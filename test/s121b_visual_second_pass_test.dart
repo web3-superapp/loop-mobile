@@ -370,8 +370,8 @@ void main() {
         ),
       );
       expect(find.text('4'), findsOneWidget);
-      expect(find.text('权重 0.5'), findsOneWidget);
-      expect(find.text('9 人有算力'), findsOneWidget);
+      // Decision 0229: the weight joins the second line.
+      expect(find.text('权重 0.5，9 人有算力'), findsOneWidget);
       expect(find.text('算力'), findsNothing);
       // Decision 0182: the figure's share of the leader's, a 64 px bar.
       final bar = tester.widget<LoopProgressBar>(find.byType(LoopProgressBar));

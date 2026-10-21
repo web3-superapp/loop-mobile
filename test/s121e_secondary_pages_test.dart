@@ -99,7 +99,11 @@ void main() {
         tester.getSize(find.byType(LoopButton)).height,
         LoopTouch.primaryButton,
       );
-      expect(tester.widget<Text>(find.text('保存')).style?.fontSize, 16);
+      // Decision 0229: the flat block button's word.
+      expect(
+        tester.widget<Text>(find.text('保存')).style?.fontSize,
+        LoopType.titleLg.fontSize,
+      );
     });
 
     testWidgets('an informational notice is one ⓘ line, a warning keeps its '
@@ -146,7 +150,8 @@ void main() {
         tester.getSize(find.byType(LoopFlatField)).height,
         greaterThanOrEqualTo(52 + 14),
       );
-      expect(tester.widget<Text>(find.text('用户名')).style?.fontSize, 13);
+      // Decision 0229: the caption size, 14.
+      expect(tester.widget<Text>(find.text('用户名')).style?.fontSize, 14);
     });
   });
 
@@ -167,7 +172,11 @@ void main() {
         tester.widget<Text>(find.text('Voyager_7')).style?.fontSize,
         LoopType.displaySm.fontSize,
       );
-      expect(tester.widget<Text>(find.text(_loopId)).style?.fontSize, 13);
+      // Decision 0229: the caption step.
+      expect(
+        tester.widget<Text>(find.text(_loopId)).style?.fontSize,
+        LoopType.caption.fontSize,
+      );
       expect(
         find.byKey(const ValueKey<String>('profile-open-edit')),
         findsOneWidget,
@@ -250,7 +259,7 @@ void main() {
       final versionText = tester.widget<Text>(
         find.descendant(of: version, matching: find.byType(Text)),
       );
-      expect(versionText.style?.fontSize, 11);
+      expect(versionText.style?.fontSize, 14);
       expect(versionText.data, startsWith('LOOP'));
 
       await tester.scrollUntilVisible(
@@ -324,7 +333,7 @@ void main() {
         );
       }
       final label = tester.widget<Text>(find.text('用户名'));
-      expect(label.style?.fontSize, 13);
+      expect(label.style?.fontSize, 14);
       final save = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('profile-edit-save')),
       );

@@ -164,11 +164,11 @@ void main() {
         intelRankLedgerKicker(
           _rank(MiningRankScope.communities, _communities()),
         ),
-        '算力榜 · 快照 ${intelRankMonthDayClock(snapshot.computedAt)}',
+        '算力榜，快照 ${intelRankMonthDayClock(snapshot.computedAt)}',
       );
       expect(
         intelRankLedgerKicker(_rank(MiningRankScope.referrals, _referrals)),
-        '算力榜 · 实时',
+        '算力榜，实时',
       );
       expect(
         intelRankLedgerKicker(
@@ -210,7 +210,7 @@ void main() {
         _users(),
         me: const MiningRankMe(rank: 12, value: '2380'),
       );
-      expect(intelRankLedgerCaption(read, const {}), '算力 2,380 · 距第 11 名还差 40');
+      expect(intelRankLedgerCaption(read, const {}), '算力 2,380，距第 11 名还差 40');
       // Place 36 is not on the pages read so far.
       final unread = _rank(
         MiningRankScope.users,
@@ -244,7 +244,7 @@ void main() {
       );
       expect(
         intelRankLedgerCaption(inRows, const {}),
-        '算力 3,210 · 距第 4 名还差 1,660 · 社区 社区5 权重 1.2',
+        '算力 3,210，距第 4 名还差 1,660，社区 社区5 权重 1.2',
       );
       final known = _rank(
         MiningRankScope.communities,
@@ -264,7 +264,7 @@ void main() {
           ),
           const {},
         ),
-        '直接邀请 5 人 · 距第 2 名还差 3 人',
+        '直接邀请 5 人，距第 2 名还差 3 人',
       );
       expect(
         intelRankLedgerCaption(
@@ -351,7 +351,7 @@ void main() {
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(
         find.text(
-          '算力榜 · 快照 '
+          '算力榜，快照 '
           '${intelRankMonthDayClock(s7MiningSnapshot().computedAt)}',
         ),
         findsOneWidget,
@@ -397,17 +397,26 @@ void main() {
         IntelRankBoard(onNavigate: (_) {}),
         mining: _BoardMining(_boards),
       );
-      expect(_key('intel-rank-list-head'), findsOneWidget);
-      expect(find.text('名次 · 社区 · 权重'), findsOneWidget);
-      expect(find.text('算力 · 占第一名比例'), findsOneWidget);
-      final row = _key('intel-rank-community-community-4');
+      final head = _key('intel-rank-list-head');
+      expect(head, findsOneWidget);
+      // Decision 0229: one word per column, no centre-dot chain.
       expect(
-        find.descendant(of: row, matching: find.text('权重 1.0')),
+        find.descendant(of: head, matching: find.text('社区')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: row, matching: find.text('27 人有算力')),
+        find.descendant(of: head, matching: find.text('算力')),
         findsOneWidget,
+      );
+      final row = _key('intel-rank-community-community-4');
+      // Decision 0229: the weight joins the second line, no badge.
+      expect(
+        find.descendant(of: row, matching: find.text('权重 1.0，27 人有算力')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.byType(LoopBadge)),
+        findsNothing,
       );
       expect(
         find.descendant(of: row, matching: find.text('4,870')),
@@ -520,7 +529,7 @@ void main() {
       );
       expect((other.decoration! as BoxDecoration).color, isNull);
       expect(
-        find.text('算力 3,210 · 距第 4 名还差 1,660 · 社区 社区5 权重 1.2'),
+        find.text('算力 3,210，距第 4 名还差 1,660，社区 社区5 权重 1.2'),
         findsOneWidget,
       );
     });
@@ -535,9 +544,15 @@ void main() {
 
       await tester.tap(find.text('用户'));
       await tester.pumpAndSettle();
-      expect(find.text('算力 2,380 · 距第 11 名还差 40'), findsOneWidget);
+      expect(find.text('算力 2,380，距第 11 名还差 40'), findsOneWidget);
       expect(find.text('TOP 5%'), findsOneWidget);
-      expect(find.text('名次 · 用户'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('intel-rank-list-head'),
+          matching: find.text('用户'),
+        ),
+        findsOneWidget,
+      );
       // No community or medal count is read for a user row: no badge.
       expect(
         find.descendant(
@@ -557,10 +572,16 @@ void main() {
       await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(find.text('我的名次\n第 3 名'), findsOneWidget);
-      expect(find.text('算力榜 · 实时'), findsOneWidget);
-      expect(find.text('直接邀请 5 人 · 距第 2 名还差 3 人'), findsOneWidget);
+      expect(find.text('算力榜，实时'), findsOneWidget);
+      expect(find.text('直接邀请 5 人，距第 2 名还差 3 人'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
-      expect(find.text('直接邀请 · 占第一名比例'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('intel-rank-list-head'),
+          matching: find.text('直接邀请'),
+        ),
+        findsOneWidget,
+      );
       // 推广 rows carry no weight badge.
       expect(find.textContaining('权重'), findsNothing);
       expect(_filledBoxes(tester, LoopColors.yellow), 0);

@@ -286,18 +286,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // `.refined-page .folio-body>.row{padding:13px 12px}` over a 44pt
-      // `.row-ico`, plus the 1px hairline: 13 + 44 + 13 + 1 = 71.
+      // Decision 0229 (v3): a row with its second line is 80 high, no
+      // hairline (0210's 13 + 44 + 13 + 1 = 71 retired).
       final rows = find.byType(LoopRecordRow);
-      // Decision 0210: every row carries its own hairline below.
-      expect(tester.getSize(rows.at(1)).height, 71);
+      expect(tester.getSize(rows.at(1)).height, 80);
       expect(
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
-        72,
+        80,
       );
-      // `.row{gap:12px}` after a 44pt mark that starts on the 16pt page
-      // margin itself (decision 0212, 水平对齐).
-      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 72);
+      // `.row{gap:12px}` after a 44pt mark that starts on the 20pt page
+      // margin itself (decisions 0212, 0229).
+      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 76);
     });
 
     testWidgets('第二行说成员数，右边只留 chevron', (tester) async {
@@ -338,8 +337,8 @@ void main() {
       final padding = tester.widget<Padding>(
         find.ancestor(of: chip, matching: find.byType(Padding)).at(1),
       );
-      // Decision 0212: the page margin is 16.
-      expect(padding.padding, const EdgeInsets.fromLTRB(16, 0, 16, 16));
+      // Decision 0229: the page margin is 20.
+      expect(padding.padding, const EdgeInsets.fromLTRB(20, 0, 20, 16));
     });
   });
 

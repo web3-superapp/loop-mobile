@@ -56,7 +56,8 @@ void main() {
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
     final subtitle = tester.widget<Text>(find.text('登录后自动创建钱包，持仓即产生算力。'));
-    expect(subtitle.style?.fontSize, 14);
+    // Decision 0229: body2, 16.
+    expect(subtitle.style?.fontSize, 16);
     final field = find.byKey(const ValueKey('privy-email'));
     expect(field, findsOneWidget);
     expect(tester.getSize(field).height, greaterThanOrEqualTo(52));

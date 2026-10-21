@@ -324,7 +324,7 @@ void main() {
           ]),
         ),
       );
-      expect(find.text('128 成员 · \$FROG'), findsOneWidget);
+      expect(find.text('128 成员，\$FROG'), findsOneWidget);
       expect(find.text('128 成员'), findsOneWidget);
       expect(find.text('已验证'), findsNWidgets(2));
 
@@ -343,7 +343,7 @@ void main() {
         onOpenCommunity: opened.add,
       );
       await _tapChip(tester, 'square-sort-power');
-      expect(find.textContaining('128 成员 · 算力 '), findsOneWidget);
+      expect(find.textContaining('128 成员，算力 '), findsOneWidget);
       expect(find.textContaining('\$FROG'), findsNothing);
 
       await tester.tap(

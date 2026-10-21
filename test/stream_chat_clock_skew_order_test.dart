@@ -137,6 +137,13 @@ void main() {
     // the list and dropping every `message.new` while a member may already be
     // typing. `loopStreamChannelScope` never enters that path.
     final harness = _SkewHarness(skew: const Duration(hours: -1), unread: true);
+    // A phone-shaped window (decision 0229): at the v3 message sizes the
+    // default 800 × 600 window's layout leads Stream's list to mark the room
+    // read, which this offline harness cannot answer; the phone window keeps
+    // the test about ordering.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(harness.app());
     await tester.pump(const Duration(milliseconds: 500));
 

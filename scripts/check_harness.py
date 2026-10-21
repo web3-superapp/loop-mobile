@@ -2894,8 +2894,10 @@ CHAT_PREVIEW_REQUEST_TEST_MARKERS = {
         "a request card disables every action while resolution is pending",
     ),
 }
+# Decision 0229 re-reviewed the test: `_tapRequestAction` now pumps after
+# `ensureVisible` so the tap lands where the scrolled control is.
 CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
-    "aed18499ecd432806bd70742207106214ac6d8af2e5074fdbe1ab6991e3e4865"
+    "fd58ea04aa06691fffbf5b42f9c893de507fad7a97c389a68552eacb77b3a476"
 )
 # Decision 0130 re-reviewed `page` and `inbox`: their SnackBars became
 # LoopToast with the same copy; nothing else in the slices changed.

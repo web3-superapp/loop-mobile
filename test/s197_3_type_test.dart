@@ -209,10 +209,11 @@ void main() {
         LoopType.displaySm,
         reason: 'name',
       );
-      // H2 R28: the figure 13/700, the word bodySm 13 text2.
+      // H2 R28: the figure at the body2 size, 700, beside its word bodySm
+      // text2 (decision 0229).
       _expectStep(
         _painted(tester, '128'),
-        LoopType.figure,
+        LoopType.figureBody,
         weight: FontWeight.w700,
         reason: 'count',
       );
@@ -222,10 +223,10 @@ void main() {
         color: LoopColors.text2,
         reason: 'count word',
       );
-      // M19 an inline LOOP ID: figure 13 at 500, text2.
+      // M19 an inline LOOP ID: figureSm 13 at 500, text2 (decision 0229).
       _expectStep(
         _painted(tester, _loopId),
-        LoopType.figure,
+        LoopType.figureSm,
         weight: FontWeight.w500,
         color: LoopColors.text2,
         reason: 'LOOP ID',

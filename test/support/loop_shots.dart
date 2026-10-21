@@ -44,6 +44,7 @@ Future<void> loopShot(
   WidgetTester tester,
   String name, {
   double slice = 900,
+  String dir = 'docs/integration/S241b-G1/shots',
 }) async {
   await tester.runAsync(_loadFonts);
   await tester.pump();
@@ -69,10 +70,9 @@ Future<void> loopShot(
       );
       final bytes = await part.toByteData(format: ui.ImageByteFormat.png);
       final suffix = h <= slice ? '' : '-${index + 1}';
-      File(
-        '${Directory.current.path}/docs/integration/S241b-G1/shots/'
-        '$name$suffix.png',
-      ).writeAsBytesSync(bytes!.buffer.asUint8List());
+      File('${Directory.current.path}/$dir/$name$suffix.png')
+        ..parent.createSync(recursive: true)
+        ..writeAsBytesSync(bytes!.buffer.asUint8List());
       index += 1;
     }
   });

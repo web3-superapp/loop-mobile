@@ -85,16 +85,16 @@ void main() {
           const ValueKey<String>('wallet-balance-value-$s5NativeAssetId'),
         ),
       );
-      // Decision 0188 (钱包 C): ≈\$ is the grey line under the amount, and
-      // the 24h move is its own line — the USD move and the percent — in
-      // rise / fall.
+      // Decision 0229 (v3): ≈\$ is the grey line under the amount, and the
+      // 24h move joins that line as its percent, in rise / fall (decision
+      // 0188 gave it a line of its own with the USD move).
       expect(value.data, '≈\$5,231.73');
       final change = tester.widget<Text>(
         find.byKey(
           const ValueKey<String>('wallet-balance-change-$s5NativeAssetId'),
         ),
       );
-      expect(change.data, '+\$249.13 (+5%)');
+      expect(change.data, '+5%');
       expect(change.style!.color, LoopColors.rise);
     });
 
@@ -1157,6 +1157,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('BNB 转账记录暂时读不到'), findsOneWidget);
 
+      // The segment row scrolls sideways at the v3 word size (decision 0229).
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('tx-history-seg-4')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-4')));
       await tester.pumpAndSettle();
       expect(find.textContaining('跨链与挖矿领取记录暂时读不到'), findsOneWidget);

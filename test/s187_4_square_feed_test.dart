@@ -396,9 +396,9 @@ void main() {
       );
       final bare = tester.getSize(_key('square-post-${_uuid(1)}')).height;
       final quoted = tester.getSize(_key('square-post-${_uuid(2)}')).height;
-      // 112 since decision 0210's 1.7 body leading.
-      expect(bare, lessThanOrEqualTo(112));
-      expect(quoted, lessThanOrEqualTo(160));
+      // 140 since decision 0229's 16 body and 17 name (112 under 0210).
+      expect(bare, lessThanOrEqualTo(140));
+      expect(quoted, lessThanOrEqualTo(190));
       // The capsule is the design's 40 dp Card strip.
       expect(
         tester.getSize(_key('square-post-quote')).height,

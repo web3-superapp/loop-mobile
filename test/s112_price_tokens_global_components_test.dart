@@ -252,7 +252,8 @@ void main() {
       final text = tester.widget<Text>(
         find.text('来源 DexScreener · GoPlus · 观察于 14:02'),
       );
-      expect(text.style?.fontSize, 11);
+      // Decision 0229: the caption size, 14 (was 11).
+      expect(text.style?.fontSize, 14);
       expect(text.maxLines, 1);
       expect(
         tester

@@ -29,6 +29,9 @@ List<String> _figures(WidgetTester tester) {
 /// Every figure the Launch pages could show is a contract fact, and no
 /// contract baseline exists. These tests pin that: the em dash and the
 /// server's own `reasonCode` appear, and the prototype's numbers never do.
+/// The launch-apply form at the v3 type ladder (decision 0229).
+const Size _applySize = Size(390, 3600);
+
 void main() {
   group('launch · the catalogue tab', () {
     testWidgets('loading shows a skeleton and no figure', (tester) async {
@@ -633,6 +636,7 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchApplyScreen(),
+        size: _applySize,
         launch: FakeLaunchGateway(),
       );
 
@@ -651,7 +655,14 @@ void main() {
       tester,
     ) async {
       final gateway = FakeLaunchGateway();
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey<String>('launch-apply-name')),
@@ -670,7 +681,14 @@ void main() {
 
     testWidgets('a valid draft is created and then submitted', (tester) async {
       final gateway = FakeLaunchGateway();
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.enterText(
         find.byKey(const ValueKey<String>('launch-apply-name')),
@@ -709,7 +727,14 @@ void main() {
           ),
         ),
       );
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.tap(
         find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
@@ -742,7 +767,14 @@ void main() {
           ),
         ),
       );
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.tap(
         find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
@@ -778,7 +810,14 @@ void main() {
           ),
         ),
       );
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.tap(
         find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
@@ -804,7 +843,14 @@ void main() {
         ),
         updateFailure: LaunchFailureKind.versionConflict,
       );
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.tap(
         find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
@@ -830,6 +876,7 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchApplyScreen(),
+        size: _applySize,
         launch: FakeLaunchGateway(
           projects: S7Answer<LaunchProjectPage>(
             value: LaunchProjectPage(
@@ -863,6 +910,7 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchApplyScreen(),
+        size: _applySize,
         launch: FakeLaunchGateway(
           projects: S7Answer<LaunchProjectPage>(
             value: LaunchProjectPage(
@@ -906,6 +954,7 @@ void main() {
         await pumpS7Page(
           tester,
           const LaunchApplyScreen(),
+          size: _applySize,
           launch: FakeLaunchGateway(
             projects: S7Answer<LaunchProjectPage>(
               value: LaunchProjectPage(
@@ -955,6 +1004,7 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchApplyScreen(),
+        size: _applySize,
         launch: FakeLaunchGateway(
           projects: S7Answer<LaunchProjectPage>(
             value: LaunchProjectPage(
@@ -1015,7 +1065,14 @@ void main() {
         ),
         updateFailure: LaunchFailureKind.versionConflict,
       );
-      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+      // v3 (decision 0229): the taller ladder needs a taller test surface for
+      // the whole form to be laid out.
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        size: _applySize,
+        launch: gateway,
+      );
 
       await tester.tap(
         find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
@@ -1050,7 +1107,7 @@ void main() {
         tester,
         const LaunchApplyScreen(),
         launch: gateway,
-        size: const Size(390, 3600),
+        size: const Size(390, 4200),
       );
 
       expect(
@@ -1091,6 +1148,7 @@ void main() {
       await pumpS7Page(
         tester,
         const LaunchApplyScreen(),
+        size: _applySize,
         launch: FakeLaunchGateway(
           projects: S7Answer<LaunchProjectPage>(
             value: LaunchProjectPage(
