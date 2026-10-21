@@ -574,7 +574,7 @@ class HarnessTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             # A second page read outside the bounded builder is rejected.
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/meme')",
                 "GoRoute(path: '/home', redirect: (context, state) => "
                 "ref.watch(loopV2MetaSnapshotProvider).value == null ? '/auth' : '/community')",
                 1,
@@ -1278,8 +1278,8 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
-                "GoRoute(path: '/home', redirect: (context, state) => '/chat'),\n"
+                "GoRoute(path: '/home', redirect: (context, state) => '/meme')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/meme'),\n"
                 "      GoRoute(path: '/onboarding', redirect: (context, state) => '/auth')",
                 1,
             )
@@ -1365,7 +1365,7 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                    "GoRoute(path: '/home', redirect: (context, state) => '/meme')",
                     "GoRoute(path: '/home', redirect: (context, state) => '/market')",
                     1,
                 ),
@@ -1376,7 +1376,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "V2 app routes must redirect `/home` to `/chat`" in error
+                "V2 app routes must redirect `/home` to `/meme`" in error
                 for error in result
             ),
             msg=f"expected compatibility-redirect guard: {result}",
@@ -1399,7 +1399,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "V2 app routes must redirect `/:unmatched(.*)` to `/chat`",
+            "V2 app routes must redirect `/:unmatched(.*)` to `/meme`",
             result,
         )
 
@@ -1410,11 +1410,11 @@ class HarnessTests(unittest.TestCase):
             app_path = root / "lib/app.dart"
             source = app_path.read_text(encoding="utf-8")
             formatted = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/meme')",
                 "GoRoute(\n"
                 "        path: '/home',\n"
                 "        redirect: (context, state) {\n"
-                "          return '/chat';\n"
+                "          return '/meme';\n"
                 "        },\n"
                 "      )",
                 1,
@@ -1425,7 +1425,7 @@ class HarnessTests(unittest.TestCase):
             test_path = root / "test/v2_primary_navigation_test.dart"
             test_source = test_path.read_text(encoding="utf-8")
             renamed = test_source.replace(
-                "unknown routes fall back directly to Chat",
+                "unknown routes fall back directly to MEME",
                 "unmatched locations use the reviewed V2 fallback",
                 1,
             )
@@ -1443,9 +1443,9 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/meme')",
                 "GoRoute(path: '/home', redirect: (context, state) => '/market')\n"
-                "      // GoRoute(path: '/home', redirect: (context, state) => '/chat')",
+                "      // GoRoute(path: '/home', redirect: (context, state) => '/meme')",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -1454,7 +1454,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "V2 app routes must redirect `/home` to `/chat`",
+            "V2 app routes must redirect `/home` to `/meme`",
             result,
         )
 
@@ -1478,7 +1478,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertIn(
             "a decided landing must hand the credential and launch pages to "
-            "the account's own step, or to Chat",
+            "the account's own step, or to MEME (decision 0221)",
             result,
         )
 
@@ -7503,8 +7503,8 @@ class HarnessTests(unittest.TestCase):
             # Decision 0122 moved 「发起」 to a floating key; the bar's
             # action slot is where an entry would be smuggled back in.
             mutated = source.replace(
-                "titleField: const _ChatSearchEntry(),",
-                "titleField: const _ChatSearchEntry(),\n"
+                "leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),",
+                "leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),\n"
                 "      actions: <Widget>[\n"
                 "        TextButton(\n"
                 "          key: const ValueKey<String>('stream-audio-room-entry'),\n"
@@ -9497,10 +9497,10 @@ class NavigationShellContractTests(unittest.TestCase):
     def test_rejects_a_tab_back_that_leaves_the_app(self) -> None:
         result = self._check(
             "lib/features/shell/loop_shell.dart",
-            "canPop: selectedIndex == 0",
+            "canPop: selectedIndex == LoopShell.homeIndex",
             "canPop: true",
         )
-        self.assertTrue(any("聊天" in e for e in result), msg=result)
+        self.assertTrue(any("MEME" in e for e in result), msg=result)
 
     def test_rejects_a_sheet_off_the_root_navigator(self) -> None:
         result = self._check(

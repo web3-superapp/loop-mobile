@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -193,14 +194,24 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           onRetry: () => unawaited(controller.reload()),
         )
       else ...<Widget>[
-        for (final community in state.items)
-          SquareCommunityRow(
-            key: ValueKey<String>('square-community-${community.communityId}'),
-            community: community,
-            sort: state.sort,
-            joining: _joining.contains(community.communityId),
-            onOpen: () => widget.onOpenCommunity(community.communityId),
-            onJoin: () => unawaited(_join(community)),
+        // Decision 0221: on the wall the rows sit on one card board; the
+        // rows themselves stay flat.
+        if (state.items.isNotEmpty)
+          LoopAtmoBoard(
+            key: const ValueKey<String>('square-community-board'),
+            children: <Widget>[
+              for (final community in state.items)
+                SquareCommunityRow(
+                  key: ValueKey<String>(
+                    'square-community-${community.communityId}',
+                  ),
+                  community: community,
+                  sort: state.sort,
+                  joining: _joining.contains(community.communityId),
+                  onOpen: () => widget.onOpenCommunity(community.communityId),
+                  onJoin: () => unawaited(_join(community)),
+                ),
+            ],
           ),
         if (state.appendFailed && !state.loadingMore)
           Padding(
@@ -424,7 +435,9 @@ class _PinnedChips extends SliverPersistentHeaderDelegate {
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => ColoredBox(color: LoopColors.ink, child: child);
+    // Decision 0221: over the wall the pinned chips paint the same wall cut
+    // to their box, so rows pass under them unseen; off the wall, Ink.
+  ) => LoopBackdropSlice(child: child);
 
   @override
   bool shouldRebuild(covariant _PinnedChips oldDelegate) =>
@@ -597,6 +610,7 @@ class SquareCommunityRow extends StatelessWidget {
                         logoRef: community.logoRef,
                         size: 48,
                         radius: LoopRadius.innerValue,
+                        chromeFallback: true,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

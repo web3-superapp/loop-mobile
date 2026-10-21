@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -129,8 +130,10 @@ void main() {
         '/wallet',
       ]);
       expect(LoopRouteManifest.entries.where((entry) => entry.tab).length, 5);
-      expect(LoopRouteManifest.defaultSlug, 'chat');
-      expect(LoopRouteManifest.defaultPath, '/chat');
+      // Decision 0221: MEME is the landing; the tab order is unchanged.
+      expect(LoopRouteManifest.defaultSlug, 'meme');
+      expect(LoopRouteManifest.defaultPath, '/meme');
+      expect(LoopShell.homeIndex, 2);
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
         '聊天',
@@ -156,7 +159,7 @@ void main() {
       // `/chat` is a tab and its children stay ordinary child routes.
       expect(LoopRouteManifest.pathFor('dm'), '/chat/dm');
       expect(LoopRouteManifest.supplementaryPaths, isNot(contains('/chat')));
-      expect(LoopRouteManifest.compatibilityRedirects['/home'], '/chat');
+      expect(LoopRouteManifest.compatibilityRedirects['/home'], '/meme');
       for (final retired in <String>[
         '/home',
         '/onboarding',
@@ -358,7 +361,7 @@ void main() {
       expect(find.byType(LoopTabBar), findsNothing);
     });
 
-    testWidgets('illegal and retired locations are logged and land on Chat', (
+    testWidgets('illegal and retired locations are logged and land on MEME', (
       tester,
     ) async {
       final routingErrors = LoopRoutingErrorLog();
@@ -380,18 +383,18 @@ void main() {
 
         expect(
           router.routeInformationProvider.value.uri.path,
-          '/chat',
+          '/meme',
           reason: location,
         );
         expect(routingErrors.last?.location, location, reason: location);
-        expect(routingErrors.last?.fallback, '/chat');
+        expect(routingErrors.last?.fallback, '/meme');
         expect(find.byType(LoopTabBar), findsOneWidget, reason: location);
       }
       expect(routingErrors.entries, hasLength(9));
 
       router.go('/home');
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/chat');
+      expect(router.routeInformationProvider.value.uri.path, '/meme');
       router.go('/launchpad');
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/launch');
@@ -489,9 +492,7 @@ Future<GoRouter> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
-  return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-  );
+  return GoRouter.of(tester.element(find.byType(MemeScreen)));
 }
 
 final class _EmptySpotMarketRepository

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
@@ -31,9 +32,9 @@ void main() {
     expect(find.text('Home'), findsNothing);
     expect(find.text('Profile'), findsNothing);
 
-    final router = GoRouter.of(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-    );
+    // Decision 0221: the App lands on MEME.
+    expect(find.byType(MemeScreen), findsOneWidget);
+    final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     final destinations = <(String, String, Finder)>[
       ('广场', '/square', find.byKey(const ValueKey<String>('square-screen'))),
       ('MEME', '/meme', find.byKey(const ValueKey<String>('meme-screen'))),
@@ -58,11 +59,8 @@ void main() {
 
     router.go('/home');
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/chat');
-    expect(
-      find.byKey(const ValueKey<String>('chat-tab-screen')),
-      findsOneWidget,
-    );
+    expect(router.routeInformationProvider.value.uri.path, '/meme');
+    expect(find.byType(MemeScreen), findsOneWidget);
 
     router.go('/launchpad');
     await tester.pumpAndSettle();
@@ -70,23 +68,20 @@ void main() {
     expect(find.byKey(const ValueKey<String>('launch-screen')), findsOneWidget);
   });
 
-  testWidgets('unknown routes fall back directly to Chat', (tester) async {
+  testWidgets('unknown routes fall back directly to MEME', (tester) async {
     await _pumpApp(tester);
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
     router.go('/not-a-loop-route');
     await tester.pumpAndSettle();
 
-    expect(router.routeInformationProvider.value.uri.path, '/chat');
-    expect(
-      find.byKey(const ValueKey<String>('chat-tab-screen')),
-      findsOneWidget,
-    );
+    expect(router.routeInformationProvider.value.uri.path, '/meme');
+    expect(find.byType(MemeScreen), findsOneWidget);
     expect(find.byType(LoopTabBar), findsOneWidget);
   });
 
   testWidgets(
-    'the four v2 tabs and Profile are child pages that return to Chat',
+    'the four v2 tabs and Profile are child pages that return to MEME',
     (tester) async {
       await _pumpApp(tester);
       final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
@@ -110,7 +105,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           router.routeInformationProvider.value.uri.path,
-          '/chat',
+          '/meme',
           reason: path,
         );
         expect(find.byType(LoopTabBar), findsOneWidget);
@@ -123,6 +118,8 @@ void main() {
   ) async {
     await _pumpApp(tester);
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
     await tester.pumpAndSettle();

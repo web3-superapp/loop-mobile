@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -111,10 +111,7 @@ void main() {
 
       expect(repository.policyCalls, 1);
       expect(repository.capabilityCalls, 1);
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // Decision 0064: the failure is now retried on a bounded ladder, and
@@ -124,10 +121,7 @@ void main() {
         await tester.pump();
       }
       expect(repository.policyCalls, 1 + LoopV2MetaObserver.maxRetries);
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -154,10 +148,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsNothing,
-      );
+      expect(find.byType(MemeScreen), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

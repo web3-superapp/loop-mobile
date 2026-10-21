@@ -651,9 +651,8 @@ void main() {
       expect(_key('launch2-campaign-cta-c1'), findsOneWidget);
     });
 
-    testWidgets('a cover fills the whole card under the bottom scrim', (
-      tester,
-    ) async {
+    testWidgets('a cover fills the whole card, opaque, and the default art '
+        'is not drawn (decision 0221 E)', (tester) async {
       final image = await tester.runAsync(
         () => createTestImage(width: 40, height: 40),
       );
@@ -663,48 +662,48 @@ void main() {
       ]);
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsOneWidget);
-      // The cover recedes: 30 % over the wall, under an Ink 55 % veil.
-      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(_key('launch2-campaign-cover-layer'), findsOneWidget);
+      // Whole: no Opacity over the cover, no Ink veil.
       expect(
-        tester
-            .widget<Opacity>(
-              find
-                  .ancestor(
-                    of: _key('launch2-campaign-cover-c1'),
-                    matching: find.byType(Opacity),
-                  )
-                  .first,
-            )
-            .opacity,
-        0.3,
+        find.ancestor(
+          of: _key('launch2-campaign-cover-layer'),
+          matching: find.byType(Opacity),
+        ),
+        findsNothing,
       );
-      expect(
-        tester.widget<ColoredBox>(_key('launch2-campaign-cover-veil')).color,
-        const Color(0x8C09090B),
-      );
+      expect(_key('launch2-campaign-cover-veil'), findsNothing);
+      // The default art is gone: no wall, no fog wash, no hand, no tag.
+      expect(_key('launch2-campaign-default-art'), findsNothing);
+      expect(_key('launch2-campaign-ground'), findsNothing);
+      expect(_key('launch2-campaign-scrim'), findsNothing);
+      expect(_key('launch2-atmo-hand'), findsNothing);
       final card = tester.getRect(_key('launch2-campaign-card-c1'));
       final cover = tester.getRect(_key('launch2-campaign-cover-c1'));
       expect(cover, card);
-      // S264: the Ink wash covers the card from the left; the words sit on
-      // its dark half.
-      final scrim = tester.getRect(_key('launch2-campaign-scrim'));
-      expect(scrim, card);
-      final title = tester.getRect(find.text('发射季交易赛'));
-      expect(title.left, lessThan(card.center.dx));
+      // Only the bottom 55 % black wash stays.
+      final wash = tester.getRect(_key('launch2-campaign-cover-wash'));
+      expect(wash.bottom, moreOrLessEquals(card.bottom));
+      expect(wash.height, moreOrLessEquals(card.height * 0.55));
+      // The layout over it does not move.
+      expect(find.text('发射季交易赛'), findsOneWidget);
+      expect(_key('launch2-campaign-cta-c1'), findsOneWidget);
     });
 
-    testWidgets('a cover that does not load is no cover: the ground stays', (
-      tester,
-    ) async {
+    testWidgets('a cover that does not load is no cover: the default art '
+        'stays, with the chrome hand', (tester) async {
       debugLoopRemoteAvatarImageProvider = (url) => const _BrokenImage();
       await _pumpPager(tester, <Launch2DeskPage>[
         Launch2DeskCampaignPage(_campaign('c1', coverUrl: _mediaUrl)),
       ]);
+      // While the cover is on its way the default art already stands.
+      expect(_key('launch2-campaign-default-art'), findsOneWidget);
+      expect(_key('launch2-atmo-hand'), findsOneWidget);
       await tester.pump();
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsNothing);
-      expect(_key('launch2-campaign-cover-veil'), findsNothing);
+      expect(_key('launch2-campaign-cover-layer'), findsNothing);
       expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(_key('launch2-atmo-hand'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

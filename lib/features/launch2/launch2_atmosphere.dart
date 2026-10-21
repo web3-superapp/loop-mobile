@@ -14,8 +14,8 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
-import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 // ---------------------------------------------------------------------------
 // MEME 主页 · 氛围层 (S264, decision 0220 — the S262 design A, plus the
@@ -38,19 +38,8 @@ bool launch2AmbientMotion(BuildContext context, WidgetRef ref) =>
 
 /// Decodes every atmosphere piece ahead of the home's first frame, so none of
 /// them pops in after the page.
-void launch2PrecacheAtmosphere(BuildContext context) {
-  for (final path in LoopAtmoAssets.all) {
-    unawaited(
-      precacheImage(
-        AssetImage(path),
-        context,
-        onError: (error, stackTrace) {
-          debugPrint('LOOP atmosphere: $path did not decode ($error)');
-        },
-      ),
-    );
-  }
-}
+void launch2PrecacheAtmosphere(BuildContext context) =>
+    loopPrecacheAtmosphere(context);
 
 /// A decorative asset image: no semantics, no gap while it loads.
 Widget _art(
@@ -59,91 +48,24 @@ Widget _art(
   double? height,
   BoxFit fit = BoxFit.contain,
   Key? key,
-}) => Image.asset(
-  path,
-  key: key,
-  width: width,
-  height: height,
-  fit: fit,
-  excludeFromSemantics: true,
-  gaplessPlayback: true,
-  errorBuilder: (context, error, stackTrace) =>
-      SizedBox(width: width, height: height),
-);
+}) => loopAtmoArt(path, width: width, height: height, fit: fit, key: key);
 
 // ---- the wall -------------------------------------------------------------
 
-/// The still layer under the MEME home: the wall at 85 % over Ink, a
-/// darkening wash down the page, Purple fog at the top left and Yellow fog at
-/// the bottom right.
+/// The still layer under the MEME home (decision 0220): the shared
+/// [LoopWallBackdrop] with the MEME fog — Purple top left, Yellow bottom
+/// right.
 class Launch2AtmosphereBackdrop extends StatelessWidget {
   const Launch2AtmosphereBackdrop({
     super.key = const ValueKey<String>('launch2-atmo-backdrop'),
   });
 
   /// The design's reference width; the fog sizes scale with the screen.
-  static const double referenceWidth = 390;
+  static const double referenceWidth = LoopWallBackdrop.referenceWidth;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final k = constraints.maxWidth / referenceWidth;
-      return ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            const DecoratedBox(
-              key: ValueKey<String>('launch2-atmo-wall'),
-              decoration: BoxDecoration(
-                color: LoopColors.ink,
-                image: DecorationImage(
-                  image: AssetImage(LoopAtmoAssets.wall),
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.topCenter,
-                  repeat: ImageRepeat.repeatY,
-                  opacity: 0.85,
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    Color(0x2609090B),
-                    Color(0x7309090B),
-                    Color(0xB309090B),
-                  ],
-                  stops: <double>[0, 0.55, 1],
-                ),
-              ),
-            ),
-            Positioned(
-              left: -190 * k,
-              top: -150 * k,
-              width: 560 * k,
-              height: 560 * k,
-              child: Opacity(
-                opacity: 0.15,
-                child: _art(LoopAtmoAssets.sprayPurple),
-              ),
-            ),
-            Positioned(
-              right: -220 * k,
-              bottom: 60 * k,
-              width: 540 * k,
-              height: 540 * k,
-              child: Opacity(
-                opacity: 0.11,
-                child: _art(LoopAtmoAssets.sprayYellow),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
+  Widget build(BuildContext context) =>
+      const LoopWallBackdrop(keyPrefix: 'launch2-atmo');
 }
 
 /// The MEME title with the wall crown peeking out behind it (60 %, −8°).
@@ -153,34 +75,9 @@ class Launch2AtmoTitle extends StatelessWidget {
   final String title;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerLeft,
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: <Widget>[
-        Positioned(
-          left: 52,
-          top: -14,
-          width: 84,
-          child: Transform.rotate(
-            angle: -8 * math.pi / 180,
-            child: Opacity(
-              opacity: 0.6,
-              child: _art(
-                LoopAtmoAssets.crownWall,
-                key: const ValueKey<String>('launch2-atmo-title-crown'),
-              ),
-            ),
-          ),
-        ),
-        Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => LoopAtmoTitle(
+    title: title,
+    crownKey: const ValueKey<String>('launch2-atmo-title-crown'),
   );
 }
 
@@ -765,13 +662,9 @@ class _StageChip extends StatelessWidget {
                     left: -7,
                     top: -8,
                     width: 24,
-                    child: Transform.rotate(
-                      angle: -18 * math.pi / 180,
-                      child: _art(
-                        LoopAtmoAssets.splatYellow,
-                        key: ValueKey<String>(
-                          'launch2-desk-seg-splat-${chip.id}',
-                        ),
+                    child: LoopSplatSticker(
+                      key: ValueKey<String>(
+                        'launch2-desk-seg-splat-${chip.id}',
                       ),
                     ),
                   ),
@@ -786,9 +679,7 @@ class _StageChip extends StatelessWidget {
 
 // ---- section headings -----------------------------------------------------------
 
-/// 「01 内盘 … 全部 ›」: the Anton index in Yellow with a small splat at its
-/// top right, the Chinese title, and a Yellow 「全部」 when the section has
-/// somewhere to go.
+/// 「01 内盘 … 全部 ›」: the shared [LoopSprayHeading] with its number.
 class Launch2SectionHeading extends StatelessWidget {
   const Launch2SectionHeading({
     required this.index,
@@ -802,131 +693,19 @@ class Launch2SectionHeading extends StatelessWidget {
   final VoidCallback? onMore;
 
   @override
-  Widget build(BuildContext context) {
-    final more = onMore;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        24,
-        LoopSpacing.page,
-        8,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Text(
-                index.toString().padLeft(2, '0'),
-                style: LoopType.sectionIndex.copyWith(color: LoopColors.yellow),
-              ),
-              Positioned(
-                right: -12,
-                top: -8,
-                width: 26,
-                child: Transform.rotate(
-                  angle: 12 * math.pi / 180,
-                  child: Opacity(
-                    opacity: 0.75,
-                    child: _art(LoopAtmoAssets.splatYellow),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.sectionTitle,
-                ),
-              ),
-            ),
-          ),
-          if (more != null)
-            Semantics(
-              button: true,
-              label: '$title 全部',
-              excludeSemantics: true,
-              child: LoopPressable(
-                key: ValueKey<String>('launch2-section-more-$title'),
-                onTap: more,
-                scale: false,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: LoopTouch.minimum,
-                    minHeight: LoopTouch.minimum,
-                  ),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    widthFactor: 1,
-                    heightFactor: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            '全部',
-                            style: LoopTypography.withWeight(
-                              LoopType.titleSm,
-                              FontWeight.w600,
-                            ).copyWith(color: LoopColors.yellow),
-                          ),
-                          const LoopIcon(
-                            'chevron',
-                            size: 14,
-                            color: LoopColors.yellow,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LoopSprayHeading(
+    index: index,
+    title: title,
+    onMore: onMore,
+    moreKey: ValueKey<String>('launch2-section-more-$title'),
+  );
 }
 
 // ---- the board -------------------------------------------------------------------
 
 /// One card-ground board, 16 radius, its rows split by 1 px lines.
-class Launch2Board extends StatelessWidget {
-  const Launch2Board({required this.children, super.key});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    clipBehavior: Clip.antiAlias,
-    decoration: const BoxDecoration(
-      color: LoopColors.card,
-      borderRadius: LoopRadius.card,
-      border: Border(top: BorderSide(color: Color(0x0AFFFFFF))),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        for (final (index, child) in children.indexed) ...<Widget>[
-          if (index > 0)
-            const Divider(height: 1, thickness: 1, color: LoopColors.line),
-          child,
-        ],
-      ],
-    ),
-  );
+class Launch2Board extends LoopAtmoBoard {
+  const Launch2Board({required super.children, super.key});
 }
 
 /// A project's 44 round face: its own logo when it has one, else the chrome
@@ -944,25 +723,12 @@ class Launch2ProjectAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final chrome = ClipOval(
-      child: _art(
-        LoopAtmoAssets.avatarChrome,
-        key: ValueKey<String>('launch2-avatar-chrome-$identity'),
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-      ),
-    );
-    final url = logoUrl;
-    if (url == null) return SizedBox(width: size, height: size, child: chrome);
-    return LoopRemoteAvatar(
-      key: ValueKey<String>('launch2-avatar-logo-$identity'),
-      url: url,
-      fallback: chrome,
-      size: size,
-    );
-  }
+  Widget build(BuildContext context) => LoopChromeAvatar(
+    size: size,
+    logoUrl: logoUrl,
+    medalKey: ValueKey<String>('launch2-avatar-chrome-$identity'),
+    logoKey: ValueKey<String>('launch2-avatar-logo-$identity'),
+  );
 }
 
 /// The 6 px Yellow progress bar; past 0 a Yellow drip hangs from its end.
@@ -979,57 +745,14 @@ class Launch2DripBar extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) {
-    final f = fraction.clamp(0.0, 1.0);
-    final fill = width * f;
-    return SizedBox(
-      key: ValueKey<String>('launch2-bar-$identity'),
+  Widget build(BuildContext context) => KeyedSubtree(
+    key: ValueKey<String>('launch2-bar-$identity'),
+    child: LoopDripBar(
+      fraction: fraction,
       width: width,
-      height: 6,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Color(0xFF24232A),
-                borderRadius: LoopRadius.pill,
-              ),
-            ),
-          ),
-          if (f > 0) ...<Widget>[
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: fill,
-              child: const DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: LoopRadius.pill,
-                  gradient: LinearGradient(
-                    colors: <Color>[Color(0xFFE6BE00), LoopColors.yellow],
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(color: Color(0x73FFD600), blurRadius: 6),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: fill - 3,
-              top: 2,
-              width: 5,
-              child: _art(
-                LoopAtmoAssets.dripYellow,
-                key: ValueKey<String>('launch2-drip-$identity'),
-                width: 5,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+      dripKey: ValueKey<String>('launch2-drip-$identity'),
+    ),
+  );
 }
 
 /// The stage capsule at a board row's right: Yellow on Yellow-soft while it
@@ -1243,111 +966,24 @@ class Launch2UpcomingEmpty extends StatelessWidget {
   /// 「我要发射」; `null` draws no button.
   final VoidCallback? onLaunch;
 
-  static const List<double> _grey = <double>[
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0, 0, 0, 1, 0, //
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    final launch = onLaunch;
-    return Launch2Board(
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Opacity(
-                opacity: 0.45,
-                child: ColorFiltered(
-                  colorFilter: const ColorFilter.matrix(_grey),
-                  child: _art(
-                    LoopAtmoAssets.crownFlat,
-                    key: const ValueKey<String>('launch2-upcoming-empty-crown'),
-                    width: 64,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '还没有排队中的项目，第一个发射的就是你',
-                textAlign: TextAlign.center,
-                style: LoopType.bodySm,
-              ),
-              if (launch != null) ...<Widget>[
-                const SizedBox(height: 10),
-                Launch2YellowButton(
-                  key: const ValueKey<String>('launch2-upcoming-empty-launch'),
-                  label: '我要发射',
-                  height: 44,
-                  onTap: launch,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => LoopAtmoEmpty(
+    message: '还没有排队中的项目，第一个发射的就是你',
+    crownKey: const ValueKey<String>('launch2-upcoming-empty-crown'),
+    actionLabel: '我要发射',
+    actionKey: const ValueKey<String>('launch2-upcoming-empty-launch'),
+    onAction: onLaunch,
+  );
 }
 
 /// The home's solid Yellow button: 12 radius, Ink 14 / 700, a soft Yellow
 /// glow under it.
-class Launch2YellowButton extends StatelessWidget {
+class Launch2YellowButton extends LoopYellowButton {
   const Launch2YellowButton({
-    required this.label,
+    required super.label,
     super.key,
-    this.onTap,
-    this.height = 40,
-    this.maxWidth = 160,
+    super.onTap,
+    super.height,
+    super.maxWidth,
   });
-
-  final String label;
-  final VoidCallback? onTap;
-  final double height;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final box = Container(
-      height: height,
-      constraints: BoxConstraints(
-        maxWidth: maxWidth,
-        minWidth: LoopTouch.minimum,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 22),
-      decoration: const BoxDecoration(
-        color: LoopColors.yellow,
-        borderRadius: LoopRadius.button,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x38FFD600),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      // Sized by its words (`inline-flex`), centred in its height.
-      child: Center(
-        widthFactor: 1,
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LoopType.action.copyWith(color: LoopColors.ink),
-        ),
-      ),
-    );
-    final tap = onTap;
-    if (tap == null) return box;
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: LoopPressable(onTap: tap, child: box),
-    );
-  }
 }

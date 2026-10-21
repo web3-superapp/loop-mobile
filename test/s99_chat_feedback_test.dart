@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -516,10 +517,7 @@ void main() {
         expectRecordFor(tester, 'community-alpha');
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(MemeScreen), findsOneWidget);
       });
 
       testWidgets('a malformed one is an unknown route', (tester) async {
@@ -527,10 +525,7 @@ void main() {
         await enterPreview(tester);
         await pushRoute(tester, '/c/community-alpha/room/extra');
         expect(find.byType(CommunityProfileScreen), findsNothing);
-        expect(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(MemeScreen), findsOneWidget);
       });
     });
 

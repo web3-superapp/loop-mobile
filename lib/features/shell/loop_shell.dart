@@ -20,8 +20,8 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// `StatefulShellRoute.indexedStack`, handed in as [navigationShell]. A tab
 /// that is left keeps its page, its scroll offset and its state; selecting
 /// it again shows it exactly as it was. Selecting the tab that is already
-/// showing scrolls it back to the top. The system back on any tab but the
-/// first returns to 聊天 instead of leaving the App.
+/// showing scrolls it back to the top. The system back on any tab but MEME
+/// returns to MEME instead of leaving the App (decision 0221; it was 聊天).
 ///
 /// Without a [navigationShell] (a detached widget test) the shell selects by
 /// [location] and switches with `go`.
@@ -29,7 +29,7 @@ class LoopShell extends StatefulWidget {
   const LoopShell({
     required this.child,
     super.key,
-    this.location = '/chat',
+    this.location = LoopRouteManifest.defaultPath,
     this.navigationShell,
   });
 
@@ -53,6 +53,12 @@ class LoopShell extends StatefulWidget {
 
   static List<String> get destinationPaths =>
       _destinations.map((item) => item.path).toList(growable: false);
+
+  /// The home tab: where the App lands and where the system back on every
+  /// other tab returns to — MEME since decision 0221. The tab order does
+  /// not change.
+  static int get homeIndex =>
+      destinationPaths.indexOf(LoopRouteManifest.defaultPath);
 
   /// Brings every vertical scroll region of [context]'s subtree back to its
   /// start: animated, or in one jump under reduced motion.
@@ -128,7 +134,7 @@ class _LoopShellState extends State<LoopShell> {
     final match = LoopShell._destinations.indexWhere(
       (item) => widget.location == item.path,
     );
-    return match < 0 ? 0 : match;
+    return match < 0 ? LoopShell.homeIndex : match;
   }
 
   void _select(BuildContext context, int index) {
@@ -193,14 +199,15 @@ class _LoopShellState extends State<LoopShell> {
       },
     );
     if (widget.navigationShell == null) return body;
-    // B2: back on 广场, MEME, 情报 or 钱包 goes to 聊天 first; only 聊天 lets
-    // the system close the App. `PopScope` is what Android's predictive back
-    // reads, so the system shows no "leave the App" preview on those tabs.
+    // B2, decision 0221: back on 聊天, 广场, 情报 or 钱包 goes to MEME first;
+    // only MEME lets the system close the App. `PopScope` is what Android's
+    // predictive back reads, so the system shows no "leave the App" preview
+    // on those tabs.
     return PopScope(
-      canPop: selectedIndex == 0,
+      canPop: selectedIndex == LoopShell.homeIndex,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        widget.navigationShell?.goBranch(0);
+        widget.navigationShell?.goBranch(LoopShell.homeIndex);
       },
       child: body,
     );

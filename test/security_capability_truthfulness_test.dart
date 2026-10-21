@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -238,9 +239,7 @@ Future<GoRouter> _pumpAuthenticatedLoopApp(WidgetTester tester) async {
   );
   await tester.pumpAndSettle();
 
-  return GoRouter.of(
-    tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-  );
+  return GoRouter.of(tester.element(find.byType(MemeScreen)));
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {

@@ -524,14 +524,16 @@ class Launch2DeskFolio extends ConsumerWidget {
 }
 
 /// The campaign page (decision 0165; redrawn by decision 0212, then by S264
-/// — decision 0220, the atmosphere banner). A 220 high, 16 radius card: the
-/// campaign cover (or the wall when it has none) at the bottom under Purple
-/// and Yellow fog and a left-to-right Ink wash; on the left the title (26 /
-/// 700, Chalk) over a Purple brush stroke, the subtitle, the foot line
-/// 「10-19 至 10-26 · 剩 6 天」 and a solid Yellow 「去参与」 40 high; on the
-/// right the chrome hand (it hangs 14 / 16 past the card's right and bottom
-/// edges) wearing the Yellow crown, and the tilted 「IN THE LOOP」 tag at the
-/// top right. The whole card is one tap.
+/// — decision 0220, the atmosphere banner — and by decision 0221 E). A 220
+/// high, 16 radius card. Its ground is the admin's cover when the campaign
+/// has one and it loads — whole, opaque, under the bottom 55 % black wash
+/// only — and otherwise the default art: the wall under Purple and Yellow
+/// fog and a left-to-right Ink wash, the chrome hand (it hangs 14 / 16 past
+/// the card's right and bottom edges) wearing the Yellow crown, and the
+/// tilted 「IN THE LOOP」 tag at the top right. Over either: on the left the
+/// title (26 / 700, Chalk) over a Purple brush stroke, the subtitle, the
+/// foot line 「10-19 至 10-26 · 剩 6 天」 and a solid Yellow 「去参与」 40 high.
+/// The whole card is one tap.
 class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   const Launch2DeskCampaignCard({
     required this.campaign,
@@ -575,10 +577,12 @@ class _Launch2DeskCampaignCardState
     });
   }
 
-  Widget _cover(String url) {
+  /// The admin's cover, whole: `BoxFit.cover`, centred, fully opaque, with
+  /// only the bottom 55 % black wash (docs/42 §5) — decision 0221 E. Until
+  /// its first frame is in, and if it fails, the default art stands in its
+  /// place, so a cover that fails never flashes anything.
+  Widget _cover(String url, Widget defaultArt) {
     final source = loopRemoteImageSource(url);
-    // The wall under it already shows while the cover loads.
-    const ground = SizedBox.expand();
     return Image(
       key: ValueKey<String>(
         'launch2-campaign-cover-${widget.campaign.campaignId}',
@@ -588,14 +592,147 @@ class _Launch2DeskCampaignCardState
       alignment: Alignment.center,
       gaplessPlayback: true,
       excludeFromSemantics: true,
-      frameBuilder: (context, child, frame, synchronous) =>
-          synchronous || frame != null ? child : ground,
+      frameBuilder: (context, child, frame, synchronous) {
+        if (!synchronous && frame == null) return defaultArt;
+        return Stack(
+          key: const ValueKey<String>('launch2-campaign-cover-layer'),
+          fit: StackFit.expand,
+          children: <Widget>[
+            ClipRRect(
+              borderRadius: LoopRadius.card,
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  const ColoredBox(color: Color(0xFF0E0D12)),
+                  child,
+                  const Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: 0.55,
+                      widthFactor: 1,
+                      child: DecoratedBox(
+                        key: ValueKey<String>('launch2-campaign-cover-wash'),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: <Color>[
+                              Color(0x0009090B),
+                              Color(0xD909090B),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: LoopRadius.card,
+                      border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
       errorBuilder: (context, error, stackTrace) {
         _coverFailed(url);
-        return ground;
+        return defaultArt;
       },
     );
   }
+
+  /// The default art (decision 0220 §4): the wall at 90 %, Purple and
+  /// Yellow fog, the left-to-right Ink wash, the chrome hand hanging past
+  /// the card's right and bottom edges, its Yellow crown and the tilted
+  /// 「IN THE LOOP」 tag.
+  Widget _defaultArt(Widget Function(String path, {double? width}) art) =>
+      Stack(
+        key: const ValueKey<String>('launch2-campaign-default-art'),
+        clipBehavior: Clip.none,
+        fit: StackFit.expand,
+        children: <Widget>[
+          ClipRRect(
+            borderRadius: LoopRadius.card,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                const ColoredBox(color: Color(0xFF0E0D12)),
+                const _CampaignGround(),
+                Positioned(
+                  left: -60,
+                  top: -110,
+                  width: 420,
+                  height: 420,
+                  child: Opacity(
+                    opacity: 0.55,
+                    child: art(LoopAtmoAssets.sprayPurple),
+                  ),
+                ),
+                Positioned(
+                  right: -140,
+                  bottom: -200,
+                  width: 360,
+                  height: 360,
+                  child: Opacity(
+                    opacity: 0.12,
+                    child: art(LoopAtmoAssets.sprayYellow),
+                  ),
+                ),
+                const DecoratedBox(
+                  key: ValueKey<String>('launch2-campaign-scrim'),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color(0xD109090B),
+                        Color(0x8C09090B),
+                        Color(0x0009090B),
+                      ],
+                      stops: <double>[0, 0.52, 0.75],
+                    ),
+                  ),
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: LoopRadius.card,
+                    border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Positioned(
+            right: -14,
+            bottom: -16,
+            width: 171,
+            height: 170,
+            child: Launch2ChromeHand(),
+          ),
+          Positioned(
+            right: 118,
+            top: 28,
+            width: 62,
+            child: Transform.rotate(
+              angle: -14 * math.pi / 180,
+              child: art(LoopAtmoAssets.crownYellow, width: 62),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            width: 42,
+            child: Transform.rotate(
+              angle: -5 * math.pi / 180,
+              child: Opacity(
+                opacity: 0.95,
+                child: art(LoopAtmoAssets.tagInLoop, width: 42),
+              ),
+            ),
+          ),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -614,66 +751,10 @@ class _Launch2DeskCampaignCardState
       gaplessPlayback: true,
       errorBuilder: (context, error, stackTrace) => SizedBox(width: width),
     );
-    final ground = ClipRRect(
-      borderRadius: LoopRadius.card,
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          const ColoredBox(color: Color(0xFF0E0D12)),
-          // The wall is always the bottom layer. A cover lies on it at 30 %
-          // under an Ink 55 % veil, so its picture is only a hint and the
-          // chrome hand and the crown are the one subject; a cover that is
-          // absent or fails leaves the wall as it is.
-          const _CampaignGround(),
-          if (hasCover) ...<Widget>[
-            Opacity(opacity: 0.3, child: _cover(cover)),
-            const ColoredBox(
-              key: ValueKey<String>('launch2-campaign-cover-veil'),
-              color: Color(0x8C09090B),
-            ),
-          ],
-          Positioned(
-            left: -60,
-            top: -110,
-            width: 420,
-            height: 420,
-            child: Opacity(
-              opacity: 0.55,
-              child: art(LoopAtmoAssets.sprayPurple),
-            ),
-          ),
-          Positioned(
-            right: -140,
-            bottom: -200,
-            width: 360,
-            height: 360,
-            child: Opacity(
-              opacity: 0.12,
-              child: art(LoopAtmoAssets.sprayYellow),
-            ),
-          ),
-          const DecoratedBox(
-            key: ValueKey<String>('launch2-campaign-scrim'),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: <Color>[
-                  Color(0xD109090B),
-                  Color(0x8C09090B),
-                  Color(0x0009090B),
-                ],
-                stops: <double>[0, 0.52, 0.75],
-              ),
-            ),
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: LoopRadius.card,
-              border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
-            ),
-          ),
-        ],
-      ),
-    );
+    final defaultArt = _defaultArt(art);
+    // Decision 0221 E: the admin's cover when it has one and it loads; the
+    // default art otherwise — and while it loads.
+    final ground = hasCover ? _cover(cover, defaultArt) : defaultArt;
     return Semantics(
       button: true,
       label: <String>[
@@ -748,34 +829,6 @@ class _Launch2DeskCampaignCardState
                 label: campaign.ctaLabel,
                 height: Launch2DeskCampaignCard.ctaHeight,
                 maxWidth: 150,
-              ),
-            ),
-            const Positioned(
-              right: -14,
-              bottom: -16,
-              width: 171,
-              height: 170,
-              child: Launch2ChromeHand(),
-            ),
-            Positioned(
-              right: 118,
-              top: 28,
-              width: 62,
-              child: Transform.rotate(
-                angle: -14 * math.pi / 180,
-                child: art(LoopAtmoAssets.crownYellow, width: 62),
-              ),
-            ),
-            Positioned(
-              right: 12,
-              top: 12,
-              width: 42,
-              child: Transform.rotate(
-                angle: -5 * math.pi / 180,
-                child: Opacity(
-                  opacity: 0.95,
-                  child: art(LoopAtmoAssets.tagInLoop, width: 42),
-                ),
               ),
             ),
           ],

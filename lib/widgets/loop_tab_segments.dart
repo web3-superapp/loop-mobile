@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -48,6 +49,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     this.updating,
     this.archetype = LoopPageArchetype.listing,
     this.initialIndex = 0,
+    this.backdrop,
   }) : assert(segments.length > 1, 'A segmented page has two segments or more');
 
   /// Stable key of the tab (`square`, `meme`, `intel`) for the segment
@@ -78,6 +80,12 @@ class LoopSegmentedTabPage extends ConsumerWidget {
   /// (decision 0181: 广场 opens on 社区, not on the 动态 segment in front of it).
   final int initialIndex;
 
+  /// A still layer under the whole tab page (decision 0221: the wall of
+  /// 广场 and 情报). The segment row stands on it with the wall crown behind
+  /// the first segment, and the embedded segment pages leave their ground
+  /// clear. `null` keeps the plain page.
+  final Widget? backdrop;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final remembered =
@@ -91,103 +99,129 @@ class LoopSegmentedTabPage extends ConsumerWidget {
       explicitChildNodes: true,
       child: Scaffold(
         key: ValueKey<String>('$tabKey-tab-page'),
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  LoopSpacing.page,
-                  6,
-                  LoopSpacing.page,
-                  0,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopLayout.topbarContentHeight,
+        backgroundColor: backdrop == null ? null : LoopColors.ink,
+        body: _staged(
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    6,
+                    LoopSpacing.page,
+                    0,
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Semantics(
-                          header: true,
-                          label: title,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: <Widget>[
-                                for (
-                                  var index = 0;
-                                  index < segments.length;
-                                  index += 1
-                                ) ...<Widget>[
-                                  if (index > 0) const SizedBox(width: 6),
-                                  _SegmentTab(
-                                    key: ValueKey<String>(
-                                      '$tabKey-segment-$index',
-                                    ),
-                                    label: segments[index],
-                                    selected: index == selected,
-                                    onTap: () {
-                                      // Decision 0130: a segment change is
-                                      // a selection.
-                                      if (index != selected) {
-                                        LoopHaptics.selection();
-                                      }
-                                      ref
-                                          .read(
-                                            loopTabSegmentMemoryProvider
-                                                .notifier,
-                                          )
-                                          .select(tabKey, index);
-                                    },
-                                  ),
-                                ],
-                              ],
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: LoopLayout.topbarContentHeight,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Semantics(
+                            header: true,
+                            label: title,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: backdrop == null
+                                  ? Clip.hardEdge
+                                  : Clip.none,
+                              child: _crowned(
+                                Row(
+                                  children: <Widget>[
+                                    for (
+                                      var index = 0;
+                                      index < segments.length;
+                                      index += 1
+                                    ) ...<Widget>[
+                                      if (index > 0) const SizedBox(width: 6),
+                                      _SegmentTab(
+                                        key: ValueKey<String>(
+                                          '$tabKey-segment-$index',
+                                        ),
+                                        label: segments[index],
+                                        selected: index == selected,
+                                        onTap: () {
+                                          // Decision 0130: a segment change is
+                                          // a selection.
+                                          if (index != selected) {
+                                            LoopHaptics.selection();
+                                          }
+                                          ref
+                                              .read(
+                                                loopTabSegmentMemoryProvider
+                                                    .notifier,
+                                              )
+                                              .select(tabKey, index);
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      if (isUpdating) ...<Widget>[
-                        const SizedBox(width: 8),
-                        LoopUpdatingBadge(
-                          key: ValueKey<String>('$tabKey-segment-updating'),
-                        ),
+                        if (isUpdating) ...<Widget>[
+                          const SizedBox(width: 8),
+                          LoopUpdatingBadge(
+                            key: ValueKey<String>('$tabKey-segment-updating'),
+                          ),
+                        ],
+                        for (final action in actions) ...<Widget>[
+                          const SizedBox(width: 6),
+                          action,
+                        ],
                       ],
-                      for (final action in actions) ...<Widget>[
-                        const SizedBox(width: 6),
-                        action,
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  // A sideways swipe over the body moves to the neighbouring
-                  // segment (S123 m7); a horizontal list or a chart inside
-                  // the body keeps its own drag.
-                  child: LoopSegmentSwipe(
-                    key: ValueKey<String>('$tabKey-segment-swipe'),
-                    index: selected,
-                    count: segments.length,
-                    onSelect: (index) => ref
-                        .read(loopTabSegmentMemoryProvider.notifier)
-                        .select(tabKey, index),
-                    child: KeyedSubtree(
-                      key: ValueKey<String>('$tabKey-segment-body-$selected'),
-                      child: builder(context, selected),
                     ),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: true,
+                    // A sideways swipe over the body moves to the neighbouring
+                    // segment (S123 m7); a horizontal list or a chart inside
+                    // the body keeps its own drag.
+                    child: LoopSegmentSwipe(
+                      key: ValueKey<String>('$tabKey-segment-swipe'),
+                      index: selected,
+                      count: segments.length,
+                      onSelect: (index) => ref
+                          .read(loopTabSegmentMemoryProvider.notifier)
+                          .select(tabKey, index),
+                      child: KeyedSubtree(
+                        key: ValueKey<String>('$tabKey-segment-body-$selected'),
+                        child: builder(context, selected),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _staged(Widget page) {
+    final layer = backdrop;
+    if (layer == null) return page;
+    return LoopBackdropStage(backdrop: layer, child: page);
+  }
+
+  /// The segment row with the wall crown behind its first word (60 %, −8°).
+  Widget _crowned(Widget row) {
+    if (backdrop == null) return row;
+    return LoopTitleCrown(
+      crownKey: ValueKey<String>('$tabKey-atmo-title-crown'),
+      left: 30,
+      top: -8,
+      width: 76,
+      child: row,
     );
   }
 }

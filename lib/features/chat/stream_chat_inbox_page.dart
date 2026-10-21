@@ -36,6 +36,7 @@ import 'package:loop_mobile/integrations/communication/stream_communication_gate
 import 'package:loop_mobile/integrations/communication/stream_deleted_message_reconciler.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -275,10 +276,23 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
       archetype: LoopPageArchetype.listing,
       title: '聊天',
       tabPage: true,
+      // Decision 0221: the wall under 聊天 — Purple fog top right, Yellow
+      // bottom left — and the faded crown behind the bar's field.
+      backdrop: const LoopWallBackdrop(
+        key: ValueKey<String>('chat-atmo-backdrop'),
+        fog: LoopWallFog.chat,
+        keyPrefix: 'chat-atmo',
+      ),
       leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),
       // OKX social head (decision 0122): the owner's face and one search
       // field across the bar; 「发起」 is the round Lime key at the foot.
-      titleField: const _ChatSearchEntry(),
+      titleField: const LoopTitleCrown(
+        crownKey: ValueKey<String>('chat-atmo-title-crown'),
+        left: 40,
+        top: -22,
+        width: 80,
+        child: _ChatSearchEntry(),
+      ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -295,6 +309,7 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
           if (!preview) const _MessageRequestsEntry(),
           LoopSegBar(
             key: const ValueKey<String>('chat-inbox-filters'),
+            splat: true,
             labels: <String>[
               for (final filter in ChatInboxFilter.values) filter.label,
             ],
@@ -310,6 +325,10 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
       collection: content,
     );
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return LoopAtmoPrecache(child: _withCreate(page, reduceMotion));
+  }
+
+  Widget _withCreate(Widget page, bool reduceMotion) {
     return Stack(
       children: <Widget>[
         Positioned.fill(
@@ -1147,17 +1166,24 @@ class _StreamChannelListBodyState
                     if (!widget.filter.includes(channel.cid)) {
                       return const SizedBox.shrink();
                     }
-                    // A swipe reveals the row's actions; a tap still opens the
-                    // conversation, and an open row closes on tap instead.
-                    return ChatInboxSwipeRow(
-                      key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
-                      // Not connected yet: no action can be carried out.
-                      actions: () => localOnly
-                          ? const <ChatInboxRowAction>[]
-                          : chatInboxRowActions(ChatInboxRowFacts.of(channel)),
-                      onAction: (action) =>
-                          unawaited(_runAction(channel, action, controller)),
-                      child: loopStreamChannelListIdentityItem(defaultItem),
+                    // Decision 0221: on the wall the rows form one opaque
+                    // card board; the rows themselves stay undecorated.
+                    return _boardRow(
+                      channels,
+                      index,
+                      widget.filter,
+                      ChatInboxSwipeRow(
+                        key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
+                        // Not connected yet: no action can be carried out.
+                        actions: () => localOnly
+                            ? const <ChatInboxRowAction>[]
+                            : chatInboxRowActions(
+                                ChatInboxRowFacts.of(channel),
+                              ),
+                        onAction: (action) =>
+                            unawaited(_runAction(channel, action, controller)),
+                        child: loopStreamChannelListIdentityItem(defaultItem),
+                      ),
                     );
                   },
                   // OKX's conversation list has no hairlines (decision 0123).
@@ -1170,22 +1196,21 @@ class _StreamChannelListBodyState
                   loadingBuilder: (context) => const ChatInboxRowsSkeleton(
                     key: ValueKey<String>('stream-chat-list-loading'),
                   ),
+                  // Decision 0221 (0220 §9's way): the grey crown, one
+                  // sentence and a Yellow action, on a card board.
                   emptyBuilder: (context) => SingleChildScrollView(
-                    child: LoopEmptyState(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: LoopAtmoEmpty(
                       key: const ValueKey<String>('stream-chat-empty'),
-                      illustration: LoopIllustration.chat,
-                      title: '还没有会话',
-                      message: '加入社区或添加好友后，会话会出现在这里',
-                      action: LoopButton(
-                        key: const ValueKey<String>(
-                          'stream-chat-empty-find-friends',
-                        ),
-                        label: '找朋友',
-                        icon: 'users',
-                        primary: true,
-                        onPressed: () =>
-                            unawaited(context.push<void>('/search')),
+                      crownKey: const ValueKey<String>(
+                        'stream-chat-empty-crown',
                       ),
+                      message: '还没有会话，加入社区或添加好友后会出现在这里',
+                      actionLabel: '找朋友',
+                      actionKey: const ValueKey<String>(
+                        'stream-chat-empty-find-friends',
+                      ),
+                      onAction: () => unawaited(context.push<void>('/search')),
                     ),
                   ),
                   errorBuilder: (context, error) => SingleChildScrollView(
@@ -1318,6 +1343,49 @@ bool chatInboxFilterLeftNothing(
   return !page.items.any((channel) => filter.includes(channel.cid));
 }
 
+/// One inbox row on the wall's card board (decision 0221): the visible rows
+/// sit inside the page gutter on the card ground, the first with the
+/// board's top corners and the last with its bottom ones. Off the wall the
+/// row is returned as it is.
+Widget _boardRow(
+  List<Channel> channels,
+  int index,
+  ChatInboxFilter filter,
+  Widget row,
+) => Builder(
+  builder: (context) {
+    if (!LoopBackdropScope.on(context)) return row;
+    final (first, last) = _visibleEnds(channels, filter);
+    const corner = Radius.circular(LoopRadius.cardValue);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      child: ClipRRect(
+        key: const ValueKey<String>('chat-inbox-board-row'),
+        borderRadius: BorderRadius.vertical(
+          top: index == first ? corner : Radius.zero,
+          bottom: index == last ? corner : Radius.zero,
+        ),
+        child: row,
+      ),
+    );
+  },
+);
+
+/// The last list the ends were read from, so a long list is walked once
+/// per change rather than once per row.
+final Expando<Map<ChatInboxFilter, (int, int)>> _visibleEndsCache =
+    Expando<Map<ChatInboxFilter, (int, int)>>('chat-inbox-visible-ends');
+
+/// The first and last rows [filter] lets through.
+(int, int) _visibleEnds(List<Channel> channels, ChatInboxFilter filter) {
+  final cached = _visibleEndsCache[channels] ??=
+      <ChatInboxFilter, (int, int)>{};
+  return cached[filter] ??= (
+    channels.indexWhere((channel) => filter.includes(channel.cid)),
+    channels.lastIndexWhere((channel) => filter.includes(channel.cid)),
+  );
+}
+
 /// Replaces the list with the filter's own empty state once
 /// [chatInboxFilterLeftNothing] holds; otherwise draws [child].
 @visibleForTesting
@@ -1350,15 +1418,20 @@ class ChatInboxFilterEmptyGate extends StatelessWidget {
             ),
             if (empty)
               SingleChildScrollView(
-                child: LoopEmptyState(
+                padding: const EdgeInsets.only(top: 16),
+                // Decision 0221: the grey crown, one sentence, an action.
+                child: LoopAtmoEmpty(
                   key: ValueKey<String>(
                     'chat-inbox-filter-empty-${filter.name}',
                   ),
-                  illustration: LoopIllustration.chat,
-                  title: communities ? '还没有社区会话' : '还没有好友会话',
-                  message: communities
-                      ? '加入社区后，社区群聊会出现在这里'
-                      : '和好友私聊或建群后，会话会出现在这里',
+                  message: communities ? '还没有社区会话' : '还没有好友会话',
+                  actionLabel: communities ? '去广场看看' : '找朋友',
+                  actionKey: ValueKey<String>(
+                    'chat-inbox-filter-empty-action-${filter.name}',
+                  ),
+                  onAction: () => communities
+                      ? GoRouter.of(context).go('/square')
+                      : unawaited(context.push<void>('/search')),
                 ),
               ),
           ],

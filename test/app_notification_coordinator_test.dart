@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -62,10 +63,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
 
       final data = _securityEventPayload();
       source.add(
@@ -81,10 +79,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
 
       source.add(
         LoopNotificationSourceEvent(

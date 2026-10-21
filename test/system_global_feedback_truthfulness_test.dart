@@ -47,7 +47,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/chat');
+    expect(router.routeInformationProvider.value.uri.path, '/meme');
   });
 
   testWidgets('feedback fails closed for blank messages and labels', (

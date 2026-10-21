@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
@@ -327,9 +328,8 @@ void main() {
   });
 
   group('page', () {
-    testWidgets('社区: the ledger card is flat, no yellow slab (S241b)', (
-      tester,
-    ) async {
+    testWidgets('社区: the ledger card is a chrome plate, no yellow slab '
+        '(S241b, decision 0221)', (tester) async {
       await pumpS7Page(
         tester,
         IntelRankBoard(onNavigate: (_) {}),
@@ -337,12 +337,12 @@ void main() {
       );
       final ledger = find.descendant(
         of: _key('intel-rank-me'),
-        matching: find.byType(LoopFolioPrimary),
+        matching: find.byType(LoopChromePlate),
       );
       expect(ledger, findsOneWidget);
-      final folio = tester.widget<LoopFolioPrimary>(ledger);
-      expect(folio.variant, LoopFolioVariant.quiet);
-      expect(folio.archetype, LoopFolioArchetype.record);
+      // The face is the dark card; only the edge is chrome.
+      final face = tester.widget<DecoratedBox>(_key('loop-chrome-plate-face'));
+      expect((face.decoration as BoxDecoration).color, LoopColors.card);
       expect(find.text('我的名次\n第 12 名'), findsOneWidget);
       expect(find.text('算力 1,240'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);

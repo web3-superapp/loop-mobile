@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
@@ -627,10 +628,7 @@ void main() {
         );
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-          findsOneWidget,
-        );
+        expect(find.byType(MemeScreen), findsOneWidget);
       },
     );
 
@@ -639,10 +637,7 @@ void main() {
       await _enterPreview(tester);
       await _pushPlatformRoute(tester, '/c/not-a-community');
       expect(find.byType(CommunityProfileScreen), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('chat-tab-screen')),
-        findsOneWidget,
-      );
+      expect(find.byType(MemeScreen), findsOneWidget);
     });
   });
 

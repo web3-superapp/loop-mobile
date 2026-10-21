@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_navigation.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -370,9 +371,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      GoRouter.of(
-        tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
-      ).go('/chat');
+      GoRouter.of(tester.element(find.byType(MemeScreen))).go('/chat');
       await tester.pumpAndSettle();
 
       final slot = find.byKey(const ValueKey<String>('chat-create-slot'));

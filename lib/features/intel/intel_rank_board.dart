@@ -23,7 +23,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart'
     show LoopProfileAvatar;
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -618,20 +618,44 @@ class IntelRankLedger extends StatelessWidget {
       container: true,
       label: <String>[heading.replaceAll('\n', '，'), caption, ?stamp].join('，'),
       excludeSemantics: true,
-      child: LoopFolioPrimary(
-        // S241b: the flat dark ledger; the place reads in yellow.
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        ring: false,
-        kicker: intelRankLedgerKicker(rank),
-        heading: heading,
-        headingMaxLines: 2,
-        // Decision 0212 (docs/42 附C §6): 「我的名次」 is a Chalk line and
-        // the place an Arimo 32 / 700 Yellow figure, not a two-line display.
-        headingBuilder: (built) => _IntelRankHeading(heading: heading),
-        caption: caption,
-        captionMaxLines: 3,
-        stamp: stamp,
+      // Decision 0221: 「我的名次」 is a chrome plate — a chrome edge around
+      // the dark card face — with the place in Arimo 32 / 700 Yellow.
+      child: LoopChromePlate(
+        key: const ValueKey<String>('intel-rank-me-plate'),
+        margin: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          8,
+          LoopSpacing.page,
+          12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            LoopKicker(intelRankLedgerKicker(rank)),
+            const SizedBox(height: 8),
+            _IntelRankHeading(heading: heading),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    caption,
+                    key: const ValueKey<String>('intel-rank-me-caption'),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ),
+                if (stamp != null) ...<Widget>[
+                  const SizedBox(width: 12),
+                  LoopFolioStamp(stamp, color: LoopColors.text2),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -818,18 +842,36 @@ class _PodiumCard extends StatelessWidget {
     final number = entry.position ?? place;
     final content = Column(
       children: <Widget>[
-        if (first) ...<Widget>[
-          const LoopIcon('crown', size: 18, color: LoopColors.purple),
-          const SizedBox(height: 6),
-        ] else
+        if (first)
+          // The winner's crown now sits on the face (decision 0221); the
+          // room it took above the face stays, so the cards keep their
+          // shape.
+          const SizedBox(height: 24)
+        else
           // Second and third stand lower than the winner: the spare height
           // of the equal cards goes above their faces, not between the
           // name and the figure (decision 0123).
           const Spacer(),
-        SizedBox.square(
-          key: ValueKey<String>('intel-rank-face-$place'),
-          dimension: intelPodiumFaceSize(place),
-          child: entry.leading(intelPodiumFaceSize(place)),
+        // Decision 0221: each of the three faces wears a small crown —
+        // Yellow on the first, chrome-grey on the second and third.
+        Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            SizedBox.square(
+              key: ValueKey<String>('intel-rank-face-$place'),
+              dimension: intelPodiumFaceSize(place),
+              child: entry.leading(intelPodiumFaceSize(place)),
+            ),
+            Positioned(
+              right: -8,
+              top: first ? -14 : -11,
+              child: LoopRankCrown(
+                key: ValueKey<String>('intel-rank-crown-$place'),
+                place: place,
+                width: first ? 28 : 22,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(

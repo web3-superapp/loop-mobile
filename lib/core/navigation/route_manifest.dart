@@ -112,11 +112,12 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'e2895fb0c137401d22ab5ec9bbae2c1ab141ea52dda763a8f076172a1a492327';
+      '511312bb7d4f4aa08eb8f2285156f5e1cb7c4baed942b9980d8ad97f218fe75d';
 
-  /// Post-login and illegal-route landing slug (v3, decision 0110).
-  static const String defaultSlug = 'chat';
-  static const String defaultPath = '/chat';
+  /// Post-login and illegal-route landing slug (v3, decision 0110; MEME
+  /// since decision 0221).
+  static const String defaultSlug = 'meme';
+  static const String defaultPath = '/meme';
 
   /// The five primary destinations in their fixed order (v3, decision 0110).
   /// The four destinations they replaced — `community`, `mining`, `launch`
@@ -132,7 +133,7 @@ abstract final class LoopRouteManifest {
   /// Compatibility redirects for installed clients. These are the only
   /// retired locations that stay mounted, and only as redirects.
   static const Map<String, String> compatibilityRedirects = <String, String>{
-    '/home': '/chat',
+    '/home': '/meme',
     '/launchpad': '/launch',
   };
 

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
@@ -49,7 +51,7 @@ void main() {
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
     expect(find.text('登录配置不完整'), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
+    expect(find.byType(MemeScreen), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('enter-development-preview-button')),
       findsNothing,
@@ -73,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
-      tester.element(find.byKey(const ValueKey<String>('chat-tab-screen'))),
+      tester.element(find.byType(MemeScreen)),
     );
     final backendGate = Completer<LoopBackendLogoutResult>();
     final exit = container
@@ -91,7 +93,7 @@ void main() {
       find.byKey(const ValueKey('privy-google-login-button')),
       findsNothing,
     );
-    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
+    expect(find.byType(MemeScreen), findsNothing);
 
     // Advancing beyond the removed outer 20-second timeout must not detach
     // the still-running backend revocation or reopen the login controls.
@@ -138,10 +140,10 @@ void main() {
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('chat-tab-screen')),
-      findsOneWidget,
-    );
+    expect(find.byType(MemeScreen), findsOneWidget);
+    // Decision 0221: the App lands on MEME; 聊天 is one tap away.
+    GoRouter.of(tester.element(find.byType(MemeScreen))).go('/chat');
+    await tester.pumpAndSettle();
     // The Preview build has no Stream session: 聊天 closes and lists nothing.
     expect(
       find.byKey(const ValueKey<String>('stream-chat-unavailable')),
@@ -181,6 +183,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('chat-tab-screen')), findsNothing);
+    expect(find.byType(MemeScreen), findsNothing);
   });
 }

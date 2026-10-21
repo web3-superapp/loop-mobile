@@ -99,7 +99,7 @@ Future<void> expectProductionUnavailable(
   await tester.ensureVisible(back);
   await tester.tap(back);
   await tester.pumpAndSettle();
-  expect(router.routeInformationProvider.value.uri.path, '/chat');
+  expect(router.routeInformationProvider.value.uri.path, '/meme');
   expect(find.byType(LoopTabBar), findsOneWidget);
 }
 
@@ -151,7 +151,7 @@ Future<void> expectProductionSpecimen(
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
-  expect(router.routeInformationProvider.value.uri.path, '/chat');
+  expect(router.routeInformationProvider.value.uri.path, '/meme');
   expect(find.byType(LoopTabBar), findsOneWidget);
 }
 

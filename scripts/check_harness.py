@@ -2132,7 +2132,7 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             ),
             "test/app_navigation_test.dart": (
                 # Step 5 retired the Spot-ledger walk with the screens it drove.
-                "retained Perp paths are unmounted and fall back to Chat with a logged error",
+                "retained Perp paths are unmounted and fall back to MEME with a logged error",
             ),
             "test/route_manifest_test.dart": (
                 "manifest keeps every retired Perp path unmounted",
@@ -8313,7 +8313,7 @@ def check_product_contract(root: Path) -> list[str]:
             "AGENTS.md": (
                 "Repository phase: `active`.",
                 "Chat / Square / Meme / Intel / Wallet",
-                "Chat is the post-login home",
+                "Meme is the post-login home",
                 "python3 scripts/check_harness.py",
             ),
             "docs/product/implementation-constraints.md": (
@@ -8488,8 +8488,10 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 113 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
-    if manifest.get("defaultRoute") != "chat":
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on chat")
+    if manifest.get("defaultRoute") != "meme":
+        errors.append(
+            f"{ROUTE_MANIFEST_JSON_PATH} must land on meme (decision 0221)"
+        )
     # Decision 0110: the manifest's own content is its fingerprint, so a slug,
     # tab or order change that does not re-freeze it is caught here.
     basis = {
@@ -9113,13 +9115,13 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\|\|\s*"
             r"location\s*==\s*'/splash'\s*\)\s*\{\s*"
             r"final\s+step\s*=\s*readOnboarding\(\)\.step\s*;\s*"
-            r"return\s+step\s*==\s*null\s*\?\s*'/chat'\s*:\s*"
+            r"return\s+step\s*==\s*null\s*\?\s*'/meme'\s*:\s*"
             r"LoopRouteManifest\.pathFor\(step\.slug\)\s*;",
             compact_source,
         ) is None:
             errors.append(
                 "a decided landing must hand the credential and launch pages "
-                "to the account's own step, or to Chat"
+                "to the account's own step, or to MEME (decision 0221)"
             )
         credential_routes = re.search(
             r"const\s+credentialRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
@@ -9146,10 +9148,10 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 "locations"
             )
         for path, destination in (
-            ("/", "/chat"),
-            ("/home", "/chat"),
+            ("/", "/meme"),
+            ("/home", "/meme"),
             ("/launchpad", "/launch"),
-            ("/:unmatched(.*)", "/chat"),
+            ("/:unmatched(.*)", "/meme"),
         ):
             if not has_direct_redirect(path, destination):
                 errors.append(
@@ -9279,8 +9281,14 @@ def check_navigation_shell_contract(root: Path) -> list[str]:
                 "goBranch(index, initialLocation: index == shell.currentIndex)",
                 "LoopShell must switch tabs with goBranch",
             ),
-            ("canPop: selectedIndex == 0", "LoopShell back must return to 聊天"),
-            ("goBranch(0)", "LoopShell back must return to 聊天"),
+            (
+                "canPop: selectedIndex == LoopShell.homeIndex",
+                "LoopShell back must return to MEME (decision 0221)",
+            ),
+            (
+                "goBranch(LoopShell.homeIndex)",
+                "LoopShell back must return to MEME (decision 0221)",
+            ),
             (
                 "LoopShell.scrollToTop(",
                 "re-selecting the showing tab must scroll it to the top",
@@ -9350,7 +9358,7 @@ def check_navigation_shell_contract(root: Path) -> list[str]:
                 "keep the tab scroll-retention test",
             ),
             ("handlePopRoute()", "drive the system back"),
-            ("'/chat'", "assert back on 广场 lands on /chat"),
+            ("'/meme'", "assert back on 广场 lands on /meme"),
             ("meme-create-step-1", "assert 创建代币 step 2 back returns to step 1"),
             ("loopLockPortrait()", "assert the portrait lock"),
         ):
