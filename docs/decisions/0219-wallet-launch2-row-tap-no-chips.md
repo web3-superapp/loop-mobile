@@ -20,3 +20,8 @@ Accepted 2026-10-21。基线 `integration/v2` 54790037。需求方 10-21 走查�
 ## Tests
 
 `test/s136_launch2_user_test.dart`：内盘持仓行无 chip、无「买入 / 卖出」文字，语义为 button 且带 tap，点击整行打开项目页一次。
+
+## Consequences
+
+内盘持仓行只剩整行点击一个入口，买卖在项目页里做；0188 的「内盘持仓带买入 / 卖出」不再成立。
+（本节由 S265 补齐：基线 ab6816b0 上 `check_harness.py` 因本决策缺 `## Consequences` 而失败，内容只复述上文 Decision 第 4 条，不改决策。）
