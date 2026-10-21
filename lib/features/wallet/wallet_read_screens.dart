@@ -336,6 +336,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         // Decision 0221: 总资产 is a chrome plate; its figure stays Yellow.
         primary: LoopChromePlate(
           key: const ValueKey<String>('wallet-total-plate'),
+          mark: LoopChromePlateMark.tag,
           margin: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
             4,

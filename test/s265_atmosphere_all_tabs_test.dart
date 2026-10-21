@@ -286,30 +286,39 @@ void main() {
       final face = tester.widget<DecoratedBox>(
         find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),
       );
-      expect((face.decoration as BoxDecoration).color, LoopColors.card);
+      expect(
+        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
+        LoopChromePlate.faceColors,
+      );
       final place = tester.widget<Text>(
         find.descendant(of: plate, matching: find.byType(Text)).at(1),
       );
       final spans = <TextSpan>[];
       place.textSpan!.visitChildren((span) {
-        if (span is TextSpan && span.text == '第 12 名') spans.add(span);
+        if (span is TextSpan && span.text == '12') spans.add(span);
         return true;
       });
+      // Decision 0224: the place is the plate's Anton 40 Yellow figure.
       expect(spans.single.style?.color, LoopColors.yellow);
-      expect(spans.single.style?.fontSize, 32);
-      expect(spans.single.style?.fontWeight, FontWeight.w700);
+      expect(spans.single.style?.fontSize, 40);
+      expect(spans.single.style?.fontFamily, LoopType.plateFigure.fontFamily);
 
       // The podium: a Yellow crown on the first, chrome-grey on 2 and 3.
-      for (final place in <int>[1, 2, 3]) {
+      // Decision 0224: the winner's drip crown is the Yellow picture itself.
+      expect(tester.widget(_key('intel-rank-crown-1')), isA<Image>());
+      for (final place in <int>[2, 3]) {
         final crown = tester.widget<LoopRankCrown>(
           _key('intel-rank-crown-$place'),
         );
         expect(crown.place, place);
+      }
+      for (final place in <int>[1, 2, 3]) {
         final face = tester.getRect(_key('intel-rank-face-$place'));
         final at = tester.getRect(_key('intel-rank-crown-$place'));
-        // Pressed onto the face's top-right corner.
+        // Pressed onto the face's top edge, centred over it.
         expect(at.overlaps(face), isTrue, reason: '$place');
-        expect(at.center.dx, greaterThan(face.center.dx), reason: '$place');
+        expect(at.center.dx, moreOrLessEquals(face.center.dx, epsilon: 1));
+        expect(at.top, lessThan(face.top), reason: '$place');
       }
       expect(
         find.descendant(
@@ -412,11 +421,14 @@ void main() {
       );
       final figure = tester.widget<Text>(_key('wallet-total-figure'));
       expect(figure.style?.color, LoopColors.yellow);
-      expect(figure.style?.fontSize, 32);
+      expect(figure.style?.fontSize, 40);
       final face = tester.widget<DecoratedBox>(
         find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),
       );
-      expect((face.decoration as BoxDecoration).color, LoopColors.card);
+      expect(
+        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
+        LoopChromePlate.faceColors,
+      );
       expect(
         find.descendant(
           of: _key('wallet-asset-tab-tokens'),

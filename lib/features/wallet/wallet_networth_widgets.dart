@@ -8,7 +8,9 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -78,6 +80,43 @@ class WalletNetWorthSpark extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Whether every snapshot of [history] is zero (decision 0224): its line
+/// would be a flat rule.
+bool walletNetWorthAllZero(LoopNetWorthHistory history) =>
+    history.points.every((point) => point.netWorthUsd == Decimal.zero);
+
+/// The 88 × 44 slot when the history is zero all the way (decision 0224): no
+/// flat Yellow rule, a short Yellow spray stroke instead. It still opens the
+/// chart.
+class WalletNetWorthSparkSpray extends StatelessWidget {
+  const WalletNetWorthSparkSpray({required this.onTap, super.key});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '7 天净值走势，点按展开',
+    excludeSemantics: true,
+    child: LoopPressable(
+      key: const ValueKey<String>('wallet-networth-spark-spray'),
+      onTap: onTap,
+      child: SizedBox.fromSize(
+        size: WalletNetWorthSpark.size,
+        child: Center(
+          child: Opacity(
+            opacity: 0.8,
+            child: Transform.rotate(
+              angle: -8 * math.pi / 180,
+              child: loopAtmoArt(LoopAtmoAssets.splatYellow, width: 44),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// The 88 × 44 slot when the 7-day history was read but cannot be drawn

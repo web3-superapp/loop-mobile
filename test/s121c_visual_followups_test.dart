@@ -176,13 +176,14 @@ void main() {
     IntelRankEntry entry(int position, String name) => IntelRankEntry(
       id: 'user-$position',
       position: position,
-      leading: (size) => SizedBox.square(dimension: size),
+      leading: (size, {chromeFallback = false}) =>
+          SizedBox.square(dimension: size),
       name: name,
       figure: '${1000 - position}',
       weight: '1.$position',
     );
 
-    testWidgets('two-line names, equal cards, faces 56 / 48 / 48', (
+    testWidgets('two-line names, faces 72 / 56 / 56 (decision 0224)', (
       tester,
     ) async {
       await _pump(
@@ -195,23 +196,18 @@ void main() {
           ],
         ),
       );
-      expect(tester.getSize(key('intel-rank-face-1')), const Size(56, 56));
-      expect(tester.getSize(key('intel-rank-face-2')), const Size(48, 48));
-      expect(tester.getSize(key('intel-rank-face-3')), const Size(48, 48));
-      final heights = <double>[
-        for (final place in <int>[1, 2, 3])
-          tester.getSize(key('intel-rank-user-$place')).height,
-      ];
-      expect(heights.toSet(), hasLength(1));
+      expect(tester.getSize(key('intel-rank-face-1')), const Size(72, 72));
+      expect(tester.getSize(key('intel-rank-face-2')), const Size(56, 56));
+      expect(tester.getSize(key('intel-rank-face-3')), const Size(56, 56));
       final name = tester.renderObject<RenderParagraph>(
         key('intel-rank-name-2'),
       );
       expect(tester.widget<Text>(key('intel-rank-name-2')).maxLines, 2);
       expect(name.didExceedMaxLines, isTrue);
-      // The figures share one line across the three cards.
+      // Second and third stand on one line; the winner is above them.
       expect(
-        tester.getRect(find.text('998')).bottom,
-        tester.getRect(find.text('997')).bottom,
+        tester.getRect(key('intel-rank-user-2')).bottom,
+        moreOrLessEquals(tester.getRect(key('intel-rank-user-3')).bottom),
       );
       expect(tester.takeException(), isNull);
     });

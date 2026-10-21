@@ -1342,10 +1342,11 @@ bool chatInboxFilterLeftNothing(
   return !page.items.any((channel) => filter.includes(channel.cid));
 }
 
-/// One inbox row on the wall's card board (decision 0221): the visible rows
-/// sit inside the page gutter on the card ground, the first with the
-/// board's top corners and the last with its bottom ones. Off the wall the
-/// row is returned as it is.
+/// One inbox row on the wall's board (decisions 0221, 0224): the visible
+/// rows sit inside the page gutter on the translucent board
+/// ([loopChatBoardFill], the wall shows through), the first with the board's
+/// top corners and the last with its bottom ones, a Chalk 8 % hairline
+/// between two rows. Off the wall the row is returned as it is.
 Widget _boardRow(
   List<Channel> channels,
   int index,
@@ -1364,7 +1365,18 @@ Widget _boardRow(
           top: index == first ? corner : Radius.zero,
           bottom: index == last ? corner : Radius.zero,
         ),
-        child: row,
+        child: index == last
+            ? row
+            : DecoratedBox(
+                key: const ValueKey<String>('chat-inbox-board-hairline'),
+                position: DecorationPosition.foreground,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: loopChatBoardHairline),
+                  ),
+                ),
+                child: row,
+              ),
       ),
     );
   },

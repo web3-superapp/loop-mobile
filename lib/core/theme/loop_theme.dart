@@ -709,6 +709,7 @@ abstract final class LoopTypography {
 /// | display | `statFigure` | Arimo 700 tnum | 26 | 1.15 | a big stat value |
 /// | display | `keyFigure` | Arimo 700 tnum | 32 | 1.15 | total assets, my rank |
 /// | display | `heroFigure` | Anton | 30 | 1.1 | MEME project hero figures |
+/// | display | `plateFigure` | Anton | 40 | 1.0 | the chrome plates' figure (总资产, 我的名次) |
 /// | heading | `stepTitle` | Arimo 700 | 26 | 1.3 | R1c step-page title |
 /// | heading | `headingLg` | Arimo 700 | 22 | 1.3 | R1 page title |
 /// | heading | `flatTitle` | Arimo 700 | 20 | 1.3 | R1b flat second-level title |
@@ -777,6 +778,15 @@ abstract final class LoopType {
     size: 30,
     height: 1.1,
     trackingEm: -0.025,
+  );
+
+  /// S265d (decision 0224): the one big figure on a chrome plate — 总资产
+  /// and 我的名次 — Anton 40, Yellow at the call site (docs/42 §2 keeps Anton
+  /// for big figures).
+  static final TextStyle plateFigure = LoopTypography.condensed(
+    size: 40,
+    height: 1.0,
+    trackingEm: 0.01,
   );
 
   /// S264 (decision 0220): the MEME home's section index 「01」 — Anton 30,

@@ -30,6 +30,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
 /// The chip label of each board, in the order they are drawn.
@@ -258,11 +259,12 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             IntelRankEntry(
               id: 'community-${row.community.communityId}',
               position: row.position,
-              leading: (size) => _communityLogo(
+              leading: (size, {chromeFallback = false}) => _communityLogo(
                 row.community.communityId,
                 row.community.name,
                 faces,
                 size,
+                chromeFallback: chromeFallback,
               ),
               name: row.community.name,
               weight: row.weight,
@@ -283,7 +285,11 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             IntelRankEntry(
               id: 'referral-$index',
               position: items[index].position,
-              leading: (size) => _identityAvatar(items[index].display, size),
+              leading: (size, {chromeFallback = false}) => _identityAvatar(
+                items[index].display,
+                size,
+                chromeFallback: chromeFallback,
+              ),
               name: _identityName(items[index].display, rank),
               caption: '直接邀请',
               isSelf: items[index].isSelf,
@@ -354,7 +360,8 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
     return IntelRankEntry(
       id: 'user-$index',
       position: row.position,
-      leading: (size) => _identityAvatar(row.display, size),
+      leading: (size, {chromeFallback = false}) =>
+          _identityAvatar(row.display, size, chromeFallback: chromeFallback),
       name: _identityName(row.display, rank),
       caption: anonymousToOthers ? '其他人看到的是匿名成员' : null,
       isSelf: row.isSelf,
@@ -383,19 +390,33 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         MiningRankAnonymous(:final labelKey) => miningRuleKeyText(labelKey),
       };
 
-  static Widget _identityAvatar(MiningRankIdentity identity, double size) =>
-      switch (identity) {
-        MiningRankAlias(:final alias, :final avatarRef) => LoopProfileAvatar(
-          avatarRef: avatarRef,
-          alias: alias,
-          size: size,
-        ),
-        MiningRankAnonymous() => LoopProfileAvatar(
-          avatarRef: null,
-          alias: '匿名',
-          size: size,
-        ),
-      };
+  /// A person's face; on the podium (decision 0224) a person with no
+  /// picture of their own wears the chrome medal, not initials.
+  static Widget _identityAvatar(
+    MiningRankIdentity identity,
+    double size, {
+    bool chromeFallback = false,
+  }) => switch (identity) {
+    MiningRankAlias(avatarRef: null) ||
+    MiningRankAnonymous() when chromeFallback => LoopChromeMedal(size: size),
+    _ => _plainIdentityAvatar(identity, size),
+  };
+
+  static Widget _plainIdentityAvatar(
+    MiningRankIdentity identity,
+    double size,
+  ) => switch (identity) {
+    MiningRankAlias(:final alias, :final avatarRef) => LoopProfileAvatar(
+      avatarRef: avatarRef,
+      alias: alias,
+      size: size,
+    ),
+    MiningRankAnonymous() => LoopProfileAvatar(
+      avatarRef: null,
+      alias: '匿名',
+      size: size,
+    ),
+  };
 
   Widget _provenance(MiningRank rank) {
     final snapshot = rank.snapshot;
@@ -438,13 +459,19 @@ Widget _communityLogo(
   String communityId,
   String name,
   Map<String, CommunityFace> faces,
-  double size,
-) => CommunityLogo(
+  double size, {
+  bool chromeFallback = false,
+}) => CommunityLogo(
   identity: communityId,
   name: name,
   logoRef: faces[communityId]?.logoRef,
   size: size,
-  radius: size >= 48 ? LoopRadius.controlValue : size / 2,
+  radius: chromeFallback
+      ? size / 2
+      : size >= 48
+      ? LoopRadius.controlValue
+      : size / 2,
+  chromeFallback: chromeFallback,
 );
 
 /// The chip glyph of each board (decision 0122).
@@ -618,10 +645,12 @@ class IntelRankLedger extends StatelessWidget {
       container: true,
       label: <String>[heading.replaceAll('\n', '，'), caption, ?stamp].join('，'),
       excludeSemantics: true,
-      // Decision 0221: 「我的名次」 is a chrome plate — a chrome edge around
-      // the dark card face — with the place in Arimo 32 / 700 Yellow.
+      // Decisions 0221, 0224: 「我的名次」 is a chrome plate — a bevelled
+      // chrome edge around a brushed dark face — with the place in Anton 40
+      // Yellow and the faded crown in its corner.
       child: LoopChromePlate(
         key: const ValueKey<String>('intel-rank-me-plate'),
+        mark: LoopChromePlateMark.crown,
         margin: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
           8,
@@ -671,22 +700,64 @@ class _IntelRankHeading extends StatelessWidget {
     final cut = heading.indexOf('\n');
     final first = cut < 0 ? heading : heading.substring(0, cut);
     final rest = cut < 0 ? null : heading.substring(cut + 1);
+    final label = TextSpan(
+      text: first,
+      style: LoopType.caption.copyWith(color: LoopColors.text2),
+    );
+    final unit = LoopType.body.copyWith(color: LoopColors.text2);
+    // 「第 12 名」: the place is the plate's figure (decision 0224) — Anton 40
+    // Yellow between two Arimo 14 Text2 words.
+    final place = rest == null
+        ? null
+        : RegExp(r'^第 (\d+) 名$').firstMatch(rest)?.group(1);
+    if (rest != null && place == null) {
+      // 「还没有名次」: a sentence, not a number — the grey crown line drawing
+      // where the figure would be, and the sentence at 18 / 700.
+      return Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            label,
+            const TextSpan(text: '\n'),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8, top: 6),
+                child: Opacity(
+                  opacity: 0.45,
+                  child: ColorFiltered(
+                    colorFilter: const ColorFilter.matrix(loopGreyMatrix),
+                    child: loopAtmoArt(
+                      LoopAtmoAssets.crownFlat,
+                      key: const ValueKey<String>('intel-rank-me-empty-crown'),
+                      width: 40,
+                      height: 30,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            TextSpan(
+              text: rest,
+              style: LoopType.heading.copyWith(color: LoopColors.chalk),
+            ),
+          ],
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
     return Text.rich(
       TextSpan(
         children: <InlineSpan>[
-          TextSpan(
-            text: first,
-            style: LoopType.sectionTitle.copyWith(color: LoopColors.text2),
-          ),
-          if (rest != null) ...<InlineSpan>[
+          label,
+          if (rest != null && place != null) ...<InlineSpan>[
             const TextSpan(text: '\n'),
+            TextSpan(text: '第 ', style: unit),
             TextSpan(
-              text: rest,
-              // Yellow is for a number: 「还没有名次」 is a sentence.
-              style: rest.startsWith('第')
-                  ? LoopType.keyFigure.copyWith(color: LoopColors.yellow)
-                  : LoopType.headingLg.copyWith(color: LoopColors.chalk),
+              text: place,
+              style: LoopType.plateFigure.copyWith(color: LoopColors.yellow),
             ),
+            TextSpan(text: ' 名', style: unit),
           ],
         ],
       ),
@@ -722,7 +793,10 @@ final class IntelRankEntry {
 
   /// `null` on a zero power: in the snapshot, not on the board.
   final int? position;
-  final Widget Function(double size) leading;
+
+  /// The face at [size]; `chromeFallback` (the podium) draws the chrome
+  /// medal for a face with no picture (decision 0224).
+  final Widget Function(double size, {bool chromeFallback}) leading;
   final String name;
   final String figure;
 
@@ -770,18 +844,14 @@ double? intelRankShare(Decimal? amount, Decimal? leader) {
   return share.clamp(0, 1).toDouble();
 }
 
-/// The colour of a medal: first Purple, second brass, third copper
-/// (decision 0212: Yellow is kept for calls to action and key figures).
-Color intelRankMedalColour(int place) => switch (place) {
-  1 => LoopColors.purple,
-  2 => LoopColors.brass,
-  _ => LoopColors.copper,
-};
-
-/// The first three places (decision 0122): three record cards side by side,
-/// the winner in the middle with a crown and a 56 face, second and third
-/// with 48 faces, all three one height (decision 0123), each with a medal in
-/// its place colour at its top-left (decision 0182).
+/// The first three places as a podium (decision 0224, replacing the three
+/// record cards of decisions 0122 / 0123 / 0182). A brand piece: the wall at
+/// 90 % under a Purple fog at 55 %, as on the banner. The winner stands in
+/// the middle — a 72 face in a 2 px chrome ring under the Yellow drip crown
+/// — second and third at the sides with 56 faces under grey crowns. Each
+/// place reads 「01 / 02 / 03」 in the section index's Anton Yellow with its
+/// splat; a face with no picture is the chrome medal. Fewer than three
+/// places leave the empty ones as 「虚位以待」 under a grey crown line.
 class IntelRankPodium extends StatelessWidget {
   const IntelRankPodium({required this.entries, super.key})
     : assert(entries.length >= 1 && entries.length <= 3);
@@ -790,30 +860,37 @@ class IntelRankPodium extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Second, first, third — the podium's own order.
-    final order = <int>[
-      if (entries.length > 1) 1,
-      0,
-      if (entries.length > 2) 2,
-    ];
+    IntelRankEntry? at(int place) =>
+        place <= entries.length ? entries[place - 1] : null;
+    Widget slot(int place) {
+      final entry = at(place);
+      return entry == null
+          ? _PodiumEmpty(place: place)
+          : _PodiumPlace(entry: entry, place: place);
+    }
+
     return Padding(
       key: const ValueKey<String>('intel-rank-podium'),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      // Decision 0123: the three cards share one height, so a two-line name
-      // never makes one card taller than its neighbours.
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ClipRRect(
+        borderRadius: LoopRadius.card,
+        child: Stack(
           children: <Widget>[
-            for (var slot = 0; slot < order.length; slot += 1) ...<Widget>[
-              if (slot > 0) const SizedBox(width: 8),
-              Expanded(
-                child: _PodiumCard(
-                  entry: entries[order[slot]],
-                  place: order[slot] + 1,
-                ),
+            const Positioned.fill(child: _PodiumGround()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 30, 8, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  // Second, first, third — the podium's own order.
+                  Expanded(child: slot(2)),
+                  const SizedBox(width: 6),
+                  Expanded(child: slot(1)),
+                  const SizedBox(width: 6),
+                  Expanded(child: slot(3)),
+                ],
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -821,59 +898,123 @@ class IntelRankPodium extends StatelessWidget {
   }
 }
 
-/// The face size on the podium: the winner 56, second and third 48.
-double intelPodiumFaceSize(int place) => place == 1 ? 56 : 48;
+/// The podium's ground: the wall at 90 % under the Purple fog at 55 % and a
+/// downward Ink wash, as on the banner (decision 0220 §4).
+class _PodiumGround extends StatelessWidget {
+  const _PodiumGround();
 
-/// The medal's side (`.podium .p .medal{width:20px}`).
-const double intelRankMedalSize = 20;
+  @override
+  Widget build(BuildContext context) => Stack(
+    key: const ValueKey<String>('intel-rank-podium-ground'),
+    fit: StackFit.expand,
+    children: <Widget>[
+      const ColoredBox(color: Color(0xFF0E0D12)),
+      const DecoratedBox(
+        key: ValueKey<String>('intel-rank-podium-wall'),
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(LoopAtmoAssets.wall),
+            fit: BoxFit.cover,
+            opacity: 0.9,
+          ),
+        ),
+      ),
+      Positioned(
+        left: -40,
+        top: -140,
+        width: 420,
+        height: 420,
+        child: Opacity(
+          opacity: 0.55,
+          child: loopAtmoArt(
+            LoopAtmoAssets.sprayPurple,
+            key: const ValueKey<String>('intel-rank-podium-fog'),
+          ),
+        ),
+      ),
+      const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Color(0x0009090B), Color(0x9909090B)],
+          ),
+        ),
+      ),
+    ],
+  );
+}
 
-class _PodiumCard extends StatelessWidget {
-  const _PodiumCard({required this.entry, required this.place});
+/// The face size on the podium: the winner 72, second and third 56.
+double intelPodiumFaceSize(int place) => place == 1 ? 72 : 56;
+
+/// The width of the chrome ring around the winner's face.
+const double intelPodiumRing = 2;
+
+class _PodiumPlace extends StatelessWidget {
+  const _PodiumPlace({required this.entry, required this.place});
 
   final IntelRankEntry entry;
 
-  /// 1, 2 or 3 — the podium slot, which is also the medal's colour.
+  /// 1, 2 or 3 — the podium slot.
   final int place;
 
   @override
   Widget build(BuildContext context) {
-    final medal = intelRankMedalColour(place);
     final first = place == 1;
-    final number = entry.position ?? place;
+    final size = intelPodiumFaceSize(place);
+    Widget face = SizedBox.square(
+      key: ValueKey<String>('intel-rank-face-$place'),
+      dimension: size,
+      child: ClipOval(child: entry.leading(size, chromeFallback: true)),
+    );
+    if (first) {
+      face = Container(
+        key: const ValueKey<String>('intel-rank-ring-1'),
+        padding: const EdgeInsets.all(intelPodiumRing),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: loopChromeGradient,
+        ),
+        child: face,
+      );
+    }
+    final crownWidth = first ? size * 0.7 : 30.0;
     final content = Column(
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (first)
-          // The winner's crown now sits on the face (decision 0221); the
-          // room it took above the face stays, so the cards keep their
-          // shape.
-          const SizedBox(height: 24)
-        else
-          // Second and third stand lower than the winner: the spare height
-          // of the equal cards goes above their faces, not between the
-          // name and the figure (decision 0123).
-          const Spacer(),
-        // Decision 0221: each of the three faces wears a small crown —
-        // Yellow on the first, chrome-grey on the second and third.
         Stack(
           clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
           children: <Widget>[
-            SizedBox.square(
-              key: ValueKey<String>('intel-rank-face-$place'),
-              dimension: intelPodiumFaceSize(place),
-              child: entry.leading(intelPodiumFaceSize(place)),
-            ),
+            face,
+            // The crown sits on the face's top edge.
             Positioned(
-              right: -8,
-              top: first ? -14 : -11,
-              child: LoopRankCrown(
-                key: ValueKey<String>('intel-rank-crown-$place'),
-                place: place,
-                width: first ? 28 : 22,
-              ),
+              top: -crownWidth * (first ? 0.5 : 0.55),
+              width: crownWidth,
+              child: first
+                  ? IgnorePointer(
+                      child: loopAtmoArt(
+                        LoopAtmoAssets.crownYellow,
+                        key: const ValueKey<String>('intel-rank-crown-1'),
+                        width: crownWidth,
+                        height: crownWidth * 0.75,
+                      ),
+                    )
+                  : LoopRankCrown(
+                      key: ValueKey<String>('intel-rank-crown-$place'),
+                      place: place,
+                      width: crownWidth,
+                    ),
             ),
           ],
         ),
         const SizedBox(height: 8),
+        KeyedSubtree(
+          key: ValueKey<String>('intel-rank-index-$place'),
+          child: LoopSprayIndex(index: entry.position ?? place),
+        ),
+        const SizedBox(height: 4),
         Text(
           entry.name,
           key: ValueKey<String>('intel-rank-name-$place'),
@@ -885,18 +1026,16 @@ class _PodiumCard extends StatelessWidget {
             FontWeight.w600,
           ).copyWith(color: LoopColors.chalk),
         ),
-        // The figures sit on one line across the three cards.
-        if (first) const Spacer(),
         const SizedBox(height: 4),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             entry.figure,
+            key: ValueKey<String>('intel-rank-figure-$place'),
             maxLines: 1,
-            style: LoopTypography.withWeight(
-              LoopType.figure,
-              FontWeight.w700,
-            ).copyWith(color: LoopColors.chalk),
+            style: LoopType.figureLg.copyWith(
+              color: first ? LoopColors.yellow : LoopColors.chalk,
+            ),
           ),
         ),
         if (entry.weight != null || entry.isSelf) ...<Widget>[
@@ -914,44 +1053,38 @@ class _PodiumCard extends StatelessWidget {
       excludeSemantics: true,
       child: KeyedSubtree(
         key: ValueKey<String>('intel-rank-${entry.id}'),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            LoopRecordCard(
-              margin: EdgeInsets.zero,
-              padding: EdgeInsets.fromLTRB(8, first ? 16 : 12, 8, 10),
-              onTap: tap,
-              child: content,
-            ),
-            Positioned(
-              left: 10,
-              top: 10,
-              child: Container(
-                key: ValueKey<String>('intel-rank-medal-$place'),
-                width: intelRankMedalSize,
-                height: intelRankMedalSize,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: medal, shape: BoxShape.circle),
-                child: Text(
-                  '$number',
-                  style:
-                      LoopTypography.withWeight(
-                        LoopType.figureXs,
-                        FontWeight.w800,
-                      ).copyWith(
-                        color: place == 1
-                            ? LoopColors.onPurple
-                            : LoopColors.ink,
-                        height: 1,
-                      ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: LoopPressable(onTap: tap, scale: false, child: content),
       ),
     );
   }
+}
+
+/// An empty place on the podium: a grey crown line and 「虚位以待」.
+class _PodiumEmpty extends StatelessWidget {
+  const _PodiumEmpty({required this.place});
+
+  final int place;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: '第 $place 名，虚位以待',
+    excludeSemantics: true,
+    child: Column(
+      key: ValueKey<String>('intel-rank-empty-slot-$place'),
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Opacity(
+          opacity: 0.45,
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.matrix(loopGreyMatrix),
+            child: loopAtmoArt(LoopAtmoAssets.crownFlat, width: 48, height: 36),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text('虚位以待', style: LoopType.caption.copyWith(color: LoopColors.text2)),
+      ],
+    ),
+  );
 }
 
 /// 「权重 1.5」: a status, so it is the mute `.badge` (decision 0172).

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
@@ -309,7 +310,8 @@ void main() {
 
       expect(
         tester.widget<Text>(key('wallet-total-figure')).style!.fontSize,
-        LoopType.keyFigure.fontSize,
+        // Decision 0224: the chrome plate's figure, Anton 40.
+        LoopType.plateFigure.fontSize,
       );
       expect(key('wallet-total-unit'), findsOneWidget);
       expect(
@@ -437,6 +439,24 @@ void main() {
         expect(placeholder, findsOneWidget);
       });
     }
+
+    testWidgets('decision 0224: a history zero all the way draws no flat '
+        'Yellow rule, a short spray stroke instead', (tester) async {
+      await pumpWallet(
+        tester,
+        history: _FakeHistory(
+          answers: <LoopNetWorthRange, LoopNetWorthHistory>{
+            LoopNetWorthRange.week: _history(
+              LoopNetWorthRange.week,
+              values: const <String>['0', '0', '0'],
+            ),
+          },
+        ),
+      );
+      expect(key('wallet-networth-spark'), findsNothing);
+      expect(key('wallet-networth-spark-spray'), findsOneWidget);
+      expect(find.byType(LoopSparkline), findsNothing);
+    });
 
     testWidgets('two snapshots draw the line, not the placeholder', (
       tester,

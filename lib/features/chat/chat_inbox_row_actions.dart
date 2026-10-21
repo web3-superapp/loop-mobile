@@ -384,9 +384,9 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0221: on the wall the row is the card board's ground.
+    // Decisions 0221, 0224: on the wall the row is the translucent board.
     final ground = LoopBackdropScope.on(context)
-        ? LoopColors.card
+        ? loopChatBoardFill
         : Theme.of(context).scaffoldBackgroundColor;
     return GestureDetector(
       key: const ValueKey<String>('chat-inbox-swipe-row'),
