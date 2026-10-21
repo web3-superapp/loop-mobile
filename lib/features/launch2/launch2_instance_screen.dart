@@ -13,6 +13,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_chart.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
@@ -1194,6 +1195,11 @@ class _CurveBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const LoopLabel('内盘'),
+        // Decision 0227: the K line between the heading and the figures.
+        Launch2CandleCard(
+          key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
+          detail: detail,
+        ),
         MemeStatFigures(
           hero: true,
           stats: <LoopStat>[
@@ -1467,6 +1473,11 @@ class _GraduatedBlock extends StatelessWidget {
               ),
             ),
           ),
+        ),
+        // Decision 0227: the same card, curve and pool on one series.
+        Launch2CandleCard(
+          key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
+          detail: detail,
         ),
         LoopKeyValue(
           label: '毕业时间',

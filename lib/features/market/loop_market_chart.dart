@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
@@ -34,6 +35,47 @@ enum LoopChartStyle {
 
   /// Open / high / low / close bodies.
   candles,
+}
+
+/// A vertical dashed rule at [at] with a short [label] at its top
+/// (decision 0227). It lands on the bucket that contains [at].
+@immutable
+final class LoopChartMarker {
+  const LoopChartMarker({
+    required this.at,
+    required this.label,
+    required this.color,
+    this.keyName,
+  });
+
+  final DateTime at;
+  final String label;
+  final Color color;
+
+  /// The label's widget key (`ValueKey<String>`), for tests and semantics.
+  final String? keyName;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LoopChartMarker &&
+      other.at == at &&
+      other.label == label &&
+      other.color == color &&
+      other.keyName == keyName;
+
+  @override
+  int get hashCode => Object.hash(at, label, color, keyName);
+}
+
+/// The bucket of [candles] (ascending by open time) that [at] falls in: the
+/// last one opening at or before it. `null` when [at] is before them all.
+int? loopChartMarkerIndex(List<LoopCandle> candles, DateTime at) {
+  int? found;
+  for (var index = 0; index < candles.length; index += 1) {
+    if (candles[index].openTime.isAfter(at)) break;
+    found = index;
+  }
+  return found;
 }
 
 /// Which slice of the series is on screen.
@@ -258,9 +300,10 @@ final class _ChartGeometry {
     required this.style,
     required this.showVolume,
     required this.showAverages,
+    this.axisWidth = priceAxisWidth,
   }) {
     final plotBottom = size.height - timeAxisHeight;
-    final right = math.max(1.0, size.width - priceAxisWidth);
+    final right = math.max(1.0, size.width - axisWidth);
     final volumeHeight = showVolume ? (plotBottom - topPadding) * 0.18 : 0.0;
     price = Rect.fromLTRB(
       0,
@@ -309,6 +352,9 @@ final class _ChartGeometry {
   }
 
   static const double priceAxisWidth = 58;
+
+  /// This chart's price axis width ([LoopMarketChart.priceAxisWidth]).
+  final double axisWidth;
   static const double timeAxisHeight = 18;
   static const double topPadding = 10;
 
@@ -370,6 +416,12 @@ class LoopMarketChart extends StatefulWidget {
     this.edgeGuard = 24,
     this.lineColor,
     this.lastPriceTag = false,
+    this.priceFormatter,
+    this.axisStyle,
+    this.priceAxisWidth = _ChartGeometry.priceAxisWidth,
+    this.retainViewport = false,
+    this.onReachStart,
+    this.markers = const <LoopChartMarker>[],
   });
 
   final List<LoopCandle> candles;
@@ -396,6 +448,34 @@ class LoopMarketChart extends StatefulWidget {
   /// halo round the current-price dot (decision 0174). Off by default: the
   /// axis keeps its own 16 px box and nothing else changes.
   final bool lastPriceTag;
+
+  /// How every price the chart prints is written: axis levels, the
+  /// crosshair, the latest close. `null` is [loopFormatCandlePrice]; a page
+  /// with its own price notation (the MEME v2 project page's folded zeros,
+  /// decision 0227) hands it here so the chart and the page agree.
+  final String Function(Decimal price)? priceFormatter;
+
+  /// The axis figures (price levels and time ticks). `null` keeps the
+  /// defaults: 9 px Chalk 50 % levels, `figureXs` Text3 ticks.
+  final TextStyle? axisStyle;
+
+  /// The width the right price axis takes.
+  final double priceAxisWidth;
+
+  /// A new [candles] list for the same series (a re-read, older buckets
+  /// added in front) keeps the window where the reader left it, counted from
+  /// the newest bucket, instead of jumping back to the newest
+  /// [LoopChartViewport.defaultVisible] buckets. A different series is a new
+  /// widget key, which always starts over (decision 0227).
+  final bool retainViewport;
+
+  /// Called once per drag when the window reaches the oldest bucket held,
+  /// so the page can fetch older buckets. The chart never fetches.
+  final VoidCallback? onReachStart;
+
+  /// Vertical rules at given moments (decision 0227: 毕业). A marker before
+  /// the first bucket held, or off the window, draws nothing.
+  final List<LoopChartMarker> markers;
 
   /// The two averages the MA switch draws.
   static const List<int> averagePeriods = <int>[7, 25];
@@ -430,9 +510,46 @@ class LoopMarketChartState extends State<LoopMarketChart> {
   @override
   void didUpdateWidget(covariant LoopMarketChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.candles, widget.candles) ||
-        oldWidget.interval != widget.interval) {
+    if (oldWidget.interval != widget.interval) {
       _reset();
+    } else if (!identical(oldWidget.candles, widget.candles)) {
+      if (widget.retainViewport && _viewport.total > 0) {
+        _retain();
+      } else {
+        _reset();
+      }
+    }
+  }
+
+  /// The same window over a new list: as many buckets wide, as far from the
+  /// newest bucket as before.
+  void _retain() {
+    _series = _NormalisedSeries(widget.candles, LoopMarketChart.averagePeriods);
+    final total = widget.candles.length;
+    final visible = LoopChartViewport.clampVisible(_viewport.visible, total);
+    _viewport = LoopChartViewport(
+      total: total,
+      visible: visible,
+      endOffset: _viewport.endOffset.clamp(
+        0.0,
+        math.max(0, total - visible).toDouble(),
+      ),
+    );
+    if (_crosshair != null && _crosshair! >= total) _crosshair = null;
+  }
+
+  String _price(Decimal value) =>
+      (widget.priceFormatter ?? loopFormatCandlePrice)(value);
+
+  /// Whether [onReachStart] was already called during this drag.
+  bool _reachedStart = false;
+
+  void _checkReachStart() {
+    final callback = widget.onReachStart;
+    if (callback == null || _reachedStart) return;
+    if (_viewport.start <= 1) {
+      _reachedStart = true;
+      callback();
     }
   }
 
@@ -449,9 +566,11 @@ class LoopMarketChartState extends State<LoopMarketChart> {
     style: widget.style,
     showVolume: widget.showVolume,
     showAverages: widget.showMovingAverages,
+    axisWidth: widget.priceAxisWidth,
   );
 
   void _onScaleStart(ScaleStartDetails details) {
+    _reachedStart = false;
     _gestureVisible = _viewport.visible;
     _lastFocalX = details.localFocalPoint.dx;
     _lastPointers = details.pointerCount;
@@ -470,16 +589,17 @@ class LoopMarketChartState extends State<LoopMarketChart> {
       final target = (_gestureVisible / scale).round();
       final next = _viewport.zoomTo(target);
       if (next != _viewport) setState(() => _viewport = next);
+      _checkReachStart();
       return;
     }
     final dx = details.localFocalPoint.dx - _lastFocalX;
     _lastFocalX = details.localFocalPoint.dx;
     final slot =
-        (_width - _ChartGeometry.priceAxisWidth) /
-        math.max(1, _viewport.visible);
+        (_width - widget.priceAxisWidth) / math.max(1, _viewport.visible);
     if (slot <= 0) return;
     final next = _viewport.panBy(dx / slot);
     if (next != _viewport) setState(() => _viewport = next);
+    _checkReachStart();
   }
 
   void _crosshairAt(double dx) {
@@ -544,6 +664,7 @@ class LoopMarketChartState extends State<LoopMarketChart> {
         final geometry = _geometry(size);
         final crosshair = _crosshair;
         final ticks = loopChartTimeTickIndices(_viewport, geometry.price.width);
+        final markers = _markersOnScreen();
         return Semantics(
           key: const ValueKey<String>('loop-market-chart-semantics'),
           container: true,
@@ -569,6 +690,9 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                         textScaler: MediaQuery.textScalerOf(context),
                         lineColor: widget.lineColor,
                         lastPriceTag: widget.lastPriceTag,
+                        priceLabel: _price,
+                        axisStyle: widget.axisStyle,
+                        markers: markers,
                       ),
                     ),
                   ),
@@ -593,12 +717,14 @@ class LoopMarketChartState extends State<LoopMarketChart> {
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
-                        style: LoopType.figureXs.copyWith(
-                          color: LoopColors.text3,
-                        ),
+                        style:
+                            widget.axisStyle ??
+                            LoopType.figureXs.copyWith(color: LoopColors.text3),
                       ),
                     ),
                   ),
+                for (final (index, marker) in markers)
+                  _markerLabelFor(geometry, index, marker),
                 if (widget.lastPriceTag && _viewport.endOffset < 1)
                   _lastPriceTagFor(geometry),
                 if (crosshair != null)
@@ -623,6 +749,40 @@ class LoopMarketChartState extends State<LoopMarketChart> {
           ),
         );
       },
+    );
+  }
+
+  /// The [LoopMarketChart.markers] whose bucket is in the window.
+  List<(int, LoopChartMarker)> _markersOnScreen() {
+    final out = <(int, LoopChartMarker)>[];
+    for (final marker in widget.markers) {
+      final index = loopChartMarkerIndex(widget.candles, marker.at);
+      if (index == null) continue;
+      if (index < _viewport.firstIndex || index > _viewport.lastIndex) continue;
+      out.add((index, marker));
+    }
+    return out;
+  }
+
+  Widget _markerLabelFor(
+    _ChartGeometry geometry,
+    int index,
+    LoopChartMarker marker,
+  ) {
+    final x = geometry.xFor(index);
+    final keyName = marker.keyName;
+    return Positioned(
+      key: keyName == null ? null : ValueKey<String>(keyName),
+      left: (x + 3).clamp(0.0, math.max(0.0, geometry.price.right - 30)),
+      top: 0,
+      child: IgnorePointer(
+        child: Text(
+          marker.label,
+          maxLines: 1,
+          softWrap: false,
+          style: LoopType.figureXs.copyWith(color: marker.color),
+        ),
+      ),
     );
   }
 
@@ -653,7 +813,7 @@ class LoopMarketChartState extends State<LoopMarketChart> {
             child: Center(
               widthFactor: 1,
               child: Text(
-                loopFormatCandlePrice(widget.candles[last].close),
+                _price(widget.candles[last].close),
                 maxLines: 1,
                 softWrap: false,
                 style: LoopTypography.withWeight(
@@ -678,8 +838,8 @@ class LoopMarketChartState extends State<LoopMarketChart> {
         right: 0,
         top: (y - 10).clamp(0.0, math.max(0.0, widget.height - 40)),
         height: 20,
-        width: _ChartGeometry.priceAxisWidth,
-        child: _Bubble(text: loopFormatCandlePrice(candle.close)),
+        width: widget.priceAxisWidth,
+        child: _Bubble(text: _price(candle.close)),
       ),
       Positioned(
         key: const ValueKey<String>('loop-market-chart-crosshair-time'),
@@ -724,11 +884,17 @@ class _LoopMarketChartPainter extends CustomPainter {
     required this.showAverages,
     required this.crosshair,
     required this.textScaler,
+    required this.priceLabel,
     this.lineColor,
     this.lastPriceTag = false,
+    this.axisStyle,
+    this.markers = const <(int, LoopChartMarker)>[],
   });
 
   final _ChartGeometry geometry;
+  final String Function(Decimal) priceLabel;
+  final TextStyle? axisStyle;
+  final List<(int, LoopChartMarker)> markers;
   final LoopChartStyle style;
   final bool showVolume;
   final bool showAverages;
@@ -754,6 +920,7 @@ class _LoopMarketChartPainter extends CustomPainter {
     }
     if (showAverages) _paintAverages(canvas);
     _paintTicks(canvas);
+    _paintMarkers(canvas);
     final index = crosshair;
     if (index != null) _paintCrosshair(canvas, index);
     canvas.restore();
@@ -786,16 +953,18 @@ class _LoopMarketChartPainter extends CustomPainter {
                 );
       final painter = TextPainter(
         text: TextSpan(
-          text: loopFormatCandlePrice(value),
-          style: LoopTypography.figure(
-            9,
-            color: LoopColors.chalk.withValues(alpha: 0.5),
-          ),
+          text: priceLabel(value),
+          style:
+              axisStyle ??
+              LoopTypography.figure(
+                9,
+                color: LoopColors.chalk.withValues(alpha: 0.5),
+              ),
         ),
         textDirection: TextDirection.ltr,
         textScaler: textScaler,
         maxLines: 1,
-      )..layout(maxWidth: _ChartGeometry.priceAxisWidth - 6);
+      )..layout(maxWidth: geometry.axisWidth - 6);
       painter.paint(
         canvas,
         Offset(size.width - painter.width - 2, y - painter.height / 2),
@@ -971,6 +1140,21 @@ class _LoopMarketChartPainter extends CustomPainter {
     }
   }
 
+  void _paintMarkers(Canvas canvas) {
+    final plot = geometry.price;
+    for (final (index, marker) in markers) {
+      final x = geometry.xFor(index);
+      _dashed(
+        canvas,
+        Offset(x, 0),
+        Offset(x, showVolume ? geometry.volume.bottom : plot.bottom),
+        Paint()
+          ..color = marker.color
+          ..strokeWidth = 1,
+      );
+    }
+  }
+
   void _paintCrosshair(Canvas canvas, int index) {
     final plot = geometry.price;
     final x = geometry.xFor(index);
@@ -1021,17 +1205,17 @@ class _LoopMarketChartPainter extends CustomPainter {
     if (lastPriceTag) return;
     final painter = TextPainter(
       text: TextSpan(
-        text: loopFormatCandlePrice(series.candles[lastIndex].close),
+        text: priceLabel(series.candles[lastIndex].close),
         style: LoopTypography.figure(9, color: LoopColors.ink),
       ),
       textDirection: TextDirection.ltr,
       textScaler: textScaler,
       maxLines: 1,
-    )..layout(maxWidth: _ChartGeometry.priceAxisWidth - 6);
+    )..layout(maxWidth: geometry.axisWidth - 6);
     final box = Rect.fromLTWH(
-      size.width - _ChartGeometry.priceAxisWidth + 1,
+      size.width - geometry.axisWidth + 1,
       (y - 8).clamp(0.0, size.height - 16),
-      _ChartGeometry.priceAxisWidth - 2,
+      geometry.axisWidth - 2,
       16,
     );
     canvas.drawRRect(
@@ -1074,5 +1258,7 @@ class _LoopMarketChartPainter extends CustomPainter {
       oldDelegate.crosshair != crosshair ||
       oldDelegate.textScaler != textScaler ||
       oldDelegate.lineColor != lineColor ||
-      oldDelegate.lastPriceTag != lastPriceTag;
+      oldDelegate.lastPriceTag != lastPriceTag ||
+      oldDelegate.axisStyle != axisStyle ||
+      !listEquals(oldDelegate.markers, markers);
 }

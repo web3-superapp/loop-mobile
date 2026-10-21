@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
@@ -9,6 +10,7 @@ import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.da
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_candle_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
@@ -48,6 +50,13 @@ final class DioLoopV2Launch2Api {
       'PROVIDER_DISCONNECTED',
       'REQUEST_TIMEOUT',
     },
+  };
+
+  /// Decision 0227 (loop-api S267): the K line read; an interval outside
+  /// the six is `422 LAUNCH2_CANDLE_INTERVAL_INVALID`.
+  static const candleErrors = <int, Set<String>>{
+    ...readErrors,
+    422: <String>{'LAUNCH2_CANDLE_INTERVAL_INVALID', 'VALIDATION_FAILED'},
   };
 
   /// The quote: a closed stage is `409 DATA_STALE`, a bad amount `422`.
@@ -424,6 +433,49 @@ final class DioLoopV2Launch2Api {
     return LoopV2Launch2Codec.positions(data, mediaUrl: mediaUrl);
   }
 
+  /// Decision 0227 (loop-api S267): one page of the project's K line.
+  ///
+  /// A `404` that is not the published envelope (a server from before S267)
+  /// is still the route missing, and reads as `notFound` so the page hides
+  /// the chart instead of reporting a failure.
+  Future<Launch2CandleSeries> getCandles({
+    required String accessToken,
+    required String clientVersion,
+    required String instanceId,
+    required Launch2CandleInterval interval,
+    required int limit,
+    DateTime? before,
+  }) async {
+    if (limit < 1 || limit > launch2CandleMaxLimit) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    final Object? data;
+    try {
+      data = await _get(
+        '$instancesPath/${_id(instanceId)}/candles',
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        errors: candleErrors,
+        query: <String, Object?>{
+          'interval': interval.wireName,
+          'limit': limit.toString(),
+          if (before != null)
+            'before': (before.millisecondsSinceEpoch ~/ 1000).toString(),
+        },
+      );
+    } on LoopBackendFailure catch (failure) {
+      if (failure.statusCode == 404) {
+        throw const LoopChainException(LoopChainFailureKind.notFound);
+      }
+      rethrow;
+    }
+    return LoopV2Launch2CandleCodec.series(
+      data,
+      instanceId: instanceId,
+      requested: interval,
+    );
+  }
+
   /// Decision 0148 (loop-api S150): the wallet's own pool trades.
   Future<Launch2PoolTrades> getPoolTrades({
     required String accessToken,
@@ -677,6 +729,23 @@ final class DioLoopV2Launch2Gateway implements Launch2Gateway {
       instanceId: instanceId,
       walletId: walletId,
       limit: limit,
+    ),
+  );
+
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
+  }) => _read(
+    (accessToken) => _api.getCandles(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      instanceId: instanceId,
+      interval: interval,
+      limit: limit,
+      before: before,
     ),
   );
 }

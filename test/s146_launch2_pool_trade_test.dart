@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
@@ -180,6 +181,17 @@ final class _Answer<T> {
 }
 
 final class _FakePool implements Launch2Gateway {
+  // S267 (decision 0227): no K line in these fixtures; the card hides.
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
+  }) => Future<Launch2CandleSeries>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+
   _FakePool({
     required this.details,
     List<_Answer<Launch2PoolQuote>>? quotes,
