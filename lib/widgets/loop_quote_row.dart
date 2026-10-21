@@ -309,6 +309,9 @@ class LoopQuoteRow extends StatelessWidget {
     if (semanticLabel == null) return body;
     return Semantics(
       button: tap != null,
+      // excludeSemantics drops the InkWell's own tap action; keep it so a
+      // screen reader can activate the row (decision 0219).
+      onTap: tap,
       label: semanticLabel,
       excludeSemantics: true,
       child: body,
