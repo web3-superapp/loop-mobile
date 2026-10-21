@@ -285,6 +285,49 @@ abstract final class LoopBrandAssets {
       '${LoopAssetPaths.brand}/loop-logo-crown.svg';
 }
 
+/// S264 (decision 0220): the MEME home's atmosphere pieces — cut from the
+/// requester's looplabs.meme posters and hero (see
+/// `assets/brand/atmo-SOURCES.md`); the layered source files replace them
+/// before launch.
+abstract final class LoopAtmoAssets {
+  static const String wall = '${LoopAssetPaths.brand}/atmo-wall.webp';
+  static const String sprayPurple =
+      '${LoopAssetPaths.brand}/atmo-spray-purple.png';
+  static const String sprayYellow =
+      '${LoopAssetPaths.brand}/atmo-spray-yellow.png';
+  static const String crownWall = '${LoopAssetPaths.brand}/atmo-crown-wall.png';
+  static const String crownYellow =
+      '${LoopAssetPaths.brand}/atmo-crown-yellow.png';
+  static const String crownFlat = '${LoopAssetPaths.brand}/atmo-crown-flat.png';
+  static const String handChrome =
+      '${LoopAssetPaths.brand}/atmo-hand-chrome.webp';
+  static const String brushPurple =
+      '${LoopAssetPaths.brand}/atmo-brush-purple.png';
+  static const String tagInLoop = '${LoopAssetPaths.brand}/atmo-tag-inloop.png';
+  static const String splatYellow =
+      '${LoopAssetPaths.brand}/atmo-splat-yellow.png';
+  static const String dripYellow =
+      '${LoopAssetPaths.brand}/atmo-drip-yellow.png';
+  static const String avatarChrome =
+      '${LoopAssetPaths.brand}/atmo-avatar-chrome.png';
+
+  /// Every piece, for `precacheImage` before the MEME home's first frame.
+  static const List<String> all = <String>[
+    wall,
+    sprayPurple,
+    sprayYellow,
+    crownWall,
+    crownYellow,
+    crownFlat,
+    handChrome,
+    brushPurple,
+    tagInLoop,
+    splatYellow,
+    dripYellow,
+    avatarChrome,
+  ];
+}
+
 /// One WebP identity atlas and its grid.
 enum LoopIdentityAtlas {
   /// People · 4 columns × 3 rows.

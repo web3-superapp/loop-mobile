@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 
 void main() {
   testWidgets('Chalk bar reserves 90 + safe area and floats 8 + safe area', (
@@ -63,9 +64,54 @@ void main() {
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);
-    // Decision 0212: no lift, no edge, no block; a 20 radius card bar.
+    // Decision 0212: no lift, no block; a 20 radius card bar. S264 (decision
+    // 0220): one 1 px chrome line along its top edge.
     expect(decoration.boxShadow, isNull);
-    expect(chalk.foregroundDecoration, isNull);
+    expect(chalk.foregroundDecoration, isNotNull);
+  });
+
+  testWidgets('S264: the chosen tab is an Ink glyph on a Yellow spray, its '
+      'word Yellow; the others stay Text3 with no spray', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LoopTheme.dark,
+        home: LoopShell(location: '/meme', child: const SizedBox.expand()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('loop-tab-spray-meme')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('loop-tab-spray-chat')),
+      findsNothing,
+    );
+    Color? glyphOf(String slug) => tester
+        .widget<LoopIcon>(
+          find.descendant(
+            of: find.byKey(ValueKey<String>('loop-tab-$slug')),
+            matching: find.byType(LoopIcon),
+          ),
+        )
+        .color;
+    Color? wordOf(String slug) => tester
+        .widget<Text>(
+          find.descendant(
+            of: find.byKey(ValueKey<String>('loop-tab-$slug')),
+            matching: find.byType(Text),
+          ),
+        )
+        .style
+        ?.color;
+    expect(glyphOf('meme'), LoopColors.ink);
+    expect(wordOf('meme'), LoopColors.yellow);
+    expect(glyphOf('chat'), LoopColors.text3);
+    expect(wordOf('chat'), LoopColors.text3);
   });
 
   testWidgets('one Lime indicator marks the selection; the cells stay bare', (

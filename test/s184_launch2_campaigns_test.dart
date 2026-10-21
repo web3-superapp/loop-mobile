@@ -19,6 +19,7 @@ import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
@@ -191,6 +192,7 @@ Future<void> _pumpPager(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        launch2AmbientMotionProvider.overrideWithValue(false),
         launch2ClockProvider.overrideWithValue(() => l2Now),
         launch2ExternalLinkOpenerProvider.overrideWithValue(
           (context, uri) async => external?.add(uri),
@@ -573,12 +575,20 @@ void main() {
         ),
         findsOneWidget,
       );
+      // S264 (decision 0220): the title is Chalk 26 over the Purple brush;
+      // the subtitle may take two lines.
       final title = tester.widget<Text>(find.text('发射季交易赛'));
       expect(title.maxLines, 1);
-      expect(title.style?.color, LoopColors.yellow);
-      expect(title.style?.fontSize, 22);
+      expect(title.style?.color, LoopColors.chalk);
+      expect(title.style?.fontSize, 26);
       final subtitle = tester.widget<Text>(find.text('一句副标题'));
-      expect(subtitle.maxLines, 1);
+      expect(subtitle.maxLines, 2);
+      // The chrome hand hangs 14 / 16 past the card's right and bottom edges.
+      final card = tester.getRect(_key('launch2-campaign-card-c1'));
+      final hand = tester.getRect(_key('launch2-atmo-hand'));
+      expect(hand.right, moreOrLessEquals(card.right + 14));
+      expect(hand.bottom, moreOrLessEquals(card.bottom + 16));
+      expect(tester.takeException(), isNull);
       final foot = tester.widget<Text>(_key('launch2-campaign-stamp-c1'));
       expect(foot.style?.color, LoopColors.text2);
       // The button: solid Yellow, 36 high, at the bottom right.
@@ -653,21 +663,34 @@ void main() {
       ]);
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsOneWidget);
+      // The cover recedes: 30 % over the wall, under an Ink 55 % veil.
+      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(
+        tester
+            .widget<Opacity>(
+              find
+                  .ancestor(
+                    of: _key('launch2-campaign-cover-c1'),
+                    matching: find.byType(Opacity),
+                  )
+                  .first,
+            )
+            .opacity,
+        0.3,
+      );
+      expect(
+        tester.widget<ColoredBox>(_key('launch2-campaign-cover-veil')).color,
+        const Color(0x8C09090B),
+      );
       final card = tester.getRect(_key('launch2-campaign-card-c1'));
       final cover = tester.getRect(_key('launch2-campaign-cover-c1'));
       expect(cover, card);
+      // S264: the Ink wash covers the card from the left; the words sit on
+      // its dark half.
       final scrim = tester.getRect(_key('launch2-campaign-scrim'));
-      expect(scrim.bottom, card.bottom);
-      expect(
-        scrim.height,
-        moreOrLessEquals(
-          card.height * Launch2DeskCampaignCard.scrimFraction,
-          epsilon: 0.5,
-        ),
-      );
-      // The text sits on the scrim, bottom left.
+      expect(scrim, card);
       final title = tester.getRect(find.text('发射季交易赛'));
-      expect(title.top, greaterThanOrEqualTo(scrim.top));
+      expect(title.left, lessThan(card.center.dx));
     });
 
     testWidgets('a cover that does not load is no cover: the ground stays', (
@@ -680,6 +703,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsNothing);
+      expect(_key('launch2-campaign-cover-veil'), findsNothing);
       expect(_key('launch2-campaign-ground'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -614,6 +615,9 @@ Future<void> pumpS7Page(
   Size size = const Size(390, 2600),
   bool settle = true,
   List<Override> overrides = const <Override>[],
+  // S264: the MEME home's looping motion (the trade band, the hand's sheen)
+  // is still by default, so a settling pump has an end.
+  bool ambientMotion = false,
   // S88d: when given, the capability document is read through this port and
   // the D0 cache, as in production, instead of being pinned to [meta].
   LoopV2MetaRepository? metaRepository,
@@ -640,6 +644,7 @@ Future<void> pumpS7Page(
           loopV2MetaSnapshotProvider.overrideWith(
             (ref) async => meta ?? s7MetaSnapshot(),
           ),
+        launch2AmbientMotionProvider.overrideWithValue(ambientMotion),
         ...overrides,
       ],
       child: MaterialApp(

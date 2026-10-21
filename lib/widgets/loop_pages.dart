@@ -508,6 +508,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.bottomBar,
     this.embedded = false,
     this.titleField,
+    this.backdrop,
   });
 
   final LoopPageArchetype archetype;
@@ -515,6 +516,12 @@ class LoopDashboardPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// A still layer under the whole page that never scrolls (S264, decision
+  /// 0220: the MEME home's wall). With it the page ground is Ink, and the
+  /// sticky bar paints the same layer behind its title. `null` keeps the
+  /// plain page.
+  final Widget? backdrop;
 
   /// A widget that takes the bar's whole title column
   /// (`LoopTopbar.titleField`); [title] stays the bar's accessible name.
@@ -614,49 +621,65 @@ class LoopDashboardPage extends StatelessWidget {
       explicitChildNodes: true,
       child: Scaffold(
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
-        body: loopRefreshable(
-          onRefresh: refresh,
-          // The sticky topbar scrolls inside this view, so the indicator is
-          // pushed below it rather than over the title.
-          edgeOffset: embedded ? 0 : LoopLayout.topbarHeight + topPadding,
-          child: CustomScrollView(
-            physics: loopRefreshablePhysics(refresh),
-            slivers: <Widget>[
-              if (!embedded)
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyTopbar(
-                    topPadding: topPadding,
-                    child: LoopTopbar(
-                      title: title,
-                      kicker: kicker,
-                      subtitle: subtitle,
-                      onBack: onBack,
-                      actions: actions,
-                      minHeight: LoopLayout.topbarContentHeight,
-                      updating: updating,
-                      framedTools: framedTools,
-                      titleField: titleField,
+        backgroundColor: backdrop == null ? null : LoopColors.ink,
+        body: _withBackdrop(
+          loopRefreshable(
+            onRefresh: refresh,
+            // The sticky topbar scrolls inside this view, so the indicator is
+            // pushed below it rather than over the title.
+            edgeOffset: embedded ? 0 : LoopLayout.topbarHeight + topPadding,
+            child: CustomScrollView(
+              physics: loopRefreshablePhysics(refresh),
+              slivers: <Widget>[
+                if (!embedded)
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyTopbar(
+                      topPadding: topPadding,
+                      backdrop: backdrop,
+                      child: LoopTopbar(
+                        title: title,
+                        kicker: kicker,
+                        subtitle: subtitle,
+                        onBack: onBack,
+                        actions: actions,
+                        minHeight: LoopLayout.topbarContentHeight,
+                        updating: updating,
+                        framedTools: framedTools,
+                        titleField: titleField,
+                      ),
                     ),
                   ),
-                ),
-              if (block != null)
-                SliverFillRemaining(hasScrollBody: false, child: block!)
-              else ...<Widget>[
-                if (primary != null)
-                  SliverToBoxAdapter(
-                    child: KeyedSubtree(
-                      key: const ValueKey<String>('loop-page-primary'),
-                      child: primary!,
+                if (block != null)
+                  SliverFillRemaining(hasScrollBody: false, child: block!)
+                else ...<Widget>[
+                  if (primary != null)
+                    SliverToBoxAdapter(
+                      child: KeyedSubtree(
+                        key: const ValueKey<String>('loop-page-primary'),
+                        child: primary!,
+                      ),
                     ),
-                  ),
-                SliverList.list(children: sections),
+                  SliverList.list(children: sections),
+                ],
+                SliverPadding(padding: EdgeInsets.only(bottom: bottom)),
               ],
-              SliverPadding(padding: EdgeInsets.only(bottom: bottom)),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _withBackdrop(Widget page) {
+    final layer = backdrop;
+    if (layer == null) return page;
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        Positioned.fill(child: IgnorePointer(child: layer)),
+        page,
+      ],
     );
   }
 }
@@ -720,10 +743,18 @@ class _LoopPageBottomBarState extends State<_LoopPageBottomBar> {
 }
 
 class _StickyTopbar extends SliverPersistentHeaderDelegate {
-  const _StickyTopbar({required this.child, required this.topPadding});
+  const _StickyTopbar({
+    required this.child,
+    required this.topPadding,
+    this.backdrop,
+  });
 
   final Widget child;
   final double topPadding;
+
+  /// Over a page backdrop the bar paints the same still backdrop, cut to its
+  /// own box: it reads as the page's ground and rows scroll under it unseen.
+  final Widget? backdrop;
 
   @override
   double get minExtent => LoopLayout.topbarHeight + topPadding;
@@ -737,18 +768,42 @@ class _StickyTopbar extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    final bar = Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: child,
+    );
+    final layer = backdrop;
+    if (layer == null) {
+      return Material(color: LoopColors.ink, child: bar);
+    }
+    final height = MediaQuery.sizeOf(context).height;
     return Material(
       color: LoopColors.ink,
-      child: Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: child,
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minHeight: height,
+                  maxHeight: height,
+                  child: layer,
+                ),
+              ),
+            ),
+          ),
+          bar,
+        ],
       ),
     );
   }
 
   @override
   bool shouldRebuild(_StickyTopbar oldDelegate) =>
-      oldDelegate.child != child || oldDelegate.topPadding != topPadding;
+      oldDelegate.child != child ||
+      oldDelegate.topPadding != topPadding ||
+      oldDelegate.backdrop != backdrop;
 }
 
 /// `stream`: fixed topbar and chip row, a scrolling collection region that

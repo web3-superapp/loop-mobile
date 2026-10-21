@@ -7,6 +7,9 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
+import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -92,9 +95,16 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
 
   String get _keyBase => 'launch2-list-${scope.name}';
 
+  bool _precached = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // S264: the home's atmosphere pieces decode before its first frame.
+    if (!_precached && widget.tabTitle != null) {
+      _precached = true;
+      launch2PrecacheAtmosphere(context);
+    }
     final visible =
         (ModalRoute.isCurrentOf(context) ?? true) &&
         TickerMode.valuesOf(context).enabled;
@@ -225,6 +235,14 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       title:
           widget.tabTitle ?? (scope == Launch2ListScope.all ? 'v2 发射' : '已毕业'),
       embedded: widget.tabTitle == null,
+      // S264 · decision 0220: the MEME home stands on the still wall, its
+      // title over the wall crown.
+      backdrop: widget.tabTitle == null
+          ? null
+          : const Launch2AtmosphereBackdrop(),
+      titleField: widget.tabTitle == null
+          ? null
+          : Launch2AtmoTitle(title: widget.tabTitle!),
       actions: widget.tabTitle == null ? const <Widget>[] : widget.actions,
       updating: widget.tabTitle != null && (state?.refreshing ?? false),
       tabPage: true,
@@ -355,10 +373,11 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     ];
   }
 
-  /// Decision 0164 · the prototype's Launch Desk over 「v2 发射」: the
-  /// ledger card, the segment counts, the record cards, the live tape and
-  /// the rows in their `.label` groups — the record cards' rows are not
-  /// drawn twice.
+  /// Decision 0164 · the prototype's Launch Desk over 「v2 发射」, in the
+  /// S264 atmosphere (decision 0220): the banner pager, the Purple trade
+  /// band, the stage chips, the record cards, then numbered sections — each
+  /// a board of rows; 预告 is always there and says so when nothing is
+  /// queued. The record cards' rows are not drawn twice.
   List<Widget> _desk(
     Launch2InstancePage page,
     Launch2Overview? overview,
@@ -377,9 +396,21 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       for (final row in launch2ListOrder(page.items))
         if (!recordIds.contains(row.instanceId)) row,
     ]);
-    final drawn = <Launch2StageGroup>{for (final (group, _) in groups) group};
     final counts = launch2DeskCounts(page.items, overview?.stats);
     final activity = overview?.activity ?? const <Launch2Activity>[];
+    final upcomingCount = counts
+        .firstWhere((entry) => entry.$1 == Launch2DeskSegment.upcoming)
+        .$2;
+    // 预告 always has its section; with nothing queued (and nothing counted
+    // anywhere) it is the empty board with 「我要发射」.
+    final sections = launch2DeskSections(
+      groups,
+      upcomingEmpty: upcomingCount == 0,
+    );
+    final drawn = <Launch2StageGroup>{
+      for (final (group, members) in sections)
+        if (members.isNotEmpty) group,
+    };
 
     /// Where a count scrolls to: its first group heading on the page, else
     /// the record card of a row of it.
@@ -392,34 +423,53 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           return _recordKey(row.instanceId);
         }
       }
+      if (segment == Launch2DeskSegment.upcoming &&
+          sections.any((entry) => entry.$1 == Launch2StageGroup.upcoming)) {
+        return _headingKey(Launch2StageGroup.upcoming);
+      }
       return null;
     }
 
-    final selected = main == null ? null : Launch2DeskSegment.of(main.stage);
+    final selected = main == null
+        ? _firstFilled(counts)
+        : Launch2DeskSegment.of(main.stage);
+    final clock = ref.read(launch2ClockProvider);
+    final band = activity.take(Launch2DeskTape.expanded).toList();
+    final creatorOpen = launch2CreatorEntryVisible(ref);
+    final open = widget.onOpenGraduated;
     return <Widget>[
       Launch2DeskPager(
-        pages: launch2DeskPages(
-          hero,
-          campaigns: campaigns,
-          now: ref.read(launch2ClockProvider)(),
-        ),
+        pages: launch2DeskPages(hero, campaigns: campaigns, now: clock()),
         chainId: page.items.first.chainId,
         onNavigate: widget.onNavigate,
         onElapsed: onElapsed,
       ),
       Builder(
-        builder: (context) => LoopSegBar(
-          key: const ValueKey<String>('launch2-desk-segs'),
-          labels: <String>[
-            for (final (segment, count) in counts) '${segment.title} $count',
+        builder: (context) => Launch2TradeTicker(
+          items: band,
+          onOpenAll: () => unawaited(
+            launch2ShowTradesSheet(
+              context,
+              items: band,
+              now: clock,
+              onNavigate: widget.onNavigate,
+            ),
+          ),
+        ),
+      ),
+      Builder(
+        builder: (context) => Launch2StageChips(
+          chips: <Launch2ChipSpec>[
+            for (final (segment, count) in counts)
+              (
+                id: segment.name,
+                title: segment.title,
+                count: count,
+                selected: segment == selected,
+              ),
           ],
-          dimmed: <bool>[for (final (_, count) in counts) count == 0],
-          selectedIndex: selected == null
-              ? -1
-              : Launch2DeskSegment.values.indexOf(selected),
           onSelected: (index) {
             final segment = Launch2DeskSegment.values[index];
-            final open = widget.onOpenGraduated;
             if (segment == Launch2DeskSegment.graduated && open != null) {
               open();
               return;
@@ -429,6 +479,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           },
         ),
       ),
+      const SizedBox(height: 8),
       for (final row in records)
         KeyedSubtree(
           key: _recordKey(row.instanceId),
@@ -438,21 +489,72 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
             onElapsed: onElapsed,
           ),
         ),
-      if (activity.isNotEmpty)
-        Launch2DeskTape(
-          items: activity,
-          now: ref.read(launch2ClockProvider),
-          onNavigate: widget.onNavigate,
-        ),
-      for (final (group, members) in groups) ...<Widget>[
+      for (final (index, (group, members)) in sections.indexed) ...<Widget>[
         KeyedSubtree(
           key: ValueKey<String>('launch2-group-${group.name}'),
-          child: LoopLabel(group.title, key: _headingKey(group)),
+          child: Launch2SectionHeading(
+            key: _headingKey(group),
+            index: index + 1,
+            title: group.title,
+            onMore: group == Launch2StageGroup.graduated ? open : null,
+          ),
         ),
-        for (final row in members) tile(row),
+        if (members.isEmpty)
+          Launch2UpcomingEmpty(
+            onLaunch: creatorOpen
+                ? () => widget.onNavigate(Launch2CreatorRoute.createPath)
+                : null,
+          )
+        else
+          Launch2Board(
+            key: ValueKey<String>('launch2-board-${group.name}'),
+            children: <Widget>[
+              for (final row in members)
+                Launch2BoardRow(
+                  key: ValueKey<String>('launch2-tile-${row.instanceId}'),
+                  row: row,
+                  onTap: () => _openInstance(row.instanceId),
+                  onElapsed: onElapsed,
+                ),
+            ],
+          ),
       ],
+      const SizedBox(height: 8),
     ];
   }
+
+  /// With no main event, the chip that is on is the first one holding
+  /// projects; none when every count is zero.
+  static Launch2DeskSegment? _firstFilled(
+    List<(Launch2DeskSegment, int)> counts,
+  ) {
+    for (final (segment, count) in counts) {
+      if (count > 0) return segment;
+    }
+    return null;
+  }
+}
+
+/// The home's numbered sections (S264, decision 0220): the non-empty groups
+/// in their order, with 预告 put in its place, empty, when [upcomingEmpty]
+/// says nothing is queued.
+List<(Launch2StageGroup, List<Launch2InstanceRow>)> launch2DeskSections(
+  List<(Launch2StageGroup, List<Launch2InstanceRow>)> groups, {
+  required bool upcomingEmpty,
+}) {
+  final has = groups.any((entry) => entry.$1 == Launch2StageGroup.upcoming);
+  if (has || !upcomingEmpty) return groups;
+  final order = Launch2StageGroup.values;
+  final at = groups.indexWhere(
+    (entry) =>
+        order.indexOf(entry.$1) > order.indexOf(Launch2StageGroup.upcoming),
+  );
+  final empty = (Launch2StageGroup.upcoming, const <Launch2InstanceRow>[]);
+  return <(Launch2StageGroup, List<Launch2InstanceRow>)>[
+    if (at < 0) ...groups else ...groups.take(at),
+    empty,
+    if (at >= 0) ...groups.skip(at),
+  ];
 }
 
 /// The order a v2 list draws its rows in (decision 0142): the server's own

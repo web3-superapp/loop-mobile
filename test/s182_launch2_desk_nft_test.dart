@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
@@ -321,8 +322,10 @@ Future<void> _pump(
   DateTime Function()? clock,
   Launch2Polling? polling,
   List<Override> extra = const <Override>[],
+  bool ambientMotion = false,
 }) => pumpS7Page(
   tester,
+  ambientMotion: ambientMotion,
   reduceMotion
       ? Builder(
           builder: (context) => MediaQuery(
@@ -400,10 +403,20 @@ String _statusText(WidgetTester tester) {
   return <String>[?folio.caption, ?folio.stamp].join(' | ');
 }
 
-/// The desk segment chip that reads [label].
-LoopSeg _seg(WidgetTester tester, String label) => tester.widget<LoopSeg>(
-  find.ancestor(of: find.text(label), matching: find.byType(LoopSeg)),
-);
+/// Whether the desk's stage chip [id] says it is on (S264).
+bool _chipSelected(WidgetTester tester, String id) =>
+    tester
+        .widget<Semantics>(
+          find
+              .ancestor(
+                of: _key('launch2-desk-seg-$id'),
+                matching: find.byType(Semantics),
+              )
+              .first,
+        )
+        .properties
+        .selected ??
+    false;
 
 void main() {
   // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
@@ -755,6 +768,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: <Override>[
+            launch2AmbientMotionProvider.overrideWithValue(false),
             launch2ClockProvider.overrideWithValue(() => l2Now),
           ],
           child: MaterialApp(
@@ -804,10 +818,11 @@ void main() {
       for (final label in <String>['铸造中 1', '内盘 2', '预告 0', '已毕业 2']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
-      expect(_seg(tester, '预告 0').dimmed, isTrue);
-      expect(_seg(tester, '内盘 2').dimmed, isFalse);
-      expect(_seg(tester, '铸造中 1').selected, isTrue);
-      expect(_seg(tester, '内盘 2').selected, isFalse);
+      // S264: the chosen chip is Purple with the Yellow splat on it.
+      expect(_key('launch2-desk-seg-splat-minting'), findsOneWidget);
+      expect(_key('launch2-desk-seg-splat-curve'), findsNothing);
+      expect(_chipSelected(tester, 'minting'), isTrue);
+      expect(_chipSelected(tester, 'curve'), isFalse);
       await _drain(tester);
     });
 
@@ -989,8 +1004,8 @@ void main() {
         ),
     ];
 
-    testWidgets('three still lines, newest first, the time in Lime; 「全部」 '
-        'opens ten and 「收起」 closes them; a line opens the project', (
+    testWidgets('S264: the Purple band runs the newest trades in one line; '
+        '「全部」 opens up to ten in a sheet; a line there opens the project', (
       tester,
     ) async {
       final opened = <String>[];
@@ -1002,20 +1017,32 @@ void main() {
           <String, Object?>{'activity': many(12), 'contractVersion': '2.0'},
         ]),
       );
-      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-ticker'), findsOneWidget);
+      expect(_key('launch2-ticker-live'), findsOneWidget);
       expect(find.text('实时'), findsOneWidget);
-      // Nothing drifts: no sideways list inside the tape.
-      expect(
-        find.descendant(
-          of: _key('launch2-tape'),
-          matching: find.byType(Scrollable),
-        ),
-        findsNothing,
+      // The three still lines are gone.
+      expect(_key('launch2-tape'), findsNothing);
+      final band = tester.widget<ColoredBox>(_key('launch2-ticker-band'));
+      expect(band.color, LoopColors.purple);
+      expect(tester.getSize(_key('launch2-ticker-band')).height, 36);
+      // 买入 sits on its own Ink ground, in rise.
+      final verb = tester.widget<Text>(find.text('买入').first);
+      expect(verb.style?.color, LoopColors.rise);
+      final verbGround = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.text('买入').first,
+              matching: find.byType(Container),
+            )
+            .first,
       );
-      for (var i = 0; i < 3; i++) {
-        expect(_key('launch2-tape-line-$i'), findsOneWidget);
-      }
-      expect(_key('launch2-tape-line-3'), findsNothing);
+      expect((verbGround.decoration! as BoxDecoration).color, LoopColors.ink);
+
+      await tester.tap(_key('launch2-ticker-all'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-tape-line-9'), findsOneWidget);
+      expect(_key('launch2-tape-line-10'), findsNothing);
       final time = tester.widget<Text>(
         find
             .descendant(
@@ -1025,33 +1052,54 @@ void main() {
             .first,
       );
       expect(time.data, '刚刚');
-      // Decision 0212: the time is a quiet Text3 figure.
       expect(time.style?.color, LoopColors.text3);
-
-      await tester.tap(_key('launch2-tape-more'));
-      await tester.pumpAndSettle();
-      expect(_key('launch2-tape-line-9'), findsOneWidget);
-      expect(_key('launch2-tape-line-10'), findsNothing);
-      expect(find.text('收起'), findsOneWidget);
-      await tester.tap(_key('launch2-tape-more'));
-      await tester.pumpAndSettle();
-      expect(_key('launch2-tape-line-3'), findsNothing);
-
       await tester.tap(_key('launch2-tape-line-1'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(opened.last, '/launch2/instance?id=${_id(1)}');
+      expect(_key('launch2-tape'), findsNothing);
       await _drain(tester);
     });
 
-    testWidgets('three or fewer: no 「全部」', (tester) async {
+    testWidgets('S264: the line moves while motion is allowed and stands '
+        'still under reduced motion', (tester) async {
       await _pump(
         tester,
         _list(<String>[]),
         _listGateway(rows),
         overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
+        settle: false,
+        ambientMotion: true,
       );
-      expect(_key('launch2-tape-line-1'), findsOneWidget);
-      expect(_key('launch2-tape-more'), findsNothing);
+      await tester.pump();
+      await tester.pump();
+      double offset() => tester
+          .widget<Transform>(
+            find
+                .descendant(
+                  of: _key('launch2-ticker-rail'),
+                  matching: find.byType(Transform),
+                )
+                .first,
+          )
+          .transform
+          .getTranslation()
+          .x;
+      final before = offset();
+      await tester.pump(const Duration(seconds: 2));
+      expect(offset(), lessThan(before));
+      await _drain(tester);
+
+      await _pump(
+        tester,
+        _list(<String>[]),
+        _listGateway(rows),
+        overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
+        reduceMotion: true,
+        ambientMotion: true,
+      );
+      final still = offset();
+      await tester.pump(const Duration(seconds: 2));
+      expect(offset(), still);
       await _drain(tester);
     });
 
@@ -1077,17 +1125,16 @@ void main() {
       expect(overview.reads, 2);
       expect(
         find.descendant(
-          of: _key('launch2-tape-line-0'),
-          matching: find.textContaining('NEWT 毕业了', findRichText: true),
+          of: _key('launch2-ticker'),
+          matching: find.text('NEWT 毕业了'),
         ),
-        findsOneWidget,
+        findsWidgets,
       );
       await _drain(tester);
     });
 
-    testWidgets('no activity, or no overview at all: no tape, no stats', (
-      tester,
-    ) async {
+    testWidgets('no activity, or no overview at all: the band says 暂无成交 '
+        'and stands still; no 全部, no stats', (tester) async {
       await _pump(
         tester,
         _list(<String>[]),
@@ -1096,14 +1143,16 @@ void main() {
           <String, Object?>{'activity': <Object?>[], 'contractVersion': '2.0'},
         ]),
       );
-      expect(_key('launch2-tape'), findsNothing);
+      expect(_key('launch2-ticker-empty'), findsOneWidget);
+      expect(_key('launch2-ticker-all'), findsNothing);
+      expect(_key('launch2-ticker-rail'), findsNothing);
       expect(_key('launch2-stats'), findsNothing);
       expect(find.text('战绩'), findsNothing);
       expect(_key('launch2-desk'), findsOneWidget);
       await _drain(tester);
 
       await _pump(tester, _list(<String>[]), _listGateway(rows));
-      expect(_key('launch2-tape'), findsNothing);
+      expect(_key('launch2-ticker-empty'), findsOneWidget);
       expect(_key('launch2-stats'), findsNothing);
       await _drain(tester);
     });
@@ -1135,10 +1184,25 @@ void main() {
           tester.getTopLeft(_key('launch2-group-$name')).dy,
       ];
       expect(ys, orderedEquals(<double>[...ys]..sort()));
+      // S264: numbered headings over boards.
       expect(
         find.descendant(
           of: _key('launch2-group-curve'),
-          matching: find.byType(LoopLabel),
+          matching: find.byType(Launch2SectionHeading),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-group-curve'),
+          matching: find.text('01'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-board-curve'),
+          matching: _key('launch2-tile-${_id(3)}'),
         ),
         findsOneWidget,
       );
@@ -1220,7 +1284,7 @@ void main() {
           _overviewJson(noStats: true),
         ]),
       );
-      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-ticker-rail'), findsOneWidget);
       expect(_key('launch2-stats'), findsNothing);
       expect(find.text('战绩'), findsNothing);
       expect(_key('launch2-curation-notice'), findsOneWidget);
@@ -1691,7 +1755,7 @@ void main() {
       expect(tester.view.physicalSize, const Size(360, 800));
       expect(_folio(tester, 'launch2-desk').heading, 'ABCDEFGH…\n共识勋章铸造中');
       expect(find.byType(Launch2DeskRecordCard), findsNWidgets(2));
-      expect(_key('launch2-tape'), findsOneWidget);
+      expect(_key('launch2-ticker'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -2400));
       await tester.pumpAndSettle();
