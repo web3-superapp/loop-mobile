@@ -45,7 +45,18 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
     this.onStageMoved,
     this.onTopUp,
     this.onFaucet,
+    this.usd1Balance,
+    this.memeBalance,
   });
+
+  /// The wallet's MEME v2 USD1 as this page read it (decision 0225), or
+  /// `null` when nothing was read. Zero says 「钱包里还没有 USD1」 under the
+  /// field and asks for no quote; any other figure only words a refusal.
+  final Decimal? usd1Balance;
+
+  /// The wallet's balance of this token as read, or `null`. Zero closes the
+  /// sell side the same way (「还没有这个代币」, no link).
+  final Decimal? memeBalance;
 
   /// 「去充值」 under a balance refusal (decision 0153): the wallet's receive
   /// page. `null` shows no link.
@@ -115,6 +126,17 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
     if (_side == Launch2Side.sell && _detail.stage != Launch2Stage.public) {
       _side = Launch2Side.buy;
       _amount.clear();
+      return;
+    }
+    // Decision 0225: funds arrived (a faucet grant re-reads the balances)
+    // while an amount waits in the field: ask for its quote now.
+    if (_readZero(old, _side) && !_emptyBalance && _entered != null) {
+      _debounce?.cancel();
+      _request += 1;
+      _quoting = !_disabled;
+      if (!_disabled) {
+        _debounce = Timer(memeQuoteDebounce, () => unawaited(_fetchQuote()));
+      }
     }
   }
 
@@ -155,6 +177,17 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
       _snapshotUnverified ||
       widget.locked;
 
+  /// Decision 0225: the side's balance was read and is zero, so no quote is
+  /// asked; the funding line stands in for it.
+  bool get _emptyBalance => _readZero(widget, _side);
+
+  static bool _readZero(Launch2TradePanel panel, Launch2Side side) {
+    final balance = side == Launch2Side.buy
+        ? panel.usd1Balance
+        : panel.memeBalance;
+    return balance != null && balance <= Decimal.zero;
+  }
+
   void _amountChanged() {
     _debounce?.cancel();
     _request += 1;
@@ -163,11 +196,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
       _quote = null;
       _quoteFailure = null;
       _prepareFailure = null;
-      _quoting = amount != null;
+      _quoting = amount != null && !_emptyBalance;
       if (!_filledMax) _notice = null;
     });
     _filledMax = false;
-    if (amount == null || _disabled) return;
+    if (amount == null || _disabled || _emptyBalance) return;
     _debounce = Timer(memeQuoteDebounce, () => unawaited(_fetchQuote()));
   }
 
@@ -374,9 +407,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
     // Decision 0161: the field stays live (the quote may say why), the
     // confirm key does not.
     final hold = _detail.tradingHold;
+    final empty = _emptyBalance;
     final canConfirm =
         hold == null &&
         !_disabled &&
+        !empty &&
         !notInList &&
         amount != null &&
         quote != null &&
@@ -431,19 +466,30 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
             suffixText: _side == Launch2Side.buy
                 ? 'USD1'
                 : loopTickerLabel(_ticker),
-            suffixIcon: _MaxKey(onTap: _disabled ? null : _fillMax),
+            suffixIcon: _MaxKey(onTap: _disabled || empty ? null : _fillMax),
           ),
         ),
         const SizedBox(height: 10),
-        _QuoteLines(
-          quote: quote,
-          quoting: _quoting,
-          failure: _quoteFailure,
-          side: _side,
-          ticker: _ticker,
-          cap: cap,
-          onFillMax: _fillMax,
-        ),
+        if (empty)
+          _EmptyBalanceLine(
+            side: _side,
+            onTopUp: widget.onTopUp,
+            onFaucet: widget.onFaucet,
+          )
+        else
+          _QuoteLines(
+            quote: quote,
+            quoting: _quoting,
+            failure: _quoteFailure,
+            side: _side,
+            ticker: _ticker,
+            cap: cap,
+            onFillMax: _fillMax,
+            requested: amount,
+            usd1Balance: widget.usd1Balance,
+            onTopUp: widget.onTopUp,
+            onFaucet: widget.onFaucet,
+          ),
         if (_notice case final String line)
           Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -648,7 +694,18 @@ class _QuoteLines extends StatelessWidget {
     required this.ticker,
     required this.cap,
     required this.onFillMax,
+    this.requested,
+    this.usd1Balance,
+    this.onTopUp,
+    this.onFaucet,
   });
+
+  /// What the field asks for; the shortfall line's 「需要」 when the
+  /// refusal carries no figure of its own.
+  final Decimal? requested;
+  final Decimal? usd1Balance;
+  final VoidCallback? onTopUp;
+  final VoidCallback? onFaucet;
 
   final Launch2Quote? quote;
   final bool quoting;
@@ -663,6 +720,26 @@ class _QuoteLines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = quote;
+    final refused = failure;
+    if (refused != null && launch2IsBalanceRefusal(refused)) {
+      // Decision 0225: the wallet is short, not the quote broken — say the
+      // shortfall and offer the way to fund it, as a refused prepare does.
+      final line = launch2ActionFailure(
+        refused,
+        fallback: (failure) => _failureText(failure, cap),
+        requested: requested,
+        usd1Balance: usd1Balance,
+        ticker: ticker,
+      );
+      return Launch2ActionFailureLine(
+        key: const ValueKey<String>('launch2-trade-quote-short'),
+        message: line.text,
+        topUpKey: const ValueKey<String>('launch2-trade-quote-topup'),
+        onTopUp: line.topUp ? onTopUp : null,
+        faucetKey: const ValueKey<String>('launch2-trade-quote-faucet'),
+        onFaucet: line.topUp ? onFaucet : null,
+      );
+    }
     if (failure != null) {
       return LoopInlineUnavailable(
         key: const ValueKey<String>('launch2-trade-quote-failed'),
@@ -675,6 +752,17 @@ class _QuoteLines extends StatelessWidget {
         quoting ? '正在报价…' : '输入金额后显示报价',
         key: const ValueKey<String>('launch2-trade-quote-empty'),
         style: LoopType.caption.copyWith(color: LoopColors.text3),
+      );
+    }
+    if (value.exceedsMax &&
+        value.limitedBy == Launch2LimitedBy.balance &&
+        value.maxAmountIn <= Decimal.zero) {
+      // Decision 0225: the server's MAX is zero because the wallet holds
+      // none — 「填入 0」 would be no help.
+      return _EmptyBalanceLine(
+        side: side,
+        onTopUp: onTopUp,
+        onFaucet: onFaucet,
       );
     }
     const pad = EdgeInsets.symmetric(vertical: 4);
@@ -764,6 +852,30 @@ class _QuoteLines extends StatelessWidget {
               '滑点 ${launch2BpsLabel(value.slippageBps)}，到期自动重新报价。',
         ),
       ],
+    );
+  }
+}
+
+/// Decision 0225: the side's balance is zero. Buying says 「钱包里还没有
+/// USD1」 with 「去充值」 and, while the faucet is open, 「获取资金」 (decision
+/// 0204's word for the faucet link); selling says 「还没有这个代币」 alone.
+class _EmptyBalanceLine extends StatelessWidget {
+  const _EmptyBalanceLine({required this.side, this.onTopUp, this.onFaucet});
+
+  final Launch2Side side;
+  final VoidCallback? onTopUp;
+  final VoidCallback? onFaucet;
+
+  @override
+  Widget build(BuildContext context) {
+    final buy = side == Launch2Side.buy;
+    return Launch2ActionFailureLine(
+      key: const ValueKey<String>('launch2-trade-empty-balance'),
+      message: buy ? launch2NoUsd1Text : launch2NoMemeText,
+      topUpKey: const ValueKey<String>('launch2-trade-empty-topup'),
+      onTopUp: buy ? onTopUp : null,
+      faucetKey: const ValueKey<String>('launch2-trade-empty-faucet'),
+      onFaucet: buy ? onFaucet : null,
     );
   }
 }
