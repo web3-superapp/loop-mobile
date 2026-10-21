@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -103,6 +104,24 @@ class LoopShell extends StatefulWidget {
 }
 
 class _LoopShellState extends State<LoopShell> {
+  bool _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // S264: the chosen tab's Yellow spray is decoded before the bar's first
+    // frame.
+    if (_precached) return;
+    _precached = true;
+    unawaited(
+      precacheImage(
+        const AssetImage(LoopAtmoAssets.sprayYellow),
+        context,
+        onError: (error, stackTrace) {},
+      ),
+    );
+  }
+
   int get _selectedIndex {
     final shell = widget.navigationShell;
     if (shell != null) return shell.currentIndex;
@@ -256,8 +275,10 @@ class LoopTabBar extends StatelessWidget {
             child: Container(
               height: LoopTouch.tabBarHeight,
               padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-              // Decision 0212: the bar is the card surface with a 20 radius,
-              // no edge and no selection block.
+              // Decision 0212: the bar is the card surface with a 20 radius
+              // and no selection block. S264 (decision 0220): a 1 px chrome
+              // line runs along its top edge.
+              foregroundDecoration: const _ChromeEdge(),
               decoration: const BoxDecoration(
                 color: LoopColors.card,
                 borderRadius: LoopRadius.tabBar,
@@ -298,7 +319,41 @@ class LoopTabBar extends StatelessWidget {
   }
 }
 
-/// One tab cell: Ink glyph and label when selected, Ink 62% otherwise.
+/// The tab bar's 1 px chrome top edge (S264): dark steel at both ends, light
+/// steel in the middle, 18 in from the bar's sides.
+class _ChromeEdge extends Decoration {
+  const _ChromeEdge();
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      const _ChromeEdgePainter();
+}
+
+class _ChromeEdgePainter extends BoxPainter {
+  const _ChromeEdgePainter();
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null) return;
+    final line = Rect.fromLTWH(offset.dx + 18, offset.dy, size.width - 36, 1);
+    final paint = Paint()
+      ..shader = const LinearGradient(
+        colors: <Color>[
+          Color(0x003A3A42),
+          LoopColors.chrome2,
+          LoopColors.chrome1,
+          LoopColors.chrome2,
+          Color(0x003A3A42),
+        ],
+        stops: <double>[0, 0.2, 0.5, 0.8, 1],
+      ).createShader(line);
+    canvas.drawRect(line, paint);
+  }
+}
+
+/// One tab cell (S264, decision 0220): selected, an Ink glyph on a Yellow
+/// spray with a Yellow label; otherwise a Text3 glyph and label.
 ///
 /// The cell draws no ground of its own — [LoopTabBar]'s single indicator is
 /// the Lime ground, and it slides. The cell only crossfades its own ink over
@@ -356,6 +411,10 @@ class LoopTabItem extends StatelessWidget {
                   : t >= 1
                   ? LoopColors.yellow
                   : Color.lerp(LoopColors.text3, LoopColors.yellow, t)!;
+              // The Ink glyph stands on a solid Yellow core from the first
+              // frame of the selection to the last; only the spray around
+              // the core fades, so the glyph never sits on a half ground.
+              final glyph = t <= 0 ? LoopColors.text3 : LoopColors.ink;
               return ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: LoopTouch.tabCellMinHeight,
@@ -366,7 +425,70 @@ class LoopTabItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      LoopIcon(icon, size: 21, color: color),
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            if (t > 0)
+                              Positioned(
+                                left: 12 - 29,
+                                top: 12 - 29,
+                                width: 58,
+                                height: 58,
+                                child: IgnorePointer(
+                                  child: Opacity(
+                                    opacity: 0.8 * t,
+                                    child: Transform.rotate(
+                                      angle: -10 * math.pi / 180,
+                                      child: Image.asset(
+                                        LoopAtmoAssets.sprayYellow,
+                                        key: ValueKey<String>(
+                                          'loop-tab-spray-$slug',
+                                        ),
+                                        fit: BoxFit.contain,
+                                        excludeFromSemantics: true,
+                                        gaplessPlayback: true,
+                                        errorBuilder: (context, error, stack) =>
+                                            const SizedBox.shrink(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (t > 0)
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: DecoratedBox(
+                                  key: ValueKey<String>('loop-tab-core-$slug'),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: <Color>[
+                                        LoopColors.yellow,
+                                        LoopColors.yellow,
+                                        Color(0x00FFD600),
+                                      ],
+                                      stops: <double>[0, 0.6, 1],
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: LoopIcon(
+                                      icon,
+                                      size: 21,
+                                      color: glyph,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              LoopIcon(icon, size: 21, color: glyph),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 3),
                       ExcludeSemantics(
                         child: Text(

@@ -316,6 +316,7 @@ bool _isNamedOwner(String name) =>
     name.endsWith('Screen') ||
     name.endsWith('Sheet') ||
     name == 'ModalBarrier' ||
+    name.endsWith('Backdrop') ||
     (name.startsWith('Loop') && !name.startsWith('LoopColors'));
 
 String? _quote(String? data) {
@@ -411,6 +412,17 @@ List<LoopPaintedColour> loopVanishedPaint(
 /// Ink, which cannot move a page that is already Ink. None of them is a mark
 /// that was supposed to be seen.
 const loopGroundProbeExemptions = <String, String>{
+  "LoopPressable · DecoratedBox-[<'launch2-campaign-scrim'>]":
+      'S264 (decision 0220): the campaign banner\'s left-to-right Ink wash '
+      'darkens the cover or the wall picture under the title. A test '
+      'decodes no picture, so it lands on the Ink ground and moves '
+      'nothing; the banner\'s words are judged against that same Ink.',
+  'Launch2AtmosphereBackdrop · DecoratedBox':
+      'S264 (decision 0220): the MEME home wall\'s darkening wash — Ink at '
+      '15 % → 70 % — exists to darken the wall picture under it. A test '
+      'decodes no picture, so the wash lands on bare Ink and moves nothing; '
+      'on a device it lands on the wall. The page\'s copy sits on cards or '
+      'is judged against the Ink ground on its own.',
   'ModalBarrier · ColoredBox':
       'the route veil is `LoopColors.veil`, Ink at 76%, and it fades in from '
       'nothing. Over the Ink page it darkens close to nothing, which is '

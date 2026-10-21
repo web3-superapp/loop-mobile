@@ -152,6 +152,18 @@ abstract final class LoopColors {
   /// 0122).
   static const Color copper = Color(0xFFB87B5A);
 
+  /// Chrome ramp (S264, decision 0220): the MEME home's chrome edge and
+  /// default project avatar — light, mid and dark steel.
+  static const Color chrome1 = Color(0xFFF0F0F3);
+  static const Color chrome2 = Color(0xFF9A9AA3);
+  static const Color chrome3 = Color(0xFF3A3A42);
+
+  /// The 已毕业 capsule's word on its Purple 18 % ground (S264).
+  static const Color purpleInk = Color(0xFFC9A0FF);
+
+  /// Purple at 18 % — the 已毕业 capsule's ground (S264).
+  static const Color purpleCapsule = Color(0x2E9C36FF);
+
   // Semantic aliases retained for existing widgets.
   static const Color textSecondary = text2;
   static const Color textTertiary = text3;
@@ -766,6 +778,17 @@ abstract final class LoopType {
     height: 1.1,
     trackingEm: -0.025,
   );
+
+  /// S264 (decision 0220): the MEME home's section index 「01」 — Anton 30,
+  /// Yellow at the call site.
+  static final TextStyle sectionIndex = LoopTypography.condensed(
+    size: 30,
+    height: 1.0,
+    trackingEm: 0.02,
+  );
+
+  /// S264: the amount on the MEME home's live trade band.
+  static final TextStyle tickerFigure = LoopTypography.figure(14);
 
   // Band 2 · heading.
   /// R1c the heading of an account-opening step page.
