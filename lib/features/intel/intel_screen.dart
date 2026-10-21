@@ -6,6 +6,8 @@ import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/intel/intel_rank_controller.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 
@@ -42,10 +44,27 @@ class IntelScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return LoopAtmoPrecache(
+      paths: const <String>[
+        ...loopAtmosphereTabAssets,
+        LoopAtmoAssets.crownYellow,
+        LoopAtmoAssets.crownFlat,
+      ],
+      child: _page(context, ref),
+    );
+  }
+
+  Widget _page(BuildContext context, WidgetRef ref) {
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('intel-screen'),
       tabKey: 'intel',
       title: '情报',
+      // Decision 0221: the wall under 情报, its own fog placing.
+      backdrop: const LoopWallBackdrop(
+        key: ValueKey<String>('intel-atmo-backdrop'),
+        fog: LoopWallFog.intel,
+        keyPrefix: 'intel-atmo',
+      ),
       segments: segments,
       // The segment bodies are embedded pages with no bar of their own, so
       // their 更新中 is drawn on the segment row (S106b).

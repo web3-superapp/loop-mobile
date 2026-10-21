@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/square/square_feed_view.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -63,10 +64,31 @@ class SquareScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = squareFeedVisible(ref);
     final offset = feed ? 1 : 0;
+    return LoopAtmoPrecache(
+      paths: const <String>[
+        ...loopAtmosphereTabAssets,
+        LoopAtmoAssets.avatarChrome,
+      ],
+      child: _page(context, ref, feed: feed, offset: offset),
+    );
+  }
+
+  Widget _page(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool feed,
+    required int offset,
+  }) {
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('square-screen'),
       tabKey: 'square',
       title: '广场',
+      // Decision 0221: the wall under 广场, its own fog placing.
+      backdrop: const LoopWallBackdrop(
+        key: ValueKey<String>('square-atmo-backdrop'),
+        fog: LoopWallFog.square,
+        keyPrefix: 'square-atmo',
+      ),
       segments: feed ? feedSegments : segments,
       // Decision 0181: the page opens on 社区; 动态 sits in front of it but
       // is a segment the reader picks.

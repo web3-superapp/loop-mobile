@@ -50,6 +50,37 @@ const List<String> loopAtmosphereTabAssets = <String>[
   LoopAtmoAssets.splatYellow,
 ];
 
+/// Decodes [paths] once, before [child]'s first frame (decision 0221: each
+/// tab page with a wall precaches what it draws).
+class LoopAtmoPrecache extends StatefulWidget {
+  const LoopAtmoPrecache({
+    required this.child,
+    super.key,
+    this.paths = loopAtmosphereTabAssets,
+  });
+
+  final Widget child;
+  final List<String> paths;
+
+  @override
+  State<LoopAtmoPrecache> createState() => _LoopAtmoPrecacheState();
+}
+
+class _LoopAtmoPrecacheState extends State<LoopAtmoPrecache> {
+  bool _done = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_done) return;
+    _done = true;
+    loopPrecacheAtmosphere(context, widget.paths);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 /// A decorative asset image: no semantics, no gap while it loads.
 Widget loopAtmoArt(
   String path, {
@@ -271,10 +302,14 @@ class LoopBackdropScope extends InheritedWidget {
     required this.backdrop,
     required super.child,
     super.key,
+    this.stageSize = Size.zero,
   });
 
   /// The still layer under the page (a [LoopWallBackdrop]).
   final Widget backdrop;
+
+  /// The size the backdrop is laid out at under the page.
+  final Size stageSize;
 
   static LoopBackdropScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<LoopBackdropScope>();
@@ -284,7 +319,7 @@ class LoopBackdropScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(LoopBackdropScope oldWidget) =>
-      oldWidget.backdrop != backdrop;
+      oldWidget.backdrop != backdrop || oldWidget.stageSize != stageSize;
 }
 
 /// Lays [backdrop] under [child] (fixed, never scrolling) and publishes it
@@ -300,15 +335,18 @@ class LoopBackdropStage extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => LoopBackdropScope(
-    backdrop: backdrop,
-    child: _LoopBackdropOrigin(
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Positioned.fill(child: IgnorePointer(child: backdrop)),
-          child,
-        ],
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => LoopBackdropScope(
+      backdrop: backdrop,
+      stageSize: constraints.biggest,
+      child: _LoopBackdropOrigin(
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Positioned.fill(child: IgnorePointer(child: backdrop)),
+            child,
+          ],
+        ),
       ),
     ),
   );
@@ -343,6 +381,7 @@ class LoopBackdropSlice extends StatelessWidget {
           child: IgnorePointer(
             child: _BackdropSlice(
               key: const ValueKey<String>('loop-backdrop-slice'),
+              stageSize: scope.stageSize,
               child: scope.backdrop,
             ),
           ),
@@ -354,15 +393,39 @@ class LoopBackdropSlice extends StatelessWidget {
 }
 
 class _BackdropSlice extends SingleChildRenderObjectWidget {
-  const _BackdropSlice({required super.child, super.key});
+  const _BackdropSlice({
+    required this.stageSize,
+    required super.child,
+    super.key,
+  });
+
+  final Size stageSize;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderBackdropSlice();
+      _RenderBackdropSlice(stageSize);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderBackdropSlice renderObject,
+  ) {
+    renderObject.stageSize = stageSize;
+  }
 }
 
 class _RenderBackdropSlice extends RenderBox
     with RenderObjectWithChildMixin<RenderBox> {
+  _RenderBackdropSlice(this._stageSize);
+
+  Size _stageSize;
+
+  set stageSize(Size value) {
+    if (value == _stageSize) return;
+    _stageSize = value;
+    markNeedsLayout();
+  }
+
   RenderBox? _origin() {
     var node = parent;
     while (node != null) {
@@ -375,8 +438,9 @@ class _RenderBackdropSlice extends RenderBox
   @override
   void performLayout() {
     size = constraints.biggest;
-    final origin = _origin();
-    final stage = origin != null && origin.hasSize ? origin.size : size;
+    final stage = _stageSize.isEmpty || !_stageSize.isFinite
+        ? size
+        : _stageSize;
     child?.layout(BoxConstraints.tight(stage));
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -383,7 +384,10 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
 
   @override
   Widget build(BuildContext context) {
-    final ground = Theme.of(context).scaffoldBackgroundColor;
+    // Decision 0221: on the wall the row is the card board's ground.
+    final ground = LoopBackdropScope.on(context)
+        ? LoopColors.card
+        : Theme.of(context).scaffoldBackgroundColor;
     return GestureDetector(
       key: const ValueKey<String>('chat-inbox-swipe-row'),
       behavior: HitTestBehavior.translucent,

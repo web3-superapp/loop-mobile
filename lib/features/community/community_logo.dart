@@ -30,6 +30,7 @@ import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 /// `avatar:preset/community-01..12` — the server's community preset catalog.
@@ -195,6 +196,7 @@ class CommunityLogo extends StatelessWidget {
     this.size = 44,
     this.radius,
     this.bordered = false,
+    this.chromeFallback = false,
   });
 
   final String identity;
@@ -214,6 +216,10 @@ class CommunityLogo extends StatelessWidget {
   /// the tile draws when it sits on the folio rather than inside a card.
   final bool bordered;
 
+  /// Draw the chrome medal (decision 0221: 广场 on the wall) instead of the
+  /// initials tile for a community with no logo of its own.
+  final bool chromeFallback;
+
   @override
   Widget build(BuildContext context) {
     final corner = radius ?? LoopRadius.innerValue;
@@ -230,7 +236,16 @@ class CommunityLogo extends StatelessWidget {
         fallbackMonogram: monogram,
       );
     }
-    final tile = _monogramTile(context, corner, monogram);
+    final tile = chromeFallback
+        ? Semantics(
+            image: true,
+            label: '$name 社区图标',
+            child: LoopChromeMedal(
+              key: ValueKey<String>('community-logo-chrome-$identity'),
+              size: size,
+            ),
+          )
+        : _monogramTile(context, corner, monogram);
     // S107 §1: an uploaded logo, over the monogram tile until it arrives.
     final mediaUrl = loopMediaUrlFor(context, logoRef);
     if (mediaUrl != null) {

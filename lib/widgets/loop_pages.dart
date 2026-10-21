@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// Business archetype (`data-page-archetype`): what the page is for.
@@ -621,7 +622,13 @@ class LoopDashboardPage extends StatelessWidget {
       explicitChildNodes: true,
       child: Scaffold(
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
-        backgroundColor: backdrop == null ? null : LoopColors.ink,
+        backgroundColor: backdrop != null
+            ? LoopColors.ink
+            : embedded && LoopBackdropScope.on(context)
+            // An embedded segment on a tab page's wall leaves its own ground
+            // clear, so the wall shows through (decision 0221).
+            ? Colors.transparent
+            : null,
         body: _withBackdrop(
           loopRefreshable(
             onRefresh: refresh,
@@ -674,13 +681,7 @@ class LoopDashboardPage extends StatelessWidget {
   Widget _withBackdrop(Widget page) {
     final layer = backdrop;
     if (layer == null) return page;
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        Positioned.fill(child: IgnorePointer(child: layer)),
-        page,
-      ],
-    );
+    return LoopBackdropStage(backdrop: layer, child: page);
   }
 }
 
@@ -837,7 +838,13 @@ class LoopStreamPage extends StatelessWidget {
     this.framedTools = false,
     this.embedded = false,
     this.leading,
+    this.backdrop,
   });
+
+  /// A still layer under the whole page that never scrolls (decision 0221:
+  /// 聊天's wall), as [LoopDashboardPage.backdrop]. The topbar does not
+  /// scroll here, so it simply stands on the same wall. `null` keeps the
+  /// plain page.
 
   final LoopPageArchetype archetype;
   final String title;
@@ -899,6 +906,8 @@ class LoopStreamPage extends StatelessWidget {
   /// has no back control: 聊天 puts the owner's own avatar there.
   final Widget? leading;
 
+  final Widget? backdrop;
+
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
 
@@ -926,46 +935,59 @@ class LoopStreamPage extends StatelessWidget {
       child: Scaffold(
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
         resizeToAvoidBottomInset: true,
-        body: SafeArea(
-          top: !embedded,
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (!embedded)
-                LoopTopbar(
-                  title: title,
-                  kicker: kicker,
-                  subtitle: subtitle,
-                  onBack: onBack,
-                  leading: leading,
-                  actions: actions,
-                  minHeight: LoopLayout.topbarContentHeight,
-                  updating: updating,
-                  titleField: titleField,
-                  framedTools: framedTools,
-                ),
-              if (block != null)
-                Expanded(child: block!)
-              else ...<Widget>[
-                Expanded(
-                  child: _StreamBody(
-                    folio: folio,
-                    folioCollapsed: folioCollapsed,
-                    filters: filters,
-                    onRefresh: onRefresh,
-                    bottom: bottom,
-                    collection: collection,
+        backgroundColor: backdrop != null
+            ? LoopColors.ink
+            : embedded && LoopBackdropScope.on(context)
+            ? Colors.transparent
+            : null,
+        body: _streamBackdrop(
+          SafeArea(
+            top: !embedded,
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (!embedded)
+                  LoopTopbar(
+                    title: title,
+                    kicker: kicker,
+                    subtitle: subtitle,
+                    onBack: onBack,
+                    leading: leading,
+                    actions: actions,
+                    minHeight: LoopLayout.topbarContentHeight,
+                    updating: updating,
+                    titleField: titleField,
+                    framedTools: framedTools,
                   ),
-                ),
-                ?footnote,
-                ?composer,
+                if (block != null)
+                  Expanded(child: block!)
+                else ...<Widget>[
+                  Expanded(
+                    child: _StreamBody(
+                      folio: folio,
+                      folioCollapsed: folioCollapsed,
+                      filters: filters,
+                      onRefresh: onRefresh,
+                      bottom: bottom,
+                      collection: collection,
+                    ),
+                  ),
+                  ?footnote,
+                  ?composer,
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _streamBackdrop(Widget page) {
+    final layer = backdrop;
+    if (layer == null) return page;
+    return LoopBackdropStage(backdrop: layer, child: page);
   }
 }
 

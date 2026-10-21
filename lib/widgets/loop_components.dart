@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
@@ -2196,7 +2197,13 @@ class LoopSeg extends StatelessWidget {
     this.quiet = false,
     this.dimmed = false,
     this.capsuleHeight,
+    this.splat = false,
   });
+
+  /// The chosen capsule wears the small Yellow splat sticker on its top-left
+  /// corner, as MEME's stage chips do (decisions 0220 §6, 0221). Only on a
+  /// [capsuleHeight] chip.
+  final bool splat;
 
   /// The drawn height of the capsule, when it is lower than the finger's
   /// target (S254, docs/42 附C §4: a segment capsule is 36 tall).
@@ -2269,6 +2276,9 @@ class LoopSeg extends StatelessWidget {
               : (quiet ? Colors.transparent : LoopColors.card2),
           block: block,
           onTap: onTap,
+          sticker: splat && selected
+              ? const LoopSplatSticker(key: ValueKey<String>('loop-seg-splat'))
+              : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: ExcludeSemantics(child: _segLabel()),
@@ -2367,6 +2377,7 @@ class _LoopSegCapsule extends StatefulWidget {
     required this.block,
     required this.onTap,
     required this.child,
+    this.sticker,
   });
 
   final double height;
@@ -2374,6 +2385,9 @@ class _LoopSegCapsule extends StatefulWidget {
   final bool block;
   final VoidCallback? onTap;
   final Widget child;
+
+  /// A sticker on the capsule's top-left corner (the chosen chip's splat).
+  final Widget? sticker;
 
   @override
   State<_LoopSegCapsule> createState() => _LoopSegCapsuleState();
@@ -2386,6 +2400,18 @@ class _LoopSegCapsuleState extends State<_LoopSegCapsule> {
   void didUpdateWidget(covariant _LoopSegCapsule oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.onTap == null) _pressed = false;
+  }
+
+  Widget _stickered(Widget capsule) {
+    final sticker = widget.sticker;
+    if (sticker == null) return capsule;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        capsule,
+        Positioned(left: -7, top: -8, width: 24, child: sticker),
+      ],
+    );
   }
 
   @override
@@ -2406,22 +2432,24 @@ class _LoopSegCapsuleState extends State<_LoopSegCapsule> {
           padding: EdgeInsets.symmetric(
             vertical: math.max(0, (LoopSeg.segmentTarget - widget.height) / 2),
           ),
-          child: DecoratedBox(
-            key: const ValueKey<String>('loop-seg-capsule'),
-            decoration: BoxDecoration(
-              color: ground,
-              borderRadius: LoopRadius.pill,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: LoopSeg.segmentTarget,
-                minHeight: widget.height,
+          child: _stickered(
+            DecoratedBox(
+              key: const ValueKey<String>('loop-seg-capsule'),
+              decoration: BoxDecoration(
+                color: ground,
+                borderRadius: LoopRadius.pill,
               ),
-              child: Align(
-                // As [LoopSeg]: the capsule measures its label unless the
-                // page asks for the whole line.
-                widthFactor: widget.block ? null : 1,
-                child: widget.child,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: LoopSeg.segmentTarget,
+                  minHeight: widget.height,
+                ),
+                child: Align(
+                  // As [LoopSeg]: the capsule measures its label unless the
+                  // page asks for the whole line.
+                  widthFactor: widget.block ? null : 1,
+                  child: widget.child,
+                ),
               ),
             ),
           ),
@@ -2444,6 +2472,7 @@ class LoopSegBar extends StatelessWidget {
     this.icons,
     this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 8),
     this.dimmed,
+    this.splat = false,
   }) : assert(icons == null || icons.length == labels.length),
        assert(dimmed == null || dimmed.length == labels.length);
 
@@ -2457,6 +2486,10 @@ class LoopSegBar extends StatelessWidget {
   /// Per label: the chip counts nothing now and is drawn dimmed
   /// ([LoopSeg.dimmed]); a tap on it still reaches [onSelected].
   final List<bool>? dimmed;
+
+  /// The chosen capsule wears the Yellow splat (decision 0221: a bar on a
+  /// tab page's wall chooses the way MEME's stage chips do).
+  final bool splat;
 
   /// The drawn height of every capsule in the bar (docs/42 附C §4: 36).
   /// Each chip still answers a finger [LoopSeg.segmentTarget] tall; the
@@ -2475,6 +2508,8 @@ class LoopSegBar extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: padding,
+      // The splat reaches 2 px above the chip's target.
+      clipBehavior: splat ? Clip.none : Clip.hardEdge,
       child: Row(
         children: <Widget>[
           for (var index = 0; index < labels.length; index++) ...<Widget>[
@@ -2486,6 +2521,7 @@ class LoopSegBar extends StatelessWidget {
               dimmed: dimmed?[index] ?? false,
               selected: index == selectedIndex,
               capsuleHeight: capsuleHeight,
+              splat: splat,
               onSelected: () => onSelected(index),
             ),
           ],
