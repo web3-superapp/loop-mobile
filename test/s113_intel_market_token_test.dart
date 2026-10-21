@@ -675,7 +675,12 @@ void main() {
         mining: mining,
       );
       // No me: 还没有名次 on the ledger card (decision 0182).
-      expect(find.text('我的名次\n还没有名次'), findsOneWidget);
+      expect(find.textContaining('还没有名次'), findsOneWidget);
+      // Decision 0224: the grey crown line where the figure would be.
+      expect(
+        find.byKey(const ValueKey<String>('intel-rank-me-empty-crown')),
+        findsOneWidget,
+      );
       await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
       expect(mining.reads.last, (MiningRankScope.referrals, null));

@@ -321,7 +321,8 @@ void main() {
     IntelRankEntry entry(int position) => IntelRankEntry(
       id: 'user-$position',
       position: position,
-      leading: (size) => SizedBox.square(dimension: size),
+      leading: (size, {chromeFallback = false}) =>
+          SizedBox.square(dimension: size),
       name: 'member$position',
       figure: '${1000 - position}',
       weight: '1.$position',
@@ -339,17 +340,18 @@ void main() {
       final third = tester.getRect(_key('intel-rank-user-3'));
       expect(second.left, lessThan(first.left));
       expect(first.left, lessThan(third.left));
-      // Decision 0123: one height for all three; the winner stands out by
-      // its crown and its 56 face. Decision 0182: each is a record card.
-      expect(first.height, second.height);
-      expect(second.height, third.height);
+      // Decision 0224: a podium on the wall — the winner taller in the
+      // middle, each place an Anton 「01 / 02 / 03」, no medal dots and no
+      // record cards.
+      expect(first.height, greaterThan(second.height));
+      expect(second.bottom, moreOrLessEquals(first.bottom));
+      expect(third.bottom, moreOrLessEquals(first.bottom));
       for (final place in <int>[1, 2, 3]) {
-        expect(_key('intel-rank-medal-$place'), findsOneWidget);
+        expect(_key('intel-rank-medal-$place'), findsNothing);
+        expect(_key('intel-rank-index-$place'), findsOneWidget);
+        expect(find.text('0$place'), findsOneWidget);
       }
-      final medal = tester.widget<Container>(_key('intel-rank-medal-2'));
-      expect((medal.decoration! as BoxDecoration).color, LoopColors.brass);
-      expect((medal.decoration! as BoxDecoration).shape, BoxShape.circle);
-      expect(find.byType(LoopRecordCard), findsNWidgets(3));
+      expect(find.byType(LoopRecordCard), findsNothing);
       expect(find.text('权重 1.1'), findsOneWidget);
       expect(find.textContaining('人有算力'), findsNothing);
     });

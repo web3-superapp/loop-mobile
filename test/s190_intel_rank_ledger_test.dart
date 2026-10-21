@@ -340,9 +340,12 @@ void main() {
         matching: find.byType(LoopChromePlate),
       );
       expect(ledger, findsOneWidget);
-      // The face is the dark card; only the edge is chrome.
+      // Decision 0224: a brushed dark face inside a chrome bevel.
       final face = tester.widget<DecoratedBox>(_key('loop-chrome-plate-face'));
-      expect((face.decoration as BoxDecoration).color, LoopColors.card);
+      expect(
+        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
+        LoopChromePlate.faceColors,
+      );
       expect(find.text('我的名次\n第 12 名'), findsOneWidget);
       expect(find.text('算力 1,240'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
@@ -364,16 +367,24 @@ void main() {
       expect(_filledBoxes(tester, LoopColors.yellow), 0);
       expect(find.text('前三名'), findsOneWidget);
       for (final place in <int>[1, 2, 3]) {
-        final medal = tester.widget<Container>(_key('intel-rank-medal-$place'));
-        // Decision 0212: a round medal.
-        expect((medal.decoration! as BoxDecoration).shape, BoxShape.circle);
+        // Decision 0224: the place is an Anton index, not a medal dot.
+        expect(_key('intel-rank-medal-$place'), findsNothing);
+        expect(_key('intel-rank-index-$place'), findsOneWidget);
       }
+      // Decision 0224: the podium stands on the wall, not on record cards.
+      expect(
+        find.descendant(
+          of: _key('intel-rank-podium'),
+          matching: _key('intel-rank-podium-wall'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: _key('intel-rank-community-community-2'),
           matching: find.byType(LoopRecordCard),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(tester.takeException(), isNull);
     });
@@ -574,7 +585,12 @@ void main() {
           ),
         ),
       );
-      expect(find.text('我的名次\n还没有名次'), findsOneWidget);
+      expect(find.textContaining('还没有名次'), findsOneWidget);
+      // Decision 0224: the grey crown line where the figure would be.
+      expect(
+        find.byKey(const ValueKey<String>('intel-rank-me-empty-crown')),
+        findsOneWidget,
+      );
       expect(find.textContaining('TOP '), findsNothing);
       expect(_key('intel-rank-self-row'), findsNothing);
       await tester.tap(find.text('邀请中心'));

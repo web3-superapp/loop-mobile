@@ -3,7 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -21,6 +23,149 @@ import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 //
 // Nothing here loops: the MEME home's moving pieces (the band, the hand's
 // sheen) stay in `launch2_atmosphere.dart`.
+
+// ---- ambient motion ----------------------------------------------------------
+
+/// What [loopAmbientMotionProvider] answers when nobody overrides it. The App
+/// runs its brand loops (the banner hand's sheen, the chrome plates' sheen,
+/// the trade band); `test/flutter_test_config.dart` turns them off for the
+/// whole suite so a settling pump has an end, and a test that is about the
+/// motion turns it back on through the provider.
+bool debugLoopAmbientMotionDefault = true;
+
+/// Whether the brand pieces' looping motion runs at all (decisions 0220,
+/// 0224). The system's reduced-motion setting always stops it too.
+final loopAmbientMotionProvider = Provider<bool>(
+  (ref) => debugLoopAmbientMotionDefault,
+);
+
+/// Whether looping motion may run in [context].
+bool loopAmbientMotion(BuildContext context, WidgetRef ref) =>
+    ref.watch(loopAmbientMotionProvider) && !LoopMotion.reduced(context);
+
+/// A light band sweeping across [child] once every [cycle] (the first 35 %
+/// of it), the way the banner's chrome hand shines (decision 0220 §4); never
+/// under reduced motion or with [loopAmbientMotionProvider] off. It paints
+/// only where [child] paints (`srcATop`), so wrap the surface, not its words.
+class LoopSheen extends ConsumerStatefulWidget {
+  const LoopSheen({
+    required this.child,
+    super.key,
+    this.sheenKey,
+    this.peak = const Color(0x8CFFFFFF),
+    this.angle = 15,
+    this.overlay = false,
+  });
+
+  static const Duration cycle = Duration(seconds: 6);
+
+  /// Paint the band over [child] as its own layer instead of masking it:
+  /// for a surface whose words sit above the sheen (the chrome plate).
+  final bool overlay;
+
+  final Widget child;
+
+  /// The key the sweeping layer carries while it is drawn.
+  final Key? sheenKey;
+
+  /// The band's brightest colour.
+  final Color peak;
+
+  /// The band's tilt, in degrees.
+  final double angle;
+
+  @override
+  ConsumerState<LoopSheen> createState() => _LoopSheenState();
+}
+
+class _LoopSheenState extends ConsumerState<LoopSheen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _run = AnimationController(
+    vsync: this,
+    duration: LoopSheen.cycle,
+  );
+
+  @override
+  void dispose() {
+    _run.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final moving = loopAmbientMotion(context, ref);
+    if (moving && !_run.isAnimating) {
+      unawaited(_run.repeat());
+    } else if (!moving && _run.isAnimating) {
+      _run.stop();
+    }
+    if (!moving) return widget.child;
+    final peak = widget.peak;
+    final clear = peak.withValues(alpha: 0);
+    return AnimatedBuilder(
+      animation: _run,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _run.value / 0.35;
+        if (t >= 1) return child!;
+        // 120 % → −20 % of a 300 %-wide band, eased like the design.
+        final p = 1.2 - 1.4 * Curves.easeInOut.transform(t);
+        if (widget.overlay) {
+          return Stack(
+            fit: StackFit.passthrough,
+            children: <Widget>[
+              child!,
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, box) => ClipRect(
+                    child: OverflowBox(
+                      alignment: Alignment.topLeft,
+                      minWidth: 3 * box.maxWidth,
+                      maxWidth: 3 * box.maxWidth,
+                      child: Transform.translate(
+                        offset: Offset(-2 * box.maxWidth * p, 0),
+                        child: DecoratedBox(
+                          key: widget.sheenKey,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: <Color>[clear, peak, clear],
+                              stops: const <double>[0.42, 0.5, 0.58],
+                              transform: GradientRotation(
+                                widget.angle * math.pi / 180,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return ShaderMask(
+          key: widget.sheenKey,
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) =>
+              LinearGradient(
+                colors: <Color>[clear, peak, clear],
+                stops: const <double>[0.42, 0.5, 0.58],
+                transform: GradientRotation(widget.angle * math.pi / 180),
+              ).createShader(
+                Rect.fromLTWH(
+                  bounds.left - 2 * bounds.width * p,
+                  bounds.top,
+                  3 * bounds.width,
+                  bounds.height,
+                ),
+              ),
+          child: child,
+        );
+      },
+    );
+  }
+}
 
 /// Decodes [paths] (every atmosphere piece by default) ahead of a page's
 /// first frame, so none of them pops in after the page.
@@ -618,18 +763,7 @@ class LoopSprayHeading extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           if (number != null) ...<Widget>[
-            Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Text(
-                  number.toString().padLeft(2, '0'),
-                  style: LoopType.sectionIndex.copyWith(
-                    color: LoopColors.yellow,
-                  ),
-                ),
-                Positioned(right: -12, top: -8, width: 26, child: _splat()),
-              ],
-            ),
+            LoopSprayIndex(index: number),
             const SizedBox(width: 10),
             Expanded(
               child: Padding(
@@ -749,6 +883,16 @@ class LoopAtmoBoard extends StatelessWidget {
     ),
   );
 }
+
+/// 聊天's conversation board (decision 0224): Chalk 10 % over an Ink 35 %
+/// underlay, composited into one fill so the wall shows through at 58.5 %
+/// (`α = 0.10 + 0.35 × 0.90 = 0.415`; colour `(0.10·#F2F2F4 + 0.315·#09090B)
+/// / 0.415 = #414143`). One fill, not two layers: a row slides over its
+/// swipe actions, and two translucent layers would double where they meet.
+const Color loopChatBoardFill = Color(0x6A414143);
+
+/// The hairline between two rows on [loopChatBoardFill]: Chalk 8 %.
+const Color loopChatBoardHairline = Color(0x14F2F2F4);
 
 /// The greyscale matrix the empty-state crown and the 2nd / 3rd crowns use.
 const List<double> loopGreyMatrix = <double>[
@@ -895,68 +1039,218 @@ const LinearGradient loopChromeGradient = LinearGradient(
   stops: <double>[0, 0.35, 0.7, 1],
 );
 
-/// The chrome plate (decision 0221): a 1.5 px chrome edge around a card
-/// face, with a faint chrome light across the face's top. The face stays the
-/// dark card, so the plate does not glare and its figure (Arimo 32 / 700
-/// Yellow) reads on the card ground.
+/// What a chrome plate wears in its bottom-right corner (decision 0224).
+enum LoopChromePlateMark {
+  /// The faded flat crown (我的名次).
+  crown,
+
+  /// The faded 「IN THE LOOP」 tag (总资产).
+  tag,
+}
+
+/// The chrome plate (decisions 0221, 0224): a brand piece, so it may carry
+/// spray and motion where a data row may not.
+///
+/// - The edge: a 2 px chrome bevel (chrome1 → chrome3 → chrome2) with a 1 px
+///   Ink 30 % line inside it, two boxes deep and no blurred shadow.
+/// - The face: brushed dark metal (`#2A2A31 → #141418 → #1F1F25` on the
+///   diagonal), the wall at 20 %, a Purple fog at 15 % in the top-right
+///   corner and a chrome light band (chrome1 12 % → clear, −20°, about 40 %
+///   wide).
+/// - The corner: a faded grey crown or tag at 25 %, its corner under the
+///   figure.
+/// - The motion: the banner hand's sheen across the face every 6 s
+///   ([LoopSheen]), never under reduced motion; the words are not swept.
 class LoopChromePlate extends StatelessWidget {
   const LoopChromePlate({
     required this.child,
     super.key,
     this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 14),
     this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    this.mark = LoopChromePlateMark.crown,
   });
 
   final Widget child;
   final EdgeInsets padding;
   final EdgeInsets margin;
+  final LoopChromePlateMark mark;
 
-  static const double edge = 1.5;
+  /// The chrome bevel's width.
+  static const double edge = 2;
+
+  /// The Ink line inside the bevel.
+  static const double innerLine = 1;
+
+  /// The face's brushed-metal stops.
+  static const List<Color> faceColors = <Color>[
+    Color(0xFF2A2A31),
+    Color(0xFF141418),
+    Color(0xFF1F1F25),
+  ];
+
+  /// The bevel's chrome stops.
+  static const List<Color> bevelColors = <Color>[
+    LoopColors.chrome1,
+    LoopColors.chrome3,
+    LoopColors.chrome2,
+  ];
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: margin,
-    child: DecoratedBox(
-      key: const ValueKey<String>('loop-chrome-plate-edge'),
-      decoration: const BoxDecoration(
-        gradient: loopChromeGradient,
-        borderRadius: LoopRadius.card,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(edge),
+  Widget build(BuildContext context) {
+    const faceRadius = BorderRadius.all(
+      Radius.circular(LoopRadius.cardValue - edge - innerLine),
+    );
+    final corner = mark == LoopChromePlateMark.crown
+        ? LoopAtmoAssets.crownFlat
+        : LoopAtmoAssets.tagInLoop;
+    final layers = <Widget>[
+      // The wall at 20 % — the plate is cut from the same wall.
+      const Positioned.fill(
         child: DecoratedBox(
-          key: const ValueKey<String>('loop-chrome-plate-face'),
+          key: ValueKey<String>('loop-chrome-plate-wall'),
           decoration: BoxDecoration(
-            color: LoopColors.card,
-            borderRadius: BorderRadius.circular(LoopRadius.cardValue - edge),
-          ),
-          child: Stack(
-            children: <Widget>[
-              // The chrome light: Chalk 7 % fading out a third of the way
-              // down, on the face's ground.
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    key: const ValueKey<String>('loop-chrome-plate-light'),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        LoopRadius.cardValue - edge,
-                      ),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment(0.2, 0.2),
-                        colors: <Color>[Color(0x12F0F0F3), Color(0x00F0F0F3)],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(padding: padding, child: child),
-            ],
+            image: DecorationImage(
+              image: AssetImage(LoopAtmoAssets.wall),
+              fit: BoxFit.cover,
+              opacity: 0.2,
+            ),
           ),
         ),
       ),
-    ),
+      Positioned(
+        right: -90,
+        top: -110,
+        width: 260,
+        height: 260,
+        child: Opacity(
+          opacity: 0.15,
+          child: loopAtmoArt(
+            LoopAtmoAssets.sprayPurple,
+            key: const ValueKey<String>('loop-chrome-plate-fog'),
+          ),
+        ),
+      ),
+      // The chrome light band: chrome1 12 % to clear, tilted −20°.
+      const Positioned.fill(
+        child: DecoratedBox(
+          key: ValueKey<String>('loop-chrome-plate-light'),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: <Color>[
+                Color(0x00F0F0F3),
+                Color(0x1FF0F0F3),
+                Color(0x00F0F0F3),
+              ],
+              stops: <double>[0.1, 0.3, 0.5],
+              transform: GradientRotation(-20 * math.pi / 180),
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        right: 6,
+        bottom: 4,
+        width: mark == LoopChromePlateMark.crown ? 74 : 64,
+        child: Opacity(
+          opacity: 0.25,
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.matrix(loopGreyMatrix),
+            child: Transform.rotate(
+              angle: -10 * math.pi / 180,
+              child: loopAtmoArt(
+                corner,
+                key: const ValueKey<String>('loop-chrome-plate-mark'),
+              ),
+            ),
+          ),
+        ),
+      ),
+      // The banner hand's sheen, across the face and under the words.
+      const Positioned.fill(
+        child: LoopSheen(
+          overlay: true,
+          peak: Color(0x33FFFFFF),
+          sheenKey: ValueKey<String>('loop-chrome-plate-sheen'),
+          child: SizedBox.expand(),
+        ),
+      ),
+    ];
+    return Padding(
+      padding: margin,
+      child: DecoratedBox(
+        key: const ValueKey<String>('loop-chrome-plate-edge'),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: bevelColors,
+            stops: <double>[0, 0.55, 1],
+          ),
+          borderRadius: LoopRadius.card,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(edge),
+          child: DecoratedBox(
+            key: const ValueKey<String>('loop-chrome-plate-inner'),
+            decoration: BoxDecoration(
+              color: const Color(0x4D09090B),
+              borderRadius: BorderRadius.circular(LoopRadius.cardValue - edge),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(innerLine),
+              // The face is the words' ancestor, so they are read against it.
+              child: DecoratedBox(
+                key: const ValueKey<String>('loop-chrome-plate-face'),
+                decoration: const BoxDecoration(
+                  borderRadius: faceRadius,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: faceColors,
+                    stops: <double>[0, 0.55, 1],
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: faceRadius,
+                  child: Stack(
+                    children: <Widget>[
+                      ...layers,
+                      Padding(padding: padding, child: child),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Anton index 「01」 in Yellow with a small splat at its top right — the
+/// section heading's number (decision 0220 §7), also the podium's place
+/// (decision 0224).
+class LoopSprayIndex extends StatelessWidget {
+  const LoopSprayIndex({required this.index, super.key});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
+    children: <Widget>[
+      Text(
+        index.toString().padLeft(2, '0'),
+        style: LoopType.sectionIndex.copyWith(color: LoopColors.yellow),
+      ),
+      Positioned(
+        right: -12,
+        top: -8,
+        width: 26,
+        child: IgnorePointer(child: LoopSprayHeading._splat()),
+      ),
+    ],
   );
 }
 

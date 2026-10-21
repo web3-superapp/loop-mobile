@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
-import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -28,13 +26,14 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 // board and its rows. Data comes from the same reads the desk already makes.
 
 /// Whether the home's looping motion (the trade band, the hand's sheen) runs
-/// at all. The system's reduced-motion setting always stops it too; widget
-/// tests turn it off so a settling pump has an end.
-final launch2AmbientMotionProvider = Provider<bool>((ref) => true);
+/// at all — since decision 0224 the shared [loopAmbientMotionProvider], so
+/// the chrome plates follow the same switch. The system's reduced-motion
+/// setting always stops it too.
+final launch2AmbientMotionProvider = loopAmbientMotionProvider;
 
 /// Whether looping motion may run in [context].
 bool launch2AmbientMotion(BuildContext context, WidgetRef ref) =>
-    ref.watch(launch2AmbientMotionProvider) && !LoopMotion.reduced(context);
+    loopAmbientMotion(context, ref);
 
 /// Decodes every atmosphere piece ahead of the home's first frame, so none of
 /// them pops in after the page.
@@ -84,90 +83,33 @@ class Launch2AtmoTitle extends StatelessWidget {
 // ---- the chrome hand ------------------------------------------------------
 
 /// The banner's chrome hand; every 6 s a light band sweeps across it (the
-/// first 35 % of the cycle), never under reduced motion.
-class Launch2ChromeHand extends ConsumerStatefulWidget {
+/// first 35 % of the cycle), never under reduced motion — the shared
+/// [LoopSheen] since decision 0224.
+class Launch2ChromeHand extends StatelessWidget {
   const Launch2ChromeHand({super.key});
 
-  static const Duration cycle = Duration(seconds: 6);
+  static const Duration cycle = LoopSheen.cycle;
 
   @override
-  ConsumerState<Launch2ChromeHand> createState() => _Launch2ChromeHandState();
-}
-
-class _Launch2ChromeHandState extends ConsumerState<Launch2ChromeHand>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _sheen = AnimationController(
-    vsync: this,
-    duration: Launch2ChromeHand.cycle,
-  );
-
-  @override
-  void dispose() {
-    _sheen.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final moving = launch2AmbientMotion(context, ref);
-    if (moving && !_sheen.isAnimating) {
-      unawaited(_sheen.repeat());
-    } else if (!moving && _sheen.isAnimating) {
-      _sheen.stop();
-    }
-    final hand = DecoratedBox(
-      decoration: const BoxDecoration(
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 16,
-            offset: Offset(0, 10),
-            spreadRadius: -18,
-          ),
-        ],
+  Widget build(BuildContext context) => KeyedSubtree(
+    key: const ValueKey<String>('launch2-atmo-hand'),
+    child: LoopSheen(
+      sheenKey: const ValueKey<String>('launch2-atmo-hand-sheen'),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Color(0x66000000),
+              blurRadius: 16,
+              offset: Offset(0, 10),
+              spreadRadius: -18,
+            ),
+          ],
+        ),
+        child: _art(LoopAtmoAssets.handChrome, fit: BoxFit.contain),
       ),
-      child: _art(LoopAtmoAssets.handChrome, fit: BoxFit.contain),
-    );
-    if (!moving) {
-      return KeyedSubtree(
-        key: const ValueKey<String>('launch2-atmo-hand'),
-        child: hand,
-      );
-    }
-    return AnimatedBuilder(
-      key: const ValueKey<String>('launch2-atmo-hand'),
-      animation: _sheen,
-      child: hand,
-      builder: (context, child) {
-        final t = _sheen.value / 0.35;
-        if (t >= 1) return child!;
-        // 120 % → −20 % of a 300 %-wide band, eased like the design.
-        final p = 1.2 - 1.4 * Curves.easeInOut.transform(t);
-        return ShaderMask(
-          key: const ValueKey<String>('launch2-atmo-hand-sheen'),
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) =>
-              const LinearGradient(
-                colors: <Color>[
-                  Color(0x00FFFFFF),
-                  Color(0x8CFFFFFF),
-                  Color(0x00FFFFFF),
-                ],
-                stops: <double>[0.42, 0.5, 0.58],
-                transform: GradientRotation(15 * math.pi / 180),
-              ).createShader(
-                Rect.fromLTWH(
-                  bounds.left - 2 * bounds.width * p,
-                  bounds.top,
-                  3 * bounds.width,
-                  bounds.height,
-                ),
-              ),
-          child: child,
-        );
-      },
-    );
-  }
+    ),
+  );
 }
 
 // ---- the live trade band ----------------------------------------------------

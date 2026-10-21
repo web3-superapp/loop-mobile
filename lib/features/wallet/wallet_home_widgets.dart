@@ -222,7 +222,11 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     // when the read failed (0188: 404 / 503 draw nothing).
     final Widget? sparkSlot = week != null
         ? week.drawable
-              ? WalletNetWorthSpark(history: week, onTap: _toggle)
+              // Decision 0224: a history that is zero all the way would be a
+              // flat Yellow rule; the slot carries a short spray stroke.
+              ? walletNetWorthAllZero(week)
+                    ? WalletNetWorthSparkSpray(onTap: _toggle)
+                    : WalletNetWorthSpark(history: week, onTap: _toggle)
               : WalletNetWorthSparkPlaceholder(onTap: _toggle)
         : weekState != null &&
               (weekState.phase == LoopChainViewPhase.loading ||
@@ -252,10 +256,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             key: ValueKey<String>('$keyPrefix-total-figure'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            // Decision 0212: the total is the page's key figure — Arimo
-            // 32 / 700 in Yellow (docs/42 附C §6).
+            // Decision 0224: the chrome plate's figure — Anton 40 in
+            // Yellow (docs/42 §2 keeps Anton for big figures).
             style: figureIsAmount
-                ? LoopType.keyFigure.copyWith(color: LoopColors.yellow)
+                ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
                 : LoopType.headingSm.copyWith(color: secondary),
           ),
         ),
@@ -264,7 +268,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
           Text(
             'USD',
             key: ValueKey<String>('$keyPrefix-total-unit'),
-            style: LoopType.figure.copyWith(color: secondary),
+            style: LoopType.body.copyWith(color: LoopColors.text2),
           ),
         ],
       ],
