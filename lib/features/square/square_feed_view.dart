@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
@@ -1045,8 +1047,11 @@ class _DeleteConfirm extends StatelessWidget {
   );
 }
 
-/// The 发帖 sheet: the text (n/500), an optional token from the MEME tokens
-/// opened in this run, and 「发布」 — the sheet's one Lime body.
+/// The 发帖 sheet: the text (n/500), an optional token, and 「发布」 — the
+/// sheet's one Lime body. Decision 0230: the token picker is always drawn;
+/// its candidates are the tokens opened in this run, the MEME v2 tokens held,
+/// then the MEME v2 projects already read (see [squareComposerTokenOptions]),
+/// with a local search over them.
 class SquareFeedComposer extends ConsumerStatefulWidget {
   const SquareFeedComposer({super.key});
 
@@ -1056,8 +1061,11 @@ class SquareFeedComposer extends ConsumerStatefulWidget {
 
 class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
   final TextEditingController _text = TextEditingController();
+  final TextEditingController _search = TextEditingController();
   SquareFeedTokenRef? _token;
   bool _sending = false;
+  bool _tokensExpanded = false;
+  bool _searching = false;
   String? _error;
 
   /// One key per (text, token) attempt: a retry of the same post replays,
@@ -1068,6 +1076,7 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
   @override
   void dispose() {
     _text.dispose();
+    _search.dispose();
     super.dispose();
   }
 
@@ -1108,9 +1117,155 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
     }
   }
 
+  /// The candidates and whether a source is still on its first read. The
+  /// MEME v2 reads are the ones the wallet and the MEME Tab already make; a
+  /// build or a server that closes MEME v2 leaves the run's own tokens.
+  ({List<SquareComposerTokenOption> options, bool loading}) _tokenSources() {
+    final recent = ref.watch(squareRecentTokensProvider);
+    if (!launch2SurfaceVisible(ref) || launch2ReadsBlocked(ref)) {
+      return (
+        options: squareComposerTokenOptions(recent: recent),
+        loading: false,
+      );
+    }
+    final held = ref.watch(launch2PositionsControllerProvider);
+    launch2LoadOnce(
+      ref,
+      held,
+      () => ref.read(launch2PositionsControllerProvider.notifier).load(),
+    );
+    final listProvider = launch2ListControllerProvider(Launch2ListScope.all);
+    final listed = ref.watch(listProvider);
+    launch2LoadOnce(ref, listed, () => ref.read(listProvider.notifier).load());
+    bool firstRead<T>(LoopChainResourceState<T> state) =>
+        state.phase == LoopChainViewPhase.loading && state.value == null;
+    return (
+      options: squareComposerTokenOptions(
+        recent: recent,
+        positions: held.value?.items ?? const <Launch2Position>[],
+        rows: listed.value?.items ?? const <Launch2InstanceRow>[],
+      ),
+      loading: firstRead(held) || firstRead(listed),
+    );
+  }
+
+  Widget _tokenChip(SquareComposerTokenOption option) => LoopSeg(
+    key: ValueKey<String>('square-composer-token-${option.ref.id}'),
+    label: option.ref.symbol,
+    quiet: true,
+    selected: _token == option.ref,
+    onSelected: _sending ? null : () => setState(() => _token = option.ref),
+  );
+
+  Widget _tokenPicker() {
+    final sources = _tokenSources();
+    final options = sources.options;
+    const padding = EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      12,
+    );
+    if (options.isEmpty) {
+      return Padding(
+        padding: padding,
+        child: Text(
+          sources.loading ? '正在读取代币…' : '暂时读不到代币，稍后再试',
+          key: const ValueKey<String>('square-composer-token-empty'),
+          style: LoopType.caption,
+        ),
+      );
+    }
+    final query = _searching ? _search.text.trim() : '';
+    final pool = query.isEmpty
+        ? options
+        : options
+              .where((option) => option.matches(query))
+              .toList(growable: false);
+    final shown = _tokensExpanded || pool.length <= squareComposerTokenChips
+        ? pool
+        : pool.take(squareComposerTokenChips).toList(growable: false);
+    final hidden = pool.length - shown.length;
+    final selected = _token;
+    final pinned =
+        selected != null && !shown.any((option) => option.ref == selected)
+        ? options.firstWhere(
+            (option) => option.ref == selected,
+            orElse: () =>
+                SquareComposerTokenOption(ref: selected, name: selected.symbol),
+          )
+        : null;
+    return Padding(
+      padding: padding,
+      child: Column(
+        key: const ValueKey<String>('square-composer-tokens'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              LoopSeg(
+                key: const ValueKey<String>('square-composer-token-none'),
+                label: '不带代币',
+                quiet: true,
+                selected: _token == null,
+                onSelected: _sending
+                    ? null
+                    : () => setState(() => _token = null),
+              ),
+              if (pinned != null) _tokenChip(pinned),
+              for (final option in shown) _tokenChip(option),
+              if (hidden > 0)
+                LoopSeg(
+                  key: const ValueKey<String>('square-composer-token-more'),
+                  label: '更多 $hidden',
+                  quiet: true,
+                  selected: false,
+                  onSelected: () => setState(() => _tokensExpanded = true),
+                ),
+              LoopSeg(
+                key: const ValueKey<String>('square-composer-token-search'),
+                label: '搜索代币',
+                icon: 'search',
+                quiet: true,
+                selected: _searching,
+                onSelected: () => setState(() {
+                  _searching = !_searching;
+                  if (!_searching) _search.clear();
+                }),
+              ),
+            ],
+          ),
+          if (_searching) ...<Widget>[
+            const SizedBox(height: 10),
+            TextField(
+              key: const ValueKey<String>('square-composer-token-search-field'),
+              controller: _search,
+              autofocus: true,
+              enabled: !_sending,
+              textInputAction: TextInputAction.search,
+              style: LoopType.body,
+              decoration: loopFormFieldDecoration(hint: '按代码或名称搜索'),
+              onChanged: (_) => setState(() {}),
+            ),
+            if (query.isNotEmpty && pool.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '没有匹配的代币',
+                  key: const ValueKey<String>('square-composer-token-no-match'),
+                  style: LoopType.caption,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final recent = ref.watch(squareRecentTokensProvider);
     final length = _length;
     final over = length > SquareFeedPost.textMax;
     final canSend = length > 0 && !over && !_sending;
@@ -1137,42 +1292,8 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
             onChanged: (_) => setState(() => _error = null),
           ),
         ),
-        if (recent.isNotEmpty) ...<Widget>[
-          const LoopLabel('引用代币（可不选）'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              0,
-              LoopSpacing.page,
-              12,
-            ),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                LoopSeg(
-                  key: const ValueKey<String>('square-composer-token-none'),
-                  label: '不带代币',
-                  quiet: true,
-                  selected: _token == null,
-                  onSelected: _sending
-                      ? null
-                      : () => setState(() => _token = null),
-                ),
-                for (final token in recent)
-                  LoopSeg(
-                    key: ValueKey<String>('square-composer-token-${token.id}'),
-                    label: token.symbol,
-                    quiet: true,
-                    selected: _token == token,
-                    onSelected: _sending
-                        ? null
-                        : () => setState(() => _token = token),
-                  ),
-              ],
-            ),
-          ),
-        ],
+        const LoopLabel('关联代币（可不选）'),
+        _tokenPicker(),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
