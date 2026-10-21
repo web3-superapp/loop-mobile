@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:uuid/uuid.dart';
 
@@ -529,6 +530,94 @@ final class SquareRecentTokens extends Notifier<List<SquareFeedTokenRef>> {
       ...state.where((held) => held != token),
     ].take(limit).toList(growable: false);
   }
+}
+
+/// One token the composer offers (decision 0230): the ref a post carries,
+/// plus the name the search reads. Never sent beyond [ref].
+@immutable
+final class SquareComposerTokenOption {
+  const SquareComposerTokenOption({required this.ref, required this.name});
+
+  final SquareFeedTokenRef ref;
+
+  /// The project name; a token opened in this run has only its symbol.
+  final String name;
+
+  /// Whether [query] (already trimmed) is in the ticker or the name, any case.
+  bool matches(String query) {
+    final needle = query.toLowerCase();
+    if (needle.isEmpty) return true;
+    final ticker = ref.symbol.toLowerCase();
+    return ticker.contains(needle) ||
+        ticker.replaceFirst(r'$', '').contains(needle) ||
+        name.toLowerCase().contains(needle);
+  }
+}
+
+/// How many token capsules the composer draws before 「更多」.
+const int squareComposerTokenChips = 8;
+
+/// Decision 0230: the composer's token candidates, in order and without a
+/// repeat — ① the MEME tokens opened in this run ([recent]); ② the MEME v2
+/// tokens this account holds ([positions], a row the wallet would draw);
+/// ③ the MEME v2 projects already read for the MEME Tab ([rows]). Nothing
+/// here asks the server; every source is a read the app already makes.
+List<SquareComposerTokenOption> squareComposerTokenOptions({
+  List<SquareFeedTokenRef> recent = const <SquareFeedTokenRef>[],
+  List<Launch2Position> positions = const <Launch2Position>[],
+  List<Launch2InstanceRow> rows = const <Launch2InstanceRow>[],
+}) {
+  final out = <SquareComposerTokenOption>[];
+  final seen = <SquareFeedTokenRef>{};
+  void add(SquareComposerTokenOption option) {
+    if (option.ref.id.isEmpty || option.ref.symbol.trim().isEmpty) return;
+    if (seen.add(option.ref)) out.add(option);
+  }
+
+  for (final token in recent) {
+    add(SquareComposerTokenOption(ref: token, name: token.symbol));
+  }
+  for (final position in positions) {
+    if (!_squareComposerHeld(position)) continue;
+    add(
+      SquareComposerTokenOption(
+        ref: SquareFeedTokenRef(
+          kind: SquareFeedTokenKind.launch2,
+          id: position.instanceId,
+          symbol: position.ticker,
+          logoUrl: position.logoUrl,
+        ),
+        name: position.name,
+      ),
+    );
+  }
+  for (final row in rows) {
+    if (row.stage == Launch2Stage.closedNoHolders) continue;
+    add(
+      SquareComposerTokenOption(
+        ref: SquareFeedTokenRef(
+          kind: SquareFeedTokenKind.launch2,
+          id: row.instanceId,
+          symbol: row.ticker,
+          logoUrl: row.logoUrl,
+        ),
+        name: row.name,
+      ),
+    );
+  }
+  return List<SquareComposerTokenOption>.unmodifiable(out);
+}
+
+/// The wallet's own rule for a held MEME v2 position (decision 0217): a
+/// token balance, the curve's net, or a project NFT.
+bool _squareComposerHeld(Launch2Position position) {
+  final balance = position.holding?.memeBalance;
+  if (balance != null) {
+    if (balance > Decimal.zero) return true;
+  } else if (position.curve.net > Decimal.zero) {
+    return true;
+  }
+  return position.nftHeld > 0;
 }
 
 /// A fresh `Idempotency-Key` for one composed post. The composer keeps it
