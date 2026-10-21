@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
@@ -45,6 +46,14 @@ final class _Launch2 implements Launch2Gateway {
   Future<Never> _unavailable() => Future<Never>.error(
     const LoopChainException(LoopChainFailureKind.unavailable),
   );
+
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
+  }) => _unavailable();
 
   @override
   Future<Launch2InstanceDetail> loadInstance(String instanceId) =>
