@@ -2197,12 +2197,12 @@ class LoopSeg extends StatelessWidget {
     this.quiet = false,
     this.dimmed = false,
     this.capsuleHeight,
-    this.splat = false,
+    this.splat = true,
   });
 
   /// The chosen capsule wears the small Yellow splat sticker on its top-left
-  /// corner, as MEME's stage chips do (decisions 0220 §6, 0221). Only on a
-  /// [capsuleHeight] chip.
+  /// corner, as MEME's stage chips do (decisions 0220 §6, 0221). On by
+  /// default since decision 0222: every solid Purple choice wears it.
   final bool splat;
 
   /// The drawn height of the capsule, when it is lower than the finger's
@@ -2332,7 +2332,7 @@ class LoopSeg extends StatelessWidget {
       selected: selected,
       label: label,
       enabled: onSelected != null,
-      child: chip,
+      child: splat && selected ? loopSplatted(chip) : chip,
     );
   }
 
@@ -2472,7 +2472,7 @@ class LoopSegBar extends StatelessWidget {
     this.icons,
     this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 8),
     this.dimmed,
-    this.splat = false,
+    this.splat = true,
   }) : assert(icons == null || icons.length == labels.length),
        assert(dimmed == null || dimmed.length == labels.length);
 
@@ -2487,8 +2487,8 @@ class LoopSegBar extends StatelessWidget {
   /// ([LoopSeg.dimmed]); a tap on it still reaches [onSelected].
   final List<bool>? dimmed;
 
-  /// The chosen capsule wears the Yellow splat (decision 0221: a bar on a
-  /// tab page's wall chooses the way MEME's stage chips do).
+  /// The chosen capsule wears the Yellow splat (decisions 0221, 0222: on by
+  /// default, as on MEME's stage chips).
   final bool splat;
 
   /// The drawn height of every capsule in the bar (docs/42 附C §4: 36).
@@ -2652,43 +2652,46 @@ class LoopButton extends StatelessWidget {
         label: semanticLabel ?? label,
         child: Opacity(
           opacity: enabled ? 1 : 0.4,
-          child: _LoopButtonFace(
-            key: ValueKey<String>(
-              'loop-button-${primary ? 'primary' : 'secondary'}',
-            ),
-            onPressed: onPressed,
-            fill: fill,
-            pressedFill: pressedFill,
-            edge: edge,
-            child: Container(
-              // Every button keeps 48: docs/42 附C §4 asks 44 for a
-              // secondary one, but the Android 48 dp tap-target guideline the
-              // accessibility suite holds wins (decision 0212).
-              constraints: BoxConstraints(
-                minHeight: LoopTouch.primaryButton,
-                minWidth: block ? double.infinity : LoopTouch.minimum,
+          child: _chosenSplat(
+            chosen,
+            _LoopButtonFace(
+              key: ValueKey<String>(
+                'loop-button-${primary ? 'primary' : 'secondary'}',
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 23),
-              child: Row(
-                mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  if (icon != null) ...<Widget>[
-                    LoopIcon(icon!, size: 17, color: foreground),
-                    if (label.isNotEmpty) const SizedBox(width: 10),
-                  ],
-                  // An empty label is the glyph-only button, which takes its
-                  // whole meaning from `semanticLabel`.
-                  if (label.isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: (wide ? LoopType.titleLg : LoopType.action)
-                            .copyWith(color: foreground),
+              onPressed: onPressed,
+              fill: fill,
+              pressedFill: pressedFill,
+              edge: edge,
+              child: Container(
+                // Every button keeps 48: docs/42 附C §4 asks 44 for a
+                // secondary one, but the Android 48 dp tap-target guideline the
+                // accessibility suite holds wins (decision 0212).
+                constraints: BoxConstraints(
+                  minHeight: LoopTouch.primaryButton,
+                  minWidth: block ? double.infinity : LoopTouch.minimum,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 23),
+                child: Row(
+                  mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    if (icon != null) ...<Widget>[
+                      LoopIcon(icon!, size: 17, color: foreground),
+                      if (label.isNotEmpty) const SizedBox(width: 10),
+                    ],
+                    // An empty label is the glyph-only button, which takes its
+                    // whole meaning from `semanticLabel`.
+                    if (label.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: (wide ? LoopType.titleLg : LoopType.action)
+                              .copyWith(color: foreground),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -2696,6 +2699,10 @@ class LoopButton extends StatelessWidget {
       ),
     );
   }
+
+  /// A chosen choice wears the Yellow splat (decision 0222).
+  static Widget _chosenSplat(bool chosen, Widget face) =>
+      chosen ? loopSplatted(face) : face;
 }
 
 /// The 12 radius face of a [LoopButton] (decision 0211): its fill, its edge

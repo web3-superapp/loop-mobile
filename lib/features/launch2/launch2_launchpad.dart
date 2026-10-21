@@ -24,7 +24,6 @@ import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
-import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
@@ -524,16 +523,15 @@ class Launch2DeskFolio extends ConsumerWidget {
 }
 
 /// The campaign page (decision 0165; redrawn by decision 0212, then by S264
-/// — decision 0220, the atmosphere banner — and by decision 0221 E). A 220
-/// high, 16 radius card. Its ground is the admin's cover when the campaign
-/// has one and it loads — whole, opaque, under the bottom 55 % black wash
-/// only — and otherwise the default art: the wall under Purple and Yellow
-/// fog and a left-to-right Ink wash, the chrome hand (it hangs 14 / 16 past
-/// the card's right and bottom edges) wearing the Yellow crown, and the
-/// tilted 「IN THE LOOP」 tag at the top right. Over either: on the left the
-/// title (26 / 700, Chalk) over a Purple brush stroke, the subtitle, the
-/// foot line 「10-19 至 10-26 · 剩 6 天」 and a solid Yellow 「去参与」 40 high.
-/// The whole card is one tap.
+/// — decision 0220, the atmosphere banner). A 220 high, 16 radius card that
+/// always stands on the default art (decision 0222): the wall under Purple
+/// and Yellow fog and a left-to-right Ink wash, the chrome hand (it hangs
+/// 14 / 16 past the card's right and bottom edges, its sheen sweeping every
+/// 6 s) wearing the Yellow crown, and the tilted 「IN THE LOOP」 tag at the top
+/// right. Only the words change per campaign: on the left the title (26 /
+/// 700, Chalk) over a Purple brush stroke, the subtitle, the foot line
+/// 「10-19 至 10-26 · 剩 6 天」 and a solid Yellow 「去参与」 40 high. A cover the
+/// admin set is not requested. The whole card is one tap.
 class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   const Launch2DeskCampaignCard({
     required this.campaign,
@@ -556,91 +554,12 @@ class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
 
 class _Launch2DeskCampaignCardState
     extends ConsumerState<Launch2DeskCampaignCard> {
-  /// The cover address that failed to load; it is not tried again.
-  String? _failedCover;
-
   void _open() {
     final opener = ref.read(launch2ExternalLinkOpenerProvider);
     launch2OpenCampaign(
       widget.campaign,
       push: widget.onNavigate,
       openExternal: (uri) => unawaited(opener(context, uri)),
-    );
-  }
-
-  void _coverFailed(String url) {
-    if (_failedCover == url) return;
-    // The error arrives during a build of the image; the card redraws
-    // without it on the next frame.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _failedCover = url);
-    });
-  }
-
-  /// The admin's cover, whole: `BoxFit.cover`, centred, fully opaque, with
-  /// only the bottom 55 % black wash (docs/42 §5) — decision 0221 E. Until
-  /// its first frame is in, and if it fails, the default art stands in its
-  /// place, so a cover that fails never flashes anything.
-  Widget _cover(String url, Widget defaultArt) {
-    final source = loopRemoteImageSource(url);
-    return Image(
-      key: ValueKey<String>(
-        'launch2-campaign-cover-${widget.campaign.campaignId}',
-      ),
-      image: source,
-      fit: BoxFit.cover,
-      alignment: Alignment.center,
-      gaplessPlayback: true,
-      excludeFromSemantics: true,
-      frameBuilder: (context, child, frame, synchronous) {
-        if (!synchronous && frame == null) return defaultArt;
-        return Stack(
-          key: const ValueKey<String>('launch2-campaign-cover-layer'),
-          fit: StackFit.expand,
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: LoopRadius.card,
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  const ColoredBox(color: Color(0xFF0E0D12)),
-                  child,
-                  const Align(
-                    alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(
-                      heightFactor: 0.55,
-                      widthFactor: 1,
-                      child: DecoratedBox(
-                        key: ValueKey<String>('launch2-campaign-cover-wash'),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: <Color>[
-                              Color(0x0009090B),
-                              Color(0xD909090B),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: LoopRadius.card,
-                      border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        _coverFailed(url);
-        return defaultArt;
-      },
     );
   }
 
@@ -739,8 +658,6 @@ class _Launch2DeskCampaignCardState
     final campaign = widget.campaign;
     final now = ref.read(launch2ClockProvider)();
     final stamp = launch2CampaignStamp(campaign, now);
-    final cover = campaign.coverUrl;
-    final hasCover = cover != null && cover != _failedCover;
     final id = campaign.campaignId;
     final subtitle = campaign.subtitle;
     Widget art(String path, {double? width}) => Image.asset(
@@ -751,10 +668,9 @@ class _Launch2DeskCampaignCardState
       gaplessPlayback: true,
       errorBuilder: (context, error, stackTrace) => SizedBox(width: width),
     );
-    final defaultArt = _defaultArt(art);
-    // Decision 0221 E: the admin's cover when it has one and it loads; the
-    // default art otherwise — and while it loads.
-    final ground = hasCover ? _cover(cover, defaultArt) : defaultArt;
+    // Decision 0222: every campaign stands on the default art; only the
+    // words change. A cover the admin set is neither requested nor drawn.
+    final ground = _defaultArt(art);
     return Semantics(
       button: true,
       label: <String>[
@@ -838,8 +754,7 @@ class _Launch2DeskCampaignCardState
   }
 }
 
-/// The ground a campaign card keeps when it has no cover, or while its cover
-/// is loading: the wall texture at 90 % (S264).
+/// The campaign card's ground: the wall texture at 90 % (S264).
 class _CampaignGround extends StatelessWidget {
   const _CampaignGround();
 

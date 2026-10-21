@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart'
     show LoopQrView, loopPosterExportMessage;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -975,52 +976,60 @@ class _LevelCell extends StatelessWidget {
           'L${level.level}，加成 ${level.boostPercent}%，'
           '有效关系 ${level.counts.valid}，待验证 ${level.counts.pending}',
       child: ExcludeSemantics(
-        child: Container(
-          key: ValueKey<String>('referral-level-cell-${level.level}'),
-          padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
-          // Decision 0210 / S241b: the current depth is a selected cell —
-          // purple 9 % ground behind a purple edge, yellow figures — not a
-          // yellow slab; the other depths are flat outlined cells.
-          // Decision 0211: filled tiles with a 10 radius, no edge.
-          decoration: BoxDecoration(
-            color: current ? LoopColors.purpleSelected : LoopColors.card2,
-            borderRadius: LoopRadius.tile,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              // S249: a narrow cell scales the label down rather than
-              // clipping 「L1 · 10%」.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'L${level.level} · ${level.boostPercent}%',
-                  maxLines: 1,
-                  softWrap: false,
-                  // R13 / R12, the steps `LoopStatGrid` draws (decision
-                  // 0192); the five-across strip is not a two-column grid,
-                  // so the cell stays local.
-                  style: LoopType.kicker.copyWith(
-                    color: current ? LoopColors.onPurple : LoopColors.text2,
+        // Decision 0222: the current depth is a solid Purple choice, so it
+        // wears the splat.
+        child: _splatIf(
+          current,
+          Container(
+            key: ValueKey<String>('referral-level-cell-${level.level}'),
+            padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
+            // Decision 0210 / S241b: the current depth is a selected cell —
+            // purple 9 % ground behind a purple edge, yellow figures — not a
+            // yellow slab; the other depths are flat outlined cells.
+            // Decision 0211: filled tiles with a 10 radius, no edge.
+            decoration: BoxDecoration(
+              color: current ? LoopColors.purpleSelected : LoopColors.card2,
+              borderRadius: LoopRadius.tile,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // S249: a narrow cell scales the label down rather than
+                // clipping 「L1 · 10%」.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'L${level.level} · ${level.boostPercent}%',
+                    maxLines: 1,
+                    softWrap: false,
+                    // R13 / R12, the steps `LoopStatGrid` draws (decision
+                    // 0192); the five-across strip is not a two-column grid,
+                    // so the cell stays local.
+                    style: LoopType.kicker.copyWith(
+                      color: current ? LoopColors.onPurple : LoopColors.text2,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 7),
-              Text(
-                '${level.counts.valid}',
-                maxLines: 1,
-                style: LoopType.figure.copyWith(
-                  color: current ? LoopColors.yellow : LoopColors.chalk,
+                const SizedBox(height: 7),
+                Text(
+                  '${level.counts.valid}',
+                  maxLines: 1,
+                  style: LoopType.figure.copyWith(
+                    color: current ? LoopColors.yellow : LoopColors.chalk,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  static Widget _splatIf(bool chosen, Widget cell) =>
+      chosen ? loopSplatted(cell) : cell;
 }
 
 /// `关系深度如何计算`: the prototype's three-row explanation of what L1, L2

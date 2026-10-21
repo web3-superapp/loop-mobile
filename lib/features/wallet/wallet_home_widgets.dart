@@ -1099,8 +1099,6 @@ class WalletAssetTabs extends StatelessWidget {
             quiet: true,
             selected: index == selectedIndex,
             capsuleHeight: LoopSegBar.capsuleHeight,
-            // Decision 0221: chosen as MEME's chips are, with the splat.
-            splat: true,
             onSelected: () => onSelected(index),
           ),
         ],
