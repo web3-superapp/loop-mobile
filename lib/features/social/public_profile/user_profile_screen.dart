@@ -481,11 +481,11 @@ class _ProfileHeader extends StatelessWidget {
                       copyKey: const ValueKey<String>(
                         'user-profile-copy-loop-id',
                       ),
-                      // M19 an inline LOOP ID: figure 13 at 500, text2.
+                      // M19 an inline LOOP ID: figureSm 13 at 500, text2 (decision 0229).
                       style: LoopTypography.withWeight(
-                        LoopType.figure,
+                        LoopType.figureSm,
                         FontWeight.w500,
-                      ).copyWith(color: LoopColors.text2),
+                      ),
                     ),
                   ],
                 ),
@@ -541,8 +541,9 @@ class _Count extends StatelessWidget {
     children: <Widget>[
       Text(
         loopFormatDecimal(Decimal.fromInt(value), maxFractionDigits: 0),
-        // R28 (decision 0191 H2): the figure at 13/700, the word at bodySm.
-        style: LoopTypography.withWeight(LoopType.figure, FontWeight.w700),
+        // R28: the figure at the body2 size, 700, beside its word (decision
+        // 0229; 13 under 0191 H2).
+        style: LoopTypography.withWeight(LoopType.figureBody, FontWeight.w700),
       ),
       const SizedBox(width: 4),
       Text(label, style: LoopType.bodySm),

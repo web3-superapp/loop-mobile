@@ -203,7 +203,12 @@ class LoopPreviewModeNotice extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: '开发预览',
       body: '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。',
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
     );
   }
 }
@@ -1232,9 +1237,9 @@ class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
                 Text(
                   code,
                   style: LoopTypography.withWeight(
-                    LoopType.figure,
+                    LoopType.figureSm,
                     FontWeight.w500,
-                  ).copyWith(color: LoopColors.text2),
+                  ),
                 ),
                 _CopyInviteCodeButton(code: code),
               ],
@@ -1611,11 +1616,11 @@ class _ProfileIdentityCard extends StatelessWidget {
     final loopId = resource.loopId;
     final bio = resource.values.bio;
     final activatedAt = resource.activatedAt;
-    // M19 an inline LOOP ID: figure 13 at 500, text2 (decision 0191).
+    // M19 an inline LOOP ID: figureSm 13 at 500, text2 (decision 0229) (decision 0191).
     final idStyle = LoopTypography.withWeight(
-      LoopType.figure,
+      LoopType.figureSm,
       FontWeight.w500,
-    ).copyWith(color: LoopColors.text2);
+    );
     final counts = this.counts;
     return Column(
       key: const ValueKey<String>('profile-identity-card'),
@@ -1823,7 +1828,7 @@ class _ProfileCountLink extends StatelessWidget {
                 Text(
                   '$figure',
                   style: LoopTypography.withWeight(
-                    LoopType.figure,
+                    LoopType.figureBody,
                     FontWeight.w700,
                   ),
                 ),
@@ -2119,9 +2124,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       'profile-edit-copy-loop-id',
                     ),
                     style: LoopTypography.withWeight(
-                      LoopType.figure,
+                      LoopType.figureSm,
                       FontWeight.w500,
-                    ).copyWith(color: LoopColors.text2),
+                    ),
                   ),
                 ),
               ),
@@ -2478,7 +2483,12 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               body:
                   '可见性只影响展示，不会让别人复制你的交易或访问你的钱包；'
                   '头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+              margin: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                14,
+              ),
             ),
           ],
         ],
@@ -2634,7 +2644,12 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
           ? '正在重新读取资料状态。'
           : '${profileFailureReason(landing.failureKind)}'
                 '${retryable ? ' 你可以继续浏览，也可以现在重试。' : ' 你可以继续浏览。'}',
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        0,
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -2695,7 +2710,12 @@ class _LoopSoftUpdatePromptState extends ConsumerState<LoopSoftUpdatePrompt> {
       body: minimum == null
           ? '建议更新到最新版本；当前版本仍然可以继续使用。'
           : '建议更新到 $minimum 或更高版本；当前版本仍然可以继续使用。',
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        8,
+        LoopSpacing.page,
+        0,
+      ),
       trailing: LoopIconButton(
         key: const ValueKey<String>('loop-soft-update-dismiss'),
         icon: 'close',

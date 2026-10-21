@@ -581,7 +581,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 state.failureKind,
                 state.failureReasonCode,
               ),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                14,
+                LoopSpacing.page,
+                0,
+              ),
             ),
           const SizedBox(height: 20),
         ],
@@ -721,7 +726,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             state.failureKind,
             state.failureReasonCode,
           ),
-          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
         ),
       const SizedBox(height: 20),
     ];

@@ -216,7 +216,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 key: const ValueKey<String>('support-command-error'),
                 title: '工单没有提交',
                 reason: loopChainFailureReason(state.commandFailureKind),
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -233,7 +238,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 key: const ValueKey<String>('support-attachments-unavailable'),
                 label: '暂不支持附件',
                 fact: page.attachments,
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             const LoopLabel('我的工单'),
             if (!state.resource.isReady)
@@ -266,7 +276,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 icon: 'info',
                 title: '还有更早的工单',
                 body: '目前只显示最新的一页，更早的工单暂时看不到。',
-                margin: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                margin: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
           ],
           if (policy != null)
@@ -284,7 +299,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             tone: LoopNoticeTone.warn,
             title: '官方不会主动私聊你',
             body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],

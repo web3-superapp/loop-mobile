@@ -442,6 +442,6 @@ class _IncompleteCard extends StatelessWidget {
     key: LoopMemberBuyCard.incompleteKey,
     icon: 'info',
     body: '$loopMemberBuyPreviewLabel · 动态数据不完整',
-    margin: EdgeInsets.fromLTRB(16, 6, 16, 6),
+    margin: EdgeInsets.fromLTRB(LoopSpacing.page, 6, LoopSpacing.page, 6),
   );
 }

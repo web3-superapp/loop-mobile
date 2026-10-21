@@ -309,7 +309,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           TextSpan(
             text: accent,
             style: LoopTypography.withWeight(
-              LoopType.figure,
+              LoopType.figureSm,
               FontWeight.w700,
             ).copyWith(color: LoopColors.lime),
           ),

@@ -592,7 +592,12 @@ class _SecurityDevicesBlock extends StatelessWidget {
                     '最近 ${policy.windowHours} 小时内新建了 $recent 个会话，达到提示阈值 '
                     '${policy.newSessionThreshold}。'
                     '这只是提示，不会因此要求二次验证或冷却。',
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  12,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
           ],
         ),
@@ -860,7 +865,12 @@ class _DeviceManagementScreenState
             key: const ValueKey<String>('devices-revoke-all-unavailable'),
             label: '需要二次验证，当前不可执行',
             fact: directory.revokeAll,
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              12,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           LoopProvenanceFooter(
             key: const ValueKey<String>('devices-observed-at'),
@@ -972,7 +982,12 @@ class _RevokeConfirmSheet extends StatelessWidget {
           body:
               'LOOP 会把这个会话记为已撤销，并拒绝之后携带它的请求，同时写入一条安全事件。'
               '对方设备上的 Privy 登录不会被终止。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
         ),
         LoopButtonPair(
           children: <Widget>[
@@ -1056,7 +1071,12 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
           icon: 'parachute',
           title: '这是你的逃生舱',
           body: '这个入口一直都在，只是导出功能还没有开放。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
         ),
         const LoopNotice(
           key: ValueKey<String>('key-export-risk'),
@@ -1199,7 +1219,12 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
           body:
               '指定 3 个你信任的人。丢失设备时，其中 2 人同意即可帮你恢复账户。'
               '守护人需要在自己的 App 里主动确认，未确认的不计入 2-of-3。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
         ),
         if (method == null)
           LoopChainStateBlock(

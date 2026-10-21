@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -209,7 +210,12 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           // prepared on.
           LoopTestnetNotice(
             visible: testnet,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              14,
+            ),
             compact: true,
           ),
           LoopContentArrival(
@@ -235,7 +241,12 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             body:
                 'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
                 '每次发射的总量、轮次与上限都以这次发射被批准的配置为准。',
-            margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              22,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           // Decision 0038: the catalogue has no single launch, so the chain
           // statement comes from the capability the server published. It is a
@@ -321,7 +332,12 @@ class _EvidenceNotice extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: '目录可用，合约未就绪',
       body: launchReasonCodeText(capability.evidenceReasonCode),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        0,
+      ),
     );
   }
 }
@@ -413,7 +429,12 @@ class _SegmentList extends StatelessWidget {
         body: segment == LaunchSegment.awaitingSchedule
             ? '通过审核但还没有排期的项目会出现在这里。'
             : launchSegmentEmptyBody,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        margin: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          0,
+        ),
       );
     }
     return LoopRecordGroup(

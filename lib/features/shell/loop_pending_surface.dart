@@ -219,8 +219,16 @@ class _Row extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Text(label, style: LoopType.eyebrow),
-          const Spacer(),
-          Text(value, style: LoopType.figure),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.figureBody,
+            ),
+          ),
         ],
       ),
     );

@@ -168,7 +168,12 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             icon: 'info',
             title: '只计入挖矿算力',
             body: '邀请加成只计入挖矿算力，不是收入、佣金或返佣。分享完成不代表关系成立，还需要验证。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1207,7 +1212,12 @@ class _BindingBlock extends StatelessWidget {
             tone: LoopNoticeTone.warn,
             title: '邀请码格式不对',
             body: '邀请码形如 LOOP- 加 5 位字符。格式明显不对时不会提交，以免浪费唯一的一次绑定机会。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
         if (claimFailureKind != null)
           LoopNotice(
@@ -1216,7 +1226,12 @@ class _BindingBlock extends StatelessWidget {
             tone: LoopNoticeTone.danger,
             title: '这次绑定没有完成',
             body: referralClaimFailureReason(claimFailureKind),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
         if (claimed)
           const LoopNotice(
@@ -1224,7 +1239,12 @@ class _BindingBlock extends StatelessWidget {
             icon: 'check',
             title: '关系已锁定',
             body: '这条关系已确认。绑定后不能更换。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
       ],
     );

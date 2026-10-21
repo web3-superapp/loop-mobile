@@ -1153,7 +1153,12 @@ class _ForceUpdatePage extends StatelessWidget {
       ),
       facts: <Widget>[
         LoopSurfaceCard(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           padding: EdgeInsets.zero,
           child: Column(
             children: <Widget>[
@@ -1702,13 +1707,23 @@ class _TokenCardStatesPage extends StatelessWidget {
             const LoopDisclosure(
               summary: '查看组件出现位置',
               child: LoopNotice(
-                margin: EdgeInsets.fromLTRB(16, 10, 16, 14),
+                margin: EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  10,
+                  LoopSpacing.page,
+                  14,
+                ),
                 body: '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。',
               ),
             ),
         ],
         const LoopNotice(
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
           title: '风险态只列事实',
           body: '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。',
         ),
@@ -1789,7 +1804,12 @@ class _SignSheetStatesPage extends StatelessWidget {
             ),
         ],
         const LoopNotice(
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          margin: EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
           title: '策略拒绝不是错误',
           body: '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。',
         ),

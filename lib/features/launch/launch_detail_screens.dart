@@ -322,7 +322,12 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
       // them. The identity card is what the audit found missing entirely.
       primary: LoopLedgerComposite(
         ground: LoopCompositeGround.chalk,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        margin: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          16,
+        ),
         detailPadding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
@@ -535,7 +540,12 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                 '${onChain == null ? launchReasonCodeText(detail.launch.onChainState.reasonCode) : '四轴、轮次与合约参数都读自区块 ${loopGroupedFigure(onChain.snapshotBlockNumber)}，状态摘要 ${launchShortHex(onChain.stateTupleDigest)}。'}'
                 '资料版本 ${detail.project.materialVersion}，'
                 '登记于 ${launchTimestampLabel(detail.launch.createdAt)}。',
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -701,7 +711,12 @@ class _TrackBlock extends StatelessWidget {
       final block = onChain?.snapshotBlockNumber;
       return LoopAccordionStrip(
         keyPrefix: 'launch-track',
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        margin: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          14,
+        ),
         rowKey: const ValueKey<String>('launch-track'),
         minHeight: accordionMinHeight,
         initialIndex: launchTrackInitialIndex(chainRounds, now),
@@ -1435,7 +1450,12 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
                       '${launchReasonCodeText('LAUNCH_CONFIG_PENDING_CONFIRMATION')}'
                 : '本页的数字是合约在快照区块的读数，不是 LOOP 写下的规则。'
                       '认购时以签名前复核的读数为准。',
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1600,7 +1620,12 @@ class _LaunchGraduationScreenState
                 : '「已结束」只表示排期结束，不等于已毕业。'
                       'V3 池上线不代表 LP 已锁定；只有 LP_LOCKED 或 COMPLETED '
                       '才算已毕业。每一步完成后才进入下一步。',
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -1823,7 +1848,12 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
                 '${eligibility.reasonCode == null ? '' : launchReasonCodeText(eligibility.reasonCode)}'
                 '资格是这次发射的准入结果，会随配置和快照变化；'
                 '这里不显示任何门槛、费率或时间窗口。',
-            margin: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              22,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -2009,7 +2039,12 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             body: count == null
                 ? '暂时读不到合约信息，因此不显示地址、比例或上限。读不到不等于「分布为零」。'
                 : '参与人数来自链上索引；地址排名与集中度还没有来源，因此不显示。',
-            margin: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              22,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -2120,7 +2155,12 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             icon: 'info',
             title: '空列表不代表没有参与',
             body: '这里是「暂时读不到」，不是「没有记录」。合约上线后才会出现可核对的购买、权益与退款。',
-            margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
+            margin: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              22,
+              LoopSpacing.page,
+              0,
+            ),
           ),
           const SizedBox(height: 20),
         ] else if (history.isEmpty) ...<Widget>[

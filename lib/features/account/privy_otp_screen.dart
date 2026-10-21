@@ -118,7 +118,12 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                 onRetry: canResend
                     ? () => unawaited(controller.resendCode())
                     : null,
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -164,7 +169,12 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                 tone: LoopNoticeTone.danger,
                 title: '验证未通过',
                 body: authState.errorMessage!,
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                margin: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  14,
+                  LoopSpacing.page,
+                  0,
+                ),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
