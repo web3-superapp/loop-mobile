@@ -9,7 +9,6 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
@@ -113,10 +112,9 @@ Launch2WalletEntries launch2WalletEntries(
           position: position,
           title: position.ticker,
           subtitle: '$launch2WalletChainLabel · 内盘持仓',
+          // Decision 0219 (需求方 10-21): no 买入 / 卖出 chips; the whole
+          // row opens the instance page, where the trade happens.
           value: hidden ? '****' : launch2MemeFigure(position.curve.net),
-          // Decision 0188 (钱包 C): an internal-market holding carries
-          // 买入 / 卖出, both into the instance page that trades it.
-          trades: Launch2WalletRows._tradesOnCurve(position.stage),
         ),
       ));
     }
@@ -177,10 +175,6 @@ class Launch2WalletRows extends ConsumerWidget {
     );
   }
 
-  /// The two rounds whose trades run on the curve.
-  static bool _tradesOnCurve(Launch2Stage stage) =>
-      stage == Launch2Stage.priority || stage == Launch2Stage.public;
-
   Widget _row({
     required String key,
     required Launch2Position position,
@@ -188,53 +182,14 @@ class Launch2WalletRows extends ConsumerWidget {
     required String subtitle,
     required String value,
     String? location,
-    bool trades = false,
-  }) {
-    final row = _quoteRow(
-      key: key,
-      position: position,
-      title: title,
-      subtitle: subtitle,
-      value: value,
-      location: location,
-    );
-    if (!trades) return row;
-    final instance = Launch2Route.instance(position.instanceId);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        row,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              LoopSeg(
-                key: ValueKey<String>(
-                  'launch2-wallet-sell-${position.instanceId}',
-                ),
-                label: '卖出',
-                quiet: true,
-                selected: false,
-                onSelected: () => onOpen(instance),
-              ),
-              const SizedBox(width: 8),
-              LoopSeg(
-                key: ValueKey<String>(
-                  'launch2-wallet-buy-${position.instanceId}',
-                ),
-                label: '买入',
-                quiet: true,
-                selected: false,
-                onSelected: () => onOpen(instance),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  }) => _quoteRow(
+    key: key,
+    position: position,
+    title: title,
+    subtitle: subtitle,
+    value: value,
+    location: location,
+  );
 
   Widget _quoteRow({
     required String key,

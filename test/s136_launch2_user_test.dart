@@ -1861,9 +1861,9 @@ void main() {
       await _drain(tester);
     });
 
-    // Decision 0188 (钱包 C): an internal-market holding carries 买入 / 卖出,
-    // both into the instance page that trades it; a graduated one does not.
-    testWidgets('a curve holding carries 卖出 / 买入 into its project page', (
+    // Decision 0219 (需求方 10-21, replacing 0188's chips): a curve holding
+    // carries no 买入 / 卖出; the whole row is a button into the project page.
+    testWidgets('a curve holding draws no chips and opens its project page', (
       tester,
     ) async {
       final opened = <String>[];
@@ -1880,14 +1880,19 @@ void main() {
           positions: _Answer<Launch2Positions>.value(l2Positions()),
         ),
       );
-      expect(_key('launch2-wallet-buy-$l2InstanceA'), findsOneWidget);
-      expect(_key('launch2-wallet-sell-$l2InstanceA'), findsOneWidget);
-      await tester.tap(_key('launch2-wallet-buy-$l2InstanceA'));
-      await tester.tap(_key('launch2-wallet-sell-$l2InstanceA'));
-      expect(opened, <String>[
-        '/launch2/instance?id=$l2InstanceA',
-        '/launch2/instance?id=$l2InstanceA',
-      ]);
+      expect(_key('launch2-wallet-buy-$l2InstanceA'), findsNothing);
+      expect(_key('launch2-wallet-sell-$l2InstanceA'), findsNothing);
+      expect(find.text('买入'), findsNothing);
+      expect(find.text('卖出'), findsNothing);
+      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
+      final semantics = tester.ensureSemantics();
+      expect(
+        tester.getSemantics(_key('launch2-wallet-meme-$l2InstanceA')),
+        isSemantics(isButton: true, hasTapAction: true),
+      );
+      semantics.dispose();
+      await tester.tap(_key('launch2-wallet-meme-$l2InstanceA'));
+      expect(opened, <String>['/launch2/instance?id=$l2InstanceA']);
       await _drain(tester);
     });
 
