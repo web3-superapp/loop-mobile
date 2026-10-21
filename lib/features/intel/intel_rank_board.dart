@@ -498,16 +498,16 @@ String? intelRankParticipantsDetail(MiningRank rank) {
 /// The kicker every board's ledger card opens with.
 const String intelRankLedgerKickerBase = '算力榜';
 
-/// 「算力榜 · 快照 10-15 04:00」 on the two power boards (the snapshot's own
+/// 「算力榜，快照 10-15 04:00」 on the two power boards (the snapshot's own
 /// computation time, local), 「算力榜 · 实时」 on 推广, which reads the invite
-/// relation live, and the bare 「算力榜」 when no snapshot was computed.
+/// relation live (「算力榜，实时」), and the bare 「算力榜」 when no snapshot was computed.
 String intelRankLedgerKicker(MiningRank rank) {
   if (rank.scope == MiningRankScope.referrals) {
-    return '$intelRankLedgerKickerBase · 实时';
+    return '$intelRankLedgerKickerBase，实时';
   }
   return switch (rank.snapshot) {
     MiningSnapshotComputed(:final computedAt) =>
-      '$intelRankLedgerKickerBase · 快照 ${intelRankMonthDayClock(computedAt)}',
+      '$intelRankLedgerKickerBase，快照 ${intelRankMonthDayClock(computedAt)}',
     MiningSnapshotUnavailable() => intelRankLedgerKickerBase,
   };
 }
@@ -605,7 +605,8 @@ String intelRankLedgerCaption(
       '算力 ${loopGroupedFigure(me.value)}',
     ?intelRankGapToNext(rank),
     ?intelRankLedgerCommunity(rank, faces),
-  ].join(' · ');
+    // v3 (decision 0229): a comma, never a centre-dot chain.
+  ].join('，');
 }
 
 /// How many places the board has, when the server said so.
@@ -651,11 +652,12 @@ class IntelRankLedger extends StatelessWidget {
       child: LoopChromePlate(
         key: const ValueKey<String>('intel-rank-me-plate'),
         mark: LoopChromePlateMark.crown,
+        // v3 (decision 0229): 28 from the plate to the next block.
         margin: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
           8,
           LoopSpacing.page,
-          12,
+          LoopSpacing.bannerGap - 8,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,7 +740,7 @@ class _IntelRankHeading extends StatelessWidget {
             ),
             TextSpan(
               text: rest,
-              style: LoopType.heading.copyWith(color: LoopColors.chalk),
+              style: LoopType.headline.copyWith(color: LoopColors.chalk),
             ),
           ],
         ),
@@ -1021,10 +1023,7 @@ class _PodiumPlace extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: LoopTypography.withWeight(
-            LoopType.titleSm,
-            FontWeight.w600,
-          ).copyWith(color: LoopColors.chalk),
+          style: LoopTypography.withWeight(LoopType.body2, FontWeight.w600),
         ),
         const SizedBox(height: 4),
         FittedBox(
@@ -1040,9 +1039,10 @@ class _PodiumPlace extends StatelessWidget {
         ),
         if (entry.weight != null || entry.isSelf) ...<Widget>[
           const SizedBox(height: 6),
+          // v3 (decision 0229): the weight is a caption, not a third badge.
           entry.isSelf
               ? const LoopBadge('我')
-              : _WeightTag(weight: entry.weight!),
+              : Text('权重 ${entry.weight!}', style: LoopType.caption),
         ],
       ],
     );
@@ -1087,16 +1087,6 @@ class _PodiumEmpty extends StatelessWidget {
   );
 }
 
-/// 「权重 1.5」: a status, so it is the mute `.badge` (decision 0172).
-class _WeightTag extends StatelessWidget {
-  const _WeightTag({required this.weight});
-
-  final String weight;
-
-  @override
-  Widget build(BuildContext context) => LoopBadge('权重 $weight');
-}
-
 /// The head over the rows (`.rank-list-head`): what the left and the right
 /// columns are, mono and uppercase like a `.label`.
 class IntelRankListHead extends StatelessWidget {
@@ -1104,15 +1094,17 @@ class IntelRankListHead extends StatelessWidget {
 
   final MiningRankScope scope;
 
+  // v3 (decision 0229): one word per column, no centre-dot chain; the bar
+  // under each figure already says it is a share of the first place.
   static String leftOf(MiningRankScope scope) => switch (scope) {
-    MiningRankScope.communities => '名次 · 社区 · 权重',
-    MiningRankScope.users => '名次 · 用户',
-    MiningRankScope.referrals => '名次 · 用户',
+    MiningRankScope.communities => '社区',
+    MiningRankScope.users => '用户',
+    MiningRankScope.referrals => '用户',
   };
 
   static String rightOf(MiningRankScope scope) => switch (scope) {
-    MiningRankScope.referrals => '直接邀请 · 占第一名比例',
-    _ => '算力 · 占第一名比例',
+    MiningRankScope.referrals => '直接邀请',
+    _ => '算力',
   };
 
   @override
@@ -1123,21 +1115,21 @@ class IntelRankListHead extends StatelessWidget {
         LoopSpacing.page,
         LoopSpacing.tight,
         LoopSpacing.page,
-        4,
+        LoopSpacing.tight,
       ),
       child: ExcludeSemantics(
         child: Row(
           children: <Widget>[
             Expanded(
               child: Text(
-                leftOf(scope).toUpperCase(),
+                leftOf(scope),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.eyebrow,
+                style: LoopType.caption,
               ),
             ),
             const SizedBox(width: 12),
-            Text(rightOf(scope).toUpperCase(), style: LoopType.eyebrow),
+            Text(rightOf(scope), style: LoopType.caption),
           ],
         ),
       ),
@@ -1184,8 +1176,16 @@ class IntelRankRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final place = position;
     final accent = isSelf ? LoopColors.yellow : null;
+    // v3 (decision 0229): rows of 72 (80 with a second line) told apart by
+    // space, no hairline; the weight joins the second line instead of
+    // standing as a badge beside the name.
+    final second = <String>[if (weight != null) '权重 $weight', ?caption];
     final content = Container(
-      constraints: const BoxConstraints(minHeight: 64),
+      constraints: BoxConstraints(
+        minHeight: second.isEmpty
+            ? LoopSpacing.rowMin
+            : LoopSpacing.rowMinWithSub,
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: LoopSpacing.page,
         vertical: 12,
@@ -1193,7 +1193,6 @@ class IntelRankRow extends StatelessWidget {
       decoration: BoxDecoration(
         // S241b: the reader's own row is a selected row — purple 9 %.
         color: isSelf ? LoopColors.purpleSoft : null,
-        border: const Border(bottom: BorderSide(color: LoopColors.line)),
       ),
       child: Row(
         children: <Widget>[
@@ -1205,9 +1204,9 @@ class IntelRankRow extends StatelessWidget {
               maxLines: 1,
               textAlign: TextAlign.right,
               style: place == null
-                  ? LoopType.captionSm.copyWith(color: LoopColors.text3)
+                  ? LoopType.caption
                   : LoopTypography.withWeight(
-                      LoopType.figure,
+                      LoopType.figureBody,
                       FontWeight.w700,
                     ).copyWith(color: accent ?? LoopColors.text3),
             ),
@@ -1220,31 +1219,20 @@ class IntelRankRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        // R4 / R5 / R6, the record row's steps (decision 0190
-                        // L20; 0182's layout unchanged).
-                        style: LoopType.title,
-                      ),
-                    ),
-                    if (weight != null) ...<Widget>[
-                      const SizedBox(width: 6),
-                      _WeightTag(weight: weight!),
-                    ],
-                  ],
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.body1,
                 ),
-                if (caption != null) ...<Widget>[
-                  const SizedBox(height: 2),
+                if (second.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 4),
                   Text(
-                    caption!,
+                    second.join('，'),
+                    key: const ValueKey<String>('intel-rank-row-caption'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    style: LoopType.caption,
                   ),
                 ],
               ],

@@ -409,7 +409,12 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     return <Widget>[
       Padding(
         key: const ValueKey<String>('token-holders-count'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          0,
+        ),
         child: Row(
           children: <Widget>[
             Text(
@@ -666,7 +671,7 @@ class TokenIdentityLine extends StatelessWidget {
     final address = asset?.address;
     return Padding(
       key: const ValueKey<String>('token-identity'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 8, 0),
       child: Row(
         children: <Widget>[
           LoopTokenLogo(
@@ -759,7 +764,12 @@ class TokenPriceHeader extends StatelessWidget {
             '24h',
           ].join(' · ').trim();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        6,
+        LoopSpacing.page,
+        4,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
@@ -901,8 +911,8 @@ class TokenTradeRow extends StatelessWidget {
             Text(
               loopFormatDecimal(trade.amountAsset, maxFractionDigits: 4),
               maxLines: 1,
-              // R6 the row's trailing figure (decision 0190 H7).
-              style: LoopType.figure.copyWith(color: LoopColors.text2),
+              // The row's second figure: the caption size (decision 0229).
+              style: LoopType.figureSm,
             ),
           ],
         ),
@@ -972,7 +982,7 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 4, 0),
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
           child: Row(
             children: <Widget>[
               Expanded(
@@ -1219,7 +1229,7 @@ class TokenPoolAndContractFacts extends StatelessWidget {
     final resolved = pair;
     final children = <Widget>[
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Text(
           resolved == null
               ? '主交易对：没有以该资产为 base 的交易对'
@@ -1255,7 +1265,7 @@ class TokenPoolAndContractFacts extends StatelessWidget {
         children.add(
           Padding(
             key: const ValueKey<String>('token-security-facts'),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[

@@ -337,11 +337,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         primary: LoopChromePlate(
           key: const ValueKey<String>('wallet-total-plate'),
           mark: LoopChromePlateMark.tag,
+          // v3 (decision 0229): 28 from the plate to the keys (they keep 10
+          // of their own above them).
           margin: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
             4,
             LoopSpacing.page,
-            8,
+            LoopSpacing.bannerGap - 10,
           ),
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
           child: WalletTotalHeader(
@@ -1402,7 +1404,12 @@ class _BalanceBreakdown extends StatelessWidget {
       children: <Widget>[
         LoopSurfaceCard(
           key: const ValueKey<String>('wallet-asset-breakdown'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -1479,7 +1486,12 @@ class _ValuationCard extends StatelessWidget {
       case final LoopValuationAvailable valued:
         return LoopSurfaceCard(
           key: const ValueKey<String>('wallet-asset-valuation'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -1588,7 +1600,12 @@ class _RegistryFactsCard extends StatelessWidget {
     final decimals = asset.decimals;
     return LoopSurfaceCard(
       key: const ValueKey<String>('wallet-asset-registry'),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -2118,7 +2135,12 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
               body:
                   '所有绑定钱包的持仓都计入算力，不用搬家。'
                   'LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。',
-              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+              margin: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                16,
+                LoopSpacing.page,
+                0,
+              ),
             ),
             LoopProvenanceFooter(
               key: const ValueKey<String>('wallets-source'),

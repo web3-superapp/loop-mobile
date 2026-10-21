@@ -477,7 +477,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
             statusFailure,
             cooldownSeconds: _cooldownSeconds,
           ),
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            8,
+            LoopSpacing.page,
+            12,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -549,7 +554,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       tone: LoopNoticeTone.warn,
       icon: 'warn',
       body: text,
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        4,
+      ),
     ),
   );
 

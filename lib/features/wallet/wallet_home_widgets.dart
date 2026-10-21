@@ -742,9 +742,10 @@ class _QuickActionTile extends StatelessWidget {
                 action.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                // v3 (decision 0229): the key's word at body2, 600.
                 style:
                     LoopTypography.withWeight(
-                      LoopType.titleSm,
+                      LoopType.body2,
                       FontWeight.w600,
                     ).copyWith(
                       color: enabled
@@ -791,7 +792,9 @@ class WalletSectionHeading extends StatelessWidget {
               // Decision 0126: a flat second-level page's section title.
               style: LoopFlat.of(context)
                   ? loopFlatSectionStyle()
-                  : LoopType.titleLg.copyWith(color: LoopGround.inkOf(context)),
+                  : LoopType.headline.copyWith(
+                      color: LoopGround.inkOf(context),
+                    ),
             ),
           ),
           const Spacer(),
@@ -1087,11 +1090,13 @@ class WalletAssetTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     key: const ValueKey<String>('wallet-asset-tabs'),
+    // v3 (decision 0229): the tabs stand as a section head — 36 above
+    // them, and the rows keep their own 14 under.
     padding: const EdgeInsets.fromLTRB(
       LoopSpacing.page,
-      LoopSpacing.group,
+      LoopSpacing.sectionTop - 12,
       LoopSpacing.page,
-      2,
+      4,
     ),
     child: Row(
       children: <Widget>[
@@ -1187,7 +1192,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
       key: const ValueKey<String>('wallet-distribution'),
       // S241b: room under the square quick keys, which had touched the card.
       margin: LoopRecordCard.defaultMargin.copyWith(top: 16),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.all(LoopSpacing.card),
       child: Semantics(
         container: true,
         label: '持仓分布，$label',
@@ -1196,8 +1201,8 @@ class WalletHoldingsDistribution extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('持仓分布', style: LoopType.caption.copyWith(color: secondary)),
-            const SizedBox(height: 10),
+            Text('持仓分布', style: LoopType.body2.copyWith(color: secondary)),
+            const SizedBox(height: 12),
             SizedBox(
               key: const ValueKey<String>('wallet-distribution-bar'),
               height: 6,
@@ -1231,7 +1236,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 14,
               runSpacing: 4,
@@ -1253,7 +1258,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
                         key: ValueKey<String>(
                           'wallet-distribution-legend-$index',
                         ),
-                        style: LoopType.captionSm.copyWith(color: auxiliary),
+                        style: LoopType.caption.copyWith(color: auxiliary),
                       ),
                     ],
                   ),
@@ -1387,6 +1392,7 @@ class WalletBalanceRow extends StatelessWidget {
 
     final String valueText;
     String? changeText;
+    String? changePct;
     Color? changeColour;
     switch (valuation) {
       case LoopValuationAvailable(
@@ -1398,6 +1404,7 @@ class WalletBalanceRow extends StatelessWidget {
           final usd = walletRowChangeUsd(value, pct);
           if (usd != null) {
             changeText = walletSignedUsdText(usd, pct, hidden: hidden);
+            changePct = hidden ? walletMaskedFigure : loopFormatPercent(pct);
             changeColour = hidden ? secondary : LoopPriceMove.of(pct).color;
           }
         }
@@ -1427,13 +1434,15 @@ class WalletBalanceRow extends StatelessWidget {
                   row.symbol,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  // The record row (decision 0190 H5 / H7): R4 / R5 / R6 / R7.
-                  style: LoopType.title.copyWith(color: ink),
+                  // v3 (decision 0229): body1 over a caption line.
+                  style: LoopType.body1.copyWith(color: ink),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Row(
                   children: <Widget>[
+                    // The subtitle (手续费保留 …) gives way last.
                     Flexible(
+                      flex: 3,
                       child: Text(
                         subtitle,
                         key: ValueKey<String>(
@@ -1441,13 +1450,13 @@ class WalletBalanceRow extends StatelessWidget {
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopType.caption.copyWith(color: secondary),
+                        style: LoopType.caption.copyWith(color: auxiliary),
                       ),
                     ),
                     if (marks.isNotEmpty)
                       Flexible(
                         child: Text(
-                          ' · ${marks.join(' · ')}',
+                          '，${marks.join('，')}',
                           key: ValueKey<String>(
                             'wallet-balance-mark-${row.assetId}',
                           ),
@@ -1473,11 +1482,34 @@ class WalletBalanceRow extends StatelessWidget {
                 style: LoopType.figure.copyWith(color: ink),
               ),
               const SizedBox(height: 4),
-              Text(
-                valueText,
-                key: ValueKey<String>('wallet-balance-value-${row.assetId}'),
-                maxLines: 1,
-                style: LoopType.figureXs,
+              // v3 (decision 0229): the value and its 24 h move share the
+              // caption line; the move no longer takes a line of its own.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    valueText,
+                    key: ValueKey<String>(
+                      'wallet-balance-value-${row.assetId}',
+                    ),
+                    maxLines: 1,
+                    style: LoopType.figureSm,
+                  ),
+                  if (changePct != null) ...<Widget>[
+                    const SizedBox(width: 6),
+                    Text(
+                      changePct,
+                      key: ValueKey<String>(
+                        'wallet-balance-change-${row.assetId}',
+                      ),
+                      maxLines: 1,
+                      style: LoopTypography.withWeight(
+                        LoopType.figureSm,
+                        FontWeight.w600,
+                      ).copyWith(color: changeColour!),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -1488,13 +1520,18 @@ class WalletBalanceRow extends StatelessWidget {
     return Semantics(
       key: ValueKey<String>('wallet-balance-${row.assetId}'),
       container: true,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: LoopColors.line)),
-        ),
+      // v3 (decision 0229): no hairline; the row's own 14 above and below.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: LoopSpacing.rowMinWithSub),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            14,
+          ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -1506,32 +1543,9 @@ class WalletBalanceRow extends StatelessWidget {
                 button: onTap != null,
                 child: top,
               ),
-              if (changeText != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 52, top: 8),
-                  child: Row(
-                    children: <Widget>[
-                      Text(
-                        '24 小时',
-                        style: LoopType.captionSm.copyWith(color: auxiliary),
-                      ),
-                      const Spacer(),
-                      Text(
-                        changeText,
-                        key: ValueKey<String>(
-                          'wallet-balance-change-${row.assetId}',
-                        ),
-                        style: LoopTypography.withWeight(
-                          LoopType.figureXs,
-                          FontWeight.w600,
-                        ).copyWith(color: changeColour!),
-                      ),
-                    ],
-                  ),
-                ),
               if (actions.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.only(top: 8),
                   child: WalletRowActions(
                     actions: actions,
                     onBlocked: onBlocked,

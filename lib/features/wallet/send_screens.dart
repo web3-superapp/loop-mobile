@@ -610,7 +610,12 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               tone: LoopNoticeTone.warn,
               icon: 'warn',
               body: status,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                10,
+              ),
             )
           else if (status != null)
             Padding(
