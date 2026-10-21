@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
@@ -68,6 +69,17 @@ Map<String, Object?> _hold(String kind) => <String, Object?>{
 };
 
 final class _Fake implements Launch2Gateway {
+  // S267 (decision 0227): no K line in these fixtures; the card hides.
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
+  }) => Future<Launch2CandleSeries>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+
   _Fake(this.detail);
 
   final Launch2InstanceDetail detail;

@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -134,6 +135,17 @@ Launch2InstanceDetail _detail({
 }
 
 final class _Fake implements Launch2Gateway {
+  // S267 (decision 0227): no K line in these fixtures; the card hides.
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
+  }) => Future<Launch2CandleSeries>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+
   _Fake({
     this.page,
     List<Launch2InstanceDetail>? details,

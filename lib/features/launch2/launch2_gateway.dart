@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 
@@ -74,6 +75,17 @@ abstract interface class Launch2Gateway {
     required String instanceId,
     required String walletId,
     int limit = launch2PoolTradesShown,
+  });
+
+  /// Decision 0227: the project's K line, ascending. [before] (exclusive)
+  /// pages into the past; [limit] is 1–[launch2CandleMaxLimit]. No trade yet
+  /// is an empty list, not a failure; an instance or a server without the
+  /// route is `notFound` / `unavailable`.
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
   });
 }
 
@@ -157,6 +169,14 @@ final class UnavailableLaunch2Gateway implements Launch2Gateway {
     required String instanceId,
     required String walletId,
     int limit = launch2PoolTradesShown,
+  }) => _unavailable();
+
+  @override
+  Future<Launch2CandleSeries> candles(
+    String instanceId,
+    Launch2CandleInterval interval, {
+    int limit = launch2CandlePageSize,
+    DateTime? before,
   }) => _unavailable();
 }
 
