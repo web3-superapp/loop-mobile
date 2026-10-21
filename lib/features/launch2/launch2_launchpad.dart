@@ -371,8 +371,9 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
     final current = _current.clamp(0, count == 0 ? 0 : count - 1);
     // S264: the pager is the card's height plus the hand's overhang; the
     // dots sit in that overhang, 12 under the card.
+    // v3 (decision 0229): 28 from the card's foot to the trade band's.
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: SizedBox(
         height: height + launch2DeskOverhang + (count >= 2 ? 6 : 0),
         child: Stack(
@@ -598,19 +599,27 @@ class Launch2DeskEventFace extends StatelessWidget {
             child: Container(
               key: const ValueKey<String>('launch2-desk-event-countdown'),
               height: 28,
+              // Inside the words' column and short of the hand, however long
+              // the countdown reads.
+              constraints: const BoxConstraints(maxWidth: 160),
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              alignment: Alignment.center,
               decoration: const BoxDecoration(
                 color: LoopColors.ink,
                 borderRadius: LoopRadius.pill,
               ),
-              child: Text(
-                left,
-                maxLines: 1,
-                style: LoopTypography.withWeight(
-                  LoopType.figureSm,
-                  FontWeight.w600,
-                ).copyWith(color: LoopColors.chalk),
+              child: Center(
+                widthFactor: 1,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    left,
+                    maxLines: 1,
+                    style: LoopTypography.withWeight(
+                      LoopType.figureSm,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.chalk),
+                  ),
+                ),
               ),
             ),
           ),
@@ -851,7 +860,7 @@ class _Launch2DeskCampaignCardState
                     text: campaign.title,
                     textKey: ValueKey<String>('launch2-campaign-title-$id'),
                   ),
-                  const SizedBox(height: 35),
+                  const SizedBox(height: 20),
                   if (subtitle != null)
                     Text(
                       subtitle,
@@ -1279,5 +1288,5 @@ const LoopNotice launch2CurationNotice = LoopNotice(
   body:
       'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
       '统一 10 亿总量，USD1 报价。',
-  margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
+  margin: EdgeInsets.fromLTRB(LoopSpacing.page, 22, LoopSpacing.page, 0),
 );

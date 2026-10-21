@@ -64,7 +64,8 @@ class MemeStatFigures extends StatelessWidget {
   /// Arimo [LoopType.statFigure].
   final bool hero;
 
-  static const double gap = 8;
+  /// Between two cells and two rows of cells: 12 (decision 0229).
+  static const double gap = LoopSpacing.rowGap;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +100,7 @@ class MemeStatFigures extends StatelessWidget {
             LoopSpacing.page,
             0,
             LoopSpacing.page,
-            LoopSpacing.card,
+            LoopSpacing.rowGap,
           ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,27 +145,33 @@ class _MemeStatCell extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  stat.value,
-                  maxLines: 1,
-                  style: (hero ? LoopType.heroFigure : LoopType.statFigure)
-                      .copyWith(
-                        color: figureColor,
-                        fontFeatures: const <FontFeature>[
-                          FontFeature.tabularFigures(),
-                        ],
-                      ),
+              // A fixed line box: a Han unit (「枚」) falls back to a face
+              // with a taller line than Arimo's, and an unfixed box let the
+              // pair's IntrinsicHeight under-measure the cell (decision 0229).
+              SizedBox(
+                height: 36,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    stat.value,
+                    maxLines: 1,
+                    style: (hero ? LoopType.heroFigure : LoopType.statFigure)
+                        .copyWith(
+                          color: figureColor,
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 stat.label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.kicker.copyWith(color: LoopColors.text3),
+                style: LoopType.caption,
               ),
             ],
           ),
