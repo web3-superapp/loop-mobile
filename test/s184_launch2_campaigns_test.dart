@@ -663,6 +663,25 @@ void main() {
       ]);
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsOneWidget);
+      // The cover recedes: 30 % over the wall, under an Ink 55 % veil.
+      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(
+        tester
+            .widget<Opacity>(
+              find
+                  .ancestor(
+                    of: _key('launch2-campaign-cover-c1'),
+                    matching: find.byType(Opacity),
+                  )
+                  .first,
+            )
+            .opacity,
+        0.3,
+      );
+      expect(
+        tester.widget<ColoredBox>(_key('launch2-campaign-cover-veil')).color,
+        const Color(0x8C09090B),
+      );
       final card = tester.getRect(_key('launch2-campaign-card-c1'));
       final cover = tester.getRect(_key('launch2-campaign-cover-c1'));
       expect(cover, card);
@@ -684,6 +703,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(_key('launch2-campaign-cover-c1'), findsNothing);
+      expect(_key('launch2-campaign-cover-veil'), findsNothing);
       expect(_key('launch2-campaign-ground'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

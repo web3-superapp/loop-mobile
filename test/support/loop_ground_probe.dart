@@ -412,6 +412,11 @@ List<LoopPaintedColour> loopVanishedPaint(
 /// Ink, which cannot move a page that is already Ink. None of them is a mark
 /// that was supposed to be seen.
 const loopGroundProbeExemptions = <String, String>{
+  "LoopPressable · ColoredBox-[<'launch2-campaign-cover-veil'>]":
+      'S264 (decision 0220): Ink at 55 % over the campaign cover, which is '
+      'drawn at 30 % so its picture is only a hint under the chrome hand. A '
+      'test decodes no picture, so the veil lands on the Ink ground and moves '
+      'nothing.',
   "LoopPressable · DecoratedBox-[<'launch2-campaign-scrim'>]":
       'S264 (decision 0220): the campaign banner\'s left-to-right Ink wash '
       'darkens the cover or the wall picture under the title. A test '

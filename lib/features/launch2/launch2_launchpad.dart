@@ -577,7 +577,8 @@ class _Launch2DeskCampaignCardState
 
   Widget _cover(String url) {
     final source = loopRemoteImageSource(url);
-    const ground = _CampaignGround();
+    // The wall under it already shows while the cover loads.
+    const ground = SizedBox.expand();
     return Image(
       key: ValueKey<String>(
         'launch2-campaign-cover-${widget.campaign.campaignId}',
@@ -619,7 +620,18 @@ class _Launch2DeskCampaignCardState
         fit: StackFit.expand,
         children: <Widget>[
           const ColoredBox(color: Color(0xFF0E0D12)),
-          if (hasCover) _cover(cover) else const _CampaignGround(),
+          // The wall is always the bottom layer. A cover lies on it at 30 %
+          // under an Ink 55 % veil, so its picture is only a hint and the
+          // chrome hand and the crown are the one subject; a cover that is
+          // absent or fails leaves the wall as it is.
+          const _CampaignGround(),
+          if (hasCover) ...<Widget>[
+            Opacity(opacity: 0.3, child: _cover(cover)),
+            const ColoredBox(
+              key: ValueKey<String>('launch2-campaign-cover-veil'),
+              color: Color(0x8C09090B),
+            ),
+          ],
           Positioned(
             left: -60,
             top: -110,
