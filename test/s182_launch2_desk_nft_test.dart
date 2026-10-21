@@ -392,6 +392,16 @@ Launch2NftMedal _medal(WidgetTester tester) =>
     tester.widget<Launch2NftMedal>(_key('launch2-nft-medal'));
 
 /// The ledger card under [key].
+/// The words of the desk page under [key] (decision 0223: every page stands
+/// on the banner art, so the event's words are no longer a folio).
+Launch2DeskEventFace _desk(WidgetTester tester, String key) =>
+    tester.widget<Launch2DeskEventFace>(
+      find.descendant(
+        of: _key(key),
+        matching: find.byType(Launch2DeskEventFace),
+      ),
+    );
+
 LoopFolioPrimary _folio(WidgetTester tester, String key) =>
     tester.widget<LoopFolioPrimary>(
       find.descendant(of: _key(key), matching: find.byType(LoopFolioPrimary)),
@@ -487,12 +497,18 @@ void main() {
         _rowJson(3, 'snapshot_pending', nextIn: const Duration(hours: 1)),
       ];
       await _pump(tester, _list(opened), _listGateway(rows));
-      final folio = _folio(tester, 'launch2-desk');
+      final folio = _desk(tester, 'launch2-desk');
       expect(folio.heading, '暂无进行中的发射');
       expect(folio.caption, 'NFT 预售开始后会出现在这里');
       expect(folio.stamp, isNull);
-      // S241b (decision 0210): the flat dark card.
-      expect(folio.variant, LoopFolioVariant.quiet);
+      // Decision 0223: the empty desk stands on the banner art too.
+      expect(
+        find.descendant(
+          of: _key('launch2-desk'),
+          matching: find.byType(Launch2BannerBackdrop),
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(Launch2DeskRecordCard), findsNothing);
       expect(_key('launch2-tile-${_id(1)}'), findsOneWidget);
       expect(_key('launch2-tile-${_id(2)}'), findsOneWidget);
@@ -602,14 +618,12 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      final folio = _folio(tester, 'launch2-desk');
-      // S241b (decision 0210): the flat dark card, the ticker in Yellow
-      // over the stage line in Purple.
-      expect(folio.variant, LoopFolioVariant.quiet);
+      final folio = _desk(tester, 'launch2-desk');
+      // Decision 0223: the banner art, the ticker in Chalk over the brush,
+      // the stage line in light Purple, the countdown on the Ink capsule.
       expect(folio.kicker, '发射台 · BSC TESTNET');
       expect(folio.heading, 'FROG\n共识勋章铸造中');
       expect(folio.stamp, '剩 00:03');
-      // No full-Yellow block on the page (S241b); the heading is two-tone.
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -618,18 +632,25 @@ void main() {
         ),
         findsNothing,
       );
-      final heading = tester.widget<Text>(
+      final title = tester.widget<Text>(
         find.descendant(
           of: _key('launch2-desk'),
-          matching: find.text('FROG\n共识勋章铸造中'),
+          matching: _key('launch2-desk-event-title'),
         ),
       );
-      expect(heading.style?.color, LoopColors.yellow);
-      final spans = (heading.textSpan! as TextSpan).children!;
-      expect((spans.last as TextSpan).style?.color, LoopColors.purple);
+      expect(title.data, 'FROG');
+      expect(title.style?.color, LoopColors.chalk);
+      final status = tester.widget<Text>(
+        find.descendant(
+          of: _key('launch2-desk'),
+          matching: _key('launch2-desk-event-status'),
+        ),
+      );
+      expect(status.data, '共识勋章铸造中');
+      expect(status.style?.color, LoopColors.purpleInk);
       now = l2Now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
-      expect(_folio(tester, 'launch2-desk').stamp, '剩 00:02');
+      expect(_desk(tester, 'launch2-desk').stamp, '剩 00:02');
       final reads = gateway.listReads;
       now = l2Now.add(const Duration(seconds: 3));
       await tester.pump(const Duration(seconds: 2));
@@ -652,7 +673,7 @@ void main() {
           _rowJson(5, 'public', soldBps: 9100),
         ]),
       );
-      final folio = _folio(tester, 'launch2-desk');
+      final folio = _desk(tester, 'launch2-desk');
       expect(folio.heading, 'FROG\n内盘冲刺 91%');
       expect(folio.stamp, isNull);
       await tester.tap(_key('launch2-desk'));
@@ -709,7 +730,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(dot(1), active);
       expect(
-        _folio(tester, 'launch2-desk-page-${_id(2)}').heading,
+        _desk(tester, 'launch2-desk-page-${_id(2)}').heading,
         'FROG\n提前购进行中',
       );
       await tester.tap(_key('launch2-desk-page-${_id(2)}'));
@@ -720,7 +741,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(dot(2), active);
       expect(
-        _folio(tester, 'launch2-desk-page-${_id(3)}').stamp,
+        _desk(tester, 'launch2-desk-page-${_id(3)}').stamp,
         startsWith('距铸造 '),
       );
       await _drain(tester);
@@ -1753,7 +1774,7 @@ void main() {
         size: const Size(360, 800),
       );
       expect(tester.view.physicalSize, const Size(360, 800));
-      expect(_folio(tester, 'launch2-desk').heading, 'ABCDEFGH…\n共识勋章铸造中');
+      expect(_desk(tester, 'launch2-desk').heading, 'ABCDEFGH…\n共识勋章铸造中');
       expect(find.byType(Launch2DeskRecordCard), findsNWidgets(2));
       expect(_key('launch2-ticker'), findsOneWidget);
       expect(tester.takeException(), isNull);

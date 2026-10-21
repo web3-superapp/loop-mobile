@@ -694,6 +694,72 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('decision 0223: the event page stands on the same art as the '
+        'campaign page — wall and chrome hand, the same height — and its '
+        'countdown sits at the left column foot, not bottom right', (
+      tester,
+    ) async {
+      final event = _rows(<Map<String, Object?>>[_rowJson(1, 'priority')])
+          .single;
+      await _pumpPager(tester, <Launch2DeskPage>[
+        Launch2DeskEventPage(event),
+        Launch2DeskCampaignPage(_campaign('c1')),
+      ]);
+      await tester.pump();
+      final eventPage = _key('launch2-desk-page-${_id(1)}');
+      expect(eventPage, findsOneWidget);
+      for (final key in <String>[
+        'launch2-campaign-default-art',
+        'launch2-campaign-ground',
+        'launch2-atmo-hand',
+      ]) {
+        expect(
+          find.descendant(of: eventPage, matching: _key(key)),
+          findsOneWidget,
+          reason: key,
+        );
+      }
+      final eventRect = tester.getRect(eventPage);
+      expect(eventRect.height, launch2DeskCampaignHeight);
+      // The hand hangs past the event card the way it does past a campaign.
+      final hand = tester.getRect(
+        find.descendant(of: eventPage, matching: _key('launch2-atmo-hand')),
+      );
+      expect(hand.right, moreOrLessEquals(eventRect.right + 14));
+      expect(hand.bottom, moreOrLessEquals(eventRect.bottom + 16));
+      // The words stay in the left column, clear of the hand.
+      final title = tester.getRect(
+        find.descendant(
+          of: eventPage,
+          matching: _key('launch2-desk-event-title'),
+        ),
+      );
+      expect(title.right, lessThanOrEqualTo(eventRect.left + 20 + 186));
+      // The countdown: bottom left, on the column's line, not bottom right.
+      final countdown = tester.getRect(
+        find.descendant(
+          of: eventPage,
+          matching: _key('launch2-desk-event-countdown'),
+        ),
+      );
+      expect(countdown.left, moreOrLessEquals(eventRect.left + 20));
+      // Inside the words' column, short of where the hand starts.
+      expect(countdown.right, lessThanOrEqualTo(eventRect.left + 20 + 186));
+      expect(countdown.right, lessThan(hand.left));
+      expect(countdown.bottom, moreOrLessEquals(eventRect.bottom - 20));
+
+      // The campaign page: the same height and the same art.
+      await tester.drag(_key('launch2-desk-pages'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      final campaign = _key('launch2-desk-page-campaign-c1');
+      expect(tester.getRect(campaign).height, eventRect.height);
+      expect(
+        find.descendant(of: campaign, matching: _key('launch2-atmo-hand')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('dots ride the campaign card in Purple from two pages on', (
       tester,
     ) async {

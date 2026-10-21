@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart
 import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
+import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -123,6 +124,33 @@ Future<void> _drain(WidgetTester tester) async {
 
 void main() {
   loopWatchGround();
+
+  testWidgets('decision 0223: the main event page wears the banner art, '
+      'at the banner height, its countdown not in the hand\'s corner', (
+    tester,
+  ) async {
+    await _pump(tester, <Map<String, Object?>>[
+      l2RowJson(instanceId: _id(1), stage: 'priority'),
+    ], tabTitle: 'MEME');
+    final page = _key('launch2-desk-page-${_id(1)}');
+    expect(page, findsOneWidget);
+    expect(
+      find.descendant(of: page, matching: find.byType(Launch2BannerBackdrop)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: page, matching: _key('launch2-atmo-hand')),
+      findsOneWidget,
+    );
+    final card = tester.getRect(page);
+    expect(card.height, launch2DeskCampaignHeight);
+    final countdown = tester.getRect(
+      find.descendant(of: page, matching: _key('launch2-desk-event-countdown')),
+    );
+    expect(countdown.left, moreOrLessEquals(card.left + 20));
+    expect(countdown.center.dx, lessThan(card.center.dx));
+    await _drain(tester);
+  });
 
   testWidgets('the home stands on the wall with the crown behind its title', (
     tester,
