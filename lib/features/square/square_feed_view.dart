@@ -378,49 +378,67 @@ class SquareFeedPostRow extends StatelessWidget {
             height: avatarSize,
             child: Row(
               children: <Widget>[
-                Flexible(
-                  child: InkWell(
-                    key: const ValueKey<String>('square-post-author'),
-                    borderRadius: LoopRadius.inner,
-                    onTap: author == null
-                        ? null
-                        : () => onOpen(
-                            userProfileLocation(author.publicProfileId),
-                          ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        if (author == null)
-                          const _OfficialAvatar()
-                        else
-                          LoopProfileAvatar(
-                            avatarRef: author.avatarRef,
-                            alias: author.displayName,
-                            size: avatarSize,
-                          ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            name,
-                            key: const ValueKey<String>('square-post-name'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            // L14 R4 the author at title 15 (decision 0191).
-                            style: LoopType.title,
+                // S268 (decision 0228): the name and the badge share
+                // whatever the age leaves; the name ellipsizes first so
+                // the badge stays, and the age is pinned to the row's
+                // trailing edge on every post.
+                Expanded(
+                  child: Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: InkWell(
+                          key: const ValueKey<String>('square-post-author'),
+                          borderRadius: LoopRadius.inner,
+                          onTap: author == null
+                              ? null
+                              : () => onOpen(
+                                  userProfileLocation(author.publicProfileId),
+                                ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              if (author == null)
+                                const _OfficialAvatar()
+                              else
+                                LoopProfileAvatar(
+                                  avatarRef: author.avatarRef,
+                                  alias: author.displayName,
+                                  size: avatarSize,
+                                ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  key: const ValueKey<String>(
+                                    'square-post-name',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  // L14 R4: author at title 15 (decision 0191).
+                                  style: LoopType.title,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                      if (badge != null) ...<Widget>[
+                        const SizedBox(width: 8),
+                        badge,
                       ],
-                    ),
+                    ],
                   ),
                 ),
-                if (badge != null) ...<Widget>[const SizedBox(width: 8), badge],
-                const Spacer(),
                 const SizedBox(width: 8),
-                Text(
-                  squareFeedAgeLabel(post.createdAt, now: now),
-                  key: const ValueKey<String>('square-post-age'),
-                  maxLines: 1,
-                  style: LoopType.figureXs.copyWith(color: LoopColors.text3),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    squareFeedAgeLabel(post.createdAt, now: now),
+                    key: const ValueKey<String>('square-post-age'),
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: LoopType.figureXs.copyWith(color: LoopColors.text3),
+                  ),
                 ),
               ],
             ),
