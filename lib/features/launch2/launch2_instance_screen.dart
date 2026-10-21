@@ -33,6 +33,7 @@ import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -121,6 +122,9 @@ String _viewerSignature(Launch2InstanceDetail detail) {
 /// Whether [detail] carries the wallet's own pool count (decision 0148).
 bool _ownPoolSignal(Launch2InstanceDetail detail) =>
     detail.viewer?.holding != null;
+
+/// USD1 is an 18-decimal token; `launchChain.usd1.balance` is base units.
+const int _launchUsd1Decimals = 18;
 
 class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   Timer? _poll;
@@ -339,14 +343,77 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         context,
         walletId: walletId,
         address: active.address,
-        onGranted: () => unawaited(
-          ref
-              .read(
-                launch2InstanceControllerProvider(detail.instanceId).notifier,
-              )
-              .reload(),
-        ),
+        onGranted: () {
+          unawaited(
+            ref
+                .read(
+                  launch2InstanceControllerProvider(detail.instanceId).notifier,
+                )
+                .reload(),
+          );
+          // Decision 0225: the curve panel's zero-balance line reads the
+          // wallet balances; the grant re-reads them so the line lifts.
+          unawaited(
+            ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .reload(),
+          );
+        },
       ),
+    );
+  }
+
+  /// The wallet the balances were last asked for on this page.
+  String? _balancesAskedFor;
+
+  /// Decision 0225: what the curve panel knows of the wallet's USD1 and of
+  /// this token, or `null` for each figure not read. The detail's own
+  /// holding (read at one block) comes first; on the curve the server
+  /// leaves it `not_graduated`, so USD1 falls back to the wallet balances'
+  /// Launch slot (`launchChain.usd1`, the Hooks Factory USD1 since loop-api
+  /// S246) for this instance's chain. The balances are re-read once per
+  /// page, and a figure that is restored, refreshing or for another chain
+  /// counts as not read — a stale zero must not stop a quote.
+  (Decimal?, Decimal?) _curveBalances(
+    Launch2InstanceDetail detail,
+    String? walletId,
+  ) {
+    final holding = detail.viewer?.holding;
+    if (holding != null &&
+        holding.balancesRead &&
+        detail.viewer?.walletId == walletId) {
+      return (holding.usd1Balance, holding.memeBalance);
+    }
+    if (walletId == null || !WalletRoute.isCanonical(walletId)) {
+      return (null, null);
+    }
+    final provider = walletBalancesControllerProvider(walletId);
+    final balances = ref.watch(provider);
+    if (_balancesAskedFor != walletId &&
+        balances.mode != LoopChainGatewayMode.unavailable) {
+      _balancesAskedFor = walletId;
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(provider.notifier).reload());
+      });
+      return (null, null);
+    }
+    final slot = balances.value?.launchChain;
+    final usd1 = slot?.usd1;
+    if (!balances.isReady ||
+        balances.refreshing ||
+        ref.read(provider.notifier).restoredObservedAt != null ||
+        slot == null ||
+        slot.chainId != detail.row.chainId ||
+        usd1 == null) {
+      return (null, null);
+    }
+    final units = Decimal.tryParse(usd1.balance);
+    if (units == null) return (null, null);
+    return (
+      (units / Decimal.ten.pow(_launchUsd1Decimals).toDecimal()).toDecimal(
+        scaleOnInfinitePrecision: _launchUsd1Decimals,
+      ),
+      null,
     );
   }
 
@@ -591,6 +658,30 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     );
   }
 
+  /// 提前购 / 公开内盘's panel with what is known of the wallet's balances
+  /// (decision 0225).
+  Widget _curvePanel(Launch2InstanceDetail detail) {
+    final curveWalletId =
+        memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId;
+    final curveBalances = _curveBalances(detail, curveWalletId);
+    return Launch2TradePanel(
+      key: ValueKey<String>('launch2-panel-${detail.instanceId}'),
+      detail: detail,
+      walletId: curveWalletId,
+      locked: _pending?.locked ?? false,
+      onPrepared: (intent) => _sign(detail, intent),
+      onTopUp: () => _openTopUp(detail),
+      onFaucet: _faucetAction(detail),
+      usd1Balance: curveBalances.$1,
+      memeBalance: curveBalances.$2,
+      onStageMoved: () => unawaited(
+        ref
+            .read(launch2InstanceControllerProvider(detail.instanceId).notifier)
+            .reload(),
+      ),
+    );
+  }
+
   List<Widget> _stageWidgets(
     Launch2InstanceDetail detail,
     Launch2DynamicPoolState? dynamicPool, {
@@ -645,22 +736,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
         ),
       _CurveBlock(detail: detail),
-      Launch2TradePanel(
-        key: ValueKey<String>('launch2-panel-${detail.instanceId}'),
-        detail: detail,
-        walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
-        locked: _pending?.locked ?? false,
-        onPrepared: (intent) => _sign(detail, intent),
-        onTopUp: () => _openTopUp(detail),
-        onFaucet: _faucetAction(detail),
-        onStageMoved: () => unawaited(
-          ref
-              .read(
-                launch2InstanceControllerProvider(detail.instanceId).notifier,
-              )
-              .reload(),
-        ),
-      ),
+      _curvePanel(detail),
       _RecentTrades(detail: detail),
       // Decision 0202: the published list, without its addresses.
       if (launch2SnapshotPublishedShown(detail))

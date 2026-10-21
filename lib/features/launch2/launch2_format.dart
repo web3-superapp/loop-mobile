@@ -384,6 +384,30 @@ String launch2TradingHoldSinceText(DateTime since, {DateTime? now}) {
       : '自 ${loopLocalTimestampLabel(since)} 起';
 }
 
+/// `LAUNCH2_QUOTE_ZERO` (decision 0225): the amount buys less than one
+/// unit. Was 「报价已变化，请重新报价」, shared with the deadline refusal.
+const String launch2QuoteZeroText = '这个金额买不到最小单位，换个金额试试';
+
+/// The two balance refusals a quote or a prepare may answer with (`409
+/// INSUFFICIENT_BALANCE`, loop-api S266). Decision 0225: a quote refused
+/// this way says the shortfall and offers the funding links.
+const String launch2Usd1BalanceInsufficientCode =
+    'LAUNCH2_USD1_BALANCE_INSUFFICIENT';
+const String launch2MemeBalanceInsufficientCode =
+    'LAUNCH2_MEME_BALANCE_INSUFFICIENT';
+
+/// Whether [failure] is the wallet being short, not the quote failing.
+bool launch2IsBalanceRefusal(LoopChainException failure) =>
+    failure.reasonCode == launch2Usd1BalanceInsufficientCode ||
+    failure.reasonCode == launch2MemeBalanceInsufficientCode;
+
+/// Decision 0225: the buy side with a USD1 balance read as zero, said under
+/// the amount field before any quote is asked.
+const String launch2NoUsd1Text = '钱包里还没有 USD1';
+
+/// Decision 0225: the sell side with this token's balance read as zero.
+const String launch2NoMemeText = '还没有这个代币';
+
 String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_USD1_PAUSED' => launch2Usd1PausedText,
   'LAUNCH2_ADDRESS_FROZEN' => launch2AddressFrozenText,
@@ -403,7 +427,9 @@ String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_GAS_INSUFFICIENT' => '$loopLaunchNativeSymbolText 手续费不足，充值后再试',
   'LAUNCH2_AMOUNT_INVALID' => '金额不正确',
   'LAUNCH2_AMOUNT_ABOVE_MAX' => '超出可买上限',
-  'LAUNCH2_DEADLINE_TOO_FAR' || 'LAUNCH2_QUOTE_ZERO' => '报价已变化，请重新报价',
+  'LAUNCH2_DEADLINE_TOO_FAR' => '报价已变化，请重新报价',
+  // Decision 0225: the curve really priced this amount at zero units.
+  'LAUNCH2_QUOTE_ZERO' => launch2QuoteZeroText,
   'LAUNCH2_WALLET_NOT_EMBEDDED' => '只能用 LOOP 内置钱包购买',
   'LAUNCH2_NOT_IN_SNAPSHOT' => '提前购仅限名单内持有人',
   'LAUNCH2_COUNTERPARTY_NOT_INSTANCE' => '暂不可用',

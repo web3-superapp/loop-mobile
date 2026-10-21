@@ -1075,6 +1075,30 @@ void main() {
       await _drain(tester);
     });
 
+    // Decision 0225: a quote refused for the balance says the shortfall with
+    // 去充值, not 「没有取到报价」.
+    testWidgets('a quote refused for the USD1 balance offers 去充值', (
+      tester,
+    ) async {
+      final gateway = _FakePool(
+        details: <Launch2InstanceDetail>[_graduated()],
+        quotes: <_Answer<Launch2PoolQuote>>[
+          const _Answer<Launch2PoolQuote>.fail(
+            LoopChainFailureKind.insufficientBalance,
+            reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
+          ),
+        ],
+      );
+      await _open(tester, gateway);
+      await _type(tester, '100');
+      expect(_key('launch2-pool-quote-failed'), findsNothing);
+      expect(_key('launch2-pool-quote-short'), findsOneWidget);
+      expect(find.textContaining('没有取到报价'), findsNothing);
+      expect(_key('launch2-pool-quote-topup'), findsOneWidget);
+      expect(_confirmCallback(tester), isNull);
+      await _drain(tester);
+    });
+
     testWidgets('a prepare refusal stays one line; offline quote says so', (
       tester,
     ) async {

@@ -376,7 +376,10 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
 
   /// The refused prepare, right above the confirm button (decision 0153).
   /// The pool's `maxAmountIn` on a balance refusal is the wallet's balance.
-  Widget _poolFailureLine(LoopChainException failure) {
+  ///
+  /// Decision 0225: a quote refused for the balance says the same line
+  /// under the field ([quote] picks that position's keys).
+  Widget _poolFailureLine(LoopChainException failure, {bool quote = false}) {
     final holding = _detail.viewer?.holding;
     final line = launch2ActionFailure(
       failure,
@@ -388,12 +391,18 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
       ticker: _detail.row.ticker,
     );
     return Launch2ActionFailureLine(
-      key: const ValueKey<String>('launch2-pool-prepare-failed'),
-      padding: const EdgeInsets.only(top: 6),
+      key: ValueKey<String>(
+        quote ? 'launch2-pool-quote-short' : 'launch2-pool-prepare-failed',
+      ),
+      padding: quote ? EdgeInsets.zero : const EdgeInsets.only(top: 6),
       message: line.text,
-      topUpKey: const ValueKey<String>('launch2-pool-topup'),
+      topUpKey: ValueKey<String>(
+        quote ? 'launch2-pool-quote-topup' : 'launch2-pool-topup',
+      ),
       onTopUp: line.topUp ? widget.onTopUp : null,
-      faucetKey: const ValueKey<String>('launch2-pool-faucet'),
+      faucetKey: ValueKey<String>(
+        quote ? 'launch2-pool-quote-faucet' : 'launch2-pool-faucet',
+      ),
       onFaucet: line.topUp ? widget.onFaucet : null,
     );
   }
@@ -485,7 +494,10 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             ),
           ),
         const SizedBox(height: 10),
-        if (view.quoteFailureLine case final String line)
+        if (_quoteFailure case final LoopChainException failure
+            when launch2IsBalanceRefusal(failure))
+          _poolFailureLine(failure, quote: true)
+        else if (view.quoteFailureLine case final String line)
           LoopInlineUnavailable(
             key: const ValueKey<String>('launch2-pool-quote-failed'),
             message: line,
