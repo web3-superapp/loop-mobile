@@ -19,7 +19,6 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
-import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -296,13 +295,9 @@ List<Launch2DeskPage> launch2DeskPages(
   ].take(launch2DeskPageLimit).toList(growable: false);
 }
 
-/// The pager's fixed height at text scale 1: two heading lines and a
-/// four-line caption at 360 dp. 232 since decision 0211 (a bold sans
-/// heading, a 1.5 caption leading).
-const double launch2DeskHeight = 232;
-
-/// The campaign banner's height at text scale 1 (S264, decision 0220: the
-/// atmosphere banner; 200 before).
+/// Every banner page's height at text scale 1 (S264, decision 0220: the
+/// atmosphere banner; 200 before). Since decision 0223 the event pages share
+/// it — 232 before.
 const double launch2DeskCampaignHeight = 220;
 
 /// The height of the dot row under the pager (decision 0211).
@@ -368,15 +363,10 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
   @override
   Widget build(BuildContext context) {
     final pages = widget.pages;
-    // docs/42 附C §5: a pager of campaign banners only is 200 high; one
-    // that also carries an event folio keeps the folio's height.
-    final allCampaigns =
-        pages.isNotEmpty && pages.every((p) => p is Launch2DeskCampaignPage);
-    final height = MediaQuery.textScalerOf(context).scale(
-      allCampaigns
-          ? launch2DeskCampaignHeight
-          : math.max(launch2DeskHeight, launch2DeskCampaignHeight),
-    );
+    // Decision 0223: every page — event, campaign or the empty desk — is
+    // the same 220 high banner on the same art.
+    final height = MediaQuery.textScalerOf(context)
+        .scale(launch2DeskCampaignHeight);
     final count = pages.length;
     final current = _current.clamp(0, count == 0 ? 0 : count - 1);
     // S264: the pager is the card's height plus the hand's overhang; the
@@ -454,9 +444,12 @@ class _DeskDots extends StatelessWidget {
   );
 }
 
-/// One ledger card of the pager: the event's ticker over its stage
-/// sentence, one caption of figures and the countdown in the stamp; with no
-/// event, the empty desk in the same card.
+/// One event page of the pager (decision 0223): the same default art as a
+/// campaign page, with the event's words in the left column — the kicker,
+/// the ticker over the Purple brush, the stage line in light Purple, one
+/// caption of figures and, at the column's foot where a campaign has its
+/// button, the countdown on a small Ink capsule. With no event, the empty
+/// desk on the same art. The whole card is one tap; there is no button.
 class Launch2DeskFolio extends ConsumerWidget {
   const Launch2DeskFolio({
     required this.row,
@@ -471,7 +464,7 @@ class Launch2DeskFolio extends ConsumerWidget {
   final String? chainId;
   final VoidCallback? onTap;
 
-  /// The stamp's countdown reached zero: the list re-reads the server.
+  /// The countdown reached zero: the list re-reads the server.
   final VoidCallback? onElapsed;
 
   @override
@@ -479,39 +472,29 @@ class Launch2DeskFolio extends ConsumerWidget {
     final kicker = launch2DeskKicker(chainId);
     final event = row;
     if (event == null) {
-      return LoopFolioPrimary(
-        archetype: LoopFolioArchetype.listing,
-        ring: false,
-        margin: EdgeInsets.zero,
+      return Launch2DeskEventFace(
         kicker: kicker,
-        headingTone: LoopFolioHeadingTone.neutral,
-        heading: '暂无进行中的发射',
+        title: '暂无进行中的发射',
         caption: 'NFT 预售开始后会出现在这里',
       );
     }
     final ticker = launch2HeroTicker(event.ticker);
     final status = launch2DeskStatus(event);
-    Widget folio(String? stamp) => LoopFolioPrimary(
-      archetype: LoopFolioArchetype.listing,
-      ring: false,
-      margin: EdgeInsets.zero,
+    Widget face(String? stamp) => Launch2DeskEventFace(
       kicker: kicker,
-      heading: '$ticker\n$status',
-      // S241b: the ticker in Yellow, the stage line in Purple (the site's
-      // two-colour heading), on the flat dark card.
-      headingBuilder: (heading) =>
-          memeTwoToneHeading(heading, first: ticker, second: status),
+      title: ticker,
+      status: status,
       caption: launch2DeskCaption(event),
       stamp: stamp,
     );
     final next = event.nextChangeAt;
     final card = next == null || !launch2RecordCountsDown(event.stage)
-        ? folio(null)
+        ? face(null)
         : Launch2CountdownBuilder(
             target: next,
             onElapsed: onElapsed,
             builder: (context, text) =>
-                folio('${launch2DeskStampPrefix(event.stage)}$text'),
+                face('${launch2DeskStampPrefix(event.stage)}$text'),
           );
     return Semantics(
       button: true,
@@ -520,6 +503,269 @@ class Launch2DeskFolio extends ConsumerWidget {
       child: LoopPressable(onTap: onTap, scale: false, child: card),
     );
   }
+}
+
+/// The words of an event page over [Launch2BannerBackdrop] (decision 0223).
+class Launch2DeskEventFace extends StatelessWidget {
+  const Launch2DeskEventFace({
+    required this.kicker,
+    required this.title,
+    super.key,
+    this.status,
+    this.caption,
+    this.stamp,
+  });
+
+  /// 「发射台 · BSC TESTNET」: 12, Text2.
+  final String kicker;
+
+  /// The ticker (or the empty desk's sentence): 26 / 700 Chalk on one line,
+  /// over the Purple brush.
+  final String title;
+
+  /// The stage line (「提前购进行中」): 14, light Purple.
+  final String? status;
+
+  /// The figures (「已铸 3 枚 · 内盘已售 0% · …」): 12, Text2, two lines.
+  final String? caption;
+
+  /// The countdown (「剩 38:04」) on the Ink capsule at the column's foot.
+  final String? stamp;
+
+  /// The title and the stage line as one heading, for reading back.
+  String get heading => status == null ? title : '$title\n$status';
+
+  @override
+  Widget build(BuildContext context) {
+    final line = status;
+    final figures = caption;
+    final left = stamp;
+    return Stack(
+      key: const ValueKey<String>('launch2-desk-event-card'),
+      clipBehavior: Clip.none,
+      fit: StackFit.expand,
+      children: <Widget>[
+        const Launch2BannerBackdrop(),
+        Positioned(
+          left: Launch2BannerBackdrop.textLeft,
+          top: Launch2BannerBackdrop.textTop,
+          width: Launch2BannerBackdrop.textWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                kicker,
+                key: const ValueKey<String>('launch2-desk-event-kicker'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(height: 6),
+              Launch2BannerTitle(
+                text: title,
+                textKey: const ValueKey<String>('launch2-desk-event-title'),
+              ),
+              const SizedBox(height: 16),
+              if (line != null)
+                Text(
+                  line,
+                  key: const ValueKey<String>('launch2-desk-event-status'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.withWeight(
+                    LoopType.body,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.purpleInk),
+                ),
+              if (figures != null) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(
+                  figures,
+                  key: const ValueKey<String>('launch2-desk-event-caption'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (left != null)
+          Positioned(
+            left: Launch2BannerBackdrop.textLeft,
+            bottom: 20,
+            child: Container(
+              key: const ValueKey<String>('launch2-desk-event-countdown'),
+              height: 28,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: LoopColors.ink,
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Text(
+                left,
+                maxLines: 1,
+                style: LoopTypography.withWeight(
+                  LoopType.figureSm,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.chalk),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The banner's default art (decisions 0220 §4, 0222, 0223) under every
+/// page of the desk — campaign, event or the empty desk alike: the wall at
+/// 90 %, Purple and Yellow fog, the left-to-right Ink wash, the chrome hand
+/// hanging 14 / 16 past the card's right and bottom edges (its sheen every
+/// 6 s), its Yellow crown and the tilted 「IN THE LOOP」 tag. A page lays
+/// its words over the left column, [Launch2BannerBackdrop.textWidth] wide.
+class Launch2BannerBackdrop extends StatelessWidget {
+  const Launch2BannerBackdrop({super.key});
+
+  /// Where the words start, and how wide their column is: the right of the
+  /// card is the hand's.
+  static const double textLeft = 20;
+  static const double textTop = 24;
+  static const double textWidth = 186;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget art(String path, {double? width}) => Image.asset(
+      path,
+      width: width,
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) => SizedBox(width: width),
+    );
+    return Stack(
+      key: const ValueKey<String>('launch2-campaign-default-art'),
+      clipBehavior: Clip.none,
+      fit: StackFit.expand,
+      children: <Widget>[
+        ClipRRect(
+          borderRadius: LoopRadius.card,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              const ColoredBox(color: Color(0xFF0E0D12)),
+              const _CampaignGround(),
+              Positioned(
+                left: -60,
+                top: -110,
+                width: 420,
+                height: 420,
+                child: Opacity(
+                  opacity: 0.55,
+                  child: art(LoopAtmoAssets.sprayPurple),
+                ),
+              ),
+              Positioned(
+                right: -140,
+                bottom: -200,
+                width: 360,
+                height: 360,
+                child: Opacity(
+                  opacity: 0.12,
+                  child: art(LoopAtmoAssets.sprayYellow),
+                ),
+              ),
+              const DecoratedBox(
+                key: ValueKey<String>('launch2-campaign-scrim'),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Color(0xD109090B),
+                      Color(0x8C09090B),
+                      Color(0x0009090B),
+                    ],
+                    stops: <double>[0, 0.52, 0.75],
+                  ),
+                ),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: LoopRadius.card,
+                  border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Positioned(
+          right: -14,
+          bottom: -16,
+          width: 171,
+          height: 170,
+          child: Launch2ChromeHand(),
+        ),
+        Positioned(
+          right: 118,
+          top: 28,
+          width: 62,
+          child: Transform.rotate(
+            angle: -14 * math.pi / 180,
+            child: art(LoopAtmoAssets.crownYellow, width: 62),
+          ),
+        ),
+        Positioned(
+          right: 12,
+          top: 12,
+          width: 42,
+          child: Transform.rotate(
+            angle: -5 * math.pi / 180,
+            child: Opacity(
+              opacity: 0.95,
+              child: art(LoopAtmoAssets.tagInLoop, width: 42),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The title of a banner page: 26 / 700 Chalk on one line, over the Purple
+/// brush stroke (the same on every page).
+class Launch2BannerTitle extends StatelessWidget {
+  const Launch2BannerTitle({required this.text, super.key, this.textKey});
+
+  final String text;
+  final Key? textKey;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
+    children: <Widget>[
+      Positioned(
+        left: -6,
+        top: 25,
+        width: 150,
+        child: Image.asset(
+          LoopAtmoAssets.brushPurple,
+          width: 150,
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
+          gaplessPlayback: true,
+          errorBuilder: (context, error, stackTrace) =>
+              const SizedBox(width: 150),
+        ),
+      ),
+      Text(
+        text,
+        key: textKey,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LoopType.display.copyWith(height: 1.2),
+      ),
+    ],
+  );
 }
 
 /// The campaign page (decision 0165; redrawn by decision 0212, then by S264
@@ -563,96 +809,6 @@ class _Launch2DeskCampaignCardState
     );
   }
 
-  /// The default art (decision 0220 §4): the wall at 90 %, Purple and
-  /// Yellow fog, the left-to-right Ink wash, the chrome hand hanging past
-  /// the card's right and bottom edges, its Yellow crown and the tilted
-  /// 「IN THE LOOP」 tag.
-  Widget _defaultArt(Widget Function(String path, {double? width}) art) =>
-      Stack(
-        key: const ValueKey<String>('launch2-campaign-default-art'),
-        clipBehavior: Clip.none,
-        fit: StackFit.expand,
-        children: <Widget>[
-          ClipRRect(
-            borderRadius: LoopRadius.card,
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                const ColoredBox(color: Color(0xFF0E0D12)),
-                const _CampaignGround(),
-                Positioned(
-                  left: -60,
-                  top: -110,
-                  width: 420,
-                  height: 420,
-                  child: Opacity(
-                    opacity: 0.55,
-                    child: art(LoopAtmoAssets.sprayPurple),
-                  ),
-                ),
-                Positioned(
-                  right: -140,
-                  bottom: -200,
-                  width: 360,
-                  height: 360,
-                  child: Opacity(
-                    opacity: 0.12,
-                    child: art(LoopAtmoAssets.sprayYellow),
-                  ),
-                ),
-                const DecoratedBox(
-                  key: ValueKey<String>('launch2-campaign-scrim'),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color(0xD109090B),
-                        Color(0x8C09090B),
-                        Color(0x0009090B),
-                      ],
-                      stops: <double>[0, 0.52, 0.75],
-                    ),
-                  ),
-                ),
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: LoopRadius.card,
-                    border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Positioned(
-            right: -14,
-            bottom: -16,
-            width: 171,
-            height: 170,
-            child: Launch2ChromeHand(),
-          ),
-          Positioned(
-            right: 118,
-            top: 28,
-            width: 62,
-            child: Transform.rotate(
-              angle: -14 * math.pi / 180,
-              child: art(LoopAtmoAssets.crownYellow, width: 62),
-            ),
-          ),
-          Positioned(
-            right: 12,
-            top: 12,
-            width: 42,
-            child: Transform.rotate(
-              angle: -5 * math.pi / 180,
-              child: Opacity(
-                opacity: 0.95,
-                child: art(LoopAtmoAssets.tagInLoop, width: 42),
-              ),
-            ),
-          ),
-        ],
-      );
-
   @override
   Widget build(BuildContext context) {
     final campaign = widget.campaign;
@@ -660,17 +816,9 @@ class _Launch2DeskCampaignCardState
     final stamp = launch2CampaignStamp(campaign, now);
     final id = campaign.campaignId;
     final subtitle = campaign.subtitle;
-    Widget art(String path, {double? width}) => Image.asset(
-      path,
-      width: width,
-      fit: BoxFit.contain,
-      excludeFromSemantics: true,
-      gaplessPlayback: true,
-      errorBuilder: (context, error, stackTrace) => SizedBox(width: width),
-    );
     // Decision 0222: every campaign stands on the default art; only the
     // words change. A cover the admin set is neither requested nor drawn.
-    final ground = _defaultArt(art);
+    const ground = Launch2BannerBackdrop();
     return Semantics(
       button: true,
       label: <String>[
@@ -692,30 +840,16 @@ class _Launch2DeskCampaignCardState
           children: <Widget>[
             ground,
             Positioned(
-              left: 20,
-              top: 24,
-              width: 186,
+              left: Launch2BannerBackdrop.textLeft,
+              top: Launch2BannerBackdrop.textTop,
+              width: Launch2BannerBackdrop.textWidth,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: <Widget>[
-                      Positioned(
-                        left: -6,
-                        top: 25,
-                        width: 150,
-                        child: art(LoopAtmoAssets.brushPurple, width: 150),
-                      ),
-                      Text(
-                        campaign.title,
-                        key: ValueKey<String>('launch2-campaign-title-$id'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.display.copyWith(height: 1.2),
-                      ),
-                    ],
+                  Launch2BannerTitle(
+                    text: campaign.title,
+                    textKey: ValueKey<String>('launch2-campaign-title-$id'),
                   ),
                   const SizedBox(height: 35),
                   if (subtitle != null)
