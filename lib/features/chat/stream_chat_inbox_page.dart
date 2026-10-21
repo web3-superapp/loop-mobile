@@ -309,7 +309,6 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
           if (!preview) const _MessageRequestsEntry(),
           LoopSegBar(
             key: const ValueKey<String>('chat-inbox-filters'),
-            splat: true,
             labels: <String>[
               for (final filter in ChatInboxFilter.values) filter.label,
             ],

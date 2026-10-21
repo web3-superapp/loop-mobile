@@ -476,6 +476,8 @@ class _SquareChips extends StatelessWidget {
     return SingleChildScrollView(
       key: const ValueKey<String>('square-community-chips'),
       scrollDirection: Axis.horizontal,
+      // Decision 0222: the chosen chip's splat reaches above its box.
+      clipBehavior: Clip.none,
       padding: const EdgeInsets.fromLTRB(16, 6, 9, 8),
       child: Row(
         children: <Widget>[

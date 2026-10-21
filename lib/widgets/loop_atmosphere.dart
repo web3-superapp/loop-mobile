@@ -551,6 +551,23 @@ class LoopSplatSticker extends StatelessWidget {
   );
 }
 
+/// [chosen] with the Yellow splat sticker on its top-left corner (−7, −8,
+/// 24 wide, −18°): the mark every solid Purple choice wears (decision 0222).
+Widget loopSplatted(Widget chosen, {Key? key}) => Stack(
+  clipBehavior: Clip.none,
+  children: <Widget>[
+    chosen,
+    Positioned(
+      left: -7,
+      top: -8,
+      width: 24,
+      child: LoopSplatSticker(
+        key: key ?? const ValueKey<String>('loop-seg-splat'),
+      ),
+    ),
+  ],
+);
+
 /// A section heading: with an [index] the Anton number in Yellow with a
 /// small splat at its top right (only for an order or a ranking), without
 /// one the 16 / 700 title with the splat after it. A Yellow 「全部」 when the
@@ -1006,7 +1023,15 @@ class LoopRankCrown extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => SizedBox(
+    // The box is the crown's own aspect (≈ 4 : 3), so it takes its place
+    // before the picture is decoded.
+    width: width,
+    height: width * 0.75,
+    child: _crown(),
+  );
+
+  Widget _crown() {
     if (place == 1) {
       return IgnorePointer(
         child: Transform.rotate(
