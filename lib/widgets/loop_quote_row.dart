@@ -7,7 +7,7 @@ import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// The row height of an OKX-shaped quote list (decision 0122, S121 §1.1.1).
 // 74 since decision 0210: the 1.35 title and 1.7 grey line of the new ladder.
-const double loopQuoteRowHeight = 74;
+const double loopQuoteRowHeight = LoopSpacing.rowMinWithSub;
 
 /// The fixed size of the change pill at the right end of a quote row.
 const Size loopChangePillSize = Size(96, 44);
@@ -99,9 +99,9 @@ class LoopChangePill extends StatelessWidget {
 }
 
 /// One OKX-shaped quote row (decision 0122, ladder per decision 0189 S1): a
-/// round mark, two lines on the left (`LoopType.titleLg` 16 over a
-/// `LoopType.bodySm` 13 grey line), two lines on the right (`LoopType.figureMd`
-/// 17 over a `LoopType.figureSm` 12 grey line) and an optional fixed trailing
+/// round mark, two lines on the left (`LoopType.body1` 17 over a
+/// `LoopType.caption` 13 grey line), two lines on the right (`LoopType.figure`
+/// 17 over a `LoopType.figureSm` 13 grey line) and an optional fixed trailing
 /// block — the change pill. No card and no hairline: rows are separated by their height.
 class LoopQuoteRow extends StatelessWidget {
   const LoopQuoteRow({
@@ -208,7 +208,7 @@ class LoopQuoteRow extends StatelessWidget {
                       ],
                     ),
                     if (subtitle != null || subtitleMark != null) ...<Widget>[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
@@ -220,7 +220,9 @@ class LoopQuoteRow extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: false,
-                                style: LoopType.bodySm,
+                                // v3 (decision 0229): the second line is a
+                                // caption.
+                                style: LoopType.caption,
                               ),
                             ),
                           if (subtitleMark != null) ...<Widget>[

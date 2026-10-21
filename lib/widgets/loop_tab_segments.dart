@@ -107,8 +107,10 @@ class LoopSegmentedTabPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Padding(
+                  // The first word stands on the page line: a segment carries
+                  // 8 of its own padding.
                   padding: const EdgeInsets.fromLTRB(
-                    LoopSpacing.page,
+                    LoopSpacing.page - 8,
                     6,
                     LoopSpacing.page,
                     0,
@@ -240,10 +242,11 @@ class _SegmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0212 (docs/42 附C §4): a top tab is a 20/700 word — Chalk
-    // when chosen, Text3 otherwise — with a 3px Yellow dash, 24 wide, under
-    // the chosen one. No capsule, no Purple.
-    final style = LoopType.flatTitle.copyWith(
+    // Decision 0212 (docs/42 附C §4): a top tab is a bold word — Chalk when
+    // chosen, Text3 otherwise — with a 3px Yellow dash, 24 wide, under the
+    // chosen one. No capsule, no Purple. v3 (decision 0229): the segments
+    // are the page's title, so they take title1 (28).
+    final style = LoopType.title1.copyWith(
       color: selected
           ? LoopGround.inkOf(context)
           : LoopGround.auxiliaryOf(context),
