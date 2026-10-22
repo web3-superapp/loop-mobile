@@ -287,6 +287,8 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           if (policy != null)
             LoopProvenanceFooter(
               key: const ValueKey<String>('support-escalation'),
+              label: '说明',
+              title: '回复时间',
               text:
                   '${policy.businessDaysOnly ? '工作日 ' : ''}'
                   '${policy.responseWindowHours} 小时内回复；'
@@ -426,7 +428,7 @@ class _SupportTicketDetail extends StatelessWidget {
           ),
         ),
         if (ticket.status == LoopSupportTicketStatus.open)
-          const LoopProvenanceFooter(
+          const LoopFootnote(
             key: ValueKey<String>('support-ticket-detail-open'),
             text: '客服还没有回复这张工单；有回复时会出现在上面。',
           ),

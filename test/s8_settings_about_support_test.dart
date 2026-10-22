@@ -11,6 +11,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s8_harness.dart';
+import 'support/provenance_finders.dart';
 
 /// `settings`, `about`, `support` (D20).
 void main() {
@@ -82,7 +83,7 @@ void main() {
       expect(find.text('USD'), findsOneWidget);
       // The CAS version and whether a row exists are write-path mechanics,
       // not facts about the account.
-      expect(find.text('当前使用默认设置'), findsOneWidget);
+      expect(findProvenanceContaining('当前使用默认设置'), findsOneWidget);
       expect(find.textContaining('版本 0'), findsNothing);
       expect(find.textContaining('尚未写入过'), findsNothing);
     });
@@ -192,7 +193,11 @@ void main() {
         findsNothing,
       );
       expect(find.text('操作没有完成，请稍后再试。'), findsNothing);
-      expect(find.textContaining('本应用使用的开源组件'), findsOneWidget);
+      // S278 · decision 0236: the summary is the (i) beside 开源许可.
+      expect(
+        find.byKey(const ValueKey<String>('about-open-source-info')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the legal rows are a version slot, never a document link', (
@@ -221,7 +226,11 @@ void main() {
         findsNothing,
       );
       expect(find.text('docs/open-source-attribution.md'), findsNothing);
-      expect(find.textContaining('本应用使用的开源组件'), findsOneWidget);
+      // S278 · decision 0236: the summary is the (i) beside 开源许可.
+      expect(
+        find.byKey(const ValueKey<String>('about-open-source-info')),
+        findsOneWidget,
+      );
 
       final entry = find.byKey(const ValueKey<String>('about-open-source-dio'));
       await scrollToS8Section(tester, entry);
@@ -488,7 +497,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('support-escalation')),
       );
-      expect(find.textContaining('工作日 24 小时内回复'), findsOneWidget);
+      expect(findProvenanceContaining('工作日 24 小时内回复'), findsOneWidget);
       expect(find.textContaining('工作日24'), findsNothing);
     });
 

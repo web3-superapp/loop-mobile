@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/market/token_screen.dart';
 
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 /// Decision 0096 · the token page's fact tray: a compact two-column grid,
 /// risk-class facts first, at most eight cells, one provenance line.
@@ -94,7 +95,10 @@ void main() {
             as BoxDecoration;
     expect(dot('mintable').color, LoopColors.lime);
     expect(dot('proxy').color, LoopColors.text3);
-    expect(find.textContaining('合约事实 ${facts.length} 项'), findsOneWidget);
-    expect(find.textContaining('来源 GoPlus'), findsOneWidget);
+    // S278 · decision 0236: the one source line is a (i) row.
+    expect(
+      findProvenanceContaining('合约事实 ${facts.length} 项 · 来源 GoPlus'),
+      findsOneWidget,
+    );
   });
 }

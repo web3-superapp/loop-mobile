@@ -18,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 void main() {
   // This file mounts pages through its own `pumpWidget`, so it arms the
@@ -55,8 +56,8 @@ void main() {
       // Decision 0118: no statistics line; one weak source line instead.
       expect(find.textContaining('自选 1 · '), findsNothing);
       expect(find.text('\$747.39'), findsWidgets);
-      expect(find.textContaining('来源 DexScreener'), findsWidgets);
-      expect(find.textContaining('观察于'), findsWidgets);
+      expect(findProvenanceContaining('来源 DexScreener'), findsWidgets);
+      expect(findProvenanceContaining('观察于'), findsWidgets);
     });
 
     testWidgets('a stale price is shown with a marker, not silently', (
@@ -313,14 +314,19 @@ void main() {
 
         expect(find.byType(LoopMarketChart), findsOneWidget);
         // Decision 0118: the series' marks ride on its one source line.
-        expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.textContaining('最后一根进行中'), findsOneWidget);
+        expect(findProvenanceContaining('按成交价折算'), findsOneWidget);
+        expect(findProvenanceContaining('最后一根进行中'), findsOneWidget);
         // The price unit is the pool's other token, never USD. It is the
         // provider's own string and prints verbatim. S82a gave the card's
         // heading row to the periods and the averages, so the unit moved onto
         // the provenance line under the panel, where the source and the time
         // already are.
+        // S278 · decision 0236: the unit stays printed beside the (i).
         expect(find.textContaining('单位 USDT per WBNB'), findsOneWidget);
+        expect(
+          find.textContaining('按成交价折算 · 单位 USDT per WBNB'),
+          findsOneWidget,
+        );
       },
     );
 
@@ -344,11 +350,11 @@ void main() {
         );
 
         // Same chip as the wallet page's proxied valuation.
-        expect(find.textContaining('以 WBNB 计价'), findsOneWidget);
+        expect(findProvenanceContaining('以 WBNB 计价'), findsOneWidget);
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
-        expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.textContaining('单位 USD per WBNB'), findsOneWidget);
+        expect(findProvenanceContaining('按成交价折算'), findsOneWidget);
+        expect(findProvenanceContaining('单位 USD per WBNB'), findsOneWidget);
       },
     );
 
@@ -374,7 +380,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('未登记池'), findsOneWidget);
+      expect(findProvenanceContaining('未登记池'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('candles-provenance')),
       );
@@ -454,7 +460,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-security-provenance')),
       );
       expect(find.text('已验证开源'), findsOneWidget);
-      expect(find.textContaining('来源 GoPlus · 观察于'), findsOneWidget);
+      expect(findProvenanceContaining('来源 GoPlus · 观察于'), findsOneWidget);
     });
 
     testWidgets('a blocked asset hides every fact', (tester) async {
@@ -605,7 +611,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('chart-full-interval-notice')),
       );
-      expect(find.textContaining('没有其他指标'), findsOneWidget);
+      expect(findProvenanceContaining('没有其他指标'), findsOneWidget);
     });
 
     testWidgets('changing the interval requests that exact interval', (
@@ -716,6 +722,12 @@ void main() {
 
       expect(find.text('买入 934.35 USDT'), findsOneWidget);
       expect(find.textContaining('我 · 已确认 · 101 确认'), findsOneWidget);
+      // S278 · decision 0236: behind the freshness line's (i).
+      expect(find.textContaining('不下发对手方地址'), findsNothing);
+      final freshness = find.byKey(const ValueKey<String>('indexer-freshness'));
+      await tester.ensureVisible(freshness);
+      await tester.tap(freshness);
+      await tester.pumpAndSettle();
       expect(find.textContaining('不下发对手方地址'), findsOneWidget);
     });
 
@@ -1097,7 +1109,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('聪明钱追踪还没有开放'), findsOneWidget);
-      expect(find.textContaining('胜率'), findsWidgets);
+      expect(findProvenanceContaining('胜率'), findsWidgets);
       expect(find.textContaining('0x'), findsNothing);
     });
   });

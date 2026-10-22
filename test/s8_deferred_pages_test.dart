@@ -33,10 +33,29 @@ void main() {
   testWidgets('bridge offers no amount, no route and no fee', (tester) async {
     await pumpS8Page(tester, const BridgeScreen());
 
+    // S278 · decision 0236 (需求方第 11 条): the heading says 跨链尚未开放;
+    // the default deferral prints no second sentence, and the page's
+    // explanations are behind the folio's (i).
+    expect(find.text('跨链尚未开放'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('bridge-unavailable')),
+      findsNothing,
+    );
+    expect(find.textContaining('这里不会发起任何跨链操作'), findsNothing);
+    expect(find.textContaining('先选来源链'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('bridge-scope-notice')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('bridge-info')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('bridge-scope-notice')),
       findsOneWidget,
     );
+    expect(find.textContaining('先选来源链'), findsOneWidget);
+    await tester.tapAt(const Offset(4, 4));
+    await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
     expect(find.textContaining('USDC'), findsNothing);
     expect(find.textContaining('998.4'), findsNothing);
@@ -203,20 +222,10 @@ void main() {
     ) async {
       await pumpS8Page(tester, const DappReviewScreen());
 
-      // The sentence is behind the prototype's own disclosure now; it is
+      // S278 · decision 0236: the sentence is behind the folio's (i); it is
       // still exactly one tap away and still says the same thing.
-      final summary = find.byKey(
-        const ValueKey<String>('dapp-scope-disclosure'),
-      );
-      await scrollToS8Section(tester, summary);
-      await tester.tap(
-        find.descendant(
-          of: summary,
-          matching: find.byKey(
-            const ValueKey<String>('loop-disclosure-summary'),
-          ),
-        ),
-      );
+      expect(find.textContaining('不会跟随任何跳转'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey<String>('dapp-info')));
       await tester.pumpAndSettle();
       final notice = find.byKey(const ValueKey<String>('dapp-no-fetch-notice'));
       expect(notice, findsOneWidget);

@@ -386,10 +386,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               ),
             ],
           ),
-          const LoopNotice(
+          // S278 · decision 0236: an explanation, behind (i).
+          const LoopProvenanceFooter(
             key: ValueKey<String>('watchlist-notice'),
+            label: '说明',
             title: '自选不是行情',
-            body:
+            text:
                 '这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。'
                 '资产必须已经在 LOOP 登记，否则整份自选表都不会保存。',
           ),

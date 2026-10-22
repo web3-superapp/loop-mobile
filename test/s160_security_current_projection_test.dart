@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/features/account/account_screens.dart'
     show walletAutomaticRecoveryEvidence;
 import 'package:loop_mobile/features/profile/security/security_models.dart';
@@ -134,6 +135,15 @@ void main() {
     Finder row(String id) =>
         find.byKey(ValueKey<String>('security-method-$id'));
 
+    // S278 · decision 0236: the 「由 Privy 提供」 card is the (i) beside 验证.
+    String scopeNote(WidgetTester tester) => tester
+        .widget<LoopInfoButton>(
+          find.byKey(const ValueKey<String>('security-scope-info')),
+        )
+        .notes
+        .single
+        .body;
+
     LoopRecordRow rowOf(WidgetTester tester, String id) =>
         tester.widget<LoopRecordRow>(row(id));
 
@@ -180,7 +190,8 @@ void main() {
       // Decision 0158: available is not enrollment, so 自动恢复 is the
       // neutral default way with its source, never 已启用.
       expect(recovery.badgeText, '默认方式');
-      expect(recovery.subtitle, walletAutomaticRecoveryEvidence);
+      expect(recovery.subtitle, isNull);
+      expect(recovery.infoText, walletAutomaticRecoveryEvidence);
       expect(find.text('已启用'), findsNothing);
       expect(recovery.onTap, isNull);
 
@@ -210,10 +221,7 @@ void main() {
           reason: id,
         );
       }
-      final notice = tester.widget<LoopNotice>(
-        find.byKey(const ValueKey<String>('security-scope-notice')),
-      );
-      expect(notice.body, '这些保护由 Privy 提供。社交恢复、导出私钥开放后会在这里显示。');
+      expect(scopeNote(tester), '这些保护由 Privy 提供。社交恢复、导出私钥开放后会在这里显示。');
     });
 
     testWidgets('available: MFA off opens the MFA sheet; passkey on', (
@@ -285,7 +293,7 @@ void main() {
         mfa: _MfaGateway(),
         capabilities: _currentModel(autoRecoveryReference: '来源：Privy 默认恢复'),
       );
-      expect(rowOf(tester, 'autoRecovery').subtitle, '来源：Privy 默认恢复');
+      expect(rowOf(tester, 'autoRecovery').infoText, '来源：Privy 默认恢复');
     });
 
     testWidgets('the default projection renders as before', (tester) async {
@@ -324,10 +332,7 @@ void main() {
           reason: id,
         );
       }
-      final notice = tester.widget<LoopNotice>(
-        find.byKey(const ValueKey<String>('security-scope-notice')),
-      );
-      expect(notice.body, '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。');
+      expect(scopeNote(tester), '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。');
     });
   });
 }
@@ -412,7 +417,19 @@ LoopSecurityCapabilities _currentModel({
 );
 
 extension on LoopRecordRow {
-  String? get badgeText => (trailingBadge as LoopBadge?)?.text;
+  /// S278 · decision 0236: a row whose explanation is behind (i) carries
+  /// the (i) and the badge side by side.
+  List<Widget> get _trailing => switch (trailingBadge) {
+    final Row row => row.children,
+    final Widget one => <Widget>[one],
+    null => const <Widget>[],
+  };
+
+  String? get badgeText => _trailing.whereType<LoopBadge>().firstOrNull?.text;
+
+  /// What the row's (i) says; null when the row has none.
+  String? get infoText =>
+      _trailing.whereType<LoopInfoButton>().firstOrNull?.notes.single.body;
 }
 
 final class _MfaGateway implements LoopMfaGateway {

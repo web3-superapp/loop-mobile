@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
@@ -111,7 +112,8 @@ void main() {
     expect(find.text('还没有开放'), findsNWidgets(5));
     expect(find.text('未开启'), findsNothing);
     // And the row says what the method would do, instead of repeating its own
-    // title with 还没有开放 after it.
+    // title with 还没有开放 after it — since S278 (decision 0236) behind the
+    // row's (i), not under its title.
     for (final id in shown) {
       final row = find.byKey(
         ValueKey<String>('security-method-${id.wireName}'),
@@ -119,6 +121,19 @@ void main() {
       await scrollToS8Section(tester, row);
       expect(
         tester.widget<LoopRecordRow>(row).subtitle,
+        isNull,
+        reason: id.wireName,
+      );
+      expect(
+        tester
+            .widget<LoopInfoButton>(
+              find.byKey(
+                ValueKey<String>('security-method-${id.wireName}-info'),
+              ),
+            )
+            .notes
+            .single
+            .body,
         id.description,
         reason: id.wireName,
       );

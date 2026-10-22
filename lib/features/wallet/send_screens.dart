@@ -961,6 +961,8 @@ class _RecipientChecks extends StatelessWidget {
           // printed to the person sending money.
           const LoopProvenanceFooter(
             key: ValueKey<String>('send-recipient-basis'),
+            label: '说明',
+            title: '判断依据',
             text: '首次收款方的判断依据：你自己在 LOOP 已索引的 ERC-20 转账记录',
           ),
         ],
@@ -1122,12 +1124,14 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                   )
                 : const SizedBox.shrink(),
           ),
-          const LoopNotice(
+          // S278 · decision 0236: an explanation, behind (i).
+          const LoopProvenanceFooter(
             key: ValueKey<String>('send-confirm-signing-exit'),
-            body:
+            label: '说明',
+            title: '统一签名出口',
+            text:
                 '签名由 Privy 嵌入式钱包在本机执行；所有资金操作都汇聚到同一个签名弹层，'
                 '这是全产品唯一的签名出口。',
-            title: '统一签名出口',
           ),
           const LoopNotice(
             key: ValueKey<String>('send-confirm-power'),

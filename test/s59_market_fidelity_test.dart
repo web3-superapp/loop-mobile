@@ -20,6 +20,7 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 /// A rules answer that publishes a weight for the market fixture's asset.
 FakeMiningGateway _weightedRules() => FakeMiningGateway(
@@ -83,7 +84,7 @@ void main() {
         find.byKey(const ValueKey<String>('market-list-provenance')),
         findsOneWidget,
       );
-      expect(find.textContaining('来源 DexScreener'), findsWidgets);
+      expect(findProvenanceContaining('来源 DexScreener'), findsWidgets);
     });
   });
 

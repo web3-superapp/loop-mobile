@@ -236,48 +236,49 @@ void main() {
   group('S112 · LoopProvenanceLine', () {
     final now = DateTime(2026, 10, 8, 16, 30);
 
-    testWidgets('one weak 11px line: sources, then the local clock', (
+    testWidgets('S278 · one quiet (i) 来源: the line is not printed', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        _host(
-          LoopProvenanceLine(
-            sources: const <String>['DexScreener', 'DexScreener', 'GoPlus'],
-            observedAt: DateTime(2026, 10, 8, 14, 2),
-            now: now,
-          ),
-        ),
+      final line = LoopProvenanceLine(
+        sources: const <String>['DexScreener', 'DexScreener', 'GoPlus'],
+        observedAt: DateTime(2026, 10, 8, 14, 2),
+        now: now,
       );
+      await tester.pumpWidget(_host(line));
 
-      final text = tester.widget<Text>(
-        find.text('来源 DexScreener · GoPlus · 观察于 14:02'),
+      // Decision 0236: the statement is the control's name and the sheet's
+      // content, never a printed line.
+      expect(line.text, '来源 DexScreener · GoPlus · 观察于 14:02');
+      expect(find.text('来源 DexScreener · GoPlus · 观察于 14:02'), findsNothing);
+      final trigger = find.byKey(
+        const ValueKey<String>('loop-provenance-line'),
       );
-      // Decision 0229: the caption size, 14 (was 11).
-      expect(text.style?.fontSize, 14);
-      expect(text.maxLines, 1);
       expect(
-        tester
-            .getSize(find.byKey(const ValueKey<String>('loop-provenance-line')))
-            .height,
-        greaterThanOrEqualTo(44),
+        find.descendant(of: trigger, matching: find.text('来源')),
+        findsOneWidget,
+      );
+      expect(tester.getSize(trigger).height, greaterThanOrEqualTo(44));
+      expect(
+        tester.getSemantics(trigger).label,
+        '来源 DexScreener · GoPlus · 观察于 14:02，查看数据来源说明',
       );
     });
 
     testWidgets('an earlier day carries its date', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          LoopProvenanceLine(
-            sources: const <String>['LOOP 链上索引'],
-            observedAt: DateTime(2026, 10, 7, 9, 5),
-            prefix: '公式 v3',
-            now: now,
-          ),
-        ),
+      final line = LoopProvenanceLine(
+        sources: const <String>['LOOP 链上索引'],
+        observedAt: DateTime(2026, 10, 7, 9, 5),
+        prefix: '公式 v3',
+        now: now,
       );
-      expect(
-        find.text('公式 v3 · 来源 LOOP 链上索引 · 观察于 10-07 09:05'),
-        findsOneWidget,
+      await tester.pumpWidget(_host(line));
+      expect(line.text, '公式 v3 · 来源 LOOP 链上索引 · 观察于 10-07 09:05');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('loop-provenance-line')),
       );
+      await tester.pumpAndSettle();
+      expect(find.text('公式 v3'), findsOneWidget);
+      expect(find.text('2026-10-07 09:05'), findsOneWidget);
     });
 
     testWidgets('nothing to attribute renders nothing', (tester) async {

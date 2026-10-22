@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -135,19 +136,15 @@ class GroupChatScreen extends ConsumerWidget {
                         CommunityPreviewNotice(mode: mode, resource: '群聊'),
                         LoopChatHeaderFold(
                           collapsed: loopChatKeyboardIsUp(context),
-                          child: const LoopNotice(
+                          // S278 · decision 0236: an explanation, behind (i).
+                          child: const LoopProvenanceFooter(
                             key: ValueKey<String>('group-scope-note'),
-                            icon: 'info',
+                            label: '说明',
                             title: '普通群与社区的区别',
-                            body:
+                            margin: EdgeInsets.fromLTRB(16, 0, 12, 0),
+                            text:
                                 '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
                                 '带币社区在「社区」栏。',
-                            margin: EdgeInsets.fromLTRB(
-                              LoopSpacing.page,
-                              10,
-                              LoopSpacing.page,
-                              4,
-                            ),
                           ),
                         ),
                       ],

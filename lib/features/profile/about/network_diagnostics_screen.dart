@@ -118,7 +118,11 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
               _row(state.results[index], index, state.results.length),
           ],
         ),
-        const LoopProvenanceFooter(text: '每项单独限时 8 秒，全部探测同时发出，最长 15 秒。'),
+        const LoopProvenanceFooter(
+          label: '说明',
+          title: '探测说明',
+          text: '每项单独限时 8 秒，全部探测同时发出，最长 15 秒。',
+        ),
         const LoopLabel('结果'),
         LoopButtonPair(
           children: <Widget>[
@@ -136,6 +140,8 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
         ),
         const LoopProvenanceFooter(
           key: ValueKey<String>('network-diagnostics-privacy'),
+          label: '说明',
+          title: '结果去向',
           text: '结果只留在这台设备上，不会上传；复制或分享由你决定。',
         ),
         const SizedBox(height: 20),

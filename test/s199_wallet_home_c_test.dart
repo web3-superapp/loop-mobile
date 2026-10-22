@@ -1168,7 +1168,8 @@ void main() {
       expect(key('wallet-total-fiat-stale'), findsNothing);
       await tester.tap(key('wallet-networth-expand'));
       await tester.pumpAndSettle();
-      expect(key('wallet-networth-provenance'), findsOneWidget);
+      // S278 · decision 0236: nothing is printed under the chart.
+      expect(key('wallet-networth-provenance'), findsNothing);
       expect(key('wallet-networth-fx-provenance'), findsNothing);
       await tester.tap(key('wallet-networth-collapse'));
       await tester.pumpAndSettle();
@@ -1178,28 +1179,31 @@ void main() {
       expect(key('wallet-info-fx'), findsNothing);
     });
 
-    testWidgets('the panel repeats the rate under the provenance line', (
+    // S278 · decision 0236 (需求方第 13 条): the two grey lines that stood
+    // under the chart are gone; 「关于总资产」 carries the snapshot's source
+    // and the rate.
+    testWidgets('no line under the chart; (i) says the snapshot and the rate', (
       tester,
     ) async {
       final fiat = fx();
       await pumpWallet(tester, history: port(fiat));
       await tester.tap(key('wallet-networth-expand'));
       await tester.pumpAndSettle();
-      final provenance = key('wallet-networth-provenance');
-      final line = key('wallet-networth-fx-provenance');
-      expect(provenance, findsOneWidget);
-      expect(line, findsOneWidget);
-      expect(
-        tester.getTopLeft(line).dy,
-        greaterThan(tester.getTopLeft(provenance).dy),
-      );
-      final text = tester.widget<Text>(line);
-      expect(text.data, walletFxProvenanceText(fiat));
-      expect(text.data, startsWith(freshHead));
-      expect(text.style!.fontSize, LoopType.captionSm.fontSize);
-      expect(text.style!.color, LoopGround.secondaryOf(tester.element(line)));
-      await tester.tap(key('wallet-networth-collapse'));
+      expect(key('wallet-networth-provenance'), findsNothing);
+      expect(key('wallet-networth-fx-provenance'), findsNothing);
+      expect(find.textContaining('净值快照'), findsNothing);
+      expect(find.textContaining('人民币按'), findsNothing);
+      await tester.tap(key('wallet-info'));
       await tester.pumpAndSettle();
+      expect(key('wallet-info-history-source'), findsOneWidget);
+      expect(
+        tester.widget<Text>(key('wallet-info-history')).data,
+        contains('每小时为这个钱包记下的 USD 估值'),
+      );
+      expect(
+        tester.widget<Text>(key('wallet-info-fx')).data,
+        walletFxProvenanceText(fiat),
+      );
     });
   });
 }

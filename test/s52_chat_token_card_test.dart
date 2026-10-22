@@ -25,6 +25,7 @@ import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 const _address = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 
@@ -263,7 +264,7 @@ void main() {
       expect(find.textContaining('检测到 mint 函数'), findsOneWidget);
       // A fact the provider answered "false" for is not a card line.
       expect(find.textContaining('合约已验证开源'), findsNothing);
-      expect(find.textContaining('报价 来源 DexScreener'), findsOneWidget);
+      expect(findProvenanceContaining('报价 来源 DexScreener'), findsOneWidget);
       // The opaque identity never reaches the screen; the address does.
       expect(find.textContaining('eip155'), findsNothing);
 
@@ -344,10 +345,10 @@ void main() {
       );
       expect(find.text('BNB Smart Chain'), findsOneWidget);
       expect(find.text(r'$2,575.14'), findsOneWidget);
-      expect(
-        find.textContaining('资产目录状态 · 未登记 · 身份来自 GeckoTerminal'),
-        findsOneWidget,
-      );
+      // S278 · decision 0236: the status stays printed; where the identity
+      // came from is behind the strip's (i).
+      expect(find.textContaining('资产目录状态 · 未登记'), findsOneWidget);
+      expect(findProvenanceContaining('身份来自 GeckoTerminal'), findsOneWidget);
       // There is no holder page for an address outside the registry, and the
       // cell says which gap it is.
       expect(find.text('未收录'), findsOneWidget);

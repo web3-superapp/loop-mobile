@@ -319,6 +319,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                 context,
                 balances: balances,
                 fiat: fiat,
+                history: chartState?.value ?? week,
                 keyPrefix: keyPrefix,
               ),
               child: LoopIcon('info', size: 14, color: auxiliary),
@@ -517,17 +518,19 @@ Future<void> showWalletTotalInfoSheet(
   BuildContext context, {
   required LoopWalletBalances? balances,
   LoopNetWorthFiat? fiat,
+  LoopNetWorthHistory? history,
   String keyPrefix = 'wallet',
 }) {
   final netWorth = balances?.netWorth;
   final fx = fiat == null ? null : walletFxProvenanceText(fiat);
+  final snapshotSource = walletNetWorthProvenance(history);
   final snapshot = balances?.snapshot;
   return showLoopSheet<void>(
     context,
     barrierLabel: '关闭总资产说明',
     builder: (sheetContext) {
       final secondary = LoopGround.secondaryOf(sheetContext);
-      return Padding(
+      return SingleChildScrollView(
         key: ValueKey<String>('$keyPrefix-info-sheet'),
         padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
         child: Column(
@@ -548,6 +551,14 @@ Future<void> showWalletTotalInfoSheet(
                     key: ValueKey<String>('$keyPrefix-not-spendable'),
                     style: LoopType.bodySm.copyWith(color: secondary),
                   ),
+                  if (snapshotSource != null) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshotSource.detail,
+                      key: ValueKey<String>('$keyPrefix-info-history'),
+                      style: LoopType.bodySm.copyWith(color: secondary),
+                    ),
+                  ],
                   // Decision 0194: where the ≈¥ beside the total came from.
                   if (fx != null) ...<Widget>[
                     const SizedBox(height: 8),
@@ -606,6 +617,21 @@ Future<void> showWalletTotalInfoSheet(
                       ),
                       padding: EdgeInsets.zero,
                     ),
+                  ],
+                  // S278 · decision 0236: what stood under the chart.
+                  if (snapshotSource != null) ...<Widget>[
+                    LoopKeyValue(
+                      key: ValueKey<String>('$keyPrefix-info-history-source'),
+                      label: '净值快照来源',
+                      value: snapshotSource.source,
+                      padding: EdgeInsets.zero,
+                    ),
+                    if (snapshotSource.observedAt case final DateTime at)
+                      LoopKeyValue(
+                        label: '快照观察于',
+                        value: loopDateTimeLabel(at),
+                        padding: EdgeInsets.zero,
+                      ),
                   ],
                   if (balances != null)
                     LoopKeyValue(

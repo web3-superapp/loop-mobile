@@ -930,11 +930,8 @@ class SwapRouteScreen extends StatelessWidget {
               '报价方 ${value.provider} · 定价出处 '
               '${value.priceImpact.priceSource ?? '未标注'} · '
               '有效期 ${quote.policy.quoteTtlSeconds} 秒',
-        ),
-        const LoopNotice(
-          key: ValueKey<String>('swap-route-notice'),
-          title: '只展示最终报价',
-          body: '只有报价方提供路径时才会显示逐跳明细，这次没有提供。',
+          // S278 · decision 0236: the 「只展示最终报价」 card.
+          notes: const <String>['只展示最终报价：只有报价方提供路径时才会显示逐跳明细，这次没有提供。'],
         ),
       ],
     );

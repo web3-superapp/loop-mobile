@@ -13,6 +13,8 @@ import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_round_key.dart';
 
+import 'support/provenance_finders.dart';
+
 Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -388,12 +390,14 @@ void main() {
           .dx,
       LoopSpacing.page,
     );
+    // S278 · decision 0236: the provenance line is a (i) row on the same
+    // gutter.
     expect(
-      tester.getTopLeft(find.textContaining('来源 LOOP')).dx,
+      tester.getTopLeft(findProvenanceContaining('来源 LOOP')).dx,
       greaterThanOrEqualTo(LoopSpacing.page),
     );
     expect(
-      tester.getTopLeft(find.textContaining('来源 LOOP')).dx,
+      tester.getTopLeft(findProvenanceContaining('来源 LOOP')).dx,
       lessThan(LoopSpacing.page + 1),
     );
     expect(tester.getTopLeft(find.text('内容')).dx, LoopSpacing.page);

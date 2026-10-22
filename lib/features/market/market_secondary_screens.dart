@@ -27,6 +27,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 
@@ -178,10 +179,12 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           height: chartHeight,
           onIntervalChanged: (value) => setState(() => _interval = value),
         ),
-        const LoopNotice(
+        // S278 · decision 0236: an explanation, behind (i).
+        const LoopProvenanceFooter(
           key: ValueKey<String>('chart-full-interval-notice'),
+          label: '说明',
           title: '这张图能做什么',
-          body:
+          text:
               '周期可选 15分 / 1时 / 4时 / 1日 / 1周；左右拖动看更早的数据，双指缩放，长按看某一根的价格和时间。'
               'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源；'
               '除此之外没有其他指标，也没有画线工具。',
@@ -260,11 +263,29 @@ class _HolderDistributionScreenState
         heading: count == null || count.value == null
             ? '持有人总数不可用'
             : '${loopFormatDecimal(count.value!, maxFractionDigits: 0)} 持有人',
+        // S278 · decision 0236: the count's source and time sit behind the
+        // kicker's (i); a count that could not be read keeps its reason.
         caption: count == null
             ? '持有人事实尚未读取成功。'
             : count.isAvailable
-            ? loopFactProvenance(count)
+            ? null
             : loopReasonCodeText(count.reasonCode),
+        kickerTrailing: count != null && count.isAvailable
+            ? LoopInfoTrigger(
+                key: const ValueKey<String>('token-holders-provenance'),
+                semanticsLabel: '${loopFactProvenance(count)}，查看数据来源说明',
+                onTap: () => unawaited(
+                  showLoopInfoSheet(
+                    context,
+                    title: '数据来源',
+                    sheetKey: 'token-holders-provenance-sheet',
+                    notes: <LoopInfoNote>[
+                      LoopInfoNote(body: loopFactProvenance(count)),
+                    ],
+                  ),
+                ),
+              )
+            : null,
         stamp: count != null && count.isAvailable
             ? loopFormatDecimal(count.value!, maxFractionDigits: 0)
             : null,
@@ -534,11 +555,13 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
           rows: <LoopRecordRow>[for (final trade in visible) _tradeRow(trade)],
         ),
       ...more,
-      _FreshnessFooter(freshness: block.freshness),
-      const LoopNotice(
-        key: ValueKey<String>('token-trades-notice'),
-        title: '不下发对手方地址',
-        body: '这里只能标出哪一笔是你自己的钱包发起的。"大单"是按金额在本机筛出来的，"聪明钱"暂时没有数据。',
+      // S278 · decision 0236: the 「不下发对手方地址」 card is behind the
+      // freshness line's (i).
+      _FreshnessFooter(
+        freshness: block.freshness,
+        notes: const <String>[
+          '不下发对手方地址：这里只能标出哪一笔是你自己的钱包发起的。"大单"是按金额在本机筛出来的，"聪明钱"暂时没有数据。',
+        ],
       ),
     ];
   }
@@ -578,15 +601,20 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
 }
 
 class _FreshnessFooter extends StatelessWidget {
-  const _FreshnessFooter({required this.freshness});
+  const _FreshnessFooter({
+    required this.freshness,
+    this.notes = const <String>[],
+  });
 
   final LoopIndexerFreshness freshness;
+  final List<String> notes;
 
   @override
   Widget build(BuildContext context) {
     final lag = freshness.lagBlocks;
     return LoopProvenanceFooter(
       key: const ValueKey<String>('indexer-freshness'),
+      notes: notes,
       text: <String>[
         // The block number on the same line already groups; a figure that
         // does not reads as a different kind of number.
@@ -897,10 +925,12 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
             message: '动向来自关注地址，而关注地址还没有开放。',
           ),
         ],
-        const LoopNotice(
+        // S278 · decision 0236: an explanation, behind (i).
+        const LoopProvenanceFooter(
           key: ValueKey<String>('smart-money-notice'),
+          label: '说明',
           title: '胜率不是预测',
-          body: '即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
+          text: '即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
         ),
       ],
     );
