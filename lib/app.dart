@@ -46,6 +46,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
@@ -768,9 +769,14 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             child: content,
           ),
         );
-        return LoopPageRecoveryScope(
-          retry: metaObserver.retryObservation,
-          child: LoopAppLockGate(child: LoopToastHost(child: content)),
+        // Decision 0234: every field's keyboard goes away on a tap outside
+        // it, and an iOS number pad gets a 完成 bar. Above the root
+        // navigator, so sheets and dialogs are covered by the same scope.
+        return LoopKeyboardScope(
+          child: LoopPageRecoveryScope(
+            retry: metaObserver.retryObservation,
+            child: LoopAppLockGate(child: LoopToastHost(child: content)),
+          ),
         );
       },
     );

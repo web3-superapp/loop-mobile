@@ -189,6 +189,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         controller: _code,
         enabled: !state.isBusy,
         keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
         style: LoopType.figureLg,
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.digitsOnly,

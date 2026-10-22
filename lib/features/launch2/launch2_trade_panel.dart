@@ -17,6 +17,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// The one line a moved or expired price leaves in the panel (S134–S137 §4:
 /// 「面板内一行，不弹 toast」).
@@ -431,21 +432,24 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (_detail.stage == Launch2Stage.public) ...<Widget>[
-          LoopSegBar(
-            key: const ValueKey<String>('launch2-trade-side'),
-            labels: const <String>['买入', '卖出'],
-            padding: const EdgeInsets.only(bottom: 14),
-            selectedIndex: _side == Launch2Side.buy ? 0 : 1,
-            onSelected: (index) {
-              final next = index == 0 ? Launch2Side.buy : Launch2Side.sell;
-              if (next == _side) return;
-              setState(() {
-                _side = next;
-                _quote = null;
-                _notice = null;
-              });
-              _amount.clear();
-            },
+          // Decision 0234: switching side while typing keeps the keyboard.
+          LoopKeepsKeyboard(
+            child: LoopSegBar(
+              key: const ValueKey<String>('launch2-trade-side'),
+              labels: const <String>['买入', '卖出'],
+              padding: const EdgeInsets.only(bottom: 14),
+              selectedIndex: _side == Launch2Side.buy ? 0 : 1,
+              onSelected: (index) {
+                final next = index == 0 ? Launch2Side.buy : Launch2Side.sell;
+                if (next == _side) return;
+                setState(() {
+                  _side = next;
+                  _quote = null;
+                  _notice = null;
+                });
+                _amount.clear();
+              },
+            ),
           ),
           const SizedBox(height: 8),
         ],
@@ -790,20 +794,22 @@ class _QuoteLines extends StatelessWidget {
                     key: const ValueKey<String>('launch2-trade-exceeds'),
                   ),
                 ),
-                TextButton(
-                  key: const ValueKey<String>('launch2-trade-fill-max'),
-                  onPressed: onFillMax,
-                  style: TextButton.styleFrom(
-                    foregroundColor: LoopColors.yellow,
-                    minimumSize: const Size(
-                      LoopTouch.minimum,
-                      LoopTouch.minimum,
+                LoopKeepsKeyboard(
+                  child: TextButton(
+                    key: const ValueKey<String>('launch2-trade-fill-max'),
+                    onPressed: onFillMax,
+                    style: TextButton.styleFrom(
+                      foregroundColor: LoopColors.yellow,
+                      minimumSize: const Size(
+                        LoopTouch.minimum,
+                        LoopTouch.minimum,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    side == Launch2Side.buy
-                        ? '填入 ${launch2Usd1Label(value.maxAmountIn, maxFractionDigits: 4)}'
-                        : '填入 ${launch2MemeLabel(value.maxAmountIn, ticker)}',
+                    child: Text(
+                      side == Launch2Side.buy
+                          ? '填入 ${launch2Usd1Label(value.maxAmountIn, maxFractionDigits: 4)}'
+                          : '填入 ${launch2MemeLabel(value.maxAmountIn, ticker)}',
+                    ),
                   ),
                 ),
               ],

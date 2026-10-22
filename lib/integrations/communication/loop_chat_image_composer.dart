@@ -27,6 +27,7 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// Applies LOOP's composer policy to [props].
 ///
@@ -208,9 +209,14 @@ class _LoopChatImageComposerState extends State<LoopChatImageComposer> {
   }
 
   @override
-  Widget build(BuildContext context) => DefaultStreamMessageComposer(
-    props: loopChatImageComposerProps(widget.props, onProblem: _toast).copyWith(
-      onError: (error, _) => _toast(loopChatImageFailureMessage(error)),
+  // Decision 0234: the whole composer (send, attachment, quoted-reply
+  // strip) belongs with its field, so tapping it keeps the keyboard up.
+  Widget build(BuildContext context) => LoopKeepsKeyboard(
+    child: DefaultStreamMessageComposer(
+      props: loopChatImageComposerProps(widget.props, onProblem: _toast)
+          .copyWith(
+            onError: (error, _) => _toast(loopChatImageFailureMessage(error)),
+          ),
     ),
   );
 }
