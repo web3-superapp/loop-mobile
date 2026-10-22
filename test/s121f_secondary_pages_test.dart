@@ -86,7 +86,8 @@ void main() {
         ),
       );
 
-      // Header: the logo at 72, the name at 24, verification as a mark.
+      // Header: the logo at 72, the name at 24; a verified community with no
+      // operator label wears no mark at all (decision 0239).
       expect(
         tester.getSize(_key('community-profile-logo')),
         const Size(72, 72),
@@ -95,8 +96,9 @@ void main() {
         tester.widget<Text>(_key('community-profile-name')).style?.fontSize,
         LoopType.displaySm.fontSize, // R27 displaySm (decision 0191 M20)
       );
-      expect(_key('community-profile-verification'), findsOneWidget);
-      expect(find.text('已验证'), findsOneWidget);
+      expect(_key('community-profile-label'), findsNothing);
+      expect(_key('community-profile-owner-review'), findsNothing);
+      expect(find.text('已验证'), findsNothing);
       // Four round keys for an owner: 进群聊 / 语音房 / 分享 / 管理, each a 56
       // disc with its word under it.
       final keys = find.descendant(

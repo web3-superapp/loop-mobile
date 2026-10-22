@@ -326,7 +326,8 @@ void main() {
       );
       expect(find.text('128 成员，\$FROG'), findsOneWidget);
       expect(find.text('128 成员'), findsOneWidget);
-      expect(find.text('已验证'), findsNWidgets(2));
+      // Decision 0239: neither row carries a label, so neither wears a mark.
+      expect(find.text('已验证'), findsNothing);
 
       final opened = <String>[];
       await _drain(tester);

@@ -108,7 +108,7 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
         if (rawType is! String) LoopV2ProjectionCodec.invalid();
         final resultType = SearchResultType.tryParse(rawType);
         if (resultType == null) LoopV2ProjectionCodec.invalid();
-        final snapshot = LoopV2Contract.strictMap(
+        final snapshot = LoopV2Contract.strictMapWithOptional(
           item['displaySnapshot'],
           const <String>{
             'title',
@@ -123,6 +123,10 @@ final class DioLoopV2SearchApi implements LoopV2SearchApi {
             'memberCount',
             'verificationStatus',
           },
+          // Decision 0239: a community snapshot may carry the operator's
+          // free-text `label`. Search does not draw it; it is tolerated so the
+          // key arriving never fails the page.
+          const <String>{'label'},
         );
         final logoUrl = snapshot['logo'] == null
             ? null

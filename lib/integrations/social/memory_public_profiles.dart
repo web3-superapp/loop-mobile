@@ -110,6 +110,7 @@ final class MemoryPublicProfileGateway implements PublicProfileGateway {
         memberCount: 312,
         verificationStatus: ProfileCommunityVerification.verified,
         joinedAt: _now.subtract(const Duration(days: 12)),
+        label: '精选社区',
       ),
       ProfileCommunity(
         communityId: '5b0c4f1e-2d3a-4b6c-8d9e-0f1a2b3c4d02',

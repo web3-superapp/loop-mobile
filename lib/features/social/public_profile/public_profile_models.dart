@@ -443,6 +443,7 @@ final class ProfileCommunity {
     required this.memberCount,
     required this.verificationStatus,
     required this.joinedAt,
+    this.label,
   });
 
   final String communityId;
@@ -452,6 +453,9 @@ final class ProfileCommunity {
   final int memberCount;
   final ProfileCommunityVerification verificationStatus;
   final DateTime joinedAt;
+
+  /// The operator's free-text mark (decision 0239); `null` is no mark.
+  final String? label;
 }
 
 /// One page of `/v2/profiles/{id}/communities`.

@@ -873,6 +873,67 @@ String communityVerificationLabel(CommunityVerification status) =>
       CommunityVerification.rejected => '未通过',
     };
 
+/// How a community's free-text label is drawn (decision 0239).
+enum CommunityLabelLook {
+  /// The list capsule 「已验证」 used to wear: Yellow 13 % ground, Yellow word
+  /// (`LoopBadge` kind `up`).
+  badge,
+
+  /// The small 20-tall mark after a name on a community's own home, where
+  /// 「已验证」 used to sit (`LoopTag` lime), without the verified check.
+  tag,
+}
+
+/// The operator's one free-text mark for a community — 「算力社区」,
+/// 「精选社区」 — in the capsule 「已验证」 used to wear (decision 0239).
+///
+/// It is drawn at most [communityLabelMaxChars] characters long and always on
+/// one line; [maxWidth] lets a row cap it further so the name beside it is
+/// never squeezed out. A caller with no label draws nothing at all.
+class CommunityLabelBadge extends StatelessWidget {
+  const CommunityLabelBadge(
+    this.label, {
+    super.key,
+    this.look = CommunityLabelLook.badge,
+    this.maxWidth = double.infinity,
+  });
+
+  final String label;
+  final CommunityLabelLook look;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = communityLabelDisplay(label);
+    final tag = look == CommunityLabelLook.tag;
+    final foreground = tag ? LoopColors.lime : LoopColors.yellow;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        height: tag ? 20 : null,
+        alignment: tag ? Alignment.center : null,
+        padding: tag
+            ? const EdgeInsets.symmetric(horizontal: 6)
+            : const EdgeInsets.fromLTRB(10, 4, 10, 4),
+        decoration: BoxDecoration(
+          color: tag ? LoopColors.limeSoft : LoopColors.yellowSoft,
+          borderRadius: LoopRadius.pill,
+        ),
+        child: Text(
+          text,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: LoopTypography.withWeight(
+            tag ? LoopType.kicker : LoopType.label,
+            FontWeight.w600,
+          ).copyWith(color: foreground),
+        ),
+      ),
+    );
+  }
+}
+
 /// The applicant's own reading of the review, in words.
 ///
 /// It is deliberately not [communityVerificationLabel]: that one is what a
@@ -1069,7 +1130,10 @@ LoopRecordRow communityDirectoryRow({
   LoopRowPosition position = LoopRowPosition.single,
   CommunityDirectorySort sort = CommunityDirectorySort.members,
 }) {
-  final verification = communityVerificationLabel(community.verificationStatus);
+  // Decision 0239: the operator's label, or nothing; never 「已验证」.
+  final label = community.label == null
+      ? null
+      : communityLabelDisplay(community.label!);
   final members = '${community.memberCount} 名成员';
   final ranked = communityDirectoryRowFigure(community, sort: sort);
   if (ranked == null) {
@@ -1083,10 +1147,10 @@ LoopRecordRow communityDirectoryRow({
       title: community.name,
       // The slug is the server's addressing handle; it told a reader browsing
       // the directory nothing 「mock-vol-01」 did not already hide.
-      subtitle: '$members · $verification',
+      subtitle: label == null ? members : '$members · $label',
       onTap: onTap,
       position: position,
-      semanticLabel: '${community.name}，$verification，$members',
+      semanticLabel: <String>[community.name, ?label, members].join('，'),
     );
   }
   // The column the list is ranked by is the one the value slot states; the
@@ -1099,13 +1163,13 @@ LoopRecordRow communityDirectoryRow({
       logoRef: community.logoRef,
     ),
     title: community.name,
-    subtitle: '$verification · $members',
+    subtitle: label == null ? members : '$label · $members',
     trailing: ranked.value,
     trailingCaption: ranked.caption,
     onTap: onTap,
     position: position,
     semanticLabel:
-        '${community.name}，$verification，$members，'
+        '${<String>[community.name, ?label, members].join('，')}，'
         '${ranked.caption}${ranked.semanticValue}',
   );
 }

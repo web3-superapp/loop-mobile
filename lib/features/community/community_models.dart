@@ -260,6 +260,7 @@ final class CommunitySummary {
     this.boundAsset,
     this.assetBadge,
     this.viewerMembership,
+    this.label,
   });
 
   final String communityId;
@@ -302,6 +303,12 @@ final class CommunitySummary {
   /// and then the row says nothing about membership at all.
   final CommunityDirectoryViewer? viewerMembership;
 
+  /// The operator's one free-text mark for this community (decision 0239),
+  /// such as 「算力社区」 or 「精选社区」. It replaced 「已验证」 on every reader
+  /// surface. `null` when the server sent no key, `null`, or an empty string —
+  /// all three read as "no mark", and the row then shows none.
+  final String? label;
+
   bool get isVerified => verificationStatus == CommunityVerification.verified;
 
   bool get hasBoundAsset => boundAssetKey != null;
@@ -330,6 +337,7 @@ final class CommunitySummary {
     boundAsset: boundAsset,
     assetBadge: assetBadge,
     viewerMembership: viewer,
+    label: label,
   );
 }
 
@@ -1194,4 +1202,28 @@ final class CommunityApplication {
     }
     return null;
   }
+}
+
+/// The longest a community label is drawn, in characters (decision 0239).
+const int communityLabelMaxChars = 12;
+
+/// Reads the optional `label` key a community response may carry (decision
+/// 0239). The key is client-first: a server that predates it sends nothing,
+/// and a server that has it sends `null` until an operator writes one. Absent,
+/// `null`, empty, blank, and any value that is not a string all read as "no
+/// label" — a label is decoration, so it never fails the community it rides
+/// on.
+String? communityLabelFromWire(Object? raw) {
+  if (raw is! String) return null;
+  final trimmed = raw.trim();
+  return trimmed.isEmpty ? null : trimmed;
+}
+
+/// The label as drawn: at most [communityLabelMaxChars] characters, the rest
+/// replaced by 「…」. Counted in code points so a CJK label is cut at a
+/// character and never in half of a surrogate pair.
+String communityLabelDisplay(String label) {
+  final runes = label.runes.toList(growable: false);
+  if (runes.length <= communityLabelMaxChars) return label;
+  return '${String.fromCharCodes(runes.take(communityLabelMaxChars))}…';
 }

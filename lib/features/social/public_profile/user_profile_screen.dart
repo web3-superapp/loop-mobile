@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
+import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -1048,7 +1049,8 @@ class _TradesSection extends StatelessWidget {
 }
 
 /// The 社区 segment (decision 0218): the communities the account joined, one
-/// row each — logo, name, 「已验证」 as a soft capsule, member count — opening
+/// row each — logo, name, the operator's label as a soft capsule (decision
+/// 0239), member count — opening
 /// the community's record; paged as the reader scrolls.
 class _CommunitiesSection extends StatelessWidget {
   const _CommunitiesSection({
@@ -1125,8 +1127,8 @@ class _CommunitiesSection extends StatelessWidget {
   }
 
   Widget _row(ProfileCommunity item) {
-    final verified =
-        item.verificationStatus == ProfileCommunityVerification.verified;
+    // Decision 0239: the operator's label replaces 「已验证」; no label, no mark.
+    final label = item.label;
     final members =
         '${loopFormatDecimal(Decimal.fromInt(item.memberCount), maxFractionDigits: 0)} 名成员';
     return LoopFlat(
@@ -1141,17 +1143,20 @@ class _CommunitiesSection extends StatelessWidget {
         ),
         title: item.name,
         subtitle: members,
-        // docs/42 附C: 「已验证」 is a yellowSoft capsule, never solid.
-        trailingBadge: verified
-            ? const LoopBadge(
-                '已验证',
-                key: ValueKey<String>('user-profile-community-verified'),
-                kind: LoopBadgeKind.launch,
-              )
-            : null,
+        // docs/42 附C: the label is a yellowSoft capsule, never solid; capped
+        // so the name keeps the line.
+        trailingBadge: label == null
+            ? null
+            : CommunityLabelBadge(
+                label,
+                key: ValueKey<String>(
+                  'user-profile-community-label-${item.communityId}',
+                ),
+                maxWidth: 112,
+              ),
         semanticLabel: <String>[
           item.name,
-          if (verified) '已验证',
+          if (label != null) communityLabelDisplay(label),
           members,
         ].join('，'),
         onTap: () => onOpen(communityProfileLocation(item.communityId)),

@@ -15,7 +15,6 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_profile_communities.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_public_profiles.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
@@ -44,7 +43,9 @@ Map<String, Object?> _communityRow({
   String name = '星夜社区',
   String verification = 'verified',
   Object? logoRef,
+  Map<String, Object?> extra = const <String, Object?>{},
 }) => <String, Object?>{
+  ...extra,
   'communityId': id,
   'name': name,
   'slug': 'star-night',
@@ -62,7 +63,7 @@ Map<String, Object?> _communitiesBody({
   'items':
       items ??
       <Object?>[
-        _communityRow(),
+        _communityRow(extra: const <String, Object?>{'label': '算力社区'}),
         _communityRow(
           id: _communityB,
           name: 'Night Owls',
@@ -566,7 +567,9 @@ void main() {
   });
 
   group('user-profile · 社区', () {
-    testWidgets('lists rows, 已验证 capsule, opens the community', (tester) async {
+    testWidgets('lists rows, label capsule, opens the community', (
+      tester,
+    ) async {
       final profiles = _Profiles(
         communityPages: <ProfileCommunitiesPage>[
           LoopV2ProfileCommunitiesCodec.page(_communitiesBody()),
@@ -578,14 +581,22 @@ void main() {
       expect(find.text('星夜社区'), findsOneWidget);
       expect(find.text('Night Owls'), findsOneWidget);
       expect(find.text('1,284 名成员'), findsNWidgets(2));
+      // Decision 0239: the operator's label replaces 「已验证」; the row
+      // without one wears nothing.
+      expect(find.text('已验证'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('user-profile-community-verified')),
+        find.byKey(
+          const ValueKey<String>('user-profile-community-label-$_communityA'),
+        ),
         findsOneWidget,
       );
-      final badge = tester.widget<LoopBadge>(
-        find.byKey(const ValueKey<String>('user-profile-community-verified')),
+      expect(
+        find.byKey(
+          const ValueKey<String>('user-profile-community-label-$_communityB'),
+        ),
+        findsNothing,
       );
-      expect(badge.kind, LoopBadgeKind.launch);
+      expect(find.text('算力社区'), findsOneWidget);
       await _tapKey(tester, 'user-profile-community-$_communityA');
       expect(opened, <String>[communityProfileLocation(_communityA)]);
     });

@@ -308,7 +308,8 @@ void main() {
       // `renderRow('community')`: `<div class="row-s">${d.members} 成员 · …`.
       // 「已验证」 alone on the second line while 「312 / 成员」 stood in a
       // two-line value column spent a 70pt row on four words.
-      expect(row.subtitle, '312 名成员 · 已验证');
+      // Decision 0239: no operator label, so the count stands alone.
+      expect(row.subtitle, '312 名成员');
       expect(row.trailing, isNull);
       expect(row.trailingCaption, isNull);
     });

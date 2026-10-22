@@ -560,9 +560,9 @@ String squareCommunitySubline(
   return symbol == null ? members : '$members，\$$symbol';
 }
 
-/// One community, DeBox-club style (decision 0116): logo, name and its
-/// verification, members and token, and the reader's membership at the
-/// right. The whole row opens the community.
+/// One community, DeBox-club style (decision 0116): logo, name and the
+/// operator's label when it has one (decision 0239), members and token, and
+/// the reader's membership at the right. The whole row opens the community.
 class SquareCommunityRow extends StatelessWidget {
   const SquareCommunityRow({
     required this.community,
@@ -586,9 +586,8 @@ class SquareCommunityRow extends StatelessWidget {
     final id = community.communityId;
     final action = squareMembershipAction(community.viewerMembership);
     final subline = squareCommunitySubline(community, sort);
-    final verification = communityVerificationLabel(
-      community.verificationStatus,
-    );
+    // Decision 0239: the operator's free-text label, or no mark at all.
+    final label = community.label;
     final state = switch (action) {
       SquareMembershipAction.none => '',
       SquareMembershipAction.join => '，未加入',
@@ -601,7 +600,9 @@ class SquareCommunityRow extends StatelessWidget {
         Expanded(
           child: Semantics(
             button: true,
-            label: '${community.name}，$verification，$subline$state',
+            label:
+                '${<String>[community.name, if (label != null) communityLabelDisplay(label)].join('，')}'
+                '，$subline$state',
             excludeSemantics: true,
             child: InkWell(
               key: ValueKey<String>('square-community-open-$id'),
@@ -626,27 +627,32 @@ class SquareCommunityRow extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Flexible(
-                                  child: Text(
-                                    community.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: LoopType.body1,
+                            // The label takes at most 45 % of the line, so a
+                            // long one ellipsizes before it pushes the name
+                            // out (decision 0239).
+                            LayoutBuilder(
+                              builder: (context, constraints) => Row(
+                                children: <Widget>[
+                                  Flexible(
+                                    child: Text(
+                                      community.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: LoopType.body1,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                LoopBadge(
-                                  verification,
-                                  key: ValueKey<String>(
-                                    'square-community-verification-$id',
-                                  ),
-                                  kind: community.isVerified
-                                      ? LoopBadgeKind.up
-                                      : LoopBadgeKind.mute,
-                                ),
-                              ],
+                                  if (label != null) ...<Widget>[
+                                    const SizedBox(width: 6),
+                                    CommunityLabelBadge(
+                                      label,
+                                      key: ValueKey<String>(
+                                        'square-community-label-$id',
+                                      ),
+                                      maxWidth: constraints.maxWidth * 0.45,
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(

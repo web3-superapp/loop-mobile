@@ -318,6 +318,8 @@ class _CommunityProfileScreenState
             ? null
             : _CommunityHeader(
                 community: community,
+                ownerView:
+                    detail?.viewer.membership?.role == CommunityRole.owner,
                 onlineCount: detail?.onlineCount,
                 onExplainPresence: switch (detail?.onlineCount) {
                   CommunityOnlineCountObserved(
@@ -651,16 +653,21 @@ class _CommunityProfileScreenState
 }
 
 /// The record's header (decision 0127): the logo at 72, the name at 22 with
-/// its verification as a small mark, one grey line of counts and the bound
+/// the operator's label as a small mark (decision 0239), one grey line of counts and the bound
 /// token's ticker, and the community's own description.
 class _CommunityHeader extends StatelessWidget {
   const _CommunityHeader({
     required this.community,
     required this.onlineCount,
+    this.ownerView = false,
     this.onExplainPresence,
   });
 
   final CommunitySummary community;
+
+  /// The reader owns this community. Only the owner is told its review is
+  /// still 审核中 or 未通过 (decision 0239); a visitor never sees the review.
+  final bool ownerView;
   final CommunityOnlineCount? onlineCount;
   final VoidCallback? onExplainPresence;
 
@@ -695,6 +702,9 @@ class _CommunityHeader extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
     final verification = community.verificationStatus;
+    final label = community.label;
+    final ownerReview =
+        ownerView && verification != CommunityVerification.verified;
     final description = community.description;
     return Padding(
       key: const ValueKey<String>('community-profile-header'),
@@ -737,18 +747,30 @@ class _CommunityHeader extends StatelessWidget {
                             style: LoopType.displaySm,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        // The verification state, in words, once.
-                        LoopTag(
-                          communityVerificationLabel(verification),
-                          key: const ValueKey<String>(
-                            'community-profile-verification',
+                        // Decision 0239: the operator's label where 「已验证」
+                        // stood, or nothing; capped so the name keeps the line.
+                        if (label != null) ...<Widget>[
+                          const SizedBox(width: 8),
+                          CommunityLabelBadge(
+                            label,
+                            key: const ValueKey<String>(
+                              'community-profile-label',
+                            ),
+                            look: CommunityLabelLook.tag,
+                            maxWidth: 140,
                           ),
-                          lime: verification == CommunityVerification.verified,
-                          icon: verification == CommunityVerification.verified
-                              ? 'check'
-                              : null,
-                        ),
+                        ],
+                        // The owner's own management hint: a review still
+                        // open or refused. Visitors are never shown it.
+                        if (ownerReview) ...<Widget>[
+                          const SizedBox(width: 8),
+                          LoopTag(
+                            communityVerificationLabel(verification),
+                            key: const ValueKey<String>(
+                              'community-profile-owner-review',
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),
