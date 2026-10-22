@@ -67,7 +67,7 @@ void main() {
       );
 
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      final copy = tester.widget<LoopButton>(
+      final copy = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('referral-copy-code')),
       );
       expect(copy.onPressed, isNotNull);
@@ -192,7 +192,16 @@ void main() {
       );
       await scrollToS7Section(tester, boost);
       expect(find.text('12.5'), findsOneWidget);
-      expect(find.textContaining('/i/LOOP-7HJKM'), findsOneWidget);
+      // Decision 0235: the link is one line, middle-elided, keeping the code
+      // it ends with.
+      final link = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-invite-link')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(link.data, endsWith('LOOP-7HJKM'));
+      expect(link.maxLines, 1);
     });
 
     testWidgets('the boost stays unavailable with the formula reason', (

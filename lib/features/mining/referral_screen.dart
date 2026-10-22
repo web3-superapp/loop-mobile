@@ -31,6 +31,7 @@ import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_person_row.dart' show LoopPillAction;
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -189,13 +190,23 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       archetype: LoopFolioArchetype.record,
       kicker: '我的邀请码',
       heading: overview.inviteCode.code,
-      headingBuilder: (heading) => Semantics(
-        label: '我的邀请码 ${overview.inviteCode.code}',
-        excludeSemantics: true,
-        child: KeyedSubtree(
-          key: const ValueKey<String>('referral-invite-code'),
-          child: heading,
-        ),
+      // Decision 0235: the code carries its own copy glyph; 复制邀请码 is no
+      // longer a full-width button under it.
+      headingBuilder: (heading) => Row(
+        children: <Widget>[
+          Flexible(
+            child: Semantics(
+              label: '我的邀请码 ${overview.inviteCode.code}',
+              excludeSemantics: true,
+              child: KeyedSubtree(
+                key: const ValueKey<String>('referral-invite-code'),
+                child: heading,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          _CopyCodeButton(code: overview.inviteCode.code),
+        ],
       ),
       caption:
           '${overview.validRelationships} 个有效关系 · '
@@ -345,42 +356,10 @@ class _ReferralCenterCardState extends ConsumerState<ReferralCenterCard> {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Semantics(
-            container: true,
-            label: '我的邀请码 ${overview.inviteCode.code}',
-            excludeSemantics: true,
-            child: Container(
-              key: const ValueKey<String>('intel-referral-code'),
-              margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              decoration: const BoxDecoration(
-                color: LoopColors.card,
-                borderRadius: LoopRadius.card,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    '我的邀请码',
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    overview.inviteCode.code,
-                    style: LoopType.keyFigure.copyWith(
-                      color: LoopColors.yellow,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
-                    style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _InviteCodeBlock(code: overview.inviteCode.code),
+          const SizedBox(height: LoopSpacing.rowGap),
           _InviteActions(overview: overview),
+          const SizedBox(height: LoopSpacing.rowGap),
           _InviteStats(stats: overview.stats),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -407,10 +386,106 @@ class _ReferralCenterCardState extends ConsumerState<ReferralCenterCard> {
 /// The `referral` route (manifest slug `referral`).
 const String referralCenterPath = '/profile/referral';
 
-/// Copy the code, share the link, make the poster.
-///
-/// Until the link has been verified on devices (loop-api decision 0162 §5)
-/// the code stays the first action and the link the second.
+/// One block of 我的邀请 (decision 0235): the raised `card2` ground with a
+/// hairline, so the code, the link and the counts read as three separate
+/// pieces on the Ink page instead of one dark run.
+class _InviteBlock extends StatelessWidget {
+  const _InviteBlock({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.card,
+      12,
+      LoopSpacing.tight,
+      12,
+    ),
+    decoration: BoxDecoration(
+      color: LoopColors.card2,
+      borderRadius: LoopRadius.card,
+      border: Border.all(color: LoopColors.line),
+    ),
+    child: child,
+  );
+}
+
+/// The copy glyph beside the invite code (decision 0235).
+class _CopyCodeButton extends StatelessWidget {
+  const _CopyCodeButton({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) => LoopIconButton(
+    key: const ValueKey<String>('referral-copy-code'),
+    icon: 'copy',
+    label: '复制邀请码',
+    onPressed: () => unawaited(LoopCopy.text(context, code, message: '邀请码已复制')),
+  );
+}
+
+/// 情报 · 我的邀请码: the code large with its copy glyph, one line under it.
+class _InviteCodeBlock extends StatelessWidget {
+  const _InviteCodeBlock({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) => _InviteBlock(
+    key: const ValueKey<String>('intel-referral-code'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Semantics(
+                container: true,
+                label: '我的邀请码 $code',
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '我的邀请码',
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      code,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.keyFigure.copyWith(
+                        color: LoopColors.yellow,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            _CopyCodeButton(code: code),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.only(right: LoopSpacing.tight),
+          child: Text(
+            '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
+            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// 邀请链接 (decision 0235): the link on one line, middle-elided, with copy
+/// and system share as glyphs; 生成海报 is a small action in the block's
+/// heading. Without a link the block says so and the poster still opens
+/// (code only).
 class _InviteActions extends ConsumerWidget {
   const _InviteActions({required this.overview});
 
@@ -420,70 +495,81 @@ class _InviteActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final code = overview.inviteCode.code;
     final link = overview.inviteLink;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopButtonPair(
-          children: <Widget>[
-            LoopButton(
-              key: const ValueKey<String>('referral-copy-code'),
-              label: '复制邀请码',
-              primary: true,
-              onPressed: () async {
-                await LoopCopy.text(context, code, message: '邀请码已复制');
-              },
-            ),
-            LoopButton(
-              key: const ValueKey<String>('referral-poster'),
-              label: '生成海报',
-              onPressed: () => unawaited(
-                showLoopSheet<void>(
-                  context,
-                  barrierLabel: '关闭邀请海报',
-                  useRootNavigator: true,
-                  builder: (sheetContext) =>
-                      ReferralPosterSheet(code: code, link: link),
+    return _InviteBlock(
+      key: const ValueKey<String>('referral-link-block'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  '邀请链接',
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
                 ),
               ),
-            ),
-          ],
-        ),
-        if (link == null)
-          Padding(
-            key: const ValueKey<String>('referral-link-absent'),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              '邀请链接还没有开放，先把邀请码发给好友；对方注册后 7 天内填写即可。',
-              style: LoopType.captionSm,
-            ),
-          )
-        else
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('referral-invite-link'),
-                title: '邀请链接',
-                subtitle: link,
-                subtitleMaxLines: 2,
-                chevron: false,
-                trailing: '复制',
-                onTap: () =>
-                    unawaited(LoopCopy.text(context, link, message: '邀请链接已复制')),
-                semanticLabel: '复制邀请链接 $link',
+              LoopPillAction(
+                key: const ValueKey<String>('referral-poster'),
+                label: '生成海报',
+                soft: true,
+                onPressed: () => unawaited(
+                  showLoopSheet<void>(
+                    context,
+                    barrierLabel: '关闭邀请海报',
+                    useRootNavigator: true,
+                    builder: (sheetContext) =>
+                        ReferralPosterSheet(code: code, link: link),
+                  ),
+                ),
               ),
             ],
           ),
-        if (link != null)
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('referral-share-link'),
-                label: '分享邀请链接',
-                onPressed: () => unawaited(_share(context, ref, code, link)),
+          if (link == null)
+            Padding(
+              key: const ValueKey<String>('referral-link-absent'),
+              padding: const EdgeInsets.only(
+                right: LoopSpacing.tight,
+                bottom: 4,
               ),
-            ],
-          ),
-      ],
+              child: Text(
+                '邀请链接还没有开放，先把邀请码发给好友；对方注册后 7 天内填写即可。',
+                style: LoopType.captionSm,
+              ),
+            )
+          else
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    label: '邀请链接 $link',
+                    excludeSemantics: true,
+                    // The scheme is dropped on screen only; copy and share
+                    // carry the full link.
+                    child: _MiddleEllipsisText(
+                      link.replaceFirst(RegExp(r'^https?://'), ''),
+                      key: const ValueKey<String>('referral-invite-link'),
+                      style: LoopType.code.copyWith(color: LoopColors.chalk),
+                    ),
+                  ),
+                ),
+                LoopIconButton(
+                  key: const ValueKey<String>('referral-copy-link'),
+                  icon: 'copy',
+                  label: '复制邀请链接',
+                  onPressed: () => unawaited(
+                    LoopCopy.text(context, link, message: '邀请链接已复制'),
+                  ),
+                ),
+                LoopIconButton(
+                  key: const ValueKey<String>('referral-share-link'),
+                  icon: 'share',
+                  label: '分享邀请链接',
+                  onPressed: () => unawaited(_share(context, ref, code, link)),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 
@@ -512,8 +598,10 @@ String referralInviteText(String code, String? link) => link == null
     ? '来 LOOP 一起挖矿，注册后填写我的邀请码 $code'
     : '来 LOOP 一起挖矿，注册后填写我的邀请码 $code\n$link';
 
-/// 我的邀请: direct / valid / depth 2–5. Without the server's `stats` every
-/// figure is the dash and the page says the counts are not open yet.
+/// 我的邀请: direct / valid / depth 2–5 — three equal cells on one raised
+/// block, the name small above the figure (decision 0235). Without the
+/// server's `stats` every figure is the dash and the page says the counts are
+/// not open yet.
 class _InviteStats extends StatelessWidget {
   const _InviteStats({required this.stats});
 
@@ -527,27 +615,51 @@ class _InviteStats extends StatelessWidget {
       key: const ValueKey<String>('referral-stats'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopStatGrid(
-          stats: <LoopStat>[
-            LoopStat(
-              statKey: const ValueKey<String>('referral-stats-direct'),
-              label: '直接邀请',
-              value: value == null ? loopFigureDash : '${value.directCount}',
+        _InviteBlock(
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                _StatCell(
+                  valueKey: const ValueKey<String>('referral-stats-direct'),
+                  label: '直接邀请',
+                  value: value == null
+                      ? loopFigureDash
+                      : '${value.directCount}',
+                ),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: LoopColors.line,
+                ),
+                _StatCell(
+                  valueKey: const ValueKey<String>('referral-stats-valid'),
+                  label: '有效成员',
+                  value: value == null ? loopFigureDash : '${value.validCount}',
+                ),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: LoopColors.line,
+                ),
+                _StatCell(
+                  valueKey: const ValueKey<String>('referral-stats-deep'),
+                  label: '二至五级',
+                  value: value == null
+                      ? loopFigureDash
+                      : '${value.level2to5Count}',
+                ),
+              ],
             ),
-            LoopStat(
-              statKey: const ValueKey<String>('referral-stats-valid'),
-              label: '有效成员',
-              value: value == null ? loopFigureDash : '${value.validCount}',
-            ),
-            LoopStat(
-              statKey: const ValueKey<String>('referral-stats-deep'),
-              label: '二至五级',
-              value: value == null ? loopFigureDash : '${value.level2to5Count}',
-            ),
-          ],
+          ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            LoopSpacing.tight,
+            LoopSpacing.page,
+            0,
+          ),
           child: Text(
             value == null
                 ? '邀请统计还没有开放，开放后显示在这里。'
@@ -559,6 +671,115 @@ class _InviteStats extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// One 我的邀请 count: the name above, the figure under it.
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.valueKey,
+    required this.label,
+    required this.value,
+  });
+
+  final Key valueKey;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Semantics(
+      container: true,
+      label: '$label $value',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              key: valueKey,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.statFigure.copyWith(color: LoopColors.chalk),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// One line of text that keeps its start and its end and drops the middle
+/// for 「…」 when it does not fit (decision 0235: the invite link keeps the
+/// host and the code it ends with). Never wraps.
+class _MiddleEllipsisText extends StatelessWidget {
+  const _MiddleEllipsisText(this.text, {required this.style, super.key});
+
+  final String text;
+  final TextStyle style;
+
+  /// The text as drawn: [text] itself when it fits [maxWidth], otherwise
+  /// its head, 「…」 and its tail — the tail a little longer than the head.
+  static String fit(
+    String text,
+    TextStyle style,
+    double maxWidth,
+    TextScaler scaler,
+  ) {
+    bool fits(String candidate) {
+      final painter = TextPainter(
+        text: TextSpan(text: candidate, style: style),
+        textDirection: TextDirection.ltr,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width <= maxWidth;
+    }
+
+    if (!maxWidth.isFinite || fits(text)) return text;
+    String elide(int keep) {
+      final head = (keep * 0.4).floor();
+      final tail = keep - head;
+      return '${text.substring(0, head)}…'
+          '${text.substring(text.length - tail)}';
+    }
+
+    var low = 0;
+    var high = text.length - 1;
+    while (low < high) {
+      final mid = (low + high + 1) ~/ 2;
+      if (fits(elide(mid))) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return elide(low);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => Text(
+        fit(text, style, constraints.maxWidth, scaler),
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
     );
   }
 }

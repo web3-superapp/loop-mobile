@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/crypto/loop_keccak.dart';
+import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
@@ -56,6 +57,19 @@ final class LoopScanRoom extends LoopScanDestination {
   String get location => voiceRoomLinkLocation(communityId);
 }
 
+/// `/i/{code}` (an invite poster, decision 0214) or a bare `LOOP-XXXXX`
+/// invite code: the `referral` page with the code filled in (decision 0235).
+/// The scanner shows the code first and opens the page on 去填写邀请码; the
+/// server still decides whether the code was issued and can be bound.
+final class LoopScanInvite extends LoopScanDestination {
+  const LoopScanInvite(this.code);
+
+  final String code;
+
+  @override
+  String get location => referralClaimLocation(code);
+}
+
 /// A wallet address: the send flow, with the recipient filled in. The
 /// address is a prefill only — the server's preflight still checks it, and
 /// the reader still picks the asset and the amount.
@@ -79,6 +93,14 @@ final class LoopScanUnknown extends LoopScanResult {
 }
 
 final RegExp _address = RegExp(r'^0x[0-9a-fA-F]{40}$');
+
+/// A bare invite code as printed under the poster's QR: `LOOP-` and five
+/// characters. Only the full printed form is read — five loose characters
+/// are too easily something else.
+final RegExp _bareInviteCode = RegExp(
+  r'^LOOP-[0-9A-Za-z]{5}$',
+  caseSensitive: false,
+);
 
 /// `ethereum:0x…@{chainId}` — the plain EIP-681 form LOOP's own receive page
 /// draws. A request that names a function (`/transfer?…`) or any parameter is
@@ -110,11 +132,17 @@ LoopScanResult loopScanResultFor(String raw, {int? sendChainReference}) {
     if (room != null) return LoopScanRoom(room);
     final community = communityIdFromLinkPath(path);
     if (community != null) return LoopScanCommunity(community);
+    final invite = inviteCodeFromLinkPath(path);
+    if (invite != null) return LoopScanInvite(invite);
     return LoopScanUnknown(text);
   }
   final loopId = loopIdFromText(text);
   if (loopId != null && loopId.length == text.length) {
     return LoopScanUser(loopId);
+  }
+  if (_bareInviteCode.hasMatch(text)) {
+    final invite = inviteCodeFromLinkPath('$inviteLinkPathPrefix$text');
+    if (invite != null) return LoopScanInvite(invite);
   }
   if (_address.hasMatch(text)) {
     return loopIsAcceptableHexAddress(text)
