@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
@@ -34,6 +35,12 @@ final class DioLoopV2MemeApi {
   static const quotePath = '/v2/meme/quote';
   static const intentsPath = '/v2/meme/intents';
   static const logoUploadPath = '/v2/media/community-logos';
+
+  /// Decision 0233: the project NFT image route, from its media kind
+  /// ([launch2NftImageMediaKind]) the way `community_logo` gives
+  /// `community-logos`.
+  static final nftImageUploadPath =
+      '/v2/media/${launch2NftImageMediaKind.replaceAll('_', '-')}s';
 
   /// The reads (OpenAPI tag `meme`): the read catalogue plus the two codes
   /// these routes add — `409 DATA_STALE` (a curve that stopped trading, a
@@ -386,6 +393,45 @@ final class DioLoopV2MemeApi {
     required String idempotencyKey,
     required Uint8List bytes,
     required String contentType,
+  }) => _uploadSquare(
+    path: logoUploadPath,
+    filename: 'logo',
+    accessToken: accessToken,
+    clientVersion: clientVersion,
+    idempotencyKey: idempotencyKey,
+    bytes: bytes,
+    contentType: contentType,
+    parse: (data) => LoopV2MemeCodec.uploadedImage(data, mediaUrl: mediaUrl),
+  );
+
+  /// Decision 0233: the project NFT image, as the media kind
+  /// [launch2NftImageMediaKind] (its route [nftImageUploadPath]).
+  Future<MemeUploadedImage> uploadNftImage({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required Uint8List bytes,
+    required String contentType,
+  }) => _uploadSquare(
+    path: nftImageUploadPath,
+    filename: 'nft',
+    accessToken: accessToken,
+    clientVersion: clientVersion,
+    idempotencyKey: idempotencyKey,
+    bytes: bytes,
+    contentType: contentType,
+    parse: (data) => LoopV2MemeCodec.uploadedNftImage(data, mediaUrl: mediaUrl),
+  );
+
+  Future<MemeUploadedImage> _uploadSquare({
+    required String path,
+    required String filename,
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required Uint8List bytes,
+    required String contentType,
+    required MemeUploadedImage Function(Object? data) parse,
   }) async {
     final subtype = switch (contentType) {
       'image/jpeg' => 'jpeg',
@@ -401,11 +447,11 @@ final class DioLoopV2MemeApi {
     }
     try {
       final response = await _dio.post<Object?>(
-        logoUploadPath,
+        path,
         data: FormData.fromMap(<String, Object?>{
           'file': MultipartFile.fromBytes(
             bytes,
-            filename: 'logo.$subtype',
+            filename: '$filename.$subtype',
             contentType: DioMediaType('image', subtype),
           ),
         }),
@@ -420,7 +466,7 @@ final class DioLoopV2MemeApi {
         ),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 201);
-      return LoopV2MemeCodec.uploadedImage(response.data, mediaUrl: mediaUrl);
+      return parse(response.data);
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: uploadErrors);
     }
@@ -574,6 +620,22 @@ final class DioLoopV2MemeGateway implements MemeGateway {
     ),
   );
 
+  /// Decision 0233: the project NFT image (not part of [MemeGateway]; the
+  /// creator reads it through [launch2NftImageUploaderProvider]).
+  Future<MemeUploadedImage> uploadProjectNftImage({
+    required Uint8List bytes,
+    required String contentType,
+  }) => _write(
+    'launch2:nft-image:${bytes.length}:${Object.hashAll(bytes)}',
+    (accessToken, key) => _api.uploadNftImage(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      idempotencyKey: key,
+      bytes: bytes,
+      contentType: contentType,
+    ),
+  );
+
   @override
   Future<MemeTokenDetail> createToken(MemeCreateDraft draft) async {
     final origin = await _origin();
@@ -672,3 +734,27 @@ final loopV2MemeGatewayProvider = Provider<MemeGateway>((ref) {
     originSource: ref.watch(loopV2WriteOriginSourceProvider),
   );
 });
+
+/// Decision 0233: the project NFT image uploader, through the same
+/// authenticated adapter as the logo. Fail-closed like the gateway.
+final class DioLoopV2Launch2NftImageUploader
+    implements Launch2NftImageUploader {
+  const DioLoopV2Launch2NftImageUploader(this._gateway);
+
+  final DioLoopV2MemeGateway _gateway;
+
+  @override
+  Future<MemeUploadedImage> upload({
+    required Uint8List bytes,
+    required String contentType,
+  }) => _gateway.uploadProjectNftImage(bytes: bytes, contentType: contentType);
+}
+
+final loopV2Launch2NftImageUploaderProvider = Provider<Launch2NftImageUploader>(
+  (ref) {
+    final gateway = ref.watch(loopV2MemeGatewayProvider);
+    return gateway is DioLoopV2MemeGateway
+        ? DioLoopV2Launch2NftImageUploader(gateway)
+        : const UnavailableLaunch2NftImageUploader();
+  },
+);

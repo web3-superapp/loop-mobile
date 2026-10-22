@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
+import 'package:loop_mobile/features/meme/meme_models.dart';
 
 /// Feature-facing port for the MEME v2 project side (S135, decision 0138).
 ///
@@ -95,6 +98,40 @@ final class UnavailableLaunch2CreatorGateway implements Launch2CreatorGateway {
 /// Overridden by the composition root with the authenticated V2 adapter.
 final launch2CreatorGatewayProvider = Provider<Launch2CreatorGateway>(
   (ref) => const UnavailableLaunch2CreatorGateway(),
+);
+
+/// Decision 0233: the media kind the project NFT image is uploaded as
+/// (loop-api S274 / 0173; working name). The one place to align with the
+/// final API name — the adapter derives the upload route from it, the
+/// pattern of `community_logo` → `community-logos`.
+const String launch2NftImageMediaKind = 'project_nft_image';
+
+/// Uploads the project NFT image ([launch2NftImageMediaKind]). The answer's
+/// `url` is what the draft saves as `nftImageAssetUrl` and what the page
+/// previews.
+abstract interface class Launch2NftImageUploader {
+  Future<MemeUploadedImage> upload({
+    required Uint8List bytes,
+    required String contentType,
+  });
+}
+
+final class UnavailableLaunch2NftImageUploader
+    implements Launch2NftImageUploader {
+  const UnavailableLaunch2NftImageUploader();
+
+  @override
+  Future<MemeUploadedImage> upload({
+    required Uint8List bytes,
+    required String contentType,
+  }) => Future<MemeUploadedImage>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+}
+
+/// Overridden by the composition root with the authenticated V2 adapter.
+final launch2NftImageUploaderProvider = Provider<Launch2NftImageUploader>(
+  (ref) => const UnavailableLaunch2NftImageUploader(),
 );
 
 /// The outcome of one EIP-712 signature.

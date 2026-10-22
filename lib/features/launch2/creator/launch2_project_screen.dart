@@ -142,6 +142,42 @@ class Launch2ProjectScreen extends ConsumerWidget {
           ],
         ),
       ),
+      // Decision 0233: the NFT image submitted with the draft, beside its
+      // label; a draft saved before it existed has none and shows nothing.
+      if (draft?.nftImageAssetUrl case final String nftImage)
+        Padding(
+          key: const ValueKey<String>('launch2-project-nft-image'),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            16,
+          ),
+          child: Row(
+            children: <Widget>[
+              Launch2NftImageFrame(imageUrl: nftImage, size: 72),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'NFT 图',
+                      style: LoopType.label.copyWith(color: LoopColors.chalk),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      launch2NftImageHelp,
+                      style: LoopType.captionSm.copyWith(
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       // Decision 0169: the shared step track (was Launch2MilestoneTrack).
       LoopStepTrack.milestones(
         key: ValueKey<String>('launch2-milestones-${status.wireName}'),

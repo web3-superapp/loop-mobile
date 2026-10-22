@@ -363,6 +363,11 @@ Future<void> main() async {
         launch2CreatorGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2Launch2CreatorGatewayProvider),
         ),
+        // S275 (decision 0233): the project NFT image upload, its own media
+        // kind through the MEME adapter. Fail-closed like the gateway.
+        launch2NftImageUploaderProvider.overrideWith(
+          (ref) => ref.watch(loopV2Launch2NftImageUploaderProvider),
+        ),
         launch2TypedDataSignerProvider.overrideWith(
           (ref) => ref.watch(privyLaunch2TypedDataSignerProvider),
         ),

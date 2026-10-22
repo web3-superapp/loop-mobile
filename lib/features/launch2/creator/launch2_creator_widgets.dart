@@ -11,7 +11,10 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart'
     show launch2BuyFeeSideText, launch2CurveCapFigure;
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 project side · copy and shared pieces (S135, decision 0138)
@@ -423,4 +426,81 @@ class _Launch2RefreshOnReturnState extends State<Launch2RefreshOnReturn> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// What the create page says under the NFT image slot (decision 0233).
+const String launch2NftImageHelp = '这张图会作为项目 NFT 的图片显示在钱包里';
+
+/// The project NFT's image in a square card-ground frame (decision 0233):
+/// the board's ground and top hairline, the Yellow splat on its top-left
+/// corner, the image inset 6. Without an image the slot shows the upload
+/// glyph.
+class Launch2NftImageFrame extends StatelessWidget {
+  const Launch2NftImageFrame({
+    super.key,
+    this.imageUrl,
+    this.size = 120,
+    this.missing = false,
+  });
+
+  final String? imageUrl;
+  final double size;
+
+  /// The step refused without one: the frame's line turns Chalk.
+  final bool missing;
+
+  @override
+  Widget build(BuildContext context) {
+    const inset = 6.0;
+    final inner = size - inset * 2;
+    final empty = Container(
+      width: inner,
+      height: inner,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: LoopColors.card2,
+        borderRadius: LoopRadius.inner,
+      ),
+      child: LoopIcon(
+        'camera',
+        key: const ValueKey<String>('launch2-nft-image-empty'),
+        size: inner / 4,
+        color: LoopColors.text3,
+      ),
+    );
+    final url = imageUrl;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        Container(
+          width: size,
+          height: size,
+          padding: const EdgeInsets.all(inset),
+          decoration: BoxDecoration(
+            color: LoopColors.card,
+            borderRadius: LoopRadius.card,
+            border: missing
+                ? Border.all(color: LoopColors.chalk)
+                : const Border(top: BorderSide(color: Color(0x0AFFFFFF))),
+          ),
+          child: url == null
+              ? empty
+              : LoopRemoteAvatar(
+                  url: url,
+                  fallback: empty,
+                  size: inner,
+                  shape: BoxShape.rectangle,
+                  radius: LoopRadius.innerValue,
+                  semanticLabel: 'NFT 图',
+                ),
+        ),
+        const Positioned(
+          left: -7,
+          top: -8,
+          width: 24,
+          child: LoopSplatSticker(),
+        ),
+      ],
+    );
+  }
 }
