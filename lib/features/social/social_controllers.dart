@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/social/accepted_friend_direct_channel.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 
@@ -642,6 +643,9 @@ final class MessageRequestsController extends Notifier<MessageRequestsState>
   }) async {
     if (state.busy) return null;
     final gateway = ref.read(socialGatewayProvider);
+    // Read before the await: this controller is autoDispose and the page may
+    // be left while the decision is in flight (decision 0231).
+    final directChannel = ref.read(acceptedFriendDirectChannelProvider);
     final previous = state;
     final generation = nextGeneration();
     state = MessageRequestsState(
@@ -656,6 +660,11 @@ final class MessageRequestsController extends Notifier<MessageRequestsState>
         messageRequestId: messageRequestId,
         decision: decision,
       );
+      // Decision 0231: an accepted friend must be under 好友 at once, and the
+      // inbox lists channels, not friendships. The backend's accept writes
+      // only the friendship, so the accepting side opens the direct channel.
+      final peer = _acceptedPeer(previous.items, messageRequestId, outcome);
+      if (peer != null) unawaited(directChannel.ensure(peer));
       if (!isCurrent(generation)) return outcome;
       final remaining = <MessageRequestEntry>[
         for (final item in previous.items)
@@ -694,6 +703,24 @@ final class MessageRequestsController extends Notifier<MessageRequestsState>
       return null;
     }
   }
+}
+
+/// The accepted requester's public profile ID, or null when [outcome] is not
+/// an accept that the server let through.
+String? _acceptedPeer(
+  List<MessageRequestEntry> items,
+  String messageRequestId,
+  MessageRequestOutcome outcome,
+) {
+  if (outcome.decision != MessageRequestDecision.accept || outcome.blocked) {
+    return null;
+  }
+  for (final item in items) {
+    if (item.messageRequestId == messageRequestId) {
+      return item.profile.publicProfileId;
+    }
+  }
+  return null;
 }
 
 final messageRequestsControllerProvider =
