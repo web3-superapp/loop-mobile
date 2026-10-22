@@ -548,10 +548,12 @@ Map<String, Object?> l2BuybacksJson({
 Map<String, Object?> l2PositionsJson({
   String stage = 'priority',
   Map<String, Object?>? holding,
+  Map<String, Object?>? extra,
 }) => <String, Object?>{
   'positions': <Object?>[
     <String, Object?>{
       ...?holding,
+      ...?extra,
       'instanceId': l2InstanceA,
       'name': 'Frog Launch',
       'ticker': 'FROG',
@@ -658,7 +660,8 @@ Launch2BuybackPage l2Buybacks({
 Launch2Positions l2Positions({
   String stage = 'priority',
   Map<String, Object?>? holding,
+  Map<String, Object?>? extra,
 }) => LoopV2Launch2Codec.positions(
-  l2PositionsJson(stage: stage, holding: holding),
+  l2PositionsJson(stage: stage, holding: holding, extra: extra),
   mediaUrl: _noMedia,
 );

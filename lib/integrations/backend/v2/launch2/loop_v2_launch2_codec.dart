@@ -334,11 +334,22 @@ abstract final class LoopV2Launch2Codec {
     'lastActivityAt',
   };
 
-  /// Keys a position may carry or omit: the wallet holding (decision 0148)
-  /// and `nftImageUrl` (S273 · decision 0232).
+  /// Keys a position may carry or omit: the wallet holding (decision 0148),
+  /// `nftImageUrl` (S273 · decision 0232) and the USD1 valuation (S281 ·
+  /// decision 0238; loop-api S280 sends it behind a switch).
   static const positionOptionalKeys = <String>{
     ...walletHoldingKeys,
     'nftImageUrl',
+    ...positionValuationKeys,
+  };
+
+  /// S281 · decision 0238: `priceUsd1`, `valueUsd1`, `priceSource`. Each is
+  /// read on its own and never refuses the row: absent, `null`, a non-string
+  /// or a malformed figure all read as no price.
+  static const positionValuationKeys = <String>{
+    'priceUsd1',
+    'valueUsd1',
+    'priceSource',
   };
 
   static Never invalid() => LoopV2ChainCodec.invalid();
@@ -440,6 +451,14 @@ abstract final class LoopV2Launch2Codec {
     final media = mediaPathPattern.firstMatch(uri.path);
     if (media != null && mediaUrl(media.group(1)!) == value) return value;
     return LoopV2ChainCodec.isAcceptedLogoUrl(uri) ? value : null;
+  }
+
+  /// A lenient USD1 figure (S281 · decision 0238): the [amountPattern]
+  /// string `usd1Spent` uses, else `null` — never a reason to refuse the row.
+  static Decimal? lenientAmount(Map<String, Object?> map, String key) {
+    final value = map[key];
+    if (value is! String || !amountPattern.hasMatch(value)) return null;
+    return Decimal.tryParse(value);
   }
 
   /// `nftImageUrl` (S273 · decision 0232): the same address rule as a logo,
@@ -1468,6 +1487,9 @@ abstract final class LoopV2Launch2Codec {
       curve: curvePosition(map['curve']),
       lastActivityAt: LoopV2ChainCodec.optionalTimestamp(map, 'lastActivityAt'),
       holding: walletHolding(map),
+      priceUsd1: lenientAmount(map, 'priceUsd1'),
+      valueUsd1: lenientAmount(map, 'valueUsd1'),
+      priceSource: Launch2PriceSource.tryParse(map['priceSource']),
     );
   }
 }

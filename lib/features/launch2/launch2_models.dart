@@ -1049,6 +1049,9 @@ final class Launch2Position {
     this.mintedTokenId,
     this.lastActivityAt,
     this.holding,
+    this.priceUsd1,
+    this.valueUsd1,
+    this.priceSource,
   });
 
   final String instanceId;
@@ -1073,6 +1076,38 @@ final class Launch2Position {
   /// Decision 0148: balances and own pool trades; `null` from an older
   /// server.
   final Launch2WalletHolding? holding;
+
+  /// S281 · decision 0238 (loop-api S280, client first): the MEME price in
+  /// USD1 the server read for this position. `null` — absent from an older
+  /// server, sent as `null`, or not a decimal string — means no price.
+  final Decimal? priceUsd1;
+
+  /// The holding valued in USD1: price × curve net before graduation,
+  /// price × `memeBalance` after. `null` means no value; the wallet row then
+  /// shows its stage instead (decision 0238).
+  final Decimal? valueUsd1;
+
+  /// Where [priceUsd1] came from; `null` when absent or not a known source.
+  final Launch2PriceSource? priceSource;
+}
+
+/// `priceSource` of a position (S281 · decision 0238): the bonding curve's
+/// spot price, or the graduated pool's.
+enum Launch2PriceSource {
+  curve('curve'),
+  pool('pool');
+
+  const Launch2PriceSource(this.wireName);
+
+  final String wireName;
+
+  /// `null` for anything not a known source — never a parse failure.
+  static Launch2PriceSource? tryParse(Object? value) {
+    for (final source in values) {
+      if (source.wireName == value) return source;
+    }
+    return null;
+  }
 }
 
 @immutable

@@ -530,7 +530,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final launch2Rows = <Widget>[
       for (final entry in walletSortTokenEntries(<WalletTokenEntry>[
         for (final entry in launch2.tokens)
-          (valueUsd: null, quantity: entry.quantity, row: entry.row),
+          (valueUsd: entry.valueUsd1, quantity: entry.quantity, row: entry.row),
       ]))
         entry.row,
       ?launch2.failure,
@@ -634,7 +634,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             row: walletLaunchUsd1Row(launch, hidden: hidden),
           ),
       for (final entry in launch2.tokens)
-        (valueUsd: null, quantity: entry.quantity, row: entry.row),
+        (valueUsd: entry.valueUsd1, quantity: entry.quantity, row: entry.row),
     ]);
     final launchSnapshot = launchNative?.snapshot;
     return <Widget>[

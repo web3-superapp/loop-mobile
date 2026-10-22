@@ -16,10 +16,16 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
-/// One MEME v2 token row of the wallet's 「代币」 tab and the figure it sorts
-/// by (S259 · decision 0217). MEME v2 rows carry no price, so the tab sorts
-/// them by [quantity] after every valued row.
-typedef Launch2WalletTokenEntry = ({Decimal quantity, Widget row});
+/// One MEME v2 token row of the wallet's 「代币」 tab and the figures it
+/// sorts by (S259 · decision 0217). S281 · decision 0238: a row the server
+/// valued carries [valueUsd1] and sorts with the other valued rows (USD1 is
+/// read as USD); a row without one sorts by [quantity] after every valued
+/// row.
+typedef Launch2WalletTokenEntry = ({
+  Decimal quantity,
+  Decimal? valueUsd1,
+  Widget row,
+});
 
 /// What `me/positions` gives the wallet's two asset tabs (S259 · decision
 /// 0217): the token rows for 「代币」, the NFT tiles for 「NFT」 (S273 · decision
@@ -100,18 +106,21 @@ Launch2WalletEntries launch2WalletEntries(
       if (balance > Decimal.zero) {
         tokens.add((
           quantity: balance,
+          valueUsd1: position.valueUsd1,
           row: rows._row(
             key: 'launch2-wallet-meme-${position.instanceId}',
             position: position,
             title: position.ticker,
             subtitle: launch2WalletChainLabel,
             value: hidden ? '****' : launch2MemeFigure(balance),
+            hidden: hidden,
           ),
         ));
       }
     } else if (position.curve.net > Decimal.zero) {
       tokens.add((
         quantity: position.curve.net,
+        valueUsd1: position.valueUsd1,
         row: rows._row(
           key: 'launch2-wallet-meme-${position.instanceId}',
           position: position,
@@ -120,6 +129,7 @@ Launch2WalletEntries launch2WalletEntries(
           // Decision 0219 (需求方 10-21): no 买入 / 卖出 chips; the whole
           // row opens the instance page, where the trade happens.
           value: hidden ? '****' : launch2MemeFigure(position.curve.net),
+          hidden: hidden,
         ),
       ));
     }
@@ -181,30 +191,52 @@ class Launch2WalletRows extends ConsumerWidget {
     );
   }
 
+  /// One token row. S281 · decision 0238: the amount stays the main figure;
+  /// with a USD1 value the grey figure under it is 「≈ 1,234.56 USD1」 and the
+  /// stage moves to the end of the left grey line; without one the grey
+  /// figure is the stage, as before.
   Widget _row({
     required String key,
     required Launch2Position position,
     required String title,
     required String subtitle,
     required String value,
-  }) => LoopQuoteRow(
-    tapKey: ValueKey<String>(key),
-    leading: MemeLogo(
-      symbol: position.ticker,
-      imageUrl: position.logoUrl,
-      identity: position.instanceId,
-      size: memeCardLogoSize,
-      radius: memeCardLogoSize / 2,
-    ),
-    title: title,
-    subtitle: subtitle,
-    value: value,
-    // The quote row owns the secondary value's step (decision 0190 M21).
-    valueCaption: Text(launch2StageLabel(position.stage)),
-    onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
-    semanticLabel:
-        '$title，$subtitle，$value，${launch2StageLabel(position.stage)}',
-  );
+    required bool hidden,
+  }) {
+    final stage = launch2StageLabel(position.stage);
+    final worth = position.valueUsd1;
+    final caption = worth == null
+        ? stage
+        : hidden
+        ? '≈ **** USD1'
+        : launch2WalletValueText(worth);
+    final line = worth == null ? subtitle : '$subtitle · $stage';
+    return LoopQuoteRow(
+      tapKey: ValueKey<String>(key),
+      leading: MemeLogo(
+        symbol: position.ticker,
+        imageUrl: position.logoUrl,
+        identity: position.instanceId,
+        size: memeCardLogoSize,
+        radius: memeCardLogoSize / 2,
+      ),
+      title: title,
+      subtitle: line,
+      value: value,
+      // The quote row owns the secondary value's step (decision 0190 M21).
+      valueCaption: Text(caption, key: ValueKey<String>('$key-caption')),
+      onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
+      semanticLabel: '$title，$line，$value，$caption',
+    );
+  }
+}
+
+/// The grey figure of a valued MEME v2 wallet row (S281 · decision 0238):
+/// 「≈ 1,234.56 USD1」; a positive value under a cent reads 「< 0.01 USD1」.
+String launch2WalletValueText(Decimal value) {
+  final cent = Decimal.parse('0.01');
+  if (value > Decimal.zero && value < cent) return '< 0.01 USD1';
+  return '≈ ${launch2Usd1Label(value)}';
 }
 
 /// The wallet 「NFT」 tab's tiles two to a row (S273 · decision 0232): a
