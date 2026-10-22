@@ -21,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// 外盘交易 · the graduated page's buy / sell panel (decision 0145).
 ///
@@ -441,24 +442,27 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             style: LoopType.captionSm.copyWith(color: LoopColors.text3),
           ),
           const SizedBox(height: 6),
-          Row(
-            children: <Widget>[
-              LoopSeg(
-                key: const ValueKey<String>('launch2-pool-mode-exactIn'),
-                label: inLabel,
-                selected: _mode == Launch2PoolMode.exactIn,
-                quiet: true,
-                onSelected: () => _setMode(Launch2PoolMode.exactIn),
-              ),
-              const SizedBox(width: 6),
-              LoopSeg(
-                key: const ValueKey<String>('launch2-pool-mode-exactOut'),
-                label: outLabel,
-                selected: _mode == Launch2PoolMode.exactOut,
-                quiet: true,
-                onSelected: () => _setMode(Launch2PoolMode.exactOut),
-              ),
-            ],
+          // Decision 0234: switching 付 / 得 while typing keeps the keyboard.
+          LoopKeepsKeyboard(
+            child: Row(
+              children: <Widget>[
+                LoopSeg(
+                  key: const ValueKey<String>('launch2-pool-mode-exactIn'),
+                  label: inLabel,
+                  selected: _mode == Launch2PoolMode.exactIn,
+                  quiet: true,
+                  onSelected: () => _setMode(Launch2PoolMode.exactIn),
+                ),
+                const SizedBox(width: 6),
+                LoopSeg(
+                  key: const ValueKey<String>('launch2-pool-mode-exactOut'),
+                  label: outLabel,
+                  selected: _mode == Launch2PoolMode.exactOut,
+                  quiet: true,
+                  onSelected: () => _setMode(Launch2PoolMode.exactOut),
+                ),
+              ],
+            ),
           ),
         ] else
           const SizedBox(height: 4),
@@ -598,6 +602,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  textInputAction: TextInputAction.done,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                   ],

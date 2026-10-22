@@ -10,6 +10,7 @@ import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// Global components of the Lime Ledger system (01 handover chapter 6.1),
 /// each mapped from its `style-v2.css` class. Colours, radii and spacing come
@@ -2953,6 +2954,11 @@ class _LoopComposerState extends State<LoopComposer> {
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.paddingOf(context).bottom;
+    // Decision 0234: the send key belongs with the field.
+    return LoopKeepsKeyboard(child: _composerBar(safeBottom));
+  }
+
+  Widget _composerBar(double safeBottom) {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 10, 16, math.max(10, safeBottom)),
       decoration: const BoxDecoration(

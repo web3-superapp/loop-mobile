@@ -22,6 +22,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/core/theme/loop_scroll_behavior.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 import 'loop_ground_probe.dart';
 import 's7_fixtures.dart';
@@ -621,6 +623,10 @@ Future<void> pumpS7Page(
   // S88d: when given, the capability document is read through this port and
   // the D0 cache, as in production, instead of being pinned to [meta].
   LoopV2MetaRepository? metaRepository,
+  // S276 (decision 0234): mount the App's keyboard rules — the scroll
+  // behaviour's drag-to-dismiss and the tap-outside / 完成 scope — the way
+  // `app.dart` does.
+  bool appKeyboard = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -649,7 +655,10 @@ Future<void> pumpS7Page(
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,
-        builder: (context, child) => LoopToastHost(child: child!),
+        scrollBehavior: appKeyboard ? const LoopScrollBehavior() : null,
+        builder: (context, child) => appKeyboard
+            ? LoopKeyboardScope(child: LoopToastHost(child: child!))
+            : LoopToastHost(child: child!),
         home: page,
       ),
     ),

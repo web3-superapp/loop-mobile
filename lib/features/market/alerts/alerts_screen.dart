@@ -700,6 +700,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              textInputAction: TextInputAction.done,
               // The threshold never becomes a `double`: it stays the exact text
               // the user typed all the way to the wire.
               inputFormatters: <TextInputFormatter>[

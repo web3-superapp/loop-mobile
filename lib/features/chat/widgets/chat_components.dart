@@ -14,6 +14,7 @@ import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 const _avatarColors = <Color>[
   LoopColors.market,
@@ -994,51 +995,53 @@ class _ChatComposerState extends State<ChatComposer> {
 
   @override
   Widget build(BuildContext context) {
-    return LoopActionDock(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          IconButton(
-            onPressed: widget.enabled
-                ? () =>
-                      _showNotice(context, 'Attachments are not available yet.')
-                : null,
-            tooltip: 'Add attachment',
-            icon: const Icon(Icons.add_circle_outline_rounded),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              enabled: widget.enabled,
-              minLines: 1,
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.newline,
-              decoration: InputDecoration(
-                hintText: widget.enabled
-                    ? widget.hintText
-                    : 'Messages are unavailable',
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
+    // Decision 0234: the send key belongs with the field.
+    return LoopActionDock(child: LoopKeepsKeyboard(child: _row(context)));
+  }
+
+  Widget _row(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        IconButton(
+          onPressed: widget.enabled
+              ? () => _showNotice(context, 'Attachments are not available yet.')
+              : null,
+          tooltip: 'Add attachment',
+          icon: const Icon(Icons.add_circle_outline_rounded),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            enabled: widget.enabled,
+            minLines: 1,
+            maxLines: 5,
+            textCapitalization: TextCapitalization.sentences,
+            textInputAction: TextInputAction.newline,
+            decoration: InputDecoration(
+              hintText: widget.enabled
+                  ? widget.hintText
+                  : 'Messages are unavailable',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
               ),
             ),
           ),
-          const SizedBox(width: 7),
-          IconButton.filled(
-            onPressed: widget.enabled && !_sending ? _send : null,
-            tooltip: 'Send message',
-            icon: _sending
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.arrow_upward_rounded),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 7),
+        IconButton.filled(
+          onPressed: widget.enabled && !_sending ? _send : null,
+          tooltip: 'Send message',
+          icon: _sending
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.arrow_upward_rounded),
+        ),
+      ],
     );
   }
 }

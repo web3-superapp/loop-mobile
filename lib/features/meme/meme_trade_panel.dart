@@ -13,6 +13,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// What the panel hands back to the token page: one side, one whole-unit
 /// amount and the slippage the owner chose. The page prepares the intent.
@@ -324,17 +325,20 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopSegBar(
-                key: const ValueKey<String>('meme-trade-side'),
-                labels: const <String>['买入', '卖出'],
-                padding: const EdgeInsets.only(bottom: 14),
-                selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
-                onSelected: (index) {
-                  _selectSide(
-                    index == 0 ? MemeTradeSide.buy : MemeTradeSide.sell,
-                  );
-                  setState(() {});
-                },
+              // Decision 0234: switching side keeps the keyboard.
+              LoopKeepsKeyboard(
+                child: LoopSegBar(
+                  key: const ValueKey<String>('meme-trade-side'),
+                  labels: const <String>['买入', '卖出'],
+                  padding: const EdgeInsets.only(bottom: 14),
+                  selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
+                  onSelected: (index) {
+                    _selectSide(
+                      index == 0 ? MemeTradeSide.buy : MemeTradeSide.sell,
+                    );
+                    setState(() {});
+                  },
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -452,6 +456,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
+                        textInputAction: TextInputAction.done,
                         inputFormatters: <TextInputFormatter>[
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                         ],

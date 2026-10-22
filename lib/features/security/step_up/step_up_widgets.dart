@@ -16,6 +16,7 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_steps.dart';
+import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 // ---------------------------------------------------------------------------
 // The step in a signing sheet (decision 0152)
@@ -418,6 +419,7 @@ class _LoopStepUpThresholdSheetState
             controller: _input,
             enabled: !_saving,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(7),
@@ -429,18 +431,21 @@ class _LoopStepUpThresholdSheetState
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              for (final preset in loopStepUpThresholdPresets)
-                LoopSeg(
-                  key: ValueKey<String>('step-up-preset-$preset'),
-                  label: loopStepUpThresholdLabel(preset),
-                  selected: value == preset,
-                  onSelected: _saving ? null : () => _pick(preset),
-                ),
-            ],
+          // Decision 0234: a preset fills the field; the keyboard stays.
+          child: LoopKeepsKeyboard(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                for (final preset in loopStepUpThresholdPresets)
+                  LoopSeg(
+                    key: ValueKey<String>('step-up-preset-$preset'),
+                    label: loopStepUpThresholdLabel(preset),
+                    selected: value == preset,
+                    onSelected: _saving ? null : () => _pick(preset),
+                  ),
+              ],
+            ),
           ),
         ),
         Padding(
