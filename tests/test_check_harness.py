@@ -10034,8 +10034,10 @@ class Launch2UserContractTests(unittest.TestCase):
             self._mutate(
                 root,
                 "lib/features/meme/meme_screen.dart",
-                "if (launch2SurfaceVisible(ref))",
-                "if (true)",
+                # S259 (decision 0217) reads the gate once into `v2`; the
+                # mutation drops that read so the Tab is no longer gated.
+                "final v2 = launch2SurfaceVisible(ref);",
+                "final v2 = true;",
             )
             result = check_harness.check_launch2_user_contract(root)
         self.assertTrue(any("meme_screen.dart" in error for error in result), result)

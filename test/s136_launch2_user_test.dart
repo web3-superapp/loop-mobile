@@ -35,6 +35,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 import 'support/test_hints.dart';
@@ -871,6 +872,7 @@ void main() {
           viewer: l2ViewerJson(member: true, eligibleNow: true, bought: '1000'),
         ),
       );
+      await l2OpenTradeSheet(tester);
       expect(find.text('1,000 / 3,000,000'), findsOneWidget);
       await _drain(tester);
     });
@@ -893,6 +895,10 @@ void main() {
         );
         expect(_key('launch2-stage-public'), findsOneWidget);
         expect(_key('launch2-curve'), findsOneWidget);
+        // Decision 0240: the latest trades are the 成交 tab's.
+        await _scrollTo(tester, _key('launch2-trade-t-1'));
+        expect(_key('launch2-trade-t-1'), findsOneWidget);
+        await l2OpenTradeSheet(tester);
         expect(_key('launch2-trade-panel'), findsOneWidget);
         expect(_key('launch2-trade-max'), findsOneWidget);
         expect(find.text('1,000 / 5,000,000'), findsOneWidget);
@@ -901,8 +907,6 @@ void main() {
         expect(_key('launch2-trade-side'), findsOneWidget);
         expect(_key('launch2-eligibility-badge'), findsNothing);
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-        await _scrollTo(tester, _key('launch2-trade-t-1'));
-        expect(_key('launch2-trade-t-1'), findsOneWidget);
         await _drain(tester);
       },
     );
@@ -923,14 +927,19 @@ void main() {
         ),
       );
       expect(_key('launch2-stage-graduated'), findsOneWidget);
+      // Decision 0240: the pool's facts and the swap link are the 信息 tab's.
+      await l2OpenTab(tester, 'info');
+      await _scrollTo(tester, _key('launch2-go-swap'));
       await tester.tap(_key('launch2-go-swap'));
       expect(opened.single, '/wallet/swap?to=eip155%3A97%3A$l2Meme');
+      await _scrollTo(tester, _key('launch2-pool-info'));
       await tester.tap(_key('launch2-pool-info'));
       await tester.pumpAndSettle();
       expect(find.text(l2PoolId), findsOneWidget);
       expect(_key('launch2-pool-tax'), findsOneWidget);
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
+      await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-next'));
       expect(find.text('100 USD1'), findsWidgets);
       expect(find.text('官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'), findsOneWidget);
@@ -1204,6 +1213,7 @@ void main() {
         launch2: gateway,
         wallet: wallet,
       );
+      await l2OpenTradeSheet(tester);
       return gateway;
     }
 
@@ -1447,6 +1457,9 @@ void main() {
       expect(line.top, greaterThanOrEqualTo(0));
       expect(button.bottom, lessThanOrEqualTo(640));
       expect(liveRegionIn(bar), findsOneWidget);
+      // The body's line stands above the price area (decision 0240 §7).
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 2000));
+      await tester.pumpAndSettle();
       expect(_key('launch2-action-failed'), findsOneWidget);
       expect(find.text('铸造勋章'), findsOneWidget);
       expect(wallet.handed, isEmpty);
@@ -1547,6 +1560,7 @@ void main() {
         launch2: gateway,
         wallet: _RecordingWallet(),
       );
+      await l2OpenTradeSheet(tester);
       await tester.enterText(_key('launch2-trade-amount'), '50');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
@@ -1739,6 +1753,7 @@ void main() {
           ),
         ],
       );
+      await l2OpenTradeSheet(tester);
       await tester.enterText(_key('launch2-trade-amount'), '50');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
@@ -2125,6 +2140,7 @@ void main() {
         launch2: gateway,
       );
       final reads = gateway.detailReads;
+      await l2OpenTradeSheet(tester);
       await tester.enterText(_key('launch2-trade-amount'), '50');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
@@ -2274,6 +2290,7 @@ void main() {
       expect(_key('launch2-stage-public'), findsOneWidget);
       expect(_key('launch2-opened-without-holders'), findsOneWidget);
       expect(find.textContaining('无 NFT 持有人，直接开放公开内盘'), findsOneWidget);
+      await l2OpenTradeSheet(tester);
       expect(_key('launch2-trade-amount'), findsOneWidget);
       expect(find.textContaining('名单'), findsNothing);
       await _drain(tester);
@@ -2541,6 +2558,7 @@ void main() {
       );
       // Decision 0148: the live read and the keeper both hold for the same
       // reason — one line naming both sources, no second row.
+      await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-held'));
       // Decision 0150: the reason, then sources and time on their own line.
       expect(
@@ -2657,6 +2675,7 @@ void main() {
           ),
         ),
       );
+      await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-held'));
       expect(find.text('下一笔暂缓：旧版合约价格保护生效'), findsOneWidget);
       final detail = tester.widget<Text>(_key('launch2-buyback-held-detail'));
@@ -2695,6 +2714,7 @@ void main() {
           ),
         ),
       );
+      await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-held'));
       expect(
         find.textContaining('下一笔暂缓：旧版合约价格保护生效（链上读数）；托管余额不足一笔（自动回购）'),
@@ -2720,6 +2740,7 @@ void main() {
           ),
         ),
       );
+      await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-keeper'));
       expect(_key('launch2-buyback-next'), findsOneWidget);
       expect(_key('launch2-buyback-held'), findsNothing);

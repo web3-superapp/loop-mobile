@@ -458,13 +458,15 @@ void main() {
 
       expect(_key('launch2-candles'), findsOneWidget);
       expect(find.byType(LoopMarketChart), findsOneWidget);
+      // Decision 0240: the price area's figure, then the K line, then the
+      // curve's progress.
       expect(
         tester.getTopLeft(_key('launch2-candles')).dy,
-        lessThan(tester.getTopLeft(_key('launch2-curve-price')).dy),
+        greaterThan(tester.getTopLeft(_key('launch2-curve-price')).dy),
       );
       expect(
         tester.getTopLeft(_key('launch2-candles')).dy,
-        greaterThan(tester.getTopLeft(find.text('内盘').first).dy),
+        lessThan(tester.getTopLeft(_key('launch2-curve')).dy),
       );
       expect(gateway.calls.single, (
         interval: Launch2CandleInterval.fiveMinutes,
@@ -601,9 +603,14 @@ void main() {
       expect(gateway.calls.first.interval, Launch2CandleInterval.oneHour);
       expect(_key('launch2-candles-graduation'), findsOneWidget);
       expect(find.text('毕业'), findsOneWidget);
+      // Decision 0240: the K line under the price, above the tabs.
       expect(
         tester.getTopLeft(_key('launch2-candles')).dy,
-        lessThan(tester.getTopLeft(find.text('毕业时间')).dy),
+        greaterThan(tester.getTopLeft(_key('launch2-pool-price')).dy),
+      );
+      expect(
+        tester.getTopLeft(_key('launch2-candles')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-instance-tabs')).dy),
       );
 
       // A series of the pool alone has no crossing to mark.

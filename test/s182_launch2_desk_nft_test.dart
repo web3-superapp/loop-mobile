@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
+import 'package:loop_mobile/features/launch2/launch2_instance_parts.dart';
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
@@ -49,6 +50,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 import 'support/test_hints.dart';
@@ -409,6 +411,18 @@ Launch2DeskEventFace _desk(WidgetTester tester, String key) =>
         matching: find.byType(Launch2DeskEventFace),
       ),
     );
+
+/// The project page's head (decision 0240).
+Text _headTicker(WidgetTester tester) =>
+    tester.widget<Text>(_key('launch2-head-ticker'));
+
+Finder _inCapsule(String text) => find.descendant(
+  of: _key('launch2-stage-capsule'),
+  matching: find.text(text),
+);
+
+String _capsuleCountdown(WidgetTester tester) =>
+    tester.widget<Text>(_key('launch2-stage-countdown')).data!;
 
 LoopFolioPrimary _folio(WidgetTester tester, String key) =>
     tester.widget<LoopFolioPrimary>(
@@ -2091,20 +2105,19 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[_detail()]),
       );
-      final folios = tester.widgetList<LoopFolioPrimary>(
-        find.byType(LoopFolioPrimary),
+      // Decision 0240: the folio card became one line and a half — logo,
+      // ticker and name, the address with its copy key, the stage capsule
+      // with the countdown.
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      expect(find.byType(Launch2InstanceHead), findsOneWidget);
+      expect(_headTicker(tester).data, 'FROG');
+      expect(_headTicker(tester).style?.color, LoopColors.yellow);
+      expect(
+        tester.widget<Text>(_key('launch2-head-name')).data,
+        'Frog Launch',
       );
-      expect(folios, hasLength(1));
-      final folio = folios.single;
-      expect(folio.key, const ValueKey<String>('launch2-instance-folio'));
-      expect(folio.variant, LoopFolioVariant.quiet);
-      expect(folio.archetype, LoopFolioArchetype.record);
-      expect(folio.ring, isFalse);
-      expect(folio.kicker, '铸造中');
-      expect(folio.heading, 'FROG');
-      expect(folio.headingTone, LoopFolioHeadingTone.accent);
-      expect(folio.caption, startsWith('Frog Launch · '));
-      expect(folio.stamp, startsWith('剩 '));
+      expect(_inCapsule('铸造中'), findsOneWidget);
+      expect(_capsuleCountdown(tester), startsWith('剩 '));
       expect(_key('launch2-copy-address'), findsOneWidget);
       // The folio is above every stage block.
       expect(
@@ -2151,24 +2164,25 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[detailOf('public')]),
       );
-      final folio = tester.widget<LoopFolioPrimary>(
-        find.byType(LoopFolioPrimary),
-      );
-      expect(folio.kicker, '公开内盘');
-      expect(folio.stamp, isNull);
+      expect(_inCapsule('公开内盘'), findsOneWidget);
+      expect(_key('launch2-stage-countdown'), findsNothing);
       expect(_key('launch2-countdown'), findsNothing);
-      for (final label in <String>['内盘', '公开内盘']) {
-        expect(
-          find.byWidgetPredicate((w) => w is LoopLabel && w.text == label),
-          findsOneWidget,
-          reason: label,
-        );
-      }
       expect(_key('launch2-curve-price'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-curve'),
           matching: find.byType(LoopProgressBar),
+        ),
+        findsOneWidget,
+      );
+      // The panel opens from the bar, with its label (decision 0240).
+      await l2OpenTradeSheet(tester);
+      expect(
+        find.descendant(
+          of: _key('launch2-trade-sheet'),
+          matching: find.byWidgetPredicate(
+            (w) => w is LoopLabel && w.text == '公开内盘',
+          ),
         ),
         findsOneWidget,
       );
@@ -2183,11 +2197,8 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[detailOf('upcoming')]),
       );
-      var folio = tester.widget<LoopFolioPrimary>(
-        find.byType(LoopFolioPrimary),
-      );
-      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
-      expect(folio.stamp, startsWith('距铸造 '));
+      expect(_headTicker(tester).style?.color, LoopColors.chalk);
+      expect(_capsuleCountdown(tester), startsWith('距铸造 '));
       await _drain(tester);
       await _pump(
         tester,
@@ -2198,9 +2209,8 @@ void main() {
           ],
         ),
       );
-      folio = tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary));
-      expect(folio.kicker, '已暂停');
-      expect(folio.headingTone, LoopFolioHeadingTone.neutral);
+      expect(_inCapsule('已暂停'), findsOneWidget);
+      expect(_headTicker(tester).style?.color, LoopColors.chalk);
       await _drain(tester);
     });
 
@@ -2275,12 +2285,8 @@ void main() {
         size: const Size(360, 800),
       );
       expect(tester.takeException(), isNull);
-      await tester.scrollUntilVisible(
-        _key('launch2-trade-panel'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
+      await l2OpenTradeSheet(tester);
+      expect(_key('launch2-trade-panel'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _drain(tester);
     });
@@ -2457,6 +2463,7 @@ void main() {
           ),
         ],
       );
+      await l2OpenTab(tester, 'info');
       await expectPublishedBlock(tester, opened);
       await _drain(tester);
     });
@@ -2560,9 +2567,6 @@ void main() {
       return LoopV2Launch2Codec.intent(body);
     }
 
-    LoopFolioPrimary folio(WidgetTester tester) =>
-        tester.widget<LoopFolioPrimary>(_key('launch2-instance-folio'));
-
     testWidgets('S234-3 · 名单发布中: the card label and the body say the same '
         'state', (tester) async {
       await _pump(
@@ -2571,7 +2575,7 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[broadcast]),
         clock: clock,
       );
-      expect(folio(tester).kicker, '名单发布中');
+      expect(_inCapsule('名单发布中'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-snapshot-pending'),
@@ -2595,7 +2599,7 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[after]),
         clock: clock,
       );
-      expect(folio(tester).caption, 'S234 Walk · 每地址 1 枚 · 已铸 2 枚');
+      expect(tester.widget<Text>(_key('launch2-head-name')).data, 'S234 Walk');
       expect(launch2InstanceFolioCaption(after), contains('已铸 2 枚'));
       final stats = tester
           .widgetList<MemeStatFigures>(find.byType(MemeStatFigures))

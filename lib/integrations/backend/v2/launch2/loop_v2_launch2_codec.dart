@@ -341,7 +341,45 @@ abstract final class LoopV2Launch2Codec {
     ...walletHoldingKeys,
     'nftImageUrl',
     ...positionValuationKeys,
+    ...costBasisKeys,
   };
+
+  /// S285 · decision 0240 (loop-api S284, client first): the cost basis and
+  /// profit on a position row and on the detail's viewer. Each is read on
+  /// its own and never refuses the row: absent, `null`, a non-string or a
+  /// malformed figure all read as no figure.
+  static const costBasisKeys = <String>{
+    'avgCostUsd1',
+    'costBasisUsd1',
+    'realizedPnlUsd1',
+    'unrealizedPnlUsd1',
+    'costCoverage',
+  };
+
+  /// A figure that may carry a minus sign (`curve.usd1Spent`'s encoding
+  /// otherwise).
+  static final RegExp signedAmountPattern = RegExp(
+    r'^-?(0|[1-9][0-9]{0,40})(\.[0-9]{1,18})?$',
+  );
+
+  static Decimal? lenientSignedAmount(Map<String, Object?> map, String key) {
+    final value = map[key];
+    if (value is! String || !signedAmountPattern.hasMatch(value)) return null;
+    return Decimal.tryParse(value);
+  }
+
+  /// The cost basis group (decision 0240), [Launch2CostBasis.none] when the
+  /// server sent none of it.
+  static Launch2CostBasis costBasis(Map<String, Object?> map) {
+    final cost = Launch2CostBasis(
+      avgCostUsd1: lenientAmount(map, 'avgCostUsd1'),
+      costBasisUsd1: lenientAmount(map, 'costBasisUsd1'),
+      realizedPnlUsd1: lenientSignedAmount(map, 'realizedPnlUsd1'),
+      unrealizedPnlUsd1: lenientSignedAmount(map, 'unrealizedPnlUsd1'),
+      coverage: Launch2CostCoverage.tryParse(map['costCoverage']),
+    );
+    return cost.isEmpty ? Launch2CostBasis.none : cost;
+  }
 
   /// S281 · decision 0238: `priceUsd1`, `valueUsd1`, `priceSource`. Each is
   /// read on its own and never refuses the row: absent, `null`, a non-string
@@ -961,7 +999,7 @@ abstract final class LoopV2Launch2Codec {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       viewerKeys,
-      walletHoldingKeys,
+      viewerOptionalKeys,
     );
     final nft = _nftHolding(map['nft']);
     final snapshot = LoopV2Contract.strictMap(map['snapshot'], const <String>{
@@ -976,8 +1014,16 @@ abstract final class LoopV2Launch2Codec {
       eligibleNow: LoopV2ChainCodec.requireBool(snapshot, 'eligibleNow'),
       curve: curvePosition(map['curve']),
       holding: walletHolding(map),
+      cost: costBasis(map),
     );
   }
+
+  /// What a viewer may carry or omit: the holding group (decision 0148) and
+  /// the cost basis (decision 0240).
+  static const viewerOptionalKeys = <String>{
+    ...walletHoldingKeys,
+    ...costBasisKeys,
+  };
 
   /// `GET /v2/launch2/instances/{id}`.
   static Launch2InstanceDetail detail(
@@ -1490,6 +1536,7 @@ abstract final class LoopV2Launch2Codec {
       priceUsd1: lenientAmount(map, 'priceUsd1'),
       valueUsd1: lenientAmount(map, 'valueUsd1'),
       priceSource: Launch2PriceSource.tryParse(map['priceSource']),
+      cost: costBasis(map),
     );
   }
 }

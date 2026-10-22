@@ -652,6 +652,7 @@ final class Launch2Viewer {
     required this.curve,
     this.mintedTokenId,
     this.holding,
+    this.cost = Launch2CostBasis.none,
   });
 
   final String walletId;
@@ -664,6 +665,70 @@ final class Launch2Viewer {
   /// Decision 0148: balances and own pool trades; `null` from an older
   /// server.
   final Launch2WalletHolding? holding;
+
+  /// S285 · decision 0240 (loop-api S284, client first): the wallet's cost
+  /// basis and profit for this instance. [Launch2CostBasis.none] from a
+  /// server without the keys.
+  final Launch2CostBasis cost;
+}
+
+/// `costCoverage` (S285 · decision 0240): whether every token held has a
+/// recorded cost (`full`) or some arrived by a plain transfer and carry
+/// none (`partial`).
+enum Launch2CostCoverage {
+  full('full'),
+  partial('partial');
+
+  const Launch2CostCoverage(this.wireName);
+
+  final String wireName;
+
+  /// `null` for anything not a known value — never a parse failure.
+  static Launch2CostCoverage? tryParse(Object? value) {
+    for (final coverage in values) {
+      if (coverage.wireName == value) return coverage;
+    }
+    return null;
+  }
+}
+
+/// The wallet's cost basis and profit for one instance (S285 · decision
+/// 0240; loop-api S284 sends it on a position row and on the detail's
+/// viewer). Every figure is optional on its own: absent, `null` or not a
+/// decimal string reads as no figure and never refuses the row. Profit
+/// figures may be negative.
+@immutable
+final class Launch2CostBasis {
+  const Launch2CostBasis({
+    this.avgCostUsd1,
+    this.costBasisUsd1,
+    this.realizedPnlUsd1,
+    this.unrealizedPnlUsd1,
+    this.coverage,
+  });
+
+  static const Launch2CostBasis none = Launch2CostBasis();
+
+  /// USD1 paid per MEME held, on average.
+  final Decimal? avgCostUsd1;
+
+  /// USD1 paid for what is held now.
+  final Decimal? costBasisUsd1;
+
+  /// Profit already taken by selling (may be negative).
+  final Decimal? realizedPnlUsd1;
+
+  /// Profit of what is held now at the current price (may be negative).
+  final Decimal? unrealizedPnlUsd1;
+  final Launch2CostCoverage? coverage;
+
+  /// Whether the server sent anything at all.
+  bool get isEmpty =>
+      avgCostUsd1 == null &&
+      costBasisUsd1 == null &&
+      realizedPnlUsd1 == null &&
+      unrealizedPnlUsd1 == null &&
+      coverage == null;
 }
 
 /// `GET /v2/launch2/instances/{id}`.
@@ -1052,6 +1117,7 @@ final class Launch2Position {
     this.priceUsd1,
     this.valueUsd1,
     this.priceSource,
+    this.cost = Launch2CostBasis.none,
   });
 
   final String instanceId;
@@ -1089,6 +1155,9 @@ final class Launch2Position {
 
   /// Where [priceUsd1] came from; `null` when absent or not a known source.
   final Launch2PriceSource? priceSource;
+
+  /// S285 · decision 0240: cost basis and profit (loop-api S284).
+  final Launch2CostBasis cost;
 }
 
 /// `priceSource` of a position (S281 · decision 0238): the bonding curve's

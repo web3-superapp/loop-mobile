@@ -21,17 +21,18 @@ import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
+import 'package:loop_mobile/features/launch2/launch2_instance_parts.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_mint.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
+import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
-import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
@@ -44,6 +45,7 @@ import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 
@@ -135,6 +137,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   /// right above the button that started it.
   Launch2ActionFailure? _actionFailure;
   bool _preparingNft = false;
+
+  /// Decision 0240: the chosen tab and the 成交 tab's 「只看我的」.
+  Launch2InstanceTab _tab = Launch2InstanceTab.trades;
+  bool _mineOnly = false;
   int _settleReads = 0;
 
   /// How many re-reads a broadcast waits for before the page stops holding
@@ -163,7 +169,30 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       if (detail?.stage == Launch2Stage.graduated)
         ref.read(launch2BuybacksControllerProvider(id).notifier).reload(),
       if (detail?.stage == Launch2Stage.graduated) _reloadPoolKind(id),
+      if (detail?.stage == Launch2Stage.graduated) _reloadRecentTrades(id),
+      if (detail?.viewer != null) _reloadPositions(),
     ]);
+  }
+
+  /// Decision 0240: the 成交 tab's public list, when it was asked for.
+  Future<void> _reloadRecentTrades(String id) {
+    final provider = launch2RecentPoolTradesControllerProvider(id);
+    final state = ref.read(provider);
+    if (state.mode == LoopChainGatewayMode.unavailable ||
+        (state.phase == LoopChainViewPhase.loading && state.value == null)) {
+      return Future<void>.value();
+    }
+    return ref.read(provider.notifier).reload();
+  }
+
+  /// Decision 0240: the holding strip's valuation, when it was asked for.
+  Future<void> _reloadPositions() {
+    final state = ref.read(launch2PositionsControllerProvider);
+    if (state.mode == LoopChainGatewayMode.unavailable ||
+        (state.phase == LoopChainViewPhase.loading && state.value == null)) {
+      return Future<void>.value();
+    }
+    return ref.read(launch2PositionsControllerProvider.notifier).reload();
   }
 
   /// Decision 0157: the round moves with every swap, so a LoopDynamic
@@ -197,6 +226,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     final pending = _pending;
     if (pending == null) return;
     if (_viewerSignature(detail) != pending.baseline) {
+      unawaited(_reloadPositions());
       final noun = launch2IntentNoun(pending.kind);
       setState(() {
         _pending = _Pending(
@@ -231,8 +261,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   }
 
   /// Hands one prepared intent to the signing exit and records what it
-  /// answered.
-  Future<void> _sign(
+  /// answered; `true` when the wallet broadcast it.
+  Future<bool> _sign(
     Launch2InstanceDetail detail,
     Launch2Intent intent, {
     Launch2IntentRefresher? refresh,
@@ -248,8 +278,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       refresh: refresh,
       confirmation: launch2ReadModelConfirmation(ref, detail, intent),
     );
-    if (!mounted || outcome == null) return;
+    if (!mounted || outcome == null) return false;
     _record(detail, intent, outcome);
+    return outcome.broadcast;
   }
 
   /// What the signing exit answered for [intent], held until the read model
@@ -376,6 +407,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
   /// page, and a figure that is restored, refreshing or for another chain
   /// counts as not read — a stale zero must not stop a quote.
   (Decimal?, Decimal?) _curveBalances(
+    WidgetRef r,
     Launch2InstanceDetail detail,
     String? walletId,
   ) {
@@ -389,12 +421,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       return (null, null);
     }
     final provider = walletBalancesControllerProvider(walletId);
-    final balances = ref.watch(provider);
+    final balances = r.watch(provider);
     if (_balancesAskedFor != walletId &&
         balances.mode != LoopChainGatewayMode.unavailable) {
       _balancesAskedFor = walletId;
       scheduleMicrotask(() {
-        if (mounted) unawaited(ref.read(provider.notifier).reload());
+        if (mounted) unawaited(r.read(provider.notifier).reload());
       });
       return (null, null);
     }
@@ -402,7 +434,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     final usd1 = slot?.usd1;
     if (!balances.isReady ||
         balances.refreshing ||
-        ref.read(provider.notifier).restoredObservedAt != null ||
+        r.read(provider.notifier).restoredObservedAt != null ||
         slot == null ||
         slot.chainId != detail.row.chainId ||
         usd1 == null) {
@@ -457,6 +489,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         _settle(value);
         if (previous?.value != null && value.stage == Launch2Stage.graduated) {
           unawaited(_reloadPoolKind(instanceId));
+          // Decision 0240: a new swap in the pool re-reads the 成交 list.
+          final before = previous?.value?.pool?.tradeCount;
+          final after = value.pool?.tradeCount;
+          if (before != null && after != null && before != after) {
+            unawaited(_reloadRecentTrades(instanceId));
+          }
         }
       }
     });
@@ -472,6 +510,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       }
     }
     final paused = detail?.stage == Launch2Stage.paused;
+    final pool = detail == null ? null : _poolOf(ref, detail);
     return LoopDashboardPage(
       key: ValueKey<String>('launch2-instance-$instanceId'),
       archetype: LoopPageArchetype.record,
@@ -486,7 +525,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
               message: launch2CapabilityText(capability),
             )
           : null,
-      bottomBar: detail == null || paused ? null : _bottomBar(detail),
+      bottomBar: detail == null || paused ? null : _bottomBar(detail, pool!),
       sections: <Widget>[
         if (state == null || detail == null)
           LoopChainStateBlock(
@@ -498,12 +537,32 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else
-          ..._sections(detail, capability),
+          ..._sections(detail, capability, pool!),
       ],
     );
   }
 
-  Widget? _bottomBar(Launch2InstanceDetail detail) {
+  /// Decision 0157: only a graduated pool has a Hook kind; the read is not
+  /// made for any other stage, and `null` (OfficialTax, unknown, absent
+  /// adapter) draws the S146 page unchanged. Decision 0159: a LoopDynamic
+  /// Hook that cannot be read now never falls back to the OfficialTax panel.
+  _PoolKind _poolOf(WidgetRef r, Launch2InstanceDetail detail) {
+    if (detail.stage != Launch2Stage.graduated) return const _PoolKind();
+    final kind = launch2PoolKindOf(r, detail.instanceId);
+    return _PoolKind(
+      dynamicPool: kind is Launch2LoopDynamicPool ? kind.state : null,
+      blocked: switch (kind) {
+        Launch2LoopDynamicUnavailable(:final reasonCode) =>
+          launch2PoolReasonText(reasonCode),
+        Launch2LoopDynamicNotGraduated() => '外盘池子正在同步，请稍后再试',
+        _ => null,
+      },
+    );
+  }
+
+  /// Decision 0240: the fixed 买入 / 卖出 bar on the curve and after
+  /// graduation, 「铸造勋章」 while the NFT sells (unchanged).
+  Widget? _bottomBar(Launch2InstanceDetail detail, _PoolKind pool) {
     switch (detail.stage) {
       case Launch2Stage.nftSale:
         final held = (detail.viewer?.nftHeld ?? 0) > 0;
@@ -542,28 +601,129 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
             onPressed: held || busy ? null : () => unawaited(_buyNft(detail)),
           ),
         );
+      case Launch2Stage.priority:
+      case Launch2Stage.public:
       case Launch2Stage.graduated:
-        // Decision 0145: trading moved into the page (外盘交易 panel); the
-        // wallet Swap stays one secondary link under it.
-        return null;
+        final hold = detail.tradingHold;
+        final reason = (_pending?.locked ?? false)
+            ? '上一笔还在链上确认，确认后再交易'
+            : pool.blocked;
+        final sellReason = detail.stage == Launch2Stage.priority
+            ? '提前购阶段只能买入，公开内盘开始后可卖出'
+            : null;
+        final open = hold == null && reason == null;
+        return Launch2BarShell(
+          failure: hold != null
+              ? Launch2TradingHoldLine(
+                  key: const ValueKey<String>('launch2-bar-hold'),
+                  hold: hold,
+                  padding: EdgeInsets.zero,
+                )
+              : reason != null
+              ? LoopInlineUnavailable(
+                  key: const ValueKey<String>('launch2-bar-reason'),
+                  icon: (_pending?.locked ?? false) ? 'clock' : 'warn',
+                  message: reason,
+                  padding: EdgeInsets.zero,
+                )
+              : sellReason != null
+              ? LoopInlineUnavailable(
+                  key: const ValueKey<String>('launch2-bar-sell-reason'),
+                  icon: 'info',
+                  message: sellReason,
+                  padding: EdgeInsets.zero,
+                )
+              : null,
+          child: Launch2TradeKeys(
+            onBuy: open
+                ? () => unawaited(_openTrade(detail, Launch2Side.buy))
+                : null,
+            onSell: open && sellReason == null
+                ? () => unawaited(_openTrade(detail, Launch2Side.sell))
+                : null,
+          ),
+        );
       case Launch2Stage.upcoming:
       case Launch2Stage.snapshotPending:
       case Launch2Stage.closedNoHolders:
-      case Launch2Stage.priority:
-      case Launch2Stage.public:
       case Launch2Stage.paused:
         return null;
     }
   }
 
+  /// Decision 0240: the stage's trade panel in a bottom sheet over the page.
+  /// The sheet reads the project itself, so the panel follows every re-read;
+  /// it closes when the stage moves under it or our broadcast is recorded.
+  Future<void> _openTrade(Launch2InstanceDetail opened, Launch2Side side) {
+    final id = opened.instanceId;
+    final stage = opened.stage;
+    return showLoopSheet<void>(
+      context,
+      barrierLabel: '关闭交易面板',
+      builder: (sheet) => Consumer(
+        builder: (context, r, _) {
+          final live =
+              r.watch(launch2InstanceControllerProvider(id)).value ?? opened;
+          if (live.stage != stage) {
+            scheduleMicrotask(() {
+              if (sheet.mounted) Navigator.of(sheet).maybePop();
+            });
+            return const SizedBox.shrink();
+          }
+          void signed(bool broadcast) {
+            if (broadcast && sheet.mounted) Navigator.of(sheet).maybePop();
+          }
+
+          final Widget panel;
+          if (stage == Launch2Stage.graduated) {
+            final pool = _poolOf(r, live);
+            panel = pool.blocked != null
+                ? Launch2DynamicUnavailableBlock(
+                    reason: pool.blocked!,
+                    onRetry: () => unawaited(_reloadPoolKind(id)),
+                  )
+                : Launch2PoolTradePanel(
+                    key: ValueKey<String>('launch2-pool-panel-$id'),
+                    detail: live,
+                    walletId:
+                        memeReadActiveWallet(r).walletId ??
+                        live.viewer?.walletId,
+                    locked: _pending?.locked ?? false,
+                    initialSide: side,
+                    onPrepared: (intent, refresh) async =>
+                        signed(await _sign(live, intent, refresh: refresh)),
+                    onTopUp: () => _openTopUp(live),
+                    onFaucet: _faucetAction(live),
+                    dynamicPool: pool.dynamicPool,
+                  );
+          } else {
+            panel = _curvePanel(r, live, side, signed);
+          }
+          return Launch2DragUnfocus(
+            child: Column(
+              key: const ValueKey<String>('launch2-trade-sheet'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // The panel carries its own heading (外盘交易 / 公开内盘).
+                panel,
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   List<Widget> _sections(
     Launch2InstanceDetail detail,
     LoopCapabilityProjection capability,
+    _PoolKind pool,
   ) {
     final pending = _pending;
     final paused = detail.stage == Launch2Stage.paused;
     final body = <Widget>[
-      _InstanceFolio(
+      Launch2InstanceHead(
         detail: detail,
         onCopy: () => unawaited(
           LoopCopy.text(context, detail.row.memeAddress, message: '已复制代币地址'),
@@ -576,6 +736,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
               .reload(),
         ),
       ),
+      // Decision 0240 §7: what the page says about trading stays above the
+      // price area, never inside a tab.
       // Decision 0161: the chain guard's hold, above every trade panel.
       if (detail.tradingHold case final Launch2TradingHold hold)
         Launch2TradingHoldBanner(hold: hold),
@@ -597,6 +759,15 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           icon: 'warn',
           message: failure.text,
         ),
+      if (detail.stage == Launch2Stage.public &&
+          detail.snapshot.openedWithoutHolders != null)
+        const LoopNotice(
+          key: ValueKey<String>('launch2-opened-without-holders'),
+          icon: 'info',
+          // Decision 0149: one line at 360–412 dp (「卖。」 was left alone on a
+          // second line); 「人人可买」 is already the stage bar's line.
+          body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
+        ),
       AnimatedSwitcher(
         duration: LoopMotion.of(context, LoopMotion.stageSwitch),
         switchInCurve: LoopMotion.contentFadeCurve,
@@ -608,7 +779,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           key: ValueKey<String>('launch2-stage-${detail.stage.wireName}'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: _stageContent(detail),
+            children: _stageWidgets(detail, pool),
           ),
         ),
       ),
@@ -638,39 +809,24 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ];
   }
 
-  List<Widget> _stageContent(Launch2InstanceDetail detail) {
-    // Decision 0157: only a graduated pool has a Hook kind; the read is not
-    // made for any other stage, and `null` (OfficialTax, unknown, absent
-    // adapter) draws the S146 page unchanged.
-    final kind = detail.stage == Launch2Stage.graduated
-        ? launch2PoolKindOf(ref, detail.instanceId)
-        : null;
-    return _stageWidgets(
-      detail,
-      kind is Launch2LoopDynamicPool ? kind.state : null,
-      dynamicBlocked: switch (kind) {
-        // Decision 0159: a LoopDynamic Hook that cannot be read now never
-        // falls back to the OfficialTax panel.
-        Launch2LoopDynamicUnavailable(:final reasonCode) =>
-          launch2PoolReasonText(reasonCode),
-        Launch2LoopDynamicNotGraduated() => '外盘池子正在同步，请稍后再试',
-        _ => null,
-      },
-    );
-  }
-
   /// 提前购 / 公开内盘's panel with what is known of the wallet's balances
   /// (decision 0225).
-  Widget _curvePanel(Launch2InstanceDetail detail) {
+  Widget _curvePanel(
+    WidgetRef r,
+    Launch2InstanceDetail detail,
+    Launch2Side side,
+    void Function(bool broadcast) signed,
+  ) {
     final curveWalletId =
-        memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId;
-    final curveBalances = _curveBalances(detail, curveWalletId);
+        memeReadActiveWallet(r).walletId ?? detail.viewer?.walletId;
+    final curveBalances = _curveBalances(r, detail, curveWalletId);
     return Launch2TradePanel(
       key: ValueKey<String>('launch2-panel-${detail.instanceId}'),
       detail: detail,
       walletId: curveWalletId,
       locked: _pending?.locked ?? false,
-      onPrepared: (intent) => _sign(detail, intent),
+      initialSide: side,
+      onPrepared: (intent) async => signed(await _sign(detail, intent)),
       onTopUp: () => _openTopUp(detail),
       onFaucet: _faucetAction(detail),
       usd1Balance: curveBalances.$1,
@@ -683,11 +839,95 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     );
   }
 
+  /// The tabs [detail]'s stage offers (decision 0240): 成交 / 信息 from the
+  /// NFT sale on, and 回购 after graduation (every graduated v2 project has
+  /// its buyback escrow; no other stage has a buyback).
+  static List<Launch2InstanceTab> _tabsFor(Launch2Stage stage) =>
+      switch (stage) {
+        Launch2Stage.graduated => Launch2InstanceTab.values,
+        Launch2Stage.nftSale ||
+        Launch2Stage.priority ||
+        Launch2Stage.public => const <Launch2InstanceTab>[
+          Launch2InstanceTab.trades,
+          Launch2InstanceTab.info,
+        ],
+        Launch2Stage.upcoming ||
+        Launch2Stage.snapshotPending ||
+        Launch2Stage.closedNoHolders ||
+        Launch2Stage.paused => const <Launch2InstanceTab>[],
+      };
+
+  /// The tab bar and the chosen tab's blocks.
+  List<Widget> _tabbed(
+    Launch2InstanceDetail detail,
+    Map<Launch2InstanceTab, List<Widget>> content,
+  ) {
+    final tabs = _tabsFor(detail.stage);
+    final chosen = tabs.contains(_tab) ? _tab : Launch2InstanceTab.trades;
+    return <Widget>[
+      Launch2InstanceTabs(
+        tabs: tabs,
+        selected: chosen,
+        onSelected: (tab) => setState(() => _tab = tab),
+      ),
+      KeyedSubtree(
+        key: ValueKey<String>('launch2-tab-body-${chosen.name}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: content[chosen] ?? const <Widget>[],
+        ),
+      ),
+    ];
+  }
+
+  /// The wallet's position row for this project from `me/positions`
+  /// (decision 0240: the valuation and, until the viewer carries it, the
+  /// cost basis), or `null` while not read.
+  Launch2Position? _positionFor(Launch2InstanceDetail detail) {
+    final viewer = detail.viewer;
+    if (viewer == null) return null;
+    final provider = launch2PositionsControllerProvider;
+    final state = ref.watch(provider);
+    if (state.mode == LoopChainGatewayMode.unavailable) return null;
+    launch2LoadOnce(ref, state, () => ref.read(provider.notifier).load());
+    for (final position in state.value?.items ?? const <Launch2Position>[]) {
+      if (position.instanceId == detail.instanceId &&
+          position.walletId == viewer.walletId) {
+        return position;
+      }
+    }
+    return null;
+  }
+
+  /// 我的持仓 (decision 0240), or nothing without a holding.
+  Widget? _holdingStrip(Launch2InstanceDetail detail, Decimal? price) {
+    final viewer = detail.viewer;
+    if (viewer == null) return null;
+    final graduated = detail.stage == Launch2Stage.graduated;
+    final holding = viewer.holding;
+    final quantity = graduated
+        ? (holding != null && holding.balancesRead ? holding.memeBalance : null)
+        : viewer.curve.net;
+    if (quantity == null || quantity <= Decimal.zero) return null;
+    final position = _positionFor(detail);
+    return Launch2HoldingStrip(
+      quantity: quantity,
+      ticker: detail.row.ticker,
+      valueUsd1: position?.valueUsd1,
+      price: price,
+      cost: viewer.cost.isEmpty
+          ? (position?.cost ?? Launch2CostBasis.none)
+          : viewer.cost,
+      quantityKey: graduated
+          ? 'launch2-holding-quantity'
+          : 'launch2-curve-holding',
+    );
+  }
+
   List<Widget> _stageWidgets(
     Launch2InstanceDetail detail,
-    Launch2DynamicPoolState? dynamicPool, {
-    String? dynamicBlocked,
-  }) => switch (detail.stage) {
+    _PoolKind pool,
+  ) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
       const LoopLabel('勋章铸造'),
       _Figures(
@@ -705,6 +945,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         detail: detail,
         onOpenMintPage: () => _open(Launch2Route.nft(detail.instanceId)),
       ),
+      ..._tabbed(detail, <Launch2InstanceTab, List<Widget>>{
+        Launch2InstanceTab.trades: <Widget>[_RecentTrades(detail: detail)],
+        Launch2InstanceTab.info: <Widget>[_TemplateCard(detail: detail)],
+      }),
     ],
     Launch2Stage.snapshotPending => <Widget>[
       LoopEmptyState(
@@ -727,26 +971,44 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.closedNoHolders => <Widget>[_ClosedBlock(detail: detail)],
     Launch2Stage.priority || Launch2Stage.public => <Widget>[
-      if (detail.stage == Launch2Stage.public &&
-          detail.snapshot.openedWithoutHolders != null)
-        const LoopNotice(
-          key: ValueKey<String>('launch2-opened-without-holders'),
-          icon: 'info',
-          // Decision 0149: one line at 360–412 dp (「卖。」 was left alone on a
-          // second line); 「人人可买」 is already the stage bar's line.
-          body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
-        ),
-      _CurveBlock(detail: detail),
-      _curvePanel(detail),
-      _RecentTrades(detail: detail),
-      // Decision 0202: the published list, without its addresses.
-      if (launch2SnapshotPublishedShown(detail))
-        Launch2SnapshotPublishedBlock(detail: detail),
+      Launch2PriceHeader(
+        price: detail.row.curve.priceUsd1,
+        priceKey: 'launch2-curve-price',
+        aside: '内盘已售 ${launch2BpsLabel(detail.row.curve.soldBps)}',
+      ),
+      // Decision 0227: the K line between the price and the figures.
+      Launch2CandleCard(
+        key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
+        detail: detail,
+      ),
+      ?_holdingStrip(detail, detail.row.curve.priceUsd1),
+      _CurveProgress(detail: detail),
+      ..._tabbed(detail, <Launch2InstanceTab, List<Widget>>{
+        Launch2InstanceTab.trades: <Widget>[_RecentTrades(detail: detail)],
+        Launch2InstanceTab.info: <Widget>[
+          // Decision 0202: the published list, without its addresses.
+          if (launch2SnapshotPublishedShown(detail))
+            Launch2SnapshotPublishedBlock(detail: detail),
+          _TemplateCard(detail: detail),
+        ],
+      }),
     ],
     Launch2Stage.graduated => <Widget>[
-      _GraduatedBlock(detail: detail),
-      if (dynamicPool != null)
-        Launch2DynamicRoundCard(
+      Launch2PriceHeader(
+        price: detail.pool?.lastPriceUsd1,
+        priceKey: 'launch2-pool-price',
+        aside: detail.pool == null
+            ? null
+            : '24h 成交 ${launch2Usd1Label(detail.pool!.volume24hUsd1)}',
+      ),
+      // Decision 0227: the same card, curve and pool on one series.
+      Launch2CandleCard(
+        key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
+        detail: detail,
+      ),
+      ?_holdingStrip(detail, detail.pool?.lastPriceUsd1),
+      if (pool.dynamicPool case final Launch2DynamicPoolState dynamicPool)
+        Launch2DynamicStatusStrip(
           state: dynamicPool,
           observedAt: ref
               .read(
@@ -756,15 +1018,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           onOpenRewards: () =>
               _open(Launch2Route.dynamicRewards(detail.instanceId)),
         ),
-      if (dynamicPool != null)
-        Launch2DynamicFeeSummaryCard(
-          state: dynamicPool,
-          ticker: detail.row.ticker,
-        ),
-      Launch2PoolStats(detail: detail),
-      if (dynamicBlocked != null)
+      if (pool.blocked case final String reason)
         Launch2DynamicUnavailableBlock(
-          reason: dynamicBlocked,
+          reason: reason,
           onRetry: () => unawaited(
             ref
                 .read(
@@ -772,42 +1028,55 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
                 )
                 .reload(),
           ),
-        )
-      else
-        Launch2PoolTradePanel(
-          key: ValueKey<String>('launch2-pool-panel-${detail.instanceId}'),
-          detail: detail,
-          walletId:
-              memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
-          locked: _pending?.locked ?? false,
-          onPrepared: (intent, refresh) =>
-              _sign(detail, intent, refresh: refresh),
-          onTopUp: () => _openTopUp(detail),
-          onFaucet: _faucetAction(detail),
-          dynamicPool: dynamicPool,
         ),
-      _MyPoolTrades(
-        detail: detail,
-        walletId: memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
-      ),
-      // Decision 0157: a LoopDynamic Hook credits rewards only to buys it
-      // can attribute; the wallet Swap may route elsewhere, so the link is
-      // not offered there.
-      if (dynamicPool == null && dynamicBlocked == null)
-        Launch2PoolSwapLink(
-          onOpen: () => _open(
-            Launch2Route.swap(
-              chainId: detail.row.chainId,
-              memeAddress: detail.row.memeAddress,
-            ),
+      ..._tabbed(detail, <Launch2InstanceTab, List<Widget>>{
+        Launch2InstanceTab.trades: <Widget>[
+          _PoolTradesTab(
+            detail: detail,
+            walletId:
+                memeReadActiveWallet(ref).walletId ?? detail.viewer?.walletId,
+            mineOnly: _mineOnly,
+            onMineOnly: (value) => setState(() => _mineOnly = value),
           ),
-        ),
-      _BuybackPanel(detail: detail),
-      if (launch2SnapshotPublishedShown(detail))
-        Launch2SnapshotPublishedBlock(detail: detail),
+        ],
+        Launch2InstanceTab.info: <Widget>[
+          _GraduatedInfo(detail: detail),
+          if (pool.dynamicPool case final Launch2DynamicPoolState dynamicPool)
+            Launch2DynamicFeeSummaryCard(
+              state: dynamicPool,
+              ticker: detail.row.ticker,
+            ),
+          Launch2PoolStats(detail: detail),
+          if (launch2SnapshotPublishedShown(detail))
+            Launch2SnapshotPublishedBlock(detail: detail),
+          // Decision 0157: a LoopDynamic Hook credits rewards only to buys
+          // it can attribute; the wallet Swap may route elsewhere, so the
+          // link is not offered there.
+          if (pool.dynamicPool == null && pool.blocked == null)
+            Launch2PoolSwapLink(
+              onOpen: () => _open(
+                Launch2Route.swap(
+                  chainId: detail.row.chainId,
+                  memeAddress: detail.row.memeAddress,
+                ),
+              ),
+            ),
+        ],
+        Launch2InstanceTab.buyback: <Widget>[_BuybackPanel(detail: detail)],
+      }),
     ],
     Launch2Stage.paused => <Widget>[_TemplateCard(detail: detail)],
   };
+}
+
+/// What `dynamic-pool` said of a graduated instance (decisions 0157 /
+/// 0159): the LoopDynamic state, or why it cannot be traded now.
+@immutable
+final class _PoolKind {
+  const _PoolKind({this.dynamicPool, this.blocked});
+
+  final Launch2DynamicPoolState? dynamicPool;
+  final String? blocked;
 }
 
 /// 「你是项目方」: one line, nothing else changes for the owner here.
@@ -840,24 +1109,6 @@ class _OwnerStrip extends StatelessWidget {
   );
 }
 
-/// Whether the folio heading carries the accent: the stage takes orders,
-/// mints, or trades in the official pool (decision 0166). Every waiting or
-/// held stage is stated in Chalk.
-bool launch2InstanceHeadingLit(Launch2Stage stage) => switch (stage) {
-  Launch2Stage.nftSale ||
-  Launch2Stage.priority ||
-  Launch2Stage.public ||
-  Launch2Stage.graduated => true,
-  Launch2Stage.upcoming ||
-  Launch2Stage.snapshotPending ||
-  Launch2Stage.closedNoHolders ||
-  Launch2Stage.paused => false,
-};
-
-/// The words before the folio stamp's countdown (decision 0166).
-String launch2InstanceStampPrefix(Launch2Stage stage) =>
-    stage == Launch2Stage.upcoming ? '距铸造 ' : '剩 ';
-
 /// The folio caption (decision 0166): the project's name, then the stage's
 /// line without the countdown words the stamp now carries.
 String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
@@ -875,80 +1126,6 @@ String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
     Launch2Stage.paused => launch2StageCaption(row.stage),
   };
   return '${row.name} · $line';
-}
-
-/// `.ledger-card.ledger-quiet.folio-primary` (decision 0166, after the
-/// 共识勋章 page of decision 0164): the stage as the kicker, the ticker as the
-/// heading with the logo beside it, the name and the stage's line as the
-/// caption, the token address under it and the countdown in the stamp. It
-/// takes the place of decision 0163's identity row and grey stage bar; the
-/// stamp is the page's one moving figure and only it redraws every second.
-class _InstanceFolio extends StatelessWidget {
-  const _InstanceFolio({
-    required this.detail,
-    required this.onCopy,
-    required this.onElapsed,
-  });
-
-  final Launch2InstanceDetail detail;
-  final VoidCallback onCopy;
-  final VoidCallback onElapsed;
-
-  @override
-  Widget build(BuildContext context) {
-    final row = detail.row;
-    final next = row.nextChangeAt;
-    Widget folio(String? stamp) => LoopFolioPrimary(
-      key: const ValueKey<String>('launch2-instance-folio'),
-      archetype: LoopFolioArchetype.record,
-      ring: false,
-      headingTone: launch2InstanceHeadingLit(row.stage)
-          ? LoopFolioHeadingTone.accent
-          : LoopFolioHeadingTone.neutral,
-      kicker: launch2InstanceStageLabel(detail),
-      heading: launch2HeroTicker(row.ticker),
-      headingMaxLines: 1,
-      trailing: MemeLogo(
-        symbol: row.ticker,
-        imageUrl: row.logoUrl,
-        identity: detail.instanceId,
-      ),
-      caption: launch2InstanceFolioCaption(detail),
-      captionMaxLines: 3,
-      footer: Row(
-        key: const ValueKey<String>('launch2-identity'),
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Flexible(
-            child: Text(
-              launch2ShortAddress(row.memeAddress),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.codeSm.copyWith(color: LoopColors.text2),
-            ),
-          ),
-          LoopIconButton(
-            key: const ValueKey<String>('launch2-copy-address'),
-            icon: 'copy',
-            label: '复制代币地址',
-            color: LoopColors.text2,
-            onPressed: onCopy,
-          ),
-        ],
-      ),
-      stamp: stamp,
-    );
-    if (next == null) return folio(null);
-    final prefix = launch2InstanceStampPrefix(row.stage);
-    return KeyedSubtree(
-      key: const ValueKey<String>('launch2-countdown'),
-      child: Launch2CountdownBuilder(
-        target: next,
-        onElapsed: onElapsed,
-        builder: (context, text) => folio('$prefix$text'),
-      ),
-    );
-  }
 }
 
 /// `closed_no_holders` (decision 0142): the sentence, the cutoff block and
@@ -1251,89 +1428,54 @@ class _MintPageLink extends StatelessWidget {
   );
 }
 
-/// 内盘 (decision 0166): the current price (and this wallet's curve
-/// position) as a `.stat-grid`, the share sold as a `.record-card` with its
-/// 6 px `.bar`.
-class _CurveBlock extends StatelessWidget {
-  const _CurveBlock({required this.detail});
+/// 内盘进度 (decision 0166, v3 decision 0229): the share sold as a
+/// `.record-card` with its 6 px `.bar`, the supply under it. Under the
+/// price area since decision 0240.
+class _CurveProgress extends StatelessWidget {
+  const _CurveProgress({required this.detail});
 
   final Launch2InstanceDetail detail;
 
   @override
   Widget build(BuildContext context) {
     final curve = detail.row.curve;
-    final viewer = detail.viewer;
-    final holding = viewer != null && viewer.curve.net > Decimal.zero
-        ? viewer.curve.net
-        : null;
-    return Column(
+    return LoopRecordCard(
       key: const ValueKey<String>('launch2-curve'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        const LoopLabel('内盘'),
-        // Decision 0227: the K line between the heading and the figures.
-        Launch2CandleCard(
-          key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
-          detail: detail,
-        ),
-        MemeStatFigures(
-          hero: true,
-          stats: <LoopStat>[
-            LoopStat(
-              label: '当前价（USD1）',
-              value: launch2PriceLabel(curve.priceUsd1),
-              statKey: const ValueKey<String>('launch2-curve-price'),
-            ),
-            if (holding != null)
-              LoopStat(
-                label: '我的内盘持仓',
-                value: launch2MemeLabel(holding, detail.row.ticker),
-                statKey: const ValueKey<String>('launch2-curve-holding'),
-              )
-            else
-              LoopStat(label: '内盘已售', value: launch2BpsLabel(curve.soldBps)),
-          ],
-        ),
-        LoopRecordCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
             children: <Widget>[
-              // v3 (decision 0229): the share is the card's one figure;
-              // the supply moves under the bar.
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      '内盘进度',
-                      style: LoopType.body2.copyWith(color: LoopColors.text2),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    launch2BpsLabel(curve.soldBps),
-                    key: const ValueKey<String>('launch2-curve-progress'),
-                    maxLines: 1,
-                    style: LoopType.figure,
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  '内盘进度',
+                  style: LoopType.body2.copyWith(color: LoopColors.text2),
+                ),
               ),
-              const SizedBox(height: 12),
-              LoopProgressBar(
-                value: launch2Fraction(curve.soldBps),
-                semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(width: 10),
               Text(
-                '已售 ${launch2MemeCompact(curve.soldSupply)} / '
-                '${launch2MemeCompact(curve.saleSupply)}，卖满自动建官方池毕业',
-                key: const ValueKey<String>('launch2-curve-supply'),
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+                launch2BpsLabel(curve.soldBps),
+                key: const ValueKey<String>('launch2-curve-progress'),
+                maxLines: 1,
+                style: LoopType.figure,
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          LoopProgressBar(
+            value: launch2Fraction(curve.soldBps),
+            semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '已售 ${launch2MemeCompact(curve.soldSupply)} / '
+            '${launch2MemeCompact(curve.saleSupply)}，卖满自动建官方池毕业',
+            key: const ValueKey<String>('launch2-curve-supply'),
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1452,23 +1594,135 @@ class _RecentTrades extends StatelessWidget {
   }
 }
 
-/// 我的外盘成交 (decision 0148): the wallet's own last five official-pool
-/// trades, read only once the viewer says it has any
-/// (`viewer.poolTradeCount`, loop-api S150) and again whenever that count
-/// moves. A failed read is one quiet line; nothing is drawn before the
-/// first trade or from a server without the count.
-class _MyPoolTrades extends ConsumerWidget {
-  const _MyPoolTrades({required this.detail, required this.walletId});
+/// 成交 after graduation (decision 0240): the official pool's latest public
+/// trades (loop-api decision 0174), or with 「只看我的」 the wallet's own
+/// pool trades (decision 0148, `…/pool/trades`).
+class _PoolTradesTab extends ConsumerWidget {
+  const _PoolTradesTab({
+    required this.detail,
+    required this.walletId,
+    required this.mineOnly,
+    required this.onMineOnly,
+  });
 
   final Launch2InstanceDetail detail;
   final String? walletId;
+  final bool mineOnly;
+  final ValueChanged<bool> onMineOnly;
+
+  static const EdgeInsets _provenancePadding = EdgeInsets.fromLTRB(
+    LoopSpacing.page,
+    6,
+    LoopSpacing.page,
+    4,
+  );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) => Column(
+    key: const ValueKey<String>('launch2-pool-trades'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      Launch2MineOnlyToggle(
+        value: mineOnly,
+        onChanged: onMineOnly,
+        title: !mineOnly
+            ? '全部外盘成交'
+            : switch (detail.viewer?.holding?.poolTradeCount) {
+                final BigInt count when count > BigInt.zero =>
+                  '我的外盘成交 · 共 ${loopGroupedFigure(count.toString())} 笔',
+                _ => '我的外盘成交',
+              },
+      ),
+      if (mineOnly) ..._mine(ref) else ..._everyone(ref),
+    ],
+  );
+
+  List<Widget> _everyone(WidgetRef ref) {
+    final provider = launch2RecentPoolTradesControllerProvider(
+      detail.instanceId,
+    );
+    final state = ref.watch(provider);
+    launch2LoadOnce(ref, state, () => ref.read(provider.notifier).load());
+    final page = state.value;
+    if (page == null) {
+      return <Widget>[
+        if (state.phase == LoopChainViewPhase.loading)
+          const LoopSkeleton(
+            key: ValueKey<String>('launch2-pool-trades-loading'),
+            type: LoopSkeletonType.list,
+            rows: 3,
+          )
+        else
+          LoopInlineUnavailable(
+            key: const ValueKey<String>('launch2-pool-trades-failed'),
+            message:
+                '外盘成交暂时读不到 · '
+                '${state.failureKind == LoopChainFailureKind.rateLimited ? '请求太频繁，稍后再试' : loopChainFailureReason(state.failureKind)}',
+            onRetry: state.mode == LoopChainGatewayMode.unavailable
+                ? null
+                : () => unawaited(ref.read(provider.notifier).reload()),
+          ),
+      ];
+    }
+    return <Widget>[
+      if (page.items.isEmpty)
+        const LoopEmptyState(
+          key: ValueKey<String>('launch2-pool-trades-empty'),
+          illustration: LoopIllustration.chartEmpty,
+          title: '还没有外盘成交',
+          compact: true,
+        )
+      else
+        for (final (index, trade) in page.items.indexed)
+          Launch2PublicTradeRow(
+            key: ValueKey<String>(
+              'launch2-pool-trade-${trade.txHash}-${trade.blockNumber}-$index',
+            ),
+            trade: trade,
+            ticker: detail.row.ticker,
+          ),
+      LoopProvenanceLine(
+        key: const ValueKey<String>('launch2-pool-trades-provenance'),
+        sources: const <String>['LOOP 链上索引'],
+        observedAt: page.observedAt,
+        padding: _provenancePadding,
+        detail:
+            '最近 $launch2RecentPoolTradesLimit 笔官方池成交，不含回购；'
+            '卖出金额为扣税后实收。',
+      ),
+    ];
+  }
+
+  List<Widget> _mine(WidgetRef ref) {
     final count = detail.viewer?.holding?.poolTradeCount;
     final wallet = walletId;
-    if (count == null || count == BigInt.zero || wallet == null) {
-      return const SizedBox.shrink();
+    if (wallet == null || detail.viewer == null) {
+      return const <Widget>[
+        LoopInlineUnavailable(
+          key: ValueKey<String>('launch2-my-pool-trades-no-wallet'),
+          icon: 'info',
+          message: '激活钱包后可以只看自己的成交',
+        ),
+      ];
+    }
+    if (count == null) {
+      return const <Widget>[
+        LoopInlineUnavailable(
+          key: ValueKey<String>('launch2-my-pool-trades-unsupported'),
+          icon: 'info',
+          message: '我的外盘成交暂时读不到',
+        ),
+      ];
+    }
+    if (count == BigInt.zero) {
+      return const <Widget>[
+        LoopEmptyState(
+          key: ValueKey<String>('launch2-my-pool-trades-none'),
+          illustration: LoopIllustration.chartEmpty,
+          title: '你还没有外盘成交',
+          compact: true,
+        ),
+      ];
     }
     final provider = launch2PoolTradesControllerProvider((
       instanceId: detail.instanceId,
@@ -1479,70 +1733,56 @@ class _MyPoolTrades extends ConsumerWidget {
     launch2LoadOnce(ref, state, () => ref.read(provider.notifier).load());
     final page = state.value;
     final ticker = detail.row.ticker;
-    return Column(
-      key: const ValueKey<String>('launch2-my-pool-trades'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Launch2SectionLabel(
-          '我的外盘成交',
-          trailing: Text(
-            '共 ${loopGroupedFigure(count.toString())} 笔',
-            style: LoopType.caption.copyWith(color: LoopColors.text2),
+    return <Widget>[
+      if (page == null)
+        state.phase == LoopChainViewPhase.loading
+            ? const LoopSkeleton(
+                key: ValueKey<String>('launch2-my-pool-trades-loading'),
+                type: LoopSkeletonType.list,
+                rows: 2,
+              )
+            : LoopInlineUnavailable(
+                key: const ValueKey<String>('launch2-my-pool-trades-failed'),
+                message:
+                    '我的外盘成交暂时读不到 · '
+                    '${loopChainFailureReason(state.failureKind)}',
+                onRetry: () => unawaited(ref.read(provider.notifier).reload()),
+              )
+      else if (page.trades.isEmpty)
+        const LoopInlineUnavailable(
+          key: ValueKey<String>('launch2-my-pool-trades-empty'),
+          icon: 'info',
+          message: '成交还在同步，稍后刷新',
+        )
+      else
+        for (final trade in page.trades)
+          LoopKeyValue(
+            key: ValueKey<String>('launch2-my-pool-trade-${trade.poolTradeId}'),
+            label:
+                '${trade.side == Launch2Side.buy ? '买入' : '卖出'} · '
+                '${loopDateTimeLabel(trade.tradedAt)}',
+            value: launch2PoolTradeFigure(trade, ticker),
+            valueUp: trade.side == Launch2Side.buy,
           ),
+      if (page != null)
+        LoopProvenanceLine(
+          key: const ValueKey<String>('launch2-my-pool-trades-provenance'),
+          sources: const <String>['LOOP 链上索引'],
+          observedAt: ref.read(provider.notifier).valueObservedAt,
+          padding: _provenancePadding,
+          detail:
+              '只含经官方池路由成交的记录，最近 $launch2MyPoolTradesShown 笔；'
+              '数量已扣 2% 外盘税。',
         ),
-        if (page == null)
-          state.phase == LoopChainViewPhase.loading
-              ? const LoopSkeleton(
-                  key: ValueKey<String>('launch2-my-pool-trades-loading'),
-                  type: LoopSkeletonType.list,
-                  rows: 2,
-                )
-              : LoopInlineUnavailable(
-                  key: const ValueKey<String>('launch2-my-pool-trades-failed'),
-                  message:
-                      '我的外盘成交暂时读不到 · '
-                      '${loopChainFailureReason(state.failureKind)}',
-                  onRetry: () =>
-                      unawaited(ref.read(provider.notifier).reload()),
-                )
-        else if (page.trades.isEmpty)
-          const LoopInlineUnavailable(
-            key: ValueKey<String>('launch2-my-pool-trades-empty'),
-            icon: 'info',
-            message: '成交还在同步，稍后刷新',
-          )
-        else
-          for (final trade in page.trades.take(launch2PoolTradesShown))
-            LoopKeyValue(
-              key: ValueKey<String>(
-                'launch2-my-pool-trade-${trade.poolTradeId}',
-              ),
-              label:
-                  '${trade.side == Launch2Side.buy ? '买入' : '卖出'} · '
-                  '${loopDateTimeLabel(trade.tradedAt)}',
-              value: launch2PoolTradeFigure(trade, ticker),
-              valueUp: trade.side == Launch2Side.buy,
-            ),
-        if (page != null)
-          LoopProvenanceLine(
-            key: const ValueKey<String>('launch2-my-pool-trades-provenance'),
-            sources: const <String>['LOOP 链上索引'],
-            observedAt: ref.read(provider.notifier).valueObservedAt,
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              6,
-              LoopSpacing.page,
-              4,
-            ),
-            detail: '只含经官方池路由成交的记录，最近 $launch2PoolTradesShown 笔；数量已扣 2% 外盘税。',
-          ),
-      ],
-    );
+    ];
   }
 }
 
-class _GraduatedBlock extends StatelessWidget {
-  const _GraduatedBlock({required this.detail});
+/// 官方池 in the 信息 tab (decision 0240; the K line moved to the price
+/// area): the pool's facts behind (i), the graduation time and price and the
+/// pool tax.
+class _GraduatedInfo extends StatelessWidget {
+  const _GraduatedInfo({required this.detail});
 
   final Launch2InstanceDetail detail;
 
@@ -1590,11 +1830,6 @@ class _GraduatedBlock extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        // Decision 0227: the same card, curve and pool on one series.
-        Launch2CandleCard(
-          key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
-          detail: detail,
         ),
         LoopKeyValue(
           label: '毕业时间',
