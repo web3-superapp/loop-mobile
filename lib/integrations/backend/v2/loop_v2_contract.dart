@@ -36,6 +36,29 @@ abstract final class LoopV2Contract {
     return _requestId(response);
   }
 
+  /// A public read the server lets a shared cache keep for a few seconds
+  /// (loop-api decision 0174: `Cache-Control: public, max-age=N`). The answer
+  /// is otherwise checked like [validateSuccess]; `no-store` is accepted too.
+  static String validateCacheableSuccess(
+    Response<Object?> response, {
+    required int statusCode,
+  }) {
+    if (response.statusCode != statusCode ||
+        !(_hasExactNoStore(response) || _hasPublicMaxAge(response))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return _requestId(response);
+  }
+
+  static final RegExp _publicMaxAge = RegExp(r'^public, ?max-age=[0-9]{1,4}$');
+
+  static bool _hasPublicMaxAge(Response<Object?> response) {
+    final values = response.headers['cache-control'];
+    return values != null &&
+        values.length == 1 &&
+        _publicMaxAge.hasMatch(values.single.trim().toLowerCase());
+  }
+
   static LoopBackendFailure mapDioFailure(
     DioException error, {
     required Map<int, Set<String>> allowedCodes,

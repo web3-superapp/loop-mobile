@@ -40,6 +40,7 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
     super.key,
     this.holding,
     this.locked = false,
+    this.initialSide = Launch2Side.buy,
     this.onTopUp,
     this.onFaucet,
     this.dynamicPool,
@@ -76,6 +77,10 @@ class Launch2PoolTradePanel extends ConsumerStatefulWidget {
   /// A broadcast of ours is still settling: no second signature.
   final bool locked;
 
+  /// The side the panel opens on (decision 0240: the page's 买入 / 卖出
+  /// key). The panel's own switch still moves it.
+  final Launch2Side initialSide;
+
   @override
   ConsumerState<Launch2PoolTradePanel> createState() =>
       _Launch2PoolTradePanelState();
@@ -86,7 +91,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
   final TextEditingController _customSlippage = TextEditingController();
   final GlobalKey _confirmKey = GlobalKey();
 
-  Launch2Side _side = Launch2Side.buy;
+  late Launch2Side _side = widget.initialSide;
   Launch2PoolMode _mode = Launch2PoolMode.exactIn;
   int _presetSlippage = launch2PoolDefaultSlippageBps;
   bool _customSelected = false;

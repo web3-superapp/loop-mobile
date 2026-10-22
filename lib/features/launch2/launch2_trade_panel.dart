@@ -43,6 +43,7 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
     required this.onPrepared,
     super.key,
     this.locked = false,
+    this.initialSide = Launch2Side.buy,
     this.onStageMoved,
     this.onTopUp,
     this.onFaucet,
@@ -82,6 +83,10 @@ class Launch2TradePanel extends ConsumerStatefulWidget {
   /// A broadcast of ours is still settling: no second signature.
   final bool locked;
 
+  /// The side the panel opens on (decision 0240: the page's 买入 / 卖出
+  /// key). The panel's own switch still moves it.
+  final Launch2Side initialSide;
+
   @override
   ConsumerState<Launch2TradePanel> createState() => _Launch2TradePanelState();
 }
@@ -90,7 +95,7 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
   final TextEditingController _amount = TextEditingController();
   final GlobalKey _confirmKey = GlobalKey();
 
-  Launch2Side _side = Launch2Side.buy;
+  late Launch2Side _side = widget.initialSide;
   Timer? _debounce;
   Timer? _expiry;
   int _request = 0;

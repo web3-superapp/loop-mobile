@@ -89,8 +89,12 @@ abstract interface class Launch2Gateway {
   });
 }
 
-/// How many of the wallet's own pool trades the project page shows.
+/// The gateway's default page of the wallet's own pool trades.
 const int launch2PoolTradesShown = 5;
+
+/// How many of the wallet's own pool trades the 成交 tab's 「只看我的」
+/// asks for and shows (decision 0240; the route allows 1–50).
+const int launch2MyPoolTradesShown = 20;
 
 /// Production default: every call fails closed with `unavailable`. No fixture
 /// ever replaces a missing MEME v2 fact.

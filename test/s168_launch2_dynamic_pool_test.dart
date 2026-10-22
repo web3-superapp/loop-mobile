@@ -38,6 +38,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 
@@ -459,6 +460,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+/// Decision 0240: 本轮状态 is one strip under the K line; the card opens
+/// in a sheet.
+Future<void> _openRound(WidgetTester tester) async {
+  await _scrollTo(tester, _key('launch2-dyn-strip'));
+  await tester.tap(_key('launch2-dyn-strip'));
+  await tester.pumpAndSettle();
+}
+
+/// The panel's own 卖出 (the bar has one too).
+Finder _panelSell() =>
+    find.descendant(of: _key('launch2-pool-side'), matching: find.text('卖出'));
+
 Future<void> _type(WidgetTester tester, String text) async {
   await _scrollTo(tester, _key('launch2-pool-amount'));
   await tester.enterText(_key('launch2-pool-amount'), text);
@@ -468,6 +481,7 @@ Future<void> _type(WidgetTester tester, String text) async {
 
 /// Every element S168 adds; none may appear on an OfficialTax page.
 const List<String> _newKeys = <String>[
+  'launch2-dyn-strip',
   'launch2-dyn-round',
   'launch2-dyn-panel-note',
   'launch2-dyn-rewards-link',
@@ -1076,14 +1090,19 @@ void main() {
       tester,
     ) async {
       await _openInstance(tester, launch2: _FakeLaunch2());
+      for (final key in _newKeys) {
+        expect(_key(key), findsNothing, reason: key);
+      }
+      await l2OpenTab(tester, 'info');
+      await _scrollTo(tester, _key('launch2-go-swap'));
+      expect(_key('launch2-go-swap'), findsOneWidget);
+      await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
       for (final key in _newKeys) {
         expect(_key(key), findsNothing, reason: key);
       }
       expect(_key('launch2-pool-mode-caption'), findsOneWidget);
       expect(find.text('外盘税 2%'), findsWidgets);
-      await _scrollTo(tester, _key('launch2-go-swap'));
-      expect(_key('launch2-go-swap'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1101,9 +1120,12 @@ void main() {
       for (final key in _newKeys) {
         expect(_key(key), findsNothing, reason: key);
       }
-      expect(_key('launch2-pool-mode-exactOut'), findsOneWidget);
+      await l2OpenTab(tester, 'info');
       await _scrollTo(tester, _key('launch2-go-swap'));
       expect(_key('launch2-go-swap'), findsOneWidget);
+      await l2OpenTradeSheet(tester);
+      expect(_key('launch2-pool-mode-exactOut'), findsOneWidget);
+      expect(dynamicPool.kindReads, 1);
       await _drain(tester);
     });
 
@@ -1121,9 +1143,14 @@ void main() {
       );
       expect(_key('launch2-dyn-unavailable'), findsOneWidget);
       expect(find.text('外盘暂不可用'), findsOneWidget);
-      expect(find.textContaining('外盘池子正在同步，请稍后再试'), findsOneWidget);
+      // The block and the bar's line under its disabled keys (0240).
+      expect(find.textContaining('外盘池子正在同步，请稍后再试'), findsWidgets);
+      expect(_key('launch2-bar-reason'), findsOneWidget);
+      expect(
+        tester.widget<LoopButton>(_key('launch2-bar-buy')).onPressed,
+        isNull,
+      );
       expect(_key('launch2-pool-panel'), findsNothing);
-      expect(_key('launch2-go-swap'), findsNothing);
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       dynamicPool.kind = Launch2LoopDynamicPool(_state());
       await _scrollTo(tester, _key('launch2-dyn-unavailable-retry'));
@@ -1131,6 +1158,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(dynamicPool.kindReads, 2);
       expect(_key('launch2-dyn-unavailable'), findsNothing);
+      await l2OpenTab(tester, 'info');
+      expect(_key('launch2-go-swap'), findsNothing);
+      await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
       await _drain(tester);
     });
@@ -1158,9 +1188,17 @@ void main() {
         dynamicPool: _FakeDynamic(kind: Launch2LoopDynamicPool(_state())),
         opened: opened,
       );
+      expect(_key('launch2-dyn-strip-idle'), findsOneWidget);
+      expect(_key('launch2-dyn-round'), findsNothing);
+      expect(
+        tester.getTopLeft(_key('launch2-dyn-strip')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-instance-tabs')).dy),
+      );
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await _openRound(tester);
       expect(_key('launch2-dyn-round'), findsOneWidget);
       expect(_key('launch2-dyn-idle'), findsOneWidget);
-      expect(find.text('未激活'), findsOneWidget);
+      expect(find.text('未激活'), findsWidgets);
       expect(find.text('价格 5 分钟内跌超 10% 将开启动态税与买入奖励'), findsOneWidget);
       expect(_key('launch2-dyn-drop'), findsNothing);
       // Decision 0169: the round's facts sit in one `.record-card`.
@@ -1185,18 +1223,19 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(
-        tester.getTopLeft(_key('launch2-dyn-round')).dy,
-        lessThan(tester.getTopLeft(_key('launch2-pool-stats')).dy),
-      );
+      await tester.tap(_key('launch2-dyn-rewards-link'));
+      await tester.pumpAndSettle();
+      expect(opened.single, Launch2Route.dynamicRewards(l2InstanceA));
+      expect(_key('launch2-dyn-round'), findsNothing);
+      await l2OpenTab(tester, 'info');
+      expect(_key('launch2-go-swap'), findsNothing);
+      // The fee totals moved into 信息 (decision 0240).
+      expect(_key('launch2-dyn-fees'), findsOneWidget);
+      await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-mode-caption'), findsNothing);
       expect(_key('launch2-pool-mode-exactOut'), findsNothing);
       expect(find.text('用任何软件买入都计入奖励，记给收到 MEME 的地址'), findsOneWidget);
       expect(find.text('外盘税 2% + 卖出动态税'), findsOneWidget);
-      expect(_key('launch2-go-swap'), findsNothing);
-      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
-      await tester.tap(_key('launch2-dyn-rewards-link'));
-      expect(opened.single, Launch2Route.dynamicRewards(l2InstanceA));
       await _drain(tester);
     });
 
@@ -1208,8 +1247,17 @@ void main() {
         launch2: _FakeLaunch2(),
         dynamicPool: _FakeDynamic(kind: Launch2LoopDynamicPool(state)),
       );
+      expect(_key('launch2-dyn-strip-armed'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _key('launch2-dyn-strip'),
+          matching: find.text('跌幅 30% · 奖金池 45 USD1'),
+        ),
+        findsOneWidget,
+      );
+      await _openRound(tester);
       expect(_key('launch2-dyn-armed'), findsOneWidget);
-      expect(find.text('已激活'), findsOneWidget);
+      expect(find.text('已激活'), findsWidgets);
       expect(_key('launch2-dyn-idle-line'), findsNothing);
       Finder inRow(String row, String text) => find.descendant(
         of: _key('launch2-dyn-$row'),
@@ -1244,6 +1292,7 @@ void main() {
           ),
         ),
       );
+      await _openRound(tester);
       expect(
         find.descendant(
           of: _key('launch2-dyn-drop'),
@@ -1271,6 +1320,7 @@ void main() {
           kind: Launch2LoopDynamicPool(_state(armed: true)),
         ),
       );
+      await l2OpenTradeSheet(tester);
       await _type(tester, '100');
       expect(launch2.quoteModes.last, Launch2PoolMode.exactIn);
       expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsOneWidget);
@@ -1282,7 +1332,7 @@ void main() {
         findsOneWidget,
       );
       await _scrollTo(tester, _key('launch2-pool-side'));
-      await tester.tap(find.text('卖出').first);
+      await tester.tap(_panelSell());
       await tester.pumpAndSettle();
       await _type(tester, '160000');
       expect(find.text('基础税 2% + 当前动态税 30%（扣 USD1）'), findsOneWidget);
@@ -1310,6 +1360,7 @@ void main() {
         ),
         dynamicPool: _FakeDynamic(kind: Launch2LoopDynamicPool(_state())),
       );
+      await l2OpenTradeSheet(tester);
       await _type(tester, '100');
       expect(find.text('没有取到报价 · 该池子只支持按支付金额交易'), findsOneWidget);
       await _drain(tester);
@@ -1850,6 +1901,7 @@ void main() {
           ),
         ),
       );
+      await l2OpenTab(tester, 'info');
       await _scrollTo(tester, _key('launch2-dyn-buy-fees-usd1'));
       expect(
         find.descendant(
@@ -1859,6 +1911,7 @@ void main() {
         findsOneWidget,
       );
       expect(_key('launch2-dyn-buy-fees-meme'), findsNothing);
+      await l2OpenTradeSheet(tester);
       await _type(tester, '100');
       expect(find.text('基础税 2%（从付出的 USD1 扣）'), findsOneWidget);
       expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsNothing);
@@ -2097,6 +2150,7 @@ void main() {
           ),
         ),
       );
+      await _openRound(tester);
       expect(
         find.descendant(
           of: _key('launch2-dyn-my-weight'),

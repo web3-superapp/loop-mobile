@@ -34,6 +34,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_gateway.dart'; // S168
 import 'package:loop_mobile/features/launch2/launch2_overview.dart'; // S180
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart'; // S184
+import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart'; // S285
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart'; // S138
@@ -89,6 +90,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_api.
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_dynamic_pool_api.dart'; // S168
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_overview_api.dart'; // S180
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_campaigns_api.dart'; // S184
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_recent_trades_api.dart'; // S285
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
@@ -386,6 +388,11 @@ Future<void> main() async {
         // Fail-closed until its inputs exist; any failure draws nothing.
         launch2OverviewGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2Launch2OverviewGatewayProvider),
+        ),
+        // S285 (decision 0240): the official pool's public recent trades.
+        // Fail-closed until its inputs exist; the 成交 tab then says so.
+        launch2RecentPoolTradesGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2Launch2RecentTradesGatewayProvider),
         ),
         // S184 (decision 0165): the launch desk's campaign cards.
         // Fail-closed until its inputs exist; any failure is no campaign.

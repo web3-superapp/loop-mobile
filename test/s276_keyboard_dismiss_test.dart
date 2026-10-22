@@ -19,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_keyboard.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 import 'support/test_hints.dart';
@@ -206,6 +207,8 @@ Future<void> _pumpTrade(WidgetTester tester) async {
       ),
     ],
   );
+  // Decision 0240: the panel is the sheet behind the page's 买入 key.
+  await l2OpenTradeSheet(tester);
   await tester.ensureVisible(_key('launch2-trade-amount'));
   await tester.pumpAndSettle();
 }

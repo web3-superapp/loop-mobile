@@ -268,7 +268,11 @@ final class Launch2PoolTradesController
   @override
   Future<Launch2PoolTrades> fetch() => ref
       .read(launch2GatewayProvider)
-      .loadPoolTrades(instanceId: key.instanceId, walletId: key.walletId);
+      .loadPoolTrades(
+        instanceId: key.instanceId,
+        walletId: key.walletId,
+        limit: launch2MyPoolTradesShown,
+      );
 }
 
 final launch2PoolTradesControllerProvider = NotifierProvider.autoDispose

@@ -29,7 +29,10 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 
+import 'package:loop_mobile/widgets/loop_components.dart';
+
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 import 'support/test_hints.dart';
@@ -385,7 +388,20 @@ LoopWalletAccount _wallet() => LoopWalletAccount(
   lastSeenAt: DateTime.utc(2026, 10, 8),
 );
 
+/// Opens the graduated page and, unless [sheet] is false, the 外盘 trade
+/// sheet behind its 买入 key (decision 0240).
 Future<void> _open(
+  WidgetTester tester,
+  _FakePool gateway, {
+  _RecordingWallet? wallet,
+  bool hasWallet = true,
+  bool sheet = true,
+}) async {
+  await _openPage(tester, gateway, wallet: wallet, hasWallet: hasWallet);
+  if (sheet) await l2OpenTradeSheet(tester);
+}
+
+Future<void> _openPage(
   WidgetTester tester,
   _FakePool gateway, {
   _RecordingWallet? wallet,
@@ -434,6 +450,10 @@ Future<void> _type(WidgetTester tester, String text) async {
   await tester.pump(const Duration(milliseconds: 400));
   await tester.pumpAndSettle();
 }
+
+/// The fixed bar's 买入 action (decision 0240), `null` while disabled.
+VoidCallback? _barBuy(WidgetTester tester) =>
+    tester.widget<LoopButton>(_key('launch2-bar-buy')).onPressed;
 
 VoidCallback? _confirmCallback(WidgetTester tester) =>
     (tester.widget<Widget>(_key('launch2-pool-confirm')) as dynamic).onPressed
@@ -932,18 +952,22 @@ void main() {
           ),
         ],
       );
+      // Decision 0240: the pool's figures and the swap link are the 信息
+      // tab's; the panel is the sheet behind 买入.
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await l2OpenTab(tester, 'info');
       expect(_key('launch2-pool-stats'), findsOneWidget);
       expect(find.text('12 笔 · 买 8 / 卖 4'), findsOneWidget);
-      expect(_key('launch2-pool-panel'), findsOneWidget);
-      expect(find.text('外盘税 2%'), findsWidgets);
       expect(find.text('去外盘交易'), findsNothing);
-      // The 44 pt rule (iOS guideline), at the top and around the panel.
-      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
-      await _scrollTo(tester, _key('launch2-pool-confirm'));
-      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await _scrollTo(tester, _key('launch2-go-swap'));
       await tester.tap(_key('launch2-go-swap'));
       expect(opened.single, '/wallet/swap?to=eip155%3A97%3A$l2Meme');
+      await l2OpenTradeSheet(tester);
+      expect(_key('launch2-pool-panel'), findsOneWidget);
+      expect(find.text('外盘税 2%'), findsWidgets);
+      // The 44 pt rule (iOS guideline), around the panel.
+      await _scrollTo(tester, _key('launch2-pool-confirm'));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await _drain(tester);
     });
 
@@ -953,8 +977,11 @@ void main() {
       await _open(
         tester,
         _FakePool(details: <Launch2InstanceDetail>[_graduated(noPool: true)]),
+        sheet: false,
       );
+      await l2OpenTab(tester, 'info');
       expect(_key('launch2-pool-stats-unavailable'), findsOneWidget);
+      await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
       await _drain(tester);
     });
@@ -1028,8 +1055,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-pending'), findsOneWidget);
       expect(find.textContaining('广播不代表已成交'), findsOneWidget);
-      // Our broadcast is settling: no second signature.
-      expect(_confirmCallback(tester), isNull);
+      // Our broadcast is settling: the sheet closed and the bar offers no
+      // second signature (decision 0240).
+      expect(_key('launch2-trade-sheet'), findsNothing);
+      expect(_barBuy(tester), isNull);
+      expect(_key('launch2-bar-reason'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1231,10 +1261,9 @@ void main() {
           _Answer<Launch2PoolQuote>.value(_sellQuote()),
         ],
       );
-      await _open(tester, gateway);
-      await _scrollTo(tester, _key('launch2-pool-side'));
-      await tester.tap(find.text('卖出').first);
-      await tester.pumpAndSettle();
+      // Decision 0240: the bar's 卖出 opens the panel on the sell side.
+      await _open(tester, gateway, sheet: false);
+      await l2OpenTradeSheet(tester, sell: true);
       await tester.tap(_key('launch2-pool-mode-exactOut'));
       await tester.pumpAndSettle();
       expect(find.text('想到手'), findsOneWidget);
@@ -1284,7 +1313,7 @@ void main() {
     /// The page's clock, moved by a slow approval.
     DateTime now = l2Now;
 
-    Future<void> openAt(
+    Future<void> openPageAt(
       WidgetTester tester,
       _FakePool gateway, {
       _RecordingWallet? wallet,
@@ -1319,6 +1348,16 @@ void main() {
       ],
     );
 
+    Future<void> openAt(
+      WidgetTester tester,
+      _FakePool gateway, {
+      _RecordingWallet? wallet,
+      bool sheet = true,
+    }) async {
+      await openPageAt(tester, gateway, wallet: wallet);
+      if (sheet) await l2OpenTradeSheet(tester);
+    }
+
     setUp(() => now = l2Now);
 
     testWidgets('the server balance is there before any quote; the quote '
@@ -1330,7 +1369,12 @@ void main() {
       expect(find.text(r'持有 7,333.18 $FROG'), findsOneWidget);
       expect(gateway.quoteCalls, isEmpty);
       // MAX on a sell fills the server's balance, still before any quote.
-      await tester.tap(find.text('卖出'));
+      await tester.tap(
+        find.descendant(
+          of: _key('launch2-pool-side'),
+          matching: find.text('卖出'),
+        ),
+      );
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch2-pool-max'));
       await tester.tap(_key('launch2-pool-max'));
@@ -1353,8 +1397,6 @@ void main() {
       );
       await _scrollTo(tester, _key('launch2-pool-holding'));
       expect(find.text('钱包余额暂时读不到 · 报价后显示'), findsOneWidget);
-      // No own trade yet: no 我的外盘成交 section, nothing read.
-      expect(_key('launch2-my-pool-trades'), findsNothing);
       await _drain(tester);
     });
 
@@ -1539,10 +1581,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(gateway.detailReads, 3);
       expect(find.text('你的外盘买入已在链上确认。'), findsOneWidget);
-      // 我的外盘成交 appears with the wallet's own trades.
-      await _scrollTo(tester, _key('launch2-my-pool-trades'));
+      // 我的外盘成交: the 成交 tab's 「只看我的」 (decision 0240).
+      await _scrollTo(tester, _key('launch2-trades-mine-only'));
+      await tester.tap(find.text('只看我的'));
+      await tester.pumpAndSettle();
+      await _scrollTo(tester, _key('launch2-my-pool-trades-provenance'));
       expect(gateway.poolTradeReads, 1);
-      expect(find.text('共 1 笔'), findsOneWidget);
+      expect(find.textContaining('共 1 笔'), findsOneWidget);
       expect(find.text(r'2,000 $FROG · 得 1.3032 USD1'), findsOneWidget);
       expect(find.text(r'7,333.18 $FROG · 付 5 USD1'), findsOneWidget);
       await _drain(tester);
@@ -1555,7 +1600,10 @@ void main() {
       gateway.poolTrades = const _Answer<Launch2PoolTrades>.fail(
         LoopChainFailureKind.offline,
       );
-      await openAt(tester, gateway);
+      await openAt(tester, gateway, sheet: false);
+      await _scrollTo(tester, _key('launch2-trades-mine-only'));
+      await tester.tap(find.text('只看我的'));
+      await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch2-my-pool-trades-failed'));
       expect(find.textContaining('我的外盘成交暂时读不到'), findsOneWidget);
       await _drain(tester);

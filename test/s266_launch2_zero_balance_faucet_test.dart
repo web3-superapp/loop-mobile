@@ -17,6 +17,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_code
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s7_page_harness.dart';
@@ -202,7 +203,26 @@ Launch2InstanceDetail _public({Map<String, Object?>? holding}) => l2Detail(
   viewer: l2ViewerJson(member: true, eligibleNow: true, holding: holding),
 );
 
+/// Opens the project page and the curve panel's sheet behind its 买入 key
+/// (decision 0240).
 Future<void> _pump(
+  WidgetTester tester, {
+  required _Launch2 launch2,
+  bool faucet = true,
+  List<LoopWalletBalances> balances = const <LoopWalletBalances>[],
+  FakeTestnetFaucetGateway? faucetGateway,
+}) async {
+  await _pumpPage(
+    tester,
+    launch2: launch2,
+    faucet: faucet,
+    balances: balances,
+    faucetGateway: faucetGateway,
+  );
+  await l2OpenTradeSheet(tester);
+}
+
+Future<void> _pumpPage(
   WidgetTester tester, {
   required _Launch2 launch2,
   bool faucet = true,
@@ -356,7 +376,12 @@ void main() {
         ),
       );
       await _pump(tester, launch2: launch2);
-      await tester.tap(find.text('卖出'));
+      await tester.tap(
+        find.descendant(
+          of: _key('launch2-trade-side'),
+          matching: find.text('卖出'),
+        ),
+      );
       await tester.pumpAndSettle();
       await _type(tester, '100');
       expect(_key('launch2-trade-quote-short'), findsOneWidget);
@@ -428,6 +453,7 @@ void main() {
           testnetFaucetGatewayProvider.overrideWithValue(faucet),
         ],
       );
+      await l2OpenTradeSheet(tester);
       // Before anything is typed the line already stands under the field.
       expect(_key('launch2-trade-empty-balance'), findsOneWidget);
       expect(find.text('钱包里还没有 USD1'), findsOneWidget);
@@ -472,7 +498,12 @@ void main() {
       );
       await _pump(tester, launch2: launch2);
       expect(find.text('钱包里还没有 USD1'), findsOneWidget);
-      await tester.tap(find.text('卖出'));
+      await tester.tap(
+        find.descendant(
+          of: _key('launch2-trade-side'),
+          matching: find.text('卖出'),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('还没有这个代币'), findsOneWidget);
       expect(_key('launch2-trade-empty-topup'), findsNothing);

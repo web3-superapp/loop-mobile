@@ -31,6 +31,7 @@ import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
 
@@ -409,7 +410,23 @@ void main() {
             findsOneWidget,
           );
         }
-        // The field stays live and still quotes.
+        // Decision 0240: a hold closes the fixed bar's keys with the reason
+        // above them; nothing opens.
+        if (kind != null) {
+          expect(_onPressed(tester, 'launch2-bar-buy'), isNull);
+          expect(_onPressed(tester, 'launch2-bar-sell'), isNull);
+          expect(
+            find.descendant(
+              of: _key('launch2-bar-hold'),
+              matching: find.text(text),
+            ),
+            findsOneWidget,
+          );
+          await _drain(tester);
+          return;
+        }
+        await l2OpenTradeSheet(tester);
+        // The field is live and quotes.
         expect(
           tester.widget<TextField>(_key('launch2-trade-amount')).enabled,
           isTrue,
@@ -456,6 +473,20 @@ void main() {
           _key('launch2-trading-hold'),
           kind == null ? findsNothing : findsOneWidget,
         );
+        if (kind != null) {
+          expect(_onPressed(tester, 'launch2-bar-buy'), isNull);
+          expect(_onPressed(tester, 'launch2-bar-sell'), isNull);
+          expect(
+            find.descendant(
+              of: _key('launch2-bar-hold'),
+              matching: find.text(text),
+            ),
+            findsOneWidget,
+          );
+          await _drain(tester);
+          return;
+        }
+        await l2OpenTradeSheet(tester);
         await _type(tester, 'launch2-pool-amount', '100');
         expect(gateway.poolQuotes, 1);
         if (kind == null) {
