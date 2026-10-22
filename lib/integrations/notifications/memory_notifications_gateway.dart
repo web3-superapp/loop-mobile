@@ -92,4 +92,12 @@ final class MemoryNotificationsGateway implements NotificationsGateway {
       Future<LoopNotificationEntry>.error(
         const LoopChainException(LoopChainFailureKind.notFound),
       );
+
+  /// Preview has no producer, so it has no count either: the badge stays
+  /// undrawn rather than showing a number nothing wrote.
+  @override
+  Future<LoopNotificationUnreadCount?> loadUnreadCount() async => null;
+
+  @override
+  Future<int?> markAllRead() async => null;
 }

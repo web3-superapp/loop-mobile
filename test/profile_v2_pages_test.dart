@@ -271,6 +271,8 @@ void main() {
         ('profile-open-mining-rules', 'mining-rules'),
         ('profile-open-privacy', 'privacy'),
         ('profile-open-security', 'security'),
+        // Decision 0241: 通知中心 above 通知设置.
+        ('profile-open-notification-inbox', 'notifications'),
         ('profile-open-notifications', 'notif-settings'),
       ]) {
         await _scrollTo(tester, entry.$1);

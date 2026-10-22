@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/notifications/notification_bell.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart'
     show confirmCommunityAction;
 import 'package:loop_mobile/features/profile/presentation/owner_face.dart';
@@ -205,10 +206,15 @@ class StreamChatInboxPage extends ConsumerStatefulWidget {
     super.key,
     this.onOpenProfile,
     this.onOpenVoiceRoom,
+    this.onOpenNotifications,
   });
 
   /// Opens 我 (`/profile`).
   final VoidCallback? onOpenProfile;
+
+  /// Opens the notification centre (`notifications`, decision 0241). The
+  /// bell is drawn only when there is somewhere to go.
+  final VoidCallback? onOpenNotifications;
 
   /// Returns to the live room of one community (`/chat/voice?id=`).
   final ValueChanged<String>? onOpenVoiceRoom;
@@ -284,6 +290,12 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
         keyPrefix: 'chat-atmo',
       ),
       leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),
+      // Decision 0241: the bell to the right of the search field opens the
+      // notification centre and carries the unread total.
+      actions: <Widget>[
+        if (widget.onOpenNotifications case final VoidCallback open)
+          NotificationBellButton(onPressed: open),
+      ],
       // OKX social head (decision 0122): the owner's face and one search
       // field across the bar; 「发起」 is the round Lime key at the foot.
       titleField: const LoopTitleCrown(

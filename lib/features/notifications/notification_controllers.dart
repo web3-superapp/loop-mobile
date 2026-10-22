@@ -8,8 +8,9 @@ import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 LoopChainGatewayMode _notificationsMode(Ref ref) =>
     ref.watch(notificationsGatewayProvider.select((gateway) => gateway.mode));
 
-/// The context notification feed. There is no standalone notification centre:
-/// this list is embedded in the `alerts` page and the token page.
+/// The context notification feed as the `alerts` page and the token page
+/// embed it. The notification centre under 聊天 (decision 0241) reads the
+/// same feed through its own `NotificationInboxController`.
 final class NotificationFeedController
     extends LoopChainReadController<LoopNotificationFeed> {
   @override
