@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/meme/loop_v2_meme_api.dart';
@@ -724,6 +725,45 @@ void main() {
         throwsA(isA<LoopBackendFailure>()),
       );
     });
+  });
+
+  group('S275 · project NFT image upload (decision 0233)', () {
+    test(
+      'posts to the NFT image kind route and keeps the gateway url',
+      () async {
+        const gatewayUrl = 'https://ipfs.example/ipfs/bafyexample';
+        final (api, adapter) = _api(<(int, Object?)>[
+          (
+            201,
+            <String, Object?>{
+              'mediaId': memeMediaId,
+              'ref': 'project_nft_image:media/$memeMediaId',
+              'url': gatewayUrl,
+              'cid': 'bafyexample',
+              'ipfsUri': 'ipfs://bafyexample',
+              'width': 512,
+              'height': 512,
+              'contractVersion': '2.0',
+            },
+          ),
+        ]);
+        final image = await api.uploadNftImage(
+          accessToken: _token,
+          clientVersion: _version,
+          idempotencyKey: _key,
+          bytes: Uint8List.fromList(<int>[1, 2, 3]),
+          contentType: 'image/png',
+        );
+        expect(adapter.requests.single.path, '/v2/media/project-nft-images');
+        expect(
+          DioLoopV2MemeApi.nftImageUploadPath,
+          '/v2/media/${launch2NftImageMediaKind.replaceAll('_', '-')}s',
+        );
+        expect(image.url, gatewayUrl);
+        expect(image.cid, 'bafyexample');
+        expect(image.ipfsUri, 'ipfs://bafyexample');
+      },
+    );
   });
 
   group('number helpers', () {

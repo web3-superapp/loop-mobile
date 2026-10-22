@@ -225,6 +225,7 @@ final class Launch2HooksDraft {
     required this.name,
     required this.ticker,
     required this.logoAssetUrl,
+    this.nftImageAssetUrl,
     required this.description,
     required this.links,
     required this.nftSaleStartAt,
@@ -244,6 +245,10 @@ final class Launch2HooksDraft {
   final String name;
   final String ticker;
   final String logoAssetUrl;
+
+  /// Decision 0233 (loop-api 0173): the image the project's NFT shows in
+  /// the wallet. Absent on a draft saved before it existed.
+  final String? nftImageAssetUrl;
   final String description;
   final List<String> links;
 
@@ -371,6 +376,7 @@ final class Launch2ConfigInput {
     required this.name,
     required this.ticker,
     required this.logoAssetUrl,
+    this.nftImageAssetUrl,
     required this.description,
     required this.links,
     required this.nftSaleStart,
@@ -380,6 +386,10 @@ final class Launch2ConfigInput {
   final String name;
   final String ticker;
   final String logoAssetUrl;
+
+  /// Decision 0233: the project NFT's image. The App requires it for a new
+  /// project; `null` leaves the key out of the `PUT` body.
+  final String? nftImageAssetUrl;
   final String description;
   final List<String> links;
   final DateTime nftSaleStart;
@@ -391,6 +401,7 @@ final class Launch2ConfigInput {
         name: name,
         ticker: ticker,
         logoAssetUrl: logoAssetUrl,
+        nftImageAssetUrl: nftImageAssetUrl,
         description: description,
         links: links,
         nftSaleStart: nftSaleStart,

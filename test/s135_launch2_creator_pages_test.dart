@@ -298,6 +298,18 @@ final class _FakeMeme implements MemeGateway {
       throw UnsupportedError('${invocation.memberName}');
 }
 
+/// The project NFT image upload (decision 0233).
+final class _FakeNftUploader implements Launch2NftImageUploader {
+  @override
+  Future<MemeUploadedImage> upload({
+    required Uint8List bytes,
+    required String contentType,
+  }) async => const MemeUploadedImage(
+    mediaId: '9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f',
+    url: 'https://ipfs.example/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
+  );
+}
+
 final class _Picker implements AvatarImagePicker {
   @override
   bool get available => true;
@@ -407,6 +419,8 @@ Future<void> _pump(
     ),
     memeGatewayProvider.overrideWithValue(meme ?? _FakeMeme()),
     avatarImagePickerProvider.overrideWithValue(_Picker()),
+    // S275 (decision 0233): the NFT image's own upload.
+    launch2NftImageUploaderProvider.overrideWithValue(_FakeNftUploader()),
     loopFeatureSwitchesProvider.overrideWithValue(
       LoopFeatureSwitchValues(launch2Visible: launch2Visible),
     ),
@@ -477,6 +491,9 @@ void main() {
     Future<void> fillProfile(WidgetTester tester) async {
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
+      await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), 'MoonCat');
       await tester.enterText(_key('launch2-create-ticker'), 'mcat');
       await tester.pump();
@@ -504,6 +521,9 @@ void main() {
       await _pump(tester, const Launch2CreateScreen());
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
+      await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), '狗狗币 🐸');
       await tester.enterText(_key('launch2-create-ticker'), '中' * 21);
       await tester.tap(_key('launch2-create-next'));
@@ -527,6 +547,9 @@ void main() {
       final launch = _FakeLaunch();
       await _pump(tester, const Launch2CreateScreen(), launch: launch);
       await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
       await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), '\u{FE0F}');
       await tester.enterText(_key('launch2-create-ticker'), '\u{E0041}');
@@ -1494,6 +1517,9 @@ void main() {
       );
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
+      await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), 'MoonCat');
       await tester.enterText(_key('launch2-create-ticker'), 'MCAT');
       await tester.tap(_key('launch2-create-next'));
@@ -1912,6 +1938,9 @@ void main() {
     Future<void> toSubmit(WidgetTester tester) async {
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
+      await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), 'MoonCat');
       await tester.enterText(_key('launch2-create-ticker'), 'mcat');
       await tester.pump();
@@ -2088,6 +2117,7 @@ void main() {
           name: d.name,
           ticker: d.ticker,
           logoAssetUrl: d.logoAssetUrl,
+          nftImageAssetUrl: d.nftImageAssetUrl,
           description: d.description,
           links: d.links,
           nftSaleStartAt: d.nftSaleStartAt,
@@ -2420,6 +2450,9 @@ void main() {
       );
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
+      await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), 'MoonCat');
       await tester.enterText(_key('launch2-create-ticker'), 'mcat');
       await tester.pump();
@@ -2504,6 +2537,9 @@ void main() {
     testWidgets('step 3: 铸造开始时间, 选择铸造开始时间, 铸造价格 and 铸造期', (tester) async {
       await _pump(tester, const Launch2CreateScreen());
       await tester.tap(_key('launch2-create-upload'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('launch2-create-nft-upload'));
+      await tester.tap(_key('launch2-create-nft-upload'));
       await tester.pumpAndSettle();
       await tester.enterText(_key('launch2-create-name'), 'S234 Walk');
       await tester.enterText(_key('launch2-create-ticker'), 's234w');

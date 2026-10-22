@@ -868,8 +868,18 @@ final class MemeCreateDraft {
 /// `POST /v2/media/community-logos`: the picture's id and its address.
 @immutable
 final class MemeUploadedImage {
-  const MemeUploadedImage({required this.mediaId, required this.url});
+  const MemeUploadedImage({
+    required this.mediaId,
+    required this.url,
+    this.cid,
+    this.ipfsUri,
+  });
 
   final String mediaId;
   final String url;
+
+  /// Decision 0233: a project NFT image is pinned to IPFS; its upload may
+  /// name the CID and the `ipfs://` URI. `null` for every other upload.
+  final String? cid;
+  final String? ipfsUri;
 }

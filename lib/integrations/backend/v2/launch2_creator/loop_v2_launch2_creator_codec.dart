@@ -185,9 +185,12 @@ abstract final class LoopV2Launch2CreatorCodec {
     final config = LoopV2Contract.strictMapWithOptional(
       map['config'],
       configKeys,
-      const <String>{'poolHookKind'},
+      // Decision 0233 (loop-api 0173): `nftImageAssetUrl` is absent on a
+      // draft saved before the NFT image existed.
+      const <String>{'poolHookKind', 'nftImageAssetUrl'},
     );
     if (config['templateVersion'] != templateVersion) invalid();
+    final nftImageRaw = config['nftImageAssetUrl'];
     final poolHookKindRaw = config['poolHookKind'];
     if (poolHookKindRaw != null && poolHookKindRaw != 'loopDynamic') invalid();
     final linksRaw = LoopV2ChainCodec.requireList(config['links'], maximum: 8);
@@ -212,6 +215,7 @@ abstract final class LoopV2Launch2CreatorCodec {
       ),
       ticker: LoopV2Launch2Codec.ticker(config, 'ticker'),
       logoAssetUrl: _httpsUrl(config['logoAssetUrl']),
+      nftImageAssetUrl: nftImageRaw == null ? null : _httpsUrl(nftImageRaw),
       description: description,
       links: List<String>.unmodifiable(links),
       nftSaleStartAt: BigInt.parse(
@@ -377,8 +381,9 @@ abstract final class LoopV2Launch2CreatorCodec {
     return value;
   }
 
-  /// The `PUT` body. Only the seven owner fields: the server rejects any
-  /// economic key (§3).
+  /// The `PUT` body. Only the seven owner fields, plus the NFT image when
+  /// one was uploaded (decision 0233): the server rejects any economic key
+  /// (§3).
   static Map<String, Object?> configBody({
     required int expectedVersion,
     required Launch2ConfigInput input,
@@ -388,6 +393,8 @@ abstract final class LoopV2Launch2CreatorCodec {
       'name': input.name,
       'ticker': input.ticker,
       'logoAssetUrl': input.logoAssetUrl,
+      if (input.nftImageAssetUrl case final String nftImage)
+        'nftImageAssetUrl': nftImage,
       'description': input.description,
       'links': input.links,
       'nftSaleStartAt': input.nftSaleStartAt,

@@ -1129,4 +1129,46 @@ abstract final class LoopV2MemeCodec {
     if (url == null) invalid();
     return MemeUploadedImage(mediaId: mediaId, url: url);
   }
+
+  /// Decision 0233: the project NFT image upload. Read tolerantly — the
+  /// API's new kind (S274) is still settling, so only `mediaId` and `url`
+  /// are required and every other key (`ref`, `width`, `cid`, `ipfsUri`, …)
+  /// is ignored or read when it fits. `url` is an absolute https address
+  /// (an IPFS gateway); a `/v2/media/…` path resolves like the logo's.
+  static MemeUploadedImage uploadedNftImage(
+    Object? raw, {
+    required String? Function(String mediaId) mediaUrl,
+  }) {
+    if (raw is! Map) invalid();
+    final map = <String, Object?>{
+      for (final entry in raw.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    };
+    final mediaId = uuid(map, 'mediaId');
+    final rawUrl = map['url'];
+    if (rawUrl is! String || rawUrl.isEmpty || rawUrl.length > 2048) {
+      invalid();
+    }
+    final String url;
+    if (rawUrl.startsWith('/v2/media/')) {
+      url = mediaUrl(mediaId) ?? invalid();
+    } else {
+      final uri = Uri.tryParse(rawUrl);
+      if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) invalid();
+      url = rawUrl;
+    }
+    String? optional(String key) {
+      final value = map[key];
+      return value is String && value.isNotEmpty && value.length <= 2048
+          ? value
+          : null;
+    }
+
+    return MemeUploadedImage(
+      mediaId: mediaId,
+      url: url,
+      cid: optional('cid'),
+      ipfsUri: optional('ipfsUri'),
+    );
+  }
 }

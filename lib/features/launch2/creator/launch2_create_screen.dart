@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart'
     show confirmCommunityAction;
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
@@ -155,6 +156,17 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   bool _uploading = false;
   String? _uploadFailure;
 
+  /// Decision 0233: the image the project's NFT shows in the wallet,
+  /// uploaded beside the logo through the same media endpoint.
+  String? _nftImageUrl;
+  bool _nftUploading = false;
+  String? _nftUploadFailure;
+
+  /// A new project cannot leave the first step without an NFT image; an
+  /// older draft being edited may still have none (the server keeps the
+  /// key optional), so there it is offered, not demanded.
+  bool get _nftImageRequired => widget.projectId == null;
+
   bool _prefilled = false;
 
   /// Decision 0200: the rejection the edit answers, shown above the form.
@@ -263,12 +275,14 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       }
     }
     if (step == 0 && _logoUrl == null) return false;
+    if (step == 0 && _nftImageRequired && _nftImageUrl == null) return false;
     if (step == 2 && _saleStart == null) return false;
     return true;
   }
 
   bool get _hasInput =>
       _logoUrl != null ||
+      _nftImageUrl != null ||
       _saleStart != null ||
       <TextEditingController>[
         _name,
@@ -360,6 +374,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             name: name,
             ticker: ticker,
             logoAssetUrl: logo,
+            nftImageAssetUrl: _nftImageUrl,
             description: description,
             links: <String>[for (final (_, url) in links.entries) url],
             nftSaleStart: start,
@@ -372,11 +387,20 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     if (id != null && mounted) widget.onSubmitted?.call(id);
   }
 
-  Future<void> _upload() async {
-    if (_uploading) return;
+  Future<void> _upload() => _uploadSquare(nft: false);
+
+  Future<void> _uploadNft() => _uploadSquare(nft: true);
+
+  /// Picks, crops and uploads one square image: the logo, or with [nft]
+  /// the NFT image (decision 0233) — the same picker, crop and endpoint.
+  Future<void> _uploadSquare({required bool nft}) async {
+    if (nft ? _nftUploading : _uploading) return;
+    void busy(bool value) => nft ? _nftUploading = value : _uploading = value;
+    void failed(String? value) =>
+        nft ? _nftUploadFailure = value : _uploadFailure = value;
     setState(() {
-      _uploading = true;
-      _uploadFailure = null;
+      busy(true);
+      failed(null);
     });
     try {
       final picked = await ref.read(avatarImagePickerProvider).pick();
@@ -384,26 +408,34 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       final crop = debugLaunch2CropOverride ?? showAvatarCropDialog;
       final square = await crop(context, picked.bytes);
       if (square == null || !mounted) return;
-      final uploaded = await ref
-          .read(memeGatewayProvider)
-          .uploadImage(bytes: square, contentType: 'image/png');
+      // Decision 0233: the NFT image is its own media kind
+      // ([launch2NftImageMediaKind]); the logo stays a community logo.
+      final uploaded = nft
+          ? await ref
+                .read(launch2NftImageUploaderProvider)
+                .upload(bytes: square, contentType: 'image/png')
+          : await ref
+                .read(memeGatewayProvider)
+                .uploadImage(bytes: square, contentType: 'image/png');
       if (!mounted) return;
-      setState(() => _logoUrl = uploaded.url);
+      setState(
+        () => nft ? _nftImageUrl = uploaded.url : _logoUrl = uploaded.url,
+      );
       ref.read(launch2SaveControllerProvider(_scope).notifier).contentChanged();
     } on LoopChainException catch (failure) {
       if (mounted) {
-        setState(() => _uploadFailure = '图片没有上传成功：${memeFailureText(failure)}');
+        setState(() => failed('图片没有上传成功：${memeFailureText(failure)}'));
       }
     } catch (_) {
       if (mounted) {
         setState(
-          () => _uploadFailure = avatarUploadFailureReason(
-            AvatarUploadFailureKind.unexpected,
+          () => failed(
+            avatarUploadFailureReason(AvatarUploadFailureKind.unexpected),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) setState(() => busy(false));
     }
   }
 
@@ -514,6 +546,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     _discord.text = project.officialLinks.discord ?? '';
     if (draft != null) {
       _logoUrl = draft.logoAssetUrl;
+      _nftImageUrl = draft.nftImageAssetUrl;
       _saleStart = draft.nftSaleStart;
     }
     _silenced = false;
@@ -716,6 +749,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           tone: LoopNoticeTone.warn,
           body: _uploadFailure!,
         ),
+      ..._nftImageSlot(picker.available),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Column(
@@ -751,6 +785,74 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           ],
         ),
       ),
+    ];
+  }
+
+  /// Decision 0233: 「NFT 图」 under the logo — the 120 square frame, its
+  /// upload button and what the image is for.
+  List<Widget> _nftImageSlot(bool pickerAvailable) {
+    final missing = _showErrors && _nftImageRequired && _nftImageUrl == null;
+    return <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          8,
+          LoopSpacing.page,
+          12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Launch2NftImageFrame(
+              key: const ValueKey<String>('launch2-create-nft-preview'),
+              imageUrl: _nftImageUrl,
+              missing: missing,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    _nftImageRequired ? 'NFT 图' : 'NFT 图（可不传）',
+                    style: LoopType.label.copyWith(color: LoopColors.chalk),
+                  ),
+                  const SizedBox(height: 8),
+                  LoopButton(
+                    key: const ValueKey<String>('launch2-create-nft-upload'),
+                    label: _nftUploading
+                        ? '上传中…'
+                        : (_nftImageUrl == null ? '上传 NFT 图' : '换一张'),
+                    icon: 'camera',
+                    onPressed: pickerAvailable && !_nftUploading
+                        ? () => unawaited(_uploadNft())
+                        : null,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    missing ? '发射需要一张 NFT 图' : launch2NftImageHelp,
+                    key: ValueKey<String>(
+                      missing
+                          ? 'launch2-create-nft-missing'
+                          : 'launch2-create-nft-help',
+                    ),
+                    style: LoopType.captionSm.copyWith(
+                      color: missing ? LoopColors.chalk : LoopColors.text3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      if (_nftUploadFailure != null)
+        LoopNotice(
+          key: const ValueKey<String>('launch2-create-nft-upload-failed'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          body: _nftUploadFailure!,
+        ),
     ];
   }
 
