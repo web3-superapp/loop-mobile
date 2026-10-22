@@ -172,6 +172,7 @@ final class Launch2InstanceRow {
     required this.nftSale,
     required this.curve,
     this.logoUrl,
+    this.nftImageUrl,
     this.nextChangeAt,
     this.holdReason,
     this.activatedAt,
@@ -187,6 +188,12 @@ final class Launch2InstanceRow {
   final String name;
   final String ticker;
   final String? logoUrl;
+
+  /// The project's own NFT picture (S273 · decision 0232; loop-api S274),
+  /// uploaded by the owner at creation. `null` — absent from an older server
+  /// or never uploaded — means there is none: the NFT card falls back to
+  /// [logoUrl], then to the default art.
+  final String? nftImageUrl;
   final String memeAddress;
   final Launch2Stage stage;
 
@@ -1038,6 +1045,7 @@ final class Launch2Position {
     required this.snapshotMember,
     required this.curve,
     this.logoUrl,
+    this.nftImageUrl,
     this.mintedTokenId,
     this.lastActivityAt,
     this.holding,
@@ -1047,6 +1055,12 @@ final class Launch2Position {
   final String name;
   final String ticker;
   final String? logoUrl;
+
+  /// The project's own NFT picture (S273 · decision 0232; loop-api S274),
+  /// uploaded by the owner at creation. `null` — absent from an older server
+  /// or never uploaded — means there is none: the NFT card falls back to
+  /// [logoUrl], then to the default art.
+  final String? nftImageUrl;
   final String memeAddress;
   final Launch2Stage stage;
   final String walletId;

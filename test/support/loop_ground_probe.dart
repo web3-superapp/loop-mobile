@@ -417,6 +417,12 @@ const loopGroundProbeExemptions = <String, String>{
       'left-to-right Ink wash darkens the wall picture under the words. A test '
       'decodes no picture, so it lands on the Ink ground and moves '
       'nothing; the banner\'s words are judged against that same Ink.',
+  "Launch2NftArtBackdrop · DecoratedBox-[<'launch2-nft-card-scrim'>]":
+      'S273 (decision 0232): an NFT card\'s default face is the banner art at '
+      'card size, and its Ink wash darkens the wall picture under the ticker '
+      'exactly as the banner\'s does. A test decodes no picture, so it lands '
+      'on the Ink ground and moves nothing; the ticker is judged against '
+      'that same Ink.',
   'LoopWallBackdrop · DecoratedBox':
       'S264 / S265 (decisions 0220, 0221): the tab wall\'s darkening wash — '
       'Ink at 15 % → 70 % — exists to darken the wall picture under it. A '

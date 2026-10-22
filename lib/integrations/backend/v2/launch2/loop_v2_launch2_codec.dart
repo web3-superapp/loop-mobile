@@ -63,7 +63,10 @@ abstract final class LoopV2Launch2Codec {
   /// Keys a row may carry or omit (loop-api S180, decision 0163): the
   /// project summary and its links. Missing, `null` or unreadable values are
   /// read as none — they are display extras, never a reason to refuse a row.
-  static const rowOptionalKeys = <String>{'summary', 'links'};
+  ///
+  /// S273 · decision 0232: `nftImageUrl`, the owner's NFT picture (loop-api
+  /// S274 adds it); a client that shipped first reads it absent as none.
+  static const rowOptionalKeys = <String>{'summary', 'links', 'nftImageUrl'};
 
   static const detailKeys = <String>{
     ...rowKeys,
@@ -331,6 +334,13 @@ abstract final class LoopV2Launch2Codec {
     'lastActivityAt',
   };
 
+  /// Keys a position may carry or omit: the wallet holding (decision 0148)
+  /// and `nftImageUrl` (S273 · decision 0232).
+  static const positionOptionalKeys = <String>{
+    ...walletHoldingKeys,
+    'nftImageUrl',
+  };
+
   static Never invalid() => LoopV2ChainCodec.invalid();
 
   // -------------------------------------------------------------------------
@@ -432,6 +442,18 @@ abstract final class LoopV2Launch2Codec {
     return LoopV2ChainCodec.isAcceptedLogoUrl(uri) ? value : null;
   }
 
+  /// `nftImageUrl` (S273 · decision 0232): the same address rule as a logo,
+  /// but never a reason to refuse the row — absent, `null`, not a string or
+  /// not an address the client fetches all read as no NFT picture.
+  static String? nftImageUrl(
+    Map<String, Object?> map, {
+    required String? Function(String mediaId) mediaUrl,
+  }) {
+    final value = map['nftImageUrl'];
+    if (value is! String || value.isEmpty || value.length > 2048) return null;
+    return logoUrl(map, 'nftImageUrl', mediaUrl: mediaUrl);
+  }
+
   // -------------------------------------------------------------------------
   // rows and the detail
   // -------------------------------------------------------------------------
@@ -488,6 +510,7 @@ abstract final class LoopV2Launch2Codec {
       name: LoopV2ChainCodec.providerText(map, 'name', maxLength: 64),
       ticker: ticker,
       logoUrl: logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
+      nftImageUrl: nftImageUrl(map, mediaUrl: mediaUrl),
       memeAddress: address(map, 'memeAddress'),
       stage: stageValue,
       nextChangeAt: nextChangeAt,
@@ -1422,7 +1445,7 @@ abstract final class LoopV2Launch2Codec {
     final map = LoopV2Contract.strictMapWithOptional(
       raw,
       positionKeys,
-      walletHoldingKeys,
+      positionOptionalKeys,
     );
     final nft = _nftHolding(map['nft']);
     return Launch2Position(
@@ -1435,6 +1458,7 @@ abstract final class LoopV2Launch2Codec {
         keepEmojiJoiners: true,
       ),
       logoUrl: logoUrl(map, 'logoUrl', mediaUrl: mediaUrl),
+      nftImageUrl: nftImageUrl(map, mediaUrl: mediaUrl),
       memeAddress: address(map, 'memeAddress'),
       stage: stage(map, 'stage'),
       walletId: uuid(map, 'walletId'),

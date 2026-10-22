@@ -6,10 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_card.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
 /// One MEME v2 token row of the wallet's 「代币」 tab and the figure it sorts
@@ -18,7 +22,8 @@ import 'package:loop_mobile/widgets/loop_quote_row.dart';
 typedef Launch2WalletTokenEntry = ({Decimal quantity, Widget row});
 
 /// What `me/positions` gives the wallet's two asset tabs (S259 · decision
-/// 0217): the token rows for 「代币」, the NFT rows for 「NFT」, and the one
+/// 0217): the token rows for 「代币」, the NFT tiles for 「NFT」 (S273 · decision
+/// 0232: [Launch2WalletNftTile], laid out by [Launch2NftGrid]), and the one
 /// line a failed read is said with.
 @immutable
 final class Launch2WalletEntries {
@@ -119,17 +124,14 @@ Launch2WalletEntries launch2WalletEntries(
       ));
     }
     if (position.nftHeld > 0) {
+      // S273 · decision 0232: a picture card, not a 36 dp row. Decision
+      // 0163: it opens 共识勋章.
       nfts.add(
-        rows._row(
-          key: 'launch2-wallet-nft-${position.instanceId}',
+        Launch2WalletNftTile(
+          key: ValueKey<String>('launch2-wallet-nft-${position.instanceId}'),
           position: position,
-          title: '${position.ticker} NFT',
-          subtitle: position.mintedTokenId == null
-              ? '项目 NFT'
-              : '项目 NFT #${position.mintedTokenId}',
-          value: hidden ? '****' : '× ${position.nftHeld}',
-          // Decision 0163: the NFT row opens 共识勋章.
-          location: Launch2Route.nft(position.instanceId),
+          hidden: hidden,
+          onTap: () => onOpen(Launch2Route.nft(position.instanceId)),
         ),
       );
     }
@@ -164,7 +166,11 @@ class Launch2WalletRows extends ConsumerWidget {
     if (entries.failure case final Widget failure) return failure;
     final rows = <Widget>[
       for (final entry in entries.tokens) entry.row,
-      ...entries.nfts,
+      if (entries.nfts.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          child: Launch2NftGrid(children: entries.nfts),
+        ),
     ];
     if (rows.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -181,23 +187,6 @@ class Launch2WalletRows extends ConsumerWidget {
     required String title,
     required String subtitle,
     required String value,
-    String? location,
-  }) => _quoteRow(
-    key: key,
-    position: position,
-    title: title,
-    subtitle: subtitle,
-    value: value,
-    location: location,
-  );
-
-  Widget _quoteRow({
-    required String key,
-    required Launch2Position position,
-    required String title,
-    required String subtitle,
-    required String value,
-    String? location,
   }) => LoopQuoteRow(
     tapKey: ValueKey<String>(key),
     leading: MemeLogo(
@@ -212,8 +201,104 @@ class Launch2WalletRows extends ConsumerWidget {
     value: value,
     // The quote row owns the secondary value's step (decision 0190 M21).
     valueCaption: Text(launch2StageLabel(position.stage)),
-    onTap: () => onOpen(location ?? Launch2Route.instance(position.instanceId)),
+    onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
     semanticLabel:
         '$title，$subtitle，$value，${launch2StageLabel(position.stage)}',
   );
+}
+
+/// The wallet 「NFT」 tab's tiles two to a row (S273 · decision 0232): a
+/// [LoopSpacing.rowGap] gutter across and down; an odd last tile keeps its
+/// column's width. Precaches the cards' default art.
+class Launch2NftGrid extends StatelessWidget {
+  const Launch2NftGrid({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => LoopAtmoPrecache(
+    paths: launch2NftCardAssets,
+    child: Column(
+      key: const ValueKey<String>('launch2-nft-grid'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (var i = 0; i < children.length; i += 2) ...<Widget>[
+          if (i > 0) const SizedBox(height: LoopSpacing.rowGap),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(child: children[i]),
+              const SizedBox(width: LoopSpacing.rowGap),
+              Expanded(
+                child: i + 1 < children.length
+                    ? children[i + 1]
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// One project NFT in the wallet (S273 · decision 0232): its
+/// [Launch2NftCard], then 「T NFT」 (body1) and 「× n · stage」 (caption,
+/// Text2). The whole tile opens 共识勋章 (decision 0163).
+class Launch2WalletNftTile extends StatelessWidget {
+  const Launch2WalletNftTile({
+    required this.position,
+    required this.hidden,
+    required this.onTap,
+    super.key,
+  });
+
+  final Launch2Position position;
+
+  /// The wallet's 隐藏金额.
+  final bool hidden;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = '${position.ticker} NFT';
+    final count = hidden ? '****' : '×${position.nftHeld}';
+    final line = '$count · ${launch2StageLabel(position.stage)}';
+    final id = position.mintedTokenId;
+    return Semantics(
+      button: true,
+      label: '$title${id == null ? '' : ' #$id'}，$line',
+      excludeSemantics: true,
+      child: LoopPressable(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Launch2NftCard(
+              ticker: position.ticker,
+              nftImageUrl: position.nftImageUrl,
+              logoUrl: position.logoUrl,
+              tokenId: id,
+            ),
+            const SizedBox(height: LoopSpacing.tight),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.body1,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              line,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.caption.copyWith(color: LoopColors.text2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

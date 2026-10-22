@@ -34,6 +34,7 @@ import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_overview_api.dart';
@@ -1395,6 +1396,21 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[_detail(tokenId: '128')]),
       );
       expect(_medal(tester).bottomLabel, '#128');
+      // S273 · decision 0232: the medal's centre is the NFT's picture.
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-medal'),
+          matching: _key('launch2-nft-medal-picture'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('launch2-nft-medal'),
+          matching: find.byType(MemeLogo),
+        ),
+        findsNothing,
+      );
       expect(_button(tester).label, '已持有 · 每地址 1 枚');
       expect(_button(tester).onPressed, isNull);
       expect(

@@ -15,14 +15,15 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_card.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_mint.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
-import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -553,16 +554,20 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         view: view,
         onElapsed: () => unawaited(_controller(detail.instanceId).reload()),
       ),
-      Center(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: LoopSpacing.tight),
-          child: Launch2NftMedal(
-            key: const ValueKey<String>('launch2-nft-medal'),
-            ticker: row.ticker,
-            logoUrl: row.logoUrl,
-            identity: row.instanceId,
-            bottomLabel: view.medalLabel,
-            lit: view.litRing,
+      LoopAtmoPrecache(
+        paths: launch2NftCardAssets,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: LoopSpacing.tight),
+            child: Launch2NftMedal(
+              key: const ValueKey<String>('launch2-nft-medal'),
+              ticker: row.ticker,
+              logoUrl: row.logoUrl,
+              nftImageUrl: row.nftImageUrl,
+              identity: row.instanceId,
+              bottomLabel: view.medalLabel,
+              lit: view.litRing,
+            ),
           ),
         ),
       ),
@@ -691,8 +696,14 @@ class _NftFolio extends StatelessWidget {
 }
 
 /// 共识勋章 (docs/32 §4.1): a perfect circle — a 2 px outer ring (Purple,
-/// decision 0212 / S257, or the greyed tone), a dark Graphite face, the logo (56) in the middle, the
-/// ticker along the upper arc in mono and [bottomLabel] along the lower one.
+/// decision 0212 / S257, or the greyed tone), the ticker along the upper arc
+/// in mono and [bottomLabel] along the lower one.
+///
+/// S273 · decision 0232 (需求方 「NFT 应该展示图片吧」): the whole disc inside
+/// the arc band is the NFT's picture — [Launch2NftCard] in its medal shape,
+/// the logo filling the disc, or the banner's default art with the ticker
+/// when there is no logo — instead of a 56 dp logo on Graphite. The medal
+/// grew from 152 to 200 so the picture reads (a 134 dp disc).
 class Launch2NftMedal extends StatelessWidget {
   const Launch2NftMedal({
     required this.ticker,
@@ -700,12 +711,16 @@ class Launch2NftMedal extends StatelessWidget {
     required this.lit,
     super.key,
     this.logoUrl,
+    this.nftImageUrl,
     this.identity,
-    this.size = 152,
+    this.size = 200,
   });
 
   final String ticker;
   final String? logoUrl;
+
+  /// The owner's NFT picture: before [logoUrl] (decision 0232).
+  final String? nftImageUrl;
   final String? identity;
 
   /// 「#tokenId」 or 「共识勋章」.
@@ -715,7 +730,12 @@ class Launch2NftMedal extends StatelessWidget {
   final bool lit;
   final double size;
 
-  static const double logoSize = 56;
+  /// The arc band's width ×2 plus the inner hairline: what the picture
+  /// leaves to the ring and the words.
+  static const double ringInset = 33;
+
+  /// The picture's diameter inside a medal of [size].
+  double get pictureSize => size - ringInset * 2;
 
   /// The outer ring: Purple when lit (decision 0212, S257), else greyed.
   Color get ringColour => lit ? LoopColors.purple : LoopColors.text3;
@@ -742,12 +762,13 @@ class Launch2NftMedal extends StatelessWidget {
             bottom: bottomLabel,
           ),
           child: Center(
-            child: MemeLogo(
-              symbol: ticker,
-              imageUrl: logoUrl,
-              identity: identity,
-              size: logoSize,
-              radius: logoSize / 2,
+            child: Launch2NftCard(
+              key: const ValueKey<String>('launch2-nft-medal-picture'),
+              ticker: ticker,
+              nftImageUrl: nftImageUrl,
+              logoUrl: logoUrl,
+              size: pictureSize,
+              shape: Launch2NftCardShape.medal,
             ),
           ),
         ),

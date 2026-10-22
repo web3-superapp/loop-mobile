@@ -82,6 +82,8 @@ Future<Launch2NftMintResult> launch2MintNft(
   final confirmed = await showLaunch2NftConfirmSheet(
     context,
     ticker: detail.row.ticker,
+    logoUrl: detail.row.logoUrl,
+    nftImageUrl: detail.row.nftImageUrl,
     priceLabel: launch2Usd1Label(detail.row.nftSale.priceUsd1),
     heading: '${entry.noun} ${detail.row.ticker} 共识勋章',
     confirmLabel: '继续${entry.noun}',

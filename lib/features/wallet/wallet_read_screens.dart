@@ -689,8 +689,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     ];
   }
 
-  /// 「NFT」 (S259 · decision 0217): the project NFTs (共识勋章), one row
-  /// each, read from `me/positions`; a row opens the medal page.
+  /// 「NFT」 (S259 · decision 0217): the project NFTs (共识勋章), read from
+  /// `me/positions` — since S273 (decision 0232) a two-column grid of
+  /// picture cards; a card opens the medal page.
   List<Widget> _nftBody({
     required Launch2WalletEntries launch2,
     required bool hidden,
@@ -728,11 +729,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ];
     }
     return <Widget>[
-      Column(
+      // S273 · decision 0232: two picture cards to a row.
+      Padding(
         key: const ValueKey<String>('wallet-nft-list'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: launch2.nfts,
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          LoopSpacing.tight,
+          LoopSpacing.page,
+          LoopSpacing.rowGap,
+        ),
+        child: Launch2NftGrid(children: launch2.nfts),
       ),
       Consumer(
         builder: (context, ref, _) => LoopProvenanceLine(
