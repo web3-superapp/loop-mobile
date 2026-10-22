@@ -272,6 +272,43 @@ void main() {
       }
     });
 
+    // S277 · decision 0235 (需求方 2026-10-22 第 06 条): the invite poster's
+    // QR was read as 不是 LOOP 二维码.
+    test('an /i/ invite link is that invite code, with or without a query', () {
+      final link = loopScanResultFor('$_stagingBase/i/LOOP-1ZR9N');
+      expect(link, isA<LoopScanInvite>());
+      expect((link as LoopScanInvite).code, 'LOOP-1ZR9N');
+      expect(link.location, '/profile/referral?code=LOOP-1ZR9N');
+
+      final query = loopScanResultFor('$_stagingBase/i/loop-1zr9n/?utm=poster');
+      expect((query as LoopScanInvite).code, 'LOOP-1ZR9N');
+      expect(
+        (loopScanResultFor('http://x.example/i/1ZR9N') as LoopScanInvite).code,
+        'LOOP-1ZR9N',
+      );
+      // The code printed under the poster's QR, typed bare.
+      expect(
+        (loopScanResultFor(' loop-1zr9n ') as LoopScanInvite).code,
+        'LOOP-1ZR9N',
+      );
+    });
+
+    test('a malformed invite code is not an invite', () {
+      for (final raw in <String>[
+        '$_stagingBase/i/LOOP-1ZR9',
+        '$_stagingBase/i/LOOP-1ZR9NX',
+        '$_stagingBase/i/LOOP-1ZR9U',
+        '$_stagingBase/i/',
+        '$_stagingBase/i/LOOP-1ZR9N/extra',
+        '$_stagingBase/x/i/LOOP-1ZR9N',
+        '1ZR9N',
+        'LOOP-1ZR9U',
+        '邀请码 LOOP-1ZR9N',
+      ]) {
+        expect(loopScanResultFor(raw), isA<LoopScanUnknown>(), reason: raw);
+      }
+    });
+
     test('anything else is shown back as text', () {
       expect(
         loopScanResultFor('https://example.com/x'),
@@ -341,6 +378,35 @@ void main() {
       opened.scanner.session.emit('$_stagingBase/u/$_loopId');
       await tester.pumpAndSettle();
       expect(opened.locations, hasLength(1));
+    });
+
+    testWidgets('an invite code is named, then 去填写邀请码 opens referral', (
+      tester,
+    ) async {
+      final opened = await _pumpScan(tester);
+      opened.scanner.session.emit('$_stagingBase/i/LOOP-1ZR9N');
+      await tester.pumpAndSettle();
+
+      expect(opened.locations, isEmpty);
+      expect(find.text('不是 LOOP 二维码'), findsNothing);
+      expect(find.text('LOOP 邀请码 LOOP-1ZR9N'), findsOneWidget);
+      // Another frame of the same code changes nothing while it is shown.
+      opened.scanner.session.emit('$_stagingBase/u/$_loopId');
+      await tester.pumpAndSettle();
+      expect(opened.locations, isEmpty);
+
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('scan-invite-continue')),
+      );
+      expect(find.byKey(const ValueKey<String>('scan-invite')), findsNothing);
+      opened.scanner.session.emit('$_stagingBase/i/LOOP-1ZR9N');
+      await tester.pumpAndSettle();
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('scan-invite-open')),
+      );
+      expect(opened.locations, <String>['/profile/referral?code=LOOP-1ZR9N']);
     });
 
     testWidgets('a picture from the library is read the same way', (
