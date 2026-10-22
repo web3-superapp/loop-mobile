@@ -37,6 +37,8 @@ import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/notifications/notification_inbox.dart';
+import 'package:loop_mobile/features/notifications/notification_inbox_screen.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
@@ -359,6 +361,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       // account's feed, and the destination comes from that record. A pointer
       // this account cannot see resolves to a page that names nothing.
       resolveContext: (pointer) => _resolveNotificationContext(ref, pointer),
+      // Decision 0241: a LOOP notification arriving re-reads the 聊天 bell's
+      // unread total. Nothing from the payload goes with it.
+      onNotificationObserved: () => unawaited(
+        ref.read(notificationUnreadCountProvider.notifier).refresh(force: true),
+      ),
     );
     postAuthBootstrapCoordinator = PostAuthBootstrapCoordinator(() async {
       // Riverpod invalidates principal-dependent providers after publishing
@@ -995,6 +1002,27 @@ GoRouter _buildRouter(
           onDone: () => context.go(LoopRouteManifest.defaultPath),
         ),
       ),
+      // S287 · decision 0241: 通知中心. A row opens what the notification
+      // router resolves from that row's own record — the same resolution a
+      // tapped push gets after its feed lookup.
+      GoRoute(
+        path: '/chat/notifications',
+        builder: (context, state) => NotificationInboxScreen(
+          onBack: () => _popOrHome(context),
+          onOpenSettings: () =>
+              context.push(LoopRouteManifest.pathFor('notif-settings')),
+          resolveLocation: (entry) => LoopNotificationRouter.resolveRecord(
+            _notificationContextOf(entry),
+          )?.location,
+          onOpenLocation: (location) {
+            if (LoopRouteManifest.isTabPath(Uri.parse(location).path)) {
+              context.go(location);
+            } else {
+              context.push(location);
+            }
+          },
+        ),
+      ),
       GoRoute(
         path: '/profile/user',
         builder: (context, state) => UserProfileScreen(
@@ -1057,6 +1085,8 @@ GoRouter _buildRouter(
                 builder: (context, state) => StreamChatInboxPage(
                   onOpenProfile: () =>
                       context.push(LoopRouteManifest.pathFor('profile')),
+                  onOpenNotifications: () =>
+                      context.push(LoopRouteManifest.pathFor('notifications')),
                   onOpenVoiceRoom: (communityId) => context.push(
                     '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
                   ),
@@ -2411,16 +2441,29 @@ Future<LoopNotificationContext?> _resolveNotificationContext(
   } catch (_) {
     return null;
   }
+  // Decision 0241: a graduation and a minted badge share one `entityRef`, so
+  // their rows are told apart by the feed `type` as well.
+  final feedType = pointer.type.feedType;
   for (final entry in feed.items) {
     if (entry.entityRef != pointer.entityRef) continue;
-    return LoopNotificationContext(
-      contextRoute: entry.contextRoute,
-      assetId: entry.contextParams[MarketAssetRoute.assetParameter],
-      communityId: entry.contextParams['communityId'],
-    );
+    if (feedType != null && entry.rawType != feedType) continue;
+    return _notificationContextOf(entry);
   }
   return null;
 }
+
+/// What one feed row says about where it leads: its `contextRoute` and the
+/// parameters the router may address a page with. Shared by a tapped push
+/// (after the feed lookup above) and a tapped row in 通知中心 (decision
+/// 0241), so the two can never resolve the same record differently.
+LoopNotificationContext _notificationContextOf(LoopNotificationEntry entry) =>
+    LoopNotificationContext(
+      contextRoute: entry.contextRoute,
+      assetId: entry.contextParams[MarketAssetRoute.assetParameter],
+      communityId: entry.contextParams['communityId'],
+      instanceId: entry.contextParams['instanceId'],
+      publicProfileId: entry.contextParams['publicProfileId'],
+    );
 
 Future<void> _signOut(WidgetRef ref) async {
   // Both push registrations have to be dropped while the credentials that
@@ -2525,6 +2568,7 @@ String _profilePath(String id) => switch (id) {
   'social-recovery' => LoopRouteManifest.pathFor('social-recovery'),
   'networks' => LoopRouteManifest.pathFor('networks'),
   'notif-settings' => LoopRouteManifest.pathFor('notif-settings'),
+  'notifications' => LoopRouteManifest.pathFor('notifications'),
   'connections' => LoopRouteManifest.pathFor('connections'),
   'blocklist' => LoopRouteManifest.pathFor('blocklist'),
   'settings' => LoopRouteManifest.pathFor('settings'),

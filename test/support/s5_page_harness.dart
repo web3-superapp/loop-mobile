@@ -543,6 +543,32 @@ final class FakeNotificationsGateway implements NotificationsGateway {
     );
   }
 
+  /// `GET /v2/notifications/unread-count`: `null` is a server without the
+  /// endpoint (decision 0241).
+  LoopNotificationUnreadCount? unreadCount;
+  Object? unreadCountFailure;
+  int unreadCountReads = 0;
+
+  /// `POST /v2/notifications/read-all`: `null` is a server without it.
+  int? readAllAnswer;
+  int readAllCalls = 0;
+
+  @override
+  Future<LoopNotificationUnreadCount?> loadUnreadCount() async {
+    unreadCountReads += 1;
+    final failure = unreadCountFailure;
+    if (failure != null) throw failure;
+    return unreadCount;
+  }
+
+  @override
+  Future<int?> markAllRead() async {
+    readAllCalls += 1;
+    final failure = writeFailure;
+    if (failure != null) throw LoopChainException(failure);
+    return readAllAnswer;
+  }
+
   @override
   Future<LoopNotificationPreferences> loadPreferences() =>
       preferences.resolve();

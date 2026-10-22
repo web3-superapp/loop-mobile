@@ -126,6 +126,23 @@ final class _KeyRecordingNotificationsApi implements LoopV2NotificationsApi {
   }
 
   @override
+  Future<LoopNotificationUnreadCount?> getUnreadCount({
+    required String accessToken,
+    required String clientVersion,
+  }) async => null;
+
+  @override
+  Future<int?> markAllRead({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    keys.add(idempotencyKey);
+    return 0;
+  }
+
+  @override
   Future<LoopNotificationPreferences> getPreferences({
     required String accessToken,
     required String clientVersion,

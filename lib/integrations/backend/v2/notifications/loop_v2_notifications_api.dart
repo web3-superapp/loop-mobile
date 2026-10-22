@@ -25,6 +25,22 @@ abstract interface class LoopV2NotificationsApi {
     LoopV2WriteOrigin? origin,
   });
 
+  /// `GET /v2/notifications/unread-count` (decision 0241). `null` when the
+  /// server answers `404`: the endpoint is not there yet.
+  Future<LoopNotificationUnreadCount?> getUnreadCount({
+    required String accessToken,
+    required String clientVersion,
+  });
+
+  /// `POST /v2/notifications/read-all` (decision 0241). Answers how many rows
+  /// changed, or `null` when the server answers `404`.
+  Future<int?> markAllRead({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    LoopV2WriteOrigin? origin,
+  });
+
   Future<LoopNotificationPreferences> getPreferences({
     required String accessToken,
     required String clientVersion,
@@ -44,6 +60,8 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
 
   static const feedPath = '/v2/notifications/feed';
   static const notificationsPath = '/v2/notifications';
+  static const unreadCountPath = '/v2/notifications/unread-count';
+  static const readAllPath = '/v2/notifications/read-all';
   static const preferencesPath = '/v2/notification-preferences';
   static const maximumVersion = 2147483647;
 
@@ -140,6 +158,87 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
         allowedCodes: LoopV2ModuleRequest.chainIdempotentWriteErrors,
       );
     }
+  }
+
+  @override
+  Future<LoopNotificationUnreadCount?> getUnreadCount({
+    required String accessToken,
+    required String clientVersion,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        unreadCountPath,
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = _optionallyVersioned(response.data, const <String>{
+        'unread',
+        'observedAt',
+      });
+      return LoopNotificationUnreadCount(
+        unread: LoopV2ChainCodec.requireInt(root, 'unread'),
+        observedAt: LoopV2ChainCodec.requireTimestamp(root, 'observedAt'),
+      );
+    } on DioException catch (error) {
+      if (_isAbsent(error)) return null;
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.chainReadErrors,
+      );
+    }
+  }
+
+  @override
+  Future<int?> markAllRead({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    try {
+      final response = await _dio.post<Object?>(
+        readAllPath,
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+          origin: origin,
+        ),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = _optionallyVersioned(response.data, const <String>{
+        'marked',
+      });
+      return LoopV2ChainCodec.requireInt(root, 'marked');
+    } on DioException catch (error) {
+      if (_isAbsent(error)) return null;
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.chainIdempotentWriteErrors,
+      );
+    }
+  }
+
+  /// A `404` from the two decision-0241 endpoints is an older server without
+  /// them, not a failure: the page works on without a badge or a read-all.
+  static bool _isAbsent(DioException error) =>
+      error.response?.statusCode == 404;
+
+  /// The two decision-0241 bodies, with or without the V2 `contractVersion`
+  /// stamp. When the stamp is there it must be the current one.
+  static Map<String, Object?> _optionallyVersioned(
+    Object? data,
+    Set<String> keys,
+  ) {
+    final root = LoopV2Contract.strictMapWithOptional(
+      data,
+      keys,
+      const <String>{'contractVersion'},
+    );
+    if (root.containsKey('contractVersion')) {
+      LoopV2ChainCodec.requireContractVersion(root);
+    }
+    return root;
   }
 
   @override
@@ -251,6 +350,7 @@ final RegExp _entityRefPattern = RegExp(
 );
 final RegExp _contextRoutePattern = RegExp(r'^[a-z][a-z0-9-]{0,63}$');
 final RegExp _sourcePattern = RegExp(r'^[a-z][a-z0-9_]{0,63}$');
+final RegExp _typePattern = RegExp(r'^[a-z][A-Za-z0-9_.-]{0,63}$');
 
 /// Decodes one `notification.v1` projection row.
 ///
@@ -262,23 +362,32 @@ LoopNotificationEntry loopV2NotificationEntryFromMap(
   Object? raw, {
   RegExp? idPattern,
 }) {
-  final map = LoopV2Contract.strictMap(raw, const <String>{
-    'notificationId',
-    'type',
-    'entityRef',
-    'contextRoute',
-    'contextParams',
-    'payload',
-    'source',
-    'observedAt',
-    'readAt',
-    'createdAt',
-  });
+  // Decision 0241: `readAt` may be absent. A row that does not say whether it
+  // was read is drawn as read rather than refused.
+  final map = LoopV2Contract.strictMapWithOptional(
+    raw,
+    const <String>{
+      'notificationId',
+      'type',
+      'entityRef',
+      'contextRoute',
+      'contextParams',
+      'payload',
+      'source',
+      'observedAt',
+      'createdAt',
+    },
+    const <String>{'readAt'},
+  );
   final rawType = map['type'];
   if (rawType is! String) LoopV2ChainCodec.invalid();
+  // A category, one of the four finer kinds, or a type this build has never
+  // heard of. The last is kept and drawn in the plain style: one row the
+  // client cannot name must not take the whole page down with it.
   final type = LoopNotificationCategory.tryParse(rawType);
-  if (type == null) LoopV2ChainCodec.invalid();
   return LoopNotificationEntry(
+    rawType: _typePattern.hasMatch(rawType) ? rawType : 'unknown',
+    readStateKnown: map.containsKey('readAt'),
     notificationId: LoopV2ChainCodec.requireString(
       map,
       'notificationId',

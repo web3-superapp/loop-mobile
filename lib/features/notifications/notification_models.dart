@@ -128,8 +128,52 @@ final class LoopNotificationPreferences {
   }
 }
 
-/// One context notification. There is no standalone notification centre: the
-/// feed is reachable from the `alerts` page and the token page.
+/// The four notification kinds that are finer than a preference category
+/// (decision 0241, loop-api S286).
+///
+/// They arrive in a feed row's `type` where older rows carry the category
+/// itself. The category the account's preference governs is still one of the
+/// ten; [category] says which, so a kind never adds an eleventh switch.
+enum LoopNotificationKind {
+  launchGraduated(
+    'launch.graduated',
+    LoopNotificationCategory.launchGraduation,
+  ),
+  // loop-api decision 0177: the badge is the snapshot credential, so it is
+  // filed under 资格快照与开始提醒.
+  launchBadgeMinted(
+    'launch.badge_minted',
+    LoopNotificationCategory.launchRound,
+  ),
+  friendRequest(
+    'social.friend_request',
+    LoopNotificationCategory.communityMention,
+  ),
+  friendAccepted(
+    'social.friend_accepted',
+    LoopNotificationCategory.communityMention,
+  );
+
+  const LoopNotificationKind(this.wireName, this.category);
+
+  final String wireName;
+
+  /// The preference category this kind is filed under, for display only.
+  final LoopNotificationCategory category;
+
+  static LoopNotificationKind? tryParse(String value) {
+    for (final kind in values) {
+      if (kind.wireName == value) return kind;
+    }
+    return null;
+  }
+}
+
+/// One context notification.
+///
+/// Decision 0241 put the rows in one list — the notification centre under
+/// 聊天 — and kept the two context readers (the `alerts` page and the token
+/// page) exactly as they were.
 @immutable
 final class LoopNotificationEntry {
   LoopNotificationEntry({
@@ -143,11 +187,23 @@ final class LoopNotificationEntry {
     required this.observedAt,
     required this.readAt,
     required this.createdAt,
-  }) : contextParams = Map<String, String>.unmodifiable(contextParams),
+    String? rawType,
+    this.readStateKnown = true,
+  }) : rawType = rawType ?? type?.wireName ?? 'unknown',
+       contextParams = Map<String, String>.unmodifiable(contextParams),
        payload = Map<String, String?>.unmodifiable(payload);
 
   final String notificationId;
-  final LoopNotificationCategory type;
+
+  /// The preference category the row's `type` names, or `null` when the row
+  /// carries a finer [kind] or a type this build does not know. Every reader
+  /// that filters by category (price alerts, community verdicts, security
+  /// events) therefore keeps seeing only its own rows.
+  final LoopNotificationCategory? type;
+
+  /// The row's `type` exactly as the server sent it. A type this build does
+  /// not know is kept, never refused: the row is drawn in the plain style.
+  final String rawType;
 
   /// `priceAlert:<alertId>` — used to highlight the alert row it belongs to.
   final String entityRef;
@@ -165,7 +221,18 @@ final class LoopNotificationEntry {
   final DateTime? readAt;
   final DateTime createdAt;
 
-  bool get isUnread => readAt == null;
+  /// Whether the row said anything about being read. A row without the
+  /// `readAt` key is treated as read (decision 0241): an unread mark the
+  /// server never stated would be a claim the client made up.
+  final bool readStateKnown;
+
+  bool get isUnread => readStateKnown && readAt == null;
+
+  /// One of the four finer kinds, or `null`.
+  LoopNotificationKind? get kind => LoopNotificationKind.tryParse(rawType);
+
+  /// The category this row is filed under, whichever way it was named.
+  LoopNotificationCategory? get category => type ?? kind?.category;
 
   /// The alert id this notification refers to, when it is a price alert.
   String? get priceAlertId {
@@ -174,6 +241,22 @@ final class LoopNotificationEntry {
     final id = entityRef.substring(prefix.length);
     return id.isEmpty ? null : id;
   }
+
+  /// The same row, read at [at]. Used by the notification centre when a
+  /// read-all is confirmed by its count rather than row by row.
+  LoopNotificationEntry markedRead(DateTime at) => LoopNotificationEntry(
+    notificationId: notificationId,
+    type: type,
+    rawType: rawType,
+    entityRef: entityRef,
+    contextRoute: contextRoute,
+    contextParams: contextParams,
+    payload: payload,
+    source: source,
+    observedAt: observedAt,
+    readAt: readAt ?? at,
+    createdAt: createdAt,
+  );
 }
 
 @immutable
@@ -207,4 +290,16 @@ String? loopNotificationSourceLabel(String? source) {
   if (source == null) return null;
   final provider = LoopFactSource.tryParse(source);
   return provider == null ? null : '来源 ${loopFactSourceLabel(provider)}';
+}
+
+/// `GET /v2/notifications/unread-count` (decision 0241, loop-api S286).
+@immutable
+final class LoopNotificationUnreadCount {
+  const LoopNotificationUnreadCount({
+    required this.unread,
+    required this.observedAt,
+  });
+
+  final int unread;
+  final DateTime observedAt;
 }

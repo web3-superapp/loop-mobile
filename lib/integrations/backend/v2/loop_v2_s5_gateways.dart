@@ -515,6 +515,29 @@ final class DioLoopV2NotificationsGateway
   }
 
   @override
+  Future<LoopNotificationUnreadCount?> loadUnreadCount() => read(
+    (accessToken) => _api.getUnreadCount(
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+    ),
+  );
+
+  @override
+  Future<int?> markAllRead() async {
+    final writeOrigin = await origin();
+    return idempotent(
+      _keyring,
+      'notification:read-all',
+      (accessToken, key) => _api.markAllRead(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        idempotencyKey: key,
+        origin: writeOrigin,
+      ),
+    );
+  }
+
+  @override
   Future<LoopNotificationPreferences> loadPreferences() => read(
     (accessToken) => _api.getPreferences(
       accessToken: accessToken,

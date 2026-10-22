@@ -1173,6 +1173,14 @@ class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
               // h17). Until the two agree this row states no posture.
               onTap: () => widget.onNavigate('security'),
             ),
+            // Decision 0241: the list of notifications sits above the
+            // switches that decide which ones arrive.
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-notification-inbox'),
+              leading: const LoopRowIcon(icon: 'mail'),
+              title: '通知中心',
+              onTap: () => widget.onNavigate('notifications'),
+            ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-notifications'),
               leading: const LoopRowIcon(icon: 'bell'),

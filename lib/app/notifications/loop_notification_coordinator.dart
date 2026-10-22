@@ -17,6 +17,7 @@ final class LoopNotificationCoordinator {
       LoopNotificationPointer pointer,
     )
     resolveContext,
+    void Function()? onNotificationObserved,
     DateTime Function()? clock,
     Duration restoringWait = const Duration(seconds: 15),
   }) {
@@ -36,6 +37,7 @@ final class LoopNotificationCoordinator {
       resolveContext,
       restoringWait,
       clock,
+      onNotificationObserved,
     );
   }
 
@@ -47,6 +49,7 @@ final class LoopNotificationCoordinator {
     this._resolveContext,
     this._restoringWait,
     DateTime Function()? clock,
+    this._onNotificationObserved,
   ) : _router = LoopNotificationRouter(clock: clock);
 
   final LoopNotificationEventSource _source;
@@ -66,6 +69,11 @@ final class LoopNotificationCoordinator {
   _resolveContext;
   final Duration _restoringWait;
   final LoopNotificationRouter _router;
+
+  /// Told that a LOOP notification for the signed-in account arrived, in any
+  /// delivery context (decision 0241: the 聊天 bell re-reads its unread count).
+  /// It carries nothing from the payload.
+  final void Function()? _onNotificationObserved;
 
   StreamSubscription<LoopNotificationSourceEvent>? _subscription;
   Timer? _deferredTimer;
@@ -141,6 +149,22 @@ final class LoopNotificationCoordinator {
       ingress: ingress,
       session: _currentContext(),
     );
+    switch (decision.disposition) {
+      case LoopNotificationDisposition.foregroundObserved:
+      case LoopNotificationDisposition.backgroundDeferred:
+      case LoopNotificationDisposition.pointerReady:
+        try {
+          _onNotificationObserved?.call();
+        } catch (_) {
+          // A badge refresh can never turn a notification into another
+          // effect.
+        }
+      case LoopNotificationDisposition.malformed:
+      case LoopNotificationDisposition.sessionDeferred:
+      case LoopNotificationDisposition.sessionRejected:
+      case LoopNotificationDisposition.duplicateInteraction:
+        break;
+    }
 
     if (decision.disposition == LoopNotificationDisposition.pointerReady) {
       final pointer = decision.pointer;

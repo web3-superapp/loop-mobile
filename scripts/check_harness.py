@@ -684,10 +684,26 @@ NOTIFICATION_KIND_MEMBERS = frozenset(
         # because the destination is a place to read and not the answer.
         "communityApplicationVerified",
         "communityApplicationRejected",
+        # Decision 0241 (loop-api S286): the notification centre's four finer
+        # kinds. A graduation and a minted badge open one MEME v2 instance; a
+        # friend request opens the requests page; an acceptance opens the new
+        # friend's page.
+        "launchGraduated",
+        "launchBadgeMinted",
+        "friendRequest",
+        "friendAccepted",
     }
 )
 NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset(
-    {"token", "devices", "voiceRoom", "communityProfile"}
+    {
+        "token",
+        "devices",
+        "voiceRoom",
+        "communityProfile",
+        "launch2Instance",
+        "friendRequests",
+        "userProfile",
+    }
 )
 NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
     {"foreground", "background", "interaction"}
@@ -704,6 +720,13 @@ NOTIFICATION_INTENT_CLASSES = frozenset(
         "LoopVoiceRoomNotificationIntent",
         "LoopCommunityApplicationNotificationIntent",
         "LoopCommunityIndexNotificationIntent",
+        # Decision 0241: each new parameterised destination has its
+        # name-nothing fallback, for the same reason as the two pairs above.
+        "LoopLaunchInstanceNotificationIntent",
+        "LoopMemeIndexNotificationIntent",
+        "LoopFriendRequestsNotificationIntent",
+        "LoopUserProfileNotificationIntent",
+        "LoopChatIndexNotificationIntent",
     }
 )
 # The parameterless destinations, plus the one parameterised literal: the
@@ -717,6 +740,13 @@ NOTIFICATION_ROUTE_LITERALS = frozenset(
         "/profile/devices",
         "/community",
         "/community/profile?id=${Uri.encodeQueryComponent(communityId)}",
+        # Decision 0241: the instance and the new friend are addressed by the
+        # ids the feed record carried, checked against the UUID shape first.
+        "/meme",
+        "/chat",
+        "/chat/requests",
+        "/launch2/instance?id=${Uri.encodeQueryComponent(instanceId)}",
+        "/profile/user?id=${Uri.encodeQueryComponent(publicProfileId)}",
     }
 )
 # `lib/app.dart` joined this set with decision 0067: confirming a pointer needs
@@ -8467,7 +8497,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 113-route manifest."""
+    """Keep the Dart route table equal to the frozen 114-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8486,8 +8516,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     # S135 (decision 0138): 105 → 111, the MEME v2 project side.
     # S168 (decision 0157): 111 → 112, 外盘奖励 of a LoopDynamic instance.
     # S180 (decision 0163): 112 → 113, 共识勋章 (the NFT mint page).
-    if manifest.get("count") != 113 or len(expected_slugs) != 113:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 113 routes")
+    # S287 (decision 0241): 113 → 114, 通知中心 under 聊天.
+    if manifest.get("count") != 114 or len(expected_slugs) != 114:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 114 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "meme":
@@ -8523,7 +8554,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 113 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 114 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)

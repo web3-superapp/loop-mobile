@@ -1,4 +1,4 @@
-/// The 112-route product manifest.
+/// The 114-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -10,6 +10,8 @@
 /// decision 0120 (S117) added the four MEME curve launchpad routes;
 /// decision 0138 (S135) added the five MEME v2 project-side routes.
 /// decision 0139 (S136) added the MEME v2 project page.
+/// decision 0241 (S287) added `notifications`, the notification centre
+/// under 聊天 (113 → 114).
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -112,7 +114,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '511312bb7d4f4aa08eb8f2285156f5e1cb7c4baed942b9980d8ad97f218fe75d';
+      '34c970325ca125628bca8f3d4eb354d87be2b72c92903cf204bbd538dd66f76f';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110; MEME
   /// since decision 0221).
@@ -338,7 +340,7 @@ abstract final class LoopRouteManifest {
       step: 2,
       status: LoopRouteStatus.implemented,
     ),
-    // 2-community · Community (20)
+    // 2-community · Community (21)
     LoopRouteEntry(
       slug: 'search',
       path: '/search',
@@ -521,6 +523,17 @@ abstract final class LoopRouteManifest {
       title: '社区管理',
       prototypeOrder: 107,
       step: 3,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S287 (decision 0241): 通知中心, a child page of 聊天. It is not the
+    // retired `/notifications` Home-era centre, which stays retired.
+    LoopRouteEntry(
+      slug: 'notifications',
+      path: '/chat/notifications',
+      module: LoopRouteModule.community,
+      title: '通知中心',
+      prototypeOrder: 127,
+      step: 4,
       status: LoopRouteStatus.implemented,
     ),
     // 3-market · Market (10)

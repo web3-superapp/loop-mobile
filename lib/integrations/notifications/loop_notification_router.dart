@@ -81,15 +81,50 @@ enum LoopPushNotificationType {
     'community_application_rejected',
     'community',
     LoopNotificationContextRoute.communityProfile,
+  ),
+  // Decision 0241 (loop-api decision 0177). A graduation and a minted badge
+  // are both about one MEME v2 instance, so they share its `entityRef` and
+  // its page; a friend request and its acceptance are both about one
+  // request. Because the reference is shared, the feed row is matched by
+  // [feedType] as well.
+  launchGraduated(
+    'launch_graduated',
+    'launch2Instance',
+    LoopNotificationContextRoute.launch2Instance,
+    feedType: 'launch.graduated',
+  ),
+  launchBadgeMinted(
+    'launch_badge_minted',
+    'launch2Instance',
+    LoopNotificationContextRoute.launch2Instance,
+    feedType: 'launch.badge_minted',
+  ),
+  friendRequest(
+    'social_friend_request',
+    'friendRequest',
+    LoopNotificationContextRoute.friendRequests,
+    feedType: 'social.friend_request',
+  ),
+  friendAccepted(
+    'social_friend_accepted',
+    'friendRequest',
+    LoopNotificationContextRoute.userProfile,
+    feedType: 'social.friend_accepted',
   );
 
   const LoopPushNotificationType(
     this.wireName,
     this.entityPrefix,
-    this.contextRoute,
-  );
+    this.contextRoute, {
+    this.feedType,
+  });
 
   final String wireName;
+
+  /// The feed row's `type` for the same event, for the kinds whose
+  /// `entityRef` is shared by more than one event (decision 0241). `null`
+  /// for the older kinds, whose reference alone names one row.
+  final String? feedType;
 
   /// The `<kind>` half of `entityRef`. It is part of the identity, not a
   /// label: `priceAlert:<uuid>` and `voiceRoom:<uuid>` are different things
@@ -111,7 +146,11 @@ enum LoopNotificationContextRoute {
   token('token'),
   devices('devices'),
   voiceRoom('voice-room'),
-  communityProfile('community-profile');
+  communityProfile('community-profile'),
+  // Decision 0241: the manifest slugs of the three new destinations.
+  launch2Instance('launch2-instance'),
+  friendRequests('dm-requests'),
+  userProfile('user-profile');
 
   const LoopNotificationContextRoute(this.wireName);
 
@@ -165,10 +204,20 @@ final class LoopNotificationContext {
     required this.contextRoute,
     this.assetId,
     this.communityId,
+    this.instanceId,
+    this.publicProfileId,
   });
 
   final String contextRoute;
   final String? assetId;
+
+  /// `contextParams.instanceId` of the record, for a graduation or a minted
+  /// badge (decision 0241). The server's record, never the payload.
+  final String? instanceId;
+
+  /// `contextParams.publicProfileId` of the record, for an accepted friend
+  /// request (decision 0241). The server's record, never the payload.
+  final String? publicProfileId;
 
   /// `contextParams.communityId` of the account's own record, for the two
   /// application-review events. As with [assetId], it is the server's record
@@ -261,6 +310,61 @@ final class LoopVoiceRoomNotificationIntent
 
   @override
   String get location => '/chat/voice';
+}
+
+/// A graduation or a minted badge whose instance the feed confirmed
+/// (decision 0241). The instance page re-reads its own record.
+final class LoopLaunchInstanceNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopLaunchInstanceNotificationIntent._(this.instanceId);
+
+  final String instanceId;
+
+  @override
+  String get location =>
+      '/launch2/instance?id=${Uri.encodeQueryComponent(instanceId)}';
+}
+
+/// A graduation or a minted badge the feed did not confirm: the MEME tab,
+/// which names no instance.
+final class LoopMemeIndexNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopMemeIndexNotificationIntent._();
+
+  @override
+  String get location => '/meme';
+}
+
+/// A friend request opens the requests page, which reads its own list.
+final class LoopFriendRequestsNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopFriendRequestsNotificationIntent._();
+
+  @override
+  String get location => '/chat/requests';
+}
+
+/// An accepted friend request whose new friend the feed confirmed: that
+/// person's page, which re-reads the profile it names.
+final class LoopUserProfileNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopUserProfileNotificationIntent._(this.publicProfileId);
+
+  final String publicProfileId;
+
+  @override
+  String get location =>
+      '/profile/user?id=${Uri.encodeQueryComponent(publicProfileId)}';
+}
+
+/// An accepted friend request the feed did not confirm: the 聊天 tab, which
+/// names nobody.
+final class LoopChatIndexNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopChatIndexNotificationIntent._();
+
+  @override
+  String get location => '/chat';
 }
 
 /// A provider-neutral result that never retains the untrusted input map.
@@ -432,7 +536,65 @@ final class LoopNotificationRouter {
       LoopPushNotificationType.communityApplicationVerified ||
       LoopPushNotificationType.communityApplicationRejected =>
         _communityApplicationIntent(confirmed ? context.communityId : null),
+      LoopPushNotificationType.launchGraduated ||
+      LoopPushNotificationType.launchBadgeMinted => _launchInstanceIntent(
+        confirmed ? context.instanceId : null,
+      ),
+      LoopPushNotificationType.friendRequest =>
+        const LoopFriendRequestsNotificationIntent._(),
+      LoopPushNotificationType.friendAccepted => _userProfileIntent(
+        confirmed ? context.publicProfileId : null,
+      ),
     };
+  }
+
+  /// The destination of one row of the account's own feed, read in the
+  /// notification centre (decision 0241).
+  ///
+  /// It is [resolve] without a push in front of it: the row *is* the record,
+  /// so its `contextRoute` names the family and its parameters the subject,
+  /// through the same validation. A route this build does not know resolves
+  /// to `null` — the row is marked read and nothing opens.
+  static LoopNotificationNavigationIntent? resolveRecord(
+    LoopNotificationContext record,
+  ) {
+    final route = LoopNotificationContextRoute.tryParse(record.contextRoute);
+    return switch (route) {
+      null => null,
+      LoopNotificationContextRoute.token => _priceAlertIntent(record.assetId),
+      LoopNotificationContextRoute.devices =>
+        const LoopSecurityEventNotificationIntent._(),
+      LoopNotificationContextRoute.voiceRoom =>
+        const LoopVoiceRoomNotificationIntent._(),
+      LoopNotificationContextRoute.communityProfile =>
+        _communityApplicationIntent(record.communityId),
+      LoopNotificationContextRoute.launch2Instance => _launchInstanceIntent(
+        record.instanceId,
+      ),
+      LoopNotificationContextRoute.friendRequests =>
+        const LoopFriendRequestsNotificationIntent._(),
+      LoopNotificationContextRoute.userProfile => _userProfileIntent(
+        record.publicProfileId,
+      ),
+    };
+  }
+
+  static LoopNotificationNavigationIntent _launchInstanceIntent(
+    String? instanceId,
+  ) {
+    if (instanceId == null || !_uuidPattern.hasMatch(instanceId)) {
+      return const LoopMemeIndexNotificationIntent._();
+    }
+    return LoopLaunchInstanceNotificationIntent._(instanceId);
+  }
+
+  static LoopNotificationNavigationIntent _userProfileIntent(
+    String? publicProfileId,
+  ) {
+    if (publicProfileId == null || !_uuidPattern.hasMatch(publicProfileId)) {
+      return const LoopChatIndexNotificationIntent._();
+    }
+    return LoopUserProfileNotificationIntent._(publicProfileId);
   }
 
   static LoopNotificationNavigationIntent _communityApplicationIntent(
