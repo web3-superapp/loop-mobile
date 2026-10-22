@@ -1866,7 +1866,8 @@ void main() {
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsOneWidget);
       expect(_key('launch2-wallet-nft-$l2InstanceA'), findsOneWidget);
       expect(find.text('1,125,000.5'), findsOneWidget);
-      expect(find.text('项目 NFT #1'), findsOneWidget);
+      // S273 · decision 0232: the NFT is a picture card with its #id.
+      expect(find.text('#1'), findsOneWidget);
       await tester.tap(_key('launch2-wallet-nft-$l2InstanceA'));
       // Decision 0163: the NFT row opens 共识勋章, not the project page.
       expect(opened.single, '/launch2/nft?id=$l2InstanceA');

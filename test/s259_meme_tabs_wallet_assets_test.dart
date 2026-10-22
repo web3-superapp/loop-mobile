@@ -237,7 +237,7 @@ void main() {
   });
 
   group('wallet NFT', () {
-    testWidgets('the project NFT row opens its medal page', (tester) async {
+    testWidgets('the project NFT card opens its medal page', (tester) async {
       final opened = <String>[];
       await _pumpWallet(
         tester,
@@ -248,8 +248,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('wallet-nft-list'), findsOneWidget);
       expect(find.text('FROG NFT'), findsOneWidget);
-      expect(find.text('项目 NFT #1'), findsOneWidget);
-      expect(find.text('× 1'), findsOneWidget);
+      // S273 · decision 0232: a picture card, the #id on its face, and
+      // 「×n · stage」 under the name.
+      expect(_key('launch2-nft-grid'), findsOneWidget);
+      expect(find.text('#1'), findsOneWidget);
+      expect(find.text('×1 · 提前购'), findsOneWidget);
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsNothing);
       expect(_key('wallet-nft-provenance'), findsOneWidget);
       await tester.ensureVisible(_key('launch2-wallet-nft-$l2InstanceA'));

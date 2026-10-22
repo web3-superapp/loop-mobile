@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_card.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
@@ -19,6 +20,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -1144,11 +1146,15 @@ Future<bool> showLaunch2NftConfirmSheet(
   required String priceLabel,
   String? heading,
   String confirmLabel = '继续铸造',
+  String? logoUrl,
+  String? nftImageUrl,
 }) async {
   final confirmed = await showLoopSheet<bool>(
     context,
     builder: (context) => _Launch2NftConfirm(
       ticker: ticker,
+      logoUrl: logoUrl,
+      nftImageUrl: nftImageUrl,
       priceLabel: priceLabel,
       heading: heading ?? '铸造 $ticker 共识勋章',
       confirmLabel: confirmLabel,
@@ -1163,9 +1169,17 @@ class _Launch2NftConfirm extends StatefulWidget {
     required this.priceLabel,
     required this.heading,
     required this.confirmLabel,
+    this.logoUrl,
+    this.nftImageUrl,
   });
 
   final String ticker;
+
+  /// The project's logo: the face of the thumbnail (S273 · decision 0232).
+  final String? logoUrl;
+
+  /// The owner's NFT picture, before [logoUrl] (decision 0232).
+  final String? nftImageUrl;
   final String priceLabel;
   final String heading;
   final String confirmLabel;
@@ -1190,6 +1204,23 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // S273 · decision 0232: what is being minted, at 64.
+            LoopAtmoPrecache(
+              paths: launch2NftCardAssets,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: LoopSpacing.tight),
+                  child: Launch2NftCard(
+                    key: const ValueKey<String>('launch2-nft-confirm-card'),
+                    ticker: widget.ticker,
+                    nftImageUrl: widget.nftImageUrl,
+                    logoUrl: widget.logoUrl,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
             LoopKeyValue(
               label: '价格',
               value: widget.priceLabel,
