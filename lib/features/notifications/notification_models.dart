@@ -139,9 +139,11 @@ enum LoopNotificationKind {
     'launch.graduated',
     LoopNotificationCategory.launchGraduation,
   ),
+  // loop-api decision 0177: the badge is the snapshot credential, so it is
+  // filed under 资格快照与开始提醒.
   launchBadgeMinted(
     'launch.badge_minted',
-    LoopNotificationCategory.launchGraduation,
+    LoopNotificationCategory.launchRound,
   ),
   friendRequest(
     'social.friend_request',

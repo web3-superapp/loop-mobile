@@ -236,6 +236,7 @@ LoopNotificationPresentation loopNotificationPresentation(
   final body = _text(entry, 'body');
   final symbol = _text(entry, 'symbol') ?? _text(entry, 'ticker');
   final name =
+      _text(entry, 'alias') ??
       _text(entry, 'displayName') ??
       _text(entry, 'nickname') ??
       _text(entry, 'loopId');
@@ -243,7 +244,12 @@ LoopNotificationPresentation loopNotificationPresentation(
     case LoopNotificationKind.launchGraduated:
       return LoopNotificationPresentation(
         icon: 'graduate',
-        title: title ?? (symbol == null ? '你参与的项目已毕业' : '$symbol 已毕业'),
+        title:
+            title ??
+            switch (symbol ?? _text(entry, 'projectName')) {
+              final String subject => '$subject 已毕业',
+              null => '你参与的项目已毕业',
+            },
         body: body ?? _text(entry, 'projectName'),
       );
     case LoopNotificationKind.launchBadgeMinted:

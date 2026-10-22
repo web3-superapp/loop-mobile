@@ -112,6 +112,9 @@ void main() {
         feed.items.first.category,
         LoopNotificationCategory.launchGraduation,
       );
+      // loop-api decision 0177: the badge is filed under 资格快照与开始提醒.
+      expect(feed.items[1].category, LoopNotificationCategory.launchRound);
+      expect(feed.items[2].category, LoopNotificationCategory.communityMention);
     });
 
     test('an unknown type is kept and drawn plainly, not refused', () async {
@@ -383,7 +386,7 @@ void main() {
 
     test('an unconfirmed graduation or acceptance names nothing', () {
       final graduated = route(
-        'launch.graduated',
+        'launch_graduated',
         'launch2Instance:7a1b2c3d-4e5f-4a6b-8c7d-0000000000aa',
         'launch2-instance',
       );
@@ -392,7 +395,7 @@ void main() {
         '/meme',
       );
       final accepted = route(
-        'social.friend_accepted',
+        'social_friend_accepted',
         'friendRequest:0f1e2d3c-4b5a-4968-8776-0000000000bb',
         'user-profile',
       );
@@ -405,8 +408,17 @@ void main() {
     test('a wrong entity kind or an unknown type still fails closed', () {
       expect(
         route(
-          'launch.graduated',
+          'launch_graduated',
           'friendRequest:$s287RequestId',
+          'launch2-instance',
+        ).disposition,
+        LoopNotificationDisposition.malformed,
+      );
+      expect(
+        // The feed's dotted name is not the push name.
+        route(
+          'launch.graduated',
+          'launch2Instance:$s287InstanceId',
           'launch2-instance',
         ).disposition,
         LoopNotificationDisposition.malformed,
@@ -419,6 +431,27 @@ void main() {
         ).disposition,
         LoopNotificationDisposition.malformed,
       );
+    });
+
+    test('the push names are underscored and map to the feed types', () {
+      expect(
+        <String, String?>{
+          for (final type in <LoopPushNotificationType>[
+            LoopPushNotificationType.launchGraduated,
+            LoopPushNotificationType.launchBadgeMinted,
+            LoopPushNotificationType.friendRequest,
+            LoopPushNotificationType.friendAccepted,
+          ])
+            type.wireName: type.feedType,
+        },
+        <String, String?>{
+          'launch_graduated': 'launch.graduated',
+          'launch_badge_minted': 'launch.badge_minted',
+          'social_friend_request': 'social.friend_request',
+          'social_friend_accepted': 'social.friend_accepted',
+        },
+      );
+      expect(LoopPushNotificationType.priceAlertTriggered.feedType, isNull);
     });
 
     test('a feed record resolves through the same validation', () {

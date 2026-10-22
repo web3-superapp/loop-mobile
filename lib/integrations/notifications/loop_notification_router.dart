@@ -82,38 +82,49 @@ enum LoopPushNotificationType {
     'community',
     LoopNotificationContextRoute.communityProfile,
   ),
-  // Decision 0241 (loop-api S286). The four kinds carry the feed row's own
-  // `type` as their wire name. A graduation and a minted badge are both about
-  // one MEME v2 instance, so they share its `entityRef` and its page; a
-  // friend request and its acceptance are both about one request.
+  // Decision 0241 (loop-api decision 0177). A graduation and a minted badge
+  // are both about one MEME v2 instance, so they share its `entityRef` and
+  // its page; a friend request and its acceptance are both about one
+  // request. Because the reference is shared, the feed row is matched by
+  // [feedType] as well.
   launchGraduated(
-    'launch.graduated',
+    'launch_graduated',
     'launch2Instance',
     LoopNotificationContextRoute.launch2Instance,
+    feedType: 'launch.graduated',
   ),
   launchBadgeMinted(
-    'launch.badge_minted',
+    'launch_badge_minted',
     'launch2Instance',
     LoopNotificationContextRoute.launch2Instance,
+    feedType: 'launch.badge_minted',
   ),
   friendRequest(
-    'social.friend_request',
+    'social_friend_request',
     'friendRequest',
     LoopNotificationContextRoute.friendRequests,
+    feedType: 'social.friend_request',
   ),
   friendAccepted(
-    'social.friend_accepted',
+    'social_friend_accepted',
     'friendRequest',
     LoopNotificationContextRoute.userProfile,
+    feedType: 'social.friend_accepted',
   );
 
   const LoopPushNotificationType(
     this.wireName,
     this.entityPrefix,
-    this.contextRoute,
-  );
+    this.contextRoute, {
+    this.feedType,
+  });
 
   final String wireName;
+
+  /// The feed row's `type` for the same event, for the kinds whose
+  /// `entityRef` is shared by more than one event (decision 0241). `null`
+  /// for the older kinds, whose reference alone names one row.
+  final String? feedType;
 
   /// The `<kind>` half of `entityRef`. It is part of the identity, not a
   /// label: `priceAlert:<uuid>` and `voiceRoom:<uuid>` are different things

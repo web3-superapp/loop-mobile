@@ -31,4 +31,14 @@
     <string name="push_communityApplicationVerified_body">点开查看这个社区</string>
     <string name="push_communityApplicationRejected_title">社区审核未通过</string>
     <string name="push_communityApplicationRejected_body">点开查看原因与重新提交</string>
+    <!-- Decision 0241 (loop-api decision 0177): the notification centre's
+         four kinds. The copy names nothing; the page re-reads the record. -->
+    <string name="push_launchGraduated_title">项目已毕业</string>
+    <string name="push_launchGraduated_body">点开查看项目</string>
+    <string name="push_launchBadgeMinted_title">共识勋章铸造完成</string>
+    <string name="push_launchBadgeMinted_body">点开查看项目</string>
+    <string name="push_socialFriendRequest_title">新的好友申请</string>
+    <string name="push_socialFriendRequest_body">点开查看并处理</string>
+    <string name="push_socialFriendAccepted_title">好友申请已通过</string>
+    <string name="push_socialFriendAccepted_body">点开查看对方主页</string>
 </resources>

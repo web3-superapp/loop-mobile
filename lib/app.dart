@@ -2441,8 +2441,12 @@ Future<LoopNotificationContext?> _resolveNotificationContext(
   } catch (_) {
     return null;
   }
+  // Decision 0241: a graduation and a minted badge share one `entityRef`, so
+  // their rows are told apart by the feed `type` as well.
+  final feedType = pointer.type.feedType;
   for (final entry in feed.items) {
     if (entry.entityRef != pointer.entityRef) continue;
+    if (feedType != null && entry.rawType != feedType) continue;
     return _notificationContextOf(entry);
   }
   return null;

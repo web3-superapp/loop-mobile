@@ -20,3 +20,13 @@
 "push.communityApplicationVerified.body" = "点开查看这个社区";
 "push.communityApplicationRejected.title" = "社区审核未通过";
 "push.communityApplicationRejected.body" = "点开查看原因与重新提交";
+/* Decision 0241 (loop-api decision 0177): the notification centre's four
+   kinds. The copy names nothing; the page re-reads the record. */
+"push.launchGraduated.title" = "项目已毕业";
+"push.launchGraduated.body" = "点开查看项目";
+"push.launchBadgeMinted.title" = "共识勋章铸造完成";
+"push.launchBadgeMinted.body" = "点开查看项目";
+"push.socialFriendRequest.title" = "新的好友申请";
+"push.socialFriendRequest.body" = "点开查看并处理";
+"push.socialFriendAccepted.title" = "好友申请已通过";
+"push.socialFriendAccepted.body" = "点开查看对方主页";
