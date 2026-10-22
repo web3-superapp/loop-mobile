@@ -393,8 +393,9 @@ void main() {
         ),
         findsNothing,
       );
-      // 「已验证」 is unchanged.
-      expect(_key('square-community-verification-$first'), findsOneWidget);
+      // Decision 0239: no operator label, no mark — 「已验证」 is gone.
+      expect(_key('square-community-label-$first'), findsNothing);
+      expect(find.text('已验证'), findsNothing);
       // The pinned chips stand on the same wall, cut to their box.
       expect(_key('loop-backdrop-slice'), findsOneWidget);
       final wall = tester.getRect(_key('square-atmo-backdrop').first);

@@ -830,7 +830,7 @@ void main() {
       expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
     });
 
-    testWidgets('the verification state is stated once, in words', (
+    testWidgets('a verified community without a label wears no mark', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -841,8 +841,10 @@ void main() {
 
       // The folio stamp carried 「VERIFIED」 while the identity card under it
       // carried 「已验证」: one fact, twice, in two languages.
+      // Decision 0239 retired the word itself: the operator's label is the
+      // only mark, and this community has none.
       expect(find.text('VERIFIED'), findsNothing);
-      expect(find.text('已验证'), findsOneWidget);
+      expect(find.text('已验证'), findsNothing);
     });
 
     testWidgets('a community under review says so where verified would be', (

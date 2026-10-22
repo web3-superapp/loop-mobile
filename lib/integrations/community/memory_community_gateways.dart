@@ -32,6 +32,7 @@ CommunitySummary _community({
   String? boundAssetKey,
   String? description,
   String? logoRef,
+  String? label,
 }) => CommunitySummary(
   communityId: id,
   name: name,
@@ -43,6 +44,7 @@ CommunitySummary _community({
   memberCount: memberCount,
   createdAt: DateTime.utc(2026, 6, 1),
   configVersion: 'communityV1',
+  label: label,
 );
 
 const _recommendation = CommunityRecommendation(
@@ -62,6 +64,9 @@ final _previewCommunities = <CommunitySummary>[
     // exercises the atlas path the production rows take. It is preview data
     // and the page labels it 演示数据 above these rows.
     logoRef: 'avatar:preset/community-01',
+    // Decision 0239: the operator's free-text label; the other rows carry
+    // none and so show no mark.
+    label: '算力社区',
   ),
   _community(
     id: '4bb85f64-5717-4562-b3fc-2c963f66afb7',

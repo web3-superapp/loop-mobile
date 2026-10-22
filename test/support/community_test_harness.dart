@@ -95,6 +95,7 @@ CommunitySummary testCommunity({
   String? logoRef,
   LoopMiningPowerFact? miningPower,
   CommunityActivityFact? activity,
+  String? label,
 }) => CommunitySummary(
   communityId: communityId,
   name: name,
@@ -108,6 +109,7 @@ CommunitySummary testCommunity({
   configVersion: 'communityV1',
   miningPower: miningPower,
   activity: activity,
+  label: label,
 );
 
 LoopPublicProfile testProfile({

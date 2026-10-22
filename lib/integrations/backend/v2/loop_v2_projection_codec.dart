@@ -278,7 +278,11 @@ abstract final class LoopV2ProjectionCodec {
 
   /// `boundAsset` (S108 §1.3) is an optional tail: an API that predates it
   /// answers without the key, and that is not an invalid community.
-  static const _communityOptionalKeys = <String>{'boundAsset'};
+  ///
+  /// `label` (decision 0239) is the operator's free-text mark; it is
+  /// client-first, so an API without it, or with `null` or `""`, is a
+  /// community with no mark, never an invalid one.
+  static const _communityOptionalKeys = <String>{'boundAsset', 'label'};
 
   static CommunitySummary community(Object? raw) => _community(
     LoopV2Contract.strictMapWithOptional(
@@ -604,6 +608,7 @@ abstract final class LoopV2ProjectionCodec {
       boundAsset: communityBoundAsset(map['boundAsset']),
       assetBadge: assetBadge,
       viewerMembership: viewerMembership,
+      label: communityLabelFromWire(map['label']),
     );
   }
 

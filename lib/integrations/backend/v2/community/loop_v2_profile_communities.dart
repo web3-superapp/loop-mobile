@@ -1,3 +1,4 @@
+import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
@@ -36,6 +37,9 @@ abstract final class LoopV2ProfileCommunitiesCodec {
     'joinedAt',
   };
 
+  /// Client-first tail (decision 0239): absent, `null` and `""` are no label.
+  static const itemOptionalKeys = <String>{'label'};
+
   static const hiddenReasonCode = 'PROFILE_COMMUNITIES_HIDDEN';
   static final RegExp reasonCodePattern = RegExp(r'^[A-Z][A-Z0-9_]{0,63}$');
   static const maximumItems = 200;
@@ -73,7 +77,11 @@ abstract final class LoopV2ProfileCommunitiesCodec {
   }
 
   static ProfileCommunity row(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, itemKeys);
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      itemKeys,
+      itemOptionalKeys,
+    );
     final verification = ProfileCommunityVerification.tryParse(
       map['verificationStatus'],
     );
@@ -98,6 +106,7 @@ abstract final class LoopV2ProfileCommunitiesCodec {
       memberCount: LoopV2ProjectionCodec.requireCount(map, 'memberCount'),
       verificationStatus: verification,
       joinedAt: LoopV2ProjectionCodec.requireTimestamp(map, 'joinedAt'),
+      label: communityLabelFromWire(map['label']),
     );
   }
 }
