@@ -620,28 +620,150 @@ class _StageChip extends StatelessWidget {
   }
 }
 
-// ---- section headings -----------------------------------------------------------
+// ---- the home's tab bar (S279) -------------------------------------------------
 
-/// 「01 内盘 … 全部 ›」: the shared [LoopSprayHeading] with its number.
-class Launch2SectionHeading extends StatelessWidget {
-  const Launch2SectionHeading({
-    required this.index,
-    required this.title,
-    super.key,
-    this.onMore,
+/// One tab of the home's tab bar: its id, words, count and whether it is on.
+typedef Launch2DeskTabSpec = ({
+  String id,
+  String title,
+  int count,
+  bool selected,
+});
+
+/// The MEME home's tab bar (S279 · decision 0237): 「01 内盘 / 02 预告 /
+/// 03 已毕业」 across the page, each tab a third of it. The section number
+/// that headed each stacked group is now the tab's own Anton index, so the
+/// list under it needs no heading of its own. The chosen tab is solid Purple
+/// with white words, its number in Yellow and the Yellow splat on its corner;
+/// the others stand on the block ground so the bar reads as one control.
+class Launch2DeskTabs extends StatelessWidget {
+  const Launch2DeskTabs({
+    required this.tabs,
+    required this.onSelected,
+    super.key = const ValueKey<String>('launch2-desk-tabs'),
   });
 
-  final int index;
-  final String title;
-  final VoidCallback? onMore;
+  final List<Launch2DeskTabSpec> tabs;
+  final ValueChanged<int> onSelected;
 
   @override
-  Widget build(BuildContext context) => LoopSprayHeading(
-    index: index,
-    title: title,
-    onMore: onMore,
-    moreKey: ValueKey<String>('launch2-section-more-$title'),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      12,
+      LoopSpacing.page,
+      0,
+    ),
+    child: Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: LoopColors.card,
+          borderRadius: LoopRadius.pill,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: <Widget>[
+              for (final (index, tab) in tabs.indexed)
+                Expanded(
+                  child: _DeskTab(
+                    index: index + 1,
+                    tab: tab,
+                    onTap: () => onSelected(index),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
+}
+
+class _DeskTab extends StatelessWidget {
+  const _DeskTab({required this.index, required this.tab, required this.onTap});
+
+  final int index;
+  final Launch2DeskTabSpec tab;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final on = tab.selected;
+    final ink = on ? LoopColors.onPurple : LoopColors.text2;
+    return Semantics(
+      button: true,
+      selected: on,
+      label: '${tab.title} ${tab.count}',
+      excludeSemantics: true,
+      child: LoopPressable(
+        key: ValueKey<String>('launch2-desk-tab-${tab.id}'),
+        onTap: onTap,
+        scale: false,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            // The ground and the words change in the same frame: a fading
+            // Purple under words already turned grey would read as nothing.
+            Container(
+              height: LoopTouch.minimum,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: on ? LoopColors.purple : const Color(0x00000000),
+                borderRadius: LoopRadius.pill,
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      index.toString().padLeft(2, '0'),
+                      key: ValueKey<String>('launch2-desk-tab-index-${tab.id}'),
+                      style: LoopType.tabIndex.copyWith(
+                        color: on ? LoopColors.yellow : LoopColors.muted,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      tab.title,
+                      maxLines: 1,
+                      style: LoopType.button.copyWith(color: ink),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${tab.count}',
+                      maxLines: 1,
+                      style:
+                          LoopTypography.withWeight(
+                            LoopType.figureSm,
+                            FontWeight.w600,
+                          ).copyWith(
+                            color: on ? LoopColors.onPurple : LoopColors.muted,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (on)
+              Positioned(
+                left: -6,
+                top: -8,
+                width: 24,
+                child: LoopSplatSticker(
+                  key: ValueKey<String>('launch2-desk-tab-splat-${tab.id}'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ---- the board -------------------------------------------------------------------

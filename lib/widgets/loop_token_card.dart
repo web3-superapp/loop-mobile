@@ -175,7 +175,7 @@ class LoopTokenCard extends StatelessWidget {
           // with a 7% glow for a surface and the page showing through it. The
           // glow is a layer over the ground, below.
           decoration: BoxDecoration(
-            color: chalk ? LoopColors.chalk : LoopColors.graphite,
+            color: chalk ? LoopColors.chalk : LoopColors.card,
             borderRadius: LoopRadius.card,
             // Decision 0211: no edge, except the Purple one a graduated
             // token keeps.

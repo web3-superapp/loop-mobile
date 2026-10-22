@@ -55,8 +55,10 @@ abstract final class LoopColors {
   /// Purple at 44 % (`#9c36ff70`) — a selected or focused edge.
   static const Color purpleLine = Color(0x709C36FF);
 
-  /// Text input ground: the card surface (decision 0212, docs/42 附C §4).
-  static const Color input = graphite;
+  /// Text input ground: the raised block (S279 · decision 0237 — a field
+  /// sits in a block, so it is the second level; decision 0212 had it on the
+  /// card surface).
+  static const Color input = plateRaised;
 
   /// Text input edge · `#3b3045`.
   static const Color inputLine = Color(0xFF3B3045);
@@ -64,8 +66,21 @@ abstract final class LoopColors {
   /// Foreground · `--foreground/--paper #f2f2f4`.
   static const Color chalk = Color(0xFFF2F2F4);
 
-  /// Card / surface · `--card #111114`.
+  /// Surface · `#111114`: the ground a sheet, a dialog or a floating bar is
+  /// drawn on — a layer above the page, not a block in it. Blocks are
+  /// [plate] (S279 · decision 0237).
   static const Color graphite = Color(0xFF111114);
+
+  /// The block ground, level 1 (S279 · decision 0237, 需求方 2026-10-22 第
+  /// 16 条) · `#1a1920`: every card, panel, board and grouped list stands on
+  /// it. Light enough to read as a block on the Ink page and on the wall
+  /// (#111114 was not), never a light grey.
+  static const Color plate = Color(0xFF1A1920);
+
+  /// The block ground, level 2 · `#26252d`: what sits inside a block — a
+  /// sub-block, a field, an icon tile, a quiet button — one step above
+  /// [plate].
+  static const Color plateRaised = Color(0xFF26252D);
 
   /// Third text grey · `#8e8a98`.
   static const Color muted = Color(0xFF8E8A98);
@@ -73,14 +88,15 @@ abstract final class LoopColors {
   /// Console / sunken ground · `#0e0e12`.
   static const Color bg2 = Color(0xFF0E0E12);
 
-  /// Panel · the card surface.
-  static const Color panel = graphite;
+  /// Panel · the block ground, level 1 ([plate]).
+  static const Color panel = plate;
 
-  /// Card · `#111114`, solid. It no longer tints the ground it sits on.
-  static const Color card = graphite;
+  /// Card · the block ground, level 1 ([plate]), solid.
+  static const Color card = plate;
 
-  /// Card 2 · a stronger inset or a pressed card (`#1c1b22`).
-  static const Color card2 = Color(0xFF1C1B22);
+  /// Card 2 · the block ground, level 2 ([plateRaised]): an inset inside a
+  /// card, a field, a pressed card.
+  static const Color card2 = plateRaised;
 
   /// Line · `--border #2a292f` — a divider hairline.
   static const Color line = Color(0xFF2A292F);
@@ -107,8 +123,8 @@ abstract final class LoopColors {
   static const Color quietFolioTint = Color(0x10FFD600);
 
   /// The record card's two tints. Flat now: both are the card surface.
-  static const Color recordCardGlow = graphite;
-  static const Color recordCardTint = graphite;
+  static const Color recordCardGlow = card;
+  static const Color recordCardTint = card;
 
   /// The primary button's glow · `0 0 17px #ffd60035`.
   static const Color primaryGlow = Color(0x35FFD600);
@@ -859,6 +875,14 @@ abstract final class LoopType {
     trackingEm: 0.02,
   );
 
+  /// S279 (decision 0237): the same Anton index at the headline step (18),
+  /// inside a MEME home tab 「01 内盘」.
+  static final TextStyle tabIndex = LoopTypography.condensed(
+    size: 18,
+    height: 1.0,
+    trackingEm: 0.02,
+  );
+
   /// A figure at the body2 size (16 / 600 tabular): a fact table's value, a
   /// record line's amount.
   static final TextStyle figureBody = LoopTypography.figure(
@@ -1134,7 +1158,7 @@ abstract final class LoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: LoopColors.card,
+        fillColor: LoopColors.input,
         // R25: a field's placeholder and floating label are the input step,
         // the same size as what is typed into it (decision 0189).
         hintStyle: LoopType.bodyLg.copyWith(color: LoopColors.text3),

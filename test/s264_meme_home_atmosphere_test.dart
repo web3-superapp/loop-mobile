@@ -171,29 +171,34 @@ void main() {
     await _drain(tester);
   });
 
-  testWidgets('numbered sections over boards; a row without a logo wears the '
-      'chrome medal; the bar drips past 0 and not at 0', (tester) async {
+  testWidgets('S279 · 0237: three numbered tabs, one board at a time; a '
+      'row without a logo wears the chrome medal; the bar drips past 0 and '
+      'not at 0', (tester) async {
     await _pump(tester, <Map<String, Object?>>[
       _row(1, 'public', soldBps: 2500, name: '天才', ticker: 'TC'),
       _row(2, 'public', name: 'S234W', ticker: 'S234W'),
       _row(3, 'graduated', soldBps: 10000),
     ]);
-    for (final (index, group, title) in <(String, String, String)>[
-      ('01', 'curve', '内盘'),
+    for (final (index, tab, title) in <(String, String, String)>[
+      ('01', 'live', '内盘'),
       ('02', 'upcoming', '预告'),
       ('03', 'graduated', '已毕业'),
     ]) {
-      final heading = _key('launch2-group-$group');
-      expect(heading, findsOneWidget, reason: group);
+      final key = _key('launch2-desk-tab-$tab');
+      expect(key, findsOneWidget, reason: tab);
       expect(
-        find.descendant(of: heading, matching: find.text(index)),
+        find.descendant(of: key, matching: find.text(index)),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: heading, matching: find.text(title)),
+        find.descendant(of: key, matching: find.text(title)),
         findsOneWidget,
       );
     }
+    // No stacked numbered sections any more: one board, the chosen tab's.
+    expect(find.byType(Launch2Board), findsOneWidget);
+    expect(_key('launch2-board-live'), findsOneWidget);
+    expect(_key('launch2-tile-${_id(3)}'), findsNothing);
     // Rows: 80 high (decision 0229), the chrome medal, no letter tile.
     expect(tester.getSize(_key('launch2-row-${_id(1)}')).height, 80);
     expect(_key('launch2-avatar-chrome-${_id(1)}'), findsOneWidget);
@@ -208,6 +213,10 @@ void main() {
     expect(drip.left, moreOrLessEquals(bar.left + bar.width * 0.25 - 3));
     expect(_key('launch2-bar-${_id(2)}'), findsOneWidget);
     expect(_key('launch2-drip-${_id(2)}'), findsNothing);
+    await tester.tap(_key('launch2-desk-tab-graduated'));
+    await tester.pumpAndSettle();
+    expect(_key('launch2-board-graduated'), findsOneWidget);
+    expect(_key('launch2-board-live'), findsNothing);
     expect(_key('launch2-drip-${_id(3)}'), findsOneWidget);
     // 已毕业 is a light Purple word on Purple 18 %.
     final pill = tester.widget<Container>(
@@ -228,6 +237,9 @@ void main() {
     await _pump(tester, <Map<String, Object?>>[
       _row(1, 'public', soldBps: 2500),
     ], opened: opened);
+    expect(_key('launch2-upcoming-empty'), findsNothing);
+    await tester.tap(_key('launch2-desk-tab-upcoming'));
+    await tester.pumpAndSettle();
     expect(_key('launch2-upcoming-empty'), findsOneWidget);
     expect(_key('launch2-upcoming-empty-crown'), findsOneWidget);
     expect(find.text('还没有排队中的项目，第一个发射的就是你'), findsOneWidget);
@@ -259,9 +271,11 @@ void main() {
         nextChangeAt: l2Now.add(const Duration(days: 10)),
       ),
     ]);
-    // The nearest preview is the main event's record card; the next one
-    // sits on the 预告 board.
+    // The nearest preview is the main event: the home opens on 预告, its
+    // record card first and the next preview on the 预告 board.
+    expect(_key('launch2-desk-tab-splat-upcoming'), findsOneWidget);
     expect(_key('launch2-upcoming-empty'), findsNothing);
+    expect(_key('launch2-desk-record-${_id(2)}'), findsOneWidget);
     expect(
       find.descendant(
         of: _key('launch2-board-upcoming'),
@@ -296,17 +310,23 @@ void main() {
     expect(_key('launch2-avatar-chrome-b'), findsOneWidget);
   });
 
-  testWidgets('the chosen stage chip carries the Yellow splat', (tester) async {
+  testWidgets('the chosen tab carries the Yellow splat', (tester) async {
     await _pump(tester, <Map<String, Object?>>[
       _row(1, 'public', soldBps: 2500),
       _row(2, 'graduated', soldBps: 10000),
     ]);
-    // No main event: the first chip holding projects is on.
-    expect(_key('launch2-desk-seg-splat-curve'), findsOneWidget);
-    expect(_key('launch2-desk-seg-splat-minting'), findsNothing);
-    expect(find.text('内盘 1'), findsOneWidget);
+    // No main event: the first tab holding projects is on.
+    expect(_key('launch2-desk-tab-splat-live'), findsOneWidget);
+    expect(_key('launch2-desk-tab-splat-graduated'), findsNothing);
     expect(
-      tester.getSize(_key('launch2-desk-seg-curve')).height,
+      find.descendant(
+        of: _key('launch2-desk-tab-live'),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(_key('launch2-desk-tab-live')).height,
       greaterThanOrEqualTo(44),
     );
     await _drain(tester);

@@ -281,7 +281,8 @@ void main() {
       );
       final gradient =
           (edge.decoration as BoxDecoration).gradient! as LinearGradient;
-      expect(gradient.colors, contains(LoopColors.chrome1));
+      // S279 · decision 0237: the bevel opens on the mid steel.
+      expect(gradient.colors, LoopChromePlate.bevelColors);
       expect(gradient.colors, contains(LoopColors.chrome3));
       final face = tester.widget<DecoratedBox>(
         find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),

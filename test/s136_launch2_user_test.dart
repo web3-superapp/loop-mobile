@@ -565,15 +565,17 @@ void main() {
       // Decision 0164: the NFT sale is the desk's main event, drawn as its
       // record card rather than repeated as a row.
       expect(_key('launch2-desk-record-$l2InstanceA'), findsOneWidget);
-      expect(_key('launch2-desk-segs'), findsOneWidget);
-      // The 已毕业 chip scrolls to the desk's own group; no second list.
-      await tester.tap(find.textContaining('已毕业').first);
-      await tester.pumpAndSettle();
+      expect(_key('launch2-desk-tabs'), findsOneWidget);
+      // S279 · 0237: the 已毕业 tab reads the graduated list in place — no
+      // second page, no scroll to a group.
       expect(
         launch2.listCalls,
         isNot(contains((Launch2Stage.graduated, null))),
       );
-      expect(_key('launch2-group-graduated'), findsOneWidget);
+      await tester.tap(_key('launch2-desk-tab-graduated'));
+      await tester.pumpAndSettle();
+      expect(launch2.listCalls, contains((Launch2Stage.graduated, null)));
+      expect(_key('launch2-board-graduated'), findsOneWidget);
       expect(_key('meme-launchpad-unavailable'), findsNothing);
       await _drain(tester);
     });
@@ -2088,10 +2090,8 @@ void main() {
         tester.getTopLeft(_key('launch2-desk-record-$l2InstanceA')).dy,
         lessThan(closedTop),
       );
-      expect(
-        tester.getTopLeft(_key('launch2-row-$l2InstanceB')).dy,
-        lessThan(closedTop),
-      );
+      // S279 · 0237: the graduated row waits on its own tab.
+      expect(_key('launch2-row-$l2InstanceB'), findsNothing);
       expect(_key('launch2-row-closed'), findsOneWidget);
       expect(_key('launch2-stage-pill-closed_no_holders'), findsOneWidget);
       expect(

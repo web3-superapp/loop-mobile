@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
@@ -79,7 +80,17 @@ final class _Launch2 implements Launch2Gateway {
   Future<Launch2InstancePage> listInstances({
     Launch2Stage? stage,
     String? cursor,
-  }) => Future<Launch2InstancePage>.value(page);
+  }) => Future<Launch2InstancePage>.value(
+    stage == null
+        ? page
+        : Launch2InstancePage(
+            items: <Launch2InstanceRow>[
+              for (final row in page.items)
+                if (row.stage == stage) row,
+            ],
+            nextCursor: null,
+          ),
+  );
 
   @override
   Future<Launch2InstanceDetail> loadInstance(String instanceId) {
@@ -141,6 +152,10 @@ Map<String, Object?> _activity(
 };
 
 final class _Overview implements Launch2OverviewGateway {
+  _Overview({this.upcomingCount = 0});
+
+  final int upcomingCount;
+
   @override
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
 
@@ -157,7 +172,7 @@ final class _Overview implements Launch2OverviewGateway {
         'mintingCount': 2,
         'priorityCount': 1,
         'curveCount': 5,
-        'upcomingCount': 0,
+        'upcomingCount': upcomingCount,
         'graduatedTotal': 12,
         'graduatedThisWeek': 3,
         'buybackUsd1Total': '4200.5',
@@ -169,7 +184,10 @@ final class _Overview implements Launch2OverviewGateway {
   );
 }
 
-List<Override> _launch2Overrides(Launch2Gateway gateway) => <Override>[
+List<Override> _launch2Overrides(
+  Launch2Gateway gateway, {
+  int upcomingCount = 0,
+}) => <Override>[
   launch2GatewayProvider.overrideWithValue(gateway),
   launch2ClockProvider.overrideWithValue(() => l2Now),
   launch2PollingProvider.overrideWithValue(
@@ -183,7 +201,9 @@ List<Override> _launch2Overrides(Launch2Gateway gateway) => <Override>[
     const LoopFeatureSwitchValues(launch2Visible: true),
   ),
   launch2CampaignsGatewayProvider.overrideWithValue(_Campaigns()),
-  launch2OverviewGatewayProvider.overrideWithValue(_Overview()),
+  launch2OverviewGatewayProvider.overrideWithValue(
+    _Overview(upcomingCount: upcomingCount),
+  ),
 ];
 
 Map<String, Object?> _row(
@@ -257,7 +277,43 @@ Future<void> drainS269(WidgetTester tester) async {
 }
 
 /// MEME home with S269's fixture data at 390 wide.
-Future<void> pumpS269MemeHome(WidgetTester tester) async {
+Future<void> pumpS269MemeHome(WidgetTester tester) =>
+    pumpS269MemeHomeWith(tester, <Map<String, Object?>>[
+      _row(1, 'public', soldBps: 6200, name: '天才少年', ticker: 'TC'),
+      _row(2, 'public', soldBps: 2500, name: 'Frog Launch'),
+      _row(3, 'public', soldBps: 900, name: 'S234W', ticker: 'S234W'),
+      _row(4, 'graduated', soldBps: 10000, name: 'Doge on LOOP'),
+      _row(5, 'graduated', soldBps: 10000, name: '月亮狗', ticker: 'MOON'),
+    ]);
+
+/// S279: the S269 MEME home with every stage in it — three live rows, two
+/// previews and three graduated projects.
+Future<void> pumpS279MemeHome(WidgetTester tester, {Size? size}) =>
+    pumpS269MemeHomeWith(
+      tester,
+      <Map<String, Object?>>[
+        _row(1, 'public', soldBps: 6200, name: '天才少年', ticker: 'TC'),
+        _row(2, 'public', soldBps: 2500, name: 'Frog Launch'),
+        _row(3, 'public', soldBps: 900, name: 'S234W', ticker: 'S234W'),
+        _row(6, 'upcoming', name: '火星猫', ticker: 'MCAT'),
+        _row(7, 'upcoming', name: 'Pepe Club', ticker: 'PEPEC'),
+        _row(4, 'graduated', soldBps: 10000, name: 'Doge on LOOP'),
+        _row(5, 'graduated', soldBps: 10000, name: '月亮狗', ticker: 'MOON'),
+        _row(8, 'graduated', soldBps: 10000, name: '老韭菜', ticker: 'JIU'),
+      ],
+      size: size,
+      upcomingCount: 2,
+      creatorActions: true,
+    );
+
+/// MEME home over [rows] at 390 wide.
+Future<void> pumpS269MemeHomeWith(
+  WidgetTester tester,
+  List<Map<String, Object?>> rows, {
+  Size? size,
+  int upcomingCount = 0,
+  bool creatorActions = false,
+}) async {
   await pumpS7Page(
     tester,
     Scaffold(
@@ -265,20 +321,20 @@ Future<void> pumpS269MemeHome(WidgetTester tester) async {
         scope: Launch2ListScope.all,
         tabTitle: 'MEME',
         onNavigate: (_) {},
+        actions: <Widget>[
+          if (creatorActions)
+            Launch2CreatorActions(
+              onNavigate: (_) {},
+              classicCreatePath: '/meme/create',
+            ),
+        ],
       ),
     ),
-    size: s269Phone,
+    size: size ?? s269Phone,
     meta: _meta(),
     overrides: _launch2Overrides(
-      _Launch2(
-        page: l2Page(<Map<String, Object?>>[
-          _row(1, 'public', soldBps: 6200, name: '天才少年', ticker: 'TC'),
-          _row(2, 'public', soldBps: 2500, name: 'Frog Launch'),
-          _row(3, 'public', soldBps: 900, name: 'S234W', ticker: 'S234W'),
-          _row(4, 'graduated', soldBps: 10000, name: 'Doge on LOOP'),
-          _row(5, 'graduated', soldBps: 10000, name: '月亮狗', ticker: 'MOON'),
-        ]),
-      ),
+      _Launch2(page: l2Page(rows)),
+      upcomingCount: upcomingCount,
     ),
   );
 }

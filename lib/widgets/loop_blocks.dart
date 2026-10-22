@@ -247,7 +247,7 @@ class LoopChartPanel extends StatelessWidget {
         constraints: BoxConstraints(minHeight: height),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: LoopColors.graphite,
+          color: LoopColors.card,
           borderRadius: LoopRadius.card,
         ),
         // The panel is Graphite whatever it was put on, so it declares its
@@ -912,7 +912,7 @@ class LoopPlaceholderStage extends StatelessWidget {
         constraints: BoxConstraints(minHeight: height),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: LoopColors.graphite,
+          color: LoopColors.card,
           borderRadius: LoopRadius.card,
         ),
         child: Column(
