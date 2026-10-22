@@ -1896,9 +1896,21 @@ extension on LoopRecordRow {
 /// page's modules read apart from the page and from each other; its rows
 /// take the block's 16 inset instead of the page margin.
 class LoopRecordGroup extends StatelessWidget {
-  const LoopRecordGroup({required this.rows, super.key});
+  const LoopRecordGroup({required this.rows, super.key}) : children = null;
+
+  /// The same block around rows that read their own state and so cannot be
+  /// handed over as plain [LoopRecordRow] values (S288: the step-up row on
+  /// 安全中心). Each child carries its own [LoopRowPosition], as the group
+  /// would have assigned it.
+  const LoopRecordGroup.children({
+    required List<Widget> this.children,
+    super.key,
+  }) : rows = const <LoopRecordRow>[];
 
   final List<LoopRecordRow> rows;
+
+  /// Set only by [LoopRecordGroup.children]; drawn as given, in order.
+  final List<Widget>? children;
 
   /// Whether [context] sits inside a group's block.
   static bool inside(BuildContext context) =>
@@ -1916,7 +1928,16 @@ class LoopRecordGroup extends StatelessWidget {
           color: LoopColors.card,
           borderRadius: LoopRadius.card,
         ),
-        child: Material(type: MaterialType.transparency, child: _rowsColumn()),
+        child: Material(
+          type: MaterialType.transparency,
+          child: children == null
+              ? _rowsColumn()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children!,
+                ),
+        ),
       ),
     );
   }

@@ -180,6 +180,36 @@ void main() {
     expect(_saveButton(tester).onPressed, isNull);
   });
 
+  testWidgets('S288 · every privacy group stands on one block', (tester) async {
+    await _pumpPrivacy(tester, gateway: _previewGateway());
+
+    const groups = <String, List<String>>{
+      'privacy-identity-group': <String>['privacy-discoverable'],
+      'privacy-social-group': <String>[
+        'privacy-social-friendRequests',
+        'privacy-social-directMessages',
+        'privacy-social-groupInvites',
+      ],
+      'privacy-visibility-group': <String>[
+        'privacy-public-holdings',
+        'privacy-visibility-miningPower',
+        'privacy-visibility-communities',
+        'privacy-open-blocklist',
+      ],
+    };
+    for (final entry in groups.entries) {
+      final group = find.byKey(ValueKey<String>(entry.key));
+      expect(tester.widget(group), isA<LoopRecordGroup>(), reason: entry.key);
+      for (final row in entry.value) {
+        expect(
+          find.descendant(of: group, matching: find.byKey(ValueKey(row))),
+          findsOneWidget,
+          reason: '$row in ${entry.key}',
+        );
+      }
+    }
+  });
+
   testWidgets('the three social gates render open and save all nine values', (
     tester,
   ) async {

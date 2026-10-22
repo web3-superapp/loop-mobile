@@ -43,3 +43,21 @@ Accepted 2026-10-22。基线 `integration/v2` 1274db1c（S276 合入后）。主
 - 测试：新增 `test/s279_meme_tabs_and_plate_test.dart`（Tab 归属 / 计数 / 默认 Tab 纯函数；只显示当前 Tab；已毕业首次切换才读、行进详情；Tab 记忆跨重建；已毕业 Tab 加载 / 空 / 离线；内盘空态；IDO 嵌套不动外层分段；右上角 24 号 glyph 与黄色「发射」胶囊、classic 关闭直达创建页；launch2 关闭无入口；两级底色 Token 关系与对比度；`LoopRecordGroup` 块底与 16 内距）。更新：`s136`、`s182`、`s184`、`s264`、`s269`（MEME Tab 字号 16）、`s265`、`s265d`（磨砂板 92%）、`s265e`（Tab 栏仍为 graphite）。
 - 删除：`Launch2SectionHeading`、`launch2DeskSections`、`launch2RevealGroup`、`Launch2ListSegment.onOpenGraduated`（只有测试在用）。`Launch2StageChips` 组件保留（未再用于首页）。
 - 待主代理 / 需求方确认：内盘 Tab 合并了铸造中（NFT 预售）与名单生成中、已暂停——需求方原话是三个 Tab，若要「铸造中」单独成 Tab，加一个 `Launch2DeskTab` 值即可。
+
+## S288 补丁（2026-10-22，build45 模拟器验收）
+
+两处块底尾巴，加同类问题一并收口。不新增依赖，`pubspec.lock` 不变；路由清单不变；不改 loop-api。
+
+1. **设置「账号」组有缝**：「我加入的」原本由 `ProfileCommunitiesRow` 自己包一个单行 `LoopRecordGroup`，叠在上面四行的组下面，看起来是两块。现把这一行抽成 `profileJoinedCommunitiesRow(ref, …)`（返回 `LoopRecordRow`，文案、五种阶段、去向不变，并继续负责触发社区 home 聚合的读取），作为「账号」组第五行（我的钱包 / 关注与粉丝 / 陌生人请求 / 邀请好友 / 我加入的），整组一块。`ProfileCommunitiesRow` 只剩「我创建的」+ 审核通知（没有自建社区时什么都不画）。「隐私与安全」组核对过：隐私中心 / 安全中心 / 通知中心（S287）/ 通知设置 本来就在同一个组里，无缝。
+2. **安全中心「交易验证 · 大额交易二次验证」无块底**：该行自己读状态（`LoopStepUpSettingRow`），不能作为普通 `LoopRecordRow` 交给组重排位置，所以给 `LoopRecordGroup` 加了命名构造 `LoopRecordGroup.children(children: [...])`：同一块底（同 key `loop-record-group-block`、同作用域，组内行取 16 内距），子行自带 `LoopRowPosition`。安全中心用它包住这一行（key `security-step-up-group`）；右侧 ⓘ、开关、副标题与 S278 的 ⓘ 弹层不变，点标题文字的行为不变。
+3. **同类排查（全局 grep：LoopRecordRow / LoopTogglePreferenceRow 直接放在 `<Widget>[` 里、未进组）**，已改：
+   - 隐私中心 身份 / 社交 / 可见性 三组开关行（手排 first/middle/last 但没有组，无块底）→ 各包一个 `LoopRecordGroup.children`（`privacy-identity-group` / `privacy-social-group` / `privacy-visibility-group`），「可见性说明」ⓘ 页脚留在块外。
+   - 编辑资料页底部「隐私中心」单行 → 包进单行 `LoopRecordGroup`。
+   - 开户第 4 步「安全设置」的「交易验证」两行（大额验证 + 多因素，原为裸 `Column`，同屏「应用锁」组有块底）→ `LoopRecordGroup.children`，key 仍为 `security-verification-group`。
+   只列不改（有疑问）：
+   - 他人主页的「交易」「社区」两个分段列表（`user_profile_screen.dart` `_tradeRow` / `_CommunitiesSection._row`）：每行单独 `LoopFlat` 包着，属分页流式列表，原设计即无底；要不要成块需定。
+   - 挖矿奖励领取卡里的「成功交易」链接行（`mining_rewards_screen.dart` `_ClaimTxLink`）：在卡片内部，本身不该再起一块。
+   - `account_screens.dart` 的 `CapabilityChoiceRow`：仓库内无调用方。
+   其余 `position:` 手排的行均在 `rows: <LoopRecordRow>[` 里，由组重排，无问题。
+- 测试：新增 `test/s288_plate_tails_test.dart`（设置「账号」组是一个 `LoopRecordGroup`、五行顺序、「我加入的」为 last；通知中心与安全中心、通知设置同组；安全中心大额验证行在 `security-step-up-group` 组内且 ⓘ 仍在行上）；`test/privacy_presentation_screen_test.dart` 加一例（三组各一块）。截图：`test/s288_shots_test.dart`（`--dart-define=LOOP_SHOTS=true`）→ `docs/integration/S288/shots/settings.png`、`security-center.png`。
+- 验证：`dart format` 无改动；`flutter analyze` 无问题；全量 `flutter test` 5774 通过、33 跳过（截图用例默认跳过）；`scripts/check_harness.py` 通过。
