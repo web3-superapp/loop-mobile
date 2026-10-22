@@ -307,15 +307,11 @@ class WalletNetWorthPanel extends StatelessWidget {
     final history = read?.value;
     final Widget body;
     if (history != null && history.range == range) {
+      // S278 · decision 0236 (需求方第 13 条): the snapshot's source and the
+      // ¥ rate no longer stand under the chart; they are in 「关于总资产」,
+      // the (i) beside 总资产 ([walletNetWorthProvenanceNotes]).
       body = history.drawable
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                WalletNetWorthChart(history: history, hidden: hidden),
-                _provenance(history),
-              ],
-            )
+          ? WalletNetWorthChart(history: history, hidden: hidden)
           : const LoopInlineUnavailable(
               key: ValueKey<String>('wallet-networth-chart-empty'),
               icon: 'info',
@@ -371,48 +367,21 @@ class WalletNetWorthPanel extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _provenance(LoopNetWorthHistory history) {
-    final source = history.source;
-    final parsed = source == null ? null : LoopFactSource.tryParse(source);
-    final fx = history.fiat == null
-        ? null
-        : walletFxProvenanceText(history.fiat!);
-    final line = LoopProvenanceLine(
-      key: const ValueKey<String>('wallet-networth-provenance'),
-      prefix: '净值快照',
-      sources: <String>[
-        if (parsed != null) loopFactSourceLabel(parsed) else 'LOOP 净值快照',
-      ],
-      observedAt: history.observedAt ?? history.currentAt,
-      detail:
-          '走势是服务端每小时为这个钱包记下的 USD 估值，只用于展示，'
-          '不是可用余额。',
-      padding: EdgeInsets.zero,
-    );
-    if (fx == null) return line;
-    // Decision 0194: the ¥ beside the total is a restatement at a published
-    // rate, so the rate says where it came from right under the chart too.
-    return Builder(
-      builder: (context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          line,
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              fx,
-              key: const ValueKey<String>('wallet-networth-fx-provenance'),
-              style: LoopType.captionSm.copyWith(
-                color: LoopGround.secondaryOf(context),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+/// What 「关于总资产」 says about the net-worth history (S278 · decision
+/// 0236): the snapshot's source and time, what the line is, and — decision
+/// 0194 — where the ¥ came from. These were two grey lines under the chart.
+({String source, DateTime? observedAt, String detail})?
+walletNetWorthProvenance(LoopNetWorthHistory? history) {
+  if (history == null) return null;
+  final source = history.source;
+  final parsed = source == null ? null : LoopFactSource.tryParse(source);
+  return (
+    source: parsed != null ? loopFactSourceLabel(parsed) : 'LOOP 净值快照',
+    observedAt: history.observedAt ?? history.currentAt,
+    detail: '走势是服务端每小时为这个钱包记下的 USD 估值，只用于展示，不是可用余额。',
+  );
 }
 
 /// zh-CN name of a rate publisher. An identifier LOOP does not know is

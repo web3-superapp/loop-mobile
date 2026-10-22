@@ -2133,24 +2133,17 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
               emptyMessage: '没有已连接的外部钱包',
             ),
             // The prototype closes this page on mining, because binding an old
-            // wallet is how a holding starts counting. Decision 0126: one ⓘ
-            // line that also carries the identity rule, then the source.
-            const LoopNotice(
-              key: ValueKey<String>('wallets-mining-notice'),
-              icon: 'mine',
-              body:
-                  '所有绑定钱包的持仓都计入算力，不用搬家。'
-                  'LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。',
-              margin: EdgeInsets.fromLTRB(
-                LoopSpacing.page,
-                16,
-                LoopSpacing.page,
-                0,
-              ),
-            ),
+            // wallet is how a holding starts counting. S278 · decision 0236:
+            // that rule and the identity rule sit behind the source's (i).
             LoopProvenanceFooter(
               key: const ValueKey<String>('wallets-source'),
+              margin: const EdgeInsets.fromLTRB(16, 8, 12, 4),
+              title: '关于绑定钱包',
               text: '来源 Privy · 观察于 ${loopRelativeTime(directory.observedAt)}',
+              notes: const <String>[
+                '所有绑定钱包的持仓都计入算力，不用搬家。'
+                    'LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。',
+              ],
             ),
             const SizedBox(height: 20),
           ],

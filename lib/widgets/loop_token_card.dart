@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// Token Card states (prototype `token-card-states`, `.tcard-signature`).
@@ -70,6 +74,7 @@ final class LoopTokenCardModel {
     this.badge,
     this.riskFacts = const <LoopTokenRiskFact>[],
     this.footnotes = const <String>[],
+    this.provenance = const <String>[],
     this.chartRangeLabel,
     this.chart,
   });
@@ -106,6 +111,10 @@ final class LoopTokenCardModel {
   /// sentence the owner can prove; the list is empty when there is nothing to
   /// add, and never carries a placeholder.
   final List<String> footnotes;
+
+  /// Where the card's figures came from (S278 · decision 0236). Not printed:
+  /// the footnote strip carries a 「(i) 来源」 that opens these lines.
+  final List<String> provenance;
   final String? chartRangeLabel;
 
   /// Owner-supplied chart (Graphite ground, Lime line). Null hides the slot.
@@ -257,9 +266,11 @@ class LoopTokenCard extends StatelessWidget {
                                 : LoopColors.text2,
                             accent: state == LoopTokenCardState.graduated,
                           ),
-                        if (model.footnotes.isNotEmpty)
+                        if (model.footnotes.isNotEmpty ||
+                            model.provenance.isNotEmpty)
                           _Footnotes(
                             lines: model.footnotes,
+                            provenance: model.provenance,
                             color: chalk
                                 ? LoopColors.inkText2
                                 : LoopColors.text2,
@@ -600,25 +611,52 @@ class _CommunityLine extends StatelessWidget {
 }
 
 class _Footnotes extends StatelessWidget {
-  const _Footnotes({required this.lines, required this.color});
+  const _Footnotes({
+    required this.lines,
+    required this.provenance,
+    required this.color,
+  });
 
   final List<String> lines;
+  final List<String> provenance;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       key: const ValueKey<String>('loop-token-card-footnotes'),
-      padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
+      padding: EdgeInsets.fromLTRB(15, 10, provenance.isEmpty ? 15 : 7, 10),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: LoopGround.hairlineOf(context))),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          for (final line in lines)
-            Text(line, style: LoopType.captionSm.copyWith(color: color)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                for (final line in lines)
+                  Text(line, style: LoopType.captionSm.copyWith(color: color)),
+              ],
+            ),
+          ),
+          if (provenance.isNotEmpty)
+            LoopInfoTrigger(
+              key: const ValueKey<String>('loop-token-card-provenance'),
+              semanticsLabel: '${provenance.join('；')}，查看数据来源说明',
+              onTap: () => unawaited(
+                showLoopInfoSheet(
+                  context,
+                  title: '数据来源',
+                  sheetKey: 'loop-token-card-provenance-sheet',
+                  notes: <LoopInfoNote>[
+                    for (final line in provenance) LoopInfoNote(body: line),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

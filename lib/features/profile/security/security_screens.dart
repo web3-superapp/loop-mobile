@@ -22,6 +22,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -54,6 +55,28 @@ bool _securityMethodIsDeferred(String reasonCode) =>
     // relying party. Nobody can turn it on until the server has one.
     reasonCode == 'PASSKEY_RELYING_PARTY_NOT_CONFIGURED' ||
     reasonCode.endsWith('_DEFERRED');
+
+/// A row's state badge with the row's explanation behind an (i) before it
+/// (S278 · decision 0236, 需求方第 12 条): the sentence that used to stand
+/// under the title is one tap away; the title and the state stay.
+Widget _securityRowInfo({
+  required String keyName,
+  required String title,
+  required String body,
+  required Widget trailing,
+}) => Row(
+  mainAxisSize: MainAxisSize.min,
+  children: <Widget>[
+    LoopInfoButton(
+      key: ValueKey<String>('$keyName-info'),
+      title: title,
+      sheetKey: '$keyName-info-sheet',
+      notes: <LoopInfoNote>[LoopInfoNote(body: body)],
+    ),
+    const SizedBox(width: 4),
+    trailing,
+  ],
+);
 
 bool _securityBlocked(
   LoopChainGatewayMode mode,
@@ -88,13 +111,18 @@ class _SecurityMethodRow extends LoopRecordRow {
   }) : super(
          key: ValueKey<String>('security-method-${capability.id.wireName}'),
          title: capability.id.label,
-         subtitle: deferred
-             ? capability.id.description
-             : loopReasonCodeText(capability.reasonCode),
+         // S278 · decision 0236: what a deferred method would do is behind
+         // the row's (i); a method that exists keeps the server's reason.
+         subtitle: deferred ? null : loopReasonCodeText(capability.reasonCode),
          subtitleMaxLines: 2,
-         trailingBadge: LoopBadge(
-           deferred ? _securityMethodDeferredLabel : _securityMethodOffLabel,
-         ),
+         trailingBadge: deferred
+             ? _securityRowInfo(
+                 keyName: 'security-method-${capability.id.wireName}',
+                 title: capability.id.label,
+                 body: capability.id.description,
+                 trailing: const LoopBadge(_securityMethodDeferredLabel),
+               )
+             : const LoopBadge(_securityMethodOffLabel),
          semanticLabel: deferred
              ? '${capability.id.label}，$_securityMethodDeferredLabel，'
                    '${capability.id.description}'
@@ -214,6 +242,13 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
             ),
           ] else
             _SecurityMethodGroup(
+              // S278 · decision 0236: the 「由 Privy 提供」 card that closed
+              // the page is the (i) beside the first group's title.
+              scopeNote: !anyAvailable
+                  ? '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。'
+                  : notOpen!.isEmpty
+                  ? '这些保护由 Privy 提供。'
+                  : '这些保护由 Privy 提供。${notOpen.join('、')}开放后会在这里显示。',
               capabilities: methods.value!,
               onNavigate: widget.onNavigate,
               mfa: mfa,
@@ -267,15 +302,6 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
               text: '观察于 ${loopRelativeTime(resource.observedAt)}',
             ),
           ],
-          LoopNotice(
-            key: const ValueKey<String>('security-scope-notice'),
-            icon: 'shield',
-            body: !anyAvailable
-                ? '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。'
-                : notOpen!.isEmpty
-                ? '这些保护由 Privy 提供。'
-                : '这些保护由 Privy 提供。${notOpen.join('、')}开放后会在这里显示。',
-          ),
           const SizedBox(height: 12),
         ],
       ),
@@ -333,9 +359,12 @@ LoopRecordRow _availableMethodRow({
     return LoopRecordRow(
       key: key,
       title: id.label,
-      subtitle: source,
-      subtitleMaxLines: 3,
-      trailingBadge: const LoopBadge(_securityMethodDefaultLabel),
+      trailingBadge: _securityRowInfo(
+        keyName: key.value,
+        title: id.label,
+        body: source,
+        trailing: const LoopBadge(_securityMethodDefaultLabel),
+      ),
       position: position,
       semanticLabel: '${id.label}，$_securityMethodDefaultLabel，$source',
     );
@@ -363,9 +392,12 @@ LoopRecordRow _availableMethodRow({
       return LoopRecordRow(
         key: key,
         title: id.label,
-        subtitle: id.description,
-        subtitleMaxLines: 2,
-        trailingBadge: const LoopBadge('读取中'),
+        trailingBadge: _securityRowInfo(
+          keyName: key.value,
+          title: id.label,
+          body: id.description,
+          trailing: const LoopBadge('读取中'),
+        ),
         position: position,
         semanticLabel: '${id.label}，正在读取登录服务的回答',
       );
@@ -401,15 +433,25 @@ LoopRecordRow _availableMethodRow({
     detail = mfa.enrollments.map((one) => one.kind.label).join(' · ');
   }
   final label = on ? _securityMethodOnLabel : _securityMethodOffLabel;
+  final badge = LoopBadge(
+    label,
+    kind: on ? LoopBadgeKind.up : LoopBadgeKind.mute,
+  );
   return LoopRecordRow(
     key: key,
     title: id.label,
-    subtitle: detail,
+    // S278 · decision 0236: what an unused method does is behind (i); what
+    // the provider holds for this account is a fact and stays.
+    subtitle: on ? detail : null,
     subtitleMaxLines: 2,
-    trailingBadge: LoopBadge(
-      label,
-      kind: on ? LoopBadgeKind.up : LoopBadgeKind.mute,
-    ),
+    trailingBadge: on
+        ? badge
+        : _securityRowInfo(
+            keyName: key.value,
+            title: id.label,
+            body: detail,
+            trailing: badge,
+          ),
     onTap: mfa.isBusy ? null : (passkey ? onOpenPasskey : onOpenMfa),
     position: position,
     semanticLabel: on
@@ -420,6 +462,7 @@ LoopRecordRow _availableMethodRow({
 
 class _SecurityMethodGroup extends StatelessWidget {
   const _SecurityMethodGroup({
+    required this.scopeNote,
     required this.capabilities,
     required this.onNavigate,
     required this.mfa,
@@ -430,6 +473,9 @@ class _SecurityMethodGroup extends StatelessWidget {
 
   final LoopSecurityCapabilities capabilities;
   final ValueChanged<String> onNavigate;
+
+  /// Who provides these protections, behind the first title's (i).
+  final String scopeNote;
 
   /// The provider's answer about this account's second factor and passkeys.
   /// Read only by rows the server reports available.
@@ -500,14 +546,29 @@ class _SecurityMethodGroup extends StatelessWidget {
     final deferred = items
         .where((item) => !item.isAvailable)
         .toList(growable: false);
+    Widget title(String text) => LoopInfoLabel(
+      text,
+      key: ValueKey<String>('security-label-$text'),
+      info: LoopInfoButton(
+        key: const ValueKey<String>('security-scope-info'),
+        title: '这些保护由谁提供',
+        sheetKey: 'security-scope-info-sheet',
+        notes: <LoopInfoNote>[
+          LoopInfoNote(
+            key: const ValueKey<String>('security-scope-notice'),
+            body: scopeNote,
+          ),
+        ],
+      ),
+    );
     return Column(
       children: <Widget>[
         if (verification.isNotEmpty) ...<Widget>[
-          const LoopLabel('验证'),
+          title('验证'),
           LoopRecordGroup(rows: _rows(verification)),
         ],
         if (recovery.isNotEmpty) ...<Widget>[
-          const LoopLabel('恢复'),
+          if (verification.isEmpty) title('恢复') else const LoopLabel('恢复'),
           LoopRecordGroup(rows: _rows(recovery)),
         ],
         if (deferred.isNotEmpty)
@@ -634,14 +695,28 @@ class _SecurityApprovalsBlock extends StatelessWidget {
                 LoopRecordRow(
                   key: const ValueKey<String>('security-approvals-active'),
                   title: '有效授权',
-                  subtitle: '当前钱包上仍然生效的 ERC-20 授权',
+                  trailingBadge: const LoopInfoButton(
+                    key: ValueKey<String>('security-approvals-active-info'),
+                    title: '有效授权',
+                    sheetKey: 'security-approvals-active-info-sheet',
+                    notes: <LoopInfoNote>[
+                      LoopInfoNote(body: '当前钱包上仍然生效的 ERC-20 授权。'),
+                    ],
+                  ),
                   trailing: '$active',
                   position: LoopRowPosition.first,
                 ),
                 LoopRecordRow(
                   key: const ValueKey<String>('security-approvals-unlimited'),
                   title: '无限额度授权',
-                  subtitle: '额度没有上限的授权，风险最高',
+                  trailingBadge: const LoopInfoButton(
+                    key: ValueKey<String>('security-approvals-unlimited-info'),
+                    title: '无限额度授权',
+                    sheetKey: 'security-approvals-unlimited-info-sheet',
+                    notes: <LoopInfoNote>[
+                      LoopInfoNote(body: '额度没有上限的授权，风险最高。'),
+                    ],
+                  ),
                   trailing: '$unlimited',
                   position: LoopRowPosition.last,
                 ),

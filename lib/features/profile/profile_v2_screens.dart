@@ -1449,7 +1449,7 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
             rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
           ),
           if (home!.ownedTruncated)
-            const LoopProvenanceFooter(
+            const LoopFootnote(
               key: ValueKey<String>('profile-owned-truncated'),
               text: '这一页放不下全部，上面是最近提交的几个。',
             ),
@@ -2477,18 +2477,15 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('blocklist'),
             ),
-            const LoopNotice(
+            // S278 · decision 0236: an explanation, behind (i).
+            const LoopProvenanceFooter(
               key: ValueKey<String>('privacy-visibility-note'),
-              icon: 'info',
-              body:
+              label: '说明',
+              title: '可见性说明',
+              margin: EdgeInsets.fromLTRB(16, 4, 12, 14),
+              text:
                   '可见性只影响展示，不会让别人复制你的交易或访问你的钱包；'
                   '头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。',
-              margin: EdgeInsets.fromLTRB(
-                LoopSpacing.page,
-                14,
-                LoopSpacing.page,
-                14,
-              ),
             ),
           ],
         ],

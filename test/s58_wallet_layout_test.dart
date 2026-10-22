@@ -134,13 +134,31 @@ void main() {
 
       // Decision 0126: no folio; the rows, the ⓘ line, then the source.
       expect(find.byKey(const ValueKey<String>('wallets-folio')), findsNothing);
-      expectOrder(tester, <Key>[
-        const ValueKey<String>('wallets-mining-notice'),
-        const ValueKey<String>('wallets-source'),
-      ]);
+      // S278 · decision 0236: the mining rule is behind the source's (i).
+      expect(
+        find.byKey(const ValueKey<String>('wallets-mining-notice')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallets-source')),
+        findsOneWidget,
+      );
       // A count is not an identity: the heading names the wallet in use.
       expect(find.text('1 个钱包'), findsNothing);
+      expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsNothing);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('wallets-source')),
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('wallets-source')),
+          matching: find.byKey(const ValueKey<String>('provenance-footer')),
+        ),
+      );
+      await tester.pumpAndSettle();
       expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsOneWidget);
+      await tester.tapAt(const Offset(4, 4));
+      await tester.pumpAndSettle();
       // 添加 keeps its shape and says what it would need.
       expect(
         find.byKey(const ValueKey<String>('wallets-add-action')),
@@ -226,7 +244,7 @@ void main() {
       expectOrder(tester, <Key>[
         const ValueKey<String>('approvals-stat-unlimited'),
         const ValueKey<String>('approvals-stat-limited'),
-        const ValueKey<String>('approvals-source-disclosure'),
+        const ValueKey<String>('approvals-freshness'),
       ]);
       expect(
         find.byKey(const ValueKey<String>('approvals-batch-action')),
@@ -296,8 +314,13 @@ void main() {
       expectOrder(tester, <Key>[
         const ValueKey<String>('pay-folio'),
         const ValueKey<String>('loop-placeholder-stage'),
-        const ValueKey<String>('pay-why-notice'),
       ]);
+      // S278 · decision 0236: 「为什么现在不做」 is behind the folio's (i).
+      expect(
+        find.byKey(const ValueKey<String>('pay-why-notice')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey<String>('pay-info')), findsOneWidget);
       // One explanation, not two.
       expect(
         find.byKey(const ValueKey<String>('pay-signing-notice')),
@@ -315,7 +338,6 @@ void main() {
         const ValueKey<String>('bridge-from'),
         const ValueKey<String>('bridge-to'),
         const ValueKey<String>('bridge-start'),
-        const ValueKey<String>('bridge-unavailable'),
       ]);
       // A bridge fee, a receive amount and an ETA can only come from a real
       // route, and there is none.
@@ -353,11 +375,13 @@ void main() {
         const ValueKey<String>('dapp-omnibox'),
         const ValueKey<String>('dapp-folio'),
       ]);
-      // The three ⓘ⚠ placeholder groups became one card and one disclosure.
+      // The three ⓘ⚠ placeholder groups became one card and one disclosure;
+      // S278 · decision 0236 folds the disclosure into the folio's (i).
       expect(
         find.byKey(const ValueKey<String>('dapp-scope-disclosure')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byKey(const ValueKey<String>('dapp-info')), findsOneWidget);
     });
   });
 }

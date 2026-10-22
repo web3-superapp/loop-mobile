@@ -336,24 +336,30 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
     final footnotes = <String>[
       // A contract the registry does not carry is still answered, and the
       // card says so rather than letting a reader take the card itself as a
-      // listing. Where the identity came from is part of that sentence: a
-      // provider's own answer is not a chain call LOOP made.
+      // listing.
       if (asset.status != LoopAssetStatus.verified)
+        '资产目录状态 · ${asset.status.label}',
+      // The provider could not be reached this time; the identity on the
+      // card is the last one it gave.
+      if (source.quality == LoopFactQuality.stale)
+        loopFactQualityMarker(LoopFactQuality.stale)!,
+      if (riskFactCount > riskFacts.length)
+        '另有 ${riskFactCount - riskFacts.length} 条合约事实，在代币页',
+      '买入与卖出现在不可用 · $tradeReason',
+    ];
+    // S278 · decision 0236: where the identity and the quote came from is
+    // behind the strip's (i), not printed. A provider's own answer is not a
+    // chain call LOOP made, and the sheet says which it was.
+    final provenance = <String>[
+      if (asset.status != LoopAssetStatus.verified &&
+          (source.provider != null || source.fetchedAt != null))
         <String>[
-          '资产目录状态 · ${asset.status.label}',
           if (source.provider != null)
             '身份来自 ${loopFactSourceLabel(source.provider!)}',
           if (source.fetchedAt != null)
             '观察于 ${loopRelativeTime(source.fetchedAt!)}',
         ].join(' · '),
-      // The provider could not be reached this time; the identity on the
-      // card is the last one it gave.
-      if (source.quality == LoopFactQuality.stale)
-        loopFactQualityMarker(LoopFactQuality.stale)!,
       if (detail.price.isAvailable) '报价 ${loopFactProvenance(detail.price)}',
-      if (riskFactCount > riskFacts.length)
-        '另有 ${riskFactCount - riskFacts.length} 条合约事实，在代币页',
-      '买入与卖出现在不可用 · $tradeReason',
     ];
     return LoopTokenCard(
       key: ValueKey<String>('chat-token-card-$address'),
@@ -404,6 +410,7 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         },
         riskFacts: riskFacts,
         footnotes: footnotes,
+        provenance: provenance,
         chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
         chart: TokenCardSparklineView(
           state: entry.candles,

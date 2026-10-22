@@ -218,9 +218,17 @@ void main() {
       _expectStep(_painted(tester, find.text('今天')), LoopType.sectionTitle);
     });
 
-    testWidgets('a provenance footer is captionSm text3', (tester) async {
+    // S278 · decision 0236: the footer prints only 「(i) 来源」 in captionSm;
+    // the statement is behind it. A list-state footnote keeps the old line.
+    testWidgets('a provenance footer is a captionSm (i) 来源', (tester) async {
       await _pump(tester, const LoopProvenanceFooter(text: '区块 1 · 观察于 刚刚'));
-      final style = _painted(tester, find.text('区块 1 · 观察于 刚刚'));
+      expect(find.text('区块 1 · 观察于 刚刚'), findsNothing);
+      _expectStep(_painted(tester, find.text('来源')), LoopType.captionSm);
+    });
+
+    testWidgets('a footnote is captionSm text3', (tester) async {
+      await _pump(tester, const LoopFootnote(text: '没有更多提醒'));
+      final style = _painted(tester, find.text('没有更多提醒'));
       _expectStep(style, LoopType.captionSm);
       expect(style.color, LoopColors.text3);
     });

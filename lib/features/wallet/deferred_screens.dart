@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -12,6 +14,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The four D21 surfaces: `pay`, `bridge`, `bridge-status` and `dapp`.
@@ -22,6 +25,38 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 
 String _reasonFor(LoopCapabilityProjection capability, String fallback) =>
     capability.reasonCode ?? fallback;
+
+/// Whether the server named a reason other than the page's own deferral —
+/// the only case in which the reason line says more than the heading
+/// (S278 · decision 0236, 需求方第 11 条).
+bool _reasonAddsToHeading(
+  LoopCapabilityProjection capability,
+  String deferredReasonCode,
+) {
+  final reason = capability.reasonCode;
+  return reason != null && reason != deferredReasonCode;
+}
+
+/// The folio's 「(i) 说明」 (S278 · decision 0236): what the page is and why
+/// it is shaped so, one tap away instead of a caption and a card.
+Widget _deferredInfo(
+  BuildContext context, {
+  required String keyName,
+  required String title,
+  required List<LoopInfoNote> notes,
+}) => LoopInfoTrigger(
+  key: ValueKey<String>('$keyName-info'),
+  label: '说明',
+  semanticsLabel: '查看$title',
+  onTap: () => unawaited(
+    showLoopInfoSheet(
+      context,
+      title: title,
+      sheetKey: '$keyName-info-sheet',
+      notes: notes,
+    ),
+  ),
+);
 
 /// `pay` · reached from Wallet. `PAY_RUNTIME_DEFERRED`.
 class PayScreen extends ConsumerWidget {
@@ -43,8 +78,8 @@ class PayScreen extends ConsumerWidget {
       onBack: onBack,
       // Chalk primary with the CAMERA stamp, as the prototype has it. A
       // deferred capability is still a page with a shape (audit §A.14).
-      primary: const LoopFolioPrimary(
-        key: ValueKey<String>('pay-folio'),
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('pay-folio'),
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
@@ -52,7 +87,21 @@ class PayScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.listing,
         kicker: '扫一扫',
         heading: '扫码支付',
-        caption: '识别结果不会直接发起签名；金额、网络与收款方会再次展示。',
+        // S278 · decision 0236: the caption and the 「为什么现在不做」 card
+        // are this (i).
+        kickerTrailing: _deferredInfo(
+          context,
+          keyName: 'pay',
+          title: '关于扫码支付',
+          notes: const <LoopInfoNote>[
+            LoopInfoNote(body: '识别结果不会直接发起签名；金额、网络与收款方会再次展示。'),
+            LoopInfoNote(
+              key: ValueKey<String>('pay-why-notice'),
+              title: '为什么现在不做',
+              body: '支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。',
+            ),
+          ],
+        ),
         stamp: '相机',
       ),
       sections: <Widget>[
@@ -63,18 +112,6 @@ class PayScreen extends ConsumerWidget {
           title: 'Pay',
           badge: 'Coming soon',
           body: loopReasonCodeText(_reasonFor(capability, deferredReasonCode)),
-        ),
-        const LoopNotice(
-          key: ValueKey<String>('pay-why-notice'),
-          icon: 'info',
-          title: '为什么现在不做',
-          body: '支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。',
-          margin: EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            14,
-          ),
         ),
         const SizedBox(height: 20),
       ],
@@ -101,13 +138,29 @@ class BridgeScreen extends ConsumerWidget {
       archetype: LoopPageArchetype.action,
       title: '跨链',
       onBack: onBack,
-      primary: const LoopFolioPrimary(
+      primary: LoopFolioPrimary(
         ring: false,
-        key: ValueKey<String>('bridge-folio'),
+        key: const ValueKey<String>('bridge-folio'),
         archetype: LoopFolioArchetype.action,
         kicker: '跨链意图',
         heading: '跨链尚未开放',
-        caption: '先选来源链、目标链与数量，再显示预计费用和到账时间。',
+        // S278 · decision 0236 (需求方第 11 条): the caption and the
+        // 「这里不会出现预估数字」 card are this (i).
+        kickerTrailing: _deferredInfo(
+          context,
+          keyName: 'bridge',
+          title: '关于跨链',
+          notes: const <LoopInfoNote>[
+            LoopInfoNote(body: '先选来源链、目标链与数量，再显示预计费用和到账时间。'),
+            LoopInfoNote(
+              key: ValueKey<String>('bridge-scope-notice'),
+              title: '这里不会出现预估数字',
+              body:
+                  '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
+                  '这一页不会用示例数据代替它们。',
+            ),
+          ],
+        ),
         stamp: '核对',
       ),
       sections: <Widget>[
@@ -135,11 +188,14 @@ class BridgeScreen extends ConsumerWidget {
             onPressed: null,
           ),
         ),
-        LoopUnavailableLine(
-          key: const ValueKey<String>('bridge-unavailable'),
-          label: '跨链尚未开放',
-          reasonCode: _reasonFor(capability, deferredReasonCode),
-        ),
+        // The heading already says 跨链尚未开放; the line stands only when
+        // the server names a different reason.
+        if (_reasonAddsToHeading(capability, deferredReasonCode))
+          LoopUnavailableLine(
+            key: const ValueKey<String>('bridge-unavailable'),
+            label: '跨链尚未开放',
+            reasonCode: _reasonFor(capability, deferredReasonCode),
+          ),
         if (onOpenStatus != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -150,20 +206,6 @@ class BridgeScreen extends ConsumerWidget {
               onPressed: onOpenStatus,
             ),
           ),
-        const LoopNotice(
-          key: ValueKey<String>('bridge-scope-notice'),
-          icon: 'info',
-          title: '这里不会出现预估数字',
-          body:
-              '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
-              '这一页不会用示例数据代替它们。',
-          margin: EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            14,
-          ),
-        ),
         const SizedBox(height: 20),
       ],
     );
@@ -197,8 +239,8 @@ class BridgeStatusScreen extends ConsumerWidget {
       archetype: LoopPageArchetype.state,
       title: '跨链进度',
       onBack: onBack,
-      primary: const LoopFolioPrimary(
-        key: ValueKey<String>('bridge-status-folio'),
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('bridge-status-folio'),
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
@@ -206,7 +248,20 @@ class BridgeStatusScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.state,
         kicker: '跨链进度',
         heading: '跨链进度尚未开放',
-        caption: '源链确认、桥接中和目标链到账是三个独立状态。',
+        // S278 · decision 0236: the caption and the 「可以离开此页」 card.
+        kickerTrailing: _deferredInfo(
+          context,
+          keyName: 'bridge-status',
+          title: '关于跨链进度',
+          notes: const <LoopInfoNote>[
+            LoopInfoNote(body: '源链确认、桥接中和目标链到账是三个独立状态。'),
+            LoopInfoNote(
+              key: ValueKey<String>('bridge-status-leave-notice'),
+              title: '可以离开此页',
+              body: '跨链开放后会在后台继续，完成后推送通知，也可以从交易历史查看。',
+            ),
+          ],
+        ),
         stamp: '未开放',
       ),
       sections: <Widget>[
@@ -220,9 +275,11 @@ class BridgeStatusScreen extends ConsumerWidget {
           // 读不到 would say LOOP tried and failed. Nothing was tried,
           // because bridging has not been built.
           message: '还没有可跟踪的跨链',
-          detail: loopReasonCodeText(
-            _reasonFor(capability, deferredReasonCode),
-          ),
+          // The heading says the progress is not open; the server's reason
+          // is printed only when it says something else.
+          detail: _reasonAddsToHeading(capability, deferredReasonCode)
+              ? loopReasonCodeText(_reasonFor(capability, deferredReasonCode))
+              : null,
           detailMaxLines: 3,
           maxLines: 2,
         ),
@@ -236,12 +293,6 @@ class BridgeStatusScreen extends ConsumerWidget {
               onPressed: onOpenWallet,
             ),
           ),
-        const LoopNotice(
-          key: ValueKey<String>('bridge-status-leave-notice'),
-          icon: 'info',
-          title: '可以离开此页',
-          body: '跨链开放后会在后台继续，完成后推送通知，也可以从交易历史查看。',
-        ),
         const SizedBox(height: 20),
       ],
     );
@@ -316,7 +367,22 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               LoopUrlVerdict.blocked =>
                 typed.isEmpty ? '还没有可核对的网址' : '这个网址不能使用',
             },
-            caption: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。',
+            // S278 · decision 0236: the caption and the 「这一页不会打开网址」
+            // disclosure are this (i).
+            kickerTrailing: _deferredInfo(
+              context,
+              keyName: 'dapp',
+              title: '这一页不会打开网址',
+              notes: const <LoopInfoNote>[
+                LoopInfoNote(body: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。'),
+                LoopInfoNote(
+                  key: ValueKey<String>('dapp-no-fetch-notice'),
+                  body:
+                      '核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，'
+                      '所以你看到的域名一定是你输入的那个。',
+                ),
+              ],
+            ),
             stamp: switch (review.verdict) {
               LoopUrlVerdict.normalized => '来源一致',
               LoopUrlVerdict.flagged => '核对来源',
@@ -458,19 +524,6 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
         // nothing back, because there is nothing behind either of them: the
         // card above already states that connecting and signing are not open.
         // An action that cannot run is not offered as a button.
-        const LoopDisclosure(
-          key: ValueKey<String>('dapp-scope-disclosure'),
-          summary: '这一页不会打开网址',
-          child: LoopNotice(
-            key: ValueKey<String>('dapp-no-fetch-notice'),
-            icon: 'shield',
-            title: '这一页不会打开网址',
-            body:
-                '核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，'
-                '所以你看到的域名一定是你输入的那个。',
-            margin: EdgeInsets.fromLTRB(0, 8, 0, 8),
-          ),
-        ),
         const SizedBox(height: 20),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
@@ -272,7 +273,18 @@ void main() {
       );
       expect(row.trailing, '不可用');
       expect(row.onTap, isNull);
-      expect(row.subtitle, '达到 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证');
+      // S278 · decision 0236: the threshold sentence is behind the row's (i).
+      expect(row.subtitle, '这次运行没有可用的设备验证');
+      expect(
+        tester
+            .widget<LoopInfoButton>(
+              find.byKey(const ValueKey<String>('security-step-up-info')).first,
+            )
+            .notes
+            .single
+            .body,
+        startsWith('达到 1,000 USD1 时再验一次身份'),
+      );
     });
   });
 

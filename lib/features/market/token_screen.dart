@@ -637,6 +637,8 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       key: key,
       sources: sources,
       observedAt: oldest,
+      // S278 · decision 0236: the line is behind (i); the marker is not.
+      marker: marked ? '含延迟或折算的数值' : null,
       prefix: <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · ').isEmpty
           ? null
           : <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · '),
@@ -1111,6 +1113,9 @@ class _CandleProvenance extends StatelessWidget {
     final open = block.items.isNotEmpty && block.items.last.isOpen;
     return LoopProvenanceLine(
       key: const ValueKey<String>('candles-provenance'),
+      // S278 · decision 0236: the line is behind (i); the quality marker and
+      // the price unit (never USD by default) are not.
+      marker: <String>[?marker, '单位 ${block.priceUnit}'].join(' · '),
       prefix: <String>{
         ?marker,
         if (block.hasSourceLabel) marketCandleLabelText(block.labelKey),

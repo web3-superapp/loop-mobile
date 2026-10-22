@@ -640,20 +640,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   '索引高度 ${loopGroupedFigure(inventory.freshness.indexerBlockNumber.toString())} / '
                   '链头 ${loopGroupedFigure(inventory.freshness.headBlockNumber.toString())} · 观察于 '
                   '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
-            ),
-            // Three sentences about indexing coverage are not what a reader
-            // came for; they were the page's last block and its longest.
-            const LoopDisclosure(
-              key: ValueKey<String>('approvals-source-disclosure'),
-              summary: '数据出处',
-              child: LoopNotice(
-                key: ValueKey<String>('approvals-source-notice'),
-                title: '数据出处',
-                body:
-                    '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
+              // Three sentences about indexing coverage are not what a reader
+              // came for; S278 · decision 0236 puts them behind the same (i)
+              // as the coverage line (they were a 「数据出处」 disclosure).
+              notes: const <String>[
+                '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
                     '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'
                     '回收会发送一笔 approve(spender, 0) 交易并产生网络费。',
-              ),
+              ],
             ),
             const SizedBox(height: 20),
           ],

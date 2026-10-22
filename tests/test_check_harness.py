@@ -8572,9 +8572,11 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
+                # S278 · decision 0236: the deferred badge sits beside the
+                # row's (i) now.
                 source.replace(
-                    "deferred ? _securityMethodDeferredLabel : _securityMethodOffLabel,",
-                    "trailingBadge: const LoopBadge('\u5df2\u5f00\u542f'),",
+                    "trailing: const LoopBadge(_securityMethodDeferredLabel),",
+                    "trailing: const LoopBadge('\u5df2\u5f00\u542f'),",
                     1,
                 ),
                 encoding="utf-8",

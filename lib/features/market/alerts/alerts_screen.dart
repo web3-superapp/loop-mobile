@@ -237,7 +237,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 rows: 2,
               ),
           ] else if (visible.isNotEmpty)
-            const LoopProvenanceFooter(
+            const LoopFootnote(
               key: ValueKey<String>('alerts-end'),
               text: '没有更多提醒',
             ),
@@ -967,13 +967,13 @@ class _AlertNotificationFeedState
               ),
             ),
         ] else
-          const LoopProvenanceFooter(
+          const LoopFootnote(
             key: ValueKey<String>('alerts-feed-end'),
             text: '没有更多触发记录',
           ),
         // The push reason is the notice below this block, printed once: the
         // footer used to carry the same sentence two lines above it.
-        LoopProvenanceFooter(
+        LoopFootnote(
           key: const ValueKey<String>('alerts-feed-unread'),
           text: '未读 ${feed.unreadCount} 条',
         ),

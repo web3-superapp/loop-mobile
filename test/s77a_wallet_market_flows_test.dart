@@ -21,6 +21,7 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 /// S77a · the wallet, market, alert and chart defects the 2026-09-23
 /// walkthrough found on the device.
@@ -207,7 +208,7 @@ void main() {
       );
       // The basis names the records, never the table they live in.
       expect(find.textContaining('indexed_erc20_transfers'), findsNothing);
-      expect(find.textContaining('已索引的 ERC-20 转账记录'), findsOneWidget);
+      expect(findProvenanceContaining('已索引的 ERC-20 转账记录'), findsOneWidget);
     });
 
     testWidgets('a contract recipient is never folded away', (tester) async {

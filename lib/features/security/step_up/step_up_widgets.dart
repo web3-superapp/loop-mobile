@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -235,14 +236,14 @@ class LoopStepUpSettingRow extends StatelessWidget {
         context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() !=
         null;
     if (!scoped) {
-      final subtitle =
-          '${loopStepUpSubtitle(loopStepUpDefaultThresholdUsd1)} · '
-          '这次运行没有可用的设备验证';
+      // S278 · decision 0236: what the rule does is behind (i); why it
+      // cannot run here stays on the row.
       final row = LoopRecordRow(
         key: rowKey,
         title: _stepUpTitle,
-        subtitle: subtitle,
+        subtitle: '这次运行没有可用的设备验证',
         subtitleMaxLines: 2,
+        trailingBadge: loopStepUpInfoButton(loopStepUpDefaultThresholdUsd1),
         trailing: '不可用',
         position: position,
         semanticLabel: '$_stepUpTitle，不可用：这次运行没有可用的设备验证',
@@ -291,13 +292,16 @@ class _LoopStepUpSettingConsumerState
     final on = state.isActive;
     final base = loopStepUpSubtitle(threshold);
     final capability = state.capability;
-    final subtitle = !state.loaded || capability == null
-        ? base
+    // S278 · decision 0236 (需求方第 12 条): 「达到 … 时再验一次身份」 is
+    // behind the row's (i); a reason it cannot run, or that it will not
+    // survive a restart, stays on the row.
+    final String? subtitle = !state.loaded || capability == null
+        ? null
         : !available
-        ? '$base · ${loopAppLockFactorText(capability)}'
+        ? loopAppLockFactorText(capability)
         : !state.persisted
-        ? '$base · 这次有效，重开 App 后不会记得'
-        : base;
+        ? '这次有效，重开 App 后不会记得'
+        : null;
     void toggle() => unawaited(controller.setEnabled(!on));
     final row = LoopRecordRow(
       key: LoopStepUpSettingRow.rowKey,
@@ -305,13 +309,19 @@ class _LoopStepUpSettingConsumerState
       subtitle: subtitle,
       subtitleMaxLines: 2,
       selected: on,
-      trailingBadge: available && !state.busy
-          ? LoopFlatSwitch(
+      trailingBadge: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          loopStepUpInfoButton(threshold),
+          const SizedBox(width: 4),
+          if (available && !state.busy)
+            LoopFlatSwitch(
               key: const ValueKey<String>('security-step-up-switch'),
               value: on,
               onChanged: toggle,
             )
-          : LoopBadge(
+          else
+            LoopBadge(
               state.busy
                   ? '验证中…'
                   : !state.loaded
@@ -319,6 +329,8 @@ class _LoopStepUpSettingConsumerState
                   : '不可用',
               kind: LoopBadgeKind.mute,
             ),
+        ],
+      ),
       onTap: available && !state.busy
           ? () => unawaited(showLoopStepUpThresholdSheet(context))
           : null,
@@ -330,6 +342,20 @@ class _LoopStepUpSettingConsumerState
     return widget.rowBuilder?.call(row) ?? row;
   }
 }
+
+/// The step-up row's (i): what the rule does at [threshold]
+/// (S278 · decision 0236).
+Widget loopStepUpInfoButton(int threshold) => LoopInfoButton(
+  key: const ValueKey<String>('security-step-up-info'),
+  title: _stepUpTitle,
+  sheetKey: 'security-step-up-info-sheet',
+  notes: <LoopInfoNote>[
+    LoopInfoNote(
+      key: const ValueKey<String>('security-step-up-info-body'),
+      body: '${loopStepUpSubtitle(threshold)}。点按这一行可以修改金额。',
+    ),
+  ],
+);
 
 /// Opens the threshold sheet. `true` when a new threshold was saved.
 Future<bool> showLoopStepUpThresholdSheet(BuildContext context) async {

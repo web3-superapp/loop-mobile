@@ -841,7 +841,8 @@ void main() {
 
       for (final reason in <String>[
         '还没有读到这台设备的锁屏能力',
-        '达到 1,000 USD1 时再验一次身份 · 这次运行没有可用的设备验证',
+        // S278 · decision 0236: the threshold sentence is behind (i).
+        '这次运行没有可用的设备验证',
         '这次运行没有连上登录服务',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);

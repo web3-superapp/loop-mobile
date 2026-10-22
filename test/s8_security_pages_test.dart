@@ -149,6 +149,15 @@ void main() {
         const ValueKey<String>('security-approvals-freshness'),
       );
       await scrollToS8Section(tester, freshness);
+      // S278 · decision 0236: the coverage line is behind the block's (i).
+      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsNothing);
+      await tester.tap(
+        find.descendant(
+          of: freshness,
+          matching: find.byKey(const ValueKey<String>('provenance-footer')),
+        ),
+      );
+      await tester.pumpAndSettle();
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
       expect(find.textContaining('索引高度 120,659,683'), findsOneWidget);
     });

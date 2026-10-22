@@ -176,14 +176,17 @@ String loopDateTimeLabel(DateTime at) {
       '${loopClockLabel(local)}';
 }
 
-/// The single, weak line that states where a block's figures came from.
+/// The single, weak control that states where a block's figures came from.
 ///
-/// 「来源 X · 观察于 HH:mm」 at 11px in the ground's auxiliary ink; a figure
-/// observed on an earlier day carries its date as well. A tap opens the full
+/// S278 · decision 0236: the page shows only 「(i) 来源」 at the block's
+/// trailing edge; [text] — 「来源 X · 观察于 HH:mm」, with the date for a
+/// figure observed on an earlier day — is its accessible name and the sheet's
+/// content. A tap opens the full
 /// statement — every source, the exact observation time and the caller's
 /// [detail] — in a sheet. It replaces the per-block provenance footers and
-/// the 「数据诚实」 explanation cards on data-dense pages, and it keeps
-/// AGENTS rule 25: the source and the time are still on the page.
+/// the 「数据诚实」 explanation cards on data-dense pages. AGENTS rule 25
+/// still holds: the source and the time are one tap away on the same page,
+/// and a stale / derived marker stays printed beside its figure.
 ///
 /// A line with no source and no time has nothing to attribute and renders
 /// nothing at all.
@@ -196,7 +199,13 @@ class LoopProvenanceLine extends StatelessWidget {
     this.detail,
     this.now,
     this.padding = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    this.marker,
   });
+
+  /// A quality marker that must stay visible (AGENTS rule 25: stale,
+  /// derived and proxied figures carry a visible marker) — printed before
+  /// the (i) even though the rest of the line is behind it (S278).
+  final String? marker;
 
   /// Provider labels, in the order they should be named. Duplicates are
   /// named once.
@@ -242,54 +251,12 @@ class LoopProvenanceLine extends StatelessWidget {
 
   Future<void> _open(BuildContext context) {
     final named = _distinctSources;
-    final at = observedAt;
-    return showLoopSheet<void>(
+    return showLoopProvenanceSheet(
       context,
-      barrierLabel: '关闭数据来源说明',
-      builder: (sheetContext) => Padding(
-        key: const ValueKey<String>('loop-provenance-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text('数据来源', style: LoopType.headingSm),
-            const SizedBox(height: 12),
-            if (prefix != null)
-              LoopKeyValue(
-                label: '范围',
-                value: prefix!,
-                padding: EdgeInsets.zero,
-              ),
-            LoopKeyValue(
-              label: '来源',
-              value: named.isEmpty ? '来源未标注' : named.join(' · '),
-              padding: EdgeInsets.zero,
-            ),
-            if (at != null)
-              LoopKeyValue(
-                label: '观察于',
-                value: loopDateTimeLabel(at),
-                padding: EdgeInsets.zero,
-              ),
-            if (detail != null) ...<Widget>[
-              const SizedBox(height: 12),
-              Text(
-                detail!,
-                style: LoopType.bodySm.copyWith(
-                  color: LoopGround.secondaryOf(sheetContext),
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            LoopButton(
-              label: '知道了',
-              block: true,
-              onPressed: () => Navigator.of(sheetContext).pop(),
-            ),
-          ],
-        ),
-      ),
+      prefix: prefix,
+      sources: named,
+      observedAt: observedAt,
+      detail: detail,
     );
   }
 
@@ -300,34 +267,159 @@ class LoopProvenanceLine extends StatelessWidget {
         key: ValueKey<String>('loop-provenance-none'),
       );
     }
-    final auxiliary = LoopGround.auxiliaryOf(context);
-    final line = text;
+    // S278 · decision 0236: the line is no longer printed. The page keeps
+    // one quiet 「(i) 来源」 at the block's trailing edge; the source, the
+    // time and the detail are a tap away. A screen reader still hears the
+    // whole line.
     return Padding(
       padding: padding,
-      child: Semantics(
-        button: true,
-        label: '$line，查看数据来源说明',
-        excludeSemantics: true,
-        child: LoopPressable(
-          key: const ValueKey<String>('loop-provenance-line'),
-          scale: false,
-          onTap: () => _open(context),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: LoopInlineUnavailable.height,
+      child: LoopInfoTrigger(
+        key: const ValueKey<String>('loop-provenance-line'),
+        semanticsLabel: '$text，查看数据来源说明',
+        expand: true,
+        leading: marker,
+        onTap: () => _open(context),
+      ),
+    );
+  }
+}
+
+/// The provenance sheet [LoopProvenanceLine] opens (S278 · decision 0236).
+///
+/// 范围 · 来源 · 观察于 as key–value rows, then the caller's [detail], then
+/// any further [notes]. Shared so an (i) beside a section title can open the
+/// same statement the compact line does.
+Future<void> showLoopProvenanceSheet(
+  BuildContext context, {
+  required List<String> sources,
+  DateTime? observedAt,
+  String? prefix,
+  String? detail,
+  List<String> notes = const <String>[],
+  String title = '数据来源',
+}) {
+  final named = <String>{...sources}.toList();
+  final at = observedAt;
+  return showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭数据来源说明',
+    builder: (sheetContext) => SingleChildScrollView(
+      key: const ValueKey<String>('loop-provenance-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(title, style: LoopType.headingSm),
+          const SizedBox(height: 12),
+          if (prefix != null)
+            LoopKeyValue(label: '范围', value: prefix, padding: EdgeInsets.zero),
+          LoopKeyValue(
+            label: '来源',
+            value: named.isEmpty ? '来源未标注' : named.join(' · '),
+            padding: EdgeInsets.zero,
+          ),
+          if (at != null)
+            LoopKeyValue(
+              label: '观察于',
+              value: loopDateTimeLabel(at),
+              padding: EdgeInsets.zero,
             ),
+          for (final note in <String>[?detail, ...notes]) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(
+              note,
+              style: LoopType.bodySm.copyWith(
+                color: LoopGround.secondaryOf(sheetContext),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          LoopButton(
+            label: '知道了',
+            block: true,
+            onPressed: () => Navigator.of(sheetContext).pop(),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// The one compact (i) trigger (S278 · decision 0236, 需求方 2026-10-22
+/// 第 11–14 条): explanatory text and provenance do not stand on the page;
+/// this 44 dp control does, with an optional two-character [label]
+/// (「来源」 / 「说明」) after the glyph, in the ground's auxiliary ink.
+class LoopInfoTrigger extends StatelessWidget {
+  const LoopInfoTrigger({
+    required this.semanticsLabel,
+    required this.onTap,
+    super.key,
+    this.label = '来源',
+    this.expand = false,
+    this.leading,
+  });
+
+  /// A short word printed before the glyph that must not hide (a quality
+  /// marker).
+  final String? leading;
+
+  /// What a screen reader hears — the whole statement, so nothing the page
+  /// stopped printing is lost to it.
+  final String semanticsLabel;
+  final VoidCallback onTap;
+
+  /// The word after the glyph; null draws the glyph alone.
+  final String? label;
+
+  /// The line under a block: the whole 44 dp row answers the finger (as the
+  /// printed line did), and the glyph sits at its trailing edge.
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final label = this.label;
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      excludeSemantics: true,
+      child: LoopPressable(
+        scale: false,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: LoopTouch.minimum,
+            minWidth: LoopTouch.minimum,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
+              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: expand
+                  ? MainAxisAlignment.end
+                  : MainAxisAlignment.center,
               children: <Widget>[
-                Flexible(
-                  child: Text(
-                    line,
+                if (leading case final String word) ...<Widget>[
+                  Flexible(
+                    child: Text(
+                      word,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.captionSm.copyWith(color: auxiliary),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                LoopIcon('info', size: 13, color: auxiliary),
+                if (label != null) ...<Widget>[
+                  const SizedBox(width: 3),
+                  Text(
+                    label,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: LoopType.captionSm.copyWith(color: auxiliary),
                   ),
-                ),
-                const SizedBox(width: 4),
-                LoopIcon('info', size: 12, color: auxiliary),
+                ],
               ],
             ),
           ),

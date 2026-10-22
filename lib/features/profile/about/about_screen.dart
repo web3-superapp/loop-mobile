@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/profile/about/about_controller.dart';
 import 'package:loop_mobile/features/profile/about/about_models.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_screen.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -111,17 +112,32 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             _AboutRulesBlock(versions: about.configVersions),
             LoopProvenanceFooter(
               key: const ValueKey<String>('about-config-note'),
+              label: '说明',
+              title: '说明',
               text: '这里只用于查看，不会固定任何一个版本。',
             ),
           ],
-          const LoopLabel('开源许可'),
-          const LoopNotice(
-            key: ValueKey<String>('about-open-source-summary'),
-            icon: 'book',
-            title: '本应用使用的开源组件',
-            body:
-                '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
-                '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
+          // S278 · decision 0236: the summary card and the closing note are
+          // the (i) beside the section title.
+          const LoopInfoLabel(
+            '开源许可',
+            info: LoopInfoButton(
+              key: ValueKey<String>('about-open-source-info'),
+              title: '本应用使用的开源组件',
+              sheetKey: 'about-open-source-info-sheet',
+              notes: <LoopInfoNote>[
+                LoopInfoNote(
+                  key: ValueKey<String>('about-open-source-summary'),
+                  body:
+                      '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
+                      '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
+                ),
+                LoopInfoNote(
+                  key: ValueKey<String>('about-open-source-note'),
+                  body: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
+                ),
+              ],
+            ),
           ),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -137,10 +153,6 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                   position: LoopRowPosition.middle,
                 ),
             ],
-          ),
-          const LoopProvenanceFooter(
-            key: ValueKey<String>('about-open-source-note'),
-            text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
           ),
           if (about != null)
             LoopUnavailableLine(

@@ -16,6 +16,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 void main() {
   group('wallet', () {
@@ -42,7 +43,7 @@ void main() {
 
       // Decision 0119: one provenance line under the list; the
       // confirmations sit in the statement it opens.
-      expect(find.textContaining('区块 120,628,164'), findsOneWidget);
+      expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
       await scrollToS5Section(
         tester,
@@ -1099,11 +1100,11 @@ void main() {
       expect(find.textContaining('来自 0x'), findsOneWidget);
       expect(find.text('+1.5'), findsOneWidget);
       expect(find.textContaining('区块 120,628,064'), findsNothing);
-      expect(find.textContaining('数据落后 33 块'), findsOneWidget);
+      expect(findProvenanceContaining('数据落后 33 块'), findsOneWidget);
       // One screen, one way of writing a number: the block number grouped and
       // the indexer height two lines under it did not.
-      expect(find.textContaining('索引高度 120,628,771'), findsOneWidget);
-      expect(find.textContaining('索引高度 120628771'), findsNothing);
+      expect(findProvenanceContaining('索引高度 120,628,771'), findsOneWidget);
+      expect(findProvenanceContaining('索引高度 120628771'), findsNothing);
 
       await tester.tap(find.text('收到 WBNB'));
       await tester.pumpAndSettle();

@@ -760,11 +760,21 @@ class LoopFactLine extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
               ],
-              Expanded(
-                child: Text(
-                  loopFactProvenance(fact, now: now),
-                  // R21 (decision 0190 M31).
-                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              const Spacer(),
+              // S278 · decision 0236: the source and the time behind (i).
+              LoopInfoTrigger(
+                key: ValueKey<String>('fact-$label-provenance'),
+                semanticsLabel:
+                    '${loopFactProvenance(fact, now: now)}，查看数据来源说明',
+                onTap: () => unawaited(
+                  showLoopInfoSheet(
+                    context,
+                    title: '数据来源',
+                    sheetKey: 'fact-provenance-sheet',
+                    notes: <LoopInfoNote>[
+                      LoopInfoNote(body: loopFactProvenance(fact, now: now)),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -775,9 +785,70 @@ class LoopFactLine extends StatelessWidget {
   }
 }
 
-/// A compact provenance footer for a whole block.
+/// A block's provenance or explanation behind one (i) (S278 · decision 0236).
+///
+/// It used to print [text] as a grey line under the block. The page now keeps
+/// a quiet 「(i) 来源」 (or 「(i) [label]」) at the block's trailing edge and
+/// the whole [text] opens in a sheet titled [title]. A line that is a state
+/// the reader needs to see — the end of a list, an unread count — is a
+/// [LoopFootnote], not this.
 class LoopProvenanceFooter extends StatelessWidget {
   const LoopProvenanceFooter({
+    required this.text,
+    super.key,
+    this.margin = const EdgeInsets.fromLTRB(16, 0, 12, 4),
+    this.label = '来源',
+    this.title = '数据来源',
+    this.notes = const <String>[],
+  });
+
+  /// The full statement; never printed on the page itself.
+  final String text;
+  final EdgeInsets margin;
+
+  /// The word beside the glyph: 「来源」 for provenance, 「说明」 for an
+  /// explanation.
+  final String label;
+
+  /// The sheet's heading.
+  final String title;
+
+  /// Further paragraphs the sheet adds under [text].
+  final List<String> notes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: margin,
+      child: LoopInfoTrigger(
+        key: const ValueKey<String>('provenance-footer'),
+        label: label,
+        expand: true,
+        semanticsLabel: '$text，查看$title',
+        onTap: () => unawaited(
+          showLoopInfoSheet(
+            context,
+            title: title,
+            sheetKey: 'provenance-footer-sheet',
+            notes: <LoopInfoNote>[
+              LoopInfoNote(
+                key: const ValueKey<String>('provenance-footer-text'),
+                body: text,
+              ),
+              for (final note in notes) LoopInfoNote(body: note),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One weak grey line that states where a list stands — 「没有更多提醒」,
+/// 「未读 3 条」 (S278 · decision 0236). Not an explanation: it stays on the
+/// page, in the look the provenance footer had before it moved behind (i).
+class LoopFootnote extends StatelessWidget {
+  const LoopFootnote({
     required this.text,
     super.key,
     this.margin = const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -792,8 +863,8 @@ class LoopProvenanceFooter extends StatelessWidget {
       padding: margin,
       child: Text(
         text,
-        key: const ValueKey<String>('provenance-footer'),
-        // R21 one grey provenance line.
+        key: const ValueKey<String>('loop-footnote'),
+        // R21 one grey line.
         style: LoopType.captionSm.copyWith(color: LoopColors.text3),
       ),
     );

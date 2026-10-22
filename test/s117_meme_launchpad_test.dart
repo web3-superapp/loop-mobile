@@ -36,6 +36,7 @@ import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/meme_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 // ---------------------------------------------------------------------------
 // S117 · MEME curve launchpad pages (client decision 0120)
@@ -889,7 +890,7 @@ void main() {
       expect(find.text('打满后自动上 PancakeSwap'), findsNothing);
       expect(_key('meme-token-liquidity-low'), findsNothing);
       expect(_key('meme-token-price-provenance'), findsOneWidget);
-      expect(find.textContaining('来源 LOOP 曲线'), findsWidgets);
+      expect(findProvenanceContaining('来源 LOOP 曲线'), findsWidgets);
       expect(_key('meme-chart-1m'), findsOneWidget);
       // The holder count is in its tab's title.
       expect(_key('meme-token-tab-持有者 12'), findsOneWidget);
@@ -1181,7 +1182,7 @@ void main() {
         ),
       );
       await _pump(tester, page(onNavigate: opened.add), meme: meme);
-      expect(find.textContaining('来源 池子推算'), findsWidgets);
+      expect(findProvenanceContaining('来源 池子推算'), findsWidgets);
       await tester.tap(_key('meme-token-swap'));
       expect(opened.single, '/wallet/swap?to=eip155%3A56%3A$memeTokenAddress');
       await _drain(tester);

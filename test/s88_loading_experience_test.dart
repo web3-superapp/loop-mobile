@@ -42,6 +42,7 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 // ---------------------------------------------------------------------------
 // Doubles
@@ -1051,7 +1052,7 @@ void main() {
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(_stripText(tester), '数据来自2 分钟前，正在更新');
       // The block the figures were read at is still stated under them.
-      expect(find.textContaining('区块 120,628,164'), findsOneWidget);
+      expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
     });
 
     testWidgets('a failed pull keeps the balances and says so', (tester) async {
