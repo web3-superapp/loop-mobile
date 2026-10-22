@@ -263,8 +263,8 @@ void main() {
   });
 
   group('聊天 · 磨砂板', () {
-    testWidgets('on the wall a row is Chalk 10 % over Ink 35 %, the wall '
-        'showing through; off the wall it keeps the page ground', (
+    testWidgets('on the wall a row is the block ground at 92 %, the wall '
+        'only just showing through; off the wall it keeps the page ground', (
       tester,
     ) async {
       Widget row() => ChatInboxSwipeRow(
@@ -303,8 +303,9 @@ void main() {
           .color!;
       expect(ground('on-wall'), loopChatBoardFill);
       expect(ground('on-wall').a, lessThan(1));
-      // α = 0.10 + 0.35 × 0.90 = 0.415.
-      expect(loopChatBoardFill.a, closeTo(0.415, 0.01));
+      // S279 · decision 0237: the board is the block ground at 92 %.
+      expect(loopChatBoardFill.a, closeTo(0.92, 0.01));
+      expect(loopChatBoardFill.withValues(alpha: 1), LoopColors.plate);
       expect(ground('off-wall'), LoopTheme.dark.scaffoldBackgroundColor);
       expect(loopChatBoardHairline, const Color(0x14F2F2F4));
 

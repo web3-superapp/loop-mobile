@@ -294,9 +294,9 @@ void main() {
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
         80,
       );
-      // `.row{gap:12px}` after a 44pt mark that starts on the 20pt page
-      // margin itself (decisions 0212, 0229).
-      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 76);
+      // `.row{gap:12px}` after a 44pt mark. S279 · decision 0237: the group
+      // is a block on the 20pt page margin, its rows 16 inside it.
+      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 20 + 16 + 44 + 12);
     });
 
     testWidgets('第二行说成员数，右边只留 chevron', (tester) async {

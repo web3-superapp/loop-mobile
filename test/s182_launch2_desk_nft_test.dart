@@ -386,13 +386,8 @@ Future<void> _drain(WidgetTester tester) async {
 Widget _list(
   List<String> opened, {
   Launch2ListScope scope = Launch2ListScope.all,
-  VoidCallback? onOpenGraduated,
 }) => Scaffold(
-  body: Launch2ListSegment(
-    scope: scope,
-    onNavigate: opened.add,
-    onOpenGraduated: onOpenGraduated,
-  ),
+  body: Launch2ListSegment(scope: scope, onNavigate: opened.add),
 );
 
 _Fake _listGateway(List<Map<String, Object?>> rows) =>
@@ -426,13 +421,13 @@ String _statusText(WidgetTester tester) {
   return <String>[?folio.caption, ?folio.stamp].join(' | ');
 }
 
-/// Whether the desk's stage chip [id] says it is on (S264).
-bool _chipSelected(WidgetTester tester, String id) =>
+/// Whether the desk's tab [id] says it is on (S279).
+bool _tabSelected(WidgetTester tester, String id) =>
     tester
         .widget<Semantics>(
           find
               .ancestor(
-                of: _key('launch2-desk-seg-$id'),
+                of: _key('launch2-desk-tab-$id'),
                 matching: find.byType(Semantics),
               )
               .first,
@@ -523,8 +518,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(Launch2DeskRecordCard), findsNothing);
-      expect(_key('launch2-tile-${_id(1)}'), findsOneWidget);
+      // S279 · 0237: the 内盘 tab holds the running rows; 已毕业 its own.
       expect(_key('launch2-tile-${_id(2)}'), findsOneWidget);
+      expect(_key('launch2-tile-${_id(3)}'), findsOneWidget);
+      expect(_key('launch2-tile-${_id(1)}'), findsNothing);
       await tester.tap(_key('launch2-desk'));
       await tester.pump();
       expect(opened, isEmpty);
@@ -540,7 +537,7 @@ void main() {
         overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
       );
       expect(_key('launch2-desk'), findsNothing);
-      expect(_key('launch2-desk-segs'), findsNothing);
+      expect(_key('launch2-desk-tabs'), findsNothing);
       expect(find.byType(Launch2DeskRecordCard), findsNothing);
       expect(_key('launch2-tape'), findsNothing);
       expect(_key('launch2-stats'), findsNothing);
@@ -837,9 +834,9 @@ void main() {
     });
   });
 
-  group('desk · segment counts', () {
-    testWidgets('from the rows when no figures were read; zero is kept and '
-        'dimmed; the main event\'s segment is on', (tester) async {
+  group('desk · tab counts (S279 · 0237)', () {
+    testWidgets('from the rows when no figures were read: 内盘 is 铸造中 + '
+        '内盘, zero is kept; the main event\'s tab is on', (tester) async {
       final json = <Map<String, Object?>>[
         _rowJson(1, 'nft_sale'),
         _rowJson(2, 'priority', nextIn: const Duration(hours: 1)),
@@ -848,15 +845,29 @@ void main() {
         _rowJson(5, 'graduated'),
       ];
       await _pump(tester, _list(<String>[]), _listGateway(json));
-      expect(_key('launch2-desk-segs'), findsOneWidget);
-      for (final label in <String>['铸造中 1', '内盘 2', '预告 0', '已毕业 2']) {
-        expect(find.text(label), findsOneWidget, reason: label);
+      expect(_key('launch2-desk-tabs'), findsOneWidget);
+      for (final (tab, title, value) in <(String, String, String)>[
+        ('live', '内盘', '3'),
+        ('upcoming', '预告', '0'),
+        ('graduated', '已毕业', '2'),
+      ]) {
+        final key = _key('launch2-desk-tab-$tab');
+        expect(
+          find.descendant(of: key, matching: find.text(title)),
+          findsOneWidget,
+          reason: tab,
+        );
+        expect(
+          find.descendant(of: key, matching: find.text(value)),
+          findsOneWidget,
+          reason: tab,
+        );
       }
-      // S264: the chosen chip is Purple with the Yellow splat on it.
-      expect(_key('launch2-desk-seg-splat-minting'), findsOneWidget);
-      expect(_key('launch2-desk-seg-splat-curve'), findsNothing);
-      expect(_chipSelected(tester, 'minting'), isTrue);
-      expect(_chipSelected(tester, 'curve'), isFalse);
+      // The chosen tab is Purple with the Yellow splat on it.
+      expect(_key('launch2-desk-tab-splat-live'), findsOneWidget);
+      expect(_key('launch2-desk-tab-splat-upcoming'), findsNothing);
+      expect(_tabSelected(tester, 'live'), isTrue);
+      expect(_tabSelected(tester, 'graduated'), isFalse);
       await _drain(tester);
     });
 
@@ -867,33 +878,54 @@ void main() {
         _listGateway(<Map<String, Object?>>[_rowJson(1, 'nft_sale')]),
         overview: _FakeOverview(<Map<String, Object?>>[_overviewJson()]),
       );
-      for (final label in <String>['铸造中 2', '内盘 6', '预告 3', '已毕业 12']) {
-        expect(find.text(label), findsOneWidget, reason: label);
+      for (final (tab, value) in <(String, String)>[
+        ('live', '8'),
+        ('upcoming', '3'),
+        ('graduated', '12'),
+      ]) {
+        expect(
+          find.descendant(
+            of: _key('launch2-desk-tab-$tab'),
+            matching: find.text(value),
+          ),
+          findsOneWidget,
+          reason: tab,
+        );
       }
       await _drain(tester);
     });
 
-    testWidgets('已毕业 switches to the 已毕业 segment', (tester) async {
-      var switched = 0;
+    testWidgets('已毕业 shows the graduated list in its own tab; a row opens '
+        'its project', (tester) async {
+      final opened = <String>[];
       await _pump(
         tester,
-        _list(<String>[], onOpenGraduated: () => switched += 1),
+        _list(opened),
         _listGateway(<Map<String, Object?>>[
           _rowJson(1, 'nft_sale'),
           _rowJson(2, 'graduated'),
         ]),
       );
-      await tester.tap(find.text('已毕业 1'));
+      expect(_key('launch2-tile-${_id(2)}'), findsNothing);
+      await tester.tap(_key('launch2-desk-tab-graduated'));
+      await tester.pumpAndSettle();
+      expect(_tabSelected(tester, 'graduated'), isTrue);
+      expect(
+        find.descendant(
+          of: _key('launch2-board-graduated'),
+          matching: _key('launch2-tile-${_id(2)}'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(_key('launch2-tile-${_id(2)}'));
       await tester.pump();
-      expect(switched, 1);
+      expect(opened.last, Launch2Route.instance(_id(2)));
       await _drain(tester);
     });
 
-    testWidgets('a count scrolls its far group heading into view', (
-      tester,
-    ) async {
+    testWidgets('each tab comes back where it was left', (tester) async {
       final json = <Map<String, Object?>>[
-        for (var i = 1; i <= 14; i++) _rowJson(i, 'nft_sale'),
+        for (var i = 1; i <= 14; i++) _rowJson(i, 'public', soldBps: 1000),
         _rowJson(20, 'upcoming', startIn: const Duration(days: 1)),
         for (var i = 30; i <= 44; i++) _rowJson(i, 'graduated'),
       ];
@@ -903,12 +935,38 @@ void main() {
         _listGateway(json),
         size: const Size(390, 800),
       );
-      expect(_key('launch2-group-upcoming'), findsNothing);
-      await tester.tap(find.text('预告 1'));
+      ScrollPosition position() =>
+          Scrollable.of(tester.element(_key('launch2-desk-tabs'))).position;
+      // The nearest preview is the main event: the home opens on 预告.
+      expect(_tabSelected(tester, 'upcoming'), isTrue);
+      await tester.tap(_key('launch2-desk-tab-live'));
       await tester.pumpAndSettle();
-      expect(_key('launch2-group-upcoming'), findsOneWidget);
-      final y = tester.getTopLeft(_key('launch2-group-upcoming')).dy;
-      expect(y, inInclusiveRange(0, 400));
+      final page = position();
+      expect(page.maxScrollExtent, greaterThan(400));
+      page.jumpTo(page.maxScrollExtent);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        _key('launch2-desk-tab-upcoming'),
+        -120,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      final atBar = position().pixels;
+      expect(atBar, greaterThan(0));
+      await tester.tap(_key('launch2-desk-tab-upcoming'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-desk-record-${_id(20)}'), findsOneWidget);
+      // A tab not seen yet keeps the bar where it is.
+      expect(position().pixels, lessThanOrEqualTo(atBar));
+      await tester.tap(_key('launch2-desk-tab-live'));
+      await tester.pumpAndSettle();
+      expect(position().pixels, atBar);
       await _drain(tester);
     });
   });
@@ -959,8 +1017,8 @@ void main() {
         tester.widget<Text>(_key('launch2-desk-record-foot-$id')).data,
         '铸造期已过 57% · 已铸 2 枚 · 100 USD1 / 枚',
       );
-      // Not drawn twice: no minting group, no row.
-      expect(_key('launch2-group-minting'), findsNothing);
+      // Not drawn twice: no board under it, no row.
+      expect(_key('launch2-board-live'), findsNothing);
       expect(_key('launch2-tile-$id'), findsNothing);
       await tester.tap(card);
       await tester.pump();
@@ -998,7 +1056,6 @@ void main() {
         '0.0₄4167 USD1 · 卖满自动毕业',
       );
       expect(_key('launch2-tile-${_id(2)}'), findsNothing);
-      expect(_key('launch2-tile-${_id(3)}'), findsOneWidget);
       expect(_key('launch2-desk-record-${_id(3)}'), findsNothing);
       // The first card sits above the second.
       expect(
@@ -1193,9 +1250,10 @@ void main() {
   });
 
   group('desk · groups', () {
-    testWidgets('`.label` groups in order, members in the server\'s order; '
-        'the record cards\' rows are not repeated; empty groups have no '
-        'label; rows carry no fuse and no ring', (tester) async {
+    testWidgets('S279 · 0237: the 内盘 tab holds every running stage on one '
+        'board in the groups\' order, members in the server\'s order; the '
+        'record card\'s row is not repeated; 预告 and 已毕业 wait on their '
+        'tabs; rows carry no fuse and no ring', (tester) async {
       final json = <Map<String, Object?>>[
         _rowJson(1, 'upcoming', startIn: const Duration(days: 1)),
         _rowJson(2, 'closed_no_holders'),
@@ -1206,54 +1264,42 @@ void main() {
         _rowJson(7, 'graduated'),
       ];
       await _pump(tester, _list(<String>[]), _listGateway(json));
-      final order = <String>[
-        'curve',
-        'snapshot',
-        'upcoming',
-        'graduated',
-        'closed',
-      ];
+      // 内盘 → 名单生成中 → 已暂停.
       final ys = <double>[
-        for (final name in order)
-          tester.getTopLeft(_key('launch2-group-$name')).dy,
+        for (final n in <int>[3, 6, 5, 2])
+          tester.getTopLeft(_key('launch2-tile-${_id(n)}')).dy,
       ];
       expect(ys, orderedEquals(<double>[...ys]..sort()));
-      // S264: numbered headings over boards.
-      expect(
-        find.descendant(
-          of: _key('launch2-group-curve'),
-          matching: find.byType(Launch2SectionHeading),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: _key('launch2-group-curve'),
-          matching: find.text('01'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: _key('launch2-board-curve'),
-          matching: _key('launch2-tile-${_id(3)}'),
-        ),
-        findsOneWidget,
-      );
-      // The minting group held only the main event, now its record card.
-      expect(_key('launch2-group-minting'), findsNothing);
-      expect(_key('launch2-group-priority'), findsNothing);
+      for (final n in <int>[3, 6, 5, 2]) {
+        expect(
+          find.descendant(
+            of: _key('launch2-board-live'),
+            matching: _key('launch2-tile-${_id(n)}'),
+          ),
+          findsOneWidget,
+        );
+      }
+      // The minting row is the main event, now its record card, above the
+      // board.
       expect(_key('launch2-tile-${_id(4)}'), findsNothing);
       expect(_key('launch2-desk-record-${_id(4)}'), findsOneWidget);
-      expect(
-        tester.getTopLeft(_key('launch2-tile-${_id(3)}')).dy,
-        lessThan(tester.getTopLeft(_key('launch2-tile-${_id(6)}')).dy),
-      );
-      // The record card and the tape come before the first group.
       expect(
         tester.getTopLeft(_key('launch2-desk-record-${_id(4)}')).dy,
         lessThan(ys.first),
       );
+      // 预告 and 已毕业 are not on this tab.
+      expect(_key('launch2-tile-${_id(1)}'), findsNothing);
+      expect(_key('launch2-tile-${_id(7)}'), findsNothing);
+      await tester.tap(_key('launch2-desk-tab-upcoming'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: _key('launch2-board-upcoming'),
+          matching: _key('launch2-tile-${_id(1)}'),
+        ),
+        findsOneWidget,
+      );
+      expect(_key('launch2-board-live'), findsNothing);
       expect(
         find.byWidgetPredicate(
           (widget) =>

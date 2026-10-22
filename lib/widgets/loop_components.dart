@@ -1726,8 +1726,14 @@ class LoopRecordRow extends StatelessWidget {
         ],
       ),
     );
+    // S279 · decision 0237: inside a [LoopRecordGroup] the group's block
+    // already stands on the page margin, so the row keeps the block's own
+    // inset instead.
+    final grouped = LoopRecordGroup.inside(context);
     final padded = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      padding: EdgeInsets.symmetric(
+        horizontal: grouped ? LoopSpacing.card : LoopSpacing.page,
+      ),
       child: row,
     );
     if (onTap == null) {
@@ -1761,14 +1767,12 @@ class LoopRecordRow extends StatelessWidget {
 /// `LoopType.figure` 13 value — grey, or in [LoopRecordRow.trailingColor]. A chosen row carries a Lime check instead of a wash.
 extension on LoopRecordRow {
   Widget _buildFlat(BuildContext context) {
+    // S279 · decision 0237: a grouped row takes the block's inset.
+    final grouped = LoopRecordGroup.inside(context);
+    final inset = grouped ? LoopSpacing.card : LoopSpacing.page;
     final content = Container(
       constraints: const BoxConstraints(minHeight: LoopFlat.rowHeight),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        8,
-        LoopSpacing.page,
-        8,
-      ),
+      padding: EdgeInsets.fromLTRB(inset, 8, inset, 8),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
@@ -1876,7 +1880,8 @@ extension on LoopRecordRow {
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
-          highlightColor: LoopColors.card,
+          // On the group's block the press is the raised ground.
+          highlightColor: grouped ? LoopColors.card2 : LoopColors.card,
           child: content,
         ),
       ),
@@ -1885,13 +1890,38 @@ extension on LoopRecordRow {
 }
 
 /// Lays out [rows] as one grouped card by assigning [LoopRowPosition].
+///
+/// S279 · decision 0237 (需求方 2026-10-22 第 16 条): the group is one block
+/// on the block ground ([LoopColors.card]) between the page margins, so a
+/// page's modules read apart from the page and from each other; its rows
+/// take the block's 16 inset instead of the page margin.
 class LoopRecordGroup extends StatelessWidget {
   const LoopRecordGroup({required this.rows, super.key});
 
   final List<LoopRecordRow> rows;
 
+  /// Whether [context] sits inside a group's block.
+  static bool inside(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_LoopRecordGroupScope>() !=
+      null;
+
   @override
   Widget build(BuildContext context) {
+    return _LoopRecordGroupScope(
+      child: Container(
+        key: const ValueKey<String>('loop-record-group-block'),
+        margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(
+          color: LoopColors.card,
+          borderRadius: LoopRadius.card,
+        ),
+        child: Material(type: MaterialType.transparency, child: _rowsColumn()),
+      ),
+    );
+  }
+
+  Widget _rowsColumn() {
     return Column(
       children: <Widget>[
         for (var index = 0; index < rows.length; index++)
@@ -1928,6 +1958,13 @@ class LoopRecordGroup extends StatelessWidget {
       ],
     );
   }
+}
+
+class _LoopRecordGroupScope extends InheritedWidget {
+  const _LoopRecordGroupScope({required super.child});
+
+  @override
+  bool updateShouldNotify(_LoopRecordGroupScope oldWidget) => false;
 }
 
 // ---------------------------------------------------------------------------

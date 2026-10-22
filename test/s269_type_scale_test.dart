@@ -119,7 +119,7 @@ void main() {
     expect(LoopSpacing.segmentGap, 16);
   });
 
-  testWidgets('MEME: title1, headline sections, body1 rows, 20 margin, '
+  testWidgets('MEME: title1, 16 tabs, body1 rows, 20 margin, '
       'nothing under 12', (tester) async {
     await pumpS269MemeHome(tester);
     expect(
@@ -136,11 +136,11 @@ void main() {
       _size(
         tester,
         find.descendant(
-          of: _key('launch2-group-curve'),
+          of: _key('launch2-desk-tab-live'),
           matching: find.text('内盘'),
         ),
       ),
-      18,
+      16,
     );
     final row = _key('launch2-row-${_id(1)}');
     expect(

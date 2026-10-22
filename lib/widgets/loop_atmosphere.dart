@@ -890,12 +890,13 @@ class LoopAtmoBoard extends StatelessWidget {
   );
 }
 
-/// 聊天's conversation board (decision 0224): Chalk 10 % over an Ink 35 %
-/// underlay, composited into one fill so the wall shows through at 58.5 %
-/// (`α = 0.10 + 0.35 × 0.90 = 0.415`; colour `(0.10·#F2F2F4 + 0.315·#09090B)
-/// / 0.415 = #414143`). One fill, not two layers: a row slides over its
-/// swipe actions, and two translucent layers would double where they meet.
-const Color loopChatBoardFill = Color(0x6A414143);
+/// 聊天's conversation board: the block ground ([LoopColors.plate]) at
+/// 92 %, so the wall only just shows through (S279 · decision 0237 — the
+/// decision 0224 board, Chalk 10 % over Ink 35 % = `#414143` at 41.5 %, read
+/// as a light grey slab beside every other block). One fill, not two
+/// layers: a row slides over its swipe actions, and two translucent layers
+/// would double where they meet.
+const Color loopChatBoardFill = Color(0xEB1A1920);
 
 /// The hairline between two rows on [loopChatBoardFill]: Chalk 8 %.
 const Color loopChatBoardHairline = Color(0x14F2F2F4);
@@ -1094,9 +1095,11 @@ class LoopChromePlate extends StatelessWidget {
     Color(0xFF1F1F25),
   ];
 
-  /// The bevel's chrome stops.
+  /// The bevel's chrome stops. S279 · decision 0237: it opens on the mid
+  /// steel, not the near-white chrome1 — a white rim was the one light block
+  /// edge on a dark page and read as pasted on.
   static const List<Color> bevelColors = <Color>[
-    LoopColors.chrome1,
+    LoopColors.chrome2,
     LoopColors.chrome3,
     LoopColors.chrome2,
   ];
@@ -1384,7 +1387,8 @@ class LoopDripBar extends StatelessWidget {
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Color(0xFF24232A),
+                // The track is the raised ground: the bar sits in a block.
+                color: LoopColors.card2,
                 borderRadius: LoopRadius.pill,
               ),
             ),

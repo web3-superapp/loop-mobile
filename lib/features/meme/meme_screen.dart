@@ -132,9 +132,10 @@ class MemeScreen extends ConsumerWidget {
   }
 
   // S259 · decision 0217: the v2 desk is the whole Tab — no 「v2 发射 / 历史
-  // / 已毕业」 row. 已毕业 is the desk's own fourth stage chip; the classic
-  // curve list has no entry. IDO comes back as a second segment only while
-  // its switch is on.
+  // / 已毕业」 row; the classic curve list has no entry. S279 · decision
+  // 0237: the desk's own 「内盘 / 预告 / 已毕业」 tabs choose its one list (tap
+  // only, so they nest under the segment row's swipe). IDO comes back as a
+  // second segment only while its switch is on.
   Widget _v2(
     BuildContext context,
     WidgetRef ref, {

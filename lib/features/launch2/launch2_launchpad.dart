@@ -2,11 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
-import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -125,34 +123,6 @@ List<(Launch2StageGroup, List<Launch2InstanceRow>)> launch2GroupRows(
       (group, members),
 ];
 
-/// Scrolls the page until [target] is built, then brings it to the top.
-/// The list is lazy, so a far heading may not exist yet: the page is moved a
-/// screen at a time until it does.
-Future<void> launch2RevealGroup(BuildContext context, GlobalKey target) async {
-  final scrollable = Scrollable.maybeOf(context, axis: Axis.vertical);
-  final reduced = LoopMotion.reduced(context);
-  const duration = Duration(milliseconds: 300);
-  for (var i = 0; i < 40 && target.currentContext == null; i++) {
-    final position = scrollable?.position;
-    if (position == null || position.pixels >= position.maxScrollExtent) break;
-    position.jumpTo(
-      (position.pixels + position.viewportDimension).clamp(
-        0,
-        position.maxScrollExtent,
-      ),
-    );
-    await SchedulerBinding.instance.endOfFrame;
-  }
-  final found = target.currentContext;
-  if (found == null || !found.mounted) return;
-  await Scrollable.ensureVisible(
-    found,
-    duration: reduced ? Duration.zero : duration,
-    curve: Curves.easeOutCubic,
-    alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-  );
-}
-
 // ---- the desk's segment counts ---------------------------------------------
 
 /// The four counts under the ledger card, each the groups it stands for.
@@ -203,6 +173,69 @@ List<(Launch2DeskSegment, int)> launch2DeskCounts(
               },
       ),
   ];
+}
+
+// ---- the home's tabs (S279) --------------------------------------------------
+
+/// The MEME home's three tabs (S279 · decision 0237, 需求方 2026-10-22 第 15
+/// 条): one list on screen at a time instead of every group stacked.
+///
+/// 「内盘」 holds every project that is running or stopped before its pool —
+/// 铸造中, 提前购, 内盘, 名单生成中 and 已暂停 — each row wearing its own stage
+/// capsule; 「预告」 the queued ones; 「已毕业」 the `stage=graduated` list.
+enum Launch2DeskTab {
+  live('内盘', <Launch2StageGroup>[
+    Launch2StageGroup.minting,
+    Launch2StageGroup.priority,
+    Launch2StageGroup.curve,
+    Launch2StageGroup.snapshot,
+    Launch2StageGroup.closed,
+  ]),
+  upcoming('预告', <Launch2StageGroup>[Launch2StageGroup.upcoming]),
+  graduated('已毕业', <Launch2StageGroup>[Launch2StageGroup.graduated]);
+
+  const Launch2DeskTab(this.title, this.groups);
+
+  final String title;
+  final List<Launch2StageGroup> groups;
+
+  static Launch2DeskTab of(Launch2Stage stage) {
+    final group = Launch2StageGroup.of(stage);
+    return values.firstWhere((tab) => tab.groups.contains(group));
+  }
+
+  /// Whether [row] belongs on this tab.
+  bool holds(Launch2InstanceRow row) =>
+      groups.contains(Launch2StageGroup.of(row.stage));
+}
+
+/// Each tab's count from the desk's segment counts: 内盘 is 铸造中 + 内盘.
+List<(Launch2DeskTab, int)> launch2DeskTabCounts(
+  List<(Launch2DeskSegment, int)> counts,
+) {
+  int of(Launch2DeskSegment segment) =>
+      counts.firstWhere((entry) => entry.$1 == segment).$2;
+  return <(Launch2DeskTab, int)>[
+    (
+      Launch2DeskTab.live,
+      of(Launch2DeskSegment.minting) + of(Launch2DeskSegment.curve),
+    ),
+    (Launch2DeskTab.upcoming, of(Launch2DeskSegment.upcoming)),
+    (Launch2DeskTab.graduated, of(Launch2DeskSegment.graduated)),
+  ];
+}
+
+/// The tab the home opens on before the reader picks one: the main event's,
+/// else the first holding projects, else 内盘.
+Launch2DeskTab launch2DefaultDeskTab(
+  Launch2InstanceRow? main,
+  List<(Launch2DeskTab, int)> counts,
+) {
+  if (main != null) return Launch2DeskTab.of(main.stage);
+  for (final (tab, count) in counts) {
+    if (count > 0) return tab;
+  }
+  return Launch2DeskTab.live;
 }
 
 /// The rows the desk gives a record card: the main event, and a second one

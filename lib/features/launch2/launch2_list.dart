@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
@@ -23,11 +26,18 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_tab_segments.dart';
+
+/// S279 · decision 0237: the MEME home's tab memory key, in the same memory
+/// the Tab pages' segments use, so the chosen tab outlives a trip to a
+/// project page and a switch to another Tab.
+const String launch2DeskTabMemoryKey = 'meme-desk';
 
 /// The sentence a closed `launch2` capability is explained with.
 String launch2CapabilityText(LoopCapabilityProjection capability) {
@@ -57,7 +67,6 @@ class Launch2ListSegment extends ConsumerStatefulWidget {
     required this.onNavigate,
     super.key,
     this.onEmptyAction,
-    this.onOpenGraduated,
     this.tabTitle,
     this.actions = const <Widget>[],
   });
@@ -75,10 +84,6 @@ class Launch2ListSegment extends ConsumerStatefulWidget {
 
   /// The empty list's one next step (another segment of the MEME Tab).
   final VoidCallback? onEmptyAction;
-
-  /// The desk's 「已毕业」 count: the MEME Tab's 已毕业 segment (decision
-  /// 0164). `null` scrolls to the 已毕业 group instead.
-  final VoidCallback? onOpenGraduated;
 
   @override
   ConsumerState<Launch2ListSegment> createState() => _Launch2ListSegmentState();
@@ -151,6 +156,13 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     if (state.value == null || state.busy || state.refreshing) return;
     unawaited(ref.read(provider.notifier).refresh());
     _refreshOverview();
+    // S279: the 已毕业 tab's own list rides the same tick.
+    if (_onGraduatedTab) {
+      final graduated = ref.read(_graduatedProvider);
+      if (graduated.value != null && !graduated.busy && !graduated.refreshing) {
+        unawaited(ref.read(_graduatedProvider.notifier).refresh());
+      }
+    }
   }
 
   /// Decision 0163 §7.1: the overview rides the list's own refresh — the
@@ -172,27 +184,106 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
 
   Future<void> _pull(Launch2ListController controller) async {
     _refreshOverview();
+    // S279: on the 已毕业 tab the pull re-reads that list too.
+    if (_onGraduatedTab) {
+      unawaited(controller.reload());
+      await ref.read(_graduatedProvider.notifier).reload();
+      return;
+    }
     await controller.reload();
   }
 
-  /// One heading key per group and one per record card, so the desk's
-  /// segment counts can scroll to them.
-  final Map<Launch2StageGroup, GlobalKey> _headingKeys =
-      <Launch2StageGroup, GlobalKey>{};
-  final Map<String, GlobalKey> _recordKeys = <String, GlobalKey>{};
-
-  GlobalKey _headingKey(Launch2StageGroup group) => _headingKeys.putIfAbsent(
-    group,
-    () => GlobalKey(debugLabel: 'launch2-group-${group.name}'),
+  static final _graduatedProvider = launch2ListControllerProvider(
+    Launch2ListScope.graduated,
   );
 
-  GlobalKey _recordKey(String instanceId) => _recordKeys.putIfAbsent(
-    instanceId,
-    () => GlobalKey(debugLabel: 'launch2-record-$instanceId'),
-  );
+  /// Where each tab was scrolled to when the reader left it.
+  final Map<Launch2DeskTab, double> _tabOffsets = <Launch2DeskTab, double>{};
+
+  /// The tab the desk drew last; `null` before it drew one.
+  Launch2DeskTab? _shownTab;
+
+  bool get _onGraduatedTab =>
+      scope == Launch2ListScope.all && _shownTab == Launch2DeskTab.graduated;
 
   void _openInstance(String instanceId) {
     widget.onNavigate(Launch2Route.instance(instanceId));
+  }
+
+  /// Moves to [next]: the tab being left keeps its scroll offset, and the
+  /// one coming back opens where it was left. A tab not seen yet opens with
+  /// the bar at the top of the page when the reader had scrolled past it, so
+  /// the first row is never out of sight.
+  void _selectTab(BuildContext context, Launch2DeskTab next) {
+    final current = _shownTab;
+    if (current == next) return;
+    LoopHaptics.selection();
+    final position = Scrollable.maybeOf(context)?.position;
+    final bar = context.findRenderObject();
+    double? anchor;
+    if (position != null && position.hasPixels) {
+      if (current != null) _tabOffsets[current] = position.pixels;
+      if (bar is RenderBox && bar.attached) {
+        final viewport = RenderAbstractViewport.maybeOf(bar);
+        if (viewport != null) {
+          final pinned = widget.tabTitle == null
+              ? 0.0
+              : LoopLayout.topbarHeight + MediaQuery.paddingOf(context).top;
+          anchor = viewport.getOffsetToReveal(bar, 0).offset - pinned;
+        }
+      }
+    }
+    ref
+        .read(loopTabSegmentMemoryProvider.notifier)
+        .select(launch2DeskTabMemoryKey, next.index);
+    if (position == null || !position.hasPixels) return;
+    final saved = _tabOffsets[next];
+    final now = position.pixels;
+    _pendingJump = (
+      tab: next,
+      offset:
+          saved ??
+          (anchor != null && now > anchor ? math.max(0.0, anchor) : now),
+    );
+  }
+
+  /// The offset [_selectTab] chose, applied after the frame that first lays
+  /// the new tab out (the tab's own rows decide how far the page can go).
+  ({Launch2DeskTab tab, double offset})? _pendingJump;
+
+  /// The tab bar, so a jump finds the page's scroll position as it is after
+  /// the new tab was laid out.
+  final GlobalKey _tabsKey = GlobalKey(debugLabel: 'launch2-desk-tabs');
+
+  void _applyPendingJump(Launch2DeskTab tab) {
+    final pending = _pendingJump;
+    if (pending == null || pending.tab != tab) return;
+    _pendingJump = null;
+    _jumpWhenLaidOut(pending.offset, 3);
+  }
+
+  /// Jumps [position] to [offset] once the page is long enough to hold it;
+  /// the new tab's rows can take a frame or two to reach the viewport, so a
+  /// short page is given [frames] more frames before the offset is clamped.
+  void _jumpWhenLaidOut(double offset, int frames) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bar = _tabsKey.currentContext;
+      if (!mounted || bar == null) return;
+      final position = Scrollable.maybeOf(bar)?.position;
+      if (position == null ||
+          !position.hasPixels ||
+          !position.hasContentDimensions) {
+        return;
+      }
+      if (offset > position.maxScrollExtent && frames > 0) {
+        _jumpWhenLaidOut(offset, frames - 1);
+        WidgetsBinding.instance.scheduleFrame();
+        return;
+      }
+      position.jumpTo(
+        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
   }
 
   @override
@@ -315,44 +406,23 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         ),
       ];
     }
-    final cursor = page.nextCursor;
     final all = scope == Launch2ListScope.all;
     final stats = all ? overview?.stats : null;
     // A row whose stage time passed: the server says what it is now.
     void elapsed() => unawaited(controller.reload());
-    Widget tile(Launch2InstanceRow row) => Launch2InstanceTile(
-      key: ValueKey<String>('launch2-tile-${row.instanceId}'),
-      row: row,
-      onTap: () => _openInstance(row.instanceId),
-      onElapsed: elapsed,
-    );
     return <Widget>[
       if (all)
-        ..._desk(page, overview, campaigns, elapsed, tile)
-      else
-        for (final row in launch2ListOrder(page.items)) tile(row),
-      if (controller.appendFailed && !state.busy)
-        LoopInlineUnavailable(
-          key: ValueKey<String>('$_keyBase-more-failed'),
-          message: '下一页没有读到',
-          onRetry: () => unawaited(controller.loadMore()),
-        )
-      else if (cursor != null) ...<Widget>[
-        LoopLoadMoreSentinel(
-          key: ValueKey<String>('$_keyBase-load-more'),
-          cursor: cursor,
-          onLoadMore: () => unawaited(controller.loadMore()),
-        ),
-        if (state.busy)
-          LoopSkeleton(
-            key: ValueKey<String>('$_keyBase-loading-more'),
-            type: LoopSkeletonType.priceRow,
-            rows: 2,
-            rowHeight: memeCardHeight,
-            leadingSize: memeCardLogoSize,
+        ..._desk(page, state, controller, overview, campaigns, elapsed)
+      else ...<Widget>[
+        for (final row in launch2ListOrder(page.items))
+          Launch2InstanceTile(
+            key: ValueKey<String>('launch2-tile-${row.instanceId}'),
+            row: row,
+            onTap: () => _openInstance(row.instanceId),
+            onElapsed: elapsed,
           ),
-      ] else
-        MarketListEnd(key: ValueKey<String>('$_keyBase-end')),
+        ..._footer(state, controller, _keyBase),
+      ],
       // 战绩: the overview's figures; none read, none drawn.
       if (stats != null) ...<Widget>[
         const LoopLabel('战绩'),
@@ -374,17 +444,52 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     ];
   }
 
+  /// The end of a list: the next page's sentinel, its failure, or the
+  /// quiet end.
+  List<Widget> _footer(
+    LoopChainResourceState<Launch2InstancePage> state,
+    Launch2ListController controller,
+    String keyBase,
+  ) {
+    final cursor = state.value?.nextCursor;
+    return <Widget>[
+      if (controller.appendFailed && !state.busy)
+        LoopInlineUnavailable(
+          key: ValueKey<String>('$keyBase-more-failed'),
+          message: '下一页没有读到',
+          onRetry: () => unawaited(controller.loadMore()),
+        )
+      else if (cursor != null) ...<Widget>[
+        LoopLoadMoreSentinel(
+          key: ValueKey<String>('$keyBase-load-more'),
+          cursor: cursor,
+          onLoadMore: () => unawaited(controller.loadMore()),
+        ),
+        if (state.busy)
+          LoopSkeleton(
+            key: ValueKey<String>('$keyBase-loading-more'),
+            type: LoopSkeletonType.priceRow,
+            rows: 2,
+            rowHeight: memeCardHeight,
+            leadingSize: memeCardLogoSize,
+          ),
+      ] else
+        MarketListEnd(key: ValueKey<String>('$keyBase-end')),
+    ];
+  }
+
   /// Decision 0164 · the prototype's Launch Desk over 「v2 发射」, in the
   /// S264 atmosphere (decision 0220): the banner pager, the Purple trade
-  /// band, the stage chips, the record cards, then numbered sections — each
-  /// a board of rows; 预告 is always there and says so when nothing is
-  /// queued. The record cards' rows are not drawn twice.
+  /// band, then — S279 · decision 0237 — the three tabs 「内盘 / 预告 /
+  /// 已毕业」 and the one list the chosen tab holds. A record card stands at
+  /// the top of its own tab and its row is not drawn twice.
   List<Widget> _desk(
     Launch2InstancePage page,
+    LoopChainResourceState<Launch2InstancePage> state,
+    Launch2ListController controller,
     Launch2Overview? overview,
     List<Launch2DeskCampaign> campaigns,
     VoidCallback onElapsed,
-    Widget Function(Launch2InstanceRow row) tile,
   ) {
     // Decision 0163: picked from the rows already read, never a request.
     final hero = launch2HeroRows(
@@ -393,51 +498,25 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
     final main = hero.isEmpty ? null : hero.first;
     final records = launch2DeskRecordRows(hero);
     final recordIds = <String>{for (final row in records) row.instanceId};
-    final groups = launch2GroupRows(<Launch2InstanceRow>[
-      for (final row in launch2ListOrder(page.items))
-        if (!recordIds.contains(row.instanceId)) row,
-    ]);
-    final counts = launch2DeskCounts(page.items, overview?.stats);
-    final activity = overview?.activity ?? const <Launch2Activity>[];
-    final upcomingCount = counts
-        .firstWhere((entry) => entry.$1 == Launch2DeskSegment.upcoming)
-        .$2;
-    // 预告 always has its section; with nothing queued (and nothing counted
-    // anywhere) it is the empty board with 「我要发射」.
-    final sections = launch2DeskSections(
-      groups,
-      upcomingEmpty: upcomingCount == 0,
+    final counts = launch2DeskTabCounts(
+      launch2DeskCounts(page.items, overview?.stats),
     );
-    final drawn = <Launch2StageGroup>{
-      for (final (group, members) in sections)
-        if (members.isNotEmpty) group,
-    };
-
-    /// Where a count scrolls to: its first group heading on the page, else
-    /// the record card of a row of it.
-    GlobalKey? target(Launch2DeskSegment segment) {
-      for (final group in segment.groups) {
-        if (drawn.contains(group)) return _headingKey(group);
-      }
-      for (final row in records) {
-        if (segment.groups.contains(Launch2StageGroup.of(row.stage))) {
-          return _recordKey(row.instanceId);
-        }
-      }
-      if (segment == Launch2DeskSegment.upcoming &&
-          sections.any((entry) => entry.$1 == Launch2StageGroup.upcoming)) {
-        return _headingKey(Launch2StageGroup.upcoming);
-      }
-      return null;
-    }
-
-    final selected = main == null
-        ? _firstFilled(counts)
-        : Launch2DeskSegment.of(main.stage);
+    final remembered = ref.watch(
+      loopTabSegmentMemoryProvider.select(
+        (memory) => memory[launch2DeskTabMemoryKey],
+      ),
+    );
+    final tab = remembered == null
+        ? launch2DefaultDeskTab(main, counts)
+        : Launch2DeskTab.values[remembered.clamp(
+            0,
+            Launch2DeskTab.values.length - 1,
+          )];
+    _shownTab = tab;
+    _applyPendingJump(tab);
+    final activity = overview?.activity ?? const <Launch2Activity>[];
     final clock = ref.read(launch2ClockProvider);
     final band = activity.take(Launch2DeskTape.expanded).toList();
-    final creatorOpen = launch2CreatorEntryVisible(ref);
-    final open = widget.onOpenGraduated;
     return <Widget>[
       Launch2DeskPager(
         pages: launch2DeskPages(hero, campaigns: campaigns, now: clock()),
@@ -459,105 +538,168 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         ),
       ),
       Builder(
-        builder: (context) => Launch2StageChips(
-          chips: <Launch2ChipSpec>[
-            for (final (segment, count) in counts)
+        key: _tabsKey,
+        builder: (context) => Launch2DeskTabs(
+          tabs: <Launch2DeskTabSpec>[
+            for (final (entry, count) in counts)
               (
-                id: segment.name,
-                title: segment.title,
+                id: entry.name,
+                title: entry.title,
                 count: count,
-                selected: segment == selected,
+                selected: entry == tab,
               ),
           ],
-          onSelected: (index) {
-            final segment = Launch2DeskSegment.values[index];
-            if (segment == Launch2DeskSegment.graduated && open != null) {
-              open();
-              return;
-            }
-            final key = target(segment);
-            if (key != null) unawaited(launch2RevealGroup(context, key));
-          },
+          onSelected: (index) =>
+              _selectTab(context, Launch2DeskTab.values[index]),
         ),
       ),
-      // v3 (decision 0229): 16 from the chips to what they choose between
-      // (the chip's own 44 target holds 4 of it).
-      const SizedBox(height: LoopSpacing.segmentGap - 4),
+      // v3 (decision 0229): 16 from the tabs to what they choose between.
+      const SizedBox(height: LoopSpacing.segmentGap),
+      if (tab == Launch2DeskTab.graduated)
+        ..._graduatedTab(onElapsed)
+      else
+        ..._readTab(
+          tab,
+          page,
+          state,
+          controller,
+          records,
+          recordIds,
+          onElapsed,
+        ),
+      const SizedBox(height: 8),
+    ];
+  }
+
+  /// 内盘 or 预告: the record cards of the tab, then its rows of the list
+  /// read so far on one board; with nothing in it and no page left to read,
+  /// the tab's own empty board.
+  List<Widget> _readTab(
+    Launch2DeskTab tab,
+    Launch2InstancePage page,
+    LoopChainResourceState<Launch2InstancePage> state,
+    Launch2ListController controller,
+    List<Launch2InstanceRow> records,
+    Set<String> recordIds,
+    VoidCallback onElapsed,
+  ) {
+    final cards = <Launch2InstanceRow>[
       for (final row in records)
-        KeyedSubtree(
-          key: _recordKey(row.instanceId),
-          child: Launch2DeskRecordCard(
-            row: row,
-            onTap: () => widget.onNavigate(launch2HeroLocation(row)),
-            onElapsed: onElapsed,
-          ),
+        if (tab.holds(row)) row,
+    ];
+    // In the groups' order (铸造中 → 提前购 → 内盘 → 名单生成中 → 已暂停),
+    // each group in the server's order.
+    final rows = <Launch2InstanceRow>[
+      for (final (_, members) in launch2GroupRows(<Launch2InstanceRow>[
+        for (final row in launch2ListOrder(page.items))
+          if (tab.holds(row) && !recordIds.contains(row.instanceId)) row,
+      ]))
+        ...members,
+    ];
+    final creatorOpen = launch2CreatorEntryVisible(ref);
+    final more = page.nextCursor != null || controller.appendFailed;
+    return <Widget>[
+      for (final row in cards)
+        Launch2DeskRecordCard(
+          key: ValueKey<String>('launch2-desk-record-slot-${row.instanceId}'),
+          row: row,
+          onTap: () => widget.onNavigate(launch2HeroLocation(row)),
+          onElapsed: onElapsed,
         ),
-      for (final (index, (group, members)) in sections.indexed) ...<Widget>[
-        KeyedSubtree(
-          key: ValueKey<String>('launch2-group-${group.name}'),
-          child: Launch2SectionHeading(
-            key: _headingKey(group),
-            index: index + 1,
-            title: group.title,
-            onMore: group == Launch2StageGroup.graduated ? open : null,
-          ),
-        ),
-        if (members.isEmpty)
+      if (rows.isNotEmpty)
+        Launch2Board(
+          key: ValueKey<String>('launch2-board-${tab.name}'),
+          children: <Widget>[
+            for (final row in rows)
+              Launch2BoardRow(
+                key: ValueKey<String>('launch2-tile-${row.instanceId}'),
+                row: row,
+                onTap: () => _openInstance(row.instanceId),
+                onElapsed: onElapsed,
+              ),
+          ],
+        )
+      else if (cards.isEmpty && !more)
+        if (tab == Launch2DeskTab.upcoming)
           Launch2UpcomingEmpty(
             onLaunch: creatorOpen
                 ? () => widget.onNavigate(Launch2CreatorRoute.createPath)
                 : null,
           )
         else
-          Launch2Board(
-            key: ValueKey<String>('launch2-board-${group.name}'),
-            children: <Widget>[
-              for (final row in members)
-                Launch2BoardRow(
-                  key: ValueKey<String>('launch2-tile-${row.instanceId}'),
-                  row: row,
-                  onTap: () => _openInstance(row.instanceId),
-                  onElapsed: onElapsed,
-                ),
-            ],
+          const LoopAtmoEmpty(
+            key: ValueKey<String>('launch2-live-empty'),
+            message: '现在没有铸造或内盘中的项目，开售后会出现在这里',
+            crownKey: ValueKey<String>('launch2-live-empty-crown'),
           ),
-      ],
-      const SizedBox(height: 8),
+      ..._footer(state, controller, _keyBase),
     ];
   }
 
-  /// With no main event, the chip that is on is the first one holding
-  /// projects; none when every count is zero.
-  static Launch2DeskSegment? _firstFilled(
-    List<(Launch2DeskSegment, int)> counts,
-  ) {
-    for (final (segment, count) in counts) {
-      if (count > 0) return segment;
+  /// 已毕业: the `stage=graduated` list, read when the tab is first opened,
+  /// a page at a time like the desk's own.
+  List<Widget> _graduatedTab(VoidCallback onElapsed) {
+    final state = ref.watch(_graduatedProvider);
+    launch2LoadOnce(
+      ref,
+      state,
+      () => ref.read(_graduatedProvider.notifier).load(),
+    );
+    final controller = ref.read(_graduatedProvider.notifier);
+    const keyBase = 'launch2-list-graduated';
+    final page = state.value;
+    if (page == null && state.phase == LoopChainViewPhase.loading) {
+      return const <Widget>[
+        LoopSkeleton(
+          key: ValueKey<String>('$keyBase-loading'),
+          type: LoopSkeletonType.priceRow,
+          rows: 4,
+          rowHeight: memeCardHeight,
+          leadingSize: memeCardLogoSize,
+        ),
+      ];
     }
-    return null;
-  }
-}
+    if (page == null) {
+      return <Widget>[
+        LoopChainStateBlock(
+          keyPrefix: keyBase,
+          phase: state.phase,
+          failureKind: state.failureKind,
+          emptyMessage: '还没有毕业的 v2 项目',
+          onRetry: () => unawaited(controller.reload()),
+        ),
+      ];
+    }
+    if (page.items.isEmpty) {
+      return const <Widget>[
+        LoopAtmoEmpty(
+          key: ValueKey<String>('launch2-graduated-empty'),
+          message: '还没有毕业的 v2 项目，内盘卖满后自动建官方池，会出现在这里',
+          crownKey: ValueKey<String>('launch2-graduated-empty-crown'),
+        ),
+      ];
+    }
+    void elapsed() {
+      onElapsed();
+      unawaited(controller.reload());
+    }
 
-/// The home's numbered sections (S264, decision 0220): the non-empty groups
-/// in their order, with 预告 put in its place, empty, when [upcomingEmpty]
-/// says nothing is queued.
-List<(Launch2StageGroup, List<Launch2InstanceRow>)> launch2DeskSections(
-  List<(Launch2StageGroup, List<Launch2InstanceRow>)> groups, {
-  required bool upcomingEmpty,
-}) {
-  final has = groups.any((entry) => entry.$1 == Launch2StageGroup.upcoming);
-  if (has || !upcomingEmpty) return groups;
-  final order = Launch2StageGroup.values;
-  final at = groups.indexWhere(
-    (entry) =>
-        order.indexOf(entry.$1) > order.indexOf(Launch2StageGroup.upcoming),
-  );
-  final empty = (Launch2StageGroup.upcoming, const <Launch2InstanceRow>[]);
-  return <(Launch2StageGroup, List<Launch2InstanceRow>)>[
-    if (at < 0) ...groups else ...groups.take(at),
-    empty,
-    if (at >= 0) ...groups.skip(at),
-  ];
+    return <Widget>[
+      Launch2Board(
+        key: const ValueKey<String>('launch2-board-graduated'),
+        children: <Widget>[
+          for (final row in launch2ListOrder(page.items))
+            Launch2BoardRow(
+              key: ValueKey<String>('launch2-tile-${row.instanceId}'),
+              row: row,
+              onTap: () => _openInstance(row.instanceId),
+              onElapsed: elapsed,
+            ),
+        ],
+      ),
+      ..._footer(state, controller, keyBase),
+    ];
+  }
 }
 
 /// The order a v2 list draws its rows in (decision 0142): the server's own

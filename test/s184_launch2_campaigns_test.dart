@@ -982,7 +982,7 @@ void main() {
       expect(campaigns.reads, 1);
       expect(_key('launch2-desk'), findsOneWidget);
       expect(_key('launch2-desk-page-${_id(1)}'), findsOneWidget);
-      expect(_key('launch2-desk-segs'), findsOneWidget);
+      expect(_key('launch2-desk-tabs'), findsOneWidget);
       expect(_key('launch2-desk-record-${_id(1)}'), findsOneWidget);
       expect(find.textContaining('campaign'), findsNothing);
       expect(_key('launch2-desk-dots'), findsNothing);

@@ -13,14 +13,18 @@ void main() {
     expect(LoopColors.purple, const Color(0xFF9C36FF));
     expect(LoopColors.purpleSoft, const Color(0x189C36FF));
     expect(LoopColors.purpleLine, const Color(0x709C36FF));
-    expect(LoopColors.input, const Color(0xFF111114));
+    // S279 · decision 0237: two block grounds; a field is the second.
+    expect(LoopColors.input, const Color(0xFF26252D));
     expect(LoopColors.purpleSelected, LoopColors.purple);
     expect(LoopColors.onPurple, const Color(0xFFFFFFFF));
     expect(LoopColors.purpleTint, const Color(0x2E9C36FF));
     expect(LoopColors.inputLine, const Color(0xFF3B3045));
     expect(LoopColors.chalk, const Color(0xFFF2F2F4));
     expect(LoopColors.graphite, const Color(0xFF111114));
-    expect(LoopColors.card, const Color(0xFF111114));
+    expect(LoopColors.card, const Color(0xFF1A1920));
+    expect(LoopColors.plate, const Color(0xFF1A1920));
+    expect(LoopColors.card2, const Color(0xFF26252D));
+    expect(LoopColors.plateRaised, const Color(0xFF26252D));
     expect(LoopColors.text2, const Color(0xFFB8B4C0));
     expect(LoopColors.text3, const Color(0xFFAEACB6));
     expect(LoopColors.muted, const Color(0xFF8E8A98));
