@@ -1453,11 +1453,10 @@ class SecuritySetupScreen extends StatelessWidget {
           // Prototype order: the amount rule first, the second factor after it.
           // The step-up row reads its own state, so it is not a plain
           // [LoopRecordRow] a [LoopRecordGroup] could re-position; the two
-          // rows carry `first` / `last` themselves, as the group would.
-          Column(
+          // rows carry `first` / `last` themselves, as the group would. S288:
+          // they still stand on the group's block, like 应用锁 above.
+          LoopRecordGroup.children(
             key: const ValueKey<String>('security-verification-group'),
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               // Decision 0152: a real switch now. A signature worth at least
               // the threshold in USD1 asks the device first; the row reads

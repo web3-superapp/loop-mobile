@@ -1107,6 +1107,13 @@ class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
               onTap: () => widget.onNavigate('friend-requests'),
             ),
             _inviteRow(),
+            // S288: 我加入的 is the fifth row of this block, not a block of
+            // its own stacked under it (build45 showed a seam between them).
+            profileJoinedCommunitiesRow(
+              ref,
+              isMounted: () => mounted,
+              onNavigate: widget.onNavigate,
+            ),
           ],
         ),
         ProfileCommunitiesRow(onNavigate: widget.onNavigate),
@@ -1326,6 +1333,86 @@ class _CopyInviteCodeButton extends StatelessWidget {
   }
 }
 
+/// 我加入的, the last row of 账号 on 设置 (S288).
+///
+/// Built as a row rather than a widget so it can sit inside the 账号
+/// [LoopRecordGroup] with the four rows above it. It stays a navigation entry
+/// in every phase: a failure is reported in its one line and carries the
+/// owner to the community directory, which owns the full five-state block and
+/// its retry. It also owns the load of the community home aggregate that
+/// [ProfileCommunitiesRow] reads for 我创建的.
+LoopRecordRow profileJoinedCommunitiesRow(
+  WidgetRef ref, {
+  required bool Function() isMounted,
+  required ValueChanged<String> onNavigate,
+}) {
+  final capability = ref.watch(
+    loopCapabilityProvider(LoopV2CapabilityId.community),
+  );
+  final mode = ref.watch(communityGatewayProvider).mode;
+  final state = ref.watch(communityHomeControllerProvider);
+  final blocked = communityCapabilityBlocks(mode, capability);
+  if (!blocked && state.phase == CommunityViewPhase.loading) {
+    scheduleMicrotask(() {
+      if (isMounted()) {
+        unawaited(ref.read(communityHomeControllerProvider.notifier).load());
+      }
+    });
+  }
+
+  final home = state.value;
+  final isReady = state.phase == CommunityViewPhase.ready && home != null;
+  final joined = home?.joined ?? const <JoinedCommunity>[];
+  final truncated = home?.joinedTruncated ?? false;
+
+  final String trailing;
+  final String subtitle;
+  if (blocked) {
+    trailing = communityMissingFigure;
+    subtitle = '社区模块当前不可用，未读取成员关系';
+  } else if (isReady) {
+    // `truncated` means the aggregate could not carry every membership, so
+    // the count is a floor and is marked as one.
+    trailing = truncated ? '${joined.length}+ 个已加入' : '${joined.length} 个已加入';
+    subtitle = joined.isEmpty
+        ? '还没有加入社区，从发现社区开始'
+        : joined
+              .take(ProfileCommunitiesRow.namedLimit)
+              .map(
+                (entry) =>
+                    '${entry.community.name}（${communityMembershipLabel(entry.membership)}）',
+              )
+              .join(' · ');
+  } else {
+    trailing = communityMissingFigure;
+    subtitle = switch (state.phase) {
+      CommunityViewPhase.loading => '正在读取社区成员关系',
+      CommunityViewPhase.offline => '设备已离线，没有读到社区成员关系',
+      CommunityViewPhase.unavailable => '社区服务当前不可用，未读取成员关系',
+      CommunityViewPhase.permission => '需要先完成 LOOP ID 激活才能读取成员关系',
+      // `empty` cannot reach here: a ready aggregate with no membership is
+      // handled above, and this state carries no other empty answer.
+      CommunityViewPhase.empty ||
+      CommunityViewPhase.error ||
+      CommunityViewPhase.ready => '社区成员关系读取失败，打开社区目录可重试',
+    };
+  }
+
+  return LoopRecordRow(
+    key: const ValueKey<String>('profile-open-communities'),
+    leading: const LoopRowIcon(icon: 'community'),
+    title: '我加入的',
+    subtitle: subtitle,
+    trailing: trailing,
+    semanticLabel: '我加入的，$trailing，$subtitle',
+    onTap: () => onNavigate(
+      isReady && joined.isNotEmpty
+          ? ProfileCommunitiesRow.joinedDestination
+          : ProfileCommunitiesRow.discoverDestination,
+    ),
+  );
+}
+
 /// The 我的社区 block on `profile`.
 ///
 /// Membership is not a profile fact. It is only ever the community module's
@@ -1340,10 +1427,9 @@ class _CopyInviteCodeButton extends StatelessWidget {
 /// sees no second group at all** — an empty 我创建的 would teach every account
 /// about a review queue none of them is in.
 ///
-/// The joined row stays a navigation entry in every phase: a failure is
-/// reported there in one line and carries the owner to the community
-/// directory, which is the page that owns the full five-state block and its
-/// retry.
+/// Since S288 the joined row is drawn by [profileJoinedCommunitiesRow] as the
+/// last row of the 账号 group; this widget draws only 我创建的 and its review
+/// notifications, and nothing at all for a reader who owns no community.
 class ProfileCommunitiesRow extends ConsumerStatefulWidget {
   const ProfileCommunitiesRow({required this.onNavigate, super.key});
 
@@ -1372,97 +1458,31 @@ class ProfileCommunitiesRow extends ConsumerStatefulWidget {
 }
 
 class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
-  /// `名称（Owner）· 名称（成员）`, capped at [ProfileCommunitiesRow.namedLimit].
-  /// A muted or banned membership reads as that state, not as its role.
-  static String _namedCommunities(List<JoinedCommunity> joined) => joined
-      .take(ProfileCommunitiesRow.namedLimit)
-      .map(
-        (entry) =>
-            '${entry.community.name}（${communityMembershipLabel(entry.membership)}）',
-      )
-      .join(' · ');
-
   @override
   Widget build(BuildContext context) {
-    final capability = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.community),
-    );
-    final mode = ref.watch(communityGatewayProvider).mode;
+    // The joined row in 账号 owns the load of this aggregate; this block only
+    // reads what it answered.
     final state = ref.watch(communityHomeControllerProvider);
-    final blocked = communityCapabilityBlocks(mode, capability);
-    if (!blocked && state.phase == CommunityViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          unawaited(ref.read(communityHomeControllerProvider.notifier).load());
-        }
-      });
-    }
-
     final home = state.value;
     final isReady = state.phase == CommunityViewPhase.ready && home != null;
-    final joined = home?.joined ?? const <JoinedCommunity>[];
-    final truncated = home?.joinedTruncated ?? false;
     final owned = isReady ? home.owned : const <OwnedCommunity>[];
-
-    final String trailing;
-    final String subtitle;
-    if (blocked) {
-      trailing = communityMissingFigure;
-      subtitle = '社区模块当前不可用，未读取成员关系';
-    } else if (isReady) {
-      // `truncated` means the aggregate could not carry every membership, so
-      // the count is a floor and is marked as one.
-      trailing = truncated ? '${joined.length}+ 个已加入' : '${joined.length} 个已加入';
-      subtitle = joined.isEmpty ? '还没有加入社区，从发现社区开始' : _namedCommunities(joined);
-    } else {
-      trailing = communityMissingFigure;
-      subtitle = switch (state.phase) {
-        CommunityViewPhase.loading => '正在读取社区成员关系',
-        CommunityViewPhase.offline => '设备已离线，没有读到社区成员关系',
-        CommunityViewPhase.unavailable => '社区服务当前不可用，未读取成员关系',
-        CommunityViewPhase.permission => '需要先完成 LOOP ID 激活才能读取成员关系',
-        // `empty` cannot reach here: a ready aggregate with no membership is
-        // handled above, and this state carries no other empty answer.
-        CommunityViewPhase.empty ||
-        CommunityViewPhase.error ||
-        CommunityViewPhase.ready => '社区成员关系读取失败，打开社区目录可重试',
-      };
-    }
+    if (owned.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        // Decision 0126: a sub-group of 账号 on 我, so the small label.
+        const LoopLabel('我创建的', followsLabel: true, tight: true),
         LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-communities'),
-              leading: const LoopRowIcon(icon: 'community'),
-              title: '我加入的',
-              subtitle: subtitle,
-              trailing: trailing,
-              semanticLabel: '我加入的，$trailing，$subtitle',
-              onTap: () => widget.onNavigate(
-                isReady && joined.isNotEmpty
-                    ? ProfileCommunitiesRow.joinedDestination
-                    : ProfileCommunitiesRow.discoverDestination,
-              ),
-            ),
-          ],
+          key: const ValueKey<String>('profile-owned-communities'),
+          rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
         ),
-        if (owned.isNotEmpty) ...<Widget>[
-          // Decision 0126: a sub-group of 账号 on 我, so the small label.
-          const LoopLabel('我创建的', followsLabel: true, tight: true),
-          LoopRecordGroup(
-            key: const ValueKey<String>('profile-owned-communities'),
-            rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
+        if (home!.ownedTruncated)
+          const LoopFootnote(
+            key: ValueKey<String>('profile-owned-truncated'),
+            text: '这一页放不下全部，上面是最近提交的几个。',
           ),
-          if (home!.ownedTruncated)
-            const LoopFootnote(
-              key: ValueKey<String>('profile-owned-truncated'),
-              text: '这一页放不下全部，上面是最近提交的几个。',
-            ),
-          ProfileApplicationNotifications(onOpenCommunity: widget.onNavigate),
-        ],
+        ProfileApplicationNotifications(onOpenCommunity: widget.onNavigate),
       ],
     );
   }
@@ -2139,12 +2159,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 ),
               ),
             const SizedBox(height: 4),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-edit-open-privacy'),
-              leading: const LoopRowIcon(icon: 'lock'),
-              title: '隐私中心',
-              subtitle: '持仓与交易是否公开、谁能加你',
-              onTap: () => widget.onNavigate('privacy'),
+            // S288: a lone row still stands on a block (decision 0237).
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('profile-edit-open-privacy'),
+                  leading: const LoopRowIcon(icon: 'lock'),
+                  title: '隐私中心',
+                  subtitle: '持仓与交易是否公开、谁能加你',
+                  onTap: () => widget.onNavigate('privacy'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
           ],
@@ -2368,39 +2393,50 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             // S107 §2: a person is drawn with their own avatar and name
             // everywhere, so the 匿名模式 switch is hidden (not removed); the
             // field stays in the resource and is resubmitted unchanged.
-            if (ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible)
-              LoopTogglePreferenceRow(
-                key: const ValueKey<String>('privacy-anonymous-mode'),
-                title: '匿名模式',
-                subtitle: '只显示别名，不显示钱包地址',
-                value: draft.anonymousMode,
-                position: LoopRowPosition.first,
-                onChanged: state.canEdit
-                    ? () => controller.editAnonymousMode(!draft.anonymousMode)
-                    : null,
-              ),
-            LoopTogglePreferenceRow(
-              key: const ValueKey<String>('privacy-discoverable'),
-              // Decision 0105 (backend decision 0090): the switch governs being
-              // found by nickname and being followed. A LOOP ID is always found
-              // by an exact search, whichever way this switch is set.
-              title: '可被发现',
-              // The subtitle described the switch turned on while the row read
-              // 已关闭 beside it, so the state and the sentence disagreed.
-              // Decision 0096 (S107b): the switch governs search listings only;
-              // follows and friend requests from a reached profile are not
-              // gated by it.
-              subtitle: draft.discoverable
-                  ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
-                  : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
-              value: draft.discoverable,
-              position:
-                  ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible
-                  ? LoopRowPosition.last
-                  : LoopRowPosition.single,
-              onChanged: state.canEdit
-                  ? () => controller.editDiscoverable(!draft.discoverable)
-                  : null,
+            // S288: each group stands on one block (decision 0237); the rows
+            // are switches that read their own draft, so they go in as
+            // children and keep the positions they set themselves.
+            LoopRecordGroup.children(
+              key: const ValueKey<String>('privacy-identity-group'),
+              children: <Widget>[
+                if (ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible)
+                  LoopTogglePreferenceRow(
+                    key: const ValueKey<String>('privacy-anonymous-mode'),
+                    title: '匿名模式',
+                    subtitle: '只显示别名，不显示钱包地址',
+                    value: draft.anonymousMode,
+                    position: LoopRowPosition.first,
+                    onChanged: state.canEdit
+                        ? () =>
+                              controller.editAnonymousMode(!draft.anonymousMode)
+                        : null,
+                  ),
+                LoopTogglePreferenceRow(
+                  key: const ValueKey<String>('privacy-discoverable'),
+                  // Decision 0105 (backend decision 0090): the switch governs being
+                  // found by nickname and being followed. A LOOP ID is always found
+                  // by an exact search, whichever way this switch is set.
+                  title: '可被发现',
+                  // The subtitle described the switch turned on while the row read
+                  // 已关闭 beside it, so the state and the sentence disagreed.
+                  // Decision 0096 (S107b): the switch governs search listings only;
+                  // follows and friend requests from a reached profile are not
+                  // gated by it.
+                  subtitle: draft.discoverable
+                      ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
+                      : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
+                  value: draft.discoverable,
+                  position:
+                      ref
+                          .watch(loopFeatureSwitchesProvider)
+                          .anonymousModeVisible
+                      ? LoopRowPosition.last
+                      : LoopRowPosition.single,
+                  onChanged: state.canEdit
+                      ? () => controller.editDiscoverable(!draft.discoverable)
+                      : null,
+                ),
+              ],
             ),
             // 社交 · the three admission gates (decision 0070). They sit apart
             // from 可见性 because they are not display preferences: the server
@@ -2408,82 +2444,98 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             // invite reach this account. The prototype's 持仓广播 card is not
             // implemented, so this group takes the middle slot of the page.
             const LoopLabel('社交'),
-            for (final gate in PrivacySocialGate.values)
-              LoopTogglePreferenceRow(
-                key: ValueKey<String>('privacy-social-${gate.wireValue}'),
-                title: gate.label,
-                subtitle: _socialGateSubtitle(gate, open: draft.social[gate]),
-                value: draft.social[gate],
-                position: gate == PrivacySocialGate.values.first
-                    ? LoopRowPosition.first
-                    : gate == PrivacySocialGate.values.last
-                    ? LoopRowPosition.last
-                    : LoopRowPosition.middle,
-                onChanged: state.canEdit
-                    ? () => controller.editSocialGate(
-                        gate,
-                        open: !draft.social[gate],
-                      )
-                    : null,
-              ),
+            LoopRecordGroup.children(
+              key: const ValueKey<String>('privacy-social-group'),
+              children: <Widget>[
+                for (final gate in PrivacySocialGate.values)
+                  LoopTogglePreferenceRow(
+                    key: ValueKey<String>('privacy-social-${gate.wireValue}'),
+                    title: gate.label,
+                    subtitle: _socialGateSubtitle(
+                      gate,
+                      open: draft.social[gate],
+                    ),
+                    value: draft.social[gate],
+                    position: gate == PrivacySocialGate.values.first
+                        ? LoopRowPosition.first
+                        : gate == PrivacySocialGate.values.last
+                        ? LoopRowPosition.last
+                        : LoopRowPosition.middle,
+                    onChanged: state.canEdit
+                        ? () => controller.editSocialGate(
+                            gate,
+                            open: !draft.social[gate],
+                          )
+                        : null,
+                  ),
+              ],
+            ),
             const LoopLabel('可见性'),
             // S107 §4: one switch for what the profile page shows others —
             // holdings and trades together. It writes `totalAssets` and
             // `tradeHistory` to the same audience.
-            LoopTogglePreferenceRow(
-              key: const ValueKey<String>('privacy-public-holdings'),
-              title: '公开持仓与交易',
-              subtitle: privacyHoldingsPublic(draft.visibility)
-                  ? '别人在你的主页能看到持仓和交易记录，不显示钱包地址'
-                  : '只有你自己能看到持仓和交易记录',
-              value: privacyHoldingsPublic(draft.visibility),
-              onLabel: '所有人',
-              offLabel: '仅自己',
-              position: LoopRowPosition.first,
-              onChanged: state.canEdit
-                  ? () {
-                      final audience = privacyHoldingsPublic(draft.visibility)
-                          ? PrivacyAudience.self
-                          : PrivacyAudience.everyone;
-                      controller
-                        ..editVisibility(
-                          PrivacyVisibilityFacet.totalAssets,
-                          audience,
-                        )
-                        ..editVisibility(
-                          PrivacyVisibilityFacet.tradeHistory,
-                          audience,
-                        );
-                    }
-                  : null,
-            ),
-            for (final facet in const <PrivacyVisibilityFacet>[
-              PrivacyVisibilityFacet.miningPower,
-              PrivacyVisibilityFacet.communities,
-            ])
-              LoopTogglePreferenceRow(
-                key: ValueKey<String>('privacy-visibility-${facet.wireValue}'),
-                title: facet.label,
-                value: draft.visibility[facet] == PrivacyAudience.everyone,
-                onLabel: '所有人',
-                offLabel: '仅自己',
-                position: LoopRowPosition.middle,
-                onChanged: state.canEdit
-                    ? () => controller.editVisibility(
-                        facet,
-                        draft.visibility[facet] == PrivacyAudience.everyone
-                            ? PrivacyAudience.self
-                            : PrivacyAudience.everyone,
-                      )
-                    : null,
-              ),
-            // The prototype closes the 可见性 card with this row rather than
-            // floating it alone under the card.
-            LoopRecordRow(
-              key: const ValueKey<String>('privacy-open-blocklist'),
-              title: '屏蔽名单',
-              position: LoopRowPosition.last,
-              onTap: () => widget.onNavigate('blocklist'),
+            LoopRecordGroup.children(
+              key: const ValueKey<String>('privacy-visibility-group'),
+              children: <Widget>[
+                LoopTogglePreferenceRow(
+                  key: const ValueKey<String>('privacy-public-holdings'),
+                  title: '公开持仓与交易',
+                  subtitle: privacyHoldingsPublic(draft.visibility)
+                      ? '别人在你的主页能看到持仓和交易记录，不显示钱包地址'
+                      : '只有你自己能看到持仓和交易记录',
+                  value: privacyHoldingsPublic(draft.visibility),
+                  onLabel: '所有人',
+                  offLabel: '仅自己',
+                  position: LoopRowPosition.first,
+                  onChanged: state.canEdit
+                      ? () {
+                          final audience =
+                              privacyHoldingsPublic(draft.visibility)
+                              ? PrivacyAudience.self
+                              : PrivacyAudience.everyone;
+                          controller
+                            ..editVisibility(
+                              PrivacyVisibilityFacet.totalAssets,
+                              audience,
+                            )
+                            ..editVisibility(
+                              PrivacyVisibilityFacet.tradeHistory,
+                              audience,
+                            );
+                        }
+                      : null,
+                ),
+                for (final facet in const <PrivacyVisibilityFacet>[
+                  PrivacyVisibilityFacet.miningPower,
+                  PrivacyVisibilityFacet.communities,
+                ])
+                  LoopTogglePreferenceRow(
+                    key: ValueKey<String>(
+                      'privacy-visibility-${facet.wireValue}',
+                    ),
+                    title: facet.label,
+                    value: draft.visibility[facet] == PrivacyAudience.everyone,
+                    onLabel: '所有人',
+                    offLabel: '仅自己',
+                    position: LoopRowPosition.middle,
+                    onChanged: state.canEdit
+                        ? () => controller.editVisibility(
+                            facet,
+                            draft.visibility[facet] == PrivacyAudience.everyone
+                                ? PrivacyAudience.self
+                                : PrivacyAudience.everyone,
+                          )
+                        : null,
+                  ),
+                // The prototype closes the 可见性 card with this row rather than
+                // floating it alone under the card.
+                LoopRecordRow(
+                  key: const ValueKey<String>('privacy-open-blocklist'),
+                  title: '屏蔽名单',
+                  position: LoopRowPosition.last,
+                  onTap: () => widget.onNavigate('blocklist'),
+                ),
+              ],
             ),
             // S278 · decision 0236: an explanation, behind (i).
             const LoopProvenanceFooter(

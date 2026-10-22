@@ -261,7 +261,13 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
           // account's own rule. It reads no security resource, so it stays
           // whatever the two reads above answered.
           const LoopLabel('交易验证'),
-          const LoopStepUpSettingRow(),
+          // S288: the one row stands on the group's block like every other
+          // group on this page; it reads its own state, so it goes in as a
+          // child rather than a plain row.
+          const LoopRecordGroup.children(
+            key: ValueKey<String>('security-step-up-group'),
+            children: <Widget>[LoopStepUpSettingRow()],
+          ),
           const LoopLabel('设备'),
           if (!summary.isReady)
             LoopChainStateBlock(
