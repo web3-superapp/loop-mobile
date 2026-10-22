@@ -141,12 +141,23 @@ void main() {
     expect(find.text('已开启'), findsOneWidget); // security.event only
 
     // The two rows that lead somewhere lead to their own explanation page.
+    // S278 · decision 0236: the row's (i) answers only its own 44 dp, which
+    // on the S279 block sits near the row's centre — so the row is tapped
+    // on its title, the way a finger reaches it.
     await tester.tap(
-      find.byKey(const ValueKey<String>('security-method-socialRecovery')),
+      find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('security-method-socialRecovery'),
+        ),
+        matching: find.text('社交恢复'),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey<String>('security-method-keyExport')),
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('security-method-keyExport')),
+        matching: find.text('导出私钥'),
+      ),
     );
     await tester.pumpAndSettle();
     expect(destinations, <String>['social-recovery', 'key-export']);
