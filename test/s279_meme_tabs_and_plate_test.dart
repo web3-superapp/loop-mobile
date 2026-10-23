@@ -20,7 +20,6 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
@@ -353,17 +352,11 @@ void main() {
   });
 
   group('the top bar', () {
-    testWidgets('我的项目 is a 24 glyph in a 44 target; 发射 is the Yellow '
-        'capsule with its words and opens the create page at once while '
-        'classic is retired', (tester) async {
+    testWidgets('发射 is the Yellow capsule with its words and opens the '
+        'create page at once while classic is retired; 我的项目 is not on '
+        'this bar (S294 · 0244)', (tester) async {
       final opened = await _pumpHome(tester, _Gateway(_rows));
-      final mine = _key('launch2-my-projects-action');
-      expect(tester.getSize(mine), const Size(44, 44));
-      final glyphs = tester.widgetList<LoopIcon>(
-        find.descendant(of: mine, matching: find.byType(LoopIcon)),
-      );
-      expect(glyphs, isNotEmpty);
-      expect(glyphs.every((icon) => icon.size == 24), isTrue);
+      expect(_key('launch2-my-projects-action'), findsNothing);
       final capsule = _key('launch2-create-action');
       expect(tester.getSize(capsule).height, greaterThanOrEqualTo(44));
       expect(
@@ -372,10 +365,6 @@ void main() {
       );
       final ground = tester.widget<Container>(_key('launch2-create-capsule'));
       expect((ground.decoration! as BoxDecoration).color, LoopColors.yellow);
-      // Left of it, 我的项目.
-      expect(tester.getCenter(mine).dx, lessThan(tester.getCenter(capsule).dx));
-      await tester.tap(mine);
-      expect(opened.last, Launch2CreatorRoute.minePath);
       await tester.tap(capsule);
       await tester.pumpAndSettle();
       expect(_key('launch2-create-chooser'), findsNothing);

@@ -1046,7 +1046,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
               state: dynamicPool,
               ticker: detail.row.ticker,
             ),
-          Launch2PoolStats(detail: detail),
+          // S294 · decision 0244 (需求方 2026-10-23 第 07 条): the pool
+          // rows (外盘最新价 … 最近成交) and their 还在同步 line are gone;
+          // the price header and the 成交 tab carry those figures.
           if (launch2SnapshotPublishedShown(detail))
             Launch2SnapshotPublishedBlock(detail: detail),
           // Decision 0157: a LoopDynamic Hook credits rewards only to buys

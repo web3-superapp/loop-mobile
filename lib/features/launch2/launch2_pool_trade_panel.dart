@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
@@ -743,78 +742,6 @@ class _PoolMaxKey extends StatelessWidget {
   );
 }
 
-/// 官方池 · 最新价 and 成交笔数 from the detail's `pool` object.
-class Launch2PoolStats extends StatelessWidget {
-  const Launch2PoolStats({required this.detail, super.key});
-
-  final Launch2InstanceDetail detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final pool = detail.pool;
-    if (pool == null) {
-      return const LoopInlineUnavailable(
-        key: ValueKey<String>('launch2-pool-stats-unavailable'),
-        icon: 'info',
-        message: '官方池成交还在同步',
-      );
-    }
-    final price = pool.lastPriceUsd1;
-    return Column(
-      key: const ValueKey<String>('launch2-pool-stats'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-pool-last-price'),
-          label: '外盘最新价',
-          value: price == null ? '还没有成交' : launch2PriceLabel(price),
-        ),
-        // Decision 0150 (loop-api S151): market trades lead, buybacks are
-        // named apart. The server gives no user buy / sell counts, so the
-        // split is the user USD1 volumes. A server before S151 keeps the
-        // pool-wide line.
-        if (pool.userTradeCount case final BigInt user) ...<Widget>[
-          LoopKeyValue(
-            key: const ValueKey<String>('launch2-pool-trade-count'),
-            label: '外盘成交',
-            value: <String>[
-              '${loopGroupedFigure(user.toString())} 笔用户成交',
-              if (launch2PoolBuybackCount(detail) case final BigInt buybacks)
-                '另有回购 ${loopGroupedFigure(buybacks.toString())} 笔',
-            ].join(' · '),
-          ),
-          LoopKeyValue(
-            key: const ValueKey<String>('launch2-pool-user-volume'),
-            label: '用户买入 / 卖出',
-            value:
-                '${loopFormatDecimal(pool.userBuyVolumeUsd1 ?? Decimal.zero, maxFractionDigits: 2)} / '
-                '${launch2Usd1Label(pool.userSellVolumeUsd1 ?? Decimal.zero)}',
-          ),
-        ] else
-          LoopKeyValue(
-            key: const ValueKey<String>('launch2-pool-trade-count'),
-            label: '外盘成交',
-            value:
-                '${loopGroupedFigure(pool.tradeCount.toString())} 笔 · '
-                '买 ${loopGroupedFigure(pool.buyCount.toString())} / '
-                '卖 ${loopGroupedFigure(pool.sellCount.toString())}',
-          ),
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-pool-volume'),
-          label: '24 小时成交额',
-          value: launch2Usd1Label(pool.volume24hUsd1),
-        ),
-        if (pool.lastTradeAt case final DateTime at)
-          LoopKeyValue(
-            key: const ValueKey<String>('launch2-pool-last-trade'),
-            label: '最近成交',
-            value: loopDateTimeLabel(at),
-          ),
-      ],
-    );
-  }
-}
-
 /// The wallet Swap, one quiet link under the panel (decision 0145: no
 /// longer the page's primary action).
 class Launch2PoolSwapLink extends StatelessWidget {
@@ -854,17 +781,4 @@ class Launch2PoolSwapLink extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// 「另有回购 M 笔」 (decision 0150; source widened by decision 0200 D10).
-///
-/// The pool's own split (`tradeCount - userTradeCount`) when it names any
-/// buyback swap; otherwise the buyback ledger's `executedCount` — the same
-/// figure the 回购 card shows. S221 saw the card say 2 笔 while the pool
-/// split was 0, so the line was missing. `null` = nothing to say.
-BigInt? launch2PoolBuybackCount(Launch2InstanceDetail detail) {
-  final fromPool = detail.pool?.buybackTradeCount;
-  if (fromPool != null && fromPool > BigInt.zero) return fromPool;
-  final fromLedger = detail.buyback.executedCount;
-  return fromLedger > BigInt.zero ? fromLedger : null;
 }

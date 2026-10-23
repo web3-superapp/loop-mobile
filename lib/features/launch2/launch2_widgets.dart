@@ -653,7 +653,8 @@ class Launch2BarShell extends StatelessWidget {
   );
 }
 
-/// 名单已发布 (decision 0202): what the published snapshot list says without
+/// NFT名单公布 (decision 0202; titled 名单已发布 until decision 0244): what
+/// the published snapshot list says without
 /// its addresses (loop-api decision 0118 never sends them) — how many are on
 /// it, when it was published, whether it was verified, and its publication
 /// transaction on BscScan, opened in the system browser. Drawn on the
@@ -679,7 +680,7 @@ class Launch2SnapshotPublishedBlock extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const LoopLabel('名单已发布'),
+        const LoopLabel('NFT名单公布'),
         LoopRecordCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

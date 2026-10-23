@@ -79,6 +79,7 @@ List<RouteBase> launch2CreatorRoutes({
       onBack: () => popOrHome(context),
       onSubmitted: (projectId) =>
           context.pushReplacement(Launch2CreatorRoute.project(projectId)),
+      onOpenMyProjects: () => context.push(Launch2CreatorRoute.minePath),
     ),
   ),
   GoRoute(

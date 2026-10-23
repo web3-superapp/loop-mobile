@@ -34,6 +34,7 @@ import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
 
@@ -484,6 +485,46 @@ void main() {
         Launch2CreatorRoute.createPath,
         Launch2CreatorRoute.minePath,
       ]);
+    });
+
+    // S294 · decision 0244 (需求方 2026-10-23 第 06 条): 我的项目 moved from
+    // the MEME home's bar to the create page's top-bar trailing slot.
+    testWidgets('the create page carries 我的项目 top right (0244)', (
+      tester,
+    ) async {
+      var opened = 0;
+      await _pump(
+        tester,
+        Launch2CreateScreen(onOpenMyProjects: () => opened++),
+      );
+      final mine = _key('launch2-my-projects-action');
+      expect(mine, findsOneWidget);
+      expect(tester.getSize(mine), const Size(44, 44));
+      expect(
+        tester.getCenter(mine).dx,
+        greaterThan(tester.getCenter(find.text('发起 v2 发射')).dx),
+      );
+      final glyphs = tester.widgetList<LoopIcon>(
+        find.descendant(of: mine, matching: find.byType(LoopIcon)),
+      );
+      expect(glyphs, isNotEmpty);
+      expect(glyphs.every((icon) => icon.name == 'user'), isTrue);
+      expect(find.bySemanticsLabel('我的项目'), findsOneWidget);
+      await tester.tap(mine);
+      expect(opened, 1);
+      await _drain(tester);
+    });
+
+    testWidgets('no 我的项目 on the create page while launch2 is closed', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        Launch2CreateScreen(onOpenMyProjects: () {}),
+        launch2Visible: false,
+      );
+      expect(_key('launch2-my-projects-action'), findsNothing);
+      await _drain(tester);
     });
   });
 

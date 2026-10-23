@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart'
     show confirmCommunityAction;
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers.dart';
+import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
@@ -125,12 +126,17 @@ class Launch2CreateScreen extends ConsumerStatefulWidget {
     this.projectId,
     this.onBack,
     this.onSubmitted,
+    this.onOpenMyProjects,
     this.clock,
   });
 
   final String? projectId;
   final VoidCallback? onBack;
   final void Function(String projectId)? onSubmitted;
+
+  /// 「我的项目」 in the top bar of a new launch (S294 · decision 0244);
+  /// absent, or on the edit form (reached from 我的项目), it is not drawn.
+  final VoidCallback? onOpenMyProjects;
   final DateTime Function()? clock;
 
   @override
@@ -591,6 +597,10 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       archetype: LoopPageArchetype.action,
       title: projectId == null ? '发起 v2 发射' : '修改资料',
       onBack: () => unawaited(_back()),
+      actions: <Widget>[
+        if (projectId == null && widget.onOpenMyProjects != null)
+          Launch2MyProjectsAction(onPressed: widget.onOpenMyProjects!),
+      ],
       keyboardAccessory: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('launch2-create-next'),

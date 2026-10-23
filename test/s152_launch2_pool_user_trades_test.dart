@@ -2,15 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:decimal/decimal.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
-import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_pool_codec.dart';
 
 import 'support/launch2_fixtures.dart';
-import 'support/s7_page_harness.dart';
 
 // ---------------------------------------------------------------------------
 // S152 · official-pool user trades apart from buybacks (client decision 0150)
@@ -33,31 +30,6 @@ Matcher get _invalid => throwsA(
     LoopBackendFailureKind.invalidPayload,
   ),
 );
-
-Future<void> _stats(
-  WidgetTester tester,
-  Map<String, Object?> pool, {
-  String buybacksExecuted = '0',
-}) => pumpS7Page(
-  tester,
-  Scaffold(
-    body: ListView(
-      children: <Widget>[
-        Launch2PoolStats(
-          detail: l2Detail(
-            stage: 'graduated',
-            noNextChange: true,
-            pool: pool,
-            buybacksExecuted: buybacksExecuted,
-          ),
-        ),
-      ],
-    ),
-  ),
-  size: const Size(360, 800),
-);
-
-Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
 Map<String, Object?> _legacy() => Map<String, Object?>.of(_pool())
   ..remove('userTradeCount')
@@ -148,69 +120,8 @@ void main() {
       expect(detail.pool!.userTradeCount, BigInt.from(3));
     });
   });
-
-  group('官方池读数', () {
-    testWidgets('user trades lead, buybacks are named apart, the 24 h volume '
-        'stays the total', (tester) async {
-      await _stats(tester, _pool());
-      expect(find.text('3 笔用户成交 · 另有回购 3 笔'), findsOneWidget);
-      expect(find.text('用户买入 / 卖出'), findsOneWidget);
-      expect(find.text('50 / 40 USD1'), findsOneWidget);
-      expect(find.text('390 USD1'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('no buyback yet: no 另有回购', (tester) async {
-      await _stats(
-        tester,
-        _pool()
-          ..['userTradeCount'] = '6'
-          ..['userBuyVolumeUsd1'] = '350',
-      );
-      expect(find.text('6 笔用户成交'), findsOneWidget);
-      expect(find.textContaining('另有回购'), findsNothing);
-      expect(find.text('350 / 40 USD1'), findsOneWidget);
-    });
-
-    testWidgets('only buybacks so far', (tester) async {
-      await _stats(
-        tester,
-        _pool()
-          ..['userTradeCount'] = '0'
-          ..['userBuyVolumeUsd1'] = '0'
-          ..['userSellVolumeUsd1'] = '0',
-      );
-      expect(find.text('0 笔用户成交 · 另有回购 6 笔'), findsOneWidget);
-      expect(find.text('0 / 0 USD1'), findsOneWidget);
-    });
-
-    // Decision 0200 D10 (S221): the pool split said 0 while the buyback
-    // card said 2 笔; the ledger count fills the line.
-    testWidgets('the pool split names no buyback: the ledger count does', (
-      tester,
-    ) async {
-      await _stats(
-        tester,
-        _pool()
-          ..['tradeCount'] = '13'
-          ..['userTradeCount'] = '13',
-        buybacksExecuted: '2',
-      );
-      expect(find.text('13 笔用户成交 · 另有回购 2 笔'), findsOneWidget);
-    });
-
-    testWidgets('the pool split wins when it names buybacks', (tester) async {
-      await _stats(tester, _pool(), buybacksExecuted: '1');
-      expect(find.text('3 笔用户成交 · 另有回购 3 笔'), findsOneWidget);
-    });
-
-    testWidgets('a server before S151 keeps the pool-wide line', (
-      tester,
-    ) async {
-      await _stats(tester, _legacy());
-      expect(find.text('6 笔 · 买 5 / 卖 1'), findsOneWidget);
-      expect(_key('launch2-pool-user-volume'), findsNothing);
-      expect(find.textContaining('用户成交'), findsNothing);
-    });
-  });
+  // S294 · decision 0244 (需求方 2026-10-23 第 07 条): the 信息 tab no
+  // longer draws the pool rows (外盘最新价 … 最近成交), so the widget cases of
+  // this file (官方池读数) went with Launch2PoolStats. The codec still reads
+  // and checks the S151 keys above.
 }

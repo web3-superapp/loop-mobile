@@ -589,7 +589,7 @@ String launch2SnapshotPendingTitle(Launch2Snapshot snapshot) =>
       Launch2PublicationStatus.pending ||
       Launch2PublicationStatus.broadcast => '名单发布中',
       Launch2PublicationStatus.confirmed =>
-        snapshot.published ? '名单已发布' : '名单已上链，同步中',
+        snapshot.published ? 'NFT名单公布' : '名单已上链，同步中',
       Launch2PublicationStatus.failed ||
       Launch2PublicationStatus.mismatch => '名单发布异常，平台处理中',
     };
@@ -610,7 +610,7 @@ String launch2SnapshotPendingMessage(Launch2Snapshot snapshot) {
   return '截止块 #${loopGroupedFigure(block.toString())}，名单发布后开始 1 小时提前购';
 }
 
-/// Whether the page draws the 名单已发布 block (decision 0202): the list was
+/// Whether the page draws the NFT名单公布 block (decision 0202): the list was
 /// published and the instance has moved past it (提前购, 公开内盘, 已毕业).
 /// A public round opened without holders has no list.
 bool launch2SnapshotPublishedShown(Launch2InstanceDetail detail) =>
@@ -620,7 +620,7 @@ bool launch2SnapshotPublishedShown(Launch2InstanceDetail detail) =>
         detail.stage == Launch2Stage.public ||
         detail.stage == Launch2Stage.graduated);
 
-/// 核验 in the 名单已发布 block (`snapshot.verification`); `null` when the
+/// 核验 in the NFT名单公布 block (`snapshot.verification`); `null` when the
 /// server said nothing.
 String? launch2SnapshotVerificationText(
   Launch2SnapshotVerification? verification,

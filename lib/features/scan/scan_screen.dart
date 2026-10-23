@@ -64,12 +64,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
   /// The text of an unrecognised code, while it is on screen.
   String? _unknown;
 
-  /// A recognised invite code, while it is on screen waiting for
-  /// 去填写邀请码 (decision 0235).
-  LoopScanInvite? _invite;
-
   /// Set once a code has been handed on: a second frame of the same code
-  /// must not open the page twice.
+  /// must not open the page twice. Invite codes open directly too
+  /// (decision 0244 retires 0235's confirmation panel).
   bool _handled = false;
   bool _pickingImage = false;
 
@@ -119,7 +116,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
   }
 
   void _onCode(String raw) {
-    if (_handled || _unknown != null || _invite != null || !mounted) return;
+    if (_handled || _unknown != null || !mounted) return;
     _dispatch(raw);
   }
 
@@ -149,10 +146,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       return;
     }
     switch (result) {
-      case LoopScanInvite():
-        LoopHaptics.selection();
-        setState(() => _invite = result);
       case LoopScanDestination():
+        // Includes LoopScanInvite: straight to `/profile/referral?code=`
+        // (decision 0244). Nothing is bound until the user confirms there.
+        if (_handled) return;
         _handled = true;
         LoopHaptics.selection();
         widget.onOpen?.call(result.location, extra: result.extra);
@@ -193,12 +190,6 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     }
   }
 
-  void _openInvite(LoopScanInvite invite) {
-    if (_handled) return;
-    _handled = true;
-    widget.onOpen?.call(invite.location, extra: invite.extra);
-  }
-
   Future<void> _copyUnknown(String text) async {
     await LoopCopy.text(context, text, message: '已复制二维码内容');
   }
@@ -232,8 +223,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       valueListenable: session.state,
       builder: (context, camera, _) {
         final unknown = _unknown;
-        final invite = _invite;
-        final panel = unknown != null || invite != null;
+        final panel = unknown != null;
         final torchOn = camera.torch == LoopQrTorch.on;
         final running = camera.status == LoopQrCameraStatus.running;
         return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -289,17 +279,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          if (invite != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: _InviteCode(
-                                code: invite.code,
-                                onOpen: () => _openInvite(invite),
-                                onContinue: () =>
-                                    setState(() => _invite = null),
-                              ),
-                            )
-                          else if (unknown != null)
+                          if (unknown != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 16),
                               child: _UnknownCode(
@@ -654,48 +634,6 @@ class _UnknownCode extends StatelessWidget {
             label: '继续扫描',
             primary: true,
             onPressed: onContinue,
-          ),
-        ],
-      ),
-    ],
-  );
-}
-
-/// A recognised invite code (decision 0235): the code, and 去填写邀请码 opens
-/// the `referral` page with it filled in. Nothing is bound from here.
-class _InviteCode extends StatelessWidget {
-  const _InviteCode({
-    required this.code,
-    required this.onOpen,
-    required this.onContinue,
-  });
-
-  final String code;
-  final VoidCallback onOpen;
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    key: const ValueKey<String>('scan-invite'),
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      LoopNotice(
-        icon: 'info',
-        title: 'LOOP 邀请码 $code',
-        body: '在填写页确认后才会绑定，绑定后不能更换。',
-      ),
-      LoopButtonPair(
-        children: <Widget>[
-          LoopButton(
-            key: const ValueKey<String>('scan-invite-continue'),
-            label: '继续扫描',
-            onPressed: onContinue,
-          ),
-          LoopButton(
-            key: const ValueKey<String>('scan-invite-open'),
-            label: '去填写邀请码',
-            primary: true,
-            onPressed: onOpen,
           ),
         ],
       ),
