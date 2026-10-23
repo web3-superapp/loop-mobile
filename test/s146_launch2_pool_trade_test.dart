@@ -956,8 +956,10 @@ void main() {
       // tab's; the panel is the sheet behind 买入.
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await l2OpenTab(tester, 'info');
-      expect(_key('launch2-pool-stats'), findsOneWidget);
-      expect(find.text('12 笔 · 买 8 / 卖 4'), findsOneWidget);
+      // S294 · decision 0244: no pool rows on 信息 any more.
+      expect(_key('launch2-pool-stats'), findsNothing);
+      expect(find.text('外盘最新价'), findsNothing);
+      expect(find.text('12 笔 · 买 8 / 卖 4'), findsNothing);
       expect(find.text('去外盘交易'), findsNothing);
       await _scrollTo(tester, _key('launch2-go-swap'));
       await tester.tap(_key('launch2-go-swap'));
@@ -971,16 +973,17 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('a pool that has not synced says so; the panel stays', (
-      tester,
-    ) async {
+    testWidgets('a pool that has not synced: 信息 draws no pool rows; the '
+        'panel stays', (tester) async {
       await _open(
         tester,
         _FakePool(details: <Launch2InstanceDetail>[_graduated(noPool: true)]),
         sheet: false,
       );
       await l2OpenTab(tester, 'info');
-      expect(_key('launch2-pool-stats-unavailable'), findsOneWidget);
+      // S294 · decision 0244: the rows and their 还在同步 line are gone.
+      expect(_key('launch2-pool-stats-unavailable'), findsNothing);
+      expect(_key('launch2-graduated'), findsOneWidget);
       await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
       await _drain(tester);

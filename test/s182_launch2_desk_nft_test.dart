@@ -2313,6 +2313,10 @@ void main() {
     final confirmed = s233('instance_snapshot_pending_confirmed');
     final priority = s233('instance_priority_published');
 
+    test('a confirmed and synced publication is titled NFT名单公布 (0244)', () {
+      expect(launch2SnapshotPendingTitle(priority.snapshot), 'NFT名单公布');
+    });
+
     testWidgets('共识勋章 · snapshot_pending follows the publication: 名单生成中, '
         '名单发布中, 名单已上链，同步中', (tester) async {
       for (final (detail, title) in <(Launch2InstanceDetail, String)>[
@@ -2433,6 +2437,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(block, findsOneWidget);
+      // S294 · decision 0244 (需求方 2026-10-23 第 07 条).
+      expect(
+        find.descendant(of: block, matching: find.text('NFT名单公布')),
+        findsOneWidget,
+      );
+      expect(find.text('名单已发布'), findsNothing);
       String value(String key) => tester.widget<LoopKeyValue>(_key(key)).value;
       expect(value('launch2-snapshot-members'), '3 人');
       expect(
@@ -2449,7 +2459,7 @@ void main() {
       expect(opened, <Uri>[Uri.parse('https://testnet.bscscan.com/tx/$tx')]);
     }
 
-    testWidgets('project page · 提前购: the 名单已发布 block with count, time, '
+    testWidgets('project page · 提前购: the NFT名单公布 block with count, time, '
         '已核验 and the BscScan link', (tester) async {
       final opened = <Uri>[];
       await _pump(

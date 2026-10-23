@@ -380,32 +380,32 @@ void main() {
       expect(opened.locations, hasLength(1));
     });
 
-    testWidgets('an invite code is named, then 去填写邀请码 opens referral', (
+    testWidgets('an invite code opens referral at once, only once (0244)', (
       tester,
     ) async {
       final opened = await _pumpScan(tester);
       opened.scanner.session.emit('$_stagingBase/i/LOOP-1ZR9N');
       await tester.pumpAndSettle();
 
-      expect(opened.locations, isEmpty);
+      expect(opened.locations, <String>['/profile/referral?code=LOOP-1ZR9N']);
       expect(find.text('不是 LOOP 二维码'), findsNothing);
-      expect(find.text('LOOP 邀请码 LOOP-1ZR9N'), findsOneWidget);
-      // Another frame of the same code changes nothing while it is shown.
+      // No confirmation panel any more (decision 0235 item 2 retired).
+      expect(find.byKey(const ValueKey<String>('scan-invite')), findsNothing);
+      expect(find.text('去填写邀请码'), findsNothing);
+      // Further frames — the same code, or another — open nothing more.
+      opened.scanner.session.emit('$_stagingBase/i/LOOP-1ZR9N');
+      opened.scanner.session.emit('LOOP-1ZR9N');
       opened.scanner.session.emit('$_stagingBase/u/$_loopId');
       await tester.pumpAndSettle();
-      expect(opened.locations, isEmpty);
+      expect(opened.locations, hasLength(1));
+    });
 
-      await _tap(
-        tester,
-        find.byKey(const ValueKey<String>('scan-invite-continue')),
-      );
-      expect(find.byKey(const ValueKey<String>('scan-invite')), findsNothing);
-      opened.scanner.session.emit('$_stagingBase/i/LOOP-1ZR9N');
+    testWidgets('a bare LOOP-XXXXX invite code also opens referral directly', (
+      tester,
+    ) async {
+      final opened = await _pumpScan(tester);
+      opened.scanner.session.emit('loop-1zr9n');
       await tester.pumpAndSettle();
-      await _tap(
-        tester,
-        find.byKey(const ValueKey<String>('scan-invite-open')),
-      );
       expect(opened.locations, <String>['/profile/referral?code=LOOP-1ZR9N']);
     });
 

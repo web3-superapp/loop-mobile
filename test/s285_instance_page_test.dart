@@ -386,7 +386,17 @@ void main() {
       await l2OpenTab(tester, 'info');
       expect(_key('launch2-pool-trades'), findsNothing);
       expect(_key('launch2-graduated'), findsOneWidget);
-      expect(_key('launch2-pool-stats'), findsOneWidget);
+      // S294 · decision 0244: 外盘最新价 … 最近成交 are off 信息.
+      expect(_key('launch2-pool-stats'), findsNothing);
+      for (final label in <String>[
+        '外盘最新价',
+        '外盘成交',
+        '用户买入 / 卖出',
+        '24 小时成交额',
+        '最近成交',
+      ]) {
+        expect(find.text(label), findsNothing, reason: label);
+      }
       expect(_key('launch2-buyback'), findsNothing);
 
       await l2OpenTab(tester, 'buyback');

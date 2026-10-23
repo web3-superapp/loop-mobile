@@ -2348,14 +2348,12 @@ void main() {
       meta: meta,
     );
 
-    testWidgets('v2 发射 carries 我的项目 and 发起; 发起 chooses v2 or 经典', (
-      tester,
-    ) async {
+    testWidgets('v2 发射 carries 发起 only (我的项目 moved to the create page, '
+        '0244); 发起 chooses v2 or 经典', (tester) async {
       final opened = <String>[];
       await pumpMeme(tester, opened);
       expect(_key('launch2-creator-actions'), findsOneWidget);
-      await tester.tap(_key('launch2-my-projects-action'));
-      expect(opened.last, Launch2CreatorRoute.minePath);
+      expect(_key('launch2-my-projects-action'), findsNothing);
 
       await tester.tap(_key('launch2-create-action'));
       await tester.pumpAndSettle();

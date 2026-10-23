@@ -64,9 +64,8 @@ class Launch2MyProjectsEntry extends ConsumerWidget {
 
 /// S148 · decision 0146: the MEME tab's project-side entry on the v2 face.
 ///
-/// Two top-bar controls, both drawn only when [launch2CreatorEntryVisible]:
-/// 「我的项目」 opens the owner's list, 「发射」 opens the decision 0138 §6
-/// chooser — v2 发射 (this module's create page) or 经典发射 (the MEME curve
+/// One top-bar control, drawn only when [launch2CreatorEntryVisible]:
+/// 「发射」 opens the decision 0138 §6 chooser — v2 发射 (this module's create page) or 经典发射 (the MEME curve
 /// create page, passed in as [classicCreatePath] so this module does not
 /// import the MEME feature).
 ///
@@ -77,6 +76,10 @@ class Launch2MyProjectsEntry extends ConsumerWidget {
 /// S279 · decision 0237 (需求方 2026-10-22 第 15 条): 「我的项目」 is a 24
 /// glyph in a heavier pen, and 「发射」 is no longer a small plus but the
 /// Yellow capsule with its words, the page's one call to action.
+///
+/// S294 · decision 0244 (需求方 2026-10-23 第 06 条): 「我的项目」 left the
+/// MEME home's top bar; it is the create page's top-bar trailing icon
+/// ([Launch2MyProjectsAction]).
 class Launch2CreatorActions extends ConsumerWidget {
   const Launch2CreatorActions({
     required this.onNavigate,
@@ -97,13 +100,6 @@ class Launch2CreatorActions extends ConsumerWidget {
       key: const ValueKey<String>('launch2-creator-actions'),
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Launch2BoldIconButton(
-          key: const ValueKey<String>('launch2-my-projects-action'),
-          icon: 'user',
-          label: '我的项目',
-          onPressed: () => onNavigate(Launch2CreatorRoute.minePath),
-        ),
-        const SizedBox(width: 4),
         Launch2LaunchCapsule(
           key: const ValueKey<String>('launch2-create-action'),
           onPressed: classic
@@ -144,6 +140,26 @@ class Launch2CreatorActions extends ConsumerWidget {
     );
     if (location == null || !context.mounted) return;
     onNavigate(location);
+  }
+}
+
+/// 「我的项目」 on the create page's top bar (S294 · decision 0244): the
+/// heavier `user` glyph in a 44 target, drawn only when
+/// [launch2CreatorEntryVisible], like the MEME home's 「发射」.
+class Launch2MyProjectsAction extends ConsumerWidget {
+  const Launch2MyProjectsAction({required this.onPressed, super.key});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!launch2CreatorEntryVisible(ref)) return const SizedBox.shrink();
+    return Launch2BoldIconButton(
+      key: const ValueKey<String>('launch2-my-projects-action'),
+      icon: 'user',
+      label: '我的项目',
+      onPressed: onPressed,
+    );
   }
 }
 
