@@ -484,9 +484,16 @@ class LoopFolioPrimary extends StatelessWidget {
     this.captionMaxLines,
     this.footer,
     this.headingBuilder,
+    this.minHeight,
   });
 
   final String heading;
+
+  /// Overrides the archetype's (or compact) minimum height. Null keeps the
+  /// prototype metric; a folio that lost its caption and sits over a
+  /// composite strip (邀请中心, decision 0243 S293b) passes 0 so the card
+  /// closes right under its heading.
+  final double? minHeight;
 
   /// Wraps the drawn heading (decision 0167: the mining reward figure slides
   /// up once a minute inside an `AnimatedSwitcher`). It receives the heading
@@ -676,7 +683,7 @@ class LoopFolioPrimary extends StatelessWidget {
               LoopSpacing.group,
             ),
         constraints: BoxConstraints(
-          minHeight: compact ? 142 : archetype.minHeight,
+          minHeight: minHeight ?? (compact ? 142 : archetype.minHeight),
         ),
         decoration: decoration,
         clipBehavior: Clip.antiAlias,

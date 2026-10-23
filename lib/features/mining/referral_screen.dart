@@ -181,6 +181,10 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       ),
       margin: EdgeInsets.zero,
       squareBottom: true,
+      // Decision 0243 S293b: with the caption gone the record folio's
+      // 178 minimum left a blank band under the code; the card now closes
+      // one padding under the code row, as 情报 · 我的邀请码 does.
+      minHeight: 0,
     ),
     detail: <Widget>[_LevelBand(levels: overview.levels)],
   );
@@ -373,9 +377,7 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
       LoopInfoNote(
         key: ValueKey<String>('referral-level-${level.level}'),
         title: 'L${level.level} · 加成 ${level.boostPercent}%',
-        body:
-            '${referralLevelDescription(level.level)}\n'
-            '${<String>[for (final entry in level.counts.entries) '${referralValidationStatusLabel(entry.$1)} ${entry.$2}'].join(' · ')}',
+        body: referralLevelDescription(level.level),
       ),
     LoopInfoNote(
       key: const ValueKey<String>('referral-info-valid-member'),
