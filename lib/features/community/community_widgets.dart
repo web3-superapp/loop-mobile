@@ -907,11 +907,23 @@ class CommunityLabelBadge extends StatelessWidget {
     final text = communityLabelDisplay(label);
     final tag = look == CommunityLabelLook.tag;
     final foreground = tag ? LoopColors.lime : LoopColors.yellow;
+    final word = Text(
+      text,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: LoopTypography.withWeight(
+        tag ? LoopType.kicker : LoopType.label,
+        FontWeight.w600,
+      ).copyWith(color: foreground),
+    );
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
         height: tag ? 20 : null,
-        alignment: tag ? Alignment.center : null,
+        // No `alignment` here: a Container that aligns fills its bounded
+        // parent, and the tag would stretch to [maxWidth] (S289). The word is
+        // centred vertically by a Center that keeps its own width instead.
         padding: tag
             ? const EdgeInsets.symmetric(horizontal: 6)
             : const EdgeInsets.fromLTRB(10, 4, 10, 4),
@@ -919,16 +931,7 @@ class CommunityLabelBadge extends StatelessWidget {
           color: tag ? LoopColors.limeSoft : LoopColors.yellowSoft,
           borderRadius: LoopRadius.pill,
         ),
-        child: Text(
-          text,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          style: LoopTypography.withWeight(
-            tag ? LoopType.kicker : LoopType.label,
-            FontWeight.w600,
-          ).copyWith(color: foreground),
-        ),
+        child: tag ? Center(widthFactor: 1, child: word) : word,
       ),
     );
   }
