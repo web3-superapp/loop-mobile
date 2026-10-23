@@ -88,12 +88,8 @@ void main() {
             .primary,
         isFalse,
       );
-      expect(_labels(tester), <String>[
-        'Power Composition',
-        'Increase Power',
-        '公式版本',
-        '算力快照',
-      ]);
+      // Decision 0243: 公式版本 and 算力快照 moved into the header (i).
+      expect(_labels(tester), <String>['Power Composition', 'Increase Power']);
     });
 
     testWidgets('a settled snapshot with nothing counted is illustrated', (

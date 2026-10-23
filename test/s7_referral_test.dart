@@ -11,8 +11,6 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
-
 /// The referral page reads `GET /v2/referral`. It shows an invite code, counts
 /// grouped by the server's validation state, and an unavailable boost — never
 /// a commission, a payout or a downline income.
@@ -82,9 +80,11 @@ void main() {
         referral: FakeReferralGateway(),
       );
 
+      // Decision 0243: the per-level counts and the totals are in the (i).
+      expect(find.textContaining('3 个待验证'), findsNothing);
+      await _openInfo(tester);
       for (var level = 1; level <= 5; level += 1) {
         final row = find.byKey(ValueKey<String>('referral-level-$level'));
-        await scrollToS7Section(tester, row);
         expect(row, findsOneWidget, reason: 'L$level');
       }
       // L1 has two pending-wallet and one pending-mining edge, zero valid.
@@ -260,22 +260,13 @@ void main() {
           ),
         ),
       );
-      expect(
-        find.byKey(const ValueKey<String>('referral-claim')),
-        findsNothing,
-      );
+      // Decision 0243: the button stays, disabled, with one line saying why.
+      _expectClaimDisabled(tester);
       expect(
         find.byKey(const ValueKey<String>('referral-claim-closed')),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('referral-claim-closed')),
-          matching: find.byType(LoopInlineUnavailable),
-          matchRoot: true,
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('绑定窗口已于 2026-08-27 00:00 UTC 关闭'), findsOneWidget);
     });
 
     testWidgets('an unactivated account has no window at all', (tester) async {
@@ -301,19 +292,8 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-unavailable')),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('referral-claim-unavailable')),
-          matching: find.byType(LoopInlineUnavailable),
-          matchRoot: true,
-        ),
-        findsOneWidget,
-      );
       expect(find.textContaining('需要先完成 LOOP ID 激活'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('referral-claim')),
-        findsNothing,
-      );
+      _expectClaimDisabled(tester);
     });
 
     testWidgets('a bound account shows depth and state, never an identity', (
@@ -334,9 +314,10 @@ void main() {
       expect(bound, findsOneWidget);
       expect(find.textContaining('深度 L1'), findsOneWidget);
       expect(find.textContaining('待挖矿生效'), findsWidgets);
+      _expectClaimDisabled(tester);
       expect(
-        find.byKey(const ValueKey<String>('referral-claim')),
-        findsNothing,
+        find.byKey(const ValueKey<String>('referral-claim-bound-note')),
+        findsOneWidget,
       );
     });
 
@@ -404,7 +385,10 @@ void main() {
           expect(data, contains('不是'), reason: data);
         }
       }
-      expect(find.textContaining('不是收入、佣金或返佣'), findsWidgets);
+      // Decision 0243: the disclaimer is said once, in the (i).
+      expect(find.textContaining('不是收入、佣金或返佣'), findsNothing);
+      await _openInfo(tester);
+      expect(find.textContaining('不是收入、佣金或返佣'), findsOneWidget);
     });
   });
 
@@ -513,4 +497,21 @@ Future<void> _openClaim(WidgetTester tester) async {
   await scrollToS7Section(tester, claim);
   await tester.tap(claim);
   await tester.pumpAndSettle();
+}
+
+Future<void> _openInfo(WidgetTester tester) async {
+  await tester.tap(
+    find.byKey(const ValueKey<String>('referral-explain-action')),
+  );
+  await tester.pumpAndSettle();
+  expect(
+    find.byKey(const ValueKey<String>('referral-explain-sheet')),
+    findsOneWidget,
+  );
+}
+
+void _expectClaimDisabled(WidgetTester tester) {
+  final claim = find.byKey(const ValueKey<String>('referral-claim'));
+  expect(claim, findsOneWidget);
+  expect(tester.widget<LoopButton>(claim).onPressed, isNull);
 }

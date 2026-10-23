@@ -20,7 +20,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `mining` · the Mining destination.
@@ -130,8 +130,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         LoopIconButton(
           key: const ValueKey<String>('mining-rules-action'),
           icon: 'info',
-          label: '挖矿规则',
-          onPressed: widget.onOpenRules,
+          label: '挖矿说明',
+          onPressed: () => unawaited(_openInfo(summary)),
         ),
       ],
       primary: summary == null
@@ -282,33 +282,107 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               ),
             ],
           ),
-          const LoopLabel('公式版本'),
-          MiningFormulaBlock(formula: summary.formula),
-          const LoopLabel(miningSnapshotSectionLabel),
-          _SnapshotBlock(snapshot: summary.snapshot),
-          LoopNotice(
-            key: const ValueKey<String>('mining-truth-notice'),
-            icon: 'shield',
-            title: '不做本地估算',
-            body: switch (summary.formula) {
-              MiningFormulaPending() =>
-                '挖矿公式还没有批准的版本。'
-                    'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
-              MiningFormulaEffective() =>
-                'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
-            },
-            margin: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           const SizedBox(height: 20),
         ],
       ],
     );
   }
+
+  /// The (i) in the header (decision 0243, 需求方 2026-10-23 #04): the
+  /// formula version, the snapshot the figures came from and the no-local-
+  /// estimate rule — where the numbers come from, said once here instead of
+  /// three blocks under 增加算力 — and the way on to 挖矿规则.
+  Future<void> _openInfo(MiningSummary? summary) => showLoopInfoSheet(
+    context,
+    title: '挖矿说明',
+    notes: miningInfoNotes(summary),
+    sheetKey: 'mining-info-sheet',
+    footer: widget.onOpenRules == null
+        ? null
+        : (sheetContext) => LoopButton(
+            key: const ValueKey<String>('mining-info-open-rules'),
+            label: '查看挖矿规则',
+            block: true,
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              widget.onOpenRules?.call();
+            },
+          ),
+  );
+}
+
+/// 公式版本 in the (i): the state in words, then — on its own line, the way
+/// the 详情 disclosure it replaces printed it — the version identifier, which
+/// is only ever shown behind a tap.
+String _formulaInfoBody(MiningFormulaGate? formula) {
+  final (
+    String sentence,
+    String? label,
+    String? identifier,
+  ) = switch (formula) {
+    null => ('还没有读到挖矿摘要，公式版本读到之后显示在这里。', null, null),
+    MiningFormulaPending(:final reasonCode, pendingVersion: null) => (
+      '挖矿公式还没有批准的版本：${launchReasonCodeText(reasonCode)}',
+      null,
+      null,
+    ),
+    MiningFormulaPending(:final pendingVersion) => (
+      '挖矿公式待批准。批准后，页面上的数字才会有来源。',
+      '待批准的公式版本',
+      pendingVersion,
+    ),
+    MiningFormulaEffective(
+      :final effectiveAt,
+      :final scope,
+      :final configVersion,
+    ) =>
+      (
+        '挖矿公式已生效${scope.isBaseline ? '（$miningBaselineLabel）' : ''}'
+            ' · 生效于 ${launchTimestampLabel(effectiveAt)}',
+        '已生效的公式版本',
+        configVersion,
+      ),
+  };
+  return label == null || identifier == null
+      ? sentence
+      : '$sentence\n$label $identifier';
+}
+
+/// What 我的挖矿's (i) says (decision 0243). It reads the same summary the
+/// page draws; without one it says the figures have not been read, never a
+/// version or a block it does not have.
+List<LoopInfoNote> miningInfoNotes(MiningSummary? summary) {
+  final formula = summary?.formula;
+  final snapshot = summary?.snapshot;
+  return <LoopInfoNote>[
+    LoopInfoNote(
+      key: const ValueKey<String>('mining-info-formula'),
+      title: '公式版本',
+      body: _formulaInfoBody(formula),
+    ),
+    LoopInfoNote(
+      key: const ValueKey<String>('mining-info-snapshot'),
+      title: miningSnapshotRowTitle,
+      body: switch (snapshot) {
+        null => '还没有读到算力快照。',
+        MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
+          '${miningSnapshotAbsenceMessage(reasonCode)}。'
+              '${miningSnapshotAbsenceReason(reasonCode, attempt: latestAttempt)}',
+        MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
+          '区块 ${loopGroupedFigure(blockNumber)} · '
+              '${launchTimestampLabel(computedAt)} · '
+              '这是算出算力的时间',
+      },
+    ),
+    LoopInfoNote(
+      key: const ValueKey<String>('mining-info-truth'),
+      title: '不做本地估算',
+      body: switch (formula) {
+        MiningFormulaEffective() => 'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
+        _ => 'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
+      },
+    ),
+  ];
 }
 
 /// The hero heading: the power itself, or the words for its absence.
@@ -532,44 +606,5 @@ class _ReferralCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _SnapshotBlock extends StatelessWidget {
-  const _SnapshotBlock({required this.snapshot});
-
-  final MiningSnapshotRef snapshot;
-
-  @override
-  Widget build(BuildContext context) {
-    return switch (snapshot) {
-      MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
-        LoopInlineUnavailable(
-          key: const ValueKey<String>('mining-snapshot-unavailable'),
-          icon: 'clock',
-          message: miningSnapshotAbsenceMessage(reasonCode),
-          detail: miningSnapshotAbsenceReason(
-            reasonCode,
-            attempt: latestAttempt,
-          ),
-          maxLines: 2,
-          detailMaxLines: 4,
-        ),
-      MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-snapshot'),
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('mining-snapshot-row'),
-              title: miningSnapshotRowTitle,
-              subtitle:
-                  '区块 ${loopGroupedFigure(blockNumber)} · '
-                  '${launchTimestampLabel(computedAt)} · '
-                  '这是算出算力的时间',
-              subtitleMaxLines: 2,
-            ),
-          ],
-        ),
-    };
   }
 }

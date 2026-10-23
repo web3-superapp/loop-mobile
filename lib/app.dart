@@ -1733,7 +1733,6 @@ GoRouter _buildRouter(
             state.uri.queryParameters,
           ),
           onBack: () => _popOrHome(context),
-          onOpenMining: () => context.push(LoopRouteManifest.pathFor('mining')),
         ),
       ),
       ..._systemRoutes,
