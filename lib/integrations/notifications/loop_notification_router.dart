@@ -110,6 +110,37 @@ enum LoopPushNotificationType {
     'friendRequest',
     LoopNotificationContextRoute.userProfile,
     feedType: 'social.friend_accepted',
+  ),
+  // Decision 0242 (loop-api S291): the four review / deployment events of a
+  // project the account launched. Three are about the project, so their
+  // reference is the project (or its deployment task, the contract leaves
+  // either); the fourth is about the instance the deployment produced.
+  launchReviewApproved(
+    'launch_review_approved',
+    'launchProject',
+    LoopNotificationContextRoute.launch2ProjectSign,
+    feedType: 'launch.review_approved',
+    alternateEntityPrefix: 'launchTask',
+  ),
+  launchReviewRejected(
+    'launch_review_rejected',
+    'launchProject',
+    LoopNotificationContextRoute.launch2ProjectsMine,
+    feedType: 'launch.review_rejected',
+    alternateEntityPrefix: 'launchTask',
+  ),
+  launchActivated(
+    'launch_activated',
+    'launch2Instance',
+    LoopNotificationContextRoute.launch2Instance,
+    feedType: 'launch.activated',
+  ),
+  launchDeployFailed(
+    'launch_deploy_failed',
+    'launchProject',
+    LoopNotificationContextRoute.launch2ProjectsMine,
+    feedType: 'launch.deploy_failed',
+    alternateEntityPrefix: 'launchTask',
   );
 
   const LoopPushNotificationType(
@@ -117,6 +148,7 @@ enum LoopPushNotificationType {
     this.entityPrefix,
     this.contextRoute, {
     this.feedType,
+    this.alternateEntityPrefix,
   });
 
   final String wireName;
@@ -130,6 +162,12 @@ enum LoopPushNotificationType {
   /// label: `priceAlert:<uuid>` and `voiceRoom:<uuid>` are different things
   /// even when the UUID matches.
   final String entityPrefix;
+
+  /// The one other `<kind>` this type may name (decision 0242): the review
+  /// and deployment events are about a project, and the contract lets the
+  /// server address it by the project or by its deployment task. Either one
+  /// only picks which feed row to read back; neither is a destination.
+  final String? alternateEntityPrefix;
 
   final LoopNotificationContextRoute contextRoute;
 
@@ -150,7 +188,12 @@ enum LoopNotificationContextRoute {
   // Decision 0241: the manifest slugs of the three new destinations.
   launch2Instance('launch2-instance'),
   friendRequests('dm-requests'),
-  userProfile('user-profile');
+  userProfile('user-profile'),
+  // Decision 0242: the project owner's signing page and project list. The
+  // second wire name is the contract's, not the manifest slug
+  // (`launch2-projects`): it names a destination family, not a route entry.
+  launch2ProjectSign('launch2-project-sign'),
+  launch2ProjectsMine('launch2-projects-mine');
 
   const LoopNotificationContextRoute(this.wireName);
 
@@ -206,9 +249,15 @@ final class LoopNotificationContext {
     this.communityId,
     this.instanceId,
     this.publicProfileId,
+    this.projectId,
   });
 
   final String contextRoute;
+
+  /// The project an approved review asks the owner to sign (decision 0242):
+  /// the record's `contextParams.projectId`, or the project its own
+  /// `entityRef` names. The server's record, never the payload.
+  final String? projectId;
   final String? assetId;
 
   /// `contextParams.instanceId` of the record, for a graduation or a minted
@@ -365,6 +414,30 @@ final class LoopChatIndexNotificationIntent
 
   @override
   String get location => '/chat';
+}
+
+/// An approved review whose project the feed confirmed (decision 0242): the
+/// signing page, which re-reads the project and its review state itself.
+final class LoopLaunchProjectSignNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopLaunchProjectSignNotificationIntent._(this.projectId);
+
+  final String projectId;
+
+  @override
+  String get location =>
+      '/launch2/project/sign?id=${Uri.encodeQueryComponent(projectId)}';
+}
+
+/// A rejected review, a failed deployment, or any project event the feed did
+/// not confirm: the owner's project list, which names nothing and reads every
+/// project's state for itself.
+final class LoopLaunchProjectsNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopLaunchProjectsNotificationIntent._();
+
+  @override
+  String get location => '/launch2/projects/mine';
 }
 
 /// A provider-neutral result that never retains the untrusted input map.
@@ -545,7 +618,41 @@ final class LoopNotificationRouter {
       LoopPushNotificationType.friendAccepted => _userProfileIntent(
         confirmed ? context.publicProfileId : null,
       ),
+      LoopPushNotificationType.launchReviewApproved => _projectSignIntent(
+        confirmed ? context.projectId : null,
+      ),
+      LoopPushNotificationType.launchReviewRejected ||
+      LoopPushNotificationType.launchDeployFailed =>
+        const LoopLaunchProjectsNotificationIntent._(),
+      // The owner of an instance the feed did not confirm lands on their own
+      // projects rather than on the MEME tab: it is their launch.
+      LoopPushNotificationType.launchActivated =>
+        confirmed && _isUuid(context.instanceId)
+            ? LoopLaunchInstanceNotificationIntent._(context.instanceId!)
+            : const LoopLaunchProjectsNotificationIntent._(),
     };
+  }
+
+  /// The project a feed record's own `entityRef` names, when it names one
+  /// (`launchProject:<uuid>`, decision 0242). A deployment task's reference
+  /// names no project and answers `null`.
+  static String? launchProjectIdOf(String entityRef) {
+    const prefix = 'launchProject:';
+    if (!entityRef.startsWith(prefix)) return null;
+    final id = entityRef.substring(prefix.length);
+    return _isUuid(id) ? id : null;
+  }
+
+  static bool _isUuid(String? value) =>
+      value != null && _uuidPattern.hasMatch(value);
+
+  static LoopNotificationNavigationIntent _projectSignIntent(
+    String? projectId,
+  ) {
+    if (!_isUuid(projectId)) {
+      return const LoopLaunchProjectsNotificationIntent._();
+    }
+    return LoopLaunchProjectSignNotificationIntent._(projectId!);
   }
 
   /// The destination of one row of the account's own feed, read in the
@@ -576,6 +683,11 @@ final class LoopNotificationRouter {
       LoopNotificationContextRoute.userProfile => _userProfileIntent(
         record.publicProfileId,
       ),
+      LoopNotificationContextRoute.launch2ProjectSign => _projectSignIntent(
+        record.projectId,
+      ),
+      LoopNotificationContextRoute.launch2ProjectsMine =>
+        const LoopLaunchProjectsNotificationIntent._(),
     };
   }
 
@@ -676,8 +788,16 @@ final class LoopNotificationRouter {
         _forbiddenTextControlPattern.hasMatch(value)) {
       return false;
     }
-    final prefix = '${type.entityPrefix}:';
-    if (!value.startsWith(prefix)) return false;
-    return _uuidPattern.hasMatch(value.substring(prefix.length));
+    for (final kind in <String?>[
+      type.entityPrefix,
+      type.alternateEntityPrefix,
+    ]) {
+      if (kind == null) continue;
+      final prefix = '$kind:';
+      if (value.startsWith(prefix)) {
+        return _uuidPattern.hasMatch(value.substring(prefix.length));
+      }
+    }
+    return false;
   }
 }

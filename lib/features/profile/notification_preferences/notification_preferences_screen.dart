@@ -454,4 +454,9 @@ String notificationDisableTitle(LoopNotificationCategory category) =>
 /// The sheet's explanation: the category's own second line, or a plain
 /// statement for a category that has none.
 String notificationDisableBody(LoopNotificationCategory category) =>
-    category.detail ?? '关闭后不会再收到这一类通知。';
+    switch (category) {
+      // Decision 0242: this row's detail lists what it covers, which reads as
+      // a description rather than a consequence; the dialog says what goes.
+      LoopNotificationCategory.launchRound => '关闭后不会再收到共识勋章、发射审核结果与上链进度通知。',
+      _ => category.detail ?? '关闭后不会再收到这一类通知。',
+    };
