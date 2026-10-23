@@ -103,6 +103,37 @@ void main() {
       }
     });
 
+    testWidgets('S293b: the code card closes right under the code row', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const ReferralScreen(),
+        referral: FakeReferralGateway(
+          overview: S7Answer<ReferralOverview>(value: _withStats()),
+        ),
+      );
+      final folio = find.descendant(
+        of: find.byKey(const ValueKey<String>('referral-hero')),
+        matching: find.byKey(const ValueKey<String>('loop-folio-primary')),
+      );
+      final codeRow = find.byKey(
+        const ValueKey<String>('referral-invite-code'),
+      );
+      // No reserved caption room: one card padding (16) under the code row,
+      // not the record folio's 178 minimum.
+      final gap = tester.getRect(folio).bottom - tester.getRect(codeRow).bottom;
+      expect(gap, lessThanOrEqualTo(16 + 44));
+      expect(tester.getSize(folio).height, lessThan(178));
+      // The level band starts where the folio ends.
+      expect(
+        tester
+            .getRect(find.byKey(const ValueKey<String>('referral-levels')))
+            .top,
+        greaterThanOrEqualTo(tester.getRect(folio).bottom),
+      );
+    });
+
     testWidgets('the (i) says every rule, one heading each', (tester) async {
       await pumpS7Page(
         tester,
@@ -139,7 +170,12 @@ void main() {
       expect(note('referral-info-depth'), contains('L1 再邀请的人是 L2'));
       expect(note('referral-info-depth'), contains('最深到 L5'));
       expect(note('referral-level-1'), contains('L1 · 加成 10%'));
-      expect(note('referral-level-1'), contains('待绑定钱包 2'));
+      // S293b: one title and one description per level; no status counts
+      // and no second 「L1 ·」.
+      expect(note('referral-level-1'), 'L1 · 加成 10%\n我直接邀请并已验证的人');
+      expect(note('referral-level-2'), contains('我的 L1 再邀请的人'));
+      expect(note('referral-level-1'), isNot(contains('待绑定钱包')));
+      expect(note('referral-level-1'), isNot(contains('有效 0')));
       expect(
         note('referral-info-valid-member'),
         contains('被邀请人本人在最近一个结算小时有算力'),

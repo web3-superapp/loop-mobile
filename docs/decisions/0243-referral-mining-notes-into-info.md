@@ -67,3 +67,8 @@ Accepted 2026-10-23。基线 `integration/v2` b7621b73（S292 合入后）。主
   既有用例迁移：`s7_referral_test.dart`（层级计数与「不是收入…」改为点开 ⓘ 断言；三种不能绑定的状态改为断言按钮禁用 + 一行说明）、`s7_mining_pages_test.dart`（公式版本 / 快照四例改为点开 ⓘ 断言，并覆盖「查看挖矿规则」跳转）、`s59_mining_structure_test.dart`（我的挖矿标签只剩 Power Composition / Increase Power）、`s197_4_type_test.dart`（邀请说明 sheet 的正文字号断言换成「只计入挖矿算力」一段）。
 - 页面变矮：邀请中心少了深度、推广榜、窗口卡、规则行、返回按钮、说明卡；我的挖矿少了三段。
 - 真机需确认：两处 ⓘ sheet 的长度（邀请说明含五级共 11 段，sheet 可滚动）；禁用按钮与一行说明的对比度。
+
+## 验收补丁 S293b
+
+- 邀请中心邀请码卡：删 caption 后 `LoopFolioPrimary`（record）仍按 178 最小高度撑开，邀请码行下留空；`LoopFolioPrimary` 加可选 `minHeight`（默认不变），邀请中心传 0，卡片在邀请码行下一个卡片内边距（16）后直接接分隔线与 L1–L5 分级。
+- ⓘ「邀请说明」L1–L5 每级只留标题「Ln · 加成 x%」与一句描述（`referralLevelDescription` 去掉重复的「Ln ·」前缀），删掉每级的状态计数行；总数仍在「关系怎样成立」。

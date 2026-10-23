@@ -71,7 +71,7 @@ void main() {
       expect(copy.onPressed, isNotNull);
     });
 
-    testWidgets('each level is counted by the server validation state', (
+    testWidgets('the (i) names each level once, without status counts', (
       tester,
     ) async {
       await pumpS7Page(
@@ -87,9 +87,12 @@ void main() {
         final row = find.byKey(ValueKey<String>('referral-level-$level'));
         expect(row, findsOneWidget, reason: 'L$level');
       }
-      // L1 has two pending-wallet and one pending-mining edge, zero valid.
-      expect(find.textContaining('待绑定钱包 2'), findsOneWidget);
-      expect(find.textContaining('待挖矿生效 1'), findsOneWidget);
+      // S293b: the per-status counts are not repeated in the (i); the
+      // totals in 「关系怎样成立」 are.
+      expect(find.textContaining('待绑定钱包'), findsNothing);
+      expect(find.textContaining('待挖矿生效'), findsNothing);
+      expect(find.text('我直接邀请并已验证的人'), findsOneWidget);
+      expect(find.textContaining('L1 · 我直接邀请'), findsNothing);
       expect(find.textContaining('0 个有效关系'), findsOneWidget);
       expect(find.textContaining('3 个待验证'), findsOneWidget);
     });
