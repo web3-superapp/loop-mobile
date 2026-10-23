@@ -2463,6 +2463,11 @@ LoopNotificationContext _notificationContextOf(LoopNotificationEntry entry) =>
       communityId: entry.contextParams['communityId'],
       instanceId: entry.contextParams['instanceId'],
       publicProfileId: entry.contextParams['publicProfileId'],
+      // Decision 0242: an approved review names its project in
+      // `contextParams`, or else by its own `entityRef`.
+      projectId:
+          entry.contextParams['projectId'] ??
+          LoopNotificationRouter.launchProjectIdOf(entry.entityRef),
     );
 
 Future<void> _signOut(WidgetRef ref) async {

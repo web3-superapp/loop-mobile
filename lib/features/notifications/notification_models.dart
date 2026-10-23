@@ -8,7 +8,10 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 enum LoopNotificationCategory {
   miningSettlement('mining.settlement', '挖矿', '每日结算完成', null),
   miningWeight('mining.weight', '挖矿', '权重变化', '持有币的 Mining Weight 调整时'),
-  launchRound('launch.round', 'Launch', '资格快照与开始提醒', null),
+  // Decision 0242: the category also files the badge (0241) and a launched
+  // project's review and deployment progress. The detail names what it
+  // covers; whether any of it is sent today is the separate 暂不生效 mark.
+  launchRound('launch.round', 'Launch', '资格快照与开始提醒', '含共识勋章、发射审核结果与上链进度'),
   launchGraduation('launch.graduation', 'Launch', '毕业通知', null),
   tradeResult('trade.result', '交易', '成交结果', null),
   tradePriceAlert('trade.priceAlert', '交易', '价格提醒', '关闭后价格提醒仍会记录事件，但不会生成通知'),
@@ -34,6 +37,11 @@ enum LoopNotificationCategory {
   /// Only price alerts are emitted; every other category stores an intent the
   /// backend does not act on yet. The page says so per row rather than
   /// counting ten switches as ten notifications.
+  ///
+  /// `launch.round` stays false under decision 0242: the review and
+  /// deployment rows it now files are written only once the server's
+  /// `LAUNCH_REVIEW_INBOX_EMIT` is on, and that switch is off by default, so
+  /// claiming them here would promise what the account does not receive.
   bool get deliversToday => this == LoopNotificationCategory.tradePriceAlert;
 
   static LoopNotificationCategory? tryParse(String value) {
@@ -128,8 +136,8 @@ final class LoopNotificationPreferences {
   }
 }
 
-/// The four notification kinds that are finer than a preference category
-/// (decision 0241, loop-api S286).
+/// The notification kinds that are finer than a preference category
+/// (decision 0241, loop-api S286; four more by decision 0242, loop-api S291).
 ///
 /// They arrive in a feed row's `type` where older rows carry the category
 /// itself. The category the account's preference governs is still one of the
@@ -152,6 +160,21 @@ enum LoopNotificationKind {
   friendAccepted(
     'social.friend_accepted',
     LoopNotificationCategory.communityMention,
+  ),
+  // Decision 0242 (loop-api S291): the review and deployment progress of a
+  // project the account launched, all filed under 资格快照与开始提醒.
+  launchReviewApproved(
+    'launch.review_approved',
+    LoopNotificationCategory.launchRound,
+  ),
+  launchReviewRejected(
+    'launch.review_rejected',
+    LoopNotificationCategory.launchRound,
+  ),
+  launchActivated('launch.activated', LoopNotificationCategory.launchRound),
+  launchDeployFailed(
+    'launch.deploy_failed',
+    LoopNotificationCategory.launchRound,
   );
 
   const LoopNotificationKind(this.wireName, this.category);
@@ -228,7 +251,7 @@ final class LoopNotificationEntry {
 
   bool get isUnread => readStateKnown && readAt == null;
 
-  /// One of the four finer kinds, or `null`.
+  /// One of the finer kinds, or `null`.
   LoopNotificationKind? get kind => LoopNotificationKind.tryParse(rawType);
 
   /// The category this row is filed under, whichever way it was named.

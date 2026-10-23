@@ -30,3 +30,13 @@
 "push.socialFriendRequest.body" = "点开查看并处理";
 "push.socialFriendAccepted.title" = "好友申请已通过";
 "push.socialFriendAccepted.body" = "点开查看对方主页";
+/* Decision 0242 (loop-api S291): a launched project's review and
+   deployment progress. The copy names nothing; the page re-reads the record. */
+"push.launchReviewApproved.title" = "发射审核已通过";
+"push.launchReviewApproved.body" = "点开完成签名";
+"push.launchReviewRejected.title" = "发射审核未通过";
+"push.launchReviewRejected.body" = "点开查看原因";
+"push.launchActivated.title" = "发射已上链";
+"push.launchActivated.body" = "点开查看项目";
+"push.launchDeployFailed.title" = "发射部署失败";
+"push.launchDeployFailed.body" = "点开查看原因";

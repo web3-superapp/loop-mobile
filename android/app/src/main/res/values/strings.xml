@@ -41,4 +41,14 @@
     <string name="push_socialFriendRequest_body">点开查看并处理</string>
     <string name="push_socialFriendAccepted_title">好友申请已通过</string>
     <string name="push_socialFriendAccepted_body">点开查看对方主页</string>
+    <!-- Decision 0242 (loop-api S291): a launched project's review and
+         deployment progress. The copy names nothing; the page re-reads the record. -->
+    <string name="push_launchReviewApproved_title">发射审核已通过</string>
+    <string name="push_launchReviewApproved_body">点开完成签名</string>
+    <string name="push_launchReviewRejected_title">发射审核未通过</string>
+    <string name="push_launchReviewRejected_body">点开查看原因</string>
+    <string name="push_launchActivated_title">发射已上链</string>
+    <string name="push_launchActivated_body">点开查看项目</string>
+    <string name="push_launchDeployFailed_title">发射部署失败</string>
+    <string name="push_launchDeployFailed_body">点开查看原因</string>
 </resources>

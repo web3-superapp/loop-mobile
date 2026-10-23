@@ -229,6 +229,27 @@ String? _text(LoopNotificationEntry entry, String key) {
   return value == null || value.isEmpty ? null : value;
 }
 
+/// 「{项目名} {verdict}」, or [fallback] when the row names no project.
+String _launchTitle(
+  LoopNotificationEntry entry,
+  String verdict,
+  String fallback,
+) {
+  final name = _text(entry, 'projectName') ?? _text(entry, 'symbol');
+  return name == null ? fallback : '$name $verdict';
+}
+
+/// The row's `saleStartAt` on the device's own clock, `YYYY-MM-DD HH:mm`.
+/// A value that is not a timestamp prints nothing rather than itself.
+String? _saleStart(LoopNotificationEntry entry) {
+  final raw = _text(entry, 'saleStartAt');
+  final at = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
+  if (at == null) return null;
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${at.year}-${two(at.month)}-${two(at.day)} '
+      '${two(at.hour)}:${two(at.minute)}';
+}
+
 LoopNotificationPresentation loopNotificationPresentation(
   LoopNotificationEntry entry,
 ) {
@@ -277,6 +298,34 @@ LoopNotificationPresentation loopNotificationPresentation(
         icon: 'users',
         title: title ?? '好友申请已通过',
         body: body ?? (name == null ? null : '你和 $name 已成为好友'),
+      );
+    // Decision 0242: a launched project's review and deployment progress.
+    // The server's own title / body win; the fallbacks are the contract's
+    // sentences, filled only with facts the row carries.
+    case LoopNotificationKind.launchReviewApproved:
+      return LoopNotificationPresentation(
+        icon: 'key',
+        title: title ?? _launchTitle(entry, '审核已通过', '发射审核已通过'),
+        body: body ?? '请完成签名，发射才会部署',
+      );
+    case LoopNotificationKind.launchReviewRejected:
+      return LoopNotificationPresentation(
+        icon: 'blocked',
+        title: title ?? _launchTitle(entry, '审核未通过', '发射审核未通过'),
+        body: body ?? _text(entry, 'reasonText'),
+      );
+    case LoopNotificationKind.launchActivated:
+      final saleStartAt = _saleStart(entry);
+      return LoopNotificationPresentation(
+        icon: 'launch',
+        title: title ?? _launchTitle(entry, '已上链', '你的发射已上链'),
+        body: body ?? (saleStartAt == null ? null : '开售时间 $saleStartAt'),
+      );
+    case LoopNotificationKind.launchDeployFailed:
+      return LoopNotificationPresentation(
+        icon: 'warn',
+        title: title ?? _launchTitle(entry, '部署失败', '发射部署失败'),
+        body: body ?? _text(entry, 'reasonText'),
       );
     case null:
       break;

@@ -692,6 +692,14 @@ NOTIFICATION_KIND_MEMBERS = frozenset(
         "launchBadgeMinted",
         "friendRequest",
         "friendAccepted",
+        # Decision 0242 (loop-api S291): a launched project's review and
+        # deployment progress. An approval opens the signing page, a refusal
+        # or a failed deployment the owner's project list, an activation the
+        # instance.
+        "launchReviewApproved",
+        "launchReviewRejected",
+        "launchActivated",
+        "launchDeployFailed",
     }
 )
 NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset(
@@ -703,6 +711,8 @@ NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset(
         "launch2Instance",
         "friendRequests",
         "userProfile",
+        "launch2ProjectSign",
+        "launch2ProjectsMine",
     }
 )
 NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
@@ -727,6 +737,10 @@ NOTIFICATION_INTENT_CLASSES = frozenset(
         "LoopFriendRequestsNotificationIntent",
         "LoopUserProfileNotificationIntent",
         "LoopChatIndexNotificationIntent",
+        # Decision 0242: the signing page is addressed by the project the feed
+        # record named; the project list is its name-nothing fallback.
+        "LoopLaunchProjectSignNotificationIntent",
+        "LoopLaunchProjectsNotificationIntent",
     }
 )
 # The parameterless destinations, plus the one parameterised literal: the
@@ -747,6 +761,9 @@ NOTIFICATION_ROUTE_LITERALS = frozenset(
         "/chat/requests",
         "/launch2/instance?id=${Uri.encodeQueryComponent(instanceId)}",
         "/profile/user?id=${Uri.encodeQueryComponent(publicProfileId)}",
+        # Decision 0242.
+        "/launch2/projects/mine",
+        "/launch2/project/sign?id=${Uri.encodeQueryComponent(projectId)}",
     }
 )
 # `lib/app.dart` joined this set with decision 0067: confirming a pointer needs
@@ -14792,6 +14809,13 @@ PUSH_COPY_EVENTS = (
     # outside the session that could authorise reading either.
     "communityApplicationVerified",
     "communityApplicationRejected",
+    # Decision 0242 (loop-api S291): a launched project's review and
+    # deployment progress. The project, the reason and the sale time stay in
+    # the feed row; the push says only that something happened.
+    "launchReviewApproved",
+    "launchReviewRejected",
+    "launchActivated",
+    "launchDeployFailed",
 )
 # A format specifier here would mean the server supplies part of the sentence,
 # which is the one thing the copy rule exists to prevent.

@@ -760,8 +760,13 @@ void main() {
         '大群建议关闭',
       );
       expect(
-        notificationDisableBody(LoopNotificationCategory.launchRound),
+        notificationDisableBody(LoopNotificationCategory.launchGraduation),
         '关闭后不会再收到这一类通知。',
+      );
+      // Decision 0242: the row that files the launch progress names it.
+      expect(
+        notificationDisableBody(LoopNotificationCategory.launchRound),
+        '关闭后不会再收到共识勋章、发射审核结果与上链进度通知。',
       );
     });
   });
