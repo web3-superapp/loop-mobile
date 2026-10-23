@@ -8,6 +8,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -296,6 +297,100 @@ void main() {
       expect(find.text('算力社区'), findsOneWidget);
       expect(find.text('已验证'), findsNothing);
       expect(_key('community-profile-owner-review'), findsNothing);
+    });
+
+    // S289: the tag capsule hugs its word. A Container that aligns its child
+    // fills a bounded parent, so 「123456」 once stood in a 140-wide pill.
+    testWidgets('tag look: a short label hugs its word, a long one caps', (
+      tester,
+    ) async {
+      Future<Rect> pumpTag(String label) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: Row(
+                children: <Widget>[
+                  CommunityLabelBadge(
+                    label,
+                    key: const ValueKey<String>('tag'),
+                    look: CommunityLabelLook.tag,
+                    maxWidth: 140,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        return tester.getRect(_key('tag'));
+      }
+
+      // The test font draws every glyph a full em wide, so widths are read
+      // against the word itself: the capsule is the word plus 6 + 6.
+      final tiny = await pumpTag('1234');
+      expect(tiny.width, lessThan(80));
+      expect(
+        tiny.width,
+        closeTo(tester.getSize(find.text('1234')).width + 12, 0.5),
+      );
+
+      final short = await pumpTag('123456');
+      expect(short.height, 20);
+      final word = tester.getRect(find.text('123456'));
+      expect(short.width, closeTo(word.width + 12, 0.5));
+      expect(short.width, lessThan(120));
+      // The word sits in the middle of the 20-tall capsule.
+      expect((word.center.dy - short.center.dy).abs(), lessThan(1));
+      expect(word.left - short.left, closeTo(6, 0.5));
+
+      final long = await pumpTag('这是一个超过十二个字的很长的运营标签文字');
+      expect(long.height, 20);
+      expect(long.width, lessThanOrEqualTo(140));
+      expect(tester.takeException(), isNull);
+
+      // The badge look is unchanged: it hugs its word too.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: const Scaffold(
+            body: Row(
+              children: <Widget>[
+                CommunityLabelBadge(
+                  '123456',
+                  key: ValueKey<String>('badge'),
+                  maxWidth: 140,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.getRect(_key('badge')).width,
+        closeTo(tester.getSize(find.text('123456')).width + 20, 0.5),
+      );
+    });
+
+    testWidgets('community home: the label tag is no wider than its word', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            community: testCommunity(label: '123456'),
+            viewer: testViewer(role: CommunityRole.member),
+          ),
+        ),
+      );
+      final tag = tester.getRect(_key('community-profile-label'));
+      expect(tag.height, 20);
+      expect(
+        tag.width,
+        closeTo(tester.getSize(find.text('123456')).width + 12, 0.5),
+      );
+      expect(tag.width, lessThan(120));
     });
 
     testWidgets('community home: no label, no mark', (tester) async {
