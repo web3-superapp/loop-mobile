@@ -233,12 +233,11 @@ void main() {
       // The stamp and the row say the status; the version says nothing a
       // reader can act on and stays out of both.
       expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
-      final formula = find.byKey(const ValueKey<String>('mining-formula-row'));
-      await scrollToS7Section(tester, formula);
-      expect(find.text('miningFormulaV1-draft'), findsNothing);
+      expect(find.textContaining('miningFormulaV1-draft'), findsNothing);
     });
 
-    testWidgets('the pending formula version stays inside the 详情', (
+    // Decision 0243: the version is in the header (i), not on the page.
+    testWidgets('the pending formula version stays inside the (i)', (
       tester,
     ) async {
       await pumpS7Page(
@@ -247,23 +246,21 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      final details = find.byKey(
-        const ValueKey<String>('mining-formula-details'),
+      expect(
+        find.byKey(const ValueKey<String>('mining-formula')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, details);
-      expect(details, findsOneWidget);
       expect(find.textContaining('miningFormulaV1-draft'), findsNothing);
 
-      await tester.tap(
+      await _openMiningInfo(tester);
+      expect(
         find.descendant(
-          of: details,
-          matching: find.byKey(
-            const ValueKey<String>('loop-disclosure-summary'),
-          ),
+          of: find.byKey(const ValueKey<String>('mining-info-formula')),
+          matching: find.textContaining('待批准的公式版本 miningFormulaV1-draft'),
         ),
+        findsOneWidget,
       );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('miningFormulaV1-draft'), findsOneWidget);
+      expect(find.textContaining('读不到不等于「算力为零」'), findsOneWidget);
     });
 
     testWidgets('one missing baseline is explained once, not per metric', (
@@ -423,29 +420,33 @@ void main() {
       expect(find.textContaining(r'$2.26'), findsNothing);
     });
 
-    testWidgets('the effective version stays inside the 详情', (tester) async {
+    testWidgets('the effective version stays inside the (i)', (tester) async {
+      var rulesOpened = 0;
       await pumpS7Page(
         tester,
-        const MiningScreen(),
+        MiningScreen(onOpenRules: () => rulesOpened += 1),
         mining: FakeMiningGateway(
           summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
         ),
       );
 
-      final details = find.byKey(
-        const ValueKey<String>('mining-formula-details'),
-      );
-      await scrollToS7Section(tester, details);
+      expect(find.textContaining(s7BaselineVersion), findsNothing);
+      expect(find.text('不做本地估算'), findsNothing);
+      await _openMiningInfo(tester);
+      expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+      expect(find.text('不做本地估算'), findsOneWidget);
+      expect(find.textContaining('页面上的数字都来自最近一次算力快照'), findsOneWidget);
+
+      // The (i) still leads on to 挖矿规则.
       await tester.tap(
-        find.descendant(
-          of: details,
-          matching: find.byKey(
-            const ValueKey<String>('loop-disclosure-summary'),
-          ),
-        ),
+        find.byKey(const ValueKey<String>('mining-info-open-rules')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+      expect(rulesOpened, 1);
+      expect(
+        find.byKey(const ValueKey<String>('mining-info-sheet')),
+        findsNothing,
+      );
     });
 
     testWidgets('a baseline zero says why it is zero, not that it is missing', (
@@ -492,14 +493,10 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      final snapshot = find.byKey(
-        const ValueKey<String>('mining-snapshot-unavailable'),
-      );
-      await scrollToS7Section(tester, snapshot);
-      expect(snapshot, findsOneWidget);
-      expect(tester.widget(snapshot), isA<LoopInlineUnavailable>());
+      expect(find.textContaining('还没有算力快照'), findsNothing);
+      await _openMiningInfo(tester);
       // The one code that means "there is none" says so.
-      expect(find.text('还没有算力快照'), findsOneWidget);
+      expect(_infoSnapshotText(tester), contains('还没有算力快照'));
     });
 
     testWidgets('the snapshot row dates a computation, not a settlement', (
@@ -542,15 +539,13 @@ void main() {
         ),
       );
 
-      final snapshot = find.byKey(
-        const ValueKey<String>('mining-snapshot-unavailable'),
-      );
-      await scrollToS7Section(tester, snapshot);
-      expect(find.text('暂时读不到算力快照'), findsOneWidget);
-      expect(find.text('还没有算力快照'), findsNothing);
+      await _openMiningInfo(tester);
+      final text = _infoSnapshotText(tester);
+      expect(text, contains('暂时读不到算力快照'));
+      expect(text, isNot(contains('还没有算力快照')));
       expect(
-        find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
-        findsOneWidget,
+        text,
+        contains(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
       );
     });
 
@@ -2270,16 +2265,14 @@ void main() {
         ),
       );
 
-      final block = find.byKey(
-        const ValueKey<String>('mining-snapshot-unavailable'),
-      );
-      await scrollToS7Section(tester, block);
-      expect(find.text('还没有完整的算力快照'), findsOneWidget);
-      expect(find.text('还没有算力快照'), findsNothing);
-      expect(find.textContaining('没有可以回退的完整快照'), findsWidgets);
       // The figures are absent, never zero.
       expect(find.text('0'), findsNothing);
       expect(find.text(launchMissingFigure), findsWidgets);
+      await _openMiningInfo(tester);
+      final text = _infoSnapshotText(tester);
+      expect(text, contains('还没有完整的算力快照'));
+      expect(text, isNot(contains('还没有算力快照')));
+      expect(text, contains('没有可以回退的完整快照'));
     });
 
     testWidgets('a wallet no snapshot includes yet is told what happens next', (
@@ -2425,3 +2418,24 @@ void main() {
     });
   });
 }
+
+/// Decision 0243: 我的挖矿's formula version, snapshot and no-estimate rule
+/// are behind the header (i).
+Future<void> _openMiningInfo(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey<String>('mining-rules-action')));
+  await tester.pumpAndSettle();
+  expect(
+    find.byKey(const ValueKey<String>('mining-info-sheet')),
+    findsOneWidget,
+  );
+}
+
+String _infoSnapshotText(WidgetTester tester) => tester
+    .widgetList<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('mining-info-snapshot')),
+        matching: find.byType(Text),
+      ),
+    )
+    .map((text) => text.data ?? '')
+    .join('\n');

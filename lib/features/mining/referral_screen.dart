@@ -10,7 +10,6 @@ import 'package:loop_mobile/core/qr/loop_qr_code.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
-import 'package:loop_mobile/features/intel/intel_referral_board.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -28,6 +27,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -42,7 +42,11 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// and `GET /v2/referral/invitees`, and the referrals board. Top to bottom:
 /// the invite code (large, copyable) over the five depths; the invite link
 /// with copy / system share and the poster; 我的邀请 counts; the invite
-/// boost; the direct invitees; how depth is counted; 推广榜; my own inviter.
+/// boost; the direct invitees; my own inviter. Decision 0243 (需求方
+/// 2026-10-23 #01 / #05): how depth is counted, what L1–L5 mean, the
+/// mining-power-only rule, the valid-member basis and the binding rules are
+/// said once, behind the (i) in the header ([referralInfoNotes]), and the
+/// 推广榜 lives on 情报 · 算力榜 only.
 /// Everything here is a relationship count or Mining Power — never a
 /// commission, a payout or a downline income (user ruling: the only reward is
 /// the power boost).
@@ -50,16 +54,11 @@ class ReferralScreen extends ConsumerStatefulWidget {
   const ReferralScreen({
     super.key,
     this.onBack,
-    this.onOpenMining,
     this.initialInviteCode,
     this.onNavigate,
   });
 
   final VoidCallback? onBack;
-
-  /// The prototype's "back to mining" control. Referral is a Mining Power
-  /// rule page, so it offers a way back to the Mining tab.
-  final VoidCallback? onOpenMining;
 
   /// A code an invite link (`/i/{code}`) carried in. Once the overview says
   /// the account may still bind, the binding form opens with it filled in;
@@ -98,14 +97,13 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '邀请中心',
-      kicker: '邀请好友 · 只计入挖矿算力',
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('referral-explain-action'),
           icon: 'info',
           label: '邀请说明',
-          onPressed: () => unawaited(_explain()),
+          onPressed: () => unawaited(_explain(overview)),
         ),
       ],
       // The invite code is the page's one hero: the large code, with the five
@@ -140,10 +138,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             LaunchUnavailableCard(label: '邀请加成', fact: boost),
           const LoopLabel('邀请列表'),
           _InviteeList(onNavigate: widget.onNavigate),
-          const LoopLabel('关系深度如何计算'),
-          _DepthExplainer(levels: overview.levels),
-          const LoopLabel('推广榜'),
-          IntelReferralBoardSection(onNavigate: widget.onNavigate),
           const LoopLabel('我的邀请人'),
           _BindingBlock(
             binding: overview.binding,
@@ -152,29 +146,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             claimFailureKind: state.claimFailureKind,
             claimShapeInvalid: state.claimShapeInvalid,
             onClaim: () => unawaited(_openClaimSheet()),
-          ),
-          _RulesFooter(rules: overview.rules),
-          if (widget.onOpenMining != null)
-            LoopButtonPair(
-              children: <Widget>[
-                LoopButton(
-                  key: const ValueKey<String>('referral-back-to-mining'),
-                  label: '返回挖矿',
-                  onPressed: widget.onOpenMining,
-                ),
-              ],
-            ),
-          const LoopNotice(
-            key: ValueKey<String>('referral-mining-only'),
-            icon: 'info',
-            title: '只计入挖矿算力',
-            body: '邀请加成只计入挖矿算力，不是收入、佣金或返佣。分享完成不代表关系成立，还需要验证。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
           ),
           const SizedBox(height: 20),
         ],
@@ -208,10 +179,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           _CopyCodeButton(code: overview.inviteCode.code),
         ],
       ),
-      caption:
-          '${overview.validRelationships} 个有效关系 · '
-          '${overview.pendingRelationships} 个待验证；'
-          '邀请加成只计入挖矿算力。',
       margin: EdgeInsets.zero,
       squareBottom: true,
     ),
@@ -222,7 +189,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     await Future.wait(<Future<void>>[
       ref.read(referralControllerProvider.notifier).reload(),
       ref.read(referralInviteesControllerProvider.notifier).reload(),
-      ref.read(referralBoardControllerProvider.notifier).reload(),
     ]);
   }
 
@@ -265,42 +231,11 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     }
   }
 
-  Future<void> _explain() => showLoopSheet<void>(
+  Future<void> _explain(ReferralOverview? overview) => showLoopInfoSheet(
     context,
-    barrierLabel: '关闭邀请说明',
-    builder: (sheetContext) => Padding(
-      key: const ValueKey<String>('referral-explain-sheet'),
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const LoopSheetHeading('邀请说明'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  '每个账号只有一个邀请码。被邀请人激活 LOOP ID 后 7 天内可以绑定；'
-                  '被邀请人本人在最近一个结算小时有算力，才算有效成员。'
-                  '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
-                  style: LoopType.bodySm,
-                ),
-                const SizedBox(height: 16),
-                LoopButton(
-                  key: const ValueKey<String>('referral-explain-close'),
-                  label: '知道了',
-                  block: true,
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
+    title: '邀请说明',
+    notes: referralInfoNotes(overview),
+    sheetKey: 'referral-explain-sheet',
   );
 }
 
@@ -378,13 +313,105 @@ class _ReferralCenterCardState extends ConsumerState<ReferralCenterCard> {
     return Column(
       key: const ValueKey<String>('intel-referral-center'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[const LoopLabel('我的邀请'), body],
+      children: <Widget>[
+        // Decision 0243 (需求方 2026-10-23 #03): the mining-power-only rule
+        // and the valid-member basis are behind this (i), not under the code
+        // and the counts.
+        LoopInfoLabel(
+          '我的邀请',
+          info: LoopInfoButton(
+            key: const ValueKey<String>('intel-referral-info'),
+            title: '邀请说明',
+            label: '邀请说明',
+            notes: referralInfoNotes(overview),
+            sheetKey: 'intel-referral-info-sheet',
+          ),
+        ),
+        body,
+      ],
     );
   }
 }
 
 /// The `referral` route (manifest slug `referral`).
 const String referralCenterPath = '/profile/referral';
+
+/// What the (i) on 邀请中心 and on 情报 · 我的邀请 says (decision 0243,
+/// 需求方 2026-10-23 #01 / #03 / #05): one heading per fact, read from the
+/// same overview the page draws. Without an overview it says the rules in
+/// words and leaves the server's figures out rather than guessing them.
+List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
+  final rules = overview?.rules;
+  final stats = overview?.stats;
+  final window = overview?.binding.claimWindow;
+  final levels = overview?.levels ?? const <ReferralLevel>[];
+  final asOf = stats?.validAsOf;
+  return <LoopInfoNote>[
+    const LoopInfoNote(
+      key: ValueKey<String>('referral-info-mining-only'),
+      title: '只计入挖矿算力',
+      body: '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
+    ),
+    LoopInfoNote(
+      key: const ValueKey<String>('referral-info-relationship'),
+      title: '关系怎样成立',
+      body:
+          '每个账号只有一个邀请码。分享完成不代表关系成立，还需要验证；'
+          '「有效」只统计已验证的关系，其余一律显示为待验证，不计入任何加成。'
+          '${overview == null ? '' : '\n当前 ${overview.validRelationships} 个有效关系 · '
+                    '${overview.pendingRelationships} 个待验证。'}',
+    ),
+    LoopInfoNote(
+      key: const ValueKey<String>('referral-info-depth'),
+      title: '关系深度如何计算',
+      body:
+          '你直接邀请并已验证的人是 L1，L1 再邀请的人是 L2，依此类推'
+          '${rules == null ? '' : '，最深到 L${rules.maximumDepth}'}。'
+          '每一级的加成比例以服务端公布的为准，只按该级的有效关系计入。',
+    ),
+    for (final level in levels)
+      LoopInfoNote(
+        key: ValueKey<String>('referral-level-${level.level}'),
+        title: 'L${level.level} · 加成 ${level.boostPercent}%',
+        body:
+            '${referralLevelDescription(level.level)}\n'
+            '${<String>[for (final entry in level.counts.entries) '${referralValidationStatusLabel(entry.$1)} ${entry.$2}'].join(' · ')}',
+      ),
+    LoopInfoNote(
+      key: const ValueKey<String>('referral-info-valid-member'),
+      title: '有效成员',
+      body:
+          '被邀请人本人在最近一个结算小时有算力，才算有效成员。'
+          '${stats == null
+              ? ''
+              : asOf == null
+              ? '\n还没有结算过的小时，有效成员暂为 0。'
+              : '\n当前数字截至 ${launchTimestampLabel(asOf)}。'}',
+    ),
+    LoopInfoNote(
+      key: const ValueKey<String>('referral-info-binding'),
+      title: '绑定邀请码',
+      body:
+          '${rules == null ? '被邀请人激活 LOOP ID 后的绑定窗口内可以绑定' : '被邀请人激活 LOOP ID 后 ${rules.claimWindowDays} 天内可以绑定'}；'
+          '一个账号只能绑定一次，关系锁定后不可更换。'
+          '不能绑定自己的邀请码，也不能绑定自己下级的邀请码。'
+          '${switch (window) {
+            ReferralClaimWindowTimed(:final isOpen, :final closesAt) when isOpen && overview?.binding.isBound != true => '\n本账号的绑定窗口截止 ${launchTimestampLabel(closesAt)}。',
+            _ => '',
+          }}',
+    ),
+    if (rules != null)
+      LoopInfoNote(
+        key: const ValueKey<String>('referral-info-rules'),
+        title: '规则版本',
+        body:
+            '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
+            '最大深度 L${rules.maximumDepth} · '
+            '绑定窗口 ${rules.claimWindowDays} 天 · '
+            '作用于${rules.appliesTo == 'miningPower' ? '挖矿算力' : ' ${rules.appliesTo}'}',
+      ),
+  ];
+}
 
 /// One block of 我的邀请 (decision 0235): the raised `card2` ground with a
 /// hairline, so the code, the link and the counts read as three separate
@@ -427,7 +454,8 @@ class _CopyCodeButton extends StatelessWidget {
   );
 }
 
-/// 情报 · 我的邀请码: the code large with its copy glyph, one line under it.
+/// 情报 · 我的邀请码: the code large with its copy glyph. The sentence that
+/// stood under it is in the (i) beside 我的邀请 (decision 0243).
 class _InviteCodeBlock extends StatelessWidget {
   const _InviteCodeBlock({required this.code});
 
@@ -468,14 +496,6 @@ class _InviteCodeBlock extends StatelessWidget {
             ),
             _CopyCodeButton(code: code),
           ],
-        ),
-        const SizedBox(height: 6),
-        Padding(
-          padding: const EdgeInsets.only(right: LoopSpacing.tight),
-          child: Text(
-            '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
-            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-          ),
         ),
       ],
     ),
@@ -601,7 +621,8 @@ String referralInviteText(String code, String? link) => link == null
 /// 我的邀请: direct / valid / depth 2–5 — three equal cells on one raised
 /// block, the name small above the figure (decision 0235). Without the
 /// server's `stats` every figure is the dash and the page says the counts are
-/// not open yet.
+/// not open yet. Decision 0243: the valid-member basis and the hour it was
+/// read at are in the (i) ([referralInfoNotes]), not under the counts.
 class _InviteStats extends StatelessWidget {
   const _InviteStats({required this.stats});
 
@@ -610,7 +631,6 @@ class _InviteStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = stats;
-    final asOf = value?.validAsOf;
     return Column(
       key: const ValueKey<String>('referral-stats'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -653,23 +673,21 @@ class _InviteStats extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            LoopSpacing.tight,
-            LoopSpacing.page,
-            0,
+        // Fail closed: counts that are not open say so on the page.
+        if (value == null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              LoopSpacing.tight,
+              LoopSpacing.page,
+              0,
+            ),
+            child: Text(
+              '邀请统计还没有开放，开放后显示在这里。',
+              key: const ValueKey<String>('referral-stats-note'),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+            ),
           ),
-          child: Text(
-            value == null
-                ? '邀请统计还没有开放，开放后显示在这里。'
-                : asOf == null
-                ? '还没有结算过的小时，有效成员暂为 0。'
-                : '有效成员截至 ${launchTimestampLabel(asOf)}：被邀请人本人在这一小时有算力。',
-            key: const ValueKey<String>('referral-stats-note'),
-            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-          ),
-        ),
       ],
     );
   }
@@ -834,7 +852,7 @@ class _BoostCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
             '结算小时 ${launchTimestampLabel(boost.hourStart)} – '
-            '${launchTimestampLabel(boost.hourEnd)}；只计入挖矿算力。',
+            '${launchTimestampLabel(boost.hourEnd)}',
             style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
         ),
@@ -1258,82 +1276,6 @@ class _LevelCell extends StatelessWidget {
       chosen ? loopSplatted(cell) : cell;
 }
 
-/// `关系深度如何计算`: the prototype's three-row explanation of what L1, L2
-/// and L3+ mean, which the App had replaced with five stacked count rows.
-class _DepthExplainer extends StatelessWidget {
-  const _DepthExplainer({required this.levels});
-
-  final List<ReferralLevel> levels;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopRecordGroup(
-          key: const ValueKey<String>('referral-depth'),
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < levels.length; index += 1)
-              _levelRow(levels[index], index, levels.length),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Text(
-            '「有效」只统计已验证的关系，其余一律显示为待验证，'
-            '不计入任何加成。',
-            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-          ),
-        ),
-      ],
-    );
-  }
-
-  LoopRecordRow _levelRow(ReferralLevel level, int index, int length) {
-    final counts = level.counts;
-    final detail = <String>[
-      for (final entry in counts.entries)
-        '${referralValidationStatusLabel(entry.$1)} ${entry.$2}',
-    ].join(' · ');
-    return LoopRecordRow(
-      key: ValueKey<String>('referral-level-${level.level}'),
-      leading: _LevelTile(level: level.level),
-      title: 'L${level.level} · ${level.boostPercent}%',
-      subtitle: '${referralLevelDescription(level.level)}\n$detail',
-      subtitleMaxLines: 2,
-      position: launchRowPosition(index, length),
-      semanticLabel:
-          'L${level.level}，加成 ${level.boostPercent}%，'
-          '有效关系 ${counts.valid}，待验证 ${counts.pending}',
-    );
-  }
-}
-
-class _LevelTile extends StatelessWidget {
-  const _LevelTile({required this.level});
-
-  final int level;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: level == 1 ? LoopColors.purpleSelected : LoopColors.card2,
-        borderRadius: LoopRadius.tile,
-      ),
-      child: Text(
-        'L$level',
-        style: LoopType.figure.copyWith(
-          color: level == 1 ? LoopColors.onPurple : LoopColors.chalk,
-        ),
-      ),
-    );
-  }
-}
-
 class _BindingBlock extends StatelessWidget {
   const _BindingBlock({
     required this.binding,
@@ -1353,8 +1295,27 @@ class _BindingBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final window = binding.claimWindow;
     final inviter = binding.inviter;
+    // Decision 0243 (需求方 2026-10-23 #05): one 绑定邀请码 button. While the
+    // window is open it is the only thing here; the window, the one-binding
+    // rule and the rule version are in the (i). Whenever it cannot be used it
+    // stays, disabled, with one short line under it saying why.
+    final String? blockedLine = binding.canClaim
+        ? null
+        : binding.isBound || inviter != null
+        ? '已绑定邀请人，关系锁定后不能更换'
+        : switch (binding.claimWindow) {
+            ReferralClaimWindowUnavailable(:final reasonCode) =>
+              '还不能绑定：${launchReasonCodeText(reasonCode)}',
+            ReferralClaimWindowTimed(:final closesAt) =>
+              '绑定窗口已于 ${launchTimestampLabel(closesAt)} 关闭',
+          };
+    final String blockedKey = binding.isBound || inviter != null
+        ? 'referral-claim-bound-note'
+        : switch (binding.claimWindow) {
+            ReferralClaimWindowUnavailable() => 'referral-claim-unavailable',
+            ReferralClaimWindowTimed() => 'referral-claim-closed',
+          };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -1372,60 +1333,33 @@ class _BindingBlock extends StatelessWidget {
                     '锁定于 ${launchTimestampLabel(inviter.lockedAt)}',
               ),
             ],
-          )
-        else
-          switch (window) {
-            ReferralClaimWindowUnavailable(:final reasonCode) =>
-              LoopInlineUnavailable(
-                key: const ValueKey<String>('referral-claim-unavailable'),
-                icon: 'id',
-                message: '还不能绑定邀请码',
-                detail: launchReasonCodeText(reasonCode),
-                maxLines: 2,
-                detailMaxLines: 4,
-              ),
-            ReferralClaimWindowTimed(:final isOpen, :final closesAt) =>
-              isOpen
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        LoopRecordGroup(
-                          key: const ValueKey<String>('referral-claim-window'),
-                          rows: <LoopRecordRow>[
-                            LoopRecordRow(
-                              key: const ValueKey<String>(
-                                'referral-claim-window-row',
-                              ),
-                              title: '绑定窗口开放中',
-                              subtitle:
-                                  '截止 ${launchTimestampLabel(closesAt)}；'
-                                  '一个账号只能绑定一次，关系锁定后不可更换。',
-                            ),
-                          ],
-                        ),
-                        LoopButtonPair(
-                          children: <Widget>[
-                            LoopButton(
-                              key: const ValueKey<String>('referral-claim'),
-                              label: '绑定邀请码',
-                              primary: true,
-                              onPressed: busy ? null : onClaim,
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                  : LoopInlineUnavailable(
-                      key: const ValueKey<String>('referral-claim-closed'),
-                      icon: 'clock',
-                      message: '绑定窗口已关闭',
-                      detail:
-                          '邀请码只能在账号激活后的窗口期内绑定，本账号的窗口已于 '
-                          '${launchTimestampLabel(closesAt)} 结束。',
-                      maxLines: 2,
-                      detailMaxLines: 4,
-                    ),
-          },
+          ),
+        LoopButtonPair(
+          children: <Widget>[
+            LoopButton(
+              key: const ValueKey<String>('referral-claim'),
+              label: '绑定邀请码',
+              primary: true,
+              onPressed: blockedLine != null || busy ? null : onClaim,
+            ),
+          ],
+        ),
+        if (blockedLine != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              LoopSpacing.tight,
+              LoopSpacing.page,
+              0,
+            ),
+            child: Text(
+              blockedLine,
+              key: ValueKey<String>(blockedKey),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+            ),
+          ),
         if (claimShapeInvalid)
           const LoopNotice(
             key: ValueKey<String>('referral-claim-shape-invalid'),
@@ -1468,26 +1402,6 @@ class _BindingBlock extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _RulesFooter extends StatelessWidget {
-  const _RulesFooter({required this.rules});
-
-  final ReferralRulesInfo rules;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      key: const ValueKey<String>('referral-rules-footer'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Text(
-        '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
-        '最大深度 L${rules.maximumDepth} · '
-        '绑定窗口 ${rules.claimWindowDays} 天 · 作用于 ${rules.appliesTo}',
-        style: LoopType.captionSm,
-      ),
     );
   }
 }

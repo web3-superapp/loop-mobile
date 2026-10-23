@@ -159,8 +159,7 @@ void main() {
     _expectStep(tester, '邀请说明', LoopType.heading);
     final support = _painted(
       tester,
-      '每个账号只有一个邀请码。被邀请人激活 LOOP ID 后 7 天内可以绑定；'
-      '被邀请人本人在最近一个结算小时有算力，才算有效成员。'
+      // Decision 0243: the sheet is the shared (i) sheet, one note per fact.
       '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
     );
     expect(support.fontSize, LoopType.bodySm.fontSize);

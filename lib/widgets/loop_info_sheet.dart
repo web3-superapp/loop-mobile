@@ -24,13 +24,16 @@ class LoopInfoNote {
 /// the page as cards.
 ///
 /// The sheet is the shared [showLoopSheet] surface (root navigator, drag
-/// handle, focus return); it carries no button — closing it is the drag,
-/// the veil or the system back.
+/// handle, focus return); it carries no close button — closing it is the
+/// drag, the veil or the system back. [footer] may add one way onward under
+/// the notes (decision 0243: 挖矿说明 → 查看挖矿规则); it is given the
+/// sheet's own context so it can close the sheet first.
 Future<void> showLoopInfoSheet(
   BuildContext context, {
   required String title,
   required List<LoopInfoNote> notes,
   String sheetKey = 'loop-info-sheet',
+  Widget Function(BuildContext sheetContext)? footer,
 }) {
   return showLoopSheet<void>(
     context,
@@ -58,6 +61,11 @@ Future<void> showLoopInfoSheet(
                   Text(note.body, style: LoopType.bodySm),
                 ],
               ),
+            ),
+          if (footer != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+              child: footer(sheetContext),
             ),
         ],
       ),
