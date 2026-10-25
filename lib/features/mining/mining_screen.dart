@@ -241,11 +241,11 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             title: '持有即算力',
             body: switch (summary.networkPower) {
               MiningFigureValue(:final value) =>
-                '按 LOOP 内置钱包的持仓自动计算，不需要质押或授权。'
+                '按绑定到 LOOP 账号的钱包持仓自动计算，不需要质押或授权。'
                     '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
                     '${loopGroupedFigure(value)}。',
               MiningFigureUnavailable(:final reasonCode) =>
-                '按 LOOP 内置钱包的持仓自动计算，不需要质押或授权。'
+                '按绑定到 LOOP 账号的钱包持仓自动计算，不需要质押或授权。'
                     '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
                     '$launchMissingFigure：${launchReasonCodeText(reasonCode)}',
             },

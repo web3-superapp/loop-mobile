@@ -24,8 +24,12 @@ void main() {
       'wallet', () {
     expect(miningConditionVerified, contains('已通过审核'));
     expect(miningConditionMember, contains('加入该社区'));
-    expect(miningConditionEmbedded, contains('内置钱包'));
-    expect(miningConditionsShort, contains('内置钱包'));
+    // S304: the embedded-only rule is a server switch, off by default;
+    // the copy names every wallet bound to the account.
+    expect(miningConditionEmbedded, '按绑定到 LOOP 账号的钱包持仓计算。');
+    expect(miningConditionEmbedded, isNot(contains('内置')));
+    expect(miningConditionsShort, contains('绑定钱包'));
+    expect(miningConditionsShort, isNot(contains('内置')));
     expect(miningConditionsShort, contains('加入'));
   });
 
@@ -34,7 +38,8 @@ void main() {
     expect(miningBaselineDetail, contains('持币算力 = 持有数量 × 资产权重'));
     expect(miningBaselineDetail, contains('NFT 算力 = 持有数量 × 所属社区系数'));
     expect(miningBaselineDetail, contains('已加入该社区'));
-    expect(miningBaselineDetail, contains('内置钱包'));
+    expect(miningBaselineDetail, contains('按绑定到 LOOP 账号的钱包持仓计算'));
+    expect(miningBaselineDetail, isNot(contains('内置')));
     expect(miningBaselineDetail, isNot(contains('社区币权重')));
   });
 
