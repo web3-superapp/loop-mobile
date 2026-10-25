@@ -232,7 +232,9 @@ const String miningBaselineLabel = '当前算力公式';
 
 /// What a source line's ⓘ says about a baseline formula (decision 0121).
 const String miningBaselineDetail =
-    '算力 = 持有数量 × 社区币权重，按数量加权，不乘价格。'
+    '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 算力 = 持有数量 × 所属社区系数。'
+    '社区币只在绑定它的社区已通过审核、且你已加入该社区时计入。'
+    '只算 LOOP 内置钱包里的持仓。'
     '当前版本：每个资产的权重都定为 1，当日产量为预估值，奖励代币还没有确定。'
     '算出来的数字不是收益，也不构成承诺。';
 

@@ -390,8 +390,8 @@ void main() {
       await tester.tap(line);
       await tester.pumpAndSettle();
       expect(find.textContaining(miningBaselineDetail), findsOneWidget);
-      // Decision 0146: the drawer states the quantity basis, no price.
-      expect(find.textContaining('持有数量 × 社区币权重'), findsOneWidget);
+      // Decision 0146 / 0183: the drawer states the quantity basis, no price.
+      expect(find.textContaining('持有数量 × 资产权重'), findsOneWidget);
       expect(find.textContaining('参考价'), findsNothing);
     });
 

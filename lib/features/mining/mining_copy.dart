@@ -17,6 +17,16 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 /// expression and prints the total it produces underneath.
 const String miningPowerFormulaHeading = '持有量 × 权重';
 
+/// The three conditions a holding must meet before it counts (loop-api
+/// decision 0183, 需求方 2026-10-25), one fact per sentence. Every page that
+/// says a holding produces power points at these instead of restating them.
+const String miningConditionVerified = '社区币只在绑定它的社区已通过审核时计入，待审核社区不算。';
+const String miningConditionMember = '你须加入该社区，按在社区的时段计入；没有绑定社区的币不要求。';
+const String miningConditionEmbedded = '只算 LOOP 内置钱包里的持仓，外部连接的钱包不计入。';
+
+/// The conditions in one line, for a caption with room for a single clause.
+const String miningConditionsShort = '只算内置钱包，社区币须加入已通过审核的绑定社区。';
+
 const String miningSnapshotSectionLabel = '算力快照';
 const String miningSnapshotRowTitle = '最近一次算力快照';
 

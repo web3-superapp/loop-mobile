@@ -891,6 +891,7 @@ Future<void> showWalletPowerSheet(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               '钱包里已登记的资产会按各自的权重产生挖矿算力，算力决定每天能分到的 LOOP。'
+              '社区币须加入已通过审核的绑定社区才计入。'
               '每个资产的权重与算力在挖矿页查看。',
               style: LoopType.bodySm.copyWith(
                 color: LoopGround.secondaryOf(sheetContext),

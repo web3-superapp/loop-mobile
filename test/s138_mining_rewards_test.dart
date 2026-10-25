@@ -1206,6 +1206,9 @@ void main() {
       expect(find.text('已退出（已毕业，外盘持有数量暂读不到）'), findsOneWidget);
       // Decision 0123: the asset track is weighted by quantity, never value.
       expect(find.text('按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重'), findsOneWidget);
+      // Decision 0183: the NFT track and the conditions, one line each.
+      expect(find.text('NFT 算力 = 持有数量 × 所属社区系数'), findsOneWidget);
+      expect(find.text('只算内置钱包，社区币须加入已通过审核的绑定社区。'), findsOneWidget);
       expect(find.textContaining('估值'), findsNothing);
       expect(find.textContaining('价格'), findsNothing);
       await _scrollTo(tester, _key('mining-invite-total'));

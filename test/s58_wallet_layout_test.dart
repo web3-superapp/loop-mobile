@@ -145,7 +145,7 @@ void main() {
       );
       // A count is not an identity: the heading names the wallet in use.
       expect(find.text('1 个钱包'), findsNothing);
-      expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsNothing);
+      expect(find.textContaining('算力只统计 LOOP 内置钱包里的持仓'), findsNothing);
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('wallets-source')),
       );
@@ -156,7 +156,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsOneWidget);
+      expect(find.textContaining('算力只统计 LOOP 内置钱包里的持仓'), findsOneWidget);
       await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
       // 添加 keeps its shape and says what it would need.
