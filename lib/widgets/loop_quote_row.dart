@@ -121,6 +121,8 @@ class LoopQuoteRow extends StatelessWidget {
     this.tapKey,
     this.height = loopQuoteRowHeight,
     this.titleMinWidth,
+    this.valueMaxWidth,
+    this.trailingSlotWidth,
   });
 
   final Widget leading;
@@ -148,12 +150,20 @@ class LoopQuoteRow extends StatelessWidget {
   /// ellipsis — before the ticker does. `null` keeps the 140 / 36 % cap only.
   final double? titleMinWidth;
 
+  /// Replaces the figure column's 140 / 36 % cap (decision 0247: the
+  /// 情报 · 行情 price stops at 92). `null` keeps that cap.
+  final double? valueMaxWidth;
+
+  /// The trailing slot's width as [titleMinWidth] budgets it, when the
+  /// trailing block is not the change pill. `null` budgets [trailingWidth].
+  final double? trailingSlotWidth;
+
   /// The figure column's cap: 140 or 36 % of the row, and — with
   /// [titleMinWidth] — no wider than what is left once the leading slot
   /// ([leadingWidth]), the title's minimum, the gaps and the trailing slot
   /// ([trailingWidth]) are paid for.
   double _valueMaxWidth(double rowWidth) {
-    final cap = math.min(140, rowWidth * 0.36).toDouble();
+    final cap = valueMaxWidth ?? math.min(140, rowWidth * 0.36).toDouble();
     final minimum = titleMinWidth;
     if (minimum == null) return cap;
     final left =
@@ -162,7 +172,7 @@ class LoopQuoteRow extends StatelessWidget {
         12 -
         minimum -
         10 -
-        (trailing == null ? 0 : trailingWidth + 12);
+        (trailing == null ? 0 : (trailingSlotWidth ?? trailingWidth) + 12);
     return math.max(56, math.min(cap, left));
   }
 

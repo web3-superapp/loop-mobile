@@ -486,11 +486,16 @@ void main() {
       expect(find.text('WBNB'), findsWidgets);
       expect(find.text('市值 \$1.6B'), findsOneWidget);
       expect(find.text('\$747.39'), findsOneWidget);
-      // Decision 0122: the move sits in the OKX pill, signed.
+      // Decision 0247 (E 稿): the move sits in the trend column, signed,
+      // with no pill ground.
       expect(find.text('+2.50%'), findsOneWidget);
       expect(
-        find.descendant(of: row, matching: _key('loop-change-pill')),
+        find.descendant(of: row, matching: _key('market-trend-column')),
         findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: _key('loop-change-pill')),
+        findsNothing,
       );
       // The unpriced row says why, inline, and prints no price.
       final unpriced = _key('market-asset-$s5UsdtAssetId');

@@ -1,9 +1,11 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -83,13 +85,19 @@ class MarketFomoRow extends StatelessWidget {
     this.unavailableReason,
     this.marker,
     this.onTap,
+    this.trend = false,
+    this.trendCloses,
   });
 
   /// A row from one of the three categories.
+  ///
+  /// [trend] draws the E-design trend column (decision 0247) instead of the
+  /// change pill; only the 情报 · 行情 list asks for it.
   factory MarketFomoRow.category(
     MarketCategoryRow row, {
     Key? key,
     VoidCallback? onTap,
+    bool trend = false,
   }) {
     final quote = row.quote;
     final cap = quote?.marketCapUsd;
@@ -110,6 +118,8 @@ class MarketFomoRow extends StatelessWidget {
           ? '池子推算'
           : marketQuoteQualityMarker(quote.quality),
       onTap: onTap,
+      trend: trend,
+      trendCloses: row.trendCloses,
     );
   }
 
@@ -119,6 +129,7 @@ class MarketFomoRow extends StatelessWidget {
     MarketAssetRow row, {
     Key? key,
     VoidCallback? onTap,
+    bool trend = false,
   }) {
     final price = row.price;
     final change = row.priceChange24h;
@@ -136,6 +147,8 @@ class MarketFomoRow extends StatelessWidget {
           ? marketQuoteQualityMarker(price.quality)
           : null,
       onTap: onTap,
+      trend: trend,
+      trendCloses: row.trendCloses,
     );
   }
 
@@ -152,6 +165,13 @@ class MarketFomoRow extends StatelessWidget {
   final String? marker;
   final VoidCallback? onTap;
 
+  /// The E-design trend column (decision 0247) in place of the change pill.
+  final bool trend;
+
+  /// The 24-hour series [trend] draws; `null` prints the percentage only.
+  /// Ignored without [trend].
+  final List<Decimal>? trendCloses;
+
   @override
   Widget build(BuildContext context) {
     final value = price;
@@ -165,7 +185,11 @@ class MarketFomoRow extends StatelessWidget {
       else
         marketRowPrice(value),
       if (value != null)
-        move == null ? '24 小时涨跌未报告' : '24 小时 ${loopFormatPercent(move)}',
+        trend
+            ? marketTrendSpoken(move, hasSeries: _hasSeries)
+            : move == null
+            ? '24 小时涨跌未报告'
+            : '24 小时 ${loopFormatPercent(move)}',
     ].join('，');
     return LoopQuoteRow(
       leading: LoopTokenLogo(
@@ -189,10 +213,174 @@ class MarketFomoRow extends StatelessWidget {
           ? null
           : KeyedSubtree(
               key: const ValueKey<String>('market-row-change'),
-              child: LoopChangePill(change: move),
+              child: trend
+                  ? MarketTrendColumn(
+                      change: move,
+                      closes: _hasSeries ? trendCloses : null,
+                    )
+                  : LoopChangePill(change: move),
             ),
+      titleMinWidth: trend ? marketTrendTitleMinWidth : null,
+      valueMaxWidth: trend ? marketTrendPriceMaxWidth : null,
+      trailingSlotWidth: trend ? marketTrendColumnWidth : null,
       onTap: onTap,
       semanticLabel: spoken,
+    );
+  }
+
+  bool get _hasSeries => (trendCloses?.length ?? 0) > 1;
+}
+
+// ---------------------------------------------------------------------------
+// 情报 · 行情 trend column (decision 0247, docs/49 E 稿)
+// ---------------------------------------------------------------------------
+
+/// The trend column's width: the 24h line and the percentage under it.
+const double marketTrendColumnWidth = 96;
+
+/// The 24h line's box inside the column.
+const Size marketTrendLineSize = Size(96, 32);
+
+/// The name column's minimum width on a trend row.
+const double marketTrendTitleMinWidth = 112;
+
+/// The price column's maximum width on a trend row.
+const double marketTrendPriceMaxWidth = 92;
+
+/// The line's inset, as the E design draws it (x 2 → 92, y 3 → 29).
+const EdgeInsets marketTrendLinePadding = EdgeInsets.fromLTRB(2, 3, 4, 3);
+
+/// The newest point's dot.
+const double marketTrendDotRadius = 2.6;
+
+/// The draw-in of a newly shown line; none when motion is reduced.
+const Duration marketTrendDrawIn = Duration(milliseconds: 360);
+
+/// The colour of the line: rise green, fall red, and the grey `line3` for a
+/// flat or unreported move (E 稿).
+Color marketTrendLineColor(Decimal? change) =>
+    switch (LoopPriceMove.of(change)) {
+      LoopPriceMove.up => LoopColors.rise,
+      LoopPriceMove.down => LoopColors.fall,
+      LoopPriceMove.flat || LoopPriceMove.unread => LoopColors.line3,
+    };
+
+/// 「24 小时走势上涨 8.40%」 with a line, 「24 小时涨跌 +8.40%」 without one.
+String marketTrendSpoken(Decimal? change, {required bool hasSeries}) {
+  if (change == null) return '24 小时涨跌未报告';
+  final magnitude = change < Decimal.zero ? -change : change;
+  final figure = '${magnitude.toStringAsFixed(2)}%';
+  if (!hasSeries) return '24 小时涨跌 ${loopSignedPercent(change)}';
+  return switch (LoopPriceMove.of(change)) {
+    LoopPriceMove.up => '24 小时走势上涨 $figure',
+    LoopPriceMove.down => '24 小时走势下跌 $figure',
+    LoopPriceMove.flat || LoopPriceMove.unread => '24 小时走势持平 $figure',
+  };
+}
+
+/// The E-design trend column: a 96 × 32 line of the last 24 hours with a dot
+/// on its newest point, and the signed move under it in `figureSm` at 700 —
+/// no pill ground. Without a series the line's box stays empty (no dashed
+/// placeholder), so every row's percentage sits on the same line and the
+/// same right edge.
+///
+/// The line is a shape: normalised between the series' own low and high, no
+/// figure is read from it.
+class MarketTrendColumn extends StatelessWidget {
+  const MarketTrendColumn({required this.change, super.key, this.closes});
+
+  final Decimal? change;
+  final List<Decimal>? closes;
+
+  @override
+  Widget build(BuildContext context) {
+    final move = change;
+    final series = closes;
+    final direction = LoopPriceMove.of(move);
+    final figureColor = switch (direction) {
+      LoopPriceMove.up => LoopColors.rise,
+      LoopPriceMove.down => LoopColors.fall,
+      LoopPriceMove.flat => LoopGround.inkOf(context),
+      LoopPriceMove.unread => LoopColors.text3,
+    };
+    return Semantics(
+      container: true,
+      label: marketTrendSpoken(
+        move,
+        hasSeries: series != null && series.length > 1,
+      ),
+      child: ExcludeSemantics(
+        child: SizedBox(
+          key: const ValueKey<String>('market-trend-column'),
+          width: marketTrendColumnWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              SizedBox.fromSize(
+                size: marketTrendLineSize,
+                child: series == null || series.length < 2
+                    ? null
+                    : _MarketTrendLine(
+                        closes: series,
+                        color: marketTrendLineColor(move),
+                      ),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  move == null ? '未报告' : loopSignedPercent(move),
+                  key: const ValueKey<String>('market-trend-percent'),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: move == null
+                      ? LoopType.caption.copyWith(color: LoopColors.text3)
+                      : LoopTypography.withWeight(
+                          LoopType.figureSm,
+                          FontWeight.w700,
+                        ).copyWith(color: figureColor, height: 1.3),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MarketTrendLine extends StatelessWidget {
+  const _MarketTrendLine({required this.closes, required this.color});
+
+  final List<Decimal> closes;
+  final Color color;
+
+  CustomPaint _paint(double progress) => CustomPaint(
+    key: const ValueKey<String>('market-trend-line'),
+    size: marketTrendLineSize,
+    painter: LoopSparklinePainter(
+      closes: closes,
+      color: color,
+      padding: marketTrendLinePadding,
+      endDotRadius: marketTrendDotRadius,
+      progress: progress,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = LoopMotion.of(context, marketTrendDrawIn);
+    return RepaintBoundary(
+      child: duration == Duration.zero
+          ? _paint(1)
+          : TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: 1),
+              duration: duration,
+              curve: LoopMotion.enter,
+              builder: (context, progress, _) => _paint(progress),
+            ),
     );
   }
 }

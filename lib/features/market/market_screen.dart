@@ -316,6 +316,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           animate: _sawSkeleton,
           child: MarketFomoRow.watchlist(
             row,
+            trend: true,
             onTap: () => _open(MarketAssetRoute.token(row.assetId)),
           ),
         ),
@@ -388,6 +389,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         MarketFomoRow.category(
           row,
           key: ValueKey<String>('market-asset-${row.assetId}'),
+          trend: true,
           onTap: () => _open(MarketAssetRoute.token(row.assetId)),
         ),
       if (controller.appendFailed && !state.busy)

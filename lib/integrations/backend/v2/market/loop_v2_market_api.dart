@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -510,7 +511,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         'quote',
         'sparkline',
       },
-      const <String>{'quoteUnavailable', 'community'},
+      const <String>{'quoteUnavailable', 'community', 'sparkline24h'},
     );
     final quote = map['quote'] == null ? null : _categoryQuote(map['quote']);
     String? reason;
@@ -565,6 +566,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       quoteUnavailableReason: reason,
       sparkline: _rowSparkline(map['sparkline'], anyRefusal: true),
       community: community,
+      sparkline24h: decodeSparkline24h(map['sparkline24h']),
     );
   }
 
@@ -710,23 +712,27 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       raw is Map && raw['status'] == 'unavailable';
 
   static MarketAssetRow _assetRow(Object? raw, {required bool trending}) {
-    final map = LoopV2Contract.strictMap(raw, <String>{
-      'assetId',
-      'asset',
-      // Required from decision 0072 on: every row that names an asset names
-      // its artwork too, and a row without the key is an invalid payload
-      // rather than a row that silently loses its logo.
-      'logo',
-      'price',
-      'priceChange24h',
-      // Required from decision 0074 §3a on. It was optional for exactly one
-      // build, while S81b's contract was being frozen; now every row carries
-      // the shape it draws, and a row without the key is an invalid payload
-      // rather than a line that silently disappears.
-      'sparkline',
-      if (trending) 'volume24h',
-      if (trending) 'liquidityUsd',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      <String>{
+        'assetId',
+        'asset',
+        // Required from decision 0072 on: every row that names an asset names
+        // its artwork too, and a row without the key is an invalid payload
+        // rather than a row that silently loses its logo.
+        'logo',
+        'price',
+        'priceChange24h',
+        // Required from decision 0074 §3a on. It was optional for exactly one
+        // build, while S81b's contract was being frozen; now every row carries
+        // the shape it draws, and a row without the key is an invalid payload
+        // rather than a line that silently disappears.
+        'sparkline',
+        if (trending) 'volume24h',
+        if (trending) 'liquidityUsd',
+      },
+      const <String>{'sparkline24h'},
+    );
     return MarketAssetRow(
       assetId: LoopV2ChainCodec.requireAssetId(map, 'assetId'),
       asset: LoopV2ChainCodec.assetSummary(map['asset']),
@@ -738,8 +744,54 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
           ? LoopV2ChainCodec.fact(map['liquidityUsd'])
           : null,
       sparkline: _rowSparkline(map['sparkline']),
+      sparkline24h: decodeSparkline24h(map['sparkline24h']),
     );
   }
+
+  /// The optional flat `sparkline24h` key (S307, decision 0247):
+  /// `number[] | null`, oldest first, the price unit.
+  ///
+  /// The key arrived after this build's contract, so it is read leniently
+  /// (「/v2 新增键必须客户端先行」): it never fails the row or the list. Each
+  /// of these is "no series" and returns `null` —
+  ///
+  /// * the key is absent or `null`;
+  /// * the value is not an array;
+  /// * an element is not a finite non-negative number (a decimal string is
+  ///   accepted as a number, `true` / `null` / an object is not);
+  /// * fewer than two points remain.
+  ///
+  /// More than [_sparkline24hMaxPoints] points keep the most recent ones. The
+  /// series is a shape only — the row normalises it and prints no figure
+  /// from it.
+  @visibleForTesting
+  static List<Decimal>? decodeSparkline24h(Object? raw) {
+    if (raw is! List) return null;
+    final closes = <Decimal>[];
+    for (final element in raw) {
+      final Decimal? value;
+      if (element is int) {
+        value = Decimal.fromInt(element);
+      } else if (element is double) {
+        value = element.isFinite ? Decimal.tryParse(element.toString()) : null;
+      } else if (element is String &&
+          element.length <= 160 &&
+          LoopV2ChainCodec.unsignedDecimalPattern.hasMatch(element)) {
+        value = Decimal.tryParse(element);
+      } else {
+        value = null;
+      }
+      if (value == null || value < Decimal.zero) return null;
+      closes.add(value);
+    }
+    if (closes.length < 2) return null;
+    final start = closes.length > _sparkline24hMaxPoints
+        ? closes.length - _sparkline24hMaxPoints
+        : 0;
+    return List<Decimal>.unmodifiable(closes.sublist(start));
+  }
+
+  static const int _sparkline24hMaxPoints = 24;
 
   /// `{status, interval, closes[], observedAt, source, quality}` — the frozen
   /// row-level shape (decision 0074 §3a).
