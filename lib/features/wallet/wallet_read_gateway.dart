@@ -65,6 +65,30 @@ final walletReadGatewayProvider = Provider<WalletReadGateway>(
   (ref) => const UnavailableWalletReadGateway(),
 );
 
+/// Feature-facing port that asks the server to re-read the account's wallets
+/// from Privy right after a bind or an unbind (S306, decision 0246).
+///
+/// A port of its own, like the net-worth history: a server that has not
+/// deployed the route leaves the wallet list on its ordinary refresh.
+abstract interface class WalletInventorySyncGateway {
+  /// `true` when the server acknowledged; `false` when it has no such route
+  /// or could not be reached. It never throws: the caller re-reads the list
+  /// either way.
+  Future<bool> requestSync();
+}
+
+final class UnavailableWalletInventorySyncGateway
+    implements WalletInventorySyncGateway {
+  const UnavailableWalletInventorySyncGateway();
+
+  @override
+  Future<bool> requestSync() async => false;
+}
+
+final walletInventorySyncGatewayProvider = Provider<WalletInventorySyncGateway>(
+  (ref) => const UnavailableWalletInventorySyncGateway(),
+);
+
 /// Feature-facing port for the wallet's net-worth history (decision 0188).
 ///
 /// A port of its own rather than a sixth [WalletReadGateway] method: the

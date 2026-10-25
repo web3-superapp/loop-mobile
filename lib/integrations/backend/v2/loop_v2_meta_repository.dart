@@ -136,16 +136,22 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   }
 
   LoopV2ClientPolicy _parseClientPolicy(Object? value) {
-    final root = LoopV2Contract.strictMap(value, const <String>{
-      'contractVersion',
-      'configVersion',
-      'effectiveAt',
-      'defaultRoute',
-      'navigation',
-      'versionGate',
-      'regionGate',
-      'termsGate',
-    });
+    // `externalWalletLimit` (S306, decision 0246) is optional and advisory:
+    // absent, or not a whole number from 0 to 50, it reads as "not said".
+    final root = LoopV2Contract.strictMapWithOptional(
+      value,
+      const <String>{
+        'contractVersion',
+        'configVersion',
+        'effectiveAt',
+        'defaultRoute',
+        'navigation',
+        'versionGate',
+        'regionGate',
+        'termsGate',
+      },
+      const <String>{'externalWalletLimit'},
+    );
     _validateBaseline(root);
     final defaultRoute = _enumValue(
       root['defaultRoute'],
@@ -181,6 +187,10 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       versionGate: _parseVersionGate(root['versionGate']),
       regionGate: _parseRegionGate(root['regionGate']),
       termsGate: _parseTermsGate(root['termsGate']),
+      externalWalletLimit: switch (root['externalWalletLimit']) {
+        final int limit when limit >= 0 && limit <= 50 => limit,
+        _ => null,
+      },
     );
   }
 

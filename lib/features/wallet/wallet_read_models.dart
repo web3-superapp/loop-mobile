@@ -7,6 +7,10 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 // wallets · GET /v2/wallets, PUT /v2/wallets/active
 // ---------------------------------------------------------------------------
 
+/// The external-wallet limit when no server document names one (S306 ruling
+/// 2: at most three per account).
+const int loopDefaultExternalWalletLimit = 3;
+
 enum LoopWalletKind {
   embedded('embedded'),
   external('external');
@@ -75,11 +79,28 @@ final class LoopWalletDirectory {
     required List<LoopWalletAccount> wallets,
     required this.activeWalletId,
     required this.observedAt,
+    this.externalWalletLimit,
   }) : wallets = List<LoopWalletAccount>.unmodifiable(wallets);
 
   final List<LoopWalletAccount> wallets;
   final String? activeWalletId;
   final DateTime observedAt;
+
+  /// How many external wallets the server lets one account bind (S306,
+  /// optional key `externalWalletLimit`). `null` when this server does not
+  /// say; the page then applies [loopDefaultExternalWalletLimit].
+  final int? externalWalletLimit;
+
+  /// External wallets that still count: an archived row is one Privy no
+  /// longer reports, so it neither counts toward the limit nor can be
+  /// unlinked again.
+  List<LoopWalletAccount> get liveExternals => wallets
+      .where(
+        (wallet) =>
+            wallet.kind == LoopWalletKind.external &&
+            wallet.status == LoopWalletStatus.active,
+      )
+      .toList(growable: false);
 
   /// The server answered, and the answer was "this account owns no wallet".
   ///

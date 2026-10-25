@@ -22,6 +22,19 @@ final class WalletDirectoryController
   Future<LoopWalletDirectory> fetch() =>
       ref.read(walletReadGatewayProvider).loadWallets();
 
+  /// Re-reads the list after a wallet was bound or unbound (S306, decision
+  /// 0246).
+  ///
+  /// The server keeps a short-lived Privy observation, so a plain re-read may
+  /// still show the old list. It is first asked to re-read Privy
+  /// (`POST /v2/wallets/sync`); a server without that route answers `false`
+  /// and the ordinary re-read follows either way.
+  Future<void> resyncInventory() async {
+    await ref.read(walletInventorySyncGatewayProvider).requestSync();
+    if (!ref.mounted) return;
+    await reload();
+  }
+
   /// Switches the active wallet under a compare-and-set on the currently
   /// rendered active id.
   ///

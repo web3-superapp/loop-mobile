@@ -149,3 +149,14 @@ final loopVersionPolicyProvider = Provider<LoopVersionPolicyProjection>((ref) {
     clientVersion: ref.watch(appConfigProvider).loopClientVersion,
   );
 });
+
+/// S306 (decision 0246): how many external wallets the client policy lets one
+/// account bind, or `null` when the observed policy does not say (or none was
+/// observed). The wallet list's own `externalWalletLimit` takes precedence.
+final loopExternalWalletLimitPolicyProvider = Provider<int?>((ref) {
+  return ref
+      .watch(loopV2MetaSnapshotProvider)
+      .value
+      ?.clientPolicy
+      .externalWalletLimit;
+});

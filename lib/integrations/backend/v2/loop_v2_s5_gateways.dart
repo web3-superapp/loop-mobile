@@ -123,7 +123,10 @@ final class DioLoopV2ChainGateway
 
 final class DioLoopV2WalletReadGateway
     with _LoopV2S5Adapter
-    implements WalletReadGateway, WalletNetWorthHistoryGateway {
+    implements
+        WalletReadGateway,
+        WalletNetWorthHistoryGateway,
+        WalletInventorySyncGateway {
   DioLoopV2WalletReadGateway({
     required this._api,
     required this.clientMetadata,
@@ -148,6 +151,20 @@ final class DioLoopV2WalletReadGateway
     (accessToken) =>
         _api.getWallets(accessToken: accessToken, clientVersion: clientVersion),
   );
+
+  @override
+  Future<bool> requestSync() async {
+    try {
+      return await cas(
+        (accessToken) => _api.postWalletsSync(
+          accessToken: accessToken,
+          clientVersion: clientVersion,
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   Future<LoopWalletDirectory> setActiveWallet({

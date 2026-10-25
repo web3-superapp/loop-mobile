@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -25,6 +26,9 @@ import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
+import 'package:loop_mobile/features/wallet/external_wallet_intro_store.dart';
+import 'package:loop_mobile/features/account/email_auth_controller.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -2005,6 +2009,13 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
     }
     final controller = ref.read(walletDirectoryControllerProvider.notifier);
     final directory = state.value;
+    final walletLinkBusy = ref.watch(
+      emailAuthProvider.select(
+        (auth) =>
+            auth.activeOperation == IdentityAuthOperation.externalWalletLink ||
+            auth.activeOperation == IdentityAuthOperation.externalWalletUnlink,
+      ),
+    );
 
     // Decision 0126: a flat list of wallets; the folio that repeated the
     // active address above the row that carries it is gone.
@@ -2017,60 +2028,23 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
         title: '我的钱包',
         onBack: widget.onBack,
         actions: <Widget>[
-          // The prototype's 添加, as a glyph (decision 0087). There is one
-          // creation path and it is the wallet-less block's own button. A greyed
-          // chip whose only answer was a toast at the foot of the page read as a
-          // control that does nothing, so the tap opens a sheet that stays until
-          // it is dismissed and says what the product does and does not do here.
+          // The prototype's 添加, as a glyph (decision 0087). S306 · decision
+          // 0246: it is now 连接外部钱包 — Reown picks the wallet, the owner
+          // signs, Privy links it to this account.
           LoopIconButton(
             key: const ValueKey<String>('wallets-add-action'),
             icon: 'plus',
             label: '添加',
-            onBlocked: () => unawaited(
-              showLoopSheet<void>(
-                context,
-                builder: (sheetContext) => Column(
-                  key: const ValueKey<String>('wallets-add-sheet'),
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const LoopSheetHeading('暂不支持绑定第二个钱包'),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        const LoopNotice(
-                          key: ValueKey<String>('wallets-add-sheet-reason'),
-                          icon: 'id',
-                          title: '一个账号，一个嵌入式钱包',
-                          body:
-                              'LOOP 为每个账号创建一个 Privy 嵌入式钱包，它已经在下面的列表里。'
-                              '绑定外部钱包（MetaMask 等）和绑定第二个嵌入式钱包都还没有开放，'
-                              '所以这里没有可以添加的东西。',
-                          margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                        ),
-                        const LoopNotice(
-                          key: ValueKey<String>('wallets-add-sheet-scope'),
-                          icon: 'info',
-                          title: '开放之后会发生什么',
-                          body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
-                          margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
-                        ),
-                        LoopButton(
-                          key: const ValueKey<String>(
-                            'wallets-add-sheet-close',
-                          ),
-                          label: '知道了',
-                          primary: true,
-                          block: true,
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            onPressed: blocked || walletLinkBusy
+                ? null
+                : () => unawaited(_addExternalWallet()),
+            onBlocked: blocked
+                ? () => LoopToast.show(
+                    context,
+                    message: '钱包清单当前不可用，暂时不能连接外部钱包。',
+                    kind: LoopToastKind.warn,
+                  )
+                : null,
           ),
         ],
         block: blocked
@@ -2124,12 +2098,15 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
               emptyMessage: '没有嵌入式钱包',
             ),
             const LoopLabel('外部钱包'),
+            // S306: an external row opens one sheet that offers the switch
+            // (when it applies) and 解绑.
             _WalletList(
               wallets: directory.externals,
               activeWalletId: directory.activeWalletId,
-              busy: state.busy,
+              busy: state.busy || walletLinkBusy,
               onActivate: (wallet) =>
-                  unawaited(_confirmActivate(controller, wallet)),
+                  unawaited(_openExternalWallet(controller, wallet)),
+              tapActiveRow: true,
               emptyMessage: '没有已连接的外部钱包',
             ),
             // The prototype closes this page on mining, because binding an old
@@ -2151,6 +2128,287 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
         ],
       ),
     );
+  }
+
+  /// The external-wallet limit in force: the wallet list's own answer, then
+  /// the client policy's, then the ruling's three (S306).
+  int _externalWalletLimit(LoopWalletDirectory directory) =>
+      directory.externalWalletLimit ??
+      ref.read(loopExternalWalletLimitPolicyProvider) ??
+      loopDefaultExternalWalletLimit;
+
+  /// 添加 · 连接外部钱包 (S306, decision 0246).
+  Future<void> _addExternalWallet() async {
+    final directory = ref.read(walletDirectoryControllerProvider).value;
+    if (directory == null) {
+      LoopToast.show(
+        context,
+        message: '钱包清单还没有读到，读到之后再连接外部钱包。',
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    final limit = _externalWalletLimit(directory);
+    // The server's list may still be serving an observation from before the
+    // last bind, so the session's own Privy credentials are counted too and
+    // the larger of the two decides.
+    final credentials =
+        ref.read(loopSessionProvider).account?.externalEvmCredentials.length ??
+        0;
+    final bound = math.max(directory.liveExternals.length, credentials);
+    if (bound >= limit) {
+      await _showExternalWalletLimit(limit);
+      return;
+    }
+    if (!await _confirmExternalWalletIntro()) return;
+    if (!mounted) return;
+
+    final auth = ref.read(emailAuthProvider.notifier);
+    final outcome = await auth.connectExternalWallet(context);
+    if (!mounted) return;
+    final message = ref.read(emailAuthProvider).errorMessage;
+    auth.clearFeedback();
+    switch (outcome) {
+      case ExternalWalletConnectOutcome.linked:
+        LoopToast.show(
+          context,
+          message: '外部钱包已绑定',
+          kind: LoopToastKind.ok,
+          toastKey: const ValueKey<String>('wallets-link-done'),
+        );
+        await ref
+            .read(walletDirectoryControllerProvider.notifier)
+            .resyncInventory();
+      case ExternalWalletConnectOutcome.failed:
+        LoopToast.show(
+          context,
+          message: message ?? '钱包绑定没有完成，请重试。',
+          kind: LoopToastKind.err,
+          toastKey: const ValueKey<String>('wallets-link-error'),
+        );
+      case ExternalWalletConnectOutcome.cancelled:
+      case ExternalWalletConnectOutcome.ignored:
+      case ExternalWalletConnectOutcome.loggedIn:
+        break;
+    }
+  }
+
+  Future<void> _showExternalWalletLimit(int limit) => showLoopSheet<void>(
+    context,
+    builder: (sheetContext) => Column(
+      key: const ValueKey<String>('wallets-limit-sheet'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSheetHeading('最多绑定 $limit 个外部钱包'),
+        Text(
+          '最多绑定 $limit 个外部钱包，请先解绑一个，再连接新的钱包。',
+          key: const ValueKey<String>('wallets-limit-sheet-body'),
+          style: LoopType.bodySm,
+        ),
+        const SizedBox(height: 16),
+        LoopButton(
+          key: const ValueKey<String>('wallets-limit-sheet-close'),
+          label: '知道了',
+          primary: true,
+          block: true,
+          onPressed: () => Navigator.of(sheetContext).pop(),
+        ),
+      ],
+    ),
+  );
+
+  /// The note in front of the first 连接外部钱包 on this installation. Once
+  /// it has been read and continued past, later taps go straight to Reown.
+  /// A store that cannot answer shows it again rather than skipping it.
+  Future<bool> _confirmExternalWalletIntro() async {
+    final store = ref.read(loopExternalWalletIntroStoreProvider);
+    try {
+      final seen = await store.readSeen().timeout(const Duration(seconds: 1));
+      if (seen ?? false) return true;
+    } on Object {
+      // Not known: show the note.
+    }
+    if (!mounted) return false;
+    final proceed = await showLoopSheet<bool>(
+      context,
+      builder: (sheetContext) => Column(
+        key: const ValueKey<String>('wallets-add-sheet'),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopSheetHeading('连接外部钱包'),
+          const LoopNotice(
+            key: ValueKey<String>('wallets-add-sheet-reason'),
+            icon: 'link',
+            title: '外部钱包只用于计算算力',
+            body:
+                '外部钱包只用于计算算力，不能在 LOOP 内交易或领奖励；'
+                'LOOP 不会获取你的私钥。',
+            margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+          ),
+          const LoopNotice(
+            key: ValueKey<String>('wallets-add-sheet-scope'),
+            icon: 'info',
+            title: '所有绑定钱包的持仓都计入算力',
+            body: '已绑定钱包里的社区币都会计入算力，不用把资产搬到某一个钱包。',
+            margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+          ),
+          const LoopNotice(
+            key: ValueKey<String>('wallets-add-sheet-network'),
+            icon: 'info',
+            tone: LoopNoticeTone.warn,
+            title: '大陆网络需要开 VPN',
+            body: '大陆网络需要开 VPN 才能连接外部钱包。',
+            margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
+          ),
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('wallets-add-sheet-close'),
+                label: '取消',
+                onPressed: () => Navigator.of(sheetContext).pop(false),
+              ),
+              LoopButton(
+                key: const ValueKey<String>('wallets-add-sheet-continue'),
+                label: '继续连接',
+                primary: true,
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+    if (!(proceed ?? false)) return false;
+    try {
+      await store.writeSeen().timeout(const Duration(seconds: 1));
+    } on Object {
+      // The note shows again next time; nothing else depends on it.
+    }
+    return true;
+  }
+
+  /// An external row: the switch when it applies, and 解绑 (S306).
+  Future<void> _openExternalWallet(
+    WalletDirectoryController controller,
+    LoopWalletAccount wallet,
+  ) async {
+    final canActivate =
+        wallet.walletId !=
+        ref.read(walletDirectoryControllerProvider).value?.activeWalletId;
+    final choice = await showLoopSheet<_ExternalWalletChoice>(
+      context,
+      builder: (sheetContext) => Column(
+        key: const ValueKey<String>('wallets-external-sheet'),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopSheetHeading('外部钱包 ${wallet.truncatedAddress}'),
+          if (canActivate) ...<Widget>[
+            Text(
+              '钱包 ${wallet.truncatedAddress} 会成为余额、活动与收款页的当前钱包。',
+              style: LoopType.bodySm,
+            ),
+            const SizedBox(height: 16),
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  label: '取消',
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+                LoopButton(
+                  key: const ValueKey<String>('wallets-activate-confirm'),
+                  label: '切换',
+                  primary: true,
+                  onPressed: () =>
+                      Navigator.of(sheetContext)
+                          .pop(_ExternalWalletChoice.activate),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          LoopButton(
+            key: const ValueKey<String>('wallets-unlink-action'),
+            label: '解绑这个钱包',
+            block: true,
+            onPressed: () =>
+                Navigator.of(sheetContext).pop(_ExternalWalletChoice.unlink),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case _ExternalWalletChoice.activate:
+        await _activate(controller, wallet);
+      case _ExternalWalletChoice.unlink:
+        await _confirmUnlink(controller, wallet);
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _confirmUnlink(
+    WalletDirectoryController controller,
+    LoopWalletAccount wallet,
+  ) async {
+    final confirmed = await showLoopSheet<bool>(
+      context,
+      builder: (sheetContext) => Column(
+        key: const ValueKey<String>('wallets-unlink-sheet'),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopSheetHeading('解绑外部钱包'),
+          Text(
+            '解绑后这个钱包的持仓从下一小时起不再计入算力。'
+            '钱包 ${wallet.truncatedAddress} 里的资产不受影响，之后也可以重新绑定。',
+            key: const ValueKey<String>('wallets-unlink-sheet-body'),
+            style: LoopType.bodySm,
+          ),
+          const SizedBox(height: 16),
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('wallets-unlink-cancel'),
+                label: '取消',
+                onPressed: () => Navigator.of(sheetContext).pop(false),
+              ),
+              LoopButton(
+                key: const ValueKey<String>('wallets-unlink-confirm'),
+                label: '解绑',
+                primary: true,
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) return;
+    final auth = ref.read(emailAuthProvider.notifier);
+    final unlinked = await auth.unlinkExternalWallet(wallet.address);
+    if (!mounted) return;
+    final message = ref.read(emailAuthProvider).errorMessage;
+    auth.clearFeedback();
+    if (!unlinked) {
+      LoopToast.show(
+        context,
+        message: message ?? '解绑没有完成，请稍后重试。',
+        kind: LoopToastKind.err,
+        toastKey: const ValueKey<String>('wallets-unlink-error'),
+      );
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: '已解绑外部钱包',
+      kind: LoopToastKind.ok,
+      toastKey: const ValueKey<String>('wallets-unlink-done'),
+    );
+    await controller.resyncInventory();
   }
 
   Future<void> _confirmActivate(
@@ -2193,6 +2451,13 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       ),
     );
     if (!(confirmed ?? false)) return;
+    await _activate(controller, wallet);
+  }
+
+  Future<void> _activate(
+    WalletDirectoryController controller,
+    LoopWalletAccount wallet,
+  ) async {
     final switched = await controller.setActive(wallet.walletId);
     if (!mounted) return;
     if (switched) {
@@ -2201,6 +2466,8 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
   }
 }
 
+enum _ExternalWalletChoice { activate, unlink }
+
 class _WalletList extends StatelessWidget {
   const _WalletList({
     required this.wallets,
@@ -2208,6 +2475,7 @@ class _WalletList extends StatelessWidget {
     required this.busy,
     required this.onActivate,
     required this.emptyMessage,
+    this.tapActiveRow = false,
   });
 
   final List<LoopWalletAccount> wallets;
@@ -2215,6 +2483,10 @@ class _WalletList extends StatelessWidget {
   final bool busy;
   final void Function(LoopWalletAccount wallet) onActivate;
   final String emptyMessage;
+
+  /// Whether the row already in use still opens [onActivate]. The external
+  /// rows do (S306): their sheet carries 解绑 as well as the switch.
+  final bool tapActiveRow;
 
   @override
   Widget build(BuildContext context) {
@@ -2254,7 +2526,7 @@ class _WalletList extends StatelessWidget {
                 : null,
             onTap:
                 busy ||
-                    wallet.walletId == activeWalletId ||
+                    (!tapActiveRow && wallet.walletId == activeWalletId) ||
                     wallet.status == LoopWalletStatus.archived
                 ? null
                 : () => onActivate(wallet),

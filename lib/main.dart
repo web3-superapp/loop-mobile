@@ -63,6 +63,7 @@ import 'package:loop_mobile/integrations/device/secure_storage_step_up_store.dar
 import 'package:loop_mobile/integrations/notifications/firebase_notification_ingress.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_external_wallet_intro_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_app_lock_prompt_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
@@ -71,6 +72,7 @@ import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart'
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
+import 'package:loop_mobile/features/wallet/external_wallet_intro_store.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
@@ -197,6 +199,11 @@ Future<void> main() async {
         loopAppLockPromptStoreProvider.overrideWithValue(
           createSharedPreferencesAppLockPromptStore(),
         ),
+        // S306: whether the note in front of 连接外部钱包 was read, one
+        // device-local Boolean.
+        loopExternalWalletIntroStoreProvider.overrideWithValue(
+          createSharedPreferencesExternalWalletIntroStore(),
+        ),
         // The large-amount step-up (decision 0152): per account, on this
         // device, beside the lock whose prompt it reuses.
         loopStepUpSettingsStoreProvider.overrideWithValue(
@@ -309,6 +316,9 @@ Future<void> main() async {
         ),
         walletNetWorthHistoryGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2WalletNetWorthHistoryGatewayProvider),
+        ),
+        walletInventorySyncGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2WalletInventorySyncGatewayProvider),
         ),
         marketReadGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2MarketReadGatewayProvider),

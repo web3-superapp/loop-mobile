@@ -110,6 +110,11 @@ class PrivySessionSnapshot {
 /// device has not observed would be a claim rather than a fact.
 const loopUndecidedSessionMessage = '暂时无法确认登录状态，请稍后重试。';
 
+/// What LOOP says when Privy refuses to link a wallet that already belongs to
+/// another account (S306 ruling 3: accounts are never merged).
+const externalWalletLinkedElsewhereMessage =
+    '这个钱包已绑定在另一个 LOOP 账号上。请先用那个账号登录并解绑，再回来绑定。';
+
 /// What Privy told us about a failure.
 ///
 /// privy_flutter 0.10.1 carried no error code across the platform channel:
@@ -258,6 +263,15 @@ abstract interface class PrivyCredentialGateway {
     required String signature,
     required String expectedPrivyUserId,
   });
+
+  /// Removes one external EVM wallet credential from the current Privy
+  /// account (S306, decision 0246). [address] is the wallet's own address;
+  /// [expectedPrivyUserId] pins the account the request was made for, so a
+  /// session that changed underneath the page unlinks nothing.
+  Future<PrivyAccountSummary> unlinkSiwe({
+    required String address,
+    required String expectedPrivyUserId,
+  });
 }
 
 final privyAuthGatewayProvider = Provider<PrivyAuthGateway>((ref) {
@@ -335,6 +349,14 @@ class UnconfiguredPrivyAuthGateway
 
   @override
   Future<PrivyAccountSummary> loginWithOAuth(PrivyOAuthLoginProvider provider) {
+    throw const PrivyGatewayException(_message);
+  }
+
+  @override
+  Future<PrivyAccountSummary> unlinkSiwe({
+    required String address,
+    required String expectedPrivyUserId,
+  }) {
     throw const PrivyGatewayException(_message);
   }
 
@@ -554,12 +576,46 @@ class PrivySdkAuthGateway
           _currentUser = linkedUser;
           return _summarize(linkedUser);
         case Failure<PrivyUser>(error: final error):
-          throw PrivyGatewayException(_siweFailureMessage(error.message));
+          throw PrivyGatewayException(siweLinkFailureMessage(error.message));
       }
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
       throw const PrivyGatewayException('钱包绑定未完成，请检查网络后重试。');
+    }
+  }
+
+  @override
+  Future<PrivyAccountSummary> unlinkSiwe({
+    required String address,
+    required String expectedPrivyUserId,
+  }) async {
+    final user = _currentUser;
+    if (user == null ||
+        expectedPrivyUserId.isEmpty ||
+        expectedPrivyUserId != expectedPrivyUserId.trim() ||
+        user.id != expectedPrivyUserId) {
+      throw const PrivyGatewayException('账号已变化，钱包没有解绑，请重新尝试。');
+    }
+    if (!_isEthereumAddress(address)) {
+      throw const PrivyGatewayException('钱包地址无效，没有解绑。');
+    }
+    try {
+      final result = await _privy.siwe.unlink(address: address);
+      switch (result) {
+        case Success<PrivyUser>(value: final updatedUser):
+          if (updatedUser.id != expectedPrivyUserId) {
+            throw const PrivyGatewayException('账号已变化，请刷新后确认钱包是否已解绑。');
+          }
+          _currentUser = updatedUser;
+          return _summarize(updatedUser);
+        case Failure<PrivyUser>(error: final error):
+          throw PrivyGatewayException(siweUnlinkFailureMessage(error.message));
+      }
+    } on PrivyGatewayException {
+      rethrow;
+    } catch (_) {
+      throw const PrivyGatewayException('解绑没有完成，请检查网络后重试。');
     }
   }
 
@@ -784,6 +840,66 @@ class PrivySdkAuthGateway
     }
     return 'Privy 未接受该钱包凭据；它可能已绑定其他账号。LOOP 不会自动转移或删除账号。';
   }
+
+  /// The sentence a refused `siwe.link` becomes (S306, decision 0246).
+  ///
+  /// privy_flutter 0.11.0 reports it as `PrivyAuthException` with flow
+  /// `siwe` / stage `link` (platform code `SIWE_LINK_ERROR`); the native
+  /// message is Privy's own and passes through unchanged, so the wallet
+  /// already belonging to another account is recognised from that message.
+  @visibleForTesting
+  static String siweLinkFailureMessage(String providerMessage) {
+    if (isLinkedToAnotherAccount(providerMessage)) {
+      return externalWalletLinkedElsewhereMessage;
+    }
+    if (_mentionsNetwork(providerMessage.toLowerCase())) {
+      return '钱包凭据提交失败，请检查网络后重试。';
+    }
+    return '钱包绑定没有完成，请重试。';
+  }
+
+  /// The sentence a refused `siwe.unlink` becomes (platform code
+  /// `UNLINK_ERROR`, flow `unknown` / stage `unlink`).
+  @visibleForTesting
+  static String siweUnlinkFailureMessage(String providerMessage) {
+    final normalized = providerMessage.toLowerCase();
+    if (_mentionsNetwork(normalized)) {
+      return '解绑没有完成，请检查网络后重试。';
+    }
+    if (normalized.contains('last') ||
+        normalized.contains('at least one') ||
+        normalized.contains('only login') ||
+        normalized.contains('only linked')) {
+      return '这是账号唯一的登录方式，不能解绑。请先绑定邮箱或其他登录方式。';
+    }
+    return '解绑没有完成，请稍后重试。';
+  }
+
+  /// Whether Privy's message says the wallet already belongs to another
+  /// user. Privy's API names this `linked_to_another_user`; its messages read
+  /// "… already linked to another user", "… already been linked …" or
+  /// "… already exists".
+  @visibleForTesting
+  static bool isLinkedToAnotherAccount(String providerMessage) {
+    final normalized = providerMessage.toLowerCase();
+    if (normalized.contains('linked_to_another_user') ||
+        normalized.contains('another user') ||
+        normalized.contains('another account')) {
+      return true;
+    }
+    return normalized.contains('already') &&
+        (normalized.contains('linked') ||
+            normalized.contains('exists') ||
+            normalized.contains('associated') ||
+            normalized.contains('user') ||
+            normalized.contains('account'));
+  }
+
+  static bool _mentionsNetwork(String normalized) =>
+      normalized.contains('network') ||
+      normalized.contains('internet') ||
+      normalized.contains('timed out') ||
+      normalized.contains('timeout');
 
   bool _isEthereumAddress(String value) =>
       RegExp(r'^0x[0-9a-fA-F]{40}$').hasMatch(value);
