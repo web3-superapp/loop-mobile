@@ -94,6 +94,35 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// The three community writes that carry or revive a bound token — create,
+  /// profile edit and resubmit — as loop-api decision 0182 (「一币一社区」)
+  /// lists them: the write catalogue plus `409 COMMUNITY_BOUND_ASSET_TAKEN`,
+  /// the refusal for a token another live community already holds. Without
+  /// it the refusal would read as an unparseable answer and the write as an
+  /// unresolved outcome. Every other community write keeps [writeErrors].
+  static const communityBoundAssetWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'COMMUNITY_BOUND_ASSET_TAKEN',
+      'DATA_STALE',
+      'IDEMPOTENCY_CONFLICT',
+      'PROFILE_ACTIVATION_REQUIRED',
+      'RESOURCE_CONFLICT',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED', 'ALIAS_RESERVED', 'ALIAS_BLOCKED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   /// The Launch purchase intent and its broadcast report (loop-api decision
   /// 0077, client decision 0089): the write catalogue as OpenAPI lists it for
   /// these two routes, which adds `409 INSUFFICIENT_BALANCE` — the USD1

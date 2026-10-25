@@ -420,7 +420,7 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
           hasBody: true,
         ),
       ),
-      allowedCodes: LoopV2ModuleRequest.writeErrors,
+      allowedCodes: LoopV2ModuleRequest.communityBoundAssetWriteErrors,
       statusCode: 201,
     );
   }
@@ -464,7 +464,7 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
           hasBody: true,
         ),
       ),
-      allowedCodes: LoopV2ModuleRequest.writeErrors,
+      allowedCodes: LoopV2ModuleRequest.communityBoundAssetWriteErrors,
     );
   }
 
@@ -559,7 +559,7 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
           idempotencyKey,
         ),
       ),
-      allowedCodes: LoopV2ModuleRequest.writeErrors,
+      allowedCodes: LoopV2ModuleRequest.communityBoundAssetWriteErrors,
     );
   }
 
@@ -764,6 +764,10 @@ CommunityFailureKind communityFailureKindForV2(
     'PROFILE_ACTIVATION_REQUIRED' => CommunityFailureKind.activationRequired,
     'ACCOUNT_BOOTSTRAP_REQUIRED' => CommunityFailureKind.bootstrapRequired,
     'RESOURCE_CONFLICT' => CommunityFailureKind.resourceConflict,
+    // Decision 0182: the token is already bound by another live community.
+    // `detailsSafe.communityId` names it (or is null); the page never shows
+    // that id, so it is not carried.
+    'COMMUNITY_BOUND_ASSET_TAKEN' => CommunityFailureKind.boundAssetTaken,
     'IDEMPOTENCY_CONFLICT' => CommunityFailureKind.idempotencyConflict,
     'VALIDATION_FAILED' => CommunityFailureKind.validationFailed,
     'ALIAS_RESERVED' => CommunityFailureKind.aliasReserved,

@@ -400,6 +400,8 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
 /// shared copy for its kind.
 String communityProfileEditFailureText(CommunityGatewayException failure) =>
     switch (failure.reasonCode) {
+      _ when failure.kind == CommunityFailureKind.boundAssetTaken =>
+        '这个代币已被其他社区绑定，请换一个代币；资料没有修改。',
       'ASSET_NOT_REGISTERED' => '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
       'OWNER_ONLY_FIELD' => '只有所有者能改绑定代币；资料没有修改。',
       _ => communityFailureReason(failure.kind),
