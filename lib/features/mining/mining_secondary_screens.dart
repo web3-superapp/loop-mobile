@@ -250,7 +250,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// with.
 LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
   final caption = switch (assets?.totalPower) {
-    MiningFigureValue() => '逐个资产列出贡献、排除状态与来源。',
+    MiningFigureValue() => '逐个资产列出贡献、排除状态与来源。$miningConditionsShort',
     MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
       reasonCode,
     ),
@@ -889,7 +889,9 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             key: ValueKey<String>('mining-community-notice'),
             icon: 'shield',
             title: '权重由平台综合评定',
-            body: '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。',
+            body:
+                '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。'
+                '持有人须加入该社区，持仓才计入算力。',
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,

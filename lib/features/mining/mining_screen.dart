@@ -241,10 +241,12 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             title: '持有即算力',
             body: switch (summary.networkPower) {
               MiningFigureValue(:final value) =>
-                '按钱包持仓自动计算，不需要质押或授权。全网总算力 '
+                '按 LOOP 内置钱包的持仓自动计算，不需要质押或授权。'
+                    '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
                     '${loopGroupedFigure(value)}。',
               MiningFigureUnavailable(:final reasonCode) =>
-                '按钱包持仓自动计算，不需要质押或授权。全网总算力 '
+                '按 LOOP 内置钱包的持仓自动计算，不需要质押或授权。'
+                    '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
                     '$launchMissingFigure：${launchReasonCodeText(reasonCode)}',
             },
             margin: const EdgeInsets.fromLTRB(
@@ -268,7 +270,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                 key: const ValueKey<String>('mining-open-market'),
                 leading: const LoopRowIcon(icon: 'search'),
                 title: '发现有权重的社区币',
-                subtitle: '社区币权重由服务端审核结果授予',
+                subtitle: '权重由审核结果授予，持有后须加入该社区',
                 onTap: widget.onOpenMarket,
                 position: LoopRowPosition.first,
               ),
@@ -381,6 +383,17 @@ List<LoopInfoNote> miningInfoNotes(MiningSummary? summary) {
         MiningFormulaEffective() => 'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
         _ => 'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
       },
+    ),
+    // Decision 0183 (需求方 2026-10-25): what a holding needs before it
+    // counts, one condition per line.
+    const LoopInfoNote(
+      key: ValueKey<String>('mining-info-conditions'),
+      title: '哪些持仓计入算力',
+      body:
+          '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 按所属社区系数计。\n'
+          '$miningConditionVerified\n'
+          '$miningConditionMember\n'
+          '$miningConditionEmbedded',
     ),
   ];
 }

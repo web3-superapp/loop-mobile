@@ -125,7 +125,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 300),
                         child: Text(
-                          '登录后自动创建钱包，持仓即产生算力。',
+                          '登录后自动创建内置钱包，加入社区并持有社区币即产生算力。',
                           textAlign: TextAlign.center,
                           style: LoopType.body.copyWith(
                             color: LoopColors.text2,

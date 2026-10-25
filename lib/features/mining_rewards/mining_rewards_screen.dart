@@ -1245,6 +1245,17 @@ class MiningAssetTrackCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Text('按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重', style: LoopType.caption),
         ),
+        // Decision 0183: the NFT track and the conditions, one line each.
+        Padding(
+          key: const ValueKey<String>('mining-asset-basis-nft'),
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text('NFT 算力 = 持有数量 × 所属社区系数', style: LoopType.caption),
+        ),
+        Padding(
+          key: const ValueKey<String>('mining-asset-basis-conditions'),
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text('只算内置钱包，社区币须加入已通过审核的绑定社区。', style: LoopType.caption),
+        ),
         _fact('本人算力', miningPowerFigure(asset.ownPower)),
         _fact('邀请算力', miningPowerFigure(asset.invitePower)),
         _fact('总算力', miningPowerFigure(asset.totalPower)),

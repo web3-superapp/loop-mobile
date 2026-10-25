@@ -42,6 +42,11 @@ enum CommunityFailureKind {
   unexpected,
 }
 
+/// The rule every bound-token field states beside itself (loop-api decision
+/// 0182): a token belongs to one community at a time; a rejected community
+/// does not hold it.
+const String communityBoundAssetUniqueHint = '每个代币只能被一个社区绑定。';
+
 final class CommunityGatewayException implements Exception {
   const CommunityGatewayException(this.kind, {this.reasonCode, this.scope});
 

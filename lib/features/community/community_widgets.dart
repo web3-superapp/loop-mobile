@@ -1532,6 +1532,7 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
                   decoration: InputDecoration(
                     labelText: '绑定代币（仅所有者，可留空）',
                     hintText: 'eip155:56:0x…',
+                    helperText: communityBoundAssetUniqueHint,
                     errorText: _assetKeyInvalid
                         ? communityApplicationFieldReason(
                             CommunityApplicationField.boundAssetKey,
@@ -1781,7 +1782,7 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
               ),
               const SizedBox(height: 8),
               Text(
-                '提交后进入审核，你是所有者；验证标记由运维核验后设置。',
+                '$communityBoundAssetUniqueHint提交后进入审核，你是所有者；验证标记由运维核验后设置。',
                 textAlign: TextAlign.center,
                 style: LoopType.captionSm,
               ),

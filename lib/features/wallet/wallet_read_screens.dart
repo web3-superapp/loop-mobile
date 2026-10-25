@@ -2052,8 +2052,8 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
                         const LoopNotice(
                           key: ValueKey<String>('wallets-add-sheet-scope'),
                           icon: 'info',
-                          title: '开放之后会发生什么',
-                          body: '已绑定钱包里的社区币都会计入算力，不需要把资产搬到某一个钱包。',
+                          title: '外部钱包与算力',
+                          body: '算力只统计 LOOP 内置钱包里的持仓，外部钱包里的币不计入。',
                           margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
                         ),
                         LoopButton(
@@ -2132,16 +2132,17 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
                   unawaited(_confirmActivate(controller, wallet)),
               emptyMessage: '没有已连接的外部钱包',
             ),
-            // The prototype closes this page on mining, because binding an old
-            // wallet is how a holding starts counting. S278 · decision 0236:
-            // that rule and the identity rule sit behind the source's (i).
+            // The prototype closed this page on 「every bound wallet counts」;
+            // loop-api decision 0183 counts the embedded wallet alone, so the
+            // (i) says that instead. S278 · decision 0236: that rule and the
+            // identity rule sit behind the source's (i).
             LoopProvenanceFooter(
               key: const ValueKey<String>('wallets-source'),
               margin: const EdgeInsets.fromLTRB(16, 8, 12, 4),
               title: '关于绑定钱包',
               text: '来源 Privy · 观察于 ${loopRelativeTime(directory.observedAt)}',
               notes: const <String>[
-                '所有绑定钱包的持仓都计入算力，不用搬家。'
+                '算力只统计 LOOP 内置钱包里的持仓，外部连接的钱包不计入。'
                     'LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。',
               ],
             ),

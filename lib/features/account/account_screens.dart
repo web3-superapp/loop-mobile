@@ -682,8 +682,8 @@ class ExternalWalletScreen extends StatelessWidget {
                 ),
                 LoopNotice(
                   icon: 'mine',
-                  title: '连接已有钱包就能挖矿',
-                  body: '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。',
+                  title: '外部钱包不计入算力',
+                  body: '算力只统计 LOOP 内置钱包里的持仓，外部钱包里的币不计入。',
                   margin: EdgeInsets.only(bottom: 10),
                 ),
                 LoopNotice(

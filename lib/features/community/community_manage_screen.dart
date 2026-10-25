@@ -375,7 +375,8 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
       context,
       title: '提交社区资料修改？',
       body: edit.touchesBoundAsset
-          ? '绑定代币会立刻影响社区页的代币卡片与群友买入动态。短链接与验证状态不能在这里修改。'
+          ? '$communityBoundAssetUniqueHint'
+                '绑定代币会立刻影响社区页的代币卡片与群友买入动态。短链接与验证状态不能在这里修改。'
           : '短链接与验证状态不能在这里修改。',
       confirmLabel: '提交',
       sheetKey: 'community-edit-confirm-sheet',
