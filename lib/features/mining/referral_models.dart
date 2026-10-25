@@ -18,8 +18,13 @@ final class ReferralInviteCode {
   final DateTime issuedAt;
 }
 
-/// Whether the seven-day binding window is open. `unavailable` means the
-/// account has no LOOP ID yet, so no window has started.
+/// Whether the account may bind an invite code now. `unavailable` means the
+/// account has no LOOP ID yet.
+///
+/// Decision S298: binding no longer expires after the LOOP ID is activated.
+/// Servers of this release still send `closesAt` for older builds and the
+/// next release drops it, so [ReferralClaimWindowTimed.closesAt] (and
+/// `activatedAt`) are optional and no copy depends on them.
 @immutable
 sealed class ReferralClaimWindow {
   const ReferralClaimWindow();
@@ -29,13 +34,15 @@ sealed class ReferralClaimWindow {
 final class ReferralClaimWindowTimed extends ReferralClaimWindow {
   const ReferralClaimWindowTimed({
     required this.isOpen,
-    required this.activatedAt,
-    required this.closesAt,
+    this.activatedAt,
+    this.closesAt,
   });
 
   final bool isOpen;
-  final DateTime activatedAt;
-  final DateTime closesAt;
+  final DateTime? activatedAt;
+
+  /// Legacy: absent or null once the server stops sending it (S298).
+  final DateTime? closesAt;
 }
 
 @immutable
@@ -168,14 +175,17 @@ final class ReferralRulesInfo {
     required this.effectiveAt,
     required this.appliesTo,
     required this.maximumDepth,
-    required this.claimWindowDays,
+    this.claimWindowDays,
   });
 
   final String configVersion;
   final DateTime effectiveAt;
   final String appliesTo;
   final int maximumDepth;
-  final int claimWindowDays;
+
+  /// Legacy (S298): binding no longer has a time limit. Kept only so a
+  /// server that still sends the key parses; nothing renders it.
+  final int? claimWindowDays;
 }
 
 /// `stats` of `GET /v2/referral` (loop-api decision 0162 §B.2), sent only

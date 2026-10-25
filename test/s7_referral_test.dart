@@ -269,7 +269,7 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-closed')),
         findsOneWidget,
       );
-      expect(find.text('绑定窗口已于 2026-08-27 00:00 UTC 关闭'), findsOneWidget);
+      expect(find.text('当前不能绑定邀请码，请稍后刷新再试'), findsOneWidget);
     });
 
     testWidgets('an unactivated account has no window at all', (tester) async {
@@ -443,7 +443,7 @@ void main() {
     testWidgets('each refusal code gets its own next step', (tester) async {
       final cases = <LaunchFailureKind, String>{
         LaunchFailureKind.activationRequired: '需要先完成 LOOP ID 激活才能绑定邀请码',
-        LaunchFailureKind.policyBlocked: '绑定窗口已经关闭',
+        LaunchFailureKind.policyBlocked: '当前不能绑定邀请码',
         LaunchFailureKind.notFound: '这个邀请码不存在',
         LaunchFailureKind.validationFailed: '不能邀请自己',
         LaunchFailureKind.stale: '已经绑定过邀请人',

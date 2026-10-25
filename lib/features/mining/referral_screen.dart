@@ -347,7 +347,6 @@ const String referralCenterPath = '/profile/referral';
 List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
   final rules = overview?.rules;
   final stats = overview?.stats;
-  final window = overview?.binding.claimWindow;
   final levels = overview?.levels ?? const <ReferralLevel>[];
   final asOf = stats?.validAsOf;
   return <LoopInfoNote>[
@@ -394,13 +393,8 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
       key: const ValueKey<String>('referral-info-binding'),
       title: '绑定邀请码',
       body:
-          '${rules == null ? '被邀请人激活 LOOP ID 后的绑定窗口内可以绑定' : '被邀请人激活 LOOP ID 后 ${rules.claimWindowDays} 天内可以绑定'}；'
-          '一个账号只能绑定一次，关系锁定后不可更换。'
-          '不能绑定自己的邀请码，也不能绑定自己下级的邀请码。'
-          '${switch (window) {
-            ReferralClaimWindowTimed(:final isOpen, :final closesAt) when isOpen && overview?.binding.isBound != true => '\n本账号的绑定窗口截止 ${launchTimestampLabel(closesAt)}。',
-            _ => '',
-          }}',
+          '被邀请人激活 LOOP ID 后随时可以绑定；一个账号只能绑定一次，关系锁定后不可更换。'
+          '不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
     ),
     if (rules != null)
       LoopInfoNote(
@@ -409,7 +403,6 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
         body:
             '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
             '最大深度 L${rules.maximumDepth} · '
-            '绑定窗口 ${rules.claimWindowDays} 天 · '
             '作用于${rules.appliesTo == 'miningPower' ? '挖矿算力' : ' ${rules.appliesTo}'}',
       ),
   ];
@@ -554,7 +547,7 @@ class _InviteActions extends ConsumerWidget {
                 bottom: 4,
               ),
               child: Text(
-                '邀请链接还没有开放，先把邀请码发给好友；对方注册后 7 天内填写即可。',
+                '邀请链接还没有开放，先把邀请码发给好友；对方激活 LOOP ID 后随时可以填写。',
                 style: LoopType.captionSm,
               ),
             )
@@ -1138,7 +1131,7 @@ class ReferralPoster extends StatelessWidget {
               Text('邀请你加入 LOOP', style: LoopType.headingLg),
               const SizedBox(height: 8),
               Text(
-                '注册后 7 天内填写邀请码，一起挖矿。',
+                '注册后随时可以填写邀请码，一起挖矿。',
                 style: LoopType.bodySm.copyWith(color: LoopColors.text2),
               ),
               const Spacer(),
@@ -1309,8 +1302,7 @@ class _BindingBlock extends StatelessWidget {
         : switch (binding.claimWindow) {
             ReferralClaimWindowUnavailable(:final reasonCode) =>
               '还不能绑定：${launchReasonCodeText(reasonCode)}',
-            ReferralClaimWindowTimed(:final closesAt) =>
-              '绑定窗口已于 ${launchTimestampLabel(closesAt)} 关闭',
+            ReferralClaimWindowTimed() => '当前不能绑定邀请码，请稍后刷新再试',
           };
     final String blockedKey = binding.isBound || inviter != null
         ? 'referral-claim-bound-note'

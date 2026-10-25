@@ -3483,6 +3483,108 @@ void main() {
       );
     });
 
+    test(
+      'S298: an overview without claimWindowDays or closesAt parses',
+      () async {
+        final body = referralBody(
+          claimWindow: <String, Object?>{'status': 'open'},
+        );
+        (body['rules']! as Map<String, Object?>).remove('claimWindowDays');
+        final overview = await DioLoopV2ReferralApi(
+          _dio(_RecordingAdapter(statusCode: 200, body: body)),
+        ).getOverview(accessToken: _token, clientVersion: _clientVersion);
+
+        expect(overview.rules.claimWindowDays, isNull);
+        final window = overview.binding.claimWindow as ReferralClaimWindowTimed;
+        expect(window.closesAt, isNull);
+        expect(window.activatedAt, isNull);
+        expect(overview.binding.canClaim, isTrue);
+      },
+    );
+
+    test('S298: null claimWindowDays and null closesAt parse', () async {
+      final body = referralBody(
+        claimWindow: <String, Object?>{
+          'status': 'open',
+          'activatedAt': '2026-09-06T00:00:00.000Z',
+          'closesAt': null,
+        },
+      );
+      (body['rules']! as Map<String, Object?>)['claimWindowDays'] = null;
+      final overview = await DioLoopV2ReferralApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      ).getOverview(accessToken: _token, clientVersion: _clientVersion);
+
+      expect(overview.rules.claimWindowDays, isNull);
+      final window = overview.binding.claimWindow as ReferralClaimWindowTimed;
+      expect(window.closesAt, isNull);
+      expect(window.activatedAt, DateTime.utc(2026, 9, 6));
+      expect(overview.binding.canClaim, isTrue);
+    });
+
+    test(
+      'S298: the legacy keys still parse while the server sends them',
+      () async {
+        final overview = await DioLoopV2ReferralApi(
+          _dio(_RecordingAdapter(statusCode: 200, body: referralBody())),
+        ).getOverview(accessToken: _token, clientVersion: _clientVersion);
+
+        expect(overview.rules.claimWindowDays, 7);
+        final window = overview.binding.claimWindow as ReferralClaimWindowTimed;
+        expect(window.closesAt, DateTime.utc(2026, 9, 13));
+      },
+    );
+
+    test(
+      'S298: an unknown window status reads as open, closed stays closed',
+      () async {
+        final unknown = await DioLoopV2ReferralApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: referralBody(
+                claimWindow: <String, Object?>{'status': 'permanent'},
+              ),
+            ),
+          ),
+        ).getOverview(accessToken: _token, clientVersion: _clientVersion);
+        expect(unknown.binding.canClaim, isTrue);
+
+        final closed = await DioLoopV2ReferralApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: referralBody(
+                claimWindow: <String, Object?>{
+                  'status': 'closed',
+                  'activatedAt': '2026-09-06T00:00:00.000Z',
+                  'closesAt': '2026-09-13T00:00:00.000Z',
+                },
+              ),
+            ),
+          ),
+        ).getOverview(accessToken: _token, clientVersion: _clientVersion);
+        expect(closed.binding.canClaim, isFalse);
+      },
+    );
+
+    test('S298: a window status that is not text is still refused', () {
+      final api = DioLoopV2ReferralApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: referralBody(claimWindow: <String, Object?>{'status': 7}),
+          ),
+        ),
+      );
+
+      expect(
+        () =>
+            api.getOverview(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('an unactivated account has an unavailable window', () async {
       final overview = await DioLoopV2ReferralApi(
         _dio(
