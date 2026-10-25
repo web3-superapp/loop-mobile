@@ -114,19 +114,45 @@ class ExternalWalletConnectorException implements Exception {
   String toString() => userMessage;
 }
 
-/// Serializes Reown's non-cancellable initialization without ever constructing
-/// a second AppKit owner over a partially registered GetIt service graph.
+/// Writes one Reown initialization failure to the debug console (logcat /
+/// Xcode console), the same channel the other SDK integrations use. The
+/// user-facing message stays generic; this line keeps the real cause readable.
+void logExternalWalletInitializationFailure(
+  String stage,
+  Object error,
+  StackTrace stack,
+) {
+  final frames = stack
+      .toString()
+      .split('\n')
+      .where((line) => line.trim().isNotEmpty)
+      .take(5)
+      .join('\n  ');
+  debugPrint(
+    'LOOP reown init failed [$stage]: ${error.runtimeType}: $error\n  $frames',
+  );
+}
+
+/// Serializes Reown's non-cancellable initialization without ever holding two
+/// AppKit owners at once.
 ///
 /// A timeout releases the UI operation lease but retains the same owner and
-/// initialization future. A later retry asks that owner to reconnect and waits
-/// again. A terminal initialization error remains fail-closed until restart.
+/// initialization future; concurrent and later callers share that one owner,
+/// and a retry asks it to reconnect and waits again. Any other initialization
+/// failure is logged with its real type, the owner is disposed, and the gate
+/// returns to empty so the next attempt creates and initializes a fresh owner
+/// (decision 0245; before it, one failure locked the gate until restart).
 class ExternalWalletInitializationGate<T extends Object> {
-  ExternalWalletInitializationGate({required this.timeout});
+  ExternalWalletInitializationGate({
+    required this.timeout,
+    void Function(String stage, Object error, StackTrace stack)? onFailure,
+  }) : _onFailure = onFailure ?? logExternalWalletInitializationFailure;
 
   final Duration timeout;
+  final void Function(String stage, Object error, StackTrace stack) _onFailure;
   T? _owner;
   Future<void>? _initialization;
-  Object? _terminalFailure;
+  Future<void>? _teardown;
 
   bool get hasRetainedOwner => _owner != null;
 
@@ -135,24 +161,36 @@ class ExternalWalletInitializationGate<T extends Object> {
     required Future<void> Function(T owner) initialize,
     required Future<void> Function(T owner) reconnect,
     required bool Function(T owner) isReady,
+    Future<void> Function(T owner)? dispose,
   }) async {
-    if (_terminalFailure != null) {
-      throw const ExternalWalletConnectorException(
-        ExternalWalletConnectorFailure.callback,
-        'Reown 初始化未完成，请重启 LOOP 后重试。',
-      );
+    // A failed owner is still being disposed: wait for it so two owners never
+    // overlap. Only if that disposal itself does not finish is the attempt
+    // refused as "not finished".
+    final teardown = _teardown;
+    if (teardown != null) {
+      try {
+        await teardown.timeout(timeout);
+      } on TimeoutException {
+        throw const ExternalWalletConnectorException(
+          ExternalWalletConnectorFailure.callback,
+          'Reown 初始化未完成，请重启 LOOP 后重试。',
+        );
+      }
     }
 
     var owner = _owner;
     var initialization = _initialization;
     if (owner == null || initialization == null) {
+      T? created;
       try {
-        owner = create();
-        _owner = owner;
-        initialization = initialize(owner);
+        created = create();
+        _owner = created;
+        initialization = initialize(created);
         _initialization = initialization;
-      } catch (error) {
-        _terminalFailure = error;
+        owner = created;
+      } catch (error, stack) {
+        _onFailure('create', error, stack);
+        _discard(created, dispose);
         throw const ExternalWalletConnectorException(
           ExternalWalletConnectorFailure.callback,
           'Reown 初始化失败，请重启 LOOP 后重试。',
@@ -169,10 +207,13 @@ class ExternalWalletInitializationGate<T extends Object> {
         ExternalWalletConnectorFailure.network,
         'Reown 服务连接超时，请检查网络后重试。',
       );
-    } on ExternalWalletConnectorException {
+    } on ExternalWalletConnectorException catch (error, stack) {
+      _onFailure('initialize', error, stack);
+      _discard(owner, dispose);
       rethrow;
-    } catch (error) {
-      _terminalFailure = error;
+    } catch (error, stack) {
+      _onFailure('initialize', error, stack);
+      _discard(owner, dispose);
       throw const ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
         'Reown 初始化失败，请重启 LOOP 后重试。',
@@ -180,9 +221,12 @@ class ExternalWalletInitializationGate<T extends Object> {
     }
 
     if (!isReady(owner)) {
-      _terminalFailure = StateError(
-        'Reown initialization did not become ready.',
+      _onFailure(
+        'ready',
+        StateError('Reown initialization did not become ready.'),
+        StackTrace.current,
       );
+      _discard(owner, dispose);
       throw const ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.network,
         'Reown 服务尚未就绪，请重启 LOOP 后重试。',
@@ -195,7 +239,22 @@ class ExternalWalletInitializationGate<T extends Object> {
     if (!identical(_owner, owner)) return;
     _owner = null;
     _initialization = null;
-    _terminalFailure = null;
+  }
+
+  /// Forgets [owner] (only if it is still the current one) and disposes it in
+  /// the background; disposal errors are swallowed.
+  void _discard(T? owner, Future<void> Function(T owner)? dispose) {
+    if (owner == null || !identical(_owner, owner)) return;
+    _owner = null;
+    _initialization = null;
+    if (dispose == null) return;
+    late final Future<void> teardown;
+    teardown = Future<void>.sync(() => dispose(owner))
+        .catchError((Object _) {})
+        .whenComplete(() {
+          if (identical(_teardown, teardown)) _teardown = null;
+        });
+    _teardown = teardown;
   }
 }
 
@@ -253,6 +312,19 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
   static const _coinbaseWalletId =
       'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa';
 
+  /// Wallets hidden from the Reown list (Solana-only and Coinbase SDK paths).
+  ///
+  /// Returns a new, growable set on every call: AppKit 1.8.4's
+  /// `ExplorerService._excludedWalletsParam` calls `addAll` on the set it was
+  /// given, so a `const` set throws `UnsupportedError` before any request and
+  /// surfaced as "Reown 初始化失败" (decision 0245).
+  @visibleForTesting
+  static Set<String> excludedWalletIds() => <String>{
+    _phantomWalletId,
+    _solflareWalletId,
+    _coinbaseWalletId,
+  };
+
   @override
   Future<ExternalWalletProof> connectAndSign({
     required BuildContext context,
@@ -282,6 +354,7 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
         initialize: (owner) => owner.init(),
         reconnect: (owner) => owner.reconnectRelay(),
         isReady: (owner) => owner.status.isInitialized,
+        dispose: (owner) => owner.dispose(),
       );
       final connected = Completer<ReownAppKitModalSession>();
       final modalFailure = Completer<ExternalWalletConnectorException>();
@@ -363,16 +436,18 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
   ReownAppKitModal _createModal(BuildContext context) {
     final chains = ReownAppKitModalNetworks.getAllSupportedNetworks(
       namespace: NetworkUtils.eip155,
-    ).map((network) => network.chainId).toList(growable: false);
+    ).map((network) => network.chainId).toList();
     return ReownAppKitModal(
       context: context,
       projectId: projectId,
-      metadata: const PairingMetadata(
+      // Every collection handed to AppKit is a fresh growable instance: the
+      // SDK is known to mutate at least one of them in place (decision 0245).
+      metadata: PairingMetadata(
         name: 'LOOP',
         description: 'LOOP external EVM sign-in credential',
         url: AppConfig.reownMetadataUrl,
         icons: <String>[AppConfig.reownIconUrl],
-        redirect: Redirect(
+        redirect: const Redirect(
           native: '${AppConfig.reownWalletScheme}://',
           linkMode: false,
         ),
@@ -385,21 +460,17 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
         // It must be false in addition to an empty socials list.
         // ignore: deprecated_member_use
         email: false,
-        socials: const <AppKitSocialOption>[],
+        socials: <AppKitSocialOption>[],
         showMainWallets: true,
       ),
       optionalNamespaces: <String, RequiredNamespace>{
         NetworkUtils.eip155: RequiredNamespace(
           chains: chains,
-          methods: const <String>['personal_sign'],
-          events: const <String>['accountsChanged', 'chainChanged'],
+          methods: <String>['personal_sign'],
+          events: <String>['accountsChanged', 'chainChanged'],
         ),
       },
-      excludedWalletIds: const <String>{
-        _phantomWalletId,
-        _solflareWalletId,
-        _coinbaseWalletId,
-      },
+      excludedWalletIds: excludedWalletIds(),
       disconnectOnDispose: true,
     );
   }
