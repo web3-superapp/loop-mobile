@@ -125,6 +125,18 @@ final loopV2WalletNetWorthHistoryGatewayProvider =
       return const UnavailableWalletNetWorthHistoryGateway();
     });
 
+/// S306: the same authenticated wallet adapter asks for an inventory
+/// re-read; while any of its inputs is missing nothing is asked and the
+/// wallet list keeps its ordinary refresh.
+final loopV2WalletInventorySyncGatewayProvider =
+    Provider<WalletInventorySyncGateway>((ref) {
+      final gateway = ref.watch(loopV2WalletReadGatewayProvider);
+      if (gateway is WalletInventorySyncGateway) {
+        return gateway as WalletInventorySyncGateway;
+      }
+      return const UnavailableWalletInventorySyncGateway();
+    });
+
 final loopV2MarketReadGatewayProvider = Provider<MarketReadGateway>((ref) {
   final api = ref.watch(loopV2MarketApiProvider);
   final metadata = ref.watch(loopV2ClientMetadataProvider);

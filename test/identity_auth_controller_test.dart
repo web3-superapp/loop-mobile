@@ -313,6 +313,14 @@ class _CredentialGateway implements PrivyCredentialGateway {
   }
 
   @override
+  Future<PrivyAccountSummary> unlinkSiwe({
+    required String address,
+    required String expectedPrivyUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<PrivyAccountSummary> linkWithSiwe({
     required PrivySiweRequest request,
     required String message,

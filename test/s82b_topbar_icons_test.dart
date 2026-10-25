@@ -217,7 +217,7 @@ void main() {
         find.byKey(const ValueKey<String>('wallets-add-sheet')),
         findsOneWidget,
       );
-      expect(find.text('暂不支持绑定第二个钱包'), findsOneWidget);
+      expect(find.text('连接外部钱包'), findsOneWidget);
     });
   });
 

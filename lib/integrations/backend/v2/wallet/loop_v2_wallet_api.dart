@@ -55,6 +55,17 @@ abstract interface class LoopV2WalletApi {
     required String walletId,
     required LoopNetWorthRange range,
   });
+
+  /// S306 (decision 0246, loop-api decision 0185): `POST /v2/wallets/sync`,
+  /// asking the server to re-read the account's wallets from Privy now
+  /// instead of serving its 60-second observation. The answer has the shape
+  /// of `GET /v2/wallets`. `null` when this server has no such route
+  /// (404 / 405). A Privy outage is a `503 PROVIDER_DISCONNECTED` failure.
+  Future<LoopWalletDirectory?> postWalletsSync({
+    required String accessToken,
+    required String clientVersion,
+    LoopV2WriteOrigin? origin,
+  });
 }
 
 final class DioLoopV2WalletApi implements LoopV2WalletApi {
@@ -76,6 +87,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
 
   static const walletsPath = '/v2/wallets';
   static const activeWalletPath = '/v2/wallets/active';
+  static const walletsSyncPath = '/v2/wallets/sync';
 
   static const _directoryKeys = <String>{
     'wallets',
@@ -123,6 +135,37 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.chainReadErrors,
+      );
+    }
+  }
+
+  @override
+  Future<LoopWalletDirectory?> postWalletsSync({
+    required String accessToken,
+    required String clientVersion,
+    LoopV2WriteOrigin? origin,
+  }) async {
+    try {
+      // The same headers as `PUT /v2/wallets/active`; no body, no query and
+      // never an Idempotency-Key (the server answers 400 to one).
+      final response = await _dio.post<Object?>(
+        walletsSyncPath,
+        options: LoopV2ModuleRequest.casOptions(
+          accessToken,
+          clientVersion,
+          origin: origin,
+        ),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final directory = _directory(response.data);
+      _snapshotTap?.call(LoopSnapshotResource.walletDirectory, response.data);
+      return directory;
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      if (status == 404 || status == 405) return null;
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.casWriteErrors,
       );
     }
   }
@@ -789,8 +832,22 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
   /// stored snapshot of it (decision 0095).
   static LoopWalletDirectory decodeDirectory(Object? data) => _directory(data);
 
+  /// An absent or `null` limit is "not said". A value that is not a whole
+  /// number from 0 to 50 is ignored rather than refused: one advisory number
+  /// must never take the whole wallet list down with it.
+  static int? decodeExternalWalletLimit(Object? value) {
+    if (value is! int || value < 0 || value > 50) return null;
+    return value;
+  }
+
   static LoopWalletDirectory _directory(Object? data) {
-    final root = LoopV2Contract.strictMap(data, _directoryKeys);
+    // `externalWalletLimit` (S306, decision 0246) is optional: a server that
+    // has not deployed it leaves the client on its own default of three.
+    final root = LoopV2Contract.strictMapWithOptional(
+      data,
+      _directoryKeys,
+      const <String>{'externalWalletLimit'},
+    );
     LoopV2ChainCodec.requireContractVersion(root);
     final source = LoopV2Contract.strictMap(root['source'], const <String>{
       'provider',
@@ -804,16 +861,22 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       root['wallets'],
       maximum: 50,
     )) {
-      final map = LoopV2Contract.strictMap(raw, const <String>{
-        'walletId',
-        'provider',
-        'address',
-        'kind',
-        'status',
-        'isActive',
-        'firstSeenAt',
-        'lastSeenAt',
-      });
+      // `archivedReason` (S306, loop-api decision 0185) is optional; an
+      // unknown string still reads as plainly archived.
+      final map = LoopV2Contract.strictMapWithOptional(
+        raw,
+        const <String>{
+          'walletId',
+          'provider',
+          'address',
+          'kind',
+          'status',
+          'isActive',
+          'firstSeenAt',
+          'lastSeenAt',
+        },
+        const <String>{'archivedReason'},
+      );
       if (map['provider'] != 'privy') LoopV2ChainCodec.invalid();
       final rawKind = map['kind'];
       final rawStatus = map['status'];
@@ -849,6 +912,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
           isActive: isActive,
           firstSeenAt: LoopV2ChainCodec.requireTimestamp(map, 'firstSeenAt'),
           lastSeenAt: LoopV2ChainCodec.requireTimestamp(map, 'lastSeenAt'),
+          archivedReason: LoopWalletArchivedReason.tryParse(
+            map['archivedReason'],
+          ),
         ),
       );
     }
@@ -874,6 +940,9 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       wallets: wallets,
       activeWalletId: activeWalletId,
       observedAt: LoopV2ChainCodec.requireTimestamp(source, 'observedAt'),
+      externalWalletLimit: decodeExternalWalletLimit(
+        root['externalWalletLimit'],
+      ),
     );
   }
 

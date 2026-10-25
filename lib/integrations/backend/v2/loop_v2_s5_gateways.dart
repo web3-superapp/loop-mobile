@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/alerts/loop_v2_alerts_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/chain/loop_v2_chain_api.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_command_keyring.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
@@ -123,7 +124,10 @@ final class DioLoopV2ChainGateway
 
 final class DioLoopV2WalletReadGateway
     with _LoopV2S5Adapter
-    implements WalletReadGateway, WalletNetWorthHistoryGateway {
+    implements
+        WalletReadGateway,
+        WalletNetWorthHistoryGateway,
+        WalletInventorySyncGateway {
   DioLoopV2WalletReadGateway({
     required this._api,
     required this.clientMetadata,
@@ -148,6 +152,39 @@ final class DioLoopV2WalletReadGateway
     (accessToken) =>
         _api.getWallets(accessToken: accessToken, clientVersion: clientVersion),
   );
+
+  @override
+  Future<WalletInventorySyncResult> requestSync() async {
+    try {
+      final writeOrigin = await origin();
+      return await cas((accessToken) async {
+        try {
+          final directory = await _api.postWalletsSync(
+            accessToken: accessToken,
+            clientVersion: clientVersion,
+            origin: writeOrigin,
+          );
+          return directory == null
+              ? const WalletInventorySyncResult(
+                  WalletInventorySyncStatus.unsupported,
+                )
+              : WalletInventorySyncResult(
+                  WalletInventorySyncStatus.synced,
+                  directory: directory,
+                );
+        } on LoopBackendFailure catch (failure) {
+          if (failure.code == 'PROVIDER_DISCONNECTED') {
+            return const WalletInventorySyncResult(
+              WalletInventorySyncStatus.providerDisconnected,
+            );
+          }
+          rethrow;
+        }
+      });
+    } catch (_) {
+      return const WalletInventorySyncResult(WalletInventorySyncStatus.failed);
+    }
+  }
 
   @override
   Future<LoopWalletDirectory> setActiveWallet({

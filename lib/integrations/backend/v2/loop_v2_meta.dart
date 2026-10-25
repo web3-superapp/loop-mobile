@@ -91,6 +91,7 @@ final class LoopV2ClientPolicy {
     required this.versionGate,
     required this.regionGate,
     required this.termsGate,
+    this.externalWalletLimit,
   });
 
   final String contractVersion;
@@ -101,6 +102,10 @@ final class LoopV2ClientPolicy {
   final LoopV2VersionGate versionGate;
   final LoopV2RegionGate regionGate;
   final LoopV2TermsGate termsGate;
+
+  /// How many external wallets one account may bind (S306, optional key).
+  /// `null` when this server does not say.
+  final int? externalWalletLimit;
 }
 
 @immutable

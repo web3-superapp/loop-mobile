@@ -37,6 +37,25 @@ enum IdentityAuthOperation {
   apple,
   externalWalletLogin,
   externalWalletLink,
+  externalWalletUnlink,
+}
+
+/// What one [EmailAuthController.connectExternalWallet] call ended in.
+enum ExternalWalletConnectOutcome {
+  /// Another identity operation was running; nothing was attempted.
+  ignored,
+
+  /// A signed-out session logged in with the wallet.
+  loggedIn,
+
+  /// The wallet was linked to the current account.
+  linked,
+
+  /// The owner closed the wallet sheet or refused to sign. Not an error.
+  cancelled,
+
+  /// Something failed; the sentence is in [EmailAuthState.errorMessage].
+  failed,
 }
 
 final isIosIdentityPlatformProvider = Provider<bool>((ref) {
@@ -308,8 +327,17 @@ class EmailAuthController extends Notifier<EmailAuthState> {
     }
   }
 
-  Future<void> connectExternalWallet(BuildContext context) async {
-    if (state.isBusy) return;
+  /// Connects an external EVM wallet through Reown and hands the proof to
+  /// Privy: a signed-out session logs in with it, an authenticated one links
+  /// it to the current account (S306, decision 0246).
+  ///
+  /// The returned outcome is what the page acts on; [state] still carries the
+  /// sentence. While linking, a wallet sheet the owner closed or a signature
+  /// the owner refused is not a failure and leaves no message (S306).
+  Future<ExternalWalletConnectOutcome> connectExternalWallet(
+    BuildContext context,
+  ) async {
+    if (state.isBusy) return ExternalWalletConnectOutcome.ignored;
     final config = ref.read(appConfigProvider);
     if (!config.canConnectExternalWallet) {
       state = EmailAuthState(
@@ -319,7 +347,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
             ? '需要先通过 --dart-define 提供有效的 Reown Project ID。'
             : '需要先通过 --dart-define 提供 Privy Client ID 和 Reown Project ID。',
       );
-      return;
+      return ExternalWalletConnectOutcome.failed;
     }
 
     final requestedSession = ref.read(loopSessionProvider);
@@ -346,7 +374,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         submittedEmail: state.submittedEmail,
         errorMessage: '只有退出登录状态或已验证的 Privy 账号可以连接钱包。',
       );
-      return;
+      return ExternalWalletConnectOutcome.failed;
     }
 
     state = EmailAuthState(
@@ -362,11 +390,11 @@ class EmailAuthController extends Notifier<EmailAuthState> {
             intent: intent,
             expectedPrivyUserId: expectedPrincipal,
           );
-      if (!ref.mounted) return;
+      if (!ref.mounted) return ExternalWalletConnectOutcome.failed;
       if (intent == ExternalWalletCredentialIntent.login) {
         _acceptLoginResult(account);
         state = const EmailAuthState();
-        return;
+        return ExternalWalletConnectOutcome.loggedIn;
       }
 
       ref
@@ -376,27 +404,106 @@ class EmailAuthController extends Notifier<EmailAuthState> {
             expectedPrivyUserId: expectedPrincipal!,
           );
       state = const EmailAuthState(successMessage: '外部钱包已绑定为 Privy 登录凭据。');
+      return ExternalWalletConnectOutcome.linked;
     } on ExternalWalletConnectorException catch (error) {
-      if (!ref.mounted) return;
+      if (!ref.mounted) return ExternalWalletConnectOutcome.failed;
+      if (intent == ExternalWalletCredentialIntent.link &&
+          (error.kind == ExternalWalletConnectorFailure.cancelled ||
+              error.kind == ExternalWalletConnectorFailure.rejected)) {
+        state = EmailAuthState(
+          step: state.step,
+          submittedEmail: state.submittedEmail,
+        );
+        return ExternalWalletConnectOutcome.cancelled;
+      }
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
         errorMessage: error.userMessage,
       );
+      return ExternalWalletConnectOutcome.failed;
     } on PrivyGatewayException catch (error) {
-      if (!ref.mounted) return;
+      if (!ref.mounted) return ExternalWalletConnectOutcome.failed;
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
         errorMessage: error.userMessage,
       );
+      return ExternalWalletConnectOutcome.failed;
     } catch (_) {
-      if (!ref.mounted) return;
+      if (!ref.mounted) return ExternalWalletConnectOutcome.failed;
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
         errorMessage: '钱包操作未完成，请检查网络和应用回跳后重试。',
       );
+      return ExternalWalletConnectOutcome.failed;
+    }
+  }
+
+  /// Unlinks one external EVM wallet from the current Privy account (S306).
+  ///
+  /// [address] is the address the wallet list shows. When the session's own
+  /// Privy credentials carry the same wallet, Privy's spelling of it is the
+  /// one sent, so a checksum difference can never make the request miss.
+  /// Returns `true` once Privy confirmed; the sentence is in [state].
+  Future<bool> unlinkExternalWallet(String address) async {
+    if (state.isBusy) return false;
+    final session = ref.read(loopSessionProvider);
+    final account = session.account;
+    if (session.mode != LoopSessionMode.authenticated || account == null) {
+      state = EmailAuthState(
+        step: state.step,
+        submittedEmail: state.submittedEmail,
+        errorMessage: '只有已验证的 Privy 账号可以解绑钱包。',
+      );
+      return false;
+    }
+    final target = address.trim();
+    var privyAddress = target;
+    for (final credential in account.externalEvmCredentials) {
+      if (credential.address.toLowerCase() == target.toLowerCase()) {
+        privyAddress = credential.address;
+        break;
+      }
+    }
+    state = EmailAuthState(
+      step: state.step,
+      submittedEmail: state.submittedEmail,
+      activeOperation: IdentityAuthOperation.externalWalletUnlink,
+    );
+    try {
+      final updated = await ref
+          .read(privyCredentialGatewayProvider)
+          .unlinkSiwe(
+            address: privyAddress,
+            expectedPrivyUserId: account.privyUserId,
+          );
+      if (!ref.mounted) return false;
+      ref
+          .read(loopSessionProvider.notifier)
+          .acceptLinkedAccount(
+            updated,
+            expectedPrivyUserId: account.privyUserId,
+          );
+      state = const EmailAuthState(successMessage: '已解绑外部钱包。');
+      return true;
+    } on PrivyGatewayException catch (error) {
+      if (!ref.mounted) return false;
+      state = EmailAuthState(
+        step: state.step,
+        submittedEmail: state.submittedEmail,
+        errorMessage: error.userMessage,
+      );
+      return false;
+    } catch (_) {
+      if (!ref.mounted) return false;
+      state = EmailAuthState(
+        step: state.step,
+        submittedEmail: state.submittedEmail,
+        errorMessage: '解绑没有完成，请检查网络后重试。',
+      );
+      return false;
     }
   }
 

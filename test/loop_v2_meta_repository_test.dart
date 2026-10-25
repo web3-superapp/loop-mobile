@@ -10,6 +10,25 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart
 void main() {
   const requestId = '11111111-1111-4111-8111-111111111111';
 
+  // S306 · decision 0246: `externalWalletLimit` is an optional, advisory key.
+  for (final (label, raw, expected) in <(String, Object?, int?)>[
+    ('absent', #absent, null),
+    ('three', 3, 3),
+    ('null', null, null),
+    ('out of range', 99, null),
+    ('a string', '3', null),
+  ]) {
+    test('client policy externalWalletLimit $label', () async {
+      final body = _clientPolicy();
+      if (raw != #absent) body['externalWalletLimit'] = raw;
+      final repository = DioLoopV2MetaRepository.withClient(
+        _dio((options, handler) => handler.resolve(_response(options, body))),
+      );
+      final policy = await repository.getClientPolicy();
+      expect(policy.externalWalletLimit, expected);
+    });
+  }
+
   test('client policy GET is credential-free and parses every gate', () async {
     RequestOptions? captured;
     final repository = DioLoopV2MetaRepository.withClient(

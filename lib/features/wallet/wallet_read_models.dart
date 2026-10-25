@@ -7,6 +7,10 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 // wallets · GET /v2/wallets, PUT /v2/wallets/active
 // ---------------------------------------------------------------------------
 
+/// The external-wallet limit when no server document names one (S306 ruling
+/// 2: at most three per account).
+const int loopDefaultExternalWalletLimit = 3;
+
 enum LoopWalletKind {
   embedded('embedded'),
   external('external');
@@ -39,6 +43,36 @@ enum LoopWalletStatus {
   }
 }
 
+/// Why the server archived a wallet row (S306, loop-api decision 0185,
+/// optional key `archivedReason`).
+enum LoopWalletArchivedReason {
+  /// The owner unlinked it at Privy.
+  unlinked('unlinked'),
+
+  /// It was linked past the account's external-wallet limit.
+  externalLimitExceeded('external_limit_exceeded'),
+
+  /// The address already belongs to another LOOP account.
+  addressConflict('address_conflict'),
+
+  /// A reason this build does not know. The row is simply archived.
+  other('');
+
+  const LoopWalletArchivedReason(this.wireName);
+
+  final String wireName;
+
+  /// `null` for an absent or non-string value; [other] for a string this
+  /// build does not know.
+  static LoopWalletArchivedReason? tryParse(Object? value) {
+    if (value is! String) return null;
+    for (final reason in values) {
+      if (reason != other && reason.wireName == value) return reason;
+    }
+    return other;
+  }
+}
+
 /// One wallet the account owns.
 ///
 /// [walletId] is the ONLY value that may address a wallet in a request. The
@@ -54,6 +88,7 @@ final class LoopWalletAccount {
     required this.isActive,
     required this.firstSeenAt,
     required this.lastSeenAt,
+    this.archivedReason,
   });
 
   final String walletId;
@@ -63,6 +98,10 @@ final class LoopWalletAccount {
   final bool isActive;
   final DateTime firstSeenAt;
   final DateTime lastSeenAt;
+
+  /// Why the row is archived, when the server says (S306). `null` when it
+  /// does not.
+  final LoopWalletArchivedReason? archivedReason;
 
   String get truncatedAddress => loopTruncatedAddress(address);
 }
@@ -75,11 +114,28 @@ final class LoopWalletDirectory {
     required List<LoopWalletAccount> wallets,
     required this.activeWalletId,
     required this.observedAt,
+    this.externalWalletLimit,
   }) : wallets = List<LoopWalletAccount>.unmodifiable(wallets);
 
   final List<LoopWalletAccount> wallets;
   final String? activeWalletId;
   final DateTime observedAt;
+
+  /// How many external wallets the server lets one account bind (S306,
+  /// optional key `externalWalletLimit`). `null` when this server does not
+  /// say; the page then applies [loopDefaultExternalWalletLimit].
+  final int? externalWalletLimit;
+
+  /// External wallets that still count: an archived row is one Privy no
+  /// longer reports, so it neither counts toward the limit nor can be
+  /// unlinked again.
+  List<LoopWalletAccount> get liveExternals => wallets
+      .where(
+        (wallet) =>
+            wallet.kind == LoopWalletKind.external &&
+            wallet.status == LoopWalletStatus.active,
+      )
+      .toList(growable: false);
 
   /// The server answered, and the answer was "this account owns no wallet".
   ///
