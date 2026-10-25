@@ -38,6 +38,7 @@ LoopWalletDirectory _directory({
   int externals = 0,
   int archived = 0,
   int? limit,
+  List<LoopWalletAccount> extra = const <LoopWalletAccount>[],
 }) => LoopWalletDirectory(
   wallets: <LoopWalletAccount>[
     LoopWalletAccount(
@@ -61,6 +62,7 @@ LoopWalletDirectory _directory({
         firstSeenAt: DateTime.utc(2026, 10, 1),
         lastSeenAt: DateTime.utc(2026, 10, 1),
       ),
+    ...extra,
   ],
   activeWalletId: s5WalletId,
   observedAt: DateTime.utc(2026, 10, 25, 8),
@@ -320,6 +322,110 @@ void main() {
     }
   });
 
+  group('POST /v2/wallets/sync · the list after a bind', () {
+    LoopWalletAccount linkedRow({
+      required LoopWalletStatus status,
+      LoopWalletArchivedReason? reason,
+    }) => LoopWalletAccount(
+      walletId: _externalId(9),
+      address: _externalAddress(9),
+      kind: LoopWalletKind.external,
+      status: status,
+      isActive: false,
+      firstSeenAt: DateTime.utc(2026, 10, 25),
+      lastSeenAt: DateTime.utc(2026, 10, 25),
+      archivedReason: reason,
+    );
+
+    testWidgets('a synced answer becomes the list without another GET', (
+      tester,
+    ) async {
+      final harness = _Harness(introSeen: true);
+      harness.sync.result = WalletInventorySyncResult(
+        WalletInventorySyncStatus.synced,
+        directory: _directory(
+          extra: <LoopWalletAccount>[
+            linkedRow(status: LoopWalletStatus.active),
+          ],
+        ),
+      );
+      final wallet = await harness.pump(tester, directory: _directory());
+      final readsBefore = wallet.directoryReads;
+
+      await _tapAdd(tester);
+
+      expect(harness.sync.calls, 1);
+      expect(wallet.directoryReads, readsBefore);
+      expect(
+        find.byKey(ValueKey<String>('wallet-row-${_externalId(9)}')),
+        findsOneWidget,
+      );
+      expect(find.text('外部钱包已绑定'), findsOneWidget);
+    });
+
+    testWidgets('Privy unreachable falls back to GET and says so', (
+      tester,
+    ) async {
+      final harness = _Harness(introSeen: true);
+      harness.sync.result = const WalletInventorySyncResult(
+        WalletInventorySyncStatus.providerDisconnected,
+      );
+      final wallet = await harness.pump(tester, directory: _directory());
+      final readsBefore = wallet.directoryReads;
+
+      await _tapAdd(tester);
+
+      expect(wallet.directoryReads, greaterThan(readsBefore));
+      expect(find.text('外部钱包已绑定，钱包清单稍后刷新'), findsOneWidget);
+    });
+
+    testWidgets('a bind archived past the limit asks for an unbind', (
+      tester,
+    ) async {
+      final harness = _Harness(introSeen: true);
+      harness.sync.result = WalletInventorySyncResult(
+        WalletInventorySyncStatus.synced,
+        directory: _directory(
+          externals: 2,
+          extra: <LoopWalletAccount>[
+            linkedRow(
+              status: LoopWalletStatus.archived,
+              reason: LoopWalletArchivedReason.externalLimitExceeded,
+            ),
+          ],
+        ),
+      );
+      await harness.pump(tester, directory: _directory(externals: 2));
+
+      await _tapAdd(tester);
+
+      expect(find.text('已达 3 个外部钱包上限，请先解绑一个'), findsOneWidget);
+      expect(find.text('外部钱包已绑定'), findsNothing);
+    });
+
+    testWidgets('a bind archived for an address conflict names the other '
+        'account', (tester) async {
+      final harness = _Harness(introSeen: true);
+      harness.sync.result = WalletInventorySyncResult(
+        WalletInventorySyncStatus.synced,
+        directory: _directory(
+          extra: <LoopWalletAccount>[
+            linkedRow(
+              status: LoopWalletStatus.archived,
+              reason: LoopWalletArchivedReason.addressConflict,
+            ),
+          ],
+        ),
+      );
+      await harness.pump(tester, directory: _directory());
+
+      await _tapAdd(tester);
+
+      expect(find.text(externalWalletLinkedElsewhereMessage), findsOneWidget);
+      expect(find.text('外部钱包已绑定'), findsNothing);
+    });
+  });
+
   group('解绑', () {
     testWidgets('an external row confirms, unlinks through Privy and '
         're-reads the list', (tester) async {
@@ -475,6 +581,57 @@ void main() {
     });
   });
 
+  group('wallet list codec · archivedReason', () {
+    Map<String, Object?> body(Object? reason, {bool present = true}) {
+      final root = s5WalletDirectoryBody(
+        activeWalletId: null,
+        status: 'archived',
+        isActive: false,
+      );
+      final rows = (root['wallets']! as List<Object?>)
+          .cast<Map<String, Object?>>();
+      if (present) rows.first['archivedReason'] = reason;
+      return root;
+    }
+
+    test('known reasons are carried', () {
+      for (final reason in LoopWalletArchivedReason.values.where(
+        (reason) => reason != LoopWalletArchivedReason.other,
+      )) {
+        final directory = DioLoopV2WalletApi.decodeDirectory(
+          body(reason.wireName),
+        );
+        expect(directory.wallets.single.archivedReason, reason);
+      }
+    });
+
+    test('an unknown string is plainly archived', () {
+      final directory = DioLoopV2WalletApi.decodeDirectory(body('later'));
+      expect(
+        directory.wallets.single.archivedReason,
+        LoopWalletArchivedReason.other,
+      );
+      expect(directory.wallets.single.status, LoopWalletStatus.archived);
+    });
+
+    test('absent or null reads as not said', () {
+      expect(
+        DioLoopV2WalletApi.decodeDirectory(body(null, present: false))
+            .wallets
+            .single
+            .archivedReason,
+        isNull,
+      );
+      expect(
+        DioLoopV2WalletApi.decodeDirectory(body(null))
+            .wallets
+            .single
+            .archivedReason,
+        isNull,
+      );
+    });
+  });
+
   group('wallet list codec · externalWalletLimit', () {
     test('absent reads as not said', () {
       final directory = DioLoopV2WalletApi.decodeDirectory(
@@ -600,10 +757,13 @@ class _ExternalCredentialGateway implements ExternalWalletCredentialGateway {
 
 class _SyncGateway implements WalletInventorySyncGateway {
   int calls = 0;
+  WalletInventorySyncResult result = const WalletInventorySyncResult(
+    WalletInventorySyncStatus.unsupported,
+  );
 
   @override
-  Future<bool> requestSync() async {
+  Future<WalletInventorySyncResult> requestSync() async {
     calls += 1;
-    return false;
+    return result;
   }
 }

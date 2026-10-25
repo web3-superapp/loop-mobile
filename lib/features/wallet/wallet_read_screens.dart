@@ -29,6 +29,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/external_wallet_intro_store.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -2163,6 +2164,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
     if (!await _confirmExternalWalletIntro()) return;
     if (!mounted) return;
 
+    final before = _credentialAddresses();
     final auth = ref.read(emailAuthProvider.notifier);
     final outcome = await auth.connectExternalWallet(context);
     if (!mounted) return;
@@ -2170,15 +2172,12 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
     auth.clearFeedback();
     switch (outcome) {
       case ExternalWalletConnectOutcome.linked:
-        LoopToast.show(
-          context,
-          message: '外部钱包已绑定',
-          kind: LoopToastKind.ok,
-          toastKey: const ValueKey<String>('wallets-link-done'),
-        );
-        await ref
+        final linked = _credentialAddresses().difference(before);
+        final status = await ref
             .read(walletDirectoryControllerProvider.notifier)
             .resyncInventory();
+        if (!mounted) return;
+        _reportLinkResult(linked, status);
       case ExternalWalletConnectOutcome.failed:
         LoopToast.show(
           context,
@@ -2191,6 +2190,64 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       case ExternalWalletConnectOutcome.loggedIn:
         break;
     }
+  }
+
+  /// The session's Privy external-wallet addresses, lower-cased.
+  Set<String> _credentialAddresses() => <String>{
+    for (final credential
+        in ref.read(loopSessionProvider).account?.externalEvmCredentials ??
+            const <PrivyExternalEvmCredentialSummary>[])
+      credential.address.toLowerCase(),
+  };
+
+  /// After a bind, the synced list may say the server did not accept the
+  /// wallet (loop-api decision 0185): past the limit, or owned by another
+  /// LOOP account. That answer replaces the success toast.
+  void _reportLinkResult(Set<String> linked, WalletInventorySyncStatus status) {
+    final directory = ref.read(walletDirectoryControllerProvider).value;
+    LoopWalletArchivedReason? refusal;
+    if (directory != null && linked.isNotEmpty) {
+      for (final wallet in directory.externals) {
+        if (wallet.status == LoopWalletStatus.archived &&
+            linked.contains(wallet.address.toLowerCase()) &&
+            (wallet.archivedReason ==
+                    LoopWalletArchivedReason.externalLimitExceeded ||
+                wallet.archivedReason ==
+                    LoopWalletArchivedReason.addressConflict)) {
+          refusal = wallet.archivedReason;
+          break;
+        }
+      }
+    }
+    switch (refusal) {
+      case LoopWalletArchivedReason.externalLimitExceeded:
+        final limit = _externalWalletLimit(directory!);
+        LoopToast.show(
+          context,
+          message: '已达 $limit 个外部钱包上限，请先解绑一个',
+          kind: LoopToastKind.warn,
+          toastKey: const ValueKey<String>('wallets-link-limit'),
+        );
+        return;
+      case LoopWalletArchivedReason.addressConflict:
+        LoopToast.show(
+          context,
+          message: externalWalletLinkedElsewhereMessage,
+          kind: LoopToastKind.err,
+          toastKey: const ValueKey<String>('wallets-link-conflict'),
+        );
+        return;
+      default:
+        break;
+    }
+    LoopToast.show(
+      context,
+      message: status == WalletInventorySyncStatus.providerDisconnected
+          ? '外部钱包已绑定，钱包清单稍后刷新'
+          : '外部钱包已绑定',
+      kind: LoopToastKind.ok,
+      toastKey: const ValueKey<String>('wallets-link-done'),
+    );
   }
 
   Future<void> _showExternalWalletLimit(int limit) => showLoopSheet<void>(
@@ -2402,13 +2459,16 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       );
       return;
     }
+    final status = await controller.resyncInventory();
+    if (!mounted) return;
     LoopToast.show(
       context,
-      message: '已解绑外部钱包',
+      message: status == WalletInventorySyncStatus.providerDisconnected
+          ? '已解绑外部钱包，钱包清单稍后刷新'
+          : '已解绑外部钱包',
       kind: LoopToastKind.ok,
       toastKey: const ValueKey<String>('wallets-unlink-done'),
     );
-    await controller.resyncInventory();
   }
 
   Future<void> _confirmActivate(

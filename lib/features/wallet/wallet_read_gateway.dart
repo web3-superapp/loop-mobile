@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -65,16 +66,41 @@ final walletReadGatewayProvider = Provider<WalletReadGateway>(
   (ref) => const UnavailableWalletReadGateway(),
 );
 
+/// How one wallet-inventory sync ended (S306, decision 0246).
+enum WalletInventorySyncStatus {
+  /// The server re-read Privy and answered with the fresh list.
+  synced,
+
+  /// This server has no sync route; the ordinary re-read applies.
+  unsupported,
+
+  /// `503 PROVIDER_DISCONNECTED`: Privy could not be reached. The ordinary
+  /// re-read applies and the page says the list will refresh later.
+  providerDisconnected,
+
+  /// Any other failure; the ordinary re-read applies.
+  failed,
+}
+
+@immutable
+final class WalletInventorySyncResult {
+  const WalletInventorySyncResult(this.status, {this.directory});
+
+  final WalletInventorySyncStatus status;
+
+  /// The fresh list; present exactly when [status] is
+  /// [WalletInventorySyncStatus.synced].
+  final LoopWalletDirectory? directory;
+}
+
 /// Feature-facing port that asks the server to re-read the account's wallets
 /// from Privy right after a bind or an unbind (S306, decision 0246).
 ///
 /// A port of its own, like the net-worth history: a server that has not
 /// deployed the route leaves the wallet list on its ordinary refresh.
 abstract interface class WalletInventorySyncGateway {
-  /// `true` when the server acknowledged; `false` when it has no such route
-  /// or could not be reached. It never throws: the caller re-reads the list
-  /// either way.
-  Future<bool> requestSync();
+  /// Never throws; every failure is a [WalletInventorySyncStatus].
+  Future<WalletInventorySyncResult> requestSync();
 }
 
 final class UnavailableWalletInventorySyncGateway
@@ -82,7 +108,8 @@ final class UnavailableWalletInventorySyncGateway
   const UnavailableWalletInventorySyncGateway();
 
   @override
-  Future<bool> requestSync() async => false;
+  Future<WalletInventorySyncResult> requestSync() async =>
+      const WalletInventorySyncResult(WalletInventorySyncStatus.unsupported);
 }
 
 final walletInventorySyncGatewayProvider = Provider<WalletInventorySyncGateway>(
