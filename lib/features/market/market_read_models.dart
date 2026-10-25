@@ -20,6 +20,7 @@ final class MarketAssetRow {
     this.liquidityUsd,
     this.logoUrl,
     this.sparkline,
+    this.sparkline24h,
   });
 
   final String assetId;
@@ -50,6 +51,13 @@ final class MarketAssetRow {
   /// series for this row, the slot stays reserved and empty, and the reason
   /// belongs to the token page, which has the room to state it.
   final MarketRowSparklineSeries? sparkline;
+
+  /// The optional `sparkline24h` key (decision 0247): up to 24 prices, oldest
+  /// first, at least two. `null` when the key is absent or unusable.
+  final List<Decimal>? sparkline24h;
+
+  /// The closes the 情报 · 行情 trend column draws, or `null` for none.
+  List<Decimal>? get trendCloses => marketTrendCloses(sparkline24h, sparkline);
 
   /// Display text for the row. Falls back to the truncated CAIP identity so a
   /// missing registry row never becomes a guessed ticker.
@@ -87,6 +95,21 @@ final class MarketRowSparklineSeries {
   /// A series with fewer than two points draws no line; the slot stays empty
   /// rather than showing a dot that reads as a flat market.
   bool get hasShape => closes.length > 1;
+}
+
+/// The series a 情报 · 行情 row draws in its trend column (decision 0247).
+///
+/// The flat `sparkline24h` key wins; a row that lacks it falls back to the
+/// older structured `sparkline` block when that block is `available` and has
+/// a shape. Neither → `null`: the column prints its percentage only. Nothing
+/// is padded or invented.
+List<Decimal>? marketTrendCloses(
+  List<Decimal>? sparkline24h,
+  MarketRowSparklineSeries? sparkline,
+) {
+  if (sparkline24h != null && sparkline24h.length > 1) return sparkline24h;
+  if (sparkline != null && sparkline.hasShape) return sparkline.closes;
+  return null;
 }
 
 sealed class MarketWatchlistBlock {
@@ -1030,6 +1053,7 @@ final class MarketCategoryRow {
     required this.quoteUnavailableReason,
     required this.sparkline,
     this.community,
+    this.sparkline24h,
   });
 
   final String assetId;
@@ -1042,6 +1066,13 @@ final class MarketCategoryRow {
   final String? quoteUnavailableReason;
   final MarketRowSparklineSeries? sparkline;
   final MarketCategoryCommunity? community;
+
+  /// The optional `sparkline24h` key (decision 0247); see
+  /// [MarketAssetRow.sparkline24h].
+  final List<Decimal>? sparkline24h;
+
+  /// The closes the 情报 · 行情 trend column draws, or `null` for none.
+  List<Decimal>? get trendCloses => marketTrendCloses(sparkline24h, sparkline);
 }
 
 /// The published rule behind a category list.
