@@ -132,7 +132,7 @@ String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   LaunchFailureKind.unavailable => '这项功能暂时不可用，请稍后再试。',
   LaunchFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
-  LaunchFailureKind.policyBlocked => '这次操作没有通过，可能是绑定窗口已经关闭。',
+  LaunchFailureKind.policyBlocked => '这次操作没有通过服务端的规则检查，没有提交任何内容。',
   LaunchFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
   LaunchFailureKind.stale => '当前状态不允许这个操作，请刷新后按最新状态重新决定。',
   LaunchFailureKind.versionConflict => '资料已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
@@ -228,7 +228,7 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'COMMUNITY_WEIGHT_PENDING_REVIEW' => '这个社区的挖矿权重还在审核中。',
   // referral
   'REFERRAL_RUNTIME_UNAVAILABLE' => '邀请暂时不可用，稍后再试。',
-  'PROFILE_ACTIVATION_REQUIRED' => '需要先完成 LOOP ID 激活，才会有绑定窗口。',
+  'PROFILE_ACTIVATION_REQUIRED' => '需要先完成 LOOP ID 激活，才能绑定邀请码。',
   null => '这一项暂时读不到。',
   _ => '这一项暂时读不到。',
 };

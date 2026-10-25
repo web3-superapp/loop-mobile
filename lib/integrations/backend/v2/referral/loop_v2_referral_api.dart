@@ -204,19 +204,24 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
         LoopV2S7Codec.unavailable(raw).reasonCode,
       );
     }
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'activatedAt',
-      'closesAt',
-    });
-    final status = LoopV2S7Codec.requireEnum(map, 'status', const <String>{
-      'open',
-      'closed',
-    });
+    // S298: binding no longer expires. `activatedAt` and `closesAt` are kept
+    // by this API release for older builds and dropped by the next one, so
+    // both may be absent or null. A status this build does not know (a
+    // future "no time limit" value) reads as open: the claim itself is still
+    // judged by the server, and a refusal is shown with its own copy.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'status'},
+      const <String>{'activatedAt', 'closesAt'},
+    );
+    final status = map['status'];
+    if (status is! String || status.isEmpty || status.length > 64) {
+      LoopV2S7Codec.invalid();
+    }
     return ReferralClaimWindowTimed(
-      isOpen: status == 'open',
-      activatedAt: LoopV2S7Codec.requireTimestamp(map, 'activatedAt'),
-      closesAt: LoopV2S7Codec.requireTimestamp(map, 'closesAt'),
+      isOpen: status != 'closed',
+      activatedAt: LoopV2S7Codec.optionalTimestamp(map, 'activatedAt'),
+      closesAt: LoopV2S7Codec.optionalTimestamp(map, 'closesAt'),
     );
   }
 
@@ -360,13 +365,19 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
       }
       if (levels.length != 5) LoopV2S7Codec.invalid();
       levels.sort((a, b) => a.level.compareTo(b.level));
-      final rules = LoopV2Contract.strictMap(root['rules'], const <String>{
-        'configVersion',
-        'effectiveAt',
-        'appliesTo',
-        'maximumDepth',
-        'claimWindowDays',
-      });
+      // S298: `claimWindowDays` is legacy (binding no longer expires); this
+      // API release still sends it, the next one drops it.
+      final rules = LoopV2Contract.strictMapWithOptional(
+        root['rules'],
+        const <String>{
+          'configVersion',
+          'effectiveAt',
+          'appliesTo',
+          'maximumDepth',
+        },
+        const <String>{'claimWindowDays'},
+      );
+      final legacyWindowDays = rules['claimWindowDays'];
       final inviteCode = LoopV2S7Codec.requirePattern(
         code,
         'code',
@@ -403,10 +414,9 @@ final class DioLoopV2ReferralApi implements LoopV2ReferralApi {
             const <String>{'miningPower'},
           ),
           maximumDepth: LoopV2S7Codec.requirePositiveInt(rules, 'maximumDepth'),
-          claimWindowDays: LoopV2S7Codec.requirePositiveInt(
-            rules,
-            'claimWindowDays',
-          ),
+          claimWindowDays: legacyWindowDays is int && legacyWindowDays > 0
+              ? legacyWindowDays
+              : null,
         ),
       );
     } on DioException catch (error) {

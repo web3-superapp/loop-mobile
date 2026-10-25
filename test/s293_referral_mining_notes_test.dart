@@ -184,16 +184,17 @@ void main() {
         note('referral-info-valid-member'),
         contains('当前数字截至 2026-10-23 03:00 UTC'),
       );
-      expect(note('referral-info-binding'), contains('7 天内可以绑定'));
+      // S298: binding has no time limit; no day count, no deadline.
+      expect(note('referral-info-binding'), contains('激活 LOOP ID 后随时可以绑定'));
       expect(note('referral-info-binding'), contains('一个账号只能绑定一次'));
-      expect(
-        note('referral-info-binding'),
-        contains('本账号的绑定窗口截止 2026-09-13 00:00 UTC'),
-      );
+      expect(note('referral-info-binding'), isNot(contains('天内')));
+      expect(note('referral-info-binding'), isNot(contains('窗口')));
+      expect(note('referral-info-binding'), isNot(contains('截止')));
       final rules = note('referral-info-rules');
       expect(rules, contains('生效于 2026-09-01 00:00 UTC'));
       expect(rules, contains('最大深度 L5'));
-      expect(rules, contains('绑定窗口 7 天'));
+      expect(rules, isNot(contains('绑定窗口')));
+      expect(rules, isNot(contains('7 天')));
       expect(rules, contains('作用于挖矿算力'));
       expect(rules, isNot(contains('miningPower')));
     });
@@ -252,7 +253,8 @@ void main() {
       final claim = find.byKey(const ValueKey<String>('referral-claim'));
       await scrollToS7Section(tester, claim);
       expect(tester.widget<LoopButton>(claim).onPressed, isNull);
-      expect(find.text('绑定窗口已于 2026-10-28 08:59 UTC 关闭'), findsOneWidget);
+      expect(find.text('当前不能绑定邀请码，请稍后刷新再试'), findsOneWidget);
+      expect(find.textContaining('2026-10-28'), findsNothing);
 
       await pumpS7Page(
         tester,
