@@ -55,9 +55,7 @@ void main() {
     // Decision 0211: the step title is bold Arimo / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
-    final subtitle = tester.widget<Text>(
-      find.text('登录后自动创建内置钱包，加入社区并持有社区币即产生算力。'),
-    );
+    final subtitle = tester.widget<Text>(find.text('登录后自动创建钱包，持仓即产生算力。'));
     // Decision 0229: body2, 16.
     expect(subtitle.style?.fontSize, 16);
     final field = find.byKey(const ValueKey('privy-email'));

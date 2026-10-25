@@ -1254,7 +1254,7 @@ class MiningAssetTrackCard extends StatelessWidget {
         Padding(
           key: const ValueKey<String>('mining-asset-basis-conditions'),
           padding: const EdgeInsets.only(bottom: 4),
-          child: Text('只算内置钱包，社区币须加入已通过审核的绑定社区。', style: LoopType.caption),
+          child: Text('按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。', style: LoopType.caption),
         ),
         _fact('本人算力', miningPowerFigure(asset.ownPower)),
         _fact('邀请算力', miningPowerFigure(asset.invitePower)),
