@@ -297,6 +297,7 @@ abstract final class LoopV2Contract {
       'ALIAS_BLOCKED' ||
       'DATA_STALE' ||
       'RESOURCE_CONFLICT' ||
+      'COMMUNITY_BOUND_ASSET_TAKEN' ||
       'PROFILE_ACTIVATION_REQUIRED' ||
       'CHAIN_MISMATCH' ||
       'INSUFFICIENT_BALANCE' ||

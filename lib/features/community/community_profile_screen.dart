@@ -606,9 +606,7 @@ class _CommunityProfileScreenState
     }
     LoopToast.show(
       context,
-      message: failure == CommunityFailureKind.stale
-          ? '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。'
-          : communityFailureReason(failure),
+      message: communityResubmitFailureText(failure),
       kind: LoopToastKind.err,
     );
     if (failure == CommunityFailureKind.stale) {
@@ -1223,3 +1221,13 @@ bool communityChatIsBelow(BuildContext context, String communityId) {
   return uri.path == '/community/chat' &&
       uri.queryParameters['id'] == communityId;
 }
+
+/// The sentence for a refused resubmission. A stale application and a token
+/// another community took meanwhile (loop-api decision 0182) each need their
+/// own next step; everything else keeps the shared copy for its kind.
+String communityResubmitFailureText(CommunityFailureKind failure) =>
+    switch (failure) {
+      CommunityFailureKind.stale => '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。',
+      CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请先在资料里换一个代币再重新提交。',
+      _ => communityFailureReason(failure),
+    };

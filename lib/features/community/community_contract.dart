@@ -28,6 +28,11 @@ enum CommunityFailureKind {
   activationRequired,
   bootstrapRequired,
   resourceConflict,
+
+  /// The token is already bound by another community that was not rejected
+  /// (loop-api decision 0182, 「一币一社区」). Create, profile edit and
+  /// resubmit can answer with it; nothing was applied.
+  boundAssetTaken,
   validationFailed,
   aliasReserved,
   aliasBlocked,
@@ -358,6 +363,7 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.activationRequired => '需要先完成 LOOP ID 激活才能执行社区与社交操作。',
   CommunityFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   CommunityFailureKind.resourceConflict => '该短链接已被其他社区占用，请换一个。',
+  CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请换一个代币。',
   CommunityFailureKind.validationFailed => '输入内容不符合要求，请修改后重试。',
   CommunityFailureKind.aliasReserved => '该名称属于 LOOP 保留词，请换一个再试。',
   CommunityFailureKind.aliasBlocked => '该名称在运营屏蔽名单内，请换一个再试。',
@@ -389,6 +395,7 @@ String communityApplyFailureReason(CommunityFailureKind? kind) =>
         '社区名称撞上了 LOOP 保留词（如官方、支持、管理），请换一个名称再提交。',
       CommunityFailureKind.aliasBlocked => '社区名称在当前的运营屏蔽名单内，请换一个名称再提交。',
       CommunityFailureKind.resourceConflict => '这个短链接已经被另一个社区占用，请换一个再提交。',
+      CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请换一个代币再提交。',
       CommunityFailureKind.validationFailed =>
         '名称或简介太长（名称 1–40 字，简介不超过 280 字），请修改后再提交。',
       CommunityFailureKind.activationRequired =>
