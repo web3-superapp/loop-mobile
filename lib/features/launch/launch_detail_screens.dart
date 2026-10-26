@@ -2032,20 +2032,6 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             LaunchReadingAvailable<LaunchHolderCount>() =>
               const SizedBox.shrink(),
           },
-          LoopNotice(
-            key: const ValueKey<String>('launch-holders-notice'),
-            icon: 'chart',
-            title: '空白不是「没有持有人」',
-            body: count == null
-                ? '暂时读不到合约信息，因此不显示地址、比例或上限。读不到不等于「分布为零」。'
-                : '参与人数来自链上索引；地址排名与集中度还没有来源，因此不显示。',
-            margin: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              22,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           const SizedBox(height: 20),
         ],
       ],
@@ -2150,18 +2136,6 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             LaunchReadingAvailable<LaunchIndexedSource>() =>
               const SizedBox.shrink(),
           },
-          const LoopNotice(
-            key: ValueKey<String>('launch-history-notice'),
-            icon: 'info',
-            title: '空列表不代表没有参与',
-            body: '这里是「暂时读不到」，不是「没有记录」。合约上线后才会出现可核对的购买、权益与退款。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              22,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           const SizedBox(height: 20),
         ] else if (history.isEmpty) ...<Widget>[
           LoopEmptyState(

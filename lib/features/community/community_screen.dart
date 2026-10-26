@@ -247,20 +247,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 onPressed: () => _open('/community/discover?membership=joined'),
               ),
             ),
-          LoopNotice(
-            key: const ValueKey<String>('community-recommendation-rule'),
-            icon: 'info',
-            title: '推荐依据',
-            body:
-                '推荐只按成员数与创建时间排列，'
-                '不是个性化算法推荐。',
-            margin: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           CommunityObservedFootnote(
             key: const ValueKey<String>('community-observed-at'),
             observedAt: home.observedAt,

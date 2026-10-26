@@ -568,7 +568,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               phase: state?.phase ?? LoopChainViewPhase.loading,
               failureKind: state?.failureKind,
               emptyMessage: '这个钱包没有有效授权',
-              emptyReason: '当前额度为 0 的授权不会列出。',
               onRetry: walletId == null
                   ? null
                   : () => unawaited(
@@ -622,7 +621,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 key: ValueKey<String>('approvals-empty'),
                 illustration: LoopIllustration.history,
                 title: '这个钱包没有有效授权',
-                message: '额度为 0 的授权不会列出。',
                 compact: true,
               )
             else
@@ -640,14 +638,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   '索引高度 ${loopGroupedFigure(inventory.freshness.indexerBlockNumber.toString())} / '
                   '链头 ${loopGroupedFigure(inventory.freshness.headBlockNumber.toString())} · 观察于 '
                   '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
-              // Three sentences about indexing coverage are not what a reader
-              // came for; S278 · decision 0236 puts them behind the same (i)
-              // as the coverage line (they were a 「数据出处」 disclosure).
-              notes: const <String>[
-                '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
-                    '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'
-                    '回收会发送一笔 approve(spender, 0) 交易并产生网络费。',
-              ],
             ),
             const SizedBox(height: 20),
           ],

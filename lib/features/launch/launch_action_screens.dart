@@ -136,20 +136,6 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
           LaunchChainBlock(
             testnet: launchSurfaceIsTestnet(capability: capability),
           ),
-          const LoopNotice(
-            key: ValueKey<String>('loop-stake-notice'),
-            icon: 'lock',
-            title: '质押与 Launch 资格',
-            body:
-                '质押用于 Launch 参与资格；某一次发射是否依赖质押，由它自己被批准的资格模式决定。'
-                '质押与挖矿算力的关系以批准的公式版本为准，这里不承诺任何倍率、等待期或权益。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           const SizedBox(height: 20),
         ],
       ],
@@ -1059,20 +1045,6 @@ class _MilestoneBlockState extends ConsumerState<_MilestoneBlock> {
                 ),
             ],
           ),
-        const LoopNotice(
-          key: ValueKey<String>('launch-apply-milestone-notice'),
-          icon: 'shield',
-          title: 'Alpha 不等于现货',
-          body:
-              '每条赛道单独记录，互不推导。只有「已上线」与「已获推荐位」附有复核过的材料；'
-              '复核记录时间与平台可核验时间是两个不同的事实，缺一不补。',
-          margin: EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            0,
-          ),
-        ),
       ],
     );
   }

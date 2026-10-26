@@ -474,34 +474,6 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             _RankingBlock(ranking: rank.ranking),
             const LoopLabel('公式版本'),
             MiningFormulaBlock(formula: rank.formula),
-            const LoopLabel('显示规则'),
-            LoopNotice(
-              key: const ValueKey<String>('mining-rank-anonymity'),
-              icon: 'shield',
-              title: '排行条目如何显示身份与算力',
-              body:
-                  '${miningRuleKeyText(rank.display.ruleKey)}'
-                  '匿名时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。\n'
-                  '${miningRuleKeyText(rank.display.powerRuleKey)}',
-              margin: const EdgeInsets.fromLTRB(
-                LoopSpacing.page,
-                14,
-                LoopSpacing.page,
-                0,
-              ),
-            ),
-            const LoopNotice(
-              key: ValueKey<String>('mining-rank-notice'),
-              icon: 'info',
-              title: '排名不是静态权益',
-              body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次算力快照，不会在这台设备上计算。',
-              margin: EdgeInsets.fromLTRB(
-                LoopSpacing.page,
-                14,
-                LoopSpacing.page,
-                0,
-              ),
-            ),
           ],
           const SizedBox(height: 20),
         ],

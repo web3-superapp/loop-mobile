@@ -206,18 +206,6 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
                   key: const ValueKey<String>('community-ai-capabilities'),
                   capabilities: overview.capabilities,
                 ),
-                const LoopNotice(
-                  key: ValueKey<String>('community-ai-scope-note'),
-                  icon: 'info',
-                  title: '只给数据和事实',
-                  body: 'AI 只提供标注出处和时间的客观信息，不输出评级或结论，也不替你做投资决定。',
-                  margin: EdgeInsets.fromLTRB(
-                    LoopSpacing.page,
-                    14,
-                    LoopSpacing.page,
-                    0,
-                  ),
-                ),
                 if (overview.exampleQuestions.isNotEmpty) ...<Widget>[
                   const LoopLabel('试试这些'),
                   Padding(
@@ -1100,18 +1088,6 @@ class _CommunityAiClosedPage extends ConsumerWidget {
                   ),
                 ),
             ],
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('community-ai-scope-note'),
-            icon: 'info',
-            title: '只给数据和事实',
-            body: '之后的 AI 只提供标注出处和时间的客观信息，不输出评级或结论，也不替你做投资决定。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
           ),
           const LoopLabel('试试这些'),
           Padding(

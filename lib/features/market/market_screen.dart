@@ -415,9 +415,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             if (row.quote case final quote?) loopFactSourceLabel(quote.source),
         ],
         observedAt: _oldestQuote(page.items) ?? page.observedAt,
-        detail:
-            '${page.rules.orderingLabel}。'
-            '读不到报价的代币排在最后，并写明原因；不会显示 0。',
       ),
     ];
   }
@@ -448,7 +445,6 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       key: const ValueKey<String>('market-list-provenance'),
       sources: sources,
       observedAt: oldest,
-      detail: '自选的价格与 24 小时涨跌，读不到的行写明原因；不会显示 0。',
     );
   }
 }

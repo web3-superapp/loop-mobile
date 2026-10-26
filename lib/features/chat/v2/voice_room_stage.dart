@@ -998,13 +998,6 @@ Future<void> showVoiceRoomInfoSheet(
                   body: providerSyncText,
                   margin: const EdgeInsets.only(top: 14),
                 ),
-              const LoopNotice(
-                key: ValueKey<String>('voiceroom-provider-note'),
-                icon: 'info',
-                title: 'Stream Video / Audio Rooms',
-                body: '语音连接、发言权限与在线状态由 Stream 提供。',
-                margin: EdgeInsets.only(top: 14),
-              ),
               const SizedBox(height: 16),
               LoopButton(
                 key: const ValueKey<String>('voiceroom-info-close'),

@@ -112,7 +112,7 @@ Decimal? walletRowChangeUsd(Decimal valueUsd, Decimal pct) {
 // 总资产 (钱包 C, decision 0188)
 // ---------------------------------------------------------------------------
 
-/// 「总资产」, the eye, the figure with `USD`, the ¥ / address line, one weak
+/// 「总资产」, the eye, the figure with `USD`, separate ¥ and address lines, one weak
 /// caption, 今日盈亏, the 7-day sparkline and the chart it opens in place.
 ///
 /// [balances] is the read the figure comes from; `null` while it has not
@@ -277,7 +277,6 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final fiatText = fiat != null && fiat.currency == 'CNY'
         ? '≈ ¥${hidden ? walletMaskedFigure : loopFormatDecimal(fiat.amount, maxFractionDigits: 2)}'
         : null;
-    final subline = <String>[?fiatText, ?widget.address].join(' · ');
     final fullAddress = widget.fullAddress;
     // Decision 0194: a stale rate wears the market figures' stale badge
     // right after the ¥ amount; the line's words do not change.
@@ -285,10 +284,6 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final staleMarker = loopFactQualityMarker(LoopFactQuality.stale)!;
     final sublineStyle = LoopType.caption.copyWith(color: auxiliary);
     final address = widget.address;
-    final sublineLabel = <String>[
-      if (fiatStale) '$fiatText，$staleMarker' else ?fiatText,
-      ?address,
-    ].join(' · ');
 
     final left = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,10 +338,37 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
           )
         else
           figureRow,
-        if (subline.isNotEmpty)
+        if (fiatText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(text: fiatText),
+                  if (fiatStale)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: LoopBadge(
+                          staleMarker,
+                          key: ValueKey<String>('$keyPrefix-total-fiat-stale'),
+                          kind: LoopBadgeKind.down,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              key: ValueKey<String>('$keyPrefix-total-subline'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sublineStyle,
+            ),
+          ),
+        if (address != null)
           Semantics(
             button: fullAddress != null,
-            label: fullAddress == null ? sublineLabel : '$sublineLabel，复制钱包地址',
+            label: fullAddress == null ? address : '$address，复制钱包地址',
             excludeSemantics: true,
             child: LoopPressable(
               key: ValueKey<String>('$keyPrefix-address-copy'),
@@ -356,46 +378,19 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                   : () => unawaited(
                       LoopCopy.text(context, fullAddress, message: '钱包地址已复制'),
                     ),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Flexible(
-                      child: fiatStale
-                          ? Text.rich(
-                              TextSpan(
-                                children: <InlineSpan>[
-                                  TextSpan(text: fiatText),
-                                  WidgetSpan(
-                                    alignment: PlaceholderAlignment.middle,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 6),
-                                      child: LoopBadge(
-                                        staleMarker,
-                                        key: ValueKey<String>(
-                                          '$keyPrefix-total-fiat-stale',
-                                        ),
-                                        kind: LoopBadgeKind.down,
-                                      ),
-                                    ),
-                                  ),
-                                  if (address != null)
-                                    TextSpan(text: ' · $address'),
-                                ],
-                              ),
-                              key: ValueKey<String>('$keyPrefix-total-subline'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: sublineStyle,
-                            )
-                          : Text(
-                              subline,
-                              key: ValueKey<String>('$keyPrefix-total-subline'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: sublineStyle,
-                            ),
+                      child: Text(
+                        address,
+                        key: ValueKey<String>('$keyPrefix-address'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sublineStyle,
+                      ),
                     ),
                     if (fullAddress != null) ...<Widget>[
                       const SizedBox(width: 4),

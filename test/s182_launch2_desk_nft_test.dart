@@ -1329,8 +1329,8 @@ void main() {
     });
   });
 
-  group('desk · 战绩 and the notice', () {
-    testWidgets('a 2×2 stat grid, then the notice, then the source line', (
+  group('desk · 战绩 without promotional copy', () {
+    testWidgets('a 2×2 stat grid followed directly by the source line', (
       tester,
     ) async {
       await _pump(
@@ -1355,21 +1355,15 @@ void main() {
         '9|进行中',
       ]);
       expect(_key('launch2-stats-buyback'), findsOneWidget);
-      final notice = tester.widget<LoopNotice>(_key('launch2-curation-notice'));
-      expect(notice.title, '精品发射，不是每天几万个');
-      final stats = tester.getTopLeft(_key('launch2-stats')).dy;
-      final noticeY = tester.getTopLeft(_key('launch2-curation-notice')).dy;
-      expect(stats, lessThan(noticeY));
+      expect(_key('launch2-curation-notice'), findsNothing);
       expect(
-        noticeY,
+        tester.getTopLeft(_key('launch2-stats')).dy,
         lessThan(tester.getTopLeft(_key('launch2-list-all-provenance')).dy),
       );
       await _drain(tester);
     });
 
-    testWidgets('no figures read: no 战绩 at all, the notice stays', (
-      tester,
-    ) async {
+    testWidgets('no figures read: no 战绩 or promotional notice', (tester) async {
       await _pump(
         tester,
         _list(<String>[]),
@@ -1381,7 +1375,7 @@ void main() {
       expect(_key('launch2-ticker-rail'), findsOneWidget);
       expect(_key('launch2-stats'), findsNothing);
       expect(find.text('战绩'), findsNothing);
-      expect(_key('launch2-curation-notice'), findsOneWidget);
+      expect(_key('launch2-curation-notice'), findsNothing);
       await _drain(tester);
     });
   });

@@ -162,8 +162,7 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    readyKey: 'launch-history-notice',
-    alsoUnreadKeys: <String>['launch-unavailable-购买、权益与退款记录'],
+    readyKey: 'launch-unavailable-购买、权益与退款记录',
     emptyContract:
         'LaunchHistory 是 `{launchId, source}` 两个必填字段'
         '（launch_models.dart:719-724），读成功时永远有一条 source 说明；'
@@ -231,7 +230,6 @@ final List<_StateCase> _cases = <_StateCase>[
       ),
     ),
     readyKey: 'loop-stake-executable',
-    alsoUnreadKeys: <String>['loop-stake-notice'],
     // The folio states that staking has not opened, which is true before and
     // after any read: there is no figure owed here to withhold.
     showsMissingHeading: false,
@@ -285,8 +283,9 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    readyKey: 'mining-rank-anonymity',
-    alsoUnreadKeys: <String>['mining-rank-notice'],
+    // The formula block is drawn only once a ranking has been read; decision
+    // 0248 removed the anonymity line and the notice that marked it before.
+    readyKey: 'mining-formula-row',
     emptyContract:
         'MiningRank 的 ranking / myPosition 都是必填的 sealed 结果，'
         'display 是必填的匿名规则：读成功时一定有一条榜单结果和一条显示规则，'

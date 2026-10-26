@@ -503,14 +503,7 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
           ),
         ),
         ...switch (state.phase) {
-          GroupAliasSearchPhase.idle => const <Widget>[
-            LoopNotice(
-              key: ValueKey<String>('group-alias-search-scope'),
-              icon: 'shield',
-              title: '仅在当前群内查找',
-              body: '结果只包含群内昵称与不透明的群内引用，不包含公开资料、钱包地址或跨群身份。',
-            ),
-          ],
+          GroupAliasSearchPhase.idle => const <Widget>[],
           GroupAliasSearchPhase.searching => const <Widget>[
             LoopSkeleton(
               key: ValueKey<String>('group-alias-search-loading'),

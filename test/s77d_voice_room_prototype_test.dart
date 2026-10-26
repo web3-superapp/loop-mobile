@@ -143,13 +143,13 @@ void main() {
         ),
         findsOneWidget,
       );
-      // The provider note is in (i), not in the page.
+      // Provider implementation copy is absent from both the page and (i).
       expect(find.byType(LoopNotice), findsNothing);
       await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('voiceroom-provider-note')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
     });

@@ -978,7 +978,7 @@ void main() {
   });
 
   group('mining-rank', () {
-    testWidgets('both scopes stay unavailable and the rule is stated', (
+    testWidgets('both scopes stay unavailable without explanatory copy', (
       tester,
     ) async {
       final gateway = FakeMiningGateway();
@@ -991,9 +991,7 @@ void main() {
       final anonymity = find.byKey(
         const ValueKey<String>('mining-rank-anonymity'),
       );
-      await scrollToS7Section(tester, anonymity);
-      expect(anonymity, findsOneWidget);
-      expect(find.textContaining('匿名成员'), findsOneWidget);
+      expect(anonymity, findsNothing);
 
       // Switching scope re-reads rather than relabelling the previous answer.
       await tester.tap(find.text('用户榜'));
@@ -1390,7 +1388,7 @@ void main() {
       );
     });
 
-    testWidgets('the two display rules are stated separately', (tester) async {
+    testWidgets('the display rule explanation is omitted', (tester) async {
       await pumpS7Page(
         tester,
         const MiningRankScreen(),
@@ -1404,12 +1402,8 @@ void main() {
       final anonymity = find.byKey(
         const ValueKey<String>('mining-rank-anonymity'),
       );
-      await scrollToS7Section(tester, anonymity);
-      // Anonymous mode decides the name; the power visibility decides the
-      // number; being discoverable decides neither.
-      expect(find.textContaining('只由该账号的匿名模式决定'), findsOneWidget);
-      expect(find.textContaining('挖矿算力'), findsOneWidget);
-      expect(find.textContaining('「可被发现」不参与'), findsOneWidget);
+      expect(anonymity, findsNothing);
+      expect(find.textContaining('「可被发现」不参与'), findsNothing);
     });
 
     testWidgets('the community board carries weight and head count', (

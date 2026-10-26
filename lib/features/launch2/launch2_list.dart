@@ -431,15 +431,10 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           child: MemeStatFigures(stats: launch2DeskStats(stats)),
         ),
       ],
-      if (all) launch2CurationNotice,
       LoopProvenanceLine(
         key: ValueKey<String>('$_keyBase-provenance'),
         sources: const <String>['LOOP 链上索引'],
         observedAt: controller.valueObservedAt,
-        detail:
-            '阶段与倒计时由服务端按链上时间给出，到点后重新读取；'
-            '列表在屏幕上时每分钟刷新一次；'
-            '内盘进度按已售 / 8 亿计，价格以 USD1 计。',
       ),
     ];
   }

@@ -334,22 +334,6 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 ),
               ],
             ),
-            LoopNotice(
-              key: const ValueKey<String>('watchlist-add-asset-note'),
-              icon: 'info',
-              title: '怎么添加资产',
-              body:
-                  '加入自选只有一条路：打开代币页，点右上角星标。'
-                  '这样加入的资产进入默认分组「$watchlistDefaultGroupName」，'
-                  '本页不能把它移到别的分组。'
-                  '情报 · 行情里的每一行都能打开代币页。',
-              margin: const EdgeInsets.fromLTRB(
-                LoopSpacing.page,
-                0,
-                LoopSpacing.page,
-                12,
-              ),
-            ),
             // A control that greys out without a word looks broken. At the
             // ceiling it says which ceiling and what clears it.
             if (state.groups.length >= watchlistMaxGroups)

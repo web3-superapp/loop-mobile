@@ -312,8 +312,8 @@ void main() {
         find.byKey(const ValueKey<String>('dm-send-message-request')),
         findsOneWidget,
       );
-      // The E2EE disclaimer is present, and it never claims encryption.
-      expect(find.text('不声明端到端加密'), findsOneWidget);
+      // Explanatory copy is removed; no encryption claim replaces it.
+      expect(find.text('不声明端到端加密'), findsNothing);
       expect(find.textContaining('端到端加密的'), findsNothing);
     });
 
@@ -399,7 +399,7 @@ void main() {
       );
     });
 
-    testWidgets('the thread carries one line, not a card over the composer', (
+    testWidgets('the thread omits provider explanation above the composer', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -423,11 +423,10 @@ void main() {
       final surface = tester.widget<LoopStreamChannelSurface>(
         find.byType(LoopStreamChannelSurface),
       );
-      final strip = (surface.header! as Column).children
-          .whereType<LoopChatHeaderStrip>()
-          .single;
-      expect(strip.key, const ValueKey<String>('dm-protection-note'));
-      expect(strip.segments.single, contains('不声明端到端加密'));
+      expect(
+        (surface.header! as Column).children.whereType<LoopChatHeaderStrip>(),
+        isEmpty,
+      );
       // No card is pinned over the composer any more, and the quarter-screen
       // Chalk hero is gone: the top bar already names the peer.
       expect(surface.footer, isNull);
@@ -3722,7 +3721,6 @@ void main() {
         const ValueKey<String>('community-ai-unavailable'),
         null,
         null,
-        const ValueKey<String>('community-ai-scope-note'),
         null,
         const ValueKey<String>('community-ai-samples'),
       ]);

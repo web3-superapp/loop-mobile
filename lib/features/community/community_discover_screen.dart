@@ -331,20 +331,6 @@ class _CommunityDiscoverScreenState
                 height: 12,
               ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('community-discover-apply-notice'),
-            icon: 'community',
-            title: '社区怎么入驻',
-            body:
-                '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
-                '本页不代表任何 Mining 权重结论。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              16,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           // No application route exists in the frozen manifest, so the form
           // opens as a sheet from this block.
           LoopButtonPair(

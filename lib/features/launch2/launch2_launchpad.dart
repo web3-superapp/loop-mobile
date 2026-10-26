@@ -1312,14 +1312,3 @@ List<LoopStat> launch2DeskStats(Launch2Stats stats) => <LoopStat>[
     label: '进行中',
   ),
 ];
-
-/// The curation notice the prototype's Launch page ends on.
-const LoopNotice launch2CurationNotice = LoopNotice(
-  key: ValueKey<String>('launch2-curation-notice'),
-  icon: 'target',
-  title: '精品发射，不是每天几万个',
-  body:
-      'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
-      '统一 10 亿总量，USD1 报价。',
-  margin: EdgeInsets.fromLTRB(LoopSpacing.page, 22, LoopSpacing.page, 0),
-);

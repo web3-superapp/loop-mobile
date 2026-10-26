@@ -240,17 +240,6 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '私聊'),
-          // A quarter of the screen was a card repeating the name already in
-          // the top bar, and the encryption caveat was a second card pinned
-          // over the composer at the foot of the thread. One line at the top
-          // says the caveat once and gives the rest of the height back to the
-          // conversation (device walkthrough 2026-09-23 · h28/h29). The Chalk
-          // hero stays on the state that has no thread to show.
-          LoopChatHeaderStrip(
-            key: const ValueKey<String>('dm-protection-note'),
-            segments: const <String>['不声明端到端加密 · 私聊由 Stream Chat 承载'],
-            collapsed: loopChatKeyboardIsUp(context),
-          ),
         ],
       ),
     );
@@ -392,18 +381,6 @@ class _FriendshipRequired extends StatelessWidget {
               onPressed: busy ? null : () => unawaited(onSend()),
             ),
           ),
-        const LoopNotice(
-          key: ValueKey<String>('dm-protection-note-blocked'),
-          icon: 'info',
-          title: '不声明端到端加密',
-          body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
-          margin: EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            0,
-          ),
-        ),
       ],
     ),
   );

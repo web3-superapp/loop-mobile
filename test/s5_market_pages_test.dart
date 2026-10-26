@@ -722,13 +722,13 @@ void main() {
 
       expect(find.text('买入 934.35 USDT'), findsOneWidget);
       expect(find.textContaining('我 · 已确认 · 101 确认'), findsOneWidget);
-      // S278 · decision 0236: behind the freshness line's (i).
+      // Explanatory copy is absent from the page and its source sheet.
       expect(find.textContaining('不下发对手方地址'), findsNothing);
       final freshness = find.byKey(const ValueKey<String>('indexer-freshness'));
       await tester.ensureVisible(freshness);
       await tester.tap(freshness);
       await tester.pumpAndSettle();
-      expect(find.textContaining('不下发对手方地址'), findsOneWidget);
+      expect(find.textContaining('不下发对手方地址'), findsNothing);
     });
 
     testWidgets('the smart-money segment is disabled and explains itself', (

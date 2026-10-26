@@ -234,20 +234,6 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             contractLive: capability.evidenceConfirmed,
             onOpenLaunch: widget.onOpenLaunch,
           ),
-          const LoopNotice(
-            key: ValueKey<String>('launch-curation-notice'),
-            icon: 'target',
-            title: '精品发射，不是每天几万个',
-            body:
-                'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
-                '每次发射的总量、轮次与上限都以这次发射被批准的配置为准。',
-            margin: EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              22,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
           // Decision 0038: the catalogue has no single launch, so the chain
           // statement comes from the capability the server published. It is a
           // footnote to the list, not a gate in front of it.

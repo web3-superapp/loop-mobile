@@ -71,3 +71,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local backups of release config (may carry secret keys)
+config/*.bak-*

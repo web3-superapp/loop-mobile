@@ -582,7 +582,11 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.textContaining('空列表不代表没有参与'), findsOneWidget);
+      expect(find.textContaining('空列表不代表没有参与'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('launch-unavailable-购买、权益与退款记录')),
+        findsOneWidget,
+      );
       expect(find.textContaining('累计盈亏'), findsNothing);
     });
   });

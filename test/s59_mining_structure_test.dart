@@ -172,7 +172,6 @@ void main() {
         // The board's own split: entries the settlement gave no place to.
         '未上榜',
         '公式版本',
-        '显示规则',
       ]);
       expect(
         find.byKey(const ValueKey<String>('mining-rank-reading')),

@@ -355,11 +355,6 @@ class _HolderDistributionScreenState
             label: 'Top 持有人、集中度与聚类标注不可用',
             reasonCode: holders.distribution.reasonCode,
           ),
-          const LoopNotice(
-            key: ValueKey<String>('token-holders-notice'),
-            title: '没有分布就不画分布',
-            body: '前十 / 前百集中度暂时读不到，这里不显示任何比例或地址。',
-          ),
         ],
       ],
     );
@@ -555,14 +550,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
           rows: <LoopRecordRow>[for (final trade in visible) _tradeRow(trade)],
         ),
       ...more,
-      // S278 · decision 0236: the 「不下发对手方地址」 card is behind the
-      // freshness line's (i).
-      _FreshnessFooter(
-        freshness: block.freshness,
-        notes: const <String>[
-          '不下发对手方地址：这里只能标出哪一笔是你自己的钱包发起的。"大单"是按金额在本机筛出来的，"聪明钱"暂时没有数据。',
-        ],
-      ),
+      _FreshnessFooter(freshness: block.freshness),
     ];
   }
 
@@ -601,20 +589,15 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
 }
 
 class _FreshnessFooter extends StatelessWidget {
-  const _FreshnessFooter({
-    required this.freshness,
-    this.notes = const <String>[],
-  });
+  const _FreshnessFooter({required this.freshness});
 
   final LoopIndexerFreshness freshness;
-  final List<String> notes;
 
   @override
   Widget build(BuildContext context) {
     final lag = freshness.lagBlocks;
     return LoopProvenanceFooter(
       key: const ValueKey<String>('indexer-freshness'),
-      notes: notes,
       text: <String>[
         // The block number on the same line already groups; a figure that
         // does not reads as a different kind of number.

@@ -122,7 +122,7 @@ final List<_S7StateCase> _s7Cases = <_S7StateCase>[
         ),
       ),
     ),
-    readyKey: 'launch-holders-notice',
+    readyKey: 'launch-holders-list',
     emptyReason:
         '持有人分布本身就是 `{status: unavailable}`：读成功时页面渲染三个不可用块，'
         '「没有来源」与「分布为零」是两回事，所以这里不能出现空状态。',

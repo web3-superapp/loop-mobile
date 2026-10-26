@@ -771,7 +771,7 @@ void main() {
         find.byKey(const ValueKey<String>('approvals-empty')),
         findsOneWidget,
       );
-      expect(find.textContaining('额度为 0 的授权不会列出'), findsWidgets);
+      expect(find.textContaining('额度为 0 的授权不会列出'), findsNothing);
     });
   });
 
@@ -1024,7 +1024,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
-      expect(find.textContaining('更早授予的授权不会出现在这里'), findsOneWidget);
+      expect(find.textContaining('更早授予的授权不会出现在这里'), findsNothing);
     });
 
     testWidgets('a closed write switch never blocks the two reads', (

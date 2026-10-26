@@ -688,8 +688,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             '原生 BNB 会保留 '
             '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB '
             '作为手续费，不计入可动用。'
-            '${launchSnapshot == null ? '' : 'Launch 链余额读自区块 ${loopGroupedFigure(launchSnapshot.blockNumber.toString())}，不计入总资产。'}'
-            '余额为 0 的资产不显示。',
+            '${launchSnapshot == null ? '' : 'Launch 链余额读自区块 ${loopGroupedFigure(launchSnapshot.blockNumber.toString())}，不计入总资产。'}',
       ),
     ];
   }
@@ -752,7 +751,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           observedAt: ref
               .read(launch2PositionsControllerProvider.notifier)
               .valueObservedAt,
-          detail: '项目 NFT 读自 LOOP 链上索引，点开看共识勋章。',
         ),
       ),
     ];
@@ -825,35 +823,30 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         key: const ValueKey<String>('wallet-bridge-entry'),
         leading: const LoopRowIcon(icon: 'shuffle'),
         title: '跨链',
-        subtitle: '在不同网络之间转移资产',
         onTap: () => _open('/wallet/bridge'),
       ),
       LoopRecordRow(
         key: const ValueKey<String>('wallet-approvals-entry'),
         leading: const LoopRowIcon(icon: 'shield'),
         title: '代币授权',
-        subtitle: '查看授出的额度，不再需要的可以收回',
         onTap: () => _open('/wallet/approvals'),
       ),
       LoopRecordRow(
         key: const ValueKey<String>('wallet-networks-entry'),
         leading: const LoopRowIcon(icon: 'globe'),
         title: '网络',
-        subtitle: '已启用的网络与连接状态',
         onTap: () => _open('/wallet/networks'),
       ),
       LoopRecordRow(
         key: const ValueKey<String>('wallet-dapp-entry'),
         leading: const LoopRowIcon(icon: 'link'),
         title: 'DApp 网址核对',
-        subtitle: '打开前先核对网址；连接与签名暂未开放',
         onTap: () => _open('/wallet/dapp'),
       ),
       LoopRecordRow(
         key: const ValueKey<String>('wallet-settings-entry'),
         leading: const LoopRowIcon(icon: 'settings'),
         title: '设置',
-        subtitle: '语言、显示与应用锁',
         onTap: () => _open('/profile/settings'),
       ),
     ],

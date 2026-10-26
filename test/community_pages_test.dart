@@ -147,7 +147,7 @@ void main() {
       // The rule is described in plain language; its internal id never
       // reaches the screen, and the page never calls it a recommendation.
       expect(find.textContaining('rule:'), findsNothing);
-      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsOneWidget);
+      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsNothing);
     });
 
     testWidgets(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -183,6 +184,50 @@ void main() {
     ],
   );
 
+  testWidgets(
+    'wallet address is below the balances and copies the full address',
+    (tester) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpWallet(tester, history: _FakeHistory());
+      final address = key('wallet-address-copy');
+      expect(
+        tester.getTopLeft(address).dy,
+        greaterThanOrEqualTo(
+          tester.getBottomLeft(key('wallet-total-subline')).dy,
+        ),
+      );
+      expect(tester.getSize(address).height, greaterThanOrEqualTo(44));
+      await tester.tap(address);
+      await tester.pumpAndSettle();
+      expect(
+        copied,
+        tester
+            .widget<WalletTotalHeader>(find.byType(WalletTotalHeader))
+            .fullAddress,
+      );
+      expect(copied, isNotNull);
+      // The full 0x address is copied, never the truncated line on screen.
+      expect(copied, hasLength(42));
+      expect(copied, isNot(tester.widget<Text>(key('wallet-address')).data));
+      expect(find.text('钱包地址已复制'), findsOneWidget);
+    },
+  );
+
   group('codec · GET …/networth/history (lenient)', () {
     LoopNetWorthHistory decode(Object? body, {String range = '7d'}) =>
         DioLoopV2WalletApi.decodeNetWorthHistory(
@@ -315,8 +360,11 @@ void main() {
       );
       expect(key('wallet-total-unit'), findsOneWidget);
       expect(
-        tester.widget<Text>(key('wallet-total-subline')).data,
-        startsWith('≈ ¥913.27 · '),
+        tester
+            .widget<Text>(key('wallet-total-subline'))
+            .textSpan!
+            .toPlainText(includePlaceholders: false),
+        '≈ ¥913.27',
       );
       final pnl = tester.widget<Text>(key('wallet-pnl-value'));
       expect(pnl.data, '+\$12.08 (+10.4%)');
@@ -343,7 +391,8 @@ void main() {
       expect(pnl.data, '-\$0.14 (-1.2%)');
       expect(pnl.style!.color, LoopColors.fall);
       expect(find.textContaining('¥'), findsNothing);
-      expect(key('wallet-total-subline'), findsOneWidget);
+      expect(key('wallet-total-subline'), findsNothing);
+      expect(key('wallet-address-copy'), findsOneWidget);
     });
 
     testWidgets('no 24h figure says 暂无, never 0', (tester) async {
@@ -690,7 +739,10 @@ void main() {
         walletMaskedFigure,
       );
       expect(
-        tester.widget<Text>(key('wallet-total-subline')).data,
+        tester
+            .widget<Text>(key('wallet-total-subline'))
+            .textSpan!
+            .toPlainText(includePlaceholders: false),
         startsWith('≈ ¥$walletMaskedFigure'),
       );
       expect(
@@ -1106,7 +1158,10 @@ void main() {
       final fiat = fx();
       await pumpWallet(tester, history: port(fiat));
       final subline = tester.widget<Text>(key('wallet-total-subline'));
-      expect(subline.data, startsWith('≈ ¥913.27 · '));
+      expect(
+        subline.textSpan!.toPlainText(includePlaceholders: false),
+        '≈ ¥913.27',
+      );
       expect(key('wallet-total-fiat-stale'), findsNothing);
 
       await tester.tap(key('wallet-info'));
@@ -1126,7 +1181,7 @@ void main() {
       await pumpWallet(tester, history: port(fiat));
       final subline = tester.widget<Text>(key('wallet-total-subline'));
       final plain = subline.textSpan!.toPlainText(includePlaceholders: false);
-      expect(plain, startsWith('≈ ¥913.27 · '));
+      expect(plain, '≈ ¥913.27');
       final badge = tester.widget<LoopBadge>(key('wallet-total-fiat-stale'));
       expect(badge.text, '数据可能过期');
       expect(badge.kind, LoopBadgeKind.down);
@@ -1151,7 +1206,7 @@ void main() {
           .widget<Text>(key('wallet-total-subline'))
           .textSpan!
           .toPlainText(includePlaceholders: false);
-      expect(plain, startsWith('≈ ¥$walletMaskedFigure · '));
+      expect(plain, '≈ ¥$walletMaskedFigure');
       expect(key('wallet-total-fiat-stale'), findsOneWidget);
       await tester.tap(key('wallet-eye'));
       await tester.pumpAndSettle();
@@ -1162,8 +1217,11 @@ void main() {
     ) async {
       await pumpWallet(tester, history: port(fx(quality: null)));
       expect(
-        tester.widget<Text>(key('wallet-total-subline')).data,
-        startsWith('≈ ¥913.27 · '),
+        tester
+            .widget<Text>(key('wallet-total-subline'))
+            .textSpan!
+            .toPlainText(includePlaceholders: false),
+        '≈ ¥913.27',
       );
       expect(key('wallet-total-fiat-stale'), findsNothing);
       await tester.tap(key('wallet-networth-expand'));

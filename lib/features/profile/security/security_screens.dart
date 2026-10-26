@@ -1148,18 +1148,6 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
       ),
       body: <Widget>[
         const LoopNotice(
-          key: ValueKey<String>('key-export-escape-hatch'),
-          icon: 'parachute',
-          title: '这是你的逃生舱',
-          body: '这个入口一直都在，只是导出功能还没有开放。',
-          margin: EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            14,
-          ),
-        ),
-        const LoopNotice(
           key: ValueKey<String>('key-export-risk'),
           icon: 'warn',
           tone: LoopNoticeTone.danger,

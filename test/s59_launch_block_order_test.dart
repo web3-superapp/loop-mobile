@@ -61,7 +61,6 @@ void main() {
       'loop-testnet-notice',
       'launch-segment-empty-live',
       'launch-unavailable-已毕业项目',
-      'launch-curation-notice',
       'launch-chain-row',
       'launch-evidence-notice',
       'launch-source-footer',
@@ -212,7 +211,6 @@ void main() {
       'loop-page-primary',
       'launch-holders-list',
       'launch-unavailable-持有人分布',
-      'launch-holders-notice',
     ]);
     // The reader's own position is a row of the list, not a block below it.
     expect(
@@ -253,7 +251,6 @@ void main() {
     expectOrder(tester, <String>[
       'loop-page-primary',
       'launch-unavailable-购买、权益与退款记录',
-      'launch-history-notice',
     ]);
     expect(find.text('参与次数'), findsOneWidget);
     expect(find.byType(LoopLedgerComposite), findsOneWidget);
@@ -273,7 +270,6 @@ void main() {
       'loop-stake-tabs',
       'loop-stake-executable',
       'loop-stake-submit',
-      'loop-stake-notice',
     ]);
   });
 

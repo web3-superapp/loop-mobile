@@ -642,7 +642,6 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       prefix: <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · ').isEmpty
           ? null
           : <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · '),
-      detail: '读不到的数值写明原因，不会显示 0。',
     );
   }
 }

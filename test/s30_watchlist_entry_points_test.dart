@@ -139,10 +139,9 @@ void main() {
       final add = find.byKey(const ValueKey<String>('watchlist-add-asset'));
       await scrollToS5Section(tester, add);
       expect(add, findsOneWidget);
-      // The control cannot add, and the page says where the asset lands
-      // instead of implying it lands in the group on screen.
-      expect(find.textContaining('打开代币页，点右上角星标'), findsOneWidget);
-      expect(find.textContaining('本页不能把它移到别的分组'), findsOneWidget);
+      // The add control remains; the explanatory card is removed.
+      expect(find.textContaining('打开代币页，点右上角星标'), findsNothing);
+      expect(find.textContaining('本页不能把它移到别的分组'), findsNothing);
 
       await tester.tap(add);
       await tester.pumpAndSettle();
