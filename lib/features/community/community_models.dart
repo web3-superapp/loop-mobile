@@ -1204,6 +1204,34 @@ final class CommunityApplication {
   }
 }
 
+final RegExp _bareBoundAssetAddress = RegExp(r'^0x[0-9a-f]{40}$');
+
+/// Turns what an owner typed into the bound-asset field into the key the
+/// server matches its asset registry on (S309 · decision 0249).
+///
+/// The owner only needs the contract address: a bare `0x…` (40 hex digits) is
+/// prefixed with [chainId], the chain the server publishes as its primary
+/// slot. A full `eip155:{ref}:0x…` key is kept as typed — its chain is never
+/// rewritten. Either way the result is lower-cased and trimmed, and it always
+/// matches [CommunityApplication.boundAssetKeyPattern]. Anything else, an
+/// empty field included, is `null`: the caller decides whether empty means
+/// "no token" or "clear the token". The `/v2` key set is unchanged; only the
+/// device does the prefixing.
+String? normalizeCommunityBoundAssetKey(
+  String typed, {
+  required String chainId,
+}) {
+  final value = typed.trim().toLowerCase();
+  if (value.isEmpty) return null;
+  if (_bareBoundAssetAddress.hasMatch(value)) {
+    final key = '${chainId.trim().toLowerCase()}:$value';
+    return CommunityApplication.boundAssetKeyPattern.hasMatch(key) ? key : null;
+  }
+  return CommunityApplication.boundAssetKeyPattern.hasMatch(value)
+      ? value
+      : null;
+}
+
 /// The longest a community label is drawn, in characters (decision 0239).
 const int communityLabelMaxChars = 12;
 

@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
@@ -1421,7 +1427,7 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
 /// 「A TextEditingController was used after being disposed」 and a broken
 /// frame. The controllers belong to a [State] whose `dispose` runs when the
 /// widget is actually gone, which is the same shape the application form has.
-class _CommunityProfileEditForm extends StatefulWidget {
+class _CommunityProfileEditForm extends ConsumerStatefulWidget {
   const _CommunityProfileEditForm({
     required this.community,
     required this.includeBoundAsset,
@@ -1431,11 +1437,13 @@ class _CommunityProfileEditForm extends StatefulWidget {
   final bool includeBoundAsset;
 
   @override
-  State<_CommunityProfileEditForm> createState() =>
+  ConsumerState<_CommunityProfileEditForm> createState() =>
       _CommunityProfileEditFormState();
 }
 
-class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
+class _CommunityProfileEditFormState
+    extends ConsumerState<_CommunityProfileEditForm>
+    with _CommunityBoundAssetChain<_CommunityProfileEditForm> {
   late final TextEditingController _name = TextEditingController(
     text: widget.community.name,
   );
@@ -1462,14 +1470,21 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
     String? assetKey;
     var clearAssetKey = false;
     if (widget.includeBoundAsset) {
-      final typed = _assetKey.text.trim().toLowerCase();
+      final typed = _assetKey.text.trim();
+      // Decision 0249: a bare address is prefixed with the current primary
+      // chain, and the comparison with the bound key happens after that, so
+      // pasting the same token's bare address is not a change.
+      final normalized = normalizeCommunityBoundAssetKey(
+        typed,
+        chainId: readBoundAssetChainId(),
+      );
       if (typed.isEmpty) {
         clearAssetKey = community.boundAssetKey != null;
-      } else if (!CommunityApplication.boundAssetKeyPattern.hasMatch(typed)) {
+      } else if (normalized == null) {
         setState(() => _assetKeyInvalid = true);
         return;
-      } else if (typed != community.boundAssetKey?.toLowerCase()) {
-        assetKey = typed;
+      } else if (normalized != community.boundAssetKey?.toLowerCase()) {
+        assetKey = normalized;
       }
     }
     Navigator.of(context).pop(
@@ -1488,6 +1503,7 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
   @override
   Widget build(BuildContext context) {
     final community = widget.community;
+    final chain = watchBoundAssetChain();
     return Column(
       key: const ValueKey<String>('community-edit-sheet'),
       mainAxisSize: MainAxisSize.min,
@@ -1531,11 +1547,15 @@ class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
                   },
                   decoration: InputDecoration(
                     labelText: '绑定代币（仅所有者，可留空）',
-                    hintText: 'eip155:56:0x…',
-                    helperText: communityBoundAssetUniqueHint,
+                    hintText: communityBoundAssetHint(chain.chainId),
+                    helperText:
+                        '${communityBoundAssetChainNote(chain)}'
+                        '$communityBoundAssetUniqueHint',
+                    helperMaxLines: 3,
                     errorText: _assetKeyInvalid
                         ? communityApplicationFieldReason(
                             CommunityApplicationField.boundAssetKey,
+                            chainId: chain.chainId,
                           )
                         : null,
                   ),
@@ -1586,14 +1606,16 @@ Future<CommunityApplication?> showCommunityApplySheet(BuildContext context) {
   );
 }
 
-class _CommunityApplyForm extends StatefulWidget {
+class _CommunityApplyForm extends ConsumerStatefulWidget {
   const _CommunityApplyForm();
 
   @override
-  State<_CommunityApplyForm> createState() => _CommunityApplyFormState();
+  ConsumerState<_CommunityApplyForm> createState() =>
+      _CommunityApplyFormState();
 }
 
-class _CommunityApplyFormState extends State<_CommunityApplyForm> {
+class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
+    with _CommunityBoundAssetChain<_CommunityApplyForm> {
   final TextEditingController _name = TextEditingController();
   final TextEditingController _slug = TextEditingController();
   final TextEditingController _description = TextEditingController();
@@ -1640,7 +1662,7 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
       slug: _slug.text.trim(),
       description: _optional(_description),
       logoRef: _logoRef,
-      boundAssetKey: _optional(_assetKey)?.toLowerCase(),
+      boundAssetKey: _boundAssetKey(),
     );
     final invalid = application.invalidField;
     if (invalid != null) {
@@ -1650,14 +1672,33 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
     Navigator.of(context).pop(application);
   }
 
-  String? _errorFor(CommunityApplicationField field) =>
-      _invalidField == field ? communityApplicationFieldReason(field) : null;
+  /// Decision 0249: a bare address gets the current primary chain's prefix.
+  /// Input that is neither shape is passed on as typed so the shape check
+  /// names the field.
+  String? _boundAssetKey() {
+    final typed = _optional(_assetKey);
+    if (typed == null) return null;
+    return normalizeCommunityBoundAssetKey(
+          typed,
+          chainId: readBoundAssetChainId(),
+        ) ??
+        typed;
+  }
+
+  String? _errorFor(CommunityApplicationField field, {String? chainId}) =>
+      _invalidField == field
+      ? communityApplicationFieldReason(
+          field,
+          chainId: chainId ?? loopPrimaryChainId,
+        )
+      : null;
 
   @override
   Widget build(BuildContext context) {
     // Decision 0127: the logo at 72 on top, then four equal 52 fields, then
     // one page-wide Lime button. The rules the server enforces are in each
     // field's hint and in its error; the form carries no paragraph of them.
+    final chain = watchBoundAssetChain();
     return Column(
       key: const ValueKey<String>('community-apply-sheet'),
       mainAxisSize: MainAxisSize.min,
@@ -1776,12 +1817,16 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
                 key: const ValueKey<String>('community-apply-asset-key'),
                 controller: _assetKey,
                 decoration: loopFormFieldDecoration(
-                  hint: '绑定代币（选填）eip155:56:0x…',
-                  error: _errorFor(CommunityApplicationField.boundAssetKey),
+                  hint: '绑定代币（选填）${communityBoundAssetHint(chain.chainId)}',
+                  error: _errorFor(
+                    CommunityApplicationField.boundAssetKey,
+                    chainId: chain.chainId,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
+                '${communityBoundAssetChainNote(chain)}'
                 '$communityBoundAssetUniqueHint提交后进入审核，你是所有者；验证标记由运维核验后设置。',
                 textAlign: TextAlign.center,
                 style: LoopType.captionSm,
@@ -1852,12 +1897,77 @@ class _ApplyLogoSlot extends StatelessWidget {
   }
 }
 
-/// Inline copy for the field the local shape check rejected.
-String communityApplicationFieldReason(CommunityApplicationField field) =>
-    switch (field) {
-      CommunityApplicationField.name => '名称需要 1–40 个字符，且不能包含控制字符。',
-      CommunityApplicationField.slug => '短链接只能是 3–32 位小写字母、数字或连字符。',
-      CommunityApplicationField.description => '简介最多 280 个字符，且不能包含控制字符。',
-      CommunityApplicationField.boundAssetKey =>
-        '绑定资产需要形如 eip155:56:0x… 的 40 位十六进制地址。',
-    };
+/// The chain a bare bound-asset address is prefixed with (decision 0249).
+///
+/// [published] is true when [chainId] is the primary chain the server
+/// published in `/v2/chain/status`; false when that answer is not on the
+/// device and the client's own [loopPrimaryChainId] stands in for it.
+@immutable
+final class CommunityBoundAssetChain {
+  const CommunityBoundAssetChain({
+    required this.chainId,
+    required this.published,
+  });
+
+  final String chainId;
+  final bool published;
+}
+
+/// The bound-asset field's hint for [chainId]: the bare address is the
+/// expected input, the full key is still accepted.
+String communityBoundAssetHint(String chainId) => '0x…（也可粘贴 $chainId:0x… 整串）';
+
+/// One sentence saying which chain a bare address is completed with. It is
+/// never silent about the fallback: when the published chain is not known
+/// the sentence says so. Names follow decision 0204 via [loopChainName].
+String communityBoundAssetChainNote(CommunityBoundAssetChain chain) {
+  final name = loopChainName(chain.chainId);
+  return chain.published
+      ? '只填合约地址即可，将按 $name 补全。'
+      : '暂未取到链状态，只填地址时将按 $name 补全。';
+}
+
+/// Reads the primary chain the server published, loading it once when the
+/// sheet opens, and falls back to [loopPrimaryChainId] while it is absent.
+mixin _CommunityBoundAssetChain<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = ref.read(chainStatusControllerProvider);
+      if (state.mode == LoopChainGatewayMode.unavailable || state.isReady) {
+        return;
+      }
+      unawaited(ref.read(chainStatusControllerProvider.notifier).load());
+    });
+  }
+
+  CommunityBoundAssetChain _resolve(String? published) =>
+      published != null && loopKnownChainIds.contains(published)
+      ? CommunityBoundAssetChain(chainId: published, published: true)
+      : const CommunityBoundAssetChain(
+          chainId: loopPrimaryChainId,
+          published: false,
+        );
+
+  CommunityBoundAssetChain watchBoundAssetChain() =>
+      _resolve(ref.watch(chainStatusControllerProvider).value?.chain.chainId);
+
+  String readBoundAssetChainId() =>
+      _resolve(ref.read(chainStatusControllerProvider).value?.chain.chainId)
+          .chainId;
+}
+
+/// Inline copy for the field the local shape check rejected. [chainId] is
+/// the chain a bare bound-asset address would be completed with.
+String communityApplicationFieldReason(
+  CommunityApplicationField field, {
+  String chainId = loopPrimaryChainId,
+}) => switch (field) {
+  CommunityApplicationField.name => '名称需要 1–40 个字符，且不能包含控制字符。',
+  CommunityApplicationField.slug => '短链接只能是 3–32 位小写字母、数字或连字符。',
+  CommunityApplicationField.description => '简介最多 280 个字符，且不能包含控制字符。',
+  CommunityApplicationField.boundAssetKey => '需要 40 位十六进制合约地址，可带 $chainId: 前缀。',
+};
