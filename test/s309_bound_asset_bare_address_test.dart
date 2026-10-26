@@ -19,27 +19,26 @@ import 'support/s5_page_harness.dart';
 const _lower = '0x040ecd2c604cfa86b35f817d845f441b97f46666';
 const _mixed = '0x040ECD2C604CFA86B35F817D845F441B97F46666';
 
-LoopChainStatus _statusOn(String chainId) {
-  final base = s5Status();
-  return LoopChainStatus(
-    chain: LoopChainInfo(
-      chainId: chainId,
-      name: base.chain.name,
-      reference: loopChainReference(chainId),
-      nativeAssetId: base.chain.nativeAssetId,
-      confirmations: base.chain.confirmations,
-      reorgDepthBlocks: base.chain.reorgDepthBlocks,
-    ),
-    rpc: base.rpc,
-    indexer: base.indexer,
-    registry: base.registry,
-  );
-}
-
-List<Override> _publishing(String chainId) => <Override>[
+/// A chain status as the server publishes it: the primary slot is always
+/// `eip155:56`; [launch] is the Launch slot when it is published apart.
+List<Override> _publishing({String? launch}) => <Override>[
   chainGatewayProvider.overrideWithValue(
     FakeChainGateway(
-      status: S5Answer<LoopChainStatus>(value: _statusOn(chainId)),
+      status: S5Answer<LoopChainStatus>(
+        value: s5Status(
+          launchChain: launch == null
+              ? null
+              : LoopLaunchChainStatus(
+                  chainId: launch,
+                  chainReference: loopChainReference(launch),
+                  verification: LoopChainVerification.verified,
+                  confirmations: 5,
+                  reorgDepthBlocks: 15,
+                  head: null,
+                  reasonCode: null,
+                ),
+        ),
+      ),
     ),
   ),
 ];
@@ -175,7 +174,7 @@ void main() {
       expect(result?.boundAssetKey, 'eip155:56:$_lower');
     });
 
-    testWidgets('published testnet primary: a bare address gets eip155:97', (
+    testWidgets('primary 56 + Launch slot 97: a bare address gets eip155:97', (
       tester,
     ) async {
       debugSetLoopTestHintsVisible(false);
@@ -183,7 +182,7 @@ void main() {
       await _openApply(
         tester,
         (value) => result = value,
-        overrides: _publishing(loopLaunchTestnetChainId),
+        overrides: _publishing(launch: loopLaunchTestnetChainId),
       );
 
       expect(
@@ -200,12 +199,33 @@ void main() {
       expect(result?.boundAssetKey, 'eip155:97:$_lower');
     });
 
+    testWidgets('primary 56 and no Launch slot: a bare address gets 56', (
+      tester,
+    ) async {
+      CommunityApplication? result;
+      await _openApply(
+        tester,
+        (value) => result = value,
+        overrides: _publishing(),
+      );
+      expect(
+        _hintOf(tester, 'community-apply-asset-key'),
+        '绑定代币（选填）0x…（也可粘贴 eip155:56:0x… 整串）',
+      );
+      expect(
+        find.textContaining('只填合约地址即可，将按 BNB Smart Chain 补全。'),
+        findsOneWidget,
+      );
+      await _fillAndSubmit(tester, _mixed);
+      expect(result?.boundAssetKey, 'eip155:56:$_lower');
+    });
+
     testWidgets('test hints on: the testnet name is drawn', (tester) async {
       debugSetLoopTestHintsVisible(true);
       await _openApply(
         tester,
         (_) {},
-        overrides: _publishing(loopLaunchTestnetChainId),
+        overrides: _publishing(launch: loopLaunchTestnetChainId),
       );
       expect(
         find.textContaining('将按 $loopTestnetChainLabel 补全。'),
@@ -218,7 +238,7 @@ void main() {
       await _openApply(
         tester,
         (value) => result = value,
-        overrides: _publishing(loopLaunchTestnetChainId),
+        overrides: _publishing(launch: loopLaunchTestnetChainId),
       );
       await _fillAndSubmit(tester, 'eip155:56:$_mixed');
       expect(result?.boundAssetKey, 'eip155:56:$_lower');
@@ -249,7 +269,7 @@ void main() {
             ),
           ),
         ),
-        overrides: _publishing(loopLaunchTestnetChainId),
+        overrides: _publishing(launch: loopLaunchTestnetChainId),
       );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
