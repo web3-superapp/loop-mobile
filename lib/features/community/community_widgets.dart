@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
-import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
@@ -1927,8 +1927,14 @@ String communityBoundAssetChainNote(CommunityBoundAssetChain chain) {
       : '暂未取到链状态，只填地址时将按 $name 补全。';
 }
 
-/// Reads the primary chain the server published, loading it once when the
-/// sheet opens, and falls back to [loopPrimaryChainId] while it is absent.
+/// Reads the chain the server published for a bound token, loading the chain
+/// status once when the sheet opens.
+///
+/// S309b · decision 0249: the Launch slot's chain comes first — it is where
+/// the platform's MEME tokens are registered (BSC testnet on staging); with no
+/// Launch slot published it is the primary chain; with no chain status on the
+/// device it is [loopPrimaryChainId], and the note says so. On mainnet both
+/// slots are `eip155:56`.
 mixin _CommunityBoundAssetChain<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
   @override
@@ -1944,20 +1950,26 @@ mixin _CommunityBoundAssetChain<T extends ConsumerStatefulWidget>
     });
   }
 
-  CommunityBoundAssetChain _resolve(String? published) =>
-      published != null && loopKnownChainIds.contains(published)
-      ? CommunityBoundAssetChain(chainId: published, published: true)
-      : const CommunityBoundAssetChain(
-          chainId: loopPrimaryChainId,
-          published: false,
-        );
+  CommunityBoundAssetChain _resolve(LoopChainStatus? status) {
+    for (final published in <String?>[
+      status?.launchChain?.chainId,
+      status?.chain.chainId,
+    ]) {
+      if (published != null && loopKnownChainIds.contains(published)) {
+        return CommunityBoundAssetChain(chainId: published, published: true);
+      }
+    }
+    return const CommunityBoundAssetChain(
+      chainId: loopPrimaryChainId,
+      published: false,
+    );
+  }
 
   CommunityBoundAssetChain watchBoundAssetChain() =>
-      _resolve(ref.watch(chainStatusControllerProvider).value?.chain.chainId);
+      _resolve(ref.watch(chainStatusControllerProvider).value);
 
   String readBoundAssetChainId() =>
-      _resolve(ref.read(chainStatusControllerProvider).value?.chain.chainId)
-          .chainId;
+      _resolve(ref.read(chainStatusControllerProvider).value).chainId;
 }
 
 /// Inline copy for the field the local shape check rejected. [chainId] is
