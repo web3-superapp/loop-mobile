@@ -505,20 +505,14 @@ class _RankingBlock extends StatelessWidget {
         label: '排行榜条目',
         fact: LaunchUnavailable(reasonCode),
       ),
-      MiningRankingUsers(:final items, :final participants)
-          when items.isEmpty =>
-        _emptyBoard(participants),
-      MiningRankingCommunities(:final items, :final participants)
-          when items.isEmpty =>
-        _emptyBoard(participants),
-      MiningRankingUsers(:final items, :final participants) => _split(
-        participants: participants,
+      MiningRankingUsers(:final items) when items.isEmpty => _emptyBoard,
+      MiningRankingCommunities(:final items) when items.isEmpty => _emptyBoard,
+      MiningRankingUsers(:final items) => _split(
         ranked: items.where((item) => item.isRanked).toList(growable: false),
         unranked: items.where((item) => !item.isRanked).toList(growable: false),
         row: _userRow,
       ),
-      MiningRankingCommunities(:final items, :final participants) => _split(
-        participants: participants,
+      MiningRankingCommunities(:final items) => _split(
         ranked: items.where((item) => item.isRanked).toList(growable: false),
         unranked: items.where((item) => !item.isRanked).toList(growable: false),
         row: _communityRow,
@@ -537,7 +531,6 @@ class _RankingBlock extends StatelessWidget {
   /// S315: the placed rows are the board; the rest fold under one quiet
   /// 「未上榜 · N」 disclosure at its end.
   static Widget _split<T>({
-    required int participants,
     required List<T> ranked,
     required List<T> unranked,
     required LoopRecordRow Function(T, int, LoopRowPosition) row,
@@ -581,7 +574,7 @@ class _RankingBlock extends StatelessWidget {
     ],
   );
 
-  static Widget _emptyBoard(int participants) => const LoopEmptyState(
+  static const Widget _emptyBoard = LoopEmptyState(
     key: ValueKey<String>('mining-rank-empty'),
     illustration: LoopIllustration.rank,
     title: '暂无上榜条目',
@@ -713,7 +706,7 @@ LoopRecordRow _userRow(
     semanticLabel: <String>[
       name,
       row.isRanked ? '第 ${row.position} 名' : _miningUnrankedLabel,
-      if (row.power != null) '算力 ${row.power}',
+      if (row.power != null) '算力 ${loopGroupedFigure(row.power!)}',
       ?powerNote,
       if (anonymousToOthers) '对他人匿名',
     ].join('，'),

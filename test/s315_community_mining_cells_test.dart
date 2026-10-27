@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 
@@ -290,4 +291,87 @@ void main() {
     );
     expect(fallback.logoRef, isNull);
   });
+
+  testWidgets('rebuilds and a failure ask once; a pull asks again', (
+    tester,
+  ) async {
+    final mining = _CountingMining();
+    final community = testCommunity(boundAssetKey: _boundAssetId);
+    await pumpCommunityPage(
+      tester,
+      const CommunityProfileScreen(communityId: testCommunityId),
+      community: FakeCommunityGateway(
+        detail: testDetail(
+          community: community,
+          miningPower: testSettledCommunityMiningPower(power: '2500000'),
+        ),
+      ),
+      mining: mining,
+    );
+    final card = find.byKey(const ValueKey<String>('community-mining-summary'));
+    await scrollToCommunitySection(tester, card);
+    // Scrolling and settling rebuild the page many times over a failed read.
+    for (var i = 0; i < 5; i += 1) {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -40));
+      await tester.pumpAndSettle();
+    }
+    expect(mining.communityReads, 1);
+    expect(mining.assetReads, 1);
+    expect(_cell(tester, 'power'), '—');
+
+    // The server answers now; only the page's own refresh asks again.
+    mining.fail = false;
+    await tester
+        .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+        .onRefresh();
+    await tester.pumpAndSettle();
+    expect(mining.communityReads, 2);
+    expect(mining.assetReads, 2);
+    await scrollToCommunitySection(tester, card);
+    expect(_cell(tester, 'power'), '2,500,000');
+    expect(_cell(tester, 'holding'), '2,500,000 猫猫');
+  });
+}
+
+/// Counts the two reads the card makes, failing both until told otherwise.
+final class _CountingMining implements MiningGateway {
+  bool fail = true;
+  int communityReads = 0;
+  int assetReads = 0;
+  final FakeMiningGateway _answers = _mining();
+
+  @override
+  LaunchGatewayMode get mode => LaunchGatewayMode.production;
+
+  @override
+  Future<MiningCommunity> loadCommunity(String communityId) {
+    communityReads += 1;
+    if (fail) {
+      return Future<MiningCommunity>.error(
+        const LaunchException(LaunchFailureKind.unavailable),
+      );
+    }
+    return _answers.loadCommunity(communityId);
+  }
+
+  @override
+  Future<MiningAssets> loadAssets() {
+    assetReads += 1;
+    if (fail) {
+      return Future<MiningAssets>.error(
+        const LaunchException(LaunchFailureKind.unavailable),
+      );
+    }
+    return _answers.loadAssets();
+  }
+
+  @override
+  Future<MiningSummary> loadSummary() => _answers.loadSummary();
+
+  @override
+  Future<MiningRank> loadRank(MiningRankScope scope, {String? cursor}) =>
+      _answers.loadRank(scope, cursor: cursor);
+
+  @override
+  Future<MiningRules> loadRules() => _answers.loadRules();
 }

@@ -355,7 +355,9 @@ class _CommunityProfileScreenState
                 title: '社区模块当前不可用',
               )
             : null,
-        onRefresh: id == null ? null : controller.reload,
+        onRefresh: id == null
+            ? null
+            : () => _refresh(controller, id, mining: miningReads != null),
         updating: state.refreshing,
         // Decision 0127: a reader who has not joined has one thing to do here,
         // and it stands at the foot of the screen at full width.
@@ -497,6 +499,21 @@ class _CommunityProfileScreenState
       ),
     );
   }
+
+  /// Pull-to-refresh: the record, and — for a community with a token to
+  /// mine — the two mining reads the card's three cells come from, so a read
+  /// that failed is asked again here and only here (S315).
+  Future<void> _refresh(
+    CommunityProfileController controller,
+    String id, {
+    required bool mining,
+  }) => Future.wait(<Future<void>>[
+    controller.reload(),
+    if (mining) ...<Future<void>>[
+      ref.read(miningCommunityControllerProvider(id).notifier).reload(),
+      ref.read(miningAssetsControllerProvider.notifier).reload(),
+    ],
+  ]);
 
   static bool _hasAnnouncements(CommunityDetail detail) =>
       switch (detail.announcements) {
