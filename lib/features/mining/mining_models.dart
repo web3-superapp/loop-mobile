@@ -712,6 +712,7 @@ final class MiningRankCommunityRow {
     required this.community,
     required this.weight,
     required this.participants,
+    this.avatarRef,
   });
 
   final int? position;
@@ -719,6 +720,10 @@ final class MiningRankCommunityRow {
   final MiningCommunityRef community;
   final String weight;
   final int participants;
+
+  /// The community's avatar (`avatar:preset/community-NN` or
+  /// `logo:media/<uuid>`), when the server sent one (S315, optional key).
+  final String? avatarRef;
 
   bool get isRanked => position != null;
 }
@@ -1209,3 +1214,11 @@ String miningRuleKeyText(String key) => switch (key) {
     '算力数值按该账号自己的「挖矿算力」可见范围显示；设为仅自己时别人看不到数值，名次与参与条目数仍然公开。',
   _ => 'LOOP 定义的规则项。',
 };
+
+/// Whether two CAIP-19 style asset keys name the same asset.
+///
+/// An EVM address is case-insensitive and the server's registry writes it in
+/// lower case, while a community's bound key may carry the checksummed form
+/// it was typed with (S315). Nothing else about the key is normalised.
+bool miningAssetIdsMatch(String a, String b) =>
+    a == b || a.toLowerCase() == b.toLowerCase();

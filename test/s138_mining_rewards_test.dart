@@ -2321,8 +2321,8 @@ void main() {
             .onTap,
         isNotNull,
       );
-      final note = tester.widget<Text>(_key('mining-summary-hero-power-only'));
-      expect(note.data, miningPowerOnlyNotice);
+      // S315: no explanatory line under the actions.
+      expect(_key('mining-summary-hero-power-only'), findsNothing);
       expect(find.text('Coming soon'), findsNothing);
       expect(find.textContaining('Coming soon'), findsNothing);
       await _drain(tester);

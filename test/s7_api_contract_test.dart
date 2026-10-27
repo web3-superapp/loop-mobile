@@ -2261,6 +2261,57 @@ void main() {
       );
     });
 
+    test('S315 · a community row reads avatarRef as an optional key', () async {
+      Map<String, Object?> withAvatar(String id, Object? avatar) {
+        final row = _communityRankRow(communityId: id);
+        (row['community']! as Map<String, Object?>)['avatarRef'] = avatar;
+        return row;
+      }
+
+      final rank =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningRank(
+                  scope: 'communities',
+                  ranking: _board(
+                    scope: 'communities',
+                    items: <Object?>[
+                      withAvatar(
+                        _otherCommunityId,
+                        'avatar:preset/community-03',
+                      ),
+                      _communityRankRow(communityId: _communityId),
+                      withAvatar(
+                        '6f1c2d3e-9a8b-4c7d-8e6f-0a1b2c3d4e5f',
+                        'https://evil.example/logo.png',
+                      ),
+                      withAvatar('7f1c2d3e-9a8b-4c7d-8e6f-0a1b2c3d4e5f', null),
+                      withAvatar('8f1c2d3e-9a8b-4c7d-8e6f-0a1b2c3d4e5f', 42),
+                    ],
+                    participants: 0,
+                  ),
+                  myPosition: _unavailable('MINING_RANK_NOT_APPLICABLE'),
+                ),
+              ),
+            ),
+          ).getRank(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            scope: MiningRankScope.communities,
+          );
+
+      final items = (rank.ranking as MiningRankingCommunities).items;
+      expect(items[0].avatarRef, 'avatar:preset/community-03');
+      // Absent, a value that is not a community logo ref, null and a
+      // non-string are all no avatar — never an invalid payload.
+      expect(items[1].avatarRef, isNull);
+      expect(items[2].avatarRef, isNull);
+      expect(items[3].avatarRef, isNull);
+      expect(items[4].avatarRef, isNull);
+    });
+
     test('the board rows must match the scope that was asked for', () {
       final api = DioLoopV2MiningApi(
         _dio(

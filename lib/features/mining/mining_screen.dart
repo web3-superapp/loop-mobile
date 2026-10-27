@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -16,7 +15,6 @@ import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -139,7 +137,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           : MiningSummaryHero(
               heading: _heroHeading(summary),
               unit: _heroUnit(summary),
-              caption: _heroCaption(summary, live: live),
+              caption: _heroCaption(summary),
               stamp: _heroStamp(summary),
               rank: _rankBadge(rankState.value),
               metrics: live
@@ -184,102 +182,52 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到挖矿摘要',
-            emptyReason: '暂时读不到算力数据。',
+            emptyMessage: '暂无算力数据',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          // Directly under the hero: the snapshot the figures came from, with
-          // the demonstration-holdings note in its sheet (decision 0121).
+          // S315 (需求方 2026-10-27): 总算力 → 算力构成 → 社区, and no
+          // sentence between them. The snapshot time is the hero's one line;
+          // why a figure is a dash is the (i)'s, not the page's. The quiet
+          // 「(i) 来源」 stays under the hero (decision 0121).
           MiningSnapshotProvenanceLine(
             slug: 'summary',
             snapshot: summary.snapshot,
             formula: summary.formula,
+            markStale: true,
           ),
-          MiningDashReasons(
-            slug: 'mining-hero',
-            // The hero caption already speaks for every dash the pending
-            // version accounts for — in the caption's own words — so neither
-            // its sentence nor the gate's own is written again underneath it.
-            said: <String>{
-              _heroCaption(summary, live: live),
-              if (summary.formula case MiningFormulaPending(:final reasonCode))
-                launchReasonCodeText(reasonCode),
-            },
-            entries: live
-                ? <(String, String)>[
-                    if (summary.estimatedToday
-                        case MiningDailyOutputUnavailable(:final reasonCode))
-                      ('今日预估', launchReasonCodeText(reasonCode)),
-                    (
-                      '累计已挖',
-                      launchReasonCodeText(summary.accumulated.reasonCode),
-                    ),
-                    ('待领取', launchReasonCodeText(summary.claimable.reasonCode)),
-                  ]
-                : <(String, String)>[
-                    if (summary.networkPower case MiningFigureUnavailable(
-                      :final reasonCode,
-                    ))
-                      ('全网算力', launchReasonCodeText(reasonCode)),
-                  ],
-          ),
-          // The numbers above are the last complete snapshot's whenever a
-          // later run did not finish, so the page dates them before it
-          // prints them.
-          MiningStaleNotice(slug: 'summary', snapshot: summary.snapshot),
-          const LoopLabel('Power Composition'),
+          const LoopLabel('算力构成'),
           _CompositionBlock(
             assets: assetsState.value,
             phase: assetsState.phase,
             failureKind: assetsState.failureKind,
           ),
-          LoopNotice(
-            key: const ValueKey<String>('mining-holding-notice'),
-            icon: 'mine',
-            tone: LoopNoticeTone.warn,
-            title: '持有即算力',
-            body: switch (summary.networkPower) {
-              MiningFigureValue(:final value) =>
-                '按绑定到 LOOP 账号的钱包持仓自动计算，不需要质押或授权。'
-                    '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
-                    '${loopGroupedFigure(value)}。',
-              MiningFigureUnavailable(:final reasonCode) =>
-                '按绑定到 LOOP 账号的钱包持仓自动计算，不需要质押或授权。'
-                    '社区币须加入已通过审核的绑定社区才计入。全网总算力 '
-                    '$launchMissingFigure：${launchReasonCodeText(reasonCode)}',
-            },
-            margin: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              14,
-              LoopSpacing.page,
-              0,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: LoopRecordCard(
-              onTap: widget.onOpenReferral,
-              child: _ReferralCard(boost: summary.referralBoost),
-            ),
-          ),
-          const LoopLabel('Increase Power'),
+          const LoopLabel('社区'),
           LoopRecordGroup(
+            key: const ValueKey<String>('mining-community-entries'),
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('mining-open-market'),
                 leading: const LoopRowIcon(icon: 'search'),
-                title: '发现有权重的社区币',
-                subtitle: '权重由审核结果授予，持有后须加入该社区',
+                title: '有权重的社区币',
                 onTap: widget.onOpenMarket,
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('mining-open-rank'),
                 leading: const LoopRowIcon(icon: 'chart'),
-                title: '查看算力排行榜',
-                subtitle: _rankSubtitle(rankState.value),
+                title: '算力排行榜',
+                trailing: _rankTrailing(rankState.value),
                 onTap: widget.onOpenRank,
+                position: LoopRowPosition.middle,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-open-referral'),
+                leading: const LoopRowIcon(icon: 'users'),
+                title: '邀请加成',
+                onTap: widget.onOpenReferral,
+                semanticLabel:
+                    '邀请加成，${launchReasonCodeText(summary.referralBoost.reasonCode)}',
                 position: LoopRowPosition.last,
               ),
             ],
@@ -411,17 +359,14 @@ String _heroHeading(MiningSummary summary) => switch (summary.formula) {
 String? _heroUnit(MiningSummary summary) =>
     _heroHeading(summary) == launchMissingHeading ? null : 'H';
 
-String _heroCaption(MiningSummary summary, {required bool live}) =>
-    switch (summary.formula) {
-      MiningFormulaPending() =>
-        live ? '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。' : '算力要等挖矿公式版本被批准后才能计算。',
-      MiningFormulaEffective() => switch (summary.power) {
-        MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
-          reasonCode,
-        ),
-        MiningFigureValue() => '持仓与社区币权重共同构成当前算力，不是收益承诺。',
-      },
-    };
+/// The hero's one line under the figure: when the snapshot behind it was
+/// computed, and 未更新 when a later run overtook it (decision 0057). S315: no
+/// sentence about formulas or promises; the (i) carries those.
+String _heroCaption(MiningSummary summary) => switch (summary.snapshot) {
+  MiningSnapshotComputed(:final computedAt, :final stale) =>
+    '快照 · ${launchTimestampLabel(computedAt)}${stale ? ' · 未更新' : ''}',
+  _ => '快照 · $launchMissingFigure',
+};
 
 String? _heroStamp(MiningSummary summary) => switch (summary.formula) {
   MiningFormulaPending(:final pendingVersion) =>
@@ -484,16 +429,16 @@ MiningHeroMetric _dailyMetric(MiningDailyOutput output) => switch (output) {
   ),
 };
 
-/// `RANK #1,284`. It prints only a place the server settled; a board this
+/// 第 1,284 名. It prints only a place the server settled; a board this
 /// reader is not on, and a board that did not load, both leave it out.
 String? _rankBadge(MiningRank? rank) => switch (rank?.myPosition) {
-  MiningRankPositionSettled(:final position) => '#$position',
+  MiningRankPositionSettled(:final position) => '第 $position 名',
   _ => null,
 };
 
-String _rankSubtitle(MiningRank? rank) => switch (rank?.myPosition) {
-  MiningRankPositionSettled(:final position) => '我的名次 第 $position 名',
-  _ => '用户榜与社区榜',
+String? _rankTrailing(MiningRank? rank) => switch (rank?.myPosition) {
+  MiningRankPositionSettled(:final position) => '第 $position 名',
+  _ => null,
 };
 
 /// The hero, before anything was read. A read that has not landed says only
@@ -505,13 +450,12 @@ LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
     ring: false,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: '挖矿算力',
+    kicker: '总算力',
     heading: loading ? '正在读取' : launchMissingHeading,
-    caption: loading ? '算力与产出读到之后显示在这里。' : '这一页还没有读到算力数据。',
   );
 }
 
-/// `Power Composition` — one row per weighted asset, each carrying the
+/// 算力构成 — one row per weighted asset, each carrying the
 /// multiplication that produced its power.
 ///
 /// This is the module's central expression and the App had none of it: the
@@ -539,8 +483,7 @@ class _CompositionBlock extends ConsumerWidget {
         phase: phase,
         failureKind: failureKind,
         rows: 2,
-        emptyMessage: '没有读到算力构成',
-        emptyReason: '每个资产的持有量与权重读到之后显示在这里。',
+        emptyMessage: '暂无算力构成',
         onRetry: () => unawaited(
           ref.read(miningAssetsControllerProvider.notifier).reload(),
         ),
@@ -550,10 +493,7 @@ class _CompositionBlock extends ConsumerWidget {
       return LoopEmptyState(
         key: const ValueKey<String>('mining-composition-empty'),
         illustration: LoopIllustration.holders,
-        title: value.isUnsettled ? '还没有算过这些资产' : '这次快照没有计入任何资产',
-        message: value.isUnsettled
-            ? '下一次算力快照之后，每个资产的算式会显示在这里。'
-            : '你的持仓里没有可以计入的资产。',
+        title: value.isUnsettled ? '暂无算力快照' : '暂无计入资产',
         compact: true,
       );
     }
@@ -566,58 +506,6 @@ class _CompositionBlock extends ConsumerWidget {
             launchRowPosition(index, value.included.length),
           ),
       ],
-    );
-  }
-}
-
-/// `REFERRAL POWER` — the relationship boost, as its own card.
-class _ReferralCard extends StatelessWidget {
-  const _ReferralCard({required this.boost});
-
-  final LaunchUnavailable boost;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: '邀请加成，${launchReasonCodeText(boost.reasonCode)}',
-      child: ExcludeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text('邀请加成', style: LoopType.eyebrow),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text('五级邀请加成', style: LoopType.headingSm),
-                      const SizedBox(height: 6),
-                      Text(
-                        // Decision 0149: the boost is never read on this
-                        // page, so it says where it is instead of printing a
-                        // dash before a full stop (「当前加成 —。」).
-                        '一级至五级关系按服务端公布的比例增加算力，'
-                        '你的邀请加成在邀请中心查看。',
-                        style: LoopType.captionSm.copyWith(
-                          color: LoopColors.text2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const LoopIcon('chevron', size: 21, color: LoopColors.text3),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

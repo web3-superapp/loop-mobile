@@ -4,6 +4,7 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_codec.dart';
 
 /// Strict V2 transport for the `mining` module (loop-api decision 0036).
@@ -605,21 +606,39 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
+  static String? _optionalCommunityAvatar(Object? value) =>
+      value is String &&
+          value.length <= 64 &&
+          LoopV2ProjectionCodec.communityLogoPattern.hasMatch(value)
+      ? value
+      : null;
+
   static MiningRankCommunityRow _rankCommunityRow(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'position',
-      'power',
-      'community',
-      'weight',
-      'participants',
-    });
-    final community = LoopV2Contract.strictMap(map['community'], const <String>{
-      'communityId',
-      'name',
-      'boundAssetId',
-    });
+    // S315: `avatarRef` is an optional key the server adds after this client
+    // ships. It is read where the server may put it — beside the community's
+    // id and name, or on the row — and a value that is absent, null or not a
+    // community logo ref is no avatar, never an invalid payload.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'position',
+        'power',
+        'community',
+        'weight',
+        'participants',
+      },
+      const <String>{'avatarRef'},
+    );
+    final community = LoopV2Contract.strictMapWithOptional(
+      map['community'],
+      const <String>{'communityId', 'name', 'boundAssetId'},
+      const <String>{'avatarRef'},
+    );
     final power = _decimal(map, 'power');
     return MiningRankCommunityRow(
+      avatarRef:
+          _optionalCommunityAvatar(community['avatarRef']) ??
+          _optionalCommunityAvatar(map['avatarRef']),
       position: _rankItemPosition(map, power),
       power: power,
       community: MiningCommunityRef(

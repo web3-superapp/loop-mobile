@@ -381,12 +381,11 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
     }
     final rank = state.value;
     final scope = rank?.scope ?? controller.scope;
-    // 情报 · 算力榜 (decision 0111): a personal place is a fact of the user
-    // board only. On the community board it was a card saying there is no
-    // personal place, and under 推广榜 it said so about the community board.
-    // The standalone `mining-rank` route keeps the prototype's folio.
-    final showPosition = !widget.embedded || scope == MiningRankScope.users;
 
+    // S315 (需求方 2026-10-27): the board starts under the segment. The card
+    // that stood above it — 全网位置, a heading saying there was no figure,
+    // 我的名次 under the community board and a sentence on how the board is
+    // sorted — is gone; the user board keeps the reader's place as one row.
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rank-screen'),
       onRefresh: controller.reload,
@@ -396,40 +395,6 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       onBack: widget.onBack,
       embedded: widget.embedded,
       tabPage: widget.embedded,
-      primary: !showPosition
-          ? null
-          : LoopLedgerComposite(
-              primary: _rankHero(rank),
-              detail: <Widget>[
-                MiningDetailRow(
-                  key: const ValueKey<String>('mining-rank-reading'),
-                  label: '我的名次',
-                  value: switch (rank?.myPosition) {
-                    MiningRankPositionSettled(:final position) =>
-                      '第 $position 名',
-                    _ => launchMissingFigure,
-                  },
-                  spoken: switch (rank?.myPosition) {
-                    MiningRankPositionSettled(:final position) =>
-                      '第 $position 名',
-                    MiningRankPositionUnavailable(:final reasonCode) =>
-                      launchReasonCodeText(reasonCode),
-                    null => '还没有读到',
-                  },
-                  trailingLabel: '已确认算力',
-                  trailingValue: switch (rank?.myPosition) {
-                    MiningRankPositionSettled(:final power) =>
-                      loopGroupedFigure(power),
-                    _ => launchMissingFigure,
-                  },
-                ),
-                const MiningDetailRule(),
-                Text(
-                  '榜单按服务端已确认算力快照排序',
-                  style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-                ),
-              ],
-            ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rank-capability-unavailable',
@@ -438,94 +403,92 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             )
           : null,
       sections: <Widget>[
-        ...<Widget>[
-          LoopSegBar(
-            key: const ValueKey<String>('mining-rank-scope'),
-            labels: <String>[
-              miningRankScopeLabel(MiningRankScope.communities),
-              miningRankScopeLabel(MiningRankScope.users),
-            ],
-            selectedIndex: scope == MiningRankScope.communities ? 0 : 1,
-            onSelected: (index) => unawaited(
-              controller.select(
-                index == 0
-                    ? MiningRankScope.communities
-                    : MiningRankScope.users,
-              ),
+        LoopSegBar(
+          key: const ValueKey<String>('mining-rank-scope'),
+          labels: <String>[
+            miningRankScopeLabel(MiningRankScope.communities),
+            miningRankScopeLabel(MiningRankScope.users),
+          ],
+          selectedIndex: scope == MiningRankScope.communities ? 0 : 1,
+          onSelected: (index) => unawaited(
+            controller.select(
+              index == 0 ? MiningRankScope.communities : MiningRankScope.users,
             ),
           ),
-          if (rank == null)
-            LaunchStateBlock(
-              prefix: 'mining-rank',
-              phase: state.phase,
-              failureKind: state.failureKind,
-              emptyMessage: '没有读到排行榜',
-              emptyReason: '暂时读不到排行数据。',
-              onRetry: () => unawaited(controller.reload()),
-            )
-          else ...<Widget>[
-            MiningStaleNotice(slug: 'rank', snapshot: rank.snapshot),
-            MiningSnapshotProvenanceLine(slug: 'rank', snapshot: rank.snapshot),
-            LoopLabel(
-              scope == MiningRankScope.communities
-                  ? 'Community Ranking'
-                  : 'User Ranking',
-            ),
-            _RankingBlock(ranking: rank.ranking),
-            const LoopLabel('公式版本'),
-            MiningFormulaBlock(formula: rank.formula),
-          ],
-          const SizedBox(height: 20),
+        ),
+        if (rank == null)
+          LaunchStateBlock(
+            prefix: 'mining-rank',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            emptyMessage: '暂无排行数据',
+            onRetry: () => unawaited(controller.reload()),
+          )
+        else ...<Widget>[
+          if (scope == MiningRankScope.users) _MyPlaceRow(rank: rank),
+          MiningSnapshotProvenanceLine(
+            slug: 'rank',
+            snapshot: rank.snapshot,
+            formula: rank.formula,
+            markStale: true,
+          ),
+          LoopLabel(
+            scope == MiningRankScope.communities ? '社区榜' : '用户榜',
+            key: const ValueKey<String>('mining-rank-label'),
+          ),
+          _RankingBlock(ranking: rank.ranking),
         ],
+        const SizedBox(height: 20),
       ],
     );
   }
 }
 
-/// The hero. A settled place prints as a position, never as a number the page
-/// could be read as power; without one the hero says *which* absence this is.
-///
-/// A settlement that left this reader off the board is not a settlement that
-/// has not happened, and neither is a board that does not carry personal
-/// places at all — so each reason keeps its own sentence instead of one
-/// 「等结算」 that the page's own block height contradicts. There is no
-/// stamp: the prototype's `.folio-stamp` carries a settled reading (`50,000 H`,
-/// `0.35×`), never a state name, and the heading already states the absence.
-LoopFolioPrimary _rankHero(MiningRank? rank) {
-  final (String heading, String caption) = switch (rank?.myPosition) {
-    MiningRankPositionSettled(:final position) => (
-      '第 $position 名',
-      '名次来自最近一次算力快照，其他账号的算力变化会改变它。',
-    ),
-    // Settled, read, and off the board: the fact first, the cause after it.
-    MiningRankPositionUnavailable(reasonCode: 'MINING_RANK_NOT_RANKED') => (
-      _miningUnrankedLabel,
-      '最近一次算力快照里你的算力为 0。',
-    ),
-    MiningRankPositionUnavailable(:final reasonCode) => (
-      launchMissingHeading,
-      launchReasonCodeText(reasonCode),
-    ),
-    // Nothing was read yet: the page states no cause it does not have.
-    null => (launchMissingHeading, '排行榜读到之后在这里显示名次。'),
-  };
-  return LoopFolioPrimary(
-    variant: LoopFolioVariant.quiet,
-    archetype: LoopFolioArchetype.record,
-    kicker: '全网位置',
-    heading: heading,
-    caption: caption,
-    // `.folio-stamp` on this page is `50,000 H` — the settled power behind the
-    // place, never a state name.
-    stamp: switch (rank?.myPosition) {
-      MiningRankPositionSettled(:final power) =>
-        '${loopGroupedFigure(power)} H',
-      _ => null,
-    },
-    ring: false,
-    margin: EdgeInsets.zero,
-    squareBottom: true,
-  );
+/// The reader's own place on the user board, as one row: the place (or
+/// 未上榜 / —) and the confirmed power behind it.
+class _MyPlaceRow extends StatelessWidget {
+  const _MyPlaceRow({required this.rank});
+
+  final MiningRank rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final (String place, String? power) = switch (rank.myPosition) {
+      MiningRankPositionSettled(:final position, :final power) => (
+        '第 $position 名',
+        loopGroupedFigure(power),
+      ),
+      MiningRankPositionUnavailable(reasonCode: 'MINING_RANK_NOT_RANKED') => (
+        _miningUnrankedLabel,
+        null,
+      ),
+      MiningRankPositionUnavailable() => (launchMissingFigure, null),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: LoopRecordGroup(
+        key: const ValueKey<String>('mining-rank-reading'),
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('mining-rank-my-place'),
+            leading: const LoopRowIcon(icon: 'chart'),
+            title: '我的名次',
+            trailing: place,
+            trailingCaption: power == null ? null : '算力 $power',
+            semanticLabel: <String>[
+              '我的名次，$place',
+              if (power != null) '算力 $power',
+              if (rank.myPosition
+                  case MiningRankPositionUnavailable(:final reasonCode)
+                  when reasonCode != 'MINING_RANK_NOT_RANKED')
+                launchReasonCodeText(reasonCode),
+            ].join('，'),
+            position: LoopRowPosition.single,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The board. A row whose power is zero has no place on it, and says so
@@ -570,6 +533,9 @@ class _RankingBlock extends StatelessWidget {
   /// 榜单 group used to carry both, so a row reading 未上榜 sat between two
   /// numbered places; the two groups are now separated by a label that says
   /// which is which.
+  /// An entry the settlement left off the board is not a place on it.
+  /// S315: the placed rows are the board; the rest fold under one quiet
+  /// 「未上榜 · N」 disclosure at its end.
   static Widget _split<T>({
     required int participants,
     required List<T> ranked,
@@ -582,8 +548,7 @@ class _RankingBlock extends StatelessWidget {
         const LoopEmptyState(
           key: ValueKey<String>('mining-rank-none-ranked'),
           illustration: LoopIllustration.rank,
-          title: '这一次没有条目上榜',
-          message: '下面的条目算力为 0，快照没有给它们名次。',
+          title: '暂无上榜条目',
           compact: true,
         )
       else
@@ -598,41 +563,94 @@ class _RankingBlock extends StatelessWidget {
               ),
           ],
         ),
-      if (unranked.isNotEmpty) ...<Widget>[
-        const LoopLabel(_miningUnrankedLabel),
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-rank-unranked-items'),
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < unranked.length; index += 1)
-              row(
-                unranked[index],
-                ranked.length + index,
-                launchRowPosition(index, unranked.length),
-              ),
-          ],
+      if (unranked.isNotEmpty)
+        _UnrankedFold(
+          count: unranked.length,
+          group: LoopRecordGroup(
+            key: const ValueKey<String>('mining-rank-unranked-items'),
+            rows: <LoopRecordRow>[
+              for (var index = 0; index < unranked.length; index += 1)
+                row(
+                  unranked[index],
+                  ranked.length + index,
+                  launchRowPosition(index, unranked.length),
+                ),
+            ],
+          ),
         ),
-      ],
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        child: Text(
-          _participantsLine(participants),
-          key: const ValueKey<String>('mining-rank-participants'),
-          style: LoopType.captionSm,
-        ),
-      ),
     ],
   );
 
-  static Widget _emptyBoard(int participants) => LoopEmptyState(
-    key: const ValueKey<String>('mining-rank-empty'),
+  static Widget _emptyBoard(int participants) => const LoopEmptyState(
+    key: ValueKey<String>('mining-rank-empty'),
     illustration: LoopIllustration.rank,
-    title: '最近一次算力快照里没有可以上榜的条目',
-    message: _participantsLine(participants),
+    title: '暂无上榜条目',
     compact: true,
   );
+}
 
-  static String _participantsLine(int participants) =>
-      '最近一次算力快照里有 $participants 个条目算出了算力。';
+/// The board's unplaced entries, folded at its end behind one quiet 44px
+/// 「未上榜 · N」 row (S315). Closed by default: they are not the board.
+class _UnrankedFold extends StatefulWidget {
+  const _UnrankedFold({required this.count, required this.group});
+
+  final int count;
+  final Widget group;
+
+  @override
+  State<_UnrankedFold> createState() => _UnrankedFoldState();
+}
+
+class _UnrankedFoldState extends State<_UnrankedFold> {
+  var _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = '$_miningUnrankedLabel · ${widget.count}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Semantics(
+          button: true,
+          expanded: _open,
+          label: summary,
+          child: InkWell(
+            key: const ValueKey<String>('mining-rank-unranked'),
+            onTap: () => setState(() => _open = !_open),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+              margin: const EdgeInsets.only(top: 8),
+              child: ExcludeSemantics(
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        summary,
+                        style: LoopType.captionSm.copyWith(
+                          color: LoopColors.text2,
+                        ),
+                      ),
+                    ),
+                    RotatedBox(
+                      quarterTurns: _open ? 3 : 1,
+                      child: const LoopIcon(
+                        'chevron',
+                        size: 14,
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_open) widget.group,
+      ],
+    );
+  }
 }
 
 /// 未上榜, not the position 0: a zero power is a settled reading, and the
@@ -653,15 +671,13 @@ LoopRecordRow _userRow(
     MiningRankAlias(:final alias) => alias,
     MiningRankAnonymous(:final labelKey) => miningRuleKeyText(labelKey),
   };
-  final place = row.isRanked
-      ? '第 ${row.position} 名'
-      : '$_miningUnrankedLabel · 算力为 0';
+  final place = row.isRanked ? '第 ${row.position} 名' : _miningUnrankedLabel;
   final powerNote = switch (row) {
     // Somebody else's number, withheld by its owner.
     MiningRankUserRow(power: null) => _miningPowerWithheldLabel,
     // The reader's own number, which nobody else is shown.
     MiningRankUserRow(isSelf: true, powerVisibility: MiningRankAudience.self) =>
-      '算力只有你自己看得到',
+      '算力仅自己可见',
     _ => null,
   };
   // The reader's own alias while anonymous mode is on: this row is not what
@@ -673,8 +689,8 @@ LoopRecordRow _userRow(
       (row.display as MiningRankAlias).audience == MiningRankAudience.self;
   final subtitle = <String>[
     <String>[place, ?powerNote].join(' · '),
-    if (anonymousToOthers) '其他人看到的是匿名成员',
-  ].join('\n');
+    if (anonymousToOthers) '对他人匿名',
+  ].join(' · ');
   return LoopRecordRow(
     // The board may carry several anonymous entries with the same power, and
     // 「power + name」 was the same string for each of them: two siblings with
@@ -692,14 +708,14 @@ LoopRecordRow _userRow(
     title: name,
     subtitle: subtitle,
     subtitleMaxLines: 2,
-    trailing: row.power,
+    trailing: row.power == null ? null : loopGroupedFigure(row.power!),
     trailingBadge: row.isSelf ? const LoopBadge('我') : null,
     semanticLabel: <String>[
       name,
       row.isRanked ? '第 ${row.position} 名' : _miningUnrankedLabel,
       if (row.power != null) '算力 ${row.power}',
       ?powerNote,
-      if (anonymousToOthers) '其他人看到的是匿名成员',
+      if (anonymousToOthers) '对他人匿名',
     ].join('，'),
     position: position,
   );
@@ -712,23 +728,22 @@ LoopRecordRow _communityRow(
 ) => LoopRecordRow(
   key: ValueKey<String>('mining-rank-community-${row.community.communityId}'),
   // The board ranks communities, so each row wears the same face that
-  // community wears on the Community tab. The mining wire carries no
-  // `logoRef`, so the row cannot resolve a preset image; the id-derived
-  // monogram is the face that community keeps wherever its preset has no
-  // local image.
+  // community wears on the Community tab: its avatar when the board sent one
+  // (S315), the id-derived monogram otherwise.
   leading: CommunityLogo(
+    key: ValueKey<String>(
+      'mining-rank-community-logo-${row.community.communityId}',
+    ),
     identity: row.community.communityId,
     name: row.community.name,
+    logoRef: row.avatarRef,
     size: 44,
   ),
-  title: row.isRanked
-      ? '#${row.position} ${row.community.name}'
-      : row.community.name,
+  title: row.community.name,
   subtitle: row.isRanked
-      ? '第 ${row.position} 名 · ${row.participants} 人有算力'
-      : '$_miningUnrankedLabel · ${row.participants} 人有算力',
-  subtitleMaxLines: 2,
-  trailing: row.power,
+      ? '第 ${row.position} 名 · ${row.participants} 人'
+      : '$_miningUnrankedLabel · ${row.participants} 人',
+  trailing: loopGroupedFigure(row.power),
   trailingCaption: '权重 ${row.weight}',
   position: position,
 );
@@ -761,11 +776,12 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       loopCapabilityProvider(LoopV2CapabilityId.mining),
     );
     final blocked = launchCapabilityBlocks(capability);
-    final state = ref.watch(miningCommunityControllerProvider);
-    final controller = ref.read(miningCommunityControllerProvider.notifier);
+    final provider = miningCommunityControllerProvider(widget.communityId);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
     if (!blocked && state.phase == LaunchViewPhase.loading) {
       scheduleMicrotask(() {
-        if (mounted) unawaited(controller.open(widget.communityId));
+        if (mounted) unawaited(controller.open());
       });
     }
     final community = state.value;
@@ -833,9 +849,9 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             slug: 'community',
             snapshot: community.snapshot,
           ),
-          const LoopLabel('My Contribution'),
+          const LoopLabel('我的贡献'),
           _MyContributionCard(community: community),
-          const LoopLabel('Community Records'),
+          const LoopLabel('社区记录'),
           _CommunityRecords(community: community),
           const LoopLabel('社区权重'),
           _WeightBlock(weight: community.weight),

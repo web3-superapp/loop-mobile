@@ -90,8 +90,8 @@ void main() {
       ),
     );
 
-    _expectStep(tester, '挖矿算力', LoopType.kicker);
-    _expectStep(tester, 'RANK ', LoopType.kicker);
+    // S315: 总算力, and the place without an English 「RANK」 prefix.
+    _expectStep(tester, '总算力', LoopType.kicker);
     _expectStep(tester, '持仓', LoopType.kicker);
     _expectStep(tester, '10', LoopType.figure);
     _expectStep(tester, '1,234', LoopType.statFigure);

@@ -89,7 +89,8 @@ void main() {
         isFalse,
       );
       // Decision 0243: 公式版本 and 算力快照 moved into the header (i).
-      expect(_labels(tester), <String>['Power Composition', 'Increase Power']);
+      // S315: 总算力 → 算力构成 → 社区, in Chinese.
+      expect(_labels(tester), <String>['算力构成', '社区']);
     });
 
     testWidgets('a settled snapshot with nothing counted is illustrated', (
@@ -114,7 +115,7 @@ void main() {
         ),
         isA<LoopEmptyState>(),
       );
-      expect(find.text('这次快照没有计入任何资产'), findsOneWidget);
+      expect(find.text('暂无计入资产'), findsOneWidget);
     });
 
     testWidgets('算力明细 leads with the priced list, not with a table', (
@@ -167,14 +168,15 @@ void main() {
         size: _tall,
       );
 
-      expect(_labels(tester), <String>[
-        'Community Ranking',
-        // The board's own split: entries the settlement gave no place to.
-        '未上榜',
-        '公式版本',
-      ]);
+      // S315: the board starts under the switch; no card above it, no
+      // formula block under it, and 未上榜 folds at the board's end.
+      expect(_labels(tester), <String>['社区榜']);
       expect(
         find.byKey(const ValueKey<String>('mining-rank-reading')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-rank-unranked')),
         findsOneWidget,
       );
     });
@@ -191,13 +193,7 @@ void main() {
         size: _tall,
       );
 
-      expect(_labels(tester), <String>[
-        'My Contribution',
-        'Community Records',
-        '社区权重',
-        '算力快照',
-        '绑定资产',
-      ]);
+      expect(_labels(tester), <String>['我的贡献', '社区记录', '社区权重', '算力快照', '绑定资产']);
       expect(
         find.byKey(const ValueKey<String>('mining-community-contribution')),
         findsOneWidget,

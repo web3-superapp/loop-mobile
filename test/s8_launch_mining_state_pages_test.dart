@@ -283,9 +283,10 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    // The formula block is drawn only once a ranking has been read; decision
-    // 0248 removed the anonymity line and the notice that marked it before.
-    readyKey: 'mining-formula-row',
+    // The board's label is drawn only once a ranking has been read (S315:
+    // the formula block and the folio above the switch are gone).
+    readyKey: 'mining-rank-label',
+    showsMissingHeading: false,
     emptyContract:
         'MiningRank 的 ranking / myPosition 都是必填的 sealed 结果，'
         'display 是必填的匿名规则：读成功时一定有一条榜单结果和一条显示规则，'

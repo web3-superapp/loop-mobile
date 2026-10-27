@@ -168,29 +168,37 @@ class _CommunityProfileScreenState
     setState(() => _warmingVoiceSession = true);
   }
 
-  /// The community whose mining reads this page has already started.
-  String? _miningReadFor;
-
-  /// Starts the two mining reads the card's three cells are printed from.
+  /// Subscribes to the two mining reads the card's three cells are printed
+  /// from, and starts whichever has not been asked yet.
   ///
-  /// Exactly once per community, and only for a community that has a token to
-  /// mine: a page that asked on every rebuild would retry a failed read for as
-  /// long as the reader stood here. Both providers are the ones the mining
+  /// Only for a community that has a token to mine. Both are watched here, at
+  /// the top of `build`, from the first frame that knows the community has a
+  /// bound asset — S315: a read started before anything watched it was
+  /// disposed with its answer, and the instance watched later was never asked.
+  /// A read in flight is joined and a failed one is not retried on rebuild;
+  /// the page's own refresh does that. Both providers are the ones the mining
   /// panel itself uses, so opening the panel from this card costs no second
   /// request.
-  void _bindMiningReads(CommunitySummary? community) {
-    if (community == null || !community.hasBoundAsset) return;
-    if (_miningReadFor == community.communityId) return;
-    _miningReadFor = community.communityId;
-    scheduleMicrotask(() {
-      if (!mounted) return;
-      unawaited(
-        ref
-            .read(miningCommunityControllerProvider.notifier)
-            .open(community.communityId),
-      );
-      unawaited(ref.read(miningAssetsControllerProvider.notifier).load());
-    });
+  (LaunchResourceState<MiningCommunity>, LaunchResourceState<MiningAssets>)?
+  _watchMiningReads(String communityId, CommunitySummary? community) {
+    if (community == null || !community.hasBoundAsset) return null;
+    final panelProvider = miningCommunityControllerProvider(communityId);
+    final panel = ref.watch(panelProvider);
+    final composition = ref.watch(miningAssetsControllerProvider);
+    if (panel.phase == LaunchViewPhase.loading && panel.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(panelProvider.notifier).open());
+      });
+    }
+    if (composition.phase == LaunchViewPhase.loading &&
+        composition.value == null) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(miningAssetsControllerProvider.notifier).load());
+        }
+      });
+    }
+    return (panel, composition);
   }
 
   /// What the 社区 tab already knows about [communityId], if it listed it.
@@ -290,9 +298,11 @@ class _CommunityProfileScreenState
       final listed = _listedCommunity(id);
       final assetKey = listed?.boundAssetKey;
       if (assetKey != null) _prefetchBoundAsset(assetKey);
-      _bindMiningReads(listed);
     }
-    _bindMiningReads(detail?.community);
+    final miningReads =
+        id == null || communityCapabilityBlocks(mode, capability)
+        ? null
+        : _watchMiningReads(id, community ?? _listedCommunity(id));
     // A restored snapshot can be minutes old: a room link is answered from
     // the server's own read, not from what the page remembered.
     if (detail != null &&
@@ -361,9 +371,7 @@ class _CommunityProfileScreenState
             const LoopInlineUnavailable(
               key: ValueKey<String>('community-profile-missing-id'),
               message: '缺少社区标识',
-              detail: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
               maxLines: 2,
-              detailMaxLines: 4,
             )
           else if (detail == null)
             CommunityStateBlock(
@@ -376,7 +384,6 @@ class _CommunityProfileScreenState
                 key: ValueKey<String>('community-profile-not-found'),
                 illustration: LoopIllustration.holders,
                 title: '找不到这个社区',
-                message: '它可能已被移除，或对当前账号不可见。',
               ),
               onRetry: () => unawaited(controller.reload()),
             )
@@ -455,7 +462,7 @@ class _CommunityProfileScreenState
             const LoopLabel('挖矿'),
             CommunityMiningSummaryCard(
               fact: detail.miningPower,
-              account: _accountReading(detail),
+              account: _accountReading(detail, miningReads),
               onOpenPanel: widget.onOpenMiningPanel == null
                   ? null
                   : () =>
@@ -507,52 +514,45 @@ class _CommunityProfileScreenState
   ///
   /// They are two reads the mining module already owns — the community panel
   /// this card opens (`GET /v2/mining/communities/{id}`, decision 0045) and
-  /// the power composition (`GET /v2/mining/assets`) — so the panel opened
-  /// from here costs no second request. Nothing is computed on the device: a
-  /// figure is the server's or it is the reason there is none.
-  CommunityMiningAccountReading _accountReading(CommunityDetail detail) {
-    if (!detail.community.hasBoundAsset) {
-      return CommunityMiningAccountReading.unread('这个社区没有绑定代币，这三格没有可读的数。');
+  /// the power composition (`GET /v2/mining/assets`). Nothing is computed on
+  /// the device: a figure is the server's or the cell is 「—」.
+  CommunityMiningAccountReading _accountReading(
+    CommunityDetail detail,
+    (LaunchResourceState<MiningCommunity>, LaunchResourceState<MiningAssets>)?
+    reads,
+  ) {
+    if (!detail.community.hasBoundAsset || reads == null) {
+      return const CommunityMiningAccountReading.unread();
     }
-    final panel = ref.watch(miningCommunityControllerProvider);
-    final composition = ref.watch(miningAssetsControllerProvider);
-    if (panel.phase == LaunchViewPhase.loading ||
-        composition.phase == LaunchViewPhase.loading) {
-      return CommunityMiningAccountReading.unread('我的持仓、算力与预估正在读取。');
-    }
+    final (panel, composition) = reads;
     final community = panel.value;
     final assets = composition.value;
-    if (community == null || assets == null) {
-      return CommunityMiningAccountReading.unread('这次没有读到我的挖矿数据，可以进面板重试。');
-    }
-    final boundAssetId = community.community.boundAssetId;
-    final row = boundAssetId == null
+    // The power is the panel's; the holding is the composition's. Each cell
+    // is drawn as soon as its own read answered.
+    final boundAssetId =
+        community?.community.boundAssetId ?? detail.community.boundAssetKey;
+    final row = boundAssetId == null || assets == null
         ? null
         : assets.included
-              .where((item) => item.assetId == boundAssetId)
+              .where((item) => miningAssetIdsMatch(item.assetId, boundAssetId))
               .firstOrNull;
     return CommunityMiningAccountReading(
-      // A wallet that holds none of the community's token holds 0 of it —
-      // that is a reading, not an absence — and the row says so only when a
-      // settlement actually counted this asset.
       holding: row == null
-          ? const CommunityMiningCell.missing('这次结算没有算到这个代币的持仓。')
+          ? const CommunityMiningCell.missing()
           : CommunityMiningCell.value(
               row.symbol == null
                   ? loopGroupedFigure(row.holding)
                   : '${loopGroupedFigure(row.holding)} ${row.symbol}',
             ),
-      power: switch (community.myContribution) {
+      power: switch (community?.myContribution) {
         MiningFigureValue(:final value) => CommunityMiningCell.value(
           loopGroupedFigure(value),
         ),
-        MiningFigureUnavailable(:final reasonCode) =>
-          CommunityMiningCell.missing(launchReasonCodeText(reasonCode)),
+        _ => const CommunityMiningCell.missing(),
       },
-      // The daily estimate LOOP settles is one account's across every asset
-      // (`GET /v2/mining/summary.estimatedToday`); no endpoint states it per
-      // community, and this card does not divide one to invent it.
-      estimatedDaily: const CommunityMiningCell.missing('每日预估按账号总算力结算，在挖矿页读。'),
+      // No endpoint states a daily estimate per community; the account's
+      // estimate covers every asset and this card does not divide it.
+      estimatedDaily: const CommunityMiningCell.missing(),
     );
   }
 
@@ -631,7 +631,7 @@ class _CommunityProfileScreenState
     final confirmed = await confirmCommunityAction(
       context,
       title: joined ? '加入这个社区？' : '退出这个社区？',
-      body: joined ? '加入后你会出现在成员列表里。' : '退出后你将从成员目录中移除。社区所有者需要先转让所有权才能退出。',
+      body: joined ? '加入后你会出现在成员列表里。' : '退出后你将从成员目录中移除。',
       confirmLabel: joined ? '加入' : '退出',
       sheetKey: 'community-membership-sheet',
     );
@@ -1162,22 +1162,22 @@ class _MembershipFooter extends StatelessWidget {
         icon: 'shield',
         tone: LoopNoticeTone.danger,
         title: '你已被该社区封禁',
-        body: '社区聊天与治理动作对你不可用。只有所有者或管理员可以解除封禁，解除后无需重新加入。',
+        body: '社区聊天与治理不可用',
         margin: EdgeInsets.fromLTRB(LoopSpacing.page, 22, LoopSpacing.page, 0),
       );
     }
     if (membership.role == CommunityRole.owner) {
+      // S315: an owner cannot leave. The row stays where a member's is, greyed
+      // and inert, instead of a sentence about transferring ownership.
       return Padding(
-        padding: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          24,
-          LoopSpacing.page,
-          0,
-        ),
-        child: Text(
-          '所有者需要先在「成员」页转让所有者，降为 Admin 后才能退出。',
+        padding: const EdgeInsets.only(top: 16),
+        child: LoopPersonRow(
           key: const ValueKey<String>('community-owner-cannot-leave'),
-          style: LoopType.captionSm,
+          leading: const LoopEntryIcon('close'),
+          title: '退出社区',
+          titleColor: LoopColors.text3,
+          subtitle: '我的身份 · ${communityMembershipLabel(membership)}',
+          semanticLabel: '退出社区，所有者不可用',
         ),
       );
     }
