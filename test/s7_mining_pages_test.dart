@@ -186,12 +186,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining(launchMissingHeading), findsWidgets);
-      // 全网算力 keeps its dash in the sentence that states the rule.
-      final holding = find.byKey(
-        const ValueKey<String>('mining-holding-notice'),
+      // S315: no notice restating the rule under the hero.
+      expect(
+        find.byKey(const ValueKey<String>('mining-holding-notice')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, holding);
-      expect(find.textContaining('全网总算力 $launchMissingFigure'), findsOneWidget);
       expect(_figures(tester), isEmpty);
     });
 
@@ -273,33 +272,15 @@ void main() {
         overrides: <Override>[s7TokenLive()],
       );
 
-      // Four of the six figures are empty for the same reason. The block
-      // states it once, naming the four it speaks for, so the dashes it does
-      // not cover are not left reading as if it did; the other two keep their
-      // own, different sentences — the reward ledger's, and the boost's own
-      // code (Decision 0046), which speaks for the boost slot alone.
-      // The hero states the pending version once, and the line under it
-      // names the metrics whose dash a different fact — the reward ledger's —
-      // accounts for, without repeating that fact three times.
+      // S315 (需求方 2026-10-27): the dashes carry no sentence under the
+      // hero. Each reason is the cell's spoken label, not printed copy.
       expect(
         find.byKey(const ValueKey<String>('mining-hero-dash-reasons')),
-        findsOneWidget,
-      );
-      expect(find.text('待领取：奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
-      // The hero caption already speaks for 今日预估 and 累计已挖, so the
-      // gate's own sentence is written exactly once more on the page — beside
-      // the one dash the caption does not cover, 全网总算力.
-      expect(
-        find.textContaining('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('mining-hero-dash-reasons')),
-          matching: find.textContaining('挖矿公式还没有批准'),
-        ),
         findsNothing,
       );
+      expect(find.text('待领取：奖励发放还没有开启，暂时不能领取。'), findsNothing);
+      expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('^待领取，')), findsOneWidget);
     });
 
     testWidgets('a shared reason names the dashes it speaks for', (
@@ -314,13 +295,14 @@ void main() {
         overrides: <Override>[s7TokenLive()],
       );
 
-      final reason = find.byKey(
-        const ValueKey<String>('mining-hero-dash-reasons'),
+      // S315: the two dashes beside a settled 今日预估 carry no printed
+      // reason line; each is spoken on its own cell.
+      expect(
+        find.byKey(const ValueKey<String>('mining-hero-dash-reasons')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, reason);
-      // 今日预估 carries a figure of its own in the same strip, which left
-      // 累计已挖 and 待领取 as two em dashes with nothing under them.
-      expect(find.textContaining('累计已挖、待领取：'), findsOneWidget);
+      expect(find.textContaining('累计已挖、待领取：'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('^累计已挖，')), findsOneWidget);
     });
 
     testWidgets('a settled page states the boost alone, not a whole outage', (
@@ -337,10 +319,12 @@ void main() {
       // The boost is a card of its own now; a version is in effect and 我的算力
       // prints 1000 on this same page, so nothing here may claim that power,
       // output and rank are all unavailable.
-      final boost = find.text('五级邀请加成');
+      // S315: the boost is one row of the 社区 group, with no sentence.
+      final boost = find.byKey(const ValueKey<String>('mining-open-referral'));
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('你的邀请加成在邀请中心查看'), findsOneWidget);
+      expect(find.text('五级邀请加成'), findsNothing);
+      expect(find.textContaining('你的邀请加成在邀请中心查看'), findsNothing);
       expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
       expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
@@ -362,7 +346,6 @@ void main() {
       // It never appears without the label that says which kind of number it
       // is.
       expect(find.textContaining('1,000'), findsWidgets);
-      expect(find.textContaining('4,000'), findsOneWidget);
       expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
@@ -478,7 +461,8 @@ void main() {
       // says which rule produced it.
       expect(find.textContaining('0'), findsWidgets);
       expect(find.textContaining(miningBaselineLabel), findsWidgets);
-      expect(find.textContaining('全网算力为 0'), findsOneWidget);
+      // S315: the reason a dash stands is spoken, not printed.
+      expect(find.textContaining('全网算力为 0'), findsNothing);
       // 我的算力 is the settled heading, not one of the em-dash cells.
       final heading = find.byKey(
         const ValueKey<String>('mining-summary-hero-power'),
@@ -1028,12 +1012,13 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rank-items')),
         findsNothing,
       );
+      await _openUnranked(tester);
       final board = find.byKey(
         const ValueKey<String>('mining-rank-unranked-items'),
       );
       await scrollToS7Section(tester, board);
       expect(board, findsOneWidget);
-      // Two rows, the group label and the hero, which says the same fact.
+      // Two rows, the fold and 我的名次.
       expect(find.textContaining('未上榜'), findsNWidgets(4));
       // The position 0 is not a rank, and it is never printed as one.
       expect(find.textContaining('第 0 名'), findsNothing);
@@ -1041,14 +1026,14 @@ void main() {
       expect(find.text('匿名成员'), findsOneWidget);
       expect(find.text('whale'), findsOneWidget);
       expect(find.textContaining(s7PublicProfileId), findsNothing);
-      // 我的名次 is the composite strip's reading now; a place the settlement
-      // did not give keeps the em dash there.
+      // 我的名次 is one row under the switch (S315); off the board it reads
+      // 未上榜, never a position.
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('mining-rank-reading')),
-          matching: find.textContaining(launchMissingFigure),
+          matching: find.text('未上榜'),
         ),
-        findsWidgets,
+        findsOneWidget,
       );
     });
 
@@ -1072,11 +1057,10 @@ void main() {
       await tester.tap(find.text('用户榜'));
       await tester.pumpAndSettle();
 
-      // The hero states the fact — settled, read, off the board — and its
-      // cause; it never claims a settlement is still owed. The second and
-      // third are the group label and its rows' own subtitle.
-      expect(find.text('未上榜'), findsNWidgets(2));
-      expect(find.text('最近一次算力快照里你的算力为 0。'), findsOneWidget);
+      // 我的名次 states the fact — off the board — with no sentence about
+      // its cause (S315); it never claims a settlement is still owed.
+      expect(find.text('未上榜'), findsOneWidget);
+      expect(find.text('最近一次算力快照里你的算力为 0。'), findsNothing);
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.textContaining('结算之后才有'), findsNothing);
       // The state name itself never reaches the screen.
@@ -1100,12 +1084,16 @@ void main() {
         ),
       );
 
-      // The hero carries the board's own rule, from the copy table, exactly
-      // once: the strip beside it keeps the em dash and speaks the same
-      // sentence only to a screen reader.
+      // S315: the community board shows no personal place at all — not a
+      // card, not the rule's sentence.
       expect(
         find.text(launchReasonCodeText('MINING_RANK_NOT_APPLICABLE')),
-        findsOneWidget,
+        findsNothing,
+      );
+      expect(find.text('我的名次'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('mining-rank-reading')),
+        findsNothing,
       );
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.text('UNAVAILABLE'), findsNothing);
@@ -1153,6 +1141,7 @@ void main() {
       await tester.tap(find.text('用户榜'));
       await tester.pumpAndSettle();
 
+      await _openUnranked(tester);
       final unranked = find.byKey(
         const ValueKey<String>('mining-rank-unranked-items'),
       );
@@ -1224,6 +1213,9 @@ void main() {
         find.descendant(of: ranked, matching: find.text('Voyager_09')),
         findsNothing,
       );
+      // Folded at the board's end until asked for (S315).
+      expect(find.text('Voyager_09'), findsNothing);
+      await _openUnranked(tester);
       final unranked = find.byKey(
         const ValueKey<String>('mining-rank-unranked-items'),
       );
@@ -1285,25 +1277,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('第 1 名'), findsOneWidget);
-      // The hero and my row on the board say the same place; the composite
-      // strip says it a third time in its own rich line.
-      expect(find.text('第 2 名'), findsNWidgets(2));
+      // 我的名次 (one row under the switch, S315) and my row on the board say
+      // the same place.
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('mining-rank-reading')),
-          matching: find.textContaining('第 2 名'),
+          matching: find.text('第 2 名'),
         ),
         findsOneWidget,
       );
-      // `.folio-stamp` carries the settled power behind the place.
-      expect(find.textContaining('1,000 H'), findsOneWidget);
-      expect(find.text('3000'), findsOneWidget);
+      // The row carries the settled power behind the place, grouped.
+      expect(find.text('算力 1,000'), findsOneWidget);
+      expect(find.text('3,000'), findsOneWidget);
       expect(find.text('我'), findsOneWidget);
-      final participants = find.byKey(
-        const ValueKey<String>('mining-rank-participants'),
-      );
-      await scrollToS7Section(tester, participants);
-      expect(find.textContaining('有 2 个条目算出了算力'), findsOneWidget);
+      // No participants sentence under the board.
+      expect(find.textContaining('个条目算出了算力'), findsNothing);
     });
 
     testWidgets('a withheld power is 仅本人可见, never a missing read', (
@@ -1370,20 +1358,14 @@ void main() {
       expect(find.textContaining('第 1 名'), findsOneWidget);
       expect(find.textContaining('读不到'), findsNothing);
       expect(
-        find.descendant(
-          of: ranked,
-          matching: find.textContaining('其他人看到的是匿名成员'),
-        ),
+        find.descendant(of: ranked, matching: find.textContaining('对他人匿名')),
         findsOneWidget,
       );
       // The reader's own number is printed to the reader, and the row says
       // who else sees it.
-      expect(find.text('1000'), findsOneWidget);
+      expect(find.text('1,000'), findsOneWidget);
       expect(
-        find.descendant(
-          of: ranked,
-          matching: find.textContaining('算力只有你自己看得到'),
-        ),
+        find.descendant(of: ranked, matching: find.textContaining('算力仅自己可见')),
         findsOneWidget,
       );
     });
@@ -1419,6 +1401,7 @@ void main() {
         ),
       );
 
+      await _openUnranked(tester);
       final board = find.byKey(
         const ValueKey<String>('mining-rank-unranked-items'),
       );
@@ -1426,7 +1409,7 @@ void main() {
       expect(find.text('Builders Guild'), findsOneWidget);
       expect(find.text('权重 1.5'), findsOneWidget);
       expect(find.text('权重 0.8'), findsOneWidget);
-      expect(find.textContaining('0 人有算力'), findsNWidgets(2));
+      expect(find.textContaining('未上榜 · 0 人'), findsNWidgets(2));
     });
 
     testWidgets('the board says which version produced its places', (
@@ -1445,10 +1428,17 @@ void main() {
         ),
       );
 
-      final formula = find.byKey(const ValueKey<String>('mining-formula'));
-      await scrollToS7Section(tester, formula);
-      expect(formula, findsOneWidget);
-      expect(find.text(miningBaselineLabel), findsWidgets);
+      // S315: no formula block under the board; the baseline is said in
+      // the source (i).
+      expect(
+        find.byKey(const ValueKey<String>('mining-formula')),
+        findsNothing,
+      );
+      final line = find.byKey(const ValueKey<String>('mining-provenance-rank'));
+      await scrollToS7Section(tester, line);
+      await tester.tap(line);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(miningBaselineDetail), findsOneWidget);
       expect(find.textContaining(s7BaselineVersion), findsNothing);
     });
 
@@ -2134,13 +2124,29 @@ void main() {
         ),
       );
 
+      // S315: the hero's one snapshot line dates the figure and marks it
+      // 未更新; the run that did not finish is in the source (i)'s sheet.
       expect(
         find.byKey(const ValueKey<String>('mining-stale-summary')),
-        findsOneWidget,
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('mining-summary-hero-caption')),
+            )
+            .data,
+        endsWith('· 未更新'),
       );
       // Reading nothing was never published as a zero: the figure the last
       // complete snapshot settled is still on the page.
       expect(find.textContaining('4.482309'), findsWidgets);
+      final line = find.byKey(
+        const ValueKey<String>('mining-provenance-summary'),
+      );
+      await tester.ensureVisible(line);
+      await tester.tap(line);
+      await tester.pumpAndSettle();
       expect(find.textContaining('最近一次快照未完成'), findsWidgets);
     });
 
@@ -2214,9 +2220,19 @@ void main() {
         ),
       );
 
-      final board = find.byKey(const ValueKey<String>('mining-stale-rank'));
+      // S315: the board's source (i) wears 未更新 instead of a notice.
+      expect(
+        find.byKey(const ValueKey<String>('mining-stale-rank')),
+        findsNothing,
+      );
+      final board = find.byKey(
+        const ValueKey<String>('mining-provenance-rank'),
+      );
       await scrollToS7Section(tester, board);
-      expect(board, findsOneWidget);
+      expect(
+        find.descendant(of: board, matching: find.textContaining('未更新')),
+        findsOneWidget,
+      );
 
       await pumpS7Page(
         tester,
@@ -2287,7 +2303,15 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('下一次算力快照之后显示'), findsWidgets);
+      // S315: the hero states the absence in words and dates the snapshot;
+      // what happens next is not a sentence on the page.
+      final heading = find.byKey(
+        const ValueKey<String>('mining-summary-hero-power'),
+      );
+      expect(
+        tester.widget<Text>(heading).textSpan!.toPlainText(),
+        launchMissingHeading,
+      );
       expect(find.text('0'), findsNothing);
     });
 
@@ -2433,3 +2457,11 @@ String _infoSnapshotText(WidgetTester tester) => tester
     )
     .map((text) => text.data ?? '')
     .join('\n');
+
+/// S315: the board's unplaced entries fold behind 「未上榜 · N」; open it.
+Future<void> _openUnranked(WidgetTester tester) async {
+  final fold = find.byKey(const ValueKey<String>('mining-rank-unranked'));
+  await scrollToS7Section(tester, fold);
+  await tester.tap(fold);
+  await tester.pumpAndSettle();
+}

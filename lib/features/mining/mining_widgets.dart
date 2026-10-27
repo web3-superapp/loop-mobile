@@ -238,6 +238,7 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
     required this.snapshot,
     super.key,
     this.formula,
+    this.markStale = false,
   });
 
   final String slug;
@@ -246,20 +247,33 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
   /// The formula the figures were computed under, when the page has it.
   final MiningFormulaGate? formula;
 
+  /// S315: on a page that prints no [MiningStaleNotice], a snapshot a later
+  /// run overtook wears 未更新 beside the (i), and the notice's sentence
+  /// moves into the sheet.
+  final bool markStale;
+
   @override
   Widget build(BuildContext context) {
     final source = snapshot;
-    final detail = miningProvenanceDetail(source, formula: formula);
+    final stale = markStale && source is MiningSnapshotComputed && source.stale;
+    final detail = <String>[
+      if (stale)
+        miningStaleLine(
+          computedAtLabel: launchTimestampLabel(source.computedAt),
+          attempt: source.latestAttempt,
+        ),
+      ?miningProvenanceDetail(source, formula: formula),
+    ].join('\n');
     if (source is! MiningSnapshotComputed) {
       // No snapshot to date, but a baseline formula still has its ⓘ.
-      if (detail == null) return const SizedBox.shrink();
+      if (detail.isEmpty) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.only(top: 6),
         child: LoopProvenanceLine(
           key: ValueKey<String>('mining-provenance-$slug'),
           prefix: miningBaselineLabel,
           sources: const <String>['LOOP 挖矿规则'],
-          detail: detail,
+          detail: detail.isEmpty ? null : detail,
         ),
       );
     }
@@ -269,7 +283,8 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
         key: ValueKey<String>('mining-provenance-$slug'),
         sources: const <String>['LOOP 算力快照'],
         observedAt: source.computedAt,
-        detail: detail,
+        detail: detail.isEmpty ? null : detail,
+        marker: stale ? '未更新' : null,
       ),
     );
   }
@@ -328,8 +343,8 @@ class MiningSummaryHero extends StatelessWidget {
   final VoidCallback? onOpenAssets;
 
   /// Decision 0184: the LOOP token is not live ([miningTokenLive] is false).
-  /// The first button opens the hour's power rather than a claim, and one
-  /// line under the actions says mining starts when the token does.
+  /// The first button opens the hour's power rather than a claim. S315: the
+  /// line that explained this under the actions is gone.
   final bool powerOnly;
 
   @override
@@ -351,28 +366,18 @@ class MiningSummaryHero extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '挖矿算力',
+                  '总算力',
                   style: LoopType.kicker.copyWith(color: LoopColors.yellow),
                 ),
               ),
               if (rank != null)
-                Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(
-                        text: 'RANK ',
-                        style: LoopType.kicker.copyWith(color: muted),
-                      ),
-                      TextSpan(
-                        text: rank,
-                        style: LoopTypography.withWeight(
-                          LoopType.figureXs,
-                          FontWeight.w600,
-                        ).copyWith(color: ink),
-                      ),
-                    ],
-                  ),
+                Text(
+                  rank!,
                   key: const ValueKey<String>('mining-summary-hero-rank'),
+                  style: LoopTypography.withWeight(
+                    LoopType.figureXs,
+                    FontWeight.w600,
+                  ).copyWith(color: ink),
                 ),
             ],
           ),
@@ -404,6 +409,8 @@ class MiningSummaryHero extends StatelessWidget {
           Text(
             caption,
             key: const ValueKey<String>('mining-summary-hero-caption'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: LoopTypography.withWeight(
               LoopType.captionSm.copyWith(color: LoopColors.text2),
               FontWeight.w700,
@@ -508,14 +515,6 @@ class MiningSummaryHero extends StatelessWidget {
               ),
             ],
           ),
-          if (powerOnly) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              miningPowerOnlyNotice,
-              key: const ValueKey<String>('mining-summary-hero-power-only'),
-              style: LoopType.caption.copyWith(color: LoopColors.text2),
-            ),
-          ],
         ],
       ),
     );
@@ -686,54 +685,3 @@ String miningCompositionExpression(MiningAssetRow row) =>
     // Decision 0149: 「0 × 0.9×」 read as a dangling second ×; the weight
     // is named instead, in the same order as the heading 持有量 × 权重.
     '${row.holding} × 权重 ${row.weight}';
-
-/// The reasons behind the em dashes a mining primary prints.
-///
-/// A composite primary states its readings as figures or as `—`, and a dash
-/// on its own is not an answer. This states each distinct reason once, naming
-/// the readings it speaks for — never the same sentence three times, and never
-/// a sentence the primary's own caption has already said.
-class MiningDashReasons extends StatelessWidget {
-  const MiningDashReasons({
-    required this.slug,
-    required this.said,
-    required this.entries,
-    super.key,
-  });
-
-  final String slug;
-
-  /// Sentences the primary already carries. They are not written again.
-  final Set<String> said;
-
-  /// `(label, reason)` for every reading that came back without a figure.
-  final List<(String, String)> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final grouped = <String, List<String>>{};
-    for (final (label, reason) in entries) {
-      if (said.contains(reason)) continue;
-      grouped.putIfAbsent(reason, () => <String>[]).add(label);
-    }
-    if (grouped.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      key: ValueKey<String>('$slug-dash-reasons'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          for (final entry in grouped.entries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '${entry.value.join('、')}：${entry.key}',
-                style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

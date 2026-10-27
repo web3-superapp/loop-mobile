@@ -195,46 +195,52 @@ final miningUserRankControllerProvider =
       LaunchResourceState<MiningRank>
     >(MiningUserRankController.new);
 
+/// One community's mining panel (`GET /v2/mining/communities/{id}`).
+///
+/// S315: keyed by the community. The record page and the panel page both
+/// read it, and a single unkeyed instance was the source of the record's three
+/// cells sitting on 「—」: the record started the read before it subscribed,
+/// the unwatched instance was disposed, and the one it later watched was a
+/// fresh, never-asked instance its once-per-community guard would not ask
+/// again. Two records stacked on each other also shared one answer.
 final class MiningCommunityController
     extends MiningReadController<MiningCommunity> {
-  @override
-  LaunchResourceState<MiningCommunity> build() {
-    _communityId = null;
-    return super.build();
-  }
+  MiningCommunityController(this.communityId);
 
-  String? _communityId;
+  /// The route's subject. Null is a route that named no community.
+  final String? communityId;
 
   /// The community is the route's subject; each open reads it again.
   @override
   bool get retainsAnswer => false;
 
-  Future<void> open(String? communityId) {
+  /// Reads the panel unless it is already on screen. A read in flight is
+  /// joined, and a failed read is not retried from here: the page's own
+  /// refresh does that.
+  Future<void> open() {
     if (communityId == null) {
       state = state.failed(LaunchFailureKind.notFound);
       return Future<void>.value();
     }
-    if (_communityId == communityId && state.isReady) {
-      return Future<void>.value();
-    }
-    _communityId = communityId;
+    if (state.isReady) return Future<void>.value();
     return reload();
   }
 
   @override
   Future<MiningCommunity> fetch(MiningGateway gateway) {
-    final communityId = _communityId;
-    if (communityId == null) {
+    final id = communityId;
+    if (id == null) {
       throw const LaunchException(LaunchFailureKind.notFound);
     }
-    return gateway.loadCommunity(communityId);
+    return gateway.loadCommunity(id);
   }
 }
 
-final miningCommunityControllerProvider =
-    NotifierProvider.autoDispose<
+final miningCommunityControllerProvider = NotifierProvider.autoDispose
+    .family<
       MiningCommunityController,
-      LaunchResourceState<MiningCommunity>
+      LaunchResourceState<MiningCommunity>,
+      String?
     >(MiningCommunityController.new);
 
 // ---------------------------------------------------------------------------

@@ -178,13 +178,7 @@ void main() {
           )
           .map((row) => row.label)
           .toList();
-      expect(rows, <String>[
-        '权重 · Mining Weight',
-        '社区总算力',
-        '我的持仓',
-        '我的算力',
-        '预估/日',
-      ]);
+      expect(rows, <String>['权重', '社区总算力', '我的持仓', '我的算力', '预估/日']);
       for (final key in <String>[
         'community-mining-weight',
         'community-mining-power',

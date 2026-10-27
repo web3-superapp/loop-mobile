@@ -984,11 +984,11 @@ void main() {
       expect(_communityPowerFigure(tester), startsWith('0'));
       // The reading says which baseline settled it, and when.
       expect(find.textContaining(miningBaselineLabel), findsOneWidget);
+      // S315: the card carries no dated footnote; the snapshot time is the
+      // panel's and the source sheet's.
       expect(
-        find.textContaining(
-          loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58)),
-        ),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('community-mining-summary-note')),
+        findsNothing,
       );
       // The version that settled it stays a backend identifier.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
@@ -998,7 +998,16 @@ void main() {
       expect(find.text('我的持仓'), findsOneWidget);
       expect(find.text('我的算力'), findsOneWidget);
       expect(find.text('预估/日'), findsOneWidget);
-      expect(find.textContaining('这个社区没有绑定代币'), findsOneWidget);
+      // S315: no sentence saying why; the three cells are dashes.
+      expect(find.textContaining('这个社区没有绑定代币'), findsNothing);
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('community-mining-cell-power')),
+            )
+            .data,
+        '—',
+      );
     });
 
     testWidgets('the three per-account cells are read, not dashed', (
@@ -1067,7 +1076,7 @@ void main() {
             .data,
         '—',
       );
-      expect(find.textContaining('每日预估按账号总算力结算'), findsOneWidget);
+      expect(find.textContaining('每日预估按账号总算力结算'), findsNothing);
     });
 
     testWidgets('the community power is grouped in thousands', (tester) async {
@@ -1110,12 +1119,14 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
+      // S315: one dated row inside the card instead of a sentence under it.
       expect(
-        find.textContaining(
-          '显示的是 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
-          '的算力快照 · 最近一次快照未完成',
-        ),
-        findsOneWidget,
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('community-mining-stale')),
+            )
+            .data,
+        endsWith('· 未更新'),
       );
       // The figure is still the one the last complete snapshot settled.
       expect(_communityPowerFigure(tester), startsWith('0'));
@@ -1144,16 +1155,15 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
-      expect(find.textContaining('权重还在审核中'), findsOneWidget);
-      // A weight under review has no value to print, and the settled power
-      // stays the server's own 0: the pending weight is why it is zero.
+      // A weight under review has no value to print (S315: the cell says
+      // 审核中, no sentence), and the settled power stays the server's own 0.
       expect(
         tester
             .widget<Text>(
               find.byKey(const ValueKey<String>('community-mining-weight')),
             )
             .data,
-        '—',
+        '审核中',
       );
       expect(_communityPowerFigure(tester), startsWith('0'));
     });
@@ -1182,8 +1192,15 @@ void main() {
       await scrollToCommunitySection(tester, card);
       // The card states the fact it was given. A review nobody is performing
       // is not a state it may announce (Decision 0046).
-      expect(find.textContaining('没有绑定代币，没有权重可审'), findsOneWidget);
-      expect(find.textContaining('权重还在审核中'), findsNothing);
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('community-mining-weight')),
+            )
+            .data,
+        '—',
+      );
+      expect(find.text('审核中'), findsNothing);
     });
 
     testWidgets('an unbound asset draws no 绑定代币 section', (tester) async {
@@ -1251,10 +1268,12 @@ void main() {
       // Every unavailable field states the server's own reason where it
       // stands, and none of them becomes a figure.
       final mining = find.byKey(
-        const ValueKey<String>('community-mining-summary-note'),
+        const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, mining);
-      expect(find.textContaining('挖矿规则还没有确定'), findsOneWidget);
+      // S315: the unavailable power is a dash, with no sentence under it.
+      expect(find.textContaining('挖矿规则还没有确定'), findsNothing);
+      expect(_communityPowerFigure(tester), '—');
       // Decision 0127: a board with nothing on it takes no room — no section
       // title and no 「暂无」 line — and still never becomes a figure.
       expect(
@@ -1409,10 +1428,9 @@ void main() {
       );
       await scrollToCommunitySection(tester, notice);
       expect(notice, findsOneWidget);
-      // The transfer demotes the previous owner to Admin, which is what the
-      // members page's confirmation says. This line says the same thing.
-      expect(find.textContaining('降为 Admin'), findsOneWidget);
-      expect(find.textContaining('普通成员'), findsNothing);
+      // S315: the owner's row is greyed and inert; no sentence explains it.
+      expect(find.textContaining('降为 Admin'), findsNothing);
+      expect(tester.widget<LoopPersonRow>(notice).onTap, isNull);
     });
 
     testWidgets('a banned viewer is told, and cannot leave or act', (
@@ -1435,7 +1453,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-membership-banned')),
         findsOneWidget,
       );
-      expect(find.textContaining('无需重新加入'), findsOneWidget);
+      expect(find.text('社区聊天与治理不可用'), findsOneWidget);
       // Nothing on a banned membership can act.
       expect(
         find.byKey(const ValueKey<String>('community-leave-action')),

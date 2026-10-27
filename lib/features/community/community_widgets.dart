@@ -336,31 +336,25 @@ Future<void> showCommunityPresenceMeaningSheet(
 
 /// One of the three per-account cells on the community record's mining card.
 ///
-/// A cell is either the server's own figure or the reason there is none. The
-/// client computes neither: a holding, a power and a daily estimate are three
-/// settled readings, and a card that multiplied them itself would be printing
-/// a number nobody settled.
+/// A cell is either the server's own figure or 「—」. The client computes
+/// neither: a holding, a power and a daily estimate are three settled
+/// readings, and a card that multiplied them itself would be printing a
+/// number nobody settled.
 @immutable
 final class CommunityMiningCell {
-  const CommunityMiningCell.value(this.value) : reason = null;
+  const CommunityMiningCell.value(String this.value);
 
-  const CommunityMiningCell.missing(this.reason) : value = null;
+  const CommunityMiningCell.missing() : value = null;
 
   /// The figure as the server sent it, already grouped for reading.
   final String? value;
-
-  /// Why there is no figure. Null exactly when [value] is not.
-  final String? reason;
 }
 
-/// The three cells `我的持仓 / 我的算力 / 预估每日` on the community record.
+/// The three cells `我的持仓 / 我的算力 / 预估/日` on the community record.
 ///
 /// They are one account's readings on this community's bound asset, and the
 /// community projection carries none of them: they are read from the mining
 /// module (`GET /v2/mining/communities/{id}` and `GET /v2/mining/assets`).
-/// Until 2026-09-23 the card printed three em dashes and a line saying it
-/// would not estimate them, which is true of the estimate and was not true of
-/// the other two.
 @immutable
 final class CommunityMiningAccountReading {
   const CommunityMiningAccountReading({
@@ -369,38 +363,26 @@ final class CommunityMiningAccountReading {
     required this.estimatedDaily,
   });
 
-  /// Nothing has been read yet: the panel and the composition are both still
-  /// in flight, or this build never asked for them.
-  factory CommunityMiningAccountReading.unread(String reason) =>
-      CommunityMiningAccountReading(
-        holding: CommunityMiningCell.missing(reason),
-        power: CommunityMiningCell.missing(reason),
-        estimatedDaily: CommunityMiningCell.missing(reason),
-      );
+  /// Nothing has been read: the reads are in flight, failed, or were never
+  /// asked. S315: the card says none of that in a sentence; the cells are 「—」.
+  const CommunityMiningAccountReading.unread()
+    : holding = const CommunityMiningCell.missing(),
+      power = const CommunityMiningCell.missing(),
+      estimatedDaily = const CommunityMiningCell.missing();
 
   final CommunityMiningCell holding;
   final CommunityMiningCell power;
   final CommunityMiningCell estimatedDaily;
-
-  /// The reasons behind the cells that have no figure, each said once.
-  List<String> get missingReasons {
-    final reasons = <String>[];
-    for (final cell in <CommunityMiningCell>[holding, power, estimatedDaily]) {
-      final reason = cell.reason;
-      if (reason != null && !reasons.contains(reason)) reasons.add(reason);
-    }
-    return reasons;
-  }
 }
 
 /// The community record's mining block (`#scr-community-profile .card`
 /// → `mining-community`): the reviewed weight, the community's own power,
 /// and the three per-account columns.
 ///
-/// The card keeps its shape whatever the server answered. A column with no
-/// source prints an em dash and the line under the card says which columns
-/// those are and why — replacing the whole card with a paragraph would lose
-/// the two figures that *are* readable along with the way into the panel.
+/// The card keeps its shape whatever the server answered, and carries no
+/// sentence under it (S315, the requester's rule of 2026-10-26): a figure the
+/// server did not give is 「—」, a weight under review is 「审核中」, and a
+/// snapshot a later run overtook is one dated row.
 class CommunityMiningSummaryCard extends StatelessWidget {
   const CommunityMiningSummaryCard({
     required this.fact,
@@ -423,6 +405,10 @@ class CommunityMiningSummaryCard extends StatelessWidget {
         : null;
     final weight = switch (settled?.weight) {
       MiningCommunityWeightApproved(:final value) => value,
+      MiningCommunityWeightPending(
+        reviewStatus: MiningWeightReviewStatus.pendingReview,
+      ) =>
+        '审核中',
       _ => communityMissingFigure,
     };
     // 531381.12 is read digit by digit; 531,381.12 is read at a glance. The
@@ -430,31 +416,12 @@ class CommunityMiningSummaryCard extends StatelessWidget {
     final power = settled == null
         ? communityMissingFigure
         : loopGroupedFigure(settled.power);
-    final reading =
-        account ??
-        CommunityMiningAccountReading.unread('这三格要在社区挖矿面板里读，这张卡片没有读到。');
+    final reading = account ?? const CommunityMiningAccountReading.unread();
     // A later run that did not complete leaves this number the last complete
-    // snapshot's (Decision 0057). The card dates it instead of withdrawing
-    // it; why that run stopped is on the mining page, which this card opens.
-    final dated = switch (fact) {
-      LoopMiningPowerSettled(:final computedAt, stale: true) =>
-        '${miningStaleLine(computedAtLabel: communityObservedAtLabel(computedAt))}。',
-      LoopMiningPowerSettled(:final computedAt) =>
-        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。',
-      LoopMiningPowerUnavailable() => '',
-    };
-    final panel = reading.missingReasons.join('');
-    final note = switch (fact) {
-      LoopMiningPowerUnavailable(:final reasonCode) =>
-        '${communityUnavailableReason(reasonCode)}$panel',
-      LoopCommunityMiningPower(:final weight) =>
-        '$dated'
-            '${switch (weight) {
-              MiningCommunityWeightApproved() => '',
-              MiningCommunityWeightPending(reviewStatus: MiningWeightReviewStatus.pendingReview) => '权重还在审核中，这里不显示权重数值。',
-              MiningCommunityWeightPending() => '没有绑定代币，没有权重可审。',
-            }}$panel',
-      LoopMiningPowerSettled() => '$dated$panel',
+    // snapshot's (Decision 0057): the card dates it in one row.
+    final staleAt = switch (fact) {
+      LoopMiningPowerSettled(:final computedAt, stale: true) => computedAt,
+      _ => null,
     };
     final semantic = '社区挖矿面板，权重 $weight，社区算力 $power';
     // Decision 0170 (docs/33 M2): one `.record-card` of `.kv` rows — the
@@ -483,7 +450,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           LoopKeyValue(
-            label: '权重 · Mining Weight',
+            label: '权重',
             value: weight,
             valueKey: const ValueKey<String>('community-mining-weight'),
             padding: _miningFactPadding,
@@ -496,6 +463,13 @@ class CommunityMiningSummaryCard extends StatelessWidget {
             valueKey: const ValueKey<String>('community-mining-power'),
             padding: _miningFactPadding,
           ),
+          if (staleAt != null)
+            LoopKeyValue(
+              label: '算力快照',
+              value: '${communityObservedAtLabel(staleAt)} · 未更新',
+              valueKey: const ValueKey<String>('community-mining-stale'),
+              padding: _miningFactPadding,
+            ),
           const LoopHairline(margin: EdgeInsets.symmetric(vertical: 6)),
           for (final (slug, label, cell)
               in <(String, String, CommunityMiningCell)>[
@@ -505,8 +479,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
               ])
             Semantics(
               container: true,
-              label:
-                  '$label，${cell.value ?? cell.reason ?? communityMissingFigure}',
+              label: '$label，${cell.value ?? communityMissingFigure}',
               child: ExcludeSemantics(
                 child: LoopKeyValue(
                   label: label,
@@ -519,27 +492,9 @@ class CommunityMiningSummaryCard extends StatelessWidget {
         ],
       ),
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        KeyedSubtree(
-          key: const ValueKey<String>('community-mining-summary'),
-          child: Semantics(container: true, label: semantic, child: card),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            0,
-            LoopSpacing.page,
-            0,
-          ),
-          child: Text(
-            note,
-            key: const ValueKey<String>('community-mining-summary-note'),
-            style: LoopType.captionSm,
-          ),
-        ),
-      ],
+    return KeyedSubtree(
+      key: const ValueKey<String>('community-mining-summary'),
+      child: Semantics(container: true, label: semantic, child: card),
     );
   }
 }
