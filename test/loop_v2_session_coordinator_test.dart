@@ -596,6 +596,179 @@ void main() {
     },
   );
 
+  group('replayed logout of an already revoked session · decision 0251', () {
+    const oldLogout = LoopV2CommandMetadata(
+      deviceId: deviceId,
+      idempotencyKey: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      clientVersion: '0.1.0+1',
+      platform: LoopV2Platform.android,
+    );
+    const replacement = LoopV2ActiveSession(
+      accountId: accountId,
+      sessionId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+      streamUserId: streamUserId,
+      deviceId: deviceId,
+    );
+    const stuck = LoopV2OwnerJournal(
+      activeSession: active,
+      pendingLogout: oldLogout,
+      revocationUnconfirmed: true,
+    );
+
+    Future<(LoopV2BootstrapRepository, _FakeApi, _MemoryStore, String)> arrange(
+      LoopBackendFailure logoutFailure,
+    ) async {
+      final store = _MemoryStore(deviceId);
+      final partition = LoopV2OwnerPartition.fromPrincipal(principal);
+      store.journals[partition] = stuck;
+      final api = _FakeApi(
+        accountResult: account,
+        logoutHandler: (requestedSessionId, command) async {
+          expect(requestedSessionId, sessionId);
+          expect(command.idempotencyKey, oldLogout.idempotencyKey);
+          throw logoutFailure;
+        },
+        bootstrapHandler: (_) async => _bootstrap(replacement),
+      );
+      final repository = LoopV2BootstrapRepository(
+        principalKey: principal,
+        clientMetadata: metadata,
+        api: api,
+        store: store,
+      );
+      return (repository, api, store, partition);
+    }
+
+    test(
+      '401 AUTH_INVALID clears the journal and bootstrap completes',
+      () async {
+        final (repository, api, store, partition) = await arrange(
+          const LoopBackendFailure(
+            LoopBackendFailureKind.authentication,
+            statusCode: 401,
+            code: 'AUTH_INVALID',
+          ),
+        );
+
+        final identity = await repository.bootstrap(
+          accessToken: 'current-token',
+        );
+
+        expect(api.events, <String>['account', 'logout', 'bootstrap']);
+        expect(identity.loopUserId, accountId);
+        expect(store.journals[partition]?.pendingLogout, isNull);
+        expect(
+          store.journals[partition]?.activeSession?.sessionId,
+          replacement.sessionId,
+        );
+      },
+    );
+
+    test('404 SESSION_NOT_FOUND still clears the journal', () async {
+      final (repository, api, store, partition) = await arrange(
+        const LoopBackendFailure(
+          LoopBackendFailureKind.invalidRequest,
+          statusCode: 404,
+          code: 'SESSION_NOT_FOUND',
+        ),
+      );
+
+      await repository.bootstrap(accessToken: 'current-token');
+
+      expect(api.events, <String>['account', 'logout', 'bootstrap']);
+      expect(store.journals[partition]?.pendingLogout, isNull);
+    });
+
+    test('500 keeps the unconfirmed journal and rethrows', () async {
+      final (repository, api, store, partition) = await arrange(
+        const LoopBackendFailure(
+          LoopBackendFailureKind.unavailable,
+          statusCode: 500,
+          code: 'INTERNAL_ERROR',
+        ),
+      );
+
+      await expectLater(
+        repository.bootstrap(accessToken: 'current-token'),
+        throwsA(_failure(LoopBackendFailureKind.unavailable)),
+      );
+      expect(api.events, <String>['account', 'logout']);
+      expect(store.journals[partition], same(stuck));
+      expect(store.journals[partition]?.revocationUnconfirmed, isTrue);
+    });
+
+    test('401 AUTH_REQUIRED is not read as a revocation', () async {
+      final (repository, _, store, partition) = await arrange(
+        const LoopBackendFailure(
+          LoopBackendFailureKind.authentication,
+          statusCode: 401,
+          code: 'AUTH_REQUIRED',
+        ),
+      );
+
+      await expectLater(
+        repository.bootstrap(accessToken: 'current-token'),
+        throwsA(_failure(LoopBackendFailureKind.authentication)),
+      );
+      expect(store.journals[partition], same(stuck));
+    });
+  });
+
+  group('sign-out against an already revoked session · decision 0251', () {
+    LoopV2LogoutCoordinator coordinator(_FakeApi api, _MemoryStore store) =>
+        LoopV2LogoutCoordinator(
+          clientMetadata: metadata,
+          api: api,
+          store: store,
+          accessTokens: _Tokens(<Object>['first-token', 'second-token']),
+        );
+
+    const authInvalid = LoopBackendFailure(
+      LoopBackendFailureKind.authentication,
+      statusCode: 401,
+      code: 'AUTH_INVALID',
+    );
+
+    test('confirms when account/me still accepts the bearer', () async {
+      final store = _MemoryStore(deviceId);
+      final partition = LoopV2OwnerPartition.fromPrincipal(principal);
+      store.journals[partition] = const LoopV2OwnerJournal(
+        activeSession: active,
+      );
+      final api = _FakeApi(
+        accountResult: account,
+        logoutHandler: (_, _) async => throw authInvalid,
+      );
+
+      expect(
+        await coordinator(api, store).logout(principal),
+        LoopV2LogoutDisposition.confirmed,
+      );
+      expect(api.events, <String>['logout', 'logout', 'account']);
+      expect(store.journals[partition], isNull);
+    });
+
+    test('stays unconfirmed when the bearer itself is refused', () async {
+      final store = _MemoryStore(deviceId);
+      final partition = LoopV2OwnerPartition.fromPrincipal(principal);
+      store.journals[partition] = const LoopV2OwnerJournal(
+        activeSession: active,
+      );
+      final api = _FakeApi(
+        accountResult: authInvalid,
+        logoutHandler: (_, _) async => throw authInvalid,
+      );
+
+      expect(
+        await coordinator(api, store).logout(principal),
+        LoopV2LogoutDisposition.unconfirmed,
+      );
+      expect(api.events, <String>['logout', 'logout', 'account']);
+      expect(store.journals[partition]?.pendingLogout, isNotNull);
+      expect(store.journals[partition]?.revocationUnconfirmed, isTrue);
+    });
+  });
+
   test(
     'logout quiescence waits for a dispatched bootstrap before revocation',
     () async {

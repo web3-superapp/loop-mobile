@@ -373,7 +373,12 @@ final class MiningSummary {
 enum MiningReferencePriceQuality {
   fresh('fresh'),
   proxied('proxied'),
-  derived('derived');
+  derived('derived'),
+
+  /// No reference price could be read for this row (loop-api decision 0189).
+  /// Power is quantity × weight, so the row still counts; only its price is
+  /// absent.
+  unavailable('unavailable');
 
   const MiningReferencePriceQuality(this.wireName);
 
@@ -393,6 +398,8 @@ enum MiningReferencePriceQuality {
   /// version declared (Decision 0059). It is an observation, not an estimate,
   /// and the row says which pool it came from.
   bool get isDerived => this == MiningReferencePriceQuality.derived;
+
+  bool get isUnavailable => this == MiningReferencePriceQuality.unavailable;
 }
 
 /// One asset the settlement weighted. Every figure is the server's own decimal
@@ -411,6 +418,8 @@ final class MiningAssetRow {
     required this.power,
     required this.blockNumber,
     this.referencePricePairAddress,
+    this.referencePriceReasonCode,
+    this.referencePriceQualityWire,
     this.logoUrl,
   });
 
@@ -426,8 +435,18 @@ final class MiningAssetRow {
   final String? symbol;
 
   final String holding;
-  final String referencePriceUsd;
+
+  /// `null` exactly when [referencePriceQuality] is `unavailable`.
+  final String? referencePriceUsd;
   final MiningReferencePriceQuality referencePriceQuality;
+
+  /// The quality exactly as the server sent it. A value this client does not
+  /// know is kept here while [referencePriceQuality] reads `unavailable`.
+  final String? referencePriceQualityWire;
+
+  /// Why the price is missing, e.g. `MINING_PRICE_NOT_FRESH`; only an
+  /// unpriced row carries one, and older servers never send it.
+  final String? referencePriceReasonCode;
 
   /// The asset whose price was used. Non-null exactly when the quality is
   /// `proxied`: a proxied price with no proxy, or a fresh price carrying one,
@@ -448,6 +467,8 @@ final class MiningAssetRow {
   bool get isProxiedPrice => referencePriceQuality.isProxied;
 
   bool get isDerivedPrice => referencePriceQuality.isDerived;
+
+  bool get hasNoReferencePrice => referencePriceQuality.isUnavailable;
 }
 
 /// One asset the account holds that the settlement did not weight. The reason

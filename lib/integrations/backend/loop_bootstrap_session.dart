@@ -14,17 +14,31 @@ final class LoopBootstrapSession {
     required String principalKey,
     required LoopBackendAccessTokenSource accessTokens,
     required LoopBootstrapRepository repository,
+    DateTime Function()? clock,
   }) {
     if (principalKey.isEmpty || principalKey != principalKey.trim()) {
       throw ArgumentError('principalKey must be a non-empty canonical value');
     }
-    return LoopBootstrapSession._(accessTokens, repository);
+    return LoopBootstrapSession._(
+      accessTokens,
+      repository,
+      clock ?? DateTime.now,
+    );
   }
 
-  LoopBootstrapSession._(this._accessTokens, this._repository);
+  LoopBootstrapSession._(this._accessTokens, this._repository, this._clock);
+
+  /// First pause after a refused authorization; it doubles per consecutive
+  /// refusal up to [maxFailureBackoff] and resets on success (decision 0251).
+  /// Transport failures are not paused.
+  static const initialFailureBackoff = Duration(seconds: 2);
+  static const maxFailureBackoff = Duration(seconds: 30);
 
   final LoopBackendAccessTokenSource _accessTokens;
   final LoopBootstrapRepository _repository;
+  final DateTime Function() _clock;
+  var _consecutiveFailures = 0;
+  DateTime? _retryNotBefore;
   final Completer<void> _invalidated = Completer<void>();
 
   Future<LoopBootstrapAuthorization>? _authorization;
@@ -58,12 +72,27 @@ final class LoopBootstrapSession {
     final active = _authorization;
     if (active != null) return active;
 
+    // Many surfaces ask for authorization independently. Without this gate a
+    // persistent backend refusal is re-dispatched by every one of them, which
+    // hammered account/me and logout several times per second.
+    final notBefore = _retryNotBefore;
+    if (notBefore != null && _clock().isBefore(notBefore)) {
+      return Future<LoopBootstrapAuthorization>.value(
+        LoopBootstrapAuthorization.unavailable,
+      );
+    }
+
     late final Future<LoopBootstrapAuthorization> operation;
-    operation = _authorize(_invalidated.future).whenComplete(() {
-      if (identical(_authorization, operation)) {
-        _authorization = null;
-      }
-    });
+    operation = _authorize(_invalidated.future)
+        .then((result) {
+          _recordOutcome(result);
+          return result;
+        })
+        .whenComplete(() {
+          if (identical(_authorization, operation)) {
+            _authorization = null;
+          }
+        });
     _authorization = operation;
     return operation;
   }
@@ -115,6 +144,27 @@ final class LoopBootstrapSession {
     } catch (_) {
       return LoopBootstrapAuthorization.unavailable;
     }
+  }
+
+  void _recordOutcome(LoopBootstrapAuthorization result) {
+    if (_disposed) return;
+    if (result == LoopBootstrapAuthorization.authorized) {
+      _consecutiveFailures = 0;
+      _retryNotBefore = null;
+      return;
+    }
+    // A request that never reached LOOP is not a refusal: the recovery tick
+    // must be free to try again the moment the network returns (decision
+    // 0123), and nothing reached the API to be hammered.
+    if (_lastTransportFailure != null) {
+      _retryNotBefore = null;
+      return;
+    }
+    final exponent = _consecutiveFailures < 5 ? _consecutiveFailures : 5;
+    _consecutiveFailures += 1;
+    var delay = initialFailureBackoff * (1 << exponent);
+    if (delay > maxFailureBackoff) delay = maxFailureBackoff;
+    _retryNotBefore = _clock().add(delay);
   }
 
   void _recordTransportFailure(LoopBackendFailure failure) {

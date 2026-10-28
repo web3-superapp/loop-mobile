@@ -247,18 +247,41 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'blockNumber',
       },
       // Added by Decision 0059 alongside the `derived` quality. A deployment
-      // without the key prices every row the old way.
-      const <String>{'referencePricePairAddress'},
+      // without the key prices every row the old way. The reason code came
+      // with the `unavailable` quality (loop-api 0189, client 0251) and is
+      // absent from every older payload.
+      const <String>{'referencePricePairAddress', 'referencePriceReasonCode'},
     );
     final logoUrl = LoopV2ChainCodec.logoUrl(map['logo']);
-    final quality = MiningReferencePriceQuality.tryParse(
-      LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
-        'fresh',
-        'proxied',
-        'derived',
-      }),
+    // A value this client does not know is read like `unavailable` (no price,
+    // power still counted) instead of refusing the page: the server may add a
+    // quality before the client ships it (decision 0251). The raw string stays
+    // on the row.
+    final qualityWire = LoopV2S7Codec.requirePattern(
+      map,
+      'referencePriceQuality',
+      _qualityWirePattern,
+      maxLength: 32,
     );
-    if (quality == null) LoopV2S7Codec.invalid();
+    final known = MiningReferencePriceQuality.tryParse(qualityWire);
+    final quality = known ?? MiningReferencePriceQuality.unavailable;
+    // An unpriced row keeps its power (quantity × weight needs no price); its
+    // price is null, and only such a row may lack one.
+    final String? referencePriceUsd;
+    if (quality.isUnavailable) {
+      LoopV2S7Codec.optionalPattern(
+        map,
+        'referencePriceUsd',
+        LoopV2S7Codec.decimalPattern,
+        maxLength: 140,
+      );
+      referencePriceUsd = null;
+    } else {
+      referencePriceUsd = _decimal(map, 'referencePriceUsd');
+    }
+    final referencePriceReasonCode = map['referencePriceReasonCode'] == null
+        ? null
+        : LoopV2S7Codec.requireReasonCode(map, 'referencePriceReasonCode');
     final proxy = LoopV2S7Codec.optionalPattern(
       map,
       'referencePriceProxyAssetId',
@@ -272,8 +295,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       maxLength: 42,
     );
     // A proxied price with no proxy, and a price that is not proxied carrying
-    // one, both leave the row unable to say where its price came from.
-    if (quality.isProxied != (proxy != null)) LoopV2S7Codec.invalid();
+    // one, both leave the row unable to say where its price came from. An
+    // unknown quality's companions are not judged; they are dropped below.
+    if (known != null && quality.isProxied != (proxy != null)) {
+      LoopV2S7Codec.invalid();
+    }
     // A derived price is one pool divided out, and the row has to name that
     // pool: without it the reader cannot tell what the number was read from.
     if (quality.isDerived && pairAddress == null) LoopV2S7Codec.invalid();
@@ -290,9 +316,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       // absence would leave the page naming assets by address again.
       symbol: LoopV2S7Codec.optionalSymbol(map, 'symbol'),
       holding: _decimal(map, 'holding'),
-      referencePriceUsd: _decimal(map, 'referencePriceUsd'),
+      referencePriceUsd: referencePriceUsd,
       referencePriceQuality: quality,
-      referencePriceProxyAssetId: proxy,
+      referencePriceQualityWire: qualityWire,
+      referencePriceReasonCode: referencePriceReasonCode,
+      referencePriceProxyAssetId: known == null ? null : proxy,
       weight: _decimal(map, 'weight'),
       power: _decimal(map, 'power'),
       blockNumber: LoopV2S7Codec.requirePattern(
@@ -344,6 +372,10 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       ),
     );
   }
+
+  static final RegExp _qualityWirePattern = RegExp(
+    r'^[a-z][a-zA-Z0-9_]{0,31}$',
+  );
 
   static String _decimal(Map<String, Object?> source, String key) =>
       LoopV2S7Codec.requirePattern(

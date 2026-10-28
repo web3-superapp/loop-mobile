@@ -1547,6 +1547,100 @@ void main() {
       );
     });
 
+    group('unpriced power rows · decision 0251', () {
+      Map<String, Object?> unpriced({bool withReason = true}) {
+        final row = _assetRow(
+          assetId: _usdtAssetId,
+          symbol: 'USDT',
+          holding: '12.5',
+          quality: 'unavailable',
+          weight: '1.5',
+          power: '18.75',
+        );
+        row['referencePriceUsd'] = null;
+        if (withReason) {
+          row['referencePriceReasonCode'] = 'MINING_PRICE_NOT_FRESH';
+        }
+        return row;
+      }
+
+      Future<MiningAssets> read(List<Object?> included) => DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: included,
+              totalPower: <String, Object?>{
+                'status': 'available',
+                'value': '18.75',
+              },
+            ),
+          ),
+        ),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      test('an old row without the reason key still parses', () async {
+        final assets = await read(<Object?>[_assetRow()]);
+        final cake = assets.included.single;
+        expect(cake.referencePriceUsd, '2.26');
+        expect(cake.referencePriceReasonCode, isNull);
+        expect(cake.hasNoReferencePrice, isFalse);
+      });
+
+      test('a null price with quality unavailable keeps its power', () async {
+        final assets = await read(<Object?>[unpriced()]);
+        final row = assets.included.single;
+        expect(row.referencePriceUsd, isNull);
+        expect(
+          row.referencePriceQuality,
+          MiningReferencePriceQuality.unavailable,
+        );
+        expect(row.hasNoReferencePrice, isTrue);
+        expect(row.referencePriceReasonCode, 'MINING_PRICE_NOT_FRESH');
+        expect(row.power, '18.75');
+        expect(row.holding, '12.5');
+        expect(row.weight, '1.5');
+      });
+
+      test('the reason code is optional on an unpriced row', () async {
+        final assets = await read(<Object?>[unpriced(withReason: false)]);
+        expect(assets.included.single.referencePriceUsd, isNull);
+        expect(assets.included.single.referencePriceReasonCode, isNull);
+      });
+
+      test('a priced row may carry the reason key as null', () async {
+        final row = _assetRow()..['referencePriceReasonCode'] = null;
+        final assets = await read(<Object?>[row]);
+        expect(assets.included.single.referencePriceUsd, '2.26');
+      });
+
+      test('a null price on a priced quality is still refused', () {
+        final row = _assetRow()..['referencePriceUsd'] = null;
+        expect(read(<Object?>[row]), throwsA(isA<LoopBackendFailure>()));
+      });
+
+      test('an unknown quality reads as unpriced and keeps power', () async {
+        final row = _assetRow(holding: '4', weight: '0.5', power: '2')
+          ..['referencePriceQuality'] = 'estimated'
+          ..['referencePriceProxyAssetId'] = _wbnbAssetId;
+        final assets = await read(<Object?>[row]);
+        final parsed = assets.included.single;
+        expect(
+          parsed.referencePriceQuality,
+          MiningReferencePriceQuality.unavailable,
+        );
+        expect(parsed.referencePriceQualityWire, 'estimated');
+        expect(parsed.referencePriceUsd, isNull);
+        expect(parsed.referencePriceProxyAssetId, isNull);
+        expect(parsed.power, '2');
+      });
+
+      test('a malformed reason code is refused', () {
+        final row = unpriced()..['referencePriceReasonCode'] = 'not a code';
+        expect(read(<Object?>[row]), throwsA(isA<LoopBackendFailure>()));
+      });
+    });
+
     test('the weighted rows carry their inputs and their proxy', () async {
       final assets = await DioLoopV2MiningApi(
         _dio(_RecordingAdapter(statusCode: 200, body: _miningAssets())),
@@ -1846,13 +1940,15 @@ void main() {
       );
     });
 
-    test('an unknown reference price quality is refused', () {
+    // Decision 0251: an unknown quality is read as unpriced; only a value
+    // that is not a quality-shaped string is still refused.
+    test('a malformed reference price quality is refused', () {
       final api = DioLoopV2MiningApi(
         _dio(
           _RecordingAdapter(
             statusCode: 200,
             body: _miningAssets(
-              included: <Object?>[_assetRow(quality: 'stale')],
+              included: <Object?>[_assetRow(quality: 'Not A Quality')],
             ),
           ),
         ),
@@ -3422,11 +3518,15 @@ void main() {
       );
     });
 
-    test('a quality outside the three is refused', () async {
-      await expectLater(
-        readAssets(_assetRow(quality: 'guessed')),
-        throwsA(isA<LoopBackendFailure>()),
+    test('a quality outside the known ones reads as unpriced (0251)', () async {
+      final assets = await readAssets(_assetRow(quality: 'guessed'));
+      final row = assets.included.single;
+      expect(
+        row.referencePriceQuality,
+        MiningReferencePriceQuality.unavailable,
       );
+      expect(row.referencePriceQualityWire, 'guessed');
+      expect(row.referencePriceUsd, isNull);
     });
 
     test('a pool that is not an address is refused', () async {

@@ -258,9 +258,13 @@ final class LoopV2BootstrapRepository implements LoopBootstrapRepository {
         command: command,
       );
     } on LoopBackendFailure catch (failure) {
-      if (failure.statusCode == 404 && failure.code == 'SESSION_NOT_FOUND') {
-        return;
-      }
+      // Every caller here dispatches logout with a bearer the backend has just
+      // accepted in this same bootstrap (account/me answered 200 or
+      // ACCOUNT_BOOTSTRAP_REQUIRED, or bootstrap itself succeeded). A 401
+      // AUTH_INVALID on the request that carries the journal's session id is
+      // therefore the server's revoked-session check: the revocation is
+      // already in effect, so the journal can be cleared (decision 0251).
+      if (_isRevocationInEffect(failure, bearerVerified: true)) return;
       rethrow;
     }
   }
@@ -432,7 +436,18 @@ final class LoopV2LogoutCoordinator {
           rethrow;
         }
         token = await _loadToken();
-        await _logoutOnce(token, active.sessionId, command);
+        try {
+          await _logoutOnce(token, active.sessionId, command);
+        } on LoopBackendFailure catch (retryFailure) {
+          // A 401 AUTH_INVALID from a freshly loaded bearer is either a dead
+          // bearer or the server's revoked-session check on the journal's
+          // session id. account/me tells them apart without a write: if it
+          // accepts the same bearer, the session is already revoked.
+          if (!_isRevocationInEffect(retryFailure, bearerVerified: true) ||
+              !await _bearerAccepted(token)) {
+            rethrow;
+          }
+        }
       }
       await _store.deleteOwnerJournal(ownerPartition);
       return LoopV2LogoutDisposition.confirmed;
@@ -473,10 +488,23 @@ final class LoopV2LogoutCoordinator {
         command: command,
       );
     } on LoopBackendFailure catch (failure) {
-      if (failure.statusCode == 404 && failure.code == 'SESSION_NOT_FOUND') {
-        return;
-      }
+      // Only the terminal 404 is decided here; a 401 still needs the caller
+      // to prove the bearer before it may count as an earlier revocation.
+      if (_isRevocationInEffect(failure, bearerVerified: false)) return;
       rethrow;
+    }
+  }
+
+  Future<bool> _bearerAccepted(String accessToken) async {
+    try {
+      await _api.getAccount(
+        accessToken: accessToken,
+        clientVersion: _clientMetadata.clientVersion,
+      );
+      return true;
+    } on LoopBackendFailure catch (failure) {
+      return failure.statusCode == 409 &&
+          failure.code == 'ACCOUNT_BOOTSTRAP_REQUIRED';
     }
   }
 
@@ -488,4 +516,22 @@ final class LoopV2LogoutCoordinator {
       platform: _clientMetadata.platform,
     );
   }
+}
+
+/// Whether a logout refusal means the journal's session is already revoked.
+///
+/// `404 SESSION_NOT_FOUND` always does. `401 AUTH_INVALID` does only when the
+/// bearer on that same request is known to be accepted: the backend then
+/// raises it solely from the `x-loop-session-id` check on a session it has
+/// already revoked. `AUTH_REQUIRED` and any other status keep the journal.
+bool _isRevocationInEffect(
+  LoopBackendFailure failure, {
+  required bool bearerVerified,
+}) {
+  if (failure.statusCode == 404 && failure.code == 'SESSION_NOT_FOUND') {
+    return true;
+  }
+  return bearerVerified &&
+      failure.statusCode == 401 &&
+      failure.code == 'AUTH_INVALID';
 }

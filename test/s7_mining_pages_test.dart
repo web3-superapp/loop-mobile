@@ -2353,6 +2353,64 @@ void main() {
       );
     });
 
+    testWidgets('an unpriced row keeps its power on the counted list (0251)', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              totalPower: const MiningFigureValue('18.75'),
+              included: const <MiningAssetRow>[
+                MiningAssetRow(
+                  assetId: s7UsdtAssetId,
+                  symbol: 'USDT',
+                  holding: '12.5',
+                  referencePriceUsd: null,
+                  referencePriceQuality:
+                      MiningReferencePriceQuality.unavailable,
+                  referencePriceProxyAssetId: null,
+                  referencePriceReasonCode: 'MINING_PRICE_NOT_FRESH',
+                  weight: '1.5',
+                  power: '18.75',
+                  blockNumber: '122037728',
+                ),
+              ],
+              source: s7MiningSnapshot(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7UsdtAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      expect(
+        find.descendant(
+          of: row,
+          matching: find.textContaining('12.5 × 权重 1.5'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.text('18.75')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(ValueKey<String>('mining-assets-excluded-$s7UsdtAssetId')),
+        findsNothing,
+      );
+      expect(
+        find.textContaining(launchReasonCodeText('MINING_PRICE_NOT_FRESH')),
+        findsNothing,
+      );
+    });
+
     testWidgets('a derived-price row prints no price or pool (0146)', (
       tester,
     ) async {

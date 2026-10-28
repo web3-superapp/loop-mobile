@@ -178,6 +178,98 @@ void main() {
     },
   );
 
+  test('a failed authorization backs off before dispatching again', () async {
+    var now = DateTime.utc(2026, 10, 28, 12);
+    final tokens = _TokenSource(<Object>[
+      'first-token',
+      'second-token',
+      'third-token',
+    ]);
+    var fail = true;
+    final repository = _RecordingRepository((_) async {
+      if (fail) {
+        throw const LoopBackendFailure(
+          LoopBackendFailureKind.unavailable,
+          statusCode: 500,
+        );
+      }
+      return identity;
+    });
+    final session = LoopBootstrapSession(
+      principalKey: 'did:privy:user-a',
+      accessTokens: tokens,
+      repository: repository,
+      clock: () => now,
+    );
+
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    // Every surface asking again inside the pause gets the same answer
+    // without a request.
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    expect(repository.tokens, <String>['first-token']);
+
+    now = now.add(LoopBootstrapSession.initialFailureBackoff);
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    expect(repository.tokens, <String>['first-token', 'second-token']);
+
+    // The second pause is twice as long.
+    now = now.add(LoopBootstrapSession.initialFailureBackoff);
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    expect(repository.tokens, hasLength(2));
+
+    fail = false;
+    now = now.add(LoopBootstrapSession.initialFailureBackoff);
+    expect(await session.authorize(), LoopBootstrapAuthorization.authorized);
+    expect(repository.tokens, hasLength(3));
+  });
+
+  test('the failure pause never exceeds its ceiling', () async {
+    var now = DateTime.utc(2026, 10, 28, 12);
+    final tokens = _TokenSource(<Object>[for (var i = 0; i < 10; i++) 't$i']);
+    final repository = _RecordingRepository((_) async {
+      throw const LoopBackendFailure(
+        LoopBackendFailureKind.unavailable,
+        statusCode: 500,
+      );
+    });
+    final session = LoopBootstrapSession(
+      principalKey: 'did:privy:user-a',
+      accessTokens: tokens,
+      repository: repository,
+      clock: () => now,
+    );
+
+    for (var attempt = 1; attempt <= 8; attempt += 1) {
+      await session.authorize();
+      expect(repository.tokens, hasLength(attempt));
+      now = now.add(LoopBootstrapSession.maxFailureBackoff);
+    }
+  });
+
+  test('a request that never reached LOOP is retried at once', () async {
+    final now = DateTime.utc(2026, 10, 28, 12);
+    var online = false;
+    final tokens = _TokenSource(<Object>['first-token', 'second-token']);
+    final repository = _RecordingRepository((_) async {
+      if (!online) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.connection);
+      }
+      return identity;
+    });
+    final session = LoopBootstrapSession(
+      principalKey: 'did:privy:user-a',
+      accessTokens: tokens,
+      repository: repository,
+      clock: () => now,
+    );
+
+    expect(await session.authorize(), LoopBootstrapAuthorization.unavailable);
+    online = true;
+    expect(await session.authorize(), LoopBootstrapAuthorization.authorized);
+    expect(repository.tokens, <String>['first-token', 'second-token']);
+  });
+
   test('invalid principal keys are rejected without echoing their value', () {
     expect(
       () => LoopBootstrapSession(
