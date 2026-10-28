@@ -729,7 +729,10 @@ LoopRecordRow miningCompositionRow(
   MiningAssetRow row,
   LoopRowPosition position, {
   String keyPrefix = 'mining-assets-row',
+  String? power,
 }) {
+  // Decision 0253: in the 代币 group the row shows `power − nftPower`.
+  final shown = power ?? row.power;
   final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
   // A named row still says which asset it is: the id is the identity, the
   // symbol is only how the registry writes it.
@@ -745,13 +748,42 @@ LoopRecordRow miningCompositionRow(
     title: label,
     subtitle: <String>[miningCompositionExpression(row), ?identity].join('\n'),
     subtitleMaxLines: 2,
-    trailing: loopPowerFigure(row.power),
+    trailing: loopPowerFigure(shown),
     trailingCaption: '算力',
     semanticLabel: <String>[
       label,
       '持有 ${loopAmountFigure(row.holding)}',
       '权重 ${row.weight}',
-      '算力 ${loopPowerFigure(row.power)}',
+      '算力 ${loopPowerFigure(shown)}',
+    ].join('，'),
+    position: position,
+  );
+}
+
+/// Decision 0253: one MEME's NFT share in 算力构成's NFT group — the asset's
+/// mark and name, and `included[].nftPower`.
+LoopRecordRow miningNftCompositionRow(
+  MiningAssetRow row,
+  String nftPower,
+  LoopRowPosition position,
+) {
+  final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
+  final identity = row.symbol == null ? null : miningAssetLabel(row.assetId);
+  return LoopRecordRow(
+    key: ValueKey<String>('mining-composition-nft-${row.assetId}'),
+    leading: LoopTokenLogo(
+      assetSymbol: row.symbol ?? label,
+      logoUrl: row.logoUrl,
+      size: 44,
+      semanticLabel: label,
+    ),
+    title: label,
+    subtitle: identity,
+    trailing: loopPowerFigure(nftPower),
+    trailingCaption: 'NFT 算力',
+    semanticLabel: <String>[
+      label,
+      'NFT 算力 ${loopPowerFigure(nftPower)}',
     ].join('，'),
     position: position,
   );

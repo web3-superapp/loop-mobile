@@ -376,7 +376,11 @@ MiningSummary s7MiningSummary({
   LaunchUnavailable? accumulated,
   MiningFormulaGate? formula,
   MiningSnapshotRef? snapshot,
+  String? assetPower,
+  String? nftPower,
 }) => MiningSummary(
+  assetPower: assetPower,
+  nftPower: nftPower,
   power: power ?? const MiningFigureUnavailable(s7FormulaPending),
   networkPower: networkPower ?? const MiningFigureUnavailable(s7FormulaPending),
   estimatedToday:
@@ -397,7 +401,12 @@ MiningSummary s7MiningSummary({
 
 /// The Development baseline as it actually answers: a version in effect, and
 /// every number under it still zero.
-MiningSummary s7MiningBaselineSummary() => s7MiningSummary(
+MiningSummary s7MiningBaselineSummary({
+  String? assetPower,
+  String? nftPower,
+}) => s7MiningSummary(
+  assetPower: assetPower,
+  nftPower: nftPower,
   power: const MiningFigureValue('1000'),
   networkPower: const MiningFigureValue('4000'),
   estimatedToday: const MiningDailyOutputEstimate(
@@ -505,7 +514,9 @@ MiningAssetRow s7MiningAssetRow({
   String power = '0',
   String? proxyAssetId,
   String? logoUrl,
+  String? nftPower,
 }) => MiningAssetRow(
+  nftPower: nftPower,
   assetId: assetId,
   symbol: symbol,
   logoUrl: logoUrl,

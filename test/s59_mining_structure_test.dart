@@ -106,20 +106,16 @@ void main() {
           ),
         ),
         size: _tall,
-        overrides: <Override>[s7TokenLive()],
       );
 
-      // Decision 0183 / 0253: each empty group is the illustrated empty state.
-      for (final slug in <String>['token', 'nft']) {
-        expect(
-          tester.widget(
-            find.byKey(ValueKey<String>('mining-composition-$slug-empty')),
-          ),
-          isA<LoopEmptyState>(),
-        );
-      }
-      expect(find.text('暂无代币算力'), findsOneWidget);
-      expect(find.text('暂无 NFT 算力'), findsOneWidget);
+      // Decision 0183: an empty composition is the illustrated empty state.
+      expect(
+        tester.widget(
+          find.byKey(const ValueKey<String>('mining-composition-empty')),
+        ),
+        isA<LoopEmptyState>(),
+      );
+      expect(find.text('暂无计入资产'), findsOneWidget);
     });
 
     testWidgets('算力明细 leads with the priced list, not with a table', (
