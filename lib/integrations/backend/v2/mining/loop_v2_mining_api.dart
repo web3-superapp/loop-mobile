@@ -247,8 +247,10 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'blockNumber',
       },
       // Added by Decision 0059 alongside the `derived` quality. A deployment
-      // without the key prices every row the old way.
-      const <String>{'referencePricePairAddress'},
+      // without the key prices every row the old way. The reason code came
+      // with the `unavailable` quality (loop-api 0189, client 0251) and is
+      // absent from every older payload.
+      const <String>{'referencePricePairAddress', 'referencePriceReasonCode'},
     );
     final logoUrl = LoopV2ChainCodec.logoUrl(map['logo']);
     final quality = MiningReferencePriceQuality.tryParse(
@@ -256,9 +258,27 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'fresh',
         'proxied',
         'derived',
+        'unavailable',
       }),
     );
     if (quality == null) LoopV2S7Codec.invalid();
+    // An unpriced row keeps its power (quantity × weight needs no price); its
+    // price is null, and only such a row may lack one.
+    final String? referencePriceUsd;
+    if (quality.isUnavailable) {
+      LoopV2S7Codec.optionalPattern(
+        map,
+        'referencePriceUsd',
+        LoopV2S7Codec.decimalPattern,
+        maxLength: 140,
+      );
+      referencePriceUsd = null;
+    } else {
+      referencePriceUsd = _decimal(map, 'referencePriceUsd');
+    }
+    final referencePriceReasonCode = map['referencePriceReasonCode'] == null
+        ? null
+        : LoopV2S7Codec.requireReasonCode(map, 'referencePriceReasonCode');
     final proxy = LoopV2S7Codec.optionalPattern(
       map,
       'referencePriceProxyAssetId',
@@ -290,8 +310,9 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       // absence would leave the page naming assets by address again.
       symbol: LoopV2S7Codec.optionalSymbol(map, 'symbol'),
       holding: _decimal(map, 'holding'),
-      referencePriceUsd: _decimal(map, 'referencePriceUsd'),
+      referencePriceUsd: referencePriceUsd,
       referencePriceQuality: quality,
+      referencePriceReasonCode: referencePriceReasonCode,
       referencePriceProxyAssetId: proxy,
       weight: _decimal(map, 'weight'),
       power: _decimal(map, 'power'),
