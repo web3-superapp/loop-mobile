@@ -1619,6 +1619,22 @@ void main() {
         expect(read(<Object?>[row]), throwsA(isA<LoopBackendFailure>()));
       });
 
+      test('an unknown quality reads as unpriced and keeps power', () async {
+        final row = _assetRow(holding: '4', weight: '0.5', power: '2')
+          ..['referencePriceQuality'] = 'estimated'
+          ..['referencePriceProxyAssetId'] = _wbnbAssetId;
+        final assets = await read(<Object?>[row]);
+        final parsed = assets.included.single;
+        expect(
+          parsed.referencePriceQuality,
+          MiningReferencePriceQuality.unavailable,
+        );
+        expect(parsed.referencePriceQualityWire, 'estimated');
+        expect(parsed.referencePriceUsd, isNull);
+        expect(parsed.referencePriceProxyAssetId, isNull);
+        expect(parsed.power, '2');
+      });
+
       test('a malformed reason code is refused', () {
         final row = unpriced()..['referencePriceReasonCode'] = 'not a code';
         expect(read(<Object?>[row]), throwsA(isA<LoopBackendFailure>()));
@@ -1924,13 +1940,15 @@ void main() {
       );
     });
 
-    test('an unknown reference price quality is refused', () {
+    // Decision 0251: an unknown quality is read as unpriced; only a value
+    // that is not a quality-shaped string is still refused.
+    test('a malformed reference price quality is refused', () {
       final api = DioLoopV2MiningApi(
         _dio(
           _RecordingAdapter(
             statusCode: 200,
             body: _miningAssets(
-              included: <Object?>[_assetRow(quality: 'stale')],
+              included: <Object?>[_assetRow(quality: 'Not A Quality')],
             ),
           ),
         ),
@@ -3500,11 +3518,15 @@ void main() {
       );
     });
 
-    test('a quality outside the three is refused', () async {
-      await expectLater(
-        readAssets(_assetRow(quality: 'guessed')),
-        throwsA(isA<LoopBackendFailure>()),
+    test('a quality outside the known ones reads as unpriced (0251)', () async {
+      final assets = await readAssets(_assetRow(quality: 'guessed'));
+      final row = assets.included.single;
+      expect(
+        row.referencePriceQuality,
+        MiningReferencePriceQuality.unavailable,
       );
+      expect(row.referencePriceQualityWire, 'guessed');
+      expect(row.referencePriceUsd, isNull);
     });
 
     test('a pool that is not an address is refused', () async {

@@ -253,15 +253,18 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       const <String>{'referencePricePairAddress', 'referencePriceReasonCode'},
     );
     final logoUrl = LoopV2ChainCodec.logoUrl(map['logo']);
-    final quality = MiningReferencePriceQuality.tryParse(
-      LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
-        'fresh',
-        'proxied',
-        'derived',
-        'unavailable',
-      }),
+    // A value this client does not know is read like `unavailable` (no price,
+    // power still counted) instead of refusing the page: the server may add a
+    // quality before the client ships it (decision 0251). The raw string stays
+    // on the row.
+    final qualityWire = LoopV2S7Codec.requirePattern(
+      map,
+      'referencePriceQuality',
+      _qualityWirePattern,
+      maxLength: 32,
     );
-    if (quality == null) LoopV2S7Codec.invalid();
+    final known = MiningReferencePriceQuality.tryParse(qualityWire);
+    final quality = known ?? MiningReferencePriceQuality.unavailable;
     // An unpriced row keeps its power (quantity × weight needs no price); its
     // price is null, and only such a row may lack one.
     final String? referencePriceUsd;
@@ -292,8 +295,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       maxLength: 42,
     );
     // A proxied price with no proxy, and a price that is not proxied carrying
-    // one, both leave the row unable to say where its price came from.
-    if (quality.isProxied != (proxy != null)) LoopV2S7Codec.invalid();
+    // one, both leave the row unable to say where its price came from. An
+    // unknown quality's companions are not judged; they are dropped below.
+    if (known != null && quality.isProxied != (proxy != null)) {
+      LoopV2S7Codec.invalid();
+    }
     // A derived price is one pool divided out, and the row has to name that
     // pool: without it the reader cannot tell what the number was read from.
     if (quality.isDerived && pairAddress == null) LoopV2S7Codec.invalid();
@@ -312,8 +318,9 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       holding: _decimal(map, 'holding'),
       referencePriceUsd: referencePriceUsd,
       referencePriceQuality: quality,
+      referencePriceQualityWire: qualityWire,
       referencePriceReasonCode: referencePriceReasonCode,
-      referencePriceProxyAssetId: proxy,
+      referencePriceProxyAssetId: known == null ? null : proxy,
       weight: _decimal(map, 'weight'),
       power: _decimal(map, 'power'),
       blockNumber: LoopV2S7Codec.requirePattern(
@@ -365,6 +372,10 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       ),
     );
   }
+
+  static final RegExp _qualityWirePattern = RegExp(
+    r'^[a-z][a-zA-Z0-9_]{0,31}$',
+  );
 
   static String _decimal(Map<String, Object?> source, String key) =>
       LoopV2S7Codec.requirePattern(

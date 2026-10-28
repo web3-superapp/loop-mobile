@@ -419,6 +419,7 @@ final class MiningAssetRow {
     required this.blockNumber,
     this.referencePricePairAddress,
     this.referencePriceReasonCode,
+    this.referencePriceQualityWire,
     this.logoUrl,
   });
 
@@ -438,6 +439,10 @@ final class MiningAssetRow {
   /// `null` exactly when [referencePriceQuality] is `unavailable`.
   final String? referencePriceUsd;
   final MiningReferencePriceQuality referencePriceQuality;
+
+  /// The quality exactly as the server sent it. A value this client does not
+  /// know is kept here while [referencePriceQuality] reads `unavailable`.
+  final String? referencePriceQualityWire;
 
   /// Why the price is missing, e.g. `MINING_PRICE_NOT_FRESH`; only an
   /// unpriced row carries one, and older servers never send it.
