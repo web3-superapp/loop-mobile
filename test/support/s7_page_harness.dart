@@ -703,14 +703,14 @@ Future<void> openS7Disclosure(WidgetTester tester, Key key) async {
 /// Both answers carry `configurationReasonCode` as the current backend does
 /// (decision 0185).
 final class S7TokenStageRewards implements MiningRewardsGateway {
-  S7TokenStageRewards.live()
+  S7TokenStageRewards.live({this.nft, this.asset})
     : claim = const MiningClaimSummary(
         status: MiningClaimStatus.none,
         executable: true,
         configurationReported: true,
       );
 
-  S7TokenStageRewards.preToken()
+  S7TokenStageRewards.preToken({this.nft, this.asset})
     : claim = const MiningClaimSummary(
         status: MiningClaimStatus.none,
         executable: false,
@@ -720,6 +720,10 @@ final class S7TokenStageRewards implements MiningRewardsGateway {
       );
 
   final MiningClaimSummary claim;
+
+  /// Decision 0253: the last settled hour's two pools, when a test gives them.
+  final MiningNftTrack? nft;
+  final MiningAssetTrack? asset;
   int reads = 0;
 
   @override
@@ -736,8 +740,8 @@ final class S7TokenStageRewards implements MiningRewardsGateway {
       display: const MiningMinuteDisplay(
         state: MiningDisplayState.awaitingFirstSettlement,
       ),
-      nft: null,
-      asset: null,
+      nft: nft,
+      asset: asset,
       invites: null,
       claim: claim,
       serverTime: DateTime.utc(2026, 10, 15, 12),

@@ -381,9 +381,11 @@ void main() {
     testWidgets('POWER COMPOSITION writes quantity × weight (0146)', (
       tester,
     ) async {
+      // Decision 0253: 我的挖矿's 算力构成 is the settled hour's two pools;
+      // the snapshot rows and their expression live on 算力明细.
       await pumpS7Page(
         tester,
-        const MiningScreen(),
+        const MiningAssetsScreen(),
         mining: FakeMiningGateway(
           assets: S7Answer<MiningAssets>(
             value: s7MiningSettledAssets(
