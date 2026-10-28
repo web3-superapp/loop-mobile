@@ -1054,7 +1054,7 @@ void main() {
               ),
             )
             .data,
-        '1,234 Cake',
+        '1,234.5 Cake',
       );
       expect(
         tester

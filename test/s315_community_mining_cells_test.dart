@@ -61,7 +61,7 @@ FakeMiningGateway _mining() => FakeMiningGateway(
         s7MiningAssetRow(
           assetId: _boundAssetId,
           symbol: '猫猫',
-          holding: '2500000.5',
+          holding: '2500000.000000000000000000',
           weight: '1',
           power: '2500000',
         ),

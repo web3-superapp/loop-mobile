@@ -559,8 +559,8 @@ class _CommunityProfileScreenState
           ? const CommunityMiningCell.missing()
           : CommunityMiningCell.value(
               row.symbol == null
-                  ? loopPowerFigure(row.holding)
-                  : '${loopPowerFigure(row.holding)} ${row.symbol}',
+                  ? loopAmountFigure(row.holding)
+                  : '${loopAmountFigure(row.holding)} ${row.symbol}',
             ),
       power: switch (community?.myContribution) {
         MiningFigureValue(:final value) => CommunityMiningCell.value(

@@ -672,7 +672,7 @@ LoopRecordRow miningCompositionRow(
     trailingCaption: '算力',
     semanticLabel: <String>[
       label,
-      '持有 ${loopPowerFigure(row.holding)}',
+      '持有 ${loopAmountFigure(row.holding)}',
       '权重 ${row.weight}',
       '算力 ${loopPowerFigure(row.power)}',
     ].join('，'),
@@ -685,4 +685,4 @@ LoopRecordRow miningCompositionRow(
 String miningCompositionExpression(MiningAssetRow row) =>
     // Decision 0149: 「0 × 0.9×」 read as a dangling second ×; the weight
     // is named instead, in the same order as the heading 持有量 × 权重.
-    '${loopPowerFigure(row.holding)} × 权重 ${row.weight}';
+    '${loopAmountFigure(row.holding)} × 权重 ${row.weight}';

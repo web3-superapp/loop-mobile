@@ -38,3 +38,21 @@ BigInt? loopPowerWhole(String raw) {
 }
 
 final RegExp _plainDecimal = RegExp(r'^([+-]?)([0-9]+)(?:\.([0-9]*))?$');
+
+/// Decision 0252: a token quantity (a holding) keeps its fraction — a
+/// balance of 0.5 ETH is not 0. Separators on the whole part, at most six
+/// fraction digits (truncated, never rounded), trailing zeros trimmed.
+/// String arithmetic only; anything that is not a plain decimal prints as it
+/// arrived.
+String loopAmountFigure(String raw) {
+  final match = _plainDecimal.firstMatch(raw.trim());
+  if (match == null) return raw;
+  final whole = BigInt.parse(match.group(2)!);
+  var fraction = match.group(3) ?? '';
+  if (fraction.length > 6) fraction = fraction.substring(0, 6);
+  fraction = fraction.replaceFirst(RegExp(r'0+$'), '');
+  final zero = whole == BigInt.zero && fraction.isEmpty;
+  final sign = match.group(1) == '-' && !zero ? '-' : '';
+  final body = loopPowerFigureOf(whole);
+  return fraction.isEmpty ? '$sign$body' : '$sign$body.$fraction';
+}

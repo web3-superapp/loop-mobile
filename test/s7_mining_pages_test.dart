@@ -2400,7 +2400,10 @@ void main() {
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
       expect(
-        find.descendant(of: row, matching: find.textContaining('12 × 权重 1.5')),
+        find.descendant(
+          of: row,
+          matching: find.textContaining('12.5 × 权重 1.5'),
+        ),
         findsOneWidget,
       );
       expect(
@@ -2454,7 +2457,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(find.textContaining('推导价'), findsNothing);
-      expect(find.textContaining('2 × 权重 1.5'), findsOneWidget);
+      expect(find.textContaining('2.99 × 权重 1.5'), findsOneWidget);
       // The full address is the identity and stays in the model.
       expect(
         find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),

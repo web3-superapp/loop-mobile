@@ -106,6 +106,21 @@ void main() {
       expect(loopPowerFigure('1e5'), '1e5');
     });
 
+    test('loopAmountFigure keeps a holding fraction', () {
+      expect(loopAmountFigure('0.5'), '0.5');
+      expect(loopAmountFigure('12.5'), '12.5');
+      expect(loopAmountFigure('1234.5'), '1,234.5');
+      expect(loopAmountFigure('5000000'), '5,000,000');
+      expect(loopAmountFigure('5000000.000000000000000000'), '5,000,000');
+      expect(loopAmountFigure('1.123456789'), '1.123456');
+      expect(loopAmountFigure('0.0000009'), '0');
+      expect(
+        loopAmountFigure('123456789012345678901234567890.25'),
+        '123,456,789,012,345,678,901,234,567,890.25',
+      );
+      expect(loopAmountFigure('abc'), 'abc');
+    });
+
     test('miningPowerFigure says the same', () {
       expect(
         miningPowerFigure(Decimal.parse('947955.604749012530067131')),
