@@ -194,7 +194,7 @@ void main() {
         const ValueKey<String>('referral-boost-available'),
       );
       await scrollToS7Section(tester, boost);
-      expect(find.text('12.5'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
       // Decision 0235: the link is one line, middle-elided, keeping the code
       // it ends with.
       final link = tester.widget<Text>(

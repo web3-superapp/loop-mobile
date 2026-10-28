@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -667,13 +668,13 @@ LoopRecordRow miningCompositionRow(
     title: label,
     subtitle: <String>[miningCompositionExpression(row), ?identity].join('\n'),
     subtitleMaxLines: 2,
-    trailing: row.power,
+    trailing: loopPowerFigure(row.power),
     trailingCaption: '算力',
     semanticLabel: <String>[
       label,
-      '持有 ${row.holding}',
+      '持有 ${loopPowerFigure(row.holding)}',
       '权重 ${row.weight}',
-      '算力 ${row.power}',
+      '算力 ${loopPowerFigure(row.power)}',
     ].join('，'),
     position: position,
   );
@@ -684,4 +685,4 @@ LoopRecordRow miningCompositionRow(
 String miningCompositionExpression(MiningAssetRow row) =>
     // Decision 0149: 「0 × 0.9×」 read as a dangling second ×; the weight
     // is named instead, in the same order as the heading 持有量 × 权重.
-    '${row.holding} × 权重 ${row.weight}';
+    '${loopPowerFigure(row.holding)} × 权重 ${row.weight}';

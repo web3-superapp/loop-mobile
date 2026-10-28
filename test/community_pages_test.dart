@@ -1054,7 +1054,7 @@ void main() {
               ),
             )
             .data,
-        '1,234.5 Cake',
+        '1,234 Cake',
       );
       expect(
         tester
@@ -1095,7 +1095,8 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
-      expect(_communityPowerFigure(tester), startsWith('531,381.12'));
+      expect(_communityPowerFigure(tester), startsWith('531,381'));
+      expect(_communityPowerFigure(tester), isNot(contains('.12')));
       expect(_communityPowerFigure(tester), isNot(contains('531381.12')));
     });
 

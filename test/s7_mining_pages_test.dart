@@ -743,7 +743,10 @@ void main() {
           assets: S7Answer<MiningAssets>(
             value: s7MiningSettledAssets(
               included: <MiningAssetRow>[
-                s7MiningAssetRow(holding: '12.5', power: '22.6'),
+                s7MiningAssetRow(
+                  holding: '5000000',
+                  power: '5000001.604749012530067131',
+                ),
               ],
             ),
           ),
@@ -756,11 +759,16 @@ void main() {
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
       // Decision 0146: quantity × weight, in the order the formula multiplies
-      // them; every figure is the server's own decimal and no price is shown.
-      expect(find.textContaining('12.5 × 权重 0.8'), findsOneWidget);
+      // them; no price is shown. Decision 0252: both figures are floored
+      // whole numbers with separators.
+      expect(find.textContaining('5,000,000 × 权重 0.8'), findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text('5,000,001')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('5000000'), findsNothing);
       expect(find.textContaining(r'$2.26'), findsNothing);
       expect(miningPowerFormulaHeading, '持有量 × 权重');
-      expect(find.text('22.6'), findsOneWidget);
       expect(find.text('算力'), findsWidgets);
       // The list is no longer empty, so the contract notice is gone.
       expect(
@@ -2115,8 +2123,8 @@ void main() {
         mining: FakeMiningGateway(
           summary: S7Answer<MiningSummary>(
             value: s7MiningSummary(
-              power: const MiningFigureValue('4.482309'),
-              networkPower: const MiningFigureValue('4.482309'),
+              power: const MiningFigureValue('4482.309'),
+              networkPower: const MiningFigureValue('4482.309'),
               formula: s7EffectiveFormula(),
               snapshot: s7MiningStaleSnapshot(),
             ),
@@ -2140,7 +2148,8 @@ void main() {
       );
       // Reading nothing was never published as a zero: the figure the last
       // complete snapshot settled is still on the page.
-      expect(find.textContaining('4.482309'), findsWidgets);
+      expect(find.textContaining('4,482'), findsWidgets);
+      expect(find.textContaining('4482.309'), findsNothing);
       final line = find.byKey(
         const ValueKey<String>('mining-provenance-summary'),
       );
@@ -2391,14 +2400,11 @@ void main() {
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
       expect(
-        find.descendant(
-          of: row,
-          matching: find.textContaining('12.5 × 权重 1.5'),
-        ),
+        find.descendant(of: row, matching: find.textContaining('12 × 权重 1.5')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: row, matching: find.text('18.75')),
+        find.descendant(of: row, matching: find.text('18')),
         findsOneWidget,
       );
       expect(
@@ -2448,7 +2454,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(find.textContaining('推导价'), findsNothing);
-      expect(find.textContaining('2.99 × 权重 1.5'), findsOneWidget);
+      expect(find.textContaining('2 × 权重 1.5'), findsOneWidget);
       // The full address is the identity and stays in the model.
       expect(
         find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),

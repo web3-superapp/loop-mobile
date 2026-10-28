@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -71,7 +72,7 @@ String walletAssetPowerText(
   final value = state.value;
   if (value == null) return '算力 $loopFigureDash';
   final row = walletMiningRowFor(state, assetId);
-  if (row != null) return '算力 ${loopGroupedFigure(row.power)}';
+  if (row != null) return '算力 ${loopPowerFigure(row.power)}';
   for (final excluded in value.excluded) {
     if (excluded.assetId == assetId) return '无权重';
   }
@@ -92,7 +93,7 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
     final state = watchWalletMiningSummary(ref);
     final summary = state.value;
     final power = switch (summary?.power) {
-      MiningFigureValue(value: final value) => loopGroupedFigure(value),
+      MiningFigureValue(value: final value) => loopPowerFigure(value),
       MiningFigureUnavailable() || null => loopFigureDash,
     };
     final daily = switch (summary?.estimatedToday) {
@@ -160,7 +161,7 @@ class WalletAssetPowerHint extends ConsumerWidget {
       key: const ValueKey<String>('wallet-asset-power-hint'),
       text: '这个资产的挖矿贡献',
       figure: <String>[
-        '${loopGroupedFigure(row.power)} 算力',
+        '${loopPowerFigure(row.power)} 算力',
         '权重 ${row.weight}×',
         if (baseline) miningBaselineLabel,
       ].join(' · '),

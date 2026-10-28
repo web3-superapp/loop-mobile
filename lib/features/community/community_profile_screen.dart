@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -558,12 +559,12 @@ class _CommunityProfileScreenState
           ? const CommunityMiningCell.missing()
           : CommunityMiningCell.value(
               row.symbol == null
-                  ? loopGroupedFigure(row.holding)
-                  : '${loopGroupedFigure(row.holding)} ${row.symbol}',
+                  ? loopPowerFigure(row.holding)
+                  : '${loopPowerFigure(row.holding)} ${row.symbol}',
             ),
       power: switch (community?.myContribution) {
         MiningFigureValue(:final value) => CommunityMiningCell.value(
-          loopGroupedFigure(value),
+          loopPowerFigure(value),
         ),
         _ => const CommunityMiningCell.missing(),
       },

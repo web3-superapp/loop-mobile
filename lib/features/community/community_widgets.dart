@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -411,11 +411,11 @@ class CommunityMiningSummaryCard extends StatelessWidget {
         '审核中',
       _ => communityMissingFigure,
     };
-    // 531381.12 is read digit by digit; 531,381.12 is read at a glance. The
-    // separator never rounds and never abbreviates (walkthrough · a48).
+    // 531381.12 is read digit by digit; 531,381 is read at a glance. Power
+    // is a floored whole number with separators (decision 0252).
     final power = settled == null
         ? communityMissingFigure
-        : loopGroupedFigure(settled.power);
+        : loopPowerFigure(settled.power);
     final reading = account ?? const CommunityMiningAccountReading.unread();
     // A later run that did not complete leaves this number the last complete
     // snapshot's (Decision 0057): the card dates it in one row.
@@ -1170,9 +1170,9 @@ CommunityRowFigure? communityDirectoryRowFigure(
       final fact = community.miningPower;
       return switch (fact) {
         LoopMiningPowerSettled(:final power) => CommunityRowFigure(
-          value: loopGroupedFigure(power),
+          value: loopPowerFigure(power),
           caption: '算力',
-          semanticValue: loopGroupedFigure(power),
+          semanticValue: loopPowerFigure(power),
         ),
         LoopMiningPowerUnavailable(:final reasonCode) => CommunityRowFigure(
           value: launchMissingFigure,

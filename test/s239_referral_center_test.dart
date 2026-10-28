@@ -284,7 +284,7 @@ void main() {
       );
       await scrollToS7Section(tester, card);
       expect(card, findsOneWidget);
-      expect(find.text('12.5'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
       expect(find.textContaining('USD'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),

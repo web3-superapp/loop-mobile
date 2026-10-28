@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 
 // ---------------------------------------------------------------------------
 // S138 · 挖矿奖励 (decisions 0140, 0141)
@@ -639,28 +640,9 @@ String miningLoopFigure(BigInt amount, {int fractionDigits = 4}) {
   return '${negative ? '-' : ''}$grouped$tail';
 }
 
-/// A power figure: exact, grouped, at most 4 decimals (truncated), trailing
-/// zeros removed.
-String miningPowerFigure(Decimal value) {
-  final truncated = value.truncate(scale: 4);
-  var text = truncated.toString();
-  if (text.contains('.')) {
-    text = text
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
-  }
-  final negative = text.startsWith('-');
-  if (negative) text = text.substring(1);
-  final parts = text.split('.');
-  final digits = parts.first;
-  final grouped = StringBuffer();
-  for (var index = 0; index < digits.length; index += 1) {
-    if (index > 0 && (digits.length - index) % 3 == 0) grouped.write(',');
-    grouped.write(digits[index]);
-  }
-  final body = parts.length == 1 ? '$grouped' : '$grouped.${parts[1]}';
-  return negative ? '-$body' : body;
-}
+/// A power figure: exact, floored to a whole number, grouped (decision 0252).
+String miningPowerFigure(Decimal value) =>
+    loopPowerFigureOf(value.floor().toBigInt());
 
 /// `10%`, `2.5%`.
 String miningRateLabel(Decimal percent) {
