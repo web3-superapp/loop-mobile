@@ -153,7 +153,12 @@ final class MiningNftTrack {
     required this.invitePower,
     required this.totalPower,
     required this.reward,
+    this.networkPower,
   });
+
+  /// `tracks.nft.networkPower`: the whole network's NFT power that hour
+  /// (decision 0253). `null` only where a test builds a track without it.
+  final Decimal? networkPower;
 
   final BigInt realCount;
   final Decimal ownPower;
@@ -215,7 +220,11 @@ final class MiningAssetTrack {
     required this.totalPower,
     required this.reward,
     this.excluded = const <MiningRewardsExcludedAsset>[],
+    this.networkPower,
   });
+
+  /// `tracks.asset.networkPower` (decision 0253).
+  final Decimal? networkPower;
 
   final List<MiningTrackAsset> assets;
 
@@ -446,6 +455,16 @@ Decimal? miningLastHourPower(MiningRewardsView? view) {
   final asset = view?.asset?.totalPower;
   if (nft == null && asset == null) return null;
   return (nft ?? Decimal.zero) + (asset ?? Decimal.zero);
+}
+
+/// 全网算力 as the 算力榜 adds it up (decision 0253): the last settled hour's
+/// `tracks.nft.networkPower + tracks.asset.networkPower`, self plus referral.
+/// `null` until both tracks carry it.
+Decimal? miningLastHourNetworkPower(MiningRewardsView? view) {
+  final nft = view?.nft?.networkPower;
+  final asset = view?.asset?.networkPower;
+  if (nft == null || asset == null) return null;
+  return nft + asset;
 }
 
 /// `GET /v2/mining/rewards`, decoded.

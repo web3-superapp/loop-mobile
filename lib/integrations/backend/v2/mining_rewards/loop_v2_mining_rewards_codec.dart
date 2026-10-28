@@ -389,9 +389,9 @@ abstract final class LoopV2MiningRewardsCodec {
       amountRaw(row, 'countAtEnd');
       power(row, 'power');
     }
-    power(n, 'networkPower');
     amountRaw(n, 'budgetRaw');
     return MiningNftTrack(
+      networkPower: power(n, 'networkPower'),
       realCount: amountRaw(n, 'realNftCount'),
       ownPower: power(n, 'selfPower'),
       invitePower: power(n, 'referralPower'),
@@ -445,9 +445,9 @@ abstract final class LoopV2MiningRewardsCodec {
         ),
       );
     }
-    power(a, 'networkPower');
     amountRaw(a, 'budgetRaw');
     return MiningAssetTrack(
+      networkPower: power(a, 'networkPower'),
       assets: List<MiningTrackAsset>.unmodifiable(assets),
       excluded: List<MiningRewardsExcludedAsset>.unmodifiable(excluded),
       ownPower: power(a, 'selfPower'),

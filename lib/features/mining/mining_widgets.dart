@@ -318,6 +318,7 @@ class MiningSummaryHero extends StatelessWidget {
     this.claimSemanticLabel,
     this.onOpenAssets,
     this.powerOnly = false,
+    this.split = const <MiningHeroMetric>[],
   });
 
   /// The power itself, or the words for its absence. Never a 44px dash.
@@ -335,6 +336,10 @@ class MiningSummaryHero extends StatelessWidget {
 
   /// `.mining-summary-metrics`: exactly three cells, each a figure or `—`.
   final List<MiningHeroMetric> metrics;
+
+  /// Decision 0253: 代币算力 and NFT 算力, the two pools of the last settled
+  /// hour, in a second strip under [metrics]. Empty draws no strip.
+  final List<MiningHeroMetric> split;
 
   /// `.mining-summary-actions button:first-child`: Ink-filled on Lime, the
   /// strongest contrast in the app. Null while the server keeps the claim
@@ -355,7 +360,6 @@ class MiningSummaryHero extends StatelessWidget {
     // the power figure and the claim button.
     const ink = LoopColors.chalk;
     const muted = LoopColors.text3;
-    const rule = LoopColors.line;
     return LoopRecordCard(
       key: const ValueKey<String>('mining-summary-hero'),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
@@ -430,65 +434,13 @@ class MiningSummaryHero extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          Container(
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: rule),
-                bottom: BorderSide(color: rule),
-              ),
+          _MiningHeroStrip(metrics: metrics, top: true),
+          if (split.isNotEmpty)
+            _MiningHeroStrip(
+              key: const ValueKey<String>('mining-summary-hero-split'),
+              metrics: split,
+              top: false,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                for (var index = 0; index < metrics.length; index += 1)
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.fromLTRB(
-                        index == 0 ? 0 : 8,
-                        12,
-                        index == metrics.length - 1 ? 0 : 8,
-                        11,
-                      ),
-                      decoration: BoxDecoration(
-                        border: index == metrics.length - 1
-                            ? null
-                            : Border(right: BorderSide(color: rule)),
-                      ),
-                      child: Semantics(
-                        container: true,
-                        label:
-                            '${metrics[index].label}，${metrics[index].spoken}',
-                        child: ExcludeSemantics(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Text(
-                                metrics[index].value,
-                                key: ValueKey<String>(
-                                  'mining-summary-hero-'
-                                  '${metrics[index].slug}',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: LoopType.figure.copyWith(color: ink),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                metrics[index].label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: LoopType.kicker.copyWith(color: muted),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
           const SizedBox(height: 14),
           Row(
             children: <Widget>[
@@ -520,6 +472,131 @@ class MiningSummaryHero extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One `.mining-summary-metrics` row of cells divided by hairlines. The
+/// first strip carries the rule above it; a strip under it shares that rule.
+class _MiningHeroStrip extends StatelessWidget {
+  const _MiningHeroStrip({required this.metrics, required this.top, super.key});
+
+  final List<MiningHeroMetric> metrics;
+  final bool top;
+
+  @override
+  Widget build(BuildContext context) {
+    const ink = LoopColors.chalk;
+    const muted = LoopColors.text3;
+    const rule = LoopColors.line;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: top ? const BorderSide(color: rule) : BorderSide.none,
+          bottom: const BorderSide(color: rule),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (var index = 0; index < metrics.length; index += 1)
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  index == 0 ? 0 : 8,
+                  12,
+                  index == metrics.length - 1 ? 0 : 8,
+                  11,
+                ),
+                decoration: BoxDecoration(
+                  border: index == metrics.length - 1
+                      ? null
+                      : const Border(right: BorderSide(color: rule)),
+                ),
+                child: Semantics(
+                  container: true,
+                  label: '${metrics[index].label}，${metrics[index].spoken}',
+                  child: ExcludeSemantics(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          metrics[index].value,
+                          key: ValueKey<String>(
+                            'mining-summary-hero-${metrics[index].slug}',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.figure.copyWith(color: ink),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          metrics[index].label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.kicker.copyWith(color: muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 算力构成's group heading (decision 0253): 代币 or NFT, with the group's
+/// subtotal on the same row.
+class MiningCompositionGroupHeading extends StatelessWidget {
+  const MiningCompositionGroupHeading({
+    required this.slug,
+    required this.title,
+    required this.subtotal,
+    required this.spoken,
+    super.key,
+  });
+
+  final String slug;
+  final String title;
+  final String subtotal;
+  final String spoken;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: ValueKey<String>('mining-composition-$slug-heading'),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      12,
+      LoopSpacing.page,
+      6,
+    ),
+    child: Semantics(
+      header: true,
+      label: '$title，$spoken',
+      child: ExcludeSemantics(
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.kicker.copyWith(color: LoopColors.text2),
+              ),
+            ),
+            Text(
+              subtotal,
+              key: ValueKey<String>('mining-composition-$slug-subtotal'),
+              maxLines: 1,
+              style: LoopType.figure.copyWith(color: LoopColors.chalk),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// One `.mining-summary-metrics` cell.
@@ -652,7 +729,10 @@ LoopRecordRow miningCompositionRow(
   MiningAssetRow row,
   LoopRowPosition position, {
   String keyPrefix = 'mining-assets-row',
+  String? power,
 }) {
+  // Decision 0253: in the 代币 group the row shows `power − nftPower`.
+  final shown = power ?? row.power;
   final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
   // A named row still says which asset it is: the id is the identity, the
   // symbol is only how the registry writes it.
@@ -668,13 +748,42 @@ LoopRecordRow miningCompositionRow(
     title: label,
     subtitle: <String>[miningCompositionExpression(row), ?identity].join('\n'),
     subtitleMaxLines: 2,
-    trailing: loopPowerFigure(row.power),
+    trailing: loopPowerFigure(shown),
     trailingCaption: '算力',
     semanticLabel: <String>[
       label,
       '持有 ${loopAmountFigure(row.holding)}',
       '权重 ${row.weight}',
-      '算力 ${loopPowerFigure(row.power)}',
+      '算力 ${loopPowerFigure(shown)}',
+    ].join('，'),
+    position: position,
+  );
+}
+
+/// Decision 0253: one MEME's NFT share in 算力构成's NFT group — the asset's
+/// mark and name, and `included[].nftPower`.
+LoopRecordRow miningNftCompositionRow(
+  MiningAssetRow row,
+  String nftPower,
+  LoopRowPosition position,
+) {
+  final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
+  final identity = row.symbol == null ? null : miningAssetLabel(row.assetId);
+  return LoopRecordRow(
+    key: ValueKey<String>('mining-composition-nft-${row.assetId}'),
+    leading: LoopTokenLogo(
+      assetSymbol: row.symbol ?? label,
+      logoUrl: row.logoUrl,
+      size: 44,
+      semanticLabel: label,
+    ),
+    title: label,
+    subtitle: identity,
+    trailing: loopPowerFigure(nftPower),
+    trailingCaption: 'NFT 算力',
+    semanticLabel: <String>[
+      label,
+      'NFT 算力 ${loopPowerFigure(nftPower)}',
     ].join('，'),
     position: position,
   );

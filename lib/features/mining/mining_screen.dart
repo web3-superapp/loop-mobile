@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -168,6 +169,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               claimSemanticLabel: '领取奖励，打开奖励与领取',
               onOpenAssets: widget.onOpenAssets,
               powerOnly: !live,
+              split: miningPoolSplitMetrics(summary, rewards),
             ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -199,6 +201,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           ),
           const LoopLabel('算力构成'),
           _CompositionBlock(
+            summary: summary,
             assets: assetsState.value,
             phase: assetsState.phase,
             failureKind: assetsState.failureKind,
@@ -385,21 +388,32 @@ List<MiningHeroMetric> _powerMetrics(
 ) {
   final hour = miningLastHourPower(rewards);
   final invites = rewards?.invites?.total.activeMembers;
+  // Decision 0253: 全网算力 is what the 算力榜 adds up — the settled hour's
+  // two network totals; the snapshot's self-only figure until an hour settles.
+  final network = miningLastHourNetworkPower(rewards);
   return <MiningHeroMetric>[
-    switch (summary.networkPower) {
-      MiningFigureValue(:final value) => MiningHeroMetric(
+    if (network != null)
+      MiningHeroMetric(
         slug: 'network-power',
         label: '全网算力',
-        value: loopPowerFigure(value),
-        spoken: loopPowerFigure(value),
-      ),
-      MiningFigureUnavailable(:final reasonCode) => MiningHeroMetric(
-        slug: 'network-power',
-        label: '全网算力',
-        value: launchMissingFigure,
-        spoken: launchReasonCodeText(reasonCode),
-      ),
-    },
+        value: miningPowerFigure(network),
+        spoken: miningPowerFigure(network),
+      )
+    else
+      switch (summary.networkPower) {
+        MiningFigureValue(:final value) => MiningHeroMetric(
+          slug: 'network-power',
+          label: '全网算力',
+          value: loopPowerFigure(value),
+          spoken: loopPowerFigure(value),
+        ),
+        MiningFigureUnavailable(:final reasonCode) => MiningHeroMetric(
+          slug: 'network-power',
+          label: '全网算力',
+          value: launchMissingFigure,
+          spoken: launchReasonCodeText(reasonCode),
+        ),
+      },
     MiningHeroMetric(
       slug: 'last-hour-power',
       label: '上一小时算力',
@@ -456,21 +470,57 @@ LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
   );
 }
 
-/// 算力构成 — one row per weighted asset, each carrying the
-/// multiplication that produced its power.
-///
-/// This is the module's central expression and the App had none of it: the
-/// three inputs were a key-value table on a second page. Nothing is computed
-/// here — the holding, the reference price, the weight and the power are four
-/// figures the server settled, printed side by side in the order it multiplies
-/// them.
+/// 代币算力 and NFT 算力 (decision 0253). The snapshot's own split
+/// (`summary.assetPower` / `summary.nftPower`) when the server sends it, so the
+/// two move with 总算力; otherwise the last settled hour's two pools
+/// (`tracks.asset.totalPower` / `tracks.nft.totalPower`), labelled 上一小时.
+List<MiningHeroMetric> miningPoolSplitMetrics(
+  MiningSummary? summary,
+  MiningRewardsView? rewards,
+) {
+  if (summary != null && summary.hasPoolSplit) {
+    MiningHeroMetric cell(String slug, String label, String value) =>
+        MiningHeroMetric(
+          slug: slug,
+          label: label,
+          value: loopPowerFigure(value),
+          spoken: loopPowerFigure(value),
+        );
+    return <MiningHeroMetric>[
+      cell('token-power', '代币算力', summary.assetPower!),
+      cell('nft-power', 'NFT 算力', summary.nftPower!),
+    ];
+  }
+  MiningHeroMetric cell(String slug, String label, Decimal? value) =>
+      MiningHeroMetric(
+        slug: slug,
+        label: label,
+        value: value == null ? launchMissingFigure : miningPowerFigure(value),
+        spoken: value == null ? '还没有结算的小时' : miningPowerFigure(value),
+      );
+  return <MiningHeroMetric>[
+    cell('token-power', '代币算力 · 上一小时', rewards?.asset?.totalPower),
+    cell('nft-power', 'NFT 算力 · 上一小时', rewards?.nft?.totalPower),
+  ];
+}
+
+Decimal _decimalOrZero(String? value) =>
+    value == null ? Decimal.zero : Decimal.parse(value);
+
+/// 算力构成 — one row per weighted asset of the snapshot, so it moves with
+/// 总算力. Decision 0253: when the summary carries `assetPower` / `nftPower`,
+/// two groups, 代币 and NFT, each headed by that subtotal; a row's NFT share
+/// is `included[].nftPower` and its 代币 part `power − nftPower`. Without
+/// the split, the single list as before.
 class _CompositionBlock extends ConsumerWidget {
   const _CompositionBlock({
+    required this.summary,
     required this.assets,
     required this.phase,
     required this.failureKind,
   });
 
+  final MiningSummary summary;
   final MiningAssets? assets;
   final LaunchViewPhase phase;
   final LaunchFailureKind? failureKind;
@@ -490,23 +540,102 @@ class _CompositionBlock extends ConsumerWidget {
         ),
       );
     }
-    if (value.included.isEmpty) {
-      return LoopEmptyState(
-        key: const ValueKey<String>('mining-composition-empty'),
-        illustration: LoopIllustration.holders,
-        title: value.isUnsettled ? '暂无算力快照' : '暂无计入资产',
-        compact: true,
+    if (!summary.hasPoolSplit) {
+      if (value.included.isEmpty) {
+        return LoopEmptyState(
+          key: const ValueKey<String>('mining-composition-empty'),
+          illustration: LoopIllustration.holders,
+          title: value.isUnsettled ? '暂无算力快照' : '暂无计入资产',
+          compact: true,
+        );
+      }
+      return LoopRecordGroup(
+        key: const ValueKey<String>('mining-composition'),
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < value.included.length; index += 1)
+            miningCompositionRow(
+              value.included[index],
+              launchRowPosition(index, value.included.length),
+            ),
+        ],
       );
     }
-    return LoopRecordGroup(
+    final tokenRows = <(MiningAssetRow, String)>[];
+    final nftRows = <(MiningAssetRow, String)>[];
+    for (final row in value.included) {
+      final nft = _decimalOrZero(row.nftPower);
+      final total = Decimal.parse(row.power);
+      final token = total - nft;
+      if (nft > Decimal.zero) nftRows.add((row, row.nftPower!));
+      if (token > Decimal.zero || nft <= Decimal.zero) {
+        tokenRows.add((
+          row,
+          (token < Decimal.zero ? Decimal.zero : token).toString(),
+        ));
+      }
+    }
+    return Column(
       key: const ValueKey<String>('mining-composition'),
-      rows: <LoopRecordRow>[
-        for (var index = 0; index < value.included.length; index += 1)
-          miningCompositionRow(
-            value.included[index],
-            launchRowPosition(index, value.included.length),
-          ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ..._group(
+          slug: 'token',
+          title: '代币',
+          subtotal: summary.assetPower!,
+          emptyTitle: '暂无代币算力',
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < tokenRows.length; index += 1)
+              miningCompositionRow(
+                tokenRows[index].$1,
+                launchRowPosition(index, tokenRows.length),
+                keyPrefix: 'mining-composition-token',
+                power: tokenRows[index].$2,
+              ),
+          ],
+        ),
+        ..._group(
+          slug: 'nft',
+          title: 'NFT',
+          subtotal: summary.nftPower!,
+          emptyTitle: '暂无 NFT 算力',
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < nftRows.length; index += 1)
+              miningNftCompositionRow(
+                nftRows[index].$1,
+                nftRows[index].$2,
+                launchRowPosition(index, nftRows.length),
+              ),
+          ],
+        ),
       ],
     );
   }
+
+  static List<Widget> _group({
+    required String slug,
+    required String title,
+    required String subtotal,
+    required List<LoopRecordRow> rows,
+    required String emptyTitle,
+  }) => <Widget>[
+    MiningCompositionGroupHeading(
+      slug: slug,
+      title: title,
+      subtotal: loopPowerFigure(subtotal),
+      spoken: loopPowerFigure(subtotal),
+    ),
+    if (rows.isEmpty)
+      LoopEmptyState(
+        key: ValueKey<String>('mining-composition-$slug-empty'),
+        illustration: LoopIllustration.holders,
+        title: emptyTitle,
+        compact: true,
+      )
+    else
+      LoopRecordGroup(
+        key: ValueKey<String>('mining-composition-$slug'),
+        rows: rows,
+      ),
+  ];
 }

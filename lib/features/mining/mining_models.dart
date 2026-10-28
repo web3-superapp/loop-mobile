@@ -349,10 +349,21 @@ final class MiningSummary {
     required this.formula,
     required this.snapshot,
     this.assetPowerBasis,
+    this.assetPower,
+    this.nftPower,
   });
 
   final MiningFigure power;
   final MiningFigure networkPower;
+
+  /// Decision 0253: the snapshot's 代币算力 and NFT 算力, `summary.assetPower`
+  /// / `summary.nftPower`. Optional keys a server may add after this client
+  /// ships; `null` when absent, and the page then falls back.
+  final String? assetPower;
+  final String? nftPower;
+
+  /// Both halves of [power] were sent.
+  bool get hasPoolSplit => assetPower != null && nftPower != null;
   final MiningDailyOutput estimatedToday;
 
   /// Pinned unavailable: there is no reward ledger to accumulate against.
@@ -421,7 +432,12 @@ final class MiningAssetRow {
     this.referencePriceReasonCode,
     this.referencePriceQualityWire,
     this.logoUrl,
+    this.nftPower,
   });
+
+  /// Decision 0253: `included[].nftPower`, the NFT share folded into this
+  /// MEME row's [power]. Optional; `null` from a server that does not send it.
+  final String? nftPower;
 
   final String assetId;
 

@@ -1308,6 +1308,52 @@ void main() {
   });
 
   group('mining transport', () {
+    // Decision 0253: `summary.assetPower` / `summary.nftPower`, optional.
+    test('the summary reads the optional pool split', () async {
+      Future<MiningSummary> read(
+        Map<String, Object?> extra,
+      ) => DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'power': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'networkPower': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'estimatedToday': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'accumulated': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'referralBoost': _unavailable(_referralBoostPending),
+              'formula': <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
+                'pendingVersion': 'miningFormulaV1-draft',
+              },
+              'snapshot': _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+              'contractVersion': '2.0',
+              ...extra,
+            },
+          ),
+        ),
+      ).getSummary(accessToken: _token, clientVersion: _clientVersion);
+
+      final split = await read(<String, Object?>{
+        'assetPower': '1234567.89',
+        'nftPower': '3000.5',
+      });
+      expect(split.assetPower, '1234567.89');
+      expect(split.nftPower, '3000.5');
+      expect(split.hasPoolSplit, isTrue);
+      final old = await read(const <String, Object?>{});
+      expect(old.assetPower, isNull);
+      expect(old.nftPower, isNull);
+      expect(old.hasPoolSplit, isFalse);
+      final bad = await read(<String, Object?>{
+        'assetPower': null,
+        'nftPower': '1e3',
+      });
+      expect(bad.hasPoolSplit, isFalse);
+    });
+
     test(
       'the summary names the pending version and stays unavailable',
       () async {
@@ -1578,6 +1624,18 @@ void main() {
           ),
         ),
       ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      // Decision 0253: `included[].nftPower` is optional and lenient.
+      test('nftPower on a row is read; absent or malformed is null', () async {
+        final withShare = _assetRow()..['nftPower'] = '3000.5';
+        final assets = await read(<Object?>[withShare]);
+        expect(assets.included.single.nftPower, '3000.5');
+        final old = await read(<Object?>[_assetRow()]);
+        expect(old.included.single.nftPower, isNull);
+        final bad = _assetRow()..['nftPower'] = -1;
+        final lenient = await read(<Object?>[bad]);
+        expect(lenient.included.single.nftPower, isNull);
+      });
 
       test('an old row without the reason key still parses', () async {
         final assets = await read(<Object?>[_assetRow()]);

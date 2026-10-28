@@ -658,6 +658,10 @@ void main() {
       expect(view.display.window!.windowEnd, DateTime.utc(2026, 10, 10, 12));
       expect(view.nft!.realCount, BigInt.zero);
       expect(view.nft!.invitePower, Decimal.parse('0.75'));
+      // Decision 0253: the two network totals are carried for 全网算力.
+      expect(view.nft!.networkPower, Decimal.parse('100'));
+      expect(view.asset!.networkPower, Decimal.parse('50000'));
+      expect(miningLastHourNetworkPower(view), Decimal.parse('50100'));
       expect(view.asset!.assets.single.assetId, _asset);
       expect(view.asset!.assets.single.balanceAtEnd, BigInt.parse(_loop(1000)));
       expect(view.asset!.excluded.single.assetId, _graduated);

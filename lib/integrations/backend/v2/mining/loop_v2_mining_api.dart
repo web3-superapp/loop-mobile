@@ -250,7 +250,12 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       // without the key prices every row the old way. The reason code came
       // with the `unavailable` quality (loop-api 0189, client 0251) and is
       // absent from every older payload.
-      const <String>{'referencePricePairAddress', 'referencePriceReasonCode'},
+      const <String>{
+        'referencePricePairAddress',
+        'referencePriceReasonCode',
+        // Decision 0253: the NFT share of `power`, added after this client.
+        'nftPower',
+      },
     );
     final logoUrl = LoopV2ChainCodec.logoUrl(map['logo']);
     // A value this client does not know is read like `unavailable` (no price,
@@ -323,6 +328,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       referencePriceProxyAssetId: known == null ? null : proxy,
       weight: _decimal(map, 'weight'),
       power: _decimal(map, 'power'),
+      nftPower: _lenientDecimal(map['nftPower']),
       blockNumber: LoopV2S7Codec.requirePattern(
         map,
         'blockNumber',
@@ -376,6 +382,16 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   static final RegExp _qualityWirePattern = RegExp(
     r'^[a-z][a-zA-Z0-9_]{0,31}$',
   );
+
+  /// Decision 0253: an optional power key the server adds after this client
+  /// ships. Absent, null or malformed reads as absent — the page falls back
+  /// rather than refusing the payload.
+  static String? _lenientDecimal(Object? value) =>
+      value is String &&
+          value.length <= 140 &&
+          LoopV2S7Codec.decimalPattern.hasMatch(value)
+      ? value
+      : null;
 
   static String _decimal(Map<String, Object?> source, String key) =>
       LoopV2S7Codec.requirePattern(
@@ -1004,6 +1020,13 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   /// `quantity`; any other value is an invalid payload.
   static const _assetPowerBasisKeys = <String>{'assetPowerBasis'};
 
+  /// Decision 0253: optional `summary.assetPower` / `summary.nftPower`.
+  static const _summaryOptionalKeys = <String>{
+    'assetPowerBasis',
+    'assetPower',
+    'nftPower',
+  };
+
   static MiningAssetPowerBasis? _assetPowerBasis(Map<String, Object?> root) {
     if (!root.containsKey('assetPowerBasis')) return null;
     final basis = MiningAssetPowerBasis.tryParse(root['assetPowerBasis']);
@@ -1035,7 +1058,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
           'snapshot',
           'contractVersion',
         },
-        _assetPowerBasisKeys,
+        _summaryOptionalKeys,
       );
       LoopV2S7Codec.requireContractVersion(root);
       return MiningSummary(
@@ -1050,6 +1073,8 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         formula: _formulaGate(root['formula']),
         snapshot: _snapshot(root['snapshot']),
         assetPowerBasis: _assetPowerBasis(root),
+        assetPower: _lenientDecimal(root['assetPower']),
+        nftPower: _lenientDecimal(root['nftPower']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);
