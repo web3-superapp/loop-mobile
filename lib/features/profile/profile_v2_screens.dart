@@ -11,6 +11,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -1206,7 +1207,7 @@ class _ProfileAccountEntriesState extends ConsumerState<ProfileAccountEntries> {
     final rank = ref.watch(miningUserRankControllerProvider);
     final (String figure, String? line) = switch (summary.value?.power) {
       MiningFigureValue(:final value) => (
-        loopGroupedFigure(value),
+        loopPowerFigure(value),
         _rankLine(rank.value),
       ),
       MiningFigureUnavailable(:final reasonCode) => (

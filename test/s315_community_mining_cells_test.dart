@@ -51,7 +51,8 @@ FakeMiningGateway _mining() => FakeMiningGateway(
         boundAssetId: _boundAssetId,
       ),
       communityPower: const MiningFigureValue('2500000'),
-      myContribution: const MiningFigureValue('2500000'),
+      // Decision 0252: floored to whole numbers with separators.
+      myContribution: const MiningFigureValue('2500000.604749012530067131'),
     ),
   ),
   assets: S7Answer<MiningAssets>(
@@ -60,7 +61,7 @@ FakeMiningGateway _mining() => FakeMiningGateway(
         s7MiningAssetRow(
           assetId: _boundAssetId,
           symbol: '猫猫',
-          holding: '2500000',
+          holding: '2500000.000000000000000000',
           weight: '1',
           power: '2500000',
         ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
@@ -97,11 +98,11 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
               key: const ValueKey<String>('mining-assets-total'),
               label: '我的总算力',
               value: switch (assets?.totalPower) {
-                MiningFigureValue(:final value) => loopGroupedFigure(value),
+                MiningFigureValue(:final value) => loopPowerFigure(value),
                 _ => launchMissingFigure,
               },
               spoken: switch (assets?.totalPower) {
-                MiningFigureValue(:final value) => loopGroupedFigure(value),
+                MiningFigureValue(:final value) => loopPowerFigure(value),
                 MiningFigureUnavailable(:final reasonCode) =>
                   launchReasonCodeText(reasonCode),
                 null => '还没有读到',
@@ -456,7 +457,7 @@ class _MyPlaceRow extends StatelessWidget {
     final (String place, String? power) = switch (rank.myPosition) {
       MiningRankPositionSettled(:final position, :final power) => (
         '第 $position 名',
-        loopGroupedFigure(power),
+        loopPowerFigure(power),
       ),
       MiningRankPositionUnavailable(reasonCode: 'MINING_RANK_NOT_RANKED') => (
         _miningUnrankedLabel,
@@ -701,12 +702,12 @@ LoopRecordRow _userRow(
     title: name,
     subtitle: subtitle,
     subtitleMaxLines: 2,
-    trailing: row.power == null ? null : loopGroupedFigure(row.power!),
+    trailing: row.power == null ? null : loopPowerFigure(row.power!),
     trailingBadge: row.isSelf ? const LoopBadge('我') : null,
     semanticLabel: <String>[
       name,
       row.isRanked ? '第 ${row.position} 名' : _miningUnrankedLabel,
-      if (row.power != null) '算力 ${loopGroupedFigure(row.power!)}',
+      if (row.power != null) '算力 ${loopPowerFigure(row.power!)}',
       ?powerNote,
       if (anonymousToOthers) '对他人匿名',
     ].join('，'),
@@ -736,7 +737,7 @@ LoopRecordRow _communityRow(
   subtitle: row.isRanked
       ? '第 ${row.position} 名 · ${row.participants} 人'
       : '$_miningUnrankedLabel · ${row.participants} 人',
-  trailing: loopGroupedFigure(row.power),
+  trailing: loopPowerFigure(row.power),
   trailingCaption: '权重 ${row.weight}',
   position: position,
 );
@@ -970,7 +971,10 @@ LoopFolioPrimary _communityHero(
   LaunchViewPhase phase,
 ) {
   final (String heading, String caption) = switch (community?.communityPower) {
-    MiningFigureValue(:final value) => (value, '成员在绑定资产上的算力之和，权重已经算在里面。'),
+    MiningFigureValue(:final value) => (
+      loopPowerFigure(value),
+      '成员在绑定资产上的算力之和，权重已经算在里面。',
+    ),
     MiningFigureUnavailable(:final reasonCode) => (
       launchMissingHeading,
       launchReasonCodeText(reasonCode),
@@ -1027,8 +1031,8 @@ class _MyContributionCard extends StatelessWidget {
       String spokenContribution,
     ) = switch (community.myContribution) {
       MiningFigureValue(:final value) => (
-        loopGroupedFigure(value),
-        loopGroupedFigure(value),
+        loopPowerFigure(value),
+        loopPowerFigure(value),
       ),
       MiningFigureUnavailable(:final reasonCode) => (
         launchMissingFigure,
@@ -1134,7 +1138,7 @@ class _CommunityRecords extends StatelessWidget {
           subtitleMaxLines: 2,
           trailing: switch (community.communityPower) {
             MiningFigureUnavailable() => launchMissingFigure,
-            MiningFigureValue(:final value) => loopGroupedFigure(value),
+            MiningFigureValue(:final value) => loopPowerFigure(value),
           },
           position: LoopRowPosition.last,
         ),

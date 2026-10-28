@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -350,7 +351,7 @@ List<LoopInfoNote> miningInfoNotes(MiningSummary? summary) {
 String _heroHeading(MiningSummary summary) => switch (summary.formula) {
   MiningFormulaPending() => launchMissingHeading,
   MiningFormulaEffective() => switch (summary.power) {
-    MiningFigureValue(:final value) => loopGroupedFigure(value),
+    MiningFigureValue(:final value) => loopPowerFigure(value),
     MiningFigureUnavailable() => launchMissingHeading,
   },
 };
@@ -389,8 +390,8 @@ List<MiningHeroMetric> _powerMetrics(
       MiningFigureValue(:final value) => MiningHeroMetric(
         slug: 'network-power',
         label: '全网算力',
-        value: loopGroupedFigure(value),
-        spoken: loopGroupedFigure(value),
+        value: loopPowerFigure(value),
+        spoken: loopPowerFigure(value),
       ),
       MiningFigureUnavailable(:final reasonCode) => MiningHeroMetric(
         slug: 'network-power',

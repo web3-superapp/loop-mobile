@@ -974,13 +974,13 @@ void main() {
       expect(nested!.swap!.toAssetId, isNull);
     });
 
-    test('figures: 4 decimals, truncated, grouped', () {
+    test('figures: LOOP 4 decimals truncated, power whole, grouped', () {
       expect(
         miningLoopFigure(BigInt.parse('1234567890000000000000')),
         '1,234.5678',
       );
       expect(miningLoopFigure(BigInt.parse('99999')), '0.0000');
-      expect(miningPowerFigure(Decimal.parse('1235.50')), '1,235.5');
+      expect(miningPowerFigure(Decimal.parse('1235.50')), '1,235');
     });
   });
 
@@ -1200,7 +1200,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('0.75'), findsWidgets);
+      expect(find.text('0'), findsWidgets);
       await _scrollTo(tester, _key('mining-asset-excluded-$_graduated'));
       expect(_key('mining-asset-$_asset'), findsOneWidget);
       expect(find.text('已退出（已毕业，外盘持有数量暂读不到）'), findsOneWidget);
@@ -2095,14 +2095,14 @@ void main() {
       // The hero is the hour's power.
       final folio = _heroFolio(tester);
       expect(folio.kicker, '上一小时算力');
-      expect(folio.heading, '1,236.25 算力');
+      expect(folio.heading, '1,236 算力');
       expect(folio.caption, '上一小时有效，已计入算力统计');
       expect(_key('mining-minute-bar'), findsNothing);
       expect(
         tester
             .widget<LoopCompositeDetailNote>(_key('mining-power-tracks'))
             .text,
-        'NFT 算力 0.75 · Meme 币算力 1,235.5',
+        'NFT 算力 0 · Meme 币算力 1,235',
       );
       // 奖励汇总 is 算力汇总.
       expect(find.text('算力汇总'), findsOneWidget);
@@ -2300,7 +2300,7 @@ void main() {
       expect(find.text('待领取'), findsNothing);
       expect(
         tester.widget<Text>(_key('mining-summary-hero-last-hour-power')).data,
-        '1,236.25',
+        '1,236',
       );
       expect(
         tester.widget<Text>(_key('mining-summary-hero-active-invites')).data,

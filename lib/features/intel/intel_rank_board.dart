@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
@@ -271,7 +272,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
               caption: '${row.participants} 人有算力',
               amount: Decimal.tryParse(row.power),
               isSelf: mine != null && mine == row.community.communityId,
-              figure: loopGroupedFigure(row.power),
+              figure: loopPowerFigure(row.power),
               spoken: '算力',
               onTap: () => widget.onNavigate(
                 '/community/profile?id='
@@ -367,7 +368,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       isSelf: row.isSelf,
       amount: row.power == null ? null : Decimal.tryParse(row.power!),
       // A number its owner keeps to themselves is withheld, not unread.
-      figure: row.power == null ? '仅本人可见' : loopGroupedFigure(row.power!),
+      figure: row.power == null ? '仅本人可见' : loopPowerFigure(row.power!),
       spoken: row.power == null ? null : '算力',
       onTap: _profileTap(row.display, row.isSelf),
     );
@@ -556,9 +557,10 @@ String? intelRankGapToNext(MiningRank rank) {
   final above = me.rank - 1;
   for (final (place, value) in _placedAmounts(rank.ranking)) {
     if (place != above) continue;
-    final gap = value - mine;
-    if (gap <= Decimal.zero) return null;
-    final figure = loopGroupedFigure(gap.toString());
+    // Decision 0252: the gap between the two whole figures on screen.
+    final gap = value.floor().toBigInt() - mine.floor().toBigInt();
+    if (gap <= BigInt.zero) return null;
+    final figure = loopPowerFigureOf(gap);
     return rank.scope == MiningRankScope.referrals
         ? '距第 $above 名还差 $figure 人'
         : '距第 $above 名还差 $figure';
@@ -599,10 +601,7 @@ String intelRankLedgerCaption(
     return referrals ? '邀请到第一位好友后上榜' : '有算力后，下一次算力快照上榜';
   }
   return <String>[
-    if (referrals)
-      '直接邀请 ${me.value} 人'
-    else
-      '算力 ${loopGroupedFigure(me.value)}',
+    if (referrals) '直接邀请 ${me.value} 人' else '算力 ${loopPowerFigure(me.value)}',
     ?intelRankGapToNext(rank),
     ?intelRankLedgerCommunity(rank, faces),
     // v3 (decision 0229): a comma, never a centre-dot chain.
@@ -864,13 +863,30 @@ class IntelRankPodium extends StatelessWidget {
   Widget build(BuildContext context) {
     IntelRankEntry? at(int place) =>
         place <= entries.length ? entries[place - 1] : null;
-    Widget slot(int place) {
-      final entry = at(place);
-      return entry == null
-          ? _PodiumEmpty(place: place)
-          : _PodiumPlace(entry: entry, place: place);
-    }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Decision 0252: the three figures share one size. Each used to
+        // shrink on its own, so a longer one printed smaller than its
+        // neighbours; the longest now sets the size for all three.
+        final style = intelPodiumFigureStyle(
+          figures: <String>[for (final entry in entries) entry.figure],
+          slotWidth: (constraints.maxWidth - 32 - 16 - 12) / 3,
+          textScaler: MediaQuery.textScalerOf(context),
+        );
+        Widget slot(int place) {
+          final entry = at(place);
+          return entry == null
+              ? _PodiumEmpty(place: place)
+              : _PodiumPlace(entry: entry, place: place, figureStyle: style);
+        }
+
+        return _podium(slot);
+      },
+    );
+  }
+
+  Widget _podium(Widget Function(int place) slot) {
     return Padding(
       key: const ValueKey<String>('intel-rank-podium'),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -947,6 +963,32 @@ class _PodiumGround extends StatelessWidget {
   );
 }
 
+/// The one style the podium's figures share: [LoopType.figureLg], scaled
+/// down together until the widest of [figures] fits [slotWidth].
+TextStyle intelPodiumFigureStyle({
+  required List<String> figures,
+  required double slotWidth,
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  final base = LoopType.figureLg;
+  var widest = 0.0;
+  for (final figure in figures) {
+    final painter = TextPainter(
+      text: TextSpan(text: figure, style: base),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    if (painter.width > widest) widest = painter.width;
+    painter.dispose();
+  }
+  final size = base.fontSize;
+  if (size == null || widest <= slotWidth || slotWidth <= 0) return base;
+  // A hair under the exact ratio, so the shared size never trips the
+  // per-figure shrink below.
+  return base.copyWith(fontSize: size * slotWidth / widest * 0.98);
+}
+
 /// The face size on the podium: the winner 72, second and third 56.
 double intelPodiumFaceSize(int place) => place == 1 ? 72 : 56;
 
@@ -954,9 +996,16 @@ double intelPodiumFaceSize(int place) => place == 1 ? 72 : 56;
 const double intelPodiumRing = 2;
 
 class _PodiumPlace extends StatelessWidget {
-  const _PodiumPlace({required this.entry, required this.place});
+  const _PodiumPlace({
+    required this.entry,
+    required this.place,
+    required this.figureStyle,
+  });
 
   final IntelRankEntry entry;
+
+  /// The size all three figures share ([intelPodiumFigureStyle]).
+  final TextStyle figureStyle;
 
   /// 1, 2 or 3 — the podium slot.
   final int place;
@@ -1032,7 +1081,7 @@ class _PodiumPlace extends StatelessWidget {
             entry.figure,
             key: ValueKey<String>('intel-rank-figure-$place'),
             maxLines: 1,
-            style: LoopType.figureLg.copyWith(
+            style: figureStyle.copyWith(
               color: first ? LoopColors.yellow : LoopColors.chalk,
             ),
           ),
@@ -1346,7 +1395,7 @@ class IntelRankSelfRow extends ConsumerWidget {
       onTap: selfTap,
       caption: referrals ? '直接邀请' : null,
       isSelf: true,
-      figure: referrals ? me.value : loopGroupedFigure(me.value),
+      figure: referrals ? me.value : loopPowerFigure(me.value),
       share: intelRankShare(Decimal.tryParse(me.value), leader),
       spoken: referrals ? '邀请人数' : '算力',
     );

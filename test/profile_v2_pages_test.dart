@@ -125,7 +125,7 @@ void main() {
       final mining = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('profile-open-mining')),
       );
-      expect(mining.trailing, '4.48');
+      expect(mining.trailing, '4');
       expect(mining.subtitle, '我的名次 第 47 名');
       expect(find.textContaining('这一页不读算力'), findsNothing);
     });

@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
@@ -817,8 +818,9 @@ class _BoostCard extends StatelessWidget {
               key: const ValueKey<String>('referral-boost-total'),
               title: '最近结算小时的邀请加成',
               subtitle:
-                  'NFT ${boost.nftReferralPower} · 资产 ${boost.assetReferralPower}',
-              trailing: boost.referralPower,
+                  'NFT ${loopPowerFigure(boost.nftReferralPower)} · '
+                  '资产 ${loopPowerFigure(boost.assetReferralPower)}',
+              trailing: loopPowerFigure(boost.referralPower),
               trailingCaption: '算力',
               trailingStrong: true,
               trailingColor: LoopColors.yellow,
@@ -834,8 +836,8 @@ class _BoostCard extends StatelessWidget {
                     'L${boost.levels[index].level} · '
                     '有效成员 ${boost.levels[index].effectiveMembers} 人',
                 subtitle:
-                    'NFT ${boost.levels[index].nftPower} · '
-                    '资产 ${boost.levels[index].assetPower}',
+                    'NFT ${loopPowerFigure(boost.levels[index].nftPower)} · '
+                    '资产 ${loopPowerFigure(boost.levels[index].assetPower)}',
                 chevron: false,
                 position: index == boost.levels.length - 1
                     ? LoopRowPosition.last

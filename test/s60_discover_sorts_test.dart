@@ -642,7 +642,7 @@ void main() {
         find.byKey(const ValueKey<String>('discover-seg-power')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('23,050.5'), findsOneWidget);
+      expect(find.text('23,050'), findsOneWidget);
       expect(find.text('算力'), findsNWidgets(2));
       // The row with no approved weight prints a dash, never a zero.
       expect(find.text('—'), findsOneWidget);
