@@ -188,12 +188,14 @@ class LoopTag extends StatelessWidget {
   }
 }
 
-/// A small capsule action at the end of a row — 「接受」 on a request
-/// (decision 0127). Lime when it is the row's one forward step, outlined
-/// otherwise. The visible capsule is 32 tall; the touch target is 44.
+/// A small action at the end of a row — 「接受」 on a request (decision
+/// 0127). Yellow when it is the row's one forward step, the raised grey
+/// otherwise. The visible face is the compact button's 32, 12 at each side
+/// (S325 · decision 0255); the touch target is 44.
 ///
-/// [soft] is the in-list forward step that must not spend the screen's one
-/// solid Lime (decision 0172, Square's 「加入」): LimeSoft ground, Lime word.
+/// [soft] is the in-list step that must not spend the screen's one solid
+/// Yellow (decision 0172, Square's 「加入」). It used to be a Yellow word on a
+/// Yellow wash, which read as a tag (UX-007); it is the grey 辅助按钮 now.
 class LoopPillAction extends StatelessWidget {
   const LoopPillAction({
     required this.label,
@@ -214,7 +216,7 @@ class LoopPillAction extends StatelessWidget {
     final ground = !enabled
         ? LoopColors.card2
         : soft
-        ? LoopColors.limeSoft
+        ? LoopColors.assistFill
         : primary
         ? LoopColors.lime
         // Decision 0211: a secondary chip is the raised ground, no edge.
@@ -222,7 +224,7 @@ class LoopPillAction extends StatelessWidget {
     final ink = !enabled
         ? LoopColors.text3
         : soft
-        ? LoopColors.lime
+        ? LoopColors.text2
         : primary
         ? LoopColors.ink
         : LoopColors.chalk;
@@ -238,8 +240,8 @@ class LoopPillAction extends StatelessWidget {
           child: Center(
             widthFactor: 1,
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              height: LoopTouch.compactButton,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: ground,

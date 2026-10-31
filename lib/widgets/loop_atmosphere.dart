@@ -909,18 +909,72 @@ const List<double> loopGreyMatrix = <double>[
   0, 0, 0, 1, 0, //
 ];
 
+/// The one empty-state drawing (S325 · decision 0255, UX-003): the grey
+/// spray-paint crown, the same one 聊天's empty list always drew.
+///
+/// The source PNG is cut off at its bottom edge, under the two drips; drawn
+/// as it is, the crown read as clipped. Its last fifth fades out instead, so
+/// the drips end the way paint does. The box keeps the drawing's own aspect,
+/// so nothing around it can crop it either.
+class LoopEmptyArt extends StatelessWidget {
+  const LoopEmptyArt({super.key, this.width = 64, this.crownKey});
+
+  final double width;
+
+  /// The key of the crown image itself (tests pin it).
+  final Key? crownKey;
+
+  /// The crown PNG's own aspect (115 × 109).
+  static const double aspect = 115 / 109;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: const ValueKey<String>('loop-empty-art'),
+    width: width,
+    height: width / aspect,
+    child: Opacity(
+      opacity: 0.45,
+      child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFFFFFFFF), Color(0x00FFFFFF)],
+          stops: <double>[0.78, 1],
+        ).createShader(bounds),
+        child: ColorFiltered(
+          colorFilter: const ColorFilter.matrix(loopGreyMatrix),
+          child: loopAtmoArt(
+            LoopAtmoAssets.crownFlat,
+            key: crownKey,
+            width: width,
+            height: width / aspect,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// An empty state on the wall (decision 0220 §9): a board with the grey
-/// crown line drawing, one sentence and, when there is one, a Yellow action.
+/// crown, a title, one sentence and, when there is one, a Yellow action.
+///
+/// S325 · decision 0255 (UX-003): the same 「主标题 + 一句描述」 as
+/// [LoopEmptyState]. A caller that gives only [message] has a title and no
+/// sentence: the one line is drawn as the title.
 class LoopAtmoEmpty extends StatelessWidget {
   const LoopAtmoEmpty({
     required this.message,
     super.key,
+    this.title,
     this.actionLabel,
     this.onAction,
     this.actionKey,
     this.crownKey,
   });
 
+  /// The title; `null` makes [message] the title.
+  final String? title;
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -931,6 +985,8 @@ class LoopAtmoEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     final action = onAction;
     final label = actionLabel;
+    final heading = title ?? message;
+    final description = title == null ? null : message;
     return LoopAtmoBoard(
       children: <Widget>[
         Padding(
@@ -938,25 +994,25 @@ class LoopAtmoEmpty extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Opacity(
-                opacity: 0.45,
-                child: ColorFiltered(
-                  colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-                  child: loopAtmoArt(
-                    LoopAtmoAssets.crownFlat,
-                    key: crownKey,
-                    width: 64,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
+              LoopEmptyArt(crownKey: crownKey),
+              const SizedBox(height: 12),
               Text(
-                message,
+                heading,
+                key: const ValueKey<String>('loop-empty-title'),
                 textAlign: TextAlign.center,
-                style: LoopType.bodySm,
+                style: LoopType.title,
               ),
+              if (description case final String line) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  line,
+                  key: const ValueKey<String>('loop-empty-message'),
+                  textAlign: TextAlign.center,
+                  style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+                ),
+              ],
               if (action != null && label != null) ...<Widget>[
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 LoopYellowButton(
                   key: actionKey,
                   label: label,
@@ -972,8 +1028,8 @@ class LoopAtmoEmpty extends StatelessWidget {
   }
 }
 
-/// The atmosphere's solid Yellow button: 12 radius, Ink 14 / 700, a soft
-/// Yellow glow under it.
+/// The atmosphere's solid Yellow button: 12 radius, Ink 14 / 700. No glow
+/// under it (S325 · decision 0255, UX-007: no button glows).
 class LoopYellowButton extends StatelessWidget {
   const LoopYellowButton({
     required this.label,
@@ -1000,13 +1056,6 @@ class LoopYellowButton extends StatelessWidget {
       decoration: const BoxDecoration(
         color: LoopColors.yellow,
         borderRadius: LoopRadius.button,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color(0x38FFD600),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
       ),
       // Sized by its words (`inline-flex`), centred in its height.
       child: Center(

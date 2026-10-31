@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// Business archetype (`data-page-archetype`): what the page is for.
 /// `listing` is the prototype's `index` (reserved on Dart enums).
@@ -388,6 +389,11 @@ class LoopFocusPage extends StatelessWidget {
         ],
       ),
     );
+    // S325 · decision 0255: the page's sources gather at its bar's (i).
+    return LoopProvenanceScope(child: _focusSemantics(content));
+  }
+
+  Widget _focusSemantics(Widget content) {
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
@@ -587,7 +593,15 @@ class LoopDashboardPage extends StatelessWidget {
     // bottom bar has already padded; read here, they would be the bare
     // device insets and the page's last row would end under the bar.
     final body = Builder(builder: (context) => _buildBody(context, refresh));
-    if (bar == null) return body;
+    // S325 · decision 0255: a page that draws its bar gathers its sources at
+    // the bar's (i); an embedded segment reports to the tab page around it.
+    if (bar == null) return embedded ? body : LoopProvenanceScope(child: body);
+    return embedded
+        ? _withBar(bar, body)
+        : LoopProvenanceScope(child: _withBar(bar, body));
+  }
+
+  Widget _withBar(Widget bar, Widget body) {
     // The bar is measured, not guessed: the scroll below reserves exactly the
     // height this widget reports, so the page's last row clears it on every
     // text scale without a constant anyone has to keep in step.
@@ -928,6 +942,12 @@ class LoopStreamPage extends StatelessWidget {
         : tabPage
         ? MediaQuery.paddingOf(context).bottom
         : loopChildPageBottomInset(context);
+    final page = _streamPage(context, bottom);
+    // S325 · decision 0255: the page's sources gather at its bar's (i).
+    return embedded ? page : LoopProvenanceScope(child: page);
+  }
+
+  Widget _streamPage(BuildContext context, double bottom) {
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),

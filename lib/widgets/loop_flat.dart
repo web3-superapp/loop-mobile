@@ -180,6 +180,10 @@ class LoopFlatSwitch extends StatelessWidget {
         trackOutlineColor: const WidgetStatePropertyAll<Color>(
           Colors.transparent,
         ),
+        // S325 · decision 0255 (UX-007): the off thumb is as large as the on
+        // one. Material 3 shrinks an off thumb that carries no icon; an empty
+        // icon keeps it at full size and paints nothing.
+        thumbIcon: const WidgetStatePropertyAll<Icon?>(Icon(null)),
         materialTapTargetSize: MaterialTapTargetSize.padded,
       ),
     );

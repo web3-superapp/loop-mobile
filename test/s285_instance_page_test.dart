@@ -23,6 +23,7 @@ import 'support/launch2_trade_sheet.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s285_page.dart';
 import 'support/test_hints.dart';
+import 'support/provenance_finders.dart';
 
 // ---------------------------------------------------------------------------
 // S285 · client decision 0240: the MEME v2 project page restructured
@@ -706,9 +707,8 @@ void main() {
       expect(pnl.style?.color, LoopColors.fall);
       // No positions read: no value cell, never a derived one.
       expect(_key('launch2-holding-value'), findsNothing);
-      await tester.tap(_key('launch2-holding-pnl-info'));
-      await tester.pumpAndSettle();
-      expect(_key('launch2-holding-partial-note'), findsOneWidget);
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('部分持仓为链上转入，无成本记录'), findsOneWidget);
       expect(find.text('-0.5 USD1'), findsOneWidget);
       await drainS285(tester);

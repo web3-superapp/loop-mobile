@@ -18,6 +18,7 @@ import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.da
 import 'support/community_test_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
@@ -726,13 +727,8 @@ void main() {
       // Decision 0121: no banner — the fact sits in the ⓘ of the source line.
       expect(find.textContaining('仅开发环境'), findsNothing);
       expect(find.text(miningDemoHoldingsDetail), findsNothing);
-      final line = find.byKey(
-        const ValueKey<String>('mining-provenance-summary'),
-      );
-      expect(line, findsOneWidget);
-      await tester.ensureVisible(line);
-      await tester.tap(line);
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.text(miningDemoHoldingsDetail), findsOneWidget);
     });
 

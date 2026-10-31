@@ -25,7 +25,6 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart'
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -44,15 +43,12 @@ String intelRankScopeLabel(MiningRankScope scope) => switch (scope) {
 /// The face on a board row (docs/35 `.rank-row .face`).
 const double intelRankRowFaceSize = 40;
 
-/// The width of the share bar under a row's figure (`.rank-row .fig .bar`).
-const double intelRankShareBarWidth = 64;
-
 /// 情报 · 算力榜 (decisions 0118, 0122, 0182).
 ///
 /// The reader's own place is the page.s one ledger card; the three
 /// boards sit behind chips under it — 社区 / 用户 / 推广 — then the first
-/// three on a podium and every later place as a row with its share of the
-/// leader's figure. The board reads on as the reader scrolls. What the
+/// three on a podium and every later place as a row with its figure
+/// (S325 · decision 0255, UX-018: no share bar). The board reads on as the reader scrolls. What the
 /// figures are and when they were computed is one weak line at the foot,
 /// which opens the display rules.
 class IntelRankBoard extends ConsumerStatefulWidget {
@@ -315,7 +311,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         (entries[podium].position ?? 99) <= 3) {
       podium += 1;
     }
-    final leader = intelRankLeaderAmount(entries);
     final me = rank.me;
     final selfMissing = me != null && !entries.any((entry) => entry.isSelf);
     final rows = entries.skip(podium).toList();
@@ -338,7 +333,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
           weight: entry.weight,
           isSelf: entry.isSelf,
           figure: entry.figure,
-          share: intelRankShare(entry.amount, leader),
           spoken: entry.spoken,
           onTap: entry.onTap,
         ),
@@ -347,7 +341,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
           key: const ValueKey<String>('intel-rank-self-row'),
           rank: rank,
           me: me,
-          leader: leader,
           faces: ref.watch(communityFacesProvider),
         ),
     ];
@@ -810,8 +803,7 @@ final class IntelRankEntry {
   /// What the figure is, said aloud only (「算力」, 「邀请人数」).
   final String? spoken;
 
-  /// The figure as a number, for the share of the leader's; `null` when the
-  /// figure is withheld.
+  /// The figure as a number; `null` when the figure is withheld.
   final Decimal? amount;
   final bool isSelf;
   final VoidCallback? onTap;
@@ -824,25 +816,6 @@ final class IntelRankEntry {
     if (weight != null) '权重 $weight',
     <String>[?spoken, figure].join(' '),
   ].join('，');
-}
-
-/// The leader's figure: the entry the server numbered 1. `null` when the
-/// board has none or its figure is withheld or zero.
-Decimal? intelRankLeaderAmount(List<IntelRankEntry> entries) {
-  for (final entry in entries) {
-    if (entry.position != 1) continue;
-    final amount = entry.amount;
-    if (amount != null && amount > Decimal.zero) return amount;
-  }
-  return null;
-}
-
-/// A row's share of the leader's figure, 0–1, for its 6 px bar. Computed on
-/// the device from the two figures on screen; `null` draws no bar.
-double? intelRankShare(Decimal? amount, Decimal? leader) {
-  if (amount == null || leader == null || leader <= Decimal.zero) return null;
-  final share = (amount / leader).toDouble();
-  return share.clamp(0, 1).toDouble();
 }
 
 /// The first three places as a podium (decision 0224, replacing the three
@@ -1187,8 +1160,9 @@ class IntelRankListHead extends StatelessWidget {
 }
 
 /// One place from the fourth on (docs/35 定稿 · B row): position · face 40 ·
-/// name with its badge over a second line · the figure over its share of the
-/// leader's. No card; a hairline under it. The reader's own row is
+/// name with its badge over a second line · the figure, alone (S325 ·
+/// decision 0255, UX-018: the share bar under it said nothing the figure did
+/// not, and read as noise when every row was 1). No card; a hairline under it. The reader's own row is
 /// purpleSoft with a yellow position and figure.
 class IntelRankRow extends StatelessWidget {
   const IntelRankRow({
@@ -1199,7 +1173,6 @@ class IntelRankRow extends StatelessWidget {
     super.key,
     this.caption,
     this.weight,
-    this.share,
     this.spoken,
     this.isSelf = false,
     this.onTap,
@@ -1212,9 +1185,6 @@ class IntelRankRow extends StatelessWidget {
   final String? caption;
   final String? weight;
   final String figure;
-
-  /// The figure's share of the leader's, 0–1; `null` draws no bar.
-  final double? share;
 
   /// What the figure is, said aloud only.
   final String? spoken;
@@ -1300,17 +1270,6 @@ class IntelRankRow extends StatelessWidget {
                   color: accent ?? LoopColors.chalk,
                 ),
               ),
-              if (share case final double fraction) ...<Widget>[
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: intelRankShareBarWidth,
-                  child: LoopProgressBar(
-                    key: const ValueKey<String>('intel-rank-row-share'),
-                    value: fraction,
-                    semanticLabel: '占第一名 ${(fraction * 100).round()}%',
-                  ),
-                ),
-              ],
             ],
           ),
         ],
@@ -1347,14 +1306,12 @@ class IntelRankSelfRow extends ConsumerWidget {
   const IntelRankSelfRow({
     required this.rank,
     required this.me,
-    required this.leader,
     required this.faces,
     super.key,
   });
 
   final MiningRank rank;
   final MiningRankMe me;
-  final Decimal? leader;
   final Map<String, CommunityFace> faces;
 
   @override
@@ -1396,7 +1353,6 @@ class IntelRankSelfRow extends ConsumerWidget {
       caption: referrals ? '直接邀请' : null,
       isSelf: true,
       figure: referrals ? me.value : loopPowerFigure(me.value),
-      share: intelRankShare(Decimal.tryParse(me.value), leader),
       spoken: referrals ? '邀请人数' : '算力',
     );
   }

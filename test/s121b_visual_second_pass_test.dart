@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart' show LoopEmptyArt;
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -93,7 +94,9 @@ void main() {
       },
     );
 
-    testWidgets('compact draws the illustration at 64', (tester) async {
+    // S325 · decision 0255: the drawing is the grey crown, 56 wide in a
+    // block, at the crown's own aspect.
+    testWidgets('compact draws the crown at 56', (tester) async {
       await _pump(
         tester,
         const LoopEmptyState(
@@ -104,7 +107,7 @@ void main() {
       );
       expect(
         tester.getSize(_key('loop-empty-illustration-holders')),
-        const Size(64, 64),
+        const Size(56, 56 / LoopEmptyArt.aspect),
       );
     });
 
@@ -366,17 +369,15 @@ void main() {
           weight: '0.5',
           caption: '9 人有算力',
           figure: '384',
-          share: 0.25,
         ),
       );
       expect(find.text('4'), findsOneWidget);
       // Decision 0229: the weight joins the second line.
       expect(find.text('权重 0.5，9 人有算力'), findsOneWidget);
       expect(find.text('算力'), findsNothing);
-      // Decision 0182: the figure's share of the leader's, a 64 px bar.
-      final bar = tester.widget<LoopProgressBar>(find.byType(LoopProgressBar));
-      expect(bar.value, 0.25);
-      expect(tester.getSize(find.byType(LoopProgressBar)).width, 64);
+      // S325 · decision 0255 (UX-018): the figure stands alone, no bar.
+      expect(find.text('384'), findsOneWidget);
+      expect(find.byType(LoopProgressBar), findsNothing);
     });
   });
 

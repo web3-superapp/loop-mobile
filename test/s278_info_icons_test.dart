@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/loop_shots.dart';
+import 'support/provenance_finders.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s8_harness.dart';
 
@@ -150,9 +151,10 @@ void main() {
       expect(find.textContaining('这里不会出现预估数字'), findsNothing);
       expect(find.textContaining('这里不会发起任何跨链操作'), findsNothing);
 
-      await tester.tap(_key('bridge-info'));
-      await tester.pumpAndSettle();
-      expect(_key('bridge-info-sheet'), findsOneWidget);
+      // S325 · decision 0255: the page's one (i), in its bar.
+      expect(_key('bridge-info'), findsNothing);
+      await openPageInfo(tester);
+      expect(_key('loop-provenance-sheet'), findsOneWidget);
       expect(find.textContaining('先选来源链'), findsOneWidget);
       expect(find.text('这里不会出现预估数字'), findsOneWidget);
     });
@@ -179,11 +181,9 @@ void main() {
       expect(find.text('无限额度授权'), findsOneWidget);
       expect(find.text('还没有开放'), findsWidgets);
 
-      final info = _key('security-approvals-unlimited-info');
-      await tester.ensureVisible(info);
-      await tester.tap(info);
-      await tester.pumpAndSettle();
-      expect(_key('security-approvals-unlimited-info-sheet'), findsOneWidget);
+      // S325 · decision 0255: the rows' (i) joined the page's one (i).
+      await openPageInfo(tester);
+      expect(_key('loop-provenance-sheet'), findsOneWidget);
       expect(find.textContaining('额度没有上限的授权，风险最高'), findsOneWidget);
     });
   });
@@ -199,11 +199,8 @@ void main() {
       );
       expect(find.textContaining('观察于'), findsNothing);
       expect(find.textContaining('区块 120,628,164'), findsNothing);
-      final line = _key('wallet-snapshot-footer');
-      expect(line, findsOneWidget);
-      await tester.ensureVisible(line);
-      await tester.tap(line);
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: the source joined the page's one (i).
+      await openPageInfo(tester);
       expect(_key('loop-provenance-sheet'), findsOneWidget);
       expect(find.textContaining('区块 120,628,164'), findsOneWidget);
     });
@@ -227,8 +224,7 @@ void main() {
         size: const Size(390, 844),
       );
       await loopShot(tester, 'bridge', dir: _shotDir, slice: 844);
-      await tester.tap(_key('bridge-info'));
-      await tester.pumpAndSettle();
+      await openPageInfo(tester);
       await loopShot(tester, 'bridge-info-sheet', dir: _shotDir, slice: 844);
     });
 

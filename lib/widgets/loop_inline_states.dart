@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart' show LoopInfoNote;
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -267,20 +269,57 @@ class LoopProvenanceLine extends StatelessWidget {
         key: ValueKey<String>('loop-provenance-none'),
       );
     }
-    // S278 · decision 0236: the line is no longer printed. The page keeps
-    // one quiet 「(i) 来源」 at the block's trailing edge; the source, the
-    // time and the detail are a tap away. A screen reader still hears the
-    // whole line.
-    return Padding(
-      padding: padding,
-      child: LoopInfoTrigger(
-        key: const ValueKey<String>('loop-provenance-line'),
-        semanticsLabel: '$text，查看数据来源说明',
-        expand: true,
-        leading: marker,
-        onTap: () => _open(context),
+    // S278 · decision 0236: the line is no longer printed. S325 · decision
+    // 0255 (UX-009): on a page with a title bar the statement joins the
+    // page's one (i); only a quality marker stays beside the block (AGENTS
+    // rule 25). Without a page (i) the block keeps its own 「(i) 来源」.
+    final marker = this.marker;
+    return LoopProvenanceReport(
+      entry: LoopProvenanceEntry(
+        heading: prefix,
+        sources: _distinctSources,
+        observedAt: observedAt,
+        attributed: true,
+        notes: <LoopInfoNote>[?_detailNote],
+        statement: text,
+      ),
+      hosted: marker == null
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: padding,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Semantics(
+                  label: '$text，数据来源在页面右上角的说明里',
+                  excludeSemantics: true,
+                  child: Text(
+                    marker,
+                    key: const ValueKey<String>('loop-provenance-marker'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.captionSm.copyWith(
+                      color: LoopGround.auxiliaryOf(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+      fallback: Padding(
+        padding: padding,
+        child: LoopInfoTrigger(
+          key: const ValueKey<String>('loop-provenance-line'),
+          semanticsLabel: '$text，查看数据来源说明',
+          expand: true,
+          leading: marker,
+          onTap: () => _open(context),
+        ),
       ),
     );
+  }
+
+  LoopInfoNote? get _detailNote {
+    final body = detail;
+    return body == null || body.isEmpty ? null : LoopInfoNote(body: body);
   }
 }
 

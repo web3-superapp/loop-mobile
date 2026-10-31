@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
@@ -168,13 +167,6 @@ class _IntelReferralBoardSectionState
     final children = <Widget>[];
     switch (ranking) {
       case MiningRankingReferrals(:final items) when items.isNotEmpty:
-        Decimal? leader;
-        for (final row in items) {
-          if (row.position == 1 && row.invitedCount > 0) {
-            leader = Decimal.fromInt(row.invitedCount);
-            break;
-          }
-        }
         for (var index = 0; index < items.length; index += 1) {
           final row = items[index];
           final display = row.display;
@@ -205,7 +197,6 @@ class _IntelReferralBoardSectionState
               caption: '直接邀请',
               isSelf: row.isSelf,
               figure: '${row.invitedCount}',
-              share: intelRankShare(Decimal.fromInt(row.invitedCount), leader),
               spoken: '邀请人数',
               onTap: location == null ? null : () => _open(location),
             ),

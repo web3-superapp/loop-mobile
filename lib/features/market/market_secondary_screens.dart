@@ -30,6 +30,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// Shared capability gate for the four secondary market pages.
 bool _marketBlocked(WidgetRef ref) {
@@ -271,17 +272,26 @@ class _HolderDistributionScreenState
             ? null
             : loopReasonCodeText(count.reasonCode),
         kickerTrailing: count != null && count.isAvailable
-            ? LoopInfoTrigger(
-                key: const ValueKey<String>('token-holders-provenance'),
-                semanticsLabel: '${loopFactProvenance(count)}，查看数据来源说明',
-                onTap: () => unawaited(
-                  showLoopInfoSheet(
-                    context,
-                    title: '数据来源',
-                    sheetKey: 'token-holders-provenance-sheet',
-                    notes: <LoopInfoNote>[
-                      LoopInfoNote(body: loopFactProvenance(count)),
-                    ],
+            // S325 · decision 0255 (UX-009): the page's one (i) in its bar.
+            ? LoopProvenanceReport(
+                entry: LoopProvenanceEntry(
+                  heading: '持有人',
+                  notes: <LoopInfoNote>[
+                    LoopInfoNote(body: loopFactProvenance(count)),
+                  ],
+                ),
+                fallback: LoopInfoTrigger(
+                  key: const ValueKey<String>('token-holders-provenance'),
+                  semanticsLabel: '${loopFactProvenance(count)}，查看数据来源说明',
+                  onTap: () => unawaited(
+                    showLoopInfoSheet(
+                      context,
+                      title: '数据来源',
+                      sheetKey: 'token-holders-provenance-sheet',
+                      notes: <LoopInfoNote>[
+                        LoopInfoNote(body: loopFactProvenance(count)),
+                      ],
+                    ),
                   ),
                 ),
               )

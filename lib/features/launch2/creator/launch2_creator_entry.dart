@@ -237,8 +237,9 @@ class Launch2BoldIconButton extends StatelessWidget {
   );
 }
 
-/// 「发射」: the MEME home's create entry, a Yellow capsule with the rocket
-/// and the word in Ink, 36 high inside a 44 target.
+/// 「发射」: the MEME home's create entry, a Yellow button with the rocket
+/// and the word in Ink, 36 high inside a 44 target — square with the button
+/// radius and no glow, like every other button (S325 · decision 0255).
 class Launch2LaunchCapsule extends StatelessWidget {
   const Launch2LaunchCapsule({required this.onPressed, super.key});
 
@@ -263,10 +264,7 @@ class Launch2LaunchCapsule extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
             decoration: const BoxDecoration(
               color: LoopColors.yellow,
-              borderRadius: LoopRadius.pill,
-              boxShadow: <BoxShadow>[
-                BoxShadow(color: LoopColors.primaryGlow, blurRadius: 14),
-              ],
+              borderRadius: LoopRadius.button,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

@@ -538,7 +538,9 @@ void main() {
       );
       expect(field.decoration?.hintText, '搜索代币、社区、用户…');
       final paste = find.byKey(const ValueKey<String>('search-paste-loop-id'));
-      expect(tester.widget<LoopSeg>(paste).label, '粘贴');
+      // S325 · decision 0255 (UX-007): a compact square button.
+      expect(tester.widget<LoopButton>(paste).label, '粘贴');
+      expect(tester.widget<LoopButton>(paste).size, LoopButtonSize.compact);
       expect(
         tester.getRect(paste).left,
         greaterThan(

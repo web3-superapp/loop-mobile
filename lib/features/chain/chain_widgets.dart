@@ -13,6 +13,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// Whether an S5 page must stop at the capability gate instead of reading.
 bool loopChainCapabilityBlocks(
@@ -761,19 +762,29 @@ class LoopFactLine extends StatelessWidget {
                 const SizedBox(width: 6),
               ],
               const Spacer(),
-              // S278 · decision 0236: the source and the time behind (i).
-              LoopInfoTrigger(
-                key: ValueKey<String>('fact-$label-provenance'),
-                semanticsLabel:
-                    '${loopFactProvenance(fact, now: now)}，查看数据来源说明',
-                onTap: () => unawaited(
-                  showLoopInfoSheet(
-                    context,
-                    title: '数据来源',
-                    sheetKey: 'fact-provenance-sheet',
-                    notes: <LoopInfoNote>[
-                      LoopInfoNote(body: loopFactProvenance(fact, now: now)),
-                    ],
+              // S278 · decision 0236: the source and the time behind (i);
+              // S325 · decision 0255: the page's one (i) when there is one.
+              LoopProvenanceReport(
+                entry: LoopProvenanceEntry(
+                  heading: label,
+                  statement: loopFactProvenance(fact, now: now),
+                  notes: <LoopInfoNote>[
+                    LoopInfoNote(body: loopFactProvenance(fact, now: now)),
+                  ],
+                ),
+                fallback: LoopInfoTrigger(
+                  key: ValueKey<String>('fact-$label-provenance'),
+                  semanticsLabel:
+                      '${loopFactProvenance(fact, now: now)}，查看数据来源说明',
+                  onTap: () => unawaited(
+                    showLoopInfoSheet(
+                      context,
+                      title: '数据来源',
+                      sheetKey: 'fact-provenance-sheet',
+                      notes: <LoopInfoNote>[
+                        LoopInfoNote(body: loopFactProvenance(fact, now: now)),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -818,6 +829,26 @@ class LoopProvenanceFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // S325 · decision 0255 (UX-009): on a page with a title bar the
+    // statement joins the page's one (i) and nothing is left under the
+    // block; elsewhere the block keeps its own 「(i) [label]」.
+    return LoopProvenanceReport(
+      entry: LoopProvenanceEntry(
+        heading: title == '数据来源' ? null : title,
+        statement: text,
+        notes: <LoopInfoNote>[
+          LoopInfoNote(
+            key: const ValueKey<String>('provenance-footer-text'),
+            body: text,
+          ),
+          for (final note in notes) LoopInfoNote(body: note),
+        ],
+      ),
+      fallback: _fallback(context),
+    );
+  }
+
+  Widget _fallback(BuildContext context) {
     return Padding(
       padding: margin,
       child: LoopInfoTrigger(

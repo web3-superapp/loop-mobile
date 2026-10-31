@@ -588,11 +588,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             children: <Widget>[
               Expanded(child: _field(controller)),
               const SizedBox(width: 8),
-              LoopSeg(
+              // S325 · decision 0255 (UX-007): a compact square button, not
+              // a capsule chip.
+              LoopButton(
                 key: const ValueKey<String>('search-paste-loop-id'),
                 label: '粘贴',
-                selected: false,
-                onSelected: () => unawaited(_paste(controller)),
+                size: LoopButtonSize.compact,
+                onPressed: () => unawaited(_paste(controller)),
               ),
             ],
           ),
