@@ -271,8 +271,13 @@ Future<void> _fillText(WidgetTester tester) async {
   await tester.pump();
 }
 
-String? _frameUrl(WidgetTester tester, String key) =>
-    tester.widget<Launch2NftImageFrame>(_key(key)).imageUrl;
+/// S326 · decision 0256: the create page's NFT image is the upload slot
+/// itself; the project page keeps [Launch2NftImageFrame].
+String? _frameUrl(WidgetTester tester, String key) => tester
+    .widget<Launch2UploadSlot>(
+      find.ancestor(of: _key(key), matching: find.byType(Launch2UploadSlot)),
+    )
+    .imageUrl;
 
 void main() {
   loopShowTestHints();
@@ -302,7 +307,7 @@ void main() {
       expect(_key('launch2-create-logo-missing'), findsNothing);
       expect(
         tester
-            .widget<Launch2NftImageFrame>(_key('launch2-create-nft-preview'))
+            .widget<Launch2UploadSlot>(_key('launch2-create-nft-upload'))
             .missing,
         isTrue,
       );

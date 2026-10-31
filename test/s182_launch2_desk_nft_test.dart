@@ -1127,10 +1127,11 @@ void main() {
       expect(find.text('实时'), findsOneWidget);
       // The three still lines are gone.
       expect(_key('launch2-tape'), findsNothing);
-      final band = tester.widget<ColoredBox>(_key('launch2-ticker-band'));
-      expect(band.color, LoopColors.purple);
+      // S326 · decision 0256: the band is the quiet card ground, not Purple.
+      final band = tester.widget<DecoratedBox>(_key('launch2-ticker-band'));
+      expect((band.decoration as BoxDecoration).color, LoopColors.card);
       expect(tester.getSize(_key('launch2-ticker-band')).height, 36);
-      // 买入 sits on its own Ink ground, in rise.
+      // 买入 sits on its own soft rise ground, in rise; 「实时」 is Purple.
       final verb = tester.widget<Text>(find.text('买入').first);
       expect(verb.style?.color, LoopColors.rise);
       final verbGround = tester.widget<Container>(
@@ -1141,7 +1142,16 @@ void main() {
             )
             .first,
       );
-      expect((verbGround.decoration! as BoxDecoration).color, LoopColors.ink);
+      expect(
+        (verbGround.decoration! as BoxDecoration).color,
+        LoopColors.riseSoft,
+      );
+      expect(
+        tester.widget<Text>(find.text('实时')).style?.color,
+        isNot(LoopColors.rise),
+      );
+      // 「全部」 is the chevron alone.
+      expect(find.text('全部'), findsNothing);
 
       await tester.tap(_key('launch2-ticker-all'));
       await tester.pumpAndSettle();
@@ -1349,16 +1359,22 @@ void main() {
         ),
       );
       expect(grid.stats.map((stat) => '${stat.value}|${stat.label}'), <String>[
-        '3|本周毕业 · 累计 12',
+        '3|本周毕业',
         '4,200.5 USD1|累计回购',
         '318 枚|勋章已铸',
         '9|进行中',
       ]);
+      // S326 · decision 0256: each cell has a second data line, and the
+      // source entry sits beside the heading, not under the grid.
+      expect(grid.notes.first, '累计 12');
+      expect(_key('launch2-stats-graduated-note'), findsOneWidget);
       expect(_key('launch2-stats-buyback'), findsOneWidget);
       expect(_key('launch2-curation-notice'), findsNothing);
+      expect(_key('launch2-stats-source'), findsOneWidget);
+      expect(_key('launch2-list-all-provenance'), findsNothing);
       expect(
-        tester.getTopLeft(_key('launch2-stats')).dy,
-        lessThan(tester.getTopLeft(_key('launch2-list-all-provenance')).dy),
+        tester.getCenter(_key('launch2-stats-source')).dy,
+        lessThan(tester.getTopLeft(_key('launch2-stats')).dy),
       );
       await _drain(tester);
     });

@@ -569,14 +569,14 @@ void main() {
       await tester.enterText(_key('launch2-create-ticker'), '中' * 21);
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
-      expect(find.text('6/20 字'), findsOneWidget);
-      expect(find.text('21/20 字'), findsOneWidget);
+      expect(find.text('6/20'), findsOneWidget);
+      expect(find.text('21/20'), findsOneWidget);
       expect(find.text(loopTokenTickerLengthMessage), findsOneWidget);
       expect(_key('launch2-create-step-2'), findsNothing);
 
       await tester.enterText(_key('launch2-create-ticker'), '狗狗币');
       await tester.pump();
-      expect(find.text('3/20 字'), findsOneWidget);
+      expect(find.text('3/20'), findsOneWidget);
       expect(find.text(loopTokenTickerLengthMessage), findsNothing);
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
@@ -617,7 +617,9 @@ void main() {
       await _pump(tester, const Launch2CreateScreen());
       expect(_key('launch2-create-step-1'), findsOneWidget);
       expect(
-        tester.widget<LoopStepTrack>(_key('launch2-create-step-1')).current,
+        tester
+            .widget<Launch2CreateStepBar>(_key('launch2-create-step-1'))
+            .current,
         0,
       );
       await tester.tap(_key('launch2-create-next'));
@@ -866,15 +868,14 @@ void main() {
       // An approved project resumes on the signing page.
       await tester.tap(_key('launch2-project-row-$_projectId'));
       expect(opened.single, Launch2CreatorRoute.sign(_projectId));
-      await tester.tap(_key('launch2-projects-create'));
-      expect(opened.last, Launch2CreatorRoute.createPath);
+      // S326 · decision 0256 (UX-005): no 「发起」 inside the flow.
+      expect(_key('launch2-projects-create'), findsNothing);
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
     });
 
-    testWidgets('no project is the illustrated empty state with one action', (
-      tester,
-    ) async {
+    testWidgets('no project is the illustrated empty state, with no create '
+        'action (S326 · decision 0256)', (tester) async {
       final opened = <String>[];
       await _pump(
         tester,
@@ -883,8 +884,8 @@ void main() {
       );
       expect(_key('launch2-projects-empty'), findsOneWidget);
       expect(_key('loop-empty-illustration-launchpad'), findsOneWidget);
-      await tester.tap(_key('launch2-projects-empty-create'));
-      expect(opened.single, Launch2CreatorRoute.createPath);
+      expect(_key('launch2-projects-empty-create'), findsNothing);
+      expect(opened, isEmpty);
     });
 
     testWidgets('loading, error, offline, unavailable and permission', (
@@ -2486,7 +2487,9 @@ void main() {
         'is bound; nothing says 绑定项目的社区', (tester) async {
       await _pump(tester, const Launch2CreateScreen());
       expect(
-        tester.widget<LoopStepTrack>(_key('launch2-create-step-1')).labels,
+        tester
+            .widget<Launch2CreateStepBar>(_key('launch2-create-step-1'))
+            .labels,
         <String>['资料', '链接', '发射'],
       );
       await tester.tap(_key('launch2-create-upload'));

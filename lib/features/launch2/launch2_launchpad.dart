@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
@@ -330,8 +331,9 @@ List<Launch2DeskPage> launch2DeskPages(
 
 /// Every banner page's height at text scale 1 (S264, decision 0220: the
 /// atmosphere banner; 200 before). Since decision 0223 the event pages share
-/// it — 232 before.
-const double launch2DeskCampaignHeight = 220;
+/// it — 232 before. S326 · decision 0256 (UX-004 ⑧): 180 (220 before) —
+/// the words sit closer and the banner gives the list more of the screen.
+const double launch2DeskCampaignHeight = 180;
 
 /// The height of the dot row under the pager (decision 0211).
 const double launch2DeskDotsHeight = 18;
@@ -595,12 +597,12 @@ class Launch2DeskEventFace extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Launch2BannerTitle(
                 text: title,
                 textKey: const ValueKey<String>('launch2-desk-event-title'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               if (line != null)
                 Text(
                   line,
@@ -628,7 +630,7 @@ class Launch2DeskEventFace extends StatelessWidget {
         if (left != null)
           Positioned(
             left: Launch2BannerBackdrop.textLeft,
-            bottom: 20,
+            bottom: Launch2BannerBackdrop.footInset,
             child: Container(
               key: const ValueKey<String>('launch2-desk-event-countdown'),
               height: 28,
@@ -673,7 +675,11 @@ class Launch2BannerBackdrop extends StatelessWidget {
   /// Where the words start, and how wide their column is: the right of the
   /// card is the hand's.
   static const double textLeft = 20;
-  static const double textTop = 24;
+  static const double textTop = 16;
+
+  /// How far a page's foot control (the countdown, 「去参与」) sits from
+  /// the card's bottom edge.
+  static const double footInset = 14;
   static const double textWidth = 186;
 
   @override
@@ -893,7 +899,7 @@ class _Launch2DeskCampaignCardState
                     text: campaign.title,
                     textKey: ValueKey<String>('launch2-campaign-title-$id'),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   if (subtitle != null)
                     Text(
                       subtitle,
@@ -914,8 +920,8 @@ class _Launch2DeskCampaignCardState
               ),
             ),
             Positioned(
-              left: 20,
-              bottom: 20,
+              left: Launch2BannerBackdrop.textLeft,
+              bottom: Launch2BannerBackdrop.footInset,
               child: Launch2YellowButton(
                 key: ValueKey<String>('launch2-campaign-cta-$id'),
                 label: campaign.ctaLabel,
@@ -1294,7 +1300,7 @@ List<LoopStat> launch2DeskStats(Launch2Stats stats) => <LoopStat>[
   LoopStat(
     statKey: const ValueKey<String>('launch2-stats-graduated'),
     value: '${stats.graduatedThisWeek}',
-    label: '本周毕业 · 累计 ${stats.graduatedTotal}',
+    label: '本周毕业',
   ),
   LoopStat(
     statKey: const ValueKey<String>('launch2-stats-buyback'),
@@ -1311,4 +1317,16 @@ List<LoopStat> launch2DeskStats(Launch2Stats stats) => <LoopStat>[
     value: '${stats.liveCount}',
     label: '进行中',
   ),
+];
+
+/// S326 · decision 0256 (UX-004 ⑨): the second line of each 战绩 cell, in
+/// [launch2DeskStats]' order — figures the same overview already carries.
+List<String?> launch2DeskStatNotes(
+  Launch2Stats stats, {
+  DateTime? observedAt,
+}) => <String?>[
+  '累计 ${stats.graduatedTotal}',
+  observedAt == null ? null : '截至 ${loopClockLabel(observedAt.toLocal())}',
+  '铸造中 ${stats.mintingCount} 个项目',
+  '提前购 ${stats.priorityCount} · 内盘 ${stats.curveCount}',
 ];

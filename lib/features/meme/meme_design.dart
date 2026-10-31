@@ -54,9 +54,16 @@ class MemeStatFigures extends StatelessWidget {
     super.key,
     this.margin,
     this.hero = false,
+    this.notes = const <String?>[],
   });
 
   final List<LoopStat> stats;
+
+  /// S326 · decision 0256 (UX-004 ⑨): one quieter data line under a cell's
+  /// label, by the cell's index; a missing or `null` entry draws none.
+  final List<String?> notes;
+
+  String? _noteAt(int index) => index < notes.length ? notes[index] : null;
   final EdgeInsets? margin;
 
   /// The MEME project page's hero figures: the one place Anton survives
@@ -80,13 +87,21 @@ class MemeStatFigures extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Expanded(
-                child: _MemeStatCell(stat: left, hero: hero),
+                child: _MemeStatCell(
+                  stat: left,
+                  hero: hero,
+                  note: _noteAt(index),
+                ),
               ),
               const SizedBox(width: gap),
               Expanded(
                 child: right == null
                     ? const SizedBox.shrink()
-                    : _MemeStatCell(stat: right, hero: hero),
+                    : _MemeStatCell(
+                        stat: right,
+                        hero: hero,
+                        note: _noteAt(index + 1),
+                      ),
               ),
             ],
           ),
@@ -116,10 +131,11 @@ class MemeStatFigures extends StatelessWidget {
 }
 
 class _MemeStatCell extends StatelessWidget {
-  const _MemeStatCell({required this.stat, required this.hero});
+  const _MemeStatCell({required this.stat, required this.hero, this.note});
 
   final LoopStat stat;
   final bool hero;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +148,11 @@ class _MemeStatCell extends StatelessWidget {
           };
     return Semantics(
       container: true,
-      label: '${stat.label} ${stat.isUnread ? '未读取' : stat.value}',
+      label: <String>[
+        stat.label,
+        stat.isUnread ? '未读取' : stat.value,
+        ?note,
+      ].join(' '),
       child: Container(
         key: stat.statKey,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -173,6 +193,23 @@ class _MemeStatCell extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.caption,
               ),
+              if (note case final String line) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  line,
+                  key: stat.statKey is ValueKey<String>
+                      ? ValueKey<String>(
+                          '${(stat.statKey! as ValueKey<String>).value}-note',
+                        )
+                      : null,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.captionSm.copyWith(
+                    color: LoopColors.muted,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

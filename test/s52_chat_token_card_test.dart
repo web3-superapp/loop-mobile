@@ -15,13 +15,13 @@ import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card.dart';
+import 'package:loop_mobile/features/chat/token_card/chat_token_card_view.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card_cache.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
-import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
@@ -439,7 +439,7 @@ void main() {
         find.text('未收录的代币 · ${loopChatTokenShortAddress(_address)}'),
         findsOneWidget,
       );
-      expect(find.byType(LoopTokenCard), findsNothing);
+      expect(find.byType(ChatTokenCardView), findsNothing);
     });
 
     testWidgets('a closed provider renders the reason, not a figure', (
@@ -705,7 +705,7 @@ void main() {
       expect(market.intervals, <LoopCandleInterval>[
         LoopCandleInterval.oneHour,
       ]);
-      expect(find.byType(LoopTokenCard), findsNWidgets(3));
+      expect(find.byType(ChatTokenCardView), findsNWidgets(3));
     });
 
     test('an answer is held for a minute and no longer', () {

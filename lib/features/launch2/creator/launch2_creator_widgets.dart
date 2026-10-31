@@ -428,8 +428,258 @@ class _Launch2RefreshOnReturnState extends State<Launch2RefreshOnReturn> {
   Widget build(BuildContext context) => widget.child;
 }
 
-/// What the create page says under the NFT image slot (decision 0233).
-const String launch2NftImageHelp = '这张图会作为项目 NFT 的图片显示在钱包里';
+/// What the create page says under the NFT image slot (decision 0233;
+/// S326 · decision 0256 shortened it to the design's words).
+const String launch2NftImageHelp = '将作为项目 NFT 图片显示在钱包里';
+
+/// S326 · decision 0256 (UX-006): the create page's step bar — equal
+/// segments across the top of the page, every reached step Yellow, the rest
+/// the raised grey, the same shape as the sign-in flow's. It replaces the
+/// step dots under the title.
+class Launch2CreateStepBar extends StatelessWidget {
+  const Launch2CreateStepBar({
+    required this.labels,
+    required this.current,
+    super.key,
+  });
+
+  final List<String> labels;
+  final int current;
+
+  /// The segments' height and the gap between two.
+  static const double height = 4;
+  static const double gap = 6;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: '第 ${current + 1} 步，共 ${labels.length} 步，${labels[current]}',
+    excludeSemantics: true,
+    child: Row(
+      children: <Widget>[
+        for (var index = 0; index < labels.length; index++) ...<Widget>[
+          if (index > 0) const SizedBox(width: gap),
+          Expanded(
+            child: AnimatedContainer(
+              key: ValueKey<String>('launch2-create-step-segment-$index'),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
+              height: height,
+              decoration: BoxDecoration(
+                color: index <= current ? LoopColors.yellow : LoopColors.card2,
+                borderRadius: LoopRadius.pill,
+              ),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// S326 · decision 0256 (UX-006): an upload placeholder that is itself the
+/// upload control. Empty, a raised square with the add-picture glyph over
+/// 「上传」; with a picture, the picture with a small 「换一张」 at its foot;
+/// while sending, 「上传中…」. There is no separate upload button beside it.
+class Launch2UploadSlot extends StatelessWidget {
+  const Launch2UploadSlot({
+    required this.size,
+    required this.semanticLabel,
+    super.key,
+    this.imageUrl,
+    this.preview,
+    this.previewKey,
+    this.emptyKey,
+    this.missing = false,
+    this.uploading = false,
+    this.onTap,
+  });
+
+  final double size;
+
+  /// What the slot holds, for a screen reader (「头像」, 「NFT 图」).
+  final String semanticLabel;
+  final String? imageUrl;
+
+  /// Draws the uploaded picture; absent, [imageUrl] is drawn as a square.
+  final Widget? preview;
+  final Key? previewKey;
+  final Key? emptyKey;
+
+  /// The step refused without a picture: the slot's edge turns Chalk.
+  final bool missing;
+  final bool uploading;
+
+  /// `null` while upload is closed or a picture is on its way.
+  final VoidCallback? onTap;
+
+  static const BorderRadius radius = LoopRadius.control;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    final words = LoopTypography.withWeight(
+      LoopType.captionSm,
+      FontWeight.w600,
+    );
+    final empty = Column(
+      key: emptyKey,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Launch2AddPictureGlyph(
+          size: size >= 110 ? 30 : 26,
+          color: uploading ? LoopColors.text3 : LoopColors.chalk,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          uploading ? '上传中…' : '上传',
+          style: words.copyWith(
+            color: uploading ? LoopColors.text3 : LoopColors.chalk,
+          ),
+        ),
+      ],
+    );
+    final Widget face;
+    if (url == null) {
+      face = empty;
+    } else {
+      face = Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          preview ??
+              LoopRemoteAvatar(
+                url: url,
+                fallback: empty,
+                size: size,
+                shape: BoxShape.rectangle,
+                radius: LoopRadius.controlValue,
+                semanticLabel: semanticLabel,
+              ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 24,
+              alignment: Alignment.center,
+              color: LoopColors.veil,
+              child: Text(
+                uploading ? '上传中…' : '换一张',
+                style: words.copyWith(color: LoopColors.chalk),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: url == null ? '上传$semanticLabel' : '$semanticLabel，换一张',
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: onTap == null && !uploading ? 0.5 : 1,
+        child: Material(
+          color: LoopColors.card2,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: missing ? LoopColors.chalk : LoopColors.line2,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: SizedBox(
+              key: previewKey,
+              width: size,
+              height: size,
+              child: face,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The add-picture glyph of [Launch2UploadSlot]: a picture frame with a hill
+/// and a sun, and a plus at its top-right corner, in the sprite's 1.7 pen.
+class Launch2AddPictureGlyph extends StatelessWidget {
+  const Launch2AddPictureGlyph({
+    super.key,
+    this.size = 26,
+    this.color = LoopColors.chalk,
+  });
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(size: Size.square(size), painter: _AddPicturePainter(color));
+}
+
+class _AddPicturePainter extends CustomPainter {
+  const _AddPicturePainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final k = size.width / 24;
+    final pen = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7 * k
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    // The frame, open at its top-right corner where the plus stands.
+    final frame = Path()
+      ..moveTo(13 * k, 4 * k)
+      ..lineTo(6 * k, 4 * k)
+      ..arcToPoint(
+        Offset(3 * k, 7 * k),
+        radius: Radius.circular(3 * k),
+        clockwise: false,
+      )
+      ..lineTo(3 * k, 18 * k)
+      ..arcToPoint(
+        Offset(6 * k, 21 * k),
+        radius: Radius.circular(3 * k),
+        clockwise: false,
+      )
+      ..lineTo(17 * k, 21 * k)
+      ..arcToPoint(
+        Offset(20 * k, 18 * k),
+        radius: Radius.circular(3 * k),
+        clockwise: false,
+      )
+      ..lineTo(20 * k, 11 * k);
+    canvas.drawPath(frame, pen);
+    // The hill.
+    canvas.drawPath(
+      Path()
+        ..moveTo(3.5 * k, 17.5 * k)
+        ..lineTo(8.5 * k, 12.5 * k)
+        ..lineTo(14 * k, 18 * k)
+        ..moveTo(12 * k, 16 * k)
+        ..lineTo(14.5 * k, 13.5 * k)
+        ..lineTo(19.5 * k, 18.5 * k),
+      pen,
+    );
+    // The sun.
+    canvas.drawCircle(Offset(8.5 * k, 8.5 * k), 1.5 * k, pen);
+    // The plus.
+    canvas.drawLine(Offset(19 * k, 2 * k), Offset(19 * k, 8 * k), pen);
+    canvas.drawLine(Offset(16 * k, 5 * k), Offset(22 * k, 5 * k), pen);
+  }
+
+  @override
+  bool shouldRepaint(_AddPicturePainter oldDelegate) =>
+      oldDelegate.color != color;
+}
 
 /// The project NFT's image in a square card-ground frame (decision 0233):
 /// the board's ground and top hairline, the Yellow splat on its top-left
