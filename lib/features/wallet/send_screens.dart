@@ -24,7 +24,6 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -544,7 +543,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             )
           : null,
       body: <Widget>[
-        const LoopStepDots(step: 1, total: sendStepCount, label: '收款地址'),
+        const SendStepBar(step: 1, total: sendStepCount, label: '收款地址'),
         const SizedBox(height: 12),
         if (walletId == null)
           LoopChainStateBlock(
@@ -558,45 +557,53 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             ),
           )
         else ...<Widget>[
+          // UX-016 (decision 0257): the field's name above it, and the
+          // field itself one layer — no card around the input.
+          const SendFieldTitle(
+            '收款地址',
+            key: ValueKey<String>('send-recipient-title'),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('send-recipient-field'),
-                controller: _address,
-                focusNode: _addressFocus,
-                autocorrect: false,
-                enableSuggestions: false,
-                keyboardType: TextInputType.visiblePassword,
-                textInputAction: TextInputAction.done,
-                maxLength: 42,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                onChanged: (_) => _addressEdited(),
-                onSubmitted: (_) {
-                  setState(() => _addressTouched = true);
-                  unawaited(_check());
-                },
-                decoration: InputDecoration(
-                  labelText: '收款地址（BNB Smart Chain）',
-                  hintText: '0x…',
-                  counterText: '',
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      LoopIconButton(
-                        key: const ValueKey<String>('send-recipient-paste'),
-                        icon: 'copy',
-                        label: '粘贴',
-                        onPressed: () => unawaited(_paste()),
-                      ),
-                      LoopIconButton(
-                        key: const ValueKey<String>('send-recipient-scan'),
-                        icon: 'camera',
-                        label: '扫码',
-                        onPressed: () => unawaited(_scan()),
-                      ),
-                    ],
-                  ),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              6,
+            ),
+            child: TextField(
+              key: const ValueKey<String>('send-recipient-field'),
+              controller: _address,
+              focusNode: _addressFocus,
+              autocorrect: false,
+              enableSuggestions: false,
+              keyboardType: TextInputType.visiblePassword,
+              textInputAction: TextInputAction.done,
+              maxLength: 42,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              onChanged: (_) => _addressEdited(),
+              onSubmitted: (_) {
+                setState(() => _addressTouched = true);
+                unawaited(_check());
+              },
+              decoration: InputDecoration(
+                hintText: '0x…（BNB Smart Chain）',
+                counterText: '',
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    LoopIconButton(
+                      key: const ValueKey<String>('send-recipient-paste'),
+                      icon: 'copy',
+                      label: '粘贴',
+                      onPressed: () => unawaited(_paste()),
+                    ),
+                    LoopIconButton(
+                      key: const ValueKey<String>('send-recipient-scan'),
+                      icon: 'camera',
+                      label: '扫码',
+                      onPressed: () => unawaited(_scan()),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -749,7 +756,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             )
           : null,
       body: <Widget>[
-        const LoopStepDots(step: 2, total: sendStepCount, label: '金额与资产'),
+        const SendStepBar(step: 2, total: sendStepCount, label: '金额与资产'),
         const SizedBox(height: 12),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -812,36 +819,42 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               ),
             ],
           ),
+          SendFieldTitle(
+            symbol == null ? '发送数量' : '发送数量（$symbol）',
+            key: const ValueKey<String>('send-amount-title'),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('send-amount-field'),
-                controller: _amount,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                textInputAction: TextInputAction.done,
-                // The amount stays the exact text all the way to the wire.
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ],
-                maxLength: TransferAmount.maxWireLength,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: symbol == null ? '发送数量' : '发送数量（$symbol）',
-                  counterText: '',
-                  errorText: overSpendable ? '超过可动用余额' : null,
-                  suffixIcon: TextButton(
-                    key: const ValueKey<String>('send-amount-max'),
-                    onPressed: spendable != null && spendable > Decimal.zero
-                        ? () => setState(
-                            () => _amount.text = spendable.toString(),
-                          )
-                        : null,
-                    child: const Text('全部'),
-                  ),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
+            child: TextField(
+              key: const ValueKey<String>('send-amount-field'),
+              controller: _amount,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.done,
+              // The amount stays the exact text all the way to the wire.
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              maxLength: TransferAmount.maxWireLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: '输入数量',
+                counterText: '',
+                errorText: overSpendable ? '超过可动用余额' : null,
+                suffixIcon: TextButton(
+                  key: const ValueKey<String>('send-amount-max'),
+                  onPressed: spendable != null && spendable > Decimal.zero
+                      ? () =>
+                            setState(() => _amount.text = spendable.toString())
+                      : null,
+                  child: const Text('全部'),
                 ),
               ),
             ),
@@ -893,6 +906,81 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
       _symbol = row.symbol;
     });
   }
+}
+
+/// Where the send flow stands (UX-016, decision 0257): equal segments across
+/// the top of the page, as the sign-in steps draw them — every reached step
+/// Yellow, the rest Line2. The step's name is the field title under it.
+class SendStepBar extends StatelessWidget {
+  const SendStepBar({
+    required this.step,
+    required this.total,
+    required this.label,
+    super.key,
+  }) : assert(step >= 1 && step <= total);
+
+  /// One-based current step.
+  final int step;
+  final int total;
+  final String label;
+
+  static const double height = 4;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('send-step-bar'),
+    label: '第 $step 步，共 $total 步，$label',
+    excludeSemantics: true,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        4,
+      ),
+      child: Row(
+        children: <Widget>[
+          for (var index = 1; index <= total; index += 1) ...<Widget>[
+            if (index > 1) const SizedBox(width: 6),
+            Expanded(
+              child: Container(
+                key: ValueKey<String>('send-step-segment-$index'),
+                height: height,
+                decoration: BoxDecoration(
+                  color: index <= step ? LoopColors.yellow : LoopColors.line2,
+                  borderRadius: LoopRadius.badge,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+/// The name of a send field, above the field (UX-016, decision 0257).
+class SendFieldTitle extends StatelessWidget {
+  const SendFieldTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      8,
+      LoopSpacing.page,
+      8,
+    ),
+    child: Text(
+      text,
+      style: LoopTypography.withWeight(
+        LoopType.body,
+        FontWeight.w600,
+      ).copyWith(color: LoopColors.chalk),
+    ),
+  );
 }
 
 /// What the preflight said about one recipient, folded into a single line.
@@ -1073,7 +1161,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         // promises 「全部确认后才请求签名」 and then lists nothing at all
         // (which is what a 403 on prepare left behind) confirms nothing. The
         // draft's own two lines stand until the intent replaces them.
-        const LoopStepDots(step: 3, total: sendStepCount, label: '确认并签名'),
+        const SendStepBar(step: 3, total: sendStepCount, label: '确认并签名'),
         const SizedBox(height: 12),
         if (intent == null) _SendDraftFacts(draft: widget.draft),
         if (other != null)

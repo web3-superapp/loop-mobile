@@ -1755,12 +1755,14 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                 children: <Widget>[
                   for (final (index, item) in networks.indexed) ...<Widget>[
                     if (index > 0) const SizedBox(width: 7),
-                    LoopSeg(
+                    ReceiveNetworkChip(
                       key: ValueKey<String>('receive-network-${item.chainId}'),
-                      quiet: true,
-                      label: item.name,
+                      network: item,
                       selected: index == _selected,
-                      onSelected: () => setState(() => _selected = index),
+                      // One published network is a label, not a choice.
+                      onTap: networks.length < 2
+                          ? null
+                          : () => setState(() => _selected = index),
                     ),
                   ],
                 ],
@@ -1831,6 +1833,69 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     }
     if (!mounted || shared) return;
     LoopToast.show(context, message: '这台设备打不开分享面板，请改用复制地址');
+  }
+}
+
+/// The network a receive address is on (UX-016, decision 0257): the chain's
+/// logo and name on a light grey capsule — a label, not the solid Purple tab
+/// it was. With more than one published network each capsule chooses its
+/// own, and the chosen one carries the brighter ground.
+class ReceiveNetworkChip extends StatelessWidget {
+  const ReceiveNetworkChip({
+    required this.network,
+    required this.selected,
+    super.key,
+    this.onTap,
+  });
+
+  final LoopReceiveNetwork network;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
+      decoration: BoxDecoration(
+        color: selected ? LoopColors.card2 : LoopColors.card,
+        borderRadius: LoopRadius.pill,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          LoopNetworkLogo(network: network.chainId, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            network.name,
+            maxLines: 1,
+            style: LoopTypography.withWeight(
+              LoopType.label,
+              FontWeight.w600,
+            ).copyWith(color: selected ? LoopColors.chalk : LoopColors.text2),
+          ),
+        ],
+      ),
+    );
+    final tap = onTap;
+    return Semantics(
+      button: tap != null,
+      selected: selected,
+      label: '网络 ${network.name}',
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+        child: Center(
+          widthFactor: 1,
+          child: tap == null
+              ? chip
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: tap,
+                  child: chip,
+                ),
+        ),
+      ),
+    );
   }
 }
 

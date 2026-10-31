@@ -18,7 +18,6 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -80,7 +79,7 @@ void main() {
         intents: FakeWalletIntentsGateway(),
       );
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      final dots = tester.widget<LoopStepDots>(find.byType(LoopStepDots));
+      final dots = tester.widget<SendStepBar>(find.byType(SendStepBar));
       expect(dots.step, 1);
       expect(dots.total, 3);
       expect(dots.label, '收款地址');
@@ -178,7 +177,7 @@ void main() {
         intents: FakeWalletIntentsGateway(),
       );
       await sendToAmountStep(tester);
-      final dots = tester.widget<LoopStepDots>(find.byType(LoopStepDots));
+      final dots = tester.widget<SendStepBar>(find.byType(SendStepBar));
       expect(dots.step, 2);
       expect(find.byType(LoopFolioPrimary), findsNothing);
       // The only asset with something to send is chosen without asking.
@@ -282,7 +281,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
         intents: FakeWalletIntentsGateway(),
       );
-      final dots = tester.widget<LoopStepDots>(find.byType(LoopStepDots));
+      final dots = tester.widget<SendStepBar>(find.byType(SendStepBar));
       expect(dots.step, 3);
       expect(find.byType(LoopFolioPrimary), findsNothing);
       expect(_key('send-confirm-sign'), findsOneWidget);
@@ -337,9 +336,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(_key('swap-flip'));
       await tester.pump();
-      expect(tester.widget<LoopButton>(_key('swap-source-pick')).label, 'WBNB');
       expect(
-        tester.widget<LoopButton>(_key('swap-destination-pick')).label,
+        tester.widget<SwapAssetPickButton>(_key('swap-source-pick')).label,
+        'WBNB',
+      );
+      expect(
+        tester.widget<SwapAssetPickButton>(_key('swap-destination-pick')).label,
         'BNB',
       );
       await tester.pump(swapQuoteDebounce);

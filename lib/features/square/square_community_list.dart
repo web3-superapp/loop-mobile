@@ -109,6 +109,24 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         ),
       );
 
+  Future<void> _chooseSort(CommunityDiscoverSegment current) async {
+    final chosen = await showLoopSheet<CommunityDiscoverSegment>(
+      context,
+      useRootNavigator: true,
+      barrierLabel: '关闭排序',
+      builder: (sheetContext) => _SquareSortSheet(
+        current: current,
+        onSelected: (segment) => Navigator.of(sheetContext).pop(segment),
+      ),
+    );
+    if (chosen == null || chosen == current || !mounted) return;
+    await ref
+        .read(communityDiscoverControllerProvider.notifier)
+        .selectSort(chosen.sort);
+  }
+
+  void _openDirectory() => unawaited(context.push<void>('/community/discover'));
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -129,8 +147,46 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     final selectedSegment = CommunityDiscoverSegment.of(state.sort);
     final joinedOnly = state.membership == CommunityMembershipFilter.joined;
 
+    // UX-013 (decision 0257): 热门社区 is the community with the most
+    // members among the rows already read — no endpoint of its own. A
+    // directory of one or two rows has nothing to single out: the banner
+    // would only repeat the row under it.
+    final hot =
+        joinedOnly ||
+            state.phase != CommunityViewPhase.ready ||
+            state.items.length < squareHotMinimumRows
+        ? null
+        : squareHotCommunity(state.items);
+
     final body = <Widget>[
       CommunityPreviewNotice(mode: mode, resource: '社区目录'),
+      if (hot != null) ...<Widget>[
+        _SquareSectionHead(
+          key: const ValueKey<String>('square-hot-head'),
+          title: '热门社区',
+          icon: 'star',
+          trailing: _SquareTextLink(
+            key: const ValueKey<String>('square-hot-more'),
+            label: '查看更多',
+            onTap: _openDirectory,
+          ),
+        ),
+        SquareHotCommunityCard(
+          key: ValueKey<String>('square-hot-${hot.communityId}'),
+          community: hot,
+          joining: _joining.contains(hot.communityId),
+          onOpen: () => widget.onOpenCommunity(hot.communityId),
+          onJoin: () => unawaited(_join(hot)),
+        ),
+      ],
+      _SquareSectionHead(
+        key: const ValueKey<String>('square-all-head'),
+        title: joinedOnly ? '我加入的社区' : '全部社区',
+        trailing: _SquareSortButton(
+          label: selectedSegment.label,
+          onTap: () => unawaited(_chooseSort(selectedSegment)),
+        ),
+      ),
       LoopFreshnessStrip(
         key: const ValueKey<String>('square-community-freshness'),
         refreshing: state.refreshing,
@@ -197,9 +253,6 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         // Decision 0221: on the wall the rows sit on one card board; the
         // rows themselves stay flat.
         if (state.items.isNotEmpty) ...<Widget>[
-          // v3 (decision 0229): 16 from the chips to the board (the pinned
-          // chips keep 8 of it).
-          const SizedBox(height: LoopSpacing.segmentGap - 8),
           LoopAtmoBoard(
             key: const ValueKey<String>('square-community-board'),
             children: <Widget>[
@@ -294,13 +347,10 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           SliverPersistentHeader(
             pinned: true,
             delegate: _PinnedChips(
-              child: _SquareChips(
+              child: _SquareMainTabs(
                 membership: state.membership,
-                sort: selectedSegment,
                 onMembership: (filter) =>
                     unawaited(controller.selectMembership(filter)),
-                onSort: (segment) =>
-                    unawaited(controller.selectSort(segment.sort)),
               ),
             ),
           ),
@@ -314,6 +364,8 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
   }
 }
 
+/// 「发现社区」 with 「规则与入驻 ›」 at its right (UX-013, decision 0257).
+/// The link opens the same sheet as before: the ordering rules and 申请入驻.
 class _SquareHeaderLine extends StatelessWidget {
   const _SquareHeaderLine({required this.onRules});
 
@@ -327,43 +379,377 @@ class _SquareHeaderLine extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: Text(
-              squareCommunityRuleLine,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.caption,
+            child: Semantics(
+              header: true,
+              child: Text(
+                '发现社区',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.title.copyWith(color: LoopColors.chalk),
+              ),
             ),
           ),
-          Semantics(
-            button: true,
-            label: '排序规则',
-            excludeSemantics: true,
-            child: InkWell(
-              key: const ValueKey<String>('square-community-rules'),
-              onTap: onRules,
-              borderRadius: BorderRadius.circular(LoopRadius.innerValue),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: LoopTouch.minimum,
-                  minHeight: LoopTouch.minimum,
+          _SquareTextLink(
+            key: const ValueKey<String>('square-community-rules'),
+            label: '规则与入驻',
+            onTap: onRules,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A quiet word with a chevron that opens something (「规则与入驻 ›」,
+/// 「查看更多 ›」), 44 tall.
+class _SquareTextLink extends StatelessWidget {
+  const _SquareTextLink({required this.label, required this.onTap, super.key});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(LoopRadius.innerValue),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: LoopTouch.minimum,
+          minHeight: LoopTouch.minimum,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                label,
+                style: LoopTypography.withWeight(
+                  LoopType.label,
+                  FontWeight.w600,
+                ).copyWith(color: LoopColors.text2),
+              ),
+              const SizedBox(width: 2),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text2),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// A module title on the 社区 segment (「热门社区」, 「全部社区」) with an
+/// optional control at its right (UX-013, decision 0257).
+class _SquareSectionHead extends StatelessWidget {
+  const _SquareSectionHead({
+    required this.title,
+    super.key,
+    this.icon,
+    this.trailing,
+  });
+
+  final String title;
+  final String? icon;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 8, 4),
+    child: Row(
+      children: <Widget>[
+        if (icon case final String glyph) ...<Widget>[
+          LoopIcon(glyph, size: 18, color: LoopColors.yellow),
+          const SizedBox(width: 6),
+        ],
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.withWeight(
+                LoopType.body1,
+                FontWeight.w700,
+              ).copyWith(color: LoopColors.chalk),
+            ),
+          ),
+        ),
+        ?trailing,
+      ],
+    ),
+  );
+}
+
+/// 「成员最多 ∨」: the current order, opening the four orders the directory
+/// takes (UX-013, decision 0257).
+class _SquareSortButton extends StatelessWidget {
+  const _SquareSortButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '排序，$label',
+    excludeSemantics: true,
+    child: InkWell(
+      key: const ValueKey<String>('square-community-sort'),
+      onTap: onTap,
+      borderRadius: LoopRadius.pill,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+        child: Center(
+          widthFactor: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: const BoxDecoration(
+              color: LoopColors.card2,
+              borderRadius: LoopRadius.pill,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  label,
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.chalk),
                 ),
-                child: Center(
-                  widthFactor: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '规则',
-                      style: LoopTypography.withWeight(
-                        LoopType.label,
-                        FontWeight.w600,
-                      ).copyWith(color: LoopColors.text2),
+                const SizedBox(width: 4),
+                const RotatedBox(
+                  quarterTurns: 1,
+                  child: LoopIcon('chevron', size: 12, color: LoopColors.text2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The four orders, one row each; the chosen one carries a tick.
+class _SquareSortSheet extends StatelessWidget {
+  const _SquareSortSheet({required this.current, required this.onSelected});
+
+  final CommunityDiscoverSegment current;
+  final ValueChanged<CommunityDiscoverSegment> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey<String>('square-community-sort-sheet'),
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      const LoopSheetHeading('排序'),
+      for (final segment in CommunityDiscoverSegment.values)
+        Semantics(
+          button: true,
+          selected: segment == current,
+          label: segment.label,
+          excludeSemantics: true,
+          child: InkWell(
+            key: ValueKey<String>('square-sort-${segment.name}'),
+            onTap: () => onSelected(segment),
+            child: SizedBox(
+              height: 52,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LoopSpacing.page,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        segment.label,
+                        style: LoopType.body.copyWith(
+                          color: segment == current
+                              ? LoopColors.yellow
+                              : LoopColors.chalk,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (segment == current)
+                      const LoopIcon(
+                        'check',
+                        size: 18,
+                        color: LoopColors.yellow,
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
+      const SizedBox(height: 8),
+    ],
+  );
+}
+
+/// How many rows the directory must hold before 热门社区 is drawn.
+const int squareHotMinimumRows = 3;
+
+/// The community with the most members among [items], the first one on a
+/// tie; `null` for no rows (UX-013, decision 0257).
+CommunitySummary? squareHotCommunity(List<CommunitySummary> items) {
+  CommunitySummary? best;
+  for (final item in items) {
+    if (best == null || item.memberCount > best.memberCount) best = item;
+  }
+  return best;
+}
+
+/// 「N 成员，7 天讨论 M」 when the row carries its discussion count, otherwise
+/// 「N 成员」.
+String squareHotFacts(CommunitySummary community) {
+  final members = '${community.memberCount} 成员';
+  final activity = community.activity;
+  if (activity is CommunityActivityCount) {
+    final count = activity.bounded
+        ? '≥${activity.messageCount}'
+        : '${activity.messageCount}';
+    return '$members，7 天讨论 $count';
+  }
+  return members;
+}
+
+/// 热门社区's banner card (UX-013, decision 0257): logo, name and the
+/// operator's label, one line of description, the counts, and the row's own
+/// membership action at the right.
+class SquareHotCommunityCard extends StatelessWidget {
+  const SquareHotCommunityCard({
+    required this.community,
+    required this.joining,
+    required this.onOpen,
+    required this.onJoin,
+    super.key,
+  });
+
+  final CommunitySummary community;
+  final bool joining;
+  final VoidCallback onOpen;
+  final VoidCallback onJoin;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = community.communityId;
+    final label = community.label;
+    final description = community.description?.trim();
+    final action = squareMembershipAction(community.viewerMembership);
+    final facts = squareHotFacts(community);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        LoopSpacing.rowGap,
+      ),
+      child: Material(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.card,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.all(LoopSpacing.card),
+            child: Row(
+              children: <Widget>[
+                CommunityLogo(
+                  identity: id,
+                  name: community.name,
+                  logoRef: community.logoRef,
+                  size: 64,
+                  radius: LoopRadius.innerValue,
+                  chromeFallback: true,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: <String>[
+                      '热门社区',
+                      community.name,
+                      if (label != null) communityLabelDisplay(label),
+                      if (description != null && description.isNotEmpty)
+                        description,
+                      facts,
+                    ].join('，'),
+                    excludeSemantics: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        LayoutBuilder(
+                          builder: (context, constraints) => Row(
+                            children: <Widget>[
+                              Flexible(
+                                child: Text(
+                                  community.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LoopTypography.withWeight(
+                                    LoopType.body1,
+                                    FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              if (label != null) ...<Widget>[
+                                const SizedBox(width: 6),
+                                CommunityLabelBadge(
+                                  label,
+                                  maxWidth: constraints.maxWidth * 0.45,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (description != null &&
+                            description.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(
+                            description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopType.caption.copyWith(
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          facts,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.captionSm.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (action != SquareMembershipAction.none) ...<Widget>[
+                  const SizedBox(width: 8),
+                  _MembershipCapsule(
+                    communityId: 'hot-$id',
+                    action: action,
+                    joining: joining,
+                    onJoin: onJoin,
+                    onOpen: onOpen,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -449,73 +835,50 @@ class _PinnedChips extends SliverPersistentHeaderDelegate {
       oldDelegate.child != child;
 }
 
-/// `全部 · 我加入的` then the four orders, on one scrolling line. Each group
-/// has exactly one chip chosen.
-class _SquareChips extends StatelessWidget {
-  const _SquareChips({
-    required this.membership,
-    required this.sort,
-    required this.onMembership,
-    required this.onSort,
-  });
+/// 全部 | 我加入的 as the segment's main tab (UX-013, decision 0257): two
+/// equal halves on one track, the chosen half the solid Purple choice. The
+/// order is no longer a chip row; it is 「全部社区」's own 「成员最多 ∨」.
+class _SquareMainTabs extends StatelessWidget {
+  const _SquareMainTabs({required this.membership, required this.onMembership});
 
   final CommunityMembershipFilter membership;
-  final CommunityDiscoverSegment sort;
   final ValueChanged<CommunityMembershipFilter> onMembership;
-  final ValueChanged<CommunityDiscoverSegment> onSort;
 
   static const _membershipLabels = <CommunityMembershipFilter, String>{
     CommunityMembershipFilter.all: '全部',
     CommunityMembershipFilter.joined: '我加入的',
   };
 
-  /// Decision 0122: the two membership chips carry a glyph; the four
-  /// orders are two-to-four characters and stay words only.
-  static const _membershipIcons = <CommunityMembershipFilter, String>{
-    CommunityMembershipFilter.all: 'compass',
-    CommunityMembershipFilter.joined: 'check',
-  };
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Padding(
       key: const ValueKey<String>('square-community-chips'),
-      scrollDirection: Axis.horizontal,
-      // Decision 0222: the chosen chip's splat reaches above its box.
-      clipBehavior: Clip.none,
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 9, 8),
-      child: Row(
-        children: <Widget>[
-          for (final filter in CommunityMembershipFilter.values)
-            Padding(
-              padding: const EdgeInsets.only(right: 7),
-              child: LoopSeg(
-                key: ValueKey<String>('square-filter-${filter.wireName}'),
-                label: _membershipLabels[filter]!,
-                icon: _membershipIcons[filter],
-                quiet: true,
-                selected: filter == membership,
-                onSelected: () => onMembership(filter),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        4,
+      ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: LoopColors.card,
+          borderRadius: LoopRadius.pill,
+        ),
+        child: Row(
+          children: <Widget>[
+            for (final filter in CommunityMembershipFilter.values)
+              Expanded(
+                child: LoopSeg(
+                  key: ValueKey<String>('square-filter-${filter.wireName}'),
+                  label: _membershipLabels[filter]!,
+                  quiet: true,
+                  block: true,
+                  selected: filter == membership,
+                  onSelected: () => onMembership(filter),
+                ),
               ),
-            ),
-          Container(
-            width: 1,
-            height: 18,
-            margin: const EdgeInsets.only(left: 2, right: 9),
-            color: LoopColors.line2,
-          ),
-          for (final segment in CommunityDiscoverSegment.values)
-            Padding(
-              padding: const EdgeInsets.only(right: 7),
-              child: LoopSeg(
-                key: ValueKey<String>('square-sort-${segment.name}'),
-                quiet: true,
-                label: segment.label,
-                selected: segment == sort,
-                onSelected: () => onSort(segment),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -581,6 +944,9 @@ class SquareCommunityRow extends StatelessWidget {
 
   static const double height = LoopSpacing.rowMinWithSub;
 
+  /// A row that also carries its one line of description (UX-013).
+  static const double heightWithDescription = 76;
+
   @override
   Widget build(BuildContext context) {
     final id = community.communityId;
@@ -588,6 +954,8 @@ class SquareCommunityRow extends StatelessWidget {
     final subline = squareCommunitySubline(community, sort);
     // Decision 0239: the operator's free-text label, or no mark at all.
     final label = community.label;
+    final description = community.description?.trim();
+    final described = description != null && description.isNotEmpty;
     final state = switch (action) {
       SquareMembershipAction.none => '',
       SquareMembershipAction.join => '，未加入',
@@ -601,14 +969,14 @@ class SquareCommunityRow extends StatelessWidget {
           child: Semantics(
             button: true,
             label:
-                '${<String>[community.name, if (label != null) communityLabelDisplay(label)].join('，')}'
+                '${<String>[community.name, if (label != null) communityLabelDisplay(label), if (described) description].join('，')}'
                 '，$subline$state',
             excludeSemantics: true,
             child: InkWell(
               key: ValueKey<String>('square-community-open-$id'),
               onTap: onOpen,
               child: SizedBox(
-                height: height,
+                height: described ? heightWithDescription : height,
                 child: Padding(
                   padding: const EdgeInsets.only(left: LoopSpacing.card),
                   child: Row(
@@ -654,6 +1022,20 @@ class SquareCommunityRow extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if (described) ...<Widget>[
+                              const SizedBox(height: 2),
+                              Text(
+                                description,
+                                key: ValueKey<String>(
+                                  'square-community-description-$id',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: LoopType.caption.copyWith(
+                                  color: LoopColors.text2,
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 4),
                             Text(
                               subline,

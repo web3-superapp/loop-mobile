@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
@@ -105,6 +106,19 @@ Future<void> _pump(
 
 Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
+/// UX-017: the small eye beside the net worth says whether amounts are hidden.
+bool? _eyeHidden(WidgetTester tester) => tester
+    .widget<Semantics>(
+      find
+          .ancestor(
+            of: find.byKey(const ValueKey<String>('profile-hide-balance')),
+            matching: find.byType(Semantics),
+          )
+          .first,
+    )
+    .properties
+    .toggled;
+
 void main() {
   loopWatchGround();
 
@@ -190,13 +204,13 @@ void main() {
       );
       // No net worth history exists, so no curve and no choosable period.
       expect(_key('profile-chart-no-history'), findsOneWidget);
-      for (final period in <String>['24 小时', '7 天', '30 天', '全部']) {
-        final seg = tester.widget<LoopSeg>(
-          _key('profile-chart-period-$period'),
-        );
-        expect(seg.onSelected, isNull, reason: period);
-        expect(seg.onBlocked, isNotNull, reason: period);
-      }
+      final periods = tester.widget<WalletSegmentedControl<String>>(
+        _key('profile-chart-periods'),
+      );
+      expect(periods.options, <String>['24 小时', '7 天', '30 天', '全部']);
+      expect(periods.onSelected, isNull);
+      expect(periods.onBlocked, isNotNull);
+      expect(periods.selected, isNull);
 
       await tester.ensureVisible(_key('wallet-balance-$s5NativeAssetId'));
       await tester.tap(_key('wallet-balance-$s5NativeAssetId'));
@@ -275,11 +289,11 @@ void main() {
     ) async {
       final store = _Store();
       await _pump(tester, store: store);
-      expect(find.text('点一下隐藏余额'), findsOneWidget);
+      expect(_eyeHidden(tester), isFalse);
 
       await tester.tap(_key('profile-hide-balance'));
       await tester.pumpAndSettle();
-      expect(find.text('余额已隐藏，再点一次取消隐藏'), findsOneWidget);
+      expect(_eyeHidden(tester), isTrue);
       expect(tester.widget<Text>(_key('profile-networth-figure')).data, '****');
       expect(
         tester
@@ -305,7 +319,7 @@ void main() {
           tester.widget<Text>(_key('profile-networth-figure')).data,
           '****',
         );
-        expect(find.text('余额已隐藏，再点一次取消隐藏'), findsOneWidget);
+        expect(_eyeHidden(tester), isTrue);
         expect(store.writes, isEmpty);
 
         // A fresh scope — a cold start — reads the same stored choice.

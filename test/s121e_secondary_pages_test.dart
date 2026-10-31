@@ -292,9 +292,13 @@ void main() {
           find.byKey(const ValueKey<String>('profile-identity-card')),
           findsNothing,
         );
-        // The capsule and the gear stand whatever the profile answered.
+        // The eye and the gear stand whatever the profile answered.
         expect(
-          find.byKey(const ValueKey<String>('profile-top-row')),
+          find.byKey(const ValueKey<String>('profile-hide-balance')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('profile-open-settings')),
           findsOneWidget,
         );
       });

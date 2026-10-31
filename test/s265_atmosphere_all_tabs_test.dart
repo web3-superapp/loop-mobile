@@ -380,7 +380,13 @@ void main() {
         findsOneWidget,
       );
       // No logo: the chrome medal, not a letter tile.
-      expect(_key('community-logo-chrome-$first'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: board,
+          matching: _key('community-logo-chrome-$first'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: _key('square-community-$first'),

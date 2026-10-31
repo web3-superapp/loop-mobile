@@ -636,7 +636,15 @@ class IntelRankLedger extends StatelessWidget {
     final stamp = intelRankTopShare(rank);
     return Semantics(
       container: true,
-      label: <String>[heading.replaceAll('\n', '，'), caption, ?stamp].join('，'),
+      label: <String>[
+        if (rank.scope == MiningRankScope.referrals)
+          '$intelReferralLedgerTitle，'
+              '${rank.me == null ? '暂未上榜' : '第 ${rank.me!.rank} 名'}'
+        else
+          heading.replaceAll('\n', '，'),
+        caption,
+        ?stamp,
+      ].join('，'),
       excludeSemantics: true,
       // Decisions 0221, 0224: 「我的名次」 is a chrome plate — a bevelled
       // chrome edge around a brushed dark face — with the place in Anton 40
@@ -651,35 +659,154 @@ class IntelRankLedger extends StatelessWidget {
           LoopSpacing.page,
           LoopSpacing.bannerGap - 8,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            LoopKicker(intelRankLedgerKicker(rank)),
-            const SizedBox(height: 8),
-            _IntelRankHeading(heading: heading),
-            const SizedBox(height: 6),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    caption,
-                    key: const ValueKey<String>('intel-rank-me-caption'),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+        child: rank.scope == MiningRankScope.referrals
+            ? _IntelReferralLedgerBody(
+                rank: rank,
+                caption: caption,
+                stamp: stamp,
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  LoopKicker(intelRankLedgerKicker(rank)),
+                  const SizedBox(height: 8),
+                  _IntelRankHeading(heading: heading),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          caption,
+                          key: const ValueKey<String>('intel-rank-me-caption'),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.caption.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ),
+                      if (stamp != null) ...<Widget>[
+                        const SizedBox(width: 12),
+                        LoopFolioStamp(stamp, color: LoopColors.text2),
+                      ],
+                    ],
                   ),
-                ),
-                if (stamp != null) ...<Widget>[
-                  const SizedBox(width: 12),
-                  LoopFolioStamp(stamp, color: LoopColors.text2),
                 ],
-              ],
+              ),
+      ),
+    );
+  }
+}
+
+/// The title of the 邀请中心 board's plate (UX-012, decision 0257).
+const String intelReferralLedgerTitle = '我的实时排名';
+
+/// 邀请中心's plate (UX-012, decision 0257), in four aligned lines: the
+/// title, the place (「第 N 名」, or the 「暂未上榜」 chip), one sentence, and
+/// the 「榜单实时更新」 status dot — the board reads the invite relation live.
+class _IntelReferralLedgerBody extends StatelessWidget {
+  const _IntelReferralLedgerBody({
+    required this.rank,
+    required this.caption,
+    required this.stamp,
+  });
+
+  final MiningRank rank;
+  final String caption;
+  final String? stamp;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = rank.me;
+    final unit = LoopType.body.copyWith(color: LoopColors.text2);
+    return Column(
+      key: const ValueKey<String>('intel-referral-ledger'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          intelReferralLedgerTitle,
+          style: LoopType.caption.copyWith(color: LoopColors.text2),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 44,
+          child: Row(
+            children: <Widget>[
+              if (me == null)
+                Container(
+                  key: const ValueKey<String>('intel-referral-ledger-chip'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: LoopColors.card2,
+                    borderRadius: LoopRadius.pill,
+                    border: Border.all(color: LoopColors.line2),
+                  ),
+                  child: Text(
+                    '暂未上榜',
+                    style: LoopTypography.withWeight(
+                      LoopType.body,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.chalk),
+                  ),
+                )
+              else
+                Text.rich(
+                  key: const ValueKey<String>('intel-referral-ledger-place'),
+                  TextSpan(
+                    children: <InlineSpan>[
+                      TextSpan(text: '第 ', style: unit),
+                      TextSpan(
+                        text: '${me.rank}',
+                        style: LoopType.plateFigure.copyWith(
+                          color: LoopColors.yellow,
+                          height: 1,
+                        ),
+                      ),
+                      TextSpan(text: ' 名', style: unit),
+                    ],
+                  ),
+                  maxLines: 1,
+                ),
+              const Spacer(),
+              if (stamp case final String value)
+                LoopFolioStamp(value, color: LoopColors.text2),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          caption,
+          key: const ValueKey<String>('intel-rank-me-caption'),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LoopType.caption.copyWith(color: LoopColors.text2),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          key: const ValueKey<String>('intel-referral-ledger-live'),
+          children: <Widget>[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: LoopColors.yellow,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '榜单实时更新',
+              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

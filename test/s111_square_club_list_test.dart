@@ -102,6 +102,26 @@ Future<void> _tapChip(WidgetTester tester, String key) async {
 bool _selected(WidgetTester tester, String key) =>
     tester.widget<LoopSeg>(find.byKey(ValueKey<String>(key))).selected;
 
+/// UX-013: the order is 「全部社区」's own dropdown, read from its label.
+String _sortLabel(WidgetTester tester) => tester
+    .widget<Semantics>(
+      find
+          .ancestor(
+            of: find.byKey(const ValueKey<String>('square-community-sort')),
+            matching: find.byType(Semantics),
+          )
+          .first,
+    )
+    .properties
+    .label!
+    .replaceFirst('排序，', '');
+
+Future<void> _chooseSort(WidgetTester tester, String key) async {
+  await _tapChip(tester, 'square-community-sort');
+  await tester.tap(find.byKey(ValueKey<String>(key)));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   loopWatchGround();
 
@@ -114,7 +134,9 @@ void main() {
       );
       expect(find.text('DISCOVERY DESK'), findsNothing);
       expect(find.textContaining('已载入'), findsNothing);
-      expect(find.text(squareCommunityRuleLine), findsOneWidget);
+      // UX-013: the page title and 「规则与入驻 ›」 replace the rule line.
+      expect(find.text('发现社区'), findsOneWidget);
+      expect(find.text(squareCommunityRuleLine), findsNothing);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('square-community-rules')),
@@ -174,7 +196,7 @@ void main() {
         const Offset(0, -900),
       );
       await tester.pumpAndSettle();
-      expect(find.text(squareCommunityRuleLine).hitTestable(), findsNothing);
+      expect(find.text('发现社区').hitTestable(), findsNothing);
       expect(chips.hitTestable(), findsOneWidget);
       expect(tester.getTopLeft(chips).dy, lessThan(before));
       await _drain(tester);
@@ -197,12 +219,11 @@ void main() {
       expect(gateway.commands.last, 'list:members:all:null');
       expect(_selected(tester, 'square-filter-all'), isTrue);
       expect(_selected(tester, 'square-filter-joined'), isFalse);
-      expect(_selected(tester, 'square-sort-members'), isTrue);
+      expect(_sortLabel(tester), '成员最多');
 
-      await _tapChip(tester, 'square-sort-newest');
+      await _chooseSort(tester, 'square-sort-newest');
       expect(gateway.commands.last, 'list:newest:all:null');
-      expect(_selected(tester, 'square-sort-newest'), isTrue);
-      expect(_selected(tester, 'square-sort-members'), isFalse);
+      expect(_sortLabel(tester), '新社区');
       expect(_selected(tester, 'square-filter-all'), isTrue);
 
       await _tapChip(tester, 'square-filter-joined');
@@ -210,7 +231,7 @@ void main() {
       expect(gateway.commands.last, 'list:newest:joined:null');
       expect(_selected(tester, 'square-filter-joined'), isTrue);
       expect(_selected(tester, 'square-filter-all'), isFalse);
-      expect(_selected(tester, 'square-sort-newest'), isTrue);
+      expect(_sortLabel(tester), '新社区');
 
       await _tapChip(tester, 'square-filter-all');
       expect(gateway.commands.last, 'list:newest:all:null');
@@ -307,9 +328,14 @@ void main() {
         expect(capsule(kind, ids[5]), findsNothing);
       }
       expect(capsule('pending', ids[6]), findsOneWidget);
-      expect(find.text('加入'), findsOneWidget);
-      expect(find.text('已加入'), findsNWidgets(2));
-      expect(find.text('我的'), findsOneWidget);
+      // The rows only: 热门社区 above the board repeats the first one.
+      Finder onBoard(String text) => find.descendant(
+        of: find.byKey(const ValueKey<String>('square-community-board')),
+        matching: find.text(text),
+      );
+      expect(onBoard('加入'), findsOneWidget);
+      expect(onBoard('已加入'), findsNWidgets(2));
+      expect(onBoard('我的'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -343,7 +369,7 @@ void main() {
         ),
         onOpenCommunity: opened.add,
       );
-      await _tapChip(tester, 'square-sort-power');
+      await _chooseSort(tester, 'square-sort-power');
       expect(find.textContaining('128 成员，算力 '), findsOneWidget);
       expect(find.textContaining('\$FROG'), findsNothing);
 
@@ -443,7 +469,7 @@ void main() {
         find.byKey(const ValueKey<String>('square-community-state')),
         findsOneWidget,
       );
-      expect(find.text(squareCommunityRuleLine), findsOneWidget);
+      expect(find.text('发现社区'), findsOneWidget);
       await _drain(tester);
     });
 

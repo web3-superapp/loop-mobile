@@ -16,14 +16,15 @@ import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_asset_picker.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// How long the pay amount rests before it is quoted by itself (decision
@@ -218,63 +219,126 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           // printed directly under it (「兑换还在验证中，暂时不能执行」 over
           // 「兑换还在验证中，可以查看报价，但不能执行。」).
           //
-          // Decision 0133: a real limit, so it stays on the page — as one
-          // small line, not a banner over the form.
+          // Decision 0133: a real limit, so it stays on the page. UX-016
+          // (decision 0257): it is the shared warning card, not a bare line
+          // in a style of its own.
           if (capability.evidencePending)
-            LoopInlineUnavailable(
+            LoopNotice(
               key: const ValueKey<String>('swap-evidence-pending'),
-              message: loopReasonCodeText(capability.evidenceReasonCode),
+              tone: LoopNoticeTone.warn,
+              icon: 'warn',
+              body: loopReasonCodeText(capability.evidenceReasonCode),
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                12,
+              ),
             ),
-          _AssetField(
-            keyPrefix: 'swap-source',
-            label: '支付',
-            symbol: _symbolFor(balances, _sourceAssetId),
-            balanceLine: _balanceLineFor(balances, _sourceAssetId),
-            controller: _amount,
-            onPick: () => unawaited(
-              _pickAsset(balances!, source: true, walletId: walletId),
+          // UX-016 (decision 0257, 图 46): 支付 and 获得 on one card, a
+          // hairline between them and ⇅ centred on that hairline.
+          Padding(
+            key: const ValueKey<String>('swap-panel'),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
             ),
-            onAmountChanged: () => _inputsChanged(walletId),
+            child: LoopSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  _AssetField(
+                    keyPrefix: 'swap-source',
+                    label: '支付',
+                    symbol: _symbolFor(balances, _sourceAssetId),
+                    balanceLine: _balanceLineFor(balances, _sourceAssetId),
+                    controller: _amount,
+                    onPick: () => unawaited(
+                      _pickAsset(balances!, source: true, walletId: walletId),
+                    ),
+                    onAmountChanged: () => _inputsChanged(walletId),
+                  ),
+                  SizedBox(
+                    key: const ValueKey<String>('swap-divider'),
+                    height: LoopTouch.minimum + 8,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: LoopColors.line2,
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: LoopColors.card,
+                            borderRadius: LoopRadius.tool,
+                            border: Border.all(color: LoopColors.line2),
+                          ),
+                          child: LoopIconButton(
+                            key: const ValueKey<String>('swap-flip'),
+                            icon: 'swap-vert',
+                            label: '互换支付与获得',
+                            onPressed:
+                                _sourceAssetId == null &&
+                                    _destinationAssetId == null
+                                ? null
+                                : () => _flip(walletId),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _ReceiveField(
+                    symbol: _symbolFor(balances, _destinationAssetId),
+                    quote: quote,
+                    quoting: _busy && quote == null,
+                    onPick: () => unawaited(
+                      _pickAsset(balances!, source: false, walletId: walletId),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          Center(
-            child: LoopIconButton(
-              key: const ValueKey<String>('swap-flip'),
-              icon: 'swap-vert',
-              label: '互换支付与获得',
-              framed: true,
-              onPressed: _sourceAssetId == null && _destinationAssetId == null
-                  ? null
-                  : () => _flip(walletId),
-            ),
-          ),
-          _ReceiveField(
-            symbol: _symbolFor(balances, _destinationAssetId),
-            quote: quote,
-            quoting: _busy && quote == null,
-            onPick: () => unawaited(
-              _pickAsset(balances!, source: false, walletId: walletId),
-            ),
-          ),
-          const LoopLabel('滑点上限'),
-          // `.segs`: one row of chips, each as wide as the step it names.
-          // The 「50 bps」 label was trade-desk vocabulary — the percentage is
+          // UX-016 (decision 0257): 滑点上限 on the left, its three steps a
+          // small segmented control on the right — not Purple capsules. The
+          // 「50 bps」 label was trade-desk vocabulary — the percentage is
           // the same number in the unit the chooser already owns.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            key: const ValueKey<String>('swap-slippage-row'),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
+            child: Row(
               children: <Widget>[
-                for (final bps in _slippageChoices)
-                  LoopSeg(
-                    key: ValueKey<String>('swap-slippage-$bps'),
-                    label: moneySlippageLabel(bps),
-                    selected: bps == _slippageBps,
-                    onSelected: () {
-                      _slippageBps = bps;
-                      _inputsChanged(walletId);
-                    },
+                Expanded(
+                  child: Text(
+                    '滑点上限',
+                    style: LoopTypography.withWeight(
+                      LoopType.body,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.chalk),
                   ),
+                ),
+                WalletSegmentedControl<int>(
+                  key: const ValueKey<String>('swap-slippage'),
+                  semanticLabel: '滑点上限',
+                  expand: false,
+                  options: _slippageChoices,
+                  labelOf: moneySlippageLabel,
+                  keyOf: (bps) => ValueKey<String>('swap-slippage-$bps'),
+                  selected: _slippageBps,
+                  onSelected: (bps) {
+                    _slippageBps = bps;
+                    _inputsChanged(walletId);
+                  },
+                ),
               ],
             ),
           ),
@@ -613,55 +677,100 @@ class _AssetField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: LoopSurfaceCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(label, style: LoopType.eyebrow),
+        const SizedBox(height: 6),
+        Row(
           children: <Widget>[
-            Text(label, style: LoopType.eyebrow),
-            const SizedBox(height: 6),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    key: ValueKey<String>('$keyPrefix-amount'),
-                    controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                    maxLength: TransferAmount.maxWireLength,
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                    onChanged: (_) => onAmountChanged(),
-                    decoration: const InputDecoration(
-                      labelText: '数量',
-                      counterText: '',
-                    ),
-                  ),
+            Expanded(
+              child: TextField(
+                key: ValueKey<String>('$keyPrefix-amount'),
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                const SizedBox(width: 8),
-                LoopButton(
-                  key: ValueKey<String>('$keyPrefix-pick'),
-                  label: symbol ?? '选择资产',
-                  onPressed: onPick,
+                textInputAction: TextInputAction.done,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                maxLength: TransferAmount.maxWireLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                onChanged: (_) => onAmountChanged(),
+                decoration: const InputDecoration(
+                  hintText: '数量',
+                  counterText: '',
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              balanceLine,
-              key: ValueKey<String>('$keyPrefix-balance'),
-              style: LoopType.caption,
+            const SizedBox(width: 8),
+            SwapAssetPickButton(
+              key: ValueKey<String>('$keyPrefix-pick'),
+              label: symbol ?? '选择资产',
+              onPressed: onPick,
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 6),
+        Text(
+          balanceLine,
+          key: ValueKey<String>('$keyPrefix-balance'),
+          style: LoopType.caption,
+        ),
+      ],
     );
   }
+}
+
+/// 「选择资产 ›」 / 「BNB ›」 (UX-016, decision 0257): the asset a side of the
+/// swap is in, with the chevron that says it opens the picker.
+class SwapAssetPickButton extends StatelessWidget {
+  const SwapAssetPickButton({
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    enabled: onPressed != null,
+    excludeSemantics: true,
+    child: Material(
+      color: LoopColors.card2,
+      borderRadius: LoopRadius.control,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: LoopRadius.control,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  label,
+                  maxLines: 1,
+                  style: LoopTypography.withWeight(
+                    LoopType.body,
+                    FontWeight.w700,
+                  ).copyWith(color: LoopColors.chalk),
+                ),
+                const SizedBox(width: 6),
+                const LoopIcon('chevron', size: 14, color: LoopColors.text2),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _ReceiveField extends StatelessWidget {
@@ -679,41 +788,36 @@ class _ReceiveField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: LoopSurfaceCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('获得', style: LoopType.eyebrow),
+        const SizedBox(height: 6),
+        Row(
           children: <Widget>[
-            Text('获得', style: LoopType.eyebrow),
-            const SizedBox(height: 6),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    key: const ValueKey<String>('swap-receive-amount'),
-                    quote == null
-                        ? (quoting ? '报价中…' : '报价后显示')
-                        : quote!.quote.estimatedOutputAmount.display,
-                    // A quoted amount is the figure (R24); 「报价中…」 and
-                    // 「报价后显示」 are words, the note step (R20, decision
-                    // 0190 L10).
-                    style: quote == null
-                        ? LoopType.caption.copyWith(color: LoopColors.text3)
-                        : LoopType.figureLg,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                LoopButton(
-                  key: const ValueKey<String>('swap-destination-pick'),
-                  label: symbol ?? '选择资产',
-                  onPressed: onPick,
-                ),
-              ],
+            Expanded(
+              child: Text(
+                key: const ValueKey<String>('swap-receive-amount'),
+                quote == null
+                    ? (quoting ? '报价中…' : '报价后显示')
+                    : quote!.quote.estimatedOutputAmount.display,
+                // A quoted amount is the figure (R24); 「报价中…」 and
+                // 「报价后显示」 are words, the note step (R20, decision
+                // 0190 L10).
+                style: quote == null
+                    ? LoopType.caption.copyWith(color: LoopColors.text3)
+                    : LoopType.figureLg,
+              ),
+            ),
+            const SizedBox(width: 8),
+            SwapAssetPickButton(
+              key: const ValueKey<String>('swap-destination-pick'),
+              label: symbol ?? '选择资产',
+              onPressed: onPick,
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

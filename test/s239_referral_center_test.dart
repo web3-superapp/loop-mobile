@@ -19,7 +19,6 @@ import 'package:loop_mobile/features/social/public_profile/user_profile_screen.d
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_api.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -449,7 +448,8 @@ void main() {
       );
       final shared = await pumpCard(tester);
 
-      // The code block carries its copy glyph; no full-width button is left.
+      // UX-012: one card — the code carries its copy glyph; no 复制邀请码
+      // button is left; 分享邀请链接 and 生成海报 close the card.
       final copyCode = find.byKey(const ValueKey<String>('referral-copy-code'));
       expect(
         find.descendant(
@@ -458,9 +458,9 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(tester.widget(copyCode), isA<LoopIconButton>());
+      expect(tester.widget(copyCode), isA<ReferralCopyGlyph>());
       expect(find.text('复制邀请码'), findsNothing);
-      expect(find.text('分享邀请链接'), findsNothing);
+      expect(find.text('分享邀请链接'), findsOneWidget);
       await tester.tap(copyCode);
       await tester.pump();
       expect(copied, 'LOOP-7HJKM');
@@ -481,17 +481,24 @@ void main() {
       final copyLink = find.byKey(const ValueKey<String>('referral-copy-link'));
       final share = find.byKey(const ValueKey<String>('referral-share-link'));
       final poster = find.byKey(const ValueKey<String>('referral-poster'));
-      for (final glyph in <Finder>[copyLink, share, poster]) {
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-link-block')),
+          matching: copyLink,
+        ),
+        findsOneWidget,
+      );
+      for (final control in <Finder>[copyLink, share, poster]) {
         expect(
           find.descendant(
-            of: find.byKey(const ValueKey<String>('referral-link-block')),
-            matching: glyph,
+            of: find.byKey(const ValueKey<String>('intel-referral-code')),
+            matching: control,
           ),
           findsOneWidget,
         );
-        expect(tester.getSize(glyph).height, greaterThanOrEqualTo(44));
+        expect(tester.getSize(control).height, greaterThanOrEqualTo(44));
       }
-      // Copy and share sit on the link's own line.
+      // Copy sits on the link's own line.
       expect(
         (tester.getCenter(copyLink).dy - tester.getCenter(linkFinder).dy).abs(),
         lessThan(4),
@@ -508,28 +515,26 @@ void main() {
       expect(shared.single.$2, '邀请你加入 LOOP');
     });
 
-    testWidgets('three blocks on the raised ground; counts in one row', (
+    testWidgets('one invite card on the raised ground; counts in one row', (
       tester,
     ) async {
       await pumpCard(tester);
-      for (final key in <String>[
-        'intel-referral-code',
-        'referral-link-block',
-      ]) {
-        final box = tester.widget<Container>(
-          find
-              .descendant(
-                of: find.byKey(ValueKey<String>(key)),
-                matching: find.byType(Container),
-              )
-              .first,
-        );
-        expect(
-          (box.decoration! as BoxDecoration).color,
-          LoopColors.card2,
-          reason: key,
-        );
-      }
+      final box = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey<String>('intel-referral-code')),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      expect((box.decoration! as BoxDecoration).color, LoopColors.card2);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('intel-referral-code')),
+          matching: find.byKey(const ValueKey<String>('referral-link-block')),
+        ),
+        findsOneWidget,
+      );
       final cells = <String>[
         'referral-stats-direct',
         'referral-stats-valid',
@@ -538,13 +543,6 @@ void main() {
       expect(cells.map((c) => c.dy).toSet(), hasLength(1));
       // The name sits above its figure.
       expect(tester.getCenter(find.text('直接邀请')).dy, lessThan(cells.first.dy));
-      final code = tester.getRect(
-        find.byKey(const ValueKey<String>('intel-referral-code')),
-      );
-      final linkBlock = tester.getRect(
-        find.byKey(const ValueKey<String>('referral-link-block')),
-      );
-      expect(linkBlock.top - code.bottom, LoopSpacing.rowGap);
     });
 
     testWidgets('without a link the block says so and the poster stays', (

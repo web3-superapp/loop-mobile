@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
@@ -15,6 +14,7 @@ import 'package:loop_mobile/features/wallet/wallet_networth_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
@@ -411,18 +411,29 @@ void main() {
       expect(find.textContaining('(+0%)'), findsNothing);
     });
 
-    testWidgets('the sparkline needs two snapshots', (tester) async {
+    testWidgets('UX-015: total, address, 今日盈亏, chart, windows — in order, '
+        'never folded', (tester) async {
       await pumpWallet(tester, history: _FakeHistory());
-      expect(key('wallet-networth-spark'), findsOneWidget);
+      expect(key('wallet-networth-panel'), findsOneWidget);
+      expect(key('wallet-networth-chart'), findsOneWidget);
+      expect(key('wallet-networth-expand'), findsNothing);
+      expect(key('wallet-networth-collapse'), findsNothing);
+      expect(key('wallet-networth-spark'), findsNothing);
+      double top(String value) => tester.getTopLeft(key(value)).dy;
+      expect(top('wallet-total-figure'), lessThan(top('wallet-address-copy')));
+      expect(top('wallet-address-copy'), lessThan(top('wallet-pnl')));
+      expect(top('wallet-pnl'), lessThan(top('wallet-networth-chart')));
       expect(
-        tester.getSize(key('wallet-networth-spark')),
-        WalletNetWorthSpark.size,
+        top('wallet-networth-chart'),
+        lessThan(top('wallet-networth-ranges')),
+      );
+      expect(
+        tester.getSize(key('wallet-networth-chart')).height,
+        WalletNetWorthPanel.chartHeight,
       );
     });
 
-    testWidgets('one snapshot draws no sparkline but keeps 今日盈亏', (
-      tester,
-    ) async {
+    testWidgets('one snapshot draws no line but keeps 今日盈亏', (tester) async {
       await pumpWallet(
         tester,
         history: _FakeHistory(
@@ -434,18 +445,18 @@ void main() {
           },
         ),
       );
-      expect(key('wallet-networth-spark'), findsNothing);
+      expect(key('wallet-networth-chart'), findsNothing);
+      expect(key('wallet-networth-chart-empty'), findsOneWidget);
       // 今日盈亏 does not need a line to be true.
       expect(key('wallet-pnl-value'), findsOneWidget);
     });
 
-    // Decision 0193: a history read but not drawable keeps the slot.
     for (final values in const <List<String>>[
       <String>[],
       <String>['0'],
     ]) {
-      testWidgets('${values.length} snapshot(s) draw the placeholder, which '
-          'opens the chart', (tester) async {
+      testWidgets('${values.length} snapshot(s) say the window has no '
+          'record yet', (tester) async {
         await pumpWallet(
           tester,
           history: _FakeHistory(
@@ -457,40 +468,17 @@ void main() {
             },
           ),
         );
-        final placeholder = key('wallet-networth-spark-placeholder');
-        expect(placeholder, findsOneWidget);
-        expect(key('wallet-networth-spark'), findsNothing);
-        expect(key('wallet-networth-spark-loading'), findsNothing);
-        expect(tester.getSize(placeholder), WalletNetWorthSpark.size);
-        final text = tester.widget<Text>(
-          key('wallet-networth-spark-placeholder-text'),
-        );
-        expect(text.data, '净值走势 · 记录中');
-        expect(text.style!.fontSize, LoopType.captionSm.fontSize);
-        final dash = tester.widget<CustomPaint>(
-          key('wallet-networth-spark-placeholder-line'),
-        );
-        expect(
-          (dash.painter! as WalletNetWorthDashPainter).color.a,
-          closeTo(LoopColors.text3.a, 0.01),
-        );
-
-        await tester.tap(placeholder);
-        await tester.pumpAndSettle();
-        expect(key('wallet-networth-panel'), findsOneWidget);
-        expect(key('wallet-networth-spark-placeholder'), findsNothing);
         final empty = tester.widget<LoopInlineUnavailable>(
           key('wallet-networth-chart-empty'),
         );
         expect(empty.message, '这个区间还没有净值记录 · 每小时记一次，有资产后开始画线');
-        await tester.tap(key('wallet-networth-collapse'));
-        await tester.pumpAndSettle();
-        expect(placeholder, findsOneWidget);
+        expect(key('wallet-networth-ranges'), findsOneWidget);
       });
     }
 
-    testWidgets('decision 0224: a history zero all the way draws no flat '
-        'Yellow rule, a short spray stroke instead', (tester) async {
+    testWidgets('a history zero all the way still draws the chart', (
+      tester,
+    ) async {
       await pumpWallet(
         tester,
         history: _FakeHistory(
@@ -502,55 +490,10 @@ void main() {
           },
         ),
       );
-      expect(key('wallet-networth-spark'), findsNothing);
-      expect(key('wallet-networth-spark-spray'), findsOneWidget);
-      expect(find.byType(LoopSparkline), findsNothing);
+      expect(key('wallet-networth-chart'), findsOneWidget);
     });
 
-    testWidgets('two snapshots draw the line, not the placeholder', (
-      tester,
-    ) async {
-      await pumpWallet(
-        tester,
-        history: _FakeHistory(
-          answers: <LoopNetWorthRange, LoopNetWorthHistory>{
-            LoopNetWorthRange.week: _history(
-              LoopNetWorthRange.week,
-              values: const <String>['1', '2'],
-            ),
-          },
-        ),
-      );
-      expect(key('wallet-networth-spark'), findsOneWidget);
-      expect(key('wallet-networth-spark-placeholder'), findsNothing);
-    });
-
-    testWidgets('the placeholder carries no figure, so 隐藏余额 keeps it', (
-      tester,
-    ) async {
-      await pumpWallet(
-        tester,
-        history: _FakeHistory(
-          answers: <LoopNetWorthRange, LoopNetWorthHistory>{
-            LoopNetWorthRange.week: _history(
-              LoopNetWorthRange.week,
-              values: const <String>[],
-            ),
-          },
-        ),
-      );
-      await tester.tap(key('wallet-eye'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-networth-spark-placeholder'), findsOneWidget);
-      expect(
-        tester.widget<Text>(key('wallet-networth-spark-placeholder-text')).data,
-        '净值走势 · 记录中',
-      );
-      await tester.tap(key('wallet-eye'));
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('while the week is read the slot is a same-size skeleton', (
+    testWidgets('while the week is read the chart is a skeleton', (
       tester,
     ) async {
       final pending = _PendingHistory();
@@ -575,47 +518,18 @@ void main() {
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
-      final skeleton = key('wallet-networth-spark-loading');
-      expect(skeleton, findsOneWidget);
-      expect(tester.getSize(skeleton), WalletNetWorthSpark.size);
-      expect(
-        find.descendant(of: skeleton, matching: find.byType(LoopSkeletonBlock)),
-        findsOneWidget,
-      );
-      expect(key('wallet-networth-spark'), findsNothing);
-      expect(key('wallet-networth-spark-placeholder'), findsNothing);
-      // Let the read land so nothing is left pending.
+      expect(key('wallet-networth-chart-loading'), findsOneWidget);
+      expect(key('wallet-networth-chart'), findsNothing);
       pending.complete(_history(LoopNetWorthRange.week));
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
-      expect(skeleton, findsNothing);
-      expect(key('wallet-networth-spark'), findsOneWidget);
+      expect(key('wallet-networth-chart-loading'), findsNothing);
+      expect(key('wallet-networth-chart'), findsOneWidget);
     });
 
-    testWidgets('the chevron says 净值走势 closed and 收起 open', (tester) async {
-      await pumpWallet(tester, history: _FakeHistory());
-      Text label() => tester.widget<Text>(key('wallet-networth-chevron-label'));
-      expect(label().data, '净值走势');
-      expect(label().style!.fontSize, LoopType.captionSm.fontSize);
-      expect(
-        tester.getSize(key('wallet-networth-expand')).height,
-        LoopTouch.minimum,
-      );
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
-      expect(label().data, '收起');
-      expect(
-        tester.getSize(key('wallet-networth-collapse')).height,
-        LoopTouch.minimum,
-      );
-      await tester.tap(key('wallet-networth-collapse'));
-      await tester.pumpAndSettle();
-      expect(label().data, '净值走势');
-    });
-
-    testWidgets('the sparkline opens a 200-high Lime chart with its high and '
-        'low; ⌃ closes it; the choice outlives the page', (tester) async {
+    testWidgets('the chart marks its high and low; the windows are a small '
+        'segmented control; the window outlives the page', (tester) async {
       final visible = ValueNotifier<bool>(true);
       addTearDown(visible.dispose);
       tester.view.devicePixelRatio = 1;
@@ -646,14 +560,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(key('wallet-networth-panel'), findsNothing);
-      expect(key('wallet-networth-expand'), findsOneWidget);
-
-      await tester.tap(key('wallet-networth-spark'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-networth-panel'), findsOneWidget);
-      expect(key('wallet-networth-spark'), findsNothing);
-      expect(tester.getSize(key('wallet-networth-chart')).height, 200);
       expect(tester.widget<Text>(key('wallet-networth-high')).data, '\$141.9');
       expect(tester.widget<Text>(key('wallet-networth-low')).data, '\$106.12');
       final high = tester.widget<Text>(key('wallet-networth-high'));
@@ -664,31 +570,49 @@ void main() {
         LoopColors.lime.withValues(alpha: 0.28),
       );
       expect(WalletNetWorthChartPainter.washColors().last.a, 0);
-      // Five quiet windows, 7 天 chosen.
-      for (final range in LoopNetWorthRange.values) {
-        final seg = tester.widget<LoopSeg>(
-          key('wallet-networth-range-${range.wireName}'),
-        );
-        expect(seg.quiet, isTrue);
-        expect(seg.selected, range == LoopNetWorthRange.week);
-      }
-      // The open chart is remembered when the tab comes back.
+      final control = tester.widget<WalletSegmentedControl<LoopNetWorthRange>>(
+        key('wallet-networth-ranges'),
+      );
+      expect(control.options, LoopNetWorthRange.values);
+      expect(control.selected, LoopNetWorthRange.week);
+      expect(
+        find.descendant(
+          of: key('wallet-networth-ranges'),
+          matching: find.byType(LoopSeg),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.getSize(key('wallet-networth-ranges')).height,
+        LoopTouch.minimum,
+      );
+
+      await tester.tap(key('wallet-networth-range-30d'));
+      await tester.pumpAndSettle();
       visible.value = false;
       await tester.pumpAndSettle();
       visible.value = true;
       await tester.pumpAndSettle();
-      expect(key('wallet-networth-panel'), findsOneWidget);
+      expect(
+        tester
+            .widget<WalletSegmentedControl<LoopNetWorthRange>>(
+              key('wallet-networth-ranges'),
+            )
+            .selected,
+        LoopNetWorthRange.month,
+      );
+      await tester.tap(key('wallet-networth-range-7d'));
+      await tester.pumpAndSettle();
+    });
 
-      await tester.tap(key('wallet-networth-collapse'));
+    testWidgets('今日盈亏 › shows the 1 天 window', (tester) async {
+      final history = _FakeHistory();
+      await pumpWallet(tester, history: history);
+      await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
-      expect(key('wallet-networth-panel'), findsNothing);
-      expect(key('wallet-networth-spark'), findsOneWidget);
-      // ⌄ opens it too.
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-networth-panel'), findsOneWidget);
-      // Collapse again so the run-scoped choice does not leak into others.
-      await tester.tap(key('wallet-networth-collapse'));
+      expect(history.requested.last, LoopNetWorthRange.day);
+      await tester.ensureVisible(key('wallet-networth-range-7d'));
+      await tester.tap(key('wallet-networth-range-7d'));
       await tester.pumpAndSettle();
     });
 
@@ -699,30 +623,25 @@ void main() {
       await pumpWallet(tester, history: history);
       expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
 
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
-      await tester.tap(key('wallet-networth-range-30d'));
-      await tester.pumpAndSettle();
+      Future<void> choose(String wire) async {
+        await tester.ensureVisible(key('wallet-networth-range-$wire'));
+        await tester.tap(key('wallet-networth-range-$wire'));
+        await tester.pumpAndSettle();
+      }
+
+      await choose('30d');
       expect(history.requested, <LoopNetWorthRange>[
         LoopNetWorthRange.week,
         LoopNetWorthRange.month,
       ]);
-      expect(
-        tester.widget<LoopSeg>(key('wallet-networth-range-30d')).selected,
-        isTrue,
-      );
-      await tester.tap(key('wallet-networth-range-7d'));
-      await tester.pumpAndSettle();
-      await tester.tap(key('wallet-networth-range-360d'));
-      await tester.pumpAndSettle();
+      await choose('7d');
+      await choose('360d');
       expect(history.requested, <LoopNetWorthRange>[
         LoopNetWorthRange.week,
         LoopNetWorthRange.month,
         LoopNetWorthRange.year,
       ]);
-      await tester.tap(key('wallet-networth-range-7d'));
-      await tester.tap(key('wallet-networth-collapse'));
-      await tester.pumpAndSettle();
+      await choose('7d');
     });
 
     testWidgets('隐藏余额 masks the total, the ¥, 今日盈亏 and the chart marks', (
@@ -730,8 +649,6 @@ void main() {
     ) async {
       await pumpWallet(tester, history: _FakeHistory());
       await tester.tap(key('wallet-eye'));
-      await tester.pumpAndSettle();
-      await tester.tap(key('wallet-networth-expand'));
       await tester.pumpAndSettle();
 
       expect(
@@ -763,7 +680,6 @@ void main() {
       );
       expect(find.textContaining('913.27'), findsNothing);
       expect(find.textContaining('12.08'), findsNothing);
-      await tester.tap(key('wallet-networth-collapse'));
       await tester.tap(key('wallet-eye'));
       await tester.pumpAndSettle();
     });
@@ -773,33 +689,25 @@ void main() {
       final history = _FakeHistory(failure: LoopChainFailureKind.unavailable);
       await pumpWallet(tester, history: history);
 
-      expect(key('wallet-networth-spark'), findsNothing);
-      expect(key('wallet-networth-spark-placeholder'), findsNothing);
-      expect(key('wallet-networth-spark-loading'), findsNothing);
+      expect(key('wallet-networth-chart'), findsNothing);
       expect(key('wallet-pnl'), findsNothing);
       expect(find.textContaining('¥'), findsNothing);
       expect(find.text('\$6,352.82'), findsOneWidget);
       expect(key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-asset-list'), findsOneWidget);
 
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
       final line = key('wallet-networth-chart-unavailable');
       expect(line, findsOneWidget);
-      // One line, not the chart's 200 points of height.
+      // One line, not the chart's height.
       expect(tester.getSize(line).height, lessThan(100));
-      expect(key('wallet-networth-chart'), findsNothing);
-      expect(key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
-      await tester.tap(key('wallet-networth-collapse'));
-      await tester.pumpAndSettle();
     });
 
-    testWidgets('without a history port there is no chevron at all', (
+    testWidgets('without a history port there is no chart at all', (
       tester,
     ) async {
       await pumpWallet(tester);
-      expect(key('wallet-networth-expand'), findsNothing);
-      expect(key('wallet-networth-spark'), findsNothing);
+      expect(key('wallet-networth-panel'), findsNothing);
+      expect(key('wallet-networth-ranges'), findsNothing);
       expect(key('wallet-pnl'), findsNothing);
     });
   });
@@ -1224,13 +1132,9 @@ void main() {
         '≈ ¥913.27',
       );
       expect(key('wallet-total-fiat-stale'), findsNothing);
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
       // S278 · decision 0236: nothing is printed under the chart.
       expect(key('wallet-networth-provenance'), findsNothing);
       expect(key('wallet-networth-fx-provenance'), findsNothing);
-      await tester.tap(key('wallet-networth-collapse'));
-      await tester.pumpAndSettle();
       await tester.tap(key('wallet-info'));
       await tester.pumpAndSettle();
       expect(key('wallet-info-sheet'), findsOneWidget);
@@ -1245,8 +1149,6 @@ void main() {
     ) async {
       final fiat = fx();
       await pumpWallet(tester, history: port(fiat));
-      await tester.tap(key('wallet-networth-expand'));
-      await tester.pumpAndSettle();
       expect(key('wallet-networth-provenance'), findsNothing);
       expect(key('wallet-networth-fx-provenance'), findsNothing);
       expect(find.textContaining('净值快照'), findsNothing);

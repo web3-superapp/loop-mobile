@@ -6,11 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
-import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -20,8 +18,8 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 // 钱包 C · the net-worth history under 总资产 (decision 0188)
 // ---------------------------------------------------------------------------
 //
-// A 7-day sparkline beside the total, which opens in place into a 200-high
-// area chart with its high and low marked and five windows to choose from.
+// UX-015 (decision 0257): an area chart under 今日盈亏, always shown, with
+// its high and low marked and five windows to choose from.
 // Every figure is a snapshot the server stored; nothing here is summed from
 // the balances, and `double` appears only once a value has been normalised
 // into the plot's pixel space (AGENTS rule 25).
@@ -44,243 +42,13 @@ String walletSignedUsdText(Decimal usd, Decimal pct, {bool hidden = false}) {
   return '$amount (${loopFormatPercent(pct)})';
 }
 
-/// The 88 × 44 seven-day line beside the total. Drawn only for a history
-/// with two snapshots or more; tapping it opens the chart.
-class WalletNetWorthSpark extends StatelessWidget {
-  const WalletNetWorthSpark({
-    required this.history,
-    required this.onTap,
-    super.key,
-  });
-
-  static const Size size = Size(88, 44);
-
-  final LoopNetWorthHistory history;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '7 天净值走势，点按展开',
-      excludeSemantics: true,
-      child: LoopPressable(
-        key: const ValueKey<String>('wallet-networth-spark'),
-        onTap: onTap,
-        child: SizedBox.fromSize(
-          size: size,
-          child: LoopSparkline(
-            closes: <Decimal>[
-              for (final point in history.points) point.netWorthUsd,
-            ],
-            semanticLabel: '7 天净值走势',
-            color: LoopColors.yellow,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Whether every snapshot of [history] is zero (decision 0224): its line
-/// would be a flat rule.
-bool walletNetWorthAllZero(LoopNetWorthHistory history) =>
-    history.points.every((point) => point.netWorthUsd == Decimal.zero);
-
-/// The 88 × 44 slot when the history is zero all the way (decision 0224): no
-/// flat Yellow rule, a short Yellow spray stroke instead. It still opens the
-/// chart.
-class WalletNetWorthSparkSpray extends StatelessWidget {
-  const WalletNetWorthSparkSpray({required this.onTap, super.key});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '7 天净值走势，点按展开',
-    excludeSemantics: true,
-    child: LoopPressable(
-      key: const ValueKey<String>('wallet-networth-spark-spray'),
-      onTap: onTap,
-      child: SizedBox.fromSize(
-        size: WalletNetWorthSpark.size,
-        child: Center(
-          child: Opacity(
-            opacity: 0.8,
-            child: Transform.rotate(
-              angle: -8 * math.pi / 180,
-              child: loopAtmoArt(LoopAtmoAssets.splatYellow, width: 44),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// The 88 × 44 slot when the 7-day history was read but cannot be drawn
-/// (fewer than two snapshots — a new or empty wallet): a dashed Text3
-/// baseline over 「净值走势 · 记录中」, so the slot still says a chart lives
-/// here (decision 0193). It carries no figure, so 隐藏余额 leaves it alone.
-/// Tapping it opens the chart, as the sparkline does.
-class WalletNetWorthSparkPlaceholder extends StatelessWidget {
-  const WalletNetWorthSparkPlaceholder({required this.onTap, super.key});
-
-  static const String caption = '净值走势 · 记录中';
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final auxiliary = LoopGround.auxiliaryOf(context);
-    final secondary = LoopGround.secondaryOf(context);
-    return Semantics(
-      button: true,
-      label: '净值走势记录中，点按展开',
-      excludeSemantics: true,
-      child: LoopPressable(
-        key: const ValueKey<String>('wallet-networth-spark-placeholder'),
-        onTap: onTap,
-        child: SizedBox.fromSize(
-          size: WalletNetWorthSpark.size,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Expanded(
-                child: CustomPaint(
-                  key: const ValueKey<String>(
-                    'wallet-networth-spark-placeholder-line',
-                  ),
-                  painter: WalletNetWorthDashPainter(color: auxiliary),
-                ),
-              ),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  caption,
-                  key: const ValueKey<String>(
-                    'wallet-networth-spark-placeholder-text',
-                  ),
-                  maxLines: 1,
-                  style: LoopType.captionSm.copyWith(color: secondary),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One dashed horizontal line through the middle of its box.
-class WalletNetWorthDashPainter extends CustomPainter {
-  const WalletNetWorthDashPainter({required this.color});
-
-  final Color color;
-
-  static const double dash = 4;
-  static const double gap = 3;
-  static const double strokeWidth = 1;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    final y = size.height / 2;
-    for (var x = 0.0; x < size.width; x += dash + gap) {
-      canvas.drawLine(
-        Offset(x, y),
-        Offset(math.min(x + dash, size.width), y),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(WalletNetWorthDashPainter oldDelegate) =>
-      oldDelegate.color != color;
-}
-
-/// The same slot while the 7-day history is being read.
-class WalletNetWorthSparkSkeleton extends StatelessWidget {
-  const WalletNetWorthSparkSkeleton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.fromSize(
-      key: const ValueKey<String>('wallet-networth-spark-loading'),
-      size: WalletNetWorthSpark.size,
-      child: LoopSkeletonBlock(
-        width: WalletNetWorthSpark.size.width,
-        height: WalletNetWorthSpark.size.height,
-      ),
-    );
-  }
-}
-
-/// ⌄ / ⌃ — the one-line switch that opens or closes the chart, labelled
-/// 「净值走势」 closed and 「收起」 open (decision 0193).
-class WalletNetWorthChevron extends StatelessWidget {
-  const WalletNetWorthChevron({
-    required this.expanded,
-    required this.onTap,
-    super.key,
-  });
-
-  final bool expanded;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final auxiliary = LoopGround.auxiliaryOf(context);
-    return Semantics(
-      button: true,
-      expanded: expanded,
-      label: expanded ? '收起净值走势' : '展开净值走势',
-      excludeSemantics: true,
-      child: LoopPressable(
-        key: ValueKey<String>(
-          expanded ? 'wallet-networth-collapse' : 'wallet-networth-expand',
-        ),
-        scale: false,
-        onTap: onTap,
-        child: SizedBox(
-          height: LoopTouch.minimum,
-          width: double.infinity,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                expanded ? '收起' : '净值走势',
-                key: const ValueKey<String>('wallet-networth-chevron-label'),
-                maxLines: 1,
-                style: LoopType.captionSm.copyWith(
-                  color: LoopGround.secondaryOf(context),
-                ),
-              ),
-              const SizedBox(width: 4),
-              RotatedBox(
-                // The chevron sprite points right; a quarter turn points down.
-                quarterTurns: expanded ? 3 : 1,
-                child: LoopIcon('chevron', size: 14, color: auxiliary),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The opened chart: the area, the five windows and ⌃.
+/// The chart under 总资产: the area and the five windows (UX-015, decision
+/// 0257: always shown, never folded behind 「净值走势 ⌄」; the windows are a
+/// small segmented control, not five capsules).
 ///
 /// [state] is the read for [range]; `null` while it has not been asked for.
 /// A failed read is one [LoopInlineUnavailable] line — it never holds the
-/// chart's 200 points of height open for nothing.
+/// chart's height open for nothing.
 class WalletNetWorthPanel extends StatelessWidget {
   const WalletNetWorthPanel({
     required this.state,
@@ -288,18 +56,17 @@ class WalletNetWorthPanel extends StatelessWidget {
     required this.hidden,
     required this.onRange,
     required this.onRetry,
-    required this.onCollapse,
     super.key,
   });
 
-  static const double chartHeight = 200;
+  /// UX-015: shorter than the 200 the folded chart opened to.
+  static const double chartHeight = 150;
 
   final LoopChainResourceState<LoopNetWorthHistory>? state;
   final LoopNetWorthRange range;
   final bool hidden;
   final ValueChanged<LoopNetWorthRange> onRange;
   final VoidCallback onRetry;
-  final VoidCallback onCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -340,30 +107,20 @@ class WalletNetWorthPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Padding(padding: const EdgeInsets.only(top: 4, right: 8), child: body),
+        Padding(padding: const EdgeInsets.only(top: 4), child: body),
         Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              key: const ValueKey<String>('wallet-networth-ranges'),
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                for (final option in LoopNetWorthRange.values)
-                  LoopSeg(
-                    key: ValueKey<String>(
-                      'wallet-networth-range-${option.wireName}',
-                    ),
-                    label: option.label,
-                    quiet: true,
-                    selected: option == range,
-                    onSelected: () => onRange(option),
-                  ),
-              ],
-            ),
+          padding: const EdgeInsets.only(top: 10),
+          child: WalletSegmentedControl<LoopNetWorthRange>(
+            key: const ValueKey<String>('wallet-networth-ranges'),
+            semanticLabel: '净值走势区间',
+            options: LoopNetWorthRange.values,
+            labelOf: (option) => option.label,
+            keyOf: (option) =>
+                ValueKey<String>('wallet-networth-range-${option.wireName}'),
+            selected: range,
+            onSelected: onRange,
           ),
         ),
-        WalletNetWorthChevron(expanded: true, onTap: onCollapse),
       ],
     );
   }
@@ -617,7 +374,9 @@ class WalletNetWorthChartPainter extends CustomPainter {
 }
 
 /// 今日盈亏 in its two states: the server's 24h move in rise / fall, or
-/// 「暂无」 when it had no snapshot 24 hours old. Tapping it opens the chart.
+/// 「暂无」 when it had no snapshot 24 hours old. UX-015 (decision 0257): one
+/// full-width line between the address and the chart, the chevron at its
+/// right edge; tapping it shows the chart's 1 天 window.
 class WalletPnlLine extends StatelessWidget {
   const WalletPnlLine({
     required this.keyPrefix,
@@ -647,20 +406,22 @@ class WalletPnlLine extends StatelessWidget {
         : LoopPriceMove.of(move.usd).color;
     return Semantics(
       button: true,
-      label: '今日盈亏 $value，查看净值走势',
+      label: '今日盈亏 $value，查看 1 天净值走势',
       excludeSemantics: true,
       child: LoopPressable(
         key: ValueKey<String>('$keyPrefix-pnl'),
         scale: false,
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 32),
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('今日盈亏', style: LoopType.caption.copyWith(color: secondary)),
-              const SizedBox(width: 6),
-              Flexible(
+              Text(
+                '今日盈亏',
+                style: LoopType.body.copyWith(color: LoopColors.chalk),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
                 child: Text(
                   value,
                   key: ValueKey<String>('$keyPrefix-pnl-value'),
@@ -669,8 +430,8 @@ class WalletPnlLine extends StatelessWidget {
                   style: LoopType.figureSm.copyWith(color: colour),
                 ),
               ),
-              const SizedBox(width: 2),
-              LoopIcon('chevron', size: 12, color: auxiliary),
+              const SizedBox(width: 8),
+              LoopIcon('chevron', size: 14, color: auxiliary),
             ],
           ),
         ),

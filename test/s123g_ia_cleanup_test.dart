@@ -21,7 +21,6 @@ import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
@@ -248,14 +247,15 @@ void main() {
 
       expect(find.text('路由由供应商选择'), findsNothing);
       expect(find.text('算力影响不可用'), findsNothing);
-      // The real limit stays, as one small line.
+      // The real limit stays, as the shared warning card (UX-016), and it
+      // is the only notice on the form.
       expect(
         tester.widget(
           find.byKey(const ValueKey<String>('swap-evidence-pending')),
         ),
-        isA<LoopInlineUnavailable>(),
+        isA<LoopNotice>(),
       );
-      expect(find.byType(LoopNotice), findsNothing);
+      expect(find.byType(LoopNotice), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey<String>('swap-info-action')));
       await tester.pumpAndSettle();
