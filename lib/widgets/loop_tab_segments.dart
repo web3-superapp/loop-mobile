@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// Which segment each v3 tab page was last showing (decision 0110).
 ///
@@ -91,8 +92,27 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     final remembered =
         ref.watch(loopTabSegmentMemoryProvider)[tabKey] ?? initialIndex;
     final selected = remembered.clamp(0, segments.length - 1);
-    final actions = actionsBuilder?.call(context, selected) ?? const <Widget>[];
+    // S325 · decision 0255: the segment pages report to the tab page's one
+    // (i) at the end of the segment row, unless the segment brings its own.
+    final own = actionsBuilder?.call(context, selected) ?? const <Widget>[];
+    final actions = <Widget>[
+      ...own,
+      if (!own.any((action) => action is LoopPageInfoAction))
+        LoopPageInfoAction(key: ValueKey<String>('$tabKey-page-info-action')),
+    ];
     final isUpdating = updating?.call(ref, selected) ?? false;
+    return LoopProvenanceScope(
+      child: _page(context, ref, selected, actions, isUpdating),
+    );
+  }
+
+  Widget _page(
+    BuildContext context,
+    WidgetRef ref,
+    int selected,
+    List<Widget> actions,
+    bool isUpdating,
+  ) {
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, LoopLayoutMode.stream),
@@ -174,7 +194,7 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                         ],
                         for (final action in actions) ...<Widget>[
                           const SizedBox(width: 6),
-                          action,
+                          LoopTopbarScope(child: action),
                         ],
                       ],
                     ),

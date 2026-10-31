@@ -381,10 +381,8 @@ void main() {
       );
 
       expect(findProvenanceContaining('未登记池'), findsOneWidget);
-      await tester.tap(
-        find.byKey(const ValueKey<String>('candles-provenance')),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
       // 「来源 X · 池 Y」 is the registered wording; it must not read as if
       // LOOP indexed this pool.
@@ -401,10 +399,8 @@ void main() {
       );
 
       expect(find.textContaining('未登记池'), findsNothing);
-      await tester.tap(
-        find.byKey(const ValueKey<String>('candles-provenance')),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
     });
 

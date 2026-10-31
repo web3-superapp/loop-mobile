@@ -828,8 +828,8 @@ class WalletSectionHeading extends StatelessWidget {
 
 /// 「产生算力」: the small tag beside 资产 that opens the mining note.
 ///
-/// Decision 0171 (docs/33 L14): the shared mute `.badge` with an (i) glyph
-/// after it, in place of the hand-made r999 outlined capsule.
+/// Decision 0171 (docs/33 L14): the shared mute `.badge`, in place of the
+/// hand-made r999 outlined capsule; no (i) after it since decision 0255.
 class WalletPowerTag extends StatelessWidget {
   const WalletPowerTag({required this.onTap, super.key});
 
@@ -837,7 +837,6 @@ class WalletPowerTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = LoopGround.secondaryOf(context);
     return Semantics(
       button: true,
       label: '持仓产生算力，查看说明',
@@ -849,14 +848,9 @@ class WalletPowerTag extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
           child: Center(
             widthFactor: 1,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const LoopBadge('产生算力'),
-                const SizedBox(width: 4),
-                LoopIcon('info', size: 13, color: secondary),
-              ],
-            ),
+            // S325 · decision 0255 (UX-009): the tag already says what it
+            // opens; it carries no (i) after it.
+            child: const LoopBadge('产生算力'),
           ),
         ),
       ),

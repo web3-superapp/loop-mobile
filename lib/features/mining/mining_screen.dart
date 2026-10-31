@@ -22,6 +22,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// `mining` · the Mining destination.
 ///
@@ -127,11 +128,15 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       onBack: widget.onBack,
       tabPage: widget.onBack == null,
       actions: <Widget>[
-        LoopIconButton(
+        // S325 · decision 0255 (UX-009): the page's one (i) — 挖矿说明
+        // and, under it, the snapshot source the hero used to carry.
+        LoopPageInfoAction(
           key: const ValueKey<String>('mining-rules-action'),
-          icon: 'info',
+          title: '挖矿说明',
           label: '挖矿说明',
-          onPressed: () => unawaited(_openInfo(summary)),
+          notes: miningInfoNotes(summary),
+          sheetKey: 'mining-info-sheet',
+          footer: _rulesFooter(),
         ),
       ],
       primary: summary == null
@@ -246,23 +251,18 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
   /// formula version, the snapshot the figures came from and the no-local-
   /// estimate rule — where the numbers come from, said once here instead of
   /// three blocks under 增加算力 — and the way on to 挖矿规则.
-  Future<void> _openInfo(MiningSummary? summary) => showLoopInfoSheet(
-    context,
-    title: '挖矿说明',
-    notes: miningInfoNotes(summary),
-    sheetKey: 'mining-info-sheet',
-    footer: widget.onOpenRules == null
-        ? null
-        : (sheetContext) => LoopButton(
-            key: const ValueKey<String>('mining-info-open-rules'),
-            label: '查看挖矿规则',
-            block: true,
-            onPressed: () {
-              Navigator.of(sheetContext).pop();
-              widget.onOpenRules?.call();
-            },
-          ),
-  );
+  Widget Function(BuildContext sheetContext)? _rulesFooter() =>
+      widget.onOpenRules == null
+      ? null
+      : (sheetContext) => LoopButton(
+          key: const ValueKey<String>('mining-info-open-rules'),
+          label: '查看挖矿规则',
+          block: true,
+          onPressed: () {
+            Navigator.of(sheetContext).pop();
+            widget.onOpenRules?.call();
+          },
+        );
 }
 
 /// 公式版本 in the (i): the state in words, then — on its own line, the way

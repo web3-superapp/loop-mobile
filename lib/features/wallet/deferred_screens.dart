@@ -16,6 +16,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 
 /// The four D21 surfaces: `pay`, `bridge`, `bridge-status` and `dapp`.
 ///
@@ -44,16 +45,20 @@ Widget _deferredInfo(
   required String keyName,
   required String title,
   required List<LoopInfoNote> notes,
-}) => LoopInfoTrigger(
-  key: ValueKey<String>('$keyName-info'),
-  label: '说明',
-  semanticsLabel: '查看$title',
-  onTap: () => unawaited(
-    showLoopInfoSheet(
-      context,
-      title: title,
-      sheetKey: '$keyName-info-sheet',
-      notes: notes,
+}) => LoopProvenanceReport(
+  // S325 · decision 0255 (UX-009): the page's one (i) in its bar.
+  entry: LoopProvenanceEntry(heading: title, notes: notes),
+  fallback: LoopInfoTrigger(
+    key: ValueKey<String>('$keyName-info'),
+    label: '说明',
+    semanticsLabel: '查看$title',
+    onTap: () => unawaited(
+      showLoopInfoSheet(
+        context,
+        title: title,
+        sheetKey: '$keyName-info-sheet',
+        notes: notes,
+      ),
     ),
   ),
 );

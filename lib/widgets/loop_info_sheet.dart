@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
@@ -17,6 +18,15 @@ class LoopInfoNote {
 
   /// Pins the paragraph for tests; the sheet keys nothing on its own.
   final Key? key;
+
+  /// Two notes are the same paragraph when they say the same thing; the key
+  /// only pins where it is drawn.
+  @override
+  bool operator ==(Object other) =>
+      other is LoopInfoNote && other.title == title && other.body == body;
+
+  @override
+  int get hashCode => Object.hash(title, body);
 }
 
 /// What an (i) opens (decision 0133, S121 §1 提示分级): explanations that
@@ -97,17 +107,23 @@ class LoopInfoButton extends StatelessWidget {
   final String sheetKey;
   final Color? color;
 
+  /// S325 · decision 0255 (UX-009): on a page with a title bar the
+  /// explanation joins the page's one (i) and this button draws nothing; it
+  /// keeps its own (i) only where there is no page (i) to join.
   @override
-  Widget build(BuildContext context) => LoopIconButton(
-    icon: 'info',
-    label: label ?? '关于$title',
-    color: color ?? LoopColors.text3,
-    onPressed: () => unawaited(
-      showLoopInfoSheet(
-        context,
-        title: title,
-        notes: notes,
-        sheetKey: sheetKey,
+  Widget build(BuildContext context) => LoopProvenanceReport(
+    entry: LoopProvenanceEntry(heading: title, notes: notes),
+    fallback: LoopIconButton(
+      icon: 'info',
+      label: label ?? '关于$title',
+      color: color ?? LoopColors.text3,
+      onPressed: () => unawaited(
+        showLoopInfoSheet(
+          context,
+          title: title,
+          notes: notes,
+          sheetKey: sheetKey,
+        ),
       ),
     ),
   );

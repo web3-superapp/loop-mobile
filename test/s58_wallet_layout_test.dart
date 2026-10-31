@@ -16,6 +16,7 @@ import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
 import 'support/s8_harness.dart';
 import 'support/test_hints.dart';
+import 'support/provenance_finders.dart';
 
 /// The wallet module's block order, pinned page by page.
 ///
@@ -146,16 +147,8 @@ void main() {
       // A count is not an identity: the heading names the wallet in use.
       expect(find.text('1 个钱包'), findsNothing);
       expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsNothing);
-      await tester.ensureVisible(
-        find.byKey(const ValueKey<String>('wallets-source')),
-      );
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('wallets-source')),
-          matching: find.byKey(const ValueKey<String>('provenance-footer')),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: the statement opens from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsOneWidget);
       await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
@@ -320,7 +313,8 @@ void main() {
         find.byKey(const ValueKey<String>('pay-why-notice')),
         findsNothing,
       );
-      expect(find.byKey(const ValueKey<String>('pay-info')), findsOneWidget);
+      // S325 · decision 0255: the page's one (i) is in its bar.
+      expect(pageInfoAction, findsOneWidget);
       // One explanation, not two.
       expect(
         find.byKey(const ValueKey<String>('pay-signing-notice')),
@@ -381,7 +375,8 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-scope-disclosure')),
         findsNothing,
       );
-      expect(find.byKey(const ValueKey<String>('dapp-info')), findsOneWidget);
+      // S325 · decision 0255: the page's one (i) is in its bar.
+      expect(pageInfoAction, findsOneWidget);
     });
   });
 }

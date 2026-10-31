@@ -98,6 +98,10 @@ abstract final class LoopColors {
   /// card, a field, a pressed card.
   static const Color card2 = plateRaised;
 
+  /// 辅助按钮's face (S325 · decision 0255): Chalk 8 % over whatever ground
+  /// it stands on, fainter than the [card2] 次按钮.
+  static const Color assistFill = Color(0x14F2F2F4);
+
   /// Line · `--border #2a292f` — a divider hairline.
   static const Color line = Color(0xFF2A292F);
 
@@ -477,6 +481,10 @@ abstract final class LoopTouch {
 
   /// Primary button height (48, decision 0211).
   static const double primaryButton = 48;
+
+  /// A compact button's visible face (S325 · decision 0255): 32, inside a
+  /// [minimum] target.
+  static const double compactButton = 32;
 
   /// Floating tab bar height and its minimum cell height.
   static const double tabBarHeight = 70;

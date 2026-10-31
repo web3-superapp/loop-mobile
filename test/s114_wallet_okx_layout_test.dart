@@ -350,7 +350,9 @@ void main() {
       expect(glyph.color, LoopColors.chalk);
     });
 
-    testWidgets('产生算力 is a mute badge with an info glyph', (tester) async {
+    // S325 · decision 0255 (UX-009): the tag's word says what it opens; no
+    // (i) after it.
+    testWidgets('产生算力 is a mute badge with no info glyph', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -369,7 +371,7 @@ void main() {
           of: key('wallet-power-tag'),
           matching: find.byType(LoopIcon),
         ),
-        findsOneWidget,
+        findsNothing,
       );
     });
 

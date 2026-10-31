@@ -15,6 +15,7 @@ import 'package:loop_mobile/core/navigation/launch_route.dart';
 
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
@@ -366,15 +367,13 @@ void main() {
       );
       expect(find.textContaining('开发'), findsNothing);
       expect(find.text(miningBaselineDetail), findsNothing);
-      final line = find.byKey(
-        const ValueKey<String>('mining-provenance-summary'),
-      );
-      await tester.ensureVisible(line);
-      await tester.tap(line);
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining(miningBaselineDetail), findsOneWidget);
-      // Decision 0146 / 0183: the drawer states the quantity basis, no price.
-      expect(find.textContaining('持有数量 × 资产权重'), findsOneWidget);
+      // Decision 0146 / 0183: the drawer states the quantity basis, no price
+      // (S325: 挖矿说明 and the snapshot source share one sheet, and both
+      // name it).
+      expect(find.textContaining('持有数量 × 资产权重'), findsWidgets);
       expect(find.textContaining('参考价'), findsNothing);
     });
 
@@ -1442,10 +1441,8 @@ void main() {
         find.byKey(const ValueKey<String>('mining-formula')),
         findsNothing,
       );
-      final line = find.byKey(const ValueKey<String>('mining-provenance-rank'));
-      await scrollToS7Section(tester, line);
-      await tester.tap(line);
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining(miningBaselineDetail), findsOneWidget);
       expect(find.textContaining(s7BaselineVersion), findsNothing);
     });
@@ -2150,12 +2147,8 @@ void main() {
       // complete snapshot settled is still on the page.
       expect(find.textContaining('4,482'), findsWidgets);
       expect(find.textContaining('4482.309'), findsNothing);
-      final line = find.byKey(
-        const ValueKey<String>('mining-provenance-summary'),
-      );
-      await tester.ensureVisible(line);
-      await tester.tap(line);
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('最近一次快照未完成'), findsWidgets);
     });
 

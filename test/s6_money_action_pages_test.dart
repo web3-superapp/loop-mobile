@@ -19,6 +19,7 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
+import 'support/provenance_finders.dart';
 
 const _draft = SendDraft(
   walletId: s5WalletId,
@@ -503,17 +504,8 @@ void main() {
       // S278 · decision 0236: the source and 「只展示最终报价」 are behind
       // the block's (i).
       expect(find.textContaining('报价方 privy'), findsNothing);
-      final provenance = find.byKey(
-        const ValueKey<String>('swap-route-provenance'),
-      );
-      await tester.ensureVisible(provenance);
-      await tester.tap(
-        find.descendant(
-          of: provenance,
-          matching: find.byKey(const ValueKey<String>('provenance-footer')),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('报价方 privy'), findsOneWidget);
       expect(find.textContaining('逐跳明细'), findsOneWidget);
     });
@@ -1012,17 +1004,8 @@ void main() {
 
       // S278 · decision 0236: the coverage line and the three sentences about
       // indexing coverage are behind one (i); still exactly one tap away.
-      final freshness = find.byKey(
-        const ValueKey<String>('approvals-freshness'),
-      );
-      await tester.ensureVisible(freshness);
-      await tester.tap(
-        find.descendant(
-          of: freshness,
-          matching: find.byKey(const ValueKey<String>('provenance-footer')),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
       expect(find.textContaining('更早授予的授权不会出现在这里'), findsNothing);
     });

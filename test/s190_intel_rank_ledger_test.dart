@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -315,16 +314,6 @@ void main() {
         isNull,
       );
     });
-
-    test('share of the leader, none without a leader figure', () {
-      expect(
-        intelRankShare(Decimal.parse('4870'), Decimal.parse('12960')),
-        closeTo(4870 / 12960, 1e-9),
-      );
-      expect(intelRankShare(Decimal.parse('1'), Decimal.zero), isNull);
-      expect(intelRankShare(null, Decimal.parse('1')), isNull);
-      expect(intelRankShare(Decimal.parse('5'), null), isNull);
-    });
   });
 
   group('page', () {
@@ -422,17 +411,10 @@ void main() {
         find.descendant(of: row, matching: find.text('4,870')),
         findsOneWidget,
       );
-      final bar = tester.widget<LoopProgressBar>(
-        find.descendant(of: row, matching: find.byType(LoopProgressBar)),
-      );
-      expect(bar.value, closeTo(4870 / 12960, 1e-9));
+      // S325 · decision 0255 (UX-018): the figure carries no share bar.
       expect(
-        tester
-            .getSize(
-              find.descendant(of: row, matching: find.byType(LoopProgressBar)),
-            )
-            .width,
-        intelRankShareBarWidth,
+        find.descendant(of: row, matching: find.byType(LoopProgressBar)),
+        findsNothing,
       );
       final face = find.descendant(
         of: row,
@@ -561,13 +543,14 @@ void main() {
         ),
         findsNothing,
       );
-      final bar = tester.widget<LoopProgressBar>(
+      // S325 · decision 0255 (UX-018): no share bar.
+      expect(
         find.descendant(
           of: _key('intel-rank-user-3'),
           matching: find.byType(LoopProgressBar),
         ),
+        findsNothing,
       );
-      expect(bar.value, closeTo(3120 / 3420, 1e-9));
 
       await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();

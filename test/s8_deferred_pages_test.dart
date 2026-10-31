@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/wallet/deferred_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s8_harness.dart';
+import 'support/provenance_finders.dart';
 
 /// `pay`, `bridge`, `bridge-status`, `dapp` (D21).
 ///
@@ -47,7 +48,8 @@ void main() {
       find.byKey(const ValueKey<String>('bridge-scope-notice')),
       findsNothing,
     );
-    await tester.tap(find.byKey(const ValueKey<String>('bridge-info')));
+    // S325 · decision 0255: the page's one (i), in its bar.
+    await openPageInfo(tester);
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey<String>('bridge-scope-notice')),
@@ -225,7 +227,8 @@ void main() {
       // S278 · decision 0236: the sentence is behind the folio's (i); it is
       // still exactly one tap away and still says the same thing.
       expect(find.textContaining('不会跟随任何跳转'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey<String>('dapp-info')));
+      // S325 · decision 0255: the page's one (i), in its bar.
+      await openPageInfo(tester);
       await tester.pumpAndSettle();
       final notice = find.byKey(const ValueKey<String>('dapp-no-fetch-notice'));
       expect(notice, findsOneWidget);

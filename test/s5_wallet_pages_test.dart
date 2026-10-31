@@ -45,14 +45,8 @@ void main() {
       // confirmations sit in the statement it opens.
       expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
-      await scrollToS5Section(
-        tester,
-        find.byKey(const ValueKey<String>('wallet-snapshot-footer')),
-      );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('loop-provenance-line')),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: the statement opens from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('15 确认'), findsOneWidget);
     });
 
@@ -124,14 +118,8 @@ void main() {
         ),
       );
 
-      await scrollToS5Section(
-        tester,
-        find.byKey(const ValueKey<String>('wallet-snapshot-footer')),
-      );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('loop-provenance-line')),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: the statement opens from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('0.005 BNB'), findsOneWidget);
       // The reserve is the server's figure; the configuration version behind
       // it is a backend identifier and never reaches the footer.

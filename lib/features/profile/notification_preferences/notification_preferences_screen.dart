@@ -140,6 +140,7 @@ class _NotificationPreferencesScreenState
             ),
             label: '开启',
             primary: true,
+            size: LoopButtonSize.compact,
             onPressed: onOptIn,
           ),
         );

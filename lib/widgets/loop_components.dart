@@ -9,6 +9,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
@@ -58,9 +59,9 @@ class LoopTopbar extends StatelessWidget {
   /// Whether the back control and the tools carry the prototype's `.tool-btn`
   /// ground (44x44, `--card`, `--line` hairline, 13 radius).
   ///
-  /// Off by default so no page changes shape without asking. A chat header
-  /// asks, because the prototype draws every one of its controls framed and a
-  /// row of bare glyphs over a message list has no edge to be tapped by.
+  /// S325 · decision 0255 (UX-007): every bar is framed now — the back
+  /// control and each [LoopIconButton] tool sit on the dark square ground —
+  /// so this flag no longer changes anything; it is kept for its callers.
   final bool framedTools;
 
   /// A field that replaces the title column entirely (`chat-search`).
@@ -110,6 +111,32 @@ class LoopTopbar extends StatelessWidget {
     final flat = LoopFlat.of(context);
     final horizontal = dense ? 12.0 : LoopSpacing.page;
     final gap = dense ? 5.0 : 6.0;
+    // S325 · decision 0255 (UX-009): a page's sources and explanations are
+    // opened from one (i) at the right end of its bar. A page that already
+    // carries its own [LoopPageInfoAction] keeps that one.
+    final pageInfo =
+        LoopProvenanceScope.maybeOf(context) != null &&
+        !actions.any((action) => action is LoopPageInfoAction);
+    final tools = <Widget>[
+      ...actions,
+      if (pageInfo)
+        const LoopPageInfoAction(
+          key: ValueKey<String>('loop-page-info-action'),
+        ),
+    ];
+    // S325 · decision 0255 (UX-007): every control in a title bar wears the
+    // same dark square ground, the way the group page's tools always did.
+    return _bar(context, theme, flat, horizontal, gap, tools);
+  }
+
+  Widget _bar(
+    BuildContext context,
+    ThemeData theme,
+    bool flat,
+    double horizontal,
+    double gap,
+    List<Widget> actions,
+  ) {
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 0),
       child: ConstrainedBox(
@@ -122,7 +149,7 @@ class LoopTopbar extends StatelessWidget {
                 icon: 'back',
                 label: backLabel,
                 onPressed: onBack,
-                framed: framedTools,
+                framed: true,
               ),
               SizedBox(width: dense ? gap : 10),
             ] else if (leading != null) ...<Widget>[
@@ -196,13 +223,27 @@ class LoopTopbar extends StatelessWidget {
             ],
             for (final action in actions) ...<Widget>[
               SizedBox(width: gap),
-              action,
+              LoopTopbarScope(child: action),
             ],
           ],
         ),
       ),
     );
   }
+}
+
+/// Marks a title bar's row of tools (S325 · decision 0255, UX-007): a
+/// [LoopIconButton] inside it is drawn framed — the glyph on the dark square
+/// ground — whatever its caller asked, so every bar's tools match.
+class LoopTopbarScope extends InheritedWidget {
+  const LoopTopbarScope({required super.child, super.key});
+
+  /// Whether [context] is inside a title bar.
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LoopTopbarScope>() != null;
+
+  @override
+  bool updateShouldNotify(LoopTopbarScope oldWidget) => false;
 }
 
 /// 44×44 icon button with a sprite glyph (`.back` and topbar tools).
@@ -216,9 +257,15 @@ class LoopIconButton extends StatelessWidget {
     this.color,
     this.toggled,
     this.framed = false,
+    this.target = LoopTouch.minimum,
   });
 
   final String icon;
+
+  /// The side of the square that answers the finger. The drawn control stays
+  /// 44; a control that must meet the 48 dp guideline on its own (the page
+  /// (i), decision 0255) asks for 48.
+  final double target;
 
   /// What the control is, in words. It is the whole accessible name, the
   /// tooltip a long press reveals, and — since decision 0087 turned every
@@ -254,6 +301,7 @@ class LoopIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
+    final framed = this.framed || LoopTopbarScope.of(context);
     return Semantics(
       button: true,
       label: label,
@@ -270,25 +318,29 @@ class LoopIconButton extends StatelessWidget {
           child: InkWell(
             onTap: onPressed ?? onBlocked,
             borderRadius: LoopRadius.tool,
-            child: Container(
-              width: LoopTouch.minimum,
-              height: LoopTouch.minimum,
-              decoration: framed
-                  ? BoxDecoration(
-                      color: LoopGround.tintOf(context),
-                      borderRadius: LoopRadius.tool,
-                    )
-                  : null,
-              child: Center(
-                child: LoopIcon(
-                  icon,
-                  size: 19,
-                  // A button with nothing behind it was drawn in full Chalk,
-                  // exactly like one that works: the 兑换 chevron looked live,
-                  // took the tap and changed nothing. A disabled control reads
-                  // as disabled.
-                  color:
-                      color ?? (enabled ? LoopColors.chalk : LoopColors.text3),
+            child: _sized(
+              target,
+              Container(
+                width: LoopTouch.minimum,
+                height: LoopTouch.minimum,
+                decoration: framed
+                    ? BoxDecoration(
+                        color: LoopGround.tintOf(context),
+                        borderRadius: LoopRadius.tool,
+                      )
+                    : null,
+                child: Center(
+                  child: LoopIcon(
+                    icon,
+                    size: 19,
+                    // A button with nothing behind it was drawn in full Chalk,
+                    // exactly like one that works: the 兑换 chevron looked live,
+                    // took the tap and changed nothing. A disabled control reads
+                    // as disabled.
+                    color:
+                        color ??
+                        (enabled ? LoopColors.chalk : LoopColors.text3),
+                  ),
                 ),
               ),
             ),
@@ -297,6 +349,14 @@ class LoopIconButton extends StatelessWidget {
       ),
     );
   }
+
+  static Widget _sized(double target, Widget control) =>
+      target <= LoopTouch.minimum
+      ? control
+      : SizedBox.square(
+          dimension: target,
+          child: Center(child: control),
+        );
 }
 
 // ---------------------------------------------------------------------------
@@ -1403,6 +1463,9 @@ class _Pressable extends StatelessWidget {
             onTap: onTap,
             onHighlightChanged: onHighlightChanged,
             borderRadius: borderRadius,
+            highlightColor: LoopColors.pressHighlight,
+            hoverColor: const Color(0x00000000),
+            focusColor: const Color(0x00000000),
             child: DecoratedBox(decoration: painted, child: child),
           ),
         ),
@@ -1413,6 +1476,10 @@ class _Pressable extends StatelessWidget {
 
 /// A tappable card's pressed answer (decision 0210): while the finger is
 /// down the card's edge turns Purple. Colour only, so reduced motion keeps it.
+///
+/// S325 · decision 0255 (UX-011): the Purple edge read as a card left
+/// selected or hovered (社区挖矿, 2026-10-31). A card has no hover, focus or
+/// held edge now; the press answers with the ink highlight alone.
 class _PressedEdge extends StatefulWidget {
   const _PressedEdge({required this.decoration, required this.builder});
 
@@ -1434,12 +1501,7 @@ class _PressedEdgeState extends State<_PressedEdge> {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = widget.decoration;
-    // Decision 0211: an edgeless card draws a 1px Purple edge while held.
-    final painted = _pressed
-        ? decoration.copyWith(border: Border.all(color: LoopColors.purple))
-        : decoration;
-    return widget.builder(_onHighlightChanged, painted);
+    return widget.builder(_onHighlightChanged, widget.decoration);
   }
 }
 
@@ -1648,7 +1710,7 @@ class LoopRecordRow extends StatelessWidget {
           ),
           if (trailingBadge != null) ...<Widget>[
             const SizedBox(width: 10),
-            trailingBadge!,
+            LoopCompactButtons(child: trailingBadge!),
           ],
           if (trailingChart != null) ...<Widget>[
             const SizedBox(width: 8),
@@ -1662,7 +1724,14 @@ class LoopRecordRow extends StatelessWidget {
             const SizedBox(width: 12),
             // v3 (decision 0229): the value is the row's 17 figure; a long
             // one (a date, a sentence) scales down rather than overflowing.
-            Flexible(
+            // S325 · decision 0255 (UX-011): the column is capped, not a
+            // second flex child. As a Flexible it was handed half the row and
+            // sat at the start of that half, so 「0 / 算力」 stood in the
+            // middle of the card instead of on its right edge.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
@@ -1819,7 +1888,7 @@ extension on LoopRecordRow {
           ),
           if (trailingBadge != null) ...<Widget>[
             const SizedBox(width: 10),
-            trailingBadge!,
+            LoopCompactButtons(child: trailingBadge!),
           ],
           if (trailingChart != null) ...<Widget>[
             const SizedBox(width: 8),
@@ -2172,9 +2241,11 @@ class LoopNotice extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) ...<Widget>[
+                if (trailing case final Widget control) ...<Widget>[
                   const SizedBox(width: 10),
-                  ?trailing,
+                  // S325 · decision 0255: a button beside a notice is a
+                  // small button.
+                  LoopCompactButtons(child: control),
                 ],
               ],
             ),
@@ -2655,6 +2726,36 @@ enum LoopButtonTone {
   danger,
 }
 
+/// How much room a [LoopButton] takes (S325 · decision 0255, UX-007).
+enum LoopButtonSize {
+  /// The page's own actions: 48 tall, 23 at each side.
+  regular,
+
+  /// A control inside a row, a notice or beside a field (开启 / 粘贴 /
+  /// 生成海报): a 32 tall face with 12 at each side, still a 44 target.
+  compact,
+}
+
+/// Makes every [LoopButton] below it compact (S325 · decision 0255,
+/// UX-007): a button inside a notice or at the end of a row is a small
+/// control and takes the narrow padding, not the page button's.
+class LoopCompactButtons extends InheritedWidget {
+  const LoopCompactButtons({required super.child, super.key});
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LoopCompactButtons>() != null;
+
+  @override
+  bool updateShouldNotify(LoopCompactButtons oldWidget) => false;
+}
+
+/// The three ranks a button can take (S325 · decision 0255, UX-007).
+///
+/// 主按钮 Yellow with an Ink word; 次按钮 the raised dark grey with a Chalk
+/// word; 辅助按钮 a fainter grey with a grey word, for a step beside the
+/// page's main one. All three share [LoopRadius.button].
+enum LoopButtonRank { primary, secondary, assist }
+
 class LoopButton extends StatelessWidget {
   const LoopButton({
     required this.label,
@@ -2666,6 +2767,8 @@ class LoopButton extends StatelessWidget {
     this.semanticLabel,
     this.tone = LoopButtonTone.lime,
     this.selected,
+    this.size = LoopButtonSize.regular,
+    this.assist = false,
   }) : assert(
          label != '' || (icon != null && semanticLabel != null),
          'A button with no label must carry a glyph and a semantic label.',
@@ -2695,11 +2798,29 @@ class LoopButton extends StatelessWidget {
   /// A primary button's fill; a secondary button ignores it.
   final LoopButtonTone tone;
 
+  /// [LoopButtonSize.compact] for a control inside a row or a notice.
+  final LoopButtonSize size;
+
+  /// The weakest rank (辅助按钮): a faint grey face and a grey word. Ignored
+  /// when [primary] is set.
+  final bool assist;
+
+  /// The rank this button is drawn at.
+  LoopButtonRank get rank => primary
+      ? LoopButtonRank.primary
+      : assist
+      ? LoopButtonRank.assist
+      : LoopButtonRank.secondary;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     final choice = selected;
     final chosen = choice ?? false;
+    final compact =
+        size == LoopButtonSize.compact ||
+        (!block && LoopCompactButtons.of(context));
+    final assistRank = rank == LoopButtonRank.assist && choice == null;
     // A disabled primary keeps the shape but not the fill (自选管理's 保存 was
     // read as "disabled-looking" while it was disabled).
     final paintPrimary = primary && enabled && choice == null;
@@ -2707,6 +2828,8 @@ class LoopButton extends StatelessWidget {
     final inkFill = tone == LoopButtonTone.ink;
     final foreground = chosen
         ? LoopColors.onPurple
+        : assistRank
+        ? LoopColors.text2
         : paintPrimary && tone == LoopButtonTone.danger
         ? LoopColors.danger
         : paintPrimary
@@ -2719,6 +2842,8 @@ class LoopButton extends StatelessWidget {
     final danger = paintPrimary && tone == LoopButtonTone.danger;
     final Color? fill = chosen
         ? LoopColors.purpleSelected
+        : assistRank
+        ? LoopColors.assistFill
         : paintPrimary
         ? switch (tone) {
             LoopButtonTone.brass => LoopColors.brass,
@@ -2730,12 +2855,13 @@ class LoopButton extends StatelessWidget {
     final Color? pressedFill = switch (fill) {
       LoopColors.yellow => LoopColors.yellowPressed,
       LoopColors.card2 => LoopColors.line,
+      LoopColors.assistFill => LoopColors.card2,
       final Color other => other,
       null => danger ? LoopColors.dangerSoft : null,
     };
     final edge = danger
         ? LoopColors.danger
-        : paintPrimary || chosen || onDarkGround
+        : paintPrimary || chosen || onDarkGround || assistRank
         ? null
         : LoopGround.edgeOf(context);
     return MergeSemantics(
@@ -2748,43 +2874,65 @@ class LoopButton extends StatelessWidget {
           opacity: enabled ? 1 : 0.4,
           child: _chosenSplat(
             chosen,
-            _LoopButtonFace(
-              key: ValueKey<String>(
-                'loop-button-${primary ? 'primary' : 'secondary'}',
-              ),
-              onPressed: onPressed,
-              fill: fill,
-              pressedFill: pressedFill,
-              edge: edge,
-              child: Container(
-                // Every button keeps 48: docs/42 附C §4 asks 44 for a
-                // secondary one, but the Android 48 dp tap-target guideline the
-                // accessibility suite holds wins (decision 0212).
-                constraints: BoxConstraints(
-                  minHeight: LoopTouch.primaryButton,
-                  minWidth: block ? double.infinity : LoopTouch.minimum,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 23),
-                child: Row(
-                  mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    if (icon != null) ...<Widget>[
-                      LoopIcon(icon!, size: 17, color: foreground),
-                      if (label.isNotEmpty) const SizedBox(width: 10),
-                    ],
-                    // An empty label is the glyph-only button, which takes its
-                    // whole meaning from `semanticLabel`.
-                    if (label.isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: (wide ? LoopType.titleLg : LoopType.action)
-                              .copyWith(color: foreground),
+            _compactTarget(
+              compact,
+              onPressed,
+              _LoopButtonFace(
+                key: ValueKey<String>('loop-button-${rank.name}'),
+                onPressed: onPressed,
+                fill: fill,
+                pressedFill: pressedFill,
+                edge: edge,
+                child: Container(
+                  // Every regular button keeps 48: docs/42 附C §4 asks 44 for
+                  // a secondary one, but the Android 48 dp tap-target
+                  // guideline the accessibility suite holds wins (decision
+                  // 0212). A compact face is 32 inside a 44 target.
+                  constraints: BoxConstraints(
+                    minHeight: compact
+                        ? LoopTouch.compactButton
+                        : LoopTouch.primaryButton,
+                    minWidth: block
+                        ? double.infinity
+                        : compact
+                        ? 0
+                        : LoopTouch.minimum,
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 23),
+                  child: Row(
+                    mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      if (icon != null) ...<Widget>[
+                        LoopIcon(
+                          icon!,
+                          size: compact ? 15 : 17,
+                          color: foreground,
                         ),
-                      ),
-                  ],
+                        if (label.isNotEmpty) SizedBox(width: compact ? 6 : 10),
+                      ],
+                      // An empty label is the glyph-only button, which takes
+                      // its whole meaning from `semanticLabel`.
+                      if (label.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            maxLines: compact ? 1 : null,
+                            style:
+                                (compact
+                                        ? LoopTypography.withWeight(
+                                            LoopType.label,
+                                            FontWeight.w600,
+                                          )
+                                        : wide
+                                        ? LoopType.titleLg
+                                        : LoopType.action)
+                                    .copyWith(color: foreground),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -2797,6 +2945,28 @@ class LoopButton extends StatelessWidget {
   /// A chosen choice wears the Yellow splat (decision 0222).
   static Widget _chosenSplat(bool chosen, Widget face) =>
       chosen ? loopSplatted(face) : face;
+
+  /// A compact face stays a 44 target: the space around the 32 face answers
+  /// the finger too.
+  static Widget _compactTarget(
+    bool compact,
+    VoidCallback? onPressed,
+    Widget face,
+  ) => compact
+      ? GestureDetector(
+          // loop-press-exempt: the margin of a compact button's own target;
+          // the face inside it carries the pressed look.
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: LoopTouch.minimum,
+              minWidth: LoopTouch.minimum,
+            ),
+            child: Center(widthFactor: 1, heightFactor: 1, child: face),
+          ),
+        )
+      : face;
 }
 
 /// The 12 radius face of a [LoopButton] (decision 0211): its fill, its edge
@@ -2949,7 +3119,10 @@ class LoopKeyValue extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          Flexible(
+          // S325 · decision 0255 (UX-011): the value column takes its whole
+          // share, so a right-aligned value ends on the card's right edge
+          // instead of the middle of the card.
+          Expanded(
             flex: valueFlex,
             child: Text(
               value,

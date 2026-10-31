@@ -8,6 +8,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s8_harness.dart';
+import 'support/provenance_finders.dart';
 
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 
@@ -151,13 +152,8 @@ void main() {
       await scrollToS8Section(tester, freshness);
       // S278 · decision 0236: the coverage line is behind the block's (i).
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsNothing);
-      await tester.tap(
-        find.descendant(
-          of: freshness,
-          matching: find.byKey(const ValueKey<String>('provenance-footer')),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // S325 · decision 0255: opened from the page's one (i).
+      await openPageInfo(tester);
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
       expect(find.textContaining('索引高度 120,659,683'), findsOneWidget);
     });
