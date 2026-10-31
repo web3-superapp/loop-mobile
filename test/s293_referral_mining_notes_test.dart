@@ -103,7 +103,7 @@ void main() {
       }
     });
 
-    testWidgets('S293b: the code card closes right under the code row', (
+    testWidgets('S293b / UX-012: one invite card, levels under it', (
       tester,
     ) async {
       await pumpS7Page(
@@ -113,24 +113,25 @@ void main() {
           overview: S7Answer<ReferralOverview>(value: _withStats()),
         ),
       );
-      final folio = find.descendant(
-        of: find.byKey(const ValueKey<String>('referral-hero')),
-        matching: find.byKey(const ValueKey<String>('loop-folio-primary')),
+      final hero = find.byKey(const ValueKey<String>('referral-hero'));
+      final card = find.descendant(
+        of: hero,
+        matching: find.byKey(const ValueKey<String>('referral-invite-card')),
       );
-      final codeRow = find.byKey(
-        const ValueKey<String>('referral-invite-code'),
+      expect(card, findsOneWidget);
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byKey(const ValueKey<String>('referral-invite-code')),
+        ),
+        findsOneWidget,
       );
-      // No reserved caption room: one card padding (16) under the code row,
-      // not the record folio's 178 minimum.
-      final gap = tester.getRect(folio).bottom - tester.getRect(codeRow).bottom;
-      expect(gap, lessThanOrEqualTo(16 + 44));
-      expect(tester.getSize(folio).height, lessThan(178));
-      // The level band starts where the folio ends.
+      // The level band starts where the invite card ends.
       expect(
         tester
             .getRect(find.byKey(const ValueKey<String>('referral-levels')))
             .top,
-        greaterThanOrEqualTo(tester.getRect(folio).bottom),
+        greaterThanOrEqualTo(tester.getRect(card).bottom),
       );
     });
 

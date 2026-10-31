@@ -66,7 +66,10 @@ void main() {
 
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
       final copy = tester.widget<LoopIconButton>(
-        find.byKey(const ValueKey<String>('referral-copy-code')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-copy-code')),
+          matching: find.byType(LoopIconButton),
+        ),
       );
       expect(copy.onPressed, isNotNull);
     });

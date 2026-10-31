@@ -53,12 +53,7 @@ final class WalletSessionFlag extends Notifier<bool> {
   void toggle() => state = !state;
 }
 
-/// Whether the net-worth chart under 总资产 is open (decision 0188). Closed
-/// by default; an open chart stays open for the rest of the run.
-final walletNetWorthExpandedProvider =
-    NotifierProvider<WalletSessionFlag, bool>(() => WalletSessionFlag(false));
-
-/// The window the open chart shows; 7 天 by default, kept for the run.
+/// The window the chart shows; 7 天 by default, kept for the run.
 final class WalletNetWorthRangeChoice extends Notifier<LoopNetWorthRange> {
   @override
   LoopNetWorthRange build() => LoopNetWorthRange.week;
@@ -175,7 +170,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     return state;
   }
 
-  void _toggle() => ref.read(walletNetWorthExpandedProvider.notifier).toggle();
+  /// 今日盈亏 › shows the chart's 1 天 window (UX-015).
+  void _showDay() => ref
+      .read(walletNetWorthRangeProvider.notifier)
+      .choose(LoopNetWorthRange.day);
 
   @override
   Widget build(BuildContext context) {
@@ -204,35 +202,18 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     );
     final historyOn =
         walletId != null && historyMode != LoopChainGatewayMode.unavailable;
-    final expanded = historyOn && ref.watch(walletNetWorthExpandedProvider);
     final range = ref.watch(walletNetWorthRangeProvider);
     final weekState = historyOn
         ? _watchHistory((walletId: walletId, range: LoopNetWorthRange.week))
         : null;
-    final chartState = !expanded
+    // UX-015 (decision 0257): the chart is always shown, never folded.
+    final chartState = !historyOn
         ? null
         : range == LoopNetWorthRange.week
         ? weekState
         : _watchHistory((walletId: walletId, range: range));
     final week = weekState?.value;
     final fiat = week?.fiat;
-    // The 88 × 44 slot beside the total (decision 0193): the line when it
-    // can be drawn, a placeholder when the history came back with fewer
-    // than two snapshots, a skeleton while it is read — and nothing at all
-    // when the read failed (0188: 404 / 503 draw nothing).
-    final Widget? sparkSlot = week != null
-        ? week.drawable
-              // Decision 0224: a history that is zero all the way would be a
-              // flat Yellow rule; the slot carries a short spray stroke.
-              ? walletNetWorthAllZero(week)
-                    ? WalletNetWorthSparkSpray(onTap: _toggle)
-                    : WalletNetWorthSpark(history: week, onTap: _toggle)
-              : WalletNetWorthSparkPlaceholder(onTap: _toggle)
-        : weekState != null &&
-              (weekState.phase == LoopChainViewPhase.loading ||
-                  weekState.failureKind == null)
-        ? const WalletNetWorthSparkSkeleton()
-        : null;
 
     final caption = <String>[
       if (netWorth case LoopNetWorthValued(
@@ -412,40 +393,40 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
               style: LoopType.captionSm.copyWith(color: auxiliary),
             ),
           ),
-        if (week != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: WalletPnlLine(
-              keyPrefix: keyPrefix,
-              change: week.change24h,
-              hidden: hidden,
-              onTap: _toggle,
-            ),
-          ),
       ],
     );
 
     return Padding(
       key: ValueKey<String>('$keyPrefix-total-header'),
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 2),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(child: left),
-              if (!expanded && sparkSlot != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 38, left: 10, right: 8),
-                  child: sparkSlot,
-                ),
-            ],
-          ),
+          left,
+          // UX-015 (decision 0257): 总资产 → 地址 → 今日盈亏 → 图表 → 区间.
+          if (week != null) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              // Line2: Line is not there on the chrome plate's face.
+              child: Divider(height: 1, thickness: 1, color: LoopColors.line2),
+            ),
+            WalletPnlLine(
+              keyPrefix: keyPrefix,
+              change: week.change24h,
+              hidden: hidden,
+              onTap: _showDay,
+            ),
+          ],
           if (historyOn)
-            if (expanded)
-              WalletNetWorthPanel(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: WalletNetWorthPanel(
                 state: chartState,
                 range: range,
                 hidden: hidden,
@@ -461,10 +442,8 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                       )
                       .reload(),
                 ),
-                onCollapse: _toggle,
-              )
-            else
-              WalletNetWorthChevron(expanded: false, onTap: _toggle),
+              ),
+            ),
         ],
       ),
     );

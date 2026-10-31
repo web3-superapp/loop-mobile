@@ -15,7 +15,6 @@ import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
@@ -522,11 +521,12 @@ void main() {
         quotes: FakeSwapQuoteGateway(),
       );
 
-      // Decision 0133: a real limit stays on the page, as one small line.
-      final notice = tester.widget<LoopInlineUnavailable>(
+      // Decision 0133: a real limit stays on the page; UX-016 draws it as
+      // the shared warning card.
+      final notice = tester.widget<LoopNotice>(
         find.byKey(const ValueKey<String>('swap-evidence-pending')),
       );
-      expect(notice.message, contains('可以查看报价'));
+      expect(notice.body, contains('可以查看报价'));
       expect(find.textContaining('兑换还在验证中'), findsOneWidget);
     });
 

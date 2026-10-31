@@ -32,7 +32,6 @@ import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart' show LoopPillAction;
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -129,7 +128,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          _InviteActions(overview: overview),
           const LoopLabel('我的邀请'),
           _InviteStats(stats: overview.stats),
           const LoopLabel('邀请加成'),
@@ -154,38 +152,17 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     );
   }
 
+  // UX-012 (decision 0257): the hero is the one invite card — the code and
+  // the link, each with its own copy glyph, and 分享邀请链接 / 生成海报 —
+  // with the five depths in the strip under it.
   Widget _hero(ReferralOverview overview) => LoopLedgerComposite(
     key: const ValueKey<String>('referral-hero'),
-    primary: LoopFolioPrimary(
-      ring: false,
-      variant: LoopFolioVariant.quiet,
-      archetype: LoopFolioArchetype.record,
-      kicker: '我的邀请码',
-      heading: overview.inviteCode.code,
-      // Decision 0235: the code carries its own copy glyph; 复制邀请码 is no
-      // longer a full-width button under it.
-      headingBuilder: (heading) => Row(
-        children: <Widget>[
-          Flexible(
-            child: Semantics(
-              label: '我的邀请码 ${overview.inviteCode.code}',
-              excludeSemantics: true,
-              child: KeyedSubtree(
-                key: const ValueKey<String>('referral-invite-code'),
-                child: heading,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          _CopyCodeButton(code: overview.inviteCode.code),
-        ],
+    primary: Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      child: _InviteCardBody(
+        overview: overview,
+        codeKey: const ValueKey<String>('referral-invite-code'),
       ),
-      margin: EdgeInsets.zero,
-      squareBottom: true,
-      // Decision 0243 S293b: with the caption gone the record folio's
-      // 178 minimum left a blank band under the code; the card now closes
-      // one padding under the code row, as 情报 · 我的邀请码 does.
-      minHeight: 0,
     ),
     detail: <Widget>[_LevelBand(levels: overview.levels)],
   );
@@ -296,9 +273,16 @@ class _ReferralCenterCardState extends ConsumerState<ReferralCenterCard> {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _InviteCodeBlock(code: overview.inviteCode.code),
-          const SizedBox(height: LoopSpacing.rowGap),
-          _InviteActions(overview: overview),
+          _InviteBlock(
+            key: const ValueKey<String>('intel-referral-code'),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.card,
+              14,
+              LoopSpacing.card,
+              LoopSpacing.card,
+            ),
+            child: _InviteCardBody(overview: overview),
+          ),
           const SizedBox(height: LoopSpacing.rowGap),
           _InviteStats(stats: overview.stats),
           LoopRecordGroup(
@@ -410,22 +394,20 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
 }
 
 /// One block of 我的邀请 (decision 0235): the raised `card2` ground with a
-/// hairline, so the code, the link and the counts read as three separate
-/// pieces on the Ink page instead of one dark run.
+/// hairline, so the invite card and the counts read as separate pieces on
+/// the Ink page instead of one dark run.
 class _InviteBlock extends StatelessWidget {
-  const _InviteBlock({required this.child, super.key});
+  const _InviteBlock({required this.child, super.key, this.padding});
 
   final Widget child;
+  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.card,
-      12,
-      LoopSpacing.tight,
-      12,
-    ),
+    padding:
+        padding ??
+        const EdgeInsets.fromLTRB(LoopSpacing.card, 12, LoopSpacing.tight, 12),
     decoration: BoxDecoration(
       color: LoopColors.card2,
       borderRadius: LoopRadius.card,
@@ -435,34 +417,82 @@ class _InviteBlock extends StatelessWidget {
   );
 }
 
-/// The copy glyph beside the invite code (decision 0235).
-class _CopyCodeButton extends StatelessWidget {
-  const _CopyCodeButton({required this.code});
+/// How long a copy glyph shows its tick before it turns back (UX-012,
+/// decision 0257).
+const Duration referralCopiedHold = Duration(seconds: 3);
 
-  final String code;
+/// A small copy glyph that answers its own tap (UX-012, decision 0257):
+/// besides the toast, the glyph turns into a tick for [referralCopiedHold]
+/// and then back. The timer dies with the glyph.
+class ReferralCopyGlyph extends StatefulWidget {
+  const ReferralCopyGlyph({
+    required this.text,
+    required this.label,
+    required this.message,
+    super.key,
+  });
+
+  final String text;
+  final String label;
+  final String message;
+
+  @override
+  State<ReferralCopyGlyph> createState() => _ReferralCopyGlyphState();
+}
+
+class _ReferralCopyGlyphState extends State<ReferralCopyGlyph> {
+  Timer? _reset;
+  bool _copied = false;
+
+  @override
+  void dispose() {
+    _reset?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    await LoopCopy.text(context, widget.text, message: widget.message);
+    if (!mounted) return;
+    _reset?.cancel();
+    setState(() => _copied = true);
+    _reset = Timer(referralCopiedHold, () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) => LoopIconButton(
-    key: const ValueKey<String>('referral-copy-code'),
-    icon: 'copy',
-    label: '复制邀请码',
-    onPressed: () => unawaited(LoopCopy.text(context, code, message: '邀请码已复制')),
+    icon: _copied ? 'check' : 'copy',
+    label: _copied ? '已复制' : widget.label,
+    color: _copied ? LoopColors.yellow : null,
+    onPressed: () => unawaited(_copy()),
   );
 }
 
-/// 情报 · 我的邀请码: the code large with its copy glyph. The sentence that
-/// stood under it is in the (i) beside 我的邀请 (decision 0243).
-class _InviteCodeBlock extends StatelessWidget {
-  const _InviteCodeBlock({required this.code});
+/// 我的邀请 as one card (UX-012, decision 0257): the invite code on one line
+/// and the invite link on the next, each with its own small copy glyph, and
+/// under them 分享邀请链接 (primary) beside 生成海报 (secondary). The
+/// separate 复制邀请码 control is gone. Without a link the card says so and
+/// the poster still opens (code only).
+class _InviteCardBody extends ConsumerWidget {
+  const _InviteCardBody({required this.overview, this.codeKey});
 
-  final String code;
+  final ReferralOverview overview;
+
+  /// The key on the drawn code (the page's hero test reads it).
+  final Key? codeKey;
 
   @override
-  Widget build(BuildContext context) => _InviteBlock(
-    key: const ValueKey<String>('intel-referral-code'),
-    child: Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final code = overview.inviteCode.code;
+    final link = overview.inviteLink;
+    final caption = LoopType.caption.copyWith(color: LoopColors.text2);
+    return Column(
+      key: const ValueKey<String>('referral-invite-card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        Text('邀请码', style: caption),
         Row(
           children: <Widget>[
             Expanded(
@@ -470,122 +500,90 @@ class _InviteCodeBlock extends StatelessWidget {
                 container: true,
                 label: '我的邀请码 $code',
                 excludeSemantics: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      '我的邀请码',
-                      style: LoopType.caption.copyWith(color: LoopColors.text2),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      code,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopType.keyFigure.copyWith(
-                        color: LoopColors.yellow,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  code,
+                  key: codeKey,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.keyFigure.copyWith(color: LoopColors.yellow),
                 ),
               ),
             ),
-            _CopyCodeButton(code: code),
+            ReferralCopyGlyph(
+              key: const ValueKey<String>('referral-copy-code'),
+              text: code,
+              label: '复制邀请码',
+              message: '邀请码已复制',
+            ),
           ],
         ),
-      ],
-    ),
-  );
-}
-
-/// 邀请链接 (decision 0235): the link on one line, middle-elided, with copy
-/// and system share as glyphs; 生成海报 is a small action in the block's
-/// heading. Without a link the block says so and the poster still opens
-/// (code only).
-class _InviteActions extends ConsumerWidget {
-  const _InviteActions({required this.overview});
-
-  final ReferralOverview overview;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final code = overview.inviteCode.code;
-    final link = overview.inviteLink;
-    return _InviteBlock(
-      key: const ValueKey<String>('referral-link-block'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Divider(height: 1, thickness: 1, color: LoopColors.line),
+        ),
+        Text('邀请链接', style: caption),
+        if (link == null)
+          Padding(
+            key: const ValueKey<String>('referral-link-absent'),
+            padding: const EdgeInsets.only(top: 6, bottom: 4),
+            child: Text(
+              '邀请链接还没有开放，先把邀请码发给好友；对方激活 LOOP ID 后随时可以填写。',
+              style: LoopType.captionSm,
+            ),
+          )
+        else
           Row(
+            key: const ValueKey<String>('referral-link-block'),
             children: <Widget>[
               Expanded(
-                child: Text(
-                  '邀请链接',
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
-              ),
-              LoopPillAction(
-                key: const ValueKey<String>('referral-poster'),
-                label: '生成海报',
-                soft: true,
-                onPressed: () => unawaited(
-                  showLoopSheet<void>(
-                    context,
-                    barrierLabel: '关闭邀请海报',
-                    useRootNavigator: true,
-                    builder: (sheetContext) =>
-                        ReferralPosterSheet(code: code, link: link),
+                child: Semantics(
+                  label: '邀请链接 $link',
+                  excludeSemantics: true,
+                  // The scheme is dropped on screen only; copy and share
+                  // carry the full link.
+                  child: _MiddleEllipsisText(
+                    link.replaceFirst(RegExp(r'^https?://'), ''),
+                    key: const ValueKey<String>('referral-invite-link'),
+                    style: LoopType.code.copyWith(color: LoopColors.chalk),
                   ),
                 ),
+              ),
+              ReferralCopyGlyph(
+                key: const ValueKey<String>('referral-copy-link'),
+                text: link,
+                label: '复制邀请链接',
+                message: '邀请链接已复制',
               ),
             ],
           ),
-          if (link == null)
-            Padding(
-              key: const ValueKey<String>('referral-link-absent'),
-              padding: const EdgeInsets.only(
-                right: LoopSpacing.tight,
-                bottom: 4,
+        const SizedBox(height: 12),
+        LoopButtonPair(
+          padded: false,
+          children: <Widget>[
+            if (link != null)
+              LoopButton(
+                key: const ValueKey<String>('referral-share-link'),
+                label: '分享邀请链接',
+                icon: 'share',
+                primary: true,
+                onPressed: () => unawaited(_share(context, ref, code, link)),
               ),
-              child: Text(
-                '邀请链接还没有开放，先把邀请码发给好友；对方激活 LOOP ID 后随时可以填写。',
-                style: LoopType.captionSm,
+            LoopButton(
+              key: const ValueKey<String>('referral-poster'),
+              label: '生成海报',
+              onPressed: () => unawaited(
+                showLoopSheet<void>(
+                  context,
+                  barrierLabel: '关闭邀请海报',
+                  useRootNavigator: true,
+                  builder: (sheetContext) =>
+                      ReferralPosterSheet(code: code, link: link),
+                ),
               ),
-            )
-          else
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Semantics(
-                    label: '邀请链接 $link',
-                    excludeSemantics: true,
-                    // The scheme is dropped on screen only; copy and share
-                    // carry the full link.
-                    child: _MiddleEllipsisText(
-                      link.replaceFirst(RegExp(r'^https?://'), ''),
-                      key: const ValueKey<String>('referral-invite-link'),
-                      style: LoopType.code.copyWith(color: LoopColors.chalk),
-                    ),
-                  ),
-                ),
-                LoopIconButton(
-                  key: const ValueKey<String>('referral-copy-link'),
-                  icon: 'copy',
-                  label: '复制邀请链接',
-                  onPressed: () => unawaited(
-                    LoopCopy.text(context, link, message: '邀请链接已复制'),
-                  ),
-                ),
-                LoopIconButton(
-                  key: const ValueKey<String>('referral-share-link'),
-                  icon: 'share',
-                  label: '分享邀请链接',
-                  onPressed: () => unawaited(_share(context, ref, code, link)),
-                ),
-              ],
             ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 

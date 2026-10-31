@@ -571,8 +571,10 @@ void main() {
 
       await tester.tap(find.text('邀请中心'));
       await tester.pumpAndSettle();
-      expect(find.text('我的名次\n第 3 名'), findsOneWidget);
-      expect(find.text('算力榜，实时'), findsOneWidget);
+      // UX-012 (decision 0257): title, place, sentence, live dot.
+      expect(find.text('我的实时排名'), findsOneWidget);
+      expect(find.text('第 3 名'), findsOneWidget);
+      expect(find.text('榜单实时更新'), findsOneWidget);
       expect(find.text('直接邀请 5 人，距第 2 名还差 3 人'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(

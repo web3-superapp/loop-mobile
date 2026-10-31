@@ -43,6 +43,7 @@ import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -438,17 +439,19 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         title: '我',
         kicker: loopPreviewKicker(isPreview),
         onBack: widget.onBack,
+        // UX-017 (decision 0257): the gear to 设置 sits in the top bar.
+        actions: <Widget>[
+          LoopIconButton(
+            key: const ValueKey<String>('profile-open-settings'),
+            icon: 'settings',
+            label: '设置',
+            onPressed: () => widget.onNavigate('settings'),
+          ),
+        ],
         // The page's one full-Lime body (docs/33 §1 rule 5).
         bottomBar: _ProfileDepositBar(onDeposit: () => _deposit(wallet)),
         sections: <Widget>[
           LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
-          _ProfileTopRow(
-            visibility: visibility,
-            onToggle: () => unawaited(
-              ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
-            ),
-            onOpenSettings: () => widget.onNavigate('settings'),
-          ),
           if (phase != LoopResourcePhase.ready)
             _ProfileStateBlock(
               phase: phase,
@@ -465,7 +468,13 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               onOpenRewards: () => widget.onNavigate('mining-rewards'),
               onOpenConnections: () => widget.onNavigate('connections'),
             ),
-          _ProfileNetWorthPanel(wallet: wallet, hidden: visibility.hidden),
+          _ProfileNetWorthPanel(
+            wallet: wallet,
+            visibility: visibility,
+            onToggleHidden: () => unawaited(
+              ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
+            ),
+          ),
           ..._holdings(wallet, hidden: visibility.hidden),
         ],
       ),
@@ -656,131 +665,86 @@ final class _ProfileWalletRead {
   final bool faucetVisible;
 }
 
-/// `.me-top`: the 「隐藏余额」 capsule and the gear to `settings`.
-class _ProfileTopRow extends StatelessWidget {
-  const _ProfileTopRow({
+/// The small eye beside the net worth (UX-017, decision 0257): it hides and
+/// shows every amount, as the full-width 「隐藏余额」 capsule did. A choice
+/// the device could not keep says so in this run (rule 23).
+class _ProfileHideBalanceGlyph extends StatelessWidget {
+  const _ProfileHideBalanceGlyph({
     required this.visibility,
     required this.onToggle,
-    required this.onOpenSettings,
   });
 
   final LoopBalanceVisibility visibility;
   final VoidCallback onToggle;
-  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     final hidden = visibility.hidden;
-    final label = hidden ? '余额已隐藏，再点一次取消隐藏' : '点一下隐藏余额';
-    // Rule 23: a choice the device could not keep says so, in this run.
+    final label = hidden ? '显示金额' : '隐藏金额';
     final runLocal =
         visibility.persistence == LoopBalanceVisibilityPersistence.unavailable;
-    return Padding(
-      key: const ValueKey<String>('profile-top-row'),
-      padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 10),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Semantics(
-              button: true,
-              toggled: hidden,
-              label: runLocal ? '$label，仅本次运行有效' : label,
-              excludeSemantics: true,
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  key: const ValueKey<String>('profile-hide-balance'),
-                  onTap: onToggle,
-                  customBorder: const RoundedRectangleBorder(
-                    borderRadius: LoopRadius.button,
-                  ),
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minHeight: LoopTouch.minimum,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: LoopColors.card2,
-                      borderRadius: LoopRadius.button,
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          hidden
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 16,
-                          color: LoopColors.text2,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            label,
-                            key: const ValueKey<String>(
-                              'profile-hide-balance-label',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.withWeight(
-                              LoopType.titleSm,
-                              FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        if (runLocal)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: Text(
-                              '仅本次',
-                              key: const ValueKey<String>(
-                                'profile-hide-balance-run-local',
-                              ),
-                              style: LoopType.captionSm.copyWith(
-                                color: LoopColors.text3,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Semantics(
+          button: true,
+          toggled: hidden,
+          label: runLocal ? '$label，仅本次运行有效' : label,
+          excludeSemantics: true,
+          child: LoopPressable(
+            key: const ValueKey<String>('profile-hide-balance'),
+            onTap: onToggle,
+            child: SizedBox(
+              width: LoopTouch.minimum,
+              height: LoopTouch.minimum,
+              child: Center(
+                child: Icon(
+                  hidden
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 18,
+                  color: LoopColors.text2,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 2),
-          LoopIconButton(
-            key: const ValueKey<String>('profile-open-settings'),
-            icon: 'settings',
-            label: '设置',
-            onPressed: onOpenSettings,
+        ),
+        if (runLocal)
+          Text(
+            '仅本次',
+            key: const ValueKey<String>('profile-hide-balance-run-local'),
+            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
 
-/// `.me-chart`: the net worth over a 200-high dot ground, the four periods,
-/// and — in place of a curve — what is known.
+/// `.me-chart`: the net worth card (UX-017, decision 0257) — the figure with
+/// its small eye at the left, the four periods as a quiet segmented control
+/// at the right, and under them a dot ground with what is known in place of
+/// a curve.
 ///
-/// LOOP publishes no net worth history (`GET /v2/wallets/:id/balances` is the
-/// only owner-scoped valuation), so no line is drawn and the periods are
-/// closed controls that say why (AGENTS rule 20). The figure is the server's
-/// `netWorth`, never a spendable total (rule 25).
+/// LOOP publishes no net worth history on this page, so no line is drawn and
+/// the periods are closed controls that say why (AGENTS rule 20). The figure
+/// is the server's `netWorth`, never a spendable total (rule 25).
 class _ProfileNetWorthPanel extends StatelessWidget {
-  const _ProfileNetWorthPanel({required this.wallet, required this.hidden});
+  const _ProfileNetWorthPanel({
+    required this.wallet,
+    required this.visibility,
+    required this.onToggleHidden,
+  });
 
   final _ProfileWalletRead wallet;
-  final bool hidden;
+  final LoopBalanceVisibility visibility;
+  final VoidCallback onToggleHidden;
 
-  static const double height = 200;
+  static const double chartHeight = 132;
   static const List<String> periods = <String>['24 小时', '7 天', '30 天', '全部'];
 
   @override
   Widget build(BuildContext context) {
+    final hidden = visibility.hidden;
     final balances = wallet.balances?.value;
     final netWorth = balances?.netWorth;
     final held = balances == null ? null : profileHeldRows(balances);
@@ -809,70 +773,87 @@ class _ProfileNetWorthPanel extends StatelessWidget {
     }
     void explain() => LoopToast.show(context, message: '净值走势暂时读不到，时间段还不能切换');
 
-    return SizedBox(
+    return Container(
       key: const ValueKey<String>('profile-networth-panel'),
-      height: height,
-      child: CustomPaint(
-        painter: const _ProfileDotGroundPainter(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 8, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      margin: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        12,
+        LoopSpacing.page,
+        4,
+      ),
+      padding: const EdgeInsets.fromLTRB(LoopSpacing.card, 12, 12, 12),
+      decoration: const BoxDecoration(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
             children: <Widget>[
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                // One row that shrinks on a narrow phone rather than a second
-                // scroll view inside the page's own.
-                child: FittedBox(
-                  key: const ValueKey<String>('profile-chart-periods'),
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      for (final period in periods)
-                        LoopSeg(
-                          key: ValueKey<String>('profile-chart-period-$period'),
-                          label: period,
-                          quiet: true,
-                          selected: false,
-                          onSelected: null,
-                          onBlocked: explain,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
               if (figure != null)
-                Text(
-                  figure,
-                  key: const ValueKey<String>('profile-networth-figure'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  // S241b: the key figure — Anton `statFigure`, yellow.
-                  style: LoopType.statFigure.copyWith(
-                    color: hidden ? LoopColors.text3 : LoopColors.yellow,
+                Flexible(
+                  child: Text(
+                    figure,
+                    key: const ValueKey<String>('profile-networth-figure'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    // S241b: the key figure — Anton `statFigure`, yellow.
+                    style: LoopType.statFigure.copyWith(
+                      color: hidden ? LoopColors.text3 : LoopColors.yellow,
+                    ),
                   ),
                 ),
-              if (caption != null)
-                Text(
-                  caption,
-                  key: const ValueKey<String>('profile-networth-caption'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-                ),
+              _ProfileHideBalanceGlyph(
+                visibility: visibility,
+                onToggle: onToggleHidden,
+              ),
+              const SizedBox(width: 4),
+              // The periods are weakened (UX-017): a small closed control.
               Expanded(
-                child: Center(
-                  child: Text(
-                    centre,
-                    key: ValueKey<String>(centreKey),
-                    style: LoopType.bodySm.copyWith(color: LoopColors.text3),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: WalletSegmentedControl<String>(
+                      key: const ValueKey<String>('profile-chart-periods'),
+                      semanticLabel: '净值走势区间',
+                      expand: false,
+                      options: periods,
+                      labelOf: (period) => period,
+                      keyOf: (period) =>
+                          ValueKey<String>('profile-chart-period-$period'),
+                      selected: null,
+                      onSelected: null,
+                      onBlocked: explain,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
+          if (caption != null)
+            Text(
+              caption,
+              key: const ValueKey<String>('profile-networth-caption'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+            ),
+          SizedBox(
+            height: chartHeight,
+            child: CustomPaint(
+              painter: const _ProfileDotGroundPainter(),
+              child: Center(
+                child: Text(
+                  centre,
+                  key: ValueKey<String>(centreKey),
+                  style: LoopType.bodySm.copyWith(color: LoopColors.text3),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1651,13 +1632,21 @@ class _ProfileIdentityCard extends StatelessWidget {
       FontWeight.w500,
     );
     final counts = this.counts;
+    // UX-017 (decision 0257, 图 47): avatar at the left; name, LOOP ID and
+    // the bio (or 「＋ 添加个人简介」) beside it; 奖励 at the right. Under
+    // them one line: the follow counts, and the month LOOP ID was activated.
     return Column(
       key: const ValueKey<String>('profile-identity-card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            8,
+            LoopSpacing.page,
+            0,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -1703,7 +1692,80 @@ class _ProfileIdentityCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      alias ?? '尚未设置别名',
+                      key: const ValueKey<String>('profile-alias'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.displaySm.copyWith(
+                        color: LoopColors.chalk,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    // Decision 0104 (S97b layout): the copy glyph follows the
+                    // ID it copies; an ID this device could not read offers
+                    // nothing.
+                    if (loopId != null)
+                      LoopIdCopyLine(
+                        loopId: loopId,
+                        style: idStyle,
+                        textKey: const ValueKey<String>('profile-loop-id'),
+                        copyKey: const ValueKey<String>('profile-copy-loop-id'),
+                      )
+                    else
+                      Text(
+                        'LOOP ID 不可读',
+                        key: const ValueKey<String>('profile-loop-id'),
+                        style: idStyle,
+                      ),
+                    if (bio != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          bio,
+                          key: const ValueKey<String>('profile-bio'),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          // L25 R18 prose in text2 (decision 0191).
+                          style: LoopType.body.copyWith(
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      )
+                    else
+                      Semantics(
+                        button: true,
+                        label: '添加个人简介',
+                        excludeSemantics: true,
+                        child: LoopPressable(
+                          key: const ValueKey<String>('profile-add-bio'),
+                          onTap: onEdit,
+                          scale: false,
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minHeight: LoopTouch.minimum,
+                            ),
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              '＋ 添加个人简介',
+                              style: LoopTypography.withWeight(
+                                LoopType.label,
+                                FontWeight.w600,
+                              ).copyWith(color: LoopColors.yellow),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               LoopButton(
                 key: const ValueKey<String>('profile-open-rewards'),
                 label: '奖励',
@@ -1713,84 +1775,22 @@ class _ProfileIdentityCard extends StatelessWidget {
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 12, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+        Container(
+          key: const ValueKey<String>('profile-meta'),
+          padding: const EdgeInsets.fromLTRB(8, 6, LoopSpacing.page, 6),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: LoopColors.line)),
+          ),
+          child: Row(
             children: <Widget>[
-              Text(
-                alias ?? '尚未设置别名',
-                key: const ValueKey<String>('profile-alias'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.displaySm.copyWith(color: LoopColors.chalk),
-              ),
-              const SizedBox(height: 2),
-              // Decision 0104 (S97b layout): the copy glyph follows the ID it
-              // copies; an ID this device could not read offers nothing.
-              if (loopId != null)
-                LoopIdCopyLine(
-                  loopId: loopId,
-                  style: idStyle,
-                  textKey: const ValueKey<String>('profile-loop-id'),
-                  copyKey: const ValueKey<String>('profile-copy-loop-id'),
-                )
-              else
-                Text(
-                  'LOOP ID 不可读',
-                  key: const ValueKey<String>('profile-loop-id'),
-                  style: idStyle,
-                ),
-            ],
-          ),
-        ),
-        if (bio != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 16, 0),
-            child: Text(
-              bio,
-              key: const ValueKey<String>('profile-bio'),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              // L25 R18 prose in text2, as on a person's home (decision 0191).
-              style: LoopType.body.copyWith(color: LoopColors.text2),
-            ),
-          )
-        else
-          Semantics(
-            button: true,
-            label: '添加个人简介',
-            excludeSemantics: true,
-            child: LoopPressable(
-              key: const ValueKey<String>('profile-add-bio'),
-              onTap: onEdit,
-              scale: false,
-              child: Container(
-                constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-                alignment: AlignmentDirectional.centerStart,
-                padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 16, 0),
-                child: Text(
-                  '＋ 添加个人简介',
-                  style: LoopTypography.withWeight(
-                    LoopType.label,
-                    FontWeight.w600,
-                  ).copyWith(color: LoopColors.yellow),
-                ),
-              ),
-            ),
-          ),
-        if (counts != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
-            child: Row(
-              children: <Widget>[
+              if (counts != null) ...<Widget>[
                 _ProfileCountLink(
                   key: const ValueKey<String>('profile-following-count'),
                   figure: counts.following,
                   label: '已关注',
                   onTap: onOpenConnections,
                 ),
+                Container(width: 1, height: 14, color: LoopColors.line2),
                 _ProfileCountLink(
                   key: const ValueKey<String>('profile-followers-count'),
                   figure: counts.followers,
@@ -1798,27 +1798,35 @@ class _ProfileIdentityCard extends StatelessWidget {
                   onTap: onOpenConnections,
                 ),
               ],
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: activatedAt == null
+                    ? const SizedBox.shrink()
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          const LoopIcon(
+                            'id',
+                            size: 14,
+                            color: LoopColors.text3,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              joinedLine(activatedAt),
+                              key: const ValueKey<String>('profile-joined'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LoopType.caption.copyWith(
+                                color: LoopColors.text3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
           ),
-        Container(
-          key: const ValueKey<String>('profile-meta'),
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 16, 14),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: LoopColors.line)),
-          ),
-          child: activatedAt == null
-              ? const SizedBox.shrink()
-              : Row(
-                  children: <Widget>[
-                    const LoopIcon('id', size: 14, color: LoopColors.text3),
-                    const SizedBox(width: 6),
-                    Text(
-                      joinedLine(activatedAt),
-                      key: const ValueKey<String>('profile-joined'),
-                      style: LoopType.caption.copyWith(color: LoopColors.text3),
-                    ),
-                  ],
-                ),
         ),
       ],
     );

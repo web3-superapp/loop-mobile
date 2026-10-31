@@ -265,7 +265,14 @@ void main() {
       expect(find.text('已验证'), findsNothing);
       expect(find.text('审核中'), findsNothing);
       expect(_key('square-community-label-${_ids[0]}'), findsOneWidget);
-      expect(find.text('算力社区'), findsOneWidget);
+      // On the rows (热门社区 above the board repeats the busiest one).
+      expect(
+        find.descendant(
+          of: _key('square-community-board'),
+          matching: find.text('算力社区'),
+        ),
+        findsOneWidget,
+      );
       expect(_key('square-community-label-${_ids[1]}'), findsNothing);
       expect(_key('square-community-label-${_ids[3]}'), findsNothing);
 
