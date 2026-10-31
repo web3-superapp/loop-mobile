@@ -833,14 +833,14 @@ Widget _directRowAvatar(BuildContext context, LoopDirectRowIdentity identity) {
   final initials = LoopInitialsAvatar(
     key: const ValueKey<String>('loop-direct-channel-avatar'),
     label: identity.initial,
-    size: 40,
+    size: chatListAvatarSize,
   );
   final url = loopMediaUrlFor(context, identity.peer?.avatarRef);
   if (url == null) return initials;
   return LoopRemoteAvatar(
     key: const ValueKey<String>('loop-direct-channel-avatar-image'),
     url: url,
-    size: 40,
+    size: chatListAvatarSize,
     fallback: initials,
   );
 }
@@ -921,8 +921,8 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           initialData: state.unreadCount,
           stream: state.unreadCountStream,
           builder: (context, unreadSnapshot) => StreamChannelListTile(
-            // Decision 0258: a group is a rounded square — its community's
-            // logo, or its members' mosaic — and a direct row a circle.
+            // Decision 0260: in the list every group, a community's own
+            // included, is its members' mosaic, and a direct row a circle.
             avatar: loopGroupChannelFace(
               communityId: communityId,
               logoRef: face?.logoRef,
@@ -931,7 +931,9 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
                 channelState.members ?? const <Member>[],
                 realIdentity: loopChannelUsesRealIdentity(context, cid),
               ),
-              size: 40,
+              size: chatListAvatarSize,
+              radius: chatListAvatarRadius,
+              listRow: true,
             ),
             title: Text(label),
             subtitle: displayMessage == null
@@ -965,6 +967,11 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
 /// A group conversation's face (decision 0258): the community's own logo
 /// when the conversation is a community channel whose community has one,
 /// otherwise the members' mosaic. Both are the same rounded square.
+///
+/// [listRow] is a row in a list of conversations — the inbox, forward
+/// targets, search hits — where every group is its members' mosaic so a
+/// group reads apart from a direct row at a glance (decision 0260); the
+/// logo stays on the conversation's own header.
 Widget loopGroupChannelFace({
   required String? communityId,
   required String? logoRef,
@@ -972,9 +979,10 @@ Widget loopGroupChannelFace({
   required List<GroupMosaicMember> members,
   double size = 40,
   double? radius,
+  bool listRow = false,
 }) {
   final corner = radius ?? LoopRadius.innerValue;
-  if (communityId != null && logoRef != null) {
+  if (!listRow && communityId != null && logoRef != null) {
     return GroupMosaicAvatar(
       key: const ValueKey<String>('loop-community-channel-logo'),
       members: members,

@@ -230,10 +230,12 @@ class ConversationRow extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: <Widget>[
                     // Decision 0258: a direct conversation is a circle,
-                    // every room of several people a rounded square.
+                    // every room of several people a rounded square, both
+                    // at the list's size (decision 0260).
                     if (conversation.kind == ConversationKind.direct)
                       ChatAvatar(
                         label: conversation.title,
+                        size: chatListAvatarSize,
                         colorSeed: conversation.accentSeed,
                         icon: icon,
                       )
@@ -241,6 +243,8 @@ class ConversationRow extends StatelessWidget {
                       GroupMosaicAvatar(
                         members: const <GroupMosaicMember>[],
                         label: conversation.title,
+                        size: chatListAvatarSize,
+                        radius: chatListAvatarRadius,
                       ),
                     if (conversation.kind == ConversationKind.voice)
                       Positioned(

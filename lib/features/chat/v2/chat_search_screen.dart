@@ -585,6 +585,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       members: hit.members,
       size: 44,
       radius: 15,
+      listRow: true,
     );
   }
 }

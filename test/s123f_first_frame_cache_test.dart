@@ -505,8 +505,9 @@ void main() {
         matching: find.byWidgetPredicate(
           (widget) =>
               widget is LoopSkeletonBlock &&
-              widget.width == 40 &&
-              widget.height == 40,
+              // Decision 0260: the list's 48 face.
+              widget.width == 48 &&
+              widget.height == 48,
         ),
       );
       expect(rows, findsNWidgets(7));

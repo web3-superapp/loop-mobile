@@ -215,7 +215,7 @@ void main() {
     );
   });
 
-  testWidgets('a community with a logo wears the logo, not the mosaic', (
+  testWidgets('outside a list a community with a logo wears the logo', (
     tester,
   ) async {
     await _pump(
@@ -238,6 +238,37 @@ void main() {
     expect(
       find.byKey(const ValueKey<String>('group-mosaic-avatar')),
       findsNothing,
+    );
+  });
+
+  testWidgets('in a list a community with a logo wears the mosaic', (
+    tester,
+  ) async {
+    // Decision 0260: a list row tells a group from a direct row by shape
+    // and mosaic, so the logo stays off it.
+    await _pump(
+      tester,
+      loopGroupChannelFace(
+        communityId: _communityId,
+        logoRef: 'avatar:preset/community-03',
+        label: 'DeFi',
+        members: _members(4),
+        size: chatListAvatarSize,
+        radius: chatListAvatarRadius,
+        listRow: true,
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('loop-community-channel-logo')),
+      findsNothing,
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey<String>('group-mosaic-avatar'))),
+      const Size.square(48),
     );
   });
 
@@ -298,6 +329,12 @@ void main() {
     );
     expect((disc.decoration as BoxDecoration).shape, BoxShape.circle);
     expect(find.byType(GroupMosaicAvatar), findsOneWidget);
+    // Decision 0260: both faces at the list's 48.
+    expect(tester.getSize(find.byType(ChatAvatar)), const Size.square(48));
+    expect(
+      tester.getSize(find.byType(GroupMosaicAvatar)),
+      const Size.square(48),
+    );
   });
 
   testWidgets('forward targets: direct is a circle, group the mosaic', (

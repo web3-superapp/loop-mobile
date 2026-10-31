@@ -1067,8 +1067,7 @@ class _MergeRow extends StatelessWidget {
 
 /// One forward destination's face (decision 0258): a direct conversation is
 /// the peer's circle, a group or community the rounded square the inbox row
-/// draws — the community's logo when this account has read one, otherwise
-/// the members' mosaic.
+/// draws — the members' mosaic, a community's own included (decision 0260).
 Widget chatForwardTargetFace(
   BuildContext context,
   ChatForwardTarget target, {
@@ -1094,5 +1093,6 @@ Widget chatForwardTargetFace(
     members: target.members,
     size: size,
     radius: radius,
+    listRow: true,
   );
 }

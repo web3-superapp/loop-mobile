@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -437,7 +438,7 @@ extension on _StreamChatInboxPageState {
 
 /// The inbox before anything is known about its conversations (decision
 /// 0132): conversation rows in the shape the list draws them — the tile's
-/// 4 + 12 insets, a 40 face, the name with the time at its end over the
+/// 4 + 12 insets, a 48 face (decision 0260), the name with the time at its end over the
 /// preview line — under the list's own padding, so nothing moves when the
 /// rows land. The list view loads in the same shape.
 class ChatInboxRowsSkeleton extends StatelessWidget {
@@ -471,9 +472,9 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                   child: Row(
                     children: <Widget>[
                       const LoopSkeletonBlock(
-                        width: 40,
-                        height: 40,
-                        radius: 12,
+                        width: chatListAvatarSize,
+                        height: chatListAvatarSize,
+                        radius: chatListAvatarRadius,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -1115,10 +1116,10 @@ class _StreamChannelListBodyState
     final directory =
         ref.watch(directChannelDirectoryProvider).value ??
         LoopDirectChannelDirectory.empty();
-    // The community rows draw the community's own logo (decision 0122). The
-    // channel carries none, so the inbox reads the community home aggregate
-    // once — it lists every community this account is in — and the rows
-    // take their faces from what it, and the directory, already answered.
+    // The community rows draw their members' mosaic like every group
+    // (decision 0260); the community home aggregate is still read once — it
+    // lists every community this account is in — for the quiet row's first
+    // sentence and the opened community conversation's title.
     final home = ref.watch(communityHomeControllerProvider);
     if (home.phase == CommunityViewPhase.loading && home.value == null) {
       scheduleMicrotask(() {

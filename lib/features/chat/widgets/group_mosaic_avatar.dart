@@ -21,6 +21,15 @@ const int groupMosaicMaxMembers = 9;
 /// The gap between two cells, and between the cells and the tile's edge.
 const double groupMosaicGap = 2;
 
+/// The face size every conversation-list row draws, a direct row's circle
+/// and a group's square alike (decision 0260).
+const double chatListAvatarSize = 48;
+
+/// A group square's corner in a conversation list: the quarter of
+/// [chatListAvatarSize] the 40 px square kept with its 10 px corner
+/// (decision 0260).
+const double chatListAvatarRadius = 12;
+
 /// Row lengths, top to bottom, for [count] members (decision 0258).
 ///
 /// WeChat's rule: one member fills the tile; up to four sit on a two-wide
