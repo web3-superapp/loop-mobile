@@ -636,7 +636,7 @@ void main() {
   );
 
   testWidgets(
-    'a community this account has not read keeps its id face and says nobody spoke',
+    'a community this account has not read wears its member mosaic and says nobody spoke',
     (tester) async {
       final harness = _ChannelHarness.community(
         member: _member(userId: 'stream-sender', accountName: ''),
@@ -651,9 +651,14 @@ void main() {
           StreamChannelListItem(channel: harness.channel),
         ),
       );
+      // Decision 0258: no logo of its own, so the members' mosaic.
+      expect(
+        find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-community-channel-logo')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text(loopChannelQuietLabel), findsOneWidget);
       await _disposeHarness(tester, harness);

@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
@@ -294,7 +295,8 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('chat-search-hit-m1')),
       );
-      expect(row.leading, isA<LoopInitialsAvatar>());
+      // Decision 0258: a group hit wears its group's rounded square.
+      expect(row.leading, isA<GroupMosaicAvatar>());
       expect(row.subtitleSpans, isNotNull);
       final lime = row.subtitleSpans!
           .whereType<TextSpan>()

@@ -9,10 +9,14 @@ import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
-import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
@@ -69,9 +73,17 @@ final class ChatForwardTarget {
     required this.cid,
     required this.label,
     required this.detail,
+    this.members = const <GroupMosaicMember>[],
+    this.peerAvatarRef,
   });
 
   final String cid;
+
+  /// A group's mosaic members (decision 0258); empty for a direct row.
+  final List<GroupMosaicMember> members;
+
+  /// A direct row's peer picture reference, from LOOP's own index.
+  final String? peerAvatarRef;
 
   /// The conversation's own name, or the kind when LOOP has no name for it.
   final String label;
@@ -235,6 +247,7 @@ Future<List<ChatForwardTarget>> queryChatForwardTargets({
   required String userId,
   required String? excludeCid,
   required LoopDirectChannelDirectory? directory,
+  LoopFeatureSwitchValues switches = const LoopFeatureSwitchValues(),
 }) async {
   // The destination list is one bounded page of the account's most recently
   // updated conversations; the page says so rather than implying it is the
@@ -266,8 +279,22 @@ Future<List<ChatForwardTarget>> queryChatForwardTargets({
       memberCount: channel.memberCount,
       directory: directory,
     );
+    final direct = surface == LoopChatSurface.direct;
     targets.add(
-      ChatForwardTarget(cid: cid, label: label.title, detail: label.subtitle),
+      ChatForwardTarget(
+        cid: cid,
+        label: label.title,
+        detail: label.subtitle,
+        members: direct
+            ? const <GroupMosaicMember>[]
+            : loopGroupMosaicMembers(
+                channel.state?.members ?? const <Member>[],
+                realIdentity: switches.realIdentityFor(
+                  communityChannel: surface == LoopChatSurface.communityChat,
+                ),
+              ),
+        peerAvatarRef: direct ? directory?.peerOf(cid)?.avatarRef : null,
+      ),
     );
   }
   return List<ChatForwardTarget>.unmodifiable(targets);
@@ -338,6 +365,7 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         directory: ref
             .read(directChannelDirectoryProvider)
             .maybeWhen(data: (value) => value, orElse: () => null),
+        switches: ref.read(loopFeatureSwitchesProvider),
       );
       state = ChatForwardState(
         sourceCid: sourceCid,
@@ -630,23 +658,17 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     // mining boards draw. The channel carries no `logoRef`, so a preset image
     // cannot be resolved here; the id-derived monogram is the same face that
     // community shows wherever its preset has no local image.
-    final communityId = loopCommunityIdForChannelCid(target.cid);
     return LoopRecordRow(
       key: ValueKey<String>('chat-forward-target-${target.cid}'),
       // `.row-ico`: the prototype's destination rows all carry one.
-      leading: communityId == null
-          ? LoopInitialsAvatar(
-              label: target.label,
-              size: 44,
-              shape: BoxShape.rectangle,
-              radius: 15,
-            )
-          : CommunityLogo(
-              identity: communityId,
-              name: target.label,
-              size: 44,
-              radius: 15,
-            ),
+      // Decision 0258: a group's square, a direct row's circle.
+      leading: chatForwardTargetFace(
+        context,
+        target,
+        faces: ref.watch(communityFacesProvider),
+        size: 44,
+        radius: 15,
+      ),
       title: target.label,
       subtitle: target.detail,
       position: index == 0
@@ -1040,5 +1062,37 @@ class _MergeRow extends StatelessWidget {
         ),
       ],
     ),
+  );
+}
+
+/// One forward destination's face (decision 0258): a direct conversation is
+/// the peer's circle, a group or community the rounded square the inbox row
+/// draws — the community's logo when this account has read one, otherwise
+/// the members' mosaic.
+Widget chatForwardTargetFace(
+  BuildContext context,
+  ChatForwardTarget target, {
+  required Map<String, CommunityFace> faces,
+  required double size,
+  required double radius,
+}) {
+  if (loopChatSurfaceForCid(target.cid) == LoopChatSurface.direct) {
+    final initials = LoopInitialsAvatar(
+      key: ValueKey<String>('chat-forward-direct-face-${target.cid}'),
+      label: target.label,
+      size: size,
+    );
+    final url = loopMediaUrlFor(context, target.peerAvatarRef);
+    if (url == null) return initials;
+    return LoopRemoteAvatar(url: url, size: size, fallback: initials);
+  }
+  final communityId = loopCommunityIdForChannelCid(target.cid);
+  return loopGroupChannelFace(
+    communityId: communityId,
+    logoRef: communityId == null ? null : faces[communityId]?.logoRef,
+    label: target.label,
+    members: target.members,
+    size: size,
+    radius: radius,
   );
 }

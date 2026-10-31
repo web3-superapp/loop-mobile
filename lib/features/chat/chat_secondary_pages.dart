@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -62,11 +63,10 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
           accent: true,
           child: Column(
             children: <Widget>[
-              const ChatAvatar(
+              const GroupMosaicAvatar(
+                members: <GroupMosaicMember>[],
                 label: 'Glyph Hunters',
                 size: 72,
-                colorSeed: 2,
-                icon: Icons.groups_rounded,
               ),
               const SizedBox(height: 13),
               Text(
@@ -678,12 +678,14 @@ class _SearchResultCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          ChatAvatar(
-            label: result.conversationTitle,
-            size: 40,
-            colorSeed: direct ? 4 : 2,
-            icon: direct ? null : Icons.groups_rounded,
-          ),
+          if (direct)
+            ChatAvatar(label: result.conversationTitle, size: 40, colorSeed: 4)
+          else
+            GroupMosaicAvatar(
+              members: const <GroupMosaicMember>[],
+              label: result.conversationTitle,
+              size: 40,
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

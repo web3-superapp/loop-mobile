@@ -7,10 +7,10 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
-import 'package:loop_mobile/features/community/community_logo.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -59,6 +59,7 @@ final class StreamChatForwardPort implements ChatForwardPort {
       directory: _ref
           .read(directChannelDirectoryProvider)
           .maybeWhen(data: (value) => value, orElse: () => null),
+      switches: _ref.read(loopFeatureSwitchesProvider),
     );
   }
 
@@ -215,6 +216,7 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
   }
 
   Widget _content(BuildContext context, int count) {
+    final faces = ref.watch(communityFacesProvider);
     return Column(
       key: const ValueKey<String>('forward-target-sheet'),
       mainAxisSize: MainAxisSize.min,
@@ -284,6 +286,7 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
                             const Divider(height: 1, color: LoopColors.line),
                         itemBuilder: (context, index) => _TargetRow(
                           target: targets[index],
+                          faces: faces,
                           sending: _sendingTo == targets[index].cid,
                           enabled: _sendingTo == null,
                           onTap: () => unawaited(_send(targets[index])),
@@ -304,19 +307,20 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
 class _TargetRow extends StatelessWidget {
   const _TargetRow({
     required this.target,
+    required this.faces,
     required this.sending,
     required this.enabled,
     required this.onTap,
   });
 
   final ChatForwardTarget target;
+  final Map<String, CommunityFace> faces;
   final bool sending;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final communityId = loopCommunityIdForChannelCid(target.cid);
     return InkWell(
       key: ValueKey<String>('forward-target-${target.cid}'),
       onTap: enabled ? onTap : null,
@@ -326,20 +330,14 @@ class _TargetRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: <Widget>[
-              if (communityId == null)
-                LoopInitialsAvatar(
-                  label: target.label,
-                  size: 40,
-                  shape: BoxShape.rectangle,
-                  radius: 13,
-                )
-              else
-                CommunityLogo(
-                  identity: communityId,
-                  name: target.label,
-                  size: 40,
-                  radius: 13,
-                ),
+              // Decision 0258: a group's square, a direct row's circle.
+              chatForwardTargetFace(
+                context,
+                target,
+                faces: faces,
+                size: 40,
+                radius: 13,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
