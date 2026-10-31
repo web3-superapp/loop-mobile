@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -231,7 +231,7 @@ void main() {
             .textSpan!
             .toPlainText(),
         switch (power) {
-          MiningFigureValue(:final value) => '${loopGroupedFigure(value)} H',
+          MiningFigureValue(:final value) => '${loopPowerFigure(value)} H',
           MiningFigureUnavailable() => launchMissingHeading,
         },
       );
