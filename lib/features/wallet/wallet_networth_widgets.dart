@@ -18,8 +18,9 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 // 钱包 C · the net-worth history under 总资产 (decision 0188)
 // ---------------------------------------------------------------------------
 //
-// UX-015 (decision 0257): an area chart under 今日盈亏, always shown, with
-// its high and low marked and five windows to choose from.
+// Decision 0259 (S329): an area chart under 今日盈亏, folded by default and
+// opened from the 今日盈亏 line, with its high and low marked and five
+// windows to choose from.
 // Every figure is a snapshot the server stored; nothing here is summed from
 // the balances, and `double` appears only once a value has been normalised
 // into the plot's pixel space (AGENTS rule 25).
@@ -42,9 +43,9 @@ String walletSignedUsdText(Decimal usd, Decimal pct, {bool hidden = false}) {
   return '$amount (${loopFormatPercent(pct)})';
 }
 
-/// The chart under 总资产: the area and the five windows (UX-015, decision
-/// 0257: always shown, never folded behind 「净值走势 ⌄」; the windows are a
-/// small segmented control, not five capsules).
+/// The opened chart under 总资产: the area and the five windows (decision
+/// 0259: shown only while 「净值走势 ⌄」 is open; the windows are a quiet
+/// word row, [WalletQuietTabs]).
 ///
 /// [state] is the read for [range]; `null` while it has not been asked for.
 /// A failed read is one [LoopInlineUnavailable] line — it never holds the
@@ -109,8 +110,8 @@ class WalletNetWorthPanel extends StatelessWidget {
       children: <Widget>[
         Padding(padding: const EdgeInsets.only(top: 4), child: body),
         Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: WalletSegmentedControl<LoopNetWorthRange>(
+          padding: const EdgeInsets.only(top: 2),
+          child: WalletQuietTabs<LoopNetWorthRange>(
             key: const ValueKey<String>('wallet-networth-ranges'),
             semanticLabel: '净值走势区间',
             options: LoopNetWorthRange.values,
@@ -373,23 +374,34 @@ class WalletNetWorthChartPainter extends CustomPainter {
       !listEquals(oldDelegate.values, values);
 }
 
-/// 今日盈亏 in its two states: the server's 24h move in rise / fall, or
-/// 「暂无」 when it had no snapshot 24 hours old. UX-015 (decision 0257): one
-/// full-width line between the address and the chart, the chevron at its
-/// right edge; tapping it shows the chart's 1 天 window.
+/// The one line that opens and closes the chart (decision 0259): 今日盈亏
+/// and its figure on the left — the server's 24h move in rise / fall, or
+/// 「暂无」 when it had no snapshot 24 hours old — and 「净值走势 ⌄」 /
+/// 「收起 ⌃」 at its right edge. The whole line is one target: it only folds,
+/// so there is no second meaning to tell apart.
+///
+/// [change] `null` with [hasHistory] off is a week that has not been read
+/// (or failed): the line keeps only its right-hand switch, so the chart can
+/// still be opened to show its own loading or unavailable state.
 class WalletPnlLine extends StatelessWidget {
   const WalletPnlLine({
     required this.keyPrefix,
     required this.change,
     required this.hidden,
+    required this.expanded,
     required this.onTap,
     super.key,
+    this.hasHistory = true,
   });
 
   final String keyPrefix;
   final LoopNetWorthChangeAvailable? change;
   final bool hidden;
+  final bool expanded;
   final VoidCallback onTap;
+
+  /// Whether the week was read, so 今日盈亏 has something true to say.
+  final bool hasHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -404,38 +416,81 @@ class WalletPnlLine extends StatelessWidget {
         : hidden
         ? secondary
         : LoopPriceMove.of(move.usd).color;
+    final action = expanded ? '收起净值走势' : '展开净值走势';
     return Semantics(
       button: true,
-      label: '今日盈亏 $value，查看 1 天净值走势',
+      expanded: expanded,
+      label: hasHistory ? '今日盈亏 $value，$action' : action,
       excludeSemantics: true,
       child: LoopPressable(
-        key: ValueKey<String>('$keyPrefix-pnl'),
+        key: ValueKey<String>(
+          hasHistory ? '$keyPrefix-pnl' : '$keyPrefix-networth-toggle',
+        ),
         scale: false,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
           child: Row(
             children: <Widget>[
-              Text(
-                '今日盈亏',
-                style: LoopType.body.copyWith(color: LoopColors.chalk),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  value,
-                  key: ValueKey<String>('$keyPrefix-pnl-value'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.figureSm.copyWith(color: colour),
+              if (hasHistory) ...<Widget>[
+                Text(
+                  '今日盈亏',
+                  style: LoopType.body.copyWith(color: LoopColors.chalk),
                 ),
-              ),
-              const SizedBox(width: 8),
-              LoopIcon('chevron', size: 14, color: auxiliary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    value,
+                    key: ValueKey<String>('$keyPrefix-pnl-value'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.figureSm.copyWith(color: colour),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ] else
+                const Spacer(),
+              WalletNetWorthChevron(expanded: expanded),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// 「净值走势 ⌄」 closed, 「收起 ⌃」 open — the right end of [WalletPnlLine].
+/// It draws only; the line around it takes the tap.
+class WalletNetWorthChevron extends StatelessWidget {
+  const WalletNetWorthChevron({required this.expanded, super.key});
+
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    key: ValueKey<String>(
+      expanded ? 'wallet-networth-collapse' : 'wallet-networth-expand',
+    ),
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Text(
+        expanded ? '收起' : '净值走势',
+        key: const ValueKey<String>('wallet-networth-chevron-label'),
+        maxLines: 1,
+        style: LoopType.captionSm.copyWith(
+          color: LoopGround.secondaryOf(context),
+        ),
+      ),
+      const SizedBox(width: 2),
+      RotatedBox(
+        // The chevron sprite points right; a quarter turn points down.
+        quarterTurns: expanded ? 3 : 1,
+        child: LoopIcon(
+          'chevron',
+          size: 14,
+          color: LoopGround.auxiliaryOf(context),
+        ),
+      ),
+    ],
+  );
 }

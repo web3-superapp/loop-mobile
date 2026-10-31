@@ -212,8 +212,10 @@ void main() {
   });
 
   group('UX-015 · 钱包资产卡', () {
-    testWidgets('the windows are a segmented control and the chart is never '
-        'folded', (tester) async {
+    // Decision 0259 (S329) overrides 0257's always-open chart: folded by
+    // default, and the windows are quiet word tabs.
+    testWidgets('the chart folds behind 今日盈亏 and its windows are quiet '
+        'tabs', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -224,10 +226,12 @@ void main() {
           ),
         ],
       );
+      expect(_key('wallet-networth-panel'), findsNothing);
+      expect(_key('wallet-networth-expand'), findsOneWidget);
+      await tester.tap(_key('wallet-pnl'));
+      await tester.pumpAndSettle();
       expect(_key('wallet-networth-panel'), findsOneWidget);
-      expect(_key('wallet-networth-expand'), findsNothing);
-      expect(find.text('净值走势'), findsNothing);
-      final ranges = tester.widget<WalletSegmentedControl<LoopNetWorthRange>>(
+      final ranges = tester.widget<WalletQuietTabs<LoopNetWorthRange>>(
         _key('wallet-networth-ranges'),
       );
       expect(ranges.options, LoopNetWorthRange.values);
