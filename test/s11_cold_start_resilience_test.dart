@@ -491,7 +491,7 @@ void main() {
         );
         expect(find.text('欢迎来到 LOOP'), findsOneWidget);
         expect(
-          find.byKey(const ValueKey<String>('privy-email-field')),
+          find.byKey(const ValueKey<String>('privy-email-login-button')),
           findsOneWidget,
         );
       },
@@ -823,7 +823,7 @@ void main() {
       );
       expect(find.text('欢迎来到 LOOP'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('privy-email-field')),
+        find.byKey(const ValueKey<String>('privy-email-login-button')),
         findsNothing,
       );
       expect(find.textContaining('暂时无法确认登录状态，请检查网络后重试。'), findsOneWidget);
@@ -858,7 +858,7 @@ void main() {
 
       expect(find.text('欢迎来到 LOOP'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('privy-email-field')),
+        find.byKey(const ValueKey<String>('privy-email-login-button')),
         findsOneWidget,
       );
       expect(
@@ -1145,7 +1145,10 @@ void _expectNoCredentialForm(WidgetTester tester) {
     findsOneWidget,
   );
   expect(find.text('欢迎来到 LOOP'), findsNothing);
-  expect(find.byKey(const ValueKey<String>('privy-email-field')), findsNothing);
+  expect(
+    find.byKey(const ValueKey<String>('privy-email-login-button')),
+    findsNothing,
+  );
 }
 
 const _config = AppConfig(

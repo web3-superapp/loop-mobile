@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -345,81 +346,209 @@ class SplashScreen extends StatelessWidget {
   /// at all when it was handed none.
   final String? unavailableReason;
 
+  /// The one line the launch frame says while the account is prepared. The
+  /// frames before it (restoring, the hand-over) already say it, so the move
+  /// onto this page changes nothing on screen (UX-001).
+  static const String preparingText = '正在准备你的账号…';
+
   @override
   Widget build(BuildContext context) {
-    final preparing = phase == LoopSplashPhase.preparingAccount;
     final unavailable = phase == LoopSplashPhase.accountUnavailable;
-    final waiting = preparing;
-    return Scaffold(
+    return LoopLaunchFrame(
       key: const ValueKey<String>('loop-splash-screen'),
-      // The Scaffold hands its body a loose width and pins it to the left
-      // edge, so a Column whose widest child is the 244 dp loader would sit
-      // in the left 244 dp of the page. The expand makes the width tight, and
-      // the Column's centering then measures against the whole page.
-      body: SafeArea(
-        child: SizedBox.expand(
-          child: Column(
-            children: <Widget>[
-              const Spacer(),
-              const LoopBrandMark(
-                key: ValueKey<String>('loop-splash-wordmark'),
-                kind: LoopBrandMarkKind.wordmark,
-                height: 96,
-                semanticLabel: 'LOOP',
-              ),
-              const SizedBox(height: 20),
-              // The mark sweeps while something is still being waited on, and
-              // settles the moment nothing is: a wait that ended badly gets the
-              // still rail and the reason under it.
-              LoopBrandLoader(
-                key: const ValueKey<String>('loop-splash-loader'),
-                animating: !unavailable,
-              ),
-              if (waiting) ...<Widget>[
-                const SizedBox(height: 18),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    '正在准备你的账号…',
-                    key: const ValueKey<String>('loop-splash-preparing'),
-                    textAlign: TextAlign.center,
-                    style: LoopType.caption,
-                  ),
-                ),
-              ],
-              if (unavailable && unavailableReason != null) ...<Widget>[
-                const SizedBox(height: 18),
-                Semantics(
-                  liveRegion: true,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      unavailableReason!,
-                      key: const ValueKey<String>('loop-splash-unavailable'),
-                      textAlign: TextAlign.center,
-                      style: LoopType.caption,
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              // Waiting is not a choice, so it is offered none. The entry frame
-              // keeps the prototype's single full-width action.
-              if (phase == LoopSplashPhase.entry)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: LoopButton(
-                    key: const ValueKey<String>('loop-splash-enter'),
-                    label: '进入 LOOP',
-                    primary: true,
-                    block: true,
-                    onPressed: onContinue,
-                  ),
-                ),
-              const SizedBox(height: 24),
-            ],
-          ),
+      markKey: const ValueKey<String>('loop-splash-wordmark'),
+      loaderKey: const ValueKey<String>('loop-splash-loader'),
+      // The mark sweeps while something is still being waited on, and
+      // settles the moment nothing is: a wait that ended badly gets the still
+      // rail and the reason under it.
+      waiting: !unavailable,
+      status: switch (phase) {
+        LoopSplashPhase.preparingAccount => preparingText,
+        LoopSplashPhase.accountUnavailable => unavailableReason,
+        LoopSplashPhase.entry => null,
+      },
+      statusKey: switch (phase) {
+        LoopSplashPhase.preparingAccount => const ValueKey<String>(
+          'loop-splash-preparing',
         ),
+        LoopSplashPhase.accountUnavailable => const ValueKey<String>(
+          'loop-splash-unavailable',
+        ),
+        LoopSplashPhase.entry => null,
+      },
+      // Waiting is not a choice, so it is offered none. The entry frame keeps
+      // the prototype's single full-width action.
+      bottomAction: phase == LoopSplashPhase.entry
+          ? LoopButton(
+              key: const ValueKey<String>('loop-splash-enter'),
+              label: '进入 LOOP',
+              primary: true,
+              block: true,
+              onPressed: onContinue,
+            )
+          : null,
+    );
+  }
+}
+
+/// UX-001 (decision 0254): the one launch frame.
+///
+/// A cold start used to walk through three different frames — 「正在恢复登录状态」
+/// with a 88 mark set above the middle, a bare 88 mark in the middle for the
+/// frame or two before the router moved, and the launch page's 96 mark set
+/// higher still, which also slid in as a pushed page. Each looked like the
+/// App starting again. Every wait before the first product page now draws
+/// this frame: the wordmark exactly where the native launch screen puts it
+/// (centred on the whole screen at the launch image's 103 pt), the rail and
+/// one status line under it. Moving from one wait to the next only changes
+/// that line.
+class LoopLaunchFrame extends StatelessWidget {
+  const LoopLaunchFrame({
+    super.key,
+    this.status,
+    this.statusKey,
+    this.detail,
+    this.detailKey,
+    this.waiting = true,
+    this.showRail = true,
+    this.action,
+    this.bottomAction,
+    this.markKey,
+    this.loaderKey,
+    this.semanticLabel,
+    this.statusStyle,
+  });
+
+  /// `LaunchImage` is 160 × 103 pt, centred on the whole screen.
+  static const double markHeight = 103;
+
+  /// The gap between the mark's foot and the rail.
+  static const double railGap = 28;
+
+  /// The one line under the rail. It is the only thing that changes while
+  /// the App waits.
+  final String? status;
+  final Key? statusKey;
+
+  /// A second line for a wait that ended: the reason, never an explanation.
+  final String? detail;
+  final Key? detailKey;
+
+  /// Whether the rail sweeps.
+  final bool waiting;
+
+  /// A frame that ended its wait with a block of its own may drop the rail.
+  final bool showRail;
+
+  /// One next step under the status lines.
+  final Widget? action;
+
+  /// The entry frame's full-width action at the foot of the page.
+  final Widget? bottomAction;
+
+  final Key? markKey;
+  final Key? loaderKey;
+  final String? semanticLabel;
+
+  /// The status line's style; the caption step unless a frame says more
+  /// than a wait (the App lock's 「LOOP 已锁定」).
+  final TextStyle? statusStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = status;
+    final second = detail;
+    final next = action;
+    final foot = bottomAction;
+    return Scaffold(
+      backgroundColor: LoopColors.ink,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final middle = constraints.maxHeight / 2;
+          return Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Positioned(
+                left: 0,
+                right: 0,
+                top: middle - markHeight / 2,
+                height: markHeight,
+                child: Center(
+                  child: LoopBrandMark(
+                    key: markKey,
+                    kind: LoopBrandMarkKind.wordmark,
+                    height: markHeight,
+                    semanticLabel: 'LOOP',
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: middle + markHeight / 2 + railGap,
+                child: Semantics(
+                  label: semanticLabel,
+                  liveRegion: true,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (showRail) ...<Widget>[
+                        Center(
+                          child: LoopBrandLoader(
+                            key: loaderKey,
+                            animating: waiting,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                      // Only the words change: no fade, no second frame.
+                      if (line != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            line,
+                            key: statusKey,
+                            textAlign: TextAlign.center,
+                            style: statusStyle ?? LoopType.caption,
+                          ),
+                        ),
+                      if (second != null) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            second,
+                            key: detailKey,
+                            textAlign: TextAlign.center,
+                            style: LoopType.caption.copyWith(
+                              color: LoopColors.text2,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (next != null) ...<Widget>[
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: LoopSpacing.page,
+                          ),
+                          child: next,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (foot != null)
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 24 + MediaQuery.paddingOf(context).bottom,
+                  child: foot,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -503,9 +632,28 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
       if (_controller.isAnimating) _controller.stop();
       _controller.value = 0;
     } else if (!_controller.isAnimating) {
-      _controller.repeat(reverse: true);
+      // UX-001 (decision 0254): every rail on the way in reads one clock, so
+      // a rail that replaces another (restoring → hand-over → the launch page)
+      // picks the band up where the last one left it instead of restarting
+      // it from the left edge.
+      final sweep = LoopBrandLoader.sweep.inMicroseconds;
+      final phase = (_launchClock.elapsedMicroseconds % (2 * sweep)) / sweep;
+      if (phase < 1) {
+        _controller.value = phase;
+        _controller.repeat(reverse: true);
+      } else {
+        _controller.value = 2 - phase;
+        unawaited(
+          _controller.reverse().then((_) {
+            if (mounted && !_settled) _controller.repeat(reverse: true);
+          }, onError: (Object _) {}),
+        );
+      }
     }
   }
+
+  /// One clock for every rail in the run.
+  static final Stopwatch _launchClock = Stopwatch()..start();
 
   /// The still reading: the wait is over, or the device asked for less motion.
   bool get _settled =>

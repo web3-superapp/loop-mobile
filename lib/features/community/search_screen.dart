@@ -602,8 +602,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   );
 
   Widget _field(SearchController controller) {
+    // UX-008 (decision 0254): the field's corners and focus edge are every
+    // field's.
     const border = OutlineInputBorder(
-      borderRadius: LoopRadius.badge,
+      borderRadius: LoopRadius.control,
       borderSide: BorderSide.none,
     );
     return TextField(
@@ -624,7 +626,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         border: border,
         enabledBorder: border,
-        focusedBorder: border,
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: LoopRadius.control,
+          borderSide: BorderSide(color: LoopColors.purple),
+        ),
         prefixIcon: LoopIconButton(
           key: const ValueKey<String>('search-submit'),
           icon: 'search',

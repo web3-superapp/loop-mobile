@@ -80,16 +80,22 @@ enum _LoginMethod { email, google, apple, wallet }
 Future<void> _completeLogin(WidgetTester tester, _LoginMethod method) async {
   switch (method) {
     case _LoginMethod.email:
+      // UX-002 (decision 0254): 使用邮箱登录 opens the e-mail step first.
+      await tester.tap(find.byKey(const ValueKey('privy-email-login-button')));
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('privy-email-field')),
         'person@example.com',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('privy-otp-field')),
         '123456',
       );
+      // 继续 opens once all six digits are in (UX-002).
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
     case _LoginMethod.google:
       await tester.tap(find.byKey(const ValueKey('privy-google-login-button')));

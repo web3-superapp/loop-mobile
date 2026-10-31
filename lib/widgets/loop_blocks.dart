@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inputs.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 
 /// Prototype blocks the wallet pages are built out of.
@@ -799,42 +800,45 @@ class LoopOmnibox extends StatelessWidget {
         LoopSpacing.page,
         LoopSpacing.card,
       ),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: LoopColors.input,
-          borderRadius: LoopRadius.control,
-        ),
-        child: Row(
-          children: <Widget>[
-            const LoopIcon('search', size: 17, color: LoopColors.text3),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                key: fieldKey,
-                controller: controller,
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                onChanged: onChanged,
-                // R26: a search-shaped field, text and placeholder alike.
-                style: LoopType.body,
-                decoration: InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  hintText: hintText,
-                  hintStyle: LoopType.body.copyWith(color: LoopColors.text3),
+      // UX-008 (decision 0254): a hand-drawn field box shows focus too.
+      child: LoopFocusRing(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: LoopColors.input,
+            borderRadius: LoopRadius.control,
+          ),
+          child: Row(
+            children: <Widget>[
+              const LoopIcon('search', size: 17, color: LoopColors.text3),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  key: fieldKey,
+                  controller: controller,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  onChanged: onChanged,
+                  // R26: a search-shaped field, text and placeholder alike.
+                  style: LoopType.body,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: hintText,
+                    hintStyle: LoopType.body.copyWith(color: LoopColors.text3),
+                  ),
                 ),
               ),
-            ),
-            if (trailingKey != null) ...<Widget>[
-              const SizedBox(width: 10),
-              LoopBadge(trailingKey!),
+              if (trailingKey != null) ...<Widget>[
+                const SizedBox(width: 10),
+                LoopBadge(trailingKey!),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -400,13 +400,19 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
             minHeight: 44,
           ),
           contentPadding: const EdgeInsets.fromLTRB(0, 11, 14, 11),
+          // UX-008 (decision 0254): the 12 corner and the Purple focus edge
+          // every field has.
           border: OutlineInputBorder(
-            borderRadius: LoopRadius.inner,
+            borderRadius: LoopRadius.control,
             borderSide: const BorderSide(color: LoopColors.line),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: LoopRadius.inner,
+            borderRadius: LoopRadius.control,
             borderSide: const BorderSide(color: LoopColors.line),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: LoopRadius.control,
+            borderSide: BorderSide(color: LoopColors.purple),
           ),
         ),
       ),

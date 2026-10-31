@@ -2,48 +2,40 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart'
-    show LoopBrandLoader;
+    show LoopLaunchFrame, SplashScreen;
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
+import 'package:loop_mobile/features/account/identity_step_scaffold.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `auth`: the identity entry point backed by Privy credentials.
 ///
-/// The second email step lives on its own manifest route (`/auth/otp`); this
-/// page only sends the code. Development preview is an explicit offline,
-/// read-only mode: entering it creates no wallet, connects no provider and
-/// bootstraps no backend session.
-class PrivyLoginScreen extends ConsumerStatefulWidget {
-  const PrivyLoginScreen({super.key, this.onCodeSent});
+/// UX-002 (decision 0254, layout one of the three the designer offered): the
+/// mark, 欢迎来到 LOOP and one line; three methods of one shape — Apple (the
+/// Yellow one, iOS only), Google and 邮箱 — then 已有钱包？连接钱包 as a text
+/// link, and the terms line at the foot of the page. 使用邮箱登录 opens its own
+/// step (`/auth/email`); this page sends nothing itself. Each method shows
+/// its own busy state: only the method that was pressed says it is working.
+///
+/// Development preview is an explicit offline, read-only mode: entering it
+/// creates no wallet, connects no provider and bootstraps no backend session.
+class PrivyLoginScreen extends ConsumerWidget {
+  const PrivyLoginScreen({super.key, this.onOpenEmail});
 
-  /// Called after a code was accepted for delivery, so the shell can push the
-  /// `auth-otp` page.
-  final VoidCallback? onCodeSent;
-
-  @override
-  ConsumerState<PrivyLoginScreen> createState() => _PrivyLoginScreenState();
-}
-
-class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
-  final _emailController = TextEditingController();
+  /// Opens the e-mail step (`/auth/email`).
+  final VoidCallback? onOpenEmail;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(loopSessionProvider);
     // Decision 0064: restoring and "temporarily unreachable" are both
     // undecided. Only an explicit Privy sign-out reaches the form below.
@@ -71,12 +63,8 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
       return const PrivySessionSignOutScreen();
     }
     // S253: a session that may enter the product is never a reason to draw
-    // the credential form. The restore answering 「signed in」 rebuilds this
-    // page in the same frame, while the router's move to the launch page
-    // only lands a frame or two later — and those frames were the welcome
-    // form flashing between 「正在恢复登录状态」 and 「正在准备你的账号」
-    // (device report S237 · 01c). The launch frame stays until the router
-    // takes the owner away.
+    // the credential form. The launch frame stays until the router takes the
+    // owner away.
     if (session.canEnterProduct) return const PrivySessionHandoverFrame();
 
     final config = ref.watch(appConfigProvider);
@@ -86,200 +74,294 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final showApple =
         ref.watch(isIosIdentityPlatformProvider) &&
         ref.watch(loopFeatureSwitchesProvider).appleLoginVisible;
+    final busy = authState.isBusy;
+    final operation = authState.activeOperation;
 
-    // `#scr-auth` carries no topbar: the brand mark, the welcome line and the
-    // methods are the page. The title stays in the semantics of the head so
-    // assistive technology still hears it (audit 2026-09-20 §C.2).
     return Scaffold(
       key: const ValueKey<String>('privy-auth-screen'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            bottom: loopChildPageBottomInset(context) + 12,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // `.identity-head`: mark, title, one line of copy.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 44, 16, 26),
-                child: Semantics(
-                  header: true,
-                  container: true,
-                  child: Column(
-                    children: <Widget>[
-                      const LoopBrandMark(
-                        key: ValueKey<String>('privy-auth-mark'),
-                        kind: LoopBrandMarkKind.officialIcon,
-                        height: 104,
-                        semanticLabel: 'LOOP',
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // `.identity-head`: mark, title, one line of copy.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 56, 16, 36),
+                      child: Semantics(
+                        header: true,
+                        container: true,
+                        child: Column(
+                          children: <Widget>[
+                            const LoopBrandMark(
+                              key: ValueKey<String>('privy-auth-mark'),
+                              kind: LoopBrandMarkKind.officialIcon,
+                              height: 104,
+                              semanticLabel: 'LOOP',
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '欢迎来到 LOOP',
+                              textAlign: TextAlign.center,
+                              style: LoopType.stepTitle,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '选择一种方式登录或创建账户',
+                              textAlign: TextAlign.center,
+                              style: LoopType.body.copyWith(
+                                color: LoopColors.text2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      // Decision 0126: step title 24 bold, subtitle 14 grey.
-                      Text(
-                        '欢迎来到 LOOP',
-                        textAlign: TextAlign.center,
-                        style: LoopType.stepTitle,
+                    ),
+                    if (!config.canInitializePrivy && !previewEnabled)
+                      const LoopNotice(
+                        key: ValueKey<String>(
+                          'privy-auth-configuration-incomplete',
+                        ),
+                        icon: 'warn',
+                        tone: LoopNoticeTone.warn,
+                        title: '登录配置不完整',
+                        body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
                       ),
-                      const SizedBox(height: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 300),
+                    if (showApple)
+                      AuthMethodButton(
+                        key: const ValueKey<String>('privy-apple-login-button'),
+                        label: '使用 Apple 登录',
+                        leading: const Icon(
+                          Icons.apple,
+                          size: 22,
+                          color: LoopColors.ink,
+                        ),
+                        primary: true,
+                        busy: operation == IdentityAuthOperation.apple,
+                        onPressed: !config.canInitializePrivy || busy
+                            ? null
+                            : () => unawaited(controller.loginWithApple()),
+                      ),
+                    AuthMethodButton(
+                      key: const ValueKey<String>('privy-google-login-button'),
+                      label: '使用 Google 登录',
+                      leading: const _GoogleMark(),
+                      busy: operation == IdentityAuthOperation.google,
+                      onPressed: !config.canInitializePrivy || busy
+                          ? null
+                          : () => unawaited(controller.loginWithGoogle()),
+                    ),
+                    AuthMethodButton(
+                      key: const ValueKey<String>('privy-email-login-button'),
+                      label: '使用邮箱登录',
+                      leading: const LoopIcon(
+                        'mail',
+                        size: 20,
+                        color: LoopColors.chalk,
+                      ),
+                      // Opening the step is not an operation: it never says
+                      // it is busy, it only waits while another method is.
+                      busy: false,
+                      onPressed: busy ? null : onOpenEmail,
+                    ),
+                    if (authState.errorMessage != null)
+                      LoopNotice(
+                        key: const ValueKey<String>('privy-auth-error'),
+                        icon: 'close',
+                        tone: LoopNoticeTone.danger,
+                        title: '无法继续',
+                        body: authState.errorMessage!,
+                        margin: const EdgeInsets.fromLTRB(
+                          LoopSpacing.page,
+                          4,
+                          LoopSpacing.page,
+                          0,
+                        ),
+                      ),
+                    const SizedBox(height: 18),
+                    _WalletLink(
+                      busy:
+                          operation ==
+                          IdentityAuthOperation.externalWalletLogin,
+                      onPressed: !config.canConnectExternalWallet || busy
+                          ? null
+                          : () => unawaited(
+                              controller.connectExternalWallet(context),
+                            ),
+                    ),
+                    if (!config.canConnectExternalWallet)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          '登录后自动创建钱包，持仓即产生算力。',
+                          config.hasValidReownProjectId
+                              ? '暂不可用 · 缺少 Privy Mobile App Client ID'
+                              : '暂不可用 · 缺少有效的 Reown Project ID',
                           textAlign: TextAlign.center,
-                          style: LoopType.body.copyWith(
-                            color: LoopColors.text2,
+                          style: LoopType.captionSm,
+                        ),
+                      ),
+                    if (previewEnabled) ...<Widget>[
+                      const LoopLabel('开发预览'),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: LoopSpacing.page,
+                        ),
+                        child: LoopButton(
+                          key: const ValueKey<String>(
+                            'enter-development-preview-button',
                           ),
+                          label: '进入开发预览',
+                          block: true,
+                          onPressed: () => ref
+                              .read(loopSessionProvider.notifier)
+                              .enterPreview(),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-              if (!config.canInitializePrivy && !previewEnabled)
-                const LoopNotice(
-                  key: ValueKey<String>('privy-auth-configuration-incomplete'),
-                  icon: 'warn',
-                  tone: LoopNoticeTone.warn,
-                  title: '登录配置不完整',
-                  body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
-                ),
-              // `.auth-methods`: Apple, Google, email, 或, external wallet.
-              if (showApple)
-                _AuthMethod(
-                  identifier: 'privy-apple-login-button',
-                  label: '使用 Apple 继续',
-                  primary: true,
-                  busy:
-                      authState.activeOperation == IdentityAuthOperation.apple,
-                  available: config.canInitializePrivy,
-                  unavailableReason: '缺少 Privy Mobile App Client ID',
-                  onPressed: authState.isBusy
-                      ? null
-                      : controller.loginWithApple,
-                ),
-              _AuthMethod(
-                identifier: 'privy-google-login-button',
-                label: '使用 Google 继续',
-                primary: !showApple,
-                busy: authState.activeOperation == IdentityAuthOperation.google,
-                available: config.canInitializePrivy,
-                unavailableReason: '缺少 Privy Mobile App Client ID',
-                onPressed: authState.isBusy ? null : controller.loginWithGoogle,
-              ),
-              // Decision 0126: the flat 52 field with its label inside, and
-              // the send action directly under it.
-              LoopFlatField(
-                key: const ValueKey<String>('privy-email'),
-                label: '邮箱',
-                child: AutofillGroup(
-                  child: TextField(
-                    key: const ValueKey<String>('privy-email-field'),
-                    controller: _emailController,
-                    enabled: !authState.isBusy,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const <String>[AutofillHints.email],
-                    autocorrect: false,
-                    style: LoopType.bodyLg,
-                    decoration: loopFormFieldDecoration(
-                      hint: 'name@example.com',
+                    const Spacer(),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        LoopSpacing.page,
+                        24,
+                        LoopSpacing.page,
+                        loopChildPageBottomInset(context) + 12,
+                      ),
+                      child: Text.rich(
+                        key: const ValueKey<String>('privy-auth-terms'),
+                        TextSpan(
+                          style: LoopType.captionSm,
+                          children: <InlineSpan>[
+                            const TextSpan(text: '继续即表示同意 '),
+                            TextSpan(
+                              text: '用户协议',
+                              style: LoopTypography.withWeight(
+                                LoopType.captionSm,
+                                FontWeight.w700,
+                              ).copyWith(color: LoopColors.chalk),
+                            ),
+                            const TextSpan(text: ' 和 '),
+                            TextSpan(
+                              text: '隐私政策',
+                              style: LoopTypography.withWeight(
+                                LoopType.captionSm,
+                                FontWeight.w700,
+                              ).copyWith(color: LoopColors.chalk),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    onSubmitted: authState.isBusy
-                        ? null
-                        : (_) => unawaited(_sendCode(controller)),
-                  ),
+                  ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: LoopSpacing.page,
-                ),
-                child: LoopButton(
-                  key: const ValueKey<String>('privy-auth-primary-button'),
-                  label: authState.isBusy ? '发送中…' : '发送验证码',
-                  block: true,
-                  onPressed: authState.isBusy
-                      ? null
-                      : () => unawaited(_sendCode(controller)),
-                ),
-              ),
-              if (authState.errorMessage != null)
-                LoopNotice(
-                  key: const ValueKey<String>('privy-auth-error'),
-                  icon: 'close',
-                  tone: LoopNoticeTone.danger,
-                  title: '无法继续',
-                  body: authState.errorMessage!,
-                  margin: const EdgeInsets.fromLTRB(
-                    LoopSpacing.page,
-                    14,
-                    LoopSpacing.page,
-                    0,
-                  ),
-                ),
-              const _AuthDivider(),
-              _AuthMethod(
-                identifier: 'privy-wallet-login-button',
-                label: '连接已有钱包',
-                busy:
-                    authState.activeOperation ==
-                    IdentityAuthOperation.externalWalletLogin,
-                available: config.canConnectExternalWallet,
-                unavailableReason: config.hasValidReownProjectId
-                    ? '缺少 Privy Mobile App Client ID'
-                    : '缺少有效的 Reown Project ID',
-                onPressed: authState.isBusy
-                    ? null
-                    : () =>
-                          unawaited(controller.connectExternalWallet(context)),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  LoopSpacing.page,
-                  6,
-                  LoopSpacing.page,
-                  0,
-                ),
-                child: Text(
-                  '继续即表示同意用户协议与隐私政策 · 外部钱包只是登录凭证，不是 LOOP 交易钱包，不能授权任何交易',
-                  textAlign: TextAlign.center,
-                  style: LoopType.captionSm,
-                ),
-              ),
-              if (previewEnabled) ...<Widget>[
-                const LoopLabel('开发预览'),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: LoopSpacing.page,
-                  ),
-                  child: LoopButton(
-                    key: const ValueKey<String>(
-                      'enter-development-preview-button',
-                    ),
-                    label: '进入开发预览',
-                    block: true,
-                    onPressed: () =>
-                        ref.read(loopSessionProvider.notifier).enterPreview(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    LoopSpacing.page,
-                    10,
-                    LoopSpacing.page,
-                    0,
-                  ),
-                  child: Text(
-                    '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
-                    textAlign: TextAlign.center,
-                    style: LoopType.captionSm,
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// `auth-email`: the e-mail step 使用邮箱登录 opens (UX-002, decision 0254).
+///
+/// One field and 获取验证码. Only that button says 发送中… while the code is
+/// being sent; the busy state of a Google or Apple attempt never reaches it.
+class PrivyEmailScreen extends ConsumerStatefulWidget {
+  const PrivyEmailScreen({super.key, this.onBack, this.onCodeSent});
+
+  final VoidCallback? onBack;
+
+  /// Called after a code was accepted for delivery, so the shell can push the
+  /// `auth-otp` page.
+  final VoidCallback? onCodeSent;
+
+  @override
+  ConsumerState<PrivyEmailScreen> createState() => _PrivyEmailScreenState();
+}
+
+class _PrivyEmailScreenState extends ConsumerState<PrivyEmailScreen> {
+  late final TextEditingController _emailController = TextEditingController(
+    text: ref.read(emailAuthProvider).submittedEmail ?? '',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onEdited);
+  }
+
+  void _onEdited() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _emailController
+      ..removeListener(_onEdited)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(emailAuthProvider);
+    final controller = ref.read(emailAuthProvider.notifier);
+    final sending =
+        authState.activeOperation == IdentityAuthOperation.sendEmailCode;
+    final busy = authState.isBusy;
+    final empty = _emailController.text.trim().isEmpty;
+    return IdentityStepScaffold(
+      key: const ValueKey<String>('privy-email-screen'),
+      title: '邮箱登录',
+      onBack: widget.onBack,
+      body: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          child: AutofillGroup(
+            child: TextField(
+              key: const ValueKey<String>('privy-email-field'),
+              controller: _emailController,
+              enabled: !busy,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              autofillHints: const <String>[AutofillHints.email],
+              autocorrect: false,
+              style: LoopType.bodyLg,
+              decoration: loopFormFieldDecoration(hint: 'name@example.com'),
+              onSubmitted: busy || empty
+                  ? null
+                  : (_) => unawaited(_sendCode(controller)),
+            ),
+          ),
+        ),
+        if (authState.errorMessage != null)
+          LoopNotice(
+            key: const ValueKey<String>('privy-auth-error'),
+            icon: 'close',
+            tone: LoopNoticeTone.danger,
+            title: '无法继续',
+            body: authState.errorMessage!,
+            margin: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              0,
+            ),
+          ),
+      ],
+      primaryAction: LoopButton(
+        key: const ValueKey<String>('privy-auth-primary-button'),
+        label: sending ? '发送中…' : '获取验证码',
+        primary: true,
+        block: true,
+        onPressed: busy || empty
+            ? null
+            : () => unawaited(_sendCode(controller)),
       ),
     );
   }
@@ -293,87 +375,168 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
   }
 }
 
-/// One sign-in method row. An unavailable method states its reason instead of
-/// silently disabling itself.
-class _AuthMethod extends StatelessWidget {
-  const _AuthMethod({
-    required this.identifier,
+/// One sign-in method: a full-width 52 control with its mark on the left of
+/// the label. The Yellow one is the method the page pushes; the others are
+/// the Graphite ground with a hairline.
+class AuthMethodButton extends StatelessWidget {
+  const AuthMethodButton({
     required this.label,
+    required this.leading,
     required this.busy,
-    required this.available,
-    required this.unavailableReason,
     required this.onPressed,
+    super.key,
     this.primary = false,
   });
 
-  final String identifier;
   final String label;
-  final bool busy;
-  final bool available;
-  final String unavailableReason;
-  final VoidCallback? onPressed;
+  final Widget leading;
 
-  /// `.auth-method-primary`: the one method the prototype pushes.
+  /// This method is the operation in flight. Only this one says so.
+  final bool busy;
+  final VoidCallback? onPressed;
   final bool primary;
+
+  static const double height = 52;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final foreground = primary ? LoopColors.ink : LoopColors.chalk;
+    final background = primary ? LoopColors.yellow : LoopColors.card;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         0,
         LoopSpacing.page,
-        10,
+        12,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          LoopButton(
-            key: ValueKey<String>(identifier),
-            label: busy ? '$label…' : label,
-            primary: primary,
-            block: true,
-            onPressed: available ? onPressed : null,
-          ),
-          if (!available)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                '暂不可用 · $unavailableReason',
-                style: LoopType.captionSm,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: busy ? '$label，正在进行' : label,
+        excludeSemantics: true,
+        child: Opacity(
+          opacity: enabled || busy ? 1 : 0.5,
+          child: Material(
+            color: background,
+            shape: RoundedRectangleBorder(
+              borderRadius: LoopRadius.button,
+              side: primary
+                  ? BorderSide.none
+                  : const BorderSide(color: LoopColors.line2),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed,
+              child: SizedBox(
+                height: height,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox.square(
+                      dimension: 22,
+                      child: Center(
+                        child: busy
+                            ? SizedBox.square(
+                                key: const ValueKey<String>('auth-method-busy'),
+                                dimension: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: foreground,
+                                ),
+                              )
+                            : leading,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      busy ? '$label…' : label,
+                      style: LoopTypography.withWeight(
+                        LoopType.bodyLg,
+                        FontWeight.w700,
+                      ).copyWith(color: foreground),
+                    ),
+                  ],
+                ),
               ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// `.auth-divider`: a hairline either side of a mono 或.
-class _AuthDivider extends StatelessWidget {
-  const _AuthDivider();
+/// 已有钱包？连接钱包 — the wallet login as one text link.
+class _WalletLink extends StatelessWidget {
+  const _WalletLink({required this.busy, required this.onPressed});
+
+  final bool busy;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        14,
-        LoopSpacing.page,
-        14,
-      ),
-      child: Row(
-        children: <Widget>[
-          const Expanded(child: Divider(height: 1, color: LoopColors.line)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('或', style: LoopType.captionSm),
+    final enabled = onPressed != null;
+    return Center(
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: busy ? '正在连接钱包' : '已有钱包？连接钱包',
+        excludeSemantics: true,
+        child: InkWell(
+          key: const ValueKey<String>('privy-wallet-login-button'),
+          onTap: onPressed,
+          borderRadius: LoopRadius.control,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                widthFactor: 1,
+                child: Text.rich(
+                  TextSpan(
+                    style: LoopType.body.copyWith(color: LoopColors.text2),
+                    children: <InlineSpan>[
+                      const TextSpan(text: '已有钱包？'),
+                      TextSpan(
+                        text: busy ? '正在连接…' : '连接钱包',
+                        style:
+                            LoopTypography.withWeight(
+                              LoopType.body,
+                              FontWeight.w700,
+                            ).copyWith(
+                              color: enabled || busy
+                                  ? LoopColors.yellow
+                                  : LoopColors.text3,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-          const Expanded(child: Divider(height: 1, color: LoopColors.line)),
-        ],
+        ),
       ),
     );
   }
+}
+
+/// Google's four-colour G, drawn from its published path.
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  static const String _svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">'
+      '<path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>'
+      '<path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>'
+      '<path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>'
+      '<path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>'
+      '</svg>';
+
+  @override
+  Widget build(BuildContext context) =>
+      SvgPicture.string(_svg, width: 20, height: 20);
 }
 
 /// The branded launch frame for both undecided session states.
@@ -395,21 +558,13 @@ class PrivySessionRestoreScreen extends StatefulWidget {
 
   final VoidCallback? onRetry;
 
-  /// What the frame says about itself from the very first paint.
-  ///
-  /// It used to say nothing at all: a 72 px mark and a 3 px bar on the Ink
-  /// ground, which is the same ground the native launch screen paints. On a
-  /// cold start with no network the mark and the bar are the only thing on
-  /// screen until the restore window closes, and an owner cannot tell that
-  /// from a launch that died. The sentence costs nothing and is true from the
-  /// first frame.
+  /// What the frame says about itself from the very first paint: the one
+  /// status line of the launch frame (UX-001, decision 0254).
   static const String restoringTitle = '正在恢复登录状态';
-  static const String restoringMessage = '正在确认这台设备上的登录状态。';
 
-  /// The wait is bounded by [LoopSessionController.defaultRestoreWindow], so
-  /// this line promises only what the deadline already guarantees: an
-  /// actionable frame arrives whether or not Privy ever answers.
-  static const String slowMessage = '还没有收到答复。再等一会儿，这里会给出可以操作的下一步。';
+  /// The same line once the wait has run long. Only the words change; the
+  /// frame stays exactly where it was.
+  static const String slowMessage = '网络较慢，仍在恢复登录状态…';
 
   /// How long the silent wait may last before the frame admits it is slow.
   /// Presentation only: it changes no session state and decides nothing.
@@ -440,8 +595,8 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
   }
 
   /// The hint belongs to the silent wait and to nothing else. Reaching the
-  /// undecided state retires it, because that frame carries its own
-  /// explanation and its own retry.
+  /// undecided state retires it, because that frame carries its own reason
+  /// and its own retry.
   void _armSlowTimer() {
     _slowTimer?.cancel();
     _slowTimer = null;
@@ -465,82 +620,31 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
   @override
   Widget build(BuildContext context) {
     final message = widget.unreachableMessage;
-    final unreachable = message != null;
-    final onRetry = widget.onRetry;
-    return Scaffold(
-      key: unreachable
-          ? const ValueKey<String>('privy-restore-unavailable-screen')
-          : const ValueKey<String>('privy-restoring-screen'),
-      body: SafeArea(
-        child: Center(
-          child: Semantics(
-            label: unreachable ? 'LOOP 暂时无法确认登录状态' : 'LOOP 正在恢复登录状态',
-            liveRegion: true,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                // The launch frame wears the wordmark the prototype's
-                // `#scr-splash` wears, so a cold start is recognisably the
-                // same page (audit 2026-09-20 §C.1).
-                const LoopBrandMark(
-                  kind: LoopBrandMarkKind.wordmark,
-                  height: 88,
-                  semanticLabel: 'LOOP',
-                ),
-                const SizedBox(height: 24),
-                if (!unreachable) ...<Widget>[
-                  Text(
-                    PrivySessionRestoreScreen.restoringTitle,
-                    key: const ValueKey<String>('privy-restoring-title'),
-                    textAlign: TextAlign.center,
-                    style: LoopType.titleLg,
-                  ),
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: LoopSpacing.page,
-                    ),
-                    child: Text(
-                      _slow
-                          ? PrivySessionRestoreScreen.slowMessage
-                          : PrivySessionRestoreScreen.restoringMessage,
-                      key: const ValueKey<String>('privy-restoring-message'),
-                      textAlign: TextAlign.center,
-                      style: LoopType.captionSm,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // `.loop-brand-loader{width:min(244px,64vw)}`. The line
-                  // stays indeterminate here: this frame is waiting for an
-                  // answer, and a full bar would claim one arrived.
-                  LoopBrandLoader(),
-                ] else ...<Widget>[
-                  _CentredStateCopy(
-                    key: const ValueKey<String>(
-                      'privy-restore-unavailable-notice',
-                    ),
-                    title: '暂时无法确认登录状态',
-                    body: '$message\n还没有收到「未登录」的答复，所以不会要求你重新登录。',
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: LoopSpacing.page,
-                    ),
-                    child: LoopButton(
-                      key: const ValueKey<String>(
-                        'privy-restore-unavailable-retry',
-                      ),
-                      label: '重试',
-                      primary: true,
-                      onPressed: onRetry,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+    if (message == null) {
+      return LoopLaunchFrame(
+        key: const ValueKey<String>('privy-restoring-screen'),
+        semanticLabel: 'LOOP 正在恢复登录状态',
+        status: _slow
+            ? PrivySessionRestoreScreen.slowMessage
+            : PrivySessionRestoreScreen.restoringTitle,
+        statusKey: const ValueKey<String>('privy-restoring-title'),
+      );
+    }
+    // The undecided state (decision 0064) on the same frame: the rail gives
+    // way to the reason and the one retry. It is never the credential form.
+    return LoopLaunchFrame(
+      key: const ValueKey<String>('privy-restore-unavailable-screen'),
+      semanticLabel: 'LOOP 暂时无法确认登录状态',
+      showRail: false,
+      waiting: false,
+      status: '暂时无法确认登录状态',
+      statusKey: const ValueKey<String>('privy-restore-unavailable-notice'),
+      detail: message,
+      action: LoopButton(
+        key: const ValueKey<String>('privy-restore-unavailable-retry'),
+        label: '重试',
+        primary: true,
+        onPressed: widget.onRetry,
       ),
     );
   }
@@ -549,25 +653,21 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
 /// The frame `/auth` draws for a session that is already signed in (S253).
 ///
 /// It only ever stands for the frame or two before the router moves the
-/// owner to the launch page, so it is the launch ground and the wordmark the
-/// frames on either side of it wear — nothing that animates, nothing to
-/// press, and no credential form.
+/// owner to the launch page, so it is that page already: the same launch
+/// frame saying the same line, so the move changes nothing on screen
+/// (UX-001, decision 0254).
 class PrivySessionHandoverFrame extends StatelessWidget {
   const PrivySessionHandoverFrame({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    // The rail is held still for these frames: the router replaces the page
+    // before a sweep could be seen, and a still rail never keeps a frame
+    // scheduled behind it.
+    return const LoopLaunchFrame(
       key: ValueKey<String>('privy-auth-handover'),
-      body: SafeArea(
-        child: Center(
-          child: LoopBrandMark(
-            kind: LoopBrandMarkKind.wordmark,
-            height: 88,
-            semanticLabel: 'LOOP',
-          ),
-        ),
-      ),
+      status: SplashScreen.preparingText,
+      waiting: false,
     );
   }
 }
@@ -593,52 +693,19 @@ class PrivySessionAwaitingNetworkScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return LoopLaunchFrame(
       key: const ValueKey<String>('privy-awaiting-network-screen'),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Semantics(
-              label: 'LOOP $title',
-              liveRegion: true,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const LoopBrandMark(
-                    kind: LoopBrandMarkKind.wordmark,
-                    height: 88,
-                    semanticLabel: 'LOOP',
-                  ),
-                  const SizedBox(height: 24),
-                  const _CentredStateCopy(
-                    key: ValueKey<String>('privy-awaiting-network-notice'),
-                    title: title,
-                    body: message,
-                  ),
-                  const SizedBox(height: 20),
-                  // Indeterminate: the frame is waiting, and a full bar would
-                  // claim an answer arrived.
-                  LoopBrandLoader(
-                    key: ValueKey<String>('privy-awaiting-network-progress'),
-                  ),
-                  const SizedBox(height: 18),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: LoopSpacing.page,
-                    ),
-                    child: LoopButton(
-                      key: const ValueKey<String>(
-                        'privy-awaiting-network-another-account',
-                      ),
-                      label: anotherAccountLabel,
-                      onPressed: onUseAnotherAccount,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      semanticLabel: 'LOOP $title',
+      // Indeterminate: the frame is waiting, and a full bar would claim an
+      // answer arrived.
+      loaderKey: const ValueKey<String>('privy-awaiting-network-progress'),
+      status: title,
+      statusKey: const ValueKey<String>('privy-awaiting-network-notice'),
+      detail: message,
+      action: LoopButton(
+        key: const ValueKey<String>('privy-awaiting-network-another-account'),
+        label: anotherAccountLabel,
+        onPressed: onUseAnotherAccount,
       ),
     );
   }
@@ -649,57 +716,11 @@ class PrivySessionSignOutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // ignore: prefer_const_constructors
+    return LoopLaunchFrame(
       key: const ValueKey<String>('privy-signing-out-screen'),
-      body: SafeArea(
-        child: Center(
-          child: Semantics(
-            label: 'LOOP 正在安全退出',
-            liveRegion: true,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                LoopBrandLoader(width: 160),
-                const SizedBox(height: 18),
-                Text('正在安全退出', style: LoopType.bodySm),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The centred copy of a waiting frame (decision 0126): an offline glyph, a
-/// 16 title and a 14 grey sentence under the brand mark, no card.
-class _CentredStateCopy extends StatelessWidget {
-  const _CentredStateCopy({required this.title, required this.body, super.key});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 360),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const LoopIcon('offline', size: 28, color: LoopColors.text3),
-            const SizedBox(height: 12),
-            Text(title, textAlign: TextAlign.center, style: LoopType.titleLg),
-            const SizedBox(height: 6),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: LoopType.body.copyWith(color: LoopColors.text2),
-            ),
-          ],
-        ),
-      ),
+      semanticLabel: 'LOOP 正在安全退出',
+      status: '正在安全退出',
     );
   }
 }
