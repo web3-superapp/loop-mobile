@@ -24,7 +24,9 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// Every MEME v2 catalogue project the account owns (`kind=launch2`), each
 /// with the state its review, Hooks draft, approval and newest task put it
 /// in. A row resumes the flow on the page that state belongs to (decision
-/// 0142); the top bar's ＋ starts a new one.
+/// 0142). S326 · decision 0256 (UX-005): the page is inside the launch flow
+/// and carries no 「发起」 of its own — the MEME home's 「发射」 is the one
+/// way in, so create → 我的项目 → create no longer nests without end.
 class Launch2ProjectsScreen extends ConsumerWidget {
   const Launch2ProjectsScreen({super.key, this.onBack, this.onNavigate});
 
@@ -60,12 +62,6 @@ class Launch2ProjectsScreen extends ConsumerWidget {
             illustration: LoopIllustration.launchpad,
             title: '还没有发起项目',
             message: 'NFT 预售 + 官方外盘，一次发起。',
-            action: LoopButton(
-              key: const ValueKey<String>('launch2-projects-empty-create'),
-              label: '发起 v2 发射',
-              primary: true,
-              onPressed: () => onNavigate?.call(Launch2CreatorRoute.createPath),
-            ),
           ),
         ],
       );
@@ -126,14 +122,6 @@ class Launch2ProjectsScreen extends ConsumerWidget {
         title: '我的项目',
         onBack: onBack,
         updating: state.refreshing,
-        actions: <Widget>[
-          LoopIconButton(
-            key: const ValueKey<String>('launch2-projects-create'),
-            icon: 'plus',
-            label: '发起 v2 发射',
-            onPressed: () => onNavigate?.call(Launch2CreatorRoute.createPath),
-          ),
-        ],
         onRefresh: controller.reload,
         collection: collection,
       ),

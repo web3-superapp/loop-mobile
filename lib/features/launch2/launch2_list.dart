@@ -423,19 +423,39 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           ),
         ..._footer(state, controller, _keyBase),
       ],
-      // 战绩: the overview's figures; none read, none drawn.
+      // 战绩: the overview's figures; none read, none drawn. S326 · decision
+      // 0256 (UX-004 ⑨): each cell has a second data line, and the page's
+      // one source entry is a small 「(i) 来源」 beside the heading.
       if (stats != null) ...<Widget>[
-        const LoopLabel('战绩'),
+        _StatsHeading(
+          onSource: () => unawaited(
+            showLoopProvenanceSheet(
+              context,
+              sources: const <String>['LOOP 链上索引'],
+              observedAt: controller.valueObservedAt,
+            ),
+          ),
+          semanticsLabel: LoopProvenanceLine(
+            sources: const <String>['LOOP 链上索引'],
+            observedAt: controller.valueObservedAt,
+          ).text,
+        ),
         KeyedSubtree(
           key: const ValueKey<String>('launch2-stats'),
-          child: MemeStatFigures(stats: launch2DeskStats(stats)),
+          child: MemeStatFigures(
+            stats: launch2DeskStats(stats),
+            notes: launch2DeskStatNotes(
+              stats,
+              observedAt: overview?.observedAt,
+            ),
+          ),
         ),
-      ],
-      LoopProvenanceLine(
-        key: ValueKey<String>('$_keyBase-provenance'),
-        sources: const <String>['LOOP 链上索引'],
-        observedAt: controller.valueObservedAt,
-      ),
+      ] else
+        LoopProvenanceLine(
+          key: ValueKey<String>('$_keyBase-provenance'),
+          sources: const <String>['LOOP 链上索引'],
+          observedAt: controller.valueObservedAt,
+        ),
     ];
   }
 
@@ -713,4 +733,33 @@ List<Launch2InstanceRow> launch2ListOrder(List<Launch2InstanceRow> rows) {
     for (final row in rows)
       if (row.stage == Launch2Stage.closedNoHolders) row,
   ];
+}
+
+/// 「战绩」 with the page's one source entry at its right: the section title
+/// and a small 「(i) 来源」 on one line (S326 · decision 0256).
+class _StatsHeading extends StatelessWidget {
+  const _StatsHeading({required this.onSource, required this.semanticsLabel});
+
+  final VoidCallback onSource;
+  final String semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    key: const ValueKey<String>('launch2-stats-heading'),
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: <Widget>[
+      const Expanded(child: LoopLabel('战绩')),
+      Padding(
+        padding: const EdgeInsets.only(
+          right: LoopSpacing.page - 4,
+          bottom: LoopSpacing.sectionBottom - 12,
+        ),
+        child: LoopInfoTrigger(
+          key: const ValueKey<String>('launch2-stats-source'),
+          semanticsLabel: '$semanticsLabel，查看数据来源说明',
+          onTap: onSource,
+        ),
+      ),
+    ],
+  );
 }

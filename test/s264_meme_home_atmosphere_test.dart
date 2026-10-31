@@ -171,7 +171,8 @@ void main() {
     await _drain(tester);
   });
 
-  testWidgets('S279 · 0237: three numbered tabs, one board at a time; a '
+  testWidgets('S279 · 0237: three tabs (S326: no index), one board at a '
+      'time; a '
       'row without a logo wears the chrome medal; the bar drips past 0 and '
       'not at 0', (tester) async {
     await _pump(tester, <Map<String, Object?>>[
@@ -186,9 +187,10 @@ void main() {
     ]) {
       final key = _key('launch2-desk-tab-$tab');
       expect(key, findsOneWidget, reason: tab);
+      // S326 · decision 0256: the 「01 / 02 / 03」 index is gone.
       expect(
         find.descendant(of: key, matching: find.text(index)),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.descendant(of: key, matching: find.text(title)),

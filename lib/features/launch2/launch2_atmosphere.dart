@@ -115,10 +115,16 @@ class Launch2ChromeHand extends StatelessWidget {
 
 // ---- the live trade band ----------------------------------------------------
 
-/// The Purple band under the banner (replaces the three-line 实时 card): the
-/// newest trades run left in one line; 「● 实时」 holds the left end and
-/// 「全部 ›」 the right, behind a Purple fade. With no trade the band says
-/// 「暂无成交」 and stands still.
+/// The trade band under the banner (replaces the three-line 实时 card): the
+/// newest trades run left in one line; 「● 实时」 holds the left end and the
+/// 「›」 to the full list the right, behind a fade. With no trade the band
+/// says 「暂无成交」 and stands still.
+///
+/// S326 · decision 0256 (UX-004 ①–⑤): the solid Purple ground is gone — the
+/// band is the quiet card ground with a hairline edge inside the page
+/// gutters; 「实时」 is Purple and 「买入」 green, so the two no longer read as
+/// one colour; the amount sits 2 from its unit; 「全部」 is the chevron alone;
+/// the band numbers nothing.
 class Launch2TradeTicker extends ConsumerStatefulWidget {
   const Launch2TradeTicker({
     required this.items,
@@ -137,6 +143,9 @@ class Launch2TradeTicker extends ConsumerStatefulWidget {
 
   /// How far the line moves per second.
   static const double speed = 24;
+
+  /// The band's ground: the card surface, no accent (decision 0256).
+  static const Color ground = LoopColors.card;
 
   @override
   ConsumerState<Launch2TradeTicker> createState() => _Launch2TradeTickerState();
@@ -214,101 +223,106 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
     final spoken = items.isEmpty
         ? '实时成交，暂无成交'
         : '实时成交，${items.map(launch2ActivityText).take(3).join('；')}';
-    return SizedBox(
-      height: 44,
-      child: Stack(
-        children: <Widget>[
-          Positioned(
-            left: 0,
-            right: 0,
-            top: (44 - Launch2TradeTicker.bandHeight) / 2,
-            height: Launch2TradeTicker.bandHeight,
-            child: ColoredBox(
-              key: const ValueKey<String>('launch2-ticker-band'),
-              color: LoopColors.purple,
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(width: 12),
-                  const _LiveLabel(),
-                  const SizedBox(width: 2),
-                  Expanded(
-                    child: Semantics(
-                      label: spoken,
-                      excludeSemantics: true,
-                      child: items.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  '暂无成交',
-                                  key: const ValueKey<String>(
-                                    'launch2-ticker-empty',
-                                  ),
-                                  style: LoopTypography.withWeight(
-                                    LoopType.bodySm,
-                                    FontWeight.w500,
-                                  ).copyWith(color: LoopColors.onPurple),
-                                ),
-                              ),
-                            )
-                          : _rail(items, now),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (items.isNotEmpty)
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          children: <Widget>[
             Positioned(
+              left: 0,
               right: 0,
-              top: 0,
-              bottom: 0,
-              child: Semantics(
-                button: true,
-                label: '全部实时成交',
-                excludeSemantics: true,
-                child: LoopPressable(
-                  key: const ValueKey<String>('launch2-ticker-all'),
-                  onTap: widget.onOpenAll,
-                  scale: false,
-                  child: Center(
-                    child: Container(
-                      height: Launch2TradeTicker.bandHeight,
-                      constraints: const BoxConstraints(
-                        minWidth: LoopTouch.minimum,
-                      ),
-                      padding: const EdgeInsets.fromLTRB(34, 0, 10, 0),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: <Color>[Color(0x009C36FF), LoopColors.purple],
-                          stops: <double>[0, 0.4],
+              top: (44 - Launch2TradeTicker.bandHeight) / 2,
+              height: Launch2TradeTicker.bandHeight,
+              child: DecoratedBox(
+                key: const ValueKey<String>('launch2-ticker-band'),
+                decoration: BoxDecoration(
+                  color: Launch2TradeTicker.ground,
+                  borderRadius: LoopRadius.control,
+                  border: Border.all(color: LoopColors.line),
+                ),
+                child: ClipRRect(
+                  borderRadius: LoopRadius.control,
+                  child: Row(
+                    children: <Widget>[
+                      const SizedBox(width: 12),
+                      const _LiveLabel(),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Semantics(
+                          label: spoken,
+                          excludeSemantics: true,
+                          child: items.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.only(left: 10),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '暂无成交',
+                                      key: const ValueKey<String>(
+                                        'launch2-ticker-empty',
+                                      ),
+                                      style: LoopTypography.withWeight(
+                                        LoopType.bodySm,
+                                        FontWeight.w500,
+                                      ).copyWith(color: LoopColors.text2),
+                                    ),
+                                  ),
+                                )
+                              : _rail(items, now),
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            '全部',
-                            style: LoopTypography.withWeight(
-                              LoopType.label,
-                              FontWeight.w600,
-                            ).copyWith(color: LoopColors.onPurple),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (items.isNotEmpty)
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Semantics(
+                  button: true,
+                  label: '全部实时成交',
+                  excludeSemantics: true,
+                  child: LoopPressable(
+                    key: const ValueKey<String>('launch2-ticker-all'),
+                    onTap: widget.onOpenAll,
+                    scale: false,
+                    child: Center(
+                      child: Container(
+                        height: Launch2TradeTicker.bandHeight - 2,
+                        constraints: const BoxConstraints(
+                          minWidth: LoopTouch.minimum,
+                        ),
+                        margin: const EdgeInsets.only(right: 1),
+                        padding: const EdgeInsets.fromLTRB(22, 0, 12, 0),
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.horizontal(
+                            right: Radius.circular(11),
                           ),
-                          const SizedBox(width: 1),
-                          const LoopIcon(
-                            'chevron',
-                            size: 14,
-                            color: LoopColors.onPurple,
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              Color(0x001A1920),
+                              Launch2TradeTicker.ground,
+                            ],
+                            stops: <double>[0, 0.45],
                           ),
-                        ],
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: const LoopIcon(
+                          'chevron',
+                          size: 16,
+                          color: LoopColors.text2,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -363,43 +377,52 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
   );
 }
 
-/// 「● 实时」: the Ink capsule fixed at the band's left end.
+/// 「● 实时」 fixed at the band's left end: a Purple dot and a light Purple
+/// word on the soft Purple capsule — never the rise green the 「买入」 tag
+/// wears (decision 0256).
 class _LiveLabel extends StatelessWidget {
   const _LiveLabel();
+
+  /// The dot and the word.
+  static const Color ink = LoopColors.purpleInk;
 
   @override
   Widget build(BuildContext context) => Container(
     key: const ValueKey<String>('launch2-ticker-live'),
-    height: 24,
-    padding: const EdgeInsets.symmetric(horizontal: 10),
+    height: 22,
+    padding: const EdgeInsets.symmetric(horizontal: 8),
     decoration: const BoxDecoration(
-      color: LoopColors.ink,
+      color: LoopColors.purpleTint,
       borderRadius: LoopRadius.pill,
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
+          key: const ValueKey<String>('launch2-ticker-live-dot'),
           width: 6,
           height: 6,
           decoration: const BoxDecoration(
-            color: LoopColors.rise,
+            color: LoopColors.purple,
             shape: BoxShape.circle,
-            boxShadow: <BoxShadow>[
-              BoxShadow(color: Color(0x3822C55E), spreadRadius: 3),
-            ],
           ),
         ),
-        const SizedBox(width: 6),
-        Text('实时', style: LoopType.label.copyWith(color: LoopColors.chalk)),
+        const SizedBox(width: 5),
+        Text(
+          '实时',
+          style: LoopTypography.withWeight(
+            LoopType.captionSm,
+            FontWeight.w600,
+          ).copyWith(color: ink),
+        ),
       ],
     ),
   );
 }
 
-/// One trade on the band: who, the verb on a small Ink ground (Purple would
-/// swallow the rise / fall colour), the ticker, the amount and USD1. Every
-/// other kind is its one sentence.
+/// One trade on the band: who, the verb on its own soft rise / fall ground,
+/// the ticker, the amount and, 2 after it, USD1. Every other kind is its one
+/// sentence. No index (decision 0256).
 class _TickerItem extends StatelessWidget {
   const _TickerItem({required this.item});
 
@@ -410,10 +433,18 @@ class _TickerItem extends StatelessWidget {
     final words = LoopTypography.withWeight(
       LoopType.bodySm,
       FontWeight.w500,
-    ).copyWith(color: LoopColors.onPurple);
+    ).copyWith(color: LoopColors.text2);
     final verb = switch (item.kind) {
-      Launch2ActivityKind.curveBuy => ('买入', LoopColors.rise),
-      Launch2ActivityKind.curveSell => ('卖出', LoopColors.fall),
+      Launch2ActivityKind.curveBuy => (
+        '买入',
+        LoopColors.rise,
+        LoopColors.riseSoft,
+      ),
+      Launch2ActivityKind.curveSell => (
+        '卖出',
+        LoopColors.fall,
+        LoopColors.fallSoft,
+      ),
       _ => null,
     };
     final amount = item.amountUsd1;
@@ -422,9 +453,10 @@ class _TickerItem extends StatelessWidget {
         : <Widget>[
             Text(launch2ActivityWho(item).trim(), style: words),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-              decoration: const BoxDecoration(
-                color: LoopColors.ink,
+              key: ValueKey<String>('launch2-ticker-verb-${item.kind.name}'),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              decoration: BoxDecoration(
+                color: verb.$3,
                 borderRadius: LoopRadius.badge,
               ),
               child: Text(
@@ -434,23 +466,31 @@ class _TickerItem extends StatelessWidget {
             ),
             Text(
               item.ticker,
-              style: LoopType.tickerFigure.copyWith(color: LoopColors.onPurple),
+              style: LoopType.tickerFigure.copyWith(color: LoopColors.chalk),
             ),
-            if (amount != null) ...<Widget>[
-              Text(
-                launch2Usd1Label(amount).replaceAll(' USD1', ''),
-                style: LoopType.tickerFigure.copyWith(
-                  color: LoopColors.onPurple,
-                ),
+            if (amount != null)
+              Row(
+                key: const ValueKey<String>('launch2-ticker-amount'),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  Text(
+                    launch2Usd1Label(amount).replaceAll(' USD1', ''),
+                    style: LoopType.tickerFigure.copyWith(
+                      color: LoopColors.chalk,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    'USD1',
+                    style: LoopTypography.withWeight(
+                      LoopType.figureXs,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.text3),
+                  ),
+                ],
               ),
-              Text(
-                'USD1',
-                style: LoopTypography.withWeight(
-                  LoopType.figureXs,
-                  FontWeight.w600,
-                ).copyWith(color: const Color(0xCCFFFFFF)),
-              ),
-            ],
           ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -630,12 +670,12 @@ typedef Launch2DeskTabSpec = ({
   bool selected,
 });
 
-/// The MEME home's tab bar (S279 · decision 0237): 「01 内盘 / 02 预告 /
-/// 03 已毕业」 across the page, each tab a third of it. The section number
-/// that headed each stacked group is now the tab's own Anton index, so the
-/// list under it needs no heading of its own. The chosen tab is solid Purple
-/// with white words, its number in Yellow and the Yellow splat on its corner;
-/// the others stand on the block ground so the bar reads as one control.
+/// The MEME home's tab bar (S279 · decision 0237): 「内盘 / 预告 / 已毕业」
+/// across the page, each tab a third of it. The chosen tab is solid Purple
+/// with white words and the Yellow splat on its corner; the others stand on
+/// the block ground so the bar reads as one control. S326 · decision 0256
+/// (UX-004 ⑤): the 「01 / 02 / 03」 index is gone and the count is a small
+/// figure set apart from the word.
 class Launch2DeskTabs extends StatelessWidget {
   const Launch2DeskTabs({
     required this.tabs,
@@ -668,11 +708,7 @@ class Launch2DeskTabs extends StatelessWidget {
             children: <Widget>[
               for (final (index, tab) in tabs.indexed)
                 Expanded(
-                  child: _DeskTab(
-                    index: index + 1,
-                    tab: tab,
-                    onTap: () => onSelected(index),
-                  ),
+                  child: _DeskTab(tab: tab, onTap: () => onSelected(index)),
                 ),
             ],
           ),
@@ -683,9 +719,8 @@ class Launch2DeskTabs extends StatelessWidget {
 }
 
 class _DeskTab extends StatelessWidget {
-  const _DeskTab({required this.index, required this.tab, required this.onTap});
+  const _DeskTab({required this.tab, required this.onTap});
 
-  final int index;
   final Launch2DeskTabSpec tab;
   final VoidCallback onTap;
 
@@ -719,31 +754,31 @@ class _DeskTab extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: <Widget>[
-                    Text(
-                      index.toString().padLeft(2, '0'),
-                      key: ValueKey<String>('launch2-desk-tab-index-${tab.id}'),
-                      style: LoopType.tabIndex.copyWith(
-                        color: on ? LoopColors.yellow : LoopColors.muted,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
                     Text(
                       tab.title,
                       maxLines: 1,
                       style: LoopType.button.copyWith(color: ink),
                     ),
                     const SizedBox(width: 4),
+                    // S326 · decision 0256 (UX-004 ⑤): the count is a
+                    // smaller, lighter figure after the word, not a second
+                    // word of the same weight.
                     Text(
                       '${tab.count}',
+                      key: ValueKey<String>('launch2-desk-tab-count-${tab.id}'),
                       maxLines: 1,
                       style:
                           LoopTypography.withWeight(
-                            LoopType.figureSm,
-                            FontWeight.w600,
+                            LoopType.figureXs,
+                            FontWeight.w500,
                           ).copyWith(
-                            color: on ? LoopColors.onPurple : LoopColors.muted,
+                            fontSize: 12,
+                            color: on
+                                ? LoopColors.onPurple.withValues(alpha: 0.72)
+                                : LoopColors.muted,
                           ),
                     ),
                   ],
@@ -828,6 +863,9 @@ class Launch2BoardStage extends StatelessWidget {
 
   final Launch2Stage stage;
 
+  /// The capsule's height.
+  static const double height = 20;
+
   @override
   Widget build(BuildContext context) {
     final (Color ground, Color ink) = switch (stage) {
@@ -840,11 +878,13 @@ class Launch2BoardStage extends StatelessWidget {
       ),
       _ => (LoopColors.card2, LoopColors.text2),
     };
+    // S326 · decision 0256 (UX-004 ⑥): a 12 word on a 20 high
+    // capsule, its right edge on the price's right edge above it.
     return Container(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(color: ground, borderRadius: LoopRadius.pill),
+      height: Launch2BoardStage.height,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(color: ground, borderRadius: LoopRadius.badge),
       // Sized by its word, never by the column it stands in.
       child: Center(
         widthFactor: 1,
@@ -852,9 +892,9 @@ class Launch2BoardStage extends StatelessWidget {
           launch2StageLabel(stage),
           maxLines: 1,
           style: LoopTypography.withWeight(
-            LoopType.label,
+            LoopType.captionSm,
             FontWeight.w600,
-          ).copyWith(color: ink),
+          ).copyWith(color: ink, fontSize: 12, height: 1.2),
         ),
       ),
     );
@@ -1026,7 +1066,7 @@ class Launch2BoardRow extends ConsumerWidget {
                             style: LoopType.figure,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                       ],
                       Launch2BoardStage(stage: row.stage),
                     ],

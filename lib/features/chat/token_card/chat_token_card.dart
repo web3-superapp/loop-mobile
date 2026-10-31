@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card_cache.dart';
+import 'package:loop_mobile/features/chat/token_card/chat_token_card_view.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -76,7 +77,9 @@ bool _statesAMechanism(MarketSecurityFact fact) {
 /// LOOP reading that address against the registry. It shows identity, quote,
 /// the 1H line, three metrics, the LOOP community, the contract facts it read,
 /// and four actions — two of which state why they cannot be taken rather than
-/// disappearing.
+/// disappearing. S326 · decision 0256 (UX-014): drawn by
+/// [ChatTokenCardView] — fewer colour blocks, larger figures, the actions as
+/// [LoopButton]s.
 class ChatTokenCard extends ConsumerStatefulWidget {
   const ChatTokenCard({required this.address, super.key, this.onNavigate});
 
@@ -131,6 +134,12 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
     if (entry.readAt == null || entry.isStale(now)) {
       scheduleMicrotask(() => unawaited(cache.resolve(address)));
     }
+    final body = _body(context, ref, entry, cache);
+    // S326 · decision 0256 (UX-014): a card carries the line inside its own
+    // top; an inline answer keeps it above.
+    if (body is ChatTokenCardView) {
+      return Semantics(container: true, child: body);
+    }
     return Semantics(
       container: true,
       child: Column(
@@ -141,12 +150,34 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
             child: Text(
               loopChatTokenCardKicker,
-              key: ValueKey<String>('chat-token-card-kicker-$address'),
+              key: _kickerKey,
               style: LoopType.captionSm,
             ),
           ),
-          _body(context, ref, entry, cache),
+          body,
         ],
+      ),
+    );
+  }
+
+  Key get _kickerKey => ValueKey<String>('chat-token-card-kicker-$address');
+
+  /// The 1H block's content: the line, or the one sentence that says why
+  /// there is none, centred in the block.
+  Widget _chart(ChatTokenCardEntry entry) {
+    final keyPrefix = 'chat-token-card-chart-$address';
+    final absence = tokenCardSparklineAbsence(entry.candles);
+    if (absence == null) {
+      return TokenCardSparklineView(state: entry.candles, keyPrefix: keyPrefix);
+    }
+    return Center(
+      key: ValueKey<String>('$keyPrefix-${absence.keySuffix}'),
+      child: Text(
+        absence.text,
+        maxLines: 3,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: LoopType.captionSm.copyWith(color: LoopColors.text2),
       ),
     );
   }
@@ -231,8 +262,10 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         ),
       ),
       // Nothing has failed and nothing has answered yet.
-      null => LoopTokenCard(
+      null => ChatTokenCardView(
         key: ValueKey<String>('chat-token-card-loading-$address'),
+        kicker: loopChatTokenCardKicker,
+        kickerKey: _kickerKey,
         state: LoopTokenCardState.loading,
         model: LoopTokenCardModel(
           symbol: loopChatTokenShortAddress(address),
@@ -278,8 +311,10 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
     final rateLimited =
         holdRetry ||
         entry.asset.failureKind == LoopChainFailureKind.rateLimited;
-    return LoopTokenCard(
+    return ChatTokenCardView(
       key: ValueKey<String>('chat-token-card-unavailable-$address'),
+      kicker: loopChatTokenCardKicker,
+      kickerKey: _kickerKey,
       state: LoopTokenCardState.partial,
       model: LoopTokenCardModel(
         symbol: loopChatTokenShortAddress(address),
@@ -361,8 +396,10 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         ].join(' · '),
       if (detail.price.isAvailable) '报价 ${loopFactProvenance(detail.price)}',
     ];
-    return LoopTokenCard(
+    return ChatTokenCardView(
       key: ValueKey<String>('chat-token-card-$address'),
+      kicker: loopChatTokenCardKicker,
+      kickerKey: _kickerKey,
       state: LoopTokenCardState.normal,
       model: LoopTokenCardModel(
         symbol: loopAssetSymbolLabel(asset),
@@ -412,10 +449,7 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         footnotes: footnotes,
         provenance: provenance,
         chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
-        chart: TokenCardSparklineView(
-          state: entry.candles,
-          keyPrefix: 'chat-token-card-chart-$address',
-        ),
+        chart: _chart(entry),
       ),
       actions: <LoopTokenCardAction>[
         const LoopTokenCardAction('买入', buy: true),

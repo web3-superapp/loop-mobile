@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -234,9 +235,17 @@ const SystemUiOverlayStyle loopTabSystemOverlay = SystemUiOverlayStyle(
   statusBarBrightness: Brightness.dark,
 );
 
-/// The tab bar's ground (decision 0226): the card surface at 92 %, so the
-/// wall shows faintly through it. No blur.
-const Color loopTabBarGround = Color(0xEB111114);
+/// The tab bar's ground (decision 0226): the card surface, see-through.
+/// S326 · decision 0256 (UX-004 ⑦): 72 % over a background blur
+/// ([loopTabBarBlur]) — the page under the bar is frosted, not hidden.
+const Color loopTabBarGround = Color(0xB8111114);
+
+/// The blur under the tab bar (decision 0256).
+const double loopTabBarBlur = 20;
+
+/// The tab bar's light edge on all four sides (decision 0256): it reads as
+/// a floating object, not a strip that slipped off the screen's foot.
+const Color loopTabBarEdge = Color(0x24FFFFFF);
 
 /// The floating Chalk tab bar.
 ///
@@ -303,45 +312,84 @@ class LoopTabBar extends StatelessWidget {
           child: Semantics(
             container: true,
             label: 'Primary navigation',
-            child: Container(
-              height: LoopTouch.tabBarHeight,
-              padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-              // Decision 0212: the bar is the card surface with a 20 radius
-              // and no selection block. S264 (decision 0220): a 1 px chrome
-              // line runs along its top edge.
-              foregroundDecoration: const _ChromeEdge(),
+            child: DecoratedBox(
+              key: const ValueKey<String>('loop-tab-bar-float'),
+              // S326 · decision 0256: a soft shadow under the bar lifts it
+              // off the page.
               decoration: const BoxDecoration(
-                // Decision 0226: card at 92 %; the safe area under the bar
-                // is clear.
-                color: loopTabBarGround,
                 borderRadius: LoopRadius.tabBar,
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 8),
+                  ),
+                ],
               ),
-              child: LoopDockBar(
-                count: count,
-                selectedIndex: selectedIndex,
-                onSelect: onSelect,
-                // The pill follows its cell's glyph sideways while the row
-                // makes room under a sliding finger; at rest the shift is 0.
-                backgroundBuilder: (context, cells) => Transform.translate(
-                  offset: Offset(cells[selectedIndex].shift, 0),
-                  // Reduced motion is a jump, not a fast slide: the plain
-                  // `Align` reaches the new cell in the same frame.
-                  child: reduceMotion
-                      ? Align(alignment: alignment, child: indicator)
-                      : AnimatedAlign(
-                          alignment: alignment,
-                          duration: slideDuration,
-                          curve: slideCurve,
-                          child: indicator,
+              child: ClipRRect(
+                borderRadius: LoopRadius.tabBar,
+                child: BackdropFilter(
+                  key: const ValueKey<String>('loop-tab-bar-blur'),
+                  filter: ImageFilter.blur(
+                    sigmaX: loopTabBarBlur,
+                    sigmaY: loopTabBarBlur,
+                  ),
+                  // The light edge all round is painted over the bar, so the
+                  // cells keep their geometry.
+                  child: DecoratedBox(
+                    key: const ValueKey<String>('loop-tab-bar-edge'),
+                    position: DecorationPosition.foreground,
+                    decoration: BoxDecoration(
+                      borderRadius: LoopRadius.tabBar,
+                      border: Border.all(color: loopTabBarEdge),
+                    ),
+                    child: Container(
+                      height: LoopTouch.tabBarHeight,
+                      padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
+                      // Decision 0212: the bar is the card surface with a 20 radius
+                      // and no selection block. S264 (decision 0220): a 1 px chrome
+                      // line runs along its top edge — S326 · decision 0256: dimmed,
+                      // over a light edge all round.
+                      foregroundDecoration: const _ChromeEdge(),
+                      decoration: BoxDecoration(
+                        // Decision 0226: the safe area under the bar is clear.
+                        color: loopTabBarGround,
+                        borderRadius: LoopRadius.tabBar,
+                      ),
+                      child: LoopDockBar(
+                        count: count,
+                        selectedIndex: selectedIndex,
+                        onSelect: onSelect,
+                        // The pill follows its cell's glyph sideways while the row
+                        // makes room under a sliding finger; at rest the shift is 0.
+                        backgroundBuilder: (context, cells) =>
+                            Transform.translate(
+                              offset: Offset(cells[selectedIndex].shift, 0),
+                              // Reduced motion is a jump, not a fast slide: the plain
+                              // `Align` reaches the new cell in the same frame.
+                              child: reduceMotion
+                                  ? Align(
+                                      alignment: alignment,
+                                      child: indicator,
+                                    )
+                                  : AnimatedAlign(
+                                      alignment: alignment,
+                                      duration: slideDuration,
+                                      curve: slideCurve,
+                                      child: indicator,
+                                    ),
+                            ),
+                        cellBuilder: (context, index, cell) => LoopTabItem(
+                          label: LoopShell._destinations[index].label,
+                          slug: LoopShell._destinations[index].slug,
+                          icon: LoopShell._destinations[index].icon,
+                          selected: index == selectedIndex,
+                          dock: cell,
+                          onTap: () => onSelect(index),
                         ),
-                ),
-                cellBuilder: (context, index, cell) => LoopTabItem(
-                  label: LoopShell._destinations[index].label,
-                  slug: LoopShell._destinations[index].slug,
-                  icon: LoopShell._destinations[index].icon,
-                  selected: index == selectedIndex,
-                  dock: cell,
-                  onTap: () => onSelect(index),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -372,11 +420,13 @@ class _ChromeEdgePainter extends BoxPainter {
     final line = Rect.fromLTWH(offset.dx + 18, offset.dy, size.width - 36, 1);
     final paint = Paint()
       ..shader = const LinearGradient(
+        // S326 · decision 0256 (UX-004 ⑦): the highlight at about a third of
+        // its old strength, so the top edge no longer outshines the rest.
         colors: <Color>[
           Color(0x003A3A42),
-          LoopColors.chrome2,
-          LoopColors.chrome1,
-          LoopColors.chrome2,
+          Color(0x339A9AA3),
+          Color(0x59F0F0F3),
+          Color(0x339A9AA3),
           Color(0x003A3A42),
         ],
         stops: <double>[0, 0.2, 0.5, 0.8, 1],

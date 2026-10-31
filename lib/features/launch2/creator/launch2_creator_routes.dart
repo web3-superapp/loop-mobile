@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_create_screen.dart';
@@ -64,6 +66,49 @@ abstract final class Launch2CreatorRoute {
       };
 }
 
+/// S326 · decision 0256 (UX-005): opens [location] from inside the launch
+/// flow without stacking the same page twice.
+///
+/// The create page's 「我的项目」 and 我的项目's rows (and a project page's
+/// 「修改资料」) could reach a page already open lower in the stack, and every
+/// visit pushed another copy, so back had to be pressed once per lap. When a
+/// page with the same location is already on the stack, this pops back to it
+/// instead; on the top of the stack it does nothing; otherwise it pushes.
+void launch2PushOnce(BuildContext context, String location) {
+  final router = GoRouter.maybeOf(context);
+  if (router == null) return;
+  final target = Uri.parse(location);
+  final pushed = <ImperativeRouteMatch>[
+    for (final match in router.routerDelegate.currentConfiguration.matches)
+      if (match is ImperativeRouteMatch) match,
+  ];
+  for (var index = pushed.length - 1; index >= 0; index--) {
+    if (!launch2SameLocation(pushed[index].matches.uri, target)) continue;
+    if (index == pushed.length - 1) return;
+    final key = pushed[index].pageKey;
+    final navigator = router.routerDelegate.navigatorKey.currentState;
+    if (navigator == null) break;
+    navigator.popUntil(
+      (route) => route.settings is Page && (route.settings as Page).key == key,
+    );
+    return;
+  }
+  unawaited(router.push<Object?>(location));
+}
+
+/// Whether two locations name the same page: the same path and the same
+/// query, in any order.
+bool launch2SameLocation(Uri a, Uri b) {
+  if (a.path != b.path) return false;
+  final left = a.queryParameters;
+  final right = b.queryParameters;
+  if (left.length != right.length) return false;
+  for (final entry in left.entries) {
+    if (right[entry.key] != entry.value) return false;
+  }
+  return true;
+}
+
 /// The route table `lib/app.dart` mounts. [popOrHome] is the App's own back.
 /// [openInstance] opens the user-side page of an activated instance; until
 /// S136 mounts it the App sends the owner to the MEME tab.
@@ -79,14 +124,15 @@ List<RouteBase> launch2CreatorRoutes({
       onBack: () => popOrHome(context),
       onSubmitted: (projectId) =>
           context.pushReplacement(Launch2CreatorRoute.project(projectId)),
-      onOpenMyProjects: () => context.push(Launch2CreatorRoute.minePath),
+      onOpenMyProjects: () =>
+          launch2PushOnce(context, Launch2CreatorRoute.minePath),
     ),
   ),
   GoRoute(
     path: Launch2CreatorRoute.minePath,
     builder: (context, state) => Launch2ProjectsScreen(
       onBack: () => popOrHome(context),
-      onNavigate: (location) => context.push(location),
+      onNavigate: (location) => launch2PushOnce(context, location),
     ),
   ),
   GoRoute(
@@ -95,7 +141,7 @@ List<RouteBase> launch2CreatorRoutes({
       key: ValueKey<String>('launch2-project-${state.uri.query}'),
       projectId: Launch2CreatorRoute.idOf(state.uri),
       onBack: () => popOrHome(context),
-      onNavigate: (location) => context.push(location),
+      onNavigate: (location) => launch2PushOnce(context, location),
       onOpenInstance: (instanceId) => openInstance(context, instanceId),
     ),
   ),

@@ -23,7 +23,6 @@ import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_editor.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -248,7 +247,10 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   /// trimmed (a Chinese character 1, most emoji 2), as four.meme does; a
   /// `maxLength` would count grapheme clusters instead, so neither has one.
   String _unitsCounter(TextEditingController controller) =>
-      '${loopTokenTextUnits(controller.text)}/$loopTokenTextMaxUnits 字';
+      '${loopTokenTextUnits(controller.text)}/$loopTokenTextMaxUnits';
+
+  /// The description's limit, counted as its `maxLength` counts.
+  static const int _descriptionMax = 2000;
 
   /// The ticker field's `$`, shown only where [loopTickerLabel] adds one.
   String? get _tickerPrefix {
@@ -618,11 +620,6 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         onPressed: save.busy || _uploading ? null : _next,
       ),
       body: <Widget>[
-        LoopStepTrack.dots(
-          key: ValueKey<String>('launch2-create-step-${_step + 1}'),
-          labels: launch2CreateSteps,
-          current: _step,
-        ),
         ..._rejectionBanner(),
         ...switch (_step) {
           0 => _profileStep(),
@@ -631,13 +628,44 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         },
       ],
     );
+    // S326 · decision 0256 (UX-006): the steps are an equal-segment bar
+    // across the top of the page, over the title bar, as in the sign-in
+    // flow; the dots under the title are gone.
+    final padding = MediaQuery.paddingOf(context);
+    final framed = ColoredBox(
+      color: LoopColors.ink,
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              padding.top + 8,
+              LoopSpacing.page,
+              4,
+            ),
+            child: Launch2CreateStepBar(
+              key: ValueKey<String>('launch2-create-step-${_step + 1}'),
+              labels: launch2CreateSteps,
+              current: _step,
+            ),
+          ),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: page,
+            ),
+          ),
+        ],
+      ),
+    );
     return PopScope(
       canPop: _step == 0 && !_hasInput && !save.busy,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         unawaited(_back());
       },
-      child: page,
+      child: framed,
     );
   }
 
@@ -670,6 +698,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     ];
   }
 
+  /// One field (S326 · decision 0256): its title on the left above the
+  /// box, the count at the right of the same line, then the box.
   Widget _field(
     Launch2Field field, {
     required String label,
@@ -679,75 +709,134 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     TextInputType? keyboard,
     String? prefix,
     String? counter,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: TextField(
-      key: ValueKey<String>('launch2-create-${field.name}'),
-      controller: _controller(field),
-      maxLength: maxLength,
-      maxLines: maxLines,
-      minLines: 1,
-      keyboardType: keyboard,
-      textCapitalization: TextCapitalization.none,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixText: prefix,
-        counterText: counter,
-        errorText: _error(field),
+  }) => Column(
+    key: ValueKey<String>('launch2-create-${field.name}-block'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              key: ValueKey<String>('launch2-create-${field.name}-label'),
+              style: _fieldTitleStyle,
+            ),
+          ),
+          if (counter != null)
+            Text(
+              counter,
+              key: ValueKey<String>('launch2-create-${field.name}-counter'),
+              style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+            ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      TextField(
+        key: ValueKey<String>('launch2-create-${field.name}'),
+        controller: _controller(field),
+        maxLength: maxLength,
+        maxLines: maxLines,
+        minLines: 1,
+        keyboardType: keyboard,
+        textCapitalization: TextCapitalization.none,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixText: prefix,
+          counterText: '',
+          errorText: _error(field),
+        ),
+      ),
+    ],
+  );
+
+  /// A field's or a picture's title: 14 / 600 Chalk.
+  static final TextStyle _fieldTitleStyle = LoopTypography.withWeight(
+    LoopType.label,
+    FontWeight.w600,
+  ).copyWith(color: LoopColors.chalk);
+
+  /// A group's title on the profile step (「图片资料」, 「基础信息」).
+  Widget _groupTitle(String text, {required double top}) => Padding(
+    padding: EdgeInsets.fromLTRB(LoopSpacing.page, top, LoopSpacing.page, 12),
+    child: Semantics(
+      header: true,
+      child: Text(
+        text,
+        key: ValueKey<String>('launch2-create-group-$text'),
+        style: LoopType.title,
       ),
     ),
   );
 
+  /// A picture's title with its one line under it.
+  Widget _pictureHeading(String title, Widget line) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, style: _fieldTitleStyle),
+        const SizedBox(height: 2),
+        line,
+      ],
+    ),
+  );
+
+  /// Step 1 (S326 · decision 0256, UX-006): two groups with left-aligned
+  /// titles — 「图片资料」 (the logo and the NFT image, each a placeholder
+  /// that is its own upload control) and 「基础信息」 (name, ticker,
+  /// description, each titled above its box with the count beside the
+  /// title). 24 between the groups, 20 between two pictures, 12 inside.
   List<Widget> _profileStep() {
     final picker = ref.watch(avatarImagePickerProvider);
     final ticker = _ticker.text.trim();
     final logoMissing = _showErrors && _logoUrl == null;
+    final nftMissing = _showErrors && _nftImageRequired && _nftImageUrl == null;
+    final logoUrl = _logoUrl;
+    Widget note(String text, {Key? key, bool alert = false}) => Text(
+      text,
+      key: key,
+      style: LoopType.captionSm.copyWith(
+        color: alert ? LoopColors.chalk : LoopColors.text3,
+      ),
+    );
     return <Widget>[
+      _groupTitle('图片资料', top: 12),
       Padding(
-        padding: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          4,
-          LoopSpacing.page,
-          12,
-        ),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            MemeLogo(
-              key: const ValueKey<String>('launch2-create-logo-preview'),
-              symbol: ticker,
-              imageUrl: _logoUrl,
-              size: 72,
-              // S241b: the upload slot is a square box (decision 0210).
-              radius: 0,
+            _pictureHeading(
+              '头像',
+              logoMissing
+                  ? note(
+                      '发射需要一张方形头像',
+                      key: const ValueKey<String>(
+                        'launch2-create-logo-missing',
+                      ),
+                      alert: true,
+                    )
+                  : note('方形图片，上传前可裁剪'),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  LoopButton(
-                    key: const ValueKey<String>('launch2-create-upload'),
-                    label: _uploading
-                        ? '上传中…'
-                        : (_logoUrl == null ? '上传头像' : '换一张'),
-                    icon: 'camera',
-                    onPressed: picker.available && !_uploading
-                        ? () => unawaited(_upload())
-                        : null,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    logoMissing ? '发射需要一张方形头像' : '方形图片，上传前可裁剪。',
-                    key: logoMissing
-                        ? const ValueKey<String>('launch2-create-logo-missing')
-                        : null,
-                    style: LoopType.captionSm.copyWith(
-                      color: logoMissing ? LoopColors.chalk : LoopColors.text3,
+            Launch2UploadSlot(
+              key: const ValueKey<String>('launch2-create-upload'),
+              previewKey: const ValueKey<String>('launch2-create-logo-preview'),
+              size: 96,
+              semanticLabel: '头像',
+              imageUrl: logoUrl,
+              preview: logoUrl == null
+                  ? null
+                  : MemeLogo(
+                      symbol: ticker,
+                      imageUrl: logoUrl,
+                      size: 96,
+                      radius: 0,
                     ),
-                  ),
-                ],
-              ),
+              missing: logoMissing,
+              uploading: _uploading,
+              onTap: picker.available && !_uploading
+                  ? () => unawaited(_upload())
+                  : null,
             ),
           ],
         ),
@@ -759,99 +848,37 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           tone: LoopNoticeTone.warn,
           body: _uploadFailure!,
         ),
-      ..._nftImageSlot(picker.available),
+      const SizedBox(height: 20),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            _field(
-              Launch2Field.name,
-              label: '名称',
-              hint: '1–20 个字，可用中文、字母、数字、emoji',
-              counter: _unitsCounter(_name),
-            ),
-            _field(
-              Launch2Field.ticker,
-              label: '代码',
-              hint: '1–20 个字，可用中文、字母、数字、emoji',
-              counter: _unitsCounter(_ticker),
-              prefix: _tickerPrefix,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                loopTokenTextRule,
-                key: const ValueKey<String>('launch2-create-text-rule'),
-                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-              ),
-            ),
-            _field(
-              Launch2Field.description,
-              label: '简介（可不填）',
-              maxLength: 2000,
-              maxLines: 4,
-            ),
-          ],
-        ),
-      ),
-    ];
-  }
-
-  /// Decision 0233: 「NFT 图」 under the logo — the 120 square frame, its
-  /// upload button and what the image is for.
-  List<Widget> _nftImageSlot(bool pickerAvailable) {
-    final missing = _showErrors && _nftImageRequired && _nftImageUrl == null;
-    return <Widget>[
-      Padding(
-        padding: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          8,
-          LoopSpacing.page,
-          12,
-        ),
-        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Launch2NftImageFrame(
-              key: const ValueKey<String>('launch2-create-nft-preview'),
-              imageUrl: _nftImageUrl,
-              missing: missing,
+            _pictureHeading(
+              _nftImageRequired ? 'NFT 图' : 'NFT 图（可不传）',
+              nftMissing
+                  ? note(
+                      '发射需要一张 NFT 图',
+                      key: const ValueKey<String>('launch2-create-nft-missing'),
+                      alert: true,
+                    )
+                  : note(
+                      launch2NftImageHelp,
+                      key: const ValueKey<String>('launch2-create-nft-help'),
+                    ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    _nftImageRequired ? 'NFT 图' : 'NFT 图（可不传）',
-                    style: LoopType.label.copyWith(color: LoopColors.chalk),
-                  ),
-                  const SizedBox(height: 8),
-                  LoopButton(
-                    key: const ValueKey<String>('launch2-create-nft-upload'),
-                    label: _nftUploading
-                        ? '上传中…'
-                        : (_nftImageUrl == null ? '上传 NFT 图' : '换一张'),
-                    icon: 'camera',
-                    onPressed: pickerAvailable && !_nftUploading
-                        ? () => unawaited(_uploadNft())
-                        : null,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    missing ? '发射需要一张 NFT 图' : launch2NftImageHelp,
-                    key: ValueKey<String>(
-                      missing
-                          ? 'launch2-create-nft-missing'
-                          : 'launch2-create-nft-help',
-                    ),
-                    style: LoopType.captionSm.copyWith(
-                      color: missing ? LoopColors.chalk : LoopColors.text3,
-                    ),
-                  ),
-                ],
-              ),
+            Launch2UploadSlot(
+              key: const ValueKey<String>('launch2-create-nft-upload'),
+              previewKey: const ValueKey<String>('launch2-create-nft-preview'),
+              emptyKey: const ValueKey<String>('launch2-nft-image-empty'),
+              size: 128,
+              semanticLabel: 'NFT 图',
+              imageUrl: _nftImageUrl,
+              missing: nftMissing,
+              uploading: _nftUploading,
+              onTap: picker.available && !_nftUploading
+                  ? () => unawaited(_uploadNft())
+                  : null,
             ),
           ],
         ),
@@ -863,6 +890,48 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           tone: LoopNoticeTone.warn,
           body: _nftUploadFailure!,
         ),
+      _groupTitle('基础信息', top: 24),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _field(
+              Launch2Field.name,
+              label: '名称',
+              hint: '输入项目名称',
+              counter: _unitsCounter(_name),
+            ),
+            const SizedBox(height: 12),
+            _field(
+              Launch2Field.ticker,
+              label: '代码',
+              hint: '输入代币代码',
+              counter: _unitsCounter(_ticker),
+              prefix: _tickerPrefix,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                loopTokenTextRule,
+                key: const ValueKey<String>('launch2-create-text-rule'),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _field(
+              Launch2Field.description,
+              label: '简介（可不填）',
+              hint: '介绍一下你的项目',
+              maxLength: _descriptionMax,
+              maxLines: 4,
+              counter:
+                  '${_description.text.characters.length}/$_descriptionMax',
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
     ];
   }
 
@@ -905,13 +974,15 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             (Launch2Field.telegram, 'Telegram（可不填）'),
             (Launch2Field.website, '官网（可不填）'),
             (Launch2Field.discord, 'Discord（可不填）'),
-          ])
+          ]) ...<Widget>[
             _field(
               field,
               label: label,
               hint: 'https://',
               keyboard: TextInputType.url,
             ),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     ),

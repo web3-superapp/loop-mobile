@@ -187,10 +187,16 @@ void main() {
     );
   });
 
-  testWidgets('the bar is the card at 92 %, the system navigation bar is '
+  testWidgets('the bar is the card at 72 % over a blur, the system '
+      'navigation bar is '
       'clear with no scrim', (tester) async {
     await _pumpApp(tester);
-    expect(loopTabBarGround.a, closeTo(0.92, 0.005));
+    // S326 · decision 0256: 72 % over a background blur.
+    expect(loopTabBarGround.a, closeTo(0.72, 0.005));
+    expect(
+      find.byKey(const ValueKey<String>('loop-tab-bar-blur')),
+      findsOneWidget,
+    );
     // S279 · decision 0237: the bar is a floating layer, so it keeps the
     // surface (#111114) when blocks moved up to the plate.
     expect(loopTabBarGround.withValues(alpha: 1), LoopColors.graphite);

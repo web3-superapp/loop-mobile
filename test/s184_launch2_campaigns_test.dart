@@ -746,7 +746,10 @@ void main() {
       // Inside the words' column, short of where the hand starts.
       expect(countdown.right, lessThanOrEqualTo(eventRect.left + 20 + 186));
       expect(countdown.right, lessThan(hand.left));
-      expect(countdown.bottom, moreOrLessEquals(eventRect.bottom - 20));
+      expect(
+        countdown.bottom,
+        moreOrLessEquals(eventRect.bottom - Launch2BannerBackdrop.footInset),
+      );
 
       // The campaign page: the same height and the same art.
       await tester.drag(_key('launch2-desk-pages'), const Offset(-300, 0));
