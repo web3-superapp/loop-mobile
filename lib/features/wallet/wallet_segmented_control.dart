@@ -167,3 +167,146 @@ class _Cell extends StatelessWidget {
     ),
   );
 }
+
+/// A quiet row of word tabs (S329, decision 0259): no track, no edge, no
+/// filled cell, no capsule. The chosen word is Chalk w700 over a 1.5 px Chalk
+/// underline; the others are Text3 w500.
+///
+/// Only the net-worth chart's windows use it: under a chart a segmented
+/// control read louder than the line it serves. Each word is drawn
+/// [visualHeight] tall, centred in a transparent [LoopTouch.minimum] cell,
+/// so the finger target stays 44 while nothing visible grows.
+class WalletQuietTabs<T> extends StatelessWidget {
+  const WalletQuietTabs({
+    required this.options,
+    required this.labelOf,
+    required this.selected,
+    required this.onSelected,
+    super.key,
+    this.keyOf,
+    this.semanticLabel,
+  });
+
+  final List<T> options;
+  final String Function(T option) labelOf;
+  final T selected;
+  final ValueChanged<T> onSelected;
+
+  /// The key of each word, for tests and for the page's own lookups.
+  final Key Function(T option)? keyOf;
+
+  /// What the group is, for assistive technology.
+  final String? semanticLabel;
+
+  /// The height of what is drawn: the word and its underline.
+  static const double visualHeight = 28;
+
+  /// The touch cell each word sits in.
+  static const double height = LoopTouch.minimum;
+
+  static const double horizontalPadding = 8;
+  static const double underline = 1.5;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: semanticLabel,
+    child: SizedBox(
+      height: height,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (final option in options)
+                _QuietTab(
+                  key: keyOf?.call(option),
+                  label: labelOf(option),
+                  chosen: option == selected,
+                  onTap: () {
+                    if (option == selected) return;
+                    LoopHaptics.selection();
+                    onSelected(option);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _QuietTab extends StatelessWidget {
+  const _QuietTab({
+    required this.label,
+    required this.chosen,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final bool chosen;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: chosen,
+    label: label,
+    excludeSemantics: true,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        height: WalletQuietTabs.height,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: WalletQuietTabs.horizontalPadding,
+          ),
+          child: Center(
+            child: SizedBox(
+              height: WalletQuietTabs.visualHeight,
+              child: IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          style:
+                              LoopTypography.withWeight(
+                                LoopType.caption,
+                                chosen ? FontWeight.w700 : FontWeight.w500,
+                              ).copyWith(
+                                color: chosen
+                                    ? LoopColors.chalk
+                                    : LoopColors.text3,
+                              ),
+                        ),
+                      ),
+                    ),
+                    // The chosen word's underline; the others keep the room
+                    // so a choice moves nothing.
+                    SizedBox(
+                      height: WalletQuietTabs.underline,
+                      child: ColoredBox(
+                        color: chosen ? LoopColors.chalk : Colors.transparent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}

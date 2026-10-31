@@ -159,6 +159,12 @@ void main() {
 
   Finder key(String value) => find.byKey(ValueKey<String>(value));
 
+  /// Decision 0259: the chart is folded until 「净值走势 ⌄」 is pressed.
+  Future<void> openChart(WidgetTester tester) async {
+    await tester.tap(key('wallet-networth-expand'));
+    await tester.pumpAndSettle();
+  }
+
   Matcher invalid() => throwsA(
     isA<LoopBackendFailure>().having(
       (failure) => failure.kind,
@@ -411,17 +417,20 @@ void main() {
       expect(find.textContaining('(+0%)'), findsNothing);
     });
 
-    testWidgets('UX-015: total, address, 今日盈亏, chart, windows — in order, '
-        'never folded', (tester) async {
+    testWidgets('decision 0259: total, address, 今日盈亏 · 净值走势 ⌄ — the '
+        'chart folded until the line is pressed', (tester) async {
       await pumpWallet(tester, history: _FakeHistory());
-      expect(key('wallet-networth-panel'), findsOneWidget);
-      expect(key('wallet-networth-chart'), findsOneWidget);
-      expect(key('wallet-networth-expand'), findsNothing);
-      expect(key('wallet-networth-collapse'), findsNothing);
+      expect(key('wallet-networth-panel'), findsNothing);
+      expect(key('wallet-networth-chart'), findsNothing);
+      expect(key('wallet-networth-ranges'), findsNothing);
+      expect(key('wallet-networth-expand'), findsOneWidget);
       expect(key('wallet-networth-spark'), findsNothing);
       double top(String value) => tester.getTopLeft(key(value)).dy;
       expect(top('wallet-total-figure'), lessThan(top('wallet-address-copy')));
       expect(top('wallet-address-copy'), lessThan(top('wallet-pnl')));
+
+      await openChart(tester);
+      expect(key('wallet-networth-collapse'), findsOneWidget);
       expect(top('wallet-pnl'), lessThan(top('wallet-networth-chart')));
       expect(
         top('wallet-networth-chart'),
@@ -445,6 +454,7 @@ void main() {
           },
         ),
       );
+      await openChart(tester);
       expect(key('wallet-networth-chart'), findsNothing);
       expect(key('wallet-networth-chart-empty'), findsOneWidget);
       // 今日盈亏 does not need a line to be true.
@@ -468,6 +478,7 @@ void main() {
             },
           ),
         );
+        await openChart(tester);
         final empty = tester.widget<LoopInlineUnavailable>(
           key('wallet-networth-chart-empty'),
         );
@@ -490,6 +501,7 @@ void main() {
           },
         ),
       );
+      await openChart(tester);
       expect(key('wallet-networth-chart'), findsOneWidget);
     });
 
@@ -518,6 +530,10 @@ void main() {
       for (var frame = 0; frame < 5; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
+      // Before the week lands the line is only its switch; it still opens.
+      expect(key('wallet-pnl'), findsNothing);
+      await tester.tap(key('wallet-networth-toggle'));
+      await tester.pump();
       expect(key('wallet-networth-chart-loading'), findsOneWidget);
       expect(key('wallet-networth-chart'), findsNothing);
       pending.complete(_history(LoopNetWorthRange.week));
@@ -528,8 +544,8 @@ void main() {
       expect(key('wallet-networth-chart'), findsOneWidget);
     });
 
-    testWidgets('the chart marks its high and low; the windows are a small '
-        'segmented control; the window outlives the page', (tester) async {
+    testWidgets('the chart marks its high and low; the windows are quiet '
+        'tabs; the window and the fold outlive the page', (tester) async {
       final visible = ValueNotifier<bool>(true);
       addTearDown(visible.dispose);
       tester.view.devicePixelRatio = 1;
@@ -560,6 +576,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await openChart(tester);
       expect(tester.widget<Text>(key('wallet-networth-high')).data, '\$141.9');
       expect(tester.widget<Text>(key('wallet-networth-low')).data, '\$106.12');
       final high = tester.widget<Text>(key('wallet-networth-high'));
@@ -570,7 +587,7 @@ void main() {
         LoopColors.lime.withValues(alpha: 0.28),
       );
       expect(WalletNetWorthChartPainter.washColors().last.a, 0);
-      final control = tester.widget<WalletSegmentedControl<LoopNetWorthRange>>(
+      final control = tester.widget<WalletQuietTabs<LoopNetWorthRange>>(
         key('wallet-networth-ranges'),
       );
       expect(control.options, LoopNetWorthRange.values);
@@ -595,25 +612,39 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<WalletSegmentedControl<LoopNetWorthRange>>(
+            .widget<WalletQuietTabs<LoopNetWorthRange>>(
               key('wallet-networth-ranges'),
             )
             .selected,
         LoopNetWorthRange.month,
       );
+      // The fold is session state: still open after the page came back.
+      expect(key('wallet-networth-collapse'), findsOneWidget);
       await tester.tap(key('wallet-networth-range-7d'));
       await tester.pumpAndSettle();
     });
 
-    testWidgets('今日盈亏 › shows the 1 天 window', (tester) async {
+    testWidgets('the 今日盈亏 line opens the chart and closes it again', (
+      tester,
+    ) async {
       final history = _FakeHistory();
       await pumpWallet(tester, history: history);
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
-      expect(history.requested.last, LoopNetWorthRange.day);
-      await tester.ensureVisible(key('wallet-networth-range-7d'));
-      await tester.tap(key('wallet-networth-range-7d'));
+      expect(key('wallet-networth-chart'), findsOneWidget);
+      expect(
+        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        '收起',
+      );
+      await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
+      expect(key('wallet-networth-panel'), findsNothing);
+      expect(
+        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        '净值走势',
+      );
+      // Folding asks for nothing beyond the week 今日盈亏 reads.
+      expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
     });
 
     testWidgets('a window asks the server once for that window', (
@@ -621,6 +652,8 @@ void main() {
     ) async {
       final history = _FakeHistory();
       await pumpWallet(tester, history: history);
+      expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
+      await openChart(tester);
       expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
 
       Future<void> choose(String wire) async {
@@ -648,6 +681,7 @@ void main() {
       tester,
     ) async {
       await pumpWallet(tester, history: _FakeHistory());
+      await openChart(tester);
       await tester.tap(key('wallet-eye'));
       await tester.pumpAndSettle();
 
@@ -696,6 +730,9 @@ void main() {
       expect(key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-asset-list'), findsOneWidget);
 
+      expect(key('wallet-networth-chart-unavailable'), findsNothing);
+      await tester.tap(key('wallet-networth-toggle'));
+      await tester.pumpAndSettle();
       final line = key('wallet-networth-chart-unavailable');
       expect(line, findsOneWidget);
       // One line, not the chart's height.
@@ -709,6 +746,7 @@ void main() {
       expect(key('wallet-networth-panel'), findsNothing);
       expect(key('wallet-networth-ranges'), findsNothing);
       expect(key('wallet-pnl'), findsNothing);
+      expect(key('wallet-networth-expand'), findsNothing);
     });
   });
 

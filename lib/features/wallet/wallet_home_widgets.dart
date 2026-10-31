@@ -53,6 +53,12 @@ final class WalletSessionFlag extends Notifier<bool> {
   void toggle() => state = !state;
 }
 
+/// Whether the net-worth chart under 总资产 is open (decision 0188, restored
+/// by decision 0259 over 0257's always-open chart). Closed by default; an
+/// open chart stays open for the rest of the run, and nothing is persisted.
+final walletNetWorthExpandedProvider =
+    NotifierProvider<WalletSessionFlag, bool>(() => WalletSessionFlag(false));
+
 /// The window the chart shows; 7 天 by default, kept for the run.
 final class WalletNetWorthRangeChoice extends Notifier<LoopNetWorthRange> {
   @override
@@ -170,10 +176,8 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     return state;
   }
 
-  /// 今日盈亏 › shows the chart's 1 天 window (UX-015).
-  void _showDay() => ref
-      .read(walletNetWorthRangeProvider.notifier)
-      .choose(LoopNetWorthRange.day);
+  /// The 今日盈亏 line opens and closes the chart (decision 0259).
+  void _toggle() => ref.read(walletNetWorthExpandedProvider.notifier).toggle();
 
   @override
   Widget build(BuildContext context) {
@@ -202,12 +206,14 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     );
     final historyOn =
         walletId != null && historyMode != LoopChainGatewayMode.unavailable;
+    final expanded = historyOn && ref.watch(walletNetWorthExpandedProvider);
     final range = ref.watch(walletNetWorthRangeProvider);
     final weekState = historyOn
         ? _watchHistory((walletId: walletId, range: LoopNetWorthRange.week))
         : null;
-    // UX-015 (decision 0257): the chart is always shown, never folded.
-    final chartState = !historyOn
+    // Decision 0259: a closed chart reads nothing beyond the week 今日盈亏
+    // needs.
+    final chartState = !expanded
         ? null
         : range == LoopNetWorthRange.week
         ? weekState
@@ -409,8 +415,10 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           left,
-          // UX-015 (decision 0257): 总资产 → 地址 → 今日盈亏 → 图表 → 区间.
-          if (week != null) ...<Widget>[
+          // 总资产 → 地址 → 今日盈亏 · 净值走势 ⌄ (decision 0259: the chart is
+          // folded by default; the line is the whole switch, no sparkline
+          // slot beside the total).
+          if (historyOn) ...<Widget>[
             Padding(
               padding: const EdgeInsets.only(top: 6),
               // Line2: Line is not there on the chrome plate's face.
@@ -418,12 +426,14 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             ),
             WalletPnlLine(
               keyPrefix: keyPrefix,
-              change: week.change24h,
+              change: week?.change24h,
+              hasHistory: week != null,
               hidden: hidden,
-              onTap: _showDay,
+              expanded: expanded,
+              onTap: _toggle,
             ),
           ],
-          if (historyOn)
+          if (expanded)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: WalletNetWorthPanel(
