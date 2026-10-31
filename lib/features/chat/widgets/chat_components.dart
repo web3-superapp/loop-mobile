@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
@@ -228,11 +229,19 @@ class ConversationRow extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: <Widget>[
-                    ChatAvatar(
-                      label: conversation.title,
-                      colorSeed: conversation.accentSeed,
-                      icon: icon,
-                    ),
+                    // Decision 0258: a direct conversation is a circle,
+                    // every room of several people a rounded square.
+                    if (conversation.kind == ConversationKind.direct)
+                      ChatAvatar(
+                        label: conversation.title,
+                        colorSeed: conversation.accentSeed,
+                        icon: icon,
+                      )
+                    else
+                      GroupMosaicAvatar(
+                        members: const <GroupMosaicMember>[],
+                        label: conversation.title,
+                      ),
                     if (conversation.kind == ConversationKind.voice)
                       Positioned(
                         right: -4,

@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
+import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -87,6 +90,7 @@ final class ChatSearchHit {
     required this.channelLabel,
     required this.text,
     required this.createdAt,
+    this.members = const <GroupMosaicMember>[],
   });
 
   final String messageId;
@@ -95,6 +99,11 @@ final class ChatSearchHit {
   final String channelLabel;
   final String text;
   final DateTime createdAt;
+
+  /// The mosaic a group or community hit is drawn with (decision 0258), from
+  /// the channel this client already holds; empty for a direct hit, and for a
+  /// channel the client has not loaded.
+  final List<GroupMosaicMember> members;
 }
 
 /// Why one search did not produce results.
@@ -144,10 +153,15 @@ final class UnconnectedChatSearchGateway implements ChatSearchGateway {
 }
 
 final class _StreamChatSearchGateway implements ChatSearchGateway {
-  const _StreamChatSearchGateway({required this.client, required this.userId});
+  const _StreamChatSearchGateway({
+    required this.client,
+    required this.userId,
+    required this.switches,
+  });
 
   final StreamChatClient client;
   final String userId;
+  final LoopFeatureSwitchValues switches;
 
   @override
   bool get connected => true;
@@ -225,6 +239,14 @@ final class _StreamChatSearchGateway implements ChatSearchGateway {
       },
       text: text,
       createdAt: message.createdAt,
+      members: surface == LoopChatSurface.direct
+          ? const <GroupMosaicMember>[]
+          : loopGroupMosaicMembers(
+              client.state.channels[cid]?.state?.members ?? const <Member>[],
+              realIdentity: switches.realIdentityFor(
+                communityChannel: surface == LoopChatSurface.communityChat,
+              ),
+            ),
     );
   }
 }
@@ -239,7 +261,11 @@ final chatSearchGatewayProvider = Provider<ChatSearchGateway>((ref) {
       userId == null) {
     return const UnconnectedChatSearchGateway();
   }
-  return _StreamChatSearchGateway(client: session.client, userId: userId);
+  return _StreamChatSearchGateway(
+    client: session.client,
+    userId: userId,
+    switches: ref.watch(loopFeatureSwitchesProvider),
+  );
 });
 
 /// `chat-search` · message search inside the channels the account can read.
@@ -501,6 +527,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         ),
       );
     }
+    final faces = ref.watch(communityFacesProvider);
     return ListView.builder(
       key: const ValueKey<String>('chat-search-results'),
       padding: const EdgeInsets.only(bottom: 20),
@@ -515,12 +542,9 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           // `.row-ico`: every result row in the prototype opens with the
           // sender's tile. The row is two lines of copy without it, and three
           // hits in a row read as one paragraph (audit 2026-09-20 · D-7).
-          leading: LoopInitialsAvatar(
-            label: hit.senderLabel,
-            size: 44,
-            shape: BoxShape.rectangle,
-            radius: 15,
-          ),
+          // Decision 0258: a direct hit is a circle, a group or community
+          // hit its conversation's rounded square.
+          leading: _hitFace(hit, faces),
           title: title,
           // `<b style="color:var(--mint)">内盘</b>`: the term that was
           // searched for is Lime inside the line it was found in, so a reader
@@ -536,6 +560,25 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           onTap: () => widget.onOpen?.call(hit.cid),
         );
       },
+    );
+  }
+
+  Widget _hitFace(ChatSearchHit hit, Map<String, CommunityFace> faces) {
+    if (loopChatSurfaceForCid(hit.cid) == LoopChatSurface.direct) {
+      return LoopInitialsAvatar(
+        key: ValueKey<String>('chat-search-direct-face-${hit.messageId}'),
+        label: hit.senderLabel,
+        size: 44,
+      );
+    }
+    final communityId = loopCommunityIdForChannelCid(hit.cid);
+    return loopGroupChannelFace(
+      communityId: communityId,
+      logoRef: communityId == null ? null : faces[communityId]?.logoRef,
+      label: hit.channelLabel,
+      members: hit.members,
+      size: 44,
+      radius: 15,
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_member_directory.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_card.dart';
 import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
@@ -245,6 +246,60 @@ LoopStreamRealIdentity? resolveLoopGroupRealIdentity({
     return loopStreamRealIdentityOf(senderUser);
   }
   return null;
+}
+
+/// The members a group's mosaic face draws (decision 0258), in order.
+///
+/// Read from the channel's own member rows — the inbox asks Stream for up to
+/// thirty per channel — earliest joined first, the feed bot left out, at
+/// most nine. Each is named the way the room names them: in a real-identity
+/// room the account's own name and picture ([resolveLoopGroupRealIdentity]'s
+/// source), otherwise the group-scoped Alias or 「成员」 and no picture, so the
+/// face never shows more of a member than their messages do.
+List<GroupMosaicMember> loopGroupMosaicMembers(
+  Iterable<Member> members, {
+  required bool realIdentity,
+}) {
+  final seen = <String>{};
+  final rows = <Member>[];
+  for (final member in members) {
+    final user = member.user;
+    final id = member.userId ?? user?.id;
+    if (id == null || id.isEmpty || !seen.add(id)) continue;
+    if (id == loopFeedBotUserId ||
+        user?.extraData[loopFeedBotFlagField] == true) {
+      continue;
+    }
+    rows.add(member);
+  }
+  rows.sort((a, b) {
+    final byJoin = a.createdAt.compareTo(b.createdAt);
+    if (byJoin != 0) return byJoin;
+    return (a.userId ?? a.user?.id ?? '').compareTo(
+      b.userId ?? b.user?.id ?? '',
+    );
+  });
+  return List<GroupMosaicMember>.unmodifiable(<GroupMosaicMember>[
+    for (final member in rows.take(groupMosaicMaxMembers))
+      _mosaicMember(member, realIdentity: realIdentity),
+  ]);
+}
+
+GroupMosaicMember _mosaicMember(Member member, {required bool realIdentity}) {
+  final id = member.userId ?? member.user!.id;
+  if (realIdentity) {
+    final real = loopStreamRealIdentityOf(member.user);
+    if (real != null) {
+      return (id: id, name: real.name, imageUrl: real.imageUrl);
+    }
+  }
+  return (
+    id: id,
+    name:
+        parseLoopGroupAliasMemberProjection(member.extraData) ??
+        loopGroupMemberNeutralLabel,
+    imageUrl: null,
+  );
 }
 
 /// Whether the channel at [cid] draws its members as their real accounts.
@@ -866,22 +921,18 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           initialData: state.unreadCount,
           stream: state.unreadCountStream,
           builder: (context, unreadSnapshot) => StreamChannelListTile(
-            avatar: communityId != null
-                ? CommunityLogo(
-                    key: const ValueKey<String>('loop-community-channel-logo'),
-                    identity: communityId,
-                    name: label,
-                    logoRef: face?.logoRef,
-                    size: 40,
-                  )
-                : LoopInitialsAvatar(
-                    key: const ValueKey<String>(
-                      'loop-group-channel-neutral-avatar',
-                    ),
-                    label: label,
-                    size: 40,
-                    shape: BoxShape.rectangle,
-                  ),
+            // Decision 0258: a group is a rounded square — its community's
+            // logo, or its members' mosaic — and a direct row a circle.
+            avatar: loopGroupChannelFace(
+              communityId: communityId,
+              logoRef: face?.logoRef,
+              label: label,
+              members: loopGroupMosaicMembers(
+                channelState.members ?? const <Member>[],
+                realIdentity: loopChannelUsesRealIdentity(context, cid),
+              ),
+              size: 40,
+            ),
             title: Text(label),
             subtitle: displayMessage == null
                 ? Text(
@@ -911,6 +962,43 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
   }
 }
 
+/// A group conversation's face (decision 0258): the community's own logo
+/// when the conversation is a community channel whose community has one,
+/// otherwise the members' mosaic. Both are the same rounded square.
+Widget loopGroupChannelFace({
+  required String? communityId,
+  required String? logoRef,
+  required String label,
+  required List<GroupMosaicMember> members,
+  double size = 40,
+  double? radius,
+}) {
+  final corner = radius ?? LoopRadius.innerValue;
+  if (communityId != null && logoRef != null) {
+    return GroupMosaicAvatar(
+      key: const ValueKey<String>('loop-community-channel-logo'),
+      members: members,
+      label: label,
+      size: size,
+      radius: corner,
+      logo: CommunityLogo(
+        identity: communityId,
+        name: label,
+        logoRef: logoRef,
+        size: size,
+        radius: corner,
+      ),
+    );
+  }
+  return GroupMosaicAvatar(
+    key: const ValueKey<String>('loop-group-channel-mosaic'),
+    members: members,
+    label: label,
+    size: size,
+    radius: corner,
+  );
+}
+
 /// Official Stream channel surface with group-safe chrome.
 ///
 /// Message list/composer pagination, state, actions, and thread navigation are
@@ -938,8 +1026,56 @@ class LoopStreamGroupChannelHeader extends StatelessWidget
         onPressed: onChannelAvatarPressed == null
             ? null
             : () => onChannelAvatarPressed!(context, channel),
-        icon: const Icon(Icons.group_rounded),
+        icon: _LoopGroupHeaderFace(channel: channel),
       ),
+    );
+  }
+}
+
+/// The header's group face (decision 0258): the same rounded square the
+/// inbox row draws, at the toolbar's icon size.
+class _LoopGroupHeaderFace extends StatelessWidget {
+  const _LoopGroupHeaderFace({required this.channel});
+
+  final Channel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = channel.state;
+    final cid = channel.cid;
+    final communityId = cid == null ? null : loopCommunityIdForChannelCid(cid);
+    final face = communityId == null
+        ? null
+        : CommunityFacesScope.of(context)[communityId];
+    if (state == null) {
+      return loopGroupChannelFace(
+        communityId: communityId,
+        logoRef: face?.logoRef,
+        label: loopGroupConversationNeutralLabel,
+        members: const <GroupMosaicMember>[],
+        size: 32,
+        radius: 8,
+      );
+    }
+    return StreamBuilder<ChannelState>(
+      initialData: state.channelState,
+      stream: state.channelStateStream,
+      builder: (context, snapshot) {
+        final channelState = snapshot.data ?? state.channelState;
+        return loopGroupChannelFace(
+          communityId: communityId,
+          logoRef: face?.logoRef,
+          label: resolveLoopGroupConversationLabel(
+            channelState.channel?.extraData ?? channel.extraData,
+          ),
+          members: loopGroupMosaicMembers(
+            channelState.members ?? const <Member>[],
+            realIdentity: loopChannelUsesRealIdentity(context, cid),
+          ),
+          size: 32,
+          radius: 8,
+        );
+      },
     );
   }
 }

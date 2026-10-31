@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -71,12 +72,14 @@ class _ConversationPage extends ConsumerWidget {
         titleSpacing: 0,
         title: Row(
           children: <Widget>[
-            ChatAvatar(
-              label: title,
-              size: 36,
-              colorSeed: direct ? 4 : 2,
-              icon: direct ? null : Icons.groups_rounded,
-            ),
+            if (direct)
+              ChatAvatar(label: title, size: 36, colorSeed: 4)
+            else
+              GroupMosaicAvatar(
+                members: const <GroupMosaicMember>[],
+                label: title,
+                size: 36,
+              ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
