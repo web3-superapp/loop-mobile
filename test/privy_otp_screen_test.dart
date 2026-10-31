@@ -43,7 +43,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('privy-otp-field')), findsNothing);
-    expect(_pressed(tester, 'privy-auth-primary-button'), isNull);
+    // Nothing to verify, so no 继续.
+    expect(
+      find.byKey(const ValueKey('privy-auth-primary-button')),
+      findsNothing,
+    );
   });
 
   testWidgets('shows the real destination, cooldown and attempt budget', (
@@ -52,33 +56,39 @@ void main() {
     final container = await _pump(tester, _Gateway());
     await _sendCode(tester, container);
 
-    expect(find.textContaining('owner@example.com'), findsOneWidget);
+    // UX-002: the address is shown masked.
+    expect(find.text('验证码已发送至 o••••r@example.com'), findsOneWidget);
     expect(find.byKey(const ValueKey('privy-otp-field')), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('privy-otp-resend-hint')),
       findsOneWidget,
     );
-    // The cooldown is real local state, so resending is blocked right after
-    // a code was sent.
-    expect(_pressed(tester, 'privy-otp-resend'), isNull);
-    expect(find.text('还可尝试 3 次'), findsOneWidget);
+    // The cooldown is real local state, so resending is not offered right
+    // after a code was sent; the countdown holds its place.
+    expect(find.byKey(const ValueKey('privy-otp-resend')), findsNothing);
+    // UX-002: the attempt budget is no longer printed.
+    expect(find.textContaining('还可尝试'), findsNothing);
   });
 
-  // Decision 0126: five dots and the step name instead of `01 / 05`, a
-  // 24 bold step title, and no explanation tray under the action.
-  testWidgets('the step reads as five dots, a 24 title and no tray', (
+  // UX-002 (decision 0254): the step bar at the very top with 1/5 beside the
+  // back control, the step title under it, and no explanation tray.
+  testWidgets('the step bar sits on top, then 1/5, then the title', (
     tester,
   ) async {
     final container = await _pump(tester, _Gateway());
     await _sendCode(tester, container);
 
-    expect(find.byKey(const ValueKey('loop-step-dot-1')), findsOneWidget);
-    expect(find.byKey(const ValueKey('loop-step-dot-5')), findsOneWidget);
+    final bar = find.byKey(const ValueKey('identity-step-bar'));
+    expect(bar, findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     expect(find.text('01 / 05'), findsNothing);
     expect(find.text('验证失败时会看到什么'), findsNothing);
-    final title = tester.widget<Text>(
-      find.descendant(of: find.byType(LoopTopbar), matching: find.text('验证邮箱')),
+    final titleFinder = find.text('验证邮箱');
+    expect(
+      tester.getTopLeft(bar).dy,
+      lessThan(tester.getTopLeft(titleFinder).dy),
     );
+    final title = tester.widget<Text>(titleFinder);
     // Decision 0211: the step title is bold Arimo / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
@@ -95,6 +105,10 @@ void main() {
       find.byKey(const ValueKey('privy-otp-field')),
       '000000',
     );
+
+    // 继续 opens once all six digits are in (UX-002).
+
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
     await tester.pumpAndSettle();
 
@@ -102,7 +116,7 @@ void main() {
       find.byKey(const ValueKey<String>('privy-otp-error')),
       findsOneWidget,
     );
-    expect(find.text('还可尝试 2 次'), findsOneWidget);
+    expect(find.textContaining('还可尝试 2 次'), findsOneWidget);
     expect(container.read(emailAuthProvider).failedAttempts, 1);
   });
 
@@ -118,6 +132,8 @@ void main() {
         find.byKey(const ValueKey('privy-otp-field')),
         '00000$attempt',
       );
+      // 继续 opens once all six digits are in (UX-002).
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
       await tester.pumpAndSettle();
     }
@@ -138,6 +154,10 @@ void main() {
       find.byKey(const ValueKey('privy-otp-field')),
       '000000',
     );
+
+    // 继续 opens once all six digits are in (UX-002).
+
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
     await tester.pumpAndSettle();
     expect(container.read(emailAuthProvider).failedAttempts, 1);
@@ -151,7 +171,7 @@ void main() {
 
     expect(gateway.sendCalls, 2);
     expect(container.read(emailAuthProvider).failedAttempts, 0);
-    expect(find.text('还可尝试 3 次'), findsOneWidget);
+    expect(find.byKey(const ValueKey('privy-otp-error')), findsNothing);
   });
 
   testWidgets('six labelled cells mirror the one real field', (tester) async {
@@ -209,13 +229,14 @@ void main() {
       find.byKey(const ValueKey('privy-otp-field')),
       '842000',
     );
+
+    // 继续 opens once all six digits are in (UX-002).
+
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
     await tester.pump();
 
-    expect(
-      find.byKey(const ValueKey<String>('privy-otp-verifying')),
-      findsOneWidget,
-    );
+    expect(find.text('验证中…'), findsOneWidget);
     gateway.releaseVerify();
     await tester.pumpAndSettle();
   });
@@ -275,6 +296,12 @@ VoidCallback? _pressed(WidgetTester tester, String key) {
   return tester.widget<LoopButton>(find.byKey(ValueKey<String>(key))).onPressed;
 }
 
+void _tallView(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1170, 2532);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+}
+
 Future<void> _sendCode(WidgetTester tester, ProviderContainer container) async {
   await container
       .read(emailAuthProvider.notifier)
@@ -304,6 +331,7 @@ Future<ProviderContainer> _pump(
     ],
   );
   addTearDown(container.dispose);
+  _tallView(tester);
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,

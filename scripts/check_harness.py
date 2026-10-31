@@ -8514,7 +8514,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 114-route manifest."""
+    """Keep the Dart route table equal to the frozen 115-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8534,8 +8534,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     # S168 (decision 0157): 111 → 112, 外盘奖励 of a LoopDynamic instance.
     # S180 (decision 0163): 112 → 113, 共识勋章 (the NFT mint page).
     # S287 (decision 0241): 113 → 114, 通知中心 under 聊天.
-    if manifest.get("count") != 114 or len(expected_slugs) != 114:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 114 routes")
+    # S324 (decision 0254): 114 → 115, 邮箱登录 between auth and auth-otp.
+    if manifest.get("count") != 115 or len(expected_slugs) != 115:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 115 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "meme":
@@ -8571,7 +8572,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 114 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 115 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -9180,10 +9181,11 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             value.strip().strip("'")
             for value in credential_routes.group(1).split(",")
             if value.strip()
-        ) != ["/auth", "/auth/otp"]:
+        ) != ["/auth", "/auth/email", "/auth/otp"]:
+            # Decision 0254 (S324): the e-mail step is its own credential page.
             errors.append(
-                "the authenticated gate must cover exactly the two credential "
-                "routes `/auth` and `/auth/otp`"
+                "the authenticated gate must cover exactly the three credential "
+                "routes `/auth`, `/auth/email` and `/auth/otp`"
             )
         signed_out_routes = re.search(
             r"const\s+signedOutRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
@@ -9192,7 +9194,7 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             value.strip().strip("'")
             for value in signed_out_routes.group(1).split(",")
             if value.strip()
-        ) != ["/auth", "/auth/otp", "/auth/wallet", "/splash"]:
+        ) != ["/auth", "/auth/email", "/auth/otp", "/auth/wallet", "/splash"]:
             errors.append(
                 "signed-out sessions may reach only the reviewed pre-login "
                 "locations"

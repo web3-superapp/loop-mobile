@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/widgets/loop_alert_card.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -89,7 +90,9 @@ void main() {
       );
     });
 
-    testWidgets('the unavailable phase is one inline line with its reason', (
+    // UX-010 (decision 0254): the unavailable phase is the compact warning
+    // card, not two bare grey lines.
+    testWidgets('the unavailable phase is one compact card with its reason', (
       tester,
     ) async {
       await _pump(
@@ -100,10 +103,9 @@ void main() {
           keyPrefix: 'probe',
         ),
       );
-      expect(
-        tester.widget(_key('probe-state-unavailable')),
-        isA<LoopInlineUnavailable>(),
-      );
+      final card = tester.widget(_key('probe-state-unavailable'));
+      expect(card, isA<LoopAlertCard>());
+      expect((card as LoopAlertCard).compact, isTrue);
       expect(find.text('该内容当前不可用'), findsOneWidget);
       expect(find.byType(LoopEmptyState), findsNothing);
     });

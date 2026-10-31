@@ -335,12 +335,9 @@ void main() {
       );
       // The Ink frame used to be a mark and a bar and nothing else, which is
       // what the native launch screen paints too.
+      // UX-001 (decision 0254): one status line under the launch rail.
       expect(
         find.text(PrivySessionRestoreScreen.restoringTitle),
-        findsOneWidget,
-      );
-      expect(
-        find.text(PrivySessionRestoreScreen.restoringMessage),
         findsOneWidget,
       );
       expect(find.text(PrivySessionRestoreScreen.slowMessage), findsNothing);
@@ -365,12 +362,14 @@ void main() {
         PrivySessionRestoreScreen.slowAfter - const Duration(milliseconds: 1),
       );
       expect(
-        find.text(PrivySessionRestoreScreen.restoringMessage),
+        find.text(PrivySessionRestoreScreen.restoringTitle),
         findsOneWidget,
       );
 
       await tester.pump(const Duration(milliseconds: 1));
+      // Only the words change: the same line now says the wait is slow.
       expect(find.text(PrivySessionRestoreScreen.slowMessage), findsOneWidget);
+      expect(find.text(PrivySessionRestoreScreen.restoringTitle), findsNothing);
       // The hint is presentation only: the session is still undecided and the
       // frame is still the restoring one, not the undecided one.
       expect(
@@ -382,7 +381,7 @@ void main() {
         findsNothing,
       );
       expect(
-        find.byKey(const ValueKey<String>('privy-email-field')),
+        find.byKey(const ValueKey<String>('privy-email-login-button')),
         findsNothing,
       );
     });

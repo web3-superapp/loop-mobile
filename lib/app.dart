@@ -25,6 +25,7 @@ import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
+import 'package:loop_mobile/features/chat/widgets/loop_composer_input.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
@@ -157,6 +158,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     // message — and LOOP's refusal copy. Voice recording stays off: LOOP has
     // proven no recording capability and claims none.
     messageComposer: (context, props) => LoopChatImageComposer(props: props),
+    // UX-008 (decision 0254): the composer's field shows focus like every
+    // other field.
+    messageComposerInput: loopStreamComposerInputBuilder,
     messageItem: loopStreamGroupMessageItemBuilder,
     // S58c: the gutter LOOP reserves beside every bubble is drawn with the
     // label this surface resolved, on the Ink/Lime/Chalk ladder. Stream's own
@@ -453,7 +457,13 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         if (landing != LoopProfileLanding.loopIdSetup) return;
         // Only lift an owner out of the credential, launch or landing pages.
         // A deep link the owner opened deliberately is never interrupted.
-        const liftable = <String>{'/auth', '/auth/otp', '/meme', '/splash'};
+        const liftable = <String>{
+          '/auth',
+          '/auth/email',
+          '/auth/otp',
+          '/meme',
+          '/splash',
+        };
         final location = router.state.matchedLocation;
         if (liftable.contains(location)) _goToOnboardingStep();
       },
@@ -503,7 +513,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       // Losing the answer has to move the owner off whatever product page the
       // previous one allowed; gaining it only ever moves a page that was
       // waiting for it.
-      const waiting = <String>{'/splash', '/auth', '/auth/otp'};
+      const waiting = <String>{'/splash', '/auth', '/auth/email', '/auth/otp'};
       if (next.isUnknown || waiting.contains(router.state.matchedLocation)) {
         router.refresh();
       }
@@ -790,6 +800,38 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   }
 }
 
+/// The shell's floating notices (UX-010, decision 0254): the soft update
+/// prompt and the profile-status banner, each closable, swipeable and gone on
+/// its own after [LoopTopNoticeLayer.defaultLife].
+class _ShellTopNotices extends ConsumerWidget {
+  const _ShellTopNotices({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final updateRecommended =
+        ref.watch(loopVersionPolicyProvider).decision ==
+        LoopVersionPolicyDecision.updateRecommended;
+    final profileWarns = ref.watch(
+      loopProfileLandingProvider.select((landing) => landing.shouldWarn),
+    );
+    return LoopTopNoticeLayer(
+      notices: <LoopTopNotice>[
+        if (updateRecommended)
+          const LoopTopNotice(id: 'soft-update', child: LoopSoftUpdatePrompt()),
+        if (profileWarns)
+          LoopTopNotice(
+            id: 'profile-availability',
+            onDismissed: ref.read(loopProfileLandingProvider.notifier).dismiss,
+            child: const ProfileAvailabilityBanner(),
+          ),
+      ],
+      child: child,
+    );
+  }
+}
+
 /// The pages that only show component specimens or fixtures (decision 0204):
 /// no product entry opens them, and each says 组件样例 or 开发预览.
 const Set<String> loopSpecimenLocations = <String>{
@@ -874,11 +916,12 @@ GoRouter _buildRouter(
       // stays behind the gate.
       const signedOutRoutes = <String>{
         '/auth',
+        '/auth/email',
         '/auth/otp',
         '/auth/wallet',
         '/splash',
       };
-      const credentialRoutes = <String>{'/auth', '/auth/otp'};
+      const credentialRoutes = <String>{'/auth', '/auth/email', '/auth/otp'};
       if (!session.canEnterProduct) {
         return signedOutRoutes.contains(location) ? null : '/auth';
       }
@@ -932,26 +975,54 @@ GoRouter _buildRouter(
     },
     routes: <RouteBase>[
       GoRoute(path: '/', redirect: (context, state) => '/meme'),
+      // UX-001 (decision 0254): `/auth` and `/splash` are both drawn as the
+      // one launch frame while the App waits, so moving between them is no
+      // page transition at all — a pushed page sliding in was one of the
+      // three times the start-up looked like it began again.
       GoRoute(
         path: '/auth',
-        builder: (context, state) => PrivyLoginScreen(
-          onCodeSent: () => context.push(LoopRouteManifest.pathFor('auth-otp')),
+        pageBuilder: (context, state) => NoTransitionPage<void>(
+          key: state.pageKey,
+          child: PrivyLoginScreen(
+            onOpenEmail: () =>
+                context.push(LoopRouteManifest.pathFor('auth-email')),
+          ),
         ),
       ),
+      // UX-002 (decision 0254): 使用邮箱登录 is its own step.
       GoRoute(
-        path: '/auth/otp',
+        path: '/auth/email',
         builder: (context, state) => Consumer(
-          builder: (context, ref, child) => PrivyOtpScreen(
+          builder: (context, ref, child) => PrivyEmailScreen(
             onBack: () {
-              // Leaving the step abandons the pending code on purpose.
-              ref.read(emailAuthProvider.notifier).changeEmail();
+              ref.read(emailAuthProvider.notifier).clearFeedback();
               if (Navigator.of(context).canPop()) {
                 context.pop();
               } else {
                 context.go(LoopRouteManifest.pathFor('auth'));
               }
             },
+            onCodeSent: () =>
+                context.push(LoopRouteManifest.pathFor('auth-otp')),
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/auth/otp',
+        builder: (context, state) => Consumer(
+          builder: (context, ref, child) {
+            void leave() {
+              // Leaving the step abandons the pending code on purpose.
+              ref.read(emailAuthProvider.notifier).changeEmail();
+              if (Navigator.of(context).canPop()) {
+                context.pop();
+              } else {
+                context.go(LoopRouteManifest.pathFor('auth-email'));
+              }
+            }
+
+            return PrivyOtpScreen(onBack: leave, onChangeEmail: leave);
+          },
         ),
       ),
       GoRoute(
@@ -1058,17 +1129,14 @@ GoRouter _buildRouter(
           child: LoopShell(
             location: state.uri.path,
             navigationShell: navigationShell,
-            child: Column(
-              children: <Widget>[
-                const LoopSoftUpdatePrompt(),
-                const ProfileAvailabilityBanner(),
-                Expanded(
-                  child: LoopTabSwitchFade(
-                    index: navigationShell.currentIndex,
-                    child: navigationShell,
-                  ),
-                ),
-              ],
+            // UX-010 (decision 0254): the two shell notices sit below the
+            // status bar, and the page is laid out under them, instead of
+            // being drawn into the status bar above the page's own safe area.
+            child: _ShellTopNotices(
+              child: LoopTabSwitchFade(
+                index: navigationShell.currentIndex,
+                child: navigationShell,
+              ),
             ),
           ),
         ),
@@ -2027,9 +2095,24 @@ final List<RouteBase> _pendingManifestRoutes =
 
 // Manifest 0-global-account pages with an existing screen. Onboarding, seed
 // reveal/verify, wallet import and the old profile setup are retired.
-final List<RouteBase> _accountRoutes =
+final List<RouteBase> _accountRoutes = <RouteBase>[
+  // UX-001 (decision 0254): the launch page replaces `/auth`'s launch frame
+  // in place, with no transition of its own.
+  GoRoute(
+    path: '/splash',
+    pageBuilder: (context, state) => NoTransitionPage<void>(
+      key: state.pageKey,
+      child: Consumer(
+        builder: (context, ref, child) =>
+            _accountScreen(context, ref, 'splash'),
+      ),
+    ),
+  ),
+  ..._accountStepRoutes,
+];
+
+final List<RouteBase> _accountStepRoutes =
     <(String, String)>[
-          ('/splash', 'splash'),
           ('/auth/wallet', 'auth-wallet'),
           ('/auth/wallet/create', 'wallet-create'),
           ('/auth/wallet/backup', 'wallet-recovery'),

@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/account/account_screens.dart'
+    show LoopLaunchFrame;
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// What the last attempt means, in the owner's words.
@@ -89,61 +90,32 @@ class _LoopAppLockCurtain extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(loopAppLockProvider);
     final outcome = state.lastOutcome;
+    // UX-001 (decision 0254): the curtain is the launch frame — the mark
+    // where the native launch screen and every wait put it — so a locked
+    // start does not jump from one mark to another.
     return Material(
       key: const ValueKey<String>('loop-app-lock-curtain'),
       color: LoopColors.ink,
-      child: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const LoopBrandMark(
-                  kind: LoopBrandMarkKind.wordmark,
-                  height: 72,
-                  semanticLabel: 'LOOP',
-                ),
-                const SizedBox(height: 20),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    'LOOP 已锁定',
-                    key: const ValueKey<String>('loop-app-lock-title'),
-                    style: LoopType.titleLg,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '这台设备的锁屏验证通过后才会显示内容。',
-                  textAlign: TextAlign.center,
-                  style: LoopType.caption,
-                ),
-                if (outcome != null &&
-                    outcome != LoopDeviceAuthOutcome.succeeded) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Text(
-                    loopAppLockAttemptText(outcome, state.systemMessage),
-                    key: const ValueKey<String>('loop-app-lock-attempt'),
-                    textAlign: TextAlign.center,
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
-                  ),
-                ],
-                const SizedBox(height: 22),
-                LoopButton(
-                  key: const ValueKey<String>('loop-app-lock-unlock'),
-                  label: state.busy ? '正在验证…' : '验证身份',
-                  primary: true,
-                  block: true,
-                  onPressed: state.busy
-                      ? null
-                      : () => unawaited(
-                          ref.read(loopAppLockProvider.notifier).unlock(),
-                        ),
-                ),
-              ],
-            ),
-          ),
+      child: LoopLaunchFrame(
+        semanticLabel: 'LOOP 已锁定',
+        showRail: false,
+        waiting: false,
+        status: 'LOOP 已锁定',
+        statusKey: const ValueKey<String>('loop-app-lock-title'),
+        statusStyle: LoopType.titleLg,
+        detail: outcome != null && outcome != LoopDeviceAuthOutcome.succeeded
+            ? loopAppLockAttemptText(outcome, state.systemMessage)
+            : null,
+        detailKey: const ValueKey<String>('loop-app-lock-attempt'),
+        action: LoopButton(
+          key: const ValueKey<String>('loop-app-lock-unlock'),
+          label: state.busy ? '正在验证…' : '验证身份',
+          primary: true,
+          block: true,
+          onPressed: state.busy
+              ? null
+              : () =>
+                    unawaited(ref.read(loopAppLockProvider.notifier).unlock()),
         ),
       ),
     );

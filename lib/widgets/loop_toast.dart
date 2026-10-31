@@ -471,3 +471,195 @@ class _OverlayToastState extends State<_OverlayToast> {
     ),
   );
 }
+
+/// One notice in the [LoopTopNoticeLayer].
+@immutable
+final class LoopTopNotice {
+  const LoopTopNotice({
+    required this.id,
+    required this.child,
+    this.onDismissed,
+    this.autoDismissAfter = LoopTopNoticeLayer.defaultLife,
+    this.cardInsets = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      8,
+      LoopSpacing.page,
+      0,
+    ),
+  });
+
+  /// Stable for as long as the notice says the same thing. A notice that
+  /// was swiped or timed out stays away until it comes back under a new id
+  /// or after it has left the list once.
+  final String id;
+
+  /// The notice itself. It carries its own 关闭 control.
+  final Widget child;
+
+  /// What closing means to the owner of the notice. `null` keeps the
+  /// dismissal run-local to this layer.
+  final VoidCallback? onDismissed;
+
+  /// `null` keeps the notice until it is closed.
+  final Duration? autoDismissAfter;
+
+  /// Where the notice's card sits inside [child] (its own margin). The layer
+  /// lays an opaque Ink ground there, because a tinted notice card is
+  /// translucent and would let the page under it show through.
+  final EdgeInsets cardInsets;
+}
+
+/// UX-010 (decision 0254): the notices that float over the top of a page.
+///
+/// They used to be the first rows of the shell's column, which sits above
+/// the page's own safe area, so a notice was drawn under the status bar and
+/// its close control under the clock. Here they are laid over the page,
+/// always below the top inset, and each one can be closed with its own
+/// control, swiped up, or left to go away on its own.
+class LoopTopNoticeLayer extends StatefulWidget {
+  const LoopTopNoticeLayer({required this.notices, super.key, this.child});
+
+  /// How long a notice stays when nobody closes it.
+  static const Duration defaultLife = Duration(seconds: 6);
+
+  final List<LoopTopNotice> notices;
+
+  /// The page under the notices. While a notice is up it takes the status
+  /// bar's inset itself and the page is laid out below it, so a notice
+  /// never covers the page's own header; when none is up the page keeps the
+  /// inset. The page's place in the tree never changes, so showing a notice
+  /// never rebuilds it from scratch.
+  final Widget? child;
+
+  @override
+  State<LoopTopNoticeLayer> createState() => _LoopTopNoticeLayerState();
+}
+
+class _LoopTopNoticeLayerState extends State<LoopTopNoticeLayer> {
+  final Set<String> _gone = <String>{};
+  final Map<String, Timer> _timers = <String, Timer>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(covariant LoopTopNoticeLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  /// Arms a timer for every notice that arrived, and forgets the ones that
+  /// left, so a notice that comes back is a new notice.
+  void _sync() {
+    final ids = <String>{for (final notice in widget.notices) notice.id};
+    for (final id in _timers.keys.toList()) {
+      if (!ids.contains(id)) _timers.remove(id)?.cancel();
+    }
+    _gone.removeWhere((id) => !ids.contains(id));
+    for (final notice in widget.notices) {
+      final life = notice.autoDismissAfter;
+      if (life == null ||
+          _timers.containsKey(notice.id) ||
+          _gone.contains(notice.id)) {
+        continue;
+      }
+      _timers[notice.id] = Timer(life, () => _dismiss(notice));
+    }
+  }
+
+  void _dismiss(LoopTopNotice notice) {
+    _timers.remove(notice.id)?.cancel();
+    if (!mounted || _gone.contains(notice.id)) return;
+    setState(() => _gone.add(notice.id));
+    notice.onDismissed?.call();
+  }
+
+  @override
+  void dispose() {
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
+    _timers.clear();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = widget.notices
+        .where((notice) => !_gone.contains(notice.id))
+        .toList(growable: false);
+    final notices = shown.isEmpty ? const SizedBox.shrink() : _notices(shown);
+    final page = widget.child;
+    if (page == null) return notices;
+    final media = MediaQuery.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        notices,
+        Expanded(
+          child: MediaQuery(
+            data: shown.isEmpty
+                ? media
+                : media.copyWith(
+                    padding: media.padding.copyWith(top: 0),
+                    viewPadding: media.viewPadding.copyWith(top: 0),
+                  ),
+            child: page,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _notices(List<LoopTopNotice> shown) {
+    return SafeArea(
+      key: const ValueKey<String>('loop-top-notice-layer'),
+      bottom: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          for (final notice in shown)
+            Dismissible(
+              key: ValueKey<String>('loop-top-notice-${notice.id}'),
+              direction: DismissDirection.up,
+              onDismissed: (_) => _dismiss(notice),
+              child: Stack(
+                children: <Widget>[
+                  Positioned.fill(
+                    child: LayoutBuilder(
+                      // A notice that drew nothing (its owner closed it a
+                      // frame ago) gets no ground either.
+                      builder: (context, constraints) =>
+                          constraints.maxHeight <= notice.cardInsets.vertical
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: notice.cardInsets,
+                              child: const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: LoopColors.ink,
+                                  borderRadius: LoopRadius.control,
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: LoopColors.inkMuted,
+                                      offset: Offset(0, 10),
+                                      blurRadius: 28,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  notice.child,
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

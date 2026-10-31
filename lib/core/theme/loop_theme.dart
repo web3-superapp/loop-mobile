@@ -1193,6 +1193,17 @@ abstract final class LoopTheme {
           borderRadius: LoopRadius.control,
           borderSide: BorderSide(color: LoopColors.danger),
         ),
+        // UX-008 (decision 0254): every state of a field keeps the 12 corner,
+        // so a field never squares off while it is disabled or focused with
+        // an error.
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: LoopRadius.control,
+          borderSide: BorderSide(color: LoopColors.danger),
+        ),
+        disabledBorder: const OutlineInputBorder(
+          borderRadius: LoopRadius.control,
+          borderSide: BorderSide.none,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

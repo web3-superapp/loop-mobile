@@ -1,4 +1,4 @@
-/// The 114-route product manifest.
+/// The 115-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -12,6 +12,8 @@
 /// decision 0139 (S136) added the MEME v2 project page.
 /// decision 0241 (S287) added `notifications`, the notification centre
 /// under 聊天 (113 → 114).
+/// decision 0254 (S324) added `auth-email`, the e-mail step 使用邮箱登录
+/// opens (114 → 115).
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -114,7 +116,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '34c970325ca125628bca8f3d4eb354d87be2b72c92903cf204bbd538dd66f76f';
+      '72a0a09f0b58e799f67db2673e3ca9023c3622e26676e3be108b34d5ae88a240';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110; MEME
   /// since decision 0221).
@@ -237,7 +239,7 @@ abstract final class LoopRouteManifest {
   ];
 
   static const List<LoopRouteEntry> entries = <LoopRouteEntry>[
-    // 0-global-account · 全局与账户 (11)
+    // 0-global-account · 全局与账户 (12)
     LoopRouteEntry(
       slug: 'splash',
       path: '/splash',
@@ -337,6 +339,17 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.globalAccount,
       title: '推荐社区',
       prototypeOrder: 105,
+      step: 2,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S324 (decision 0254, UX-002): 使用邮箱登录 is its own step between
+    // `auth` and `auth-otp`.
+    LoopRouteEntry(
+      slug: 'auth-email',
+      path: '/auth/email',
+      module: LoopRouteModule.globalAccount,
+      title: '邮箱登录',
+      prototypeOrder: 128,
       step: 2,
       status: LoopRouteStatus.implemented,
     ),

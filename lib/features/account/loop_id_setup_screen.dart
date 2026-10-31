@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_inputs.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// `loop-id-setup`: the one-time public-profile activation (decision 0112).
@@ -159,56 +160,76 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             const LoopLabel('用户名'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: LoopSurfaceCard(
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        key: const ValueKey<String>('loop-id-alias-field'),
-                        controller: _aliasController,
-                        enabled: editable,
-                        maxLength: 40,
-                        buildCounter: (
-                          context, {
-                          required currentLength,
-                          required isFocused,
-                          required maxLength,
-                        }) => null,
-                        style: LoopType.bodyLg,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: '1–40 个字符，可以和别人重复',
+              // UX-008 (decision 0254): the card is the field's box, so the
+              // focus edge sits on the card.
+              child: LoopFocusRing(
+                borderRadius: LoopRadius.card,
+                enabled: editable,
+                child: LoopSurfaceCard(
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: TextField(
+                          key: const ValueKey<String>('loop-id-alias-field'),
+                          controller: _aliasController,
+                          enabled: editable,
+                          maxLength: 40,
+                          buildCounter: (
+                            context, {
+                            required currentLength,
+                            required isFocused,
+                            required maxLength,
+                          }) => null,
+                          style: LoopType.bodyLg,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            filled: false,
+                            hintText: '1–40 个字符，可以和别人重复',
+                          ),
+                          onChanged: controller.editAlias,
                         ),
-                        onChanged: controller.editAlias,
                       ),
-                    ),
-                    LoopSeg(
-                      key: const ValueKey<String>('loop-id-alias-suggest'),
-                      label: '换一个',
-                      selected: false,
-                      onSelected: editable ? () => _suggest(controller) : null,
-                    ),
-                  ],
+                      LoopSeg(
+                        key: const ValueKey<String>('loop-id-alias-suggest'),
+                        label: '换一个',
+                        selected: false,
+                        onSelected: editable
+                            ? () => _suggest(controller)
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             const LoopLabel('简介'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: LoopSurfaceCard(
-                child: TextField(
-                  key: const ValueKey<String>('loop-id-bio-field'),
-                  controller: _bioController,
-                  enabled: editable,
-                  maxLength: profileMaximumBioCodePoints,
-                  maxLines: 3,
-                  minLines: 1,
-                  style: LoopType.bodyLg,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: '一句话介绍自己（可以不填）',
+              child: LoopFocusRing(
+                borderRadius: LoopRadius.card,
+                enabled: editable,
+                child: LoopSurfaceCard(
+                  child: TextField(
+                    key: const ValueKey<String>('loop-id-bio-field'),
+                    controller: _bioController,
+                    enabled: editable,
+                    maxLength: profileMaximumBioCodePoints,
+                    maxLines: 3,
+                    minLines: 1,
+                    style: LoopType.bodyLg,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      filled: false,
+                      hintText: '一句话介绍自己（可以不填）',
+                    ),
+                    onChanged: controller.editBio,
                   ),
-                  onChanged: controller.editBio,
                 ),
               ),
             ),

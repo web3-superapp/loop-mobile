@@ -42,8 +42,9 @@ void main() {
       () {
         expect(
           json['count'],
-          114,
+          115,
         ); // S135: 105 → 111; S168: → 112; S180: → 113; S287: → 114
+        // S324 (decision 0254): → 115, auth-email.
         expect(json['prototypeSha256'], LoopRouteManifest.prototypeSha256);
         expect(
           LoopRouteManifest.prototypeSha256,
@@ -54,7 +55,7 @@ void main() {
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(114));
+        expect(LoopRouteManifest.entries, hasLength(115));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -87,8 +88,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(114));
-      expect(paths.toSet(), hasLength(114));
+      expect(slugs.toSet(), hasLength(115));
+      expect(paths.toSet(), hasLength(115));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);

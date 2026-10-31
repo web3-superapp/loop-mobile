@@ -9,7 +9,6 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -19,14 +18,17 @@ void main() {
   // ground probe itself; the page harnesses arm it for everybody else.
   loopWatchGround();
 
+  // UX-002 (decision 0254): 邮箱 is kept as its own step; the wallet login
+  // is a text link and the disclaimer is gone.
   testWidgets('keeps Email and exposes Google plus external EVM wallet login', (
     tester,
   ) async {
     await _pump(tester, showApple: false);
 
-    expect(find.byKey(const ValueKey('privy-email-field')), findsOneWidget);
+    // UX-002 (decision 0254): the e-mail address is its own step now.
+    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
     expect(
-      find.byKey(const ValueKey('privy-auth-primary-button')),
+      find.byKey(const ValueKey('privy-email-login-button')),
       findsOneWidget,
     );
     expect(
@@ -41,30 +43,18 @@ void main() {
       find.byKey(const ValueKey('privy-apple-login-button')),
       findsNothing,
     );
-    expect(find.textContaining('不是 LOOP 交易钱包'), findsOneWidget);
+    expect(find.textContaining('不是 LOOP 交易钱包'), findsNothing);
   });
 
-  // Decision 0126: title 24 bold, subtitle 14 grey, the email in a 52-high
-  // flat field with its label inside, no Emoji on the page.
-  testWidgets('the welcome reads 24 / 14 and the email field is flat', (
-    tester,
-  ) async {
+  testWidgets('the welcome reads title, one line and no Emoji', (tester) async {
     await _pump(tester, showApple: false);
 
     final title = tester.widget<Text>(find.text('欢迎来到 LOOP'));
     // Decision 0211: the step title is bold Arimo / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
-    final subtitle = tester.widget<Text>(find.text('登录后自动创建钱包，持仓即产生算力。'));
-    // Decision 0229: body2, 16.
-    expect(subtitle.style?.fontSize, 16);
-    final field = find.byKey(const ValueKey('privy-email'));
-    expect(field, findsOneWidget);
-    expect(tester.getSize(field).height, greaterThanOrEqualTo(52));
-    expect(
-      find.descendant(of: field, matching: find.text('邮箱')),
-      findsOneWidget,
-    );
+    expect(find.text('选择一种方式登录或创建账户'), findsOneWidget);
+    expect(find.text('登录后自动创建钱包，持仓即产生算力。'), findsNothing);
     final emoji = RegExp(
       r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]',
       unicode: true,
@@ -108,42 +98,18 @@ void main() {
   ) async {
     await _pump(tester, showApple: false, reownProjectId: '');
 
-    expect(_pressed(tester, 'privy-wallet-login-button'), isNull);
+    expect(_walletLinkTap(tester), isNull);
     expect(find.textContaining('缺少有效的 Reown Project ID'), findsOneWidget);
   });
 
-  testWidgets('sending a code pushes the dedicated OTP step', (tester) async {
-    var pushed = 0;
-    await _pump(tester, showApple: false, onCodeSent: () => pushed += 1);
+  testWidgets('使用邮箱登录 opens the e-mail step', (tester) async {
+    var opened = 0;
+    await _pump(tester, showApple: false, onOpenEmail: () => opened += 1);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('privy-email-field')),
-      'owner@example.com',
-    );
-    await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('privy-email-login-button')));
+    await tester.pump();
 
-    expect(pushed, 1);
-    // The second step never renders here.
-    expect(find.byKey(const ValueKey('privy-otp-field')), findsNothing);
-  });
-
-  testWidgets('an invalid address never leaves this step', (tester) async {
-    var pushed = 0;
-    await _pump(tester, showApple: false, onCodeSent: () => pushed += 1);
-
-    await tester.enterText(
-      find.byKey(const ValueKey('privy-email-field')),
-      'not-an-address',
-    );
-    await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
-    await tester.pumpAndSettle();
-
-    expect(pushed, 0);
-    expect(
-      find.byKey(const ValueKey<String>('privy-auth-error')),
-      findsOneWidget,
-    );
+    expect(opened, 1);
   });
 
   testWidgets('one OAuth operation disables every authentication action', (
@@ -158,8 +124,9 @@ void main() {
     await tester.pump();
 
     expect(credential.calls, 1);
-    expect(_pressed(tester, 'privy-wallet-login-button'), isNull);
-    expect(_pressed(tester, 'privy-auth-primary-button'), isNull);
+    expect(_walletLinkTap(tester), isNull);
+    expect(_method(tester, 'privy-email-login-button').onPressed, isNull);
+    expect(_method(tester, 'privy-apple-login-button').onPressed, isNull);
 
     pending.complete(
       const PrivyAccountSummary(privyUserId: 'did:privy:google'),
@@ -187,17 +154,25 @@ void main() {
       ),
     );
     // Every frame from the first one on is a launch frame.
-    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('privy-email-login-button')),
+      findsNothing,
+    );
     expect(
       find.byKey(const ValueKey<String>('privy-restoring-screen')),
       findsOneWidget,
     );
     for (var frame = 0; frame < 6; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
-      expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('privy-email-login-button')),
+        findsNothing,
+      );
       expect(find.byKey(const ValueKey('privy-auth-screen')), findsNothing);
     }
-    await tester.pumpAndSettle();
+    // The launch frame's rail never settles (UX-001); pump through the
+    // restore instead.
+    await _pumpFrames(tester);
     expect(
       container.read(loopSessionProvider).mode,
       LoopSessionMode.authenticated,
@@ -206,7 +181,10 @@ void main() {
       find.byKey(const ValueKey<String>('privy-auth-handover')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('privy-email-login-button')),
+      findsNothing,
+    );
     expect(
       find.byKey(const ValueKey('privy-google-login-button')),
       findsNothing,
@@ -228,7 +206,9 @@ void main() {
           child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
-      await tester.pumpAndSettle();
+      // The launch frame's rail never settles (UX-001); pump through the
+      // restore instead.
+      await _pumpFrames(tester);
       expect(
         container.read(loopSessionProvider).mode,
         LoopSessionMode.authenticated,
@@ -244,7 +224,10 @@ void main() {
         find.byKey(const ValueKey<String>('privy-signing-out-screen')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('privy-email-login-button')),
+        findsNothing,
+      );
       expect(
         find.byKey(const ValueKey('privy-google-login-button')),
         findsNothing,
@@ -276,9 +259,12 @@ void main() {
   );
 }
 
-VoidCallback? _pressed(WidgetTester tester, String key) {
-  return tester.widget<LoopButton>(find.byKey(ValueKey<String>(key))).onPressed;
-}
+AuthMethodButton _method(WidgetTester tester, String key) =>
+    tester.widget<AuthMethodButton>(find.byKey(ValueKey<String>(key)));
+
+GestureTapCallback? _walletLinkTap(WidgetTester tester) => tester
+    .widget<InkWell>(find.byKey(const ValueKey('privy-wallet-login-button')))
+    .onTap;
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -286,7 +272,7 @@ Future<void> _pump(
   bool appleLoginVisible = true,
   _CredentialGateway? credential,
   String reownProjectId = '26a5cc1adad234fcdf7762b8d2a2b28d',
-  VoidCallback? onCodeSent,
+  VoidCallback? onOpenEmail,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -312,7 +298,7 @@ Future<void> _pump(
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,
-        home: PrivyLoginScreen(onCodeSent: onCodeSent),
+        home: PrivyLoginScreen(onOpenEmail: onOpenEmail),
       ),
     ),
   );
@@ -426,4 +412,12 @@ class _CredentialGateway implements PrivyCredentialGateway {
     required String message,
     required String signature,
   }) => throw UnimplementedError();
+}
+
+/// Pumps a second of frames: enough for the restore to answer, without
+/// waiting for the launch rail, which sweeps for as long as it is shown.
+Future<void> _pumpFrames(WidgetTester tester) async {
+  for (var frame = 0; frame < 20; frame++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }

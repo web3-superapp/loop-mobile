@@ -88,7 +88,10 @@ void main() {
       find.byKey(const ValueKey<String>('privy-signing-out-screen')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('privy-email-login-button')),
+      findsNothing,
+    );
     expect(
       find.byKey(const ValueKey('privy-google-login-button')),
       findsNothing,
@@ -106,7 +109,10 @@ void main() {
       find.byKey(const ValueKey<String>('privy-signing-out-screen')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('privy-email-login-button')),
+      findsNothing,
+    );
 
     backendGate.complete(LoopBackendLogoutResult.confirmed);
     await exit;

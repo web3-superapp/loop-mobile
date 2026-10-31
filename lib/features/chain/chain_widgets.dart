@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/widgets/loop_alert_card.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -314,12 +315,15 @@ class LoopChainStateBlock extends StatelessWidget {
           pausedActions: const <String>['刷新', '切换钱包', '保存自选', '价格提醒'],
         );
       case LoopChainViewPhase.unavailable:
-        return LoopInlineUnavailable(
+        // UX-010 (decision 0254): the same compact warning card as
+        // [LoopUnavailableLine].
+        return LoopAlertCard(
           key: ValueKey<String>('$keyPrefix-state-unavailable'),
-          message: '该内容当前不可用',
-          detail: loopChainFailureReason(failureKind),
-          maxLines: 2,
-          detailMaxLines: 4,
+          title: '该内容当前不可用',
+          body: loopChainFailureReason(failureKind),
+          compact: true,
+          bodyMaxLines: 4,
+          margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         );
       case LoopChainViewPhase.permission:
         final stepUp = failureKind == LoopChainFailureKind.stepUpRequired;
@@ -558,13 +562,15 @@ class LoopUnavailableLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final line = LoopInlineUnavailable(
+    // UX-010 (decision 0254): the gap is the compact warning card, not two
+    // bare grey lines.
+    final line = LoopAlertCard(
       key: ValueKey<String>('unavailable-${reasonCode ?? 'unstated'}'),
-      message: label,
-      detail: loopReasonCodeText(reasonCode),
-      maxLines: 2,
-      detailMaxLines: 3,
-      padding: EdgeInsets.zero,
+      title: label,
+      body: loopReasonCodeText(reasonCode),
+      compact: true,
+      bodyMaxLines: 3,
+      margin: const EdgeInsets.symmetric(vertical: 6),
     );
     final next = action;
     return Padding(
@@ -577,7 +583,7 @@ class LoopUnavailableLine extends StatelessWidget {
               children: <Widget>[
                 line,
                 Padding(
-                  padding: const EdgeInsets.only(left: 23, bottom: 10),
+                  padding: const EdgeInsets.only(top: 8, bottom: 10),
                   child: next,
                 ),
               ],
