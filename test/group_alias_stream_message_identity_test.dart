@@ -592,7 +592,7 @@ void main() {
   });
 
   testWidgets(
-    'a community row wears its logo and its description, not a monogram',
+    'a community row with a logo wears its member mosaic and its description',
     (tester) async {
       final harness = _ChannelHarness.community(
         member: _member(userId: 'stream-sender', accountName: ''),
@@ -613,9 +613,15 @@ void main() {
           StreamChannelListItem(channel: harness.channel),
         ),
       );
+      // Decision 0260: in the list a community is a group like any other,
+      // so its members' mosaic stands where its logo stood.
+      expect(
+        find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-community-channel-logo')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(
@@ -623,7 +629,7 @@ void main() {
             'community-logo-image-avatar:preset/community-03',
           ),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('loop-group-channel-neutral-avatar')),

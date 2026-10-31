@@ -679,12 +679,17 @@ class _SearchResultCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (direct)
-            ChatAvatar(label: result.conversationTitle, size: 40, colorSeed: 4)
+            ChatAvatar(
+              label: result.conversationTitle,
+              size: chatListAvatarSize,
+              colorSeed: 4,
+            )
           else
             GroupMosaicAvatar(
               members: const <GroupMosaicMember>[],
               label: result.conversationTitle,
-              size: 40,
+              size: chatListAvatarSize,
+              radius: chatListAvatarRadius,
             ),
           const SizedBox(width: 12),
           Expanded(

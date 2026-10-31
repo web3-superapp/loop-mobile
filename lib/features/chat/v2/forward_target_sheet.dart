@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
@@ -330,13 +331,14 @@ class _TargetRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: <Widget>[
-              // Decision 0258: a group's square, a direct row's circle.
+              // Decision 0258: a group's square, a direct row's circle, at
+              // the inbox row's size (decision 0260).
               chatForwardTargetFace(
                 context,
                 target,
                 faces: faces,
-                size: 40,
-                radius: 13,
+                size: chatListAvatarSize,
+                radius: chatListAvatarRadius,
               ),
               const SizedBox(width: 12),
               Expanded(
