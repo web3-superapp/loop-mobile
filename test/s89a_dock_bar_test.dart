@@ -143,6 +143,9 @@ void main() {
         'cells keep their size, and lifting selects', (tester) async {
       final selections = await pumpBar(tester);
       final before = cellRects(tester);
+      final barCentre = tester.getCenter(
+        find.byKey(const ValueKey<String>('loop-tab-bar-float')),
+      );
       final start = tester.getCenter(cell('square'));
       final gesture = await tester.startGesture(start);
       await tester.pump();
@@ -175,8 +178,22 @@ void main() {
         find.byKey(const ValueKey<String>('loop-tab-dock-meme')),
         findsOneWidget,
       );
-      // The hit areas are the laid-out cells, untouched by the magnification.
-      expect(cellRects(tester), before);
+      // The hit areas are the laid-out cells, untouched by the magnification;
+      // only the whole bar's press swell (decision 0261, 1.02 about its
+      // centre) moves them, and it moves them all alike.
+      final pivot = barCentre;
+      Rect swell(Rect rect) => Rect.fromPoints(
+        pivot + (rect.topLeft - pivot) * LoopTabBar.pressScale,
+        pivot + (rect.bottomRight - pivot) * LoopTabBar.pressScale,
+      );
+      final pressed = cellRects(tester);
+      for (var i = 0; i < before.length; i += 1) {
+        final expected = swell(before[i]);
+        expect(pressed[i].left, moreOrLessEquals(expected.left));
+        expect(pressed[i].right, moreOrLessEquals(expected.right));
+        expect(pressed[i].top, moreOrLessEquals(expected.top));
+        expect(pressed[i].bottom, moreOrLessEquals(expected.bottom));
+      }
       // Nothing has been selected while the finger is still down.
       expect(selections, isEmpty);
 

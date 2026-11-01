@@ -162,8 +162,9 @@ void main() {
     // draw no background of their own, so nothing can appear or disappear.
     final indicator = find.byKey(const ValueKey<String>('loop-tab-indicator'));
     expect(indicator, findsOneWidget);
-    // Decision 0212: the slot paints nothing — no colour block in the bar.
-    expect(tester.widget(indicator), isA<SizedBox>());
+    // Decision 0261 (overturning 0212): the indicator is a visible glass
+    // pill again.
+    expect(tester.widget(indicator), isA<DecoratedBox>());
     expect(
       find.descendant(of: find.byType(LoopTabItem), matching: indicator),
       findsNothing,
