@@ -253,25 +253,185 @@ const Color loopTabBarEdge = Color(0x24FFFFFF);
 /// that is exactly the reserve the body receives as bottom padding. Inside,
 /// the 70px bar sits `max(8, safe-area)` from the edges with a 23px radius.
 ///
-/// The Lime ground is one indicator, not five backgrounds: switching tabs
-/// slides that single pill from the tab that had it to the tab that takes it
-/// (decision 0071), so nothing appears and nothing disappears. Material's
+/// S331 · decision 0261 (overturns decision 0212's "no colour block"): the
+/// selected cell stands on one visible glass pill. Switching tabs stretches
+/// that single pill from the tab that had it across to the tab that takes it
+/// — the leading edge runs ahead, the trailing edge follows and settles with
+/// a slight spring — so nothing appears and nothing disappears (decision
+/// 0071). A press anywhere on the bar swells the whole bar by 2 %. Material's
 /// ripple and highlight are removed — a grey wash under the finger reads as a
 /// second, contradicting selection.
-class LoopTabBar extends StatelessWidget {
+class LoopTabBar extends StatefulWidget {
   const LoopTabBar({
     required this.selectedIndex,
     required this.onSelect,
     super.key,
   });
 
-  /// Indicator travel. Long enough to read as one object moving, short enough
-  /// that the destination is already legible when the finger lifts.
-  static const Duration slideDuration = Duration(milliseconds: 200);
+  /// Indicator travel, and the cells' ink crossfade over the same time.
+  static const Duration slideDuration = Duration(milliseconds: 280);
   static const Curve slideCurve = Curves.easeOutCubic;
+
+  /// The leading edge's share of [slideDuration]: it runs out first, so the
+  /// pill's first frame already spans both cells.
+  static const Interval leadInterval = Interval(
+    0,
+    0.62,
+    curve: Curves.easeOutCubic,
+  );
+
+  /// The trailing edge's share: it starts late and springs into place.
+  static const double trailBegin = 0.22;
+
+  /// The trailing edge's overshoot past its rest, in cells.
+  static const double trailOvershoot = 0.06;
+
+  /// Glass pill (decision 0261): white 10 % over the bar's ground, a 1 px
+  /// white 8 % edge inside, inset 4 from its cell on every side.
+  static const Color indicatorFill = Color(0x1AFFFFFF);
+  static const Color indicatorEdge = Color(0x14FFFFFF);
+  static const double indicatorInset = 4;
+
+  /// Press feedback on the whole bar (decision 0261).
+  static const double pressScale = 1.02;
+  static const Duration pressDuration = Duration(milliseconds: 120);
 
   final int selectedIndex;
   final ValueChanged<int> onSelect;
+
+  @override
+  State<LoopTabBar> createState() => _LoopTabBarState();
+}
+
+class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
+  late final AnimationController _slide = AnimationController(
+    vsync: this,
+    duration: LoopTabBar.slideDuration,
+    value: 1,
+  );
+  late final AnimationController _press = AnimationController(
+    vsync: this,
+    duration: LoopTabBar.pressDuration,
+  );
+  late final Animation<double> _pressScale = Tween<double>(
+    begin: 1,
+    end: LoopTabBar.pressScale,
+  ).animate(CurvedAnimation(parent: _press, curve: Curves.easeOut));
+
+  // The pill's edges in cell units: cell i spans [i, i + 1].
+  late double _fromLeft = widget.selectedIndex.toDouble();
+  late double _fromRight = widget.selectedIndex + 1.0;
+  late double _toLeft = _fromLeft;
+  late double _toRight = _fromRight;
+  bool _towardsEnd = true;
+  Curve _trailCurve = Curves.easeOutCubic;
+
+  @override
+  void didUpdateWidget(LoopTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex == widget.selectedIndex) return;
+    final target = widget.selectedIndex.toDouble();
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      _slide.value = 1;
+      _fromLeft = _toLeft = target;
+      _fromRight = _toRight = target + 1;
+      return;
+    }
+    // A second tap mid-flight carries on from where the pill is now.
+    final (left, right) = _edges();
+    _fromLeft = left;
+    _fromRight = right;
+    _toLeft = target;
+    _toRight = target + 1;
+    _towardsEnd = (_toLeft + _toRight) >= (left + right);
+    final trailTravel = _towardsEnd
+        ? (_toLeft - _fromLeft).abs()
+        : (_toRight - _fromRight).abs();
+    _trailCurve = trailTravel <= 0
+        ? Curves.easeOutCubic
+        : LoopBoundedBackCurve(
+            overshoot: math.min(0.1, LoopTabBar.trailOvershoot / trailTravel),
+          );
+    unawaited(_slide.forward(from: 0));
+  }
+
+  /// The pill's left and right edges, in cell units, at this frame.
+  (double, double) _edges() {
+    final t = _slide.value;
+    if (t >= 1) return (_toLeft, _toRight);
+    final lead = LoopTabBar.leadInterval.transform(t);
+    final trail = Interval(
+      LoopTabBar.trailBegin,
+      1,
+      curve: _trailCurve,
+    ).transform(t);
+    double lerp(double a, double b, double f) => a + (b - a) * f;
+    return _towardsEnd
+        ? (lerp(_fromLeft, _toLeft, trail), lerp(_fromRight, _toRight, lead))
+        : (lerp(_fromLeft, _toLeft, lead), lerp(_fromRight, _toRight, trail));
+  }
+
+  void _pressDown(bool reduceMotion) {
+    if (reduceMotion) return;
+    unawaited(_press.forward());
+  }
+
+  void _pressUp() {
+    if (_press.value == 0 && !_press.isAnimating) return;
+    unawaited(_press.reverse());
+  }
+
+  @override
+  void dispose() {
+    _slide.dispose();
+    _press.dispose();
+    super.dispose();
+  }
+
+  Widget _indicator(double shift) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cell = constraints.maxWidth / LoopShell._destinations.length;
+        const inset = LoopTabBar.indicatorInset;
+        return AnimatedBuilder(
+          animation: _slide,
+          builder: (context, _) {
+            final reduceMotion = MediaQuery.disableAnimationsOf(context);
+            final (leftCells, rightCells) = reduceMotion
+                ? (widget.selectedIndex.toDouble(), widget.selectedIndex + 1.0)
+                : _edges();
+            final left = leftCells * cell + inset + shift;
+            final width = math.max(
+              0.0,
+              (rightCells - leftCells) * cell - 2 * inset,
+            );
+            return Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Positioned(
+                  left: left,
+                  top: inset,
+                  bottom: inset,
+                  width: width,
+                  // Decision 0261 overturns decision 0212: the bar carries a
+                  // visible glass pill under the selected cell again.
+                  child: const DecoratedBox(
+                    key: ValueKey<String>('loop-tab-indicator'),
+                    decoration: ShapeDecoration(
+                      color: LoopTabBar.indicatorFill,
+                      shape: StadiumBorder(
+                        side: BorderSide(color: LoopTabBar.indicatorEdge),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -281,27 +441,7 @@ class LoopTabBar extends StatelessWidget {
     final rightInset = math.max(LoopLayout.tabBarInset, padding.right);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final count = LoopShell._destinations.length;
-    // -1 at the first cell, +1 at the last: `Alignment` interpolates the
-    // remaining cells for us, so the pill lands on cell centres exactly.
-    final alignment = Alignment(
-      count <= 1 ? 0 : -1 + 2 * (selectedIndex / (count - 1)),
-      0,
-    );
-    final indicator = FractionallySizedBox(
-      widthFactor: 1 / count,
-      heightFactor: 1,
-      // Decision 0212 (docs/42 附C §4): the bar carries no colour block —
-      // the chosen cell is told apart by its Yellow glyph and word alone. The
-      // keyed slot stays so the cell geometry the dock tracks is unchanged.
-      child: const Align(
-        alignment: Alignment(0, -0.7),
-        child: SizedBox(
-          key: ValueKey<String>('loop-tab-indicator'),
-          width: 48,
-          height: 30,
-        ),
-      ),
-    );
+    final selectedIndex = widget.selectedIndex;
     return SizedBox(
       key: const ValueKey<String>('loop-tab-bar'),
       height: LoopLayout.tabPageBottomReserve + padding.bottom,
@@ -312,80 +452,83 @@ class LoopTabBar extends StatelessWidget {
           child: Semantics(
             container: true,
             label: 'Primary navigation',
-            child: DecoratedBox(
-              key: const ValueKey<String>('loop-tab-bar-float'),
-              // S326 · decision 0256: a soft shadow under the bar lifts it
-              // off the page.
-              decoration: const BoxDecoration(
-                borderRadius: LoopRadius.tabBar,
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: Color(0x66000000),
-                    blurRadius: 24,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: LoopRadius.tabBar,
-                child: BackdropFilter(
-                  key: const ValueKey<String>('loop-tab-bar-blur'),
-                  filter: ImageFilter.blur(
-                    sigmaX: loopTabBarBlur,
-                    sigmaY: loopTabBarBlur,
-                  ),
-                  // The light edge all round is painted over the bar, so the
-                  // cells keep their geometry.
-                  child: DecoratedBox(
-                    key: const ValueKey<String>('loop-tab-bar-edge'),
-                    position: DecorationPosition.foreground,
-                    decoration: BoxDecoration(
-                      borderRadius: LoopRadius.tabBar,
-                      border: Border.all(color: loopTabBarEdge),
-                    ),
-                    child: Container(
-                      height: LoopTouch.tabBarHeight,
-                      padding: const EdgeInsets.all(LoopLayout.tabBarPadding),
-                      // Decision 0212: the bar is the card surface with a 20 radius
-                      // and no selection block. S264 (decision 0220): a 1 px chrome
-                      // line runs along its top edge — S326 · decision 0256: dimmed,
-                      // over a light edge all round.
-                      foregroundDecoration: const _ChromeEdge(),
-                      decoration: BoxDecoration(
-                        // Decision 0226: the safe area under the bar is clear.
-                        color: loopTabBarGround,
-                        borderRadius: LoopRadius.tabBar,
+            // Decision 0261: the whole bar swells 2 % under a press. The
+            // scale sits outside the shadow, the clip and the blur, so the
+            // frosted area grows with the bar instead of being cut.
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (_) => _pressDown(reduceMotion),
+              onPointerUp: (_) => _pressUp(),
+              onPointerCancel: (_) => _pressUp(),
+              child: ScaleTransition(
+                key: const ValueKey<String>('loop-tab-bar-press'),
+                scale: reduceMotion
+                    ? const AlwaysStoppedAnimation<double>(1)
+                    : _pressScale,
+                child: DecoratedBox(
+                  key: const ValueKey<String>('loop-tab-bar-float'),
+                  // S326 · decision 0256: a soft shadow under the bar lifts it
+                  // off the page.
+                  decoration: const BoxDecoration(
+                    borderRadius: LoopRadius.tabBar,
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x66000000),
+                        blurRadius: 24,
+                        offset: Offset(0, 8),
                       ),
-                      child: LoopDockBar(
-                        count: count,
-                        selectedIndex: selectedIndex,
-                        onSelect: onSelect,
-                        // The pill follows its cell's glyph sideways while the row
-                        // makes room under a sliding finger; at rest the shift is 0.
-                        backgroundBuilder: (context, cells) =>
-                            Transform.translate(
-                              offset: Offset(cells[selectedIndex].shift, 0),
-                              // Reduced motion is a jump, not a fast slide: the plain
-                              // `Align` reaches the new cell in the same frame.
-                              child: reduceMotion
-                                  ? Align(
-                                      alignment: alignment,
-                                      child: indicator,
-                                    )
-                                  : AnimatedAlign(
-                                      alignment: alignment,
-                                      duration: slideDuration,
-                                      curve: slideCurve,
-                                      child: indicator,
-                                    ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: LoopRadius.tabBar,
+                    child: BackdropFilter(
+                      key: const ValueKey<String>('loop-tab-bar-blur'),
+                      filter: ImageFilter.blur(
+                        sigmaX: loopTabBarBlur,
+                        sigmaY: loopTabBarBlur,
+                      ),
+                      // The light edge all round is painted over the bar, so
+                      // the cells keep their geometry.
+                      child: DecoratedBox(
+                        key: const ValueKey<String>('loop-tab-bar-edge'),
+                        position: DecorationPosition.foreground,
+                        decoration: BoxDecoration(
+                          borderRadius: LoopRadius.tabBar,
+                          border: Border.all(color: loopTabBarEdge),
+                        ),
+                        child: Container(
+                          height: LoopTouch.tabBarHeight,
+                          padding: const EdgeInsets.all(
+                            LoopLayout.tabBarPadding,
+                          ),
+                          // S264 (decision 0220): a 1 px chrome line runs
+                          // along the bar's top edge — S326 · decision 0256:
+                          // dimmed, over a light edge all round.
+                          foregroundDecoration: const _ChromeEdge(),
+                          decoration: BoxDecoration(
+                            // Decision 0226: the safe area under the bar is
+                            // clear.
+                            color: loopTabBarGround,
+                            borderRadius: LoopRadius.tabBar,
+                          ),
+                          child: LoopDockBar(
+                            count: count,
+                            selectedIndex: selectedIndex,
+                            onSelect: widget.onSelect,
+                            // The pill follows its cell's glyph sideways while
+                            // the row makes room under a sliding finger; at
+                            // rest the shift is 0.
+                            backgroundBuilder: (context, cells) =>
+                                _indicator(cells[selectedIndex].shift),
+                            cellBuilder: (context, index, cell) => LoopTabItem(
+                              label: LoopShell._destinations[index].label,
+                              slug: LoopShell._destinations[index].slug,
+                              icon: LoopShell._destinations[index].icon,
+                              selected: index == selectedIndex,
+                              dock: cell,
+                              onTap: () => widget.onSelect(index),
                             ),
-                        cellBuilder: (context, index, cell) => LoopTabItem(
-                          label: LoopShell._destinations[index].label,
-                          slug: LoopShell._destinations[index].slug,
-                          icon: LoopShell._destinations[index].icon,
-                          selected: index == selectedIndex,
-                          dock: cell,
-                          onTap: () => onSelect(index),
+                          ),
                         ),
                       ),
                     ),
@@ -397,6 +540,40 @@ class LoopTabBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// `easeOutBack` with its overshoot bounded (decision 0261): the curve
+/// `1 + (s + 1)(t − 1)³ + s(t − 1)²` peaks at `4s³ / 27(s + 1)²` past 1, so
+/// [overshoot] picks `s`; 0 is `easeOutCubic`, about 0.1 is `easeOutBack`.
+class LoopBoundedBackCurve extends Curve {
+  LoopBoundedBackCurve({required this.overshoot}) : _s = _solve(overshoot);
+
+  /// The peak past 1, as a fraction of the travel.
+  final double overshoot;
+  final double _s;
+
+  static double peakFor(double s) => 4 * s * s * s / (27 * (s + 1) * (s + 1));
+
+  static double _solve(double overshoot) {
+    if (overshoot <= 0) return 0;
+    var lo = 0.0;
+    var hi = 20.0;
+    for (var i = 0; i < 48; i += 1) {
+      final mid = (lo + hi) / 2;
+      if (peakFor(mid) < overshoot) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return (lo + hi) / 2;
+  }
+
+  @override
+  double transformInternal(double t) {
+    final x = t - 1;
+    return 1 + (_s + 1) * x * x * x + _s * x * x;
   }
 }
 
@@ -438,9 +615,11 @@ class _ChromeEdgePainter extends BoxPainter {
 /// One tab cell (S264, decision 0220): selected, an Ink glyph on a Yellow
 /// spray with a Yellow label; otherwise a Text3 glyph and label.
 ///
-/// The cell draws no ground of its own — [LoopTabBar]'s single indicator is
-/// the Lime ground, and it slides. The cell only crossfades its own ink over
-/// the same interval so the glyph darkens exactly while the pill arrives.
+/// The cell draws no ground of its own — [LoopTabBar]'s single glass pill
+/// is the ground, and it stretches across (decision 0261). The cell only
+/// crossfades its own ink over the same 280 ms, so on the first frame both
+/// the old and the new cell are lit and the old one greys as the pill
+/// leaves.
 class LoopTabItem extends StatelessWidget {
   const LoopTabItem({
     required this.label,
@@ -508,68 +687,78 @@ class LoopTabItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          alignment: Alignment.center,
-                          children: <Widget>[
-                            if (t > 0)
-                              Positioned(
-                                left: 12 - 29,
-                                top: 12 - 29,
-                                width: 58,
-                                height: 58,
-                                child: IgnorePointer(
-                                  child: Opacity(
-                                    opacity: 0.8 * t,
-                                    child: Transform.rotate(
-                                      angle: -10 * math.pi / 180,
-                                      child: Image.asset(
-                                        LoopAtmoAssets.sprayYellow,
-                                        key: ValueKey<String>(
-                                          'loop-tab-spray-$slug',
+                      LoopTabGlyphMotion(
+                        icon: icon,
+                        slug: slug,
+                        selected: selected,
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              if (t > 0)
+                                Positioned(
+                                  left: 12 - 29,
+                                  top: 12 - 29,
+                                  width: 58,
+                                  height: 58,
+                                  child: IgnorePointer(
+                                    child: Opacity(
+                                      opacity: 0.8 * t,
+                                      child: Transform.rotate(
+                                        angle: -10 * math.pi / 180,
+                                        child: Image.asset(
+                                          LoopAtmoAssets.sprayYellow,
+                                          key: ValueKey<String>(
+                                            'loop-tab-spray-$slug',
+                                          ),
+                                          fit: BoxFit.contain,
+                                          excludeFromSemantics: true,
+                                          gaplessPlayback: true,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stack,
+                                          ) => const SizedBox.shrink(),
                                         ),
-                                        fit: BoxFit.contain,
-                                        excludeFromSemantics: true,
-                                        gaplessPlayback: true,
-                                        errorBuilder: (context, error, stack) =>
-                                            const SizedBox.shrink(),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            if (t > 0)
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: DecoratedBox(
-                                  key: ValueKey<String>('loop-tab-core-$slug'),
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: <Color>[
-                                        LoopColors.yellow,
-                                        LoopColors.yellow,
-                                        Color(0x00FFD600),
-                                      ],
-                                      stops: <double>[0, 0.6, 1],
+                              if (t > 0)
+                                SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: DecoratedBox(
+                                    key: ValueKey<String>(
+                                      'loop-tab-core-$slug',
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: RadialGradient(
+                                        colors: <Color>[
+                                          LoopColors.yellow,
+                                          LoopColors.yellow,
+                                          Color(0x00FFD600),
+                                        ],
+                                        stops: <double>[0, 0.6, 1],
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: LoopIcon(
+                                        icon,
+                                        size: 21,
+                                        color: glyph,
+                                      ),
                                     ),
                                   ),
-                                  child: Center(
-                                    child: LoopIcon(
-                                      icon,
-                                      size: 21,
-                                      color: glyph,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              LoopIcon(icon, size: 21, color: glyph),
-                          ],
+                                )
+                              else
+                                LoopIcon(icon, size: 21, color: glyph),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -605,6 +794,171 @@ class LoopTabItem extends StatelessWidget {
       transform: Matrix4.translationValues(dock.shift, 0, 0)
         ..scaleByDouble(dock.scale, dock.scale, 1, 1),
       child: child,
+    );
+  }
+}
+
+/// One tab glyph's move when its tab becomes selected (S331 · decision
+/// 0261): [t] runs 0 → 1 linearly over [duration]; [at] gives the glyph's
+/// transform about [alignment] at that point, the identity at both ends.
+@immutable
+class LoopTabGlyphMove {
+  const LoopTabGlyphMove({
+    required this.duration,
+    required this.at,
+    this.alignment = Alignment.center,
+  });
+
+  final Duration duration;
+  final Matrix4 Function(double t) at;
+  final Alignment alignment;
+}
+
+/// The selected-moment move of each tab glyph (decision 0261), by icon:
+/// the bubble nods, the compass needle turns a full circle, the rocket lifts
+/// off and drops back, the bars grow again, the wallet flips on its upright.
+class LoopTabGlyphMotion extends StatefulWidget {
+  const LoopTabGlyphMotion({
+    required this.icon,
+    required this.slug,
+    required this.selected,
+    required this.child,
+    super.key,
+  });
+
+  final String icon;
+  final String slug;
+  final bool selected;
+  final Widget child;
+
+  static const double _degree = math.pi / 180;
+
+  /// 0 → 1 → 0 over [t]: rising on [rise] up to [peakAt], falling on [fall].
+  static double _hump(double t, double peakAt, Curve rise, Curve fall) =>
+      t <= peakAt
+      ? rise.transform(t / peakAt)
+      : 1 - fall.transform((t - peakAt) / (1 - peakAt));
+
+  /// Piecewise keyframes: [values] at [stops], each segment on [curves].
+  static double _keys(
+    double t,
+    List<double> stops,
+    List<double> values,
+    List<Curve> curves,
+  ) {
+    for (var i = 1; i < stops.length; i += 1) {
+      if (t <= stops[i]) {
+        final f = curves[i - 1].transform(
+          (t - stops[i - 1]) / (stops[i] - stops[i - 1]),
+        );
+        return values[i - 1] + (values[i] - values[i - 1]) * f;
+      }
+    }
+    return values.last;
+  }
+
+  static final Map<String, LoopTabGlyphMove> moves = <String, LoopTabGlyphMove>{
+    // 聊天: scale 1 → 1.18 → 1 while tilting 0 → −8° → 0.
+    'chat': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 320),
+      at: (t) {
+        final p = _hump(t, 0.4, Curves.easeOutBack, Curves.easeOut);
+        final scale = 1 + 0.18 * p;
+        return Matrix4.rotationZ(-8 * _degree * p)
+          ..scaleByDouble(scale, scale, 1, 1);
+      },
+    ),
+    // 广场: the whole compass turns once; the ring is symmetric, so the eye
+    // sees the needle sweep round.
+    'compass': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 420),
+      at: (t) =>
+          Matrix4.rotationZ(2 * math.pi * Curves.easeOutCubic.transform(t)),
+    ),
+    // MEME: the rocket lifts (+2, −3) px tilting −6°, then drops back.
+    'launch': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 320),
+      at: (t) {
+        final p = _hump(t, 0.5, Curves.easeOut, Curves.easeOutBack);
+        return Matrix4.translationValues(2 * p, -3 * p, 0)
+          ..rotateZ(-6 * _degree * p);
+      },
+    ),
+    // 情报: the bars shrink and grow again from the baseline,
+    // scaleY 1 → 0.72 → 1.08 → 1; x is untouched.
+    'chart': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 360),
+      alignment: Alignment.bottomCenter,
+      at: (t) => Matrix4.diagonal3Values(
+        1,
+        _keys(
+          t,
+          const <double>[0, 0.25, 0.6, 1],
+          const <double>[1, 0.72, 1.08, 1],
+          const <Curve>[Curves.easeOut, Curves.easeOut, Curves.easeInOut],
+        ),
+        1,
+      ),
+    ),
+    // 钱包: a flip on the upright axis, rotateY 0 → −0.45 rad → 0.
+    'wallet': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 340),
+      at: (t) {
+        final p = _hump(t, 0.5, Curves.easeInOut, Curves.easeInOut);
+        return Matrix4.identity()
+          ..setEntry(3, 2, 0.002)
+          ..rotateY(-0.45 * p);
+      },
+    ),
+  };
+
+  @override
+  State<LoopTabGlyphMotion> createState() => _LoopTabGlyphMotionState();
+}
+
+class _LoopTabGlyphMotionState extends State<LoopTabGlyphMotion>
+    with SingleTickerProviderStateMixin {
+  LoopTabGlyphMove? get _move => LoopTabGlyphMotion.moves[widget.icon];
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _move?.duration ?? Duration.zero,
+    value: 1,
+  );
+
+  @override
+  void didUpdateWidget(LoopTabGlyphMotion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only the moment a tab becomes selected moves its glyph; deselecting
+    // plays nothing backwards — the ink fades out on its own.
+    if (oldWidget.selected || !widget.selected || _move == null) return;
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return;
+    unawaited(_controller.forward(from: 0));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final move = _move;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _controller.value;
+        final rest = move == null || reduceMotion || t <= 0 || t >= 1;
+        return Transform(
+          key: ValueKey<String>('loop-tab-glyph-motion-${widget.slug}'),
+          alignment: move?.alignment ?? Alignment.center,
+          transform: rest ? Matrix4.identity() : move.at(t),
+          child: child,
+        );
+      },
     );
   }
 }
