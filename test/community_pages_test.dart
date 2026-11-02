@@ -982,8 +982,9 @@ void main() {
       );
       expect(find.text('0.8'), findsOneWidget);
       expect(_communityPowerFigure(tester), startsWith('0'));
-      // The reading says which baseline settled it, and when.
-      expect(find.textContaining(miningBaselineLabel), findsOneWidget);
+      // S336 · decision 0265: the figure stands alone; 「当前算力公式」 is
+      // behind the card's own 「社区挖矿 ›」, not printed after it.
+      expect(find.textContaining(miningBaselineLabel), findsNothing);
       // S315: the card carries no dated footnote; the snapshot time is the
       // panel's and the source sheet's.
       expect(
@@ -1251,10 +1252,20 @@ void main() {
         find.byKey(const ValueKey<String>('community-bound-asset-price')),
         findsNothing,
       );
+      // S336 · decision 0265: no reported change draws no pill, and the
+      // row never says it is still reading.
       expect(
         find.descendant(of: card, matching: find.text('未报告')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byKey(const ValueKey<String>('loop-change-pill')),
+        ),
+        findsNothing,
+      );
+      expect(find.text('行情读取中'), findsNothing);
     });
 
     testWidgets('mining, presence, announcements and links stay unavailable', (

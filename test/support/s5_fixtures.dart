@@ -1068,6 +1068,7 @@ MarketAssetDetail s5Detail({
   MarketSecurityBlock? security,
   MarketCommunityBlock? community,
   LoopFact? price,
+  LoopFact? priceChange24h,
   MarketRange24h? range24h,
   bool withRange = true,
 }) => MarketAssetDetail(
@@ -1075,7 +1076,7 @@ MarketAssetDetail s5Detail({
   capability: capability ?? s5ViewableCapability,
   range24h: range24h ?? (withRange ? s5Range() : null),
   price: price ?? s5FreshFact('747.39'),
-  priceChange24h: s5FreshFact('0.27'),
+  priceChange24h: priceChange24h ?? s5FreshFact('0.27'),
   liquidityUsd: s5FreshFact('9876543.21'),
   volume24h: s5FreshFact('1234567.89'),
   marketCap: const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED'),
