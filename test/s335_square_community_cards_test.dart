@@ -96,8 +96,7 @@ void main() {
             _card(0, label: '算力社区', viewer: _member),
             _card(1, symbol: 'DOGE'),
             _card(2),
-            // Token and label together outgrow a 390 card's facts line: the
-            // label gives way, the token stays whole.
+            // A 算力社区 with its token: the mark rides in the token chip.
             _card(3, symbol: 'DOGE', label: '算力社区'),
           ]),
         ),
@@ -204,7 +203,41 @@ void main() {
         ),
         findsOneWidget,
       );
+      // The bolt sits inside the chip, after the symbol; no separate label
+      // and no 「算力社区」 word anywhere on the line.
+      final bolted = _key('square-community-token-${_id(3)}');
+      final bolt = _key('square-community-bolt-${_id(3)}');
+      expect(find.descendant(of: bolted, matching: bolt), findsOneWidget);
+      expect(tester.getSize(bolt), const Size(12, 12));
+      expect(tester.widget<LoopIcon>(bolt).name, 'bolt');
+      expect(tester.widget<LoopIcon>(bolt).color, LoopColors.yellow);
+      final boltSymbol = find.descendant(
+        of: bolted,
+        matching: find.text('\$DOGE'),
+      );
+      expect(tester.getRect(bolt).left - tester.getRect(boltSymbol).right, 4);
+      // 6 of padding inside the 1px edge.
+      expect(tester.getRect(bolted).right - tester.getRect(bolt).right, 7);
       expect(_key('square-community-label-${_id(3)}'), findsNothing);
+      expect(
+        find.descendant(
+          of: _key('square-community-meta-${_id(3)}'),
+          matching: find.text('算力社区'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: _key('square-community-meta-${_id(3)}'),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.label == '\$DOGE，算力社区',
+          ),
+        ),
+        findsOneWidget,
+      );
+      // A token without the mark carries no bolt.
+      expect(_key('square-community-bolt-${_id(1)}'), findsNothing);
 
       // No token: members only — no chip, nothing joined by a comma or bar.
       expect(_key('square-community-token-${_id(2)}'), findsNothing);
@@ -269,14 +302,14 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('where the line has room the label follows the token chip', (
+    testWidgets('another label follows the token chip where there is room', (
       tester,
     ) async {
       await _pump(
         tester,
         FakeCommunityGateway(
           directoryPage: _page(<CommunitySummary>[
-            _card(0, symbol: 'DOGE', label: '算力社区'),
+            _card(0, symbol: 'DOGE', label: '官方合作'),
           ]),
         ),
         size: const Size(600, 1400),

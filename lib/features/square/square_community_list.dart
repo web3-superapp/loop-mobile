@@ -705,7 +705,7 @@ const double squareCommunityPillHeight = 32;
 const double squareCommunityChipHeight = 20;
 const double squareCommunityTokenLogoSize = 16;
 const double squareCommunityMetaGap = 8;
-const double squareCommunityTokenChipMaxWidth = 120;
+const double squareCommunityTokenChipMaxWidth = 136;
 
 /// One community as its own card (S335 · decision 0264): logo, name,
 /// one line of description, the facts line — members, a hairline, the token,
@@ -882,6 +882,12 @@ class _SquareCommunityMeta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = communityId;
+    // Decision 0264 (supplement): a 算力社区 always has its token, so the mark
+    // rides inside the token chip as a Yellow bolt instead of a chip of its
+    // own that a 390 line could never fit.
+    final mark = label;
+    final bolted = symbol != null && mark != null && squareIsMiningLabel(mark);
+    final trailingLabel = bolted ? null : mark;
     return SizedBox(
       key: ValueKey<String>('square-community-meta-$id'),
       height: squareCommunityChipHeight,
@@ -911,29 +917,44 @@ class _SquareCommunityMeta extends StatelessWidget {
           ],
           if (symbol case final String asset) ...<Widget>[
             const SizedBox(width: squareCommunityMetaGap),
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: squareCommunityTokenChipMaxWidth,
-              ),
-              child: _SquareMetaChip(
-                key: ValueKey<String>('square-community-token-$id'),
-                leading: LoopTokenLogo(
-                  key: ValueKey<String>('square-community-token-logo-$id'),
-                  assetSymbol: asset,
-                  logoUrl: logoUrl,
-                  // 16 holds one letter, not two.
-                  fallbackMonogram: loopMonogram(asset).characters.first,
-                  size: squareCommunityTokenLogoSize,
+            // On a narrow line the symbol is cut before the bolt or the logo.
+            Flexible(
+              flex: 3,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: squareCommunityTokenChipMaxWidth,
                 ),
-                text: '\$$asset',
-                color: LoopColors.chalk,
+                child: _SquareMetaChip(
+                  key: ValueKey<String>('square-community-token-$id'),
+                  leading: LoopTokenLogo(
+                    key: ValueKey<String>('square-community-token-logo-$id'),
+                    assetSymbol: asset,
+                    logoUrl: logoUrl,
+                    // 16 holds one letter, not two.
+                    fallbackMonogram: loopMonogram(asset).characters.first,
+                    size: squareCommunityTokenLogoSize,
+                  ),
+                  text: '\$$asset',
+                  color: LoopColors.chalk,
+                  semanticsLabel: bolted
+                      ? '\$$asset，${communityLabelDisplay(mark)}'
+                      : '\$$asset',
+                  trailing: bolted
+                      ? LoopIcon(
+                          'bolt',
+                          key: ValueKey<String>('square-community-bolt-$id'),
+                          size: squareCommunityBoltSize,
+                          color: LoopColors.yellow,
+                        )
+                      : null,
+                ),
               ),
             ),
           ],
           // The label comes last and gives way first: whole when it fits,
           // cut after its first four characters at the least, otherwise left
           // off this line (the card's spoken label still carries it).
-          if (label case final String mark)
+          if (trailingLabel case final String mark)
             Flexible(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -979,6 +1000,15 @@ double squareMetaChipFloor(BuildContext context, String text) {
   return width + squareMetaChipPadding * 2 + 2;
 }
 
+/// The bolt inside a 算力社区's token chip.
+const double squareCommunityBoltSize = 12;
+
+/// The operator's label that marks a 算力社区 (decision 0264 supplement).
+const String squareMiningLabel = '算力社区';
+
+/// Whether [label] is the 算力社区 mark.
+bool squareIsMiningLabel(String label) => label.trim() == squareMiningLabel;
+
 const double squareMetaChipPadding = 6;
 
 /// A 20-high outlined chip on the facts line: the tab bar's own hairline
@@ -989,40 +1019,56 @@ class _SquareMetaChip extends StatelessWidget {
     required this.color,
     super.key,
     this.leading,
+    this.trailing,
+    this.semanticsLabel,
   });
 
   final String text;
   final Color color;
   final Widget? leading;
 
+  /// A mark after the word (the 算力社区 bolt), 4 after it.
+  final Widget? trailing;
+
+  /// What the chip reads as; null reads [text].
+  final String? semanticsLabel;
+
   @override
-  Widget build(BuildContext context) => Container(
-    height: squareCommunityChipHeight,
-    padding: EdgeInsets.only(
-      left: leading == null ? squareMetaChipPadding : 2,
-      right: squareMetaChipPadding,
-    ),
-    decoration: BoxDecoration(
-      borderRadius: LoopRadius.inner,
-      border: Border.all(color: loopTabBarEdge),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (leading case final Widget logo) ...<Widget>[
-          logo,
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            style: LoopType.tag.copyWith(color: color),
+  Widget build(BuildContext context) => Semantics(
+    label: semanticsLabel ?? text,
+    excludeSemantics: true,
+    child: Container(
+      height: squareCommunityChipHeight,
+      padding: EdgeInsets.only(
+        left: leading == null ? squareMetaChipPadding : 2,
+        right: squareMetaChipPadding,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: LoopRadius.inner,
+        border: Border.all(color: loopTabBarEdge),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (leading case final Widget logo) ...<Widget>[
+            logo,
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.tag.copyWith(color: color),
+            ),
           ),
-        ),
-      ],
+          if (trailing case final Widget mark) ...<Widget>[
+            const SizedBox(width: 4),
+            mark,
+          ],
+        ],
+      ),
     ),
   );
 }
