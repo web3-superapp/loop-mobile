@@ -31,6 +31,20 @@ abstract interface class LoopV2WalletIntentsApi {
     LoopV2WriteOrigin? origin,
   });
 
+  /// S339 · decision 0267: one LOOP Launch project NFT. [tokenId] is the
+  /// exact decimal string; [chainId] the CAIP-2 id of the Launch chain.
+  Future<LoopWalletIntent> prepareSendNft({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+    LoopV2WriteOrigin? origin,
+  });
+
   Future<LoopWalletIntent> prepareApprove({
     required String accessToken,
     required String clientVersion,
@@ -108,6 +122,15 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
   static const intentsPath = '/v2/wallet-intents';
   static const preflightPath = '/v2/wallet-intents/send/preflight';
   static const sendPath = '/v2/wallet-intents/send';
+  static const sendNftPath = '/v2/wallet-intents/send-nft';
+
+  static final RegExp _tokenIdPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
+
+  /// The send-nft write errors: the money-action catalogue. The NFT refusals
+  /// (`NFT_NOT_OWNED`, `NFT_CONTRACT_UNSUPPORTED`, `NFT_RECIPIENT_REJECTS`,
+  /// `RECIPIENT_SELF`) travel as `detailsSafe.reasonCode` of a 422, and the
+  /// closed switch as `503 CAPABILITY_UNAVAILABLE / NFT_SEND_DISABLED`.
+  static const sendNftWriteErrors = LoopV2ModuleRequest.moneyActionWriteErrors;
   static const approvePath = '/v2/wallet-intents/approve';
   static const revokePath = '/v2/wallet-intents/revoke';
   static const swapPath = '/v2/wallet-intents/swap';
@@ -159,6 +182,8 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
     required String clientVersion,
     required String idempotencyKey,
     required LoopV2WriteOrigin? origin,
+    Map<int, Set<String>> allowedCodes =
+        LoopV2ModuleRequest.moneyActionWriteErrors,
   }) async {
     try {
       final response = await _dio.post<Object?>(
@@ -180,10 +205,7 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
       }
       return LoopV2IntentCodec.intent(response.data);
     } on DioException catch (error) {
-      throw LoopV2Contract.mapDioFailure(
-        error,
-        allowedCodes: LoopV2ModuleRequest.moneyActionWriteErrors,
-      );
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: allowedCodes);
     }
   }
 
@@ -271,6 +293,39 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
     idempotencyKey: idempotencyKey,
     origin: origin,
   );
+
+  @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+    LoopV2WriteOrigin? origin,
+  }) {
+    if (!LoopV2ChainCodec.chainIdPattern.hasMatch(chainId) ||
+        !_tokenIdPattern.hasMatch(tokenId)) {
+      _badRequest();
+    }
+    return _prepare(
+      sendNftPath,
+      <String, Object?>{
+        'walletId': _uuid(walletId),
+        'chainId': chainId,
+        'contractAddress': _address(contractAddress),
+        'tokenId': tokenId,
+        'recipientAddress': _address(recipientAddress),
+      },
+      accessToken: accessToken,
+      clientVersion: clientVersion,
+      idempotencyKey: idempotencyKey,
+      origin: origin,
+      allowedCodes: sendNftWriteErrors,
+    );
+  }
 
   @override
   Future<LoopWalletIntent> prepareApprove({

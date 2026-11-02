@@ -128,11 +128,14 @@ class MoneyFactsFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balance = intent.review.balance;
+    final observed =
+        '事实观察于 ${loopRelativeTime(intent.factsObservedAt, now: now)}';
     return LoopProvenanceFooter(
       key: const ValueKey<String>('money-facts-footer'),
-      text:
-          '区块 ${loopGroupedFigure(balance.blockNumber.toString())} · 事实观察于 '
-          '${loopRelativeTime(intent.factsObservedAt, now: now)}',
+      text: balance == null
+          ? observed
+          : '区块 ${loopGroupedFigure(balance.blockNumber.toString())} · '
+                '$observed',
     );
   }
 }

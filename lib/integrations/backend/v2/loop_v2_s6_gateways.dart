@@ -121,6 +121,33 @@ final class DioLoopV2WalletIntentsGateway
   }
 
   @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+  }) async {
+    final writeOrigin = await origin();
+    return idempotent(
+      _keyring,
+      'send-nft:$walletId:$chainId:${contractAddress.toLowerCase()}:'
+      '$tokenId:${recipientAddress.toLowerCase()}',
+      (accessToken, key) => _api.prepareSendNft(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        idempotencyKey: key,
+        walletId: walletId,
+        chainId: chainId,
+        contractAddress: contractAddress,
+        tokenId: tokenId,
+        recipientAddress: recipientAddress,
+        origin: writeOrigin,
+      ),
+    );
+  }
+
+  @override
   Future<LoopWalletIntent> prepareApproval({
     required String walletId,
     required String assetId,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -81,6 +82,8 @@ Future<void> pumpS6Page(
   // S88d: when given, the capability document is read through this port and
   // the D0 cache, as in production, instead of being pinned.
   LoopV2MetaRepository? metaRepository,
+  // S339: extra provider overrides (the Launch reads an NFT send refreshes).
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -112,6 +115,7 @@ Future<void> pumpS6Page(
               swapEvidencePending: swapEvidencePending,
             ),
           ),
+        ...overrides,
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

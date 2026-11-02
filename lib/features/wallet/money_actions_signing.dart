@@ -120,6 +120,8 @@ final class MoneyActionSigner {
               ? IntentKind.approval
               : IntentKind.launchApproval,
         LoopIntentKind.swap => IntentKind.swap,
+        // S339 · decision 0267: a project NFT, on the Launch slot.
+        LoopIntentKind.sendNft => IntentKind.nftTransfer,
       },
       // The chain is the server's own canonical value. Money actions are
       // locked to the primary chain, and the signing exit refuses anything
@@ -261,6 +263,10 @@ Decimal? moneyIntentStepUpUsd1(LoopWalletIntent intent) {
       return valued;
     case LoopIntentKind.revoke:
       return null;
+    // An NFT has no USD1 amount; the server's own valuation, when it made
+    // one, is the only figure.
+    case LoopIntentKind.sendNft:
+      return valued;
   }
 }
 
@@ -278,7 +284,17 @@ String moneyActionTitle(LoopIntentKind kind) => switch (kind) {
   LoopIntentKind.approve => '确认授权',
   LoopIntentKind.revoke => '确认回收授权',
   LoopIntentKind.swap => '确认兑换',
+  LoopIntentKind.sendNft => '确认发送 NFT',
 };
+
+/// 「T #id」 for the NFT a `send_nft` intent moves; the project's name when
+/// the server named it, else [fallbackName], else 「NFT」.
+String moneyNftLabel(LoopWalletIntent intent, {String? fallbackName}) {
+  final nft = intent.review.nft;
+  if (nft == null) return '不可用';
+  final name = nft.projectName ?? fallbackName ?? 'NFT';
+  return '$name #${nft.tokenId}';
+}
 
 /// The exact facts shown before signing, read from the server's review.
 ///
@@ -316,6 +332,15 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
           value: review.amount.isUnlimited
               ? '无限额度'
               : '${review.amount.display} ${review.asset.symbol}',
+        ),
+      ]);
+    case LoopIntentKind.sendNft:
+      fields.addAll(<IntentField>[
+        IntentField(label: 'NFT', value: moneyNftLabel(intent)),
+        IntentField(label: '合约', value: review.nft?.contractAddress ?? '不可用'),
+        IntentField(
+          label: '收款方',
+          value: review.recipient?.checksumAddress ?? '不可用',
         ),
       ]);
     case LoopIntentKind.swap:

@@ -5732,16 +5732,16 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected the published-slot guard: {result}",
         )
 
-    def test_s9_launch_slot_admits_exactly_three_kinds(self) -> None:
-        """Decision 0141: a fourth off-primary kind fails the harness."""
+    def test_s9_launch_slot_admits_exactly_four_kinds(self) -> None:
+        """Decisions 0141 / 0267: a fifth off-primary kind fails the harness."""
 
         with tempfile.TemporaryDirectory() as temporary:
             root = self._s9_root(temporary)
             target = root / check_harness.S9_SIGNING_INTENT_PATH
             target.write_text(
                 target.read_text(encoding="utf-8").replace(
-                    "  IntentKind.miningClaim,\n};",
-                    "  IntentKind.miningClaim,\n  IntentKind.transfer,\n};",
+                    "  IntentKind.nftTransfer,\n};",
+                    "  IntentKind.nftTransfer,\n  IntentKind.transfer,\n};",
                     1,
                 ),
                 encoding="utf-8",

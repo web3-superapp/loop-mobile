@@ -12077,11 +12077,17 @@ S9_SIGNING_INTENT_MARKERS = (
     "miningClaim,",
     "return launchSlotIntentKinds.contains(kind);",
 )
-# The exact kinds that may leave the primary chain (decisions 0089, 0141).
-# A fourth kind in the set is a new off-primary signing path and needs its own
-# decision, so the set is compared whole rather than searched for members.
+# The exact kinds that may leave the primary chain (decisions 0089, 0141,
+# 0267 — the project NFT send). A further kind in the set is a new
+# off-primary signing path and needs its own decision, so the set is compared
+# whole rather than searched for members.
 S9_LAUNCH_SLOT_KINDS = frozenset(
-    {"IntentKind.launchPurchase", "IntentKind.launchApproval", "IntentKind.miningClaim"}
+    {
+        "IntentKind.launchPurchase",
+        "IntentKind.launchApproval",
+        "IntentKind.miningClaim",
+        "IntentKind.nftTransfer",
+    }
 )
 S9_LAUNCH_SLOT_SET_PATTERN = re.compile(
     r"const Set<IntentKind> launchSlotIntentKinds = <IntentKind>\{([^}]*)\};"
@@ -12205,7 +12211,7 @@ def check_s9_dual_chain_contract(root: Path) -> list[str]:
             errors.append(
                 f"{S9_SIGNING_INTENT_PATH} must admit exactly "
                 f"{sorted(S9_LAUNCH_SLOT_KINDS)} in `launchSlotIntentKinds`; "
-                f"found {sorted(kinds)} (decisions 0089, 0141)"
+                f"found {sorted(kinds)} (decisions 0089, 0141, 0267)"
             )
 
     # 5. The device signer fails closed on a chain it cannot select.

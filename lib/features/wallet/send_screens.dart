@@ -12,12 +12,14 @@ import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_nft_card.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_asset_picker.dart';
+import 'package:loop_mobile/features/wallet/nft_send.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -27,7 +29,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The route argument carried through the three Send steps.
 ///
@@ -43,11 +47,27 @@ final class SendDraft {
     this.recipientAddress,
     this.amount,
     this.recipientPrefill,
+    this.nft,
   });
+
+  /// S339 · decision 0267: a project NFT send. It has a recipient and no
+  /// amount; the asset fields are the NFT contract and its ticker.
+  SendDraft.nft(SendNftTarget target, {this.recipientAddress})
+    : walletId = target.walletId,
+      assetId = '${target.chainId}:erc721:${target.contractAddress}',
+      symbol = target.ticker,
+      amount = null,
+      recipientPrefill = null,
+      nft = target;
 
   final String walletId;
   final String assetId;
   final String symbol;
+
+  /// The NFT this draft sends, or `null` for a fungible send.
+  final SendNftTarget? nft;
+
+  bool get isNft => nft != null;
 
   /// The EIP-55 checksum address the preflight returned.
   final String? recipientAddress;
@@ -61,7 +81,8 @@ final class SendDraft {
   final String? amount;
 
   bool get isComplete =>
-      (recipientAddress?.isNotEmpty ?? false) && (amount?.isNotEmpty ?? false);
+      (recipientAddress?.isNotEmpty ?? false) &&
+      (isNft || (amount?.isNotEmpty ?? false));
 
   SendDraft copyWith({String? recipientAddress, String? amount}) => SendDraft(
     walletId: walletId,
@@ -70,6 +91,7 @@ final class SendDraft {
     recipientAddress: recipientAddress ?? this.recipientAddress,
     amount: amount ?? this.amount,
     recipientPrefill: recipientPrefill,
+    nft: nft,
   );
 }
 
@@ -164,6 +186,9 @@ const Duration sendRecipientCheckDebounce = Duration(milliseconds: 400);
 
 /// The three send steps, in the order a wallet app asks for them.
 const int sendStepCount = 3;
+
+/// An NFT send's two steps (S339 · decision 0267): no amount.
+const int sendNftStepCount = 2;
 
 /// `send` · the route that starts the flow at its first step.
 ///
@@ -289,6 +314,15 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
 
   static final RegExp _addressPattern = RegExp(r'^0x[0-9a-fA-F]{40}$');
 
+  /// S339 · decision 0267: the NFT this flow sends, or `null`.
+  SendNftTarget? get _nft => widget.initialDraft?.nft;
+
+  /// An NFT send has no amount step: 收款地址 → 确认并签名.
+  int get _stepCount => _nft == null ? sendStepCount : sendNftStepCount;
+
+  /// The chain the recipient is checked for.
+  String get _chainName => loopChainName(_nft?.chainId ?? loopPrimaryChainId);
+
   @override
   void initState() {
     super.initState();
@@ -383,10 +417,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     _debounce?.cancel();
     final address = _address.text.trim();
     if (!_addressPattern.hasMatch(address)) return;
-    final walletId = ref
-        .read(walletDirectoryControllerProvider)
-        .value
-        ?.activeWalletId;
+    final walletId =
+        _nft?.walletId ??
+        ref.read(walletDirectoryControllerProvider).value?.activeWalletId;
     if (walletId == null || sendCapabilityBlocks(ref)) return;
     final lowered = address.toLowerCase();
     if (_checkedAddress == lowered && (_checking || _preflight != null)) {
@@ -467,7 +500,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final blocked = sendCapabilityBlocks(ref);
-    final walletId = watchActiveMoneyWalletId(ref, blocked: blocked);
+    // An NFT send is bound to the wallet that holds the NFT.
+    final walletId =
+        _nft?.walletId ?? watchActiveMoneyWalletId(ref, blocked: blocked);
     final directory = ref.watch(walletDirectoryControllerProvider);
     // A prefill waits for the wallet directory; it is checked once the
     // wallet is known.
@@ -506,17 +541,18 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     final String? status = _checking
         ? '正在校验地址…'
         : preflight != null
-        ? '地址已校验 · BNB Smart Chain'
+        ? '地址已校验 · $_chainName'
         : text.isEmpty
         ? null
         : !wellFormed && _addressTouched
         ? '地址格式不对：0x 开头，共 42 位'
         : null;
     final ready = !blocked && walletId != null && preflight != null;
+    final nft = _nft;
     return LoopFocusPage(
       key: const ValueKey<String>('send-address-screen'),
       archetype: LoopPageArchetype.action,
-      title: '发送',
+      title: nft == null ? '发送' : '发送 NFT',
       onBack: _back,
       primaryAction: blocked
           ? null
@@ -532,7 +568,17 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                 label: '下一步',
                 primary: true,
                 block: true,
-                onPressed: ready ? () => _toStep(2) : null,
+                onPressed: !ready
+                    ? null
+                    : nft == null
+                    ? () => _toStep(2)
+                    : () => _open(
+                        '/wallet/send/confirm',
+                        extra: SendDraft.nft(
+                          nft,
+                          recipientAddress: preflight.recipient.checksumAddress,
+                        ),
+                      ),
               ),
             ),
       block: blocked
@@ -543,8 +589,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             )
           : null,
       body: <Widget>[
-        const SendStepBar(step: 1, total: sendStepCount, label: '收款地址'),
+        SendStepBar(step: 1, total: _stepCount, label: '收款地址'),
         const SizedBox(height: 12),
+        if (nft != null) SendNftSummary(target: nft),
         if (walletId == null)
           LoopChainStateBlock(
             keyPrefix: 'send-directory',
@@ -586,7 +633,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                 unawaited(_check());
               },
               decoration: InputDecoration(
-                hintText: '0x…（BNB Smart Chain）',
+                hintText: '0x…（$_chainName）',
                 counterText: '',
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -669,7 +716,12 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             LoopErrorState(
               key: const ValueKey<String>('send-recipient-preflight-error'),
               title: '地址没有校验成功',
-              reason: loopChainFailureReason(_preflightFailure!.kind),
+              // S339: an NFT send names its own refusals (发给自己 …).
+              reason:
+                  (nft == null
+                      ? null
+                      : nftSendFailureText(_preflightFailure!)) ??
+                  loopChainFailureReason(_preflightFailure!.kind),
               onRetry: _retryCheck,
             ),
           if (preflight != null) _RecipientChecks(preflight: preflight),
@@ -1118,11 +1170,16 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     }
     final intent = _intent;
     final other = _pendingOther;
+    final nft = widget.draft.nft;
+    final failure = _failure;
+    final nftFailure = nft == null || failure == null
+        ? null
+        : nftSendFailureText(failure);
 
     return LoopFocusPage(
       key: const ValueKey<String>('send-confirm-screen'),
       archetype: LoopPageArchetype.action,
-      title: '确认发送',
+      title: nft == null ? '确认发送' : '确认发送 NFT',
       onBack: widget.onBack,
       primaryAction: intent == null
           ? null
@@ -1161,9 +1218,22 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         // promises 「全部确认后才请求签名」 and then lists nothing at all
         // (which is what a 403 on prepare left behind) confirms nothing. The
         // draft's own two lines stand until the intent replaces them.
-        const SendStepBar(step: 3, total: sendStepCount, label: '确认并签名'),
+        if (nft == null)
+          const SendStepBar(step: 3, total: sendStepCount, label: '确认并签名')
+        else
+          const SendStepBar(
+            step: sendNftStepCount,
+            total: sendNftStepCount,
+            label: '确认并签名',
+          ),
         const SizedBox(height: 12),
-        if (intent == null) _SendDraftFacts(draft: widget.draft),
+        if (intent == null && nft == null) _SendDraftFacts(draft: widget.draft),
+        if (intent == null && nft != null)
+          SendNftReviewCard(
+            key: const ValueKey<String>('send-nft-draft'),
+            target: nft,
+            recipient: widget.draft.recipientAddress,
+          ),
         if (other != null)
           _PendingIntentBlock(
             intent: other,
@@ -1178,6 +1248,17 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
             failure: _failure!,
             onOpenSecurity: () => _open('/profile/security'),
           )
+        else if (intent == null && nftFailure != null)
+          LoopInlineUnavailable(
+            key: ValueKey<String>(
+              'send-nft-failure-${failure!.reasonCode ?? failure.kind.name}',
+            ),
+            message: nftFailure,
+            maxLines: 2,
+            onRetry: nftSendFailureRetryable(failure)
+                ? () => unawaited(_prepare(force: true))
+                : null,
+          )
         else if (intent == null)
           LoopChainStateBlock(
             keyPrefix: 'send-confirm',
@@ -1188,7 +1269,35 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
             skeleton: LoopSkeletonType.detail,
             onRetry: () => unawaited(_prepare(force: true)),
           )
-        else ...<Widget>[
+        else if (nft != null) ...<Widget>[
+          SendNftReviewCard(
+            key: const ValueKey<String>('send-nft-review'),
+            target: nft,
+            intent: intent,
+          ),
+          if (!intent.simulation.passed)
+            LoopNotice(
+              key: const ValueKey<String>('send-confirm-simulation-failed'),
+              icon: 'warn',
+              tone: LoopNoticeTone.danger,
+              title: '试算没有通过，不能签名',
+              body: loopReasonCodeText(intent.simulation.reasonCode),
+            ),
+          MoneyCountdown(
+            expiresAt: intent.expiresAt,
+            clock: widget.clock,
+            builder: (context, remaining) => remaining == Duration.zero
+                ? const LoopNotice(
+                    key: ValueKey<String>('send-confirm-expired'),
+                    icon: 'clock',
+                    tone: LoopNoticeTone.warn,
+                    title: '事实已过期',
+                    body: '请重新准备一次再签名。',
+                  )
+                : const SizedBox.shrink(),
+          ),
+          MoneyFactsFooter(intent: intent, now: widget.clock?.call()),
+        ] else ...<Widget>[
           MoneyIntentReviewCard(intent: intent, clock: widget.clock),
           const _SendArrivalEstimate(),
           if (!intent.simulation.passed)
@@ -1239,7 +1348,8 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     final draft = widget.draft;
     final amount = draft.amount;
     final recipient = draft.recipientAddress;
-    if (amount == null || recipient == null) return;
+    final nft = draft.nft;
+    if (recipient == null || (nft == null && amount == null)) return;
     setState(() {
       _busy = true;
       _failure = null;
@@ -1267,12 +1377,29 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
           return;
         }
       }
-      final intent = await gateway.prepareSend(
-        walletId: draft.walletId,
-        assetId: draft.assetId,
-        amount: amount,
-        recipientAddress: recipient,
-      );
+      final LoopWalletIntent intent;
+      if (nft == null) {
+        intent = await gateway.prepareSend(
+          walletId: draft.walletId,
+          assetId: draft.assetId,
+          amount: amount!,
+          recipientAddress: recipient,
+        );
+      } else {
+        intent = await gateway.prepareSendNft(
+          walletId: nft.walletId,
+          chainId: nft.chainId,
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenIdText,
+          recipientAddress: recipient,
+        );
+        // The intent must name the NFT this page asked for: another token or
+        // contract is not the send the owner chose.
+        if (!sendNftIntentMatches(intent, nft)) {
+          throw const LoopChainException(LoopChainFailureKind.invalidData);
+        }
+        ref.read(nftSendDisabledProvider.notifier).set(false);
+      }
       if (!mounted) return;
       setState(() {
         _intent = intent;
@@ -1280,6 +1407,10 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
       });
     } on LoopChainException catch (failure) {
       if (!mounted) return;
+      if (nft != null && nftSendIsDisabled(failure)) {
+        ref.read(nftSendDisabledProvider.notifier).set(true);
+        LoopToast.show(context, message: nftSendDisabledText);
+      }
       setState(() {
         _failure = failure;
         _busy = false;
@@ -1341,11 +1472,162 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (outcome == null) return;
+    // S339 · decision 0267: whatever the wallet did with an NFT send, the
+    // Launch holdings are re-read, so the NFT tab and the medal page follow
+    // the chain rather than the read from before the send.
+    final nft = widget.draft.nft;
+    if (nft != null && outcome.opensResult) refreshLaunch2Holdings(ref, nft);
     // A locked outcome — including a broadcast the server did not accept —
     // has only one honest next screen.
     if (outcome.opensResult) {
       _open('/wallet/tx/result?intentId=${intent.intentId}');
     }
+  }
+}
+
+/// Whether [intent] is the NFT send [target] asked for: its kind, chain,
+/// contract and token id.
+bool sendNftIntentMatches(LoopWalletIntent intent, SendNftTarget target) {
+  final nft = intent.review.nft;
+  return intent.kind == LoopIntentKind.sendNft &&
+      intent.chainId == target.chainId &&
+      nft != null &&
+      nft.contractAddress == target.contractAddress &&
+      nft.tokenId == target.tokenIdText;
+}
+
+/// The NFT a send moves, as one row (step 1): the picture, 「T #id」 and the
+/// chain.
+class SendNftSummary extends StatelessWidget {
+  const SendNftSummary({required this.target, super.key});
+
+  final SendNftTarget target;
+
+  @override
+  Widget build(BuildContext context) => LoopRecordGroup(
+    key: const ValueKey<String>('send-nft-summary'),
+    rows: <LoopRecordRow>[
+      LoopRecordRow(
+        leading: ClipRRect(
+          borderRadius: LoopRadius.badge,
+          child: Launch2NftCard(
+            ticker: target.ticker,
+            nftImageUrl: target.nftImageUrl,
+            logoUrl: target.logoUrl,
+            size: 40,
+          ),
+        ),
+        title: target.label,
+        subtitle: target.projectName == null
+            ? loopChainName(target.chainId)
+            : '${target.projectName} · ${loopChainName(target.chainId)}',
+        chevron: false,
+      ),
+    ],
+  );
+}
+
+/// The NFT send's review (S339 · decision 0267): the NFT's picture, project
+/// name and `#tokenId` over the recipient, the network and the network fee.
+///
+/// With an [intent] every line is the server's, built by [moneyActionFields]
+/// as the signing sheet builds it. Without one only what this device holds
+/// is drawn: the NFT, the recipient the preflight checked and the network;
+/// the fee is not read yet.
+class SendNftReviewCard extends StatelessWidget {
+  const SendNftReviewCard({
+    required this.target,
+    super.key,
+    this.intent,
+    this.recipient,
+  });
+
+  final SendNftTarget target;
+  final LoopWalletIntent? intent;
+
+  /// The checked recipient, before the intent exists.
+  final String? recipient;
+
+  static const double pictureSide = 96;
+
+  @override
+  Widget build(BuildContext context) {
+    final intent = this.intent;
+    final serverName = intent?.review.nft?.projectName;
+    final name = serverName ?? target.projectName ?? target.ticker;
+    final tokenId = intent?.review.nft?.tokenId ?? target.tokenIdText;
+    final rows = intent == null
+        ? <(String, String)>[
+            ('收款方', recipient ?? '还没有填写'),
+            ('网络', loopChainName(target.chainId)),
+            ('最高网络费', '还没有读到'),
+          ]
+        : <(String, String)>[
+            for (final field in moneyActionFields(intent).skip(1))
+              if (field.label != 'NFT') (field.label, field.value),
+          ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopRecordCard(
+          child: Row(
+            children: <Widget>[
+              ClipRRect(
+                borderRadius: LoopRadius.card,
+                child: Launch2NftCard(
+                  key: const ValueKey<String>('send-nft-picture'),
+                  ticker: target.ticker,
+                  nftImageUrl: target.nftImageUrl,
+                  logoUrl: target.logoUrl,
+                  size: pictureSide,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      name,
+                      key: const ValueKey<String>('send-nft-name'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.titleLg,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '#$tokenId',
+                      key: const ValueKey<String>('send-nft-token-id'),
+                      style: LoopType.figureMd.copyWith(
+                        color: LoopColors.text2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: LoopSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (final (label, value) in rows)
+                  LoopKeyValue(
+                    key: ValueKey<String>('send-nft-review-$label'),
+                    label: label,
+                    value: value,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    valueUp: label == '模拟结果' ? intent?.simulation.passed : null,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

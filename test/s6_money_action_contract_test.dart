@@ -32,7 +32,7 @@ void main() {
       expect(intent.review.amount.display, '0.01');
       expect(intent.review.amount.value, Decimal.parse('0.01'));
       expect(intent.review.fee!.maximumFee, Decimal.parse('0.0000020775'));
-      expect(intent.review.balance.blockNumber, BigInt.from(120695250));
+      expect(intent.review.balance!.blockNumber, BigInt.from(120695250));
       expect(intent.reviewSha256, 'c' * 64);
       expect(intent.signing.mode, LoopSigningMode.deviceEthSendTransaction);
       expect(

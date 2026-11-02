@@ -49,10 +49,13 @@ void main() {
 
   group('the admission matrix (kind x chain)', () {
     // Decision 0141: the mining reward claim is the third Launch-slot kind.
+    // S339 · decision 0267: a project NFT send is the fourth — the project
+    // NFT lives on the Launch chain.
     const launchKinds = <IntentKind>{
       IntentKind.launchApproval,
       IntentKind.launchPurchase,
       IntentKind.miningClaim,
+      IntentKind.nftTransfer,
     };
 
     test('the matrix is the one set both exits read', () {

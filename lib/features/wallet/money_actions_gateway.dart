@@ -23,6 +23,16 @@ abstract interface class WalletIntentsGateway {
     required String recipientAddress,
   });
 
+  /// S339 · decision 0267: one LOOP Launch project NFT, `tokenId` as an exact
+  /// decimal string. The server checks ownership and builds the transfer.
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+  });
+
   Future<LoopWalletIntent> prepareApproval({
     required String walletId,
     required String assetId,
@@ -112,6 +122,15 @@ final class UnavailableWalletIntentsGateway implements WalletIntentsGateway {
     required String walletId,
     required String assetId,
     required String amount,
+    required String recipientAddress,
+  }) => _unavailable();
+
+  @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
     required String recipientAddress,
   }) => _unavailable();
 

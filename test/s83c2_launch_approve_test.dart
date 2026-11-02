@@ -125,6 +125,15 @@ final class _ApprovalIntents implements WalletIntentsGateway {
         reported ?? _approvalIntent(state: 'submitted'),
       );
 
+  @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+  }) => _unused();
+
   Future<Never> _unused() => Future<Never>.error(
     const LoopChainException(LoopChainFailureKind.unavailable),
   );
