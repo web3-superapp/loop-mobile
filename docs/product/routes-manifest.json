@@ -3,7 +3,7 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "72a0a09f0b58e799f67db2673e3ca9023c3622e26676e3be108b34d5ae88a240",
+  "sha256": "e69189adedcafde0543908c51b733d87a909ccf1ae1f72e3deff8d493eb505a7",
   "defaultRoute": "meme",
   "tabs": [
     "chat",
@@ -12,7 +12,7 @@
     "intel",
     "wallet"
   ],
-  "count": 115,
+  "count": 117,
   "modules": {
     "0-global-account": [
       {
@@ -561,6 +561,16 @@
         "slug": "user-profile",
         "tab": false,
         "prototypeOrder": 104
+      },
+      {
+        "slug": "beta-feedback",
+        "tab": false,
+        "prototypeOrder": 129
+      },
+      {
+        "slug": "beta-feedback-mine",
+        "tab": false,
+        "prototypeOrder": 130
       }
     ],
     "8-system": [

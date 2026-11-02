@@ -53,3 +53,10 @@ bootstrap/logout idempotency journal are generated or returned at runtime and
 belong only in the reviewed Secure Storage adapter. Configuration files never
 contain that journal, a raw Privy principal, Privy access/refresh token, Stream
 user token, wallet private key, PIN, or signing material.
+
+`LOOP_BETA_FEEDBACK` (S332, decision 0262) draws the 内测反馈 floating entry
+inside the five-tab shell and opens `/beta-feedback` and
+`/beta-feedback/mine`. Only `"true"` turns it on; it is off when the key is
+absent. `debug.json` and `staging.json` set it to `"true"`; an internal-test
+(TestFlight / staging) `release.json` copied from `release.example.json` must
+change it to `"true"`, and a public release leaves it `"false"`.

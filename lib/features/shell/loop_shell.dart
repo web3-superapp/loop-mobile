@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/beta_feedback/beta_feedback_entry.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -130,6 +132,42 @@ class _LoopShellState extends State<LoopShell> {
     );
   }
 
+  /// S332 · decision 0262: the floating 内测反馈 entry, over the tabs and
+  /// under every pushed page, only in a build whose switch is on. The drawn
+  /// capsule's lowest place is [tabBarReserve] + the safe area + 12.
+  Widget _withFeedbackEntry(
+    BuildContext context,
+    Widget page, {
+    required double tabBarReserve,
+  }) {
+    if (!loopFeatureSwitchesOf(context).betaFeedbackVisible) return page;
+    final capsuleBottom =
+        tabBarReserve +
+        MediaQuery.paddingOf(context).bottom +
+        BetaFeedbackEntry.gapOverTabBar;
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(child: page),
+        Positioned.fill(
+          child: BetaFeedbackEntry(
+            location: widget.location,
+            lowestBottom:
+                capsuleBottom -
+                (BetaFeedbackEntry.targetHeight -
+                        BetaFeedbackEntry.capsuleHeight) /
+                    2,
+            onOpen: (origin) => unawaited(
+              context.push(
+                LoopRouteManifest.pathFor('beta-feedback'),
+                extra: origin,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   int get _selectedIndex {
     final shell = widget.navigationShell;
     if (shell != null) return shell.currentIndex;
@@ -171,7 +209,7 @@ class _LoopShellState extends State<LoopShell> {
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= LoopLayout.railBreakpoint;
         if (wide) {
-          return Scaffold(
+          final page = Scaffold(
             body: Row(
               children: <Widget>[
                 _DesktopRail(
@@ -187,6 +225,7 @@ class _LoopShellState extends State<LoopShell> {
               ],
             ),
           );
+          return _withFeedbackEntry(context, page, tabBarReserve: 0);
         }
         // Decision 0226: the page runs under the floating bar to the very
         // bottom of the screen — the wall included — and the system
@@ -194,13 +233,17 @@ class _LoopShellState extends State<LoopShell> {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: loopTabSystemOverlay,
           child: LoopTabBarScope(
-            child: Scaffold(
-              extendBody: true,
-              body: widget.child,
-              bottomNavigationBar: LoopTabBar(
-                selectedIndex: selectedIndex,
-                onSelect: (index) => _select(context, index),
+            child: _withFeedbackEntry(
+              context,
+              Scaffold(
+                extendBody: true,
+                body: widget.child,
+                bottomNavigationBar: LoopTabBar(
+                  selectedIndex: selectedIndex,
+                  onSelect: (index) => _select(context, index),
+                ),
               ),
+              tabBarReserve: LoopLayout.tabPageBottomReserve,
             ),
           ),
         );

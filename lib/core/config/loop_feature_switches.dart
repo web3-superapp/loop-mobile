@@ -57,6 +57,12 @@ abstract final class LoopFeatureSwitches {
   /// `loopTestHintsVisible`（`lib/core/config/loop_test_hints.dart`），
   /// 没有 `ref` 的格式化函数也能读到同一个值。
   static const bool testHintsVisible = AppConfig.testHintsVisibleDefine;
+
+  /// S332 · 决策 0262：需求方 2026-11-01「内测版本加一个内测反馈入口」。
+  /// 五 Tab 壳内的「内测反馈」悬浮按钮与 `/beta-feedback` 两页只在内测包
+  /// 打开：`--dart-define=LOOP_BETA_FEEDBACK=true`，或 config json 里加
+  /// `"LOOP_BETA_FEEDBACK": "true"`。默认关；关时两页按非法路由回 MEME。
+  static const bool betaFeedbackVisible = AppConfig.betaFeedbackDefine;
 }
 
 /// The switch values one build runs with.
@@ -79,6 +85,7 @@ final class LoopFeatureSwitchValues {
     this.launch2Visible = LoopFeatureSwitches.launch2Visible,
     this.classicMemeLaunchVisible =
         LoopFeatureSwitches.classicMemeLaunchVisible,
+    this.betaFeedbackVisible = LoopFeatureSwitches.betaFeedbackVisible,
   });
 
   final bool idoLaunchVisible;
@@ -90,6 +97,9 @@ final class LoopFeatureSwitchValues {
   final bool appleLoginVisible;
   final bool launch2Visible;
   final bool classicMemeLaunchVisible;
+
+  /// S332 · decision 0262: the 内测反馈 entry and its two pages.
+  final bool betaFeedbackVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,
   /// image, tap to the public profile) rather than as a channel-scoped name.

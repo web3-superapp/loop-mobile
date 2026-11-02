@@ -39,5 +39,39 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // S332 (decision 0262): the 内测反馈 environment block reads the
+    // version and build this binary was built with, the device model and
+    // the system version over the platform channel Android also answers.
+    // Mirrored by `lib/core/platform/loop_android_sdk.dart`
+    // (`loopPlatformChannelName`).
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LoopPlatformChannel") {
+      let channel = FlutterMethodChannel(
+        name: "com.cywd.loop/platform",
+        binaryMessenger: registrar.messenger()
+      )
+      channel.setMethodCallHandler { call, result in
+        guard call.method == "appInfo" else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        result(AppDelegate.appInfo())
+      }
+    }
+  }
+
+  private static func appInfo() -> [String: String] {
+    let bundle = Bundle.main
+    var systemInfo = utsname()
+    uname(&systemInfo)
+    let machine = withUnsafePointer(to: &systemInfo.machine) {
+      $0.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+    }
+    let os = ProcessInfo.processInfo.operatingSystemVersion
+    return [
+      "appVersion": bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+      "build": bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+      "deviceModel": machine,
+      "osVersion": "iOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
+    ]
   }
 }
