@@ -7,7 +7,7 @@ import 'package:loop_mobile/core/platform/loop_android_sdk.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_gateway.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
 
-/// The photo library and the camera for 内测反馈 (S332 · decision 0262),
+/// The photo library and the camera for 意见反馈 (S332 · decision 0262),
 /// through `image_picker`.
 ///
 /// Pictures are scaled by the platform to at most 2048 px on the long edge

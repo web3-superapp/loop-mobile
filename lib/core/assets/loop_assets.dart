@@ -82,6 +82,7 @@ abstract final class LoopIconNames {
     'drag',
     'droplet',
     'expand',
+    'feedback',
     'globe',
     'graduate',
     'hand',

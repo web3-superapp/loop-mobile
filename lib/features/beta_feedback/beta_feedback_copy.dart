@@ -14,7 +14,7 @@ String betaFeedbackFailureReason(
   LoopChainFailureKind.submissionUnknown => '结果未确认，再次提交不会重复。',
   LoopChainFailureKind.unavailable => '反馈服务暂不可用。',
   LoopChainFailureKind.permissionDenied ||
-  LoopChainFailureKind.regionBlocked => '当前账号不能使用内测反馈。',
+  LoopChainFailureKind.regionBlocked => '当前账号不能使用意见反馈。',
   LoopChainFailureKind.rateLimited => '提交太频繁，请稍后再试。',
   LoopChainFailureKind.validationFailed => '内容或图片不符合要求，请修改后再试。',
   LoopChainFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后再试。',

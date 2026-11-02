@@ -276,12 +276,11 @@ void main() {
           positions: positions,
         );
         expect(find.text('持仓 ($walletRows)'), findsOneWidget);
-        for (final key in <String>[
-          ..._tokenKeys,
-          'launch2-wallet-nft-$l2InstanceA',
-        ]) {
+        // S337 · decision 0266: 代币 first, the NFT behind its own tab.
+        for (final key in _tokenKeys) {
           expect(_key(key), findsOneWidget, reason: key);
         }
+        expect(_key('launch2-wallet-nft-$l2InstanceA'), findsNothing);
         expect(_key('profile-first-buy'), findsNothing);
         expect(find.text('获取你的第一个代币'), findsNothing);
         expect(_key('profile-chart-empty'), findsNothing);
@@ -312,6 +311,9 @@ void main() {
         // A MEME row and the NFT card open the same pages as on 钱包.
         await tester.ensureVisible(_key('launch2-wallet-meme-$l2InstanceA'));
         await tester.tap(_key('launch2-wallet-meme-$l2InstanceA'));
+        await tester.ensureVisible(_key('profile-holdings-tab-nfts'));
+        await tester.tap(_key('profile-holdings-tab-nfts'));
+        await tester.pumpAndSettle();
         await tester.ensureVisible(_key('launch2-wallet-nft-$l2InstanceA'));
         await tester.tap(_key('launch2-wallet-nft-$l2InstanceA'));
         expect(opened, hasLength(2));

@@ -862,7 +862,7 @@ bool loopSpecimenLocationClosed(
     !previewSession &&
     loopSpecimenLocations.contains(location);
 
-/// Whether [location] is one of the two 内测反馈 pages (decision 0262).
+/// Whether [location] is one of the two 意见反馈 pages (decision 0262).
 bool loopBetaFeedbackLocation(String location) =>
     location == '/beta-feedback' || location == '/beta-feedback/mine';
 
@@ -979,7 +979,7 @@ GoRouter _buildRouter(
         routingErrors.record(state.uri.toString());
         return LoopRouteManifest.defaultPath;
       }
-      // S332 · decision 0262: the two 内测反馈 pages exist only in a build
+      // S332 · decision 0262: the two 意见反馈 pages exist only in a build
       // whose `LOOP_BETA_FEEDBACK` is on; elsewhere they are unknown.
       if (loopBetaFeedbackLocation(location) &&
           !loopFeatureSwitchesOf(context).betaFeedbackVisible) {
@@ -1779,7 +1779,7 @@ GoRouter _buildRouter(
             NetworksScreen(onBack: () => _popOrHome(context)),
       ),
       ..._profileRoutes,
-      // S332 (decision 0262): 内测反馈 and 我的反馈. The redirect above closes
+      // S332 (decision 0262): 意见反馈 and 我的反馈. The redirect above closes
       // both while `LOOP_BETA_FEEDBACK` is off. The entry hands the place it
       // was tapped on as `extra`; a location typed by hand reads `unknown`.
       GoRoute(

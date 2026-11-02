@@ -502,6 +502,10 @@ abstract final class LoopLayout {
   /// Child pages keep `max(24, safe-area-bottom)`.
   static const double childPageBottomMinimum = 24;
 
+  /// A page's floating action key — 聊天's 「发起」 (decisions 0122 / 0210)
+  /// — on each side. The 意见反馈 entry keeps 12 clear of it (decision 0266).
+  static const double floatingActionExtent = 56;
+
   /// Tab bar side and bottom inset on mobile (`8 + safe area`).
   static const double tabBarInset = 8;
 

@@ -44,7 +44,7 @@ class LoopShell extends StatefulWidget {
   static const _destinations = <_LoopDestination>[
     // v3 (需求方 2026-10-08, decision 0110): 聊天/广场/MEME/情报/钱包.
     // Slugs stay the stable test and analytics identifiers.
-    _LoopDestination('聊天', '/chat', 'chat'),
+    _LoopDestination('聊天', chatPath, 'chat'),
     _LoopDestination('广场', '/square', 'compass'),
     _LoopDestination('MEME', '/meme', 'launch'),
     _LoopDestination('情报', '/intel', 'chart'),
@@ -54,6 +54,9 @@ class LoopShell extends StatefulWidget {
   /// Labels in shell order, for tests and the desktop rail.
   static List<String> get destinationLabels =>
       _destinations.map((item) => item.label).toList(growable: false);
+
+  /// 聊天's root, where the inbox floats its 「发起」 key (decision 0123).
+  static const String chatPath = '/chat';
 
   static List<String> get destinationPaths =>
       _destinations.map((item) => item.path).toList(growable: false);
@@ -132,30 +135,47 @@ class _LoopShellState extends State<LoopShell> {
     );
   }
 
-  /// S332 · decision 0262: the floating 内测反馈 entry, over the tabs and
-  /// under every pushed page, only in a build whose switch is on. The drawn
-  /// capsule's lowest place is [tabBarReserve] + the safe area + 12.
+  /// S332 · decision 0262: the floating 意见反馈 entry, over the tabs and
+  /// under every pushed page, only in a build whose switch is on. The key's
+  /// lowest place is [tabBarReserve] + the safe area + 12.
+  ///
+  /// S337 · decision 0266: on 聊天 the inbox floats its 「发起」 key in the
+  /// same corner, [LoopLayout.tabPageBottomReserve] over the page's bottom
+  /// inset and [LoopLayout.floatingActionExtent] tall; where the entry's
+  /// default place would come within 12 of it, the default is lifted to 12
+  /// over that key.
   Widget _withFeedbackEntry(
     BuildContext context,
     Widget page, {
     required double tabBarReserve,
   }) {
     if (!loopFeatureSwitchesOf(context).betaFeedbackVisible) return page;
-    final capsuleBottom =
-        tabBarReserve +
-        MediaQuery.paddingOf(context).bottom +
-        BetaFeedbackEntry.gapOverTabBar;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    final lowestBottom =
+        tabBarReserve + safeBottom + BetaFeedbackEntry.gapOverTabBar;
+    var floorLift = 0.0;
+    if (Uri.tryParse(widget.location)?.path == LoopShell.chatPath) {
+      // The inbox stands its key [LoopLayout.tabPageBottomReserve] over its
+      // own bottom inset, which under the bar is the bar's reserve.
+      final createBottom =
+          safeBottom + tabBarReserve + LoopLayout.tabPageBottomReserve;
+      final createTop = createBottom + LoopLayout.floatingActionExtent;
+      final overlaps =
+          lowestBottom < createTop + BetaFeedbackEntry.gapOverTabBar &&
+          lowestBottom + BetaFeedbackEntry.size >
+              createBottom - BetaFeedbackEntry.gapOverTabBar;
+      if (overlaps) {
+        floorLift = createTop + BetaFeedbackEntry.gapOverTabBar - lowestBottom;
+      }
+    }
     return Stack(
       children: <Widget>[
         Positioned.fill(child: page),
         Positioned.fill(
           child: BetaFeedbackEntry(
             location: widget.location,
-            lowestBottom:
-                capsuleBottom -
-                (BetaFeedbackEntry.targetHeight -
-                        BetaFeedbackEntry.capsuleHeight) /
-                    2,
+            lowestBottom: lowestBottom,
+            floorLift: floorLift,
             onOpen: (origin) => unawaited(
               context.push(
                 LoopRouteManifest.pathFor('beta-feedback'),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
@@ -10,12 +9,10 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_controllers.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
-// The tab bar's ground, edge and blur (decision 0256): one glass for both.
-import 'package:loop_mobile/features/shell/loop_shell.dart'
-    show loopTabBarBlur, loopTabBarEdge, loopTabBarGround;
 
-/// Whether the 内测反馈 entry is drawn: the build switch is on and a
+/// Whether the 意见反馈 entry is drawn: the build switch is on and a
 /// session may enter the product (S332 · decision 0262).
 final betaFeedbackEntryVisibleProvider = Provider<bool>((ref) {
   if (!ref.watch(loopFeatureSwitchesProvider).betaFeedbackVisible) {
@@ -26,14 +23,17 @@ final betaFeedbackEntryVisibleProvider = Provider<bool>((ref) {
   );
 });
 
-/// The floating 内测反馈 capsule over the five tabs (S332 · decision 0262).
+/// The floating 意见反馈 key over the five tabs (S332 · decision 0262;
+/// S337 · decision 0266 turned the glass capsule into this key).
 ///
-/// A 32 tall glass capsule — the tab bar's ground, edge and blur — on the
-/// right edge, 12 above the tab bar by default. It can be dragged anywhere;
+/// A 56 Yellow square, radius 16, an Ink glyph over the word, on the right
+/// edge, 12 above the tab bar by default — or, where a page keeps its own
+/// floating key in that corner (聊天's 「发起」), 12 above that key: the
+/// shell passes the difference as [floorLift]. It can be dragged anywhere;
 /// let go, it slides back onto the right edge at the height it was left,
-/// never lower than its default place, so it never covers the bar. The
-/// height is kept for the run. Under reduced motion it jumps back instead
-/// of sliding. It steps aside while the keyboard is up.
+/// never lower than its default place, so it never covers the bar or the
+/// other key. The height is kept for the run. Under reduced motion it jumps
+/// back instead of sliding. It steps aside while the keyboard is up.
 ///
 /// It lives inside `LoopShell`, so every page pushed over the tabs covers
 /// it, and the credential pages never have it.
@@ -42,31 +42,41 @@ class BetaFeedbackEntry extends ConsumerStatefulWidget {
     required this.location,
     required this.lowestBottom,
     required this.onOpen,
+    this.floorLift = 0,
     super.key,
   });
 
   /// The router location under the entry, carried into the form.
   final String location;
 
-  /// The distance from the screen's bottom edge to the capsule's touch
-  /// target at its default place: the tab bar's reserve, the safe area
-  /// and 12.
+  /// The distance from the screen's bottom edge to the key's lowest place:
+  /// the tab bar's reserve, the safe area and 12.
   final double lowestBottom;
+
+  /// How far above [lowestBottom] this page's default place is, and the
+  /// lowest it may be dragged to here: `0` on most pages; on 聊天 the
+  /// 「发起」 key's height, so the two never overlap.
+  final double floorLift;
 
   final ValueChanged<BetaFeedbackOrigin> onOpen;
 
-  /// The drawn capsule.
-  static const double capsuleHeight = 32;
+  /// The drawn key, which is also its touch target.
+  static const double size = 56;
 
-  /// The touch target around it.
-  static const double targetHeight = LoopTouch.minimum;
+  /// The touch target: the key itself.
+  static const double targetHeight = size;
 
-  /// The gap over the tab bar at the default place.
+  static const double radius = 16;
+
+  static const double glyphSize = 22;
+
+  /// The gap over the tab bar, or over the page's own floating key, at the
+  /// default place.
   static const double gapOverTabBar = 12;
 
   static const Duration snapDuration = Duration(milliseconds: 220);
 
-  static const String label = '内测反馈';
+  static const String label = '意见反馈';
 
   @override
   ConsumerState<BetaFeedbackEntry> createState() => _BetaFeedbackEntryState();
@@ -139,22 +149,23 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
     return LayoutBuilder(
       builder: (context, constraints) {
         final maximumLift = _maximumLift(constraints, padding);
-        final lift = (_dragLift ?? storedLift).clamp(0.0, maximumLift);
+        final minimumLift = math.min(
+          math.max(0.0, widget.floorLift),
+          maximumLift,
+        );
+        final lift = (_dragLift ?? storedLift).clamp(minimumLift, maximumLift);
         final maximumPull = math.max(
           0.0,
-          constraints.maxWidth - rightInset - 120,
+          constraints.maxWidth - rightInset - BetaFeedbackEntry.size,
         );
-        // The tap is the capsule's own pressable; the detector around it
-        // only moves it.
-        final capsule = Semantics(
+        // The tap is the key's own pressable; the detector around it only
+        // moves it.
+        final key = Semantics(
           button: true,
           label: BetaFeedbackEntry.label,
           excludeSemantics: true,
           onTap: _open,
-          child: LoopPressable(
-            onTap: _open,
-            child: const _BetaFeedbackCapsule(),
-          ),
+          child: LoopPressable(onTap: _open, child: const _BetaFeedbackKey()),
         );
         return Stack(
           clipBehavior: Clip.none,
@@ -166,7 +177,7 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
               child: GestureDetector(
                 key: const ValueKey<String>('beta-feedback-entry'),
                 behavior: HitTestBehavior.opaque,
-                // The capsule stays under the finger from the first move.
+                // The key stays under the finger from the first move.
                 dragStartBehavior: DragStartBehavior.down,
                 onPanStart: (_) {
                   _snap.stop();
@@ -175,7 +186,7 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
                 onPanUpdate: (details) {
                   setState(() {
                     _dragLift = ((_dragLift ?? lift) - details.delta.dy).clamp(
-                      0.0,
+                      minimumLift,
                       maximumLift,
                     );
                     _pull = (_pull - details.delta.dx).clamp(0.0, maximumPull);
@@ -183,7 +194,7 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
                 },
                 onPanEnd: (_) => _release(reduceMotion),
                 onPanCancel: () => _release(reduceMotion),
-                child: capsule,
+                child: key,
               ),
             ),
           ],
@@ -209,54 +220,52 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
   }
 }
 
-class _BetaFeedbackCapsule extends StatelessWidget {
-  const _BetaFeedbackCapsule();
+class _BetaFeedbackKey extends StatelessWidget {
+  const _BetaFeedbackKey();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: BetaFeedbackEntry.targetHeight,
-      child: Center(
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            borderRadius: LoopRadius.pill,
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Color(0x52000000),
-                blurRadius: 12,
-                offset: Offset(0, 4),
-              ),
-            ],
+    return Container(
+      key: const ValueKey<String>('beta-feedback-entry-key'),
+      width: BetaFeedbackEntry.size,
+      height: BetaFeedbackEntry.size,
+      decoration: const BoxDecoration(
+        color: LoopColors.yellow,
+        borderRadius: BorderRadius.all(
+          Radius.circular(BetaFeedbackEntry.radius),
+        ),
+        // The tab bar's shadow (decision 0256): the same lift off the page.
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
           ),
-          child: ClipRRect(
-            borderRadius: LoopRadius.pill,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: loopTabBarBlur,
-                sigmaY: loopTabBarBlur,
-              ),
-              child: DecoratedBox(
-                key: const ValueKey<String>('beta-feedback-entry-glass'),
-                decoration: BoxDecoration(
-                  color: loopTabBarGround,
-                  borderRadius: LoopRadius.pill,
-                  border: Border.all(color: loopTabBarEdge),
-                ),
-                child: Container(
-                  key: const ValueKey<String>('beta-feedback-entry-capsule'),
-                  height: BetaFeedbackEntry.capsuleHeight,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  child: Text(
-                    BetaFeedbackEntry.label,
-                    maxLines: 1,
-                    style: LoopType.label.copyWith(color: LoopColors.chalk),
-                  ),
-                ),
-              ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const LoopIcon(
+            'feedback',
+            size: BetaFeedbackEntry.glyphSize,
+            color: LoopColors.ink,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            BetaFeedbackEntry.label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            textScaler: TextScaler.noScaling,
+            style: LoopTypography.sans(
+              size: 10,
+              weight: FontWeight.w600,
+              height: 1.2,
+              color: LoopColors.ink,
             ),
           ),
-        ),
+        ],
       ),
     );
   }

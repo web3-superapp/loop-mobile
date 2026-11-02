@@ -16,7 +16,7 @@ import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// `beta-feedback` · 内测反馈 (S332 · decision 0262): archetype `action`,
+/// `beta-feedback` · 意见反馈 (S332 · decision 0262): archetype `action`,
 /// layout `focus`.
 ///
 /// A category, the text, up to four pictures and the read-only environment
@@ -134,7 +134,7 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
       child: LoopFocusPage(
         key: const ValueKey<String>('beta-feedback-screen'),
         archetype: LoopPageArchetype.action,
-        title: '内测反馈',
+        title: '意见反馈',
         onBack: widget.onBack,
         keyboardAccessory: true,
         actions: <Widget>[
@@ -148,7 +148,7 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
         block: blocked
             ? const LoopPageBlock(
                 key: ValueKey<String>('beta-feedback-unavailable'),
-                title: '内测反馈暂不可用',
+                title: '意见反馈暂不可用',
                 message: '现在无法提交反馈。',
               )
             : null,

@@ -45,7 +45,7 @@ class ChatCreateMenuButton extends ConsumerWidget {
             splashColor: Colors.transparent,
             onTap: () => unawaited(_open(context, ref)),
             child: const SizedBox.square(
-              dimension: 56,
+              dimension: LoopLayout.floatingActionExtent,
               child: Center(
                 child: LoopIcon('plus', size: 24, color: LoopColors.ink),
               ),

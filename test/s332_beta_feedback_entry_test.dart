@@ -23,6 +23,7 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dar
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
@@ -95,6 +96,7 @@ void main() {
       WidgetTester tester, {
       bool reduceMotion = false,
       double keyboard = 0,
+      double floorLift = 0,
       ValueNotifier<bool>? shown,
     }) async {
       tester.view.devicePixelRatio = 1;
@@ -131,6 +133,7 @@ void main() {
                         child: BetaFeedbackEntry(
                           location: '/meme',
                           lowestBottom: 100,
+                          floorLift: floorLift,
                           onOpen: opened.add,
                         ),
                       ),
@@ -147,26 +150,74 @@ void main() {
 
     Rect target(WidgetTester tester) => tester.getRect(find.byKey(_entry));
 
-    testWidgets('a 32 tall capsule on the right edge, named, and tappable', (
+    testWidgets('a 56 Yellow key on the right edge, glyph and word, tappable', (
       tester,
     ) async {
       final opened = await pumpEntry(tester);
       expect(target(tester).right, 390 - LoopLayout.tabBarInset);
       expect(target(tester).bottom, 844 - 100);
-      expect(target(tester).height, 44);
+      expect(target(tester).size, const Size(56, 56));
+      const keyFinder = ValueKey<String>('beta-feedback-entry-key');
+      expect(tester.getSize(find.byKey(keyFinder)), const Size(56, 56));
+      final box = tester.widget<Container>(find.byKey(keyFinder));
+      final decoration = box.decoration! as BoxDecoration;
+      expect(decoration.color, LoopColors.yellow);
       expect(
-        tester
-            .getSize(
-              find.byKey(const ValueKey<String>('beta-feedback-entry-capsule')),
-            )
-            .height,
-        32,
+        decoration.borderRadius,
+        const BorderRadius.all(Radius.circular(16)),
       );
-      expect(find.bySemanticsLabel('内测反馈'), findsOneWidget);
+      expect(decoration.boxShadow, const <BoxShadow>[
+        BoxShadow(
+          color: Color(0x66000000),
+          blurRadius: 24,
+          offset: Offset(0, 8),
+        ),
+      ]);
+      expect(find.byType(BackdropFilter), findsNothing);
+      final glyph = tester.widget<LoopIcon>(
+        find.descendant(
+          of: find.byKey(keyFinder),
+          matching: find.byType(LoopIcon),
+        ),
+      );
+      expect(glyph.name, 'feedback');
+      expect(glyph.size, 22);
+      expect(glyph.color, LoopColors.ink);
+      final word = tester.widget<Text>(
+        find.descendant(of: find.byKey(keyFinder), matching: find.byType(Text)),
+      );
+      expect(word.data, '意见反馈');
+      expect(word.style?.fontSize, 10);
+      expect(word.style?.fontWeight, FontWeight.w600);
+      expect(word.style?.color, LoopColors.ink);
+      // Glyph over word, both inside the key.
+      final glyphRect = tester.getRect(find.byType(LoopIcon));
+      final wordRect = tester.getRect(find.text('意见反馈'));
+      expect(glyphRect.bottom, lessThanOrEqualTo(wordRect.top));
+      expect(target(tester).contains(glyphRect.center), isTrue);
+      expect(wordRect.left, greaterThanOrEqualTo(target(tester).left));
+      expect(wordRect.right, lessThanOrEqualTo(target(tester).right));
+      expect(find.bySemanticsLabel('意见反馈'), findsOneWidget);
+      expect(find.bySemanticsLabel('内测反馈'), findsNothing);
 
       await tester.tap(find.byKey(_entry));
       expect(opened.single.route, '/meme');
       expect(opened.single.locale, isNotEmpty);
+    });
+
+    testWidgets('a floor lift raises the default place and the lowest drag', (
+      tester,
+    ) async {
+      await pumpEntry(tester, floorLift: 68);
+      expect(target(tester).bottom, 844 - 100 - 68);
+      await tester.drag(find.byKey(_entry), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      expect(target(tester).bottom, 844 - 100 - 68);
+      final gesture = await tester.startGesture(target(tester).center);
+      await gesture.moveBy(const Offset(0, -100));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(target(tester).bottom, closeTo(844 - 100 - 168, 0.5));
     });
 
     testWidgets('drags anywhere, snaps back to the right edge, keeps height', (
@@ -296,13 +347,32 @@ void main() {
         await tester.pumpAndSettle();
 
         final capsule = tester.getRect(
-          find.byKey(const ValueKey<String>('beta-feedback-entry-capsule')),
+          find.byKey(const ValueKey<String>('beta-feedback-entry-key')),
         );
         final bar = tester.getRect(
           find.byKey(const ValueKey<String>('loop-tab-bar-float')),
         );
         expect(capsule.bottom, lessThanOrEqualTo(bar.top - 12));
         expect(capsule.right, closeTo(bar.right, 0.5));
+
+        // 聊天: the 「发起」 key stands over the bar's reserve; the entry's
+        // default place keeps at least 12 clear of it.
+        router.go('/chat');
+        await tester.pumpAndSettle();
+        final create = tester.getRect(
+          find.byKey(const ValueKey<String>('chat-create-menu')),
+        );
+        final onChat = tester.getRect(
+          find.byKey(const ValueKey<String>('beta-feedback-entry-key')),
+        );
+        expect(onChat.overlaps(create), isFalse);
+        expect(
+          onChat.bottom <= create.top - 12 || onChat.top >= create.bottom + 12,
+          isTrue,
+          reason: 'entry $onChat · 发起 $create',
+        );
+        router.go('/meme');
+        await tester.pumpAndSettle();
 
         unawaited(router.push('/profile'));
         await tester.pumpAndSettle();
@@ -315,6 +385,9 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(BetaFeedbackScreen), findsOneWidget);
         expect(find.byKey(_entry), findsNothing);
+        // S337 · decision 0266: the page says 意见反馈, never 内测反馈.
+        expect(find.textContaining('意见反馈'), findsWidgets);
+        expect(find.textContaining('内测反馈'), findsNothing);
         expect(
           GoRouterState.of(tester.element(find.byType(BetaFeedbackScreen)))
               .uri

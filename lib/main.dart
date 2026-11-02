@@ -442,7 +442,7 @@ Future<void> main() async {
         aboutGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2AboutGatewayProvider),
         ),
-        // S332 (decision 0262): 内测反馈. Fail-closed until its Dio client,
+        // S332 (decision 0262): 意见反馈. Fail-closed until its Dio client,
         // client metadata and authenticated session all exist; the entry
         // itself is drawn only when `LOOP_BETA_FEEDBACK` is on.
         betaFeedbackGatewayProvider.overrideWith(

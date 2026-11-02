@@ -59,7 +59,7 @@ abstract final class LoopFeatureSwitches {
   static const bool testHintsVisible = AppConfig.testHintsVisibleDefine;
 
   /// S332 · 决策 0262：需求方 2026-11-01「内测版本加一个内测反馈入口」。
-  /// 五 Tab 壳内的「内测反馈」悬浮按钮与 `/beta-feedback` 两页只在内测包
+  /// 五 Tab 壳内的「意见反馈」悬浮按钮与 `/beta-feedback` 两页只在内测包
   /// 打开：`--dart-define=LOOP_BETA_FEEDBACK=true`，或 config json 里加
   /// `"LOOP_BETA_FEEDBACK": "true"`。默认关；关时两页按非法路由回 MEME。
   static const bool betaFeedbackVisible = AppConfig.betaFeedbackDefine;
@@ -98,7 +98,7 @@ final class LoopFeatureSwitchValues {
   final bool launch2Visible;
   final bool classicMemeLaunchVisible;
 
-  /// S332 · decision 0262: the 内测反馈 entry and its two pages.
+  /// S332 · decision 0262: the 意见反馈 entry and its two pages.
   final bool betaFeedbackVisible;
 
   /// Whether a channel draws its members as their real Stream user (name,

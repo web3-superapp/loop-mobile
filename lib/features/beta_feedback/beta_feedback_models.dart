@@ -159,7 +159,7 @@ final class BetaFeedbackEnvironment {
   final String deviceModel;
 }
 
-/// Where the person was when they tapped 内测反馈, read at the tap.
+/// Where the person was when they tapped 意见反馈, read at the tap.
 @immutable
 final class BetaFeedbackOrigin {
   const BetaFeedbackOrigin({required this.route, required this.locale});

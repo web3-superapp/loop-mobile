@@ -385,6 +385,22 @@ const String profileWalletAssetDestination = 'wallet-asset:';
 /// read: a fact without a source — holding time, trade count, the net worth
 /// history — is not drawn. The account's other entries moved behind the gear
 /// to `settings` ([ProfileAccountEntries]); no route was added or removed.
+/// 我 · 持仓's two tabs (S337 · decision 0266), as 钱包 splits them.
+enum ProfileHoldingsTab { tokens, nfts }
+
+/// The 持仓 tab last chosen, kept for the run: 代币 until one is picked.
+final class ProfileHoldingsTabChoice extends Notifier<ProfileHoldingsTab> {
+  @override
+  ProfileHoldingsTab build() => ProfileHoldingsTab.tokens;
+
+  void select(ProfileHoldingsTab tab) => state = tab;
+}
+
+final profileHoldingsTabProvider =
+    NotifierProvider<ProfileHoldingsTabChoice, ProfileHoldingsTab>(
+      ProfileHoldingsTabChoice.new,
+    );
+
 class ProfileHomeScreen extends ConsumerStatefulWidget {
   const ProfileHomeScreen({
     required this.onNavigate,
@@ -496,12 +512,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
             ),
           ),
-          ..._holdings(
-            wallet,
-            holdings: holdings,
-            launch2: launch2,
-            nothingHeld: nothingHeld,
-          ),
+          ..._holdings(wallet, holdings: holdings, launch2: launch2),
         ],
       ),
     );
@@ -590,17 +601,63 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     _ProfileWalletRead wallet, {
     required WalletHoldings holdings,
     required Launch2WalletEntries launch2,
-    required bool nothingHeld,
   }) {
     final read = wallet.balances;
     final value = read?.value;
+    final tab = ref.watch(profileHoldingsTabProvider);
     // The MEME v2 holdings stand on their own read, as on 钱包: a main read
-    // that failed or a closed chain does not hide them.
-    final launch2Rows = <Widget>[
-      for (final entry in holdings.tokens) entry.row,
-      if (holdings.nfts.isNotEmpty) _nftGrid(holdings.nfts),
-      ?launch2.failure,
-    ];
+    // that failed or a closed chain does not hide them. S337 · decision
+    // 0266: tokens and NFTs are two tabs, as on 钱包.
+    List<Widget> tabbed({Widget? tokensEmpty}) {
+      final tokenCount = holdings.tokens.length - holdings.unreadCount;
+      return <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: LoopSpacing.page - WalletQuietTabs.horizontalPadding,
+          ),
+          child: WalletQuietTabs<ProfileHoldingsTab>(
+            key: const ValueKey<String>('profile-holdings-tabs'),
+            semanticLabel: '持仓类别',
+            options: ProfileHoldingsTab.values,
+            labelOf: (option) => switch (option) {
+              ProfileHoldingsTab.tokens => '代币 $tokenCount',
+              ProfileHoldingsTab.nfts => 'NFT ${holdings.nfts.length}',
+            },
+            keyOf: (option) =>
+                ValueKey<String>('profile-holdings-tab-${option.name}'),
+            selected: tab,
+            onSelected: ref.read(profileHoldingsTabProvider.notifier).select,
+          ),
+        ),
+        ...switch (tab) {
+          ProfileHoldingsTab.tokens => <Widget>[
+            for (final entry in holdings.tokens) entry.row,
+            if (holdings.tokens.isEmpty &&
+                !launch2.loading &&
+                launch2.failure == null)
+              ?tokensEmpty,
+          ],
+          ProfileHoldingsTab.nfts => <Widget>[
+            if (holdings.nfts.isNotEmpty)
+              _nftGrid(holdings.nfts)
+            else if (!launch2.loading && launch2.failure == null)
+              Padding(
+                key: const ValueKey<String>('profile-holdings-nfts-empty'),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  LoopSpacing.tight,
+                  LoopSpacing.page,
+                  LoopSpacing.rowGap,
+                ),
+                child: Text('暂无 NFT', style: LoopType.caption),
+              ),
+          ],
+        },
+        ?launch2.failure,
+      ];
+    }
+
+    final launch2Rows = tabbed();
     if (wallet.blockedReason != null) {
       return <Widget>[
         const LoopLabel('持仓'),
@@ -652,9 +709,11 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     }
     return <Widget>[
       LoopLabel('持仓 (${holdings.heldCount})'),
-      ...launch2Rows,
-      if (nothingHeld)
-        _ProfileFirstBuyCard(onOpen: () => widget.onNavigate('meme')),
+      ...tabbed(
+        tokensEmpty: _ProfileFirstBuyCard(
+          onOpen: () => widget.onNavigate('meme'),
+        ),
+      ),
     ];
   }
 

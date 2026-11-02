@@ -1240,13 +1240,13 @@ abstract final class LoopRouteManifest {
       status: LoopRouteStatus.implemented,
     ),
     // S332 (decision 0262): the internal-test feedback form, opened from the
-    // floating 内测反馈 entry inside the five-tab shell, and the account's
+    // floating 意见反馈 entry inside the five-tab shell, and the account's
     // own feedback list. Both stay closed unless `LOOP_BETA_FEEDBACK` is on.
     LoopRouteEntry(
       slug: 'beta-feedback',
       path: '/beta-feedback',
       module: LoopRouteModule.profile,
-      title: '内测反馈',
+      title: '意见反馈',
       prototypeOrder: 129,
       step: 8,
       status: LoopRouteStatus.implemented,
