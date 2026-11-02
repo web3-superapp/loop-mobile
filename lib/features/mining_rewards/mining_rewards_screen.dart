@@ -270,6 +270,7 @@ class _MiningRewardsHourlyScreenState
               view,
               live: live,
               settling: progress?.phase == MiningMinutePhase.settling,
+              progress: progress,
             ),
             sheetKey: 'mining-rewards-info-sheet',
           ),
@@ -536,24 +537,13 @@ class MiningMinuteHero extends StatelessWidget {
             stamp: settling ? '结算中' : null,
           ),
           detail: <Widget>[
+            // S336 · decision 0265: the strip is the minute bar alone; the
+            // hour's total and period are said in the page's (i).
             LoopProgressBar(
               key: const ValueKey<String>('mining-minute-bar'),
               value: progress.completedMinutes / 60,
               semanticLabel: '第 ${progress.completedMinutes} / 60 分钟',
             ),
-            const SizedBox(height: 12),
-            LoopCompositeDetailNote(
-              '上一小时 ${miningLoopFigure(progress.total)} LOOP',
-              key: const ValueKey<String>('mining-minute-total'),
-            ),
-            if (epoch case final MiningRewardEpoch hour) ...<Widget>[
-              const SizedBox(height: 4),
-              LoopCompositeDetailNote(
-                '结算时段 ${loopClockLabel(hour.epochStart)}–${loopClockLabel(hour.epochEnd)} · '
-                '本小时奖励结算后已全部计入可领取',
-                key: const ValueKey<String>('mining-minute-epoch'),
-              ),
-            ],
           ],
         );
     }
@@ -1399,13 +1389,33 @@ List<LoopInfoNote> miningRewardsInfoNotes(
   MiningRewardsView? view, {
   required bool live,
   bool settling = false,
+  MiningMinuteProgress? progress,
 }) {
+  final shown =
+      progress != null &&
+      (progress.phase == MiningMinutePhase.displaying ||
+          progress.phase == MiningMinutePhase.settling);
   final nftPower = view?.nft?.totalPower;
   final assetPower = view?.asset?.totalPower;
   final hasPower = nftPower != null || assetPower != null;
   final total = (nftPower ?? Decimal.zero) + (assetPower ?? Decimal.zero);
   final epoch = view?.lastEpoch;
   return <LoopInfoNote>[
+    // Live: what the minute folio's strip used to say under its bar.
+    if (live && view != null) ...<LoopInfoNote>[
+      if (shown)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-minute-total'),
+          body: '上一小时 ${miningLoopFigure(progress.total)} LOOP',
+        ),
+      if (epoch != null)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-minute-epoch'),
+          body:
+              '结算时段 ${loopClockLabel(epoch.epochStart)}–${loopClockLabel(epoch.epochEnd)} · '
+              '本小时奖励结算后已全部计入可领取',
+        ),
+    ],
     if (!live && view != null) ...<LoopInfoNote>[
       if (hasPower && !settling && total > Decimal.zero)
         const LoopInfoNote(

@@ -840,8 +840,8 @@ class _CommunityHeader extends StatelessWidget {
 ///
 /// Each key states its own condition. The voice key is an entry while a room
 /// is live, an opening for an owner or an admin when none is, and the
-/// server's own reason for anybody else. The chat key's reason is the one
-/// line under the row; the voice key's is a toast on tap (S336).
+/// server's own reason for anybody else. A key that cannot act says why as a
+/// toast on tap; nothing stands under the row (S336).
 class _CommunityKeys extends ConsumerWidget {
   const _CommunityKeys({
     required this.detail,
@@ -890,7 +890,10 @@ class _CommunityKeys extends ConsumerWidget {
     final voiceReason = voiceLive || mayOpenRoom || !joined
         ? null
         : communicationUnavailableReason(voice.reasonCode);
-    final reasons = <String>[?chatReason];
+    // S336 · decision 0265 (补): nothing stands under the row; each key that
+    // cannot act says why on tap.
+    void say(String reason) =>
+        LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
     final Widget voiceKey;
     if (voiceLive) {
       voiceKey = LoopRoundKey(
@@ -915,61 +918,36 @@ class _CommunityKeys extends ConsumerWidget {
         label: '语音房',
         semanticLabel: '语音房',
         onPressed: null,
-        onBlocked: voiceReason == null
-            ? null
-            : () => LoopToast.show(
-                context,
-                message: voiceReason,
-                kind: LoopToastKind.warn,
-              ),
+        onBlocked: voiceReason == null ? null : () => say(voiceReason),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopRoundKeyRow(
-          key: const ValueKey<String>('community-profile-keys'),
-          keys: <Widget>[
-            LoopRoundKey(
-              key: const ValueKey<String>('community-profile-open-chat'),
-              icon: 'chat',
-              label: '进群聊',
-              tone: LoopRoundKeyTone.primary,
-              onPressed: chatOpenable ? onOpenChat : null,
-            ),
-            voiceKey,
-            LoopRoundKey(
-              key: const ValueKey<String>('community-profile-share'),
-              icon: 'share',
-              label: '分享',
-              semanticLabel: '分享社区',
-              onPressed: onShare,
-            ),
-            // Decision 0113: only the owner and admins are offered the
-            // manage center, which is where the profile is edited.
-            if (detail.viewer.mayManage)
-              LoopRoundKey(
-                key: const ValueKey<String>('community-profile-manage'),
-                icon: 'settings',
-                label: '管理',
-                onPressed: onManage,
-              ),
-          ],
+    return LoopRoundKeyRow(
+      key: const ValueKey<String>('community-profile-keys'),
+      keys: <Widget>[
+        LoopRoundKey(
+          key: const ValueKey<String>('community-profile-open-chat'),
+          icon: 'chat',
+          label: '进群聊',
+          tone: LoopRoundKeyTone.primary,
+          onPressed: chatOpenable ? onOpenChat : null,
+          onBlocked: chatReason == null ? null : () => say(chatReason),
         ),
-        if (reasons.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              4,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              reasons.join(' '),
-              key: const ValueKey<String>('community-profile-action-reasons'),
-              textAlign: TextAlign.center,
-              style: LoopType.captionSm,
-            ),
+        voiceKey,
+        LoopRoundKey(
+          key: const ValueKey<String>('community-profile-share'),
+          icon: 'share',
+          label: '分享',
+          semanticLabel: '分享社区',
+          onPressed: onShare,
+        ),
+        // Decision 0113: only the owner and admins are offered the
+        // manage center, which is where the profile is edited.
+        if (detail.viewer.mayManage)
+          LoopRoundKey(
+            key: const ValueKey<String>('community-profile-manage'),
+            icon: 'settings',
+            label: '管理',
+            onPressed: onManage,
           ),
       ],
     );

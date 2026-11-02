@@ -1197,7 +1197,24 @@ void main() {
       await _pump(tester, rewards: rewards);
       expect(_key('mining-minute-displaying'), findsOneWidget);
       expect(_key('mining-minute-figure-20.0000'), findsOneWidget);
-      expect(find.text('上一小时 60.0000 LOOP'), findsOneWidget);
+      // S336 · decision 0265 (补): the strip is the minute bar alone; the
+      // hour's total and period are in the page's (i), live only.
+      expect(find.text('上一小时 60.0000 LOOP'), findsNothing);
+      expect(find.textContaining('本小时奖励结算后'), findsNothing);
+      expect(find.textContaining('结算时段'), findsNothing);
+      expect(_key('mining-minute-bar'), findsOneWidget);
+      expect(_infoBodies(tester), contains('上一小时 60.0000 LOOP'));
+      final period = _infoBodies(tester)
+          .where((body) => body.startsWith('结算时段 '))
+          .toList();
+      expect(period, hasLength(1));
+      expect(period.single, endsWith(' · 本小时奖励结算后已全部计入可领取'));
+      // Live, the (i) does not say the page only counts power.
+      expect(_powerOnly(tester), isFalse);
+      expect(
+        _infoBodies(tester).any((body) => body.startsWith('统计时段 ')),
+        isFalse,
+      );
       expect(_key('mining-summary-settled'), findsOneWidget);
       expect(find.text('200.0000'), findsOneWidget);
       expect(find.text('80.0000'), findsOneWidget);
@@ -2214,6 +2231,12 @@ void main() {
         '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。',
       ];
       expect(_infoBodies(tester), containsAll(sentences));
+      // The live strip's two notes are said only once the token is live.
+      expect(
+        _infoBodies(tester)
+            .any((body) => body.startsWith('结算时段 ') || body.endsWith(' LOOP')),
+        isFalse,
+      );
       expect(
         _infoBodies(tester).where((body) => body.startsWith('统计时段 ')),
         hasLength(1),

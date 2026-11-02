@@ -70,6 +70,31 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('no channel: the 进群聊 key says so on tap, nothing stands '
+        'under the row', (tester) async {
+      const noChannel = '该社区还没有官方群频道。';
+      final chatKey = find.byKey(
+        const ValueKey<String>('community-profile-open-chat'),
+      );
+      await pumpProfile(tester);
+      await scrollToCommunitySection(tester, chatKey);
+
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-action-reasons')),
+        findsNothing,
+      );
+      expect(find.text(noChannel), findsNothing);
+      final key = tester.widget<LoopRoundKey>(chatKey);
+      expect(key.onPressed, isNull);
+      expect(key.onBlocked, isNotNull);
+
+      await tester.tap(chatKey);
+      await tester.pump();
+      expect(find.text(noChannel), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('a live room is still entered on tap', (tester) async {
       final opened = <String>[];
       await pumpProfile(
