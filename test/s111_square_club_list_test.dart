@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
@@ -328,14 +329,10 @@ void main() {
         expect(capsule(kind, ids[5]), findsNothing);
       }
       expect(capsule('pending', ids[6]), findsOneWidget);
-      // The rows only: 热门社区 above the board repeats the first one.
-      Finder onBoard(String text) => find.descendant(
-        of: find.byKey(const ValueKey<String>('square-community-board')),
-        matching: find.text(text),
-      );
-      expect(onBoard('加入'), findsOneWidget);
-      expect(onBoard('已加入'), findsNWidgets(2));
-      expect(onBoard('我的'), findsOneWidget);
+      // S335 (decision 0264): no 热门社区 banner repeats a row any more.
+      expect(find.text('加入'), findsOneWidget);
+      expect(find.text('已加入'), findsNWidgets(2));
+      expect(find.text('我的'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -350,8 +347,27 @@ void main() {
           ]),
         ),
       );
-      expect(find.text('128 成员，\$FROG'), findsOneWidget);
-      expect(find.text('128 成员'), findsOneWidget);
+      // S335 (decision 0264): members and the token are two pieces, the
+      // token a chip with its logo; nothing joins them into one sentence.
+      expect(find.text('128 成员'), findsNWidgets(2));
+      final chip = find.byKey(
+        const ValueKey<String>('square-community-token-$testCommunityId'),
+      );
+      expect(chip, findsOneWidget);
+      expect(
+        find.descendant(of: chip, matching: find.text('\$FROG')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: chip, matching: find.byType(LoopTokenLogo)),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('square-community-token-$_otherId')),
+        findsNothing,
+      );
+      expect(find.textContaining('，\$'), findsNothing);
+      expect(find.textContaining('|'), findsNothing);
       // Decision 0239: neither row carries a label, so neither wears a mark.
       expect(find.text('已验证'), findsNothing);
 
@@ -370,8 +386,23 @@ void main() {
         onOpenCommunity: opened.add,
       );
       await _chooseSort(tester, 'square-sort-power');
-      expect(find.textContaining('128 成员，算力 '), findsOneWidget);
-      expect(find.textContaining('\$FROG'), findsNothing);
+      expect(find.text('128 成员'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('square-community-ranked-$testCommunityId'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('算力 '), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('square-community-meta-$testCommunityId'),
+          ),
+          matching: find.textContaining('，'),
+        ),
+        findsNothing,
+      );
 
       await tester.tap(
         find.byKey(

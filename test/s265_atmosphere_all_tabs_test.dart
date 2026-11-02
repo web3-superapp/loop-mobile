@@ -372,11 +372,13 @@ void main() {
       // The page's wall, and the same wall cut to the pinned chips' box.
       expect(_key('square-atmo-backdrop'), findsNWidgets(2));
       expect(_key('square-atmo-title-crown'), findsOneWidget);
-      final board = _key('square-community-board');
-      expect(board, findsOneWidget);
+      // S335 (decision 0264): one card per community, no shared board.
+      expect(_key('square-community-board'), findsNothing);
       final first = '4b96a75e-6828-4a6b-8c1d-${0.toString().padLeft(12, '0')}';
+      final board = _key('square-community-card-$first');
+      expect(board, findsOneWidget);
       expect(
-        find.descendant(of: board, matching: _key('square-community-$first')),
+        find.descendant(of: _key('square-community-$first'), matching: board),
         findsOneWidget,
       );
       // No logo: the chrome medal, not a letter tile.

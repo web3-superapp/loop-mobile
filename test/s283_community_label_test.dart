@@ -265,10 +265,11 @@ void main() {
       expect(find.text('已验证'), findsNothing);
       expect(find.text('审核中'), findsNothing);
       expect(_key('square-community-label-${_ids[0]}'), findsOneWidget);
-      // On the rows (热门社区 above the board repeats the busiest one).
+      // S335 (decision 0264): the label sits at the end of the facts line,
+      // not beside the name.
       expect(
         find.descendant(
-          of: _key('square-community-board'),
+          of: _key('square-community-meta-${_ids[0]}'),
           matching: find.text('算力社区'),
         ),
         findsOneWidget,
