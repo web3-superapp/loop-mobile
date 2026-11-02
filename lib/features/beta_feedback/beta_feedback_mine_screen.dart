@@ -67,7 +67,7 @@ class _BetaFeedbackMineScreenState
         block: resource.phase == LoopChainViewPhase.unavailable
             ? const LoopPageBlock(
                 key: ValueKey<String>('beta-feedback-mine-unavailable'),
-                title: '内测反馈暂不可用',
+                title: '意见反馈暂不可用',
                 message: '现在读不到反馈记录。',
               )
             : null,

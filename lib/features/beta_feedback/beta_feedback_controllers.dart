@@ -340,7 +340,7 @@ final betaFeedbackMineControllerProvider =
 // The floating entry's place
 // ---------------------------------------------------------------------------
 
-/// How far the 内测反馈 entry's bottom edge sits above its lowest place, in
+/// How far the 意见反馈 entry's bottom edge sits above its lowest place, in
 /// logical pixels. Kept for the run, never stored: `0` is the default place
 /// on top of the tab bar.
 final class BetaFeedbackEntryLift extends Notifier<double> {
