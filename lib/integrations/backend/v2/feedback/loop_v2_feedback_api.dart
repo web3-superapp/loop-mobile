@@ -315,15 +315,28 @@ LoopChainException loopV2FeedbackFailure(
   LoopBackendFailure failure, {
   required bool write,
 }) {
+  // The server's rule name (`detailsSafe.reasonCode`) travels with every
+  // refusal: `MEDIA_NOT_OWNED` / `FEEDBACK_MEDIA_IN_USE` tell the form its
+  // uploaded pictures can no longer be used (S332 F2).
+  final reasonCode = failure.detailsSafe?.reasonCode;
   final status = failure.statusCode;
   if (status == 404 || status == 503) {
-    return const LoopChainException(LoopChainFailureKind.unavailable);
+    return LoopChainException(
+      LoopChainFailureKind.unavailable,
+      reasonCode: reasonCode,
+    );
   }
   if (status == 429) {
-    return const LoopChainException(LoopChainFailureKind.rateLimited);
+    return LoopChainException(
+      LoopChainFailureKind.rateLimited,
+      reasonCode: reasonCode,
+    );
   }
   if (status == 413 || status == 415 || status == 422) {
-    return const LoopChainException(LoopChainFailureKind.validationFailed);
+    return LoopChainException(
+      LoopChainFailureKind.validationFailed,
+      reasonCode: reasonCode,
+    );
   }
   return loopChainExceptionForV2(failure, write: write);
 }

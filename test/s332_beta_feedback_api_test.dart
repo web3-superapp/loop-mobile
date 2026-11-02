@@ -401,6 +401,40 @@ void main() {
       },
     );
 
+    test('a 422 carries the server\'s reasonCode', () async {
+      final gateway = DioLoopV2BetaFeedbackGateway(
+        api: DioLoopV2FeedbackApi(
+          s8Dio((options, handler) {
+            final error = s8ErrorResponse(
+              options,
+              statusCode: 422,
+              code: 'VALIDATION_FAILED',
+              category: 'validation',
+              retryable: false,
+              userMessageKey: 'errors.validation.failed',
+            );
+            (error.response!.data! as Map<String, Object?>)['detailsSafe'] =
+                <String, Object?>{'reasonCode': 'MEDIA_NOT_OWNED'};
+            handler.reject(error);
+          }),
+        ),
+        clientMetadata: s8ClientMetadata,
+        session: _session(),
+      );
+      await expectLater(
+        gateway.submit(_submission()),
+        throwsA(
+          isA<LoopChainException>()
+              .having(
+                (e) => e.kind,
+                'kind',
+                LoopChainFailureKind.validationFailed,
+              )
+              .having((e) => e.reasonCode, 'reasonCode', 'MEDIA_NOT_OWNED'),
+        ),
+      );
+    });
+
     test('404 and 503 read as unavailable, 429 as rate limited', () async {
       for (final (status, code, kind) in <(int, String, LoopChainFailureKind)>[
         (404, 'NOT_FOUND', LoopChainFailureKind.unavailable),
