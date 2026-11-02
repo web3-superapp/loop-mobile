@@ -949,15 +949,37 @@ abstract final class LoopV2Launch2Codec {
     );
   }
 
-  static ({BigInt? mintedTokenId, int held}) _nftHolding(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'mintedTokenId',
-      'held',
-    });
+  static ({BigInt? mintedTokenId, int held, List<BigInt>? heldTokenIds})
+  _nftHolding(Object? raw) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'mintedTokenId', 'held'},
+      const <String>{'heldTokenIds'},
+    );
     return (
       mintedTokenId: optionalInteger(map, 'mintedTokenId'),
       held: LoopV2ChainCodec.requireInt(map, 'held'),
+      heldTokenIds: heldTokenIds(map['heldTokenIds']),
     );
+  }
+
+  static final RegExp _tokenIdPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
+
+  /// S339 · decision 0267 (loop-api `LAUNCH2_NFT_HELD_TOKEN_IDS_EMIT`, client
+  /// first): the token ids the wallet holds now, ascending, at most 100.
+  /// Absent or `null` is `null` — the server did not say. A value that is
+  /// not that list is dropped to `null` too: it only chooses what 发送 offers,
+  /// and the server checks ownership again at prepare.
+  static List<BigInt>? heldTokenIds(Object? raw) {
+    if (raw is! List || raw.length > 100) return null;
+    final ids = <BigInt>[];
+    for (final value in raw) {
+      if (value is! String || !_tokenIdPattern.hasMatch(value)) return null;
+      final id = BigInt.parse(value);
+      if (ids.isNotEmpty && id <= ids.last) return null;
+      ids.add(id);
+    }
+    return List<BigInt>.unmodifiable(ids);
   }
 
   /// The holding group of a viewer or a position (decision 0148), `null`
@@ -1009,6 +1031,7 @@ abstract final class LoopV2Launch2Codec {
     return Launch2Viewer(
       walletId: uuid(map, 'walletId'),
       mintedTokenId: nft.mintedTokenId,
+      heldTokenIds: nft.heldTokenIds,
       nftHeld: nft.held,
       snapshotMember: LoopV2ChainCodec.requireBool(snapshot, 'member'),
       eligibleNow: LoopV2ChainCodec.requireBool(snapshot, 'eligibleNow'),
@@ -1528,6 +1551,7 @@ abstract final class LoopV2Launch2Codec {
       stage: stage(map, 'stage'),
       walletId: uuid(map, 'walletId'),
       mintedTokenId: nft.mintedTokenId,
+      heldTokenIds: nft.heldTokenIds,
       nftHeld: nft.held,
       snapshotMember: LoopV2ChainCodec.requireBool(map, 'snapshotMember'),
       curve: curvePosition(map['curve']),

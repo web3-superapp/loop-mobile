@@ -548,9 +548,9 @@ void main() {
           'reasonCode': null,
         },
       });
-      expect(items, hasLength(36));
+      expect(items, hasLength(37));
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(35));
+      expect(capabilities.capabilities, hasLength(36));
       expect(
         capabilities.capabilities.map((LoopV2Capability c) => c.id),
         containsAll(LoopV2CapabilityId.values),
@@ -567,7 +567,7 @@ void main() {
           'reasonCode': 'LAUNCH2_FACTORY_NOT_CONFIGURED',
         };
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(35));
+      expect(capabilities.capabilities, hasLength(36));
       final launch2 = capabilities[LoopV2CapabilityId.launch2];
       expect(launch2.availability, LoopV2CapabilityAvailability.unavailable);
       expect(launch2.reasonCode, 'LAUNCH2_FACTORY_NOT_CONFIGURED');
@@ -598,10 +598,10 @@ void main() {
       (value['capabilities']! as List<Object?>).removeWhere(
         (item) => (item! as Map<String, Object?>)['capabilityId'] == 'launch2',
       );
-      expect(value['capabilities']! as List<Object?>, hasLength(34));
+      expect(value['capabilities']! as List<Object?>, hasLength(35));
 
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(35));
+      expect(capabilities.capabilities, hasLength(36));
       expect(
         capabilities.capabilities.map((capability) => capability.id).toSet(),
         LoopV2CapabilityId.values.toSet(),
@@ -686,7 +686,7 @@ void main() {
             (item! as Map<String, Object?>)['capabilityId'] == 'testnetFaucet',
       );
       final read = await _resolvingRepository(value).getCapabilities();
-      expect(read.capabilities, hasLength(35));
+      expect(read.capabilities, hasLength(36));
       final faucet = read[LoopV2CapabilityId.testnetFaucet];
       expect(faucet.availability, LoopV2CapabilityAvailability.unavailable);
       expect(
@@ -742,15 +742,49 @@ void main() {
         (item) =>
             (item! as Map<String, Object?>)['capabilityId'] == 'squareFeed',
       );
-      expect(value['capabilities']! as List<Object?>, hasLength(34));
+      expect(value['capabilities']! as List<Object?>, hasLength(35));
       final read = await _resolvingRepository(value).getCapabilities();
-      expect(read.capabilities, hasLength(35));
+      expect(read.capabilities, hasLength(36));
       final feed = read[LoopV2CapabilityId.squareFeed];
       expect(feed.availability, LoopV2CapabilityAvailability.unavailable);
       expect(
         feed.reasonCode,
         DioLoopV2MetaRepository.squareFeedAbsentReasonCode,
       );
+    });
+  });
+
+  group('nftSend capability (decision 0267)', () {
+    test('a backend before loop-api S339 omits it and it reads '
+        'unavailable', () async {
+      final value = _capabilities();
+      (value['capabilities']! as List<Object?>).removeWhere(
+        (item) => (item! as Map<String, Object?>)['capabilityId'] == 'nftSend',
+      );
+      final read = await _resolvingRepository(value).getCapabilities();
+      expect(read.capabilities, hasLength(36));
+      final nftSend = read[LoopV2CapabilityId.nftSend];
+      expect(nftSend.availability, LoopV2CapabilityAvailability.unavailable);
+      expect(
+        nftSend.reasonCode,
+        DioLoopV2MetaRepository.nftSendAbsentReasonCode,
+      );
+    });
+
+    test('a published row is read as the backend states it', () async {
+      final value = _capabilities();
+      final row = (value['capabilities']! as List<Object?>)
+          .cast<Map<String, Object?>>()
+          .singleWhere((item) => item['capabilityId'] == 'nftSend');
+      row
+        ..['availability'] = 'unavailable'
+        ..['reasonCode'] = 'NFT_SEND_DISABLED'
+        ..['evidence'] = <String, Object?>{
+          'status': 'notApplicable',
+          'reasonCode': null,
+        };
+      final read = await _resolvingRepository(value).getCapabilities();
+      expect(read[LoopV2CapabilityId.nftSend].reasonCode, 'NFT_SEND_DISABLED');
     });
   });
 

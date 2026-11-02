@@ -11,15 +11,28 @@ abstract interface class WalletIntentsGateway {
   LoopChainGatewayMode get mode;
 
   /// Recipient facts for `send-to`. It stores nothing and never blocks.
+  /// [chainId] names the chain the recipient is read on (an NFT send names
+  /// the Launch chain, S339); absent means the primary chain.
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   });
 
   Future<LoopWalletIntent> prepareSend({
     required String walletId,
     required String assetId,
     required String amount,
+    required String recipientAddress,
+  });
+
+  /// S339 · decision 0267: one LOOP Launch project NFT, `tokenId` as an exact
+  /// decimal string. The server checks ownership and builds the transfer.
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
     required String recipientAddress,
   });
 
@@ -105,6 +118,7 @@ final class UnavailableWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) => _unavailable();
 
   @override
@@ -112,6 +126,15 @@ final class UnavailableWalletIntentsGateway implements WalletIntentsGateway {
     required String walletId,
     required String assetId,
     required String amount,
+    required String recipientAddress,
+  }) => _unavailable();
+
+  @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
     required String recipientAddress,
   }) => _unavailable();
 

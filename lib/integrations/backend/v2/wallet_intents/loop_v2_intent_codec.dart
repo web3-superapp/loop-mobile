@@ -122,7 +122,13 @@ abstract final class LoopV2IntentCodec {
   static LoopUnavailable _unavailableBlock(Object? raw) =>
       LoopV2ChainCodec.unavailable(raw);
 
-  static LoopIntentRecipient recipient(Object? raw) {
+  /// A `basis` other than the ERC-20 one, admitted on a `send_nft` review
+  /// only (S339 · decision 0267).
+  static final RegExp nftRecipientBasisPattern = RegExp(
+    r'^[a-z][a-z0-9_]{0,63}$',
+  );
+
+  static LoopIntentRecipient recipient(Object? raw, {bool nft = false}) {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'address',
       'checksumAddress',
@@ -132,7 +138,13 @@ abstract final class LoopV2IntentCodec {
       'screening',
     });
     final basis = map['basis'];
-    if (basis != 'indexed_erc20_transfers') _invalid();
+    if (nft) {
+      if (basis is! String || !nftRecipientBasisPattern.hasMatch(basis)) {
+        _invalid();
+      }
+    } else if (basis != 'indexed_erc20_transfers') {
+      _invalid();
+    }
     return LoopIntentRecipient(
       address: _address(map, 'address'),
       checksumAddress: _checksumAddress(map, 'checksumAddress'),
@@ -159,7 +171,7 @@ abstract final class LoopV2IntentCodec {
     );
   }
 
-  static LoopDecodedCall? _decodedCall(Object? raw) {
+  static LoopDecodedCall? _decodedCall(Object? raw, {bool nft = false}) {
     if (raw == null) return null;
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'functionName',
@@ -170,8 +182,10 @@ abstract final class LoopV2IntentCodec {
     if (functionName is! String) _invalid();
     final parsed = LoopDecodedFunction.tryParse(functionName);
     if (parsed == null) _invalid();
+    // `safeTransferFrom` belongs to a `send_nft` review and to nothing else.
+    if ((parsed == LoopDecodedFunction.safeTransferFrom) != nft) _invalid();
     final rawArgs = map['args'];
-    if (rawArgs is! Map || rawArgs.length > 4) _invalid();
+    if (rawArgs is! Map || rawArgs.length > (nft ? 8 : 4)) _invalid();
     final args = <String, String>{};
     for (final entry in rawArgs.entries) {
       final key = entry.key;
@@ -394,7 +408,10 @@ abstract final class LoopV2IntentCodec {
     );
   }
 
-  static LoopIntentReview _review(Object? raw) {
+  static LoopIntentReview _review(Object? raw, Object? chainId) {
+    if (raw is Map && raw['kind'] == LoopIntentKind.sendNft.wireName) {
+      return _nftReview(raw, chainId);
+    }
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'kind',
       'asset',
@@ -416,6 +433,104 @@ abstract final class LoopV2IntentCodec {
       fee: _fee(map['fee']),
       balance: _balance(map['balance']),
       swap: _swap(map['swap']),
+    );
+  }
+
+  static final RegExp _tokenIdPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
+
+  /// A `send_nft` review (S339 · decision 0267, client first).
+  ///
+  /// Known keys are validated, unknown keys are ignored: the review was frozen
+  /// in docs/53 by its meaning (recipient, `safeTransferFrom` from / to /
+  /// tokenId, contract and project name), not key by key. The NFT contract is
+  /// read from `nft.contractAddress`, else `asset.address`, else a
+  /// `contractAddress` call argument; the token id from `nft.tokenId`, else
+  /// the `tokenId` call argument — and two sources that disagree are an
+  /// invalid payload. `asset` and `amount` are not facts of an NFT send: the
+  /// review's asset is the contract itself and its amount is one.
+  static LoopIntentReview _nftReview(Map<Object?, Object?> raw, Object? chain) {
+    final map = LoopV2Contract.knownKeysMap(
+      raw,
+      const <String>{'kind', 'recipient', 'decodedCall'},
+      const <String>{'asset', 'fee', 'balance', 'nft'},
+    );
+    if (chain is! String || !loopKnownChainIds.contains(chain)) _invalid();
+    final decoded = _decodedCall(map['decodedCall'], nft: true);
+    if (decoded == null) _invalid();
+    final rawNft = map['nft'];
+    Map<String, Object?>? nftMap;
+    if (rawNft != null) {
+      nftMap = LoopV2Contract.knownKeysMap(
+        rawNft,
+        const <String>{},
+        const <String>{'contractAddress', 'tokenId', 'projectName', 'name'},
+      );
+    }
+    String? assetAddress;
+    final rawAsset = map['asset'];
+    if (rawAsset is Map) {
+      final address = rawAsset['address'];
+      if (address is String) assetAddress = address.toLowerCase();
+    }
+    String? lowerAddress(Object? value) {
+      if (value == null) return null;
+      if (value is! String || !checksumAddressPattern.hasMatch(value)) {
+        _invalid();
+      }
+      return value.toLowerCase();
+    }
+
+    final contract =
+        lowerAddress(nftMap?['contractAddress']) ??
+        (assetAddress != null && checksumAddressPattern.hasMatch(assetAddress)
+            ? assetAddress
+            : null) ??
+        lowerAddress(decoded.args['contractAddress']);
+    if (contract == null) _invalid();
+    String? tokenId(Object? value) {
+      if (value == null) return null;
+      if (value is! String || !_tokenIdPattern.hasMatch(value)) _invalid();
+      return value;
+    }
+
+    final fromNft = tokenId(nftMap?['tokenId']);
+    final fromCall = tokenId(decoded.args['tokenId']);
+    if (fromNft != null && fromCall != null && fromNft != fromCall) _invalid();
+    final id = fromNft ?? fromCall;
+    if (id == null) _invalid();
+    final name = nftMap?['projectName'] ?? nftMap?['name'];
+    final projectName =
+        name is String && name.trim().isNotEmpty && name.length <= 64
+        ? name.trim()
+        : null;
+    LoopIntentBalance? balance;
+    if (map['balance'] != null) {
+      try {
+        balance = _balance(map['balance']);
+      } on Object {
+        balance = null;
+      }
+    }
+    return LoopIntentReview(
+      kind: LoopIntentKind.sendNft,
+      asset: LoopIntentAsset(
+        assetId: '$chain:erc721:$contract',
+        address: contract,
+        symbol: 'NFT',
+        decimals: 0,
+      ),
+      amount: LoopIntentAmount(raw: '1', display: '1', value: Decimal.one),
+      recipient: recipient(map['recipient'], nft: true),
+      spender: null,
+      decodedCall: decoded,
+      fee: _fee(map['fee']),
+      balance: balance,
+      swap: null,
+      nft: LoopIntentNft(
+        contractAddress: contract,
+        tokenId: id,
+        projectName: projectName,
+      ),
     );
   }
 
@@ -520,8 +635,11 @@ abstract final class LoopV2IntentCodec {
     String key,
     LoopIntentKind kind,
   ) {
+    // S339 · decision 0267: a project NFT lives on the Launch chain.
     final launchSlotAllowed =
-        kind == LoopIntentKind.approve || kind == LoopIntentKind.revoke;
+        kind == LoopIntentKind.approve ||
+        kind == LoopIntentKind.revoke ||
+        kind == LoopIntentKind.sendNft;
     if (launchSlotAllowed && source[key] == loopLaunchTestnetChainId) {
       return loopLaunchTestnetChainId;
     }
@@ -792,7 +910,7 @@ abstract final class LoopV2IntentCodec {
     final parsedState = LoopIntentState.tryParse(state);
     if (parsedState == null) _invalid();
     final kind = _kind(map, 'kind');
-    final review = _review(map['review']);
+    final review = _review(map['review'], map['chainId']);
     // The review's own kind is part of the canonical payload: a mismatch means
     // the two halves do not describe the same operation.
     if (review.kind != kind) _invalid();
@@ -869,10 +987,19 @@ abstract final class LoopV2IntentCodec {
           map['items'],
           maximum: 50,
         ))
-          intent(item),
+          // S339 · decision 0267: a kind this build does not know is a later
+          // operation, not a broken page — it is skipped, never decoded. A
+          // known kind is still read strictly.
+          if (!_hasUnknownKind(item)) intent(item),
       ],
       nextCursor: LoopV2ChainCodec.cursor(map, 'nextCursor'),
     );
+  }
+
+  static bool _hasUnknownKind(Object? item) {
+    if (item is! Map) return false;
+    final kind = item['kind'];
+    return kind is String && LoopIntentKind.tryParse(kind) == null;
   }
 
   static LoopSendPreflight preflight(Object? raw) {

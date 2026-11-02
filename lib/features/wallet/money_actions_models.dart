@@ -13,7 +13,11 @@ enum LoopIntentKind {
   send('send'),
   approve('approve'),
   revoke('revoke'),
-  swap('swap');
+  swap('swap'),
+
+  /// S339 · decision 0267: one LOOP Launch project NFT (ERC-721
+  /// `safeTransferFrom`), on the Launch chain.
+  sendNft('send_nft');
 
   const LoopIntentKind(this.wireName);
 
@@ -137,7 +141,10 @@ enum LoopExposureBasis {
 
 enum LoopDecodedFunction {
   transfer('transfer'),
-  approve('approve');
+  approve('approve'),
+
+  /// ERC-721 `safeTransferFrom(from, to, tokenId)` (S339 · decision 0267).
+  safeTransferFrom('safeTransferFrom');
 
   const LoopDecodedFunction(this.wireName);
 
@@ -436,6 +443,27 @@ final class LoopIntentSwap {
   final LoopSwapPolicy policy;
 }
 
+/// The one NFT a `send_nft` intent moves (S339 · decision 0267).
+///
+/// [contractAddress] is the project NFT contract (lower-case) and [tokenId]
+/// the exact decimal string; both are what the call data encodes. The
+/// project's name, when the server names it, is display text only.
+@immutable
+final class LoopIntentNft {
+  const LoopIntentNft({
+    required this.contractAddress,
+    required this.tokenId,
+    this.projectName,
+  });
+
+  /// `safeTransferFrom(address,address,uint256)`.
+  static const String safeTransferFromSelector = '0x42842e0e';
+
+  final String contractAddress;
+  final String tokenId;
+  final String? projectName;
+}
+
 /// Everything the owner is shown before signing. It is one half of the server's
 /// canonical payload; [LoopWalletIntent.reviewSha256] binds it to the other.
 @immutable
@@ -450,6 +478,7 @@ final class LoopIntentReview {
     required this.fee,
     required this.balance,
     required this.swap,
+    this.nft,
   });
 
   final LoopIntentKind kind;
@@ -459,8 +488,14 @@ final class LoopIntentReview {
   final LoopIntentSpender? spender;
   final LoopDecodedCall? decodedCall;
   final LoopIntentFee? fee;
-  final LoopIntentBalance balance;
+
+  /// The balance snapshot. Always present for send / approve / revoke /
+  /// swap; a `send_nft` review may omit it (S339 · decision 0267).
+  final LoopIntentBalance? balance;
   final LoopIntentSwap? swap;
+
+  /// Present exactly for `send_nft`.
+  final LoopIntentNft? nft;
 }
 
 @immutable
@@ -743,6 +778,10 @@ final class LoopWalletIntent {
     // spend a different balance than the one reviewed.
     if (transaction.chainId != expectedChainId) return false;
 
+    if (kind == LoopIntentKind.sendNft) {
+      return _nftPayloadMatches(transaction);
+    }
+
     final decoded = review.decodedCall;
     if (decoded == null) {
       // A native transfer carries no call data at all.
@@ -762,10 +801,36 @@ final class LoopWalletIntent {
     final target = switch (decoded.functionName) {
       LoopDecodedFunction.transfer => review.recipient?.address,
       LoopDecodedFunction.approve => review.spender?.address,
+      // Only a `send_nft` review names this call; it was checked above.
+      LoopDecodedFunction.safeTransferFrom => null,
     };
     if (target == null) return false;
     if (words[0] != _padAddress(target)) return false;
     return words[1] == _padAmount(review.amount.raw);
+  }
+
+  /// S339 · decision 0267: `safeTransferFrom(from, to, tokenId)` on the
+  /// reviewed NFT contract, from the signing wallet to the reviewed
+  /// recipient, moving no native value.
+  bool _nftPayloadMatches(LoopUnsignedTransaction transaction) {
+    final nft = review.nft;
+    final decoded = review.decodedCall;
+    final recipient = review.recipient?.address;
+    if (nft == null || decoded == null || recipient == null) return false;
+    if (decoded.functionName != LoopDecodedFunction.safeTransferFrom) {
+      return false;
+    }
+    if (decoded.selector != LoopIntentNft.safeTransferFromSelector) {
+      return false;
+    }
+    if (!transaction.data.startsWith(decoded.selector)) return false;
+    if (transaction.to.toLowerCase() != nft.contractAddress) return false;
+    if (transaction.value != '0x0') return false;
+    final words = _dataWords(transaction.data);
+    if (words.length != 3) return false;
+    if (words[0] != _padAddress(transaction.from.toLowerCase())) return false;
+    if (words[1] != _padAddress(recipient.toLowerCase())) return false;
+    return words[2] == _padAmount(nft.tokenId);
   }
 
   static bool _swapEndpointMatches(

@@ -469,6 +469,7 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
     this.pageItems = const <LoopWalletIntent>[],
     this.failure,
     this.prepareFailure,
+    this.prepareException,
     this.reportFailure,
     this.mode = LoopChainGatewayMode.production,
     this.pending = false,
@@ -486,6 +487,9 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
 
   /// Applies to every prepare.
   final LoopChainFailureKind? prepareFailure;
+
+  /// A full refusal (kind and reason code) for `prepareSendNft`.
+  final LoopChainException? prepareException;
 
   /// Applies to the broadcast report and to execute.
   final LoopChainFailureKind? reportFailure;
@@ -526,7 +530,9 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) {
+    preflightChains.add(chainId);
     if (preflightPending) return Completer<LoopSendPreflight>().future;
     final kind = failure;
     if (kind != null) {
@@ -542,6 +548,44 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
     required String amount,
     required String recipientAddress,
   }) => _prepared();
+
+  /// The `chainId` of every recipient preflight (`null` = primary).
+  final List<String?> preflightChains = <String?>[];
+
+  /// Every `prepareSendNft` call, as the port received it.
+  final List<
+    ({
+      String walletId,
+      String chainId,
+      String contractAddress,
+      String tokenId,
+      String recipientAddress,
+    })
+  >
+  nftSends = [];
+
+  @override
+  Future<LoopWalletIntent> prepareSendNft({
+    required String walletId,
+    required String chainId,
+    required String contractAddress,
+    required String tokenId,
+    required String recipientAddress,
+  }) {
+    nftSends.add((
+      walletId: walletId,
+      chainId: chainId,
+      contractAddress: contractAddress,
+      tokenId: tokenId,
+      recipientAddress: recipientAddress,
+    ));
+    final failure = prepareException;
+    if (failure != null) {
+      prepareCalls += 1;
+      return Future<LoopWalletIntent>.error(failure);
+    }
+    return _prepared();
+  }
 
   @override
   Future<LoopWalletIntent> prepareApproval({

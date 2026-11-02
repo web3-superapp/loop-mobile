@@ -256,10 +256,14 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// `squareFeed` was added by loop-api decision 0143 (client decision 0177).
   /// A backend without it has no timeline: the absent row reads
   /// `unavailable` and 广场 keeps its two older segments.
+  ///
+  /// `nftSend` was added by loop-api S339 (client decision 0267). A backend
+  /// without it cannot send an NFT: the absent row reads `unavailable`.
   static const omissibleCapabilities = <LoopV2CapabilityId>{
     LoopV2CapabilityId.launch2,
     LoopV2CapabilityId.testnetFaucet,
     LoopV2CapabilityId.squareFeed,
+    LoopV2CapabilityId.nftSend,
   };
 
   /// The reason code on a capability the backend did not publish. It is the
@@ -274,6 +278,9 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// The same, for an absent `squareFeed` (decision 0177).
   static const squareFeedAbsentReasonCode = 'SQUARE_FEED_CAPABILITY_ABSENT';
 
+  /// The same, for an absent `nftSend` (decision 0267): no NFT send.
+  static const nftSendAbsentReasonCode = 'NFT_SEND_CAPABILITY_ABSENT';
+
   /// The row an omitted capability reads as: `deferred` (`launch2`) or
   /// `unavailable` (`testnetFaucet`) with no provider precondition, the same
   /// shape loop-api emits for a module that is off.
@@ -287,6 +294,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       reasonCode: switch (id) {
         LoopV2CapabilityId.testnetFaucet => testnetFaucetAbsentReasonCode,
         LoopV2CapabilityId.squareFeed => squareFeedAbsentReasonCode,
+        LoopV2CapabilityId.nftSend => nftSendAbsentReasonCode,
         _ => launch2AbsentReasonCode,
       },
       evidence: const LoopV2CapabilityEvidence(

@@ -32,6 +32,12 @@ enum IntentKind {
   /// the Launch slot, so this kind is admitted there too; it never carries a
   /// purchase, an approval or a transfer.
   miningClaim,
+
+  /// ERC-721 `safeTransferFrom` of one LOOP Launch project NFT (S339 ·
+  /// decision 0267). The project NFT lives on the Launch slot, so this kind
+  /// is admitted there; it never carries a purchase, an approval or a
+  /// fungible transfer.
+  nftTransfer,
 }
 
 /// The kinds that may be signed on the published Launch slot as well as the
@@ -41,6 +47,7 @@ const Set<IntentKind> launchSlotIntentKinds = <IntentKind>{
   IntentKind.launchPurchase,
   IntentKind.launchApproval,
   IntentKind.miningClaim,
+  IntentKind.nftTransfer,
 };
 
 enum IntentOrigin { localPreview, backendCanonical }

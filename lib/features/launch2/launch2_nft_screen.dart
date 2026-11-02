@@ -21,6 +21,8 @@ import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
+import 'package:loop_mobile/features/wallet/nft_send.dart';
+import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
@@ -29,6 +31,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -227,17 +230,49 @@ String launch2NftHoldingText(Launch2InstanceDetail detail) {
 /// The toast once a mint shows up in the read model (docs/32 §4.3).
 const String launch2NftMintedToast = '已铸造 · 等待铸造结束进入名单';
 
+/// The NFTs this wallet can send from [detail] (S339 · decision 0267), one
+/// per token id, ascending; empty when there is nothing to offer: no viewer,
+/// nothing held, no known token id or no published NFT contract.
+///
+/// The token ids are the server's `heldTokenIds` when it sent them, else the
+/// one this wallet minted. Ownership is the server's to check at prepare.
+List<SendNftTarget> launch2NftSendTargets(Launch2InstanceDetail detail) {
+  final viewer = detail.viewer;
+  if (viewer == null || viewer.nftHeld <= 0) return const <SendNftTarget>[];
+  final ids = viewer.heldTokenIds ?? <BigInt>[?viewer.mintedTokenId];
+  final row = detail.row;
+  return <SendNftTarget>[
+    for (final id in ids)
+      ?SendNftTarget.tryCreate(
+        walletId: viewer.walletId,
+        chainId: row.chainId,
+        contractAddress: detail.contracts['nft'],
+        tokenId: id,
+        ticker: row.ticker,
+        projectName: row.name,
+        instanceId: row.instanceId,
+        nftImageUrl: row.nftImageUrl,
+        logoUrl: row.logoUrl,
+      ),
+  ];
+}
+
 class Launch2NftScreen extends ConsumerStatefulWidget {
   const Launch2NftScreen({
     required this.instanceId,
     super.key,
     this.onBack,
     this.onNavigate,
+    this.onSendNft,
   });
 
   final String? instanceId;
   final VoidCallback? onBack;
   final void Function(String location)? onNavigate;
+
+  /// Opens the NFT send flow (S339 · decision 0267). Defaults to pushing
+  /// `/wallet/send/to` with the NFT's draft.
+  final void Function(SendNftTarget target)? onSendNft;
 
   @override
   ConsumerState<Launch2NftScreen> createState() => _Launch2NftScreenState();
@@ -308,6 +343,51 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
         onGranted: () => unawaited(_controller(detail.instanceId).reload()),
       ),
     );
+  }
+
+  /// 「发送」: the send flow, unless the server's `nftSend` capability is not
+  /// available or this session already heard its switch is off.
+  /// 「发送」 with several NFTs held: the owner picks one first.
+  Future<void> _sendOne(List<SendNftTarget> targets) async {
+    if (!_sendAllowed()) return;
+    if (targets.length == 1) {
+      _send(targets.single);
+      return;
+    }
+    final picked = await showLoopSheet<SendNftTarget>(
+      context,
+      barrierLabel: '关闭选择 NFT',
+      builder: (sheetContext) => Launch2NftSendPicker(
+        targets: targets,
+        onPick: (target) => Navigator.of(sheetContext).pop(target),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    _send(picked);
+  }
+
+  /// Whether a send may start; otherwise the toast says it may not.
+  bool _sendAllowed() {
+    final capability = ref.read(
+      loopCapabilityProvider(LoopV2CapabilityId.nftSend),
+    );
+    if (capability.isAvailable && !ref.read(nftSendDisabledProvider)) {
+      return true;
+    }
+    LoopToast.show(context, message: nftSendDisabledText);
+    return false;
+  }
+
+  void _send(SendNftTarget target) {
+    // The server's `nftSend` capability decides first; a 503 this session
+    // already heard is the fallback when the capability lags the switch.
+    if (!_sendAllowed()) return;
+    final send = widget.onSendNft;
+    if (send != null) {
+      send(target);
+      return;
+    }
+    unawaited(context.push('/wallet/send/to', extra: SendDraft.nft(target)));
   }
 
   Launch2InstanceController _controller(String id) =>
@@ -491,6 +571,22 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
       Launch2NftAction.none => false,
     };
     final failure = mint && hold == null && !_preparing ? _failure : null;
+    final sendTargets = launch2NftSendTargets(detail);
+    final main = LoopButton(
+      key: const ValueKey<String>('launch2-nft-mint'),
+      label: mint && _preparing ? '正在准备…' : view.buttonLabel,
+      primary: true,
+      block: true,
+      onPressed: !enabled
+          ? null
+          : switch (view.action) {
+              Launch2NftAction.mint => () => unawaited(_mint(detail)),
+              Launch2NftAction.openProject => () => _open(
+                Launch2Route.instance(detail.instanceId),
+              ),
+              Launch2NftAction.none => null,
+            },
+    );
     return Launch2BarShell(
       failure: mint && hold != null
           ? Launch2TradingHoldLine(
@@ -510,21 +606,23 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
               faucetKey: const ValueKey<String>('launch2-nft-bar-faucet'),
               onFaucet: _faucetAction(detail),
             ),
-      child: LoopButton(
-        key: const ValueKey<String>('launch2-nft-mint'),
-        label: mint && _preparing ? '正在准备…' : view.buttonLabel,
-        primary: true,
-        block: true,
-        onPressed: !enabled
-            ? null
-            : switch (view.action) {
-                Launch2NftAction.mint => () => unawaited(_mint(detail)),
-                Launch2NftAction.openProject => () => _open(
-                  Launch2Route.instance(detail.instanceId),
+      // S339 · decision 0267: a held NFT is sent from here, beside the
+      // page's own action.
+      child: sendTargets.isEmpty
+          ? main
+          : LoopButtonPair(
+              key: const ValueKey<String>('launch2-nft-actions'),
+              padded: false,
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('launch2-nft-send'),
+                  label: '发送',
+                  block: true,
+                  onPressed: () => unawaited(_sendOne(sendTargets)),
                 ),
-                Launch2NftAction.none => null,
-              },
-      ),
+                main,
+              ],
+            ),
     );
   }
 
@@ -873,4 +971,49 @@ class _MedalPainter extends CustomPainter {
       old.ink != ink ||
       old.top != top ||
       old.bottom != bottom;
+}
+
+/// Which NFT to send, when the wallet holds several of one project (S339 ·
+/// decision 0267): one row per token id.
+class Launch2NftSendPicker extends StatelessWidget {
+  const Launch2NftSendPicker({
+    required this.targets,
+    required this.onPick,
+    super.key,
+  });
+
+  final List<SendNftTarget> targets;
+  final ValueChanged<SendNftTarget> onPick;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    key: const ValueKey<String>('launch2-nft-send-picker'),
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopLabel('选择要发送的 NFT'),
+        Flexible(
+          child: SingleChildScrollView(
+            child: LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (final target in targets)
+                  LoopRecordRow(
+                    key: ValueKey<String>(
+                      'launch2-nft-send-pick-${target.tokenIdText}',
+                    ),
+                    leading: const LoopRowIcon(icon: 'ticket'),
+                    title: target.label,
+                    onTap: () => onPick(target),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

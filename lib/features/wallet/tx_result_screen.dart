@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
+import 'package:loop_mobile/features/wallet/nft_send.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -188,6 +189,12 @@ class _TransactionResultScreenState
         scheduleMicrotask(() {
           if (mounted) LoopToast.show(context, message: '交易已确认');
         });
+        // S339 · decision 0267: a confirmed NFT send moved a Launch holding.
+        if (intent.kind == LoopIntentKind.sendNft) {
+          scheduleMicrotask(() {
+            if (mounted) refreshLaunch2Holdings(ref, null);
+          });
+        }
       }
     }
 

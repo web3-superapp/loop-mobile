@@ -651,12 +651,17 @@ final class Launch2Viewer {
     required this.eligibleNow,
     required this.curve,
     this.mintedTokenId,
+    this.heldTokenIds,
     this.holding,
     this.cost = Launch2CostBasis.none,
   });
 
   final String walletId;
   final BigInt? mintedTokenId;
+
+  /// S339 · decision 0267: the token ids held now, ascending; `null` when the
+  /// server did not send them (an older server, or its switch off).
+  final List<BigInt>? heldTokenIds;
   final int nftHeld;
   final bool snapshotMember;
   final bool eligibleNow;
@@ -1112,6 +1117,7 @@ final class Launch2Position {
     this.logoUrl,
     this.nftImageUrl,
     this.mintedTokenId,
+    this.heldTokenIds,
     this.lastActivityAt,
     this.holding,
     this.priceUsd1,
@@ -1134,6 +1140,10 @@ final class Launch2Position {
   final Launch2Stage stage;
   final String walletId;
   final BigInt? mintedTokenId;
+
+  /// S339 · decision 0267: the token ids held now, ascending; `null` when the
+  /// server did not send them.
+  final List<BigInt>? heldTokenIds;
   final int nftHeld;
   final bool snapshotMember;
   final Launch2CurvePosition curve;
