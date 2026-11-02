@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,6 +37,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
+import 'package:loop_mobile/features/wallet/wallet_holdings.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
@@ -532,11 +532,25 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     void retry() => unawaited(
       ref.read(walletBalancesControllerProvider(walletId).notifier).reload(),
     );
+    // S334 · decision 0263: the same holdings 我 lists.
+    Widget mainRow(LoopAssetBalanceRow row) => WalletBalanceRow(
+      row: row,
+      hidden: hidden,
+      gasReserve: row.isNative
+          ? state?.value?.gasReservePolicy.nativeReserve
+          : null,
+      onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
+      onRetry: retry,
+      onBlocked: _blocked,
+      actions: _rowActions(row, sendGate, swapGate),
+    );
     final launch2Rows = <Widget>[
-      for (final entry in walletSortTokenEntries(<WalletTokenEntry>[
-        for (final entry in launch2.tokens)
-          (valueUsd: entry.valueUsd1, quantity: entry.quantity, row: entry.row),
-      ]))
+      for (final entry in walletHoldings(
+        balances: null,
+        launch2: launch2,
+        hidden: hidden,
+        mainRow: mainRow,
+      ).tokens)
         entry.row,
       ?launch2.failure,
     ];
@@ -592,55 +606,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final netWorth = balances.netWorth;
     final launch = balances.launchChain;
     final launchNative = launch?.nativeBalance;
-    final launchUsd1 = launch?.usd1;
-    final entries = walletSortTokenEntries(<WalletTokenEntry>[
-      for (final row in balances.balances)
-        if (!walletRowIsZero(row))
-          (
-            valueUsd: switch (row.valuation) {
-              LoopValuationAvailable(valueUsd: final value) => value,
-              LoopValuationUnavailable() => null,
-            },
-            quantity: switch (row.balance) {
-              LoopBalanceAvailable(displayBalance: final value) => value,
-              _ => Decimal.zero,
-            },
-            row: WalletBalanceRow(
-              row: row,
-              hidden: hidden,
-              gasReserve: row.isNative
-                  ? balances.gasReservePolicy.nativeReserve
-                  : null,
-              onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
-              onRetry: retry,
-              onBlocked: _blocked,
-              actions: _rowActions(row, sendGate, swapGate),
-            ),
-          ),
-      // Decision 0038: the Launch rows exist only when the backend
-      // published a Launch slot. Their figures are never added to the
-      // total or to the net worth.
-      if (launch != null && launchNative != null)
-        if (launchNative.displayBalance > Decimal.zero)
-          (
-            valueUsd: null,
-            quantity: launchNative.displayBalance,
-            row: walletLaunchNativeRow(launch, launchNative, hidden: hidden),
-          ),
-      // A USD1 nobody read is not a zero: its row stays with its reason.
-      if (launch != null)
-        if (launchUsd1 == null ||
-            walletLaunchUsd1Figure(launchUsd1.balance) > Decimal.zero)
-          (
-            valueUsd: null,
-            quantity: launchUsd1 == null
-                ? Decimal.zero
-                : walletLaunchUsd1Figure(launchUsd1.balance),
-            row: walletLaunchUsd1Row(launch, hidden: hidden),
-          ),
-      for (final entry in launch2.tokens)
-        (valueUsd: entry.valueUsd1, quantity: entry.quantity, row: entry.row),
-    ]);
+    final entries = walletHoldings(
+      balances: balances,
+      launch2: launch2,
+      hidden: hidden,
+      mainRow: mainRow,
+    ).tokens;
     final launchSnapshot = launchNative?.snapshot;
     return <Widget>[
       LoopContentArrival(

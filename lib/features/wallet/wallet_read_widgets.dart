@@ -705,9 +705,19 @@ Widget walletLaunchUsd1Row(
 /// Decision 0203: on a testnet slot, the line that keeps the Launch rows
 /// out of the total above (test-hints switch on only, decision 0204), with
 /// the testnet explanation behind its (i) (audit m14, decision 0133).
-Widget walletLaunchTotalNote() => Builder(
+///
+/// [padding] lets a card that already has its own inset (我's net worth,
+/// S334 · decision 0263) draw the same line without the page margin.
+Widget walletLaunchTotalNote({
+  EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(
+    LoopSpacing.page,
+    4,
+    8,
+    0,
+  ),
+}) => Builder(
   builder: (context) => Padding(
-    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 4, 8, 0),
+    padding: padding,
     child: Row(
       children: <Widget>[
         Expanded(

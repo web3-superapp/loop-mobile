@@ -39,7 +39,10 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
+import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart';
+import 'package:loop_mobile/features/wallet/wallet_holdings.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -431,6 +434,23 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     // the profile itself is still loading.
     final counts = ref.watch(connectionsControllerProvider).counts;
     final wallet = _watchWallet();
+    // S334 · decision 0263: the holdings 钱包 lists, read the same way.
+    final launch2 = launch2WalletEntries(
+      ref,
+      onOpen: widget.onNavigate,
+      hidden: visibility.hidden,
+    );
+    final holdings = walletHoldings(
+      balances: wallet.balances?.value,
+      launch2: launch2,
+      hidden: visibility.hidden,
+      mainRow: (row) => _holdingRow(wallet, row, hidden: visibility.hidden),
+    );
+    final nothingHeld =
+        wallet.balances?.value != null &&
+        holdings.isEmpty &&
+        !launch2.loading &&
+        launch2.failure == null;
 
     return LoopFlat(
       child: LoopDashboardPage(
@@ -470,12 +490,18 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             ),
           _ProfileNetWorthPanel(
             wallet: wallet,
+            nothingHeld: nothingHeld,
             visibility: visibility,
             onToggleHidden: () => unawaited(
               ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
             ),
           ),
-          ..._holdings(wallet, hidden: visibility.hidden),
+          ..._holdings(
+            wallet,
+            holdings: holdings,
+            launch2: launch2,
+            nothingHeld: nothingHeld,
+          ),
         ],
       ),
     );
@@ -522,6 +548,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
       });
     }
     return _ProfileWalletRead(
+      chainClosed: chainClosed,
       blockedReason: blocked
           ? (walletReadGate.reasonCode ?? 'WALLET_RUNTIME_UNAVAILABLE')
           : chainClosed
@@ -557,10 +584,23 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
   }
 
   /// `持仓 (N)` and the rows, or the first-buy card when the read answered
-  /// that nothing is held.
-  List<Widget> _holdings(_ProfileWalletRead wallet, {required bool hidden}) {
+  /// that nothing is held. S334 · decision 0263: the rows are [holdings],
+  /// the list 钱包 draws — the main chain, the Launch chain and MEME v2.
+  List<Widget> _holdings(
+    _ProfileWalletRead wallet, {
+    required WalletHoldings holdings,
+    required Launch2WalletEntries launch2,
+    required bool nothingHeld,
+  }) {
     final read = wallet.balances;
     final value = read?.value;
+    // The MEME v2 holdings stand on their own read, as on 钱包: a main read
+    // that failed or a closed chain does not hide them.
+    final launch2Rows = <Widget>[
+      for (final entry in holdings.tokens) entry.row,
+      if (holdings.nfts.isNotEmpty) _nftGrid(holdings.nfts),
+      ?launch2.failure,
+    ];
     if (wallet.blockedReason != null) {
       return <Widget>[
         const LoopLabel('持仓'),
@@ -569,6 +609,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           message: loopReasonCodeText(wallet.blockedReason),
           maxLines: 2,
         ),
+        if (wallet.chainClosed) ...launch2Rows,
       ];
     }
     if (wallet.directory.isReady &&
@@ -597,59 +638,68 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             leadingSize: 36,
             subtitleLines: 1,
           )
-        else
+        else ...<Widget>[
           LoopInlineUnavailable(
             key: const ValueKey<String>('profile-holdings-failed'),
             message: '持仓暂时读不到',
             onRetry: wallet.walletId == null
                 ? null
-                : () => unawaited(
-                    ref
-                        .read(
-                          walletBalancesControllerProvider(wallet.walletId!)
-                              .notifier,
-                        )
-                        .reload(),
-                  ),
+                : () => _reloadBalances(wallet.walletId!),
           ),
+          ...launch2Rows,
+        ],
       ];
     }
-    final held = profileHeldRows(value);
-    final unread = value.balances
-        .where((row) => row.balance is LoopBalanceUnavailable)
-        .length;
     return <Widget>[
-      LoopLabel('持仓 (${held.length})'),
-      for (final row in held)
-        WalletAssetLine(
-          row: row,
-          hidden: hidden,
-          onTap: () =>
-              widget.onNavigate('$profileWalletAssetDestination${row.assetId}'),
-        ),
-      if (unread > 0)
-        LoopInlineUnavailable(
-          key: const ValueKey<String>('profile-holdings-unread'),
-          message: '$unread 项余额读不到，未列入',
-        ),
-      if (held.isEmpty && unread == 0)
+      LoopLabel('持仓 (${holdings.heldCount})'),
+      ...launch2Rows,
+      if (nothingHeld)
         _ProfileFirstBuyCard(onOpen: () => widget.onNavigate('meme')),
     ];
   }
-}
 
-/// The rows this page calls holdings: a balance the chain read answered and
-/// that is not zero. A row whose read failed is unknown, never a holding.
-List<LoopAssetBalanceRow> profileHeldRows(LoopWalletBalances balances) =>
-    balances.balances
-        .where(
-          (row) => row.balance is LoopBalanceAvailable && !walletRowIsZero(row),
-        )
-        .toList(growable: false);
+  /// One main-chain row: the row 钱包 draws, without its 发送 / 兑换 chips;
+  /// it opens that asset's wallet page.
+  Widget _holdingRow(
+    _ProfileWalletRead wallet,
+    LoopAssetBalanceRow row, {
+    required bool hidden,
+  }) => WalletBalanceRow(
+    row: row,
+    hidden: hidden,
+    gasReserve: row.isNative
+        ? wallet.balances?.value?.gasReservePolicy.nativeReserve
+        : null,
+    onTap: () =>
+        widget.onNavigate('$profileWalletAssetDestination${row.assetId}'),
+    onRetry: wallet.walletId == null
+        ? null
+        : () => _reloadBalances(wallet.walletId!),
+    onBlocked: (reason) => LoopToast.show(context, message: reason),
+    actions: const <WalletRowAction>[],
+  );
+
+  /// The project NFT cards, two to a row, as 钱包's 「NFT」 draws them.
+  Widget _nftGrid(List<Widget> nfts) => Padding(
+    key: const ValueKey<String>('profile-holdings-nfts'),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      LoopSpacing.tight,
+      LoopSpacing.page,
+      LoopSpacing.rowGap,
+    ),
+    child: Launch2NftGrid(children: nfts),
+  );
+
+  void _reloadBalances(String walletId) => unawaited(
+    ref.read(walletBalancesControllerProvider(walletId).notifier).reload(),
+  );
+}
 
 /// What [_ProfileHomeScreenState] read from the wallet module.
 final class _ProfileWalletRead {
   const _ProfileWalletRead({
+    required this.chainClosed,
     required this.blockedReason,
     required this.directory,
     required this.walletId,
@@ -659,6 +709,9 @@ final class _ProfileWalletRead {
 
   /// The server's reason when the wallet or the chain gate is shut.
   final String? blockedReason;
+
+  /// The chain gate alone is shut: the MEME v2 holdings still read.
+  final bool chainClosed;
   final LoopChainResourceState<LoopWalletDirectory> directory;
   final String? walletId;
   final LoopChainResourceState<LoopWalletBalances>? balances;
@@ -731,11 +784,15 @@ class _ProfileHideBalanceGlyph extends StatelessWidget {
 class _ProfileNetWorthPanel extends StatelessWidget {
   const _ProfileNetWorthPanel({
     required this.wallet,
+    required this.nothingHeld,
     required this.visibility,
     required this.onToggleHidden,
   });
 
   final _ProfileWalletRead wallet;
+
+  /// The balances read answered and [walletHoldings] lists nothing.
+  final bool nothingHeld;
   final LoopBalanceVisibility visibility;
   final VoidCallback onToggleHidden;
 
@@ -747,24 +804,19 @@ class _ProfileNetWorthPanel extends StatelessWidget {
     final hidden = visibility.hidden;
     final balances = wallet.balances?.value;
     final netWorth = balances?.netWorth;
-    final held = balances == null ? null : profileHeldRows(balances);
+    // S334 · decision 0263: the figure, its grey line and the Launch note
+    // are 钱包's 总资产, word for word.
     final String? figure = switch (netWorth) {
       LoopNetWorthValued(valueUsd: final value) =>
         hidden ? walletMaskedFigure : loopFormatUsd(value),
-      _ => null,
-    };
-    final caption = switch (netWorth) {
-      LoopNetWorthValued(partial: true, unavailableCount: final count) =>
-        '净值 · $count 项资产暂无价格，未计入',
-      LoopNetWorthValued() => '净值 · 不是可用余额',
-      LoopNetWorthUnavailable(reasonCode: final reason) => loopReasonCodeText(
-        reason,
-      ),
+      LoopNetWorthUnavailable() => '暂不可用',
       null => null,
     };
+    final caption = walletNetWorthCaption(netWorth);
+    final launch = balances?.launchChain;
     final String centre;
     final String centreKey;
-    if (held != null && held.isEmpty) {
+    if (nothingHeld) {
       centre = '暂无持仓';
       centreKey = 'profile-chart-empty';
     } else {
@@ -799,9 +851,13 @@ class _ProfileNetWorthPanel extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     // S241b: the key figure — Anton `statFigure`, yellow.
-                    style: LoopType.statFigure.copyWith(
-                      color: hidden ? LoopColors.text3 : LoopColors.yellow,
-                    ),
+                    style: netWorth is LoopNetWorthValued
+                        ? LoopType.statFigure.copyWith(
+                            color: hidden
+                                ? LoopColors.text3
+                                : LoopColors.yellow,
+                          )
+                        : LoopType.headingSm.copyWith(color: LoopColors.text2),
                   ),
                 ),
               _ProfileHideBalanceGlyph(
@@ -832,7 +888,7 @@ class _ProfileNetWorthPanel extends StatelessWidget {
               ),
             ],
           ),
-          if (caption != null)
+          if (caption.isNotEmpty)
             Text(
               caption,
               key: const ValueKey<String>('profile-networth-caption'),
@@ -840,6 +896,9 @@ class _ProfileNetWorthPanel extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: LoopType.captionSm.copyWith(color: LoopColors.text3),
             ),
+          // 钱包's Launch note (decision 0203), on the same condition.
+          if (launch != null && walletLaunchChainBadged(launch))
+            walletLaunchTotalNote(padding: const EdgeInsets.only(top: 4)),
           SizedBox(
             height: chartHeight,
             child: CustomPaint(

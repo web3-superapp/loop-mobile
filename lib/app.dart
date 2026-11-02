@@ -2638,6 +2638,12 @@ String _profilePath(String id) => switch (id) {
     MarketAssetRoute.walletAsset(
       held.substring(profileWalletAssetDestination.length),
     ),
+  // S334 · decision 0263: a MEME v2 holding on 我 opens its project or
+  // its NFT page, the same locations 钱包 opens.
+  final String launch2
+      when launch2.startsWith('${Launch2Route.instancePath}?') ||
+          launch2.startsWith('${Launch2Route.nftPath}?') =>
+    launch2,
   'community-discover' => LoopRouteManifest.pathFor('community-discover'),
   // Not a route of its own: the same manifest page narrowed to the owner's
   // memberships, which is what 我的社区 opens once the aggregate reports any.
