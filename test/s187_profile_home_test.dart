@@ -295,14 +295,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(_eyeHidden(tester), isTrue);
       expect(tester.widget<Text>(_key('profile-networth-figure')).data, '****');
+      // S334 · decision 0263: 我 draws 钱包's row; its amount is masked.
       expect(
         tester
-            .widget<Text>(
-              find.descendant(
-                of: _key('wallet-balance-$s5NativeAssetId'),
-                matching: find.text('****'),
-              ),
-            )
+            .widget<Text>(_key('wallet-balance-amount-$s5NativeAssetId'))
             .data,
         '****',
       );

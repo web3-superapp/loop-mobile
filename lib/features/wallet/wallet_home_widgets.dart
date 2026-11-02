@@ -113,6 +113,20 @@ Decimal? walletRowChangeUsd(Decimal valueUsd, Decimal pct) {
 // 总资产 (钱包 C, decision 0188)
 // ---------------------------------------------------------------------------
 
+/// The grey line under the net worth, on 钱包 and on 我 alike (S334 ·
+/// decision 0263): the unpriced count, the figure's quality, or the reason
+/// it is unavailable. Empty when there is nothing to say.
+String walletNetWorthCaption(LoopNetWorth? netWorth) => <String>[
+  if (netWorth case LoopNetWorthValued(
+    partial: true,
+    unavailableCount: final count,
+  ))
+    '$count 项资产暂无价格，未计入',
+  if (netWorth is LoopNetWorthValued) ?loopFactQualityMarker(netWorth.quality),
+  if (netWorth case LoopNetWorthUnavailable(reasonCode: final reason))
+    loopReasonCodeText(reason),
+].join(' · ');
+
 /// 「总资产」, the eye, the figure with `USD`, separate ¥ and address lines, one weak
 /// caption, 今日盈亏, the 7-day sparkline and the chart it opens in place.
 ///
@@ -221,17 +235,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final week = weekState?.value;
     final fiat = week?.fiat;
 
-    final caption = <String>[
-      if (netWorth case LoopNetWorthValued(
-        partial: true,
-        unavailableCount: final count,
-      ))
-        '$count 项资产暂无价格，未计入',
-      if (netWorth is LoopNetWorthValued)
-        ?loopFactQualityMarker(netWorth.quality),
-      if (netWorth case LoopNetWorthUnavailable(reasonCode: final reason))
-        loopReasonCodeText(reason),
-    ].join(' · ');
+    final caption = walletNetWorthCaption(netWorth);
 
     final figureRow = Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
