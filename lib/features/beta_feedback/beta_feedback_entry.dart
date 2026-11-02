@@ -70,6 +70,10 @@ class BetaFeedbackEntry extends ConsumerStatefulWidget {
 
   static const double glyphSize = 22;
 
+  /// The distance from the right edge, at rest: the page margin 聊天's
+  /// 「发起」 key stands at, so the two right edges line up.
+  static const double rightMargin = LoopSpacing.page;
+
   /// The gap over the tab bar, or over the page's own floating key, at the
   /// default place.
   static const double gapOverTabBar = 12;
@@ -145,7 +149,9 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
     final padding = MediaQuery.paddingOf(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final storedLift = ref.watch(betaFeedbackEntryLiftProvider);
-    final rightInset = math.max(LoopLayout.tabBarInset, padding.right);
+    // S337 · decision 0266: the right edge is 聊天's 「发起」 key's, the page
+    // margin, so the two keys stand on one line.
+    final rightInset = math.max(BetaFeedbackEntry.rightMargin, padding.right);
     return LayoutBuilder(
       builder: (context, constraints) {
         final maximumLift = _maximumLift(constraints, padding);

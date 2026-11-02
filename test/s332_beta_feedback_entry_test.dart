@@ -154,7 +154,7 @@ void main() {
       tester,
     ) async {
       final opened = await pumpEntry(tester);
-      expect(target(tester).right, 390 - LoopLayout.tabBarInset);
+      expect(target(tester).right, 390 - LoopSpacing.page);
       expect(target(tester).bottom, 844 - 100);
       expect(target(tester).size, const Size(56, 56));
       const keyFinder = ValueKey<String>('beta-feedback-entry-key');
@@ -229,17 +229,17 @@ void main() {
       await gesture.moveBy(const Offset(-50, -100));
       await gesture.moveBy(const Offset(-50, -100));
       await tester.pump();
-      expect(target(tester).right, closeTo(390 - 8 - 100, 0.5));
+      expect(target(tester).right, closeTo(390 - 20 - 100, 0.5));
       expect(target(tester).bottom, closeTo(744 - 200, 0.5));
 
       await gesture.up();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
       // Mid-slide: on its way back, not there yet.
-      expect(target(tester).right, greaterThan(390 - 8 - 100));
-      expect(target(tester).right, lessThan(390 - 8));
+      expect(target(tester).right, greaterThan(390 - 20 - 100));
+      expect(target(tester).right, lessThan(390 - 20));
       await tester.pumpAndSettle();
-      expect(target(tester).right, 390 - 8);
+      expect(target(tester).right, 390 - 20);
       expect(target(tester).bottom, closeTo(744 - 200, 0.5));
 
       final container = ProviderScope.containerOf(
@@ -270,10 +270,10 @@ void main() {
       final gesture = await tester.startGesture(target(tester).center);
       await gesture.moveBy(const Offset(-120, -40));
       await tester.pump();
-      expect(target(tester).right, closeTo(390 - 8 - 120, 0.5));
+      expect(target(tester).right, closeTo(390 - 20 - 120, 0.5));
       await gesture.up();
       await tester.pump();
-      expect(target(tester).right, 390 - 8);
+      expect(target(tester).right, 390 - 20);
       expect(tester.hasRunningAnimations, isFalse);
     });
 
@@ -353,7 +353,7 @@ void main() {
           find.byKey(const ValueKey<String>('loop-tab-bar-float')),
         );
         expect(capsule.bottom, lessThanOrEqualTo(bar.top - 12));
-        expect(capsule.right, closeTo(bar.right, 0.5));
+        expect(capsule.right, closeTo(800 - LoopSpacing.page, 0.5));
 
         // 聊天: the 「发起」 key stands over the bar's reserve; the entry's
         // default place keeps at least 12 clear of it.
@@ -366,6 +366,8 @@ void main() {
           find.byKey(const ValueKey<String>('beta-feedback-entry-key')),
         );
         expect(onChat.overlaps(create), isFalse);
+        // One right edge for both keys.
+        expect(onChat.right, closeTo(create.right, 0.5));
         expect(
           onChat.bottom <= create.top - 12 || onChat.top >= create.bottom + 12,
           isTrue,
