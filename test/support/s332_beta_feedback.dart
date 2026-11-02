@@ -62,6 +62,7 @@ final class FakeBetaFeedbackGateway implements BetaFeedbackGateway {
 
   LoopChainFailureKind? uploadFailure;
   LoopChainFailureKind? submitFailure;
+  String? submitReasonCode;
   Completer<void>? submitGate;
 
   /// Answers to `listMine`, consumed in order; the last one repeats.
@@ -89,7 +90,9 @@ final class FakeBetaFeedbackGateway implements BetaFeedbackGateway {
     final gate = submitGate;
     if (gate != null) await gate.future;
     final failure = submitFailure;
-    if (failure != null) throw LoopChainException(failure);
+    if (failure != null) {
+      throw LoopChainException(failure, reasonCode: submitReasonCode);
+    }
     return BetaFeedbackReceipt(
       id: s332Uuid(0x200),
       status: BetaFeedbackStatus.open,

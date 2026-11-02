@@ -76,6 +76,13 @@ final class BetaFeedbackFormController extends Notifier<BetaFeedbackFormState> {
     'image/heic',
   };
 
+  /// Refusals that mean the uploaded media ids are spent (S332 F2).
+  static const mediaRefusalReasonCodes = <String>{
+    'MEDIA_NOT_OWNED',
+    'FEEDBACK_MEDIA_IN_USE',
+    'FEEDBACK_MEDIA_DUPLICATE',
+  };
+
   int _nextLocalId = 0;
   final Map<int, String> _uploadedMediaIds = <int, String>{};
 
@@ -174,6 +181,12 @@ final class BetaFeedbackFormController extends Notifier<BetaFeedbackFormState> {
       state = state.copyWith(step: BetaFeedbackSubmitStep.idle, uploaded: 0);
       return receipt;
     } on LoopChainException catch (error) {
+      // The server no longer accepts these uploads (expired, or already
+      // attached by a send whose answer was lost): forget them, so the next
+      // submit uploads every picture again instead of repeating the refusal.
+      if (mediaRefusalReasonCodes.contains(error.reasonCode)) {
+        _uploadedMediaIds.clear();
+      }
       if (ref.mounted) {
         state = state.copyWith(
           step: BetaFeedbackSubmitStep.idle,
