@@ -457,9 +457,9 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           ),
           LoopKeyValue(
             label: '社区总算力',
-            value: settled != null && settled.isBaseline
-                ? '$power · $miningBaselineLabel'
-                : power,
+            // S336 · decision 0265: the figure alone; the formula is one
+            // tap away behind the card's own 「社区挖矿 ›」.
+            value: power,
             valueKey: const ValueKey<String>('community-mining-power'),
             padding: _miningFactPadding,
           ),

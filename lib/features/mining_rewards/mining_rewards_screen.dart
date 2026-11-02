@@ -21,9 +21,11 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
+import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
@@ -257,6 +259,22 @@ class _MiningRewardsHourlyScreenState
         archetype: LoopPageArchetype.record,
         title: '挖矿奖励',
         onBack: widget.onBack,
+        // S336 · decision 0265: the page's one (i) holds its explanations,
+        // then the settlement source the foot reports.
+        actions: <Widget>[
+          LoopPageInfoAction(
+            key: const ValueKey<String>('mining-rewards-info-action'),
+            title: '挖矿奖励说明',
+            label: '挖矿奖励说明',
+            notes: miningRewardsInfoNotes(
+              view,
+              live: live,
+              settling: progress?.phase == MiningMinutePhase.settling,
+              progress: progress,
+            ),
+            sheetKey: 'mining-rewards-info-sheet',
+          ),
+        ],
         onRefresh: _refresh,
         updating: state.refreshing,
         primary: view == null || progress == null
@@ -302,18 +320,8 @@ class _MiningRewardsHourlyScreenState
                 if (!live) ...<Widget>[
                   const LoopLabel('算力汇总'),
                   MiningPowerSummary(view: view),
-                  // The claim block, whole, is this one line (decision 0184).
-                  const LoopNotice(
-                    key: ValueKey<String>('mining-power-only-notice'),
-                    icon: 'mine',
-                    body: miningPowerOnlyNotice,
-                    margin: EdgeInsets.fromLTRB(
-                      LoopSpacing.page,
-                      14,
-                      LoopSpacing.page,
-                      0,
-                    ),
-                  ),
+                  // S336 · decision 0265: 「LOOP 代币上线后开始正式开挖…」
+                  // is said in the page's (i), not under the grid.
                 ] else ...<Widget>[
                   const LoopLabel('奖励汇总'),
                   MiningRewardsSummary(view: view),
@@ -369,8 +377,7 @@ class _MiningRewardsHourlyScreenState
                       ? '每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；'
                             '结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，'
                             '不改变可领取数量。'
-                      : '每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力；'
-                            'LOOP 代币上线前只统计算力，上线后开始正式开挖。',
+                      : '每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力。',
                 ),
                 const SizedBox(height: 24),
               ],
@@ -530,39 +537,30 @@ class MiningMinuteHero extends StatelessWidget {
             stamp: settling ? '结算中' : null,
           ),
           detail: <Widget>[
+            // S336 · decision 0265: the strip is the minute bar alone; the
+            // hour's total and period are said in the page's (i).
             LoopProgressBar(
               key: const ValueKey<String>('mining-minute-bar'),
               value: progress.completedMinutes / 60,
               semanticLabel: '第 ${progress.completedMinutes} / 60 分钟',
             ),
-            const SizedBox(height: 12),
-            LoopCompositeDetailNote(
-              '上一小时 ${miningLoopFigure(progress.total)} LOOP',
-              key: const ValueKey<String>('mining-minute-total'),
-            ),
-            if (epoch case final MiningRewardEpoch hour) ...<Widget>[
-              const SizedBox(height: 4),
-              LoopCompositeDetailNote(
-                '结算时段 ${loopClockLabel(hour.epochStart)}–${loopClockLabel(hour.epochEnd)} · '
-                '本小时奖励结算后已全部计入可领取',
-                key: const ValueKey<String>('mining-minute-epoch'),
-              ),
-            ],
           ],
         );
     }
   }
 
   /// The settled hour as power (decision 0184): the folio's heading is the
-  /// hour's power, its caption whether the hour counted, and the strip the
-  /// two tracks and the settled period. Nothing steps by the minute — the
-  /// minute display is a reward's, and there is none yet.
+  /// hour's power. Nothing steps by the minute — the minute display is a
+  /// reward's, and there is none yet. S336 · decision 0265: the hour's
+  /// explanation (whether it counted, the two tracks, the period) moved to
+  /// the page's (i), [miningRewardsInfoNotes]; the folio stands alone.
   Widget _powerFolio({required bool settling}) {
     final total = nftPower == null && assetPower == null
         ? null
         : (nftPower ?? Decimal.zero) + (assetPower ?? Decimal.zero);
     final figure = total == null ? loopFigureDash : miningPowerFigure(total);
     final counted = total != null && total > Decimal.zero;
+    final caption = settling ? '下一小时结算后更新' : (counted ? null : '上一小时没有算力');
     return LoopLedgerComposite(
       key: ValueKey<String>(
         settling ? 'mining-power-settling' : 'mining-power-displaying',
@@ -573,30 +571,16 @@ class MiningMinuteHero extends StatelessWidget {
         archetype: LoopFolioArchetype.record,
         ring: false,
         margin: EdgeInsets.zero,
-        squareBottom: true,
         kicker: miningPowerKicker,
         heading: '$figure 算力',
         headingMaxLines: 1,
-        caption: settling
-            ? '下一小时结算后更新'
-            : (counted ? '上一小时有效，已计入算力统计' : '上一小时没有算力'),
+        caption: caption,
+        // With no caption the card closes under its heading (as 邀请中心,
+        // decision 0243 S293b).
+        minHeight: caption == null ? 0 : null,
         stamp: settling ? '结算中' : null,
       ),
-      detail: <Widget>[
-        LoopCompositeDetailNote(
-          'NFT 算力 ${nftPower == null ? loopFigureDash : miningPowerFigure(nftPower!)} · '
-          'Meme 币算力 ${assetPower == null ? loopFigureDash : miningPowerFigure(assetPower!)}',
-          key: const ValueKey<String>('mining-power-tracks'),
-        ),
-        if (epoch case final MiningRewardEpoch hour) ...<Widget>[
-          const SizedBox(height: 4),
-          LoopCompositeDetailNote(
-            '统计时段 ${loopClockLabel(hour.epochStart)}–${loopClockLabel(hour.epochEnd)} · '
-            '每个整点统计一次',
-            key: const ValueKey<String>('mining-power-epoch'),
-          ),
-        ],
-      ],
+      detail: const <Widget>[],
     );
   }
 }
@@ -1237,25 +1221,9 @@ class MiningAssetTrackCard extends StatelessWidget {
             '已退出（${miningExcludedReasonText(item.reasonCode)}）',
             key: ValueKey<String>('mining-asset-excluded-${item.assetId}'),
           ),
+        // S336 · decision 0265: the three formula lines (decisions 0123,
+        // 0183) are said in the page's (i) — [miningRewardsInfoNotes].
         const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
-        // Decision 0123 (loop-api): asset power is the hour's average holding
-        // quantity times the approved mining weight; no price enters it.
-        Padding(
-          key: const ValueKey<String>('mining-asset-basis'),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text('按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重', style: LoopType.caption),
-        ),
-        // Decision 0183: the NFT track and the conditions, one line each.
-        Padding(
-          key: const ValueKey<String>('mining-asset-basis-nft'),
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text('NFT 算力 = 持有数量 × 所属社区系数', style: LoopType.caption),
-        ),
-        Padding(
-          key: const ValueKey<String>('mining-asset-basis-conditions'),
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text('按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。', style: LoopType.caption),
-        ),
         _fact('本人算力', miningPowerFigure(asset.ownPower)),
         _fact('邀请算力', miningPowerFigure(asset.invitePower)),
         _fact('总算力', miningPowerFigure(asset.totalPower)),
@@ -1281,7 +1249,13 @@ class MiningInviteTable extends StatelessWidget {
 
   final MiningInvites? invites;
 
-  static const List<int> _flex = <int>[3, 2, 2, 3, 3];
+  /// S336 · decision 0265: 层级 and 比例 are narrow; the three figure
+  /// columns share the rest equally, so 「有效邀请」「NFT 算力」「资产算力」
+  /// read whole at 390 wide.
+  static const List<int> _flex = <int>[9, 7, 10, 10, 10];
+
+  /// The head row's step: 12, and a second line before an ellipsis.
+  static final TextStyle _headStyle = LoopType.kicker.copyWith(fontSize: 12);
 
   Widget _row(
     List<String> cells, {
@@ -1289,11 +1263,8 @@ class MiningInviteTable extends StatelessWidget {
     bool head = false,
     bool strong = false,
   }) {
-    // The head row is the prototype's `.label` (mono 10, uppercase, Text3);
-    // figures are the `.kv` mono, the 合计 row in Chalk.
-    final style = head
-        ? LoopType.kicker
-        : strong
+    // Figures are the `.kv` mono, the 合计 row in Chalk.
+    final style = strong
         ? LoopTypography.withWeight(
             LoopType.figureXs,
             FontWeight.w600,
@@ -1303,18 +1274,46 @@ class MiningInviteTable extends StatelessWidget {
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           for (final (index, cell) in cells.indexed)
             Expanded(
               flex: _flex[index],
-              child: Text(
-                cell,
-                textAlign: index == 0 ? TextAlign.left : TextAlign.right,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: index == 0 && !head
-                    ? LoopType.captionSm.copyWith(color: LoopColors.text2)
-                    : style,
+              child: Padding(
+                padding: EdgeInsets.only(left: index == 0 ? 0 : 6),
+                child: head
+                    // A head never ellipsises: it may take a second line.
+                    ? Text(
+                        cell,
+                        key: ValueKey<String>('mining-invite-head-$index'),
+                        textAlign: index == 0
+                            ? TextAlign.left
+                            : TextAlign.right,
+                        maxLines: 2,
+                        softWrap: true,
+                        style: _headStyle,
+                      )
+                    : index == 0
+                    ? Text(
+                        cell,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: LoopType.captionSm.copyWith(
+                          color: LoopColors.text2,
+                        ),
+                      )
+                    // A long figure shrinks to its column instead of losing
+                    // digits.
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Text(
+                          cell,
+                          maxLines: 1,
+                          textAlign: TextAlign.right,
+                          style: style,
+                        ),
+                      ),
               ),
             ),
         ],
@@ -1329,7 +1328,7 @@ class MiningInviteTable extends StatelessWidget {
     return _TrackCard(
       key: const ValueKey<String>('mining-invite-table'),
       children: <Widget>[
-        _row(const <String>['层级', '比例', '有效人数', 'NFT 算力', '资产算力'], head: true),
+        _row(miningInviteHeads, head: true),
         for (final level in data.levels)
           _row(<String>[
             '第 ${level.level} 级',
@@ -1350,16 +1349,116 @@ class MiningInviteTable extends StatelessWidget {
           key: const ValueKey<String>('mining-invite-total'),
           strong: true,
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 4, bottom: 6),
-          child: Text(
-            '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。',
-            style: LoopType.caption,
-          ),
-        ),
+        // S336 · decision 0265: the footnote is [miningInviteNote], in the
+        // page's (i).
       ],
     );
   }
+}
+
+/// The 五级邀请 table's column heads.
+const List<String> miningInviteHeads = <String>[
+  '层级',
+  '比例',
+  '有效邀请',
+  'NFT 算力',
+  '资产算力',
+];
+
+/// What the 五级邀请 table counts (the footnote that stood under it).
+const String miningInviteNote = '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。';
+
+/// The Meme 币 track's basis (decision 0123, loop-api): the hour's average
+/// holding quantity times the approved mining weight; no price enters it.
+const String miningAssetBasisNote = '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重';
+
+/// The NFT track's basis (decision 0183).
+const String miningNftBasisNote = 'NFT 算力 = 持有数量 × 所属社区系数';
+
+/// The conditions (decision 0183).
+const String miningConditionsNote = '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。';
+
+/// The hour that counted, as the hero's caption used to say it.
+const String miningHourCountedNote = '上一小时有效，已计入算力统计';
+
+/// S336 · decision 0265: everything the page used to explain on its face —
+/// the hero's caption and strip, the power-only line, the Meme 币 track's
+/// three formula lines and the invite footnote — said once, in the page's
+/// (i). The page itself carries no explanatory sentence.
+List<LoopInfoNote> miningRewardsInfoNotes(
+  MiningRewardsView? view, {
+  required bool live,
+  bool settling = false,
+  MiningMinuteProgress? progress,
+}) {
+  final shown =
+      progress != null &&
+      (progress.phase == MiningMinutePhase.displaying ||
+          progress.phase == MiningMinutePhase.settling);
+  final nftPower = view?.nft?.totalPower;
+  final assetPower = view?.asset?.totalPower;
+  final hasPower = nftPower != null || assetPower != null;
+  final total = (nftPower ?? Decimal.zero) + (assetPower ?? Decimal.zero);
+  final epoch = view?.lastEpoch;
+  return <LoopInfoNote>[
+    // Live: what the minute folio's strip used to say under its bar.
+    if (live && view != null) ...<LoopInfoNote>[
+      if (shown)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-minute-total'),
+          body: '上一小时 ${miningLoopFigure(progress.total)} LOOP',
+        ),
+      if (epoch != null)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-minute-epoch'),
+          body:
+              '结算时段 ${loopClockLabel(epoch.epochStart)}–${loopClockLabel(epoch.epochEnd)} · '
+              '本小时奖励结算后已全部计入可领取',
+        ),
+    ],
+    if (!live && view != null) ...<LoopInfoNote>[
+      if (hasPower && !settling && total > Decimal.zero)
+        const LoopInfoNote(
+          key: ValueKey<String>('mining-info-hour-counted'),
+          body: miningHourCountedNote,
+        ),
+      if (hasPower)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-power-tracks'),
+          body:
+              'NFT 算力 ${nftPower == null ? loopFigureDash : miningPowerFigure(nftPower)} · '
+              'Meme 币算力 ${assetPower == null ? loopFigureDash : miningPowerFigure(assetPower)}',
+        ),
+      if (epoch != null)
+        LoopInfoNote(
+          key: const ValueKey<String>('mining-power-epoch'),
+          body:
+              '统计时段 ${loopClockLabel(epoch.epochStart)}–${loopClockLabel(epoch.epochEnd)} · '
+              '每个整点统计一次',
+        ),
+    ],
+    if (!live)
+      const LoopInfoNote(
+        key: ValueKey<String>('mining-power-only-notice'),
+        body: miningPowerOnlyNotice,
+      ),
+    const LoopInfoNote(
+      key: ValueKey<String>('mining-asset-basis'),
+      body: miningAssetBasisNote,
+    ),
+    const LoopInfoNote(
+      key: ValueKey<String>('mining-asset-basis-nft'),
+      body: miningNftBasisNote,
+    ),
+    const LoopInfoNote(
+      key: ValueKey<String>('mining-asset-basis-conditions'),
+      body: miningConditionsNote,
+    ),
+    const LoopInfoNote(
+      key: ValueKey<String>('mining-invite-note'),
+      body: miningInviteNote,
+    ),
+  ];
 }
 
 // ---------------------------------------------------------------------------

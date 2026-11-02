@@ -840,8 +840,8 @@ class _CommunityHeader extends StatelessWidget {
 ///
 /// Each key states its own condition. The voice key is an entry while a room
 /// is live, an opening for an owner or an admin when none is, and the
-/// server's own reason for anybody else. Every key that cannot act says why,
-/// once, in the one line under the row.
+/// server's own reason for anybody else. A key that cannot act says why as a
+/// toast on tap; nothing stands under the row (S336).
 class _CommunityKeys extends ConsumerWidget {
   const _CommunityKeys({
     required this.detail,
@@ -885,10 +885,15 @@ class _CommunityKeys extends ConsumerWidget {
     final chatReason = chatOpenable || !joined
         ? null
         : communicationUnavailableReason(chat.reasonCode);
+    // S336 · decision 0265: why the voice key cannot act is not a standing
+    // line under the row; a tap on the key says it once, as a toast.
     final voiceReason = voiceLive || mayOpenRoom || !joined
         ? null
         : communicationUnavailableReason(voice.reasonCode);
-    final reasons = <String>[?chatReason, ?voiceReason];
+    // S336 · decision 0265 (补): nothing stands under the row; each key that
+    // cannot act says why on tap.
+    void say(String reason) =>
+        LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
     final Widget voiceKey;
     if (voiceLive) {
       voiceKey = LoopRoundKey(
@@ -907,60 +912,42 @@ class _CommunityKeys extends ConsumerWidget {
         onPressed: opening ? null : onCreateVoiceRoom,
       );
     } else {
-      voiceKey = const LoopRoundKey(
-        key: ValueKey<String>('community-profile-open-voice'),
+      voiceKey = LoopRoundKey(
+        key: const ValueKey<String>('community-profile-open-voice'),
         icon: 'voice-off',
         label: '语音房',
         semanticLabel: '语音房',
         onPressed: null,
+        onBlocked: voiceReason == null ? null : () => say(voiceReason),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopRoundKeyRow(
-          key: const ValueKey<String>('community-profile-keys'),
-          keys: <Widget>[
-            LoopRoundKey(
-              key: const ValueKey<String>('community-profile-open-chat'),
-              icon: 'chat',
-              label: '进群聊',
-              tone: LoopRoundKeyTone.primary,
-              onPressed: chatOpenable ? onOpenChat : null,
-            ),
-            voiceKey,
-            LoopRoundKey(
-              key: const ValueKey<String>('community-profile-share'),
-              icon: 'share',
-              label: '分享',
-              semanticLabel: '分享社区',
-              onPressed: onShare,
-            ),
-            // Decision 0113: only the owner and admins are offered the
-            // manage center, which is where the profile is edited.
-            if (detail.viewer.mayManage)
-              LoopRoundKey(
-                key: const ValueKey<String>('community-profile-manage'),
-                icon: 'settings',
-                label: '管理',
-                onPressed: onManage,
-              ),
-          ],
+    return LoopRoundKeyRow(
+      key: const ValueKey<String>('community-profile-keys'),
+      keys: <Widget>[
+        LoopRoundKey(
+          key: const ValueKey<String>('community-profile-open-chat'),
+          icon: 'chat',
+          label: '进群聊',
+          tone: LoopRoundKeyTone.primary,
+          onPressed: chatOpenable ? onOpenChat : null,
+          onBlocked: chatReason == null ? null : () => say(chatReason),
         ),
-        if (reasons.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              4,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              reasons.join(' '),
-              key: const ValueKey<String>('community-profile-action-reasons'),
-              textAlign: TextAlign.center,
-              style: LoopType.captionSm,
-            ),
+        voiceKey,
+        LoopRoundKey(
+          key: const ValueKey<String>('community-profile-share'),
+          icon: 'share',
+          label: '分享',
+          semanticLabel: '分享社区',
+          onPressed: onShare,
+        ),
+        // Decision 0113: only the owner and admins are offered the
+        // manage center, which is where the profile is edited.
+        if (detail.viewer.mayManage)
+          LoopRoundKey(
+            key: const ValueKey<String>('community-profile-manage'),
+            icon: 'settings',
+            label: '管理',
+            onPressed: onManage,
           ),
       ],
     );
@@ -1084,8 +1071,8 @@ class _AiEntryRow extends ConsumerWidget {
 /// ticker over its name, the price over 「24h」 and the 24h change pill.
 ///
 /// Every figure comes from `GET /v2/market/assets/{assetKey}`, the same read
-/// the `token` page makes; an unread price is the server's reason in the
-/// grey line, never a zero.
+/// the `token` page makes. Without a quote the row is the token's name and
+/// nothing on the right — never a zero, a reading state or a reason (S336).
 class _BoundAssetSection extends ConsumerStatefulWidget {
   const _BoundAssetSection({required this.assetKey, this.onOpenToken});
 
@@ -1131,21 +1118,23 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
             size: 36,
           ),
           title: symbol,
-          subtitle: priced
-              ? (name == null || name == symbol
+          // S336 · decision 0265: without a quote the grey line is the
+          // token's name (or its short address), never a reading state or a
+          // reason; before the first answer it is blank.
+          subtitle: detail == null
+              ? null
+              : (name == null || name == symbol
                     ? loopTruncatedAssetId(widget.assetKey)
-                    : name)
-              : price == null
-              ? (detail == null ? '行情读取中' : '暂无价格')
-              : loopReasonCodeSummaryText(price.reasonCode),
+                    : name),
           value: priced
               ? loopFoldedZerosPrice(loopFormatUsd(price.value!))
               : null,
           valueKey: const ValueKey<String>('community-bound-asset-price'),
           valueCaption: priced ? const Text('24h') : null,
-          trailing: LoopChangePill(
-            change: change != null && change.isAvailable ? change.value : null,
-          ),
+          // No reported change, no pill: 「未报告」 is not drawn.
+          trailing: change != null && change.isAvailable && change.value != null
+              ? LoopChangePill(change: change.value)
+              : null,
           onTap: open == null ? null : () => open(widget.assetKey),
           semanticLabel: priced
               ? '$symbol，${loopFormatUsd(price.value!)}'
@@ -1194,7 +1183,6 @@ class _MembershipFooter extends StatelessWidget {
           leading: const LoopEntryIcon('close'),
           title: '退出社区',
           titleColor: LoopColors.text3,
-          subtitle: '我的身份 · ${communityMembershipLabel(membership)}',
           semanticLabel: '退出社区，所有者不可用',
         ),
       );
@@ -1206,7 +1194,6 @@ class _MembershipFooter extends StatelessWidget {
         leading: const LoopEntryIcon('close'),
         title: '退出社区',
         titleColor: LoopColors.fall,
-        subtitle: '我的身份 · ${communityMembershipLabel(membership)}',
         onTap: busy ? null : onLeave,
         semanticLabel: '退出社区',
       ),

@@ -37,6 +37,9 @@ Future<void> _loadFonts() async {
   }
 }
 
+/// The app's own faces, for a test that measures real text (S336).
+Future<void> loopLoadShotFonts() => _loadFonts();
+
 /// S241b-G1 visual check only: writes the current frame to
 /// docs/integration/S241b-G1/shots/`name`.png, in slices of [slice] logical
 /// pixels so a tall page stays readable.

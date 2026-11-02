@@ -822,12 +822,13 @@ void main() {
       // available AI leaves nothing under the button, and the page no longer
       // contradicts the working page the button opens.
       expect(find.textContaining('Community AI 还没有开放'), findsNothing);
-      final reasons = find.byKey(
-        const ValueKey<String>('community-profile-action-reasons'),
+      // S336 · decision 0265: nothing stands under the keys; the chat key
+      // says its reason on tap.
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-action-reasons')),
+        findsNothing,
       );
-      await scrollToCommunitySection(tester, reasons);
-      // The other two controls keep their own reasons on the same line.
-      expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
+      expect(find.textContaining('该社区还没有官方群频道。'), findsNothing);
     });
 
     testWidgets('a verified community without a label wears no mark', (
@@ -982,8 +983,9 @@ void main() {
       );
       expect(find.text('0.8'), findsOneWidget);
       expect(_communityPowerFigure(tester), startsWith('0'));
-      // The reading says which baseline settled it, and when.
-      expect(find.textContaining(miningBaselineLabel), findsOneWidget);
+      // S336 · decision 0265: the figure stands alone; 「当前算力公式」 is
+      // behind the card's own 「社区挖矿 ›」, not printed after it.
+      expect(find.textContaining(miningBaselineLabel), findsNothing);
       // S315: the card carries no dated footnote; the snapshot time is the
       // panel's and the source sheet's.
       expect(
@@ -1251,10 +1253,20 @@ void main() {
         find.byKey(const ValueKey<String>('community-bound-asset-price')),
         findsNothing,
       );
+      // S336 · decision 0265: no reported change draws no pill, and the
+      // row never says it is still reading.
       expect(
         find.descendant(of: card, matching: find.text('未报告')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byKey(const ValueKey<String>('loop-change-pill')),
+        ),
+        findsNothing,
+      );
+      expect(find.text('行情读取中'), findsNothing);
     });
 
     testWidgets('mining, presence, announcements and links stay unavailable', (
@@ -1301,15 +1313,21 @@ void main() {
         community: FakeCommunityGateway(detail: testDetail()),
       );
 
-      final reasons = find.byKey(
-        const ValueKey<String>('community-profile-action-reasons'),
+      // S336 · decision 0265: the reason is the chat key's toast, on tap.
+      final chat = find.byKey(
+        const ValueKey<String>('community-profile-open-chat'),
       );
-      await scrollToCommunitySection(tester, reasons);
+      await scrollToCommunitySection(tester, chat);
+      expect(find.textContaining('该社区还没有官方群频道。'), findsNothing);
+      await tester.tap(chat);
+      await tester.pump();
       expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
       // The one code covers both a missing row and an unfinished one, so the
       // page states the fact and claims no cause for it.
       expect(find.textContaining('通过验证后'), findsNothing);
       expect(find.textContaining('验证后才会创建'), findsNothing);
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('a non-member sees join, and the sheet must be confirmed', (
