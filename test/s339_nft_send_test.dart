@@ -21,11 +21,14 @@ import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/tx_result_screen.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2/loop_v2_launch2_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet_intents/loop_v2_intent_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet_intents/loop_v2_wallet_intents_api.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/launch2_fixtures.dart';
+import 'support/loop_ground_probe.dart';
 import 'support/s285_page.dart';
 import 'support/s339_nft_send_fixtures.dart';
 import 'support/s5_fixtures.dart';
@@ -117,20 +120,54 @@ class _PositionsWatcher extends ConsumerWidget {
   }
 }
 
-Launch2InstanceDetail _medalDetail({int held = 1}) => l2Detail(
-  stage: 'public',
-  viewer: l2ViewerJson(held: held),
-);
+Launch2InstanceDetail _medalDetail({int held = 1, Object? heldTokenIds}) {
+  final viewer = l2ViewerJson(held: held);
+  if (heldTokenIds != null) {
+    (viewer['nft']! as Map<String, Object?>)['heldTokenIds'] = heldTokenIds;
+  }
+  return l2Detail(stage: 'public', viewer: viewer);
+}
+
+/// [s285Meta] with the `nftSend` row set to [availability].
+LoopV2MetaSnapshot _meta(LoopV2CapabilityAvailability availability) {
+  final base = s285Meta();
+  return LoopV2MetaSnapshot(
+    clientPolicy: base.clientPolicy,
+    capabilities: LoopV2Capabilities(
+      contractVersion: '2.0',
+      configVersion: base.capabilities.configVersion,
+      effectiveAt: base.capabilities.effectiveAt,
+      capabilities: <LoopV2Capability>[
+        for (final capability in base.capabilities.capabilities)
+          if (capability.id == LoopV2CapabilityId.nftSend)
+            LoopV2Capability(
+              id: LoopV2CapabilityId.nftSend,
+              availability: availability,
+              reasonCode: availability == LoopV2CapabilityAvailability.available
+                  ? null
+                  : 'NFT_SEND_DISABLED',
+              evidence: const LoopV2CapabilityEvidence(
+                status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                reasonCode: null,
+              ),
+            )
+          else
+            capability,
+      ],
+    ),
+  );
+}
 
 Future<void> _pumpMedal(
   WidgetTester tester, {
   required Launch2InstanceDetail detail,
   required void Function(SendNftTarget) onSend,
   List<Override> extra = const <Override>[],
+  LoopV2CapabilityAvailability nftSend = LoopV2CapabilityAvailability.available,
 }) => pumpS7Page(
   tester,
   Launch2NftScreen(instanceId: l2InstanceA, onSendNft: onSend),
-  meta: s285Meta(),
+  meta: _meta(nftSend),
   size: const Size(390, 1600),
   overrides: <Override>[
     launch2GatewayProvider.overrideWithValue(S285Launch2(detail: detail)),
@@ -147,6 +184,8 @@ Future<void> _pumpMedal(
 );
 
 void main() {
+  loopWatchGround();
+
   group('codec · send_nft', () {
     test('decodes a Launch-chain NFT send whose payload is the reviewed '
         'safeTransferFrom', () {
@@ -363,6 +402,121 @@ void main() {
     );
   });
 
+  group('launch2 · heldTokenIds (optional)', () {
+    test('accepted on viewer.nft and positions[].nft; absent stays null', () {
+      expect(_medalDetail().viewer!.heldTokenIds, isNull);
+      expect(
+        _medalDetail(heldTokenIds: <String>['3', '9']).viewer!.heldTokenIds,
+        <BigInt>[BigInt.from(3), BigInt.from(9)],
+      );
+      final positions = l2PositionsJson();
+      ((positions['positions']! as List<Object?>).single!
+          as Map<String, Object?>)['nft'] = <String, Object?>{
+        'mintedTokenId': '1',
+        'held': 2,
+        'heldTokenIds': <String>['4', '5'],
+      };
+      final decoded = LoopV2Launch2Codec.positions(
+        positions,
+        mediaUrl: (_) => null,
+      );
+      expect(decoded.items.single.heldTokenIds, <BigInt>[
+        BigInt.from(4),
+        BigInt.from(5),
+      ]);
+    });
+
+    test('a value that is not an ascending decimal list reads as absent', () {
+      for (final bad in <Object>[
+        <Object>[7],
+        <String>['9', '3'],
+        <String>['07'],
+        'x',
+        List<String>.generate(101, (i) => '$i'),
+      ]) {
+        expect(_medalDetail(heldTokenIds: bad).viewer!.heldTokenIds, isNull);
+      }
+    });
+
+    test('another unknown nft key is still refused', () {
+      final viewer = l2ViewerJson(held: 1);
+      (viewer['nft']! as Map<String, Object?>)['other'] = 1;
+      expect(
+        () => l2Detail(stage: 'public', viewer: viewer),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+  });
+
+  group('transport · list and preflight', () {
+    test('the intent list opts in to send_nft on every page', () async {
+      final queries = <Map<String, Object?>>[];
+      final api = DioLoopV2WalletIntentsApi(
+        s5Dio((options, handler) {
+          queries.add(options.queryParameters);
+          handler.resolve(
+            s5Response(options, <String, Object?>{
+              'items': <Object?>[s339IntentBody()],
+              'nextCursor': null,
+              'contractVersion': '2.0',
+            }),
+          );
+        }),
+      );
+      final page = await api.listIntents(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+      await api.listIntents(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        cursor: 'abc.123',
+      );
+      expect(page.items.single.kind, LoopIntentKind.sendNft);
+      expect(queries, <Map<String, Object?>>[
+        <String, Object?>{'includeKinds': 'send_nft'},
+        <String, Object?>{'includeKinds': 'send_nft', 'cursor': 'abc.123'},
+      ]);
+    });
+
+    test(
+      'an NFT preflight names the Launch chain; a plain one does not',
+      () async {
+        final bodies = <Object?>[];
+        final api = DioLoopV2WalletIntentsApi(
+          s5Dio((options, handler) {
+            bodies.add(options.data);
+            handler.resolve(s5Response(options, s6PreflightBody()));
+          }),
+        );
+        await api.preflightSend(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          walletId: s5WalletId,
+          address: s6RecipientChecksum,
+          chainId: s339Chain,
+        );
+        await api.preflightSend(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          walletId: s5WalletId,
+          address: s6RecipientChecksum,
+        );
+        expect(bodies, <Object?>[
+          <String, Object?>{
+            'walletId': s5WalletId,
+            'address': s6RecipientChecksum,
+            'chainId': 'eip155:97',
+          },
+          <String, Object?>{
+            'walletId': s5WalletId,
+            'address': s6RecipientChecksum,
+          },
+        ]);
+      },
+    );
+  });
+
   group('refusal lines', () {
     test('each NFT refusal is one short line', () {
       String? text(String? reason, [LoopChainFailureKind? kind]) =>
@@ -387,6 +541,10 @@ void main() {
       expect(
         text(null, LoopChainFailureKind.idempotencyConflict),
         '这笔发送已提交过，请查看最新状态',
+      );
+      expect(
+        text(null, LoopChainFailureKind.simulationFailed),
+        '这笔发送预执行没有通过，请稍后再试',
       );
       expect(text(null, LoopChainFailureKind.offline), isNull);
     });
@@ -421,6 +579,68 @@ void main() {
       await drainS285(tester);
     });
 
+    testWidgets('nftSend unavailable: the tap is a toast, no 503 needed', (
+      tester,
+    ) async {
+      final sent = <SendNftTarget>[];
+      await _pumpMedal(
+        tester,
+        detail: _medalDetail(),
+        onSend: sent.add,
+        nftSend: LoopV2CapabilityAvailability.unavailable,
+      );
+      expect(_key('launch2-nft-send'), findsOneWidget);
+      await tester.tap(_key('launch2-nft-send'));
+      await tester.pump();
+      expect(find.text('暂不支持发送 NFT'), findsOneWidget);
+      expect(sent, isEmpty);
+      await drainS285(tester);
+    });
+
+    testWidgets('heldTokenIds with one id sends that id, not the minted one', (
+      tester,
+    ) async {
+      final sent = <SendNftTarget>[];
+      await _pumpMedal(
+        tester,
+        detail: _medalDetail(heldTokenIds: <String>['9']),
+        onSend: sent.add,
+      );
+      await tester.tap(_key('launch2-nft-send'));
+      await tester.pump();
+      expect(sent.single.tokenIdText, '9');
+      await drainS285(tester);
+    });
+
+    testWidgets('several held ids: the owner picks one first', (tester) async {
+      final sent = <SendNftTarget>[];
+      await _pumpMedal(
+        tester,
+        detail: _medalDetail(held: 3, heldTokenIds: <String>['3', '9', '12']),
+        onSend: sent.add,
+      );
+      await tester.tap(_key('launch2-nft-send'));
+      await tester.pumpAndSettle();
+      expect(_key('launch2-nft-send-picker'), findsOneWidget);
+      expect(find.text('FROG #3'), findsOneWidget);
+      expect(find.text('FROG #12'), findsOneWidget);
+      expect(sent, isEmpty);
+      await tester.tap(_key('launch2-nft-send-pick-9'));
+      await tester.pumpAndSettle();
+      expect(sent.single.tokenIdText, '9');
+      await drainS285(tester);
+    });
+
+    testWidgets('held but no usable token id: no 发送', (tester) async {
+      await _pumpMedal(
+        tester,
+        detail: _medalDetail(heldTokenIds: <String>[]),
+        onSend: (_) => fail('no send'),
+      );
+      expect(_key('launch2-nft-send'), findsNothing);
+      await drainS285(tester);
+    });
+
     testWidgets('a closed switch answers the tap with a toast and opens '
         'nothing', (tester) async {
       final sent = <SendNftTarget>[];
@@ -442,6 +662,7 @@ void main() {
     testWidgets('the NFT row, two steps, the preflight, scan and paste — and '
         '下一步 opens the confirm page with the checked address', (tester) async {
       final routes = <(String, Object?)>[];
+      final intents = FakeWalletIntentsGateway();
       await pumpS6Page(
         tester,
         SendFlowScreen(
@@ -450,7 +671,7 @@ void main() {
           onScan: () async => s6RecipientChecksum,
         ),
         wallet: FakeWalletReadGateway(),
-        intents: FakeWalletIntentsGateway(),
+        intents: intents,
       );
       expect(find.text('发送 NFT'), findsOneWidget);
       expect(_key('send-nft-summary'), findsOneWidget);
@@ -461,6 +682,7 @@ void main() {
       await tester.tap(_key('send-recipient-scan'));
       await tester.pumpAndSettle();
       expect(_key('send-recipient-checks'), findsOneWidget);
+      expect(intents.preflightChains, <String?>['eip155:97']);
       await tester.tap(_key('send-address-next'));
       await tester.pump();
       expect(routes.single.$1, '/wallet/send/confirm');
@@ -572,6 +794,37 @@ void main() {
         ),
       );
       expect(find.text('这笔发送已提交过，请查看最新状态'), findsOneWidget);
+    });
+
+    testWidgets('409 SIMULATION_FAILED is its own line, with a retry; 403 '
+        'POLICY_BLOCKED keeps the send refusal block', (tester) async {
+      await pumpS6Page(
+        tester,
+        SendConfirmScreen(draft: _confirmDraft(), clock: _fresh),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          prepareException: const LoopChainException(
+            LoopChainFailureKind.simulationFailed,
+          ),
+        ),
+      );
+      expect(find.text('这笔发送预执行没有通过，请稍后再试'), findsOneWidget);
+      expect(find.text('重试'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      await pumpS6Page(
+        tester,
+        SendConfirmScreen(draft: _confirmDraft(), clock: _fresh),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          prepareException: const LoopChainException(
+            LoopChainFailureKind.permissionDenied,
+            reasonCode: 'COUNTERPARTY_NOT_IN_CANARY_ALLOWLIST',
+          ),
+        ),
+      );
+      expect(_key('send-confirm-permission'), findsOneWidget);
+      expect(find.textContaining('这个收款地址不在当前允许的收款名单里'), findsOneWidget);
     });
 
     testWidgets('503 NFT_SEND_DISABLED: the toast, the line, and the session '

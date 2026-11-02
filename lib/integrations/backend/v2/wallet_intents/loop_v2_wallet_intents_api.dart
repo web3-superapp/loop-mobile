@@ -18,6 +18,7 @@ abstract interface class LoopV2WalletIntentsApi {
     required String clientVersion,
     required String walletId,
     required String address,
+    String? chainId,
   });
 
   Future<LoopWalletIntent> prepareSend({
@@ -123,6 +124,10 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
   static const preflightPath = '/v2/wallet-intents/send/preflight';
   static const sendPath = '/v2/wallet-intents/send';
   static const sendNftPath = '/v2/wallet-intents/send-nft';
+
+  /// The intent kinds beyond the default set this build decodes; the list
+  /// hides them unless asked (S339).
+  static const includeKinds = 'send_nft';
 
   static final RegExp _tokenIdPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
 
@@ -245,10 +250,16 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
     required String clientVersion,
     required String walletId,
     required String address,
+    String? chainId,
   }) async {
+    if (chainId != null && !LoopV2ChainCodec.chainIdPattern.hasMatch(chainId)) {
+      _badRequest();
+    }
     final body = <String, Object?>{
       'walletId': _uuid(walletId),
       'address': _address(address),
+      // S339: an NFT send reads the recipient on the Launch chain.
+      'chainId': ?chainId,
     };
     try {
       final response = await _dio.post<Object?>(
@@ -507,11 +518,13 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
     try {
       final response = await _dio.get<Object?>(
         intentsPath,
-        queryParameters: cursor != null
-            ? <String, Object?>{'cursor': cursor}
-            : limit != null
-            ? <String, Object?>{'limit': limit}
-            : null,
+        // S339 (loop-api decision 0194): `send_nft` rows are opt-in, and the
+        // cursor is bound to the opt-in set, so every page asks for it.
+        queryParameters: <String, Object?>{
+          'includeKinds': includeKinds,
+          'cursor': ?cursor,
+          'limit': ?limit,
+        },
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);

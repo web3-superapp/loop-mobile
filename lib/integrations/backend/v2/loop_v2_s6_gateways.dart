@@ -87,12 +87,14 @@ final class DioLoopV2WalletIntentsGateway
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) => read(
     (accessToken) => _api.preflightSend(
       accessToken: accessToken,
       clientVersion: clientVersion,
       walletId: walletId,
       address: address,
+      chainId: chainId,
     ),
   );
 

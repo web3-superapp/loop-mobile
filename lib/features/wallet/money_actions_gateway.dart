@@ -11,9 +11,12 @@ abstract interface class WalletIntentsGateway {
   LoopChainGatewayMode get mode;
 
   /// Recipient facts for `send-to`. It stores nothing and never blocks.
+  /// [chainId] names the chain the recipient is read on (an NFT send names
+  /// the Launch chain, S339); absent means the primary chain.
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   });
 
   Future<LoopWalletIntent> prepareSend({
@@ -115,6 +118,7 @@ final class UnavailableWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) => _unavailable();
 
   @override

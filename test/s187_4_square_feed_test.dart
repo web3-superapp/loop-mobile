@@ -227,7 +227,9 @@ void main() {
         DioLoopV2MetaRepository.omissibleCapabilities,
         contains(LoopV2CapabilityId.squareFeed),
       );
-      expect(LoopV2CapabilityId.values.last, LoopV2CapabilityId.squareFeed);
+      // Decision 0267 appended `nftSend` after it.
+      final ids = LoopV2CapabilityId.values;
+      expect(ids[ids.length - 2], LoopV2CapabilityId.squareFeed);
     });
   });
 

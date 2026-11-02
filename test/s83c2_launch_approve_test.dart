@@ -142,6 +142,7 @@ final class _ApprovalIntents implements WalletIntentsGateway {
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) => _unused();
 
   @override

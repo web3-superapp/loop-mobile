@@ -127,6 +127,8 @@ String? nftSendFailureText(LoopChainException failure) {
     LoopChainFailureKind.insufficientBalance =>
       '$loopLaunchNativeSymbolText 手续费不足，充值后再试',
     LoopChainFailureKind.idempotencyConflict => '这笔发送已提交过，请查看最新状态',
+    // 409 SIMULATION_FAILED: the transfer reverted in the pre-execution.
+    LoopChainFailureKind.simulationFailed => '这笔发送预执行没有通过，请稍后再试',
     _ => null,
   };
 }

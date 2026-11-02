@@ -435,7 +435,11 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     try {
       final result = await ref
           .read(walletIntentsGatewayProvider)
-          .preflightRecipient(walletId: walletId, address: address);
+          .preflightRecipient(
+            walletId: walletId,
+            address: address,
+            chainId: _nft?.chainId,
+          );
       if (!mounted || request != _checkRequest) return;
       setState(() {
         _preflight = result;

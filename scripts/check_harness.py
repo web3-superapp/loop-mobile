@@ -907,6 +907,9 @@ S5_CAPABILITY_IDS = (
     # Decision 0177 (loop-api decision 0143): the square timeline. The parser
     # accepts a backend that still omits it (read as unavailable).
     "squareFeed",
+    # Decision 0267 (loop-api S339): the project NFT send. The parser accepts
+    # a backend that still omits it (read as unavailable).
+    "nftSend",
 )
 # The three S7 ports (decision 0058). Each production default is its own
 # `Unavailable…Gateway`, so Launch, Mining and Referral are unavailable until
@@ -11607,7 +11610,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 35 ids, in contract order.
+    # 2. The capability enum follows the contract's 36 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))

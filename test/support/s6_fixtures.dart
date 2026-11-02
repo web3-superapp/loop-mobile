@@ -530,7 +530,9 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopSendPreflight> preflightRecipient({
     required String walletId,
     required String address,
+    String? chainId,
   }) {
+    preflightChains.add(chainId);
     if (preflightPending) return Completer<LoopSendPreflight>().future;
     final kind = failure;
     if (kind != null) {
@@ -546,6 +548,9 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
     required String amount,
     required String recipientAddress,
   }) => _prepared();
+
+  /// The `chainId` of every recipient preflight (`null` = primary).
+  final List<String?> preflightChains = <String?>[];
 
   /// Every `prepareSendNft` call, as the port received it.
   final List<
