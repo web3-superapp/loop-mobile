@@ -25,6 +25,10 @@ import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
+import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/features/beta_feedback/beta_feedback_mine_screen.dart';
+import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
+import 'package:loop_mobile/features/beta_feedback/beta_feedback_screen.dart';
 import 'package:loop_mobile/features/chat/widgets/loop_composer_input.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
@@ -858,6 +862,10 @@ bool loopSpecimenLocationClosed(
     !previewSession &&
     loopSpecimenLocations.contains(location);
 
+/// Whether [location] is one of the two 内测反馈 pages (decision 0262).
+bool loopBetaFeedbackLocation(String location) =>
+    location == '/beta-feedback' || location == '/beta-feedback/mine';
+
 /// Chooses between the labelled Development Preview surface and the V2
 /// production page for one chat route.
 ///
@@ -968,6 +976,13 @@ GoRouter _buildRouter(
         location,
         previewSession: session.isPreview,
       )) {
+        routingErrors.record(state.uri.toString());
+        return LoopRouteManifest.defaultPath;
+      }
+      // S332 · decision 0262: the two 内测反馈 pages exist only in a build
+      // whose `LOOP_BETA_FEEDBACK` is on; elsewhere they are unknown.
+      if (loopBetaFeedbackLocation(location) &&
+          !loopFeatureSwitchesOf(context).betaFeedbackVisible) {
         routingErrors.record(state.uri.toString());
         return LoopRouteManifest.defaultPath;
       }
@@ -1764,6 +1779,31 @@ GoRouter _buildRouter(
             NetworksScreen(onBack: () => _popOrHome(context)),
       ),
       ..._profileRoutes,
+      // S332 (decision 0262): 内测反馈 and 我的反馈. The redirect above closes
+      // both while `LOOP_BETA_FEEDBACK` is off. The entry hands the place it
+      // was tapped on as `extra`; a location typed by hand reads `unknown`.
+      GoRoute(
+        path: '/beta-feedback',
+        builder: (context, state) => BetaFeedbackScreen(
+          origin: switch (state.extra) {
+            final BetaFeedbackOrigin origin => origin,
+            _ => BetaFeedbackOrigin(
+              route: 'unknown',
+              locale: WidgetsBinding.instance.platformDispatcher.locale
+                  .toLanguageTag(),
+            ),
+          },
+          onBack: () => _popOrHome(context),
+          onDone: () => _popOrHome(context),
+          onOpenMine: () =>
+              context.push(LoopRouteManifest.pathFor('beta-feedback-mine')),
+        ),
+      ),
+      GoRoute(
+        path: '/beta-feedback/mine',
+        builder: (context, state) =>
+            BetaFeedbackMineScreen(onBack: () => _popOrHome(context)),
+      ),
       GoRoute(
         path: '/profile/connections',
         builder: (context, state) => ConnectionsScreen(

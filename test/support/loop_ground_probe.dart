@@ -438,6 +438,12 @@ const loopGroundProbeExemptions = <String, String>{
       'the Community panel scrim, the same `LoopColors.veil` painted by the '
       'screen itself instead of by a route, for the same reason. '
       'Community paints no other bare `ColoredBox`.',
+  "LoopPressable · DecoratedBox-[<'beta-feedback-entry-glass'>]":
+      'S332 (decision 0262): the 内测反馈 capsule is the tab bar\'s own glass — '
+      'its 72 % ground over a background blur — floating over the page. A '
+      'test blurs nothing, so the glass restates the ground it lands on; the '
+      'capsule is separated by its light edge and its Chalk word, which the '
+      'probe checks.',
   'LoopActionDock · DecoratedBox':
       'the sticky dock restates the page behind it — Abyss at 96%, the page\'s '
       'own colour — so that content scrolls under it. The line that '

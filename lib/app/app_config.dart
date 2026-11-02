@@ -31,6 +31,14 @@ class AppConfig {
     'LOOP_TEST_HINTS_VISIBLE',
   );
 
+  /// S332 · decision 0262: `LOOP_BETA_FEEDBACK`, the build-time value of
+  /// `LoopFeatureSwitches.betaFeedbackVisible`. Off unless an internal-test
+  /// build passes `--dart-define=LOOP_BETA_FEEDBACK=true` (or the same key in
+  /// its `--dart-define-from-file` json).
+  static const bool betaFeedbackDefine = bool.fromEnvironment(
+    'LOOP_BETA_FEEDBACK',
+  );
+
   factory AppConfig.fromEnvironment({
     bool? releaseMode,
     String? declaredBuildMode,

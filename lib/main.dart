@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/beta_feedback/beta_feedback_gateway.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/features/account/onboarding_communities.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_recommended_communities.dart';
+import 'package:loop_mobile/integrations/backend/v2/feedback/loop_v2_feedback_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/media/loop_v2_media.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_public_profiles.dart';
 import 'package:loop_mobile/integrations/communication/stream_community_channel_muter.dart';
+import 'package:loop_mobile/integrations/device/beta_feedback_device.dart';
 import 'package:loop_mobile/integrations/device/image_picker_avatar_source.dart';
 import 'package:loop_mobile/integrations/device/mobile_scanner_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
@@ -438,6 +441,20 @@ Future<void> main() async {
         ),
         aboutGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2AboutGatewayProvider),
+        ),
+        // S332 (decision 0262): 内测反馈. Fail-closed until its Dio client,
+        // client metadata and authenticated session all exist; the entry
+        // itself is drawn only when `LOOP_BETA_FEEDBACK` is on.
+        betaFeedbackGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2BetaFeedbackGatewayProvider),
+        ),
+        betaFeedbackImagePickerProvider.overrideWithValue(
+          ImagePickerBetaFeedbackSource(),
+        ),
+        betaFeedbackEnvironmentSourceProvider.overrideWithValue(
+          PlatformBetaFeedbackEnvironmentSource(
+            fallbackAppVersion: config.loopClientVersionForCurrentBuild,
+          ),
         ),
       ],
       child: const LoopApp(),

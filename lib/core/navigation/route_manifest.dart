@@ -1,4 +1,4 @@
-/// The 115-route product manifest.
+/// The 117-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -14,6 +14,8 @@
 /// under 聊天 (113 → 114).
 /// decision 0254 (S324) added `auth-email`, the e-mail step 使用邮箱登录
 /// opens (114 → 115).
+/// decision 0262 (S332) added `beta-feedback` and `beta-feedback-mine`, the
+/// internal-test feedback form and its list (115 → 117).
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -116,7 +118,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      '72a0a09f0b58e799f67db2673e3ca9023c3622e26676e3be108b34d5ae88a240';
+      'e69189adedcafde0543908c51b733d87a909ccf1ae1f72e3deff8d493eb505a7';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110; MEME
   /// since decision 0221).
@@ -1099,7 +1101,7 @@ abstract final class LoopRouteManifest {
       step: 5,
       status: LoopRouteStatus.implemented,
     ),
-    // 7-profile · Profile / LOOP ID (15)
+    // 7-profile · Profile / LOOP ID (17)
     LoopRouteEntry(
       slug: 'profile',
       path: '/profile',
@@ -1235,6 +1237,27 @@ abstract final class LoopRouteManifest {
       title: '用户资料',
       prototypeOrder: 104,
       step: 3,
+      status: LoopRouteStatus.implemented,
+    ),
+    // S332 (decision 0262): the internal-test feedback form, opened from the
+    // floating 内测反馈 entry inside the five-tab shell, and the account's
+    // own feedback list. Both stay closed unless `LOOP_BETA_FEEDBACK` is on.
+    LoopRouteEntry(
+      slug: 'beta-feedback',
+      path: '/beta-feedback',
+      module: LoopRouteModule.profile,
+      title: '内测反馈',
+      prototypeOrder: 129,
+      step: 8,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'beta-feedback-mine',
+      path: '/beta-feedback/mine',
+      module: LoopRouteModule.profile,
+      title: '我的反馈',
+      prototypeOrder: 130,
+      step: 8,
       status: LoopRouteStatus.implemented,
     ),
     // 8-system · 系统态与组件 (8)

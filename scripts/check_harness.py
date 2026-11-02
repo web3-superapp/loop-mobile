@@ -5227,6 +5227,8 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
             "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
             "LOOP_PASSKEY_RP_DOMAIN": "api-dev.quant-dinger.cc",
             "FIREBASE_CONFIGURED": "true",
+            # S332 (decision 0262): the 内测反馈 entry is on in Development.
+            "LOOP_BETA_FEEDBACK": "true",
         },
         Path("config/release.example.json"): {
             "LOOP_BUILD_MODE": "release",
@@ -5238,6 +5240,9 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
             "LOOP_BACKEND_BASE_URL": "",
             "LOOP_PASSKEY_RP_DOMAIN": "",
             "FIREBASE_CONFIGURED": "false",
+            # S332 (decision 0262): off by default; an internal-test (TF /
+            # staging) build sets it to "true".
+            "LOOP_BETA_FEEDBACK": "false",
         },
     }
     forbidden_key_markers = (
@@ -8514,7 +8519,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 115-route manifest."""
+    """Keep the Dart route table equal to the frozen 117-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8535,8 +8540,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     # S180 (decision 0163): 112 → 113, 共识勋章 (the NFT mint page).
     # S287 (decision 0241): 113 → 114, 通知中心 under 聊天.
     # S324 (decision 0254): 114 → 115, 邮箱登录 between auth and auth-otp.
-    if manifest.get("count") != 115 or len(expected_slugs) != 115:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 115 routes")
+    # S332 (decision 0262): 115 → 117, 内测反馈 and 我的反馈.
+    if manifest.get("count") != 117 or len(expected_slugs) != 117:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 117 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "meme":
@@ -8572,7 +8578,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 115 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 117 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)

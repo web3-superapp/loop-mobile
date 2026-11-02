@@ -51,17 +51,35 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         // Decision 0130: Android 13+ draws its own confirmation for every
-        // clipboard write, so LOOP's toast steps aside there. The level is the
-        // only fact this channel answers. Mirrored by
+        // clipboard write, so LOOP's toast steps aside there. The level and
+        // the 内测反馈 `appInfo` are the facts this channel answers. Mirrored by
         // `lib/core/platform/loop_android_sdk.dart`.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PLATFORM_CHANNEL)
             .setMethodCallHandler { call, result ->
-                if (call.method == "sdkInt") {
-                    result.success(Build.VERSION.SDK_INT)
-                } else {
-                    result.notImplemented()
+                when (call.method) {
+                    "sdkInt" -> result.success(Build.VERSION.SDK_INT)
+                    // S332 (decision 0262): the 内测反馈 environment block —
+                    // the version and build this binary was built with, the
+                    // device model and the system version.
+                    "appInfo" -> result.success(appInfo())
+                    else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun appInfo(): Map<String, String> {
+        val info = try {
+            packageManager.getPackageInfo(packageName, 0)
+        } catch (error: Exception) {
+            null
+        }
+        // minSdk is 28, so `longVersionCode` is always there.
+        return mapOf(
+            "appVersion" to (info?.versionName ?: ""),
+            "build" to (info?.longVersionCode?.toString() ?: ""),
+            "deviceModel" to "${Build.MANUFACTURER} ${Build.MODEL}".trim(),
+            "osVersion" to "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+        )
     }
 
     // Decision 0130 (audit 2026-10-09 m17): after a hardware key or a D-pad
