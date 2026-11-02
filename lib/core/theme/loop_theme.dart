@@ -965,6 +965,15 @@ abstract final class LoopType {
   /// retired 11).
   static final TextStyle captionSm = caption;
 
+  /// meta · 13 / 400 Text3 — a list card's facts line under its
+  /// description (广场 社区 cards, S335 · decision 0264).
+  static final TextStyle meta = LoopTypography.sans(
+    size: 13,
+    weight: FontWeight.w400,
+    height: 1.3,
+    color: LoopColors.text3,
+  );
+
   // Band 6 · label.
   /// The button word and the Material button slot — [button].
   static final TextStyle action = button;

@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart' show loopTabBarEdge;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -23,7 +24,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -125,8 +126,6 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         .selectSort(chosen.sort);
   }
 
-  void _openDirectory() => unawaited(context.push<void>('/community/discover'));
-
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -147,45 +146,13 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     final selectedSegment = CommunityDiscoverSegment.of(state.sort);
     final joinedOnly = state.membership == CommunityMembershipFilter.joined;
 
-    // UX-013 (decision 0257): 热门社区 is the community with the most
-    // members among the rows already read — no endpoint of its own. A
-    // directory of one or two rows has nothing to single out: the banner
-    // would only repeat the row under it.
-    final hot =
-        joinedOnly ||
-            state.phase != CommunityViewPhase.ready ||
-            state.items.length < squareHotMinimumRows
-        ? null
-        : squareHotCommunity(state.items);
-
     final body = <Widget>[
       CommunityPreviewNotice(mode: mode, resource: '社区目录'),
-      if (hot != null) ...<Widget>[
-        _SquareSectionHead(
-          key: const ValueKey<String>('square-hot-head'),
-          title: '热门社区',
-          icon: 'star',
-          trailing: _SquareTextLink(
-            key: const ValueKey<String>('square-hot-more'),
-            label: '查看更多',
-            onTap: _openDirectory,
-          ),
-        ),
-        SquareHotCommunityCard(
-          key: ValueKey<String>('square-hot-${hot.communityId}'),
-          community: hot,
-          joining: _joining.contains(hot.communityId),
-          onOpen: () => widget.onOpenCommunity(hot.communityId),
-          onJoin: () => unawaited(_join(hot)),
-        ),
-      ],
-      _SquareSectionHead(
-        key: const ValueKey<String>('square-all-head'),
-        title: joinedOnly ? '我加入的社区' : '全部社区',
-        trailing: _SquareSortButton(
-          label: selectedSegment.label,
-          onTap: () => unawaited(_chooseSort(selectedSegment)),
-        ),
+      // S335 (decision 0264): no 热门社区 banner and no 「全部社区」 heading;
+      // the order is one quiet word, right-aligned over the cards.
+      _SquareSortButton(
+        label: selectedSegment.label,
+        onTap: () => unawaited(_chooseSort(selectedSegment)),
       ),
       LoopFreshnessStrip(
         key: const ValueKey<String>('square-community-freshness'),
@@ -250,26 +217,17 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           onRetry: () => unawaited(controller.reload()),
         )
       else ...<Widget>[
-        // Decision 0221: on the wall the rows sit on one card board; the
-        // rows themselves stay flat.
-        if (state.items.isNotEmpty) ...<Widget>[
-          LoopAtmoBoard(
-            key: const ValueKey<String>('square-community-board'),
-            children: <Widget>[
-              for (final community in state.items)
-                SquareCommunityRow(
-                  key: ValueKey<String>(
-                    'square-community-${community.communityId}',
-                  ),
-                  community: community,
-                  sort: state.sort,
-                  joining: _joining.contains(community.communityId),
-                  onOpen: () => widget.onOpenCommunity(community.communityId),
-                  onJoin: () => unawaited(_join(community)),
-                ),
-            ],
+        // S335 (decision 0264): one card per community, each its own list
+        // child so a long directory builds only the cards on screen.
+        for (final community in state.items)
+          SquareCommunityRow(
+            key: ValueKey<String>('square-community-${community.communityId}'),
+            community: community,
+            sort: state.sort,
+            joining: _joining.contains(community.communityId),
+            onOpen: () => widget.onOpenCommunity(community.communityId),
+            onJoin: () => unawaited(_join(community)),
           ),
-        ],
         if (state.appendFailed && !state.loadingMore)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -443,51 +401,9 @@ class _SquareTextLink extends StatelessWidget {
   );
 }
 
-/// A module title on the 社区 segment (「热门社区」, 「全部社区」) with an
-/// optional control at its right (UX-013, decision 0257).
-class _SquareSectionHead extends StatelessWidget {
-  const _SquareSectionHead({
-    required this.title,
-    super.key,
-    this.icon,
-    this.trailing,
-  });
-
-  final String title;
-  final String? icon;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 8, 4),
-    child: Row(
-      children: <Widget>[
-        if (icon case final String glyph) ...<Widget>[
-          LoopIcon(glyph, size: 18, color: LoopColors.yellow),
-          const SizedBox(width: 6),
-        ],
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopTypography.withWeight(
-                LoopType.body1,
-                FontWeight.w700,
-              ).copyWith(color: LoopColors.chalk),
-            ),
-          ),
-        ),
-        ?trailing,
-      ],
-    ),
-  );
-}
-
-/// 「成员最多 ∨」: the current order, opening the four orders the directory
-/// takes (UX-013, decision 0257).
+/// 「成员最多 ∨」: the current order as one quiet Text3 word, right-aligned
+/// over the cards, opening the four orders the directory takes (UX-013,
+/// decision 0257; S335 · decision 0264 dropped its chip and its heading).
 class _SquareSortButton extends StatelessWidget {
   const _SquareSortButton({required this.label, required this.onTap});
 
@@ -495,40 +411,41 @@ class _SquareSortButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '排序，$label',
-    excludeSemantics: true,
-    child: InkWell(
-      key: const ValueKey<String>('square-community-sort'),
-      onTap: onTap,
-      borderRadius: LoopRadius.pill,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-        child: Center(
-          widthFactor: 1,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: const BoxDecoration(
-              color: LoopColors.card2,
-              borderRadius: LoopRadius.pill,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(right: squareCommunityCardInset - 8),
+    child: Align(
+      alignment: Alignment.centerRight,
+      child: Semantics(
+        button: true,
+        label: '排序，$label',
+        excludeSemantics: true,
+        child: InkWell(
+          key: const ValueKey<String>('square-community-sort'),
+          onTap: onTap,
+          borderRadius: LoopRadius.pill,
+          // The word reads as a 32 line; the hit box keeps the 44 floor.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: LoopTouch.minimum,
+              minWidth: LoopTouch.minimum,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  label,
-                  style: LoopTypography.withWeight(
-                    LoopType.label,
-                    FontWeight.w600,
-                  ).copyWith(color: LoopColors.chalk),
-                ),
-                const SizedBox(width: 4),
-                const RotatedBox(
-                  quarterTurns: 1,
-                  child: LoopIcon('chevron', size: 12, color: LoopColors.text2),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(label, style: LoopType.meta),
+                  const SizedBox(width: 4),
+                  const RotatedBox(
+                    quarterTurns: 1,
+                    child: LoopIcon(
+                      'chevron',
+                      size: 12,
+                      color: LoopColors.text3,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -593,166 +510,6 @@ class _SquareSortSheet extends StatelessWidget {
       const SizedBox(height: 8),
     ],
   );
-}
-
-/// How many rows the directory must hold before 热门社区 is drawn.
-const int squareHotMinimumRows = 3;
-
-/// The community with the most members among [items], the first one on a
-/// tie; `null` for no rows (UX-013, decision 0257).
-CommunitySummary? squareHotCommunity(List<CommunitySummary> items) {
-  CommunitySummary? best;
-  for (final item in items) {
-    if (best == null || item.memberCount > best.memberCount) best = item;
-  }
-  return best;
-}
-
-/// 「N 成员，7 天讨论 M」 when the row carries its discussion count, otherwise
-/// 「N 成员」.
-String squareHotFacts(CommunitySummary community) {
-  final members = '${community.memberCount} 成员';
-  final activity = community.activity;
-  if (activity is CommunityActivityCount) {
-    final count = activity.bounded
-        ? '≥${activity.messageCount}'
-        : '${activity.messageCount}';
-    return '$members，7 天讨论 $count';
-  }
-  return members;
-}
-
-/// 热门社区's banner card (UX-013, decision 0257): logo, name and the
-/// operator's label, one line of description, the counts, and the row's own
-/// membership action at the right.
-class SquareHotCommunityCard extends StatelessWidget {
-  const SquareHotCommunityCard({
-    required this.community,
-    required this.joining,
-    required this.onOpen,
-    required this.onJoin,
-    super.key,
-  });
-
-  final CommunitySummary community;
-  final bool joining;
-  final VoidCallback onOpen;
-  final VoidCallback onJoin;
-
-  @override
-  Widget build(BuildContext context) {
-    final id = community.communityId;
-    final label = community.label;
-    final description = community.description?.trim();
-    final action = squareMembershipAction(community.viewerMembership);
-    final facts = squareHotFacts(community);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        4,
-        LoopSpacing.page,
-        LoopSpacing.rowGap,
-      ),
-      child: Material(
-        color: LoopColors.card,
-        borderRadius: LoopRadius.card,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onOpen,
-          child: Padding(
-            padding: const EdgeInsets.all(LoopSpacing.card),
-            child: Row(
-              children: <Widget>[
-                CommunityLogo(
-                  identity: id,
-                  name: community.name,
-                  logoRef: community.logoRef,
-                  size: 64,
-                  radius: LoopRadius.innerValue,
-                  chromeFallback: true,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Semantics(
-                    button: true,
-                    label: <String>[
-                      '热门社区',
-                      community.name,
-                      if (label != null) communityLabelDisplay(label),
-                      if (description != null && description.isNotEmpty)
-                        description,
-                      facts,
-                    ].join('，'),
-                    excludeSemantics: true,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        LayoutBuilder(
-                          builder: (context, constraints) => Row(
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  community.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: LoopTypography.withWeight(
-                                    LoopType.body1,
-                                    FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              if (label != null) ...<Widget>[
-                                const SizedBox(width: 6),
-                                CommunityLabelBadge(
-                                  label,
-                                  maxWidth: constraints.maxWidth * 0.45,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (description != null &&
-                            description.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: 4),
-                          Text(
-                            description,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: LoopType.caption.copyWith(
-                              color: LoopColors.text2,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 4),
-                        Text(
-                          facts,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.captionSm.copyWith(
-                            color: LoopColors.text2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (action != SquareMembershipAction.none) ...<Widget>[
-                  const SizedBox(width: 8),
-                  _MembershipCapsule(
-                    communityId: 'hot-$id',
-                    action: action,
-                    joining: joining,
-                    onJoin: onJoin,
-                    onOpen: onOpen,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// A search field that is not one: it opens `/search`, where typing is.
@@ -909,23 +666,51 @@ SquareMembershipAction squareMembershipAction(
   };
 }
 
-/// The line under a row's name: members, then the bound token — or, under an
-/// order that ranks by a fact the row carries, that fact.
+/// The facts under a row's description, joined for the row's spoken label
+/// only (the card draws them as separate pieces): members, the ranked fact
+/// under an order that ranks by one, then the bound token.
 String squareCommunitySubline(
   CommunitySummary community,
   CommunityDirectorySort sort,
 ) {
-  final members = '${community.memberCount} 成员';
-  final ranked = communityDirectoryRowFigure(community, sort: sort);
-  // v3 (decision 0229): no centre-dot chain; a comma joins the two facts.
-  if (ranked != null) return '$members，${ranked.caption} ${ranked.value}';
+  final ranked = squareCommunityRankedFact(community, sort);
   final symbol = community.assetSymbol;
-  return symbol == null ? members : '$members，\$$symbol';
+  return <String>[
+    '${community.memberCount} 成员',
+    ?ranked,
+    if (symbol != null) '\$$symbol',
+  ].join('，');
 }
 
-/// One community, DeBox-club style (decision 0116): logo, name and the
-/// operator's label when it has one (decision 0239), members and token, and
-/// the reader's membership at the right. The whole row opens the community.
+/// The fact an order ranks by (算力 / 7 天讨论 …), or null under an order
+/// that ranks by members or age.
+String? squareCommunityRankedFact(
+  CommunitySummary community,
+  CommunityDirectorySort sort,
+) {
+  final ranked = communityDirectoryRowFigure(community, sort: sort);
+  return ranked == null ? null : '${ranked.caption} ${ranked.value}';
+}
+
+/// The card's measures (S335 · decision 0264, the requester's 390-wide
+/// board): a card per community, 16 in from the screen edge, 12 apart, 16
+/// inside, a 60 logo at a 14 corner; the facts line's chips 20 high.
+const double squareCommunityCardInset = 16;
+const double squareCommunityCardGap = 12;
+const double squareCommunityCardPadding = 16;
+const double squareCommunityLogoSize = 60;
+const double squareCommunityLogoRadius = 14;
+const double squareCommunityPillWidth = 52;
+const double squareCommunityPillHeight = 32;
+const double squareCommunityChipHeight = 20;
+const double squareCommunityTokenLogoSize = 16;
+const double squareCommunityMetaGap = 8;
+const double squareCommunityTokenChipMaxWidth = 136;
+
+/// One community as its own card (S335 · decision 0264): logo, name,
+/// one line of description, the facts line — members, a hairline, the token,
+/// and the operator's label at its end (decision 0239) — and the reader's
+/// membership at the right. The whole card opens the community.
 class SquareCommunityRow extends StatelessWidget {
   const SquareCommunityRow({
     required this.community,
@@ -942,16 +727,12 @@ class SquareCommunityRow extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback onJoin;
 
-  static const double height = LoopSpacing.rowMinWithSub;
-
-  /// A row that also carries its one line of description (UX-013).
-  static const double heightWithDescription = 76;
-
   @override
   Widget build(BuildContext context) {
     final id = community.communityId;
     final action = squareMembershipAction(community.viewerMembership);
     final subline = squareCommunitySubline(community, sort);
+    final ranked = squareCommunityRankedFact(community, sort);
     // Decision 0239: the operator's free-text label, or no mark at all.
     final label = community.label;
     final description = community.description?.trim();
@@ -963,117 +744,333 @@ class SquareCommunityRow extends StatelessWidget {
       SquareMembershipAction.mine => '，我的社区',
       SquareMembershipAction.pending => '，审核中',
     };
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Semantics(
-            button: true,
-            label:
-                '${<String>[community.name, if (label != null) communityLabelDisplay(label), if (described) description].join('，')}'
-                '，$subline$state',
-            excludeSemantics: true,
-            child: InkWell(
-              key: ValueKey<String>('square-community-open-$id'),
-              onTap: onOpen,
-              child: SizedBox(
-                height: described ? heightWithDescription : height,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: LoopSpacing.card),
-                  child: Row(
-                    children: <Widget>[
-                      CommunityLogo(
-                        identity: id,
-                        name: community.name,
-                        logoRef: community.logoRef,
-                        size: 48,
-                        radius: LoopRadius.innerValue,
-                        chromeFallback: true,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            // The label takes at most 45 % of the line, so a
-                            // long one ellipsizes before it pushes the name
-                            // out (decision 0239).
-                            LayoutBuilder(
-                              builder: (context, constraints) => Row(
-                                children: <Widget>[
-                                  Flexible(
-                                    child: Text(
-                                      community.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: LoopType.body1,
-                                    ),
-                                  ),
-                                  if (label != null) ...<Widget>[
-                                    const SizedBox(width: 6),
-                                    CommunityLabelBadge(
-                                      label,
-                                      key: ValueKey<String>(
-                                        'square-community-label-$id',
-                                      ),
-                                      maxWidth: constraints.maxWidth * 0.45,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            if (described) ...<Widget>[
-                              const SizedBox(height: 2),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        squareCommunityCardInset,
+        0,
+        squareCommunityCardInset,
+        squareCommunityCardGap,
+      ),
+      child: Material(
+        key: ValueKey<String>('square-community-card-$id'),
+        color: LoopColors.card,
+        borderRadius: LoopRadius.shell,
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Semantics(
+                button: true,
+                label:
+                    '${<String>[community.name, if (described) description, subline, if (label != null) communityLabelDisplay(label)].join('，')}'
+                    '$state',
+                excludeSemantics: true,
+                child: InkWell(
+                  key: ValueKey<String>('square-community-open-$id'),
+                  onTap: onOpen,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      squareCommunityCardPadding,
+                      squareCommunityCardPadding,
+                      8,
+                      squareCommunityCardPadding,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        CommunityLogo(
+                          key: ValueKey<String>('square-community-logo-$id'),
+                          identity: id,
+                          name: community.name,
+                          logoRef: community.logoRef,
+                          size: squareCommunityLogoSize,
+                          radius: squareCommunityLogoRadius,
+                          chromeFallback: true,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
                               Text(
-                                description,
+                                community.name,
                                 key: ValueKey<String>(
-                                  'square-community-description-$id',
+                                  'square-community-name-$id',
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopType.caption.copyWith(
-                                  color: LoopColors.text2,
+                                style: LoopType.body1.copyWith(
+                                  color: LoopColors.chalk,
                                 ),
                               ),
-                            ],
-                            const SizedBox(height: 4),
-                            Text(
-                              subline,
-                              key: ValueKey<String>(
-                                'square-community-subline-$id',
+                              if (described) ...<Widget>[
+                                const SizedBox(height: 2),
+                                Text(
+                                  description,
+                                  key: ValueKey<String>(
+                                    'square-community-description-$id',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LoopType.caption.copyWith(
+                                    color: LoopColors.text2,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 6),
+                              _SquareCommunityMeta(
+                                communityId: id,
+                                members: '${community.memberCount} 成员',
+                                ranked: ranked,
+                                symbol: community.assetSymbol,
+                                logoUrl:
+                                    community.assetBadge?.logoUrl ??
+                                    community.boundAsset?.logoUrl,
+                                label: label,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: LoopType.caption,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+            if (action != SquareMembershipAction.none)
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: squareCommunityCardPadding,
+                ),
+                child: _MembershipCapsule(
+                  communityId: id,
+                  action: action,
+                  joining: joining,
+                  onJoin: onJoin,
+                  onOpen: onOpen,
+                ),
+              )
+            else
+              const SizedBox(width: 4),
+          ],
         ),
-        if (action != SquareMembershipAction.none)
-          Padding(
-            // The action ends on the board's own inner line (decision 0229).
-            padding: const EdgeInsets.only(right: LoopSpacing.card),
-            child: _MembershipCapsule(
-              communityId: id,
-              action: action,
-              joining: joining,
-              onJoin: onJoin,
-              onOpen: onOpen,
-            ),
-          )
-        else
-          const SizedBox(width: LoopSpacing.card),
-      ],
+      ),
     );
   }
+}
+
+/// 「(people) 28 成员  [(logo) $DOGE]  [算力社区]」: the card's facts line
+/// (S335 · decision 0264). Separate pieces 8 apart — no comma, no divider.
+/// No bound token, no token chip; no label, no label chip.
+class _SquareCommunityMeta extends StatelessWidget {
+  const _SquareCommunityMeta({
+    required this.communityId,
+    required this.members,
+    required this.ranked,
+    required this.symbol,
+    required this.logoUrl,
+    required this.label,
+  });
+
+  final String communityId;
+  final String members;
+  final String? ranked;
+  final String? symbol;
+  final String? logoUrl;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = communityId;
+    // Decision 0264 (supplement): a 算力社区 always has its token, so the mark
+    // rides inside the token chip as a Yellow bolt instead of a chip of its
+    // own that a 390 line could never fit.
+    final mark = label;
+    final bolted = symbol != null && mark != null && squareIsMiningLabel(mark);
+    final trailingLabel = bolted ? null : mark;
+    return SizedBox(
+      key: ValueKey<String>('square-community-meta-$id'),
+      height: squareCommunityChipHeight,
+      child: Row(
+        children: <Widget>[
+          const LoopIcon('users', size: 14, color: LoopColors.text3),
+          const SizedBox(width: 4),
+          Text(
+            members,
+            key: ValueKey<String>('square-community-members-$id'),
+            maxLines: 1,
+            softWrap: false,
+            style: LoopType.meta,
+          ),
+          if (ranked case final String fact) ...<Widget>[
+            const SizedBox(width: squareCommunityMetaGap),
+            Flexible(
+              child: Text(
+                fact,
+                key: ValueKey<String>('square-community-ranked-$id'),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.meta,
+              ),
+            ),
+          ],
+          if (symbol case final String asset) ...<Widget>[
+            const SizedBox(width: squareCommunityMetaGap),
+            // On a narrow line the symbol is cut before the bolt or the logo.
+            Flexible(
+              flex: 3,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: squareCommunityTokenChipMaxWidth,
+                ),
+                child: _SquareMetaChip(
+                  key: ValueKey<String>('square-community-token-$id'),
+                  leading: LoopTokenLogo(
+                    key: ValueKey<String>('square-community-token-logo-$id'),
+                    assetSymbol: asset,
+                    logoUrl: logoUrl,
+                    // 16 holds one letter, not two.
+                    fallbackMonogram: loopMonogram(asset).characters.first,
+                    size: squareCommunityTokenLogoSize,
+                  ),
+                  text: '\$$asset',
+                  color: LoopColors.chalk,
+                  semanticsLabel: bolted
+                      ? '\$$asset，${communityLabelDisplay(mark)}'
+                      : '\$$asset',
+                  trailing: bolted
+                      ? LoopIcon(
+                          'bolt',
+                          key: ValueKey<String>('square-community-bolt-$id'),
+                          size: squareCommunityBoltSize,
+                          color: LoopColors.yellow,
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ],
+          // The label comes last and gives way first: whole when it fits,
+          // cut after its first four characters at the least, otherwise left
+          // off this line (the card's spoken label still carries it).
+          if (trailingLabel case final String mark)
+            Flexible(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final text = communityLabelDisplay(mark);
+                  final need =
+                      squareCommunityMetaGap +
+                      squareMetaChipFloor(context, text);
+                  if (constraints.maxWidth < need) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      left: squareCommunityMetaGap,
+                    ),
+                    child: _SquareMetaChip(
+                      key: ValueKey<String>('square-community-label-$id'),
+                      text: text,
+                      color: LoopColors.text3,
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The narrowest a label chip may be drawn: its first four characters (and
+/// an ellipsis when there is more) plus the chip's own padding and edge.
+double squareMetaChipFloor(BuildContext context, String text) {
+  final chars = text.characters;
+  final shown = chars.length <= 4 ? text : '${chars.take(4)}…';
+  final painter = TextPainter(
+    text: TextSpan(text: shown, style: LoopType.tag),
+    textDirection: TextDirection.ltr,
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width + squareMetaChipPadding * 2 + 2;
+}
+
+/// The bolt inside a 算力社区's token chip.
+const double squareCommunityBoltSize = 12;
+
+/// The operator's label that marks a 算力社区 (decision 0264 supplement).
+const String squareMiningLabel = '算力社区';
+
+/// Whether [label] is the 算力社区 mark.
+bool squareIsMiningLabel(String label) => label.trim() == squareMiningLabel;
+
+const double squareMetaChipPadding = 6;
+
+/// A 20-high outlined chip on the facts line: the tab bar's own hairline
+/// edge, a 10 corner, an optional 16 logo, one 12 / 600 word.
+class _SquareMetaChip extends StatelessWidget {
+  const _SquareMetaChip({
+    required this.text,
+    required this.color,
+    super.key,
+    this.leading,
+    this.trailing,
+    this.semanticsLabel,
+  });
+
+  final String text;
+  final Color color;
+  final Widget? leading;
+
+  /// A mark after the word (the 算力社区 bolt), 4 after it.
+  final Widget? trailing;
+
+  /// What the chip reads as; null reads [text].
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: semanticsLabel ?? text,
+    excludeSemantics: true,
+    child: Container(
+      height: squareCommunityChipHeight,
+      padding: EdgeInsets.only(
+        left: leading == null ? squareMetaChipPadding : 2,
+        right: squareMetaChipPadding,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: LoopRadius.inner,
+        border: Border.all(color: loopTabBarEdge),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (leading case final Widget logo) ...<Widget>[
+            logo,
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: LoopType.tag.copyWith(color: color),
+            ),
+          ),
+          if (trailing case final Widget mark) ...<Widget>[
+            const SizedBox(width: 4),
+            mark,
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _MembershipCapsule extends StatelessWidget {
@@ -1096,7 +1093,7 @@ class _MembershipCapsule extends StatelessWidget {
     final (
       String key,
       String label,
-      bool lime,
+      bool primary,
       VoidCallback? onTap,
     ) = switch (action) {
       SquareMembershipAction.join => (
@@ -1110,14 +1107,50 @@ class _MembershipCapsule extends StatelessWidget {
       SquareMembershipAction.pending => ('pending', '审核中', false, onOpen),
       SquareMembershipAction.none => ('none', '', false, null),
     };
+    final word = joining ? '加入中' : label;
     // Decision 0212 (docs/42 附C §6): 「加入」 is the Yellow primary step —
-    // the one thing on the row that asks to be tapped; 「已加入」 and the
-    // others are the quiet secondary pill.
-    return LoopPillAction(
-      key: ValueKey<String>('square-community-$key-$communityId'),
-      label: joining ? '加入中' : label,
-      primary: lime,
-      onPressed: onTap,
+    // the one thing on the card that asks to be tapped; 「已加入」 and the
+    // others are the quiet grey capsule (S335 · decision 0264: 52 × 32).
+    final solid = primary && onTap != null;
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: word,
+      excludeSemantics: true,
+      child: LoopPressable(
+        key: ValueKey<String>('square-community-$key-$communityId'),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: LoopTouch.minimum,
+            minWidth: LoopTouch.minimum,
+          ),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              key: ValueKey<String>('square-community-pill-$communityId'),
+              height: squareCommunityPillHeight,
+              constraints: const BoxConstraints(
+                minWidth: squareCommunityPillWidth,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: solid ? LoopColors.yellow : LoopColors.card2,
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Text(
+                word,
+                maxLines: 1,
+                softWrap: false,
+                style: LoopType.label.copyWith(
+                  color: solid ? LoopColors.ink : LoopColors.text2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

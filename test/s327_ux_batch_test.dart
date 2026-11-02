@@ -161,7 +161,7 @@ void main() {
   });
 
   group('UX-013 · 发现社区', () {
-    testWidgets('「热门社区」 and 「全部社区」 headings, no category chips', (
+    testWidgets('no 热门社区 banner, no 「全部社区」 heading, no category chips', (
       tester,
     ) async {
       final page = CommunityDirectoryPage(
@@ -187,13 +187,13 @@ void main() {
       );
       expect(find.text('发现社区'), findsOneWidget);
       expect(find.text('规则与入驻'), findsOneWidget);
-      expect(find.text('热门社区'), findsOneWidget);
-      expect(find.text('全部社区'), findsOneWidget);
-      expect(find.text('查看更多'), findsOneWidget);
-      // The banner is the community with the most members.
+      // S335 (decision 0264): the banner and the heading are gone.
+      expect(find.text('热门社区'), findsNothing);
+      expect(find.text('全部社区'), findsNothing);
+      expect(find.text('查看更多'), findsNothing);
       expect(
         _key('square-hot-10000000-0000-4000-8000-000000000002'),
-        findsOneWidget,
+        findsNothing,
       );
       // The order is a dropdown, not a chip row.
       expect(_key('square-community-sort'), findsOneWidget);
