@@ -56,6 +56,10 @@ void main() {
       IntentKind.launchPurchase,
       IntentKind.miningClaim,
       IntentKind.nftTransfer,
+      // S342 · decision 0270: the two DApp kinds sign on the Launch slot
+      // only; `chainIsPermitted` refuses them on the primary chain.
+      IntentKind.dappTransaction,
+      IntentKind.dappMessage,
     };
 
     test('the matrix is the one set both exits read', () {

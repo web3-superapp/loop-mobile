@@ -1267,7 +1267,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_route_manifest_contract(root)
 
         self.assertTrue(
-            any("114 manifest slugs in manifest order" in error for error in result),  # S168, S180, S287
+            any("118 manifest slugs in manifest order" in error for error in result),  # S168, S180, S287, S342
             msg=f"expected manifest slug drift guard: {result}",
         )
 
@@ -5732,16 +5732,17 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected the published-slot guard: {result}",
         )
 
-    def test_s9_launch_slot_admits_exactly_four_kinds(self) -> None:
-        """Decisions 0141 / 0267: a fifth off-primary kind fails the harness."""
+    def test_s9_launch_slot_admits_exactly_six_kinds(self) -> None:
+        """Decisions 0141 / 0267 / 0270: a seventh off-primary kind fails."""
 
         with tempfile.TemporaryDirectory() as temporary:
             root = self._s9_root(temporary)
             target = root / check_harness.S9_SIGNING_INTENT_PATH
             target.write_text(
                 target.read_text(encoding="utf-8").replace(
-                    "  IntentKind.nftTransfer,\n};",
-                    "  IntentKind.nftTransfer,\n  IntentKind.transfer,\n};",
+                    "  IntentKind.nftTransfer,\n  IntentKind.dappTransaction,",
+                    "  IntentKind.nftTransfer,\n  IntentKind.transfer,\n"
+                    "  IntentKind.dappTransaction,",
                     1,
                 ),
                 encoding="utf-8",
@@ -5936,14 +5937,14 @@ class HarnessTests(unittest.TestCase):
     def test_current_s7_surfaces_pass_their_guard(self) -> None:
         self.assertEqual(check_harness.check_s7_truth_contract(REPOSITORY_ROOT), [])
 
-    def test_capability_enum_must_hold_the_contracts_thirty_six_ids(self) -> None:
+    def test_capability_enum_must_hold_the_contracts_thirty_seven_ids(self) -> None:
         relative = str(check_harness.S5_CAPABILITY_META_PATH)
         source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
         mutations = (
-            # A thirty-seventh id the contract never listed.
+            # A thirty-eighth id the contract never listed.
             (
-                "  nftSend('nftSend');",
-                "  nftSend('nftSend'),\n  perpTrading('perpTrading');",
+                "  dappBrowser('dappBrowser');",
+                "  dappBrowser('dappBrowser'),\n  perpTrading('perpTrading');",
             ),
             # `launch2` dropped: omissible on the wire, never in the enum.
             ("  launch2('launch2'),\n", ""),
@@ -5952,7 +5953,9 @@ class HarnessTests(unittest.TestCase):
             # `squareFeed` dropped (decision 0177): omissible on the wire too.
             ("  squareFeed('squareFeed'),\n", ""),
             # `nftSend` dropped (decision 0267): omissible on the wire too.
-            ("  nftSend('nftSend');", "  ;"),
+            ("  nftSend('nftSend'),\n", ""),
+            # `dappBrowser` dropped (decision 0270): omissible on the wire too.
+            ("  dappBrowser('dappBrowser');", "  ;"),
             # A dropped id.
             ("  marketRead('marketRead'),\n", ""),
             # A renamed wire value.
@@ -5973,11 +5976,11 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any(
-                        "LoopV2CapabilityId must list exactly the contract's 36 ids"
+                        "LoopV2CapabilityId must list exactly the contract's 37 ids"
                         in error
                         for error in result
                     ),
-                    msg=f"expected 36-capability guard: {result}",
+                    msg=f"expected 37-capability guard: {result}",
                 )
 
     def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:

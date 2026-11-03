@@ -105,6 +105,20 @@ final class PrivyWalletSigningGateway implements WalletSigningGateway {
             headers: headers,
             body: body,
           ),
+        // S342 · decision 0270: a DApp message. Only a signer that owns the
+        // message exit may sign one.
+        MessageSignaturePayload(
+          fromAddress: final from,
+          method: final method,
+          payload: final message,
+        ) =>
+          signer is PrivyMessageSigner
+              ? await (signer as PrivyMessageSigner).signMessage(
+                  fromAddress: from,
+                  method: method,
+                  payload: message,
+                )
+              : throw const PrivySigningException('privy_wallet_unavailable'),
       };
       return WalletHandoffResult(
         accepted: true,

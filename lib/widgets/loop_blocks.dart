@@ -781,11 +781,16 @@ class LoopOmnibox extends StatelessWidget {
     this.onChanged,
     this.trailingKey,
     this.fieldKey,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
   final String hintText;
   final ValueChanged<String>? onChanged;
+
+  /// The keyboard's 前往 (S342 · decision 0270: the DApp browser opens the
+  /// typed address). `null` keeps the default action.
+  final ValueChanged<String>? onSubmitted;
 
   /// `.search-trigger .key`: the scope chip at the right edge.
   final String? trailingKey;
@@ -820,6 +825,10 @@ class LoopOmnibox extends StatelessWidget {
                   keyboardType: TextInputType.url,
                   autocorrect: false,
                   onChanged: onChanged,
+                  onSubmitted: onSubmitted,
+                  textInputAction: onSubmitted == null
+                      ? null
+                      : TextInputAction.go,
                   // R26: a search-shaped field, text and placeholder alike.
                   style: LoopType.body,
                   decoration: InputDecoration(

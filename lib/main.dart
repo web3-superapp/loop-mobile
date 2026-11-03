@@ -1,5 +1,11 @@
 import 'dart:async';
 
+import 'package:loop_mobile/features/dapp/dapp_gateway.dart';
+import 'package:loop_mobile/features/dapp/dapp_store.dart';
+import 'package:loop_mobile/features/dapp/dapp_webview.dart';
+import 'package:loop_mobile/integrations/backend/v2/dapp/loop_v2_dapp_api.dart';
+import 'package:loop_mobile/integrations/browser/inapp_dapp_webview.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_dapp_browser_store.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_gateway.dart';
@@ -346,6 +352,21 @@ Future<void> main() async {
         // server-owned, and every page still reads its capability gate.
         walletIntentsGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2WalletIntentsGatewayProvider),
+        ),
+        // S342 (decision 0270): the in-app DApp browser — its intents, its
+        // read-only RPC channel, its WebView and its device-local lists. The
+        // page still reads the `dappBrowser` capability before it opens.
+        dappIntentsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2DappIntentsGatewayProvider),
+        ),
+        dappRpcReaderProvider.overrideWith(
+          (ref) => ref.watch(loopV2DappRpcReaderProvider),
+        ),
+        dappWebViewFactoryProvider.overrideWithValue(
+          const InAppDappWebViewFactory(),
+        ),
+        dappBrowserStoreProvider.overrideWithValue(
+          SharedPreferencesDappBrowserStore(),
         ),
         swapQuoteGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2SwapQuoteGatewayProvider),

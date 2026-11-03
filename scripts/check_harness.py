@@ -910,6 +910,9 @@ S5_CAPABILITY_IDS = (
     # Decision 0267 (loop-api S339): the project NFT send. The parser accepts
     # a backend that still omits it (read as unavailable).
     "nftSend",
+    # Decision 0270 (loop-api S342): the in-app DApp browser. The parser
+    # accepts a backend that still omits it (read as unavailable).
+    "dappBrowser",
 )
 # The three S7 ports (decision 0058). Each production default is its own
 # `Unavailable…Gateway`, so Launch, Mining and Referral are unavailable until
@@ -4498,6 +4501,12 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
         # Decision 0186: whether this installation was offered the app lock,
         # pinned by `check_app_lock_prompt_store_contract`.
         APP_LOCK_PROMPT_STORE_OWNER,
+        # Decision 0270: the DApp browser's recents, bookmarks and connected
+        # origins, one device-local key.
+        Path(
+            "lib/integrations/personalization/"
+            "shared_preferences_dapp_browser_store.dart"
+        ),
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -8522,7 +8531,7 @@ ROUTE_MANIFEST_RETIRED_LITERALS = (
 
 
 def check_route_manifest_contract(root: Path) -> list[str]:
-    """Keep the Dart route table equal to the frozen 117-route manifest."""
+    """Keep the Dart route table equal to the frozen 118-route manifest."""
 
     errors: list[str] = []
     json_path = root / ROUTE_MANIFEST_JSON_PATH
@@ -8544,8 +8553,9 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     # S287 (decision 0241): 113 → 114, 通知中心 under 聊天.
     # S324 (decision 0254): 114 → 115, 邮箱登录 between auth and auth-otp.
     # S332 (decision 0262): 115 → 117, 内测反馈 and 我的反馈.
-    if manifest.get("count") != 117 or len(expected_slugs) != 117:
-        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 117 routes")
+    # S342 (decision 0270): 117 → 118, DApp 页面.
+    if manifest.get("count") != 118 or len(expected_slugs) != 118:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 118 routes")
     if manifest.get("tabs") != ["chat", "square", "meme", "intel", "wallet"]:
         errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
     if manifest.get("defaultRoute") != "meme":
@@ -8581,7 +8591,7 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
     if dart_slugs != expected_slugs:
         errors.append(
-            "lib/core/navigation/route_manifest.dart entries must list the 117 manifest "
+            "lib/core/navigation/route_manifest.dart entries must list the 118 manifest "
             "slugs in manifest order"
         )
     dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
@@ -10931,6 +10941,9 @@ def _first_positional_argument(arguments: str) -> str | None:
 # A listing page whose rows are a read must answer a pull with a re-read. The
 # exemptions are pages where a pull would be wrong, each with its reason.
 LIST_REFRESH_EXEMPT: dict[str, str] = {
+    "lib/features/dapp/dapp_browser_screens.dart": (
+        "device-local recents and bookmarks; nothing on the server to re-read"
+    ),
     "lib/widgets/loop_tab_segments.dart": (
         "the segmented container; each segment body installs its own refresh"
     ),
@@ -11610,7 +11623,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 36 ids, in contract order.
+    # 2. The capability enum follows the contract's 37 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))
@@ -12081,7 +12094,8 @@ S9_SIGNING_INTENT_MARKERS = (
     "return launchSlotIntentKinds.contains(kind);",
 )
 # The exact kinds that may leave the primary chain (decisions 0089, 0141,
-# 0267 — the project NFT send). A further kind in the set is a new
+# 0267 — the project NFT send; 0270 — the two DApp kinds, which
+# `chainIsPermitted` also refuses on the primary chain). A further kind in the set is a new
 # off-primary signing path and needs its own decision, so the set is compared
 # whole rather than searched for members.
 S9_LAUNCH_SLOT_KINDS = frozenset(
@@ -12090,6 +12104,8 @@ S9_LAUNCH_SLOT_KINDS = frozenset(
         "IntentKind.launchApproval",
         "IntentKind.miningClaim",
         "IntentKind.nftTransfer",
+        "IntentKind.dappTransaction",
+        "IntentKind.dappMessage",
     }
 )
 S9_LAUNCH_SLOT_SET_PATTERN = re.compile(

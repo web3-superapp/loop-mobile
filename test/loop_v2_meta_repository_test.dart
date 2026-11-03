@@ -548,9 +548,9 @@ void main() {
           'reasonCode': null,
         },
       });
-      expect(items, hasLength(37));
+      expect(items, hasLength(38));
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(36));
+      expect(capabilities.capabilities, hasLength(37));
       expect(
         capabilities.capabilities.map((LoopV2Capability c) => c.id),
         containsAll(LoopV2CapabilityId.values),
@@ -567,7 +567,7 @@ void main() {
           'reasonCode': 'LAUNCH2_FACTORY_NOT_CONFIGURED',
         };
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(36));
+      expect(capabilities.capabilities, hasLength(37));
       final launch2 = capabilities[LoopV2CapabilityId.launch2];
       expect(launch2.availability, LoopV2CapabilityAvailability.unavailable);
       expect(launch2.reasonCode, 'LAUNCH2_FACTORY_NOT_CONFIGURED');
@@ -598,10 +598,10 @@ void main() {
       (value['capabilities']! as List<Object?>).removeWhere(
         (item) => (item! as Map<String, Object?>)['capabilityId'] == 'launch2',
       );
-      expect(value['capabilities']! as List<Object?>, hasLength(35));
+      expect(value['capabilities']! as List<Object?>, hasLength(36));
 
       final capabilities = await _resolvingRepository(value).getCapabilities();
-      expect(capabilities.capabilities, hasLength(36));
+      expect(capabilities.capabilities, hasLength(37));
       expect(
         capabilities.capabilities.map((capability) => capability.id).toSet(),
         LoopV2CapabilityId.values.toSet(),
@@ -686,7 +686,7 @@ void main() {
             (item! as Map<String, Object?>)['capabilityId'] == 'testnetFaucet',
       );
       final read = await _resolvingRepository(value).getCapabilities();
-      expect(read.capabilities, hasLength(36));
+      expect(read.capabilities, hasLength(37));
       final faucet = read[LoopV2CapabilityId.testnetFaucet];
       expect(faucet.availability, LoopV2CapabilityAvailability.unavailable);
       expect(
@@ -742,9 +742,9 @@ void main() {
         (item) =>
             (item! as Map<String, Object?>)['capabilityId'] == 'squareFeed',
       );
-      expect(value['capabilities']! as List<Object?>, hasLength(35));
+      expect(value['capabilities']! as List<Object?>, hasLength(36));
       final read = await _resolvingRepository(value).getCapabilities();
-      expect(read.capabilities, hasLength(36));
+      expect(read.capabilities, hasLength(37));
       final feed = read[LoopV2CapabilityId.squareFeed];
       expect(feed.availability, LoopV2CapabilityAvailability.unavailable);
       expect(
@@ -762,7 +762,7 @@ void main() {
         (item) => (item! as Map<String, Object?>)['capabilityId'] == 'nftSend',
       );
       final read = await _resolvingRepository(value).getCapabilities();
-      expect(read.capabilities, hasLength(36));
+      expect(read.capabilities, hasLength(37));
       final nftSend = read[LoopV2CapabilityId.nftSend];
       expect(nftSend.availability, LoopV2CapabilityAvailability.unavailable);
       expect(
@@ -785,6 +785,25 @@ void main() {
         };
       final read = await _resolvingRepository(value).getCapabilities();
       expect(read[LoopV2CapabilityId.nftSend].reasonCode, 'NFT_SEND_DISABLED');
+    });
+  });
+
+  group('dappBrowser capability (decision 0270)', () {
+    test('a backend before loop-api S342 omits it and it reads '
+        'unavailable', () async {
+      final value = _capabilities();
+      (value['capabilities']! as List<Object?>).removeWhere(
+        (item) =>
+            (item! as Map<String, Object?>)['capabilityId'] == 'dappBrowser',
+      );
+      final read = await _resolvingRepository(value).getCapabilities();
+      expect(read.capabilities, hasLength(37));
+      final browser = read[LoopV2CapabilityId.dappBrowser];
+      expect(browser.availability, LoopV2CapabilityAvailability.unavailable);
+      expect(
+        browser.reasonCode,
+        DioLoopV2MetaRepository.dappBrowserAbsentReasonCode,
+      );
     });
   });
 

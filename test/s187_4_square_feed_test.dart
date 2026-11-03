@@ -227,9 +227,10 @@ void main() {
         DioLoopV2MetaRepository.omissibleCapabilities,
         contains(LoopV2CapabilityId.squareFeed),
       );
-      // Decision 0267 appended `nftSend` after it.
+      // Decision 0267 appended `nftSend` after it, decision 0270
+      // `dappBrowser`.
       final ids = LoopV2CapabilityId.values;
-      expect(ids[ids.length - 2], LoopV2CapabilityId.squareFeed);
+      expect(ids[ids.length - 3], LoopV2CapabilityId.squareFeed);
     });
   });
 
