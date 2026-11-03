@@ -28,10 +28,10 @@ Accepted · 2026-11-03（S342-mobile）。合同见 `LOOP/docs/55-内置DApp浏�
 
 ### 方法
 
-- `eth_chainId / net_version / eth_accounts`（未连接 `[]`）本地答；`eth_requestAccounts` 弹连接确认（站点、图标、地址），按 origin 本地记住，菜单可断开（发 `accountsChanged []` + `disconnect`）；`wallet_switchEthereumChain` 只 56 / 97，其他 4902。
+- `eth_chainId / net_version / eth_accounts`（未连接 `[]`）本地答；`eth_requestAccounts` 弹连接确认（站点、图标、地址），按 origin 本地记住，菜单可断开（发 `accountsChanged []` + `disconnect`）；`wallet_switchEthereumChain` 只 56 / 97，其他 4902；`wallet_addEthereumChain`（S342 联调补）对 0x38 / 0x61 按切换处理，其他 4902。
 - 读方法（`eth_blockNumber / eth_call / eth_getBalance / eth_getCode / eth_getTransactionReceipt / eth_getTransactionByHash / eth_estimateGas / eth_gasPrice / eth_getLogs`）走一个可替换接口 `DappRpcReader`，生产默认 `POST /v2/chain/rpc-read`。
 - `eth_sendTransaction` → `POST /v2/wallet-intents/dapp-tx`；`personal_sign / eth_signTypedData_v4` → `POST /v2/wallet-intents/dapp-sign`；主网签名类本地先拒 4100 + toast「暂不支持在这个网络签名」（服务端 422 `CHAIN_SIGNING_DISABLED` 同样处理）；`eth_sign / eth_signTransaction` 与未知方法 4200。
-- 确认页：站点 origin + 图标、解码内容（交易：方法、目标合约、数量、参数；消息：文本或 typedData 树）、风险条（仅在 `riskFlags` 非空时出现）。签名前核对服务端 intent 与页面请求同一笔（目标、data、value、from、链；消息 method 与 payload，typedData 按 JSON 语义比较），不一致拒签。签名经 `loopGuardedWalletSigningGatewayProvider` → Privy（交易 `eth_sendTransaction`；消息新增 `MessageSignaturePayload` + `PrivyMessageSigner`），之后 `broadcast-report` / `signature-report` 回报；hash / 签名不论回报成败都交回页面。拒绝 → 4001 并 cancel intent。
+- 确认页：站点 origin + 图标、解码内容（交易：方法、目标合约、数量、参数；消息：文本或 typedData 树）、风险条（仅在 `riskFlags` 非空时出现）。签名前核对服务端 intent 与页面请求同一笔（目标、data、value、from、链；消息 method 与 payload，typedData 按 JSON 语义比较），不一致拒签。签名经 `loopGuardedWalletSigningGatewayProvider` → Privy（交易 `eth_sendTransaction`；消息新增 `MessageSignaturePayload` + `PrivyMessageSigner`），之后 `broadcast-report` / `signature-report` 回报；hash / 签名不论回报成败都交回页面。拒绝 → 4001 并 cancel intent。签名类请求在页面内串行排队（服务端每钱包只留一个 open intent，新 prepare 顶替旧的且交易 nonce 相同），第二个请求等第一个签完 / 拒绝 / 被拒后才 prepare。
 - `IntentKind.dappTransaction / dappMessage` 只在 Launch 槽可签，`SigningIntent.chainIsPermitted` 在主网对它们恒为 false。
 - intent 列表 `includeKinds=send_nft,dapp_tx,dapp_sign`；两种 DApp 行由 `LoopV2DappCodec` 宽松读入 `LoopWalletIntentPage.dappIntents`，读不了的行跳过，不让整页失败。
 

@@ -115,6 +115,10 @@ const Set<String> dappReadMethods = <String>{
   'eth_estimateGas',
   'eth_gasPrice',
   'eth_getLogs',
+  // S342 integration: the block and fee reads wallet libraries make before
+  // they build a transaction (served by loop-api from the S342 联调 build).
+  'eth_getBlockByNumber',
+  'eth_feeHistory',
 };
 
 final class UnavailableDappRpcReader implements DappRpcReader {

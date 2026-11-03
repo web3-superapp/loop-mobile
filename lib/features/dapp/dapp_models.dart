@@ -25,6 +25,9 @@ abstract final class DappRpcErrorCode {
 
   static const invalidParams = -32602;
   static const internal = -32603;
+
+  /// The read channel's per-account limit (EIP-1474 `limit exceeded`).
+  static const limitExceeded = -32005;
 }
 
 /// One EIP-1193 error as it travels back to the page.

@@ -36,6 +36,11 @@ String dappSignReasonText(String reasonCode) => switch (reasonCode) {
   loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
   'INTENT_EXPIRED' => '这笔请求已过期，没有签名。请回到页面重新发起。',
   'REVIEW_PAYLOAD_MISMATCH' => '待签内容与页面请求不一致，已拒绝签名。',
+  // dapp_tx pre-execution did not pass (signing.allowed = false).
+  'BSC_CALL_REVERTED' ||
+  'GAS_ESTIMATE_UNAVAILABLE' ||
+  'INTENT_NOT_SIGNABLE' => '这笔交易预执行未通过，没有签名。',
+  'SIMULATION_UNAVAILABLE' => '这笔交易暂时无法预执行，没有签名。',
   'CHAIN_SIGNING_DISABLED' ||
   'INTENT_CHAIN_NOT_PERMITTED' ||
   'intent_chain_not_permitted' => dappMainnetSigningLine,
