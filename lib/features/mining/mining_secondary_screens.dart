@@ -39,21 +39,15 @@ Widget _miningCapabilityBlock(
 );
 
 /// `mining-assets` · the per-asset power breakdown.
+///
+/// Decision 0272 (S344): the `mining-assets` route forwards to 情报 · 算力,
+/// whose NFT / 代币 tabs carry the same rows; this page stays for a host
+/// that pushes it directly.
 class MiningAssetsScreen extends ConsumerStatefulWidget {
-  const MiningAssetsScreen({
-    super.key,
-    this.onBack,
-    this.onOpenRules,
-    this.onOpenCommunities,
-  });
+  const MiningAssetsScreen({super.key, this.onBack, this.onOpenRules});
 
   final VoidCallback? onBack;
   final VoidCallback? onOpenRules;
-
-  /// The community directory, from which one community's mining panel is
-  /// reachable. There is no weighted-community list to link to directly: the
-  /// weights themselves are still under review.
-  final VoidCallback? onOpenCommunities;
 
   @override
   ConsumerState<MiningAssetsScreen> createState() => _MiningAssetsScreenState();
@@ -148,17 +142,6 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
               slug: 'assets',
               snapshot: assets.source,
             ),
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('mining-assets-open-communities'),
-                  leading: const LoopRowIcon(icon: 'clock'),
-                  title: '查看社区挖矿面板',
-                  subtitle: '每个社区的权重按审核结果授予',
-                  onTap: widget.onOpenCommunities,
-                ),
-              ],
-            ),
             const LoopLabel('计入的资产'),
             if (assets.isUnsettled)
               const LoopNotice(
@@ -215,7 +198,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                       index < assets.excluded.length;
                       index += 1
                     )
-                      _excludedRow(
+                      miningExcludedRow(
                         assets.excluded[index],
                         launchRowPosition(index, assets.excluded.length),
                       ),
@@ -282,29 +265,28 @@ Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
 };
 
 /// One asset the settlement skipped, with the server's own reason in words.
-LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
-    LoopRecordRow(
-      key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
-      leading: LoopTokenLogo(
-        assetSymbol:
-            row.symbol ??
-            miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-        logoUrl: row.logoUrl,
-        size: 44,
-        semanticLabel: miningAssetTitle(
-          symbol: row.symbol,
-          assetId: row.assetId,
-        ),
-      ),
-      title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-      subtitle: row.symbol == null
-          ? launchReasonCodeText(row.reasonCode)
-          : '${miningAssetLabel(row.assetId)} · '
-                '${launchReasonCodeText(row.reasonCode)}',
-      subtitleMaxLines: 2,
-      trailingBadge: const LoopBadge('未计入'),
-      position: position,
-    );
+LoopRecordRow miningExcludedRow(
+  MiningExcludedAsset row,
+  LoopRowPosition position,
+) => LoopRecordRow(
+  key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
+  leading: LoopTokenLogo(
+    assetSymbol:
+        row.symbol ??
+        miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
+    logoUrl: row.logoUrl,
+    size: 44,
+    semanticLabel: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
+  ),
+  title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
+  subtitle: row.symbol == null
+      ? launchReasonCodeText(row.reasonCode)
+      : '${miningAssetLabel(row.assetId)} · '
+            '${launchReasonCodeText(row.reasonCode)}',
+  subtitleMaxLines: 2,
+  trailingBadge: const LoopBadge('未计入'),
+  position: position,
+);
 
 /// Which settlement these rows came from. The identifiers it carries are
 /// backend strings, so only the block height and the time reach the row.

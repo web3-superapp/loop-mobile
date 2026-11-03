@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
+import 'package:loop_mobile/core/navigation/intel_power_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
@@ -471,16 +474,13 @@ void main() {
     );
 
     // Decision 0214: `/i/{code}` invite links reuse the same hold-and-deliver
-    // path and open `referral` with the code.
+    // path; decision 0272: `referral` forwards to 情报 · 算力 · 邀请, and the
+    // code rides along to be offered there.
     testWidgets('an invite link opens 邀请中心 with the code', (tester) async {
       await _pumpPreviewApp(tester);
       await _enterPreview(tester);
       await _pushPlatformRoute(tester, '/i/loop-7hjkm');
-      expect(find.byKey(const ValueKey<String>('referral-screen')), findsOne);
-      expect(
-        find.byKey(const ValueKey<String>('referral-code=LOOP-7HJKM')),
-        findsOneWidget,
-      );
+      _expectInviteTabOffered(tester);
     });
 
     testWidgets('an invite link before sign-in waits for the landing', (
@@ -496,7 +496,7 @@ void main() {
         'LOOP-7HJKM',
       );
       await _enterPreview(tester);
-      expect(find.byKey(const ValueKey<String>('referral-screen')), findsOne);
+      _expectInviteTabOffered(tester);
       expect(
         container.read(loopProfileLinkInboxProvider).pendingInvite,
         isNull,
@@ -694,4 +694,19 @@ void _expectProfileWith(WidgetTester tester, String loopId) {
     tester.widget<UserProfileScreen>(find.byType(UserProfileScreen)).target,
     PublicProfileByLoopId(loopId),
   );
+}
+
+void _expectInviteTabOffered(WidgetTester tester) {
+  final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+  expect(router.routeInformationProvider.value.uri.path, '/intel');
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(LoopApp)),
+  );
+  expect(
+    find.byKey(const ValueKey<String>('mining-power-tab-invite')),
+    findsOneWidget,
+  );
+  // The preview closes 邀请, so the code waits in 情报 to be offered once
+  // the overview says the account may bind.
+  expect(container.read(intelPendingInviteCodeProvider), 'LOOP-7HJKM');
 }

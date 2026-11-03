@@ -30,7 +30,7 @@ const _tall = Size(390, 9000);
 
 void main() {
   group('mining · block order', () {
-    testWidgets('the tab opens on the dashboard, then the composition', (
+    testWidgets('情报 · 算力: network card, my card, then the tabs (0272)', (
       tester,
     ) async {
       await pumpS7Page(
@@ -60,7 +60,10 @@ void main() {
         'mining-summary-hero-accumulated',
         'mining-summary-hero-claimable',
         'mining-summary-hero-claim',
-        'mining-summary-hero-assets',
+        'mining-network-card',
+        'mining-power-tabs',
+        'mining-power-tab-token',
+        'mining-composition',
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
@@ -80,17 +83,38 @@ void main() {
         ),
         isA<LoopFolioStamp>(),
       );
+      // Decision 0272: the composition is the tabs under the card, so the
+      // card no longer carries a second button to a separate page.
       expect(
-        tester
-            .widget<LoopButton>(
-              find.byKey(const ValueKey<String>('mining-summary-hero-assets')),
-            )
-            .primary,
-        isFalse,
+        find.byKey(const ValueKey<String>('mining-summary-hero-assets')),
+        findsNothing,
       );
-      // Decision 0243: 公式版本 and 算力快照 moved into the header (i).
-      // S315: 总算力 → 算力构成 → 社区, in Chinese.
-      expect(_labels(tester), <String>['算力构成', '社区']);
+      // 算力排行榜 is the network card's icon, 邀请加成 the 邀请 tab.
+      expect(
+        find.byKey(const ValueKey<String>('mining-open-rank')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-open-referral')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-open-market')),
+        findsOneWidget,
+      );
+      // No section headings between the cards and the tabs.
+      expect(_labels(tester), isEmpty);
+      final network = tester.getRect(
+        find.byKey(const ValueKey<String>('mining-network-card')),
+      );
+      final mine = tester.getRect(
+        find.byKey(const ValueKey<String>('mining-summary-hero')),
+      );
+      final tabs = tester.getRect(
+        find.byKey(const ValueKey<String>('mining-power-tabs')),
+      );
+      expect(network.bottom, lessThanOrEqualTo(mine.top));
+      expect(mine.bottom, lessThan(tabs.top));
     });
 
     testWidgets('a settled snapshot with nothing counted is illustrated', (

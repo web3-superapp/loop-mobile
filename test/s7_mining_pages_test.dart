@@ -320,10 +320,11 @@ void main() {
       // The boost is a card of its own now; a version is in effect and 我的算力
       // prints 1000 on this same page, so nothing here may claim that power,
       // output and rank are all unavailable.
-      // S315: the boost is one row of the 社区 group, with no sentence.
-      final boost = find.byKey(const ValueKey<String>('mining-open-referral'));
-      await scrollToS7Section(tester, boost);
-      expect(boost, findsOneWidget);
+      // Decision 0272: the boost is the 邀请 tab's, not a row of its own.
+      expect(
+        find.byKey(const ValueKey<String>('mining-open-referral')),
+        findsNothing,
+      );
       expect(find.text('五级邀请加成'), findsNothing);
       expect(find.textContaining('你的邀请加成在邀请中心查看'), findsNothing);
       expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
@@ -687,24 +688,18 @@ void main() {
       expect(find.text('还没有算力快照'), findsOneWidget);
     });
 
-    testWidgets('the community mining panel is reachable from here', (
+    testWidgets('decision 0272: the dead community panel row is gone', (
       tester,
     ) async {
-      var opened = false;
       await pumpS7Page(
         tester,
-        MiningAssetsScreen(onOpenCommunities: () => opened = true),
+        const MiningAssetsScreen(),
         mining: FakeMiningGateway(),
       );
-
-      final row = find.byKey(
-        const ValueKey<String>('mining-assets-open-communities'),
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-open-communities')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, row);
-      await tester.tap(row);
-      await tester.pumpAndSettle();
-
-      expect(opened, isTrue);
     });
 
     testWidgets('decision 0146: the page prints no reference price', (

@@ -88,7 +88,6 @@ void main() {
 
       for (final (path, key) in <(String, String)>[
         ('/community', 'community-screen'),
-        ('/mining', 'mining-screen'),
         ('/launch', 'launch-screen'),
         ('/market', 'market-screen'),
         ('/profile', 'profile-home-screen'),

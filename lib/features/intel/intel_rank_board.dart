@@ -37,7 +37,7 @@ import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 String intelRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.communities => '社区',
   MiningRankScope.users => '用户',
-  MiningRankScope.referrals => '邀请中心',
+  MiningRankScope.referrals => '邀请',
 };
 
 /// The face on a board row (docs/35 `.rank-row .face`).
@@ -51,10 +51,17 @@ const double intelRankRowFaceSize = 40;
 /// (S325 · decision 0255, UX-018: no share bar). The board reads on as the reader scrolls. What the
 /// figures are and when they were computed is one weak line at the foot,
 /// which opens the display rules.
+///
+/// Decision 0272 (S344): 算力榜 is the second-level page behind 情报 · 算力's
+/// network card (the `mining-rank` route): 社区 / 用户 / 邀请, the invite
+/// center itself living in the 邀请 tab of 算力.
 class IntelRankBoard extends ConsumerStatefulWidget {
-  const IntelRankBoard({required this.onNavigate, super.key});
+  const IntelRankBoard({required this.onNavigate, super.key, this.onBack});
 
   final ValueChanged<String> onNavigate;
+
+  /// Set when the board is its own page; null draws it as an embedded body.
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<IntelRankBoard> createState() => _IntelRankBoardState();
@@ -136,8 +143,18 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         key: const ValueKey<String>('intel-rank-board'),
         archetype: LoopPageArchetype.listing,
         title: '算力榜',
-        embedded: true,
-        tabPage: true,
+        onBack: widget.onBack,
+        embedded: widget.onBack == null,
+        tabPage: widget.onBack == null,
+        // As its own page the board keeps 情报's wall (decision 0221), so
+        // the podium and the chrome ledger stand where they always stood.
+        backdrop: widget.onBack == null
+            ? null
+            : const LoopWallBackdrop(
+                key: ValueKey<String>('intel-rank-atmo-backdrop'),
+                fog: LoopWallFog.intel,
+                keyPrefix: 'intel-rank-atmo',
+              ),
         onRefresh: controller.reload,
         updating: state.refreshing,
         block: blocked
@@ -150,11 +167,6 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
         primary: ledger,
         sections: <Widget>[
           scopeBar,
-          // S239 · decision 0214: the third chip is 邀请中心 — my invite code
-          // with copy, link and poster, 我的邀请 counts and the way into the
-          // full page — over the 推广榜 it always was.
-          if (state.scope == MiningRankScope.referrals)
-            ReferralCenterCard(onNavigate: widget.onNavigate),
           if (rank == null)
             LaunchStateBlock(
               prefix: 'intel-rank',
@@ -239,7 +251,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
                     key: const ValueKey<String>('intel-rank-empty-invite'),
                     label: '去邀请',
                     icon: 'users',
-                    onPressed: () => widget.onNavigate('/profile/referral'),
+                    onPressed: () => widget.onNavigate(referralCenterPath),
                   )
                 : null,
           ),

@@ -193,7 +193,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('market-alerts-action'),
-          icon: 'bell',
+          icon: 'alarm',
           label: '价格提醒',
           framed: true,
           onPressed: () => _open(MarketAssetRoute.alertsPath),

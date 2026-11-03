@@ -334,7 +334,7 @@ void main() {
         mining: FakeMiningGateway(),
       );
       final card = find.byKey(const ValueKey<String>('intel-rank-me'));
-      for (final label in <String>['社区', '用户', '邀请中心']) {
+      for (final label in <String>['社区', '用户', '邀请']) {
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
         expect(card, findsOneWidget, reason: label);

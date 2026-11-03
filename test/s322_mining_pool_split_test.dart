@@ -70,6 +70,19 @@ String _text(WidgetTester tester, String key) =>
 
 Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
+/// Decision 0272: 全网算力 is the network card's total.
+String _network(WidgetTester tester) =>
+    tester.widget<Text>(_key('mining-network-total')).textSpan!.toPlainText();
+
+/// Decision 0272: 算力构成 is one tab at a time under 我的总算力; 代币 is
+/// the tab it opens on.
+Future<void> _openNftTab(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(of: _key('mining-power-tabs'), matching: find.text('NFT')),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('S322 · snapshot split present', () {
     testWidgets('both: hero from the summary, two groups with subtotals', (
@@ -110,16 +123,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('代币算力 · 上一小时'), findsNothing);
-      for (final slug in <String>[
-        'network-power',
-        'last-hour-power',
-        'active-invites',
-      ]) {
+      for (final slug in <String>['last-hour-power', 'active-invites']) {
         expect(_key('mining-summary-hero-$slug'), findsOneWidget);
       }
 
       expect(_text(tester, 'mining-composition-token-subtotal'), '1,234,577');
-      expect(_text(tester, 'mining-composition-nft-subtotal'), '3,000');
       // 代币 rows show power − nftPower, in the S321 row with its expression.
       final cake = _key('mining-composition-token-$s7CakeAssetId');
       expect(
@@ -134,6 +142,11 @@ void main() {
         findsOneWidget,
       );
       expect(_key('mining-composition-token-$s7UsdtAssetId'), findsOneWidget);
+      expect(_key('mining-composition-token-invite'), findsNothing);
+      expect(find.byType(LoopEmptyState), findsNothing);
+
+      await _openNftTab(tester);
+      expect(_text(tester, 'mining-composition-nft-subtotal'), '3,000');
       // NFT rows are the rows with an NFT share, showing that share.
       final cakeNft = _key('mining-composition-nft-$s7CakeAssetId');
       expect(
@@ -164,6 +177,7 @@ void main() {
 
       expect(_text(tester, 'mining-summary-hero-nft-power'), '0');
       expect(_key('mining-composition-token'), findsOneWidget);
+      await _openNftTab(tester);
       expect(
         tester.widget(_key('mining-composition-nft-empty')),
         isA<LoopEmptyState>(),
@@ -182,10 +196,11 @@ void main() {
       );
 
       expect(_text(tester, 'mining-summary-hero-token-power'), '0');
-      expect(_text(tester, 'mining-composition-nft-subtotal'), '3,000');
       expect(find.text('暂无代币算力'), findsOneWidget);
-      expect(_key('mining-composition-nft-$s7CakeAssetId'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsNothing);
+      await _openNftTab(tester);
+      expect(_text(tester, 'mining-composition-nft-subtotal'), '3,000');
+      expect(_key('mining-composition-nft-$s7CakeAssetId'), findsOneWidget);
     });
 
     testWidgets('none: two empty groups', (tester) async {
@@ -197,8 +212,9 @@ void main() {
       );
 
       expect(find.text('暂无代币算力'), findsOneWidget);
-      expect(find.text('暂无 NFT 算力'), findsOneWidget);
       expect(_text(tester, 'mining-composition-token-subtotal'), '0');
+      await _openNftTab(tester);
+      expect(find.text('暂无 NFT 算力'), findsOneWidget);
     });
   });
 
@@ -221,6 +237,9 @@ void main() {
       expect(_key('mining-assets-row-$s7CakeAssetId'), findsOneWidget);
       expect(_key('mining-composition-token-subtotal'), findsNothing);
       expect(_key('mining-composition-nft-subtotal'), findsNothing);
+      // Without the split the NFT tab has no share of its own to show.
+      await _openNftTab(tester);
+      expect(_key('mining-composition-nft-unavailable'), findsOneWidget);
     });
 
     testWidgets('no settled hour either: dashes', (tester) async {
@@ -256,12 +275,12 @@ void main() {
         asset: _assetTrack(),
       );
       // 1,000,000.6 + 25,000.5 = 1,025,001.1, not the snapshot's 4,000.
-      expect(_text(tester, 'mining-summary-hero-network-power'), '1,025,001');
+      expect(_network(tester), startsWith('1,025,001'));
     });
 
     testWidgets('no settled hour: the snapshot networkPower', (tester) async {
       await _pump(tester, rows: <MiningAssetRow>[s7MiningAssetRow()]);
-      expect(_text(tester, 'mining-summary-hero-network-power'), '4,000');
+      expect(_network(tester), startsWith('4,000'));
     });
   });
 }

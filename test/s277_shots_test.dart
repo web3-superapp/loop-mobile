@@ -7,7 +7,7 @@
 // and writes nothing.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
 
@@ -54,7 +54,7 @@ void main() {
   testWidgets('情报 · 我的邀请', skip: !_shots, (tester) async {
     await pumpS7Page(
       tester,
-      IntelRankBoard(onNavigate: (_) {}),
+      const MiningScreen(embedded: true),
       size: const Size(390, 900),
       mining: FakeMiningGateway(),
       referral: FakeReferralGateway(
@@ -66,10 +66,16 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('邀请中心'));
+    // Decision 0272: 我的邀请 is 情报 · 算力's 邀请 tab.
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('mining-power-tabs')),
+        matching: find.text('邀请'),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-      find.byKey(const ValueKey<String>('intel-referral-open')),
+      find.byKey(const ValueKey<String>('referral-hero')),
     );
     await tester.pumpAndSettle();
     await loopShot(tester, 'intel-referral-center', dir: _dir);

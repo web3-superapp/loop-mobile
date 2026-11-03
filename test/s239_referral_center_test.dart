@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
@@ -370,30 +370,30 @@ void main() {
     });
   });
 
-  group('情报 · 邀请中心 chip', () {
-    testWidgets('the chip draws my code over 推广榜 and opens the page', (
-      tester,
-    ) async {
-      final opened = <String>[];
+  group('情报 · 算力 · 邀请 tab (decision 0272)', () {
+    testWidgets('the tab draws the invite center with my code', (tester) async {
       await pumpS7Page(
         tester,
-        IntelRankBoard(onNavigate: opened.add),
+        const MiningScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
+        size: const Size(390, 4000),
       );
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-power-tabs')),
+          matching: find.text('邀请'),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('intel-referral-code')),
+        find.byKey(const ValueKey<String>('referral-invite-code')),
         findsOneWidget,
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      // The board's own ledger card stays.
-      expect(find.byKey(const ValueKey<String>('intel-rank-me')), findsOne);
-      final open = find.byKey(const ValueKey<String>('intel-referral-open'));
-      await scrollToS7Section(tester, open);
-      await tester.tap(open);
-      expect(opened, <String>['/profile/referral']);
+      for (final label in <String>['我的邀请', '邀请加成', '邀请列表', '我的邀请人']) {
+        expect(find.text(label), findsWidgets, reason: label);
+      }
     });
   });
 
@@ -409,7 +409,7 @@ void main() {
       final shared = <(String, String?)>[];
       await pumpS7Page(
         tester,
-        IntelRankBoard(onNavigate: (_) {}),
+        const ReferralScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(
           overview: S7Answer(value: _center(link: inviteLink)),
@@ -421,8 +421,6 @@ void main() {
           }),
         ],
       );
-      await tester.tap(find.text('邀请中心'));
-      await tester.pumpAndSettle();
       return shared;
     }
 
@@ -453,7 +451,7 @@ void main() {
       final copyCode = find.byKey(const ValueKey<String>('referral-copy-code'));
       expect(
         find.descendant(
-          of: find.byKey(const ValueKey<String>('intel-referral-code')),
+          of: find.byKey(const ValueKey<String>('referral-hero')),
           matching: copyCode,
         ),
         findsOneWidget,
@@ -491,7 +489,7 @@ void main() {
       for (final control in <Finder>[copyLink, share, poster]) {
         expect(
           find.descendant(
-            of: find.byKey(const ValueKey<String>('intel-referral-code')),
+            of: find.byKey(const ValueKey<String>('referral-hero')),
             matching: control,
           ),
           findsOneWidget,
@@ -515,22 +513,11 @@ void main() {
       expect(shared.single.$2, '邀请你加入 LOOP');
     });
 
-    testWidgets('one invite card on the raised ground; counts in one row', (
-      tester,
-    ) async {
+    testWidgets('one invite card; counts in one row', (tester) async {
       await pumpCard(tester);
-      final box = tester.widget<Container>(
-        find
-            .descendant(
-              of: find.byKey(const ValueKey<String>('intel-referral-code')),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-      expect((box.decoration! as BoxDecoration).color, LoopColors.card2);
       expect(
         find.descendant(
-          of: find.byKey(const ValueKey<String>('intel-referral-code')),
+          of: find.byKey(const ValueKey<String>('referral-hero')),
           matching: find.byKey(const ValueKey<String>('referral-link-block')),
         ),
         findsOneWidget,

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_entry.dart';
@@ -377,6 +378,16 @@ Future<void> pumpS269Intel(WidgetTester tester) async {
   await pumpS7Page(
     tester,
     IntelScreen(onNavigate: (_) {}),
+    mining: _BoardMining(),
+    size: s269Phone,
+  );
+}
+
+/// 情报 · 算力 · 算力榜 (decision 0272) with S269's fixture boards.
+Future<void> pumpS269IntelRank(WidgetTester tester) async {
+  await pumpS7Page(
+    tester,
+    IntelRankBoard(onNavigate: (_) {}, onBack: () {}),
     mining: _BoardMining(),
     size: s269Phone,
   );

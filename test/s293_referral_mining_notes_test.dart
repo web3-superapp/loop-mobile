@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
@@ -277,38 +276,41 @@ void main() {
     });
   });
 
-  group('情报 · 我的邀请 · #03', () {
+  group('情报 · 算力 · 邀请 · #03', () {
     testWidgets('no sentence under the code or the counts; (i) has them', (
       tester,
     ) async {
       await pumpS7Page(
         tester,
-        IntelRankBoard(onNavigate: (_) {}),
+        const MiningScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(value: _withStats()),
         ),
+        size: const Size(390, 4000),
       );
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-power-tabs')),
+          matching: find.text('邀请'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('intel-referral-code')),
+        find.byKey(const ValueKey<String>('referral-invite-code')),
         findsOneWidget,
       );
       expect(find.textContaining('有效成员截至'), findsNothing);
       expect(find.textContaining('不是收入、佣金或返佣'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('intel-referral-open')),
-        findsOneWidget,
-      );
 
+      // S325 · decision 0255: the tab's notes join the page's one (i).
       await tester.tap(
-        find.byKey(const ValueKey<String>('intel-referral-info')),
+        find.byKey(const ValueKey<String>('mining-rules-action')),
       );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('intel-referral-info-sheet')),
+        find.byKey(const ValueKey<String>('mining-info-sheet')),
         findsOneWidget,
       );
       expect(find.textContaining('不是收入、佣金或返佣'), findsOneWidget);
@@ -348,8 +350,13 @@ void main() {
         find.byKey(const ValueKey<String>('mining-open-market')),
         findsOneWidget,
       );
+      // Decision 0272: 算力榜 opens from the network card's icon.
       expect(
         find.byKey(const ValueKey<String>('mining-open-rank')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-network-rank-action')),
         findsOneWidget,
       );
 

@@ -28,8 +28,9 @@ void main() {
     // turned into glyphs, `copy` for the LOOP ID (decision 0104, S97b) and
     // the five message reactions (decision 0121, S121a) and `bolt` for the
     // MEME token page's 快买 key (decision 0174, S187-2), and `feedback`
-    // for the floating 意见反馈 key (decision 0266, S337).
-    expect(LoopIconNames.all, hasLength(72));
+    // for the floating 意见反馈 key (decision 0266, S337), and `alarm` for
+    // 价格提醒 (decision 0272, S344).
+    expect(LoopIconNames.all, hasLength(73));
     for (final name in <String>[
       'react-like',
       'react-laugh',
@@ -43,6 +44,7 @@ void main() {
     expect(LoopIconNames.contains('plus'), isTrue);
     expect(LoopIconNames.contains('share'), isTrue);
     expect(LoopIconNames.contains('copy'), isTrue);
+    expect(LoopIconNames.contains('alarm'), isTrue);
     expect(LoopIconNames.contains('feedback'), isTrue);
     expect(
       Directory(LoopAssetPaths.icons)
@@ -50,7 +52,7 @@ void main() {
           .whereType<File>()
           .where((file) => file.path.endsWith('.svg'))
           .length,
-      72,
+      73,
     );
     for (final file in LoopTokenAssets.bySymbol.values) {
       expect(

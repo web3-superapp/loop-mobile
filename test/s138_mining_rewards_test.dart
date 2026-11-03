@@ -2441,7 +2441,9 @@ void main() {
         tester.widget<Text>(_key('mining-summary-hero-active-invites')).data,
         '15 人',
       );
-      expect(_key('mining-summary-hero-network-power'), findsOneWidget);
+      // Decision 0272: 全网算力 is the network card's, not a hero cell.
+      expect(_key('mining-summary-hero-network-power'), findsNothing);
+      expect(_key('mining-network-card'), findsOneWidget);
       // The first step opens the hour's power, still a way in.
       final claim = _key('mining-summary-hero-claim');
       expect(

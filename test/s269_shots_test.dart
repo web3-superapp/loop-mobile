@@ -23,6 +23,7 @@ void main() {
         ('MEME home', 'meme-home', pumpS269MemeHome),
         ('MEME project page', 'project', pumpS269Project),
         ('情报', 'intel', pumpS269Intel),
+        ('算力榜', 'intel-rank', pumpS269IntelRank),
         ('广场 · 社区', 'square-communities', pumpS269Square),
         ('钱包', 'wallet', pumpS269Wallet),
         ('代币页', 'token', pumpS269Token),

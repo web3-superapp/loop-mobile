@@ -38,6 +38,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
+import 'package:loop_mobile/core/navigation/intel_power_route.dart';
 import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -80,6 +81,7 @@ import 'package:loop_mobile/features/scan/scan_screen.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
 import 'package:loop_mobile/features/launch/launch_trade_screen.dart';
 import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
+import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
@@ -93,11 +95,9 @@ import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S
 import 'package:loop_mobile/features/launch2/launch2_dynamic_rewards_screen.dart'; // S168
 import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart'; // S180
 import 'package:loop_mobile/features/launch2/launch2_routes.dart'; // S136
-import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart'; // S138
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart'; // S138
-import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
@@ -1219,6 +1219,11 @@ GoRouter _buildRouter(
                 path: '/intel',
                 builder: (context, state) => IntelScreen(
                   onNavigate: (location) => context.push(location),
+                  tab: state.uri.queryParameters[IntelPowerRoute.tabKey],
+                  sub: state.uri.queryParameters[IntelPowerRoute.subKey],
+                  inviteCode: referralClaimCodeFromQuery(
+                    state.uri.queryParameters,
+                  ),
                 ),
               ),
             ],
@@ -1243,22 +1248,12 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             CommunityScreen(onBack: () => _popOrHome(context)),
       ),
+      // Decision 0272 (S344): 挖矿 is 情报 · 算力 now. Pushed or gone to, the
+      // location hops to the tab (see [LoopRouteForward]).
       GoRoute(
         path: '/mining',
-        builder: (context, state) => MiningScreen(
-          onBack: () => _popOrHome(context),
-          onOpenAssets: () =>
-              context.push(LoopRouteManifest.pathFor('mining-assets')),
-          onOpenRewards: () =>
-              context.push(LoopRouteManifest.pathFor('mining-rewards')),
-          onOpenRank: () =>
-              context.push(LoopRouteManifest.pathFor('mining-rank')),
-          onOpenRules: () =>
-              context.push(LoopRouteManifest.pathFor('mining-rules')),
-          onOpenReferral: () =>
-              context.push(LoopRouteManifest.pathFor('referral')),
-          onOpenMarket: () => context.push(LoopRouteManifest.pathFor('market')),
-        ),
+        pageBuilder: (context, state) =>
+            loopRouteForwardPage(state, IntelPowerRoute.powerLocation()),
       ),
       GoRoute(
         path: '/launch',
@@ -1850,14 +1845,15 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             BlocklistScreen(onBack: () => _popOrHome(context)),
       ),
+      // Decision 0272: 邀请中心 is 情报 · 算力 · 邀请; an invite link's code
+      // rides along.
       GoRoute(
         path: '/profile/referral',
-        builder: (context, state) => ReferralScreen(
-          key: ValueKey<String>('referral-${state.uri.query}'),
-          initialInviteCode: referralClaimCodeFromQuery(
-            state.uri.queryParameters,
+        pageBuilder: (context, state) => loopRouteForwardPage(
+          state,
+          IntelPowerRoute.inviteLocation(
+            code: referralClaimCodeFromQuery(state.uri.queryParameters),
           ),
-          onBack: () => _popOrHome(context),
         ),
       ),
       ..._systemRoutes,
@@ -2097,13 +2093,11 @@ void _pushLaunchChild(BuildContext context, GoRouterState state, String path) {
 
 /// The five Mining child pages.
 final List<RouteBase> _miningRoutes = <RouteBase>[
+  // Decision 0272: 算力明细 is the NFT / 代币 tabs of 情报 · 算力.
   GoRoute(
     path: '/mining/assets',
-    builder: (context, state) => MiningAssetsScreen(
-      onBack: () => _popOrHome(context),
-      onOpenRules: () =>
-          context.push(LoopRouteManifest.pathFor('mining-rules')),
-    ),
+    pageBuilder: (context, state) =>
+        loopRouteForwardPage(state, IntelPowerRoute.powerLocation()),
   ),
   // S138 (decision 0140): the hourly two-track rewards page. The retired
   // daily `MiningRewardsScreen` was deleted with its decoder (decision 0141).
@@ -2117,8 +2111,11 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
   ),
   GoRoute(
     path: '/mining/rank',
-    builder: (context, state) =>
-        MiningRankScreen(onBack: () => _popOrHome(context)),
+    // Decision 0272: 算力榜, 社区 / 用户 / 邀请.
+    builder: (context, state) => IntelRankBoard(
+      onBack: () => _popOrHome(context),
+      onNavigate: (location) => context.push(location),
+    ),
   ),
   GoRoute(
     path: MiningRoute.communityPath,
