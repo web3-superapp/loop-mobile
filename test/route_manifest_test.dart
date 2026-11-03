@@ -409,6 +409,21 @@ void main() {
       router.go('/wallet/networth');
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/wallet');
+      // Decision 0272: 挖矿, 算力明细 and 邀请中心 are 情报 · 算力 now.
+      for (final location in <String>[
+        '/mining',
+        '/mining/assets',
+        '/profile/referral',
+      ]) {
+        router.go(location);
+        await tester.pumpAndSettle();
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          '/intel',
+          reason: location,
+        );
+        expect(find.byType(LoopTabBar), findsOneWidget, reason: location);
+      }
       expect(
         routingErrors.entries,
         hasLength(9),
@@ -433,7 +448,6 @@ void main() {
         '/launch/detail',
         // Decision 0110: the four v2 tabs are child pages now.
         '/community',
-        '/mining',
         '/launch',
         '/market',
       ]) {

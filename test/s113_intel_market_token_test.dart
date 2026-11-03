@@ -686,7 +686,7 @@ void main() {
         find.byKey(const ValueKey<String>('intel-rank-me-empty-crown')),
         findsOneWidget,
       );
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(find.text('邀请'));
       await tester.pumpAndSettle();
       expect(mining.reads.last, (MiningRankScope.referrals, null));
       expect(find.text('我的实时排名'), findsOneWidget);

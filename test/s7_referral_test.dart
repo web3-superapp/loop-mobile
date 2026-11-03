@@ -210,7 +210,7 @@ void main() {
       expect(link.maxLines, 1);
     });
 
-    testWidgets('the boost stays unavailable with the formula reason', (
+    testWidgets('an unapproved boost is left out, not explained', (
       tester,
     ) async {
       await pumpS7Page(
@@ -219,15 +219,14 @@ void main() {
         referral: FakeReferralGateway(),
       );
 
-      final boost = find.byKey(
-        const ValueKey<String>('launch-unavailable-邀请加成'),
+      // S344 review (需求方不要说明性文案): until the boost is approved the
+      // section is not drawn; its figures come with the approval.
+      expect(
+        find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, boost);
-      expect(boost, findsOneWidget);
-      // The boost's own code (Decision 0046) says only that the boost is not
-      // approved. The blanket formula sentence would contradict a page that
-      // is printing settled power at the same time, so it is not here.
-      expect(find.textContaining('还没有批准邀请加成'), findsWidgets);
+      expect(find.text('邀请加成'), findsNothing);
+      expect(find.textContaining('还没有批准邀请加成'), findsNothing);
       expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
       // The prototype's final boost figure never returns.
       expect(find.textContaining('2,840'), findsNothing);

@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_inbox_row_actions.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
-import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -196,7 +195,7 @@ void main() {
         'no logo, the winner\'s figure Yellow', (tester) async {
       await pumpS7Page(
         tester,
-        IntelScreen(onNavigate: (_) {}),
+        IntelRankBoard(onNavigate: (_) {}, onBack: () {}),
         mining: _BoardMining(3),
         size: const Size(390, 1400),
       );
@@ -251,7 +250,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        IntelScreen(onNavigate: (_) {}),
+        IntelRankBoard(onNavigate: (_) {}, onBack: () {}),
         mining: _BoardMining(1),
         size: const Size(390, 1400),
       );

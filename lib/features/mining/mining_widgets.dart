@@ -308,8 +308,8 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
 class MiningSummaryHero extends StatelessWidget {
   const MiningSummaryHero({
     required this.heading,
-    required this.caption,
     required this.metrics,
+    this.caption,
     super.key,
     this.unit,
     this.rank,
@@ -326,7 +326,9 @@ class MiningSummaryHero extends StatelessWidget {
 
   /// `.mining-power-value small`: the unit that follows a settled figure.
   final String? unit;
-  final String caption;
+
+  /// The snapshot line; null draws none (S344: no 「快照 · —」).
+  final String? caption;
 
   /// `.mining-rank`: the reader's place, when the server settled one.
   final String? rank;
@@ -371,7 +373,7 @@ class MiningSummaryHero extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '总算力',
+                  '我的总算力',
                   style: LoopType.kicker.copyWith(color: LoopColors.yellow),
                 ),
               ),
@@ -410,17 +412,19 @@ class MiningSummaryHero extends StatelessWidget {
                 ? LoopType.displayXl.copyWith(color: ink)
                 : LoopType.statFigure.copyWith(color: LoopColors.yellow),
           ),
-          const SizedBox(height: 9),
-          Text(
-            caption,
-            key: const ValueKey<String>('mining-summary-hero-caption'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopTypography.withWeight(
-              LoopType.captionSm.copyWith(color: LoopColors.text2),
-              FontWeight.w700,
+          if (caption case final String caption) ...<Widget>[
+            const SizedBox(height: 9),
+            Text(
+              caption,
+              key: const ValueKey<String>('mining-summary-hero-caption'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.withWeight(
+                LoopType.captionSm.copyWith(color: LoopColors.text2),
+                FontWeight.w700,
+              ),
             ),
-          ),
+          ],
           if (stamp != null) ...<Widget>[
             const SizedBox(height: 9),
             // `.folio-stamp` in the flow of the Lime card rather than over
@@ -450,24 +454,142 @@ class MiningSummaryHero extends StatelessWidget {
                   key: const ValueKey<String>('mining-summary-hero-claim'),
                   // Decision 0184: before the token is live the page it
                   // opens counts power, so the button says so.
-                  label: powerOnly ? '小时算力' : '领取奖励',
+                  label: powerOnly ? '挖矿奖励' : '领取奖励',
                   primary: true,
                   onPressed: onClaim,
                   semanticLabel: powerOnly
-                      ? '小时算力，打开挖矿奖励页'
+                      ? '挖矿奖励，打开挖矿奖励页'
                       : claimSemanticLabel,
                 ),
               ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: LoopButton(
-                  key: const ValueKey<String>('mining-summary-hero-assets'),
-                  label: '算力明细',
-                  onPressed: onOpenAssets,
+              // Decision 0272: on 情报 · 算力 the composition is the tabs
+              // right under this card, so the second button is drawn only
+              // where a separate composition page is still reachable.
+              if (onOpenAssets != null) ...<Widget>[
+                const SizedBox(width: 9),
+                Expanded(
+                  child: LoopButton(
+                    key: const ValueKey<String>('mining-summary-hero-assets'),
+                    label: '算力明细',
+                    onPressed: onOpenAssets,
+                  ),
                 ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 情报 · 算力's first card (decision 0272): 全网总算力, split into NFT and
+/// 代币, with the way into 算力榜 at its top right.
+///
+/// The split is the last settled hour's two network pools
+/// (`tracks.nft.networkPower` / `tracks.asset.networkPower`), so the card
+/// says 上一小时. Without them the card prints the snapshot's
+/// `summary.networkPower` alone and draws no split it was not given.
+class MiningNetworkPowerCard extends StatelessWidget {
+  const MiningNetworkPowerCard({
+    required this.total,
+    required this.spoken,
+    super.key,
+    this.nft,
+    this.token,
+    this.lastHour = false,
+    this.onOpenRank,
+  });
+
+  /// The total figure, or [launchMissingFigure].
+  final String total;
+  final String spoken;
+  final String? nft;
+  final String? token;
+
+  /// The figures are the last settled hour's.
+  final bool lastHour;
+  final VoidCallback? onOpenRank;
+
+  @override
+  Widget build(BuildContext context) {
+    final settled = total != launchMissingFigure;
+    return LoopRecordCard(
+      key: const ValueKey<String>('mining-network-card'),
+      padding: const EdgeInsets.fromLTRB(18, 10, 8, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  lastHour ? '全网总算力 · 上一小时' : '全网总算力',
+                  key: const ValueKey<String>('mining-network-kicker'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.kicker.copyWith(color: LoopColors.yellow),
+                ),
+              ),
+              LoopIconButton(
+                key: const ValueKey<String>('mining-network-rank-action'),
+                icon: 'crown',
+                label: '算力榜',
+                onPressed: onOpenRank,
               ),
             ],
           ),
+          Semantics(
+            container: true,
+            label: '全网总算力，$spoken',
+            child: ExcludeSemantics(
+              child: Text.rich(
+                TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(text: total),
+                    if (settled)
+                      TextSpan(
+                        text: ' H',
+                        style: LoopType.figureMd.copyWith(
+                          color: LoopColors.text3,
+                        ),
+                      ),
+                  ],
+                ),
+                key: const ValueKey<String>('mining-network-total'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.statFigure.copyWith(
+                  color: settled ? LoopColors.chalk : LoopColors.text3,
+                ),
+              ),
+            ),
+          ),
+          if (nft != null && token != null) ...<Widget>[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: _MiningHeroStrip(
+                key: const ValueKey<String>('mining-network-split'),
+                metrics: <MiningHeroMetric>[
+                  MiningHeroMetric(
+                    slug: 'network-nft',
+                    label: 'NFT',
+                    value: nft!,
+                    spoken: nft!,
+                  ),
+                  MiningHeroMetric(
+                    slug: 'network-token',
+                    label: '代币',
+                    value: token!,
+                    spoken: token!,
+                  ),
+                ],
+                top: true,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -57,9 +57,12 @@ abstract final class LoopAssetPaths {
 ///   characters that stood in for them read as stray text on the device.
 /// * `bolt`: decision 0174 (S187-2) puts a 快买 key beside the MEME token
 ///   page's 买入, and the prototype's ⚡ is a system Emoji LOOP does not print.
+/// * `alarm`: decision 0272 (S344) gives 价格提醒 an alarm clock so it no
+///   longer wears the App notifications' `bell`.
 abstract final class LoopIconNames {
   static const Set<String> all = <String>{
     'ai',
+    'alarm',
     'arrow-down',
     'arrow-up',
     'back',

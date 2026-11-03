@@ -38,19 +38,20 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `referral` · 邀请中心 (S239, decision 0214; formerly Referral Boost).
 ///
-/// archetype `record`, layout `dashboard`. The page reads `GET /v2/referral`
-/// and `GET /v2/referral/invitees`, and the referrals board. Top to bottom:
-/// the invite code (large, copyable) over the five depths; the invite link
-/// with copy / system share and the poster; 我的邀请 counts; the invite
-/// boost; the direct invitees; my own inviter. Decision 0243 (需求方
-/// 2026-10-23 #01 / #05): how depth is counted, what L1–L5 mean, the
-/// mining-power-only rule, the valid-member basis and the binding rules are
-/// said once, behind the (i) in the header ([referralInfoNotes]), and the
-/// 推广榜 lives on 情报 · 算力榜 only.
+/// Decision 0272 (S344): the route forwards to 情报 · 算力 · 邀请, where
+/// [ReferralCenterSections] is drawn as the 邀请 tab. This page keeps the
+/// same sections behind its own bar for a host that pushes it directly.
+///
+/// archetype `record`, layout `dashboard`. The sections read `GET
+/// /v2/referral` and `GET /v2/referral/invitees`. Top to bottom: the invite
+/// code (large, copyable) over the five depths; the invite link with copy /
+/// system share and the poster; 我的邀请 counts; the invite boost; the
+/// direct invitees; my own inviter. Decision 0243: the rules are said once,
+/// behind the (i) ([referralInfoNotes]).
 /// Everything here is a relationship count or Mining Power — never a
 /// commission, a payout or a downline income (user ruling: the only reward is
 /// the power boost).
-class ReferralScreen extends ConsumerStatefulWidget {
+class ReferralScreen extends ConsumerWidget {
   const ReferralScreen({
     super.key,
     this.onBack,
@@ -60,6 +61,80 @@ class ReferralScreen extends ConsumerStatefulWidget {
 
   final VoidCallback? onBack;
 
+  /// A code an invite link (`/i/{code}`) carried in; see
+  /// [ReferralCenterSections.initialInviteCode].
+  final String? initialInviteCode;
+
+  /// Pushes a location; defaults to the ambient router.
+  final ValueChanged<String>? onNavigate;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.referral),
+    );
+    final blocked = launchCapabilityBlocks(capability);
+    final state = ref.watch(referralControllerProvider);
+    return LoopDashboardPage(
+      key: const ValueKey<String>('referral-screen'),
+      onRefresh: () => reloadReferralCenter(ref),
+      updating: state.refreshing,
+      archetype: LoopPageArchetype.record,
+      title: '邀请中心',
+      onBack: onBack,
+      actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('referral-explain-action'),
+          icon: 'info',
+          label: '邀请说明',
+          onPressed: () => unawaited(
+            showLoopInfoSheet(
+              context,
+              title: '邀请说明',
+              notes: referralInfoNotes(state.value),
+              sheetKey: 'referral-explain-sheet',
+            ),
+          ),
+        ),
+      ],
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('referral-capability-unavailable'),
+              title: '邀请关系当前不可用',
+              capability: capability,
+            )
+          : null,
+      sections: <Widget>[
+        ReferralCenterSections(
+          initialInviteCode: initialInviteCode,
+          onNavigate: onNavigate,
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+/// Re-reads the overview and the invitees together (pull-to-refresh).
+Future<void> reloadReferralCenter(WidgetRef ref) async {
+  await Future.wait(<Future<void>>[
+    ref.read(referralControllerProvider.notifier).reload(),
+    ref.read(referralInviteesControllerProvider.notifier).reload(),
+  ]);
+}
+
+/// 邀请中心's content as a run of sections (decision 0272): the invite card
+/// with the five depths, 我的邀请, 邀请加成, 邀请列表 and 我的邀请人. Drawn
+/// by 情报 · 算力's 邀请 tab and by [ReferralScreen].
+class ReferralCenterSections extends ConsumerStatefulWidget {
+  const ReferralCenterSections({
+    super.key,
+    this.initialInviteCode,
+    this.onNavigate,
+    this.info,
+    this.onOfferedInviteCode,
+  });
+
   /// A code an invite link (`/i/{code}`) carried in. Once the overview says
   /// the account may still bind, the binding form opens with it filled in;
   /// nothing is submitted without the owner's tap.
@@ -68,12 +143,21 @@ class ReferralScreen extends ConsumerStatefulWidget {
   /// Pushes a location; defaults to the ambient router.
   final ValueChanged<String>? onNavigate;
 
+  /// The (i) beside the first heading, when the host has no bar to carry it.
+  final Widget? info;
+
+  /// Called once [initialInviteCode] has been offered, so a host that holds
+  /// the code can let it go.
+  final VoidCallback? onOfferedInviteCode;
+
   @override
-  ConsumerState<ReferralScreen> createState() => _ReferralScreenState();
+  ConsumerState<ReferralCenterSections> createState() =>
+      _ReferralCenterSectionsState();
 }
 
-class _ReferralScreenState extends ConsumerState<ReferralScreen> {
-  bool _offeredLinkCode = false;
+class _ReferralCenterSectionsState
+    extends ConsumerState<ReferralCenterSections> {
+  String? _offeredCode;
 
   @override
   Widget build(BuildContext context) {
@@ -90,88 +174,75 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     }
     final overview = state.value;
     if (overview != null) _offerLinkCode(overview);
-
-    return LoopDashboardPage(
-      key: const ValueKey<String>('referral-screen'),
-      onRefresh: _reloadAll,
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '邀请中心',
-      onBack: widget.onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('referral-explain-action'),
-          icon: 'info',
-          label: '邀请说明',
-          onPressed: () => unawaited(_explain(overview)),
+    final info = widget.info;
+    final children = <Widget>[
+      if (blocked)
+        LoopInlineUnavailable(
+          key: const ValueKey<String>('referral-capability-inline'),
+          icon: 'users',
+          message: '邀请关系当前不可用',
+          detail: launchReasonCodeText(
+            capability.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
+          ),
+        )
+      else if (overview == null)
+        LaunchStateBlock(
+          prefix: 'referral',
+          phase: state.phase,
+          failureKind: state.failureKind,
+          skeleton: LoopSkeletonType.detail,
+          emptyMessage: '没有读到邀请关系',
+          emptyReason: '暂时读不到邀请码和邀请人数。',
+          onRetry: () => unawaited(controller.reload()),
+        )
+      else ...<Widget>[
+        // UX-012 (decision 0257): the hero is the one invite card — the
+        // code and the link, each with its own copy glyph, and 分享邀请链接 /
+        // 生成海报 — with the five depths in the strip under it.
+        LoopLedgerComposite(
+          key: const ValueKey<String>('referral-hero'),
+          primary: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: _InviteCardBody(
+              overview: overview,
+              codeKey: const ValueKey<String>('referral-invite-code'),
+            ),
+          ),
+          detail: <Widget>[_LevelBand(levels: overview.levels)],
+        ),
+        // S344 review (需求方不要说明性文案): a section the server has not
+        // opened is left out, not explained.
+        if (overview.stats case final ReferralStats stats) ...<Widget>[
+          const LoopLabel('我的邀请'),
+          _InviteStats(stats: stats),
+        ],
+        if (overview.boostAvailable
+            case final ReferralBoostAvailable boost) ...<Widget>[
+          const LoopLabel('邀请加成'),
+          _BoostCard(boost: boost),
+        ],
+        if (info != null)
+          LoopInfoLabel('邀请列表', info: info)
+        else
+          const LoopLabel('邀请列表'),
+        _InviteeList(onNavigate: widget.onNavigate),
+        const LoopLabel('我的邀请人'),
+        _BindingBlock(
+          binding: overview.binding,
+          busy: state.busy,
+          claimed: state.claimed,
+          claimFailureKind: state.claimFailureKind,
+          claimShapeInvalid: state.claimShapeInvalid,
+          onClaim: () => unawaited(_openClaimSheet()),
         ),
       ],
-      // The invite code is the page's one hero: the large code, with the five
-      // depths under it in the same card (audit 2026-09-21 §J.11).
-      primary: overview == null ? null : _hero(overview),
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('referral-capability-unavailable'),
-              title: '邀请关系当前不可用',
-              capability: capability,
-            )
-          : null,
-      sections: <Widget>[
-        if (overview == null)
-          LaunchStateBlock(
-            prefix: 'referral',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到邀请关系',
-            emptyReason: '暂时读不到邀请码和邀请人数。',
-            onRetry: () => unawaited(controller.reload()),
-          )
-        else ...<Widget>[
-          const LoopLabel('我的邀请'),
-          _InviteStats(stats: overview.stats),
-          const LoopLabel('邀请加成'),
-          if (overview.boostAvailable case final ReferralBoostAvailable boost)
-            _BoostCard(boost: boost)
-          else if (overview.boost case final LaunchUnavailable boost)
-            LaunchUnavailableCard(label: '邀请加成', fact: boost),
-          const LoopLabel('邀请列表'),
-          _InviteeList(onNavigate: widget.onNavigate),
-          const LoopLabel('我的邀请人'),
-          _BindingBlock(
-            binding: overview.binding,
-            busy: state.busy,
-            claimed: state.claimed,
-            claimFailureKind: state.claimFailureKind,
-            claimShapeInvalid: state.claimShapeInvalid,
-            onClaim: () => unawaited(_openClaimSheet()),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ],
+    ];
+    return Column(
+      key: const ValueKey<String>('referral-center-sections'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
     );
-  }
-
-  // UX-012 (decision 0257): the hero is the one invite card — the code and
-  // the link, each with its own copy glyph, and 分享邀请链接 / 生成海报 —
-  // with the five depths in the strip under it.
-  Widget _hero(ReferralOverview overview) => LoopLedgerComposite(
-    key: const ValueKey<String>('referral-hero'),
-    primary: Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      child: _InviteCardBody(
-        overview: overview,
-        codeKey: const ValueKey<String>('referral-invite-code'),
-      ),
-    ),
-    detail: <Widget>[_LevelBand(levels: overview.levels)],
-  );
-
-  Future<void> _reloadAll() async {
-    await Future.wait(<Future<void>>[
-      ref.read(referralControllerProvider.notifier).reload(),
-      ref.read(referralInviteesControllerProvider.notifier).reload(),
-    ]);
   }
 
   /// The code an invite link carried, offered once: the binding form opens
@@ -179,10 +250,15 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   /// says why the code cannot be used, and nothing is sent.
   void _offerLinkCode(ReferralOverview overview) {
     final code = widget.initialInviteCode;
-    if (code == null || _offeredLinkCode) return;
-    _offeredLinkCode = true;
+    if (code == null) {
+      _offeredCode = null;
+      return;
+    }
+    if (_offeredCode == code) return;
+    _offeredCode = code;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      widget.onOfferedInviteCode?.call();
       if (overview.binding.canClaim) {
         unawaited(_openClaimSheet(initialCode: code));
       } else {
@@ -212,117 +288,10 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       LoopToast.show(context, message: '邀请码已绑定', kind: LoopToastKind.ok);
     }
   }
-
-  Future<void> _explain(ReferralOverview? overview) => showLoopInfoSheet(
-    context,
-    title: '邀请说明',
-    notes: referralInfoNotes(overview),
-    sheetKey: 'referral-explain-sheet',
-  );
 }
 
-/// 情报 · 邀请中心 chip (S239, decision 0214): my invite code, copy / link /
-/// poster, 我的邀请 counts, and the way into the full page — drawn over the
-/// 推广榜 under the same chips. It reads the same overview as the page.
-class ReferralCenterCard extends ConsumerStatefulWidget {
-  const ReferralCenterCard({required this.onNavigate, super.key});
-
-  final ValueChanged<String> onNavigate;
-
-  @override
-  ConsumerState<ReferralCenterCard> createState() => _ReferralCenterCardState();
-}
-
-class _ReferralCenterCardState extends ConsumerState<ReferralCenterCard> {
-  @override
-  Widget build(BuildContext context) {
-    final capability = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.referral),
-    );
-    final blocked = launchCapabilityBlocks(capability);
-    final state = ref.watch(referralControllerProvider);
-    final controller = ref.read(referralControllerProvider.notifier);
-    if (!blocked && state.phase == LaunchViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) unawaited(controller.load());
-      });
-    }
-    final overview = state.value;
-    final Widget body;
-    if (blocked) {
-      body = LoopInlineUnavailable(
-        key: const ValueKey<String>('intel-referral-center-unavailable'),
-        icon: 'users',
-        message: '邀请关系当前不可用',
-        detail: launchReasonCodeText(
-          capability.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
-        ),
-      );
-    } else if (overview == null) {
-      body = LaunchStateBlock(
-        prefix: 'intel-referral-center',
-        phase: state.phase,
-        failureKind: state.failureKind,
-        skeleton: LoopSkeletonType.record,
-        rows: 2,
-        emptyMessage: '没有读到邀请码',
-        emptyReason: '暂时读不到邀请码和邀请人数。',
-        onRetry: () => unawaited(controller.reload()),
-      );
-    } else {
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _InviteBlock(
-            key: const ValueKey<String>('intel-referral-code'),
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.card,
-              14,
-              LoopSpacing.card,
-              LoopSpacing.card,
-            ),
-            child: _InviteCardBody(overview: overview),
-          ),
-          const SizedBox(height: LoopSpacing.rowGap),
-          _InviteStats(stats: overview.stats),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('intel-referral-open'),
-                leading: const LoopRowIcon(icon: 'users'),
-                title: '打开邀请中心',
-                subtitle: '邀请列表、邀请加成和我的邀请人',
-                onTap: () => widget.onNavigate(referralCenterPath),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-    return Column(
-      key: const ValueKey<String>('intel-referral-center'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        // Decision 0243 (需求方 2026-10-23 #03): the mining-power-only rule
-        // and the valid-member basis are behind this (i), not under the code
-        // and the counts.
-        LoopInfoLabel(
-          '我的邀请',
-          info: LoopInfoButton(
-            key: const ValueKey<String>('intel-referral-info'),
-            title: '邀请说明',
-            label: '邀请说明',
-            notes: referralInfoNotes(overview),
-            sheetKey: 'intel-referral-info-sheet',
-          ),
-        ),
-        body,
-      ],
-    );
-  }
-}
-
-/// The `referral` route (manifest slug `referral`).
+/// The `referral` route (manifest slug `referral`). Decision 0272: it
+/// forwards to 情报 · 算力 · 邀请.
 const String referralCenterPath = '/profile/referral';
 
 /// What the (i) on 邀请中心 and on 情报 · 我的邀请 says (decision 0243,
@@ -397,17 +366,19 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
 /// hairline, so the invite card and the counts read as separate pieces on
 /// the Ink page instead of one dark run.
 class _InviteBlock extends StatelessWidget {
-  const _InviteBlock({required this.child, super.key, this.padding});
+  const _InviteBlock({required this.child});
 
   final Widget child;
-  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    padding:
-        padding ??
-        const EdgeInsets.fromLTRB(LoopSpacing.card, 12, LoopSpacing.tight, 12),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.card,
+      12,
+      LoopSpacing.tight,
+      12,
+    ),
     decoration: BoxDecoration(
       color: LoopColors.card2,
       borderRadius: LoopRadius.card,
@@ -517,21 +488,15 @@ class _InviteCardBody extends ConsumerWidget {
             ),
           ],
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Divider(height: 1, thickness: 1, color: LoopColors.line),
-        ),
-        Text('邀请链接', style: caption),
-        if (link == null)
-          Padding(
-            key: const ValueKey<String>('referral-link-absent'),
-            padding: const EdgeInsets.only(top: 6, bottom: 4),
-            child: Text(
-              '邀请链接还没有开放，先把邀请码发给好友；对方激活 LOOP ID 后随时可以填写。',
-              style: LoopType.captionSm,
-            ),
-          )
-        else
+        // S344 review (需求方不要说明性文案): without a link the whole
+        // 邀请链接 block is left out; the code, its copy glyph and the poster
+        // stay.
+        if (link != null) ...<Widget>[
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, thickness: 1, color: LoopColors.line),
+          ),
+          Text('邀请链接', style: caption),
           Row(
             key: const ValueKey<String>('referral-link-block'),
             children: <Widget>[
@@ -556,6 +521,7 @@ class _InviteCardBody extends ConsumerWidget {
               ),
             ],
           ),
+        ],
         const SizedBox(height: 12),
         LoopButtonPair(
           padded: false,
@@ -614,13 +580,12 @@ String referralInviteText(String code, String? link) => link == null
 
 /// 我的邀请: direct / valid / depth 2–5 — three equal cells on one raised
 /// block, the name small above the figure (decision 0235). Without the
-/// server's `stats` every figure is the dash and the page says the counts are
-/// not open yet. Decision 0243: the valid-member basis and the hour it was
+/// server's `stats` the section is not drawn (S344). Decision 0243: the valid-member basis and the hour it was
 /// read at are in the (i) ([referralInfoNotes]), not under the counts.
 class _InviteStats extends StatelessWidget {
   const _InviteStats({required this.stats});
 
-  final ReferralStats? stats;
+  final ReferralStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -637,9 +602,7 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-direct'),
                   label: '直接邀请',
-                  value: value == null
-                      ? loopFigureDash
-                      : '${value.directCount}',
+                  value: '${value.directCount}',
                 ),
                 const VerticalDivider(
                   width: 1,
@@ -649,7 +612,7 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-valid'),
                   label: '有效成员',
-                  value: value == null ? loopFigureDash : '${value.validCount}',
+                  value: '${value.validCount}',
                 ),
                 const VerticalDivider(
                   width: 1,
@@ -659,29 +622,12 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-deep'),
                   label: '二至五级',
-                  value: value == null
-                      ? loopFigureDash
-                      : '${value.level2to5Count}',
+                  value: '${value.level2to5Count}',
                 ),
               ],
             ),
           ),
         ),
-        // Fail closed: counts that are not open say so on the page.
-        if (value == null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              LoopSpacing.tight,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              '邀请统计还没有开放，开放后显示在这里。',
-              key: const ValueKey<String>('referral-stats-note'),
-              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-            ),
-          ),
       ],
     );
   }
@@ -883,8 +829,7 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
         failureKind: state.failureKind,
         skeleton: LoopSkeletonType.record,
         rows: 3,
-        emptyMessage: '还没有邀请到好友',
-        emptyReason: '好友用你的邀请码绑定后，会出现在这里。',
+        emptyMessage: '还没有邀请',
         onRetry: () => unawaited(controller.reload()),
       );
     }
@@ -893,8 +838,7 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
       return const LoopInlineUnavailable(
         key: ValueKey<String>('referral-invitees-empty'),
         icon: 'users',
-        message: '还没有邀请到好友',
-        detail: '好友用你的邀请码绑定后，会出现在这里。',
+        message: '还没有邀请',
       );
     }
     return Column(

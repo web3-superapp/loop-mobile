@@ -229,11 +229,20 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.text('待批准'), findsWidgets);
-      // The stamp and the row say the status; the version says nothing a
-      // reader can act on and stays out of both.
+      // S344 review: the status chip left the card; the (i) says it.
+      expect(
+        find.byKey(const ValueKey<String>('mining-summary-hero-stamp')),
+        findsNothing,
+      );
+      // The version says nothing a reader can act on and stays off the page.
       expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
       expect(find.textContaining('miningFormulaV1-draft'), findsNothing);
+      // The (i) says the status.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mining-rules-action')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('待批准'), findsWidgets);
     });
 
     // Decision 0243: the version is in the header (i), not on the page.
@@ -320,10 +329,11 @@ void main() {
       // The boost is a card of its own now; a version is in effect and 我的算力
       // prints 1000 on this same page, so nothing here may claim that power,
       // output and rank are all unavailable.
-      // S315: the boost is one row of the 社区 group, with no sentence.
-      final boost = find.byKey(const ValueKey<String>('mining-open-referral'));
-      await scrollToS7Section(tester, boost);
-      expect(boost, findsOneWidget);
+      // Decision 0272: the boost is the 邀请 tab's, not a row of its own.
+      expect(
+        find.byKey(const ValueKey<String>('mining-open-referral')),
+        findsNothing,
+      );
       expect(find.text('五级邀请加成'), findsNothing);
       expect(find.textContaining('你的邀请加成在邀请中心查看'), findsNothing);
       expect(find.textContaining('当前加成 $launchMissingFigure'), findsNothing);
@@ -347,11 +357,16 @@ void main() {
       // It never appears without the label that says which kind of number it
       // is.
       expect(find.textContaining('1,000'), findsWidgets);
-      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
-      // The version is an identifier: it stays out of every sentence.
+      // The version is an identifier: it stays off the page.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+      // S344 review: the scope label is the (i)'s, not a chip on the card.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mining-rules-action')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(miningBaselineLabel), findsWidgets);
     });
 
     testWidgets('what a baseline means is in the source line ⓘ', (
@@ -459,7 +474,6 @@ void main() {
       // A settled zero is a reading, not an absence: it keeps the figure and
       // says which rule produced it.
       expect(find.textContaining('0'), findsWidgets);
-      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // S315: the reason a dash stands is spoken, not printed.
       expect(find.textContaining('全网算力为 0'), findsNothing);
       // 我的算力 is the settled heading, not one of the em-dash cells.
@@ -687,24 +701,18 @@ void main() {
       expect(find.text('还没有算力快照'), findsOneWidget);
     });
 
-    testWidgets('the community mining panel is reachable from here', (
+    testWidgets('decision 0272: the dead community panel row is gone', (
       tester,
     ) async {
-      var opened = false;
       await pumpS7Page(
         tester,
-        MiningAssetsScreen(onOpenCommunities: () => opened = true),
+        const MiningAssetsScreen(),
         mining: FakeMiningGateway(),
       );
-
-      final row = find.byKey(
-        const ValueKey<String>('mining-assets-open-communities'),
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-open-communities')),
+        findsNothing,
       );
-      await scrollToS7Section(tester, row);
-      await tester.tap(row);
-      await tester.pumpAndSettle();
-
-      expect(opened, isTrue);
     });
 
     testWidgets('decision 0146: the page prints no reference price', (

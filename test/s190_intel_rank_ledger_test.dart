@@ -552,7 +552,7 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(find.text('邀请'));
       await tester.pumpAndSettle();
       // UX-012 (decision 0257): title, place, sentence, live dot.
       expect(find.text('我的实时排名'), findsOneWidget);
@@ -599,7 +599,7 @@ void main() {
       );
       expect(find.textContaining('TOP '), findsNothing);
       expect(_key('intel-rank-self-row'), findsNothing);
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(find.text('邀请'));
       await tester.pumpAndSettle();
       expect(_key('intel-rank-empty'), findsOneWidget);
       final invite = tester.widget<LoopButton>(_key('intel-rank-empty-invite'));

@@ -12,7 +12,7 @@ import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
-import 'package:loop_mobile/features/intel/intel_screen.dart';
+import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -263,12 +263,14 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        IntelScreen(onNavigate: (_) {}),
+        IntelRankBoard(onNavigate: (_) {}, onBack: () {}),
         mining: _BoardMining(),
         size: const Size(390, 844),
       );
-      expect(_key('intel-atmo-backdrop'), findsOneWidget);
-      final wall = tester.getRect(_key('intel-atmo-backdrop'));
+      // The page draws its wall under the body and again behind the sticky
+      // bar (LoopDashboardPage.backdrop).
+      expect(_key('intel-rank-atmo-backdrop'), findsWidgets);
+      final wall = tester.getRect(_key('intel-rank-atmo-backdrop').first);
 
       // 我的名次: the chrome edge around the dark card face.
       final plate = find.descendant(
@@ -339,7 +341,7 @@ void main() {
       // The wall does not scroll with the board.
       await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
       await tester.pumpAndSettle();
-      expect(tester.getRect(_key('intel-atmo-backdrop')), wall);
+      expect(tester.getRect(_key('intel-rank-atmo-backdrop').first), wall);
     });
 
     testWidgets('广场: rows on one card board, no-logo communities wear the '

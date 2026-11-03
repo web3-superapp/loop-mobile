@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/navigation/invite_link.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
@@ -208,10 +208,12 @@ void main() {
           overview: S7Answer(value: _center(link: null)),
         ),
       );
+      // S344 review: without a link the 邀请链接 block is left out.
       expect(
-        find.byKey(const ValueKey<String>('referral-link-absent')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('referral-link-block')),
+        findsNothing,
       );
+      expect(find.text('邀请链接'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-share-link')),
         findsNothing,
@@ -228,7 +230,7 @@ void main() {
       );
     });
 
-    testWidgets('stats absent: dashes and a note; present: the counts', (
+    testWidgets('stats absent: the section is left out; present: counts', (
       tester,
     ) async {
       await pumpS7Page(
@@ -237,12 +239,10 @@ void main() {
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
       );
       final grid = find.byKey(const ValueKey<String>('referral-stats'));
-      await scrollToS7Section(tester, grid);
-      expect(
-        find.descendant(of: grid, matching: find.text(loopFigureDash)),
-        findsNWidgets(3),
-      );
-      expect(find.textContaining('邀请统计还没有开放'), findsOneWidget);
+      // S344 review: an unopened section is not explained, it is not drawn.
+      expect(grid, findsNothing);
+      expect(find.text('我的邀请'), findsNothing);
+      expect(find.textContaining('邀请统计还没有开放'), findsNothing);
 
       await pumpS7Page(
         tester,
@@ -370,30 +370,33 @@ void main() {
     });
   });
 
-  group('情报 · 邀请中心 chip', () {
-    testWidgets('the chip draws my code over 推广榜 and opens the page', (
-      tester,
-    ) async {
-      final opened = <String>[];
+  group('情报 · 算力 · 邀请 tab (decision 0272)', () {
+    testWidgets('the tab draws the invite center with my code', (tester) async {
       await pumpS7Page(
         tester,
-        IntelRankBoard(onNavigate: opened.add),
+        const MiningScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
+        size: const Size(390, 4000),
       );
-      await tester.tap(find.text('邀请中心'));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-power-tabs')),
+          matching: find.text('邀请'),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey<String>('intel-referral-code')),
+        find.byKey(const ValueKey<String>('referral-invite-code')),
         findsOneWidget,
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      // The board's own ledger card stays.
-      expect(find.byKey(const ValueKey<String>('intel-rank-me')), findsOne);
-      final open = find.byKey(const ValueKey<String>('intel-referral-open'));
-      await scrollToS7Section(tester, open);
-      await tester.tap(open);
-      expect(opened, <String>['/profile/referral']);
+      for (final label in <String>['邀请列表', '我的邀请人']) {
+        expect(find.text(label), findsWidgets, reason: label);
+      }
+      // Not opened by the server yet: left out.
+      expect(find.text('我的邀请'), findsNothing);
+      expect(find.text('邀请加成'), findsNothing);
     });
   });
 
@@ -409,10 +412,20 @@ void main() {
       final shared = <(String, String?)>[];
       await pumpS7Page(
         tester,
-        IntelRankBoard(onNavigate: (_) {}),
+        const ReferralScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(
-          overview: S7Answer(value: _center(link: inviteLink)),
+          overview: S7Answer(
+            value: _center(
+              link: inviteLink,
+              stats: ReferralStats(
+                directCount: 0,
+                validCount: 0,
+                level2to5Count: 0,
+                validAsOf: DateTime.utc(2026, 10, 22, 9),
+              ),
+            ),
+          ),
         ),
         overrides: [
           loopTextShareProvider.overrideWithValue((text, {subject}) async {
@@ -421,8 +434,6 @@ void main() {
           }),
         ],
       );
-      await tester.tap(find.text('邀请中心'));
-      await tester.pumpAndSettle();
       return shared;
     }
 
@@ -453,7 +464,7 @@ void main() {
       final copyCode = find.byKey(const ValueKey<String>('referral-copy-code'));
       expect(
         find.descendant(
-          of: find.byKey(const ValueKey<String>('intel-referral-code')),
+          of: find.byKey(const ValueKey<String>('referral-hero')),
           matching: copyCode,
         ),
         findsOneWidget,
@@ -491,7 +502,7 @@ void main() {
       for (final control in <Finder>[copyLink, share, poster]) {
         expect(
           find.descendant(
-            of: find.byKey(const ValueKey<String>('intel-referral-code')),
+            of: find.byKey(const ValueKey<String>('referral-hero')),
             matching: control,
           ),
           findsOneWidget,
@@ -515,22 +526,11 @@ void main() {
       expect(shared.single.$2, '邀请你加入 LOOP');
     });
 
-    testWidgets('one invite card on the raised ground; counts in one row', (
-      tester,
-    ) async {
+    testWidgets('one invite card; counts in one row', (tester) async {
       await pumpCard(tester);
-      final box = tester.widget<Container>(
-        find
-            .descendant(
-              of: find.byKey(const ValueKey<String>('intel-referral-code')),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-      expect((box.decoration! as BoxDecoration).color, LoopColors.card2);
       expect(
         find.descendant(
-          of: find.byKey(const ValueKey<String>('intel-referral-code')),
+          of: find.byKey(const ValueKey<String>('referral-hero')),
           matching: find.byKey(const ValueKey<String>('referral-link-block')),
         ),
         findsOneWidget,
@@ -545,14 +545,16 @@ void main() {
       expect(tester.getCenter(find.text('直接邀请')).dy, lessThan(cells.first.dy));
     });
 
-    testWidgets('without a link the block says so and the poster stays', (
+    testWidgets('without a link the block is left out and the poster stays', (
       tester,
     ) async {
       final shared = await pumpCard(tester, inviteLink: null);
+      // S344 review: without a link the 邀请链接 block is left out.
       expect(
-        find.byKey(const ValueKey<String>('referral-link-absent')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('referral-link-block')),
+        findsNothing,
       );
+      expect(find.text('邀请链接'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-copy-link')),
         findsNothing,

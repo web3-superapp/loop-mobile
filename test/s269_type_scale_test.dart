@@ -203,8 +203,12 @@ void main() {
       ),
       28,
     );
-    expect(_size(tester, find.text('前三名')), 18);
     _expectNothingUnder12(tester, '情报');
+    await drainS269(tester);
+
+    await pumpS269IntelRank(tester);
+    expect(_size(tester, find.text('前三名')), 18);
+    _expectNothingUnder12(tester, '算力榜');
   });
 
   testWidgets('钱包: title1, headline-free tabs, body1 symbol and the figure', (
