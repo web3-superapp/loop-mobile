@@ -23,8 +23,6 @@ import 'package:loop_mobile/features/square/square_screen.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
-import 'package:stream_chat_flutter/stream_chat_flutter.dart'
-    show Channel, Level, PagedValue, StreamChatClient;
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
@@ -119,74 +117,6 @@ const _session = VoiceRoomSession(
 
 void main() {
   loopWatchGround();
-
-  // S343 · decision 0271: the filters are gone; the list is in two parts.
-  group('chat · two parts', () {
-    late StreamChatClient client;
-    setUp(() {
-      client = StreamChatClient('public-stream-api-key', logLevel: Level.OFF);
-    });
-    tearDown(() => client.dispose());
-
-    const hex = '0123456789abcdef0123456789abcdef';
-    Channel community() => Channel(client, 'messaging', 'loop_community_$hex');
-    Channel direct() => Channel(client, 'messaging', 'loop_direct_$hex');
-
-    test('the controller hands the rows over 社区 first', () {
-      final dm = direct();
-      final room = community();
-      final controller = LoopSectionedChannelListController.fromValue(
-        PagedValue<int, Channel>(items: <Channel>[dm, room], nextPageKey: 20),
-        client: client,
-        userId: 'me',
-      );
-      addTearDown(controller.dispose);
-      final value = controller.value.asSuccess;
-      expect(value.items, <Channel>[room, dm]);
-      // Paging is Stream's own.
-      expect(value.nextPageKey, 20);
-      expect(controller.value, same(controller.value));
-      expect(
-        LoopSectionedChannelListController(
-          client: client,
-          userId: 'me',
-        ).value.isSuccess,
-        isFalse,
-      );
-    });
-
-    testWidgets('each part has its title', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: const Scaffold(
-            body: Column(
-              children: <Widget>[
-                ChatInboxSectionHeader(
-                  section: ChatInboxSection.communities,
-                  leading: true,
-                ),
-                ChatInboxSectionHeader(
-                  section: ChatInboxSection.friends,
-                  leading: false,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      expect(find.text('社区'), findsOneWidget);
-      expect(find.text('好友'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('chat-inbox-section-communities')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('chat-inbox-section-friends')),
-        findsOneWidget,
-      );
-    });
-  });
 
   group('chat · the room this account is in', () {
     testWidgets('the head carries a way back into the room', (tester) async {

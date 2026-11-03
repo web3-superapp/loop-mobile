@@ -22,7 +22,6 @@ import 'package:loop_mobile/features/social/public_profile/user_profile_screen.d
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_api.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -232,20 +231,9 @@ void main() {
       );
     });
 
-    testWidgets('stats absent: the section is left out; present: counts', (
+    testWidgets('S348: 我的邀请 is not drawn, with or without stats', (
       tester,
     ) async {
-      await pumpS7Page(
-        tester,
-        const ReferralCenterHost(),
-        referral: FakeReferralGateway(overview: S7Answer(value: _center())),
-      );
-      final grid = find.byKey(const ValueKey<String>('referral-stats'));
-      // S344 review: an unopened section is not explained, it is not drawn.
-      expect(grid, findsNothing);
-      expect(find.text('我的邀请'), findsNothing);
-      expect(find.textContaining('邀请统计还没有开放'), findsNothing);
-
       await pumpS7Page(
         tester,
         const ReferralCenterHost(),
@@ -262,37 +250,40 @@ void main() {
           ),
         ),
       );
-      await scrollToS7Section(tester, grid);
       expect(
-        find.descendant(of: grid, matching: find.text(loopFigureDash)),
+        find.byKey(const ValueKey<String>('referral-stats')),
         findsNothing,
       );
-      expect(find.descendant(of: grid, matching: find.text('4')), findsOne);
+      expect(find.text('我的邀请'), findsNothing);
+      expect(find.text('直接邀请'), findsNothing);
     });
-
     testWidgets('an available boost is drawn in power, not money', (
       tester,
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralCenterHost(),
+        const ReferralCenterHost(initialTab: ReferralCenterTab.boost),
         referral: FakeReferralGateway(
           overview: S7Answer(value: _center(boostAvailable: true)),
         ),
       );
-      final card = find.byKey(
-        const ValueKey<String>('referral-boost-available'),
-      );
+      final card = find.byKey(const ValueKey<String>('referral-boost'));
       await scrollToS7Section(tester, card);
       expect(card, findsOneWidget);
       expect(find.text('12'), findsOneWidget);
       expect(find.textContaining('USD'), findsNothing);
+      // S348: only the depth with something is drawn.
       expect(
-        find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
-        findsNothing,
+        find.byKey(const ValueKey<String>('referral-boost-level-1')),
+        findsOneWidget,
       );
+      for (var level = 2; level <= 5; level += 1) {
+        expect(
+          find.byKey(ValueKey<String>('referral-boost-level-$level')),
+          findsNothing,
+        );
+      }
     });
-
     testWidgets('invitee faces open profiles; a hidden profile opens nothing', (
       tester,
     ) async {
@@ -393,12 +384,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      for (final label in <String>['邀请列表', '我的邀请人']) {
+      // S348: 邀请列表 / 邀请加成 side by side, 我的邀请人 at the foot.
+      for (final label in <String>['邀请列表', '邀请加成', '我的邀请人']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
-      // Not opened by the server yet: left out.
       expect(find.text('我的邀请'), findsNothing);
-      expect(find.text('邀请加成'), findsNothing);
     });
   });
 
@@ -528,7 +518,7 @@ void main() {
       expect(shared.single.$2, '邀请你加入 LOOP');
     });
 
-    testWidgets('one invite card; counts in one row', (tester) async {
+    testWidgets('one invite card; no counts under it (S348)', (tester) async {
       await pumpCard(tester);
       expect(
         find.descendant(
@@ -537,16 +527,15 @@ void main() {
         ),
         findsOneWidget,
       );
-      final cells = <String>[
-        'referral-stats-direct',
-        'referral-stats-valid',
-        'referral-stats-deep',
-      ].map((key) => tester.getCenter(find.byKey(ValueKey<String>(key))));
-      expect(cells.map((c) => c.dy).toSet(), hasLength(1));
-      // The name sits above its figure.
-      expect(tester.getCenter(find.text('直接邀请')).dy, lessThan(cells.first.dy));
+      expect(
+        find.byKey(const ValueKey<String>('referral-stats-direct')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('referral-levels')),
+        findsNothing,
+      );
     });
-
     testWidgets('without a link the block is left out and the poster stays', (
       tester,
     ) async {

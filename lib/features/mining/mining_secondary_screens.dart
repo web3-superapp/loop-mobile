@@ -16,7 +16,6 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -48,35 +47,6 @@ Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
   for (final row in assets.excluded)
     if (row.symbol != null) row.assetId: row.symbol!,
 };
-
-/// One asset the settlement skipped, with the server's own reason in words.
-LoopRecordRow miningExcludedRow(
-  MiningExcludedAsset row,
-  LoopRowPosition position, {
-  bool reason = true,
-}) => LoopRecordRow(
-  key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
-  leading: LoopTokenLogo(
-    assetSymbol:
-        row.symbol ??
-        miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-    logoUrl: row.logoUrl,
-    size: 44,
-    semanticLabel: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-  ),
-  title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-  // S344: 情报 · 算力 keeps the short state — the 未计入 badge and the
-  // address — without the server's sentence.
-  subtitle: !reason
-      ? miningAssetLabel(row.assetId)
-      : row.symbol == null
-      ? launchReasonCodeText(row.reasonCode)
-      : '${miningAssetLabel(row.assetId)} · '
-            '${launchReasonCodeText(row.reasonCode)}',
-  subtitleMaxLines: 2,
-  trailingBadge: const LoopBadge('未计入'),
-  position: position,
-);
 
 /// `mining-community` · one community's mining panel.
 class MiningCommunityScreen extends ConsumerStatefulWidget {

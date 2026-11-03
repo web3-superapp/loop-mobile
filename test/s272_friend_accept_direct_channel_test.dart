@@ -2,7 +2,7 @@
 //
 // Bug (TestFlight build 40): after a friend request was accepted the 聊天
 // tab's 好友 filter still read 「还没有好友会话」. The inbox lists Stream
-// channels (`ChatInboxSection.friends` keeps `loop_direct_` / `loop_group_`
+// channels (direct conversations keep `loop_direct_` / `loop_group_`
 // CIDs), and `POST /v2/message-requests/:id/decision` with `accept` writes
 // only the friendship row — no direct channel exists until somebody opens
 // the conversation from a profile card. The accepting side now runs the
@@ -13,7 +13,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
@@ -51,8 +51,8 @@ void main() {
 
       expect(chat.opened, <String>[peer]);
       expect(chat.polled, isNotEmpty, reason: 'pending is polled to terminal');
-      // The new row is listed under 好友 (S343 · decision 0271).
-      expect(ChatInboxSection.of(_cid), ChatInboxSection.friends);
+      // The new row is a direct conversation in the one inbox list (S348).
+      expect(loopChatSurfaceForCid(_cid), LoopChatSurface.direct);
     });
 
     test('ignore and report never open a channel', () async {

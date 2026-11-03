@@ -12,9 +12,11 @@ class ReferralCenterHost extends ConsumerWidget {
     super.key,
     this.initialInviteCode,
     this.onNavigate,
+    this.initialTab = ReferralCenterTab.invitees,
   });
 
   final String? initialInviteCode;
+  final ReferralCenterTab initialTab;
   final ValueChanged<String>? onNavigate;
 
   @override
@@ -24,6 +26,7 @@ class ReferralCenterHost extends ConsumerWidget {
       child: ReferralCenterSections(
         initialInviteCode: initialInviteCode,
         onNavigate: onNavigate,
+        initialTab: initialTab,
         info: LoopInfoButton(
           key: const ValueKey<String>('referral-explain-action'),
           title: '邀请说明',

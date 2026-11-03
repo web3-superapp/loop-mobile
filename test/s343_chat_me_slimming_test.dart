@@ -33,7 +33,6 @@ import 'package:loop_mobile/integrations/communication/stream_chat_providers.dar
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/community_test_harness.dart';
@@ -240,39 +239,6 @@ void main() {
       ]) {
         expect(_key(key), findsOneWidget, reason: key);
       }
-    });
-
-    test('the list is in two parts: 社区 first, then 好友', () async {
-      final client = StreamChatClient('key', logLevel: Level.OFF);
-      addTearDown(client.dispose);
-      Channel channel(String id) => Channel(client, 'messaging', id);
-      const hex = '0123456789abcdef0123456789abcdef';
-      const hex2 = 'fedcba9876543210fedcba9876543210';
-      final dm = channel('loop_direct_$hex');
-      final community = channel('loop_community_$hex');
-      final group = channel('loop_group_$hex');
-      final community2 = channel('loop_community_$hex2');
-      final unknown = channel('loop-room-42');
-      final ordered = chatInboxSectioned(<Channel>[
-        dm,
-        community,
-        group,
-        unknown,
-        community2,
-      ]);
-      expect(ordered, <Channel>[community, community2, dm, group, unknown]);
-      expect(ChatInboxSection.of(community.cid), ChatInboxSection.communities);
-      expect(ChatInboxSection.of(dm.cid), ChatInboxSection.friends);
-      expect(ChatInboxSection.of(group.cid), ChatInboxSection.friends);
-      // A conversation LOOP cannot classify is listed under 好友.
-      expect(ChatInboxSection.of(unknown.cid), ChatInboxSection.friends);
-      expect(ChatInboxSection.of(null), ChatInboxSection.friends);
-      expect(ChatInboxSection.values.map((section) => section.label), <String>[
-        '社区',
-        '好友',
-      ]);
-      // Each part keeps Stream's order.
-      expect(chatInboxSectioned(<Channel>[dm, group]), <Channel>[dm, group]);
     });
   });
 

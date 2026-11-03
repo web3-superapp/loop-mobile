@@ -9,7 +9,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
-import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 /// The block order of the six Mining pages, pinned against the frozen
 /// prototype (`docs/prototype/screens/mining*.html`).
@@ -40,7 +40,9 @@ void main() {
           summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
           assets: S7Answer<MiningAssets>(
             value: s7MiningSettledAssets(
-              included: <MiningAssetRow>[s7MiningAssetRow()],
+              included: <MiningAssetRow>[
+                s7MiningAssetRow(holding: '10', power: '8'),
+              ],
             ),
           ),
         ),
@@ -96,9 +98,10 @@ void main() {
         find.byKey(const ValueKey<String>('mining-open-referral')),
         findsNothing,
       );
+      // S348: 有权重的社区币 is gone.
       expect(
         find.byKey(const ValueKey<String>('mining-open-market')),
-        findsOneWidget,
+        findsNothing,
       );
       // No section headings between the cards and the tabs.
       expect(_labels(tester), isEmpty);
@@ -115,7 +118,7 @@ void main() {
       expect(mine.bottom, lessThan(tabs.top));
     });
 
-    testWidgets('a settled snapshot with nothing counted is illustrated', (
+    testWidgets('a settled snapshot with nothing counted is one line', (
       tester,
     ) async {
       await pumpS7Page(
@@ -130,14 +133,14 @@ void main() {
         size: _tall,
       );
 
-      // Decision 0183: an empty composition is the illustrated empty state.
+      // S348: an empty composition is one line.
       expect(
         tester.widget(
           find.byKey(const ValueKey<String>('mining-composition-empty')),
         ),
-        isA<LoopEmptyState>(),
+        isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('暂无计入资产'), findsOneWidget);
+      expect(find.text('暂无代币算力'), findsOneWidget);
     });
 
     testWidgets('社区挖矿面板 carries the contribution card', (tester) async {

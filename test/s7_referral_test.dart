@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
+import 'package:loop_mobile/features/mining/referral_screen.dart';
 
 import 'support/referral_center_host.dart';
 
@@ -101,47 +101,21 @@ void main() {
       expect(find.textContaining('3 个待验证'), findsOneWidget);
     });
 
-    // S249: the filled L1 cell read 「L1 ·」 on a phone. 「L1 · 10%」 is the
-    // only two-digit label, so at a fifth of the width it was the one that
-    // soft-wrapped at the space and lost 「10%」 to `maxLines: 1`.
-    for (final width in <double>[320, 390]) {
-      testWidgets('every level cell shows its whole label at $width', (
+    // S348: the five-depth strip under the invite card is gone; the depths
+    // are 邀请加成's rows.
+    testWidgets('no level strip under the invite card', (tester) async {
+      await pumpS7Page(
         tester,
-      ) async {
-        await pumpS7Page(
-          tester,
-          const ReferralCenterHost(),
-          referral: FakeReferralGateway(),
-          size: Size(width, 2600),
-        );
-
-        final strip = find.byKey(const ValueKey<String>('referral-levels'));
-        expect(strip, findsOneWidget);
-        for (final (level, percent) in <(int, String)>[
-          (1, '10'),
-          (2, '5'),
-          (3, '3'),
-          (4, '2'),
-          (5, '1'),
-        ]) {
-          final label = find.descendant(
-            of: strip,
-            matching: find.text('L$level · $percent%'),
-          );
-          expect(label, findsOneWidget, reason: 'L$level');
-          final paragraph = tester.renderObject<RenderParagraph>(label);
-          expect(paragraph.didExceedMaxLines, isFalse, reason: 'L$level');
-          final cell = find.byKey(
-            ValueKey<String>('referral-level-cell-$level'),
-          );
-          expect(
-            tester.getRect(label).right,
-            lessThanOrEqualTo(tester.getRect(cell).right),
-            reason: 'L$level',
-          );
-        }
-      });
-    }
+        const ReferralCenterHost(),
+        referral: FakeReferralGateway(),
+        size: const Size(390, 2600),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('referral-levels')),
+        findsNothing,
+      );
+      expect(find.text('L1 · 10%'), findsNothing);
+    });
 
     // S239 (decision 0214): the decoded center keys are drawn — the available
     // boost replaces the unavailable card, and the link is offered.
@@ -151,7 +125,7 @@ void main() {
       final base = s7Referral();
       await pumpS7Page(
         tester,
-        const ReferralCenterHost(),
+        const ReferralCenterHost(initialTab: ReferralCenterTab.boost),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: ReferralOverview(
@@ -194,11 +168,16 @@ void main() {
         find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
         findsNothing,
       );
-      final boost = find.byKey(
-        const ValueKey<String>('referral-boost-available'),
-      );
+      final boost = find.byKey(const ValueKey<String>('referral-boost'));
       await scrollToS7Section(tester, boost);
       expect(find.text('12'), findsOneWidget);
+      // S348: every depth is empty, so no depth row is drawn.
+      for (var level = 1; level <= 5; level += 1) {
+        expect(
+          find.byKey(ValueKey<String>('referral-boost-level-$level')),
+          findsNothing,
+        );
+      }
       // Decision 0235: the link is one line, middle-elided, keeping the code
       // it ends with.
       final link = tester.widget<Text>(
@@ -216,17 +195,29 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralCenterHost(),
+        const ReferralCenterHost(initialTab: ReferralCenterTab.boost),
         referral: FakeReferralGateway(),
       );
 
-      // S344 review (需求方不要说明性文案): until the boost is approved the
-      // section is not drawn; its figures come with the approval.
+      // S348 (需求方不要说明性文案): until the boost is approved 邀请加成
+      // is the total as the em dash, and nothing else.
       expect(
         find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
         findsNothing,
       );
-      expect(find.text('邀请加成'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-boost-total')),
+          matching: find.text('—'),
+        ),
+        findsOneWidget,
+      );
+      for (var level = 1; level <= 5; level += 1) {
+        expect(
+          find.byKey(ValueKey<String>('referral-boost-level-$level')),
+          findsNothing,
+        );
+      }
       expect(find.textContaining('还没有批准邀请加成'), findsNothing);
       expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
       // The prototype's final boost figure never returns.

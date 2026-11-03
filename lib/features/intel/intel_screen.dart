@@ -168,8 +168,6 @@ class _IntelScreenState extends ConsumerState<IntelScreen> {
                   onNavigate(LoopRouteManifest.pathFor('mining-rewards')),
               onOpenRules: () =>
                   onNavigate(LoopRouteManifest.pathFor('mining-rules')),
-              onOpenMarket: () =>
-                  onNavigate(LoopRouteManifest.pathFor('market')),
             )
           : MarketScreen(
               embedded: true,

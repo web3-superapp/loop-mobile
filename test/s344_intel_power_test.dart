@@ -504,11 +504,10 @@ void main() {
       expect(bar.labels, <String>['NFT', '代币', '邀请']);
       expect(_key('mining-power-tab-token'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsOneWidget);
-      // What the snapshot did not count closes the 代币 tab: the badge and
-      // the address, no sentence.
-      expect(_key('mining-composition-excluded'), findsOneWidget);
+      // S348: what the snapshot did not count is not drawn.
+      expect(_key('mining-composition-excluded'), findsNothing);
       expect(find.textContaining('参考价'), findsNothing);
-      expect(find.text('未计入'), findsOneWidget);
+      expect(find.text('未计入'), findsNothing);
 
       await _tab(tester, 'NFT');
       expect(_key('mining-power-tab-nft'), findsOneWidget);
@@ -523,12 +522,11 @@ void main() {
       expect(_key('referral-link-block'), findsNothing);
       expect(find.text('邀请链接'), findsNothing);
       expect(_key('referral-stats'), findsNothing);
-      expect(find.text('邀请加成'), findsNothing);
       expect(find.textContaining('还没有开放'), findsNothing);
       expect(find.textContaining('还没有批准'), findsNothing);
       expect(find.text('还没有邀请'), findsOneWidget);
       expect(find.textContaining('绑定后，会出现在这里'), findsNothing);
-      for (final label in <String>['邀请列表', '我的邀请人']) {
+      for (final label in <String>['邀请列表', '邀请加成', '我的邀请人']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
     });
