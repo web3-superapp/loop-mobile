@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
 
 import 'support/loop_ground_probe.dart';
 import 'support/loop_shots.dart';
@@ -84,7 +85,7 @@ void main() {
   testWidgets('邀请中心 · top', skip: !_shots, (tester) async {
     await pumpS7Page(
       tester,
-      const ReferralScreen(),
+      const ReferralCenterHost(),
       size: const Size(390, 1300),
       referral: FakeReferralGateway(
         overview: S7Answer(
@@ -101,7 +102,7 @@ void main() {
   testWidgets('邀请中心 · no link yet', skip: !_shots, (tester) async {
     await pumpS7Page(
       tester,
-      const ReferralScreen(),
+      const ReferralCenterHost(),
       size: const Size(390, 1300),
       referral: FakeReferralGateway(overview: S7Answer(value: _overview())),
     );

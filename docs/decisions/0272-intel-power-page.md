@@ -44,3 +44,10 @@ Accepted · 2026-11-03（S344-mobile）。依据 `LOOP/docs/56-页面精简-需�
 
 - 全网算力的 NFT / 代币拆分只有上一结算小时口径；若要与快照总数同口径，需要 `GET /v2/mining/summary` 增加可选键（如 `networkAssetPower` / `networkNftPower`），客户端按 0253 的方式先落可选键。
 - 我的 NFT / 代币明细依赖 `summary.assetPower` / `nftPower` 与 `included[].nftPower`（0253 可选键）；服务端未发时 NFT tab 显示不可用一行，代币 tab 显示全部计入行。
+
+## Amendment · 2026-11-03（S347 · docs/57 N1 / N4）
+
+- 算力榜（`/mining/rank`，含从挖矿社区页进入的同一页）点本人行改走 `LoopProfileFaceLink.push`（`/wallet` 是 Tab，用 `go`），不再经 `onNavigate` 把 Tab `push` 到壳上触发 Navigator 断言；路由层 `onNavigate` 也按 `Uri.parse(location).path` 判 Tab 则 `go`、否则 `push`（`_goTabOrPush`，`_profileScreen` 共用）。
+- 删除仅测试引用的死代码：`MiningAssetsScreen`、`MiningRankScreen`（及其私有行 / 折叠 / 来源块）、`ReferralScreen`、整个 `intel_referral_board.dart`（`IntelReferralBoardSection` / `ReferralBoardController`）。`miningExcludedRow`、`_assetSymbols`、`ReferralCenterSections` 等仍被情报 · 算力使用的部分保留。
+- 对应旧测试：只测这两个页面的用例删除；测 `ReferralScreen` 的用例改为挂 `test/support/referral_center_host.dart`（`ReferralCenterSections` + 邀请 tab 同款 (i)），只依赖旧页面外壳（页面标题、能力拦截块、页面级「更新中」、失败态下的页面 (i)）的 5 条删除。
+- 回归测试：`test/s347_regressions_test.dart`（本人行 `go('/wallet')`、`/mining/rank` 与社区页进入的榜到 `/wallet` 不崩、`profileDestinationPath('invite')` 经 `_profileScreen` 落到情报 Tab）。

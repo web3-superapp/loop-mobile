@@ -46,3 +46,13 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - `scripts/check_harness.py` 的「首帧画本机头像」规则从聊天页移到 `profile_v2_screens.dart`（`ref.watch(ownerFaceProvider)` 现在在 `ProfileIdentitySection`）。
 - 依赖 `/intel?tab=power` 与 `&sub=invite` 的落点由 S344 实现；合并前这两个深链落在情报默认段。
 - 聊天分节的整列表渲染没有 widget 测试（需要真实 Stream 会话），分节规则由 `chatInboxSectioned` 单测覆盖。
+
+## Amendment · 2026-11-03（S347 · docs/57 N2 / N3 / N5）
+
+- 聊天分节改为两个 Stream 查询（`LoopSectionedChannelListController` 组合两个 `LoopInboxSectionController`）：「社区」按服务端写在频道上的自定义字段 `loop_channel_kind = community` 查询，30 条一页连续读到底后一次画出（重读期间保留上一份完整列表，不出现半截社区节）；「好友」按 `loop_channel_kind ∈ {direct, group}` 查询，20 条一页（首读 30）随滚动分页，下一页、加载更多失败与重试都属于好友节。列表先社区后好友，翻页只在末尾追加，已画的行不移动。
+- 每节自带排序（置顶在前，再按最新消息）；实时事件按 CID 前缀只进所属节（`_SectionEvents`：另一节的 `message.new` / `channel.visible` / `notification.*` 不处理），并在 `value` setter 里再按 CID 过滤一次，任何读取或事件都不会把另一节的行带进来。
+- 一节为空时保留节标题 + 一行「暂无社区会话」/「暂无好友会话」；两节都空时仍是原整页空态。
+- 本机副本（0132）按两节各自的查询从 Stream 本地库读取（社区最多 300 条，好友 30 条），交给在线列表时按节拆分。
+- 我的 · 邀请好友等 Tab 目的地：`_profileScreen` 按 `Uri.parse(path).path` 判断是否 Tab，带 query 的 Tab 地址（`/intel?tab=power&sub=invite`）走 `go`，不再被 `push` 到壳上。
+- `LoopDashboardPage.pageInfo` 的文档注释移出 `backdrop` 注释中间。
+- 测试：`test/s347_regressions_test.dart`（>20 条会话时社区节首屏完整、好友翻页不跳动、重读不出现半截社区、实时事件只进所属节、种子按节拆分、节空态一行）。

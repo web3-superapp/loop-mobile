@@ -140,69 +140,6 @@ void main() {
       expect(find.text('暂无计入资产'), findsOneWidget);
     });
 
-    testWidgets('算力明细 leads with the priced list, not with a table', (
-      tester,
-    ) async {
-      await pumpS7Page(
-        tester,
-        const MiningAssetsScreen(),
-        mining: FakeMiningGateway(
-          assets: S7Answer<MiningAssets>(
-            value: s7MiningSettledAssets(
-              included: <MiningAssetRow>[s7MiningAssetRow()],
-              excluded: <MiningExcludedAsset>[
-                const MiningExcludedAsset(
-                  assetId: s7UsdtAssetId,
-                  symbol: 'USDT',
-                  reasonCode: 'MINING_PRICE_NOT_FRESH',
-                ),
-              ],
-            ),
-          ),
-        ),
-        size: _tall,
-      );
-
-      expect(_labels(tester), <String>[
-        // Decision 0126: the page's own words.
-        '计入的资产',
-        '未计入的资产',
-        // Decision 0146: quantity basis, the 参考价 section is gone.
-        '公式版本',
-        '算力快照',
-      ]);
-      // 我的总算力 is the strip welded under the primary, above every label.
-      expect(
-        find.byKey(const ValueKey<String>('mining-assets-total')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('算力排行榜 keeps the board under the scope switch', (tester) async {
-      await pumpS7Page(
-        tester,
-        const MiningRankScreen(),
-        mining: FakeMiningGateway(
-          rank: S7Answer<MiningRank>(
-            value: s7MiningRank(ranking: s7MiningCommunityBoard()),
-          ),
-        ),
-        size: _tall,
-      );
-
-      // S315: the board starts under the switch; no card above it, no
-      // formula block under it, and 未上榜 folds at the board's end.
-      expect(_labels(tester), <String>['社区榜']);
-      expect(
-        find.byKey(const ValueKey<String>('mining-rank-reading')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('mining-rank-unranked')),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('社区挖矿面板 carries the contribution card', (tester) async {
       await pumpS7Page(
         tester,

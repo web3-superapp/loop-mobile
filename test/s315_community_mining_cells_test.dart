@@ -3,17 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
-import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
+import 'support/loop_ground_probe.dart';
 
 /// The bound asset of the staging community the requester owns (2026-10-27).
 const _boundAssetId = 'eip155:97:0x040ecd2c604cfa86b35f817d845f441b97f46666';
@@ -93,6 +92,8 @@ String? _cell(WidgetTester tester, String slug) => tester
     .data;
 
 void main() {
+  loopWatchGround();
+
   testWidgets('arriving from the 社区 tab, the three cells are read', (
     tester,
   ) async {
@@ -219,78 +220,6 @@ void main() {
     await scrollToCommunitySection(tester, card);
     expect(_cell(tester, 'power'), '—');
     expect(find.textContaining('可以进面板重试'), findsNothing);
-  });
-
-  testWidgets('社区榜: avatars, the board first, 未上榜 folded at its end', (
-    tester,
-  ) async {
-    final rank = s7MiningRank(
-      ranking: s7MiningCommunityBoard(
-        items: const <MiningRankCommunityRow>[
-          MiningRankCommunityRow(
-            position: 1,
-            power: '2500000',
-            community: MiningCommunityRef(
-              communityId: testCommunityId,
-              name: 'dad',
-              boundAssetId: _boundAssetId,
-            ),
-            weight: '1',
-            participants: 1,
-            avatarRef: 'avatar:preset/community-03',
-          ),
-          MiningRankCommunityRow(
-            position: null,
-            power: '0',
-            community: MiningCommunityRef(
-              communityId: s7OtherCommunityId,
-              name: 'Builders Guild',
-              boundAssetId: s7UsdtAssetId,
-            ),
-            weight: '1.5',
-            participants: 0,
-          ),
-        ],
-        participants: 1,
-      ),
-    );
-    await pumpS7Page(
-      tester,
-      const MiningRankScreen(),
-      mining: FakeMiningGateway(rank: S7Answer<MiningRank>(value: rank)),
-    );
-
-    // No card above the board, and no personal place under 社区榜.
-    expect(find.text('全网位置'), findsNothing);
-    expect(find.text('我的名次'), findsNothing);
-    expect(find.textContaining('榜单按'), findsNothing);
-    expect(find.text('Community Ranking'), findsNothing);
-    expect(find.text('社区榜'), findsWidgets);
-
-    final logo = tester.widget<CommunityLogo>(
-      find.byKey(
-        const ValueKey<String>('mining-rank-community-logo-$testCommunityId'),
-      ),
-    );
-    expect(logo.logoRef, 'avatar:preset/community-03');
-    expect(find.text('2,500,000'), findsOneWidget);
-
-    // The unplaced community is folded until asked for.
-    expect(find.text('未上榜 · 1'), findsOneWidget);
-    expect(find.text('Builders Guild'), findsNothing);
-    await tester.tap(
-      find.byKey(const ValueKey<String>('mining-rank-unranked')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Builders Guild'), findsOneWidget);
-    final fallback = tester.widget<CommunityLogo>(
-      find.byKey(
-        const ValueKey<String>(
-          'mining-rank-community-logo-$s7OtherCommunityId',
-        ),
-      ),
-    );
-    expect(fallback.logoRef, isNull);
   });
 
   testWidgets('rebuilds and a failure ask once; a pull asks again', (

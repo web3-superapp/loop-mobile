@@ -14,6 +14,9 @@ import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -94,7 +97,7 @@ void main() {
     testWidgets('loading', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(pending: true),
         ),
@@ -115,7 +118,7 @@ void main() {
       testWidgets(phase, (tester) async {
         await pumpS7Page(
           tester,
-          const ReferralScreen(),
+          const ReferralCenterHost(),
           referral: FakeReferralGateway(
             overview: S7Answer<ReferralOverview>(failure: kind),
           ),
@@ -133,7 +136,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
       );
       final empty = find.byKey(
@@ -144,7 +147,7 @@ void main() {
 
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer(value: _center()),
           invitees: S7Answer<ReferralInviteePage>(
@@ -166,11 +169,10 @@ void main() {
     testWidgets('code, link, share and poster actions', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      expect(find.text('邀请中心'), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('referral-copy-code')),
         findsOneWidget,
@@ -203,7 +205,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer(value: _center(link: null)),
         ),
@@ -235,7 +237,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
       );
       final grid = find.byKey(const ValueKey<String>('referral-stats'));
@@ -246,7 +248,7 @@ void main() {
 
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer(
             value: _center(
@@ -273,7 +275,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer(value: _center(boostAvailable: true)),
         ),
@@ -301,7 +303,7 @@ void main() {
       );
       await pumpS7Page(
         tester,
-        ReferralScreen(onNavigate: opened.add),
+        ReferralCenterHost(onNavigate: opened.add),
         referral: gateway,
       );
       final face = find.byKey(
@@ -334,7 +336,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(initialInviteCode: 'LOOP-ABCDE'),
+        const ReferralCenterHost(initialInviteCode: 'LOOP-ABCDE'),
         referral: FakeReferralGateway(),
       );
       await tester.pumpAndSettle();
@@ -356,7 +358,7 @@ void main() {
       );
       await pumpS7Page(
         tester,
-        const ReferralScreen(initialInviteCode: 'LOOP-ABCDE'),
+        const ReferralCenterHost(initialInviteCode: 'LOOP-ABCDE'),
         referral: gateway,
       );
       await tester.pump();
@@ -412,7 +414,7 @@ void main() {
       final shared = <(String, String?)>[];
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(
           overview: S7Answer(

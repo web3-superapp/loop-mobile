@@ -7,7 +7,9 @@ import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -143,7 +145,7 @@ void main() {
   ) async {
     await pumpS7Page(
       tester,
-      const ReferralScreen(),
+      const ReferralCenterHost(),
       referral: FakeReferralGateway(),
     );
 

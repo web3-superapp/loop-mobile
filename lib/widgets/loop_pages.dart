@@ -525,13 +525,13 @@ class LoopDashboardPage extends StatelessWidget {
   final VoidCallback? onBack;
   final List<Widget> actions;
 
+  /// Whether the bar may add the page's (i); see [LoopTopbar.pageInfo].
+  final bool pageInfo;
+
   /// A still layer under the whole page that never scrolls (S264, decision
   /// 0220: the MEME home's wall). With it the page ground is Ink, and the
   /// sticky bar paints the same layer behind its title. `null` keeps the
   /// plain page.
-  /// Whether the bar may add the page's (i); see [LoopTopbar.pageInfo].
-  final bool pageInfo;
-
   final Widget? backdrop;
 
   /// A widget that takes the bar's whole title column

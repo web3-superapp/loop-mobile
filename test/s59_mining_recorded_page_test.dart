@@ -9,7 +9,6 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/mining/loop_v2_mining_api.dart';
 
 import 'support/s7_page_harness.dart';
@@ -137,72 +136,6 @@ void main() {
       summary = summaryRecord == null
           ? null
           : await _recordedSummary(summaryRecord);
-    });
-
-    testWidgets('the real payload decodes and the page renders it', (
-      tester,
-    ) async {
-      await pumpS7Page(
-        tester,
-        const MiningAssetsScreen(),
-        mining: _RecordedMiningGateway(assets),
-      );
-
-      // The failure the device saw is a transport state, and it is not this
-      // one: nothing about this answer puts the page on the offline card.
-      expect(
-        find.byKey(const ValueKey<String>('mining-assets-state-offline')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('mining-assets-state-error')),
-        findsNothing,
-      );
-      expect(find.text('连不上 LOOP'), findsNothing);
-
-      // Every weighted holding the snapshot priced, each with the expression
-      // that produced its power. What the numbers are belongs to the capture
-      // — a Development stack that holds different amounts on a different
-      // day is still the same answer shape — so the assertion is that the
-      // page prints the row's own figures, not one day's figures.
-      expect(assets.included, isNotEmpty);
-      for (final asset in assets.included) {
-        final row = find.byKey(
-          ValueKey<String>('mining-assets-row-${asset.assetId}'),
-        );
-        await scrollToS7Section(tester, row);
-        expect(row, findsOneWidget, reason: asset.assetId);
-        expect(
-          find.textContaining(
-            // Decision 0146: quantity × weight, no price.
-            '${asset.holding} × 权重 ${asset.weight}',
-          ),
-          findsWidgets,
-          reason: asset.assetId,
-        );
-      }
-      // Decision 0146: no row prints a price any more, proxied or not.
-      expect(find.textContaining('代理价，来自'), findsNothing);
-
-      // Decision 0057: when a later run did not finish, the page keeps the
-      // last complete snapshot and dates it; when nothing overtook it, the
-      // line is absent rather than reworded.
-      final stale = find.byKey(const ValueKey<String>('mining-stale-assets'));
-      if (miningSnapshotIsStale(assets.source)) {
-        await scrollToS7Section(tester, stale);
-        expect(stale, findsOneWidget);
-      } else {
-        expect(stale, findsNothing);
-      }
-
-      // Whatever the snapshot skipped, each with the server's own reason.
-      for (final skipped in assets.excluded) {
-        final row = find.byKey(
-          ValueKey<String>('mining-assets-excluded-${skipped.assetId}'),
-        );
-        await scrollToS7Section(tester, row);
-        expect(row, findsOneWidget, reason: skipped.assetId);
-      }
     });
 
     testWidgets('the tab reads the same answer, so the detail page is not a '

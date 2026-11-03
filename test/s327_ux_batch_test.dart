@@ -6,6 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/features/wallet/swap_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
@@ -109,7 +112,7 @@ void main() {
       );
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
       // One card: the code and the link with their glyphs, share and poster;
@@ -147,7 +150,7 @@ void main() {
       );
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
       await tester.tap(_key('referral-copy-code'));

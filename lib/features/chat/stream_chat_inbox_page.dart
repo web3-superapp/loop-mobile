@@ -48,6 +48,9 @@ const double chatInboxListBottomPadding = LoopLayout.tabPageBottomReserve;
 /// persistence. LOOP deliberately does not mirror these records into its
 /// preview conversation DTOs.
 ///
+/// S347 · N3: the list is two Stream queries, one per part
+/// ([LoopSectionedChannelListController]).
+///
 /// [initialChannels] — what the local list already drew (decision 0132) —
 /// becomes the first value, so the live list opens on those rows and its own
 /// initial load replaces them without a skeleton in between.
@@ -64,23 +67,10 @@ StreamChannelListController createLoopStreamChannelListController({
     return LoopSectionedChannelListController.fromValue(
       PagedValue<int, Channel>(items: initialChannels),
       client: client,
-      filter: loopStreamInboxFilter(userId),
-      channelStateSort: loopStreamInboxSort,
-      presence: true,
-      limit: loopStreamInboxPageSize,
-      messageLimit: 25,
-      memberLimit: 30,
+      userId: userId,
     );
   }
-  return LoopSectionedChannelListController(
-    client: client,
-    filter: loopStreamInboxFilter(userId),
-    channelStateSort: loopStreamInboxSort,
-    presence: true,
-    limit: loopStreamInboxPageSize,
-    messageLimit: 25,
-    memberLimit: 30,
-  );
+  return LoopSectionedChannelListController(client: client, userId: userId);
 }
 
 /// The inbox query: every messaging channel this account is a member of.
@@ -88,6 +78,29 @@ Filter loopStreamInboxFilter(String userId) => Filter.and(<Filter>[
   Filter.equal('type', 'messaging'),
   Filter.in_('members', <Object>[userId]),
 ]);
+
+/// The custom field the server writes on every LOOP channel it creates
+/// (`community`, `direct` or `group`).
+const String loopStreamChannelKindField = 'loop_channel_kind';
+
+/// One part's query (S347 · N3): the inbox query narrowed by the kind the
+/// server stamped on the channel — 社区 the community rooms, 好友 the direct
+/// and group conversations.
+Filter loopStreamInboxSectionFilter(String userId, ChatInboxSection section) =>
+    Filter.and(<Filter>[
+      Filter.equal('type', 'messaging'),
+      Filter.in_('members', <Object>[userId]),
+      switch (section) {
+        ChatInboxSection.communities => Filter.equal(
+          loopStreamChannelKindField,
+          'community',
+        ),
+        ChatInboxSection.friends => Filter.in_(
+          loopStreamChannelKindField,
+          const <Object>['direct', 'group'],
+        ),
+      },
+    ]);
 
 /// A pinned conversation stands above the rest (decision 0129); within each
 /// part Stream keeps the newest message first.
@@ -97,14 +110,21 @@ const List<SortOption<ChannelState>> loopStreamInboxSort =
       SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
     ];
 
-/// One page of the inbox.
+/// One page of the inbox's 好友 part.
 const int loopStreamInboxPageSize = 20;
+
+/// One page of the 社区 part, Stream's backend maximum: the part is read
+/// to its end before it is drawn.
+const int loopStreamInboxCommunityPageSize = 30;
 
 /// The rows Stream's own first read asks for: its initial-page multiplier
 /// over [loopStreamInboxPageSize], capped at its backend limit of 30. The
 /// local read asks for the same, so it reads the very rows the live list
 /// will.
 const int loopStreamInboxFirstRead = 30;
+
+/// How many community rooms this device's own copy hands over at most.
+const int loopStreamInboxLocalCommunityRead = 300;
 
 /// Exact server-side lookup used before a string-addressed channel route mounts
 /// official Stream UI. Unlike `client.channel(...).watch()`, a channel-list
@@ -190,11 +210,7 @@ final Expando<List<Channel>> _sectionedCache = Expando<List<Channel>>(
 final Expando<PagedValue<int, Channel>> _sectionedValues =
     Expando<PagedValue<int, Channel>>('chat-inbox-sectioned-value');
 
-/// The inbox's rows as the list reads them: in two parts (S343 · decision
-/// 0271). Stream keeps sorting every value it is given — pinned first, then
-/// the latest message — and the list reads that order regrouped by
-/// [chatInboxSectioned]. The count, the next page and every row are Stream's
-/// own, so paging and live events are untouched.
+/// This device's own copy regrouped in two parts (S343 · decision 0271).
 mixin LoopSectionedInbox on StreamChannelListController {
   @override
   PagedValue<int, Channel> get value {
@@ -210,30 +226,262 @@ mixin LoopSectionedInbox on StreamChannelListController {
   }
 }
 
-/// The live inbox list, in two parts.
-@visibleForTesting
-class LoopSectionedChannelListController extends StreamChannelListController
-    with LoopSectionedInbox {
-  LoopSectionedChannelListController({
-    required super.client,
-    super.filter,
-    super.channelStateSort,
-    super.presence,
-    super.limit,
-    super.messageLimit,
-    super.memberLimit,
-  });
+/// Live events for one part: a conversation that belongs to the other part
+/// is left to that part's list (S347 · N3), so a new message moves its row
+/// within its own part and a newly visible conversation joins its own part.
+class _SectionEvents extends StreamChannelListEventHandler {
+  _SectionEvents(this.section);
 
-  LoopSectionedChannelListController.fromValue(
+  final ChatInboxSection section;
+
+  bool _mine(String? cid) => cid != null && ChatInboxSection.of(cid) == section;
+
+  static String? _cidOf(Event event) {
+    final cid = event.cid ?? event.channel?.cid;
+    if (cid != null) return cid;
+    final type = event.channelType;
+    final id = event.channelId;
+    return type == null || id == null ? null : '$type:$id';
+  }
+
+  @override
+  void onChannelVisible(Event event, StreamChannelListController controller) {
+    if (!_mine(_cidOf(event))) return;
+    super.onChannelVisible(event, controller);
+  }
+
+  @override
+  void onMessageNew(Event event, StreamChannelListController controller) {
+    if (!_mine(_cidOf(event))) return;
+    super.onMessageNew(event, controller);
+  }
+}
+
+/// One part of the live inbox: its own Stream query, its own events, its
+/// own order (pinned first, then the latest message).
+///
+/// 社区 is read to its end before it is shown: while the pages are on their
+/// way the part keeps what it showed before ([published]), so the list
+/// below it never moves as they land. 好友 pages as the reader scrolls.
+@visibleForTesting
+class LoopInboxSectionController extends StreamChannelListController {
+  LoopInboxSectionController({
+    required super.client,
+    required this.section,
+    required String userId,
+  }) : super(
+         eventHandler: _SectionEvents(section),
+         filter: loopStreamInboxSectionFilter(userId, section),
+         channelStateSort: loopStreamInboxSort,
+         presence: true,
+         limit: section == ChatInboxSection.communities
+             ? loopStreamInboxCommunityPageSize
+             : loopStreamInboxPageSize,
+         messageLimit: 25,
+         memberLimit: 30,
+       );
+
+  LoopInboxSectionController.fromValue(
     super.value, {
     required super.client,
-    super.filter,
-    super.channelStateSort,
-    super.presence,
-    super.limit,
-    super.messageLimit,
-    super.memberLimit,
-  }) : super.fromValue();
+    required this.section,
+    required String userId,
+  }) : super.fromValue(
+         eventHandler: _SectionEvents(section),
+         filter: loopStreamInboxSectionFilter(userId, section),
+         channelStateSort: loopStreamInboxSort,
+         presence: true,
+         limit: section == ChatInboxSection.communities
+             ? loopStreamInboxCommunityPageSize
+             : loopStreamInboxPageSize,
+         messageLimit: 25,
+         memberLimit: 30,
+       );
+
+  final ChatInboxSection section;
+
+  bool _filling = false;
+  PagedValue<int, Channel> _held = const PagedValue<int, Channel>.loading();
+
+  /// What the list draws for this part: the whole of 社区 once it is read,
+  /// never a page of it.
+  PagedValue<int, Channel> get published => _filling ? _held : value;
+
+  /// A row of the other part never enters this one, whatever a read or an
+  /// event hands over.
+  @override
+  set value(PagedValue<int, Channel> newValue) {
+    super.value = newValue.maybeMap(
+      (success) =>
+          success.items.every((it) => ChatInboxSection.of(it.cid) == section)
+          ? success
+          : success.copyWith(
+              items: <Channel>[
+                for (final it in success.items)
+                  if (ChatInboxSection.of(it.cid) == section) it,
+              ],
+            ),
+      orElse: () => newValue,
+    );
+  }
+
+  @override
+  Future<void> doInitialLoad() async {
+    if (section != ChatInboxSection.communities) return super.doInitialLoad();
+    _held = value;
+    _filling = true;
+    try {
+      await super.doInitialLoad();
+      while (!disposed && value.isSuccess) {
+        final page = value.asSuccess;
+        final next = page.nextPageKey;
+        if (next == null || page.error != null) break;
+        await loadMore(next);
+      }
+    } finally {
+      _filling = false;
+      if (!disposed) notifyListeners();
+    }
+  }
+}
+
+/// The live inbox list, in two parts (S343 · decision 0271; S347 · N3).
+///
+/// Each part is its own Stream query ([LoopInboxSectionController]): 社区
+/// read whole, 好友 a page at a time. The list reads 社区 then 好友; the next
+/// page, a load-more failure and its retry are 好友's.
+@visibleForTesting
+class LoopSectionedChannelListController extends StreamChannelListController {
+  LoopSectionedChannelListController({
+    required super.client,
+    required String userId,
+  }) : communities = LoopInboxSectionController(
+         client: client,
+         section: ChatInboxSection.communities,
+         userId: userId,
+       ),
+       friends = LoopInboxSectionController(
+         client: client,
+         section: ChatInboxSection.friends,
+         userId: userId,
+       ),
+       super(channelStateSort: null) {
+    _listen();
+  }
+
+  /// Opens on [seed] (decision 0132), each row in its own part.
+  LoopSectionedChannelListController.fromValue(
+    PagedValue<int, Channel> seed, {
+    required super.client,
+    required String userId,
+  }) : communities = LoopInboxSectionController.fromValue(
+         _seedPart(seed, ChatInboxSection.communities),
+         client: client,
+         section: ChatInboxSection.communities,
+         userId: userId,
+       ),
+       friends = LoopInboxSectionController.fromValue(
+         _seedPart(seed, ChatInboxSection.friends),
+         client: client,
+         section: ChatInboxSection.friends,
+         userId: userId,
+       ),
+       super(channelStateSort: null) {
+    _listen();
+  }
+
+  final LoopInboxSectionController communities;
+  final LoopInboxSectionController friends;
+
+  static PagedValue<int, Channel> _seedPart(
+    PagedValue<int, Channel> seed,
+    ChatInboxSection section,
+  ) => seed.maybeMap(
+    (success) => PagedValue<int, Channel>(
+      items: <Channel>[
+        for (final it in success.items)
+          if (ChatInboxSection.of(it.cid) == section) it,
+      ],
+      nextPageKey: section == ChatInboxSection.friends
+          ? success.nextPageKey
+          : null,
+    ),
+    orElse: () => const PagedValue<int, Channel>.loading(),
+  );
+
+  void _listen() {
+    communities.addListener(_compose);
+    friends.addListener(_compose);
+    _compose();
+  }
+
+  void _compose() {
+    final top = communities.published;
+    final rest = friends.value;
+    if (!_settled(top) || !_settled(rest)) {
+      // A part still on its way: nothing is drawn under a part that would
+      // push it down when it lands.
+      value = const PagedValue<int, Channel>.loading();
+      return;
+    }
+    final failed = _failure(rest) ?? _failure(top);
+    final items = <Channel>[
+      if (top.isSuccess) ...top.asSuccess.items,
+      if (rest.isSuccess) ...rest.asSuccess.items,
+    ];
+    if (items.isEmpty && failed != null) {
+      value = PagedValue<int, Channel>.error(failed);
+      return;
+    }
+    value = PagedValue<int, Channel>(
+      items: items,
+      nextPageKey: rest.isSuccess ? rest.asSuccess.nextPageKey : null,
+      error: failed,
+    );
+  }
+
+  static bool _settled(PagedValue<int, Channel> value) =>
+      value.maybeMap((_) => true, error: (_) => true, orElse: () => false);
+
+  static StreamChatError? _failure(PagedValue<int, Channel> value) =>
+      value.maybeMap(
+        (success) => success.error,
+        error: (error) => error.error,
+        orElse: () => null,
+      );
+
+  @override
+  Future<void> doInitialLoad() => Future.wait(<Future<void>>[
+    communities.doInitialLoad(),
+    friends.doInitialLoad(),
+  ]);
+
+  @override
+  Future<void> loadMore(int nextPageKey) => friends.loadMore(nextPageKey);
+
+  @override
+  Future<void> refresh({bool resetValue = true}) => Future.wait(<Future<void>>[
+    communities.refresh(resetValue: resetValue),
+    friends.refresh(resetValue: resetValue),
+  ]);
+
+  @override
+  Future<void> retry() {
+    final rest = friends.value;
+    if (rest.isSuccess && rest.asSuccess.error != null) return friends.retry();
+    return refresh(resetValue: false);
+  }
+
+  @override
+  void dispose() {
+    communities
+      ..removeListener(_compose)
+      ..dispose();
+    friends
+      ..removeListener(_compose)
+      ..dispose();
+    super.dispose();
+  }
 }
 
 /// `chat` · 聊天, the first tab (decision 0110, S106 §2).
@@ -922,16 +1170,7 @@ final class LoopLocalChannelListController extends StreamChannelListController
   Future<void> doInitialLoad() async {
     List<Channel> channels;
     try {
-      channels =
-          await (read ??
-              () => client.queryChannelsOffline(
-                filter: filter,
-                channelStateSort: channelStateSort,
-                messageLimit: messageLimit,
-                paginationParams: const PaginationParams(
-                  limit: loopStreamInboxFirstRead,
-                ),
-              ))();
+      channels = await (read ?? _readParts)();
     } catch (_) {
       // No copy is no copy: the rows stay in their loading shape.
       return;
@@ -941,6 +1180,25 @@ final class LoopLocalChannelListController extends StreamChannelListController
     if (channels.isEmpty) return;
     _inboxLocalSeeds[client] = (userId: userId, channels: channels);
     value = PagedValue<int, Channel>(items: channels);
+  }
+
+  /// Each part from the store, read with the very query its live list
+  /// makes (S347 · N3): 社区 whole, 好友 its first read.
+  Future<List<Channel>> _readParts() async {
+    final parts = await Future.wait(<Future<List<Channel>>>[
+      for (final section in ChatInboxSection.values)
+        client.queryChannelsOffline(
+          filter: loopStreamInboxSectionFilter(userId, section),
+          channelStateSort: channelStateSort,
+          messageLimit: messageLimit,
+          paginationParams: PaginationParams(
+            limit: section == ChatInboxSection.communities
+                ? loopStreamInboxLocalCommunityRead
+                : loopStreamInboxFirstRead,
+          ),
+        ),
+    ]);
+    return <Channel>[for (final part in parts) ...part];
   }
 
   @override
@@ -1039,16 +1297,46 @@ class _StreamChannelListBodyState
                       child: loopStreamChannelListIdentityItem(defaultItem),
                     ),
                   );
-                  if (!first) return row;
+                  // S347 · N3: a part with no conversation keeps its title
+                  // over one empty line.
+                  final noCommunities =
+                      index == 0 && section == ChatInboxSection.friends;
+                  final value = controller.value;
+                  final noFriends =
+                      index == channels.length - 1 &&
+                      section == ChatInboxSection.communities &&
+                      value.isSuccess &&
+                      value.asSuccess.nextPageKey == null &&
+                      value.asSuccess.error == null;
+                  if (!first && !noFriends) return row;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      ChatInboxSectionHeader(
-                        section: section,
-                        leading: index == 0,
-                      ),
+                      if (noCommunities) ...const <Widget>[
+                        ChatInboxSectionHeader(
+                          section: ChatInboxSection.communities,
+                          leading: true,
+                        ),
+                        ChatInboxSectionEmpty(
+                          section: ChatInboxSection.communities,
+                        ),
+                      ],
+                      if (first)
+                        ChatInboxSectionHeader(
+                          section: section,
+                          leading: index == 0 && !noCommunities,
+                        ),
                       row,
+                      if (noFriends) ...const <Widget>[
+                        ChatInboxSectionHeader(
+                          section: ChatInboxSection.friends,
+                          leading: false,
+                        ),
+                        ChatInboxSectionEmpty(
+                          section: ChatInboxSection.friends,
+                        ),
+                      ],
                     ],
                   );
                 },
@@ -1219,6 +1507,30 @@ class ChatInboxSectionHeader extends StatelessWidget {
           FontWeight.w600,
         ).copyWith(color: LoopColors.text2),
       ),
+    ),
+  );
+}
+
+/// The one line under a part's title when that part has no conversation
+/// (S347 · N3).
+@visibleForTesting
+class ChatInboxSectionEmpty extends StatelessWidget {
+  const ChatInboxSectionEmpty({super.key, required this.section});
+
+  final ChatInboxSection section;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: ValueKey<String>('chat-inbox-section-empty-${section.name}'),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      4,
+      LoopSpacing.page,
+      8,
+    ),
+    child: Text(
+      '暂无${section.label}会话',
+      style: LoopType.body.copyWith(color: LoopColors.text3),
     ),
   );
 }

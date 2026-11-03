@@ -4,7 +4,9 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
@@ -42,14 +44,13 @@ void main() {
     testWidgets('the page body carries no explanation', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(value: _withStats()),
         ),
       );
 
       final texts = _pageTexts(tester).join('\n');
-      expect(find.text('邀请中心'), findsOneWidget);
       for (final gone in <String>[
         '邀请好友 · 只计入挖矿算力',
         '个有效关系',
@@ -107,7 +108,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(value: _withStats()),
         ),
@@ -137,7 +138,7 @@ void main() {
     testWidgets('the (i) says every rule, one heading each', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(value: _withStats()),
         ),
@@ -199,41 +200,12 @@ void main() {
       expect(rules, isNot(contains('miningPower')));
     });
 
-    testWidgets('a read that failed still says so; the (i) still opens', (
-      tester,
-    ) async {
-      await pumpS7Page(
-        tester,
-        const ReferralScreen(),
-        referral: FakeReferralGateway(
-          overview: S7Answer<ReferralOverview>(
-            failure: LaunchFailureKind.unexpected,
-          ),
-        ),
-      );
-      expect(
-        find.byKey(const ValueKey<String>('referral-state-error')),
-        findsOneWidget,
-      );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('referral-explain-action')),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('不是收入、佣金或返佣'), findsOneWidget);
-      // No figure the page did not read.
-      expect(find.textContaining('个待验证'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('referral-info-rules')),
-        findsNothing,
-      );
-    });
-
     testWidgets('closed / bound: the button is disabled with one line', (
       tester,
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: _withStats(
@@ -258,7 +230,7 @@ void main() {
 
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: _withStats(binding: s7BoundBinding()),

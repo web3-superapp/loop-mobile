@@ -14,8 +14,6 @@ import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_editor_screen.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
-import 'package:loop_mobile/features/mining/mining_models.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
@@ -33,8 +31,6 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
-import 'support/s7_fixtures.dart';
-import 'support/s7_page_harness.dart';
 
 /// The one published address the contract's allow-list accepts for a BSC
 /// token. Every projection test below asserts this exact string reaches the
@@ -124,28 +120,6 @@ void main() {
       final row = find.byKey(
         const ValueKey<String>('send-asset-$s5NativeAssetId'),
       );
-      expect(_logoUrlUnder(tester, row), _trustWalletLogo);
-    });
-
-    testWidgets('挖矿算力明细行把它交给 LoopTokenLogo', (tester) async {
-      await pumpS7Page(
-        tester,
-        const MiningAssetsScreen(),
-        mining: FakeMiningGateway(
-          assets: S7Answer<MiningAssets>(
-            value: s7MiningSettledAssets(
-              included: <MiningAssetRow>[
-                s7MiningAssetRow(logoUrl: _trustWalletLogo),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      final row = find.byKey(
-        ValueKey<String>('mining-assets-row-$s7CakeAssetId'),
-      );
-      await scrollToS7Section(tester, row);
       expect(_logoUrlUnder(tester, row), _trustWalletLogo);
     });
 

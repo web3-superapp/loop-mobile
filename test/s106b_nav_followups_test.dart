@@ -138,6 +138,7 @@ void main() {
       final controller = LoopSectionedChannelListController.fromValue(
         PagedValue<int, Channel>(items: <Channel>[dm, room], nextPageKey: 20),
         client: client,
+        userId: 'me',
       );
       addTearDown(controller.dispose);
       final value = controller.value.asSuccess;
@@ -146,7 +147,10 @@ void main() {
       expect(value.nextPageKey, 20);
       expect(controller.value, same(controller.value));
       expect(
-        LoopSectionedChannelListController(client: client).value.isSuccess,
+        LoopSectionedChannelListController(
+          client: client,
+          userId: 'me',
+        ).value.isSuccess,
         isFalse,
       );
     });
