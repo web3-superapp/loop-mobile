@@ -960,7 +960,9 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
-      expect(find.text('DApp 网址核对'), findsOneWidget);
+      // S349: the key never names the browser; `/wallet/dapp` decides.
+      expect(find.text('DApp 浏览器'), findsNothing);
+      expect(find.text('DApp'), findsOneWidget);
     });
 
     for (final (sendApprovals, nftSend, blocked)

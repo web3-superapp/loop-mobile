@@ -185,7 +185,7 @@ void main() {
       expect(find.textContaining('以 WBNB 计价'), findsWidgets);
     });
 
-    testWidgets('the account rows never state a count they did not read', (
+    testWidgets('the foot of 我的 states nothing it did not read', (
       tester,
     ) async {
       await pumpS5Page(
@@ -199,12 +199,13 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
       // S343 · decision 0271: 跨链 · 代币授权 · 网络 · 设置 left the foot of
-      // 我的 (设置 is the gear in the bar); the account rows stand there.
+      // 我的 (设置 is the gear in the bar); S349: the account rows left too,
+      // DApp is the fifth key.
       expect(find.text('跨链'), findsNothing);
       expect(find.text('代币授权'), findsNothing);
       expect(find.text('网络'), findsNothing);
-      expect(find.text('DApp 网址核对'), findsOneWidget);
-      expect(find.text('我的钱包'), findsOneWidget);
+      expect(find.text('DApp'), findsOneWidget);
+      expect(find.text('我的钱包'), findsNothing);
       expect(find.text('授权与网络'), findsNothing);
       expect(find.text('安全中心'), findsNothing);
       expect(find.textContaining('approve('), findsNothing);
@@ -226,7 +227,7 @@ void main() {
       );
 
       for (final entry in const <String>[
-        'profile-open-wallets',
+        'wallet-manage-action',
         'wallet-dapp-entry',
         'profile-open-settings',
       ]) {
@@ -254,18 +255,17 @@ void main() {
       );
 
       // The person, 总资产, then the four keys in one row, then 资产 with its
-      // power tag and the rows, then the account rows. The order is the
-      // page's whole argument, so it is pinned rather than left to a
+      // power tag and the rows (S349: under 持仓 / 交易 / 社区). The order is
+      // the page's whole argument, so it is pinned rather than left to a
       // screenshot.
       final order = <Key>[
         const ValueKey<String>('profile-identity-section'),
         const ValueKey<String>('wallet-total-header'),
         const ValueKey<String>('wallet-receive-entry'),
+        const ValueKey<String>('me-sections'),
         const ValueKey<String>('wallet-power-tag'),
         const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
         const ValueKey<String>('wallet-snapshot-footer'),
-        const ValueKey<String>('profile-open-wallets'),
-        const ValueKey<String>('wallet-dapp-entry'),
       ];
       var previous = double.negativeInfinity;
       for (final key in order) {
@@ -279,12 +279,13 @@ void main() {
         );
         previous = top;
       }
-      // The four keys share one row, equally wide.
+      // The five keys share one row, equally wide.
       final keys = <String>[
         'wallet-receive-entry',
         'wallet-send-entry',
         'wallet-swap-entry',
         'wallet-pay-entry',
+        'wallet-dapp-entry',
       ];
       final tops = keys
           .map((key) => tester.getTopLeft(find.byKey(ValueKey<String>(key))).dy)

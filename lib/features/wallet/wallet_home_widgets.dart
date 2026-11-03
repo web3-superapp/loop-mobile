@@ -146,6 +146,7 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
     this.fullAddress,
     this.environmentTag,
     this.walletId,
+    this.addressTrailing,
   });
 
   final String keyPrefix;
@@ -163,6 +164,10 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
   final String? environmentTag;
 
   final String? walletId;
+
+  /// Drawn at the right end of the address line (S349: 钱包管理), whether or
+  /// not a wallet is active.
+  final Widget? addressTrailing;
 
   @override
   ConsumerState<WalletTotalHeader> createState() => _WalletTotalHeaderState();
@@ -188,6 +193,52 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
       });
     }
     return state;
+  }
+
+  /// The truncated address with its copy glyph; a tap copies it in full.
+  Widget _addressLine(
+    BuildContext context, {
+    required String address,
+    required String? fullAddress,
+    required TextStyle sublineStyle,
+    required Color auxiliary,
+  }) {
+    final keyPrefix = widget.keyPrefix;
+    return Semantics(
+      button: fullAddress != null,
+      label: fullAddress == null ? address : '$address，复制钱包地址',
+      excludeSemantics: true,
+      child: LoopPressable(
+        key: ValueKey<String>('$keyPrefix-address-copy'),
+        scale: false,
+        onTap: fullAddress == null
+            ? null
+            : () => unawaited(
+                LoopCopy.text(context, fullAddress, message: '钱包地址已复制'),
+              ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  address,
+                  key: ValueKey<String>('$keyPrefix-address'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sublineStyle,
+                ),
+              ),
+              if (fullAddress != null) ...<Widget>[
+                const SizedBox(width: 4),
+                LoopIcon('copy', size: 12, color: auxiliary),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// The 今日盈亏 line opens and closes the chart (decision 0259).
@@ -344,41 +395,25 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
               style: sublineStyle,
             ),
           ),
-        if (address != null)
-          Semantics(
-            button: fullAddress != null,
-            label: fullAddress == null ? address : '$address，复制钱包地址',
-            excludeSemantics: true,
-            child: LoopPressable(
-              key: ValueKey<String>('$keyPrefix-address-copy'),
-              scale: false,
-              onTap: fullAddress == null
-                  ? null
-                  : () => unawaited(
-                      LoopCopy.text(context, fullAddress, message: '钱包地址已复制'),
-                    ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        address,
-                        key: ValueKey<String>('$keyPrefix-address'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: sublineStyle,
-                      ),
-                    ),
-                    if (fullAddress != null) ...<Widget>[
-                      const SizedBox(width: 4),
-                      LoopIcon('copy', size: 12, color: auxiliary),
-                    ],
-                  ],
+        if (address != null || widget.addressTrailing != null)
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: address == null
+                      ? const SizedBox.shrink()
+                      : _addressLine(
+                          context,
+                          address: address,
+                          fullAddress: fullAddress,
+                          sublineStyle: sublineStyle,
+                          auxiliary: auxiliary,
+                        ),
                 ),
               ),
-            ),
+              ?widget.addressTrailing,
+            ],
           ),
         if (caption.isNotEmpty)
           Padding(

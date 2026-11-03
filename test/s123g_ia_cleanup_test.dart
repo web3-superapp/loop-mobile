@@ -210,13 +210,17 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-networth-entry')),
         findsNothing,
       );
+      // S349: 交易历史 is 我的's 交易 section, named once in its bar.
       expect(
-        tester
-            .widget<LoopIconButton>(
-              find.byKey(const ValueKey<String>('wallet-history-action')),
-            )
-            .label,
-        '交易历史',
+        find.byKey(const ValueKey<String>('wallet-history-action')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('me-sections')),
+          matching: find.text('交易'),
+        ),
+        findsOneWidget,
       );
       expect(find.text('授权与网络'), findsNothing);
       expect(

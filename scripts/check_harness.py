@@ -9030,9 +9030,12 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "ValueKey<String>('wallet-pay-entry')",
             "ValueKey<String>('wallet-swap-entry')",
             "ValueKey<String>('wallet-send-entry')",
-            # S343 · decision 0271: 跨链 lost its entry (the route stays);
-            # 交易历史 in the bar must stay.
-            "ValueKey<String>('wallet-history-action')",
+            # S343 · decision 0271: 跨链 lost its entry (the route stays).
+            # S349 (0271 Amendment): 交易历史 is the 交易 section; the bar key
+            # left with it, and the section's tape and 钱包管理 stay.
+            "ValueKey<String>('me-sections')",
+            "ValueKey<String>('wallet-manage-action')",
+            "keyPrefix: 'me-trades'",
         ),
     }
     for relative, fragments in normalized_contracts.items():

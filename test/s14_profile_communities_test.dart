@@ -56,74 +56,65 @@ final _writers = _joined(
   role: CommunityRole.admin,
 );
 
-Finder get _row =>
-    find.byKey(const ValueKey<String>('profile-open-communities'));
+Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
-LoopRecordRow _rowWidget(WidgetTester tester) =>
-    tester.widget<LoopRecordRow>(_row);
-
-/// Pumps `profile` with only the community port overridden: the profile
-/// resource itself stays closed, so what the test observes is the membership
-/// row's own answer.
+/// Pumps 我's community section with only the community port overridden:
+/// the profile resource itself stays closed, so what the test observes is
+/// the section's own answer (S349 · decision 0271 Amendment: 我的 · 社区
+/// lists the communities, as another account's 社区 does).
 Future<void> _pumpProfile(
   WidgetTester tester, {
   required FakeCommunityGateway community,
   ValueChanged<String>? onNavigate,
   LoopV2MetaSnapshot? meta,
+  bool settle = true,
 }) async {
   await pumpCommunityPage(
     tester,
-    // Decision 0175: 我的社区 hangs on 设置, behind 我's gear.
-    // S343 · decision 0271: the rows stand on 我的.
     loopMeSurface(onNavigate: onNavigate ?? (_) {}),
     community: community,
     meta: meta,
+    settle: settle,
   );
-  await scrollToCommunitySection(tester, _row);
+  if (settle) {
+    await scrollToCommunitySection(tester, _key('me-communities-section'));
+  }
 }
 
 void main() {
-  group('profile · 我的社区', () {
-    testWidgets('one membership shows the count, the name and the role', (
+  group('我的 · 社区', () {
+    testWidgets('one row per joined community, opening its record', (
       tester,
     ) async {
       final destinations = <String>[];
       await _pumpProfile(
         tester,
         community: FakeCommunityGateway(
-          home: _home(joined: <JoinedCommunity>[_builders]),
+          home: _home(joined: <JoinedCommunity>[_builders, _frogs, _writers]),
         ),
         onNavigate: destinations.add,
       );
 
-      final row = _rowWidget(tester);
-      expect(row.trailing, '1 个已加入');
-      expect(row.subtitle, 'Builders Guild（Owner）');
+      for (final entry in <JoinedCommunity>[_builders, _frogs, _writers]) {
+        final row = tester.widget<LoopRecordRow>(
+          _key('me-joined-${entry.community.communityId}'),
+        );
+        expect(row.title, entry.community.name);
+        expect(row.subtitle, '128 名成员');
+      }
       // The retired copy must not survive anywhere on the page.
       expect(find.text('社区成员关系尚未接入'), findsNothing);
+      expect(_key('profile-open-communities'), findsNothing);
 
-      await tester.tap(_row);
+      await tester.tap(_key('me-joined-${_frogs.community.communityId}'));
       await tester.pumpAndSettle();
-      expect(destinations, <String>['community-joined']);
+      expect(destinations, <String>[
+        'community-profile:${_frogs.community.communityId}',
+      ]);
     });
 
-    testWidgets('the subtitle names at most two communities', (tester) async {
-      await _pumpProfile(
-        tester,
-        community: FakeCommunityGateway(
-          home: _home(joined: <JoinedCommunity>[_builders, _frogs, _writers]),
-        ),
-      );
-
-      final row = _rowWidget(tester);
-      expect(row.trailing, '3 个已加入');
-      expect(row.subtitle, 'Builders Guild（Owner） · Frog Holders（成员）');
-      expect(row.subtitle, isNot(contains('Writers Room')));
-    });
-
-    testWidgets('a truncated aggregate marks the count as a floor', (
-      tester,
-    ) async {
+    testWidgets('a truncated aggregate ends on the full list', (tester) async {
+      final destinations = <String>[];
       await _pumpProfile(
         tester,
         community: FakeCommunityGateway(
@@ -132,102 +123,56 @@ void main() {
             truncated: true,
           ),
         ),
-      );
-
-      expect(_rowWidget(tester).trailing, '2+ 个已加入');
-    });
-
-    testWidgets('a suspended membership reads as its state, not its role', (
-      tester,
-    ) async {
-      await _pumpProfile(
-        tester,
-        community: FakeCommunityGateway(
-          home: _home(
-            joined: <JoinedCommunity>[
-              _joined(
-                communityId: '3fa85f64-5717-4562-b3fc-2c963f66af44',
-                name: 'Muted Hall',
-                role: CommunityRole.admin,
-                status: CommunityMemberStatus.muted,
-              ),
-            ],
-          ),
-        ),
-      );
-
-      expect(_rowWidget(tester).subtitle, 'Muted Hall（已禁言）');
-    });
-
-    testWidgets('no membership says so and points at discovery', (
-      tester,
-    ) async {
-      final destinations = <String>[];
-      await _pumpProfile(
-        tester,
-        community: FakeCommunityGateway(home: _home()),
         onNavigate: destinations.add,
       );
 
-      final row = _rowWidget(tester);
-      expect(row.trailing, '0 个已加入');
-      expect(row.subtitle, '还没有加入社区，从发现社区开始');
-
-      await tester.tap(_row);
+      await tester.ensureVisible(_key('me-joined-all'));
+      await tester.tap(_key('me-joined-all'));
       await tester.pumpAndSettle();
-      expect(destinations, <String>['community-discover']);
+      expect(destinations, <String>['community-joined']);
     });
 
-    testWidgets('an unread aggregate shows no figure while it loads', (
+    testWidgets('no membership is one line', (tester) async {
+      await _pumpProfile(
+        tester,
+        community: FakeCommunityGateway(home: _home()),
+      );
+
+      expect(_key('me-communities-empty'), findsOneWidget);
+      expect(find.text('还没有加入社区'), findsOneWidget);
+    });
+
+    testWidgets('an unread aggregate shows no list while it loads', (
       tester,
     ) async {
       await _pumpProfile(
         tester,
         community: FakeCommunityGateway()..pending = true,
+        settle: false,
       );
 
-      final row = _rowWidget(tester);
-      expect(row.trailing, '—');
-      expect(row.subtitle, '正在读取社区成员关系');
+      expect(_key('me-communities-state'), findsOneWidget);
+      expect(_key('me-communities'), findsNothing);
     });
 
-    testWidgets('offline says the membership was not read', (tester) async {
-      final destinations = <String>[];
-      await _pumpProfile(
+    for (final failure in <CommunityFailureKind>[
+      CommunityFailureKind.offline,
+      CommunityFailureKind.unexpected,
+    ]) {
+      testWidgets('a ${failure.name} read is a state, never an empty list', (
         tester,
-        community: FakeCommunityGateway(failure: CommunityFailureKind.offline),
-        onNavigate: destinations.add,
-      );
+      ) async {
+        await _pumpProfile(
+          tester,
+          community: FakeCommunityGateway(failure: failure),
+        );
 
-      final row = _rowWidget(tester);
-      expect(row.trailing, '—');
-      expect(row.subtitle, '设备已离线，没有读到社区成员关系');
+        expect(_key('me-communities-state'), findsOneWidget);
+        expect(_key('me-communities-empty'), findsNothing);
+      });
+    }
 
-      // The entry point survives the failure and hands the owner to the page
-      // that owns the retry.
-      await tester.tap(_row);
-      await tester.pumpAndSettle();
-      expect(destinations, <String>['community-discover']);
-    });
-
-    testWidgets('a refused read reports the failure, never a count', (
-      tester,
-    ) async {
-      await _pumpProfile(
-        tester,
-        community: FakeCommunityGateway(
-          failure: CommunityFailureKind.unexpected,
-        ),
-      );
-
-      final row = _rowWidget(tester);
-      expect(row.trailing, '—');
-      expect(row.subtitle, '社区成员关系读取失败，打开社区目录可重试');
-    });
-
-    testWidgets('a closed capability keeps the row from claiming anything', (
-      tester,
-    ) async {
+    testWidgets('a closed capability claims nothing', (tester) async {
       final gateway = FakeCommunityGateway(
         home: _home(joined: <JoinedCommunity>[_builders]),
       );
@@ -239,9 +184,11 @@ void main() {
         ),
       );
 
-      final row = _rowWidget(tester);
-      expect(row.trailing, '—');
-      expect(row.subtitle, '社区模块当前不可用，未读取成员关系');
+      expect(_key('me-communities-unavailable'), findsOneWidget);
+      expect(
+        _key('me-joined-${_builders.community.communityId}'),
+        findsNothing,
+      );
     });
   });
 }
