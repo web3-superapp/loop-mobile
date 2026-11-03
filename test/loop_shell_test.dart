@@ -141,7 +141,7 @@ void main() {
       '广场',
       'MEME',
       '情报',
-      '钱包',
+      '我的',
     ]);
     expect(items.map((item) => item.slug), <String>[
       'chat',
@@ -180,7 +180,7 @@ void main() {
     // would read as a second, contradicting selection.
     final ink = tester.widget<InkWell>(
       find.descendant(
-        of: find.widgetWithText(LoopTabItem, '钱包'),
+        of: find.widgetWithText(LoopTabItem, '我的'),
         matching: find.byType(InkWell),
       ),
     );
@@ -198,10 +198,10 @@ void main() {
         .style!
         .color!;
     expect(labelColor('情报'), LoopColors.yellow);
-    expect(labelColor('钱包'), LoopColors.text3);
+    expect(labelColor('我的'), LoopColors.text3);
 
     expect(
-      tester.getSize(find.widgetWithText(LoopTabItem, '钱包')).height,
+      tester.getSize(find.widgetWithText(LoopTabItem, '我的')).height,
       greaterThanOrEqualTo(LoopTouch.tabCellMinHeight),
     );
     expect(
@@ -220,7 +220,7 @@ void main() {
     // The indicator travels: mid-flight it is between the two tabs, and it is
     // still the same single widget — nothing was created or destroyed.
     final from = tester.getCenter(indicator).dx;
-    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(selected, 4);
@@ -231,11 +231,11 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '钱包')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, '我的')).dx,
       ),
     );
     expect(travelling, lessThan(tester.getCenter(indicator).dx));
-    expect(labelColor('钱包'), LoopColors.yellow);
+    expect(labelColor('我的'), LoopColors.yellow);
     expect(labelColor('情报'), LoopColors.text3);
     semantics.dispose();
   });
@@ -272,22 +272,22 @@ void main() {
       ),
     );
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     // One frame, no elapsed time: the indicator is already at the destination.
     await tester.pump();
     expect(selected, 4);
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '钱包')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, '我的')).dx,
       ),
     );
     expect(
       tester
           .widget<Text>(
             find.descendant(
-              of: find.widgetWithText(LoopTabItem, '钱包'),
-              matching: find.text('钱包'),
+              of: find.widgetWithText(LoopTabItem, '我的'),
+              matching: find.text('我的'),
             ),
           )
           .style!
@@ -436,7 +436,7 @@ void main() {
       '广场',
       'MEME',
       '情报',
-      '钱包',
+      '我的',
     ]);
   });
 }

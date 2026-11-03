@@ -220,7 +220,7 @@ void main() {
         tester,
         find.descendant(
           of: find.byType(LoopAtmoTitle),
-          matching: find.text('钱包'),
+          matching: find.text('我的'),
         ),
       ),
       28,

@@ -801,8 +801,8 @@ void main() {
       expect(total.toDouble(), closeTo(100, 0.001));
     });
 
-    testWidgets('a complete set draws one bar and its legend in a record '
-        'card', (tester) async {
+    testWidgets('我的 draws no 持仓分布', (tester) async {
+      // S343 · decision 0271: it repeated the list below it.
       await pumpWallet(
         tester,
         wallet: FakeWalletReadGateway(
@@ -811,28 +811,7 @@ void main() {
           ),
         ),
       );
-      final card = key('wallet-distribution');
-      expect(card, findsOneWidget);
-      expect(tester.widget(card), isA<LoopRecordCard>());
-      expect(
-        tester.widget<Text>(key('wallet-distribution-legend-0')).data,
-        'BNB 84%',
-      );
-      expect(
-        tester.widget<Text>(key('wallet-distribution-legend-1')).data,
-        'WBNB 16%',
-      );
-      final first = tester.getSize(key('wallet-distribution-segment-0'));
-      final second = tester.getSize(key('wallet-distribution-segment-1'));
-      expect(first.width / second.width, closeTo(5231.73 / 1000, 0.1));
-      expect(
-        (tester
-                    .widget<DecoratedBox>(key('wallet-distribution-segment-0'))
-                    .decoration
-                as BoxDecoration)
-            .color,
-        LoopColors.lime,
-      );
+      expect(key('wallet-distribution'), findsNothing);
     });
 
     testWidgets('an unpriced holding or a partial total draws no split', (
@@ -1002,8 +981,6 @@ void main() {
       },
     );
 
-    const freshHead = '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 ';
-
     test('the new shape decodes source, publication day, fetch time and '
         'quality', () {
       final fiat = decode(_body(fiat: fxBody())).fiat!;
@@ -1110,14 +1087,8 @@ void main() {
       );
       expect(key('wallet-total-fiat-stale'), findsNothing);
 
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      final line = tester.widget<Text>(key('wallet-info-fx'));
-      expect(line.data, walletFxProvenanceText(fiat));
-      expect(line.data, startsWith(freshHead));
-      expect(line.data, endsWith('）折算'));
-      expect(find.text('ecb'), findsNothing);
-      expect(find.textContaining('ecb'), findsNothing);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
 
     testWidgets('stale: the ¥ wears the stale badge and (i) says so', (
@@ -1132,11 +1103,8 @@ void main() {
       expect(badge.text, '数据可能过期');
       expect(badge.kind, LoopBadgeKind.down);
 
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      final line = tester.widget<Text>(key('wallet-info-fx'));
-      expect(line.data, startsWith(freshHead));
-      expect(line.data, endsWith('）折算，数据可能过期'));
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
 
     testWidgets('hidden amounts mask the ¥ but keep the stale badge', (
@@ -1173,10 +1141,8 @@ void main() {
       // S278 · decision 0236: nothing is printed under the chart.
       expect(key('wallet-networth-provenance'), findsNothing);
       expect(key('wallet-networth-fx-provenance'), findsNothing);
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-info-sheet'), findsOneWidget);
-      expect(key('wallet-info-fx'), findsNothing);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
 
     // S278 · decision 0236 (需求方第 13 条): the two grey lines that stood
@@ -1191,17 +1157,8 @@ void main() {
       expect(key('wallet-networth-fx-provenance'), findsNothing);
       expect(find.textContaining('净值快照'), findsNothing);
       expect(find.textContaining('人民币按'), findsNothing);
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-info-history-source'), findsOneWidget);
-      expect(
-        tester.widget<Text>(key('wallet-info-history')).data,
-        contains('每小时为这个钱包记下的 USD 估值'),
-      );
-      expect(
-        tester.widget<Text>(key('wallet-info-fx')).data,
-        walletFxProvenanceText(fiat),
-      );
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
   });
 }

@@ -75,7 +75,7 @@ void main() {
       expect(find.text('WALLET ASSETS'), findsNothing);
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+        find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
       expect(find.text('SECURITY & CONNECTIONS'), findsNothing);
     });

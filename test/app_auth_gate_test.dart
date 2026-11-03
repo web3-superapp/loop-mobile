@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
@@ -156,9 +157,10 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
+    // S343 · decision 0271: 我 is the 我的 tab; 退出登录 lives behind its
+    // gear, on 设置.
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     await tester.pumpAndSettle();
-    // Decision 0175: 退出登录 lives behind 我's gear, on 设置.
     await tester.tap(
       find.byKey(const ValueKey<String>('profile-open-settings')),
     );

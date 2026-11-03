@@ -2,7 +2,7 @@
 //
 // Bug (TestFlight build 40): after a friend request was accepted the 聊天
 // tab's 好友 filter still read 「还没有好友会话」. The inbox lists Stream
-// channels (`ChatInboxFilter.friends` keeps `loop_direct_` / `loop_group_`
+// channels (`ChatInboxSection.friends` keeps `loop_direct_` / `loop_group_`
 // CIDs), and `POST /v2/message-requests/:id/decision` with `accept` writes
 // only the friendship row — no direct channel exists until somebody opens
 // the conversation from a profile card. The accepting side now runs the
@@ -51,8 +51,8 @@ void main() {
 
       expect(chat.opened, <String>[peer]);
       expect(chat.polled, isNotEmpty, reason: 'pending is polled to terminal');
-      // The new row is the 好友 filter's kind of row.
-      expect(ChatInboxFilter.friends.includes(_cid), isTrue);
+      // The new row is listed under 好友 (S343 · decision 0271).
+      expect(ChatInboxSection.of(_cid), ChatInboxSection.friends);
     });
 
     test('ignore and report never open a channel', () async {

@@ -516,6 +516,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.embedded = false,
     this.titleField,
     this.backdrop,
+    this.pageInfo = true,
   });
 
   final LoopPageArchetype archetype;
@@ -528,6 +529,9 @@ class LoopDashboardPage extends StatelessWidget {
   /// 0220: the MEME home's wall). With it the page ground is Ink, and the
   /// sticky bar paints the same layer behind its title. `null` keeps the
   /// plain page.
+  /// Whether the bar may add the page's (i); see [LoopTopbar.pageInfo].
+  final bool pageInfo;
+
   final Widget? backdrop;
 
   /// A widget that takes the bar's whole title column
@@ -668,6 +672,7 @@ class LoopDashboardPage extends StatelessWidget {
                         updating: updating,
                         framedTools: framedTools,
                         titleField: titleField,
+                        pageInfo: pageInfo,
                       ),
                     ),
                   ),

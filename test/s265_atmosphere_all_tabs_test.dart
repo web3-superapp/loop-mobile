@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -25,8 +24,6 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_pro
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
-import 'package:stream_chat_flutter/stream_chat_flutter.dart'
-    show Channel, Level, PagedValue, StreamChatClient;
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/community_test_harness.dart';
@@ -179,7 +176,7 @@ void main() {
         '广场',
         'MEME',
         '情报',
-        '钱包',
+        '我的',
       ]);
       expect(LoopShell.homeIndex, 2);
       // `/`, `/home` and an illegal location all land on MEME.
@@ -198,7 +195,7 @@ void main() {
         ('聊天', '/chat'),
         ('广场', '/square'),
         ('情报', '/intel'),
-        ('钱包', '/wallet'),
+        ('我的', '/wallet'),
       ]) {
         await tester.tap(find.widgetWithText(LoopTabItem, label));
         await tester.pumpAndSettle();
@@ -222,7 +219,7 @@ void main() {
         ('聊天', 'chat'),
         ('广场', 'square'),
         ('情报', 'intel'),
-        ('钱包', 'wallet'),
+        ('我的', 'wallet'),
       ]) {
         await tester.tap(find.widgetWithText(LoopTabItem, label));
         await tester.pumpAndSettle();
@@ -236,16 +233,10 @@ void main() {
         // Nothing on these pages loops: a settled pump has nothing left.
         expect(tester.binding.hasScheduledFrame, isFalse, reason: label);
       }
-      // 聊天's chosen filter chip wears MEME's splat.
+      // S343 · decision 0271: 聊天 has no filter strip any more.
       await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
       await tester.pumpAndSettle();
-      expect(
-        find.descendant(
-          of: _key('chat-inbox-filters'),
-          matching: _key('loop-seg-splat'),
-        ),
-        findsOneWidget,
-      );
+      expect(_key('chat-inbox-filters'), findsNothing);
       // The five walls are not one copy.
       expect(
         LoopWallFog.values.map((fog) => fog.spots.first.left).toSet().length +
@@ -462,55 +453,5 @@ void main() {
       expect(tester.getRect(_key('wallet-atmo-backdrop').first), wall);
     });
   });
-
-  group('B · 聊天 empty states', () {
-    late StreamChatClient client;
-    setUp(() {
-      client = StreamChatClient('public-stream-api-key', logLevel: Level.OFF);
-    });
-    tearDown(() => client.dispose());
-
-    const hex = '0123456789abcdef0123456789abcdef';
-
-    testWidgets('a filter with nothing left: the grey crown, one sentence and '
-        'a Yellow action', (tester) async {
-      final value = ValueNotifier<PagedValue<int, Channel>>(
-        PagedValue<int, Channel>(
-          items: <Channel>[Channel(client, 'messaging', 'loop_direct_$hex')],
-        ),
-      );
-      addTearDown(value.dispose);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: Scaffold(
-            body: ChatInboxFilterEmptyGate(
-              controller: value,
-              filter: ChatInboxFilter.communities,
-              child: const Text('channel-list'),
-            ),
-          ),
-        ),
-      );
-      final empty = _key('chat-inbox-filter-empty-communities');
-      expect(empty, findsOneWidget);
-      expect(tester.widget(empty), isA<LoopAtmoEmpty>());
-      expect(
-        find.descendant(of: empty, matching: find.byType(ColorFiltered)),
-        findsOneWidget,
-      );
-      expect(find.text('还没有社区会话'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: _key('chat-inbox-filter-empty-action-communities'),
-          matching: find.text('去广场看看'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        tester.widget(_key('chat-inbox-filter-empty-action-communities')),
-        isA<LoopYellowButton>(),
-      );
-    });
-  });
+  // S343 · decision 0271: the filtered empty state went with the filters.
 }

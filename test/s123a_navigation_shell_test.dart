@@ -236,7 +236,7 @@ void main() {
       await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
       await tester.pumpAndSettle();
       final square = tester.element(find.byType(SquareScreen));
-      await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+      await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
       await tester.pumpAndSettle();
       expect(_location(router), '/wallet');
       expect(find.byType(SquareScreen), findsNothing);
@@ -261,7 +261,7 @@ void main() {
       final offset = _position(tester, 'square').pixels;
       expect(offset, greaterThan(500));
 
-      await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+      await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
       await tester.pumpAndSettle();
       expect(_location(router), '/wallet');
       await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
@@ -354,7 +354,7 @@ void main() {
     tester,
   ) async {
     await _pumpMirror(tester);
-    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     await tester.pumpAndSettle();
     final rootNavigator = Navigator.of(
       tester.element(find.byType(LoopTabBar)),

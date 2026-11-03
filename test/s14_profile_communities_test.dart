@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
-import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/me_surface.dart';
 import 'support/community_test_harness.dart';
 
 /// One `GET /v2/community/home` answer, carrying only the `joined` block the
@@ -74,7 +74,8 @@ Future<void> _pumpProfile(
   await pumpCommunityPage(
     tester,
     // Decision 0175: 我的社区 hangs on 设置, behind 我's gear.
-    ProfileSurfaceScreen.fromId('settings', onNavigate: onNavigate ?? (_) {}),
+    // S343 · decision 0271: the rows stand on 我的.
+    loopMeSurface(onNavigate: onNavigate ?? (_) {}),
     community: community,
     meta: meta,
   );

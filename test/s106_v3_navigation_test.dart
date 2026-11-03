@@ -554,37 +554,31 @@ void main() {
   });
 
   group('chat tab', () {
-    test('the filters read the server-assigned channel prefix', () {
+    test('the two parts read the server-assigned channel prefix', () {
       const hex = '0123456789abcdef0123456789abcdef';
       const community = 'messaging:loop_community_$hex';
       const direct = 'messaging:loop_direct_$hex';
       const group = 'messaging:loop_group_$hex';
       const unknown = 'messaging:loop-room-42';
-      expect(ChatInboxFilter.values.map((filter) => filter.label), <String>[
-        '全部',
+      // S343 · decision 0271: no filter strip; 社区 then 好友.
+      expect(ChatInboxSection.values.map((section) => section.label), <String>[
         '社区',
         '好友',
       ]);
-      for (final cid in <String>[community, direct, group, unknown]) {
-        expect(ChatInboxFilter.all.includes(cid), isTrue, reason: cid);
-      }
-      expect(ChatInboxFilter.communities.includes(community), isTrue);
-      expect(ChatInboxFilter.communities.includes(direct), isFalse);
-      expect(ChatInboxFilter.friends.includes(direct), isTrue);
-      expect(ChatInboxFilter.friends.includes(group), isTrue);
-      expect(ChatInboxFilter.friends.includes(community), isFalse);
-      expect(ChatInboxFilter.friends.includes(unknown), isFalse);
-      expect(ChatInboxFilter.communities.includes(null), isFalse);
+      expect(ChatInboxSection.of(community), ChatInboxSection.communities);
+      expect(ChatInboxSection.of(direct), ChatInboxSection.friends);
+      expect(ChatInboxSection.of(group), ChatInboxSection.friends);
+      expect(ChatInboxSection.of(unknown), ChatInboxSection.friends);
+      expect(ChatInboxSection.of(null), ChatInboxSection.friends);
     });
 
     testWidgets('connecting, then not connected: the head stays usable', (
       tester,
     ) async {
       final authorization = Completer<StreamSessionAuthorization>();
-      var profileOpened = 0;
       await pumpCommunityPage(
         tester,
-        StreamChatInboxPage(onOpenProfile: () => profileOpened++),
+        const StreamChatInboxPage(),
         settle: false,
         streamAuthorization: () => authorization.future,
       );
@@ -593,12 +587,16 @@ void main() {
         find.byKey(const ValueKey<String>('stream-chat-connecting')),
         findsOneWidget,
       );
+      // S343 · decision 0271: no filter strip and no owner's face; one
+      // search field across the bar and 「＋」 at its top right.
       expect(
         find.byKey(const ValueKey<String>('chat-inbox-filters')),
-        findsOneWidget,
+        findsNothing,
       );
-      // Decision 0122: the OKX social head — the owner's face and one search
-      // field across the bar; 「发起」 is the round Lime key at the foot.
+      expect(
+        find.byKey(const ValueKey<String>('chat-open-profile')),
+        findsNothing,
+      );
       expect(
         find.byKey(const ValueKey<String>('chat-search-entry')),
         findsOneWidget,
@@ -607,8 +605,6 @@ void main() {
         find.byKey(const ValueKey<String>('chat-create-menu')),
         findsOneWidget,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('chat-open-profile')));
-      expect(profileOpened, 1);
 
       authorization.complete(StreamSessionAuthorization.unavailable);
       await tester.pumpAndSettle();

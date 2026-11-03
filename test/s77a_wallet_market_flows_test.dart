@@ -539,23 +539,19 @@ void main() {
   });
 
   group('wallet · no control takes a tap and does nothing', () {
-    testWidgets('跨链 opens the page that states why there is no route', (
-      tester,
-    ) async {
-      final routes = <String>[];
+    // S343 · decision 0271: 跨链 has no entry on 我的; `/wallet/bridge`
+    // stays mounted for any link that names it.
+    testWidgets('我的 offers no 跨链 key that would do nothing', (tester) async {
       await pumpS5Page(
         tester,
-        WalletScreen(onNavigate: routes.add),
+        const WalletScreen(),
         wallet: FakeWalletReadGateway(),
         chain: FakeChainGateway(),
       );
-
-      await tester.tap(
+      expect(
         find.byKey(const ValueKey<String>('wallet-bridge-entry')),
+        findsNothing,
       );
-      await tester.pumpAndSettle();
-
-      expect(routes, <String>['/wallet/bridge']);
     });
 
     testWidgets('添加 opens an explanation that stays on screen', (tester) async {

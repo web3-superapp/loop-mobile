@@ -73,7 +73,6 @@ class ProfileSurfaceScreen extends StatelessWidget {
   });
 
   static const supportedIds = <String>{
-    'profile',
     'profile-edit',
     'privacy',
     'security',
@@ -109,11 +108,6 @@ class ProfileSurfaceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     void navigate(String destination) => _navigate(context, destination);
     return switch (_id) {
-      'profile' => ProfileHomeScreen(
-        onNavigate: navigate,
-        onBack: onBack,
-        walletAddress: identity.address,
-      ),
       'profile-edit' => ProfileEditScreen(onNavigate: navigate, onBack: onBack),
       'privacy' => PrivacyCenterScreen(onNavigate: navigate, onBack: onBack),
       'security' => SecurityCenterScreen(onNavigate: navigate, onBack: onBack),

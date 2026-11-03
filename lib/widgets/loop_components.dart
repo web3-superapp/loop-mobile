@@ -40,9 +40,14 @@ class LoopTopbar extends StatelessWidget {
     this.framedTools = false,
     this.titleField,
     this.leading,
+    this.pageInfo = true,
   });
 
   final String title;
+
+  /// Whether the bar may add the page's (i) (S325 · decision 0255). S343 ·
+  /// decision 0271: 我的 keeps its bar to 交易历史 / 通知 / 设置.
+  final bool pageInfo;
 
   /// Small line above the title (`.topbar small`).
   final String? kicker;
@@ -115,6 +120,7 @@ class LoopTopbar extends StatelessWidget {
     // opened from one (i) at the right end of its bar. A page that already
     // carries its own [LoopPageInfoAction] keeps that one.
     final pageInfo =
+        this.pageInfo &&
         LoopProvenanceScope.maybeOf(context) != null &&
         !actions.any((action) => action is LoopPageInfoAction);
     final tools = <Widget>[

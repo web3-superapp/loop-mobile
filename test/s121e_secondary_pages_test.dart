@@ -17,6 +17,7 @@ import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/me_surface.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
@@ -193,61 +194,28 @@ void main() {
       _expectCleanCopy(tester);
     });
 
-    testWidgets('设置: three round keys, the entry sections, the version', (
-      tester,
-    ) async {
+    testWidgets('设置: 隐私与安全, 通用, 关于, the version', (tester) async {
       final destinations = <String>[];
       await _pumpProfile(tester, 'settings', onNavigate: destinations.add);
 
-      // 56 square outlined keys (S241c), in order, at the head of the page.
-      // None is Yellow: the row has no single main action. Decision 0133:
-      // 好友 opened 关注与粉丝, a row below, under a second name, and is gone.
-      final keys = <String>[
+      // S343 · decision 0271: the three round keys, 账号 and 资产与挖矿 left
+      // 设置; 分享名片 is on 我的's person.
+      for (final gone in <String>[
         'profile-share-loop-id',
         'profile-open-scan',
         'profile-open-mining-key',
-      ];
-      expect(
-        find.byKey(const ValueKey<String>('profile-open-friends')),
-        findsNothing,
-      );
-      final firstRow = find.byKey(
-        const ValueKey<String>('profile-open-wallets'),
-      );
-      double? previous;
-      for (final key in keys) {
-        final finder = find.byKey(ValueKey<String>(key));
-        expect(finder, findsOneWidget, reason: key);
-        final rect = tester.getRect(finder);
-        expect(rect.bottom, lessThanOrEqualTo(tester.getRect(firstRow).top));
-        if (previous != null) expect(rect.left, greaterThan(previous));
-        previous = rect.left;
-        final face = tester.widget<Container>(
-          find.descendant(
-            of: finder,
-            matching: find.byKey(const ValueKey<String>('loop-round-key-face')),
-          ),
-        );
-        final decoration = face.decoration! as BoxDecoration;
-        expect(decoration.shape, BoxShape.rectangle, reason: key);
-        expect(decoration.color, LoopColors.card2, reason: key);
-      }
-
-      expect(_labels(tester), containsAllInOrder(<String>['账号', '资产与挖矿']));
-      for (final key in <String>[
+        'profile-open-wallets',
         'profile-open-mining-assets',
-        'profile-open-mining-rewards',
-        'profile-open-mining-rules',
-        'profile-open-security',
       ]) {
-        await tester.scrollUntilVisible(
-          find.byKey(ValueKey<String>(key)),
-          300,
-          scrollable: find.byType(Scrollable).first,
-        );
-        expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
+        expect(find.byKey(ValueKey<String>(gone)), findsNothing, reason: gone);
       }
-      expect(_labels(tester), contains('隐私与安全'));
+      expect(_labels(tester), containsAllInOrder(<String>['隐私与安全', '通用']));
+      expect(_labels(tester), isNot(contains('账号')));
+      expect(_labels(tester), isNot(contains('资产与挖矿')));
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-security')),
+        findsOneWidget,
+      );
 
       final version = find.byKey(const ValueKey<String>('profile-version'));
       await tester.scrollUntilVisible(
@@ -263,13 +231,15 @@ void main() {
       expect(versionText.data, startsWith('LOOP'));
 
       await tester.scrollUntilVisible(
-        find.byKey(const ValueKey<String>('profile-open-scan')),
+        find.byKey(const ValueKey<String>('profile-open-privacy')),
         -300,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('profile-open-scan')));
-      expect(destinations.last, 'scan');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('profile-open-privacy')),
+      );
+      expect(destinations.last, 'privacy');
       _expectCleanCopy(tester);
     });
 
@@ -292,11 +262,7 @@ void main() {
           find.byKey(const ValueKey<String>('profile-identity-card')),
           findsNothing,
         );
-        // The eye and the gear stand whatever the profile answered.
-        expect(
-          find.byKey(const ValueKey<String>('profile-hide-balance')),
-          findsOneWidget,
-        );
+        // The gear stands whatever the profile answered.
         expect(
           find.byKey(const ValueKey<String>('profile-open-settings')),
           findsOneWidget,
@@ -587,10 +553,13 @@ Future<void> _pumpProfile(
       child: MaterialApp(
         theme: LoopTheme.dark,
         home: LoopToastHost(
-          child: ProfileSurfaceScreen.fromId(
-            surfaceId,
-            onNavigate: onNavigate ?? (_) {},
-          ),
+          // S343 · decision 0271: 我 is the head of the 我的 tab.
+          child: surfaceId == 'profile'
+              ? loopMeSurface(onNavigate: onNavigate ?? (_) {})
+              : ProfileSurfaceScreen.fromId(
+                  surfaceId,
+                  onNavigate: onNavigate ?? (_) {},
+                ),
         ),
       ),
     ),

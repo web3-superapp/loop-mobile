@@ -17,12 +17,16 @@ import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
-import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/community_test_harness.dart';
+import 'support/me_surface.dart';
 import 'support/loop_ground_probe.dart';
 
 const _requestId = '11111111-1111-4111-8111-111111111111';
@@ -919,32 +923,47 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       String? destination;
+      // S343 · decision 0271: the row stands on 我的 while a request waits,
+      // under the name of the page it opens (decision 0133).
       await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: ProviderScope(
-            // Decision 0175: the row hangs on 设置, behind 我's gear.
-            child: ProfileSurfaceScreen.fromId(
-              'settings',
-              onNavigate: (value) => destination = value,
+        ProviderScope(
+          overrides: [
+            socialGatewayProvider.overrideWithValue(
+              FakeSocialGateway(
+                requests: MessageRequestPage(
+                  items: <MessageRequestEntry>[
+                    MessageRequestEntry(
+                      messageRequestId: testRequestId,
+                      profile: testProfile(alias: 'fox_trader'),
+                      createdAt: DateTime.utc(2026, 9, 7),
+                      expiresAt: DateTime.utc(2026, 9, 14),
+                      preview: const LoopUnavailableFact(
+                        'MESSAGE_PREVIEW_DEFERRED',
+                      ),
+                      aiModeration: const LoopUnavailableFact(
+                        'AI_MODERATION_DEFERRED',
+                      ),
+                    ),
+                  ],
+                  nextCursor: null,
+                ),
+              ),
             ),
+          ],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: loopMeSurface(onNavigate: (value) => destination = value),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('陌生人请求'),
-        240,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
-      // Decision 0133: the row carries the name of the page it opens.
       await tester.ensureVisible(find.text('陌生人请求'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('陌生人请求'));
       expect(destination, 'friend-requests');
       expect(tester.takeException(), isNull);
 
+      await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(
         ProviderScope(
           overrides: [

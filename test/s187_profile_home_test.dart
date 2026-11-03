@@ -1,19 +1,20 @@
-// Decision 0175 (S187-5): 我 in docs/35's 「我的」 layout.
+// Decision 0175 (S187-5): 我 in docs/35's 「我的」 layout. S343 · decision
+// 0271: the person stands at the head of the 我的 tab (`/wallet`), and the
+// net worth it hides is 我的's 总资产.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
-import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/profile/profile_destinations.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_balance_visibility_store.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
@@ -82,7 +83,7 @@ Future<void> _pump(
   ValueChanged<String>? onNavigate,
 }) => pumpS5Page(
   tester,
-  ProfileSurfaceScreen.fromId('profile', onNavigate: onNavigate ?? (_) {}),
+  WalletScreen(onNavigate: onNavigate),
   wallet: FakeWalletReadGateway(
     balances: S5Answer<LoopWalletBalances>(value: balances ?? s5Balances()),
   ),
@@ -106,18 +107,12 @@ Future<void> _pump(
 
 Finder _key(String key) => find.byKey(ValueKey<String>(key));
 
-/// UX-017: the small eye beside the net worth says whether amounts are hidden.
-bool? _eyeHidden(WidgetTester tester) => tester
-    .widget<Semantics>(
-      find
-          .ancestor(
-            of: find.byKey(const ValueKey<String>('profile-hide-balance')),
-            matching: find.byType(Semantics),
-          )
-          .first,
-    )
-    .properties
-    .toggled;
+/// Whether 总资产 is masked.
+bool _eyeHidden(WidgetTester tester) =>
+    tester
+        .widget<Text>(find.byKey(const ValueKey<String>('wallet-total-figure')))
+        .data ==
+    '****';
 
 void main() {
   loopWatchGround();
@@ -140,13 +135,11 @@ void main() {
 
       await tester.tap(_key('profile-add-bio'));
       await tester.tap(_key('profile-open-edit'));
-      await tester.tap(_key('profile-open-rewards'));
       await tester.tap(_key('profile-open-settings'));
       expect(opened, <String>[
-        'profile-edit',
-        'profile-edit',
-        'mining-rewards',
-        'settings',
+        profileDestinationPath('profile-edit'),
+        profileDestinationPath('profile-edit'),
+        profileDestinationPath('settings'),
       ]);
     });
 
@@ -180,7 +173,7 @@ void main() {
         '12 粉丝',
       );
       await tester.tap(_key('profile-followers-count'));
-      expect(opened, <String>['connections']);
+      expect(opened, <String>[profileDestinationPath('connections')]);
     });
 
     testWidgets('an unread connections count draws no count line', (
@@ -190,78 +183,8 @@ void main() {
       expect(_key('profile-following-count'), findsNothing);
       expect(_key('profile-followers-count'), findsNothing);
     });
-
-    testWidgets('holdings list the held rows under 持仓 (N)', (tester) async {
-      final opened = <String>[];
-      await _pump(tester, onNavigate: opened.add);
-
-      expect(find.text('持仓 (1)'), findsOneWidget);
-      expect(_key('wallet-balance-$s5NativeAssetId'), findsOneWidget);
-      expect(_key('profile-first-buy'), findsNothing);
-      expect(
-        tester.widget<Text>(_key('profile-networth-figure')).data,
-        r'$6,352.82',
-      );
-      // No net worth history exists, so no curve and no choosable period.
-      expect(_key('profile-chart-no-history'), findsOneWidget);
-      final periods = tester.widget<WalletSegmentedControl<String>>(
-        _key('profile-chart-periods'),
-      );
-      expect(periods.options, <String>['24 小时', '7 天', '30 天', '全部']);
-      expect(periods.onSelected, isNull);
-      expect(periods.onBlocked, isNotNull);
-      expect(periods.selected, isNull);
-
-      await tester.ensureVisible(_key('wallet-balance-$s5NativeAssetId'));
-      await tester.tap(_key('wallet-balance-$s5NativeAssetId'));
-      expect(opened.last, 'wallet-asset:$s5NativeAssetId');
-    });
-
-    testWidgets('nothing held: 暂无持仓 and the first-buy card to MEME', (
-      tester,
-    ) async {
-      final opened = <String>[];
-      await _pump(
-        tester,
-        balances: s5Balances(
-          rows: <LoopAssetBalanceRow>[
-            s5Row(
-              balance: LoopBalanceAvailable(
-                rawValue: '0',
-                displayBalance: s5Decimal('0'),
-                availableBalance: s5Decimal('0'),
-                spendableBalance: s5Decimal('0'),
-                gasReserve: s5Decimal('0'),
-              ),
-            ),
-          ],
-        ),
-        onNavigate: opened.add,
-      );
-      expect(find.text('持仓 (0)'), findsOneWidget);
-      expect(_key('profile-chart-empty'), findsOneWidget);
-      expect(find.text('暂无持仓'), findsOneWidget);
-      expect(find.text('获取你的第一个代币'), findsOneWidget);
-      await tester.ensureVisible(_key('profile-first-buy'));
-      await tester.tap(_key('profile-first-buy'));
-      expect(opened, <String>['meme']);
-    });
-
-    testWidgets('one full-Lime body: 充值, which opens the wallet', (
-      tester,
-    ) async {
-      final opened = <String>[];
-      await _pump(tester, onNavigate: opened.add);
-      final primaries = tester
-          .widgetList<LoopButton>(find.byType(LoopButton))
-          .where((button) => button.primary)
-          .toList();
-      expect(primaries, hasLength(1));
-      expect(primaries.single.label, '充值');
-      // The testnet faucet is closed in this harness, so 充值 is the wallet.
-      await tester.tap(_key('profile-deposit'));
-      expect(opened, <String>['wallet']);
-    });
+    // S343 · decision 0271: 我's own holdings, net worth and 充值 are gone;
+    // 我的 lists 钱包's.
   });
 
   group('「隐藏余额」 persistence (decision 0175)', () {
@@ -291,11 +214,11 @@ void main() {
       await _pump(tester, store: store);
       expect(_eyeHidden(tester), isFalse);
 
-      await tester.tap(_key('profile-hide-balance'));
+      await tester.tap(_key('wallet-eye'));
       await tester.pumpAndSettle();
       expect(_eyeHidden(tester), isTrue);
-      expect(tester.widget<Text>(_key('profile-networth-figure')).data, '****');
-      // S334 · decision 0263: 我 draws 钱包's row; its amount is masked.
+      expect(tester.widget<Text>(_key('wallet-total-figure')).data, '****');
+      // The asset rows are masked with it.
       expect(
         tester
             .widget<Text>(_key('wallet-balance-amount-$s5NativeAssetId'))
@@ -303,7 +226,6 @@ void main() {
         '****',
       );
       expect(store.writes, <bool>[true]);
-      expect(_key('profile-hide-balance-run-local'), findsNothing);
     });
 
     testWidgets(
@@ -311,20 +233,14 @@ void main() {
       (tester) async {
         final store = _Store(value: true);
         await _pump(tester, store: store);
-        expect(
-          tester.widget<Text>(_key('profile-networth-figure')).data,
-          '****',
-        );
+        expect(tester.widget<Text>(_key('wallet-total-figure')).data, '****');
         expect(_eyeHidden(tester), isTrue);
         expect(store.writes, isEmpty);
 
         // A fresh scope — a cold start — reads the same stored choice.
         await tester.pumpWidget(const SizedBox.shrink());
         await _pump(tester, store: store);
-        expect(
-          tester.widget<Text>(_key('profile-networth-figure')).data,
-          '****',
-        );
+        expect(tester.widget<Text>(_key('wallet-total-figure')).data, '****');
       },
     );
 
@@ -336,15 +252,13 @@ void main() {
       // Fail-open: the figures are shown, and the capsule says the device
       // could not keep the choice.
       expect(
-        tester.widget<Text>(_key('profile-networth-figure')).data,
+        tester.widget<Text>(_key('wallet-total-figure')).data,
         r'$6,352.82',
       );
-      expect(_key('profile-hide-balance-run-local'), findsOneWidget);
 
-      await tester.tap(_key('profile-hide-balance'));
+      await tester.tap(_key('wallet-eye'));
       await tester.pumpAndSettle();
-      expect(tester.widget<Text>(_key('profile-networth-figure')).data, '****');
-      expect(_key('profile-hide-balance-run-local'), findsOneWidget);
+      expect(tester.widget<Text>(_key('wallet-total-figure')).data, '****');
     });
 
     test(

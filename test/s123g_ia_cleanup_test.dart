@@ -2,7 +2,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +21,7 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/me_surface.dart';
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
@@ -182,25 +182,18 @@ void main() {
     testWidgets('no 好友 key; the request row is named after its page', (
       tester,
     ) async {
-      final opened = <String>[];
-      await _pumpProfile(tester, surface: 'settings', onNavigate: opened.add);
-
+      // S343 · decision 0271: 陌生人请求 stands on 我的 only while one
+      // waits, under the name of the page it opens; 设置 has no account row.
+      await _pumpProfile(tester, surface: 'settings');
       expect(
         find.byKey(const ValueKey<String>('profile-open-friends')),
         findsNothing,
       );
-      final requests = find.byKey(
-        const ValueKey<String>('profile-open-friend-requests'),
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-friend-requests')),
+        findsNothing,
       );
-      await tester.scrollUntilVisible(
-        requests,
-        240,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(tester.widget<LoopRecordRow>(requests).title, '陌生人请求');
       expect(find.text('好友请求'), findsNothing);
-      await tester.tap(requests);
-      expect(opened, <String>['friend-requests']);
     });
   });
 
@@ -352,10 +345,10 @@ void main() {
     });
   });
 
-  group('聊天 · 发起 steps aside (m10)', () {
-    testWidgets('scrolling on hides it, scrolling back brings it', (
-      tester,
-    ) async {
+  // S343 · decision 0271: 「发起」 left the foot of 聊天 for the bar's 「＋」,
+  // so nothing steps aside while the list scrolls.
+  group('聊天 · 发起 is in the bar', () {
+    testWidgets('no floating key over the list', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -374,44 +367,17 @@ void main() {
       GoRouter.of(tester.element(find.byType(MemeScreen))).go('/chat');
       await tester.pumpAndSettle();
 
-      final slot = find.byKey(const ValueKey<String>('chat-create-slot'));
-      expect(tester.widget<AnimatedSlide>(slot).offset, Offset.zero);
-
-      void scroll(ScrollDirection direction, double pixels) {
-        final context = tester.element(
-          find.byKey(const ValueKey<String>('chat-tab-screen')),
-        );
-        UserScrollNotification(
-          metrics: FixedScrollMetrics(
-            minScrollExtent: 0,
-            maxScrollExtent: 2000,
-            pixels: pixels,
-            viewportDimension: 600,
-            axisDirection: AxisDirection.down,
-            devicePixelRatio: 1,
-          ),
-          context: context,
-          direction: direction,
-        ).dispatch(context);
-      }
-
-      scroll(ScrollDirection.reverse, 300);
-      await tester.pumpAndSettle();
-      expect(tester.widget<AnimatedSlide>(slot).offset, isNot(Offset.zero));
       expect(
-        tester
-            .widget<IgnorePointer>(
-              find
-                  .ancestor(of: slot, matching: find.byType(IgnorePointer))
-                  .first,
-            )
-            .ignoring,
-        isTrue,
+        find.byKey(const ValueKey<String>('chat-create-slot')),
+        findsNothing,
       );
-
-      scroll(ScrollDirection.forward, 200);
-      await tester.pumpAndSettle();
-      expect(tester.widget<AnimatedSlide>(slot).offset, Offset.zero);
+      expect(
+        find.descendant(
+          of: find.byType(LoopTopbar),
+          matching: find.byKey(const ValueKey<String>('chat-create-menu')),
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -468,11 +434,14 @@ Future<void> _pumpProfile(
     MaterialApp(
       theme: LoopTheme.dark,
       home: ProviderScope(
-        child: ProfileSurfaceScreen.fromId(
-          surface,
-          onNavigate: onNavigate ?? (_) {},
-          onSignOut: onSignOut,
-        ),
+        // S343 · decision 0271: 我 is the head of the 我的 tab.
+        child: surface == 'profile'
+            ? loopMeSurface(onNavigate: onNavigate ?? (_) {})
+            : ProfileSurfaceScreen.fromId(
+                surface,
+                onNavigate: onNavigate ?? (_) {},
+                onSignOut: onSignOut,
+              ),
       ),
     ),
   );

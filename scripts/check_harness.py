@@ -9030,7 +9030,9 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "ValueKey<String>('wallet-pay-entry')",
             "ValueKey<String>('wallet-swap-entry')",
             "ValueKey<String>('wallet-send-entry')",
-            "ValueKey<String>('wallet-bridge-entry')",
+            # S343 · decision 0271: 跨链 lost its entry (the route stays);
+            # 交易历史 in the bar must stay.
+            "ValueKey<String>('wallet-history-action')",
         ),
     }
     for relative, fragments in normalized_contracts.items():
@@ -9060,7 +9062,8 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 ("'广场'", "'/square'"),
                 ("'MEME'", "'/meme'"),
                 ("'情报'", "'/intel'"),
-                ("'钱包'", "'/wallet'"),
+                # S343 · decision 0271: the 钱包 tab is 我的; path unchanged.
+                ("'我的'", "'/wallet'"),
             )
             positions: list[int] = []
             for label, path in markers:
@@ -9262,18 +9265,18 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         chat_slice = source[
             chat_start : chat_end if chat_end >= 0 else len(source)
         ]
-        # Decision 0110: 聊天 is the first tab. It has no back control; its
-        # head is the owner's avatar, the way into 我.
+        # Decision 0110: 聊天 is the first tab. It has no back control.
+        # S343 · decision 0271: its top right carries 「＋」 and nothing
+        # else; the owner's avatar and the bell moved to 我的.
         chat_fallback_fragments = (
-            "ValueKey<String>('chat-open-profile')",
-            "onTap: onPressed,",
+            "actions: const <Widget>[ChatCreateMenuButton()]",
             "tabPage: true,",
         )
         if chat_start < 0 or chat_end < 0 or any(
             fragment not in chat_slice for fragment in chat_fallback_fragments
         ):
             errors.append(
-                "Chat tab must open 我 from the owner's avatar"
+                "Chat tab must carry 「＋」 at its top right"
             )
     else:
         errors.append(
@@ -12430,8 +12433,10 @@ def check_profile_application_contract(root: Path) -> list[str]:
                 "single mode projection"
             )
         # The build lives in the State class, so the slice starts there.
+        # S343 · decision 0271: 我's person is a section of 我的 now; the
+        # page's kicker is 我的's, so the section carries the notice.
         for page, mode in (
-            ("class _ProfileHomeScreenState", "ProfileMode.preview"),
+            ("class _ProfileIdentitySectionState", "ProfileMode.preview"),
             ("class _ProfileEditScreenState", "ProfileMode.preview"),
             ("class _PrivacyCenterScreenState", "PrivacyMode.preview"),
         ):
@@ -12444,7 +12449,10 @@ def check_profile_application_contract(root: Path) -> list[str]:
             )
             if (
                 f"state.mode == {mode}" not in page_slice
-                or "loopPreviewKicker(" not in page_slice
+                or (
+                    "loopPreviewKicker(" not in page_slice
+                    and "Section" not in page
+                )
                 or "LoopPreviewModeNotice(" not in page_slice
             ):
                 errors.append(
@@ -13277,18 +13285,26 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             # Decision 0053: the Profile root moved to profile_v2_screens; the
             # Social privacy entry retired with the V2 privacy resource.
             "lib/features/profile/profile_v2_screens.dart": (
-                # Step 3: the friend list retired; only the request inbox stays.
-                # Decision 0133: it carries the name of the page it opens.
-                "title: '陌生人请求'",
-                "onTap: () => widget.onNavigate('friend-requests')",
-                "onTap: () => widget.onNavigate('connections')",
+                # S343 · decision 0271: the counts on 我的's person open
+                # 关注与粉丝; the request row moved to me_attention.dart.
+                "onOpenConnections: () => widget.onNavigate('connections')",
                 "onTap: () => widget.onNavigate('privacy')",
+            ),
+            # Step 3: the friend list retired; only the request inbox stays.
+            # Decision 0133: it carries the name of the page it opens.
+            "lib/features/profile/me_attention.dart": (
+                "title: '陌生人请求'",
+                "onOpen ?? () => unawaited(context.push<void>('/chat/requests'))",
             ),
             "lib/app.dart": (
                 "messageItem: loopStreamGroupMessageItemBuilder",
                 "mentionItem: loopStreamGroupMentionItemBuilder",
                 "path: '/chat/groups/create'",
                 "path: '/chat/groups/:groupId/alias'",
+            ),
+            # S343 · decision 0271: the profile destinations moved out of
+            # app.dart into one resolver the 我的 tab shares.
+            "lib/features/profile/profile_destinations.dart": (
                 # Step 4: `/chat/friends/requests` was folded into the
                 # `dm-requests` page and `/chat/channel/:cid/alias` into
                 # `group-info`, which resolves the LOOP group itself. Both are
@@ -14694,7 +14710,8 @@ FIRST_FRAME_CACHE_CONTRACT: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] =
         ("image: loopRemoteAvatarImage(source),", "LoopMediaImage(url)"),
         ("resizeIfNeeded",),
     ),
-    "lib/features/chat/stream_chat_inbox_page.dart#owner": (
+    # S343 · decision 0271: the owner's face moved from 聊天 to 我的.
+    "lib/features/profile/profile_v2_screens.dart#owner": (
         ("ref.watch(ownerFaceProvider)",),
         (),
     ),

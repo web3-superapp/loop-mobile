@@ -120,13 +120,14 @@ void main() {
         findsNothing,
       );
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      // Decision 0133: the 账户 group repeated rows 我 and 钱包 already carry.
-      // Decision 0175: 我's entries stand at the head of this page, behind
-      // 我's gear, once each; 通用 and 关于 follow them.
+      // S343 · decision 0271: 隐私与安全, 通用 and 关于; the account rows
+      // moved to 我的 and 资产与挖矿 left.
       expect(
         _labels(tester),
-        containsAllInOrder(<String>['账号', '资产与挖矿', '隐私与安全', '通用', '关于']),
+        containsAllInOrder(<String>['隐私与安全', '通用', '关于']),
       );
+      expect(_labels(tester), isNot(contains('账号')));
+      expect(_labels(tester), isNot(contains('资产与挖矿')));
       expect(_labels(tester).where((label) => label == '通用'), hasLength(1));
 
       // §D+ #11: 语言 reads its value, not a sentence about why it is fixed;

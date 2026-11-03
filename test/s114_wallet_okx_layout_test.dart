@@ -275,11 +275,8 @@ void main() {
       );
 
       expect(find.textContaining('不是可用余额'), findsNothing);
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-info-sheet'), findsOneWidget);
-      expect(find.textContaining('不是可用余额'), findsOneWidget);
-      expect(find.textContaining('DexScreener'), findsWidgets);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
   });
 
@@ -314,11 +311,8 @@ void main() {
         '/scan',
       ]);
       expect(find.text('扫码'), findsOneWidget);
-      // 跨链 left the keys for the entry group.
-      expect(
-        tester.getTopLeft(key('wallet-bridge-entry')).dy,
-        greaterThan(tester.getTopLeft(key('wallet-pay-entry')).dy),
-      );
+      // S343 · decision 0271: 跨链 has no entry on 我的.
+      expect(key('wallet-bridge-entry'), findsNothing);
     });
 
     // Decision 0171 (docs/33 M15, user ruling): one full-accent key, 兑换;
@@ -451,8 +445,9 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      await scrollToS5Section(tester, key('wallet-settings-entry'));
-      await tester.tap(key('wallet-settings-entry'));
+      // S343 · decision 0271: the gear in the bar, not a row at the foot.
+      expect(key('wallet-settings-entry'), findsNothing);
+      await tester.tap(key('profile-open-settings'));
       await tester.pumpAndSettle();
       expect(opened, <String>['/profile/settings']);
     });
@@ -470,8 +465,7 @@ void main() {
         ),
       );
 
-      await scrollToS5Section(tester, key('wallet-settings-entry'));
-      expect(key('wallet-settings-entry'), findsOneWidget);
+      expect(key('profile-open-settings'), findsOneWidget);
       expect(key('wallet-quick-actions'), findsNothing);
     });
   });

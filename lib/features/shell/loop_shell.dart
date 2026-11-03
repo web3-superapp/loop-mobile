@@ -11,6 +11,7 @@ import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_entry.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -35,20 +36,27 @@ class LoopShell extends StatefulWidget {
     super.key,
     this.location = LoopRouteManifest.defaultPath,
     this.navigationShell,
+    this.attention = const <String>{},
   });
 
   final Widget child;
   final String location;
   final StatefulNavigationShell? navigationShell;
 
+  /// The tab slugs that carry a small red dot (S343 · decision 0271: 我的
+  /// while a notification is unread or a stranger request waits).
+  final Set<String> attention;
+
   static const _destinations = <_LoopDestination>[
     // v3 (需求方 2026-10-08, decision 0110): 聊天/广场/MEME/情报/钱包.
-    // Slugs stay the stable test and analytics identifiers.
+    // S343 · decision 0271: 钱包 became 我的 with a person glyph; its path
+    // and slug stay `/wallet`. Slugs stay the stable test and analytics
+    // identifiers.
     _LoopDestination('聊天', chatPath, 'chat'),
     _LoopDestination('广场', '/square', 'compass'),
     _LoopDestination('MEME', '/meme', 'launch'),
     _LoopDestination('情报', '/intel', 'chart'),
-    _LoopDestination('钱包', '/wallet', 'wallet'),
+    _LoopDestination('我的', '/wallet', 'user'),
   ];
 
   /// Labels in shell order, for tests and the desktop rail.
@@ -261,6 +269,7 @@ class _LoopShellState extends State<LoopShell> {
                 bottomNavigationBar: LoopTabBar(
                   selectedIndex: selectedIndex,
                   onSelect: (index) => _select(context, index),
+                  attention: widget.attention,
                 ),
               ),
               tabBarReserve: LoopLayout.tabPageBottomReserve,
@@ -329,7 +338,11 @@ class LoopTabBar extends StatefulWidget {
     required this.selectedIndex,
     required this.onSelect,
     super.key,
+    this.attention = const <String>{},
   });
+
+  /// The tab slugs that carry a small red dot.
+  final Set<String> attention;
 
   /// Indicator travel, and the cells' ink crossfade over the same time.
   static const Duration slideDuration = Duration(milliseconds: 280);
@@ -588,6 +601,9 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
                               slug: LoopShell._destinations[index].slug,
                               icon: LoopShell._destinations[index].icon,
                               selected: index == selectedIndex,
+                              dot: widget.attention.contains(
+                                LoopShell._destinations[index].slug,
+                              ),
                               dock: cell,
                               onTap: () => widget.onSelect(index),
                             ),
@@ -692,9 +708,13 @@ class LoopTabItem extends StatelessWidget {
     required this.onTap,
     super.key,
     this.dock = LoopDockCell.rest,
+    this.dot = false,
   });
 
   final String label;
+
+  /// A small red dot on the glyph's corner (S343 · decision 0271).
+  final bool dot;
 
   /// Stable identifier (`chat`, `square`, ...) for keys and analytics.
   final String slug;
@@ -713,7 +733,7 @@ class LoopTabItem extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: dot ? '$label，有新消息' : label,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -820,6 +840,20 @@ class LoopTabItem extends StatelessWidget {
                                 )
                               else
                                 LoopIcon(icon, size: 21, color: glyph),
+                              if (dot)
+                                Positioned(
+                                  top: -1,
+                                  right: -3,
+                                  child: IgnorePointer(
+                                    child: LoopUnreadBadge(
+                                      key: ValueKey<String>(
+                                        'loop-tab-dot-$slug',
+                                      ),
+                                      count: 1,
+                                      dot: true,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -962,6 +996,17 @@ class LoopTabGlyphMotion extends StatefulWidget {
         ),
         1,
       ),
+    ),
+    // 我的 (S343 · decision 0271): the person nods, scale 1 → 1.14 → 1
+    // rising 2 px.
+    'user': LoopTabGlyphMove(
+      duration: const Duration(milliseconds: 320),
+      at: (t) {
+        final p = _hump(t, 0.45, Curves.easeOutBack, Curves.easeOut);
+        final scale = 1 + 0.14 * p;
+        return Matrix4.translationValues(0, -2 * p, 0)
+          ..scaleByDouble(scale, scale, 1, 1);
+      },
     ),
     // 钱包: a flip on the upright axis, rotateY 0 → −0.45 rad → 0.
     'wallet': LoopTabGlyphMove(

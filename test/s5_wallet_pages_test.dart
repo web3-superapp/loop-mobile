@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -45,9 +46,9 @@ void main() {
       // confirmations sit in the statement it opens.
       expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
-      // S325 · decision 0255: the statement opens from the page's one (i).
-      await openPageInfo(tester);
-      expect(find.textContaining('15 确认'), findsOneWidget);
+      // S343 · decision 0271: 我的's bar has no (i); the statement is still
+      // the line's own.
+      expect(_provenanceNote('15 确认'), findsOneWidget);
     });
 
     testWidgets('the assets are unboxed rows: amount over value and 24h', (
@@ -118,9 +119,9 @@ void main() {
         ),
       );
 
-      // S325 · decision 0255: the statement opens from the page's one (i).
-      await openPageInfo(tester);
-      expect(find.textContaining('0.005 BNB'), findsOneWidget);
+      // S343 · decision 0271: 我的's bar has no (i); the statement is still
+      // the line's own.
+      expect(_provenanceNote('0.005 BNB'), findsOneWidget);
       // The reserve is the server's figure; the configuration version behind
       // it is a backend identifier and never reaches the footer.
       expect(find.textContaining('walletGasReserveV1'), findsNothing);
@@ -184,7 +185,9 @@ void main() {
       expect(find.textContaining('以 WBNB 计价'), findsWidgets);
     });
 
-    testWidgets('the entry group never states a count', (tester) async {
+    testWidgets('the account rows never state a count they did not read', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -193,16 +196,15 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+        find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
-      // Decision 0133 (on 0119): 跨链 · 代币授权 · 网络 · DApp 网址核对 · 设置,
-      // flat — no 授权与网络 sheet in between, and 安全中心 lives on 我 —
-      // none of them stating a figure this page never read.
-      expect(find.text('跨链'), findsOneWidget);
-      expect(find.text('代币授权'), findsOneWidget);
-      expect(find.text('网络'), findsOneWidget);
+      // S343 · decision 0271: 跨链 · 代币授权 · 网络 · 设置 left the foot of
+      // 我的 (设置 is the gear in the bar); the account rows stand there.
+      expect(find.text('跨链'), findsNothing);
+      expect(find.text('代币授权'), findsNothing);
+      expect(find.text('网络'), findsNothing);
       expect(find.text('DApp 网址核对'), findsOneWidget);
-      expect(find.text('设置'), findsOneWidget);
+      expect(find.text('我的钱包'), findsOneWidget);
       expect(find.text('授权与网络'), findsNothing);
       expect(find.text('安全中心'), findsNothing);
       expect(find.textContaining('approve('), findsNothing);
@@ -224,11 +226,9 @@ void main() {
       );
 
       for (final entry in const <String>[
-        'wallet-bridge-entry',
-        'wallet-approvals-entry',
-        'wallet-networks-entry',
+        'profile-open-wallets',
         'wallet-dapp-entry',
-        'wallet-settings-entry',
+        'profile-open-settings',
       ]) {
         await scrollToS5Section(tester, find.byKey(ValueKey<String>(entry)));
         await tester.tap(find.byKey(ValueKey<String>(entry)));
@@ -238,15 +238,13 @@ void main() {
       // Each entry opens its own page, which owns its unavailable state; this
       // page never speaks for the destinations.
       expect(opened, <String>[
-        '/wallet/bridge',
-        '/wallet/approvals',
-        '/wallet/networks',
+        '/wallet/manage',
         '/wallet/dapp',
         '/profile/settings',
       ]);
     });
 
-    testWidgets('the blocks are laid out in the decision 0119 order', (
+    testWidgets('the blocks are laid out in the decision 0271 order', (
       tester,
     ) async {
       await pumpS5Page(
@@ -255,27 +253,29 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      // 总资产, then the four keys in one row, then 资产 with its power tag
-      // and the rows, then the entry group. The order is the page's whole
-      // argument, so it is pinned rather than left to a screenshot.
+      // The person, 总资产, then the four keys in one row, then 资产 with its
+      // power tag and the rows, then the account rows. The order is the
+      // page's whole argument, so it is pinned rather than left to a
+      // screenshot.
       final order = <Key>[
+        const ValueKey<String>('profile-identity-section'),
         const ValueKey<String>('wallet-total-header'),
         const ValueKey<String>('wallet-receive-entry'),
         const ValueKey<String>('wallet-power-tag'),
         const ValueKey<String>('wallet-balance-$s5NativeAssetId'),
         const ValueKey<String>('wallet-snapshot-footer'),
-        const ValueKey<String>('wallet-bridge-entry'),
-        const ValueKey<String>('wallet-settings-entry'),
+        const ValueKey<String>('profile-open-wallets'),
+        const ValueKey<String>('wallet-dapp-entry'),
       ];
       var previous = double.negativeInfinity;
       for (final key in order) {
         final finder = find.byKey(key);
-        expect(finder, findsOneWidget, reason: '\$key is missing');
+        expect(finder, findsOneWidget, reason: '$key is missing');
         final top = tester.getTopLeft(finder).dy;
         expect(
           top,
           greaterThanOrEqualTo(previous),
-          reason: '\$key is out of order',
+          reason: '$key is out of order',
         );
         previous = top;
       }
@@ -302,7 +302,7 @@ void main() {
       }
     });
 
-    testWidgets('the power tag opens the mining note', (tester) async {
+    testWidgets('the power tag opens 情报 · 算力', (tester) async {
       final opened = <String>[];
       await pumpS5Page(
         tester,
@@ -310,18 +310,14 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      // S343 · decision 0271: straight to the power page, no note between.
       await tester.tap(find.byKey(const ValueKey<String>('wallet-power-tag')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('wallet-power-sheet')),
-        findsOneWidget,
+        findsNothing,
       );
-      // Mining is not wired in this harness: the figure is a dash, never 0.
-      expect(find.textContaining('— 算力'), findsOneWidget);
-      expect(find.textContaining('0 算力'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey<String>('wallet-power-hint')));
-      await tester.pumpAndSettle();
-      expect(opened, <String>['/mining']);
+      expect(opened, <String>['/intel?tab=power']);
     });
 
     testWidgets('a closed chain node is one inline line, not a page block', (
@@ -352,10 +348,10 @@ void main() {
       expect(find.textContaining('\$'), findsNothing);
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+        find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
       expect(
-        find.byKey(const ValueKey<String>('wallet-settings-entry')),
+        find.byKey(const ValueKey<String>('wallet-dapp-entry')),
         findsOneWidget,
       );
     });
@@ -575,14 +571,8 @@ void main() {
       );
 
       expect(find.text('\$6,352.82'), findsWidgets);
-      // Decision 0119: the statement sits behind the (i) beside 总资产.
-      await tester.tap(find.byKey(const ValueKey<String>('wallet-info')));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('wallet-not-spendable')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('不是可用余额'), findsOneWidget);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
 
     testWidgets('a partial total says how many rows have no price', (
@@ -1562,3 +1552,11 @@ class WalletCreatingTestPrivyGateway implements PrivyAuthGateway {
     throw UnsupportedError('This gateway does not verify OTPs.');
   }
 }
+
+/// A registered provenance entry whose notes hold [fragment] (S343 · decision
+/// 0271: 我的's bar no longer opens them).
+Finder _provenanceNote(String fragment) => find.byWidgetPredicate(
+  (widget) =>
+      widget is LoopProvenanceHosted &&
+      widget.entry.notes.any((note) => note.body.contains(fragment)),
+);

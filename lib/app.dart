@@ -100,6 +100,8 @@ import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart'; // S138
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_screen.dart'; // S138
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
+import 'package:loop_mobile/features/profile/me_attention.dart';
+import 'package:loop_mobile/features/profile/profile_destinations.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
@@ -1118,7 +1120,7 @@ GoRouter _buildRouter(
           target: userProfileTargetFromQuery(state.uri.queryParameters),
           onBack: () => _popOrHome(context),
           // The viewer's own account is 我, never this page.
-          onOpenSelf: () => context.pushReplacement('/profile'),
+          onOpenSelf: () => context.go('/wallet'),
           onOpenDirectMessage: (profile) => context.push(
             '/chat/dm',
             extra: DirectMessageTarget(
@@ -1141,18 +1143,25 @@ GoRouter _buildRouter(
         // stack. A tab that is left is kept, scroll offset and state
         // included, and is shown again as it was; the peer fade is the
         // branch container's, not a page transition.
-        builder: (context, state, navigationShell) => LoopProductFrameReporter(
-          onDrawn: onProductFrameDrawn ?? () {},
-          child: LoopShell(
-            location: state.uri.path,
-            navigationShell: navigationShell,
-            // UX-010 (decision 0254): the two shell notices sit below the
-            // status bar, and the page is laid out under them, instead of
-            // being drawn into the status bar above the page's own safe area.
-            child: _ShellTopNotices(
-              child: LoopTabSwitchFade(
-                index: navigationShell.currentIndex,
-                child: navigationShell,
+        builder: (context, state, navigationShell) => LoopMeAttentionReader(
+          builder: (context, attention) => LoopProductFrameReporter(
+            onDrawn: onProductFrameDrawn ?? () {},
+            child: LoopShell(
+              location: state.uri.path,
+              navigationShell: navigationShell,
+              // S343 · decision 0271: 我的 carries a dot while a notification
+              // is unread or a stranger request waits.
+              attention: attention
+                  ? const <String>{'wallet'}
+                  : const <String>{},
+              // UX-010 (decision 0254): the two shell notices sit below the
+              // status bar, and the page is laid out under them, instead of
+              // being drawn into the status bar above the page's own safe area.
+              child: _ShellTopNotices(
+                child: LoopTabSwitchFade(
+                  index: navigationShell.currentIndex,
+                  child: navigationShell,
+                ),
               ),
             ),
           ),
@@ -1168,10 +1177,6 @@ GoRouter _buildRouter(
               GoRoute(
                 path: '/chat',
                 builder: (context, state) => StreamChatInboxPage(
-                  onOpenProfile: () =>
-                      context.push(LoopRouteManifest.pathFor('profile')),
-                  onOpenNotifications: () =>
-                      context.push(LoopRouteManifest.pathFor('notifications')),
                   onOpenVoiceRoom: (communityId) => context.push(
                     '/chat/voice?id=${Uri.encodeQueryComponent(communityId)}',
                   ),
@@ -1277,13 +1282,10 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             MarketScreen(onBack: () => _popOrHome(context)),
       ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => Consumer(
-          builder: (context, ref, child) =>
-              _profileScreen(context, ref, 'profile'),
-        ),
-      ),
+      // S343 · decision 0271: 我 is the 我的 tab. The slug keeps its path
+      // for any link that still names it, and lands on `/wallet`; the child
+      // pages under `/profile/` keep theirs.
+      GoRoute(path: '/profile', redirect: (context, state) => '/wallet'),
       ..._accountRoutes,
       GoRoute(
         path: '/search',
@@ -2550,7 +2552,7 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
     identity: identity,
     onBack: back,
     onNavigate: (destination) {
-      final path = _profilePath(destination);
+      final path = profileDestinationPath(destination);
       // Tab destinations replace the stack; only child pages push.
       if (LoopRouteManifest.isTabPath(path)) {
         context.go(path);
@@ -2666,73 +2668,6 @@ String _accountPath(String id) => switch (id) {
   'community' => LoopRouteManifest.defaultPath,
   'home' => LoopRouteManifest.defaultPath,
   _ => LoopRouteManifest.pathFor('auth'),
-};
-
-/// Prefix of the one profile destination that carries a parameter.
-const String _communityRecordDestination = 'community-profile:';
-
-// Profile screen destinations. Copy permissions live inside Privacy, seed
-// backup is replaced by the manifest `key-export` page and rewards by the
-// Mining tab; none of the retired ids reaches a dead route.
-String _profilePath(String id) => switch (id) {
-  'profile' => LoopRouteManifest.pathFor('profile'),
-  // `community-profile:<communityId>`: one created community's own record.
-  // The 我创建的 group hands the id over rather than a page-less destination,
-  // because `community-profile` addresses exactly one community and this is
-  // the only place that knows which.
-  final String scoped when scoped.startsWith(_communityRecordDestination) =>
-    '${LoopRouteManifest.pathFor('community-profile')}?id='
-        '${Uri.encodeQueryComponent(scoped.substring(_communityRecordDestination.length))}',
-  // `/profile/friends` and `/chat/friends/add` were folded into `search`
-  // and `connections` in step 3; step 4 folded the V1 request inbox into the
-  // `dm-requests` page, so the profile row now opens that manifest slug.
-  'friend-requests' => LoopRouteManifest.pathFor('dm-requests'),
-  'wallets' => LoopRouteManifest.pathFor('wallets'),
-  // Decision 0175: 我's 充值 falls back to the wallet tab, its first-buy card
-  // opens the MEME tab, and a holding row opens that asset's wallet page.
-  'wallet' => LoopRouteManifest.pathFor('wallet'),
-  'meme' => LoopRouteManifest.pathFor('meme'),
-  final String held when held.startsWith(profileWalletAssetDestination) =>
-    MarketAssetRoute.walletAsset(
-      held.substring(profileWalletAssetDestination.length),
-    ),
-  // S334 · decision 0263: a MEME v2 holding on 我 opens its project or
-  // its NFT page, the same locations 钱包 opens.
-  final String launch2
-      when launch2.startsWith('${Launch2Route.instancePath}?') ||
-          launch2.startsWith('${Launch2Route.nftPath}?') =>
-    launch2,
-  'community-discover' => LoopRouteManifest.pathFor('community-discover'),
-  // Not a route of its own: the same manifest page narrowed to the owner's
-  // memberships, which is what 我的社区 opens once the aggregate reports any.
-  'community-joined' =>
-    '${LoopRouteManifest.pathFor('community-discover')}?membership=joined',
-  'launch-history' => LoopRouteManifest.pathFor('launch-history'),
-  'launch-tier' => LoopRouteManifest.pathFor('launch-tier'),
-  'profile-edit' => LoopRouteManifest.pathFor('profile-edit'),
-  'privacy' => LoopRouteManifest.pathFor('privacy'),
-  'social-privacy' => LoopRouteManifest.pathFor('privacy'),
-  'copytrade-perms' => LoopRouteManifest.pathFor('privacy'),
-  'security' => LoopRouteManifest.pathFor('security'),
-  'devices' => LoopRouteManifest.pathFor('devices'),
-  'key-export' => LoopRouteManifest.pathFor('key-export'),
-  'social-recovery' => LoopRouteManifest.pathFor('social-recovery'),
-  'networks' => LoopRouteManifest.pathFor('networks'),
-  'notif-settings' => LoopRouteManifest.pathFor('notif-settings'),
-  'notifications' => LoopRouteManifest.pathFor('notifications'),
-  'connections' => LoopRouteManifest.pathFor('connections'),
-  'blocklist' => LoopRouteManifest.pathFor('blocklist'),
-  'settings' => LoopRouteManifest.pathFor('settings'),
-  'about' => LoopRouteManifest.pathFor('about'),
-  'support' => LoopRouteManifest.pathFor('support'),
-  'mining' => LoopRouteManifest.pathFor('mining'),
-  'mining-assets' => LoopRouteManifest.pathFor('mining-assets'),
-  'mining-rewards' => LoopRouteManifest.pathFor('mining-rewards'),
-  'mining-rules' => LoopRouteManifest.pathFor('mining-rules'),
-  'referral' => LoopRouteManifest.pathFor('referral'),
-  // Decision 0126: 我's 扫一扫 key opens the same scanner as 钱包's 扫码.
-  'scan' => LoopRouteManifest.pathFor('scan'),
-  _ => LoopRouteManifest.pathFor('profile'),
 };
 
 /// A location no route claims (decision 0168): the focus shell, one centred
