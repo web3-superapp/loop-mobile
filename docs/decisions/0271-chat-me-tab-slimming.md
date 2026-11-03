@@ -63,7 +63,7 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - 持仓：原钱包代币 / NFT 持仓原样（S334 同口径，`WalletAssetTabs` 代币 / NFT 切换 + 「产生算力」→ `/intel?tab=power`）。钱包模块关闭时持仓段画能力块（`wallet-capability-block`），没有钱包 / 未选定 / 清单未读到的三种块也落在持仓与交易段内。
 - 交易：`tx-history` 的列表与分页抽成 mixin `_WalletActivityTape`（筛选 chip、按日分组、索引新鲜度、`LoopLoadMoreSentinel` 滚动加载、离线 / 失败续页），`tx-history` 页与「我的 · 交易」共用；我的页 key 前缀 `me-trades-*`。分段逐条返回给页面的 `SliverList`，哨兵只在滚到附近时构建（整页一个滚动容器，段内不嵌套滚动）。右上角「交易历史」图标删除（与交易段二选一）；`tx-history` 路由与导出保留，从资产详情等处仍可进入。
 - 社区：`MeCommunitiesSection` 取代 `MeAccountEntries`，读社区首页聚合：我加入的（行 key `me-joined-<id>`，副行成员数 + 运营标签胶囊，`joinedTruncated` 时末尾「全部已加入的社区」行进 `community-discover?membership=joined`）+ 我创建的（`profile-owned-<id>`，审核状态胶囊 + 审核通知 `ProfileApplicationNotifications`）；两组都有时各带小标签，只有一组时不加标签；两组都空一行「还没有加入社区」；社区模块关闭 / 不可用一行不可用。
-- 总资产卡地址行右侧加图标按钮「钱包管理」（`wallet` 图标，key `wallet-manage-action`）→ `wallets`；`WalletTotalHeader.addressTrailing` 槽位，没有活动钱包时也画。
+- 总资产卡地址行上紧跟复制图标之后放描边小胶囊「管理」（`WalletManagePill`：`wallet` 图标 + 「管理」，高 28，边框 `LoopColors.line2`，文字 `LoopType.meta`，触控区 44，语义「钱包管理」，key `wallet-manage-action`）→ `wallets`；经 `WalletTotalHeader.addressTrailing` 槽位，不压卡片右侧装饰字，360 宽地址 / 复制 / 胶囊同一行；没有活动钱包时也画。主代理验收后由无底色图标改为胶囊。
 - 快捷键五个：接收 / 发送 / 兑换 / 扫码 / DApp（`link` 图标，key `wallet-dapp-entry`）→ `/wallet/dapp`，能力不可用时仍可点，由该路由按 S342 判定进浏览器或「DApp 网址核对」。
 - 删除整个账号行组（我的钱包、我加入的、我创建的、邀请好友、DApp）及 `profileJoinedCommunitiesRow` / `ProfileCommunitiesRow` / 复制邀请码按钮；`profile_destinations.dart` 的 `invite` 目的地保留。
 - 空态各一行：持仓「还没有资产」/「还没有 NFT」、交易「这一段没有记录」（`tx-history` 同步去掉副句）、社区「还没有加入社区」；「未选定当前钱包」块去掉说明副句。

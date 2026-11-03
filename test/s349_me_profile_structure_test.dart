@@ -280,17 +280,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.bySemanticsLabel('钱包管理'), findsOneWidget);
-    // On the address line, at its right end.
+    // On the address line, right after the address and its copy glyph.
+    final address = tester.getRect(_key('wallet-address-copy'));
+    final pill = tester.getRect(button);
+    expect(pill.center.dy, moreOrLessEquals(address.center.dy, epsilon: 4));
+    expect(pill.left, greaterThan(address.right));
+    expect(pill.left - address.right, lessThan(16));
     expect(
-      tester.getCenter(button).dy,
-      moreOrLessEquals(
-        tester.getCenter(_key('wallet-address-copy')).dy,
-        epsilon: 4,
-      ),
-    );
-    expect(
-      tester.getCenter(button).dx,
-      greaterThan(tester.getCenter(_key('wallet-address-copy')).dx),
+      find.descendant(of: button, matching: find.text('管理')),
+      findsOneWidget,
     );
     await tester.tap(button);
     await tester.pumpAndSettle();
@@ -444,6 +442,15 @@ void main() {
   for (final width in <double>[390, 360]) {
     testWidgets('no overflow at $width in any section', (tester) async {
       await _pumpMe(tester, size: Size(width, 2400));
+      // Address, copy and 管理 share one line.
+      expect(
+        tester.getCenter(_key('wallet-manage-action')).dy,
+        moreOrLessEquals(
+          tester.getCenter(_key('wallet-address')).dy,
+          epsilon: 4,
+        ),
+      );
+      expect(tester.getSize(_key('wallet-address')).height, lessThan(24));
       for (final section in <String>['持仓', '交易', '社区']) {
         await _section(tester, section);
         expect(tester.takeException(), isNull, reason: '$width · $section');

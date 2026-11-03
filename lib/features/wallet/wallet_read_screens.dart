@@ -670,10 +670,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       walletId: walletId,
       // S349 (需求方 11-03): 钱包管理 beside the address, in place of the
       // 我的钱包 row.
-      addressTrailing: LoopIconButton(
+      addressTrailing: WalletManagePill(
         key: const ValueKey<String>('wallet-manage-action'),
-        icon: 'wallet',
-        label: '钱包管理',
         onPressed: () => _openProfile('wallets'),
       ),
     ),

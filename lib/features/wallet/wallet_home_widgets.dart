@@ -165,8 +165,8 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
 
   final String? walletId;
 
-  /// Drawn at the right end of the address line (S349: 钱包管理), whether or
-  /// not a wallet is active.
+  /// Drawn right after the address and its copy glyph (S349: 钱包管理),
+  /// whether or not a wallet is active.
   final Widget? addressTrailing;
 
   @override
@@ -395,23 +395,23 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
               style: sublineStyle,
             ),
           ),
+        // S349: the address, its copy glyph, then 管理 right after them on
+        // the same line — clear of the plate's lettering on the right.
         if (address != null || widget.addressTrailing != null)
           Row(
             children: <Widget>[
-              Expanded(
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: address == null
-                      ? const SizedBox.shrink()
-                      : _addressLine(
-                          context,
-                          address: address,
-                          fullAddress: fullAddress,
-                          sublineStyle: sublineStyle,
-                          auxiliary: auxiliary,
-                        ),
+              if (address != null)
+                Flexible(
+                  child: _addressLine(
+                    context,
+                    address: address,
+                    fullAddress: fullAddress,
+                    sublineStyle: sublineStyle,
+                    auxiliary: auxiliary,
+                  ),
                 ),
-              ),
+              if (address != null && widget.addressTrailing != null)
+                const SizedBox(width: 8),
               ?widget.addressTrailing,
             ],
           ),
@@ -1584,6 +1584,55 @@ class WalletBalanceRow extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 钱包管理 on the 总资产 plate (S349): a small outlined capsule — the wallet
+/// glyph and 「管理」, 28 tall on the plate's own hairline — right after the
+/// address. The finger target stays [LoopTouch.minimum] tall.
+class WalletManagePill extends StatelessWidget {
+  const WalletManagePill({required this.onPressed, super.key});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = LoopGround.secondaryOf(context);
+    return Semantics(
+      button: true,
+      label: '钱包管理',
+      excludeSemantics: true,
+      onTap: onPressed,
+      child: LoopPressable(
+        onTap: onPressed,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              height: 28,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                borderRadius: LoopRadius.pill,
+                border: Border.all(color: LoopColors.line2),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  LoopIcon('wallet', size: 14, color: ink),
+                  const SizedBox(width: 4),
+                  Text(
+                    '管理',
+                    maxLines: 1,
+                    style: LoopType.meta.copyWith(color: ink),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
