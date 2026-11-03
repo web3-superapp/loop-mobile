@@ -20,7 +20,6 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
@@ -1292,41 +1291,3 @@ List<InlineSpan> launch2TapeSpans(Launch2Activity item) {
     if (split) TextSpan(text: figure, style: figureStyle),
   ];
 }
-
-// ---- 战绩 ---------------------------------------------------------------------
-
-/// `.stat-grid.stat-grid-4`: 本周毕业 · 累计回购 · 勋章已铸 · 进行中.
-List<LoopStat> launch2DeskStats(Launch2Stats stats) => <LoopStat>[
-  LoopStat(
-    statKey: const ValueKey<String>('launch2-stats-graduated'),
-    value: '${stats.graduatedThisWeek}',
-    label: '本周毕业',
-  ),
-  LoopStat(
-    statKey: const ValueKey<String>('launch2-stats-buyback'),
-    value: launch2Usd1Label(stats.buybackUsd1Total),
-    label: '累计回购',
-  ),
-  LoopStat(
-    statKey: const ValueKey<String>('launch2-stats-minted'),
-    value: '${stats.nftMintedTotal} 枚',
-    label: '勋章已铸',
-  ),
-  LoopStat(
-    statKey: const ValueKey<String>('launch2-stats-live'),
-    value: '${stats.liveCount}',
-    label: '进行中',
-  ),
-];
-
-/// S326 · decision 0256 (UX-004 ⑨): the second line of each 战绩 cell, in
-/// [launch2DeskStats]' order — figures the same overview already carries.
-List<String?> launch2DeskStatNotes(
-  Launch2Stats stats, {
-  DateTime? observedAt,
-}) => <String?>[
-  '累计 ${stats.graduatedTotal}',
-  observedAt == null ? null : '截至 ${loopClockLabel(observedAt.toLocal())}',
-  '铸造中 ${stats.mintingCount} 个项目',
-  '提前购 ${stats.priorityCount} · 内盘 ${stats.curveCount}',
-];

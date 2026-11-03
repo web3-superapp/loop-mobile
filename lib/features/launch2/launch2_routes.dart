@@ -36,6 +36,33 @@ abstract final class Launch2Route {
     queryParameters: <String, String>{'id': instanceId},
   ).toString();
 
+  /// Decision 0273 · the project page's full-screen chart: the market's own
+  /// `chart-full` path (`/market/chart`), addressed by the [chartParameter]
+  /// query parameter instead of an `assetId`.
+  static const String chartParameter = 'launch2';
+
+  static String chart(String instanceId) => Uri(
+    path: '/market/chart',
+    queryParameters: <String, String>{chartParameter: instanceId},
+  ).toString();
+
+  /// The instance id of a [chart] location, or `null` when [uri] is not one.
+  static String? chartIdOf(Uri uri) {
+    if (uri.path != '/market/chart' ||
+        uri.queryParametersAll.length != 1 ||
+        !uri.queryParameters.containsKey(chartParameter)) {
+      return null;
+    }
+    final value = uri.queryParameters[chartParameter];
+    return isInstanceId(value) ? value : null;
+  }
+
+  /// Whether [uri] asks for a project's full-screen chart at all (well
+  /// formed or not).
+  static bool isChart(Uri uri) =>
+      uri.path == '/market/chart' &&
+      uri.queryParameters.containsKey(chartParameter);
+
   /// The instance id in a route, or `null` when it is missing or malformed.
   static String? idOf(Uri uri) {
     final value = uri.queryParameters['id'];

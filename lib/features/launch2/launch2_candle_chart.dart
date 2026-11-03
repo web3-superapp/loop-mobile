@@ -11,19 +11,21 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 // ---------------------------------------------------------------------------
-// 项目页 K 线 (decision 0227)
+// 项目页 K 线 (decision 0227 · 0273)
 // ---------------------------------------------------------------------------
 //
-// One card under the 内盘 (or, after graduation, 官方池) heading: the six
-// interval capsules, then the shared token chart (`LoopMarketChart`) as
-// candles with a volume strip. No second chart is written here — the card
-// only feeds the shared one and says what it could not read.
+// The chart block under the price: the market token detail's own two rows
+// (decision 0273) — K线 / MA / VOL above the plot, the six MEME periods and
+// the full-screen glyph under it — around the shared token chart
+// (`LoopMarketChart`). No second chart is written here — the block only
+// feeds the shared one and says what it could not read.
 
 /// What the card draws.
 enum Launch2CandlePhase {
@@ -239,12 +241,14 @@ DateTime? launch2CandleGraduationMark({
   return graduatedAt;
 }
 
-/// The K line card (decision 0227).
+/// The K line block (decision 0227; toolbar and full screen, decision 0273).
 class Launch2CandleCard extends ConsumerStatefulWidget {
   const Launch2CandleCard({
     required this.detail,
     super.key,
     this.refreshInterval = const Duration(seconds: 15),
+    this.height = chartHeight,
+    this.onExpand,
   });
 
   final Launch2InstanceDetail detail;
@@ -252,7 +256,14 @@ class Launch2CandleCard extends ConsumerStatefulWidget {
   /// How often the newest page is read again while the page is in view.
   final Duration refreshInterval;
 
-  /// The chart's height (decision 0227: 220).
+  /// The plot's height.
+  final double height;
+
+  /// Opens the full-screen chart; `null` (on the full-screen page itself)
+  /// draws no glyph.
+  final VoidCallback? onExpand;
+
+  /// The chart's height on the project page (decision 0227: 220).
   static const double chartHeight = 220;
 
   @override
@@ -263,6 +274,12 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
   late final Launch2CandleFeed _feed;
   late final LoopForegroundPoll _poll;
   bool _polling = false;
+
+  /// Decision 0273: the market token detail's defaults — a line, MA off,
+  /// VOL on.
+  LoopChartStyle _style = LoopChartStyle.line;
+  bool _averages = false;
+  bool _volume = true;
 
   @override
   void initState() {
@@ -318,31 +335,59 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
       return const SizedBox.shrink(key: ValueKey<String>('launch2-candles'));
     }
     final intervals = Launch2CandleInterval.values;
-    return LoopRecordCard(
+    final ready =
+        _feed.phase == Launch2CandlePhase.ready && _feed.candles.isNotEmpty;
+    final onExpand = widget.onExpand;
+    return Column(
       key: const ValueKey<String>('launch2-candles'),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          LoopSegBar(
-            key: const ValueKey<String>('launch2-candles-intervals'),
-            labels: <String>[for (final i in intervals) i.label],
-            selectedIndex: intervals.indexOf(_feed.interval),
-            padding: const EdgeInsets.only(bottom: 8),
-            onSelected: (index) => unawaited(_feed.select(intervals[index])),
-          ),
-          SizedBox(height: Launch2CandleCard.chartHeight, child: _body()),
-        ],
-      ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LoopChartToolbar(
+          keyPrefix: 'launch2-candles',
+          averagesText: _averages && ready
+              ? loopChartAveragesText(
+                  _chartCandles(),
+                  priceFormatter: launch2PriceLabel,
+                )
+              : '',
+          style: _style,
+          averages: _averages,
+          volume: _volume,
+          onStyleChanged: (style) => setState(() => _style = style),
+          onAveragesChanged: (on) => setState(() => _averages = on),
+          onVolumeChanged: (on) => setState(() => _volume = on),
+        ),
+        SizedBox(height: widget.height, child: _body()),
+        LoopChartIntervalRow(
+          periodsKey: const ValueKey<String>('launch2-candles-intervals'),
+          options: <LoopChartIntervalOption>[
+            for (final interval in intervals)
+              (
+                keyName: 'launch2-candles-interval-${interval.wireName}',
+                label: interval.label,
+              ),
+          ],
+          selectedIndex: intervals.indexOf(_feed.interval),
+          onSelected: (index) => unawaited(_feed.select(intervals[index])),
+          trailing: onExpand == null
+              ? null
+              : LoopIconButton(
+                  key: const ValueKey<String>('launch2-candles-expand'),
+                  icon: 'expand',
+                  label: '打开全屏图表',
+                  onPressed: onExpand,
+                ),
+        ),
+      ],
     );
   }
 
   Widget _body() => switch (_feed.phase) {
     Launch2CandlePhase.loading ||
-    Launch2CandlePhase.hidden => const LoopSkeletonBlock(
-      key: ValueKey<String>('launch2-candles-loading'),
-      height: Launch2CandleCard.chartHeight,
+    Launch2CandlePhase.hidden => LoopSkeletonBlock(
+      key: const ValueKey<String>('launch2-candles-loading'),
+      height: widget.height,
       radius: LoopRadius.innerValue,
     ),
     Launch2CandlePhase.failed => _Failed(
@@ -352,13 +397,35 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
     Launch2CandlePhase.ready => _chart(),
   };
 
+  List<LoopCandle>? _chartCache;
+  List<Launch2Candle>? _chartCacheSource;
+  Launch2CandleInterval? _chartCacheInterval;
+
+  /// The held buckets as the shared chart's, rebuilt only when the feed
+  /// holds a new list (the chart keeps its window across identical lists).
+  List<LoopCandle> _chartCandles() {
+    final source = _feed.candles;
+    final interval = _feed.interval;
+    final cached = _chartCache;
+    if (cached != null &&
+        identical(_chartCacheSource, source) &&
+        _chartCacheInterval == interval) {
+      return cached;
+    }
+    final now = ref.read(launch2ClockProvider)();
+    final out = <LoopCandle>[
+      for (final candle in source) candle.toChart(interval.width, now),
+    ];
+    _chartCache = out;
+    _chartCacheSource = source;
+    _chartCacheInterval = interval;
+    return out;
+  }
+
   Widget _chart() {
     final detail = widget.detail;
     final interval = _feed.interval;
-    final now = ref.read(launch2ClockProvider)();
-    final candles = <LoopCandle>[
-      for (final candle in _feed.candles) candle.toChart(interval.width, now),
-    ];
+    final candles = _chartCandles();
     final mark = launch2CandleGraduationMark(
       stage: detail.stage,
       graduatedAt: detail.graduation?.graduatedAt ?? detail.row.graduatedAt,
@@ -366,14 +433,16 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
       candles: _feed.candles,
       interval: interval,
     );
+    final line = _style == LoopChartStyle.line;
     return LoopMarketChart(
       key: ValueKey<String>('launch2-candles-chart-${interval.wireName}'),
       candles: candles,
       interval: interval.axis,
-      style: LoopChartStyle.candles,
-      height: Launch2CandleCard.chartHeight,
+      style: _style,
+      showMovingAverages: _averages,
+      showVolume: _volume,
+      height: widget.height,
       priceFormatter: launch2PriceLabel,
-      axisStyle: LoopType.figureXs.copyWith(color: LoopColors.text3),
       priceAxisWidth: 66,
       retainViewport: true,
       onReachStart: () => unawaited(_feed.loadOlder()),
@@ -387,7 +456,8 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
           ),
       ],
       semanticLabel:
-          '${candles.length} 根${interval.label} K 线，单位 USD1'
+          '${candles.length} 根${interval.label}'
+          '${line ? '收盘价折线' : 'K 线'}，单位 USD1'
           '${mark == null ? '' : '，含毕业时刻'}',
     );
   }
