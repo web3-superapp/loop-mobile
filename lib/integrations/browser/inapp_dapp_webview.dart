@@ -8,10 +8,16 @@ import 'package:loop_mobile/features/dapp/dapp_webview.dart';
 /// `flutter_inappwebview` 6.1.5.
 ///
 /// Hardening: `https` main-frame navigations only (the page decides through
-/// [DappWebViewConfig.shouldAllowNavigation]), no new windows, no file or
+/// [DappWebViewConfig.shouldAllowNavigation]), no new windows — a
+/// `window.open` loads in this WebView through the same check — no file or
 /// content access, mixed content never allowed, Safe Browsing / fraudulent
 /// site warnings on, and every camera, microphone, location or other device
-/// permission a page asks for is denied.
+/// permission a page asks for is denied. Cleartext `http` is refused by the
+/// platform itself (Android network security default from API 28, iOS ATS);
+/// a navigation that reached the main frame without
+/// `shouldOverrideUrlLoading` (an Android POST form) is checked again when
+/// it starts and stopped there, and the bridge never admits a document the
+/// page did not allow (S346 · M12).
 final class InAppDappWebViewFactory implements DappWebViewFactory {
   const InAppDappWebViewFactory();
 
@@ -33,12 +39,7 @@ class _InAppDappWebView extends StatelessWidget {
       key: const ValueKey<String>('dapp-inapp-webview'),
       initialUrlRequest: URLRequest(url: WebUri.uri(config.initialUrl)),
       initialUserScripts: UnmodifiableListView<UserScript>(<UserScript>[
-        UserScript(
-          groupName: 'loop-dapp-provider',
-          source: config.documentStartScript,
-          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-          forMainFrameOnly: true,
-        ),
+        _providerScript(config.documentStartScript),
       ]),
       initialSettings: InAppWebViewSettings(
         useShouldOverrideUrlLoading: true,
@@ -64,10 +65,18 @@ class _InAppDappWebView extends StatelessWidget {
           callback: (arguments) =>
               config.onBridgeCall(List<Object?>.from(arguments)),
         );
+        controller.addJavaScriptHandler(
+          handlerName: config.readyHandlerName,
+          callback: (arguments) =>
+              config.onReady(List<Object?>.from(arguments)),
+        );
         config.onCreated(_Controller(controller));
       },
       onLoadStart: (controller, url) {
-        if (url != null) config.onUrlChanged(url);
+        if (url != null) config.onLoadStart(url);
+      },
+      onLoadStop: (controller, url) {
+        if (url != null) config.onLoadStop(url);
       },
       onUpdateVisitedHistory: (controller, url, isReload) {
         if (url != null) config.onUrlChanged(url);
@@ -106,7 +115,15 @@ class _InAppDappWebView extends StatelessWidget {
             ? NavigationActionPolicy.ALLOW
             : NavigationActionPolicy.CANCEL;
       },
-      onCreateWindow: (controller, action) async => false,
+      // A `window.open` (iOS reaches here on a user gesture) loads in this
+      // WebView, through the same check as any main-frame navigation.
+      onCreateWindow: (controller, action) async {
+        final url = action.request.url;
+        if (url != null && config.shouldAllowNavigation(url)) {
+          await controller.loadUrl(urlRequest: URLRequest(url: url));
+        }
+        return false;
+      },
       onPermissionRequest: (controller, request) async => PermissionResponse(
         resources: request.resources,
         action: PermissionResponseAction.DENY,
@@ -120,6 +137,15 @@ class _InAppDappWebView extends StatelessWidget {
     );
   }
 }
+
+const String _providerGroup = 'loop-dapp-provider';
+
+UserScript _providerScript(String source) => UserScript(
+  groupName: _providerGroup,
+  source: source,
+  injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+  forMainFrameOnly: true,
+);
 
 final class _Controller implements DappWebViewController {
   _Controller(this._controller);
@@ -148,5 +174,14 @@ final class _Controller implements DappWebViewController {
   @override
   Future<void> evaluate(String source) async {
     await _controller.evaluateJavascript(source: source);
+  }
+
+  @override
+  Future<void> stop() => _controller.stopLoading();
+
+  @override
+  Future<void> setDocumentStartScript(String source) async {
+    await _controller.removeUserScriptsByGroupName(groupName: _providerGroup);
+    await _controller.addUserScript(userScript: _providerScript(source));
   }
 }

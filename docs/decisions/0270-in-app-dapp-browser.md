@@ -40,3 +40,15 @@ Accepted · 2026-11-03（S342-mobile）。合同见 `LOOP/docs/55-内置DApp浏�
 - 与 S342-api 的线上形状未对齐前，codec 按含义读（已知键校验、未知键忽略），签名所依赖的字段严格。联调后若键名不同只需改 `LoopV2DappCodec`。
 - dApp 交易成功后不进 `/wallet/tx/result`（该页解码 `LoopWalletIntent`），回执由 intent 生命周期在服务端对账。
 - 测试网链名在浏览器里固定显示「BSC 测试网 / BSC 主网」，不随测试提示开关隐藏，因为这里要让用户在两条链之间选择。
+
+## Amendment · 2026-11-03（S346-mobile，docs/57 §二 M1–M12）
+
+- **桥（M1）**：取消「每 WebView 一个 nonce + `window["__loopEmit_" + nonce]`」。注入脚本闭包持有一次性 boot nonce，文档开始时 `callHandler('loopEthereumReady', boot, origin)` 握手；App 立即换新 boot（`removeUserScriptsByGroupName` + `addUserScript`），回本文档专属 `token` / `emitToken` / `chainId`。请求为 `callHandler('loopEthereum', token, origin, isTopFrame, json)`；token 绑定文档自报的 origin，只有在 WebView 报告同 origin `onLoadStop` 后才生效。`onLoadStart` 起到下一次 `onLoadStop` 之间一律 4100，在途签名作废（确认页未进入钱包则按拒绝关闭）、排队请求不再 prepare、服务端 intent cancel。App → 页面走固定名 `window.__loopEthereumDispatch(emitToken, event, json)`，闭包校验 emitToken；任何 nonce / token 都不出现在 `window` 属性名上。`_url` 只在 `onLoadStop` 更新，同文档内 history 变化只在同 origin 时更新显示。bfcache 恢复的文档直接 reload。Android 先握手后 `onPageStarted` 的顺序保留新文档的位置。
+- **大额验证（M2）**：`SigningIntent.stepUpRequired`（新增）+ `LoopStepUpGuard.verify(usd1, force:)`。DApp 估值：value=0 → 0；value>0 → 服务端 `policy.valueUsd`（exposureBasis ≠ none），无估值则强制；`transfer/transferFrom/safeTransferFrom/safeBatchTransferFrom` 强制；风险标记 UNLIMITED_APPROVAL / APPROVAL_FOR_ALL / EOA_SPENDER / PERMIT_SIGNATURE / RAW_HASH_SIGNATURE / UNRECOGNIZED_TYPED_DATA 强制。强制只在用户开着大额验证时问，每次都问、不复用也不留授权窗口。
+- **后端新码**：409 `RESOURCE_CONFLICT` / `INTENT_BUSY` → 页面 4001 + toast「钱包有待处理的操作」；503 `RPC_UPSTREAM_LIMITED` 与 429 `RATE_LIMITED` → -32005；422 `TYPED_DATA_INVALID` / `TYPED_DATA_CHAIN_MISMATCH` → -32602，不提示切网络。风险条顺序与后端一致，新增文案「授权给个人地址」「原始哈希签名」「不可识别的签名结构」。
+- **本地数据（M3/M4）**：键改为 `loop.dapp.v2.browser.<LoopV2OwnerPartition>`，旧键 `loop.dapp.v1.browser` 读到即删；连接按 `walletId|origin`；登出（`_signOut`）清当前账号的连接与最近访问，收藏保留在该账号分区。最近访问只存 origin+path，收藏保留完整 URL。
+- **M5**：bridge 层 try/finally，非 produced 一律 cancel intent；页面不再自行 cancel。
+- **M6**：切链更新 document-start 脚本，握手应答也带当前链。
+- **M7/M8**：typed data 以保留数字字面量的解析器比较，出现 >2^53 的数字字面量拒签；personal_sign 本地解码与 review.text/hex 比对；typedData 比对 primaryType、domain 与每个 message 叶子（含 S342-api 扁平 fields）；`refusalBeforeWallet` 要求 `intent.origin == 请求 origin`。
+- **M9**：最近访问 / 收藏不预置 acknowledged。**M10**：「我的」钱包行用 `dappBrowserAvailable`（能力 + WebView）。**M11**：NFT 发送的地址页、确认页与签名前复核走 `nftSend` 能力，不受 `sendApprovals` 拦；`NFT_NOT_OWNED` 文案「这枚 NFT 已不在钱包，请返回重新选择」并刷新 Launch 持仓。
+- **M12**：`window.open`（iOS `onCreateWindow`）在当前 WebView 加载，同样过导航检查。未启用 `shouldInterceptRequest` / content blocker：前者每个子资源都要回 Dart，后者在 Android 上对每个请求发 HEAD；明文 http 已由平台拒绝（Android minSdk 28 默认不允许 cleartext，iOS ATS）。绕过 `shouldOverrideUrlLoading` 的主框架导航（Android POST 表单）在 `onLoadStart` 复核，不允许则 `stopLoading`，且该文档永远不被桥承认。

@@ -529,7 +529,7 @@ void main() {
               reasonCode: reason,
             ),
           );
-      expect(text(NftSendReason.notOwned), '这枚 NFT 已不在你的钱包');
+      expect(text(NftSendReason.notOwned), '这枚 NFT 已不在钱包，请返回重新选择');
       expect(text(NftSendReason.contractUnsupported), '暂不支持发送这个 NFT');
       expect(text(NftSendReason.recipientRejects), '收款地址不接收这枚 NFT');
       expect(text(NftSendReason.recipientSelf), '不能发送给自己');
@@ -746,7 +746,7 @@ void main() {
     });
 
     for (final (reason, line, retry) in <(String, String, bool)>[
-      (NftSendReason.notOwned, '这枚 NFT 已不在你的钱包', false),
+      (NftSendReason.notOwned, '这枚 NFT 已不在钱包，请返回重新选择', false),
       (NftSendReason.contractUnsupported, '暂不支持发送这个 NFT', false),
       (NftSendReason.recipientRejects, '收款地址不接收这枚 NFT', false),
       (NftSendReason.recipientSelf, '不能发送给自己', false),

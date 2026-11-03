@@ -113,7 +113,7 @@ bool nftSendIsDisabled(LoopChainException? failure) =>
 String? nftSendFailureText(LoopChainException failure) {
   switch (failure.reasonCode) {
     case NftSendReason.notOwned:
-      return '这枚 NFT 已不在你的钱包';
+      return '这枚 NFT 已不在钱包，请返回重新选择';
     case NftSendReason.contractUnsupported:
       return '暂不支持发送这个 NFT';
     case NftSendReason.recipientRejects:

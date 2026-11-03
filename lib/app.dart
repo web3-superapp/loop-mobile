@@ -120,6 +120,7 @@ import 'package:loop_mobile/features/square/square_screen.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/features/dapp/dapp_browser_screens.dart';
+import 'package:loop_mobile/features/dapp/dapp_store.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -2623,6 +2624,11 @@ Future<void> _signOut(WidgetRef ref) async {
   // Decision 0095: the stored first-screen answers belong to the account that
   // is leaving; none of them survives the sign-out.
   await ref.read(loopSnapshotStoreProvider)?.clear();
+  // S346 · M3: the leaving account's connected DApp sites and recent pages.
+  await dappForgetAccount(
+    ref.read(dappBrowserStoreProvider),
+    ref.read(loopAccountScopeProvider),
+  );
   final retirement = ref
       .read(loopCommunicationRetirementRegistryProvider)
       .capture();

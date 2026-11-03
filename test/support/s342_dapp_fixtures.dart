@@ -20,6 +20,9 @@ const s342Spender = '0x3333333333333333333333333333333333333333';
 const s342Launch = 'eip155:97';
 const s342Mainnet = 'eip155:56';
 
+/// The signed-in account the browser's local lists belong to.
+const s342Account = 'did:privy:s342-account';
+
 /// `approve(spender, 2^256 - 1)`.
 const String s342ApproveData =
     '0x095ea7b3'
@@ -157,7 +160,7 @@ DappIntent s342SignIntent({
 );
 
 /// Records every prepare and report; answers with the fixture intents.
-final class FakeDappIntentsGateway implements DappIntentsGateway {
+class FakeDappIntentsGateway implements DappIntentsGateway {
   FakeDappIntentsGateway({this.failure, this.txIntent, this.signIntent});
 
   final LoopChainException? failure;
@@ -250,7 +253,6 @@ final class FakeDappRpcReader implements DappRpcReader {
 /// A scripted bridge host.
 final class FakeDappHost implements DappBridgeHost {
   FakeDappHost({
-    this.topOrigin = s342Origin,
     this.wallet = s342Wallet,
     this.agree = true,
     this.outcome = const DappSignOutcome(
@@ -260,9 +262,6 @@ final class FakeDappHost implements DappBridgeHost {
       reported: true,
     ),
   });
-
-  @override
-  String? topOrigin;
 
   @override
   DappWalletIdentity? wallet;
@@ -281,6 +280,9 @@ final class FakeDappHost implements DappBridgeHost {
   final List<String> toasts = <String>[];
   final List<(String, Object?)> events = <(String, Object?)>[];
   final List<String> chains = <String>[];
+  final List<String> origins = <String>[];
+  int dismissals = 0;
+  int scriptChanges = 0;
 
   @override
   Future<bool> confirmConnection({
@@ -295,10 +297,12 @@ final class FakeDappHost implements DappBridgeHost {
   Future<DappSignOutcome> confirmIntent({
     required DappIntent intent,
     required DappWalletIdentity wallet,
+    required String origin,
     DappTxRequest? tx,
     DappSignRequest? sign,
   }) async {
     confirmed.add(intent);
+    origins.add(origin);
     if (holdSheets) {
       final answer = Completer<DappSignOutcome>();
       openSheets.add(answer);
@@ -316,6 +320,17 @@ final class FakeDappHost implements DappBridgeHost {
 
   @override
   void chainChanged(String chainId) => chains.add(chainId);
+
+  @override
+  void dismissSigning() {
+    dismissals += 1;
+    for (final sheet in openSheets) {
+      if (!sheet.isCompleted) sheet.complete(const DappSignOutcome.rejected());
+    }
+  }
+
+  @override
+  void documentScriptChanged() => scriptChanges += 1;
 }
 
 /// The WebView double: records the config and the controller calls.
@@ -348,10 +363,21 @@ class _FakeWebViewState extends State<_FakeWebView> {
   void initState() {
     super.initState();
     scheduleMicrotask(() {
-      widget.config.onCreated(widget.controller);
-      widget.config.onUrlChanged(widget.config.initialUrl);
-      widget.config.onTitleChanged('Example DApp');
-      widget.config.onProgress(1);
+      final config = widget.config;
+      config.onCreated(widget.controller);
+      config.onLoadStart(config.initialUrl);
+      // The provider's handshake at document start.
+      final boot = RegExp(r'var BOOT = "([0-9a-f]+)"')
+          .firstMatch(config.documentStartScript)
+          ?.group(1);
+      final answer = config.onReady(<Object?>[boot, config.initialUrl.origin]);
+      if (answer is Map && answer['ok'] == true) {
+        widget.controller.token = answer['token'] as String?;
+        widget.controller.emitToken = answer['emitToken'] as String?;
+      }
+      config.onLoadStop(config.initialUrl);
+      config.onTitleChanged('Example DApp');
+      config.onProgress(1);
     });
   }
 
@@ -363,6 +389,18 @@ class _FakeWebViewState extends State<_FakeWebView> {
 final class FakeDappWebViewController implements DappWebViewController {
   final List<String> calls = <String>[];
   final List<String> scripts = <String>[];
+  final List<String> documentScripts = <String>[];
+
+  /// The tokens the page's handshake was handed.
+  String? token;
+  String? emitToken;
+
+  @override
+  Future<void> stop() async => calls.add('stop');
+
+  @override
+  Future<void> setDocumentStartScript(String source) async =>
+      documentScripts.add(source);
 
   @override
   Future<bool> canGoBack() async => false;

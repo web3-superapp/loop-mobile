@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/dapp/dapp_browser_screens.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -548,14 +549,10 @@ class _MeAccountEntriesState extends ConsumerState<MeAccountEntries> {
     final dapp = LoopRecordRow(
       key: const ValueKey<String>('wallet-dapp-entry'),
       leading: const LoopRowIcon(icon: 'link'),
-      // S342 · decision 0270: the row names the in-app browser once the
-      // server opens `dappBrowser`; until then it is the local URL review.
-      title:
-          ref
-              .watch(loopCapabilityProvider(LoopV2CapabilityId.dappBrowser))
-              .isAvailable
-          ? 'DApp 浏览器'
-          : 'DApp 网址核对',
+      // S342 · decision 0270: the row names the in-app browser exactly when
+      // `/wallet/dapp` opens it — the server's `dappBrowser` and a WebView in
+      // this build (S346 · M10); otherwise it is the local URL review.
+      title: dappBrowserAvailable(ref) ? 'DApp 浏览器' : 'DApp 网址核对',
       onTap: () => widget.onNavigate('dapp'),
     );
     return Column(

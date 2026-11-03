@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
@@ -86,16 +87,30 @@ abstract final class DappChains {
 /// The risk facts the server attaches to a DApp intent (docs/55 §二). The
 /// strip on the confirmation is drawn only when at least one is present.
 enum DappRiskFlag {
-  unlimitedApproval('UNLIMITED_APPROVAL', '无限授权'),
-  approvalForAll('APPROVAL_FOR_ALL', '授权全部 NFT'),
-  permitSignature('PERMIT_SIGNATURE', '签名授权（Permit）'),
+  unlimitedApproval('UNLIMITED_APPROVAL', '无限授权', forcesStepUp: true),
+  approvalForAll('APPROVAL_FOR_ALL', '授权全部 NFT', forcesStepUp: true),
+  // S346 (api finding A5): an approval whose spender has no code.
+  eoaSpender('EOA_SPENDER', '授权给个人地址', forcesStepUp: true),
+  permitSignature('PERMIT_SIGNATURE', '签名授权（Permit）', forcesStepUp: true),
+  // S346 (api finding A2): a personal_sign of exactly 32 bytes of hex.
+  rawHashSignature('RAW_HASH_SIGNATURE', '原始哈希签名', forcesStepUp: true),
+  // S346 (api finding A2): typed data whose primaryType is not recognised.
+  unrecognizedTypedData(
+    'UNRECOGNIZED_TYPED_DATA',
+    '不可识别的签名结构',
+    forcesStepUp: true,
+  ),
   unverifiedContract('UNVERIFIED_CONTRACT', '未验证合约'),
   simulationFailed('SIMULATION_FAILED', '预执行失败');
 
-  const DappRiskFlag(this.wireName, this.label);
+  const DappRiskFlag(this.wireName, this.label, {this.forcesStepUp = false});
 
   final String wireName;
   final String label;
+
+  /// The large-amount step-up asks for a request carrying this flag whatever
+  /// its amount (S346).
+  final bool forcesStepUp;
 
   static DappRiskFlag? tryParse(Object? value) {
     for (final flag in values) {
@@ -207,6 +222,8 @@ final class DappSignReview {
     required this.text,
     required this.hex,
     required this.typedData,
+    this.typedLeaves,
+    this.typedTruncated = const <String>{},
   });
 
   final String method;
@@ -219,6 +236,14 @@ final class DappSignReview {
 
   /// `{domain, primaryType, message}` of an `eth_signTypedData_v4` request.
   final Map<String, Object?>? typedData;
+
+  /// Every leaf of the typed-data message the sheet shows, by path
+  /// (`a.b[0].c`), in the server's text form; checked against the page's
+  /// own payload before the wallet opens (S346 · M8).
+  final Map<String, String>? typedLeaves;
+
+  /// The leaves whose shown value the server cut short.
+  final Set<String> typedTruncated;
 }
 
 /// One DApp intent, `dapp_tx` or `dapp_sign` (docs/55 §二).
@@ -242,6 +267,7 @@ final class DappIntent {
     required this.signingAllowed,
     required this.signingReasonCode,
     required List<DappRiskFlag> riskFlags,
+    this.valueUsd,
     this.txReview,
     this.signReview,
     this.unsignedTransaction,
@@ -263,6 +289,10 @@ final class DappIntent {
   final bool signingAllowed;
   final String? signingReasonCode;
   final List<DappRiskFlag> riskFlags;
+
+  /// The server's own USD valuation of the request (`policy.valueUsd`), or
+  /// `null` when it made none — the Launch testnet has no price.
+  final Decimal? valueUsd;
   final DappTxReview? txReview;
   final DappSignReview? signReview;
 
@@ -305,43 +335,304 @@ final class DappIntent {
     return review.valueWei == request.value;
   }
 
-  /// The message the server bound is the one the page asked for.
+  /// The message the server bound is the one the page asked for, and the
+  /// message the sheet shows is that message (S346 · M8).
   ///
-  /// A typed-data payload is compared as JSON (key order and spacing are
-  /// not part of what is signed); a `personal_sign` message as the exact
-  /// string.
+  /// A typed-data payload is compared as JSON with every number compared by
+  /// its literal text (key order and spacing are not part of what is
+  /// signed), and refused outright when it holds an integer literal past
+  /// 2^53 (S346 · M7); a `personal_sign` message as the exact string.
   bool matchesSign(DappSignRequest request) {
     if (kind != DappIntentKind.message) return false;
     if (signMethod != request.method) return false;
-    if (signReview?.method != request.method) return false;
+    final review = signReview;
+    if (review == null || review.method != request.method) return false;
     final payload = signPayload;
     if (payload == null) return false;
-    if (payload == request.payload) return true;
+    if (request.method == 'personal_sign') {
+      return payload == request.payload &&
+          dappPersonalMessageMatchesReview(request.payload, review);
+    }
     if (request.method != 'eth_signTypedData_v4') return false;
+    final Object? signed;
+    final Object? asked;
     try {
-      return _jsonEquals(jsonDecode(payload), jsonDecode(request.payload));
+      signed = DappJsonLiteral.parse(payload);
+      asked = DappJsonLiteral.parse(request.payload);
     } on FormatException {
       return false;
     }
+    if (!DappJsonLiteral.equals(signed, asked)) return false;
+    return dappTypedDataMatchesReview(asked, review);
+  }
+}
+
+/// `0x…` hex is raw bytes, anything else UTF-8 text (MetaMask semantics).
+List<int> dappPersonalMessageBytes(String payload) {
+  if (RegExp(r'^0x([0-9a-fA-F]{2})*$').hasMatch(payload)) {
+    final hex = payload.substring(2);
+    return <int>[
+      for (var index = 0; index < hex.length; index += 2)
+        int.parse(hex.substring(index, index + 2), radix: 16),
+    ];
+  }
+  return utf8.encode(payload);
+}
+
+/// The text and hex the review shows are the page's own `personal_sign`
+/// message.
+bool dappPersonalMessageMatchesReview(String payload, DappSignReview review) {
+  final bytes = dappPersonalMessageBytes(payload);
+  final hex = review.hex;
+  if (hex != null) {
+    final local = '0x${_hexOf(bytes)}';
+    if (hex.toLowerCase() != local) return false;
+  }
+  final text = review.text;
+  if (text != null) {
+    final String decoded;
+    try {
+      decoded = utf8.decode(bytes);
+    } on FormatException {
+      return false;
+    }
+    if (decoded != text) return false;
+  }
+  return hex != null || text != null;
+}
+
+String _hexOf(List<int> bytes) =>
+    bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+
+/// The primary type, the domain and every message leaf the review shows are
+/// the page's own typed data.
+bool dappTypedDataMatchesReview(Object? asked, DappSignReview review) {
+  final shown = review.typedData;
+  if (shown == null || asked is! Map) return false;
+  final primary = shown['primaryType'];
+  if (primary != null &&
+      dappTypedLeafText(asked['primaryType']) != '$primary') {
+    return false;
+  }
+  final domain = shown['domain'];
+  if (domain is Map) {
+    final askedDomain = asked['domain'];
+    if (askedDomain is! Map) return false;
+    for (final entry in domain.entries) {
+      if (entry.value == null) continue;
+      final value = dappTypedLeafText(entry.value);
+      if (value == null || dappTypedLeafText(askedDomain[entry.key]) != value) {
+        return false;
+      }
+    }
+  }
+  final leaves = review.typedLeaves;
+  if (leaves == null) return false;
+  final message = asked['message'];
+  for (final entry in leaves.entries) {
+    final value = dappTypedLeafText(dappTypedPath(message, entry.key));
+    if (value == null) return false;
+    if (review.typedTruncated.contains(entry.key)) {
+      if (!value.startsWith(entry.value)) return false;
+    } else if (value != entry.value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+final RegExp _pathPart = RegExp(r'([^.\[\]]+)|\[(\d+)\]');
+
+/// The node at `a.b[0].c` under [root], or `null`.
+Object? dappTypedPath(Object? root, String path) {
+  Object? node = root;
+  for (final match in _pathPart.allMatches(path)) {
+    final key = match.group(1);
+    final index = match.group(2);
+    if (key != null) {
+      if (node is! Map || !node.containsKey(key)) return null;
+      node = node[key];
+    } else {
+      final at = int.parse(index!);
+      if (node is! List || at >= node.length) return null;
+      node = node[at];
+    }
+  }
+  return node;
+}
+
+/// A typed-data leaf as the server writes it: strings as they are, numbers
+/// by their literal, booleans as `true` / `false`. `null` for anything that
+/// is not a leaf.
+String? dappTypedLeafText(Object? value) => switch (value) {
+  final String text => text,
+  final DappJsonNumber number => number.literal,
+  final bool flag => flag ? 'true' : 'false',
+  final int number => '$number',
+  _ => null,
+};
+
+/// One JSON number kept as the literal the page wrote.
+@immutable
+final class DappJsonNumber {
+  const DappJsonNumber(this.literal);
+
+  final String literal;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DappJsonNumber && other.literal == literal;
+
+  @override
+  int get hashCode => literal.hashCode;
+
+  @override
+  String toString() => literal;
+}
+
+/// A JSON reader that keeps every number as its literal text, so two
+/// payloads are compared by what was written rather than by a double, and
+/// that refuses an integer past 2^53 (S346 · M7).
+abstract final class DappJsonLiteral {
+  static final BigInt _safe = BigInt.from(9007199254740992);
+  static final RegExp _number = RegExp(
+    r'-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?',
+  );
+
+  static Object? parse(String source) {
+    final reader = _Reader(source);
+    final value = reader.value();
+    reader.skip();
+    if (reader.at != source.length) throw const FormatException('trailing');
+    return value;
   }
 
-  static bool _jsonEquals(Object? left, Object? right) {
+  static bool equals(Object? left, Object? right) {
     if (left is Map && right is Map) {
       if (left.length != right.length) return false;
       for (final key in left.keys) {
         if (!right.containsKey(key)) return false;
-        if (!_jsonEquals(left[key], right[key])) return false;
+        if (!equals(left[key], right[key])) return false;
       }
       return true;
     }
     if (left is List && right is List) {
       if (left.length != right.length) return false;
       for (var index = 0; index < left.length; index++) {
-        if (!_jsonEquals(left[index], right[index])) return false;
+        if (!equals(left[index], right[index])) return false;
       }
       return true;
     }
     return left == right;
+  }
+
+  static DappJsonNumber _checked(String literal) {
+    final plain = !literal.contains('.') && !literal.contains(RegExp('[eE]'));
+    if (plain) {
+      if (BigInt.parse(literal).abs() > _safe) {
+        throw const FormatException('integer past 2^53');
+      }
+    } else {
+      final value = double.tryParse(literal);
+      if (value == null || !value.isFinite || value.abs() >= 9007199254740992) {
+        throw const FormatException('number past 2^53');
+      }
+    }
+    return DappJsonNumber(literal);
+  }
+}
+
+final class _Reader {
+  _Reader(this.source);
+
+  final String source;
+  int at = 0;
+
+  void skip() {
+    while (at < source.length) {
+      final unit = source.codeUnitAt(at);
+      if (unit == 0x20 || unit == 0x0a || unit == 0x0d || unit == 0x09) {
+        at += 1;
+      } else {
+        break;
+      }
+    }
+  }
+
+  Object? value() {
+    skip();
+    if (at >= source.length) throw const FormatException('end');
+    final char = source[at];
+    switch (char) {
+      case '{':
+        at += 1;
+        final map = <String, Object?>{};
+        skip();
+        if (_take('}')) return map;
+        while (true) {
+          skip();
+          final key = _string();
+          skip();
+          if (!_take(':')) throw const FormatException(':');
+          if (map.containsKey(key)) throw const FormatException('dup');
+          map[key] = value();
+          skip();
+          if (_take('}')) return map;
+          if (!_take(',')) throw const FormatException(',');
+        }
+      case '[':
+        at += 1;
+        final list = <Object?>[];
+        skip();
+        if (_take(']')) return list;
+        while (true) {
+          list.add(value());
+          skip();
+          if (_take(']')) return list;
+          if (!_take(',')) throw const FormatException(',');
+        }
+      case '"':
+        return _string();
+    }
+    for (final (word, meaning) in const <(String, Object?)>[
+      ('true', true),
+      ('false', false),
+      ('null', null),
+    ]) {
+      if (source.startsWith(word, at)) {
+        at += word.length;
+        return meaning;
+      }
+    }
+    final match = DappJsonLiteral._number.matchAsPrefix(source, at);
+    if (match == null) throw const FormatException('value');
+    at = match.end;
+    return DappJsonLiteral._checked(match.group(0)!);
+  }
+
+  bool _take(String char) {
+    if (at < source.length && source[at] == char) {
+      at += 1;
+      return true;
+    }
+    return false;
+  }
+
+  String _string() {
+    if (!_take('"')) throw const FormatException('"');
+    final start = at - 1;
+    while (at < source.length) {
+      final char = source[at];
+      if (char == '\\') {
+        at += 2;
+        continue;
+      }
+      at += 1;
+      if (char == '"') {
+        return jsonDecode(source.substring(start, at)) as String;
+      }
+    }
+    throw const FormatException('unterminated');
   }
 }
 
