@@ -1,7 +1,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/dapp/dapp_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/dapp/loop_v2_dapp_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
@@ -703,6 +705,14 @@ abstract final class LoopV2IntentCodec {
     );
   }
 
+  /// The strict `unsignedTransaction` decoder, shared with the DApp intent
+  /// codec (S342 · decision 0270): the payload's own chain must be
+  /// [intentChainId].
+  static LoopUnsignedTransaction? unsignedTransactionFor(
+    Object? raw,
+    String intentChainId,
+  ) => _unsignedTransaction(raw, intentChainId);
+
   /// The Privy authorization payload. The optional `fee_configuration` is the
   /// only key that may be absent, so the body is validated against both shapes
   /// and then rebuilt verbatim — the device signs exactly what the server sent.
@@ -981,19 +991,33 @@ abstract final class LoopV2IntentCodec {
       'contractVersion',
     });
     LoopV2ChainCodec.requireContractVersion(map);
+    final rows = LoopV2ChainCodec.requireList(map['items'], maximum: 50);
     return LoopWalletIntentPage(
       items: <LoopWalletIntent>[
-        for (final item in LoopV2ChainCodec.requireList(
-          map['items'],
-          maximum: 50,
-        ))
+        for (final item in rows)
           // S339 · decision 0267: a kind this build does not know is a later
           // operation, not a broken page — it is skipped, never decoded. A
-          // known kind is still read strictly.
-          if (!_hasUnknownKind(item)) intent(item),
+          // known kind is still read strictly. S342 · decision 0270: the two
+          // DApp kinds are known, and read by their own codec below.
+          if (!_hasUnknownKind(item) && !LoopV2DappCodec.isDappKind(item))
+            intent(item),
+      ],
+      dappIntents: <DappIntent>[
+        for (final item in rows)
+          if (LoopV2DappCodec.isDappKind(item)) ?_lenientDapp(item),
       ],
       nextCursor: LoopV2ChainCodec.cursor(map, 'nextCursor'),
     );
+  }
+
+  /// A DApp row is read leniently: one this build cannot read is skipped,
+  /// it never fails the page (S342 · decision 0270).
+  static DappIntent? _lenientDapp(Object? item) {
+    try {
+      return LoopV2DappCodec.intent(item);
+    } on Object {
+      return null;
+    }
   }
 
   static bool _hasUnknownKind(Object? item) {

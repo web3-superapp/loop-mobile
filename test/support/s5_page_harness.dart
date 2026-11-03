@@ -631,6 +631,9 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // Decision 0154: the testnet faucet, closed unless a test opens it.
   LoopV2CapabilityAvailability testnetFaucet =
       LoopV2CapabilityAvailability.unavailable,
+  // Decision 0270: the in-app DApp browser, closed unless a test opens it.
+  LoopV2CapabilityAvailability dappBrowser =
+      LoopV2CapabilityAvailability.unavailable,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -673,6 +676,7 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.privySwap => privySwap,
               LoopV2CapabilityId.pushNotifications => pushNotifications,
               LoopV2CapabilityId.testnetFaucet => testnetFaucet,
+              LoopV2CapabilityId.dappBrowser => dappBrowser,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -716,6 +720,10 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 testnetFaucet == LoopV2CapabilityAvailability.available
                     ? null
                     : 'TESTNET_FAUCET_DISABLED',
+              LoopV2CapabilityId.dappBrowser =>
+                dappBrowser == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'DAPP_BROWSER_DISABLED',
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
             evidence:

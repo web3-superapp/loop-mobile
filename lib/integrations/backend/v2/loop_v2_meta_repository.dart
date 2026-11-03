@@ -264,6 +264,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     LoopV2CapabilityId.testnetFaucet,
     LoopV2CapabilityId.squareFeed,
     LoopV2CapabilityId.nftSend,
+    LoopV2CapabilityId.dappBrowser,
   };
 
   /// The reason code on a capability the backend did not publish. It is the
@@ -281,6 +282,10 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   /// The same, for an absent `nftSend` (decision 0267): no NFT send.
   static const nftSendAbsentReasonCode = 'NFT_SEND_CAPABILITY_ABSENT';
 
+  /// The same, for an absent `dappBrowser` (decision 0270): the wallet keeps
+  /// the local URL review page.
+  static const dappBrowserAbsentReasonCode = 'DAPP_BROWSER_CAPABILITY_ABSENT';
+
   /// The row an omitted capability reads as: `deferred` (`launch2`) or
   /// `unavailable` (`testnetFaucet`) with no provider precondition, the same
   /// shape loop-api emits for a module that is off.
@@ -295,6 +300,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
         LoopV2CapabilityId.testnetFaucet => testnetFaucetAbsentReasonCode,
         LoopV2CapabilityId.squareFeed => squareFeedAbsentReasonCode,
         LoopV2CapabilityId.nftSend => nftSendAbsentReasonCode,
+        LoopV2CapabilityId.dappBrowser => dappBrowserAbsentReasonCode,
         _ => launch2AbsentReasonCode,
       },
       evidence: const LoopV2CapabilityEvidence(

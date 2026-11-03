@@ -38,7 +38,26 @@ enum IntentKind {
   /// is admitted there; it never carries a purchase, an approval or a
   /// fungible transfer.
   nftTransfer,
+
+  /// A transaction a DApp asked for through the in-app browser (S342 ·
+  /// decision 0270), prepared by the server as a `dapp_tx` intent. It is
+  /// admitted on the published Launch slot only: BSC Mainnet signing stays
+  /// closed (docs/00 rule 8), so [SigningIntent.chainIsPermitted] refuses it
+  /// on the primary chain.
+  dappTransaction,
+
+  /// A `personal_sign` / `eth_signTypedData_v4` message a DApp asked for
+  /// (S342 · decision 0270), prepared as a `dapp_sign` intent. Same chain
+  /// rule as [dappTransaction].
+  dappMessage,
 }
+
+/// The two DApp kinds (S342 · decision 0270). They are never signed on the
+/// primary chain while BSC Mainnet signing stays closed.
+const Set<IntentKind> dappIntentKinds = <IntentKind>{
+  IntentKind.dappTransaction,
+  IntentKind.dappMessage,
+};
 
 /// The kinds that may be signed on the published Launch slot as well as the
 /// primary chain (decisions 0062, 0089, 0141). Every other kind is locked to
@@ -48,6 +67,8 @@ const Set<IntentKind> launchSlotIntentKinds = <IntentKind>{
   IntentKind.launchApproval,
   IntentKind.miningClaim,
   IntentKind.nftTransfer,
+  IntentKind.dappTransaction,
+  IntentKind.dappMessage,
 };
 
 enum IntentOrigin { localPreview, backendCanonical }
@@ -92,6 +113,26 @@ final class AuthorizationSignaturePayload extends SigningPayload {
   final String url;
   final Map<String, String> headers;
   final Map<String, Object?> body;
+}
+
+/// A DApp message (S342 · decision 0270): the device signs [payload] with
+/// [method] through the embedded wallet whose address is [fromAddress]. The
+/// payload is the exact string the page sent — a `personal_sign` hex or UTF-8
+/// message, or the `eth_signTypedData_v4` JSON — and the server's intent
+/// echoed it before the sheet opened.
+final class MessageSignaturePayload extends SigningPayload {
+  const MessageSignaturePayload({
+    required this.fromAddress,
+    required this.method,
+    required this.payload,
+  });
+
+  static const personalSign = 'personal_sign';
+  static const signTypedDataV4 = 'eth_signTypedData_v4';
+
+  final String fromAddress;
+  final String method;
+  final String payload;
 }
 
 final class IntentField {
@@ -337,7 +378,9 @@ final class SigningIntent {
   /// wallet is opened.
   bool get chainIsPermitted {
     if (!loopKnownChainIds.contains(chainId)) return false;
-    if (chainId == loopPrimaryChainId) return true;
+    // S342 · decision 0270: a DApp request is never signed on BSC Mainnet
+    // while docs/00 rule 8 keeps mainnet signing closed.
+    if (chainId == loopPrimaryChainId) return !dappIntentKinds.contains(kind);
     return launchSlotIntentKinds.contains(kind);
   }
 

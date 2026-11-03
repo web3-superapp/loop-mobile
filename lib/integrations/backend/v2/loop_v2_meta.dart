@@ -210,7 +210,8 @@ final class LoopV2TermsGate {
 /// `launch2` by loop-api decision 0114 (client decision 0137), and
 /// `testnetFaucet` by loop-api S156 (client decision 0154), and `squareFeed`
 /// by loop-api decision 0143 (client decision 0177), and `nftSend` by loop-api
-/// S339 (client decision 0267), for 36 ids in the exact
+/// S339 (client decision 0267), and `dappBrowser` by loop-api S342 (client
+/// decision 0270), for 37 ids in the exact
 /// order of `openapi/loop-api.v2.json`.
 /// The parser requires the exact set, so this list must track the frozen
 /// contract even for modules a given step does not consume. The two
@@ -219,7 +220,8 @@ final class LoopV2TermsGate {
 /// (decision 0137, see `DioLoopV2MetaRepository.launch2AbsentReasonCode`);
 /// and [testnetFaucet]: a backend that predates loop-api S156 omits it, and
 /// the parser fills it in as `unavailable` (decision 0154); [squareFeed] the
-/// same way (decision 0177), and [nftSend] (decision 0267).
+/// same way (decision 0177), and [nftSend] (decision 0267), and [dappBrowser]
+/// (decision 0270).
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),
@@ -266,7 +268,11 @@ enum LoopV2CapabilityId {
   squareFeed('squareFeed'),
   // 发送 LOOP 项目 NFT (loop-api S339 / decision 0194, client decision 0267).
   // A backend that predates it omits the id and reads unavailable.
-  nftSend('nftSend');
+  nftSend('nftSend'),
+  // 内置 DApp 浏览器 (loop-api S342, client decision 0270). A backend that
+  // predates it omits the id and reads unavailable: the wallet keeps the
+  // local DApp 网址核对 page.
+  dappBrowser('dappBrowser');
 
   const LoopV2CapabilityId(this.wireName);
 

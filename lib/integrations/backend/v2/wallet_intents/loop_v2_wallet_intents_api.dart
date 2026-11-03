@@ -126,8 +126,9 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
   static const sendNftPath = '/v2/wallet-intents/send-nft';
 
   /// The intent kinds beyond the default set this build decodes; the list
-  /// hides them unless asked (S339).
-  static const includeKinds = 'send_nft';
+  /// hides them unless asked (S339; S342 · decision 0270 adds the two DApp
+  /// kinds).
+  static const includeKinds = 'send_nft,dapp_tx,dapp_sign';
 
   static final RegExp _tokenIdPattern = RegExp(r'^(0|[1-9][0-9]{0,77})$');
 

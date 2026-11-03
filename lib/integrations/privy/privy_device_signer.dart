@@ -46,6 +46,19 @@ abstract interface class PrivyDeviceSigner {
   });
 }
 
+/// The DApp message exit (S342 · decision 0270): one `personal_sign` or
+/// `eth_signTypedData_v4` through the embedded wallet whose address is
+/// [fromAddress]. It is a separate interface so identity and test doubles
+/// of [PrivyDeviceSigner] do not gain it by accident.
+abstract interface class PrivyMessageSigner {
+  /// Returns the 65-byte signature as `0x` + 130 hex characters.
+  Future<String> signMessage({
+    required String fromAddress,
+    required String method,
+    required String payload,
+  });
+}
+
 /// Raised when the device cannot sign. It carries no provider detail.
 final class PrivySigningException implements Exception {
   const PrivySigningException(this.code);
@@ -83,8 +96,9 @@ final class UnavailablePrivyDeviceSigner implements PrivyDeviceSigner {
   }) => throw const PrivySigningException('privy_wallet_unavailable');
 }
 
-/// Binds one live [PrivyUser] to the two SDK signing calls.
-final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
+/// Binds one live [PrivyUser] to the SDK signing calls.
+final class SdkPrivyDeviceSigner
+    implements PrivyDeviceSigner, PrivyMessageSigner {
   const SdkPrivyDeviceSigner(this._user);
 
   final PrivyUser? _user;
@@ -165,6 +179,57 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
         // error, a timeout, an unmapped provider string — may have reached
         // the network, so it locks rather than inviting a second signature.
         throw PrivySigningException(privyWalletFailureCode(error.message));
+    }
+  }
+
+  static final RegExp _signaturePattern = RegExp(r'^0x[0-9a-fA-F]{130}$');
+
+  @override
+  Future<String> signMessage({
+    required String fromAddress,
+    required String method,
+    required String payload,
+  }) async {
+    final user = _user;
+    if (user == null) {
+      throw const PrivySigningException('privy_session_required');
+    }
+    EmbeddedEthereumWallet? match;
+    for (final wallet in user.embeddedEthereumWallets) {
+      if (wallet.address.toLowerCase() == fromAddress.toLowerCase()) {
+        match = wallet;
+        break;
+      }
+    }
+    if (match == null) {
+      throw const PrivySigningException('privy_wallet_mismatch');
+    }
+    final EthereumRpcRequest request;
+    switch (method) {
+      case MessageSignaturePayload.personalSign:
+        request = EthereumRpcRequest.personalSign(payload, match.address);
+      case MessageSignaturePayload.signTypedDataV4:
+        request = EthereumRpcRequest.ethSignTypedDataV4(match.address, payload);
+      default:
+        throw const PrivySigningException('privy_payload_unencodable');
+    }
+    final result = await match.provider.request(request);
+    switch (result) {
+      case Success<EthereumRpcResponse>(value: final response):
+        final signature = response.data.trim();
+        if (!_signaturePattern.hasMatch(signature)) {
+          throw const PrivySigningException('privy_signature_unreadable');
+        }
+        return signature;
+      case Failure<EthereumRpcResponse>(error: final error):
+        // A message signature never leaves the device by itself: an
+        // unmapped failure is a refusal, not an unknown outcome.
+        final code = privyWalletFailureCode(error.message);
+        throw PrivySigningException(
+          code == 'privy_broadcast_rejected'
+              ? 'privy_signature_rejected'
+              : 'privy_signature_failed',
+        );
     }
   }
 

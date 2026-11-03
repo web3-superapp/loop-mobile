@@ -1,4 +1,4 @@
-/// The 117-route product manifest.
+/// The 118-route product manifest.
 ///
 /// Source of truth: `docs/product/routes-manifest.json` (mirror of
 /// `LOOP/docs/routes-manifest.json`). The first 93 slugs were frozen
@@ -16,6 +16,8 @@
 /// opens (114 → 115).
 /// decision 0262 (S332) added `beta-feedback` and `beta-feedback-mine`, the
 /// internal-test feedback form and its list (115 → 117).
+/// decision 0270 (S342) added `dapp-web`, the page the in-app DApp browser
+/// opens (117 → 118).
 /// `test/route_manifest_test.dart`
 /// asserts that this table and the JSON agree on slug, module, tab flag and
 /// prototype order, and that `lib/app.dart` mounts exactly these paths.
@@ -118,7 +120,7 @@ abstract final class LoopRouteManifest {
   /// SHA-256 of the manifest's own canonical content (`sha256Basis` in the
   /// JSON); `scripts/check_harness.py` recomputes it.
   static const String sha256 =
-      'e69189adedcafde0543908c51b733d87a909ccf1ae1f72e3deff8d493eb505a7';
+      '88752f588ba92029eeb73d93337f668792f8fa6da3f816537469218516383d8a';
 
   /// Post-login and illegal-route landing slug (v3, decision 0110; MEME
   /// since decision 0221).
@@ -1070,6 +1072,15 @@ abstract final class LoopRouteManifest {
       module: LoopRouteModule.wallet,
       title: 'DApp 浏览器',
       prototypeOrder: 65,
+      step: 8,
+      status: LoopRouteStatus.implemented,
+    ),
+    LoopRouteEntry(
+      slug: 'dapp-web',
+      path: '/wallet/dapp/web',
+      module: LoopRouteModule.wallet,
+      title: 'DApp 页面',
+      prototypeOrder: 131,
       step: 8,
       status: LoopRouteStatus.implemented,
     ),

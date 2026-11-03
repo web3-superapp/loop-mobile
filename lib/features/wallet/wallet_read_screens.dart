@@ -808,10 +808,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         title: '网络',
         onTap: () => _open('/wallet/networks'),
       ),
+      // S342 · decision 0270: the same row and glyph name the in-app
+      // browser once the server opens `dappBrowser`; until then it stays the
+      // local URL review it always was.
       LoopRecordRow(
         key: const ValueKey<String>('wallet-dapp-entry'),
         leading: const LoopRowIcon(icon: 'link'),
-        title: 'DApp 网址核对',
+        title:
+            ref
+                .watch(loopCapabilityProvider(LoopV2CapabilityId.dappBrowser))
+                .isAvailable
+            ? 'DApp 浏览器'
+            : 'DApp 网址核对',
         onTap: () => _open('/wallet/dapp'),
       ),
       LoopRecordRow(

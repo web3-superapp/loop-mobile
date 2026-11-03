@@ -116,6 +116,7 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/square/square_screen.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
+import 'package:loop_mobile/features/dapp/dapp_browser_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -1752,10 +1753,26 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             WalletManagerScreen(onBack: () => _popOrHome(context)),
       ),
+      // S342 · decision 0270: the DApp browser's first page while the
+      // server opens `dappBrowser`; the local DApp 网址核对 page otherwise.
       GoRoute(
         path: '/wallet/dapp',
-        builder: (context, state) =>
-            DappReviewScreen(onBack: () => _popOrHome(context)),
+        builder: (context, state) => DappEntryScreen(
+          onBack: () => _popOrHome(context),
+          onOpen: (request) =>
+              unawaited(context.push(dappWebPath, extra: request)),
+        ),
+      ),
+      // Manifest `dapp-web`: one reviewed page. It is opened only from the
+      // browser's first page, which hands over the reviewed URL.
+      GoRoute(
+        path: dappWebPath,
+        redirect: (context, state) =>
+            state.extra is DappOpenRequest ? null : '/wallet/dapp',
+        builder: (context, state) => DappBrowserPage(
+          request: state.extra! as DappOpenRequest,
+          onClose: () => _popOrHome(context),
+        ),
       ),
       // Manifest `approval-guard` (legacy `/preview/approval`). The guard is a
       // real money action now, so it lives under `/wallet`.

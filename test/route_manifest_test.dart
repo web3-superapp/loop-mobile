@@ -42,10 +42,11 @@ void main() {
       () {
         expect(
           json['count'],
-          117,
+          118,
         ); // S135: 105 → 111; S168: → 112; S180: → 113; S287: → 114
         // S324 (decision 0254): → 115, auth-email.
         // S332 (decision 0262): → 117, beta-feedback + beta-feedback-mine.
+        // S342 (decision 0270): → 118, dapp-web.
         expect(json['prototypeSha256'], LoopRouteManifest.prototypeSha256);
         expect(
           LoopRouteManifest.prototypeSha256,
@@ -56,7 +57,7 @@ void main() {
         expect(json['tabs'], LoopRouteManifest.tabSlugs);
         expect(json['frozenAt'], LoopRouteManifest.frozenAt);
         expect(json['sha256'], LoopRouteManifest.sha256);
-        expect(LoopRouteManifest.entries, hasLength(117));
+        expect(LoopRouteManifest.entries, hasLength(118));
 
         final modules = json['modules']! as Map<String, Object?>;
         expect(
@@ -89,8 +90,8 @@ void main() {
     test('every slug maps to one unique path and non-empty page facts', () {
       final slugs = LoopRouteManifest.entries.map((entry) => entry.slug);
       final paths = LoopRouteManifest.entries.map((entry) => entry.path);
-      expect(slugs.toSet(), hasLength(117));
-      expect(paths.toSet(), hasLength(117));
+      expect(slugs.toSet(), hasLength(118));
+      expect(paths.toSet(), hasLength(118));
       for (final entry in LoopRouteManifest.entries) {
         expect(entry.path, startsWith('/'), reason: entry.slug);
         expect(entry.path, isNot(contains(':')), reason: entry.slug);
@@ -256,7 +257,7 @@ void main() {
 
     test('Wallet manifest maps every slug to its mounted route', () {
       final wallet = LoopRouteManifest.forModule(LoopRouteModule.wallet);
-      expect(wallet, hasLength(19));
+      expect(wallet, hasLength(20)); // S342: + dapp-web
       expect(
         wallet.where((entry) => entry.status == LoopRouteStatus.pending),
         isEmpty,

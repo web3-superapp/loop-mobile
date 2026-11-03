@@ -474,8 +474,11 @@ void main() {
       );
       expect(page.items.single.kind, LoopIntentKind.sendNft);
       expect(queries, <Map<String, Object?>>[
-        <String, Object?>{'includeKinds': 'send_nft'},
-        <String, Object?>{'includeKinds': 'send_nft', 'cursor': 'abc.123'},
+        <String, Object?>{'includeKinds': 'send_nft,dapp_tx,dapp_sign'},
+        <String, Object?>{
+          'includeKinds': 'send_nft,dapp_tx,dapp_sign',
+          'cursor': 'abc.123',
+        },
       ]);
     });
 

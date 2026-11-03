@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/dapp/dapp_models.dart';
 
 // ---------------------------------------------------------------------------
 // wallet intents · POST /v2/wallet-intents/{send|approve|revoke|swap}
@@ -875,9 +876,15 @@ final class LoopWalletIntentPage {
   LoopWalletIntentPage({
     required List<LoopWalletIntent> items,
     required this.nextCursor,
-  }) : items = List<LoopWalletIntent>.unmodifiable(items);
+    List<DappIntent> dappIntents = const <DappIntent>[],
+  }) : items = List<LoopWalletIntent>.unmodifiable(items),
+       dappIntents = List<DappIntent>.unmodifiable(dappIntents);
 
   final List<LoopWalletIntent> items;
+
+  /// The `dapp_tx` / `dapp_sign` rows of the page (S342 · decision 0270),
+  /// read by their own lenient codec.
+  final List<DappIntent> dappIntents;
   final String? nextCursor;
 }
 

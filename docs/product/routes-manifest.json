@@ -3,7 +3,7 @@
   "source": "https://cliview.org/loop-v2.html",
   "prototypeSha256": "bdbe183286c2d77c0de7f731818d5a8da9702ef08ed9a558a5189609c8b33c1a",
   "sha256Basis": "SHA-256 of the UTF-8 canonical JSON (sorted keys, compact separators) of defaultRoute, tabs, count and modules",
-  "sha256": "e69189adedcafde0543908c51b733d87a909ccf1ae1f72e3deff8d493eb505a7",
+  "sha256": "88752f588ba92029eeb73d93337f668792f8fa6da3f816537469218516383d8a",
   "defaultRoute": "meme",
   "tabs": [
     "chat",
@@ -12,7 +12,7 @@
     "intel",
     "wallet"
   ],
-  "count": 117,
+  "count": 118,
   "modules": {
     "0-global-account": [
       {
@@ -469,6 +469,11 @@
         "slug": "dapp",
         "tab": false,
         "prototypeOrder": 65
+      },
+      {
+        "slug": "dapp-web",
+        "tab": false,
+        "prototypeOrder": 131
       },
       {
         "slug": "approval-guard",
