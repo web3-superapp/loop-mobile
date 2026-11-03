@@ -585,6 +585,9 @@ class _MeAccountEntriesState extends ConsumerState<MeAccountEntries> {
   LoopRecordRow _inviteRow() {
     final referral = ref.watch(referralControllerProvider);
     final code = referral.value?.inviteCode.code;
+    // Narrow screens keep the title whole: the code text drops, the copy
+    // button stays.
+    final showCodeText = MediaQuery.sizeOf(context).width >= 380;
     return LoopRecordRow(
       key: const ValueKey<String>('profile-open-referral'),
       leading: const LoopRowIcon(icon: 'ticket'),
@@ -594,13 +597,14 @@ class _MeAccountEntriesState extends ConsumerState<MeAccountEntries> {
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
-                  code,
-                  style: LoopTypography.withWeight(
-                    LoopType.figureSm,
-                    FontWeight.w500,
+                if (showCodeText)
+                  Text(
+                    code,
+                    style: LoopTypography.withWeight(
+                      LoopType.figureSm,
+                      FontWeight.w500,
+                    ),
                   ),
-                ),
                 _CopyInviteCodeButton(code: code),
               ],
             ),
