@@ -426,7 +426,6 @@ class _ProfileIdentitySectionState
         resource: resource,
         counts: counts,
         onEdit: () => widget.onNavigate('profile-edit'),
-        onOpenRewards: () => widget.onNavigate('mining-rewards'),
         onOpenConnections: () => widget.onNavigate('connections'),
         onShare: loopId == null
             ? null
@@ -1017,7 +1016,6 @@ class ProfileIdentityCard extends StatelessWidget {
     required this.resource,
     required this.counts,
     required this.onEdit,
-    required this.onOpenRewards,
     required this.onOpenConnections,
   });
 
@@ -1026,7 +1024,6 @@ class ProfileIdentityCard extends StatelessWidget {
   /// `null` until the connections read answered; the line is then absent.
   final ConnectionCounts? counts;
   final VoidCallback onEdit;
-  final VoidCallback onOpenRewards;
   final VoidCallback onOpenConnections;
 
   /// 分享名片 (S343 · decision 0271): the LOOP ID card sheet. `null` while
@@ -1117,14 +1114,30 @@ class ProfileIdentityCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      alias ?? '尚未设置别名',
-                      key: const ValueKey<String>('profile-alias'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopType.displaySm.copyWith(
-                        color: LoopColors.chalk,
-                      ),
+                    // S343 · decision 0271: 分享名片 at the end of the name.
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            alias ?? '尚未设置别名',
+                            key: const ValueKey<String>('profile-alias'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LoopType.displaySm.copyWith(
+                              color: LoopColors.chalk,
+                            ),
+                          ),
+                        ),
+                        if (onShare case final VoidCallback share)
+                          LoopIconButton(
+                            key: const ValueKey<String>(
+                              'profile-share-loop-id',
+                            ),
+                            icon: 'share',
+                            label: '分享名片',
+                            onPressed: share,
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     // Decision 0104 (S97b layout): the copy glyph follows the
@@ -1184,13 +1197,6 @@ class ProfileIdentityCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              LoopButton(
-                key: const ValueKey<String>('profile-open-rewards'),
-                label: '奖励',
-                icon: 'parachute',
-                onPressed: onOpenRewards,
-              ),
             ],
           ),
         ),
@@ -1244,14 +1250,6 @@ class ProfileIdentityCard extends StatelessWidget {
                         ],
                       ),
               ),
-              // S343 · decision 0271: 分享名片 at the end of the line.
-              if (onShare case final VoidCallback share)
-                LoopIconButton(
-                  key: const ValueKey<String>('profile-share-loop-id'),
-                  icon: 'share',
-                  label: '分享名片',
-                  onPressed: share,
-                ),
             ],
           ),
         ),

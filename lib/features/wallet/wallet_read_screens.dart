@@ -317,6 +317,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         archetype: LoopPageArchetype.record,
         title: '我的',
         tabPage: true,
+        // S343 · decision 0271: the bar keeps 交易历史 / 通知 / 设置 only.
+        pageInfo: false,
         // Decision 0221: the wall under 钱包, the crown behind its title.
         backdrop: const LoopWallBackdrop(
           key: ValueKey<String>('wallet-atmo-backdrop'),
@@ -491,10 +493,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   // S237 · decision 0204: the faucet card under the quick actions is
                   // gone; 获取资金 opens from 充值 on 我 and MEME, and from the
                   // MEME v2 insufficient-balance link.
-                  // Decision 0188 · 持仓分布: only over a complete set of valuations.
-                  if (balances != null)
-                    if (walletHoldingShares(balances) case final shares?)
-                      WalletHoldingsDistribution(shares: shares),
+                  // S343 · decision 0271: 持仓分布 repeated the list below it.
                   // S259 · decision 0217: 「代币 / NFT」 in place of the 余额 label,
                   // 产生算力 kept on the right of the same line.
                   WalletAssetTabs(

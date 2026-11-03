@@ -298,18 +298,6 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                 color: auxiliary,
               ),
             ),
-            _HeaderGlyphButton(
-              key: ValueKey<String>('$keyPrefix-info'),
-              label: '总资产说明',
-              onTap: () => showWalletTotalInfoSheet(
-                context,
-                balances: balances,
-                fiat: fiat,
-                history: chartState?.value ?? week,
-                keyPrefix: keyPrefix,
-              ),
-              child: LoopIcon('info', size: 14, color: auxiliary),
-            ),
             const Spacer(),
             if (widget.environmentTag case final String tag)
               Padding(
@@ -1386,10 +1374,9 @@ class WalletBalanceRow extends StatelessWidget {
         ? walletMaskedFigure
         : loopFormatDecimal(balance.displayBalance);
     final valuation = row.valuation;
-    final reserve = gasReserve;
-    final subtitle = row.isNative && reserve != null
-        ? '手续费保留 ${loopFormatDecimal(reserve)}'
-        : row.name;
+    // S343 · decision 0271: the second line is the asset's name; the gas
+    // reserve is stated on the asset's own page.
+    final subtitle = row.name;
     final marks = <String>[
       if (valuation is LoopValuationAvailable)
         ?loopFactQualityMarker(valuation.quality),
@@ -1449,23 +1436,24 @@ class WalletBalanceRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: <Widget>[
-                    // The subtitle (手续费保留 …) gives way last.
-                    Flexible(
-                      flex: 3,
-                      child: Text(
-                        subtitle,
-                        key: ValueKey<String>(
-                          'wallet-balance-subtitle-${row.assetId}',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.caption.copyWith(color: auxiliary),
-                      ),
-                    ),
-                    if (marks.isNotEmpty)
+                    // S343 · decision 0271: one short fact — the data
+                    // quality note when there is one, else the asset's name.
+                    if (marks.isEmpty)
                       Flexible(
                         child: Text(
-                          '，${marks.join('，')}',
+                          subtitle,
+                          key: ValueKey<String>(
+                            'wallet-balance-subtitle-${row.assetId}',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.caption.copyWith(color: auxiliary),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: Text(
+                          marks.join('，'),
                           key: ValueKey<String>(
                             'wallet-balance-mark-${row.assetId}',
                           ),

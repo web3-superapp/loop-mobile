@@ -199,10 +199,10 @@ void main() {
       );
       expect(find.textContaining('观察于'), findsNothing);
       expect(find.textContaining('区块 120,628,164'), findsNothing);
-      // S325 · decision 0255: the source joined the page's one (i).
-      await openPageInfo(tester);
-      expect(_key('loop-provenance-sheet'), findsOneWidget);
-      expect(find.textContaining('区块 120,628,164'), findsOneWidget);
+      // S343 · decision 0271: 我的 keeps its bar to three keys; the source
+      // stays registered with the line.
+      expect(_key('loop-page-info-action'), findsNothing);
+      expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
     });
   });
 

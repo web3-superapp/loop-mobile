@@ -67,18 +67,13 @@ void main() {
       // Decision 0229: the caption size, 14.
       expect(value.style!.fontSize, 14);
       expect(value.style!.color, LoopColors.text2);
-      // The native row's grey line is its gas reserve, from the policy.
-      expect(
-        tester
-            .widget<Text>(key('wallet-balance-subtitle-$s5NativeAssetId'))
-            .data,
-        '手续费保留 0.005',
-      );
-      // The derived-price note is small type at the end of the grey line.
+      // S343 · decision 0271: the grey line is one short fact — here the
+      // price note; the gas reserve is stated on the asset's own page.
+      expect(key('wallet-balance-subtitle-$s5NativeAssetId'), findsNothing);
       final mark = tester.widget<Text>(
         key('wallet-balance-mark-$s5NativeAssetId'),
       );
-      expect(mark.data, contains('以 WBNB 计价'));
+      expect(mark.data, '以 WBNB 计价');
       expect(mark.style!.fontSize, 14);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);

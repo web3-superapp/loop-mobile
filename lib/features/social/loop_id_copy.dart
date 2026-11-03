@@ -46,7 +46,14 @@ class LoopIdCopyLine extends StatelessWidget {
             // long press on the printed ID is the shortcut for the finger.
             excludeFromSemantics: true,
             onLongPress: () => unawaited(copyLoopId(context, loopId)),
-            child: Text(loopId, key: textKey, style: style),
+            child: Text(
+              loopId,
+              key: textKey,
+              style: style,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         Semantics(

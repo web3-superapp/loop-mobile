@@ -275,11 +275,8 @@ void main() {
       );
 
       expect(find.textContaining('不是可用余额'), findsNothing);
-      await tester.tap(key('wallet-info'));
-      await tester.pumpAndSettle();
-      expect(key('wallet-info-sheet'), findsOneWidget);
-      expect(find.textContaining('不是可用余额'), findsOneWidget);
-      expect(find.textContaining('DexScreener'), findsWidgets);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
   });
 

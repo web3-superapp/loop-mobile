@@ -23,6 +23,12 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - 删除：右上「钱包管理」（与「我的钱包」同页）、底部跨链 / 代币授权 / 网络 / 设置行、profile 版净值面板与持仓（`ProfileHomeScreen` 整页删除）、底部「充值」。钱包模块整体关闭时只把资产部分换成能力块，身份卡与账号行仍在。
 - 测试网「获取资金」挪进「接收」页：`testnetFaucet` 能力可用且当前钱包为内置钱包时，复制 / 分享下方一个按钮打开原领币弹层；主网不画。
 
+### 我的 · 截图验收后再精简（主代理 2026-11-03）
+
+- 右上角只留 交易历史 / 通知 / 设置：`LoopDashboardPage.pageInfo: false`（`LoopTopbar.pageInfo`），不再自动加页面 (i)。
+- 身份卡去掉「奖励」按钮（挖矿奖励在情报·算力）；分享名片图标在昵称同一行右侧；昵称单行省略，LOOP ID 单行（`LoopIdCopyLine` 不折行），390 / 360 宽都不折行。
+- 删「持仓分布」整块；总资产卡标题旁 (i) 删除；资产行副行不再写「手续费保留 …」，只显示资产名（手续费保留仍在资产详情页）。
+
 ### 设置
 
 - 只剩 隐私与安全（隐私中心 / 安全中心 / 通知设置，`ProfileSettingsEntries`）、通用、关于、退出登录。删去三个圆键（分享名片 / 扫一扫 / 挖矿）、账号组、资产与挖矿组、通知中心行。
@@ -34,6 +40,8 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - bridge、bridge-status、networks、approvals、pay 路由保留但无入口（安全中心「授权盘点」仍可进 approvals）。清单数量不变。
 
 ## Consequences
+
+- IDO「参与记录 / 我的资格」两个入口随资产与挖矿组删除；IDO 现在关闭，重开时再定入口位置。
 
 - `scripts/check_harness.py` 的「首帧画本机头像」规则从聊天页移到 `profile_v2_screens.dart`（`ref.watch(ownerFaceProvider)` 现在在 `ProfileIdentitySection`）。
 - 依赖 `/intel?tab=power` 与 `&sub=invite` 的落点由 S344 实现；合并前这两个深链落在情报默认段。

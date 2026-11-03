@@ -165,9 +165,10 @@ void main() {
         _painted(tester, _key('wallet-balance-amount-${healthy.assetId}')),
         LoopType.figure,
       );
+      // S343 · decision 0271: this row's one grey fact is its price note.
       _expectStep(
-        _painted(tester, _key('wallet-balance-subtitle-${healthy.assetId}')),
-        LoopType.caption,
+        _painted(tester, _key('wallet-balance-mark-${healthy.assetId}')),
+        LoopType.captionSm,
       );
       _expectStep(
         _painted(tester, _key('wallet-balance-value-${healthy.assetId}')),

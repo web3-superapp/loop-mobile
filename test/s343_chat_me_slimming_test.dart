@@ -292,6 +292,15 @@ void main() {
       expect(history, lessThan(bell));
       expect(bell, lessThan(gear));
       expect(_key('wallet-manage-action'), findsNothing);
+      // Only those three: no (i) in the bar.
+      expect(_key('loop-page-info-action'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(LoopTopbar),
+          matching: find.byType(LoopIconButton),
+        ),
+        findsNWidgets(3),
+      );
 
       double top(String key) => tester.getTopLeft(_key(key)).dy;
       expect(_key('profile-identity-card'), findsOneWidget);
@@ -299,7 +308,25 @@ void main() {
       expect(_key('profile-copy-loop-id'), findsOneWidget);
       expect(_key('profile-following-count'), findsOneWidget);
       expect(_key('profile-followers-count'), findsOneWidget);
-      expect(_key('profile-open-rewards'), findsOneWidget);
+      // 奖励 left the card (挖矿奖励 is on 情报 · 算力); 分享名片 ends the
+      // name's line.
+      expect(_key('profile-open-rewards'), findsNothing);
+      expect(
+        tester.getCenter(_key('profile-share-loop-id')).dy,
+        moreOrLessEquals(
+          tester.getCenter(_key('profile-alias')).dy,
+          epsilon: 2,
+        ),
+      );
+      // Name and LOOP ID each on one line.
+      final idLine = tester.getSize(_key('profile-loop-id')).height;
+      expect(idLine, lessThan(24));
+      expect(find.text(_loopId), findsOneWidget);
+      // No 持仓分布, no (i) beside 总资产, no explanation under a row.
+      expect(_key('wallet-holdings-distribution'), findsNothing);
+      expect(find.text('持仓分布'), findsNothing);
+      expect(_key('wallet-info'), findsNothing);
+      expect(find.textContaining('手续费保留'), findsNothing);
       expect(top('profile-identity-card'), lessThan(top('wallet-total-plate')));
       expect(top('wallet-total-plate'), lessThan(top('wallet-receive-entry')));
       for (final key in <String>[
@@ -337,6 +364,7 @@ void main() {
         'wallet-networks-entry',
         'wallet-settings-entry',
         'profile-deposit',
+        'profile-open-rewards',
         'profile-networth-panel',
         'profile-holdings-tabs',
         'profile-round-keys',
@@ -433,6 +461,16 @@ void main() {
       await _pumpMe(tester, balances: s5Balances(rows: const []));
       expect(_key('wallet-balances-empty'), findsOneWidget);
       expect(_key('me-account-entries'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('at 360 the name and the LOOP ID stay on one line', (
+      tester,
+    ) async {
+      await _pumpMe(tester, size: const Size(360, 2400));
+      expect(find.text(_loopId), findsOneWidget);
+      expect(tester.getSize(_key('profile-loop-id')).height, lessThan(24));
+      expect(tester.getSize(_key('profile-alias')).height, lessThan(40));
       expect(tester.takeException(), isNull);
     });
 
@@ -644,6 +682,15 @@ void main() {
         size: const Size(390, 1700),
       );
       await _shot(tester, 'S343-me-assets');
+    });
+
+    testWidgets('我的 · 360 宽', skip: !_shots, (tester) async {
+      await _pumpMe(
+        tester,
+        requests: _oneRequest(),
+        size: const Size(360, 1600),
+      );
+      await _shot(tester, 'S343-me-360');
     });
 
     testWidgets('我的 · 空资产', skip: !_shots, (tester) async {

@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -45,9 +46,9 @@ void main() {
       // confirmations sit in the statement it opens.
       expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
-      // S325 · decision 0255: the statement opens from the page's one (i).
-      await openPageInfo(tester);
-      expect(find.textContaining('15 确认'), findsOneWidget);
+      // S343 · decision 0271: 我的's bar has no (i); the statement is still
+      // the line's own.
+      expect(_provenanceNote('15 确认'), findsOneWidget);
     });
 
     testWidgets('the assets are unboxed rows: amount over value and 24h', (
@@ -118,9 +119,9 @@ void main() {
         ),
       );
 
-      // S325 · decision 0255: the statement opens from the page's one (i).
-      await openPageInfo(tester);
-      expect(find.textContaining('0.005 BNB'), findsOneWidget);
+      // S343 · decision 0271: 我的's bar has no (i); the statement is still
+      // the line's own.
+      expect(_provenanceNote('0.005 BNB'), findsOneWidget);
       // The reserve is the server's figure; the configuration version behind
       // it is a backend identifier and never reaches the footer.
       expect(find.textContaining('walletGasReserveV1'), findsNothing);
@@ -570,14 +571,8 @@ void main() {
       );
 
       expect(find.text('\$6,352.82'), findsWidgets);
-      // Decision 0119: the statement sits behind the (i) beside 总资产.
-      await tester.tap(find.byKey(const ValueKey<String>('wallet-info')));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('wallet-not-spendable')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('不是可用余额'), findsOneWidget);
+      // S343 · decision 0271: 我的 has no (i) beside 总资产.
+      expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
 
     testWidgets('a partial total says how many rows have no price', (
@@ -1557,3 +1552,11 @@ class WalletCreatingTestPrivyGateway implements PrivyAuthGateway {
     throw UnsupportedError('This gateway does not verify OTPs.');
   }
 }
+
+/// A registered provenance entry whose notes hold [fragment] (S343 · decision
+/// 0271: 我的's bar no longer opens them).
+Finder _provenanceNote(String fragment) => find.byWidgetPredicate(
+  (widget) =>
+      widget is LoopProvenanceHosted &&
+      widget.entry.notes.any((note) => note.body.contains(fragment)),
+);

@@ -135,12 +135,10 @@ void main() {
 
       await tester.tap(_key('profile-add-bio'));
       await tester.tap(_key('profile-open-edit'));
-      await tester.tap(_key('profile-open-rewards'));
       await tester.tap(_key('profile-open-settings'));
       expect(opened, <String>[
         profileDestinationPath('profile-edit'),
         profileDestinationPath('profile-edit'),
-        profileDestinationPath('mining-rewards'),
         profileDestinationPath('settings'),
       ]);
     });
