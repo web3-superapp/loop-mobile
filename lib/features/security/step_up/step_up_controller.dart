@@ -107,7 +107,11 @@ abstract interface class LoopStepUpGuard {
   /// Asks the device when [usd1] reaches the threshold. A verification that
   /// passed for at least [usd1] within [loopStepUpGrantWindow] is reused,
   /// so one operation that opens the wallet twice is asked once.
-  Future<LoopStepUpVerdict> verify(Decimal? usd1);
+  ///
+  /// [force] treats the signature as reaching the threshold whatever [usd1]
+  /// says (S346): it is asked while the rule is on, every time, and it
+  /// neither reuses nor leaves a grant.
+  Future<LoopStepUpVerdict> verify(Decimal? usd1, {bool force = false});
 
   /// Ends the operation: the next signature is asked for again.
   void release();
@@ -244,7 +248,8 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
           LoopDeviceAuthUnavailableReason.unknown;
 
   @override
-  Future<LoopStepUpVerdict> verify(Decimal? usd1) async {
+  Future<LoopStepUpVerdict> verify(Decimal? usd1, {bool force = false}) async {
+    if (force) return _verifyForced();
     final plan = await this.plan(usd1);
     if (!plan.required || usd1 == null) return LoopStepUpVerdict.notRequired;
     if (_capabilityUnknown) return LoopStepUpVerdict.failed;
@@ -264,6 +269,22 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
       );
       return LoopStepUpVerdict.passed;
     }
+    return state.lastOutcome == LoopDeviceAuthOutcome.canceled
+        ? LoopStepUpVerdict.cancelled
+        : LoopStepUpVerdict.failed;
+  }
+
+  Future<LoopStepUpVerdict> _verifyForced() async {
+    await load();
+    await refreshCapability();
+    if (!ref.mounted) return LoopStepUpVerdict.failed;
+    if (!state.isActive && !_capabilityUnknown) {
+      return LoopStepUpVerdict.notRequired;
+    }
+    if (_capabilityUnknown) return LoopStepUpVerdict.failed;
+    final passed = await _ask('验证身份以签名这笔请求');
+    if (!ref.mounted) return LoopStepUpVerdict.failed;
+    if (passed) return LoopStepUpVerdict.passed;
     return state.lastOutcome == LoopDeviceAuthOutcome.canceled
         ? LoopStepUpVerdict.cancelled
         : LoopStepUpVerdict.failed;
@@ -359,7 +380,9 @@ final class LoopStepUpWalletSigningGateway implements WalletSigningGateway {
     }
     final LoopStepUpVerdict verdict;
     try {
-      verdict = await guard.verify(intent.stepUpUsd1);
+      verdict = intent.stepUpRequired
+          ? await guard.verify(intent.stepUpUsd1, force: true)
+          : await guard.verify(intent.stepUpUsd1);
     } on Object {
       return const WalletHandoffResult.rejected(loopStepUpFailedCode);
     }

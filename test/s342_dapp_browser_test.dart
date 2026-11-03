@@ -4,7 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -36,6 +38,19 @@ import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s6_page_harness.dart';
 
+/// Bridge secrets in order: the first boot nonce, the next one, then the
+/// first document's token (`n0nce`) and event token, then `s4`, `s5`, ….
+String Function() _secrets() {
+  var index = 0;
+  const first = <String>['boot0', 'boot1', 'n0nce', 'emit0'];
+  return () {
+    final value = index < first.length ? first[index] : 's$index';
+    index += 1;
+    return value;
+  };
+}
+
+/// A bridge whose first document, at [loaded], shook hands and loaded.
 DappBridge _bridge(
   FakeDappHost host, {
   FakeDappIntentsGateway? intents,
@@ -43,15 +58,15 @@ DappBridge _bridge(
   DappRpcReader? customReader,
   Set<String>? connected,
   String chainId = s342Launch,
+  String? loaded = s342Origin,
 }) {
   final origins = connected ?? <String>{};
-  return DappBridge(
-    nonce: 'n0nce',
+  final bridge = DappBridge(
     host: host,
     intents: intents ?? FakeDappIntentsGateway(),
     reader: customReader ?? reader ?? FakeDappRpcReader(),
-    isConnected: origins.contains,
-    setConnected: (origin, {required bool connected}) async {
+    isConnected: (walletId, origin) => origins.contains(origin),
+    setConnected: (walletId, origin, {required bool connected}) async {
       if (connected) {
         origins.add(origin);
       } else {
@@ -59,7 +74,14 @@ DappBridge _bridge(
       }
     },
     chainId: chainId,
+    secrets: _secrets(),
   );
+  if (loaded != null) {
+    bridge.documentStarting(Uri.parse(loaded));
+    bridge.ready(<Object?>[bridge.bootNonce, loaded]);
+    bridge.documentLoaded(Uri.parse(loaded));
+  }
+  return bridge;
 }
 
 List<Object?> _call(
@@ -113,7 +135,7 @@ void main() {
 
   group('provider script', () {
     final script = dappProviderScript(
-      nonce: 'abc123',
+      bootNonce: 'abc123',
       chainIdHex: '0x61',
       providerUuid: '11111111-1111-4111-8111-111111111111',
     );
@@ -144,14 +166,16 @@ void main() {
       expect(script, isNot(contains('__LOOP_')));
     });
 
-    test('an emitted event names the page nonce', () {
+    test('an emitted event carries the document token, not a global name', () {
       final emit = DappBridgeProtocol.emitScript(
         'abc123',
         'chainChanged',
         '0x38',
       );
-      expect(emit, contains('__loopEmit_abc123'));
+      expect(emit, contains('"__loopEthereumDispatch"'));
+      expect(emit, contains('"abc123"'));
       expect(emit, contains('"chainChanged"'));
+      expect(emit, isNot(contains('__loopEmit_')));
     });
   });
 
@@ -187,12 +211,12 @@ void main() {
     });
 
     test('no page loaded, or a non-https top page, admits nothing', () async {
-      final bridge = _bridge(FakeDappHost(topOrigin: null));
+      final bridge = _bridge(FakeDappHost(), loaded: null);
       expect(
         _code(await bridge.handle(_call('eth_chainId'))),
         DappRpcErrorCode.unauthorized,
       );
-      final http = _bridge(FakeDappHost(topOrigin: 'http://app.example.org'));
+      final http = _bridge(FakeDappHost(), loaded: 'http://app.example.org');
       expect(
         _code(
           await http.handle(
@@ -903,6 +927,7 @@ void main() {
             'reasonCode': 'BSC_CALL_REVERTED',
           },
         }),
+        origin: s342Origin,
         fromAddress: s342Address,
         now: DateTime.utc(2026, 11, 3),
         tx: s342TxRequest,
@@ -935,6 +960,7 @@ void main() {
       final signer = DappSigner(wallet: wallet, intents: intents);
       final outcome = await signer.sign(
         s342TxIntent(),
+        origin: s342Origin,
         fromAddress: s342Address,
         now: DateTime.utc(2026, 11, 3),
         tx: s342TxRequest,
@@ -957,6 +983,7 @@ void main() {
         );
         final outcome = await signer.sign(
           LoopV2DappCodec.intent(s342TxIntentBody(value: '0x1')),
+          origin: s342Origin,
           fromAddress: s342Address,
           now: DateTime.utc(2026, 11, 3),
           tx: s342TxRequest,
@@ -973,6 +1000,7 @@ void main() {
         final intents = FakeDappIntentsGateway();
         final outcome = await DappSigner(wallet: wallet, intents: intents).sign(
           s342SignIntent(),
+          origin: s342Origin,
           fromAddress: s342Address,
           now: DateTime.utc(2026, 11, 3),
           sign: const DappSignRequest(
@@ -1007,6 +1035,7 @@ void main() {
                   wallet: RecordingSigningGateway(),
                   intents: FakeDappIntentsGateway(),
                 ),
+                origin: s342Origin,
                 fromAddress: s342Address,
                 tx: s342TxRequest,
                 clock: () => DateTime.utc(2026, 11, 3),
@@ -1074,6 +1103,11 @@ void main() {
                 ? LoopV2CapabilityAvailability.available
                 : LoopV2CapabilityAvailability.unavailable,
           ),
+          overrides: <Override>[
+            dappWebViewFactoryProvider.overrideWithValue(
+              FakeDappWebViewFactory(),
+            ),
+          ],
         );
         await scrollToS5Section(
           tester,
@@ -1134,8 +1168,9 @@ void main() {
         final store = SharedPreferencesDappBrowserStore.forTesting(
           (key) async => storage[key],
           (key, value) async => storage[key] = value,
+          (key) async => storage.remove(key),
         );
-        var state = await store.read();
+        var state = await store.read(s342Account);
         for (var index = 0; index < 25; index++) {
           state = state.visited(
             DappPageEntry(url: 'https://site$index.example/', title: 'S$index'),
@@ -1148,16 +1183,16 @@ void main() {
             .toggledBookmark(
               const DappPageEntry(url: 'https://a.example/', title: 'A'),
             )
-            .withConnection(s342Origin, on: true);
-        await store.write(state);
-        final read = await store.read();
+            .withConnection(s342WalletId, s342Origin, on: true);
+        await store.write(s342Account, state);
+        final read = await store.read(s342Account);
         expect(read.recents, hasLength(20));
         expect(read.recents.first.url, 'https://site3.example/');
         expect(read.isBookmarked('https://a.example/'), isTrue);
-        expect(read.isConnected(s342Origin), isTrue);
+        expect(read.isConnected(s342WalletId, s342Origin), isTrue);
         expect(read.toggledBookmark(read.bookmarks.single).bookmarks, isEmpty);
         expect(
-          read.withConnection(s342Origin, on: false).connectedOrigins,
+          read.withConnection(s342WalletId, s342Origin, on: false).connections,
           isEmpty,
         );
       },
@@ -1167,16 +1202,20 @@ void main() {
       expect(DappBrowserLocalState.decode('{not json').recents, isEmpty);
       final state = DappBrowserLocalState.decode(
         jsonEncode(<String, Object?>{
-          'v': 1,
+          'v': 2,
           'recents': <Object?>[
             <String, Object?>{'url': 'http://plain.example/', 'title': 'x'},
             <String, Object?>{'url': 'https://ok.example/', 'title': 'ok'},
           ],
-          'connections': <Object?>['http://plain.example', s342Origin],
+          'connections': <Object?>[
+            '$s342WalletId|http://plain.example',
+            s342Origin,
+            '$s342WalletId|$s342Origin',
+          ],
         }),
       );
       expect(state.recents.single.url, 'https://ok.example/');
-      expect(state.connectedOrigins, <String>{s342Origin});
+      expect(state.connections, <String>{'$s342WalletId|$s342Origin'});
     });
   });
 
@@ -1207,6 +1246,7 @@ void main() {
             dappWebViewFactoryProvider.overrideWithValue(
               factory ?? FakeDappWebViewFactory(),
             ),
+            loopAccountScopeProvider.overrideWithValue(s342Account),
             dappBrowserStoreProvider.overrideWithValue(
               store ?? MemoryDappBrowserStore(),
             ),
@@ -1299,8 +1339,8 @@ void main() {
     testWidgets('home lists bookmarks and recents from the store', (
       tester,
     ) async {
-      final store = MemoryDappBrowserStore(
-        DappBrowserLocalState(
+      final store = MemoryDappBrowserStore(<String, DappBrowserLocalState>{
+        s342Account: DappBrowserLocalState(
           recents: const <DappPageEntry>[
             DappPageEntry(url: 'https://r.example/', title: 'Recent'),
           ],
@@ -1308,7 +1348,7 @@ void main() {
             DappPageEntry(url: 'https://b.example/', title: 'Saved'),
           ],
         ),
-      );
+      });
       await pumpPage(tester, const DappEntryScreen(), store: store);
       expect(find.text('收藏'), findsOneWidget);
       expect(find.text('最近访问'), findsOneWidget);
@@ -1319,7 +1359,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Recent'), findsNothing);
-      expect((await store.read()).recents, isEmpty);
+      expect((await store.read(s342Account)).recents, isEmpty);
     });
 
     testWidgets('the page: host, lock, chain, bridge, menu and visit record', (
@@ -1358,16 +1398,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The script's nonce is the only one the bridge admits.
-      final nonce = RegExp(r'var NONCE = "([0-9a-f]+)"')
-          .firstMatch(config.documentStartScript)!
-          .group(1)!;
+      // The token the document's handshake was handed is the only one the
+      // bridge admits.
+      final token = factory.controller.token!;
       final answer = await config.onBridgeCall(
-        _call('eth_chainId', const [], s342Origin, nonce),
+        _call('eth_chainId', const [], s342Origin, token),
       );
       expect((answer! as Map<String, Object?>)['result'], '0x61');
 
-      expect((await store.read()).recents.single.title, 'Example DApp');
+      expect(
+        (await store.read(s342Account)).recents.single.title,
+        'Example DApp',
+      );
 
       await tester.tap(find.byKey(const ValueKey<String>('dapp-web-address')));
       await tester.pumpAndSettle();
@@ -1387,6 +1429,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('BSC 主网'), findsOneWidget);
       expect(factory.controller.scripts.last, contains('chainChanged'));
+      expect(
+        factory.controller.scripts.last,
+        contains(factory.controller.emitToken!),
+      );
+      // S346 · M6: documents that start from now on read the new chain.
+      expect(factory.controller.documentScripts.last, contains('"0x38"'));
 
       await tester.tap(find.byKey(const ValueKey<String>('dapp-web-menu')));
       await tester.pumpAndSettle();
@@ -1398,7 +1446,10 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-menu-bookmark')),
       );
       await tester.pumpAndSettle();
-      expect((await store.read()).isBookmarked('$s342Origin/swap'), isTrue);
+      expect(
+        (await store.read(s342Account)).isBookmarked('$s342Origin/swap'),
+        isTrue,
+      );
 
       await tester.tap(find.byKey(const ValueKey<String>('dapp-web-reload')));
       await tester.pump();

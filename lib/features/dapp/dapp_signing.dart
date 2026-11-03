@@ -81,6 +81,7 @@ final class DappSigner {
           payload: message,
         );
     }
+    final stepUp = dappIntentStepUp(intent);
     return SigningIntent.backendCanonical(
       revision: intent.intentId,
       payloadDigest: intent.reviewSha256,
@@ -96,6 +97,8 @@ final class DappSigner {
         for (final fact in dappIntentFacts(intent))
           IntentField(label: fact.label, value: fact.value),
       ],
+      stepUpUsd1: stepUp.usd1,
+      stepUpRequired: stepUp.forced,
     );
   }
 
@@ -103,6 +106,7 @@ final class DappSigner {
   /// clock. The sheet states them before the wallet ever opens.
   static String? refusalBeforeWallet(
     DappIntent intent, {
+    required String origin,
     required String fromAddress,
     required DateTime now,
     DappTxRequest? tx,
@@ -110,6 +114,8 @@ final class DappSigner {
   }) {
     final refusal = intent.refusalAt(now);
     if (refusal != null) return refusal;
+    // S346 · M8: the intent is bound to the page that asked for it.
+    if (intent.origin != origin) return 'REVIEW_PAYLOAD_MISMATCH';
     final matches = switch (intent.kind) {
       DappIntentKind.transaction =>
         tx != null && intent.matchesTx(tx, fromAddress: fromAddress),
@@ -120,6 +126,7 @@ final class DappSigner {
 
   Future<DappSignOutcome> sign(
     DappIntent intent, {
+    required String origin,
     required String fromAddress,
     required DateTime now,
     DappTxRequest? tx,
@@ -127,6 +134,7 @@ final class DappSigner {
   }) async {
     final refusal = refusalBeforeWallet(
       intent,
+      origin: origin,
       fromAddress: fromAddress,
       now: now,
       tx: tx,
@@ -193,6 +201,36 @@ final class DappSigner {
     }
   }
 }
+
+/// What the large-amount step-up reads for one DApp request (S346 · M2).
+///
+/// [usd1] is the request's worth when it can be read: zero for a call that
+/// moves no native coin and names no token transfer, the server's own
+/// valuation (`policy.valueUsd`, the same figure a send is checked against)
+/// for one that moves native coin. `forced` asks whatever the figure,
+/// when the worth cannot be read — native coin the server did not value, a
+/// token transfer — or the server named an approval, permit or unreadable
+/// signature risk.
+({Decimal? usd1, bool forced}) dappIntentStepUp(DappIntent intent) {
+  final flagged = intent.riskFlags.any((flag) => flag.forcesStepUp);
+  final tx = intent.txReview;
+  if (tx == null) return (usd1: null, forced: flagged);
+  final name = tx.decodedCall?.functionName;
+  final movesToken =
+      name != null && _dappTokenTransferFunctions.contains(name.toLowerCase());
+  if (tx.valueWei == BigInt.zero) {
+    return (usd1: Decimal.zero, forced: flagged || movesToken);
+  }
+  final valued = intent.valueUsd;
+  return (usd1: valued, forced: flagged || movesToken || valued == null);
+}
+
+const Set<String> _dappTokenTransferFunctions = <String>{
+  'transfer',
+  'transferfrom',
+  'safetransferfrom',
+  'safebatchtransferfrom',
+};
 
 final dappSignerProvider = Provider<DappSigner>(
   (ref) => DappSigner(
@@ -487,11 +525,13 @@ Future<DappSignOutcome> showDappIntentSheet(
   BuildContext context, {
   required DappIntent intent,
   required DappSigner signer,
+  required String origin,
   required String fromAddress,
   DappTxRequest? tx,
   DappSignRequest? sign,
   String? faviconUrl,
   DateTime Function()? clock,
+  Listenable? dismiss,
 }) async {
   final latch = MoneySignLatch();
   final pending = Completer<DappSignOutcome>();
@@ -501,7 +541,9 @@ Future<DappSignOutcome> showDappIntentSheet(
     builder: (context) => DappIntentSheet(
       intent: intent,
       signer: signer,
+      origin: origin,
       fromAddress: fromAddress,
+      dismiss: dismiss,
       tx: tx,
       sign: sign,
       faviconUrl: faviconUrl,
@@ -522,8 +564,10 @@ class DappIntentSheet extends StatefulWidget {
   const DappIntentSheet({
     required this.intent,
     required this.signer,
+    required this.origin,
     required this.fromAddress,
     super.key,
+    this.dismiss,
     this.tx,
     this.sign,
     this.faviconUrl,
@@ -534,7 +578,14 @@ class DappIntentSheet extends StatefulWidget {
 
   final DappIntent intent;
   final DappSigner signer;
+
+  /// The page origin that asked; the intent must be bound to it.
+  final String origin;
   final String fromAddress;
+
+  /// Closes a sheet that has not reached the wallet as a decline: the page
+  /// it belongs to navigated away (S346 · M1 / M5).
+  final Listenable? dismiss;
   final DappTxRequest? tx;
   final DappSignRequest? sign;
   final String? faviconUrl;
@@ -557,8 +608,10 @@ class _DappIntentSheetState extends State<DappIntentSheet> {
   @override
   void initState() {
     super.initState();
+    widget.dismiss?.addListener(_dismissed);
     final refusal = DappSigner.refusalBeforeWallet(
       widget.intent,
+      origin: widget.origin,
       fromAddress: widget.fromAddress,
       now: _now,
       tx: widget.tx,
@@ -574,6 +627,17 @@ class _DappIntentSheetState extends State<DappIntentSheet> {
     }
   }
 
+  @override
+  void dispose() {
+    widget.dismiss?.removeListener(_dismissed);
+    super.dispose();
+  }
+
+  void _dismissed() {
+    if (_submitted || !mounted) return;
+    Navigator.of(context).pop(const DappSignOutcome.rejected());
+  }
+
   Future<void> _confirm() async {
     if (_submitted) return;
     setState(() {
@@ -584,6 +648,7 @@ class _DappIntentSheetState extends State<DappIntentSheet> {
     widget.latch?.enteredSigning = true;
     final outcome = await widget.signer.sign(
       widget.intent,
+      origin: widget.origin,
       fromAddress: widget.fromAddress,
       now: _now,
       tx: widget.tx,

@@ -634,6 +634,9 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // Decision 0270: the in-app DApp browser, closed unless a test opens it.
   LoopV2CapabilityAvailability dappBrowser =
       LoopV2CapabilityAvailability.unavailable,
+  // Decision 0267: the NFT send, closed unless a test opens it.
+  LoopV2CapabilityAvailability nftSend =
+      LoopV2CapabilityAvailability.unavailable,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -677,6 +680,7 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.pushNotifications => pushNotifications,
               LoopV2CapabilityId.testnetFaucet => testnetFaucet,
               LoopV2CapabilityId.dappBrowser => dappBrowser,
+              LoopV2CapabilityId.nftSend => nftSend,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -724,6 +728,10 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 dappBrowser == LoopV2CapabilityAvailability.available
                     ? null
                     : 'DAPP_BROWSER_DISABLED',
+              LoopV2CapabilityId.nftSend =>
+                nftSend == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'NFT_SEND_DISABLED',
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
             evidence:

@@ -157,6 +157,7 @@ final class SigningIntent {
     this.payloadDigest,
     this.payload,
     this.stepUpUsd1,
+    this.stepUpRequired = false,
   }) : fields = List<IntentField>.unmodifiable(fields);
 
   /// The only constructor that may produce a wallet-bound intent.
@@ -177,6 +178,7 @@ final class SigningIntent {
     required DateTime expiresAt,
     required List<IntentField> fields,
     Decimal? stepUpUsd1,
+    bool stepUpRequired = false,
   }) {
     return SigningIntent._(
       revision: revision,
@@ -192,6 +194,7 @@ final class SigningIntent {
       payloadDigest: payloadDigest,
       payload: payload,
       stepUpUsd1: stepUpUsd1,
+      stepUpRequired: stepUpRequired,
     );
   }
 
@@ -353,6 +356,13 @@ final class SigningIntent {
   /// signing exit and nowhere else: it is not part of the payload, it is not
   /// shown as a fact, and `null` means "not known" — never zero.
   final Decimal? stepUpUsd1;
+
+  /// The large-amount step-up asks for this signature whatever
+  /// [stepUpUsd1] says, as if it reached the threshold (S346): a DApp request
+  /// whose worth cannot be read, or that carries an approval / permit /
+  /// unreadable-signature risk. Like [stepUpUsd1] it is read only at the
+  /// signing exit.
+  final bool stepUpRequired;
 
   /// Hyperliquid account mutations are relayed by LOOP's backend. The mobile
   /// app must never send those intents to an embedded-wallet signing API.

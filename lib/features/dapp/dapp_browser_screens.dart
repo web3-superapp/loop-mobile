@@ -160,16 +160,12 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
     widget.onOpen?.call(request);
   }
 
+  /// A saved or recent page opens through the same review as a typed one:
+  /// a flagged address shows its findings first (S346 · M9).
   void _openEntry(DappPageEntry entry) {
     final review = LoopUrlReview.review(entry.url);
-    final url = dappNavigableUrl(review);
-    if (url == null) return;
-    _open(
-      DappOpenRequest(
-        url: Uri.parse(entry.url),
-        acknowledged: review.verdict == LoopUrlVerdict.flagged,
-      ),
-    );
+    if (dappNavigableUrl(review) == null) return;
+    _open(DappOpenRequest(url: Uri.parse(entry.url)));
   }
 
   @override
@@ -423,8 +419,8 @@ enum _PageGate { open, findings, blocked }
 
 class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     implements DappBridgeHost {
-  late final String _nonce = _randomHex(16);
   late final String _providerUuid = _uuidV4();
+  final ValueNotifier<int> _dismissSigning = ValueNotifier<int>(0);
   late final DappBridge _bridge;
   late final LoopUrlReview _review = LoopUrlReview.review(
     widget.request.url.toString(),
@@ -468,16 +464,18 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
         ? _PageGate.findings
         : _PageGate.open;
     _bridge = DappBridge(
-      nonce: _nonce,
       host: this,
       intents: ref.read(dappIntentsGatewayProvider),
       reader: ref.read(dappRpcReaderProvider),
-      isConnected: (origin) =>
-          ref.read(dappBrowserLocalProvider).value?.isConnected(origin) ??
+      isConnected: (walletId, origin) =>
+          ref
+              .read(dappBrowserLocalProvider)
+              .value
+              ?.isConnected(walletId, origin) ??
           false,
-      setConnected: (origin, {required bool connected}) => ref
+      setConnected: (walletId, origin, {required bool connected}) => ref
           .read(dappBrowserLocalProvider.notifier)
-          .setConnected(origin, connected: connected),
+          .setConnected(walletId, origin, connected: connected),
       chainId: _chainId,
     );
     scheduleMicrotask(() {
@@ -489,14 +487,18 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     });
   }
 
+  @override
+  void dispose() {
+    _bridge.dispose();
+    _dismissSigning.dispose();
+    super.dispose();
+  }
+
   // ---- DappBridgeHost -----------------------------------------------------
 
-  @override
-  String? get topOrigin {
-    final url = _url;
-    if (url == null || url.scheme != 'https' || url.host.isEmpty) return null;
-    return url.origin;
-  }
+  /// The origin of the document the WebView last reported loaded, while no
+  /// navigation is under way.
+  String? get topOrigin => _bridge.committedOrigin;
 
   @override
   DappWalletIdentity? get wallet =>
@@ -525,30 +527,25 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
   Future<DappSignOutcome> confirmIntent({
     required DappIntent intent,
     required DappWalletIdentity wallet,
+    required String origin,
     DappTxRequest? tx,
     DappSignRequest? sign,
   }) async {
     if (!mounted) return const DappSignOutcome.rejected();
+    // The bridge releases the server's intent for every outcome that is not
+    // a produced hash or signature.
     final outcome = await showDappIntentSheet(
       context,
       intent: intent,
       signer: ref.read(dappSignerProvider),
+      origin: origin,
       fromAddress: wallet.address,
       tx: tx,
       sign: sign,
       faviconUrl: _favicon,
       clock: widget.clock,
+      dismiss: _dismissSigning,
     );
-    if (outcome.status == DappSignStatus.rejected) {
-      // The owner declined before the wallet opened: the server's intent
-      // is released rather than left to expire.
-      unawaited(
-        ref
-            .read(dappIntentsGatewayProvider)
-            .cancel(intentId: intent.intentId)
-            .catchError((Object _) {}),
-      );
-    }
     if (outcome.status == DappSignStatus.produced && mounted) {
       LoopToast.show(
         context,
@@ -565,11 +562,15 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
   }
 
   @override
+  void dismissSigning() => _dismissSigning.value += 1;
+
+  @override
   Future<void> emit(String event, Object? data) async {
     final controller = _controller;
-    if (controller == null) return;
+    final script = _bridge.emitScript(event, data);
+    if (controller == null || script == null) return;
     try {
-      await controller.evaluate(_bridge.emitScript(event, data));
+      await controller.evaluate(script);
     } on Object {
       // A page that navigated away no longer has the listener.
     }
@@ -580,7 +581,30 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     if (mounted) setState(() => _chainId = chainId);
   }
 
+  @override
+  void documentScriptChanged() {
+    final controller = _controller;
+    if (controller == null) return;
+    unawaited(
+      controller
+          .setDocumentStartScript(_documentStartScript())
+          .catchError((Object _) {}),
+    );
+  }
+
+  String _documentStartScript() => dappProviderScript(
+    bootNonce: _bridge.bootNonce,
+    chainIdHex: DappChains.hexOf(_bridge.chainId),
+    providerUuid: _providerUuid,
+  );
+
   // ---- WebView ------------------------------------------------------------
+
+  /// A main-frame URL the page may hold: `https` that the local review
+  /// does not block.
+  static bool _navigable(Uri url) =>
+      url.scheme.toLowerCase() == 'https' &&
+      !LoopUrlReview.review(url.toString()).isBlocked;
 
   bool _allowNavigation(Uri url) {
     final scheme = url.scheme.toLowerCase();
@@ -598,20 +622,50 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     return true;
   }
 
-  void _onUrlChanged(Uri url) {
+  /// A main-frame navigation started (S346 · M1): the bridge refuses every
+  /// request until a document finishes loading. A navigation that reached
+  /// here without the navigation check — an Android POST form — and is not
+  /// allowed is stopped (M12).
+  void _onLoadStart(Uri url) {
+    _bridge.documentStarting(url);
+    if (url.scheme.toLowerCase() != 'about' && !_navigable(url)) {
+      unawaited(_controller?.stop().catchError((Object _) {}));
+      toast('这个网址不能打开');
+    }
+    if (mounted) setState(() => _failure = null);
+  }
+
+  /// The main frame finished loading [url]: it becomes the page's address
+  /// and the only origin the bridge acts for.
+  void _onLoadStop(Uri url) {
     if (!mounted) return;
+    if (!_navigable(url)) return;
+    _bridge.documentLoaded(url);
     setState(() {
       _url = url;
       _failure = null;
     });
     unawaited(_refreshHistory());
-    if (url.scheme == 'https') {
-      unawaited(
-        ref
-            .read(dappBrowserLocalProvider.notifier)
-            .recordVisit(DappPageEntry(url: url.toString(), title: _title)),
-      );
-    }
+    unawaited(
+      ref
+          .read(dappBrowserLocalProvider.notifier)
+          .recordVisit(DappPageEntry(url: url.toString(), title: _title)),
+    );
+  }
+
+  /// The address changed inside the same document (history API, hash).
+  void _onUrlChanged(Uri url) {
+    if (!mounted) return;
+    final current = _url;
+    if (current == null || url.origin != current.origin) return;
+    if (_bridge.committedOrigin != url.origin) return;
+    setState(() => _url = url);
+    unawaited(_refreshHistory());
+    unawaited(
+      ref
+          .read(dappBrowserLocalProvider.notifier)
+          .recordVisit(DappPageEntry(url: url.toString(), title: _title)),
+    );
   }
 
   void _onTitle(String title) {
@@ -738,7 +792,11 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     final origin = topOrigin;
     final local = ref.read(dappBrowserLocalProvider).value;
     final bookmarked = local?.isBookmarked(url.toString()) ?? false;
-    final connected = origin != null && (local?.isConnected(origin) ?? false);
+    final walletId = wallet?.walletId;
+    final connected =
+        origin != null &&
+        walletId != null &&
+        (local?.isConnected(walletId, origin) ?? false);
     final action = await showLoopSheet<String>(
       context,
       builder: (context) => Padding(
@@ -923,14 +981,14 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
             child: factory.build(
               DappWebViewConfig(
                 initialUrl: dappNavigableUrl(_review) ?? widget.request.url,
-                documentStartScript: dappProviderScript(
-                  nonce: _nonce,
-                  chainIdHex: DappChains.hexOf(_chainId),
-                  providerUuid: _providerUuid,
-                ),
+                documentStartScript: _documentStartScript(),
                 handlerName: DappBridgeProtocol.handlerName,
                 onBridgeCall: _bridge.handle,
+                readyHandlerName: DappBridgeProtocol.readyHandlerName,
+                onReady: _bridge.ready,
                 onCreated: (controller) => _controller = controller,
+                onLoadStart: _onLoadStart,
+                onLoadStop: _onLoadStop,
                 onUrlChanged: _onUrlChanged,
                 onTitleChanged: _onTitle,
                 onProgress: (value) {

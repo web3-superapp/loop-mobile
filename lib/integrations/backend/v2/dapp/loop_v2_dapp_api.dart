@@ -38,6 +38,9 @@ final class DioLoopV2DappApi {
       entry.key: <String>{
         ...entry.value,
         if (entry.key == 422) 'CHAIN_SIGNING_DISABLED',
+        // S346: `409 RESOURCE_CONFLICT` with reasonCode INTENT_BUSY — a
+        // non-DApp intent is open on the wallet.
+        if (entry.key == 409) 'RESOURCE_CONFLICT',
       },
   };
 

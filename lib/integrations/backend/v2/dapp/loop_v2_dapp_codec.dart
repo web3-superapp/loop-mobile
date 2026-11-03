@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/dapp/dapp_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
@@ -149,6 +150,7 @@ abstract final class LoopV2DappCodec {
         for (final flag in DappRiskFlag.values)
           if (flags.contains(flag)) flag,
       ],
+      valueUsd: _valueUsd(map['policy']),
       txReview: txReview,
       signReview: signReview,
       unsignedTransaction: unsigned,
@@ -200,6 +202,20 @@ abstract final class LoopV2DappCodec {
         if (entry.value != null || !review.containsKey(entry.key))
           entry.key: entry.value,
     };
+  }
+
+  static final RegExp _decimal = RegExp(r'^[0-9]{1,30}(\.[0-9]{1,18})?$');
+
+  /// `policy.valueUsd` when the server valued the request (S346 · M2); the
+  /// policy block is optional and any shape this build cannot read is "not
+  /// valued", never a zero.
+  static Decimal? _valueUsd(Object? raw) {
+    if (raw is! Map) return null;
+    final basis = raw['exposureBasis'];
+    final value = raw['valueUsd'];
+    if (basis is! String || basis == 'none') return null;
+    if (value is! String || !_decimal.hasMatch(value)) return null;
+    return Decimal.tryParse(value);
   }
 
   static Iterable<DappRiskFlag> _flags(Object? raw) sync* {
@@ -324,10 +340,22 @@ abstract final class LoopV2DappCodec {
         // S342-api flattens the message tree into `{path, type, value}`
         // leaves; the sheet draws them back as one level under `message`.
         final domain = typed['domain'];
+        final leaves = <String, String>{};
+        final truncated = <String>{};
+        for (final field in fields.take(256)) {
+          if (field is! Map || field['path'] is! String) _invalid();
+          final path = field['path'] as String;
+          final value = _leafText(field['value']);
+          if (value == null) _invalid();
+          leaves[path] = value;
+          if (field['truncated'] == true) truncated.add(path);
+        }
         return DappSignReview(
           method: method,
           text: null,
           hex: null,
+          typedLeaves: leaves,
+          typedTruncated: truncated,
           typedData: <String, Object?>{
             'primaryType': typed['primaryType'],
             if (domain is Map)
@@ -343,10 +371,13 @@ abstract final class LoopV2DappCodec {
           },
         );
       }
+      final leaves = <String, String>{};
+      _collectLeaves(typed['message'], '', leaves);
       return DappSignReview(
         method: method,
         text: null,
         hex: null,
+        typedLeaves: leaves,
         typedData: <String, Object?>{
           for (final key in const <String>['primaryType', 'domain', 'message'])
             if (typed.containsKey(key)) key: typed[key],
@@ -370,6 +401,44 @@ abstract final class LoopV2DappCodec {
       hex: hex is String ? hex : null,
       typedData: null,
     );
+  }
+
+  /// The server's text for one typed-data leaf.
+  static String? _leafText(Object? value) => switch (value) {
+    final String text => text,
+    final bool flag => flag ? 'true' : 'false',
+    final int number => '$number',
+    final double number
+        when number == number.truncateToDouble() &&
+            number.abs() < 9007199254740992 =>
+      '${number.toInt()}',
+    _ => null,
+  };
+
+  /// The leaves of a nested typed-data message, by `a.b[0].c` path.
+  static void _collectLeaves(
+    Object? node,
+    String path,
+    Map<String, String> into,
+  ) {
+    if (into.length > 256) _invalid();
+    if (node is Map) {
+      for (final entry in node.entries) {
+        final key = '${entry.key}';
+        _collectLeaves(entry.value, path.isEmpty ? key : '$path.$key', into);
+      }
+      return;
+    }
+    if (node is List) {
+      for (var index = 0; index < node.length; index++) {
+        _collectLeaves(node[index], '$path[$index]', into);
+      }
+      return;
+    }
+    if (path.isEmpty || node == null) return;
+    final text = _leafText(node);
+    if (text == null) _invalid();
+    into[path] = text;
   }
 
   /// The method and exact payload the device signs: `signPayload` or

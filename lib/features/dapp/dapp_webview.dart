@@ -17,6 +17,13 @@ abstract interface class DappWebViewController {
   Future<bool> canGoForward();
 
   Future<void> evaluate(String source);
+
+  /// Stops the main-frame load in progress.
+  Future<void> stop();
+
+  /// Replaces the document-start script for documents that start from now
+  /// on (S346: a new boot nonce, or a new chain).
+  Future<void> setDocumentStartScript(String source);
 }
 
 /// Why a main-frame load failed.
@@ -30,7 +37,11 @@ final class DappWebViewConfig {
     required this.documentStartScript,
     required this.handlerName,
     required this.onBridgeCall,
+    required this.readyHandlerName,
+    required this.onReady,
     required this.onCreated,
+    required this.onLoadStart,
+    required this.onLoadStop,
     required this.onUrlChanged,
     required this.onTitleChanged,
     required this.onProgress,
@@ -50,9 +61,19 @@ final class DappWebViewConfig {
   /// out.
   final Future<Object?> Function(List<Object?> args) onBridgeCall;
 
+  /// The handshake handler a document's provider calls once (S346).
+  final String readyHandlerName;
+  final Object? Function(List<Object?> args) onReady;
+
   final void Function(DappWebViewController controller) onCreated;
 
-  /// The top-level URL the WebView now reports.
+  /// A main-frame navigation to the URL started.
+  final void Function(Uri url) onLoadStart;
+
+  /// The main frame finished loading the URL.
+  final void Function(Uri url) onLoadStop;
+
+  /// The visited URL changed without a new document (history API, hash).
   final void Function(Uri url) onUrlChanged;
 
   final void Function(String title) onTitleChanged;

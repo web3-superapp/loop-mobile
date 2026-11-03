@@ -76,6 +76,8 @@ Future<void> pumpS6Page(
       LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability privySwap =
       LoopV2CapabilityAvailability.available,
+  // S346 · M11: an NFT send is gated by `nftSend`, not `sendApprovals`.
+  LoopV2CapabilityAvailability nftSend = LoopV2CapabilityAvailability.available,
   bool swapEvidencePending = true,
   Size size = const Size(390, 2400),
   bool settle = true,
@@ -112,6 +114,7 @@ Future<void> pumpS6Page(
             (ref) async => s5MetaSnapshot(
               sendApprovals: sendApprovals,
               privySwap: privySwap,
+              nftSend: nftSend,
               swapEvidencePending: swapEvidencePending,
             ),
           ),

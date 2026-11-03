@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/dapp/dapp_gateway.dart';
@@ -12,11 +14,6 @@ import 'package:loop_mobile/features/dapp/dapp_provider_script.dart';
 /// The page implements it with the WebView, the sheets and the toast; a test
 /// implements it with a double. Nothing here touches a widget.
 abstract interface class DappBridgeHost {
-  /// The origin of the top-level document the WebView reports right now, or
-  /// `null` while no page is loaded. It is the only origin a request may
-  /// claim.
-  String? get topOrigin;
-
   /// The wallet pages connect to, or `null` while it is not known.
   DappWalletIdentity? get wallet;
 
@@ -31,9 +28,14 @@ abstract interface class DappBridgeHost {
   Future<DappSignOutcome> confirmIntent({
     required DappIntent intent,
     required DappWalletIdentity wallet,
+    required String origin,
     DappTxRequest? tx,
     DappSignRequest? sign,
   });
+
+  /// Closes an open confirmation that has not reached the wallet, as a
+  /// decline: the document that asked for it is gone (S346 · M1 / M5).
+  void dismissSigning();
 
   /// One short line on screen.
   void toast(String message);
@@ -43,38 +45,106 @@ abstract interface class DappBridgeHost {
 
   /// The page's chain changed (top bar).
   void chainChanged(String chainId);
+
+  /// The next document's boot nonce or chain changed: the page installs a
+  /// new document-start script (S346 · M1 / M6).
+  void documentScriptChanged();
 }
 
 /// The toast a signing request on BSC Mainnet shows (docs/55 §一).
 const String dappMainnetSigningText = '暂不支持在这个网络签名';
 
+/// The toast for `409 INTENT_BUSY`: another wallet action is open (S346).
+const String dappIntentBusyText = '钱包有待处理的操作';
+
+/// 128 random bits, hex.
+String dappRandomSecret() {
+  final random = Random.secure();
+  return List<String>.generate(
+    16,
+    (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+  ).join();
+}
+
+/// One document's bridge credentials (S346 · M1): the token its requests
+/// carry, the token its events carry, and the origin its own script read at
+/// document start.
+@immutable
+final class _DappDocument {
+  const _DappDocument({
+    required this.token,
+    required this.emitToken,
+    required this.origin,
+    required this.loadSeq,
+  });
+
+  final String token;
+  final String emitToken;
+  final String origin;
+
+  /// How many documents had finished loading when this one shook hands.
+  final int loadSeq;
+}
+
 /// Routes the EIP-1193 requests of one browser page.
 ///
-/// It owns the page's chain and reads the connected origins from
-/// [isConnected] / [setConnected]; it never decides an outcome on its own
-/// that the owner or the server should decide.
+/// It owns the page's chain and the bridge credentials of the document on
+/// screen, and reads the connected sites from [isConnected] /
+/// [setConnected]; it never decides an outcome on its own that the owner or
+/// the server should decide.
+///
+/// Document lifecycle (S346 · M1). Each document's provider shakes hands
+/// once with the boot nonce of the script it was given; the nonce is
+/// replaced at once, so no other document — and no frame, which never gets
+/// the script — can present it again. The answer is a token bound to the
+/// origin that document read for itself. The token is honoured only once
+/// the WebView reported that origin loaded ([documentLoaded]); from the
+/// moment a main-frame navigation starts ([documentStarting]) every request
+/// is refused (4100), in-flight signing is called off and its server intent
+/// released.
 final class DappBridge {
   DappBridge({
-    required this.nonce,
     required this.host,
     required this.intents,
     required this.reader,
     required this.isConnected,
     required this.setConnected,
     String chainId = loopLaunchTestnetChainId,
-  }) : _chainId = chainId; // ignore: prefer_initializing_formals
+    String Function()? secrets,
+  }) : _chainId = chainId, // ignore: prefer_initializing_formals
+       _secret = secrets ?? dappRandomSecret {
+    _boot = _secret();
+  }
 
-  final String nonce;
   final DappBridgeHost host;
   final DappIntentsGateway intents;
   final DappRpcReader reader;
-  final bool Function(String origin) isConnected;
-  final Future<void> Function(String origin, {required bool connected})
+
+  /// Whether [origin] is connected to the wallet [walletId] (S346 · M3).
+  final bool Function(String walletId, String origin) isConnected;
+  final Future<void> Function(
+    String walletId,
+    String origin, {
+    required bool connected,
+  })
   setConnected;
 
+  final String Function() _secret;
   String _chainId;
+  late String _boot;
 
-  /// Requests refused by the origin check, for diagnostics and tests.
+  _DappDocument? _active;
+  _DappDocument? _pending;
+  String? _committedOrigin;
+  bool _transitioning = false;
+  bool _disposed = false;
+  int _loadSeq = 0;
+
+  /// Moves at every navigation start, new document and disposal; a signing
+  /// request admitted under an older generation is called off.
+  int _generation = 0;
+
+  /// Requests refused by the admission check, for diagnostics and tests.
   int refusedFrames = 0;
 
   /// The tail of the signing queue. The server keeps one open intent per
@@ -98,14 +168,119 @@ final class DappBridge {
 
   String get chainId => _chainId;
 
+  /// The boot nonce the next document's script carries.
+  String get bootNonce => _boot;
+
+  /// The origin of the document the WebView last reported loaded, while no
+  /// navigation is under way.
+  String? get committedOrigin => _transitioning ? null : _committedOrigin;
+
   static const _signingMethods = <String>{
     'eth_sendTransaction',
     'personal_sign',
     'eth_signTypedData_v4',
   };
 
+  static final RegExp _originPattern = RegExp(r'^https://[^/\s]{1,253}$');
+
+  static const Map<String, Object?> _refusedHandshake = <String, Object?>{
+    'ok': false,
+  };
+
+  // ---- document lifecycle -----------------------------------------------
+
+  /// The handshake handler. [args] is what `callHandler` passed after the
+  /// handler name: boot nonce, origin.
+  Map<String, Object?> ready(List<Object?> args) {
+    if (_disposed || args.length != 2) return _refusedHandshake;
+    final boot = args[0];
+    final origin = args[1];
+    if (boot is! String || boot != _boot) {
+      refusedFrames += 1;
+      return _refusedHandshake;
+    }
+    // Spent: the next document gets a new one.
+    _boot = _secret();
+    host.documentScriptChanged();
+    if (origin is! String || !_originPattern.hasMatch(origin)) {
+      return _refusedHandshake;
+    }
+    _callOff();
+    final document = _DappDocument(
+      token: _secret(),
+      emitToken: _secret(),
+      origin: origin,
+      loadSeq: _loadSeq,
+    );
+    _active = null;
+    if (!_transitioning && _committedOrigin == origin) {
+      // A page whose bridge came up after its load finished.
+      _active = document;
+    } else {
+      _pending = document;
+    }
+    return <String, Object?>{
+      'ok': true,
+      'token': document.token,
+      'emitToken': document.emitToken,
+      'chainId': DappChains.hexOf(_chainId),
+    };
+  }
+
+  /// A main-frame navigation to [url] started: nothing is admitted until a
+  /// document finishes loading, and in-flight signing is called off.
+  void documentStarting(Uri url) {
+    if (_disposed) return;
+    final active = _active;
+    // On Android the start is reported after the new document already
+    // shook hands; that document keeps its place.
+    if (_pending == null &&
+        active != null &&
+        active.loadSeq == _loadSeq &&
+        _originOf(url) == active.origin) {
+      _pending = active;
+    }
+    _active = null;
+    _transitioning = true;
+    _callOff();
+  }
+
+  /// The WebView reports [url] loaded in the main frame.
+  void documentLoaded(Uri url) {
+    if (_disposed) return;
+    _loadSeq += 1;
+    _transitioning = false;
+    _committedOrigin = _originOf(url);
+    final pending = _pending;
+    if (pending != null && pending.origin == _committedOrigin) {
+      _active = pending;
+      _pending = null;
+    }
+  }
+
+  /// The page is closing.
+  void dispose() {
+    _disposed = true;
+    _active = null;
+    _pending = null;
+    _callOff();
+  }
+
+  void _callOff() {
+    _generation += 1;
+    host.dismissSigning();
+  }
+
+  static String? _originOf(Uri url) {
+    if (url.scheme != 'https' || url.host.isEmpty) return null;
+    final origin = url.origin;
+    return _originPattern.hasMatch(origin) ? origin : null;
+  }
+
+  // ---- requests -----------------------------------------------------------
+
   /// The JavaScript handler. [args] is what `callHandler` passed after the
-  /// handler name: nonce, origin, isTopFrame, requestJson.
+  /// handler name: token, origin, isTopFrame, requestJson.
   Future<Map<String, Object?>> handle(List<Object?> args) async {
     final origin = _admittedOrigin(args);
     if (origin == null) {
@@ -154,19 +329,29 @@ final class DappBridge {
     'error': error.toJson(),
   };
 
-  /// The origin a request may act for, or `null`: the nonce must be this
-  /// page's, the frame the top one, and the claimed origin the origin of the
-  /// top-level URL the WebView itself reports.
+  /// The origin a request may act for, or `null`: no navigation under way,
+  /// the token this document was handed, the top frame, and the origin that
+  /// document read for itself — which must also be the origin the WebView
+  /// reported loaded.
   String? _admittedOrigin(List<Object?> args) {
-    if (args.length != 4) return null;
-    if (args[0] != nonce) return null;
+    if (_disposed || _transitioning) return null;
+    final document = _active;
+    if (document == null || args.length != 4) return null;
+    if (args[0] != document.token) return null;
     if (args[2] != true) return null;
-    final claimed = args[1];
-    final top = host.topOrigin;
-    if (claimed is! String || top == null || claimed != top) return null;
-    if (!top.startsWith('https://')) return null;
+    if (args[1] != document.origin) return null;
+    if (_committedOrigin != document.origin) return null;
     if (args[3] is! String) return null;
-    return top;
+    return document.origin;
+  }
+
+  static const DappRpcError _calledOff = DappRpcError(
+    DappRpcErrorCode.unauthorized,
+    'Request refused',
+  );
+
+  void _stillCurrent(int generation) {
+    if (generation != _generation) throw _calledOff;
   }
 
   /// One request, already admitted for [origin].
@@ -175,6 +360,7 @@ final class DappBridge {
     required String method,
     required List<Object?> params,
   }) async {
+    final generation = _generation;
     switch (method) {
       case 'eth_chainId':
         return DappChains.hexOf(_chainId);
@@ -182,10 +368,12 @@ final class DappBridge {
         return '${loopChainReference(_chainId)}';
       case 'eth_accounts':
         final wallet = host.wallet;
-        if (wallet == null || !isConnected(origin)) return const <String>[];
+        if (wallet == null || !isConnected(wallet.walletId, origin)) {
+          return const <String>[];
+        }
         return <String>[wallet.address];
       case 'eth_requestAccounts':
-        return _requestAccounts(origin);
+        return _requestAccounts(origin, generation);
       case 'wallet_switchEthereumChain':
         return _switchChain(params);
       // The two chains are built in: adding one of them is switching to it,
@@ -195,7 +383,12 @@ final class DappBridge {
       case 'eth_sendTransaction':
       case 'personal_sign':
       case 'eth_signTypedData_v4':
-        return _serialSigning(() => _sign(origin, method, params));
+        return _serialSigning(() {
+          // A request queued behind one the page navigated away from is
+          // called off before it prepares anything.
+          _stillCurrent(generation);
+          return _sign(origin, method, params, generation);
+        });
     }
     if (dappReadMethods.contains(method)) {
       return _read(method, params);
@@ -244,6 +437,13 @@ final class DappBridge {
     } on DappRpcError {
       rethrow;
     } on LoopChainException catch (failure) {
+      // S346: the node provider refused on quota or rate grounds.
+      if (failure.reasonCode == 'RPC_UPSTREAM_LIMITED') {
+        throw const DappRpcError(
+          DappRpcErrorCode.limitExceeded,
+          'Request limit exceeded',
+        );
+      }
       // A server whose allowlist is older than this build.
       if (failure.reasonCode == 'RPC_METHOD_NOT_ALLOWED') {
         throw DappRpcError(
@@ -270,7 +470,7 @@ final class DappBridge {
     }
   }
 
-  Future<List<String>> _requestAccounts(String origin) async {
+  Future<List<String>> _requestAccounts(String origin, int generation) async {
     final wallet = host.wallet;
     if (wallet == null) {
       throw const DappRpcError(
@@ -278,15 +478,18 @@ final class DappBridge {
         'Wallet unavailable',
       );
     }
-    if (isConnected(origin)) return <String>[wallet.address];
+    if (isConnected(wallet.walletId, origin)) return <String>[wallet.address];
     final agreed = await host.confirmConnection(origin: origin, wallet: wallet);
+    // The owner agreed to the page that asked; a page that has gone since
+    // is not connected by it.
+    _stillCurrent(generation);
     if (!agreed) {
       throw const DappRpcError(
         DappRpcErrorCode.userRejected,
         'User rejected the request',
       );
     }
-    await setConnected(origin, connected: true);
+    await setConnected(wallet.walletId, origin, connected: true);
     unawaited(host.emit('accountsChanged', <String>[wallet.address]));
     return <String>[wallet.address];
   }
@@ -320,13 +523,17 @@ final class DappBridge {
     if (!DappChains.supported.contains(chainId) || chainId == _chainId) return;
     _chainId = chainId;
     host.chainChanged(chainId);
+    // S346 · M6: documents that start from now on read the new chain.
+    host.documentScriptChanged();
     await host.emit('chainChanged', DappChains.hexOf(chainId));
   }
 
   /// The owner disconnected [origin] from the menu.
   Future<void> disconnect(String origin) async {
-    await setConnected(origin, connected: false);
-    if (host.topOrigin == origin) {
+    final wallet = host.wallet;
+    if (wallet == null) return;
+    await setConnected(wallet.walletId, origin, connected: false);
+    if (committedOrigin == origin) {
       await host.emit('accountsChanged', const <String>[]);
       await host.emit('disconnect', <String, Object?>{
         'code': 4900,
@@ -339,10 +546,11 @@ final class DappBridge {
     String origin,
     String method,
     List<Object?> params,
+    int generation,
   ) async {
     assert(_signingMethods.contains(method));
     final wallet = host.wallet;
-    if (wallet == null || !isConnected(origin)) {
+    if (wallet == null || !isConnected(wallet.walletId, origin)) {
       throw const DappRpcError(
         DappRpcErrorCode.unauthorized,
         'The site is not connected',
@@ -381,26 +589,66 @@ final class DappBridge {
     } on LoopChainException catch (failure) {
       throw _prepareFailure(failure);
     }
-    final outcome = await host.confirmIntent(
-      intent: intent,
-      wallet: wallet,
-      tx: tx,
-      sign: sign,
-    );
-    switch (outcome.status) {
+    // S346 · M5: from here every way out that is not a produced hash or
+    // signature releases the server's intent.
+    DappSignOutcome? outcome;
+    try {
+      _stillCurrent(generation);
+      if (intent.origin != origin) {
+        throw const DappRpcError(
+          DappRpcErrorCode.internal,
+          'REVIEW_PAYLOAD_MISMATCH',
+        );
+      }
+      outcome = await host.confirmIntent(
+        intent: intent,
+        wallet: wallet,
+        origin: origin,
+        tx: tx,
+        sign: sign,
+      );
+    } finally {
+      if (outcome?.status != DappSignStatus.produced) {
+        unawaited(
+          intents.cancel(intentId: intent.intentId).catchError((Object _) {}),
+        );
+      }
+    }
+    final answer = outcome;
+    switch (answer.status) {
       case DappSignStatus.produced:
-        return outcome.value;
+        return answer.value;
       case DappSignStatus.rejected:
         throw const DappRpcError(
           DappRpcErrorCode.userRejected,
           'User rejected the request',
         );
       case DappSignStatus.failed:
-        throw DappRpcError(DappRpcErrorCode.internal, outcome.reasonCode);
+        throw DappRpcError(DappRpcErrorCode.internal, answer.reasonCode);
     }
   }
 
   DappRpcError _prepareFailure(LoopChainException failure) {
+    // S346: a send, swap, approval or NFT send is open on the wallet; the
+    // server does not let a page displace it.
+    if (failure.reasonCode == 'INTENT_BUSY') {
+      host.toast(dappIntentBusyText);
+      return const DappRpcError(
+        DappRpcErrorCode.userRejected,
+        'The wallet has a pending request',
+      );
+    }
+    // S346: typed data the server cannot hash, or whose domain names another
+    // chain, is the page's own malformed request — never a network to
+    // switch to.
+    if (failure.reasonCode == 'TYPED_DATA_INVALID' ||
+        failure.reasonCode == 'TYPED_DATA_CHAIN_MISMATCH') {
+      host.toast(dappPrepareFailureText(failure) ?? '这笔请求没有通过检查');
+      return const DappRpcError(
+        DappRpcErrorCode.invalidParams,
+        'Invalid typed data',
+      );
+    }
     if (failure.reasonCode == 'CHAIN_SIGNING_DISABLED') {
       host.toast(dappMainnetSigningText);
       return const DappRpcError(
@@ -520,9 +768,13 @@ final class DappBridge {
     return DappSignRequest(method: method, payload: payload);
   }
 
-  /// The script that raises [event] on the page.
-  String emitScript(String event, Object? data) =>
-      DappBridgeProtocol.emitScript(nonce, event, data);
+  /// The script that raises [event] on the document on screen, or `null`
+  /// when no document holds a token.
+  String? emitScript(String event, Object? data) {
+    final document = _active;
+    if (document == null || _transitioning) return null;
+    return DappBridgeProtocol.emitScript(document.emitToken, event, data);
+  }
 }
 
 /// The short line for a prepare the server refused, or `null` when the page

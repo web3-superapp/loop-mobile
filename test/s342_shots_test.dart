@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/dapp/dapp_browser_screens.dart';
 import 'package:loop_mobile/features/dapp/dapp_gateway.dart';
@@ -43,9 +44,10 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
           ),
         ),
         dappWebViewFactoryProvider.overrideWithValue(FakeDappWebViewFactory()),
+        loopAccountScopeProvider.overrideWithValue(s342Account),
         dappBrowserStoreProvider.overrideWithValue(
-          MemoryDappBrowserStore(
-            DappBrowserLocalState(
+          MemoryDappBrowserStore(<String, DappBrowserLocalState>{
+            s342Account: DappBrowserLocalState(
               recents: const <DappPageEntry>[
                 DappPageEntry(
                   url: 'https://pancakeswap.finance/swap',
@@ -64,7 +66,7 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
                 ),
               ],
             ),
-          ),
+          }),
         ),
         dappIntentsGatewayProvider.overrideWithValue(FakeDappIntentsGateway()),
         walletReadGatewayProvider.overrideWithValue(FakeWalletReadGateway()),
@@ -140,6 +142,7 @@ void main() {
                   wallet: RecordingSigningGateway(),
                   intents: FakeDappIntentsGateway(),
                 ),
+                origin: s342Origin,
                 fromAddress: s342Address,
                 tx: s342TxRequest,
                 clock: () => DateTime.utc(2026, 11, 3),

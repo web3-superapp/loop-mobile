@@ -116,6 +116,14 @@ bool sendCapabilityBlocks(WidgetRef ref) => moneyActionBlocks(
   ref.watch(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals)),
 );
 
+/// The gate of an NFT send: the server's own `nftSend` capability, not the
+/// fungible send's (S346 · M11), so an NFT can be sent while `sendApprovals`
+/// is closed.
+bool nftSendCapabilityBlocks(WidgetRef ref) => moneyActionBlocks(
+  ref.watch(walletIntentsGatewayProvider).mode,
+  ref.watch(loopCapabilityProvider(LoopV2CapabilityId.nftSend)),
+);
+
 /// The same gate, as a strip inside a page that keeps its own shape.
 ///
 /// A deferred capability is not a page with nothing on it: the prototype's
@@ -147,12 +155,11 @@ Widget sendCapabilityPageBlock(
   WidgetRef ref, {
   required Key key,
   required String title,
+  LoopV2CapabilityId capability = LoopV2CapabilityId.sendApprovals,
 }) => LoopCapabilityPageBlock.of(
   key: key,
   title: title,
-  capability: ref.watch(
-    loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
-  ),
+  capability: ref.watch(loopCapabilityProvider(capability)),
   fallbackReasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
 );
 
@@ -420,7 +427,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     final walletId =
         _nft?.walletId ??
         ref.read(walletDirectoryControllerProvider).value?.activeWalletId;
-    if (walletId == null || sendCapabilityBlocks(ref)) return;
+    if (walletId == null || _gateBlocks()) return;
     final lowered = address.toLowerCase();
     if (_checkedAddress == lowered && (_checking || _preflight != null)) {
       return;
@@ -501,9 +508,12 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     });
   }
 
+  bool _gateBlocks() =>
+      _nft != null ? nftSendCapabilityBlocks(ref) : sendCapabilityBlocks(ref);
+
   @override
   Widget build(BuildContext context) {
-    final blocked = sendCapabilityBlocks(ref);
+    final blocked = _gateBlocks();
     // An NFT send is bound to the wallet that holds the NFT.
     final walletId =
         _nft?.walletId ?? watchActiveMoneyWalletId(ref, blocked: blocked);
@@ -590,6 +600,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               ref,
               key: const ValueKey<String>('send-capability-block'),
               title: '发送当前不可用',
+              capability: nft == null
+                  ? LoopV2CapabilityId.sendApprovals
+                  : LoopV2CapabilityId.nftSend,
             )
           : null,
       body: <Widget>[
@@ -1165,7 +1178,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final blocked = sendCapabilityBlocks(ref);
+    final blocked = widget.draft.nft != null
+        ? nftSendCapabilityBlocks(ref)
+        : sendCapabilityBlocks(ref);
     if (!blocked && !_started) {
       _started = true;
       scheduleMicrotask(() {
@@ -1213,6 +1228,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
               ref,
               key: const ValueKey<String>('send-confirm-capability-block'),
               title: '发送当前不可用',
+              capability: nft == null
+                  ? LoopV2CapabilityId.sendApprovals
+                  : LoopV2CapabilityId.nftSend,
             )
           : null,
       body: <Widget>[
@@ -1415,6 +1433,12 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         ref.read(nftSendDisabledProvider.notifier).set(true);
         LoopToast.show(context, message: nftSendDisabledText);
       }
+      // S346 · M11: the NFT left the wallet since the holdings were read
+      // (the minted id stood in for a missing `heldTokenIds`); the holdings
+      // are re-read so the page the owner returns to picks from the chain.
+      if (nft != null && failure.reasonCode == NftSendReason.notOwned) {
+        refreshLaunch2Holdings(ref, nft);
+      }
       setState(() {
         _failure = failure;
         _busy = false;
@@ -1460,7 +1484,13 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     if (!mounted) return;
     final closed = moneyActionBlocks(
       ref.read(walletIntentsGatewayProvider).mode,
-      ref.read(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals)),
+      ref.read(
+        loopCapabilityProvider(
+          widget.draft.nft == null
+              ? LoopV2CapabilityId.sendApprovals
+              : LoopV2CapabilityId.nftSend,
+        ),
+      ),
     );
     setState(() {
       _checkingCapability = false;
