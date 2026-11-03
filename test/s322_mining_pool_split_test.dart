@@ -110,19 +110,10 @@ void main() {
         asset: _assetTrack(),
       );
 
-      expect(_key('mining-summary-hero-split'), findsOneWidget);
-      expect(_text(tester, 'mining-summary-hero-token-power'), '1,234,577');
-      expect(_text(tester, 'mining-summary-hero-nft-power'), '3,000');
-      final split = _key('mining-summary-hero-split');
-      expect(
-        find.descendant(of: split, matching: find.text('代币算力')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: split, matching: find.text('NFT 算力')),
-        findsOneWidget,
-      );
-      expect(find.text('代币算力 · 上一小时'), findsNothing);
+      // S344 review: 我的总算力 no longer repeats the split; the tabs carry
+      // it with their subtotals.
+      expect(_key('mining-summary-hero-split'), findsNothing);
+      expect(_key('mining-summary-hero-token-power'), findsNothing);
       for (final slug in <String>['last-hour-power', 'active-invites']) {
         expect(_key('mining-summary-hero-$slug'), findsOneWidget);
       }
@@ -175,7 +166,6 @@ void main() {
         nftPower: '0',
       );
 
-      expect(_text(tester, 'mining-summary-hero-nft-power'), '0');
       expect(_key('mining-composition-token'), findsOneWidget);
       await _openNftTab(tester);
       expect(
@@ -195,7 +185,6 @@ void main() {
         nftPower: '3000',
       );
 
-      expect(_text(tester, 'mining-summary-hero-token-power'), '0');
       expect(find.text('暂无代币算力'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsNothing);
       await _openNftTab(tester);
@@ -219,7 +208,7 @@ void main() {
   });
 
   group('S322 · snapshot split absent (old payload)', () {
-    testWidgets('hero falls back to the hour, labelled; one list as before', (
+    testWidgets('one list as before; NFT has no share of its own', (
       tester,
     ) async {
       await _pump(
@@ -229,10 +218,7 @@ void main() {
         asset: _assetTrack(),
       );
 
-      expect(find.text('代币算力 · 上一小时'), findsOneWidget);
-      expect(find.text('NFT 算力 · 上一小时'), findsOneWidget);
-      expect(_text(tester, 'mining-summary-hero-token-power'), '507');
-      expect(_text(tester, 'mining-summary-hero-nft-power'), '3,020');
+      expect(_key('mining-summary-hero-split'), findsNothing);
       expect(_key('mining-composition'), findsOneWidget);
       expect(_key('mining-assets-row-$s7CakeAssetId'), findsOneWidget);
       expect(_key('mining-composition-token-subtotal'), findsNothing);
@@ -240,13 +226,6 @@ void main() {
       // Without the split the NFT tab has no share of its own to show.
       await _openNftTab(tester);
       expect(_key('mining-composition-nft-unavailable'), findsOneWidget);
-    });
-
-    testWidgets('no settled hour either: dashes', (tester) async {
-      await _pump(tester, rows: <MiningAssetRow>[s7MiningAssetRow()]);
-
-      expect(_text(tester, 'mining-summary-hero-token-power'), '—');
-      expect(_text(tester, 'mining-summary-hero-nft-power'), '—');
     });
 
     test('the split cells read the summary first', () {

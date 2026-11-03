@@ -308,8 +308,8 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
 class MiningSummaryHero extends StatelessWidget {
   const MiningSummaryHero({
     required this.heading,
-    required this.caption,
     required this.metrics,
+    this.caption,
     super.key,
     this.unit,
     this.rank,
@@ -326,7 +326,9 @@ class MiningSummaryHero extends StatelessWidget {
 
   /// `.mining-power-value small`: the unit that follows a settled figure.
   final String? unit;
-  final String caption;
+
+  /// The snapshot line; null draws none (S344: no 「快照 · —」).
+  final String? caption;
 
   /// `.mining-rank`: the reader's place, when the server settled one.
   final String? rank;
@@ -410,17 +412,19 @@ class MiningSummaryHero extends StatelessWidget {
                 ? LoopType.displayXl.copyWith(color: ink)
                 : LoopType.statFigure.copyWith(color: LoopColors.yellow),
           ),
-          const SizedBox(height: 9),
-          Text(
-            caption,
-            key: const ValueKey<String>('mining-summary-hero-caption'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LoopTypography.withWeight(
-              LoopType.captionSm.copyWith(color: LoopColors.text2),
-              FontWeight.w700,
+          if (caption case final String caption) ...<Widget>[
+            const SizedBox(height: 9),
+            Text(
+              caption,
+              key: const ValueKey<String>('mining-summary-hero-caption'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.withWeight(
+                LoopType.captionSm.copyWith(color: LoopColors.text2),
+                FontWeight.w700,
+              ),
             ),
-          ),
+          ],
           if (stamp != null) ...<Widget>[
             const SizedBox(height: 9),
             // `.folio-stamp` in the flow of the Lime card rather than over
@@ -450,11 +454,11 @@ class MiningSummaryHero extends StatelessWidget {
                   key: const ValueKey<String>('mining-summary-hero-claim'),
                   // Decision 0184: before the token is live the page it
                   // opens counts power, so the button says so.
-                  label: powerOnly ? '小时算力' : '领取奖励',
+                  label: powerOnly ? '挖矿奖励' : '领取奖励',
                   primary: true,
                   onPressed: onClaim,
                   semanticLabel: powerOnly
-                      ? '小时算力，打开挖矿奖励页'
+                      ? '挖矿奖励，打开挖矿奖励页'
                       : claimSemanticLabel,
                 ),
               ),

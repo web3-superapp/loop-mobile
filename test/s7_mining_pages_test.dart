@@ -229,11 +229,20 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.text('待批准'), findsWidgets);
-      // The stamp and the row say the status; the version says nothing a
-      // reader can act on and stays out of both.
+      // S344 review: the status chip left the card; the (i) says it.
+      expect(
+        find.byKey(const ValueKey<String>('mining-summary-hero-stamp')),
+        findsNothing,
+      );
+      // The version says nothing a reader can act on and stays off the page.
       expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
       expect(find.textContaining('miningFormulaV1-draft'), findsNothing);
+      // The (i) says the status.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mining-rules-action')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('待批准'), findsWidgets);
     });
 
     // Decision 0243: the version is in the header (i), not on the page.
@@ -348,11 +357,16 @@ void main() {
       // It never appears without the label that says which kind of number it
       // is.
       expect(find.textContaining('1,000'), findsWidgets);
-      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
-      // The version is an identifier: it stays out of every sentence.
+      // The version is an identifier: it stays off the page.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+      // S344 review: the scope label is the (i)'s, not a chip on the card.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mining-rules-action')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(miningBaselineLabel), findsWidgets);
     });
 
     testWidgets('what a baseline means is in the source line ⓘ', (
@@ -460,7 +474,6 @@ void main() {
       // A settled zero is a reading, not an absence: it keeps the figure and
       // says which rule produced it.
       expect(find.textContaining('0'), findsWidgets);
-      expect(find.textContaining(miningBaselineLabel), findsWidgets);
       // S315: the reason a dash stands is spoken, not printed.
       expect(find.textContaining('全网算力为 0'), findsNothing);
       // 我的算力 is the settled heading, not one of the em-dash cells.

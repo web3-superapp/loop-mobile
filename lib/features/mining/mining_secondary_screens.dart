@@ -267,8 +267,9 @@ Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
 /// One asset the settlement skipped, with the server's own reason in words.
 LoopRecordRow miningExcludedRow(
   MiningExcludedAsset row,
-  LoopRowPosition position,
-) => LoopRecordRow(
+  LoopRowPosition position, {
+  bool reason = true,
+}) => LoopRecordRow(
   key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
   leading: LoopTokenLogo(
     assetSymbol:
@@ -279,7 +280,11 @@ LoopRecordRow miningExcludedRow(
     semanticLabel: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
   ),
   title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
-  subtitle: row.symbol == null
+  // S344: 情报 · 算力 keeps the short state — the 未计入 badge and the
+  // address — without the server's sentence.
+  subtitle: !reason
+      ? miningAssetLabel(row.assetId)
+      : row.symbol == null
       ? launchReasonCodeText(row.reasonCode)
       : '${miningAssetLabel(row.assetId)} · '
             '${launchReasonCodeText(row.reasonCode)}',

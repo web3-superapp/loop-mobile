@@ -76,12 +76,10 @@ void main() {
       );
       expect(claim.primary, isTrue);
       expect(claim.tone, LoopButtonTone.lime);
-      // The baseline scope label is the folio's own stamp pill.
+      // S344 review: no scope chip on the card — the formula is the (i)'s.
       expect(
-        tester.widget(
-          find.byKey(const ValueKey<String>('mining-summary-hero-stamp')),
-        ),
-        isA<LoopFolioStamp>(),
+        find.byKey(const ValueKey<String>('mining-summary-hero-stamp')),
+        findsNothing,
       );
       // Decision 0272: the composition is the tabs under the card, so the
       // card no longer carries a second button to a separate page.

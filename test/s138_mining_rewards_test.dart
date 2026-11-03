@@ -2447,7 +2447,7 @@ void main() {
       // The first step opens the hour's power, still a way in.
       final claim = _key('mining-summary-hero-claim');
       expect(
-        find.descendant(of: claim, matching: find.text('小时算力')),
+        find.descendant(of: claim, matching: find.text('挖矿奖励')),
         findsOneWidget,
       );
       expect(

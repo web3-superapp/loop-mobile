@@ -208,10 +208,12 @@ void main() {
           overview: S7Answer(value: _center(link: null)),
         ),
       );
+      // S344 review: without a link the 邀请链接 block is left out.
       expect(
-        find.byKey(const ValueKey<String>('referral-link-absent')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('referral-link-block')),
+        findsNothing,
       );
+      expect(find.text('邀请链接'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-share-link')),
         findsNothing,
@@ -228,7 +230,7 @@ void main() {
       );
     });
 
-    testWidgets('stats absent: dashes and a note; present: the counts', (
+    testWidgets('stats absent: the section is left out; present: counts', (
       tester,
     ) async {
       await pumpS7Page(
@@ -237,12 +239,10 @@ void main() {
         referral: FakeReferralGateway(overview: S7Answer(value: _center())),
       );
       final grid = find.byKey(const ValueKey<String>('referral-stats'));
-      await scrollToS7Section(tester, grid);
-      expect(
-        find.descendant(of: grid, matching: find.text(loopFigureDash)),
-        findsNWidgets(3),
-      );
-      expect(find.textContaining('邀请统计还没有开放'), findsOneWidget);
+      // S344 review: an unopened section is not explained, it is not drawn.
+      expect(grid, findsNothing);
+      expect(find.text('我的邀请'), findsNothing);
+      expect(find.textContaining('邀请统计还没有开放'), findsNothing);
 
       await pumpS7Page(
         tester,
@@ -391,9 +391,12 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      for (final label in <String>['我的邀请', '邀请加成', '邀请列表', '我的邀请人']) {
+      for (final label in <String>['邀请列表', '我的邀请人']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
+      // Not opened by the server yet: left out.
+      expect(find.text('我的邀请'), findsNothing);
+      expect(find.text('邀请加成'), findsNothing);
     });
   });
 
@@ -412,7 +415,17 @@ void main() {
         const ReferralScreen(),
         mining: FakeMiningGateway(),
         referral: FakeReferralGateway(
-          overview: S7Answer(value: _center(link: inviteLink)),
+          overview: S7Answer(
+            value: _center(
+              link: inviteLink,
+              stats: ReferralStats(
+                directCount: 0,
+                validCount: 0,
+                level2to5Count: 0,
+                validAsOf: DateTime.utc(2026, 10, 22, 9),
+              ),
+            ),
+          ),
         ),
         overrides: [
           loopTextShareProvider.overrideWithValue((text, {subject}) async {
@@ -532,14 +545,16 @@ void main() {
       expect(tester.getCenter(find.text('直接邀请')).dy, lessThan(cells.first.dy));
     });
 
-    testWidgets('without a link the block says so and the poster stays', (
+    testWidgets('without a link the block is left out and the poster stays', (
       tester,
     ) async {
       final shared = await pumpCard(tester, inviteLink: null);
+      // S344 review: without a link the 邀请链接 block is left out.
       expect(
-        find.byKey(const ValueKey<String>('referral-link-absent')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('referral-link-block')),
+        findsNothing,
       );
+      expect(find.text('邀请链接'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-copy-link')),
         findsNothing,

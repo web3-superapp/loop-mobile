@@ -404,11 +404,15 @@ MiningSummary s7MiningSummary({
 MiningSummary s7MiningBaselineSummary({
   String? assetPower,
   String? nftPower,
+  String power = '1000',
+  String networkPower = '4000',
+  MiningSnapshotRef? snapshot,
 }) => s7MiningSummary(
   assetPower: assetPower,
   nftPower: nftPower,
-  power: const MiningFigureValue('1000'),
-  networkPower: const MiningFigureValue('4000'),
+  snapshot: snapshot,
+  power: MiningFigureValue(power),
+  networkPower: MiningFigureValue(networkPower),
   estimatedToday: const MiningDailyOutputEstimate(
     value: '250000',
     budget: '1000000',

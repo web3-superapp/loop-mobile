@@ -52,22 +52,25 @@ Finder _key(String value) => find.byKey(ValueKey<String>(value));
 String _text(WidgetTester tester, String key) =>
     tester.widget<Text>(_key(key)).data!;
 
+// The fixture adds up: my 总算力 1,237,577.89 = 代币 1,234,577.39 (Cake
+// 1,234,567.39 + USDT 10) + NFT 3,000.5, and the last settled hour reads the
+// same, inside a network of 5,025,001.1.
 MiningNftTrack _nftTrack() => MiningNftTrack(
   realCount: BigInt.from(3),
-  ownPower: Decimal.parse('3000'),
-  invitePower: Decimal.parse('20'),
-  totalPower: Decimal.parse('3020.5'),
+  ownPower: Decimal.parse('3000.5'),
+  invitePower: Decimal.zero,
+  totalPower: Decimal.parse('3000.5'),
   reward: BigInt.zero,
   networkPower: Decimal.parse('25000.5'),
 );
 
 MiningAssetTrack _assetTrack() => MiningAssetTrack(
   assets: const <MiningTrackAsset>[],
-  ownPower: Decimal.parse('500'),
-  invitePower: Decimal.parse('7'),
-  totalPower: Decimal.parse('507.9'),
+  ownPower: Decimal.parse('1234577.39'),
+  invitePower: Decimal.zero,
+  totalPower: Decimal.parse('1234577.39'),
   reward: BigInt.zero,
-  networkPower: Decimal.parse('1000000.6'),
+  networkPower: Decimal.parse('5000000.6'),
 );
 
 List<MiningAssetRow> _rows() => <MiningAssetRow>[
@@ -105,10 +108,19 @@ Future<void> _pumpPower(
       ),
   mining: FakeMiningGateway(
     summary: S7Answer<MiningSummary>(
-      value: s7MiningBaselineSummary(
-        assetPower: split ? '1234577.39' : null,
-        nftPower: split ? '3000.5' : null,
-      ),
+      value: (rows ?? _rows()).isEmpty
+          ? s7MiningBaselineSummary(
+              assetPower: split ? '0' : null,
+              nftPower: split ? '0' : null,
+              power: '0',
+            )
+          : s7MiningBaselineSummary(
+              assetPower: split ? '1234577.39' : null,
+              nftPower: split ? '3000.5' : null,
+              power: '1237577.89',
+              networkPower: '5025001.1',
+              snapshot: s7MiningSnapshot(),
+            ),
     ),
     assets: S7Answer<MiningAssets>(
       value: s7MiningSettledAssets(
@@ -434,24 +446,34 @@ void main() {
       );
       expect(_key('mining-network-card'), findsOneWidget);
       expect(find.text('全网总算力 · 上一小时'), findsOneWidget);
-      // 1,000,000.6 + 25,000.5.
+      // 5,000,000.6 + 25,000.5.
       expect(
         tester
             .widget<Text>(_key('mining-network-total'))
             .textSpan!
             .toPlainText(),
-        startsWith('1,025,001'),
+        startsWith('5,025,001'),
       );
       expect(_text(tester, 'mining-summary-hero-network-nft'), '25,000');
-      expect(_text(tester, 'mining-summary-hero-network-token'), '1,000,000');
+      expect(_text(tester, 'mining-summary-hero-network-token'), '5,000,000');
       await tester.tap(_key('mining-network-rank-action'));
       expect(rank, 1);
 
-      // 我的总算力 with its own split, and the claim.
+      // 我的总算力: the figure, the hour's cells and 挖矿奖励 — no split
+      // cells (the tabs have them), no formula chip (the (i) has it).
       expect(_key('mining-summary-hero'), findsOneWidget);
-      expect(_text(tester, 'mining-summary-hero-token-power'), '1,234,577');
-      expect(_text(tester, 'mining-summary-hero-nft-power'), '3,000');
-      await tester.tap(_key('mining-summary-hero-claim'));
+      expect(_key('mining-summary-hero-split'), findsNothing);
+      expect(_key('mining-summary-hero-token-power'), findsNothing);
+      expect(_key('mining-summary-hero-stamp'), findsNothing);
+      expect(_key('mining-summary-hero-caption'), findsOneWidget);
+      expect(_text(tester, 'mining-summary-hero-last-hour-power'), '1,237,577');
+      final claim = _key('mining-summary-hero-claim');
+      expect(
+        find.descendant(of: claim, matching: find.text('挖矿奖励')),
+        findsOneWidget,
+      );
+      expect(find.text('小时算力'), findsNothing);
+      await tester.tap(claim);
       expect(rewards, 1);
       expect(_key('mining-summary-hero-assets'), findsNothing);
     });
@@ -459,7 +481,7 @@ void main() {
     testWidgets('no settled hour: the snapshot total alone, no split', (
       tester,
     ) async {
-      await _pumpPower(tester, hour: false);
+      await _pumpPower(tester, hour: false, rows: const <MiningAssetRow>[]);
       expect(find.text('全网总算力'), findsOneWidget);
       expect(_key('mining-network-split'), findsNothing);
       expect(
@@ -469,6 +491,9 @@ void main() {
             .toPlainText(),
         startsWith('4,000'),
       );
+      // No snapshot time: no 「快照 · —」 line at all.
+      expect(_key('mining-summary-hero-caption'), findsNothing);
+      expect(find.textContaining('快照 ·'), findsNothing);
     });
   });
 
@@ -479,8 +504,11 @@ void main() {
       expect(bar.labels, <String>['NFT', '代币', '邀请']);
       expect(_key('mining-power-tab-token'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsOneWidget);
-      // What the snapshot did not count closes the 代币 tab.
+      // What the snapshot did not count closes the 代币 tab: the badge and
+      // the address, no sentence.
       expect(_key('mining-composition-excluded'), findsOneWidget);
+      expect(find.textContaining('参考价'), findsNothing);
+      expect(find.text('未计入'), findsOneWidget);
 
       await _tab(tester, 'NFT');
       expect(_key('mining-power-tab-nft'), findsOneWidget);
@@ -490,7 +518,17 @@ void main() {
       await _tab(tester, '邀请');
       expect(_key('mining-power-tab-invite'), findsOneWidget);
       expect(_key('referral-invite-code'), findsOneWidget);
-      for (final label in <String>['我的邀请', '邀请加成', '邀请列表', '我的邀请人']) {
+      expect(_key('referral-poster'), findsOneWidget);
+      // Not open yet on the server: left out, not explained.
+      expect(_key('referral-link-block'), findsNothing);
+      expect(find.text('邀请链接'), findsNothing);
+      expect(_key('referral-stats'), findsNothing);
+      expect(find.text('邀请加成'), findsNothing);
+      expect(find.textContaining('还没有开放'), findsNothing);
+      expect(find.textContaining('还没有批准'), findsNothing);
+      expect(find.text('还没有邀请'), findsOneWidget);
+      expect(find.textContaining('绑定后，会出现在这里'), findsNothing);
+      for (final label in <String>['邀请列表', '我的邀请人']) {
         expect(find.text(label), findsWidgets, reason: label);
       }
     });

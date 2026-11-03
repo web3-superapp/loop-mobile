@@ -162,7 +162,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             heading: _heroHeading(summary),
             unit: _heroUnit(summary),
             caption: _heroCaption(summary),
-            stamp: _heroStamp(summary),
+            // S344 review: the scope chip and the split cells are gone — the
+            // formula is the (i)'s, the split is the tabs'.
             rank: _rankBadge(rankState.value),
             metrics: live
                 ? <MiningHeroMetric>[
@@ -190,7 +191,6 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             onClaim: widget.onOpenRewards,
             claimSemanticLabel: '领取奖励，打开奖励与领取',
             powerOnly: !live,
-            split: miningPoolSplitMetrics(summary, rewards),
           ),
           MiningSnapshotProvenanceLine(
             slug: 'summary',
@@ -420,17 +420,10 @@ String? _heroUnit(MiningSummary summary) =>
 /// The hero's one line under the figure: when the snapshot behind it was
 /// computed, and 未更新 when a later run overtook it (decision 0057). S315: no
 /// sentence about formulas or promises; the (i) carries those.
-String _heroCaption(MiningSummary summary) => switch (summary.snapshot) {
+String? _heroCaption(MiningSummary summary) => switch (summary.snapshot) {
   MiningSnapshotComputed(:final computedAt, :final stale) =>
     '快照 · ${launchTimestampLabel(computedAt)}${stale ? ' · 未更新' : ''}',
-  _ => '快照 · $launchMissingFigure',
-};
-
-String? _heroStamp(MiningSummary summary) => switch (summary.formula) {
-  MiningFormulaPending(:final pendingVersion) =>
-    pendingVersion != null ? '待批准' : null,
-  MiningFormulaEffective(:final scope) =>
-    scope.isBaseline ? miningBaselineLabel : null,
+  _ => null,
 };
 
 /// The cells while the LOOP token is not live (decision 0184): the
@@ -674,6 +667,7 @@ class _CompositionBlock extends ConsumerWidget {
               miningExcludedRow(
                 assets.excluded[index],
                 launchRowPosition(index, assets.excluded.length),
+                reason: false,
               ),
           ],
         ),

@@ -210,17 +210,21 @@ class _ReferralCenterSectionsState
           ),
           detail: <Widget>[_LevelBand(levels: overview.levels)],
         ),
-        if (info != null)
-          LoopInfoLabel('我的邀请', info: info)
-        else
+        // S344 review (需求方不要说明性文案): a section the server has not
+        // opened is left out, not explained.
+        if (overview.stats case final ReferralStats stats) ...<Widget>[
           const LoopLabel('我的邀请'),
-        _InviteStats(stats: overview.stats),
-        const LoopLabel('邀请加成'),
-        if (overview.boostAvailable case final ReferralBoostAvailable boost)
-          _BoostCard(boost: boost)
-        else if (overview.boost case final LaunchUnavailable boost)
-          LaunchUnavailableCard(label: '邀请加成', fact: boost),
-        const LoopLabel('邀请列表'),
+          _InviteStats(stats: stats),
+        ],
+        if (overview.boostAvailable
+            case final ReferralBoostAvailable boost) ...<Widget>[
+          const LoopLabel('邀请加成'),
+          _BoostCard(boost: boost),
+        ],
+        if (info != null)
+          LoopInfoLabel('邀请列表', info: info)
+        else
+          const LoopLabel('邀请列表'),
         _InviteeList(onNavigate: widget.onNavigate),
         const LoopLabel('我的邀请人'),
         _BindingBlock(
@@ -484,21 +488,15 @@ class _InviteCardBody extends ConsumerWidget {
             ),
           ],
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Divider(height: 1, thickness: 1, color: LoopColors.line),
-        ),
-        Text('邀请链接', style: caption),
-        if (link == null)
-          Padding(
-            key: const ValueKey<String>('referral-link-absent'),
-            padding: const EdgeInsets.only(top: 6, bottom: 4),
-            child: Text(
-              '邀请链接还没有开放，先把邀请码发给好友；对方激活 LOOP ID 后随时可以填写。',
-              style: LoopType.captionSm,
-            ),
-          )
-        else
+        // S344 review (需求方不要说明性文案): without a link the whole
+        // 邀请链接 block is left out; the code, its copy glyph and the poster
+        // stay.
+        if (link != null) ...<Widget>[
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, thickness: 1, color: LoopColors.line),
+          ),
+          Text('邀请链接', style: caption),
           Row(
             key: const ValueKey<String>('referral-link-block'),
             children: <Widget>[
@@ -523,6 +521,7 @@ class _InviteCardBody extends ConsumerWidget {
               ),
             ],
           ),
+        ],
         const SizedBox(height: 12),
         LoopButtonPair(
           padded: false,
@@ -581,13 +580,12 @@ String referralInviteText(String code, String? link) => link == null
 
 /// 我的邀请: direct / valid / depth 2–5 — three equal cells on one raised
 /// block, the name small above the figure (decision 0235). Without the
-/// server's `stats` every figure is the dash and the page says the counts are
-/// not open yet. Decision 0243: the valid-member basis and the hour it was
+/// server's `stats` the section is not drawn (S344). Decision 0243: the valid-member basis and the hour it was
 /// read at are in the (i) ([referralInfoNotes]), not under the counts.
 class _InviteStats extends StatelessWidget {
   const _InviteStats({required this.stats});
 
-  final ReferralStats? stats;
+  final ReferralStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -604,9 +602,7 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-direct'),
                   label: '直接邀请',
-                  value: value == null
-                      ? loopFigureDash
-                      : '${value.directCount}',
+                  value: '${value.directCount}',
                 ),
                 const VerticalDivider(
                   width: 1,
@@ -616,7 +612,7 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-valid'),
                   label: '有效成员',
-                  value: value == null ? loopFigureDash : '${value.validCount}',
+                  value: '${value.validCount}',
                 ),
                 const VerticalDivider(
                   width: 1,
@@ -626,29 +622,12 @@ class _InviteStats extends StatelessWidget {
                 _StatCell(
                   valueKey: const ValueKey<String>('referral-stats-deep'),
                   label: '二至五级',
-                  value: value == null
-                      ? loopFigureDash
-                      : '${value.level2to5Count}',
+                  value: '${value.level2to5Count}',
                 ),
               ],
             ),
           ),
         ),
-        // Fail closed: counts that are not open say so on the page.
-        if (value == null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              LoopSpacing.tight,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              '邀请统计还没有开放，开放后显示在这里。',
-              key: const ValueKey<String>('referral-stats-note'),
-              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-            ),
-          ),
       ],
     );
   }
@@ -850,8 +829,7 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
         failureKind: state.failureKind,
         skeleton: LoopSkeletonType.record,
         rows: 3,
-        emptyMessage: '还没有邀请到好友',
-        emptyReason: '好友用你的邀请码绑定后，会出现在这里。',
+        emptyMessage: '还没有邀请',
         onRetry: () => unawaited(controller.reload()),
       );
     }
@@ -860,8 +838,7 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
       return const LoopInlineUnavailable(
         key: ValueKey<String>('referral-invitees-empty'),
         icon: 'users',
-        message: '还没有邀请到好友',
-        detail: '好友用你的邀请码绑定后，会出现在这里。',
+        message: '还没有邀请',
       );
     }
     return Column(
