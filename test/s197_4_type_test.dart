@@ -140,19 +140,13 @@ void main() {
     _expectStep(tester, '3', LoopType.figure);
   });
 
-  testWidgets('M36 / M7 / M17 · referral levels and the explain sheet', (
-    tester,
-  ) async {
+  // S348: the five-depth strip (M36) is gone; the sheet stays.
+  testWidgets('M7 / M17 · the referral explain sheet', (tester) async {
     await pumpS7Page(
       tester,
       const ReferralCenterHost(),
       referral: FakeReferralGateway(),
     );
-
-    final level = tester
-        .widgetList<Text>(find.byType(Text))
-        .firstWhere((text) => (text.data ?? '').startsWith('L1 · '));
-    _expectStep(tester, level.data!, LoopType.kicker);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('referral-explain-action')),

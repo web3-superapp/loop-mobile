@@ -51,3 +51,12 @@ Accepted · 2026-11-03（S344-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - 删除仅测试引用的死代码：`MiningAssetsScreen`、`MiningRankScreen`（及其私有行 / 折叠 / 来源块）、`ReferralScreen`、整个 `intel_referral_board.dart`（`IntelReferralBoardSection` / `ReferralBoardController`）。`miningExcludedRow`、`_assetSymbols`、`ReferralCenterSections` 等仍被情报 · 算力使用的部分保留。
 - 对应旧测试：只测这两个页面的用例删除；测 `ReferralScreen` 的用例改为挂 `test/support/referral_center_host.dart`（`ReferralCenterSections` + 邀请 tab 同款 (i)），只依赖旧页面外壳（页面标题、能力拦截块、页面级「更新中」、失败态下的页面 (i)）的 5 条删除。
 - 回归测试：`test/s347_regressions_test.dart`（本人行 `go('/wallet')`、`/mining/rank` 与社区页进入的榜到 `/wallet` 不崩、`profileDestinationPath('invite')` 经 `_profileScreen` 落到情报 Tab）。
+
+## Amendment · 2026-11-03（S348 · docs/56 §四「情报·算力」）
+
+- 「代币」tab 只列代币算力 > 0 的资产（有拆分时为 `power − nftPower`，无拆分时为 `power`）；「未计入的资产」节整体去掉（`miningExcludedRow` 随之删除）。「NFT」tab 只列 `nftPower > 0`。全部为 0 时空态改为一行（`LoopInlineUnavailable`，「暂无代币算力」/「暂无 NFT 算力」；快照未结算为「暂无算力快照」）。
+- 删除「有权重的社区币」行（`MiningScreen.onOpenMarket` 一并删去）。
+- 「邀请」tab：邀请码卡下方的 L1–L5 五格条去掉；删「我的邀请」节；卡下方改为并列子 tab「邀请列表 / 邀请加成」（`LoopSegBar`，quiet 样式，默认邀请列表，(i) 在子 tab 行右侧）；「我的邀请人 / 绑定邀请码」保留在最下方。
+- 「邀请加成」子 tab（`ReferralBoostPanel`）：顶部一行「总加成」= `boost.referralPower`；L1–L5 各级只在该级有效成员 > 0 或 NFT / 资产加成 > 0 时显示一行（`L1 · 10% · 有效成员 N 人`，副行 NFT / 资产加成），没有数据的级不显示；服务端未批准加成（`boostAvailable == null`）时只显示总加成「—」，不加解释句。结算小时说明行去掉。
+- `ReferralCenterSections` 新增 `initialTab`（测试 / 截图用，默认邀请列表）。深链 `/intel?tab=power&sub=invite` 仍落在邀请 tab。
+- 测试：更新 s239 / s293 / s7_referral / s344 / s59 / s322 / s7_mining_pages 中相应断言；新增 `test/s348_chat_power_slimming_test.dart`。

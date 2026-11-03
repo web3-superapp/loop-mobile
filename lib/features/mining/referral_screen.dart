@@ -22,7 +22,6 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart'
     show LoopQrView, loopPosterExportMessage;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
-import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -42,9 +41,9 @@ Future<void> reloadReferralCenter(WidgetRef ref) async {
   ]);
 }
 
-/// 邀请中心's content as a run of sections (decision 0272): the invite card
-/// with the five depths, 我的邀请, 邀请加成, 邀请列表 and 我的邀请人. Drawn
-/// by 情报 · 算力's 邀请 tab.
+/// 邀请中心's content as a run of sections (decision 0272, S348): the invite
+/// card, then two side-by-side tabs — 邀请列表 and 邀请加成 — and 我的邀请人
+/// at the foot. Drawn by 情报 · 算力's 邀请 tab.
 class ReferralCenterSections extends ConsumerStatefulWidget {
   const ReferralCenterSections({
     super.key,
@@ -52,7 +51,11 @@ class ReferralCenterSections extends ConsumerStatefulWidget {
     this.onNavigate,
     this.info,
     this.onOfferedInviteCode,
+    this.initialTab = ReferralCenterTab.invitees,
   });
+
+  /// The tab under the invite card the sections open on.
+  final ReferralCenterTab initialTab;
 
   /// A code an invite link (`/i/{code}`) carried in. Once the overview says
   /// the account may still bind, the binding form opens with it filled in;
@@ -74,9 +77,20 @@ class ReferralCenterSections extends ConsumerStatefulWidget {
       _ReferralCenterSectionsState();
 }
 
+/// The two tabs under the invite card (S348).
+enum ReferralCenterTab {
+  invitees('邀请列表'),
+  boost('邀请加成');
+
+  const ReferralCenterTab(this.label);
+
+  final String label;
+}
+
 class _ReferralCenterSectionsState
     extends ConsumerState<ReferralCenterSections> {
   String? _offeredCode;
+  late ReferralCenterTab _tab = widget.initialTab;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +131,7 @@ class _ReferralCenterSectionsState
       else ...<Widget>[
         // UX-012 (decision 0257): the hero is the one invite card — the
         // code and the link, each with its own copy glyph, and 分享邀请链接 /
-        // 生成海报 — with the five depths in the strip under it.
+        // 生成海报. S348: the five depths moved into 邀请加成.
         LoopLedgerComposite(
           key: const ValueKey<String>('referral-hero'),
           primary: Padding(
@@ -127,24 +141,40 @@ class _ReferralCenterSectionsState
               codeKey: const ValueKey<String>('referral-invite-code'),
             ),
           ),
-          detail: <Widget>[_LevelBand(levels: overview.levels)],
+          detail: const <Widget>[],
         ),
-        // S344 review (需求方不要说明性文案): a section the server has not
-        // opened is left out, not explained.
-        if (overview.stats case final ReferralStats stats) ...<Widget>[
-          const LoopLabel('我的邀请'),
-          _InviteStats(stats: stats),
-        ],
-        if (overview.boostAvailable
-            case final ReferralBoostAvailable boost) ...<Widget>[
-          const LoopLabel('邀请加成'),
-          _BoostCard(boost: boost),
-        ],
-        if (info != null)
-          LoopInfoLabel('邀请列表', info: info)
-        else
-          const LoopLabel('邀请列表'),
-        _InviteeList(onNavigate: widget.onNavigate),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: LoopSegBar(
+                key: const ValueKey<String>('referral-tabs'),
+                labels: <String>[
+                  for (final tab in ReferralCenterTab.values) tab.label,
+                ],
+                selectedIndex: _tab.index,
+                onSelected: (index) =>
+                    setState(() => _tab = ReferralCenterTab.values[index]),
+              ),
+            ),
+            if (info != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4, bottom: 8),
+                child: info,
+              ),
+          ],
+        ),
+        KeyedSubtree(
+          key: ValueKey<String>('referral-tab-${_tab.name}'),
+          child: switch (_tab) {
+            ReferralCenterTab.invitees => _InviteeList(
+              onNavigate: widget.onNavigate,
+            ),
+            ReferralCenterTab.boost => ReferralBoostPanel(
+              boost: overview.boostAvailable,
+              levels: overview.levels,
+            ),
+          },
+        ),
         const LoopLabel('我的邀请人'),
         _BindingBlock(
           binding: overview.binding,
@@ -279,32 +309,6 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
             '作用于${rules.appliesTo == 'miningPower' ? '挖矿算力' : ' ${rules.appliesTo}'}',
       ),
   ];
-}
-
-/// One block of 我的邀请 (decision 0235): the raised `card2` ground with a
-/// hairline, so the invite card and the counts read as separate pieces on
-/// the Ink page instead of one dark run.
-class _InviteBlock extends StatelessWidget {
-  const _InviteBlock({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.card,
-      12,
-      LoopSpacing.tight,
-      12,
-    ),
-    decoration: BoxDecoration(
-      color: LoopColors.card2,
-      borderRadius: LoopRadius.card,
-      border: Border.all(color: LoopColors.line),
-    ),
-    child: child,
-  );
 }
 
 /// How long a copy glyph shows its tick before it turns back (UX-012,
@@ -497,105 +501,6 @@ String referralInviteText(String code, String? link) => link == null
     ? '来 LOOP 一起挖矿，注册后填写我的邀请码 $code'
     : '来 LOOP 一起挖矿，注册后填写我的邀请码 $code\n$link';
 
-/// 我的邀请: direct / valid / depth 2–5 — three equal cells on one raised
-/// block, the name small above the figure (decision 0235). Without the
-/// server's `stats` the section is not drawn (S344). Decision 0243: the valid-member basis and the hour it was
-/// read at are in the (i) ([referralInfoNotes]), not under the counts.
-class _InviteStats extends StatelessWidget {
-  const _InviteStats({required this.stats});
-
-  final ReferralStats stats;
-
-  @override
-  Widget build(BuildContext context) {
-    final value = stats;
-    return Column(
-      key: const ValueKey<String>('referral-stats'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _InviteBlock(
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _StatCell(
-                  valueKey: const ValueKey<String>('referral-stats-direct'),
-                  label: '直接邀请',
-                  value: '${value.directCount}',
-                ),
-                const VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: LoopColors.line,
-                ),
-                _StatCell(
-                  valueKey: const ValueKey<String>('referral-stats-valid'),
-                  label: '有效成员',
-                  value: '${value.validCount}',
-                ),
-                const VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: LoopColors.line,
-                ),
-                _StatCell(
-                  valueKey: const ValueKey<String>('referral-stats-deep'),
-                  label: '二至五级',
-                  value: '${value.level2to5Count}',
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// One 我的邀请 count: the name above, the figure under it.
-class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.valueKey,
-    required this.label,
-    required this.value,
-  });
-
-  final Key valueKey;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Semantics(
-      container: true,
-      label: '$label $value',
-      excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.captionSm.copyWith(color: LoopColors.text2),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              key: valueKey,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.statFigure.copyWith(color: LoopColors.chalk),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 /// One line of text that keeps its start and its end and drops the middle
 /// for 「…」 when it does not fit (decision 0235: the invite link keeps the
 /// host and the code it ends with). Never wraps.
@@ -661,61 +566,75 @@ class _MiddleEllipsisText extends StatelessWidget {
   }
 }
 
-/// The available boost (loop-api decision 0162 §B.2): the newest settled
-/// hour's referral power and each depth's effective members. Mining Power,
-/// not money; every figure is the server's own string.
-class _BoostCard extends StatelessWidget {
-  const _BoostCard({required this.boost});
+/// 邀请加成 (S348): one total, then a row per depth that has something —
+/// effective members or power above zero; a depth with nothing is not
+/// drawn. Before the server approves the boost the total is the em dash and
+/// nothing else. Mining Power, not money; every figure is the server's own
+/// string (loop-api decision 0162 §B.2).
+@visibleForTesting
+class ReferralBoostPanel extends StatelessWidget {
+  const ReferralBoostPanel({
+    required this.boost,
+    required this.levels,
+    super.key,
+  });
 
-  final ReferralBoostAvailable boost;
+  /// `null` while the server sends the unavailable projection.
+  final ReferralBoostAvailable? boost;
+
+  /// The depths' published boost percentages.
+  final List<ReferralLevel> levels;
+
+  static bool _positive(String value) => (double.tryParse(value) ?? 0) > 0;
+
+  /// Whether one depth has anything to show.
+  static bool hasData(ReferralBoostLevel level) =>
+      level.effectiveMembers > 0 ||
+      _positive(level.nftPower) ||
+      _positive(level.assetPower);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      key: const ValueKey<String>('referral-boost-available'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('referral-boost-total'),
-              title: '最近结算小时的邀请加成',
-              subtitle:
-                  'NFT ${loopPowerFigure(boost.nftReferralPower)} · '
-                  '资产 ${loopPowerFigure(boost.assetReferralPower)}',
-              trailing: loopPowerFigure(boost.referralPower),
-              trailingCaption: '算力',
-              trailingStrong: true,
-              trailingColor: LoopColors.yellow,
-              chevron: false,
-              position: LoopRowPosition.first,
-            ),
-            for (var index = 0; index < boost.levels.length; index += 1)
-              LoopRecordRow(
-                key: ValueKey<String>(
-                  'referral-boost-level-${boost.levels[index].level}',
-                ),
-                title:
-                    'L${boost.levels[index].level} · '
-                    '有效成员 ${boost.levels[index].effectiveMembers} 人',
-                subtitle:
-                    'NFT ${loopPowerFigure(boost.levels[index].nftPower)} · '
-                    '资产 ${loopPowerFigure(boost.levels[index].assetPower)}',
-                chevron: false,
-                position: index == boost.levels.length - 1
-                    ? LoopRowPosition.last
-                    : LoopRowPosition.middle,
-              ),
-          ],
+    final value = boost;
+    final shown = <ReferralBoostLevel>[
+      if (value != null)
+        for (final level in value.levels)
+          if (hasData(level)) level,
+    ];
+    final percents = <int, String>{
+      for (final level in levels) level.level: level.boostPercent,
+    };
+    final total = value == null
+        ? launchMissingFigure
+        : loopPowerFigure(value.referralPower);
+    return LoopRecordGroup(
+      key: const ValueKey<String>('referral-boost'),
+      rows: <LoopRecordRow>[
+        LoopRecordRow(
+          key: const ValueKey<String>('referral-boost-total'),
+          title: '总加成',
+          trailing: total,
+          trailingCaption: value == null ? null : '算力',
+          trailingStrong: true,
+          trailingColor: value == null ? null : LoopColors.yellow,
+          chevron: false,
+          position: launchRowPosition(0, shown.length + 1),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Text(
-            '结算小时 ${launchTimestampLabel(boost.hourStart)} – '
-            '${launchTimestampLabel(boost.hourEnd)}',
-            style: LoopType.captionSm.copyWith(color: LoopColors.text2),
+        for (var index = 0; index < shown.length; index += 1)
+          LoopRecordRow(
+            key: ValueKey<String>('referral-boost-level-${shown[index].level}'),
+            title: <String>[
+              'L${shown[index].level}',
+              if (percents[shown[index].level] case final String percent)
+                '$percent%',
+              '有效成员 ${shown[index].effectiveMembers} 人',
+            ].join(' · '),
+            subtitle:
+                'NFT ${loopPowerFigure(shown[index].nftPower)} · '
+                '资产 ${loopPowerFigure(shown[index].assetPower)}',
+            chevron: false,
+            position: launchRowPosition(index + 1, shown.length + 1),
           ),
-        ),
       ],
     );
   }
@@ -1037,101 +956,6 @@ class ReferralPoster extends StatelessWidget {
       ),
     );
   }
-}
-
-/// `.ledger-card > grid-template-columns:repeat(5,…)`: the five depths side
-/// by side inside the hero, each with its boost and its own verified count.
-class _LevelBand extends StatelessWidget {
-  const _LevelBand({required this.levels});
-
-  final List<ReferralLevel> levels;
-
-  @override
-  Widget build(BuildContext context) {
-    // The five cells carry the same two lines, so they come out the same
-    // height; `stretch` here would ask for a height the strip does not have.
-    return Row(
-      key: const ValueKey<String>('referral-levels'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (var index = 0; index < levels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: 5),
-          Expanded(child: _LevelCell(level: levels[index])),
-        ],
-      ],
-    );
-  }
-}
-
-class _LevelCell extends StatelessWidget {
-  const _LevelCell({required this.level});
-
-  final ReferralLevel level;
-
-  @override
-  Widget build(BuildContext context) {
-    // The prototype fills the current depth and tints the rest.
-    final current = level.level == 1;
-    return Semantics(
-      container: true,
-      label:
-          'L${level.level}，加成 ${level.boostPercent}%，'
-          '有效关系 ${level.counts.valid}，待验证 ${level.counts.pending}',
-      child: ExcludeSemantics(
-        // Decision 0222: the current depth is a solid Purple choice, so it
-        // wears the splat.
-        child: _splatIf(
-          current,
-          Container(
-            key: ValueKey<String>('referral-level-cell-${level.level}'),
-            padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
-            // Decision 0210 / S241b: the current depth is a selected cell —
-            // purple 9 % ground behind a purple edge, yellow figures — not a
-            // yellow slab; the other depths are flat outlined cells.
-            // Decision 0211: filled tiles with a 10 radius, no edge.
-            decoration: BoxDecoration(
-              color: current ? LoopColors.purpleSelected : LoopColors.card2,
-              borderRadius: LoopRadius.tile,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                // S249: a narrow cell scales the label down rather than
-                // clipping 「L1 · 10%」.
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'L${level.level} · ${level.boostPercent}%',
-                    maxLines: 1,
-                    softWrap: false,
-                    // R13 / R12, the steps `LoopStatGrid` draws (decision
-                    // 0192); the five-across strip is not a two-column grid,
-                    // so the cell stays local.
-                    style: LoopType.kicker.copyWith(
-                      color: current ? LoopColors.onPurple : LoopColors.text2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  '${level.counts.valid}',
-                  maxLines: 1,
-                  style: LoopType.figure.copyWith(
-                    color: current ? LoopColors.yellow : LoopColors.chalk,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static Widget _splatIf(bool chosen, Widget cell) =>
-      chosen ? loopSplatted(cell) : cell;
 }
 
 class _BindingBlock extends StatelessWidget {

@@ -56,3 +56,10 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - 我的 · 邀请好友等 Tab 目的地：`_profileScreen` 按 `Uri.parse(path).path` 判断是否 Tab，带 query 的 Tab 地址（`/intel?tab=power&sub=invite`）走 `go`，不再被 `push` 到壳上。
 - `LoopDashboardPage.pageInfo` 的文档注释移出 `backdrop` 注释中间。
 - 测试：`test/s347_regressions_test.dart`（>20 条会话时社区节首屏完整、好友翻页不跳动、重读不出现半截社区、实时事件只进所属节、种子按节拆分、节空态一行）。
+
+## Amendment · 2026-11-03（S348 · docs/56 §四「聊天」）
+
+- 需求方 11-03 晚确认：社区与好友**混排、不分节**。撤回 S343 的分节与 S347 的双查询：聊天回到单一 Stream 查询（`loopStreamInboxFilter`：`type = messaging` 且本人是成员），排序仍为置顶在前、再按最新消息（`loopStreamInboxSort`），20 条一页（首读 30），单列表直接按 Stream 顺序画出；无 seg bar、无节标题、无节空态。右上「＋」与 S343 其余结构不变；整列表空态仍是原整页空态。
+- 删除：`ChatInboxSection`、`chatInboxSectioned`、`LoopSectionedInbox`、`LoopSectionedChannelListController`、`LoopInboxSectionController`、`_SectionEvents`、`loopStreamInboxSectionFilter`、`loopStreamChannelKindField`、`ChatInboxSectionHeader`、`ChatInboxSectionEmpty` 及社区分页 / 本机社区读取两个常量。本机副本（0132）回到单查询读 30 条。卡板（0221）的首末圆角改为整张列表的首行与末行。
+- S347 的其他修复（Tab 带 query 走 `go`、`pageInfo` 注释）保留。
+- 测试：删去 s343 / s106 / s106b / s347 / stream_chat_inbox_page_test 里的分节用例；新增 `test/s348_chat_power_slimming_test.dart`（单查询、一次读取、社区与好友按 Stream 顺序混排、种子不重排）。

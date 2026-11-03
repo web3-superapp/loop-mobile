@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/navigation/intel_power_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/text/loop_power_text.dart';
@@ -14,16 +13,12 @@ import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
-import 'package:loop_mobile/features/mining/mining_secondary_screens.dart'
-    show miningExcludedRow;
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -33,9 +28,9 @@ import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 ///
 /// The `mining` and `mining-assets` routes forward here. Top to bottom:
 /// 全网总算力 split into NFT and 代币, with the way into 算力榜; 我的总算力
-/// (the claim, the account's own split); 有权重的社区币; then the tabs NFT /
-/// 代币 / 邀请 — the composition of the account's power by kind, and 邀请中心
-/// with its boost.
+/// (the claim, the account's own split); then the tabs NFT / 代币 / 邀请 —
+/// the assets that carry power by kind (S348: only those above zero), and
+/// 邀请中心 with its list and its boost.
 ///
 /// The mining formula is backend delivery D19; every figure is the server's
 /// own or the em dash with its reason. The client never estimates power,
@@ -46,7 +41,6 @@ class MiningScreen extends ConsumerStatefulWidget {
     this.onOpenRewards,
     this.onOpenRank,
     this.onOpenRules,
-    this.onOpenMarket,
     this.onNavigate,
     this.onBack,
     this.embedded = false,
@@ -63,9 +57,6 @@ class MiningScreen extends ConsumerStatefulWidget {
   /// 算力榜, from the network card's top right.
   final VoidCallback? onOpenRank;
   final VoidCallback? onOpenRules;
-
-  /// 行情, where the weighted community tokens are discovered.
-  final VoidCallback? onOpenMarket;
 
   /// Pushes a location from the 邀请 tab.
   final ValueChanged<String>? onNavigate;
@@ -197,17 +188,6 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             snapshot: summary.snapshot,
             formula: summary.formula,
             markStale: true,
-          ),
-          LoopRecordGroup(
-            key: const ValueKey<String>('mining-community-entries'),
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('mining-open-market'),
-                leading: const LoopRowIcon(icon: 'search'),
-                title: '有权重的社区币',
-                onTap: widget.onOpenMarket,
-              ),
-            ],
           ),
         ],
         LoopSegBar(
@@ -527,8 +507,9 @@ Decimal _decimalOrZero(String? value) =>
 /// summary's `assetPower` / `nftPower` (decision 0253) each tab is headed
 /// by its subtotal; a row's NFT share is `included[].nftPower` and its 代币
 /// part `power − nftPower`. Without the split, 代币 keeps the single list
-/// and NFT says its share was not sent. 代币 ends with the assets the
-/// snapshot did not count, with the server's reason.
+/// and NFT says its share was not sent. S348: a row whose power is zero is
+/// not drawn, and neither are the assets the snapshot did not count; a tab
+/// with nothing above zero is one line.
 class _CompositionBlock extends ConsumerWidget {
   const _CompositionBlock({
     required this.summary,
@@ -568,26 +549,25 @@ class _CompositionBlock extends ConsumerWidget {
           message: 'NFT 算力暂未单独提供',
         );
       }
-      return _withExcluded(
-        value,
-        value.included.isEmpty
-            ? LoopEmptyState(
-                key: const ValueKey<String>('mining-composition-empty'),
-                illustration: LoopIllustration.holders,
-                title: value.isUnsettled ? '暂无算力快照' : '暂无计入资产',
-                compact: true,
-              )
-            : LoopRecordGroup(
-                key: const ValueKey<String>('mining-composition'),
-                rows: <LoopRecordRow>[
-                  for (var index = 0; index < value.included.length; index += 1)
-                    miningCompositionRow(
-                      value.included[index],
-                      launchRowPosition(index, value.included.length),
-                    ),
-                ],
-              ),
-      );
+      final counted = <MiningAssetRow>[
+        for (final row in value.included)
+          if (_decimalOrZero(row.power) > Decimal.zero) row,
+      ];
+      return counted.isEmpty
+          ? _emptyLine(
+              'mining-composition-empty',
+              value.isUnsettled ? '暂无算力快照' : '暂无代币算力',
+            )
+          : LoopRecordGroup(
+              key: const ValueKey<String>('mining-composition'),
+              rows: <LoopRecordRow>[
+                for (var index = 0; index < counted.length; index += 1)
+                  miningCompositionRow(
+                    counted[index],
+                    launchRowPosition(index, counted.length),
+                  ),
+              ],
+            );
     }
     if (nftTab) {
       final nftRows = <(MiningAssetRow, String)>[
@@ -618,62 +598,36 @@ class _CompositionBlock extends ConsumerWidget {
     for (final row in value.included) {
       final nft = _decimalOrZero(row.nftPower);
       final token = Decimal.parse(row.power) - nft;
-      if (token > Decimal.zero || nft <= Decimal.zero) {
-        tokenRows.add((
-          row,
-          (token < Decimal.zero ? Decimal.zero : token).toString(),
-        ));
-      }
+      if (token > Decimal.zero) tokenRows.add((row, token.toString()));
     }
-    return _withExcluded(
-      value,
-      Column(
-        key: const ValueKey<String>('mining-composition'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: _group(
-          slug: 'token',
-          title: '代币',
-          subtotal: summary.assetPower!,
-          emptyTitle: '暂无代币算力',
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < tokenRows.length; index += 1)
-              miningCompositionRow(
-                tokenRows[index].$1,
-                launchRowPosition(index, tokenRows.length),
-                keyPrefix: 'mining-composition-token',
-                power: tokenRows[index].$2,
-              ),
-          ],
-        ),
+    return Column(
+      key: const ValueKey<String>('mining-composition'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: _group(
+        slug: 'token',
+        title: '代币',
+        subtotal: summary.assetPower!,
+        emptyTitle: '暂无代币算力',
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < tokenRows.length; index += 1)
+            miningCompositionRow(
+              tokenRows[index].$1,
+              launchRowPosition(index, tokenRows.length),
+              keyPrefix: 'mining-composition-token',
+              power: tokenRows[index].$2,
+            ),
+        ],
       ),
     );
   }
 
-  /// The 代币 tab's counted rows, then 未计入的资产 when the snapshot
-  /// skipped any.
-  static Widget _withExcluded(MiningAssets assets, Widget counted) {
-    if (assets.isUnsettled || assets.excluded.isEmpty) return counted;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        counted,
-        const LoopLabel('未计入的资产'),
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-composition-excluded'),
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < assets.excluded.length; index += 1)
-              miningExcludedRow(
-                assets.excluded[index],
-                launchRowPosition(index, assets.excluded.length),
-                reason: false,
-              ),
-          ],
-        ),
-      ],
-    );
-  }
+  /// A tab with nothing above zero: one line.
+  static Widget _emptyLine(String key, String message) => LoopInlineUnavailable(
+    key: ValueKey<String>(key),
+    icon: 'mine',
+    message: message,
+  );
 
   static List<Widget> _group({
     required String slug,
@@ -689,12 +643,7 @@ class _CompositionBlock extends ConsumerWidget {
       spoken: loopPowerFigure(subtotal),
     ),
     if (rows.isEmpty)
-      LoopEmptyState(
-        key: ValueKey<String>('mining-composition-$slug-empty'),
-        illustration: LoopIllustration.holders,
-        title: emptyTitle,
-        compact: true,
-      )
+      _emptyLine('mining-composition-$slug-empty', emptyTitle)
     else
       LoopRecordGroup(
         key: ValueKey<String>('mining-composition-$slug'),

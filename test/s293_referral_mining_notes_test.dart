@@ -86,9 +86,16 @@ void main() {
         find.byKey(const ValueKey<String>('intel-referral-board')),
         findsNothing,
       );
-      // The counts and the five depths stay.
-      expect(find.byKey(const ValueKey<String>('referral-stats')), findsOne);
-      expect(find.byKey(const ValueKey<String>('referral-levels')), findsOne);
+      // S348: 我的邀请 and the five-depth strip are gone; the two tabs stand.
+      expect(
+        find.byKey(const ValueKey<String>('referral-stats')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('referral-levels')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey<String>('referral-tabs')), findsOne);
 
       // While the window is open: only the button, enabled, no line.
       final claim = find.byKey(const ValueKey<String>('referral-claim'));
@@ -103,7 +110,7 @@ void main() {
       }
     });
 
-    testWidgets('S293b / UX-012: one invite card, levels under it', (
+    testWidgets('S293b / UX-012: one invite card, the tabs under it', (
       tester,
     ) async {
       await pumpS7Page(
@@ -126,11 +133,9 @@ void main() {
         ),
         findsOneWidget,
       );
-      // The level band starts where the invite card ends.
+      // S348: the two tabs start where the invite card ends.
       expect(
-        tester
-            .getRect(find.byKey(const ValueKey<String>('referral-levels')))
-            .top,
+        tester.getRect(find.byKey(const ValueKey<String>('referral-tabs'))).top,
         greaterThanOrEqualTo(tester.getRect(card).bottom),
       );
     });
@@ -318,9 +323,10 @@ void main() {
         find.byKey(const ValueKey<String>('mining-truth-notice')),
         findsNothing,
       );
+      // S348: 有权重的社区币 is gone.
       expect(
         find.byKey(const ValueKey<String>('mining-open-market')),
-        findsOneWidget,
+        findsNothing,
       );
       // Decision 0272: 算力榜 opens from the network card's icon.
       expect(

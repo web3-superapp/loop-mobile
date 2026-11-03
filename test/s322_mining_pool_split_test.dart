@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_gateway.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
@@ -158,7 +159,7 @@ void main() {
       expect(find.byType(LoopEmptyState), findsNothing);
     });
 
-    testWidgets('token only: the NFT group is the empty style', (tester) async {
+    testWidgets('token only: the NFT group is one line', (tester) async {
       await _pump(
         tester,
         rows: <MiningAssetRow>[s7MiningAssetRow(holding: '10', power: '8')],
@@ -170,7 +171,7 @@ void main() {
       await _openNftTab(tester);
       expect(
         tester.widget(_key('mining-composition-nft-empty')),
-        isA<LoopEmptyState>(),
+        isA<LoopInlineUnavailable>(),
       );
       expect(find.text('暂无 NFT 算力'), findsOneWidget);
     });
