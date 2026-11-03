@@ -120,7 +120,8 @@ const _session = VoiceRoomSession(
 void main() {
   loopWatchGround();
 
-  group('chat · filtered empty state', () {
+  // S343 · decision 0271: the filters are gone; the list is in two parts.
+  group('chat · two parts', () {
     late StreamChatClient client;
     setUp(() {
       client = StreamChatClient('public-stream-api-key', logLevel: Level.OFF);
@@ -131,88 +132,55 @@ void main() {
     Channel community() => Channel(client, 'messaging', 'loop_community_$hex');
     Channel direct() => Channel(client, 'messaging', 'loop_direct_$hex');
 
-    test('only a finished list with no match is empty', () {
-      final onlyCommunities = PagedValue<int, Channel>(
-        items: <Channel>[community()],
+    test('the controller hands the rows over 社区 first', () {
+      final dm = direct();
+      final room = community();
+      final controller = LoopSectionedChannelListController.fromValue(
+        PagedValue<int, Channel>(items: <Channel>[dm, room], nextPageKey: 20),
+        client: client,
       );
+      addTearDown(controller.dispose);
+      final value = controller.value.asSuccess;
+      expect(value.items, <Channel>[room, dm]);
+      // Paging is Stream's own.
+      expect(value.nextPageKey, 20);
+      expect(controller.value, same(controller.value));
       expect(
-        chatInboxFilterLeftNothing(ChatInboxFilter.friends, onlyCommunities),
-        isTrue,
-      );
-      expect(
-        chatInboxFilterLeftNothing(
-          ChatInboxFilter.communities,
-          onlyCommunities,
-        ),
-        isFalse,
-      );
-      expect(
-        chatInboxFilterLeftNothing(ChatInboxFilter.all, onlyCommunities),
-        isFalse,
-      );
-      // Another page may still hold a match: the list view reads it first.
-      expect(
-        chatInboxFilterLeftNothing(
-          ChatInboxFilter.friends,
-          PagedValue<int, Channel>(
-            items: <Channel>[community()],
-            nextPageKey: 20,
-          ),
-        ),
-        isFalse,
-      );
-      // An empty account is Stream's own empty state, not the filter's.
-      expect(
-        chatInboxFilterLeftNothing(
-          ChatInboxFilter.friends,
-          const PagedValue<int, Channel>(items: <Channel>[]),
-        ),
-        isFalse,
-      );
-      expect(
-        chatInboxFilterLeftNothing(
-          ChatInboxFilter.friends,
-          const PagedValue<int, Channel>.loading(),
-        ),
+        LoopSectionedChannelListController(client: client).value.isSuccess,
         isFalse,
       );
     });
 
-    testWidgets('社区 and 好友 each say their own empty sentence', (tester) async {
-      final value = ValueNotifier<PagedValue<int, Channel>>(
-        PagedValue<int, Channel>(items: <Channel>[direct()]),
-      );
-      addTearDown(value.dispose);
-      Widget gate(ChatInboxFilter filter) => MaterialApp(
-        theme: LoopTheme.dark,
-        home: Scaffold(
-          body: ChatInboxFilterEmptyGate(
-            controller: value,
-            filter: filter,
-            child: const Text('channel-list'),
+    testWidgets('each part has its title', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: const Scaffold(
+            body: Column(
+              children: <Widget>[
+                ChatInboxSectionHeader(
+                  section: ChatInboxSection.communities,
+                  leading: true,
+                ),
+                ChatInboxSectionHeader(
+                  section: ChatInboxSection.friends,
+                  leading: false,
+                ),
+              ],
+            ),
           ),
         ),
       );
-
-      await tester.pumpWidget(gate(ChatInboxFilter.communities));
-      expect(find.text('还没有社区会话'), findsOneWidget);
-      expect(find.text('channel-list'), findsNothing);
-
-      await tester.pumpWidget(gate(ChatInboxFilter.friends));
-      expect(find.text('还没有社区会话'), findsNothing);
-      expect(find.text('channel-list'), findsOneWidget);
-
-      value.value = PagedValue<int, Channel>(items: <Channel>[community()]);
-      await tester.pump();
-      expect(find.text('还没有好友会话'), findsOneWidget);
+      expect(find.text('社区'), findsOneWidget);
+      expect(find.text('好友'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('chat-inbox-filter-empty-friends')),
+        find.byKey(const ValueKey<String>('chat-inbox-section-communities')),
         findsOneWidget,
       );
-
-      await tester.pumpWidget(gate(ChatInboxFilter.all));
-      expect(find.text('还没有好友会话'), findsNothing);
-      expect(find.text('channel-list'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('chat-inbox-section-friends')),
+        findsOneWidget,
+      );
     });
   });
 

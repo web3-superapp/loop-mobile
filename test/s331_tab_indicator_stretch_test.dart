@@ -12,7 +12,7 @@ final Finder _indicator = _key('loop-tab-indicator');
 
 Finder _cell(String label) => find.widgetWithText(LoopTabItem, label);
 
-const List<String> _labels = <String>['聊天', '广场', 'MEME', '情报', '钱包'];
+const List<String> _labels = <String>['聊天', '广场', 'MEME', '情报', '我的'];
 
 Future<void> _pumpBar(
   WidgetTester tester, {
@@ -101,7 +101,7 @@ void main() {
     tester,
   ) async {
     await _pumpBar(tester, initial: 4);
-    final from = _cellRect(tester, '钱包');
+    final from = _cellRect(tester, '我的');
     await tester.tap(_cell('广场'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
@@ -136,14 +136,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     final before = tester.getRect(_indicator);
-    await tester.tap(_cell('钱包'));
+    await tester.tap(_cell('我的'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 16));
     final after = tester.getRect(_indicator);
     // No jump back to the first cell.
     expect(after.left, greaterThanOrEqualTo(before.left - 1));
     await tester.pumpAndSettle();
-    _expectRestingOn(tester, '钱包');
+    _expectRestingOn(tester, '我的');
   });
 
   testWidgets('reduced motion lands in one frame and does not swell', (
@@ -152,7 +152,7 @@ void main() {
     await _pumpBar(tester, reduceMotion: true);
     _expectRestingOn(tester, '聊天');
     final rest = tester.getRect(_key('loop-tab-bar-float'));
-    final gesture = await tester.startGesture(tester.getCenter(_cell('钱包')));
+    final gesture = await tester.startGesture(tester.getCenter(_cell('我的')));
     await tester.pump(const Duration(milliseconds: 200));
     expect(
       tester.getRect(_key('loop-tab-bar-float')).width,
@@ -160,7 +160,7 @@ void main() {
     );
     await gesture.up();
     await tester.pump();
-    _expectRestingOn(tester, '钱包');
+    _expectRestingOn(tester, '我的');
   });
 
   testWidgets('a press swells the whole bar to 1.02 and lifting restores it', (
@@ -247,7 +247,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'square'), Matrix4.identity());
-    await tester.tap(_cell('钱包'));
+    await tester.tap(_cell('我的'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'wallet'), Matrix4.identity());

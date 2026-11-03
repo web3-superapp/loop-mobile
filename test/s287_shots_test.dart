@@ -66,7 +66,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: LoopTheme.dark,
-          home: StreamChatInboxPage(onOpenNotifications: () {}),
+          home: const StreamChatInboxPage(),
         ),
       ),
     );

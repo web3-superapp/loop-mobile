@@ -6,8 +6,8 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
-/// The 我 page (manifest `profile`).
-const String loopOwnProfileLocation = '/profile';
+/// 我的, the reader's own page (S343 · decision 0271: the `/wallet` tab).
+const String loopOwnProfileLocation = '/wallet';
 
 /// Where a face opens (S239, decision 0214): the reader's own face opens 我,
 /// anybody else's opens their `user-profile` page. `null` when there is no
@@ -46,10 +46,16 @@ class LoopProfileFaceLink extends StatelessWidget {
   final Widget child;
   final ValueChanged<String>? onOpen;
 
-  /// Pushes [location] on the ambient router, if there is one.
+  /// Pushes [location] on the ambient router, if there is one. The
+  /// reader's own page is a tab, so it is switched to rather than pushed.
   static void push(BuildContext context, String location) {
     final router = GoRouter.maybeOf(context);
-    if (router != null) unawaited(router.push<void>(location));
+    if (router == null) return;
+    if (location == loopOwnProfileLocation) {
+      router.go(location);
+      return;
+    }
+    unawaited(router.push<void>(location));
   }
 
   @override

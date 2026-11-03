@@ -6,8 +6,9 @@ import 'package:loop_mobile/features/notifications/notification_inbox.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 
-/// The bell at the head of 聊天 that opens the notification centre
-/// (decision 0241), with the unread total on its corner.
+/// The bell at the head of 我的 that opens the notification centre
+/// (decision 0241; S343 · decision 0271 moved it from 聊天), with the unread
+/// total on its corner.
 ///
 /// The total is read when the bell first appears and again when the App comes
 /// back to the foreground (at most once a minute); a notification arriving
@@ -54,7 +55,7 @@ class _NotificationBellButtonState
       clipBehavior: Clip.none,
       children: <Widget>[
         LoopIconButton(
-          key: const ValueKey<String>('chat-notification-bell'),
+          key: const ValueKey<String>('me-notification-bell'),
           icon: 'bell',
           label: label == null ? '通知' : '通知，未读 $label 条',
           onPressed: widget.onPressed,
@@ -65,7 +66,7 @@ class _NotificationBellButtonState
             right: 2,
             child: IgnorePointer(
               child: LoopUnreadBadge(
-                key: const ValueKey<String>('chat-notification-badge'),
+                key: const ValueKey<String>('me-notification-badge'),
                 count: unread,
               ),
             ),

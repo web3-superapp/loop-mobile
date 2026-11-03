@@ -607,7 +607,7 @@ void main() {
 
   group('faces open profiles', () {
     test('self opens 我, another account its page, an address nothing', () {
-      expect(loopProfileFaceLocation(null, isSelf: true), '/profile');
+      expect(loopProfileFaceLocation(null, isSelf: true), '/wallet');
       expect(
         loopProfileFaceLocation(_profileA),
         userProfileLocation(_profileA),

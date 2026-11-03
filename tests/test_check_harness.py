@@ -1540,8 +1540,8 @@ class HarnessTests(unittest.TestCase):
             chat_end = source.index("class StreamChatChannelRoutePage", chat_start)
             chat_slice = source[chat_start:chat_end]
             mutated_slice = chat_slice.replace(
-                "ValueKey<String>('chat-open-profile')",
-                "ValueKey<String>('chat-open-wallet')",
+                "actions: const <Widget>[ChatCreateMenuButton()]",
+                "actions: const <Widget>[]",
                 1,
             )
             self.assertNotEqual(chat_slice, mutated_slice)
@@ -1553,7 +1553,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "Chat tab must open 我 from the owner's avatar",
+            "Chat tab must carry 「＋」 at its top right",
             result,
         )
 
@@ -7505,12 +7505,12 @@ class HarnessTests(unittest.TestCase):
             root = Path(temporary)
             relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            # Decision 0122 moved 「发起」 to a floating key; the bar's
-            # action slot is where an entry would be smuggled back in.
+            # S343 · decision 0271: 「＋」 is the bar's one action; its slot
+            # is where an entry would be smuggled back in.
             mutated = source.replace(
-                "leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),",
-                "leading: _ChatOwnerAvatar(onPressed: widget.onOpenProfile),\n"
-                "      actions: <Widget>[\n"
+                "actions: const <Widget>[ChatCreateMenuButton()],",
+                "actions: <Widget>[\n"
+                "        const ChatCreateMenuButton(),\n"
                 "        TextButton(\n"
                 "          key: const ValueKey<String>('stream-audio-room-entry'),\n"
                 "          onPressed: () => unawaited(context.push<void>('/chat/voice')),\n"

@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
-import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/notifications/notification_bell.dart';
 import 'package:loop_mobile/features/notifications/notification_inbox.dart';
 import 'package:loop_mobile/features/notifications/notification_inbox_screen.dart';
@@ -780,10 +779,15 @@ void main() {
               ),
             ),
           ],
+          // S343 · decision 0271: the bell stands on 我的 now.
           child: MaterialApp(
             theme: LoopTheme.dark,
-            home: StreamChatInboxPage(
-              onOpenNotifications: () => opened?.add('notifications'),
+            home: Scaffold(
+              body: Center(
+                child: NotificationBellButton(
+                  onPressed: () => opened?.add('notifications'),
+                ),
+              ),
             ),
           ),
         ),
@@ -794,8 +798,8 @@ void main() {
 
     testWidgets('0 unread draws a bare bell', (tester) async {
       final gateway = await pumpChat(tester, unread: 0);
-      expect(_key('chat-notification-bell'), findsOneWidget);
-      expect(_key('chat-notification-badge'), findsNothing);
+      expect(_key('me-notification-bell'), findsOneWidget);
+      expect(_key('me-notification-badge'), findsNothing);
       expect(gateway.unreadReads, 1);
     });
 
@@ -803,7 +807,7 @@ void main() {
       await pumpChat(tester, unread: 5);
       expect(
         find.descendant(
-          of: _key('chat-notification-badge'),
+          of: _key('me-notification-badge'),
           matching: find.text('5'),
         ),
         findsOneWidget,
@@ -814,7 +818,7 @@ void main() {
       await pumpChat(tester, unread: 120);
       expect(
         find.descendant(
-          of: _key('chat-notification-badge'),
+          of: _key('me-notification-badge'),
           matching: find.text('99+'),
         ),
         findsOneWidget,
@@ -823,14 +827,14 @@ void main() {
 
     testWidgets('a server without the endpoint draws no badge', (tester) async {
       await pumpChat(tester);
-      expect(_key('chat-notification-bell'), findsOneWidget);
-      expect(_key('chat-notification-badge'), findsNothing);
+      expect(_key('me-notification-bell'), findsOneWidget);
+      expect(_key('me-notification-badge'), findsNothing);
     });
 
     testWidgets('the bell opens the notification centre', (tester) async {
       final opened = <String>[];
       await pumpChat(tester, unread: 2, opened: opened);
-      await tester.tap(_key('chat-notification-bell'));
+      await tester.tap(_key('me-notification-bell'));
       await tester.pumpAndSettle();
       expect(opened, <String>['notifications']);
     });

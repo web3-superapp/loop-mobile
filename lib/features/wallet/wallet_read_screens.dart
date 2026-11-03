@@ -19,10 +19,17 @@ import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/notifications/notification_bell.dart';
+import 'package:loop_mobile/features/profile/me_attention.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
+import 'package:loop_mobile/features/profile/profile_destinations.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_activity_export.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/external_wallet_intro_store.dart';
@@ -175,12 +182,12 @@ bool _noWalletYet(WidgetRef ref) =>
 // wallet
 // ---------------------------------------------------------------------------
 
-/// `wallet` · the钱包 tab.
+/// `wallet` · the 我的 tab (S343 · decision 0271: 钱包 and 我 in one page).
 ///
-/// Decision 0119 (v3 需求 §1 位置 5, §6.2): the first screen follows OKX —
-/// 总资产 with an eye and a 24h line, four equal keys, an unboxed asset list —
-/// and the wallet's management pages sit in one entry group at the bottom,
-/// 设置 included (B6).
+/// From the top: the person (identity card, 分享名片), the stranger requests
+/// while any wait, 总资产 with an eye and a 24h line and four equal keys
+/// (decision 0119), the 代币 / NFT holdings, then the account rows. 交易历史,
+/// 通知 and 设置 sit in the bar.
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key, this.onNavigate});
 
@@ -210,8 +217,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       navigate(location);
       return;
     }
+    // A tab (情报 · 算力) is switched to, never pushed over 我的.
+    if (LoopRouteManifest.isTabPath(Uri.parse(location).path)) {
+      context.go(location);
+      return;
+    }
     context.push(location);
   }
+
+  /// A profile destination id ([profileDestinationPath]).
+  void _openProfile(String id) => _open(profileDestinationPath(id));
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +315,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('wallet-screen'),
         archetype: LoopPageArchetype.record,
-        title: '钱包',
+        title: '我的',
         tabPage: true,
         // Decision 0221: the wall under 钱包, the crown behind its title.
         backdrop: const LoopWallBackdrop(
@@ -309,20 +324,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           keyPrefix: 'wallet-atmo',
         ),
         titleField: const LoopAtmoTitle(
-          title: '钱包',
+          title: '我的',
           crownKey: ValueKey<String>('wallet-atmo-title-crown'),
         ),
         // Balances the page already read stay on screen while the next read
         // runs; only the 更新中 mark changes.
         updating: balancesState?.refreshing ?? false,
-        onRefresh: () => _refreshWallet(ref, chainClosed ? null : walletId),
-        block: blocked
-            ? _walletPageBlock(
-                ref,
-                key: const ValueKey<String>('wallet-capability-block'),
-                title: '钱包读取当前不可用',
-              )
-            : null,
+        onRefresh: () => Future.wait<void>(<Future<void>>[
+          _refreshWallet(ref, chainClosed ? null : walletId),
+          ref.read(profileControllerProvider.notifier).reload(),
+        ]),
         actions: <Widget>[
           LoopIconButton(
             key: const ValueKey<String>('wallet-history-action'),
@@ -331,187 +342,231 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             label: '交易历史',
             onPressed: () => _open('/wallet/history'),
           ),
+          // S343 · decision 0271: the bell left 聊天 for 我的.
+          NotificationBellButton(
+            onPressed: () => _openProfile('notifications'),
+          ),
           LoopIconButton(
-            key: const ValueKey<String>('wallet-manage-action'),
-            icon: 'wallet',
-            label: '钱包管理',
-            onPressed: () => _open('/wallet/manage'),
+            key: const ValueKey<String>('profile-open-settings'),
+            icon: 'settings',
+            label: '设置',
+            onPressed: () => _openProfile('settings'),
           ),
         ],
-        // Decision 0221: 总资产 is a chrome plate; its figure stays Yellow.
-        primary: LoopChromePlate(
-          key: const ValueKey<String>('wallet-total-plate'),
-          mark: LoopChromePlateMark.tag,
-          // v3 (decision 0229): 28 from the plate to the keys (they keep 10
-          // of their own above them).
-          margin: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            4,
-            LoopSpacing.page,
-            LoopSpacing.bannerGap - 10,
-          ),
-          padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
-          child: WalletTotalHeader(
-            key: const ValueKey<String>('wallet-folio'),
-            keyPrefix: 'wallet',
-            balances: balances,
-            loading: balancesLoading,
-            unreadText: directoryEmpty
-                ? '还没有钱包'
-                : walletId == null && directory.isReady
-                ? '未选定钱包'
-                // Decision 0123: a read that never reached LOOP is the device
-                // being offline, not the figure being unavailable.
-                : directory.phase == LoopChainViewPhase.offline ||
-                      balancesState?.phase == LoopChainViewPhase.offline
-                ? '离线'
-                : '暂不可用',
-            address: directory.value?.active?.truncatedAddress,
-            fullAddress: directory.value?.active?.address,
-            environmentTag: ref.watch(loopEnvironmentTagProvider),
-            walletId: walletId,
-          ),
-        ),
-        sections: <Widget>[
-          LoopFreshnessStrip(
-            key: const ValueKey<String>('wallet-freshness'),
-            restoredAt: restoredAt,
-            readAt: balancesController?.valueObservedAt,
-            refreshing:
-                (balancesState?.refreshing ?? false) || directory.refreshing,
-            refreshFailed: refreshFailed,
-            onRetry: () =>
-                unawaited(_refreshWallet(ref, chainClosed ? null : walletId)),
-          ),
-          // Three different answers, three different blocks: the list was not
-          // read, the list was read and is empty, or a wallet is active.
-          if (directoryEmpty)
-            const WalletCreationBlock(keyPrefix: 'wallet-directory')
-          else if (walletId == null && directory.isReady)
-            LoopEmptyState(
-              key: const ValueKey<String>('wallet-directory-no-active'),
-              illustration: LoopIllustration.history,
-              title: '还没有选定当前钱包',
-              message: '这个账号已经有钱包，但还没有选定当前钱包。到“钱包管理”里选一个后才会显示余额。',
-              action: LoopButton(
-                key: const ValueKey<String>('wallet-directory-pick'),
-                label: '钱包管理',
-                primary: true,
-                onPressed: () => _open('/wallet/manage'),
-              ),
-              compact: true,
-            )
-          else if (walletId == null)
-            LoopChainStateBlock(
-              keyPrefix: 'wallet-directory',
-              phase: directory.phase,
-              failureKind: directory.failureKind,
-              emptyMessage: '钱包清单还没有读到',
-              emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
-              onRetry: () => unawaited(
-                ref.read(walletDirectoryControllerProvider.notifier).reload(),
-              ),
-            )
-          else ...<Widget>[
-            // Decision 0095: the keys never wait for a balance.
-            WalletQuickActions(
-              onBlocked: _blocked,
-              actions: <WalletQuickAction>[
-                WalletQuickAction(
-                  actionKey: const ValueKey<String>('wallet-receive-entry'),
-                  label: '接收',
-                  glyph: (color) =>
-                      LoopIcon('arrow-down', size: 22, color: color),
-                  onPressed: () => _open(WalletRoute.receive(walletId)),
-                ),
-                WalletQuickAction(
-                  actionKey: const ValueKey<String>('wallet-send-entry'),
-                  label: '发送',
-                  glyph: (color) =>
-                      LoopIcon('arrow-up', size: 22, color: color),
-                  onPressed: sendGate.isAvailable
-                      ? () => _open('/wallet/send')
-                      : null,
-                  blockedReason: sendGate.isAvailable
-                      ? null
-                      : loopReasonCodeText(
-                          sendGate.reasonCode ??
-                              'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-                        ),
-                ),
-                WalletQuickAction(
-                  actionKey: const ValueKey<String>('wallet-swap-entry'),
-                  label: '兑换',
-                  glyph: (color) =>
-                      LoopIcon('swap-vert', size: 22, color: color),
-                  primary: true,
-                  onPressed: swapGate.isAvailable
-                      ? () => _open('/wallet/swap')
-                      : null,
-                  blockedReason: swapGate.isAvailable
-                      ? null
-                      : loopReasonCodeText(
-                          swapGate.reasonCode ??
-                              'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-                        ),
-                ),
-                // Decision 0113 (需求方 2026-10-08: 扫码支付先做扫码转账): the
-                // key opens the scanner. A scanned address continues into 发送
-                // with the recipient filled in and the same server preflight
-                // and signing sheet; the `pay` page itself stays unavailable.
-                WalletQuickAction(
-                  actionKey: const ValueKey<String>('wallet-pay-entry'),
-                  label: '扫码',
-                  glyph: (color) => Icon(
-                    Icons.qr_code_scanner_rounded,
-                    size: 22,
-                    color: color,
-                  ),
-                  onPressed: () => _open('/scan'),
-                ),
-              ],
+        primary: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ProfileIdentitySection(onNavigate: _openProfile),
+            MeMessageRequestsEntry(
+              onOpen: () => _openProfile('friend-requests'),
             ),
-            // S237 · decision 0204: the faucet card under the quick actions is
-            // gone; 获取资金 opens from 充值 on 我 and MEME, and from the
-            // MEME v2 insufficient-balance link.
-            // Decision 0188 · 持仓分布: only over a complete set of valuations.
-            if (balances != null)
-              if (walletHoldingShares(balances) case final shares?)
-                WalletHoldingsDistribution(shares: shares),
-            // S259 · decision 0217: 「代币 / NFT」 in place of the 余额 label,
-            // 产生算力 kept on the right of the same line.
-            WalletAssetTabs(
-              selectedIndex: _assetTab,
-              onSelected: (index) => setState(() => _assetTab = index),
-              trailing: WalletPowerTag(
-                onTap: () => unawaited(
-                  showWalletPowerSheet(
-                    context,
-                    onOpenMining: () => _open('/mining'),
-                  ),
-                ),
+            if (!blocked)
+              _totalPlate(
+                balances: balances,
+                balancesLoading: balancesLoading,
+                directory: directory,
+                directoryEmpty: directoryEmpty,
+                walletId: walletId,
+                balancesState: balancesState,
               ),
-            ),
-            ...(_assetTab == WalletAssetTabs.nft
-                ? _nftBody(launch2: launch2, hidden: hidden)
-                : _tokenBody(
-                    walletId: walletId,
-                    chainClosed: chainClosed,
-                    chainReason: bscGate.reasonCode,
-                    state: balancesState,
-                    hidden: hidden,
-                    sendGate: sendGate,
-                    swapGate: swapGate,
-                    launch2: launch2,
-                  )),
           ],
-          const SizedBox(height: LoopSpacing.group),
-          _entryGroup(),
-          const SizedBox(height: 20),
-        ],
+        ),
+        sections: blocked
+            ? <Widget>[
+                _walletPageBlock(
+                  ref,
+                  key: const ValueKey<String>('wallet-capability-block'),
+                  title: '钱包读取当前不可用',
+                ),
+                const SizedBox(height: LoopSpacing.group),
+                MeAccountEntries(onNavigate: _openProfile),
+                const SizedBox(height: 20),
+              ]
+            : <Widget>[
+                LoopFreshnessStrip(
+                  key: const ValueKey<String>('wallet-freshness'),
+                  restoredAt: restoredAt,
+                  readAt: balancesController?.valueObservedAt,
+                  refreshing:
+                      (balancesState?.refreshing ?? false) ||
+                      directory.refreshing,
+                  refreshFailed: refreshFailed,
+                  onRetry: () => unawaited(
+                    _refreshWallet(ref, chainClosed ? null : walletId),
+                  ),
+                ),
+                // Three different answers, three different blocks: the list was not
+                // read, the list was read and is empty, or a wallet is active.
+                if (directoryEmpty)
+                  const WalletCreationBlock(keyPrefix: 'wallet-directory')
+                else if (walletId == null && directory.isReady)
+                  LoopEmptyState(
+                    key: const ValueKey<String>('wallet-directory-no-active'),
+                    illustration: LoopIllustration.history,
+                    title: '还没有选定当前钱包',
+                    message: '这个账号已经有钱包，但还没有选定当前钱包。到“钱包管理”里选一个后才会显示余额。',
+                    action: LoopButton(
+                      key: const ValueKey<String>('wallet-directory-pick'),
+                      label: '钱包管理',
+                      primary: true,
+                      onPressed: () => _open('/wallet/manage'),
+                    ),
+                    compact: true,
+                  )
+                else if (walletId == null)
+                  LoopChainStateBlock(
+                    keyPrefix: 'wallet-directory',
+                    phase: directory.phase,
+                    failureKind: directory.failureKind,
+                    emptyMessage: '钱包清单还没有读到',
+                    emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
+                    onRetry: () => unawaited(
+                      ref
+                          .read(walletDirectoryControllerProvider.notifier)
+                          .reload(),
+                    ),
+                  )
+                else ...<Widget>[
+                  // Decision 0095: the keys never wait for a balance.
+                  WalletQuickActions(
+                    onBlocked: _blocked,
+                    actions: <WalletQuickAction>[
+                      WalletQuickAction(
+                        actionKey: const ValueKey<String>(
+                          'wallet-receive-entry',
+                        ),
+                        label: '接收',
+                        glyph: (color) =>
+                            LoopIcon('arrow-down', size: 22, color: color),
+                        onPressed: () => _open(WalletRoute.receive(walletId)),
+                      ),
+                      WalletQuickAction(
+                        actionKey: const ValueKey<String>('wallet-send-entry'),
+                        label: '发送',
+                        glyph: (color) =>
+                            LoopIcon('arrow-up', size: 22, color: color),
+                        onPressed: sendGate.isAvailable
+                            ? () => _open('/wallet/send')
+                            : null,
+                        blockedReason: sendGate.isAvailable
+                            ? null
+                            : loopReasonCodeText(
+                                sendGate.reasonCode ??
+                                    'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+                              ),
+                      ),
+                      WalletQuickAction(
+                        actionKey: const ValueKey<String>('wallet-swap-entry'),
+                        label: '兑换',
+                        glyph: (color) =>
+                            LoopIcon('swap-vert', size: 22, color: color),
+                        primary: true,
+                        onPressed: swapGate.isAvailable
+                            ? () => _open('/wallet/swap')
+                            : null,
+                        blockedReason: swapGate.isAvailable
+                            ? null
+                            : loopReasonCodeText(
+                                swapGate.reasonCode ??
+                                    'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+                              ),
+                      ),
+                      // Decision 0113 (需求方 2026-10-08: 扫码支付先做扫码转账): the
+                      // key opens the scanner. A scanned address continues into 发送
+                      // with the recipient filled in and the same server preflight
+                      // and signing sheet; the `pay` page itself stays unavailable.
+                      WalletQuickAction(
+                        actionKey: const ValueKey<String>('wallet-pay-entry'),
+                        label: '扫码',
+                        glyph: (color) => Icon(
+                          Icons.qr_code_scanner_rounded,
+                          size: 22,
+                          color: color,
+                        ),
+                        onPressed: () => _open('/scan'),
+                      ),
+                    ],
+                  ),
+                  // S237 · decision 0204: the faucet card under the quick actions is
+                  // gone; 获取资金 opens from 充值 on 我 and MEME, and from the
+                  // MEME v2 insufficient-balance link.
+                  // Decision 0188 · 持仓分布: only over a complete set of valuations.
+                  if (balances != null)
+                    if (walletHoldingShares(balances) case final shares?)
+                      WalletHoldingsDistribution(shares: shares),
+                  // S259 · decision 0217: 「代币 / NFT」 in place of the 余额 label,
+                  // 产生算力 kept on the right of the same line.
+                  WalletAssetTabs(
+                    selectedIndex: _assetTab,
+                    onSelected: (index) => setState(() => _assetTab = index),
+                    // S343 · decision 0271: 产生算力 opens 情报 · 算力.
+                    trailing: WalletPowerTag(
+                      onTap: () => _open(loopIntelPowerLocation),
+                    ),
+                  ),
+                  ...(_assetTab == WalletAssetTabs.nft
+                      ? _nftBody(launch2: launch2, hidden: hidden)
+                      : _tokenBody(
+                          walletId: walletId,
+                          chainClosed: chainClosed,
+                          chainReason: bscGate.reasonCode,
+                          state: balancesState,
+                          hidden: hidden,
+                          sendGate: sendGate,
+                          swapGate: swapGate,
+                          launch2: launch2,
+                        )),
+                ],
+                const SizedBox(height: LoopSpacing.group),
+                MeAccountEntries(onNavigate: _openProfile),
+                const SizedBox(height: 20),
+              ],
       ),
     );
   }
+
+  /// 总资产 on its chrome plate (decision 0221); its figure stays Yellow.
+  Widget _totalPlate({
+    required LoopWalletBalances? balances,
+    required bool balancesLoading,
+    required LoopChainResourceState<LoopWalletDirectory> directory,
+    required bool directoryEmpty,
+    required String? walletId,
+    required LoopChainResourceState<LoopWalletBalances>? balancesState,
+  }) => LoopChromePlate(
+    key: const ValueKey<String>('wallet-total-plate'),
+    mark: LoopChromePlateMark.tag,
+    // v3 (decision 0229): 28 from the plate to the keys (they keep 10
+    // of their own above them).
+    margin: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      4,
+      LoopSpacing.page,
+      LoopSpacing.bannerGap - 10,
+    ),
+    padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
+    child: WalletTotalHeader(
+      key: const ValueKey<String>('wallet-folio'),
+      keyPrefix: 'wallet',
+      balances: balances,
+      loading: balancesLoading,
+      unreadText: directoryEmpty
+          ? '还没有钱包'
+          : walletId == null && directory.isReady
+          ? '未选定钱包'
+          // Decision 0123: a read that never reached LOOP is the device
+          // being offline, not the figure being unavailable.
+          : directory.phase == LoopChainViewPhase.offline ||
+                balancesState?.phase == LoopChainViewPhase.offline
+          ? '离线'
+          : '暂不可用',
+      address: directory.value?.active?.truncatedAddress,
+      fullAddress: directory.value?.active?.address,
+      environmentTag: ref.watch(loopEnvironmentTagProvider),
+      walletId: walletId,
+    ),
+  );
 
   /// 「代币」 in each of its states (S259 · decision 0217). The main chain's
   /// rows, the Launch chain's BNB and USD1 and the MEME v2 tokens are one
@@ -778,58 +833,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       _ => '余额暂时读不到',
     };
   }
-
-  /// The wallet's management pages, in one group at the bottom (B6).
-  ///
-  /// Decision 0133 (audit m9): the three pages that sat behind a 授权与网络
-  /// sheet are rows here — a sheet that only lists links is one more tap and
-  /// one more surface for nothing — and 安全中心, an account page, is on 我
-  /// only.
-  Widget _entryGroup() => LoopRecordGroup(
-    key: const ValueKey<String>('wallet-entry-group'),
-    rows: <LoopRecordRow>[
-      // 跨链 has no provider; the bridge page is where its reason stands
-      // still long enough to be read.
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-bridge-entry'),
-        leading: const LoopRowIcon(icon: 'shuffle'),
-        title: '跨链',
-        onTap: () => _open('/wallet/bridge'),
-      ),
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-approvals-entry'),
-        leading: const LoopRowIcon(icon: 'shield'),
-        title: '代币授权',
-        onTap: () => _open('/wallet/approvals'),
-      ),
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-networks-entry'),
-        leading: const LoopRowIcon(icon: 'globe'),
-        title: '网络',
-        onTap: () => _open('/wallet/networks'),
-      ),
-      // S342 · decision 0270: the same row and glyph name the in-app
-      // browser once the server opens `dappBrowser`; until then it stays the
-      // local URL review it always was.
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-dapp-entry'),
-        leading: const LoopRowIcon(icon: 'link'),
-        title:
-            ref
-                .watch(loopCapabilityProvider(LoopV2CapabilityId.dappBrowser))
-                .isAvailable
-            ? 'DApp 浏览器'
-            : 'DApp 网址核对',
-        onTap: () => _open('/wallet/dapp'),
-      ),
-      LoopRecordRow(
-        key: const ValueKey<String>('wallet-settings-entry'),
-        leading: const LoopRowIcon(icon: 'settings'),
-        title: '设置',
-        onTap: () => _open('/profile/settings'),
-      ),
-    ],
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1650,8 +1653,10 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   @override
   Widget build(BuildContext context) {
     final blocked = _walletBlocked(ref);
-    final walletId =
-        widget.walletId ?? _watchActiveWalletId(ref, blocked: blocked);
+    // The directory is read either way: 获取资金 asks which wallet is the
+    // active embedded one (S343 · decision 0271).
+    final activeWalletId = _watchActiveWalletId(ref, blocked: blocked);
+    final walletId = widget.walletId ?? activeWalletId;
     // A walletless account is not a page that is still loading.
     final noWalletYet = _noWalletYet(ref) && walletId == null;
     final state = walletId == null
@@ -1670,6 +1675,15 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     }
     final networks = state?.value?.networks ?? const <LoopReceiveNetwork>[];
     final network = _selected < networks.length ? networks[_selected] : null;
+    final active = ref.watch(walletDirectoryControllerProvider).value?.active;
+    final faucetWalletId =
+        walletId != null &&
+            WalletRoute.isCanonical(walletId) &&
+            testnetFaucetVisible(ref) &&
+            active?.kind == LoopWalletKind.embedded &&
+            active?.walletId == walletId
+        ? walletId
+        : null;
 
     // Decision 0126 (OKX 收款): network chips, the code centred, the address
     // in one capsule, then 复制 / 分享 — no folio restating the address.
@@ -1770,6 +1784,26 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
                 ],
               ),
             ),
+            // S343 · decision 0271: 获取资金 (the testnet faucet) moved here
+            // from 我's 充值; only while the server publishes it for the
+            // active embedded wallet.
+            if (faucetWalletId != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: LoopButton(
+                  key: const ValueKey<String>('receive-faucet'),
+                  label: testnetFaucetTitle,
+                  icon: 'droplet',
+                  block: true,
+                  onPressed: () => unawaited(
+                    showTestnetFaucetSheet(
+                      context,
+                      walletId: faucetWalletId,
+                      address: network.address,
+                    ),
+                  ),
+                ),
+              ),
             LoopNotice(
               key: const ValueKey<String>('receive-warning'),
               tone: LoopNoticeTone.warn,

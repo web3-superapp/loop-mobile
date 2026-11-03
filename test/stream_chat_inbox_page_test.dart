@@ -396,7 +396,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the inbox opens the stranger requests it never lists', (
+  testWidgets('我的 opens the stranger requests the inbox never lists', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -436,13 +436,24 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    // Decision 0221: the App lands on MEME; the inbox is on 聊天.
+    // Decision 0221: the App lands on MEME. S343 · decision 0271: 聊天 no
+    // longer carries the row; 我的 does, and its tab wears a dot.
     await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-message-requests-entry')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('loop-tab-dot-wallet')),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     await tester.pumpAndSettle();
 
     // A request that has not been accepted is not a conversation and never
-    // enters the channel list, so the inbox carries its own entry — only
-    // while one is waiting (decision 0110), with the count it read.
+    // enters the channel list, so 我的 carries its own entry — only while
+    // one is waiting (decision 0110), with the count it read.
     final entry = find.byKey(
       const ValueKey<String>('stream-chat-message-requests-entry'),
     );

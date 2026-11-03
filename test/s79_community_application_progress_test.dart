@@ -7,13 +7,13 @@ import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/notifications/community_application_notifications.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
-import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
 
+import 'support/me_surface.dart';
 import 'support/community_test_harness.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
@@ -122,7 +122,8 @@ Future<void> _pumpProfile(
 }) => pumpCommunityPage(
   tester,
   // Decision 0175: 我的社区 hangs on 设置, behind 我's gear.
-  ProfileSurfaceScreen.fromId('settings', onNavigate: onNavigate ?? (_) {}),
+  // S343 · decision 0271: the rows stand on 我的.
+  loopMeSurface(onNavigate: onNavigate ?? (_) {}),
   community: community,
   notifications: notifications,
   meta: meta,
@@ -147,10 +148,10 @@ void main() {
         find.byKey(const ValueKey<String>('profile-open-communities')),
       );
 
-      expect(find.text('我加入的'), findsOneWidget);
+      expect(find.text('我加入的社区'), findsOneWidget);
       // An empty group would teach every account about a review queue none of
       // them is in.
-      expect(find.text('我创建的'), findsNothing);
+      expect(find.text('我创建的社区'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('profile-owned-communities')),
         findsNothing,
@@ -183,7 +184,7 @@ void main() {
 
       // The joined row keeps its own count and never counts what was created.
       expect(_row(tester, 'profile-open-communities').trailing, '1 个已加入');
-      expect(find.text('我创建的'), findsOneWidget);
+      expect(find.text('我创建的社区'), findsOneWidget);
       expect(_row(tester, 'profile-owned-$_ownedId').title, 'Builders Guild');
       expect(
         _row(tester, 'profile-owned-$_secondOwnedId').title,

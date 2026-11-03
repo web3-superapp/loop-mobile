@@ -96,6 +96,12 @@ List<String> _opaqueOver(WidgetTester tester, Element wall, Rect band) {
   final found = <String>[];
   // `find` skips what is offstage — the tabs kept in the indexed stack.
   final painted = find.byWidgetPredicate((widget) {
+    // A record group is the page's own content scrolling under the floating
+    // bar (S343 · decision 0271: 我的's account rows can rest there on a
+    // short page), not a band the shell paints.
+    if (widget.key == const ValueKey<String>('loop-record-group-block')) {
+      return false;
+    }
     final colour = _fill(widget);
     return colour != null && colour.a >= 0.9;
   });

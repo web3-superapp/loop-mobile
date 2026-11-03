@@ -215,16 +215,15 @@ void main() {
   });
 
   group('4 · chat list', () {
-    test('no hairline between rows; the last row clears 「发起」', () {
+    test('no hairline between rows; the last row clears the tab bar', () {
       final source = File('lib/features/chat/stream_chat_inbox_page.dart')
           .readAsStringSync();
       expect(source, isNot(contains('defaultChannelListViewSeparatorBuilder')));
       expect(source, isNot(contains('StreamChannelListSeparator')));
       expect(source, contains('chatInboxListBottomPadding,'));
-      // The button stands the tab bar's reserve above the list's end; the
-      // last row clears it by its 56 and a 32 margin.
-      expect(chatInboxFabClearance, 88);
-      expect(chatInboxListBottomPadding, LoopLayout.tabPageBottomReserve + 88);
+      // S343 · decision 0271: 「发起」 moved to the bar, so only the floating
+      // tab bar stands over the list's end.
+      expect(chatInboxListBottomPadding, LoopLayout.tabPageBottomReserve);
     });
   });
 

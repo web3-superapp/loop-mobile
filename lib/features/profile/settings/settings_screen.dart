@@ -18,7 +18,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// `settings` · the account's entries (decision 0175), the account resource
+/// `settings` · 隐私与安全 (S343 · decision 0271), the account resource
 /// and the device-local display switch.
 ///
 /// Both account values are fixed constants published by the server, so they
@@ -97,9 +97,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
         // §D+ #13).
         sections: <Widget>[
-          // Decision 0175: 我 became the fomo layout, and every entry it
-          // carried stands here, behind its gear — same keys, same pages.
-          ProfileAccountEntries(onNavigate: widget.onNavigate),
+          // S343 · decision 0271: 隐私与安全, 通用, 关于 and 退出登录. The
+          // account rows moved to 我的; 分享名片 is on its identity card.
+          ProfileSettingsEntries(onNavigate: widget.onNavigate),
           const LoopLabel('通用'),
           if (blocked)
             LoopUnavailableLine(
@@ -247,9 +247,8 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               ),
             ),
           // Decision 0133 (audit m9): a destination has one entry per hub.
-          // 隐私中心, 安全中心 and 通知 are rows of [ProfileAccountEntries]
-          // above (decision 0175 moved them here from 我), and 网络 is a row
-          // on 钱包.
+          // 隐私中心, 安全中心 and 通知设置 are rows of
+          // [ProfileSettingsEntries] above.
           const LoopLabel('关于'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[

@@ -22,6 +22,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/me_surface.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
@@ -144,16 +145,22 @@ void main() {
       expect(find.text('已复制 LOOP ID'), findsOneWidget);
     });
 
-    // Decision 0126: 分享名片 is the first of the 56 Lime round keys, not a
-    // glyph in a card's corner. Decision 0175 moved the keys from 我 to the
-    // head of 设置, behind 我's gear, above the 账号 rows.
-    testWidgets('分享名片 is the first 56 round key at the head of 设置', (
+    // S343 · decision 0271: 分享名片 is a 44 glyph on 我的's person, beside
+    // 奖励; 设置 has no round keys any more.
+    testWidgets('分享名片 is a glyph on the person, not a key on 设置', (
       tester,
     ) async {
-      await _pumpProfile(tester, loopId: _ownId, surface: 'settings');
+      await _pumpProfile(tester, loopId: _ownId);
 
-      final header = find.byKey(const ValueKey<String>('profile-open-wallets'));
       final share = find.byKey(const ValueKey<String>('profile-share-loop-id'));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('profile-identity-card')),
+          matching: share,
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(share).width, greaterThanOrEqualTo(44));
       expect(
         tester.getSemantics(share),
         matchesSemantics(
@@ -162,20 +169,16 @@ void main() {
           hasEnabledState: true,
           isEnabled: true,
           hasTapAction: true,
+          isFocusable: true,
+          hasFocusAction: true,
         ),
-      );
-      final disc = find.descendant(
-        of: share,
-        matching: find.byKey(const ValueKey<String>('loop-round-key-face')),
-      );
-      expect(tester.getSize(disc), const Size(56, 56));
-      expect(
-        tester.getRect(share).bottom,
-        lessThanOrEqualTo(tester.getRect(header).top),
       );
       // The outlined 复制 / 分享 buttons under the ID are gone.
       expect(find.text('复制'), findsNothing);
       expect(find.text('分享'), findsNothing);
+
+      await _pumpProfile(tester, loopId: _ownId, surface: 'settings');
+      expect(share, findsNothing);
     });
 
     // Decision 0113: 分享 opens the QR card; the invitation text moved into
@@ -184,7 +187,7 @@ void main() {
       tester,
     ) async {
       final clipboard = _mockClipboard(tester);
-      await _pumpProfile(tester, loopId: _ownId, surface: 'settings');
+      await _pumpProfile(tester, loopId: _ownId);
 
       await _tap(
         tester,
@@ -222,18 +225,10 @@ void main() {
         find.byKey(const ValueKey<String>('profile-copy-loop-id')),
         findsNothing,
       );
-      // The key keeps its place on 设置 and says why it cannot share.
-      await _pumpProfile(tester, loopId: null, surface: 'settings');
+      // With nothing to put on the card there is no 分享名片.
       expect(
-        tester.getSemantics(
-          find.byKey(const ValueKey<String>('profile-share-loop-id')),
-        ),
-        matchesSemantics(
-          label: '分享名片，暂不可用',
-          isButton: true,
-          hasEnabledState: true,
-          hasTapAction: true,
-        ),
+        find.byKey(const ValueKey<String>('profile-share-loop-id')),
+        findsNothing,
       );
     });
   });
@@ -578,10 +573,13 @@ Future<void> _pumpProfile(
       child: MaterialApp(
         theme: LoopTheme.dark,
         builder: (context, child) => LoopToastHost(child: child!),
-        home: ProfileSurfaceScreen.fromId(
-          surface,
-          identity: const ProfileIdentity(),
-        ),
+        // S343 · decision 0271: 我 is the head of the 我的 tab.
+        home: surface == 'profile'
+            ? loopMeSurface(onNavigate: (_) {})
+            : ProfileSurfaceScreen.fromId(
+                surface,
+                identity: const ProfileIdentity(),
+              ),
       ),
     ),
   );

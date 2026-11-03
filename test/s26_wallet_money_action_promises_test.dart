@@ -45,7 +45,8 @@ void main() {
       expect(inKeys('扫码'), findsOneWidget);
       expect(inKeys('接收'), findsOneWidget);
       expect(inKeys('兑换'), findsOneWidget);
-      expect(find.text('跨链'), findsOneWidget);
+      // S343 · decision 0271: 跨链 has no entry on 我的.
+      expect(find.text('跨链'), findsNothing);
       // The promise the page cannot keep is gone, and so is the row that
       // carried it.
       expect(find.textContaining('在本机签名并广播'), findsNothing);

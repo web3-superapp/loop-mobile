@@ -146,7 +146,7 @@ void main() {
         '广场',
         'MEME',
         '情报',
-        '钱包',
+        '我的',
       ]);
       // The four v2 tabs keep their slug, path and page; only the tab flag
       // moved.
@@ -425,8 +425,12 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(LoopTabBar), findsOneWidget, reason: path);
       }
+      // S343 · decision 0271: `/profile` lands on the 我的 tab.
+      router.go('/profile');
+      await tester.pumpAndSettle();
+      expect(find.byType(LoopTabBar), findsOneWidget);
       for (final path in <String>[
-        '/profile',
+        '/profile/settings',
         '/search',
         '/system/offline',
         '/preview/toast',

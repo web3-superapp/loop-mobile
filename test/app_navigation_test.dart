@@ -84,7 +84,7 @@ void main() {
 
     // Decision 0221: the App lands on MEME.
     expect(find.byType(MemeScreen), findsOneWidget);
-    for (final destination in <String>['广场', 'MEME', '情报', '钱包', '聊天']) {
+    for (final destination in <String>['广场', 'MEME', '情报', '我的', '聊天']) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }
@@ -115,7 +115,7 @@ void main() {
     expect(find.textContaining('Perp trading'), findsNothing);
     expect(find.textContaining('Live perpetual markets'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
     await tester.pumpAndSettle();
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);

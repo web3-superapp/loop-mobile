@@ -355,8 +355,8 @@ void main() {
         expect(capsule.bottom, lessThanOrEqualTo(bar.top - 12));
         expect(capsule.right, closeTo(800 - LoopSpacing.page, 0.5));
 
-        // 聊天: the 「发起」 key stands over the bar's reserve; the entry's
-        // default place keeps at least 12 clear of it.
+        // 聊天: S343 · decision 0271 moved 「发起」 to the bar's 「＋」; the
+        // entry stays clear of it.
         router.go('/chat');
         await tester.pumpAndSettle();
         final create = tester.getRect(
@@ -366,17 +366,10 @@ void main() {
           find.byKey(const ValueKey<String>('beta-feedback-entry-key')),
         );
         expect(onChat.overlaps(create), isFalse);
-        // One right edge for both keys.
-        expect(onChat.right, closeTo(create.right, 0.5));
-        expect(
-          onChat.bottom <= create.top - 12 || onChat.top >= create.bottom + 12,
-          isTrue,
-          reason: 'entry $onChat · 发起 $create',
-        );
         router.go('/meme');
         await tester.pumpAndSettle();
 
-        unawaited(router.push('/profile'));
+        unawaited(router.push('/profile/settings'));
         await tester.pumpAndSettle();
         expect(find.byKey(_entry), findsNothing);
         router.pop();

@@ -164,10 +164,9 @@ void main() {
   });
 
   group('the mining read on the wallet page is retained (decision 0095)', () {
-    testWidgets('a second visit sends nothing; the tag reads the summary', (
-      tester,
-    ) async {
+    testWidgets('no visit reads mining; the tag opens 情报 · 算力', (tester) async {
       final mining = _CountingMining();
+      final opened = <String>[];
       final visible = ValueNotifier<bool>(true);
       addTearDown(visible.dispose);
       tester.view.devicePixelRatio = 1;
@@ -191,33 +190,28 @@ void main() {
             builder: (context, child) => LoopToastHost(child: child!),
             home: ValueListenableBuilder<bool>(
               valueListenable: visible,
-              builder: (context, show, _) =>
-                  show ? const WalletScreen() : const SizedBox.shrink(),
+              builder: (context, show, _) => show
+                  ? WalletScreen(onNavigate: opened.add)
+                  : const SizedBox.shrink(),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      // Decision 0119: the rows no longer carry a per-asset power figure, so
-      // the page reads no mining composition at all. The account's power is
-      // read when the 「产生算力」 tag is opened.
+      // Decision 0119: the rows carry no per-asset power figure. S343 ·
+      // decision 0271: 「产生算力」 opens 情报 · 算力 instead of a sheet, so
+      // 我的 reads no mining composition at all.
       expect(mining.assetsCalls, 0);
       expect(mining.summaryCalls, 0);
       await tester.tap(_key('wallet-power-tag'));
       await tester.pumpAndSettle();
-      expect(mining.summaryCalls, 1);
-      await tester.tap(_key('wallet-power-sheet-close'));
-      await tester.pumpAndSettle();
+      expect(opened, <String>['/intel?tab=power']);
 
-      // Leave the page and come back inside the revisit floor, and open the
-      // note again: the summary is retained, nothing is sent.
       visible.value = false;
       await tester.pumpAndSettle();
       visible.value = true;
       await tester.pumpAndSettle();
-      await tester.tap(_key('wallet-power-tag'));
-      await tester.pumpAndSettle();
-      expect(mining.summaryCalls, 1);
+      expect(mining.summaryCalls, 0);
       expect(mining.assetsCalls, 0);
     });
   });

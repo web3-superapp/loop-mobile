@@ -11,6 +11,7 @@ import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/me_surface.dart';
 import 'support/loop_ground_probe.dart';
 
 const _aliasField = ValueKey<String>('profile-edit-alias-field');
@@ -321,7 +322,10 @@ Future<void> _pumpProfile(
           data: MediaQuery.of(context).copyWith(textScaler: textScaler),
           child: LoopToastHost(child: child!),
         ),
-        home: ProfileSurfaceScreen.fromId(surfaceId, identity: identity),
+        // S343 · decision 0271: 我 is the head of the 我的 tab.
+        home: surfaceId == 'profile'
+            ? loopMeSurface(onNavigate: (_) {})
+            : ProfileSurfaceScreen.fromId(surfaceId, identity: identity),
       ),
     ),
   );

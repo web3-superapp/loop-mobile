@@ -3,11 +3,9 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
-import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/features/wallet/swap_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
@@ -285,9 +283,11 @@ void main() {
     testWidgets('设置 is the gear in the top bar; no 隐藏余额 capsule', (
       tester,
     ) async {
+      // S343 · decision 0271: 我 is the 我的 tab; the gear stays in its bar
+      // and the eye stays inside 总资产.
       await pumpS5Page(
         tester,
-        ProfileSurfaceScreen.fromId('profile', onNavigate: (_) {}),
+        WalletScreen(onNavigate: (_) {}),
         wallet: FakeWalletReadGateway(),
       );
       final topbar = find.byType(LoopTopbar);
@@ -301,17 +301,13 @@ void main() {
         greaterThan(tester.getSize(find.byType(LoopDashboardPage)).width / 2),
       );
       expect(_key('profile-top-row'), findsNothing);
-      // The eye is a small glyph inside the net worth card.
+      expect(_key('profile-hide-balance'), findsNothing);
       expect(
         find.descendant(
-          of: _key('profile-networth-panel'),
-          matching: _key('profile-hide-balance'),
+          of: _key('wallet-total-plate'),
+          matching: _key('wallet-eye'),
         ),
         findsOneWidget,
-      );
-      expect(
-        tester.getSize(_key('profile-hide-balance')).width,
-        LoopTouch.minimum,
       );
     });
   });

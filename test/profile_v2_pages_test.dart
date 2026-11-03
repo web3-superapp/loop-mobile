@@ -9,19 +9,17 @@ import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
-import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
-import 'support/s7_fixtures.dart';
-import 'support/s7_page_harness.dart';
 
 void main() {
   // This file mounts pages through its own `pumpWidget`, so it arms the
@@ -85,69 +83,19 @@ void main() {
       );
       expect(find.text('Voyager_7'), findsWidgets);
       expect(find.text(loopId), findsOneWidget);
-      // Decision 0175: the mining row moved to 设置. Metrics have no source
-      // there, so it states its figure as unread and hands the reader the
-      // page that owns it.
+      // S343 · decision 0271: the mining row left 设置 with its group.
       await _pump(tester, 'settings', gateway: _Gateway(resource: active()));
-      final mining = tester.widget<LoopRecordRow>(
+      expect(
         find.byKey(const ValueKey<String>('profile-open-mining')),
+        findsNothing,
       );
-      expect(mining.trailing, '—');
-      expect(find.textContaining('24,820'), findsNothing);
     });
 
-    testWidgets('the mining row prints the power and the place it earned', (
-      tester,
-    ) async {
-      // Device walkthrough 2026-09-23 · h01: the row explained that it does
-      // not read power, while the mining tab held 4.48 and 第 47 名.
-      await _pump(
-        tester,
-        // Decision 0175: the entries hang on 设置, behind 我's gear.
-        'settings',
-        gateway: _Gateway(resource: active()),
-        mining: FakeMiningGateway(
-          summary: S7Answer<MiningSummary>(
-            value: s7MiningSummary(power: const MiningFigureValue('4.48')),
-          ),
-          rank: S7Answer<MiningRank>(
-            value: s7MiningRank(
-              scope: MiningRankScope.users,
-              myPosition: const MiningRankPositionSettled(
-                position: 47,
-                power: '4.48',
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final mining = tester.widget<LoopRecordRow>(
-        find.byKey(const ValueKey<String>('profile-open-mining')),
-      );
-      expect(mining.trailing, '4');
-      expect(mining.subtitle, '我的名次 第 47 名');
-      expect(find.textContaining('这一页不读算力'), findsNothing);
-    });
-
-    testWidgets('each 账户 row carries the state it is a way into', (
+    testWidgets('each account row carries the state it is a way into', (
       tester,
     ) async {
       // `#scr-profile`: 「2 个已绑定」, 「匿名模式已开启」, 「关注 24 · 粉丝 108」.
-      await _pump(
-        tester,
-        // Decision 0175: the entries hang on 设置, behind 我's gear.
-        'settings',
-        gateway: _Gateway(resource: active()),
-        social: FakeSocialGateway(
-          connections: const ConnectionPage(
-            direction: ConnectionDirection.following,
-            items: <ConnectionEntry>[],
-            counts: ConnectionCounts(following: 24, followers: 108),
-            nextCursor: null,
-          ),
-        ),
-      );
+      await _pump(tester, 'settings', gateway: _Gateway(resource: active()));
 
       Future<String?> subtitle(String key) async {
         final row = find.byKey(ValueKey<String>(key));
@@ -159,11 +107,29 @@ void main() {
       // S107 §4: the row states the 公开持仓与交易 switch (the 匿名模式 line
       // left with its own switch). This harness keeps both facets private.
       expect(await subtitle('profile-open-privacy'), '持仓与交易仅自己可见');
-      expect(await subtitle('profile-open-connections'), '关注 24 · 粉丝 108');
-      // The wallet directory and the security posture were not read, so
-      // those rows say nothing rather than 「读不到」.
-      expect(await subtitle('profile-open-wallets'), isNull);
+      // The security posture was not read, so the row says nothing rather
+      // than 「读不到」.
       expect(await subtitle('profile-open-security'), isNull);
+
+      // S343 · decision 0271: the counts stand on 我的's person, and the
+      // wallet row on 我的 says nothing while its directory is unread.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        social: FakeSocialGateway(
+          connections: const ConnectionPage(
+            direction: ConnectionDirection.following,
+            items: <ConnectionEntry>[],
+            counts: ConnectionCounts(following: 24, followers: 108),
+            nextCursor: null,
+          ),
+        ),
+      );
+      expect(find.text('24'), findsOneWidget);
+      expect(find.text('108'), findsOneWidget);
+      expect(await subtitle('profile-open-wallets'), isNull);
       expect(find.textContaining('读不到'), findsNothing);
     });
 
@@ -173,35 +139,23 @@ void main() {
       final routes = <String>[];
       await _pump(
         tester,
-        // Decision 0175: the entries hang on 设置, behind 我's gear.
-        'settings',
+        'profile',
         gateway: _Gateway(resource: active()),
         onNavigate: routes.add,
       );
 
-      // The mining tab settles power every five minutes; this page only lacks
-      // a reader of its own and says which page has one.
       expect(find.textContaining('挖矿数据还没有开放'), findsNothing);
-      expect(find.textContaining('资产与挖矿数据还没有开放'), findsNothing);
-      final toMining = find.byKey(
-        const ValueKey<String>('profile-open-mining'),
-      );
-      await tester.scrollUntilVisible(toMining, 120);
-      await tester.tap(toMining);
-      await tester.pumpAndSettle();
-      expect(routes, contains('mining'));
-
-      // The connections page works and counts what it finds.
       expect(find.textContaining('关注数据还没有开放'), findsNothing);
-      final connections = find.byKey(
-        const ValueKey<String>('profile-open-connections'),
-      );
-      await tester.scrollUntilVisible(connections, 120);
-      // The prototype's account rows carry a state value or nothing at all;
-      // a state this device has not read is no second line, never a
-      // description of the destination (audit 2026-09-21 §D+ #11).
-      expect(tester.widget<LoopRecordRow>(connections).subtitle, isNull);
-      expect(tester.widget<LoopRecordRow>(connections).onTap, isNotNull);
+      for (final key in <String>[
+        'profile-open-wallets',
+        'profile-open-communities',
+        'profile-open-referral',
+        'wallet-dapp-entry',
+      ]) {
+        final row = find.byKey(ValueKey<String>(key));
+        await tester.scrollUntilVisible(row, 120);
+        expect(tester.widget<LoopRecordRow>(row).onTap, isNotNull, reason: key);
+      }
     });
 
     testWidgets('unavailable, offline and error each get their own block', (
@@ -244,35 +198,35 @@ void main() {
       tester,
     ) async {
       final destinations = <String>[];
+      // S343 · decision 0271: 我的 carries the account rows; 设置 keeps
+      // 隐私与安全.
       await _pump(
         tester,
-        // Decision 0175: the entries hang on 设置, behind 我's gear.
+        'profile',
+        gateway: _Gateway(resource: active()),
+        onNavigate: destinations.add,
+      );
+      for (final entry in <(String, String)>[
+        ('profile-open-wallets', 'wallets'),
+        ('profile-open-communities', 'community-discover'),
+        ('profile-open-referral', 'invite'),
+        ('wallet-dapp-entry', 'dapp'),
+      ]) {
+        await _scrollTo(tester, entry.$1);
+        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
+        await tester.pumpAndSettle();
+        expect(destinations.last, entry.$2, reason: entry.$1);
+      }
+
+      await _pump(
+        tester,
         'settings',
         gateway: _Gateway(resource: active()),
         onNavigate: destinations.add,
       );
-
-      // Decision 0110 · S106 §5: 我, top to bottom — mining, invite,
-      // communities, account, settings. Every row reaches its own slug.
       for (final entry in <(String, String)>[
-        // Decision 0126: the round keys under the header, then the three
-        // sections top to bottom; 挖矿总览 became the fourth key.
-        // Decision 0133: 好友 was 关注与粉丝 under a second name.
-        ('profile-open-scan', 'scan'),
-        ('profile-open-mining-key', 'mining'),
-        ('profile-open-wallets', 'wallets'),
-        ('profile-open-connections', 'connections'),
-        ('profile-open-friend-requests', 'friend-requests'),
-        ('profile-open-referral', 'referral'),
-        ('profile-open-communities', 'community-discover'),
-        ('profile-open-mining', 'mining'),
-        ('profile-open-mining-assets', 'mining-assets'),
-        ('profile-open-mining-rewards', 'mining-rewards'),
-        ('profile-open-mining-rules', 'mining-rules'),
         ('profile-open-privacy', 'privacy'),
         ('profile-open-security', 'security'),
-        // Decision 0241: 通知中心 above 通知设置.
-        ('profile-open-notification-inbox', 'notifications'),
         ('profile-open-notifications', 'notif-settings'),
       ]) {
         await _scrollTo(tester, entry.$1);
@@ -280,41 +234,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(destinations.last, entry.$2, reason: entry.$1);
       }
-      // IDO Launch is hidden by default (需求方 2026-10-08): neither row is
-      // drawn, and 未开放 appears nowhere.
+      // IDO Launch is hidden by default (需求方 2026-10-08), and since S343
+      // its two rows left with 资产与挖矿.
       expect(
         find.byKey(const ValueKey<String>('profile-open-launch-history')),
         findsNothing,
       );
-      expect(
-        find.byKey(const ValueKey<String>('profile-open-launch-tier')),
-        findsNothing,
-      );
       expect(find.text('未开放'), findsNothing);
       expect(find.text('社区成员关系尚未接入'), findsNothing);
-    });
-
-    testWidgets('the IDO switch brings both Launch rows back', (tester) async {
-      final destinations = <String>[];
-      await _pump(
-        tester,
-        // Decision 0175: the entries hang on 设置, behind 我's gear.
-        'settings',
-        gateway: _Gateway(resource: active()),
-        onNavigate: destinations.add,
-        switches: const LoopFeatureSwitchValues(idoLaunchVisible: true),
-      );
-
-      for (final entry in <(String, String)>[
-        ('profile-open-launch-history', 'launch-history'),
-        ('profile-open-launch-tier', 'launch-tier'),
-      ]) {
-        await _scrollTo(tester, entry.$1);
-        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
-        await tester.pumpAndSettle();
-        expect(destinations.last, entry.$2);
-      }
-      expect(find.text('未开放'), findsNWidgets(2));
     });
 
     testWidgets('the primary action opens the edit page', (tester) async {
@@ -690,10 +617,21 @@ Future<void> _pump(
       child: MaterialApp(
         theme: LoopTheme.dark,
         home: LoopToastHost(
-          child: ProfileSurfaceScreen.fromId(
-            surfaceId,
-            onNavigate: onNavigate ?? (_) {},
-          ),
+          // S343 · decision 0271: 我 is the person and the account rows
+          // of 我的; this harness draws those two without the wallet reads.
+          child: surfaceId == 'profile'
+              ? LoopDashboardPage(
+                  archetype: LoopPageArchetype.record,
+                  title: '我的',
+                  sections: <Widget>[
+                    ProfileIdentitySection(onNavigate: onNavigate ?? (_) {}),
+                    MeAccountEntries(onNavigate: onNavigate ?? (_) {}),
+                  ],
+                )
+              : ProfileSurfaceScreen.fromId(
+                  surfaceId,
+                  onNavigate: onNavigate ?? (_) {},
+                ),
         ),
       ),
     ),
