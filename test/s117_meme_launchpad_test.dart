@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_create_screen.dart';
@@ -898,7 +899,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('S187-2 · the chart is full bleed, Lime, with a price tag', (
+    testWidgets('S345 · the chart is full bleed with the market toolbar', (
       tester,
     ) async {
       final meme = gateway(memeDetail());
@@ -908,51 +909,52 @@ void main() {
         find.byType(LoopMarketChart),
       );
       expect(chart.height, memeTokenChartHeight(screen.height));
-      expect(chart.lineColor, LoopColors.lime);
-      expect(chart.lastPriceTag, isTrue);
-      expect(chart.showVolume, isFalse);
+      // Decision 0273: the market token detail's defaults and colours.
+      expect(chart.lineColor, isNull);
+      expect(chart.lastPriceTag, isFalse);
+      expect(chart.showVolume, isTrue);
+      expect(chart.showMovingAverages, isFalse);
       final rect = tester.getRect(_key('loop-market-chart'));
       expect(rect.height, chart.height);
       expect(rect.left, 0);
       expect(rect.width, screen.width);
-      // It follows the price head directly.
+      // The price head, the toolbar, then the plot.
       expect(
-        rect.top,
+        tester.getRect(_key('meme-chart-style')).top,
         greaterThanOrEqualTo(tester.getRect(_key('meme-token-price')).bottom),
       );
       expect(
-        rect.top - tester.getRect(_key('meme-token-price')).bottom,
-        lessThan(12),
+        rect.top,
+        greaterThanOrEqualTo(tester.getRect(_key('meme-chart-style')).bottom),
       );
-      final tag = _key('loop-market-chart-last-price-tag');
-      expect(tag, findsOneWidget);
-      final box = tester.widget<DecoratedBox>(
-        find.descendant(of: tag, matching: find.byType(DecoratedBox)),
-      );
-      final decoration = box.decoration as BoxDecoration;
-      expect(decoration.color, LoopColors.lime);
-      expect(decoration.borderRadius, LoopRadius.badge);
-      final label = tester.widget<Text>(
-        find.descendant(of: tag, matching: find.byType(Text)),
-      );
-      expect(label.style?.color, LoopColors.ink);
-      // LIVE / 1H / 4H / 1D quiet chips and K; no ALL.
-      for (final label in <String>['LIVE', '1H', '4H', '1D', 'K']) {
-        expect(find.text(label), findsOneWidget, reason: label);
+      for (final (interval, label) in memeChartRanges) {
+        expect(
+          find.descendant(
+            of: _key('meme-interval-strip'),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+          reason: label,
+        );
+        expect(_key('meme-interval-${interval.wireName}'), findsOneWidget);
       }
-      expect(find.text('ALL'), findsNothing);
-      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).selected, isTrue);
-      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).quiet, isTrue);
+      expect(find.text('LIVE'), findsNothing);
+      expect(
+        tester.widget<LoopChartPeriod>(_key('meme-interval-1m')).selected,
+        isTrue,
+      );
+      expect(_key('meme-chart-expand'), findsOneWidget);
       await tester.tap(_key('meme-interval-1h'));
       await tester.pumpAndSettle();
       expect(_key('meme-chart-1h'), findsOneWidget);
+      expect(find.text('K线'), findsOneWidget);
       await tester.tap(_key('meme-chart-style'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopMarketChart>(find.byType(LoopMarketChart)).style,
         LoopChartStyle.candles,
       );
-      expect(tester.widget<LoopSeg>(_key('meme-chart-style')).selected, isTrue);
+      expect(find.text('折线'), findsOneWidget);
       await _drain(tester);
     });
 

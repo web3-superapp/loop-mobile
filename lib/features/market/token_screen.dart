@@ -10,7 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
-import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
@@ -973,55 +973,19 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
     }
     final block = state.value?.candles;
     final candles = block is MarketCandlesAvailable ? block.items : null;
-    final averages = <String>[
-      if (_averages && candles != null && candles.isNotEmpty)
-        for (final period in LoopMarketChart.averagePeriods)
-          ?loopCandleMovingAverageLabel(candles, period),
-    ];
     return Column(
       key: const ValueKey<String>('token-chart-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  averages.isEmpty ? '' : '${averages.join(' · ')} · 本机计算',
-                  key: const ValueKey<String>('token-moving-averages'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.figureXs.copyWith(color: LoopColors.text2),
-                ),
-              ),
-              _ChartToggle(
-                key: const ValueKey<String>('token-chart-style'),
-                label: _style == LoopChartStyle.line ? 'K线' : '折线',
-                semantic: _style == LoopChartStyle.line ? '切换到 K 线' : '切换到折线',
-                on: false,
-                onTap: () => setState(
-                  () => _style = _style == LoopChartStyle.line
-                      ? LoopChartStyle.candles
-                      : LoopChartStyle.line,
-                ),
-              ),
-              _ChartToggle(
-                key: const ValueKey<String>('token-chart-ma'),
-                label: 'MA',
-                semantic: '均线',
-                on: _averages,
-                onTap: () => setState(() => _averages = !_averages),
-              ),
-              _ChartToggle(
-                key: const ValueKey<String>('token-chart-vol'),
-                label: 'VOL',
-                semantic: '成交量',
-                on: _volume,
-                onTap: () => setState(() => _volume = !_volume),
-              ),
-            ],
-          ),
+        LoopChartToolbar(
+          keyPrefix: 'token',
+          averagesText: _averages ? loopChartAveragesText(candles) : '',
+          style: _style,
+          averages: _averages,
+          volume: _volume,
+          onStyleChanged: (style) => setState(() => _style = style),
+          onAveragesChanged: (on) => setState(() => _averages = on),
+          onVolumeChanged: (on) => setState(() => _volume = on),
         ),
         if (!state.isReady || block == null)
           ConstrainedBox(
@@ -1088,9 +1052,17 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                   '${block.items.last.isOpen ? '，最后一根尚未收盘' : ''}',
             ),
           },
-        _IntervalChips(
-          selected: widget.interval,
-          onSelected: widget.onIntervalChanged,
+        LoopChartIntervalRow(
+          options: <LoopChartIntervalOption>[
+            for (final interval in LoopCandleInterval.values)
+              (
+                keyName: 'token-interval-${interval.wireName}',
+                label: loopChartIntervalLabel(interval),
+              ),
+          ],
+          selectedIndex: LoopCandleInterval.values.indexOf(widget.interval),
+          onSelected: (index) =>
+              widget.onIntervalChanged(LoopCandleInterval.values[index]),
           trailing: widget.trailing,
         ),
         if (block is MarketCandlesAvailable) _CandleProvenance(block: block),
@@ -1131,86 +1103,6 @@ class _CandleProvenance extends StatelessWidget {
         if (open) '最后一根尚未收盘，收盘前还会变化。',
         'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源。',
       ].join(''),
-    );
-  }
-}
-
-/// A chart toolbar switch (K线 / MA / VOL).
-///
-/// Decision 0171 (docs/33 L4): the shared quiet `.seg` — a word, and the
-/// solid dark-grey pill while it is on — instead of a hand-made r6 capsule.
-/// A screen reader hears what it switches, not the abbreviation.
-class _ChartToggle extends StatelessWidget {
-  const _ChartToggle({
-    required this.label,
-    required this.semantic,
-    required this.on,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final String semantic;
-  final bool on;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    toggled: on,
-    label: semantic,
-    excludeSemantics: true,
-    child: LoopSeg(label: label, quiet: true, selected: on, onSelected: onTap),
-  );
-}
-
-/// 15分 / 1时 / 4时 / 1日 / 1周, then the caller's trailing control.
-///
-/// Decision 0171 (docs/33 L4): the periods are quiet `LoopSeg`s, the same
-/// OKX filter pill as every other peer choice. The row scrolls rather than
-/// overflowing on a narrow phone, and the trailing control keeps its place.
-class _IntervalChips extends StatelessWidget {
-  const _IntervalChips({
-    required this.selected,
-    required this.onSelected,
-    this.trailing,
-  });
-
-  final LoopCandleInterval selected;
-  final ValueChanged<LoopCandleInterval> onSelected;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (final (index, interval)
-                      in LoopCandleInterval.values.indexed) ...<Widget>[
-                    if (index > 0) const SizedBox(width: 4),
-                    LoopSeg(
-                      key: ValueKey<String>(
-                        'token-interval-${interval.wireName}',
-                      ),
-                      label: loopChartIntervalLabel(interval),
-                      quiet: true,
-                      selected: interval == selected,
-                      onSelected: () => onSelected(interval),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          ?trailing,
-        ],
-      ),
     );
   }
 }

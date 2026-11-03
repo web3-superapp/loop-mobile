@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
@@ -15,6 +17,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
@@ -29,6 +32,7 @@ import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/shell/loop_orientation.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
@@ -62,15 +66,16 @@ enum MemeTokenTab {
 /// The token page's chart when fewer than two candles exist (decision 0121).
 const String memeChartEmptyMessage = '还没有成交';
 
-/// The chart's range chips under the plot (decision 0174, 代币页 B): each
-/// names one bucket width the server already serves. 「ALL」 has no bucket of
-/// its own and is not drawn; 5 / 15 minute buckets are no longer offered.
+/// The chart's periods under the plot (decision 0273): every bucket width
+/// the server serves, the MEME v2 project page's six.
 const List<(MemeCandleInterval, String)> memeChartRanges =
     <(MemeCandleInterval, String)>[
-      (MemeCandleInterval.oneMinute, 'LIVE'),
-      (MemeCandleInterval.oneHour, '1H'),
-      (MemeCandleInterval.fourHours, '4H'),
-      (MemeCandleInterval.oneDay, '1D'),
+      (MemeCandleInterval.oneMinute, '1分'),
+      (MemeCandleInterval.fiveMinutes, '5分'),
+      (MemeCandleInterval.fifteenMinutes, '15分'),
+      (MemeCandleInterval.oneHour, '1时'),
+      (MemeCandleInterval.fourHours, '4时'),
+      (MemeCandleInterval.oneDay, '1天'),
     ];
 
 /// The token page's full-bleed chart height for a screen [screenHeight] tall
@@ -566,11 +571,12 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       _PriceBlock(detail: detail),
       // Decision 0174: the chart follows the price head directly, full
       // bleed, its range chips under it.
-      _ChartSection(
+      MemeChartSection(
         memeTokenId: detail.memeTokenId,
         interval: _interval,
         height: chartHeight,
         onIntervalChanged: (value) => setState(() => _interval = value),
+        onExpand: () => _open(MemeRoute.chart(detail.memeTokenId)),
       ),
       _ProgressStats(detail: detail),
       if (memeLiquidityLow(detail))
@@ -1259,12 +1265,17 @@ class _GraduationBanner extends StatelessWidget {
   }
 }
 
-class _ChartSection extends ConsumerStatefulWidget {
-  const _ChartSection({
+/// The token page's chart block (decision 0273): the market token detail's
+/// two rows — K线 / MA / VOL above the plot, the periods and the full-screen
+/// glyph under it — around the shared token chart.
+class MemeChartSection extends ConsumerStatefulWidget {
+  const MemeChartSection({
     required this.memeTokenId,
     required this.interval,
     required this.height,
     required this.onIntervalChanged,
+    super.key,
+    this.onExpand,
   });
 
   final String memeTokenId;
@@ -1272,12 +1283,18 @@ class _ChartSection extends ConsumerStatefulWidget {
   final double height;
   final ValueChanged<MemeCandleInterval> onIntervalChanged;
 
+  /// Opens the full-screen chart; `null` on the full-screen page itself.
+  final VoidCallback? onExpand;
+
   @override
-  ConsumerState<_ChartSection> createState() => _ChartSectionState();
+  ConsumerState<MemeChartSection> createState() => _MemeChartSectionState();
 }
 
-class _ChartSectionState extends ConsumerState<_ChartSection> {
+class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
+  /// The market token detail's defaults: a line, MA off, VOL on.
   LoopChartStyle _style = LoopChartStyle.line;
+  bool _averages = false;
+  bool _volume = true;
 
   @override
   Widget build(BuildContext context) {
@@ -1294,6 +1311,7 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
       });
     }
     final series = state.value;
+    final drawn = series != null && series.candles.length >= 2;
     final Widget body;
     if (series == null) {
       body = ConstrainedBox(
@@ -1307,7 +1325,7 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
           onRetry: () => unawaited(ref.read(provider.notifier).reload()),
         ),
       );
-    } else if (series.candles.length < 2) {
+    } else if (!drawn) {
       body = SizedBox(
         height: widget.height,
         child: const SingleChildScrollView(
@@ -1327,58 +1345,53 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
         candles: series.candles,
         interval: widget.interval.axis,
         style: _style,
+        showMovingAverages: _averages,
+        showVolume: _volume,
         height: widget.height,
-        // Decision 0174: one Lime line over the page itself — no card, no
-        // volume strip — with the current price as a Lime tag.
-        showVolume: false,
-        lineColor: LoopColors.yellow,
-        lastPriceTag: true,
         semanticLabel:
             '${series.candles.length} 根${widget.interval.label}'
             '${_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'}，单位 USD1',
       );
     }
+    final onExpand = widget.onExpand;
     return Column(
       key: const ValueKey<String>('meme-chart-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(padding: const EdgeInsets.only(top: 6, bottom: 2), child: body),
-        // Decision 0174: the range chips sit under the full-bleed chart, the
-        // K switch at the end of the same line (decision 0131's periods
-        // above the chart are superseded; the bar's height is reserved, so
-        // they are never under it).
-        Padding(
-          key: const ValueKey<String>('meme-interval-strip'),
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-          child: Row(
-            children: <Widget>[
-              for (final (interval, label) in memeChartRanges) ...<Widget>[
-                LoopSeg(
-                  key: ValueKey<String>('meme-interval-${interval.wireName}'),
-                  label: label,
-                  quiet: true,
-                  selected: interval == widget.interval,
-                  onSelected: () => widget.onIntervalChanged(interval),
-                ),
-                const SizedBox(width: 4),
-              ],
-              const Spacer(),
-              Semantics(
-                label: _style == LoopChartStyle.line ? '切到 K 线' : '切到折线',
-                child: LoopSeg(
-                  key: const ValueKey<String>('meme-chart-style'),
-                  label: 'K',
-                  quiet: true,
-                  selected: _style == LoopChartStyle.candles,
-                  onSelected: () => setState(
-                    () => _style = _style == LoopChartStyle.line
-                        ? LoopChartStyle.candles
-                        : LoopChartStyle.line,
-                  ),
-                ),
-              ),
-            ],
+        LoopChartToolbar(
+          keyPrefix: 'meme',
+          averagesOnOwnLine: true,
+          averagesText: _averages && drawn
+              ? loopChartAveragesText(series.candles)
+              : '',
+          style: _style,
+          averages: _averages,
+          volume: _volume,
+          onStyleChanged: (style) => setState(() => _style = style),
+          onAveragesChanged: (on) => setState(() => _averages = on),
+          onVolumeChanged: (on) => setState(() => _volume = on),
+        ),
+        body,
+        LoopChartIntervalRow(
+          fill: true,
+          periodsKey: const ValueKey<String>('meme-interval-strip'),
+          options: <LoopChartIntervalOption>[
+            for (final (interval, label) in memeChartRanges)
+              (keyName: 'meme-interval-${interval.wireName}', label: label),
+          ],
+          selectedIndex: memeChartRanges.indexWhere(
+            (range) => range.$1 == widget.interval,
           ),
+          onSelected: (index) =>
+              widget.onIntervalChanged(memeChartRanges[index].$1),
+          trailing: onExpand == null
+              ? null
+              : LoopIconButton(
+                  key: const ValueKey<String>('meme-chart-expand'),
+                  icon: 'expand',
+                  label: '打开全屏图表',
+                  onPressed: onExpand,
+                ),
         ),
         if (series != null)
           MemeProvenance(
@@ -1389,6 +1402,127 @@ class _ChartSectionState extends ConsumerState<_ChartSection> {
             detail:
                 '每笔曲线成交后的价格按时段聚成 K 线；空时段不补。'
                 '${series.frozenAt == null ? '' : '毕业后的走势在外盘行情里看。'}',
+          ),
+      ],
+    );
+  }
+}
+
+/// `chart-full` for a MEME curve token (decision 0273): the market's
+/// full-screen chart page (`/market/chart?meme=<memeTokenId>`) with the token
+/// page's own chart block.
+///
+/// Archetype `record`, layout `focus`. Loading / error / offline /
+/// permission come from the token read; empty is the block's own
+/// 「还没有成交」.
+class MemeFullChartScreen extends ConsumerStatefulWidget {
+  const MemeFullChartScreen({
+    required this.memeTokenId,
+    super.key,
+    this.onBack,
+  });
+
+  final String? memeTokenId;
+  final VoidCallback? onBack;
+
+  @override
+  ConsumerState<MemeFullChartScreen> createState() =>
+      _MemeFullChartScreenState();
+}
+
+class _MemeFullChartScreenState extends ConsumerState<MemeFullChartScreen> {
+  MemeCandleInterval _interval = memeChartRanges.first.$1;
+
+  /// Everything on this page that is not the plot (the market page's own
+  /// figure, `FullChartScreen`).
+  static const double _chromeHeight = 210;
+  static const double _minimumChartHeight = 160;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(SystemChrome.setPreferredOrientations(loopChartOrientations));
+  }
+
+  @override
+  void dispose() {
+    unawaited(loopLockPortrait());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final id = widget.memeTokenId;
+    if (!MemeRoute.isTokenId(id)) {
+      return LoopFocusPage(
+        key: const ValueKey<String>('meme-chart-full-invalid'),
+        archetype: LoopPageArchetype.record,
+        title: '无法打开这张图表',
+        onBack: widget.onBack,
+        body: const <Widget>[
+          LoopEmptyState(
+            key: ValueKey<String>('meme-chart-full-invalid-identity'),
+            illustration: LoopIllustration.launchpad,
+            title: '路由中没有可用的代币标识',
+            message: '没有请求任何数据，也没有回退到其他代币。',
+            compact: true,
+          ),
+        ],
+      );
+    }
+    final memeTokenId = id!;
+    if (memeReadsBlocked(ref)) {
+      final capability = ref.watch(
+        loopCapabilityProvider(LoopV2CapabilityId.meme),
+      );
+      return LoopFocusPage(
+        key: const ValueKey<String>('meme-chart-full-blocked'),
+        archetype: LoopPageArchetype.record,
+        title: '全屏图表',
+        onBack: widget.onBack,
+        block: LoopPageBlock(
+          key: const ValueKey<String>('meme-chart-full-capability-block'),
+          title: '发射台暂时不可用',
+          message: memeCapabilityText(capability),
+        ),
+        body: const <Widget>[],
+      );
+    }
+    final provider = memeTokenControllerProvider(memeTokenId);
+    final state = ref.watch(provider);
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(ref.read(provider.notifier).load());
+      });
+    }
+    final detail = state.value;
+    final media = MediaQuery.of(context);
+    final chartHeight = math.max(
+      _minimumChartHeight,
+      media.size.height - media.padding.vertical - _chromeHeight,
+    );
+    return LoopFocusPage(
+      key: ValueKey<String>('meme-chart-full-$memeTokenId'),
+      archetype: LoopPageArchetype.record,
+      title: detail == null ? '全屏图表' : loopTickerLabel(detail.row.symbol),
+      onBack: widget.onBack,
+      body: <Widget>[
+        if (detail == null)
+          LoopChainStateBlock(
+            keyPrefix: 'meme-chart-full',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            skeleton: LoopSkeletonType.chart,
+            emptyMessage: '代币不存在',
+            onRetry: () => unawaited(ref.read(provider.notifier).reload()),
+          )
+        else
+          MemeChartSection(
+            key: const ValueKey<String>('meme-chart-full-candles'),
+            memeTokenId: memeTokenId,
+            interval: _interval,
+            height: chartHeight,
+            onIntervalChanged: (value) => setState(() => _interval = value),
           ),
       ],
     );

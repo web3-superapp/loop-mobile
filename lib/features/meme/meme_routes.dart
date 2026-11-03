@@ -32,6 +32,28 @@ abstract final class MemeRoute {
     queryParameters: <String, String>{'draft': memeTokenId},
   ).toString();
 
+  /// Decision 0273 · the token page's full-screen chart: the market's own
+  /// `chart-full` path (`/market/chart`), addressed by the [chartParameter]
+  /// query parameter instead of an `assetId`.
+  static const String chartParameter = 'meme';
+
+  static String chart(String memeTokenId) => Uri(
+    path: '/market/chart',
+    queryParameters: <String, String>{chartParameter: memeTokenId},
+  ).toString();
+
+  /// Whether [uri] asks for a token's full-screen chart at all (well formed
+  /// or not).
+  static bool isChart(Uri uri) =>
+      uri.path == '/market/chart' &&
+      uri.queryParameters.containsKey(chartParameter);
+
+  /// The token id of a [chart] location, or `null` when [uri] is not one.
+  static String? chartIdOf(Uri uri) {
+    if (!isChart(uri) || uri.queryParametersAll.length != 1) return null;
+    return idOf(uri, key: chartParameter);
+  }
+
   /// The token id in a route, or `null` when it is missing or malformed.
   static String? idOf(Uri uri, {String key = 'id'}) {
     final value = uri.queryParameters[key];

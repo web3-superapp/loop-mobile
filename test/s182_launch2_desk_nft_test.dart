@@ -1339,8 +1339,8 @@ void main() {
     });
   });
 
-  group('desk · 战绩 without promotional copy', () {
-    testWidgets('a 2×2 stat grid followed directly by the source line', (
+  group('desk · no 战绩 (decision 0273)', () {
+    testWidgets('figures read: no 战绩, no (i), no grid; the source line', (
       tester,
     ) async {
       await _pump(
@@ -1351,31 +1351,12 @@ void main() {
           <String, Object?>{'stats': _statsJson(), 'contractVersion': '2.0'},
         ]),
       );
-      expect(find.text('战绩'), findsOneWidget);
-      final grid = tester.widget<MemeStatFigures>(
-        find.descendant(
-          of: _key('launch2-stats'),
-          matching: find.byType(MemeStatFigures),
-        ),
-      );
-      expect(grid.stats.map((stat) => '${stat.value}|${stat.label}'), <String>[
-        '3|本周毕业',
-        '4,200.5 USD1|累计回购',
-        '318 枚|勋章已铸',
-        '9|进行中',
-      ]);
-      // S326 · decision 0256: each cell has a second data line, and the
-      // source entry sits beside the heading, not under the grid.
-      expect(grid.notes.first, '累计 12');
-      expect(_key('launch2-stats-graduated-note'), findsOneWidget);
-      expect(_key('launch2-stats-buyback'), findsOneWidget);
+      expect(find.text('战绩'), findsNothing);
+      expect(_key('launch2-stats'), findsNothing);
+      expect(_key('launch2-stats-source'), findsNothing);
+      expect(find.byType(MemeStatFigures), findsNothing);
       expect(_key('launch2-curation-notice'), findsNothing);
-      expect(_key('launch2-stats-source'), findsOneWidget);
-      expect(_key('launch2-list-all-provenance'), findsNothing);
-      expect(
-        tester.getCenter(_key('launch2-stats-source')).dy,
-        lessThan(tester.getTopLeft(_key('launch2-stats')).dy),
-      );
+      expect(_key('launch2-list-all-provenance'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1831,7 +1812,7 @@ void main() {
   });
 
   group('360 dp', () {
-    testWidgets('the desk, counts, record cards, tape, groups and 战绩 with '
+    testWidgets('the desk, counts, record cards, tape and groups with '
         'long tickers and names do not overflow', (tester) async {
       tester.view.physicalSize = const Size(360, 800);
       final json = <Map<String, Object?>>[
@@ -1878,7 +1859,8 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -2400));
       await tester.pumpAndSettle();
-      expect(_key('launch2-stats'), findsOneWidget);
+      expect(_key('launch2-stats'), findsNothing);
+      expect(_key('launch2-list-all-provenance'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _drain(tester);
     });

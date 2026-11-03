@@ -89,6 +89,7 @@ import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/meme/meme_token_screen.dart';
+import 'package:loop_mobile/features/launch2/launch2_full_chart_screen.dart'; // S345
 import 'package:loop_mobile/features/launch2/launch2_instance_screen.dart'; // S136
 import 'package:loop_mobile/features/launch2/launch2_dynamic_rewards_screen.dart'; // S168
 import 'package:loop_mobile/features/launch2/launch2_nft_screen.dart'; // S180
@@ -1418,7 +1419,10 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: MarketAssetRoute.chartPath,
-        builder: (context, state) => FullChartScreen(
+        // Decision 0273: the same page also opens a MEME v2 project's
+        // (`?launch2=`) or a MEME curve token's (`?meme=`) chart.
+        builder: (context, state) => loopChartFullPage(
+          state.uri,
           assetId: MarketAssetRoute.parse(
             state.uri,
             MarketAssetRoute.chartPath,
@@ -2769,4 +2773,30 @@ class UnknownRouteScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// `chart-full` (`/market/chart`): a market asset's chart by `assetId`, and
+/// (decision 0273) the same page for a MEME v2 project (`?launch2=`) or a
+/// MEME curve token (`?meme=`).
+///
+/// [assetId] is the market asset parsed from [uri] (`null` when it is not
+/// one); it is used only when [uri] names neither MEME series.
+Widget loopChartFullPage(
+  Uri uri, {
+  required String? assetId,
+  required VoidCallback onBack,
+}) {
+  if (Launch2Route.isChart(uri)) {
+    return Launch2FullChartScreen(
+      instanceId: Launch2Route.chartIdOf(uri),
+      onBack: onBack,
+    );
+  }
+  if (MemeRoute.isChart(uri)) {
+    return MemeFullChartScreen(
+      memeTokenId: MemeRoute.chartIdOf(uri),
+      onBack: onBack,
+    );
+  }
+  return FullChartScreen(assetId: assetId, onBack: onBack);
 }

@@ -980,6 +980,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       Launch2CandleCard(
         key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
         detail: detail,
+        onExpand: () => _open(Launch2Route.chart(detail.instanceId)),
       ),
       ?_holdingStrip(detail, detail.row.curve.priceUsd1),
       _CurveProgress(detail: detail),
@@ -1005,6 +1006,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       Launch2CandleCard(
         key: ValueKey<String>('launch2-candles-${detail.instanceId}'),
         detail: detail,
+        onExpand: () => _open(Launch2Route.chart(detail.instanceId)),
       ),
       ?_holdingStrip(detail, detail.pool?.lastPriceUsd1),
       if (pool.dynamicPool case final Launch2DynamicPoolState dynamicPool)
