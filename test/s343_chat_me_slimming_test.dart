@@ -243,7 +243,7 @@ void main() {
   });
 
   group('我的', () {
-    testWidgets('top to bottom: bar, person, 总资产, keys, holdings, rows', (
+    testWidgets('top to bottom: bar, person, 总资产, keys, sections', (
       tester,
     ) async {
       await _pumpMe(tester);
@@ -251,21 +251,27 @@ void main() {
         find.descendant(of: find.byType(LoopTopbar), matching: find.text('我的')),
         findsWidgets,
       );
-      // The bar: 交易历史, 通知, 设置 — and no 钱包管理.
-      final history = tester.getCenter(_key('wallet-history-action')).dx;
+      // S349: the bar keeps 通知 and 设置; 交易历史 is the 交易 section and
+      // 钱包管理 sits on the 总资产 plate.
+      expect(_key('wallet-history-action'), findsNothing);
       final bell = tester.getCenter(_key('me-notification-bell')).dx;
       final gear = tester.getCenter(_key('profile-open-settings')).dx;
-      expect(history, lessThan(bell));
       expect(bell, lessThan(gear));
-      expect(_key('wallet-manage-action'), findsNothing);
-      // Only those three: no (i) in the bar.
+      expect(
+        find.descendant(
+          of: _key('wallet-total-plate'),
+          matching: _key('wallet-manage-action'),
+        ),
+        findsOneWidget,
+      );
+      // Only those two: no (i) in the bar.
       expect(_key('loop-page-info-action'), findsNothing);
       expect(
         find.descendant(
           of: find.byType(LoopTopbar),
           matching: find.byType(LoopIconButton),
         ),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
 
       double top(String key) => tester.getTopLeft(_key(key)).dy;
@@ -300,27 +306,25 @@ void main() {
         'wallet-send-entry',
         'wallet-swap-entry',
         'wallet-pay-entry',
+        'wallet-dapp-entry',
       ]) {
         expect(_key(key), findsOneWidget, reason: key);
       }
+      expect(top('wallet-receive-entry'), lessThan(top('me-sections')));
       expect(_key('wallet-asset-list'), findsOneWidget);
-      expect(top('wallet-asset-list'), lessThan(top('me-account-entries')));
+      expect(top('me-sections'), lessThan(top('wallet-asset-list')));
 
-      // The account rows, in order.
-      final rows = <String>[
+      // S349: the account rows are gone, 邀请好友 with them.
+      for (final gone in <String>[
+        'me-account-entries',
         'profile-open-wallets',
         'profile-open-communities',
         'profile-open-referral',
-        'wallet-dapp-entry',
-      ];
-      for (var i = 0; i < rows.length; i++) {
-        expect(_key(rows[i]), findsOneWidget, reason: rows[i]);
-        if (i > 0) expect(top(rows[i - 1]), lessThan(top(rows[i])));
+        'profile-copy-invite-code',
+      ]) {
+        expect(_key(gone), findsNothing, reason: gone);
       }
-      expect(find.text('我加入的社区'), findsOneWidget);
-      expect(find.text('邀请好友'), findsOneWidget);
-      // The invite code and its copy stay on the row.
-      expect(_key('profile-copy-invite-code'), findsOneWidget);
+      expect(find.text('邀请好友'), findsNothing);
 
       // Removed: the bottom entry group, 充值, profile's own holdings.
       for (final gone in <String>[
@@ -358,7 +362,6 @@ void main() {
         return opened.single;
       }
 
-      expect(await tapAndRead('wallet-history-action'), '/wallet/history');
       expect(await tapAndRead('me-notification-bell'), '/chat/notifications');
       expect(await tapAndRead('profile-open-settings'), '/profile/settings');
       expect(await tapAndRead('profile-open-edit'), '/profile/edit');
@@ -366,11 +369,7 @@ void main() {
         await tapAndRead('profile-following-count'),
         '/profile/connections',
       );
-      expect(await tapAndRead('profile-open-wallets'), '/wallet/manage');
-      expect(
-        await tapAndRead('profile-open-referral'),
-        loopIntelInviteLocation,
-      );
+      expect(await tapAndRead('wallet-manage-action'), '/wallet/manage');
       expect(loopIntelInviteLocation, '/intel?tab=power&sub=invite');
       expect(await tapAndRead('wallet-dapp-entry'), '/wallet/dapp');
       expect(await tapAndRead('wallet-power-tag'), loopIntelPowerLocation);
@@ -418,7 +417,7 @@ void main() {
       expect(_key('profile-identity-card'), findsNothing);
       // The rest of the page does not wait for the person.
       expect(_key('wallet-total-plate'), findsOneWidget);
-      expect(_key('me-account-entries'), findsOneWidget);
+      expect(_key('me-sections'), findsOneWidget);
     });
 
     testWidgets('nothing held: the empty asset state, no overflow at 390', (
@@ -426,7 +425,7 @@ void main() {
     ) async {
       await _pumpMe(tester, balances: s5Balances(rows: const []));
       expect(_key('wallet-balances-empty'), findsOneWidget);
-      expect(_key('me-account-entries'), findsOneWidget);
+      expect(_key('me-sections'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -445,11 +444,11 @@ void main() {
     ) async {
       await _pumpMe(tester, size: const Size(390, 700));
       await tester.scrollUntilVisible(
-        _key('wallet-dapp-entry'),
+        _key('wallet-snapshot-footer'),
         240,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(_key('wallet-dapp-entry'), findsOneWidget);
+      expect(_key('wallet-snapshot-footer'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -466,7 +465,7 @@ void main() {
       );
       expect(_key('wallet-capability-block'), findsOneWidget);
       expect(_key('profile-identity-card'), findsOneWidget);
-      expect(_key('me-account-entries'), findsOneWidget);
+      expect(_key('me-sections'), findsOneWidget);
       expect(_key('wallet-total-plate'), findsNothing);
     });
   });

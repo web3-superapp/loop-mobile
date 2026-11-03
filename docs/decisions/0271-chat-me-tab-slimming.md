@@ -63,3 +63,15 @@ Accepted · 2026-11-03（S343-mobile）。依据 `LOOP/docs/56-页面精简-需�
 - 删除：`ChatInboxSection`、`chatInboxSectioned`、`LoopSectionedInbox`、`LoopSectionedChannelListController`、`LoopInboxSectionController`、`_SectionEvents`、`loopStreamInboxSectionFilter`、`loopStreamChannelKindField`、`ChatInboxSectionHeader`、`ChatInboxSectionEmpty` 及社区分页 / 本机社区读取两个常量。本机副本（0132）回到单查询读 30 条。卡板（0221）的首末圆角改为整张列表的首行与末行。
 - S347 的其他修复（Tab 带 query 走 `go`、`pageInfo` 注释）保留。
 - 测试：删去 s343 / s106 / s106b / s347 / stream_chat_inbox_page_test 里的分节用例；新增 `test/s348_chat_power_slimming_test.dart`（单查询、一次读取、社区与好友按 Stream 顺序混排、种子不重排）。
+## Amendment · 2026-11-03（S349 · docs/56 §四「我的」，需求方确认 10 条）
+
+- 「我的」改为与他人主页（`user-profile`，决策 0218）同结构：身份卡 → 陌生人请求行（仅有待处理时）→ 总资产卡 + 五快捷键 → `LoopProfileSectionsBar` 持仓 / 交易 / 社区（key `me-sections`）。分段条抽成公共组件 `lib/widgets/loop_profile_sections.dart`（`LoopProfileSection` 枚举 + 顶部 18 间距的 `LoopSegBar`），他人主页改用同一组件；社区行抽成 `CommunityRecordRow`（`lib/features/community/community_record_row.dart`，logo 40 / 名称 / 一行事实 / 右侧胶囊），两页社区段共用。
+- 持仓：原钱包代币 / NFT 持仓原样（S334 同口径，`WalletAssetTabs` 代币 / NFT 切换 + 「产生算力」→ `/intel?tab=power`）。钱包模块关闭时持仓段画能力块（`wallet-capability-block`），没有钱包 / 未选定 / 清单未读到的三种块也落在持仓与交易段内。
+- 交易：`tx-history` 的列表与分页抽成 mixin `_WalletActivityTape`（筛选 chip、按日分组、索引新鲜度、`LoopLoadMoreSentinel` 滚动加载、离线 / 失败续页），`tx-history` 页与「我的 · 交易」共用；我的页 key 前缀 `me-trades-*`。分段逐条返回给页面的 `SliverList`，哨兵只在滚到附近时构建（整页一个滚动容器，段内不嵌套滚动）。右上角「交易历史」图标删除（与交易段二选一）；`tx-history` 路由与导出保留，从资产详情等处仍可进入。
+- 社区：`MeCommunitiesSection` 取代 `MeAccountEntries`，读社区首页聚合：我加入的（行 key `me-joined-<id>`，副行成员数 + 运营标签胶囊，`joinedTruncated` 时末尾「全部已加入的社区」行进 `community-discover?membership=joined`）+ 我创建的（`profile-owned-<id>`，审核状态胶囊 + 审核通知 `ProfileApplicationNotifications`）；两组都有时各带小标签，只有一组时不加标签；两组都空一行「还没有加入社区」；社区模块关闭 / 不可用一行不可用。
+- 总资产卡地址行上紧跟复制图标之后放描边小胶囊「管理」（`WalletManagePill`：`wallet` 图标 + 「管理」，高 28，边框 `LoopColors.line2`，文字 `LoopType.meta`，触控区 44，语义「钱包管理」，key `wallet-manage-action`）→ `wallets`；经 `WalletTotalHeader.addressTrailing` 槽位，不压卡片右侧装饰字，360 宽地址 / 复制 / 胶囊同一行；没有活动钱包时也画。主代理验收后由无底色图标改为胶囊。
+- 快捷键五个：接收 / 发送 / 兑换 / 扫码 / DApp（`link` 图标，key `wallet-dapp-entry`）→ `/wallet/dapp`，能力不可用时仍可点，由该路由按 S342 判定进浏览器或「DApp 网址核对」。
+- 删除整个账号行组（我的钱包、我加入的、我创建的、邀请好友、DApp）及 `profileJoinedCommunitiesRow` / `ProfileCommunitiesRow` / 复制邀请码按钮；`profile_destinations.dart` 的 `invite` 目的地保留。
+- 空态各一行：持仓「还没有资产」/「还没有 NFT」、交易「这一段没有记录」（`tx-history` 同步去掉副句）、社区「还没有加入社区」；「未选定当前钱包」块去掉说明副句。
+- 下拉刷新另外重读已打开过的交易段与社区聚合。
+- 测试：`test/s349_me_profile_structure_test.dart`；s343 / s5 / s14 / s79 / s288 等按新结构更新。

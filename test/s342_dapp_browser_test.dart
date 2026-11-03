@@ -1091,30 +1091,39 @@ void main() {
 
   group('entry and connection sheet', () {
     for (final open in <bool>[true, false]) {
-      testWidgets('the wallet row reads ${open ? 'DApp 浏览器' : 'DApp 网址核对'}', (
-        tester,
-      ) async {
-        await pumpS5Page(
-          tester,
-          const WalletScreen(),
-          wallet: FakeWalletReadGateway(),
-          meta: s5MetaSnapshot(
-            dappBrowser: open
-                ? LoopV2CapabilityAvailability.available
-                : LoopV2CapabilityAvailability.unavailable,
-          ),
-          overrides: <Override>[
-            dappWebViewFactoryProvider.overrideWithValue(
-              FakeDappWebViewFactory(),
+      testWidgets(
+        'the DApp key stands with the browser ${open ? 'open' : 'closed'}',
+        (tester) async {
+          await pumpS5Page(
+            tester,
+            const WalletScreen(),
+            wallet: FakeWalletReadGateway(),
+            meta: s5MetaSnapshot(
+              dappBrowser: open
+                  ? LoopV2CapabilityAvailability.available
+                  : LoopV2CapabilityAvailability.unavailable,
             ),
-          ],
-        );
-        await scrollToS5Section(
-          tester,
-          find.byKey(const ValueKey<String>('wallet-dapp-entry')),
-        );
-        expect(find.text(open ? 'DApp 浏览器' : 'DApp 网址核对'), findsOneWidget);
-      });
+            overrides: <Override>[
+              dappWebViewFactoryProvider.overrideWithValue(
+                FakeDappWebViewFactory(),
+              ),
+            ],
+          );
+          await scrollToS5Section(
+            tester,
+            find.byKey(const ValueKey<String>('wallet-dapp-entry')),
+          );
+          // S349: the fifth key on 我的 reads DApp either way; `/wallet/dapp`
+          // decides between the browser and the URL review.
+          expect(
+            find.descendant(
+              of: find.byKey(const ValueKey<String>('wallet-dapp-entry')),
+              matching: find.text('DApp'),
+            ),
+            findsOneWidget,
+          );
+        },
+      );
     }
 
     testWidgets('connect sheet: site, address, 连接 / 取消', (tester) async {

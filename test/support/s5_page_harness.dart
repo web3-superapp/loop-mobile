@@ -637,6 +637,10 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // Decision 0267: the NFT send, closed unless a test opens it.
   LoopV2CapabilityAvailability nftSend =
       LoopV2CapabilityAvailability.unavailable,
+  // S349: 我的 · 社区 reads the community module, closed unless a test
+  // opens it.
+  LoopV2CapabilityAvailability community =
+      LoopV2CapabilityAvailability.unavailable,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -681,6 +685,7 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.testnetFaucet => testnetFaucet,
               LoopV2CapabilityId.dappBrowser => dappBrowser,
               LoopV2CapabilityId.nftSend => nftSend,
+              LoopV2CapabilityId.community => community,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {

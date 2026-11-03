@@ -145,13 +145,13 @@ void main() {
       );
       await scrollToCommunitySection(
         tester,
-        find.byKey(const ValueKey<String>('profile-open-communities')),
+        find.byKey(const ValueKey<String>('me-joined-communities')),
       );
 
-      expect(find.text('我加入的社区'), findsOneWidget);
-      // An empty group would teach every account about a review queue none of
-      // them is in.
-      expect(find.text('我创建的社区'), findsNothing);
+      // S349: one group needs no label. An empty created group would teach
+      // every account about a review queue none of them is in.
+      expect(find.text('我加入的'), findsNothing);
+      expect(find.text('我创建的'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('profile-owned-communities')),
         findsNothing,
@@ -182,9 +182,17 @@ void main() {
         find.byKey(const ValueKey<String>('profile-owned-communities')),
       );
 
-      // The joined row keeps its own count and never counts what was created.
-      expect(_row(tester, 'profile-open-communities').trailing, '1 个已加入');
-      expect(find.text('我创建的社区'), findsOneWidget);
+      // S349: joined and created are two labelled groups; a created
+      // community is never listed among the joined ones.
+      expect(find.text('我加入的'), findsOneWidget);
+      expect(find.text('我创建的'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('me-joined-communities')),
+          matching: find.byType(LoopRecordRow),
+        ),
+        findsOneWidget,
+      );
       expect(_row(tester, 'profile-owned-$_ownedId').title, 'Builders Guild');
       expect(
         _row(tester, 'profile-owned-$_secondOwnedId').title,

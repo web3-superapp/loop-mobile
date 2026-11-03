@@ -129,7 +129,11 @@ void main() {
       );
       expect(find.text('24'), findsOneWidget);
       expect(find.text('108'), findsOneWidget);
-      expect(await subtitle('profile-open-wallets'), isNull);
+      // S349: the account rows left 我的.
+      expect(
+        find.byKey(const ValueKey<String>('profile-open-wallets')),
+        findsNothing,
+      );
       expect(find.textContaining('读不到'), findsNothing);
     });
 
@@ -146,16 +150,6 @@ void main() {
 
       expect(find.textContaining('挖矿数据还没有开放'), findsNothing);
       expect(find.textContaining('关注数据还没有开放'), findsNothing);
-      for (final key in <String>[
-        'profile-open-wallets',
-        'profile-open-communities',
-        'profile-open-referral',
-        'wallet-dapp-entry',
-      ]) {
-        final row = find.byKey(ValueKey<String>(key));
-        await tester.scrollUntilVisible(row, 120);
-        expect(tester.widget<LoopRecordRow>(row).onTap, isNotNull, reason: key);
-      }
     });
 
     testWidgets('unavailable, offline and error each get their own block', (
@@ -198,26 +192,9 @@ void main() {
       tester,
     ) async {
       final destinations = <String>[];
-      // S343 · decision 0271: 我的 carries the account rows; 设置 keeps
+      // S349: 我的's account rows are gone (钱包管理 and DApp are on the
+      // plate and its keys, s349_me_profile_structure_test); 设置 keeps
       // 隐私与安全.
-      await _pump(
-        tester,
-        'profile',
-        gateway: _Gateway(resource: active()),
-        onNavigate: destinations.add,
-      );
-      for (final entry in <(String, String)>[
-        ('profile-open-wallets', 'wallets'),
-        ('profile-open-communities', 'community-discover'),
-        ('profile-open-referral', 'invite'),
-        ('wallet-dapp-entry', 'dapp'),
-      ]) {
-        await _scrollTo(tester, entry.$1);
-        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
-        await tester.pumpAndSettle();
-        expect(destinations.last, entry.$2, reason: entry.$1);
-      }
-
       await _pump(
         tester,
         'settings',
@@ -625,7 +602,7 @@ Future<void> _pump(
                   title: '我的',
                   sections: <Widget>[
                     ProfileIdentitySection(onNavigate: onNavigate ?? (_) {}),
-                    MeAccountEntries(onNavigate: onNavigate ?? (_) {}),
+                    MeCommunitiesSection(onNavigate: onNavigate ?? (_) {}),
                   ],
                 )
               : ProfileSurfaceScreen.fromId(

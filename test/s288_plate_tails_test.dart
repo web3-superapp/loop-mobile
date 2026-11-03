@@ -11,7 +11,6 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
-import 'support/me_surface.dart';
 import 'support/s8_harness.dart';
 
 CommunityHome _home() => CommunityHome(
@@ -35,41 +34,6 @@ Finder _groupOf(Finder row) =>
     find.ancestor(of: row, matching: find.byType(LoopRecordGroup));
 
 void main() {
-  testWidgets('我的 · the account rows are one block, 我加入的社区 second', (
-    tester,
-  ) async {
-    // S343 · decision 0271: the account rows moved to 我的; with no created
-    // community they are one block of four.
-    await pumpCommunityPage(
-      tester,
-      loopMeSurface(onNavigate: (_) {}),
-      community: FakeCommunityGateway(home: _home()),
-    );
-    await scrollToCommunitySection(tester, _key('profile-open-communities'));
-
-    const account = <String>[
-      'profile-open-wallets',
-      'profile-open-communities',
-      'profile-open-referral',
-      'wallet-dapp-entry',
-    ];
-    final group = _groupOf(_key(account.first));
-    expect(group, findsOneWidget);
-    final rows = tester.widget<LoopRecordGroup>(group).rows;
-    expect(
-      rows.map((row) => (row.key! as ValueKey<String>).value).toList(),
-      account,
-    );
-    expect(tester.widget<LoopRecordRow>(_key(account[1])).title, '我加入的社区');
-    for (final key in account) {
-      expect(
-        find.descendant(of: group, matching: _key(key)),
-        findsOneWidget,
-        reason: key,
-      );
-    }
-  });
-
   testWidgets('设置 · 隐私与安全 is one block of three rows', (tester) async {
     await pumpCommunityPage(
       tester,

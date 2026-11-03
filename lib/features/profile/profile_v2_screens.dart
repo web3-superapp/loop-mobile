@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/features/dapp/dapp_browser_screens.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -15,11 +14,10 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
-import 'package:loop_mobile/features/community/community_logo.dart';
+import 'package:loop_mobile/features/community/community_record_row.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
-import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/notifications/community_application_notifications.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_editor.dart';
@@ -35,12 +33,10 @@ import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
-import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -498,126 +494,6 @@ class _ProfileIdentitySectionState
 // settings · the account's entries (decision 0175)
 // ---------------------------------------------------------------------------
 
-/// 我的's account rows (S343 · decision 0271): 我的钱包, 我加入的社区,
-/// 我创建的社区 with its review notifications, 邀请好友 with the code and its
-/// copy, and the DApp browser.
-///
-/// [onNavigate] takes a profile destination id ([profileDestinationPath]).
-class MeAccountEntries extends ConsumerStatefulWidget {
-  const MeAccountEntries({required this.onNavigate, super.key});
-
-  final ValueChanged<String> onNavigate;
-
-  @override
-  ConsumerState<MeAccountEntries> createState() => _MeAccountEntriesState();
-}
-
-class _MeAccountEntriesState extends ConsumerState<MeAccountEntries> {
-  var _startedSideReads = false;
-
-  /// Starts the reads the rows' trailing values are printed from, once. A
-  /// read that fails leaves its row without one.
-  void _startSideReads() {
-    if (_startedSideReads) return;
-    _startedSideReads = true;
-    scheduleMicrotask(() {
-      if (!mounted) return;
-      unawaited(ref.read(walletDirectoryControllerProvider.notifier).load());
-      unawaited(ref.read(referralControllerProvider.notifier).load());
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _startSideReads();
-    final joined = profileJoinedCommunitiesRow(
-      ref,
-      isMounted: () => mounted,
-      onNavigate: widget.onNavigate,
-    );
-    final home = ref.watch(communityHomeControllerProvider);
-    final ownsCommunity =
-        home.phase == CommunityViewPhase.ready &&
-        (home.value?.owned.isNotEmpty ?? false);
-    final wallets = LoopRecordRow(
-      key: const ValueKey<String>('profile-open-wallets'),
-      leading: const LoopRowIcon(icon: 'wallet'),
-      title: '我的钱包',
-      trailing: _walletSubtitle(),
-      onTap: () => widget.onNavigate('wallets'),
-    );
-    final dapp = LoopRecordRow(
-      key: const ValueKey<String>('wallet-dapp-entry'),
-      leading: const LoopRowIcon(icon: 'link'),
-      // S342 · decision 0270: the row names the in-app browser exactly when
-      // `/wallet/dapp` opens it — the server's `dappBrowser` and a WebView in
-      // this build (S346 · M10); otherwise it is the local URL review.
-      title: dappBrowserAvailable(ref) ? 'DApp 浏览器' : 'DApp 网址核对',
-      onTap: () => widget.onNavigate('dapp'),
-    );
-    return Column(
-      key: const ValueKey<String>('me-account-entries'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (ownsCommunity) ...<Widget>[
-          LoopRecordGroup(rows: <LoopRecordRow>[wallets, joined]),
-          ProfileCommunitiesRow(onNavigate: widget.onNavigate),
-          const SizedBox(height: LoopSpacing.rowGap),
-          LoopRecordGroup(rows: <LoopRecordRow>[_inviteRow(), dapp]),
-        ] else
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[wallets, joined, _inviteRow(), dapp],
-          ),
-      ],
-    );
-  }
-
-  /// 邀请码 with a one-tap copy; the row itself opens 情报 · 算力 · 邀请
-  /// (S343 · decision 0271).
-  ///
-  /// The code is the one `GET /v2/referral` issued to this account. Until
-  /// it is read the row says nothing about it and offers no copy, because
-  /// there is nothing yet to copy.
-  LoopRecordRow _inviteRow() {
-    final referral = ref.watch(referralControllerProvider);
-    final code = referral.value?.inviteCode.code;
-    // Narrow screens keep the title whole: the code text drops, the copy
-    // button stays.
-    final showCodeText = MediaQuery.sizeOf(context).width >= 380;
-    return LoopRecordRow(
-      key: const ValueKey<String>('profile-open-referral'),
-      leading: const LoopRowIcon(icon: 'ticket'),
-      title: '邀请好友',
-      trailingBadge: code == null
-          ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (showCodeText)
-                  Text(
-                    code,
-                    style: LoopTypography.withWeight(
-                      LoopType.figureSm,
-                      FontWeight.w500,
-                    ),
-                  ),
-                _CopyInviteCodeButton(code: code),
-              ],
-            ),
-      semanticLabel: code == null ? '邀请好友' : '我的邀请码 $code',
-      onTap: () => widget.onNavigate('invite'),
-    );
-  }
-
-  /// `1 个已绑定`. A directory this device has not read states nothing.
-  String? _walletSubtitle() {
-    final directory = ref.watch(walletDirectoryControllerProvider).value;
-    if (directory == null) return null;
-    return '${directory.wallets.length} 个已绑定';
-  }
-}
-
 /// 设置's 隐私与安全 group (S343 · decision 0271): 隐私中心, 安全中心 and
 /// 通知设置. Each row keeps its key and its destination.
 class ProfileSettingsEntries extends ConsumerStatefulWidget {
@@ -709,133 +585,23 @@ class ProfileVersionFootnote extends ConsumerWidget {
   }
 }
 
-/// Copies the account's invite code; the row around it stays a link.
-class _CopyInviteCodeButton extends StatelessWidget {
-  const _CopyInviteCodeButton({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopIconButton(
-      key: const ValueKey<String>('profile-copy-invite-code'),
-      icon: 'copy',
-      label: '复制邀请码',
-      onPressed: () async {
-        await LoopCopy.text(context, code, message: '邀请码已复制');
-      },
-    );
-  }
-}
-
-/// 我加入的, the last row of 账号 on 设置 (S288).
+/// 我的 · 社区 (S349 · decision 0271 Amendment): the communities this account
+/// joined, then the ones it created with the state of each review and the
+/// review notifications under them — the rows another account's 社区
+/// section draws ([CommunityRecordRow]).
 ///
-/// Built as a row rather than a widget so it can sit inside the 账号
-/// [LoopRecordGroup] with the four rows above it. It stays a navigation entry
-/// in every phase: a failure is reported in its one line and carries the
-/// owner to the community directory, which owns the full five-state block and
-/// its retry. It also owns the load of the community home aggregate that
-/// [ProfileCommunitiesRow] reads for 我创建的.
-LoopRecordRow profileJoinedCommunitiesRow(
-  WidgetRef ref, {
-  required bool Function() isMounted,
-  required ValueChanged<String> onNavigate,
-}) {
-  final capability = ref.watch(
-    loopCapabilityProvider(LoopV2CapabilityId.community),
-  );
-  final mode = ref.watch(communityGatewayProvider).mode;
-  final state = ref.watch(communityHomeControllerProvider);
-  final blocked = communityCapabilityBlocks(mode, capability);
-  if (!blocked && state.phase == CommunityViewPhase.loading) {
-    scheduleMicrotask(() {
-      if (isMounted()) {
-        unawaited(ref.read(communityHomeControllerProvider.notifier).load());
-      }
-    });
-  }
-
-  final home = state.value;
-  final isReady = state.phase == CommunityViewPhase.ready && home != null;
-  final joined = home?.joined ?? const <JoinedCommunity>[];
-  final truncated = home?.joinedTruncated ?? false;
-
-  final String trailing;
-  final String subtitle;
-  if (blocked) {
-    trailing = communityMissingFigure;
-    subtitle = '社区模块当前不可用，未读取成员关系';
-  } else if (isReady) {
-    // `truncated` means the aggregate could not carry every membership, so
-    // the count is a floor and is marked as one.
-    trailing = truncated ? '${joined.length}+ 个已加入' : '${joined.length} 个已加入';
-    subtitle = joined.isEmpty
-        ? '还没有加入社区，从发现社区开始'
-        : joined
-              .take(ProfileCommunitiesRow.namedLimit)
-              .map(
-                (entry) =>
-                    '${entry.community.name}（${communityMembershipLabel(entry.membership)}）',
-              )
-              .join(' · ');
-  } else {
-    trailing = communityMissingFigure;
-    subtitle = switch (state.phase) {
-      CommunityViewPhase.loading => '正在读取社区成员关系',
-      CommunityViewPhase.offline => '设备已离线，没有读到社区成员关系',
-      CommunityViewPhase.unavailable => '社区服务当前不可用，未读取成员关系',
-      CommunityViewPhase.permission => '需要先完成 LOOP ID 激活才能读取成员关系',
-      // `empty` cannot reach here: a ready aggregate with no membership is
-      // handled above, and this state carries no other empty answer.
-      CommunityViewPhase.empty ||
-      CommunityViewPhase.error ||
-      CommunityViewPhase.ready => '社区成员关系读取失败，打开社区目录可重试',
-    };
-  }
-
-  return LoopRecordRow(
-    key: const ValueKey<String>('profile-open-communities'),
-    leading: const LoopRowIcon(icon: 'community'),
-    title: '我加入的社区',
-    subtitle: subtitle,
-    trailing: trailing,
-    semanticLabel: '我加入的社区，$trailing，$subtitle',
-    onTap: () => onNavigate(
-      isReady && joined.isNotEmpty
-          ? ProfileCommunitiesRow.joinedDestination
-          : ProfileCommunitiesRow.discoverDestination,
-    ),
-  );
-}
-
-/// The 我的社区 block on `profile`.
+/// Membership is not a profile fact: the block reads the community module's
+/// own home aggregate ([CommunityHomeController]) and states its phase. **A
+/// reader who never applied sees no 我创建的 at all.**
 ///
-/// Membership is not a profile fact. It is only ever the community module's
-/// own home aggregate, so this block reads that aggregate through the existing
-/// [CommunityHomeController] instead of adding a second source, and states the
-/// aggregate's phase rather than claiming the relationship is unconnected.
-///
-/// Since the 2026-09-23 ruling the block is two groups, because the aggregate
-/// answers in two (backend decision 0073): 我加入的 stays the one navigation
-/// row it has always been, and 我创建的 lists the reader's own communities with
-/// the state of each application on the row. **A reader who has never applied
-/// sees no second group at all** — an empty 我创建的 would teach every account
-/// about a review queue none of them is in.
-///
-/// Since S288 the joined row is drawn by [profileJoinedCommunitiesRow] as the
-/// last row of the 账号 group; this widget draws only 我创建的 and its review
-/// notifications, and nothing at all for a reader who owns no community.
-class ProfileCommunitiesRow extends ConsumerStatefulWidget {
-  const ProfileCommunitiesRow({required this.onNavigate, super.key});
+/// [onNavigate] takes a profile destination id ([profileDestinationPath]).
+class MeCommunitiesSection extends ConsumerStatefulWidget {
+  const MeCommunitiesSection({required this.onNavigate, super.key});
 
-  /// Profile-screen destination id, resolved by the composition root.
   final ValueChanged<String> onNavigate;
 
   /// The paginated directory narrowed to the owner's own communities.
   static const joinedDestination = 'community-joined';
-
-  /// The public directory, used whenever there is nothing joined to open.
-  static const discoverDestination = 'community-discover';
 
   /// One community's own record. The id travels in the destination because
   /// `community-profile` addresses exactly one community and the composition
@@ -843,72 +609,147 @@ class ProfileCommunitiesRow extends ConsumerStatefulWidget {
   static String recordDestination(String communityId) =>
       'community-profile:$communityId';
 
-  /// How many joined communities the subtitle names before the trailing count
-  /// takes over.
-  static const namedLimit = 2;
-
   @override
-  ConsumerState<ProfileCommunitiesRow> createState() =>
-      _ProfileCommunitiesRowState();
+  ConsumerState<MeCommunitiesSection> createState() =>
+      _MeCommunitiesSectionState();
 }
 
-class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
+class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
   @override
   Widget build(BuildContext context) {
-    // The joined row in 账号 owns the load of this aggregate; this block only
-    // reads what it answered.
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.community),
+    );
+    final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(communityHomeControllerProvider);
+    if (communityCapabilityBlocks(mode, capability)) {
+      return const LoopInlineUnavailable(
+        key: ValueKey<String>('me-communities-unavailable'),
+        icon: 'community',
+        message: '社区暂不可用',
+      );
+    }
+    if (state.phase == CommunityViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(communityHomeControllerProvider.notifier).load());
+        }
+      });
+    }
     final home = state.value;
-    final isReady = state.phase == CommunityViewPhase.ready && home != null;
-    final owned = isReady ? home.owned : const <OwnedCommunity>[];
-    if (owned.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        // Decision 0126: a sub-group of 账号 on 我, so the small label.
-        const LoopLabel('我创建的社区', tight: true),
-        LoopRecordGroup(
-          key: const ValueKey<String>('profile-owned-communities'),
-          rows: <LoopRecordRow>[for (final entry in owned) _ownedRow(entry)],
+    if (state.phase != CommunityViewPhase.ready || home == null) {
+      if (state.phase == CommunityViewPhase.unavailable) {
+        return const LoopInlineUnavailable(
+          key: ValueKey<String>('me-communities-unavailable'),
+          icon: 'community',
+          message: '社区暂不可用',
+        );
+      }
+      return CommunityStateBlock(
+        key: const ValueKey<String>('me-communities-state'),
+        phase: state.phase,
+        failureKind: state.failureKind,
+        skeleton: LoopSkeletonType.record,
+        rows: 4,
+        onRetry: () => unawaited(
+          ref.read(communityHomeControllerProvider.notifier).reload(),
         ),
-        if (home!.ownedTruncated)
-          const LoopFootnote(
-            key: ValueKey<String>('profile-owned-truncated'),
-            text: '这一页放不下全部，上面是最近提交的几个。',
+      );
+    }
+    final joined = home.joined;
+    final owned = home.owned;
+    if (joined.isEmpty && owned.isEmpty) {
+      return const LoopEmptyState(
+        key: ValueKey<String>('me-communities-empty'),
+        illustration: LoopIllustration.watchlist,
+        title: '还没有加入社区',
+        compact: true,
+      );
+    }
+    // Two groups get a small label each; one group needs none.
+    final labelled = joined.isNotEmpty && owned.isNotEmpty;
+    return Column(
+      key: const ValueKey<String>('me-communities'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (joined.isNotEmpty) ...<Widget>[
+          if (labelled) const LoopLabel('我加入的', tight: true),
+          Column(
+            key: const ValueKey<String>('me-joined-communities'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[for (final entry in joined) _joinedRow(entry)],
           ),
-        ProfileApplicationNotifications(onOpenCommunity: widget.onNavigate),
+          if (home.joinedTruncated)
+            LoopFlat(
+              child: LoopRecordRow(
+                key: const ValueKey<String>('me-joined-all'),
+                title: '全部已加入的社区',
+                onTap: () =>
+                    widget.onNavigate(MeCommunitiesSection.joinedDestination),
+              ),
+            ),
+        ],
+        if (owned.isNotEmpty) ...<Widget>[
+          if (labelled) const LoopLabel('我创建的', tight: true),
+          Column(
+            key: const ValueKey<String>('profile-owned-communities'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[for (final entry in owned) _ownedRow(entry)],
+          ),
+          ProfileApplicationNotifications(onOpenCommunity: widget.onNavigate),
+        ],
       ],
     );
   }
 
-  /// One community this account created, with the state of its review.
-  ///
-  /// The value column carries the state as a pill rather than a figure: it is
-  /// a decision somebody made, not a number. The second line is the fact the
-  /// owner can act on — when the version under review was submitted, or the
-  /// head of the operator's own reason for refusing it.
-  LoopRecordRow _ownedRow(OwnedCommunity entry) {
+  /// One joined community: logo, name, member count and the operator's
+  /// label (decision 0239), as on another account's 社区.
+  Widget _joinedRow(JoinedCommunity entry) {
+    final community = entry.community;
+    final label = community.label;
+    final members =
+        '${loopGroupedFigure(community.memberCount.toString())} 名成员';
+    return CommunityRecordRow(
+      rowKey: ValueKey<String>('me-joined-${community.communityId}'),
+      communityId: community.communityId,
+      name: community.name,
+      logoRef: community.logoRef,
+      subtitle: members,
+      trailingBadge: label == null
+          ? null
+          : CommunityLabelBadge(label, maxWidth: 112),
+      semanticLabel: <String>[
+        community.name,
+        if (label != null) communityLabelDisplay(label),
+        members,
+      ].join('，'),
+      onTap: () => widget.onNavigate(
+        MeCommunitiesSection.recordDestination(community.communityId),
+      ),
+    );
+  }
+
+  /// One community this account created, with the state of its review: the
+  /// state as a capsule, the fact the owner can act on under the name.
+  Widget _ownedRow(OwnedCommunity entry) {
     final community = entry.community;
     final line = communityApplicationRowLine(entry);
     final status = communityApplicationStatusLabel(entry.status);
-    return LoopRecordRow(
-      key: ValueKey<String>('profile-owned-${community.communityId}'),
-      leading: CommunityLogo(
-        identity: community.communityId,
-        name: community.name,
-        logoRef: community.logoRef,
-        size: 40,
-        radius: 12,
-      ),
-      title: community.name,
+    return CommunityRecordRow(
+      rowKey: ValueKey<String>('profile-owned-${community.communityId}'),
+      communityId: community.communityId,
+      name: community.name,
+      logoRef: community.logoRef,
       subtitle: line,
       subtitleMaxLines: 2,
       trailingBadge: CommunityApplicationBadge(entry.status),
       chevron: false,
       semanticLabel: '${community.name}，$status，$line',
       onTap: () => widget.onNavigate(
-        ProfileCommunitiesRow.recordDestination(community.communityId),
+        MeCommunitiesSection.recordDestination(community.communityId),
       ),
     );
   }
@@ -993,7 +834,7 @@ class _ProfileApplicationNotificationsState
                     );
                   }
                   widget.onOpenCommunity(
-                    ProfileCommunitiesRow.recordDestination(result.communityId),
+                    MeCommunitiesSection.recordDestination(result.communityId),
                   );
                 },
               ),
