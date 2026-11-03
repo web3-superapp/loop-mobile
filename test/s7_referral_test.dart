@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
-import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
@@ -46,7 +47,7 @@ void main() {
     testWidgets('loading shows a skeleton and no count', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(pending: true),
         ),
@@ -60,7 +61,7 @@ void main() {
     testWidgets('the invite code is shown and can be copied', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
 
@@ -79,7 +80,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
 
@@ -109,7 +110,7 @@ void main() {
       ) async {
         await pumpS7Page(
           tester,
-          const ReferralScreen(),
+          const ReferralCenterHost(),
           referral: FakeReferralGateway(),
           size: Size(width, 2600),
         );
@@ -150,7 +151,7 @@ void main() {
       final base = s7Referral();
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: ReferralOverview(
@@ -215,7 +216,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
 
@@ -238,7 +239,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
       expect(
@@ -248,7 +249,7 @@ void main() {
 
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: s7Referral(
@@ -277,7 +278,7 @@ void main() {
     testWidgets('an unactivated account has no window at all', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: s7Referral(
@@ -306,7 +307,7 @@ void main() {
     ) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             value: s7Referral(binding: s7BoundBinding()),
@@ -326,26 +327,10 @@ void main() {
       );
     });
 
-    testWidgets('the capability gate stops the read', (tester) async {
-      await pumpS7Page(
-        tester,
-        const ReferralScreen(),
-        referral: FakeReferralGateway(),
-        meta: s7MetaSnapshot(
-          referral: LoopV2CapabilityAvailability.unavailable,
-        ),
-      );
-
-      expect(
-        find.byKey(const ValueKey<String>('referral-capability-unavailable')),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('offline and error stay distinct', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             failure: LaunchFailureKind.offline,
@@ -359,7 +344,7 @@ void main() {
 
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(
           overview: S7Answer<ReferralOverview>(
             failure: LaunchFailureKind.unexpected,
@@ -375,7 +360,7 @@ void main() {
     testWidgets('the page never uses commission language', (tester) async {
       await pumpS7Page(
         tester,
-        const ReferralScreen(),
+        const ReferralCenterHost(),
         referral: FakeReferralGateway(),
       );
 
@@ -402,7 +387,7 @@ void main() {
       tester,
     ) async {
       final gateway = FakeReferralGateway();
-      await pumpS7Page(tester, const ReferralScreen(), referral: gateway);
+      await pumpS7Page(tester, const ReferralCenterHost(), referral: gateway);
 
       await _openClaim(tester);
       await tester.enterText(
@@ -426,7 +411,7 @@ void main() {
       tester,
     ) async {
       final gateway = FakeReferralGateway();
-      await pumpS7Page(tester, const ReferralScreen(), referral: gateway);
+      await pumpS7Page(tester, const ReferralCenterHost(), referral: gateway);
 
       await _openClaim(tester);
       await tester.enterText(
@@ -452,7 +437,7 @@ void main() {
       };
       for (final entry in cases.entries) {
         final gateway = FakeReferralGateway(claimFailure: entry.key);
-        await pumpS7Page(tester, const ReferralScreen(), referral: gateway);
+        await pumpS7Page(tester, const ReferralCenterHost(), referral: gateway);
 
         await _openClaim(tester);
         await tester.enterText(

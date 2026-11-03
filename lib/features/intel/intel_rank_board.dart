@@ -386,7 +386,10 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
       identity is MiningRankAlias ? identity.publicProfileId : null,
       isSelf: isSelf,
     );
-    return location == null ? null : () => widget.onNavigate(location);
+    if (location == null) return null;
+    // S347 · N1: 我 is a tab — switched to, never pushed over this page.
+    if (isSelf) return () => LoopProfileFaceLink.push(context, location);
+    return () => widget.onNavigate(location);
   }
 
   static String _identityName(MiningRankIdentity identity, MiningRank rank) =>

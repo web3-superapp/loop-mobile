@@ -9,7 +9,6 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/qr/loop_qr_code.dart';
 import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
@@ -31,89 +30,9 @@ import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
-import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
-
-/// `referral` · 邀请中心 (S239, decision 0214; formerly Referral Boost).
-///
-/// Decision 0272 (S344): the route forwards to 情报 · 算力 · 邀请, where
-/// [ReferralCenterSections] is drawn as the 邀请 tab. This page keeps the
-/// same sections behind its own bar for a host that pushes it directly.
-///
-/// archetype `record`, layout `dashboard`. The sections read `GET
-/// /v2/referral` and `GET /v2/referral/invitees`. Top to bottom: the invite
-/// code (large, copyable) over the five depths; the invite link with copy /
-/// system share and the poster; 我的邀请 counts; the invite boost; the
-/// direct invitees; my own inviter. Decision 0243: the rules are said once,
-/// behind the (i) ([referralInfoNotes]).
-/// Everything here is a relationship count or Mining Power — never a
-/// commission, a payout or a downline income (user ruling: the only reward is
-/// the power boost).
-class ReferralScreen extends ConsumerWidget {
-  const ReferralScreen({
-    super.key,
-    this.onBack,
-    this.initialInviteCode,
-    this.onNavigate,
-  });
-
-  final VoidCallback? onBack;
-
-  /// A code an invite link (`/i/{code}`) carried in; see
-  /// [ReferralCenterSections.initialInviteCode].
-  final String? initialInviteCode;
-
-  /// Pushes a location; defaults to the ambient router.
-  final ValueChanged<String>? onNavigate;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final capability = ref.watch(
-      loopCapabilityProvider(LoopV2CapabilityId.referral),
-    );
-    final blocked = launchCapabilityBlocks(capability);
-    final state = ref.watch(referralControllerProvider);
-    return LoopDashboardPage(
-      key: const ValueKey<String>('referral-screen'),
-      onRefresh: () => reloadReferralCenter(ref),
-      updating: state.refreshing,
-      archetype: LoopPageArchetype.record,
-      title: '邀请中心',
-      onBack: onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('referral-explain-action'),
-          icon: 'info',
-          label: '邀请说明',
-          onPressed: () => unawaited(
-            showLoopInfoSheet(
-              context,
-              title: '邀请说明',
-              notes: referralInfoNotes(state.value),
-              sheetKey: 'referral-explain-sheet',
-            ),
-          ),
-        ),
-      ],
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('referral-capability-unavailable'),
-              title: '邀请关系当前不可用',
-              capability: capability,
-            )
-          : null,
-      sections: <Widget>[
-        ReferralCenterSections(
-          initialInviteCode: initialInviteCode,
-          onNavigate: onNavigate,
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
 
 /// Re-reads the overview and the invitees together (pull-to-refresh).
 Future<void> reloadReferralCenter(WidgetRef ref) async {
@@ -125,7 +44,7 @@ Future<void> reloadReferralCenter(WidgetRef ref) async {
 
 /// 邀请中心's content as a run of sections (decision 0272): the invite card
 /// with the five depths, 我的邀请, 邀请加成, 邀请列表 and 我的邀请人. Drawn
-/// by 情报 · 算力's 邀请 tab and by [ReferralScreen].
+/// by 情报 · 算力's 邀请 tab.
 class ReferralCenterSections extends ConsumerStatefulWidget {
   const ReferralCenterSections({
     super.key,

@@ -75,21 +75,33 @@ void main() {
       });
 
       expect(controller.client, same(client));
-      expect(
-        controller.filter,
-        Filter.and(<Filter>[
-          Filter.equal('type', 'messaging'),
-          Filter.in_('members', <Object>['loop-user-42']),
-        ]),
-      );
-      expect(controller.channelStateSort, const <SortOption<ChannelState>>[
-        SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
-        SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
-      ]);
-      expect(controller.presence, isTrue);
-      expect(controller.limit, 20);
-      expect(controller.messageLimit, 25);
-      expect(controller.memberLimit, 30);
+      // S347 · N3: one Stream query per part.
+      final sectioned = controller as LoopSectionedChannelListController;
+      for (final (part, kind) in <(LoopInboxSectionController, Filter)>[
+        (sectioned.communities, Filter.equal('loop_channel_kind', 'community')),
+        (
+          sectioned.friends,
+          Filter.in_('loop_channel_kind', const <Object>['direct', 'group']),
+        ),
+      ]) {
+        expect(
+          part.filter,
+          Filter.and(<Filter>[
+            Filter.equal('type', 'messaging'),
+            Filter.in_('members', <Object>['loop-user-42']),
+            kind,
+          ]),
+        );
+        expect(part.channelStateSort, const <SortOption<ChannelState>>[
+          SortOption<ChannelState>.desc(ChannelSortKey.pinnedAt),
+          SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
+        ]);
+        expect(part.presence, isTrue);
+        expect(part.messageLimit, 25);
+        expect(part.memberLimit, 30);
+      }
+      expect(sectioned.communities.limit, 30);
+      expect(sectioned.friends.limit, 20);
     },
   );
 

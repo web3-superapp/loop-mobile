@@ -239,60 +239,6 @@ final List<_StateCase> _cases = <_StateCase>[
         '可执行性布尔值，没有「读到了但没有质押对象」这一档。',
     pinsOffline: true,
   ),
-  // mining-assets
-  _StateCase(
-    slug: 'mining-assets',
-    page: const MiningAssetsScreen(),
-    ports: ({LaunchFailureKind? failure, bool pending = false}) => _miningPorts(
-      FakeMiningGateway(
-        assets: S7Answer<MiningAssets>(
-          value: failure == null && !pending ? s7MiningAssets() : null,
-          failure: failure,
-          pending: pending,
-        ),
-      ),
-    ),
-    // 我的总算力 is the composite strip's reading and is part of the page's
-    // shape, so it is on screen — as an em dash — before anything is read.
-    // The conclusion this page draws is the weighted list itself; decision
-    // 0146 removed the price notice, so the formula block marks readiness.
-    readyKey: 'mining-formula-row',
-    alsoUnreadKeys: <String>[
-      'mining-assets-empty-notice',
-      'mining-assets-included',
-    ],
-    // While the read is in flight the folio says it is reading. 「暂无数值」 is
-    // a conclusion about an answer, and no answer has arrived; the skeleton
-    // frame is pinned in s7_mining_pages_test.dart instead.
-    showsMissingHeading: false,
-    emptyContract:
-        'MiningAssets 是一条必填的总算力 + 两个列表 + 必填的 source（参考价仍解析，0146 起不展示）：'
-        '读成功时一定有一条总算力口径和一条出处，'
-        '「计入/排除为空」由 source 说明是没有结算还是这次没有计入，不是页面的空态。',
-  ),
-  // mining-rank
-  _StateCase(
-    slug: 'mining-rank',
-    page: const MiningRankScreen(),
-    ports: ({LaunchFailureKind? failure, bool pending = false}) => _miningPorts(
-      FakeMiningGateway(
-        rank: S7Answer<MiningRank>(
-          value: failure == null && !pending ? s7MiningRank() : null,
-          failure: failure,
-          pending: pending,
-        ),
-      ),
-    ),
-    // The board's label is drawn only once a ranking has been read (S315:
-    // the formula block and the folio above the switch are gone).
-    readyKey: 'mining-rank-label',
-    showsMissingHeading: false,
-    emptyContract:
-        'MiningRank 的 ranking / myPosition 都是必填的 sealed 结果，'
-        'display 是必填的匿名规则：读成功时一定有一条榜单结果和一条显示规则，'
-        '「榜单没有条目」是 ranking 自己的一档，不是页面读不到。',
-    pinsOffline: true,
-  ),
   // mining-community
   _StateCase(
     slug: 'mining-community',

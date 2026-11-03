@@ -2120,7 +2120,7 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
     // Decision 0272: 算力榜, 社区 / 用户 / 邀请.
     builder: (context, state) => IntelRankBoard(
       onBack: () => _popOrHome(context),
-      onNavigate: (location) => context.push(location),
+      onNavigate: (location) => _goTabOrPush(context, location),
     ),
   ),
   GoRoute(
@@ -2526,6 +2526,16 @@ void _popOrHome(BuildContext context) {
   }
 }
 
+/// Opens [location]: a tab (its query aside) is switched to, anything else
+/// is pushed (S347 · N1/N2 — a tab pushed over the shell trips Navigator).
+void _goTabOrPush(BuildContext context, String location) {
+  if (LoopRouteManifest.isTabPath(Uri.parse(location).path)) {
+    context.go(location);
+  } else {
+    unawaited(context.push<void>(location));
+  }
+}
+
 Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   final session = ref.watch(loopSessionProvider);
   final account = session.account;
@@ -2552,13 +2562,8 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
     identity: identity,
     onBack: back,
     onNavigate: (destination) {
-      final path = profileDestinationPath(destination);
       // Tab destinations replace the stack; only child pages push.
-      if (LoopRouteManifest.isTabPath(path)) {
-        context.go(path);
-      } else {
-        context.push(path);
-      }
+      _goTabOrPush(context, profileDestinationPath(destination));
     },
     onSignOut: () => _signOut(ref),
   );

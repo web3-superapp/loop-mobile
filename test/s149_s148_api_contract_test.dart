@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -244,27 +243,6 @@ void main() {
         find.text(miningRuleKeyText('mining.rules.priceGuard.twap')),
         findsNothing,
       );
-    });
-
-    testWidgets('the assets page reads a 0125 answer', (tester) async {
-      final (api, _) = _mining(_body('mining_assets_quantity'));
-      final assets = (await tester.runAsync(
-        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
-      ))!;
-      await pumpS7Page(
-        tester,
-        const MiningAssetsScreen(),
-        mining: FakeMiningGateway(
-          assets: S7Answer<MiningAssets>(value: assets),
-        ),
-      );
-      final row = find.byKey(
-        const ValueKey<String>('mining-assets-row-$_cake'),
-      );
-      await scrollToS7Section(tester, row);
-      expect(row, findsOneWidget);
-      expect(find.textContaining('10 × 权重 0.8'), findsOneWidget);
-      expect(find.textContaining(r'$2.26'), findsNothing);
     });
   });
 

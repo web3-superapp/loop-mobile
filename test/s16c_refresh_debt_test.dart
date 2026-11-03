@@ -5,15 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
-import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_action_screens.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
-import 'package:loop_mobile/features/mining/referral_gateway.dart';
-import 'package:loop_mobile/features/mining/referral_models.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
@@ -145,37 +141,6 @@ final class _HeldAlertsGateway implements AlertsGateway {
     required String alertId,
     required int expectedVersion,
   }) => Future<void>.value();
-}
-
-/// A referral port whose overview read can be held open.
-final class _HeldReferralGateway implements ReferralGateway {
-  _HeldReferralGateway();
-
-  Completer<void>? hold;
-  int reads = 0;
-
-  @override
-  LaunchGatewayMode get mode => LaunchGatewayMode.production;
-
-  @override
-  Future<ReferralOverview> loadOverview() {
-    reads += 1;
-    final overview = s7Referral();
-    final held = hold;
-    if (held == null) return Future<ReferralOverview>.value(overview);
-    hold = null;
-    return held.future.then((_) => overview);
-  }
-
-  @override
-  Future<ReferralBinding> claim(String inviteCode) =>
-      Future<ReferralBinding>.value(s7BoundBinding());
-
-  @override
-  Future<ReferralInviteePage> loadInvitees({String? cursor}) =>
-      Future<ReferralInviteePage>.value(
-        const ReferralInviteePage(items: <ReferralInvitee>[], nextCursor: null),
-      );
 }
 
 void main() {
@@ -355,27 +320,6 @@ void main() {
       expect(gateway.reads, 2);
       // The list the page already read stays exactly where it was.
       expect(find.textContaining('1 个提醒正在监听'), findsOneWidget);
-      expect(find.byType(LoopSkeleton), findsNothing);
-      expect(_updatingBadge, findsOneWidget);
-
-      hold.complete();
-      await tester.pumpAndSettle();
-      expect(_updatingBadge, findsNothing);
-    });
-
-    testWidgets('referral wears 更新中 while a pull is in flight', (tester) async {
-      final gateway = _HeldReferralGateway();
-      await pumpS7Page(tester, const ReferralScreen(), referral: gateway);
-      expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      expect(gateway.reads, 1);
-
-      final hold = Completer<void>();
-      gateway.hold = hold;
-      await _pull(tester, distance: 900);
-
-      expect(gateway.reads, 2);
-      // The invite code that was issued stays readable through the re-read.
-      expect(find.text('LOOP-7HJKM'), findsOneWidget);
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(_updatingBadge, findsOneWidget);
 

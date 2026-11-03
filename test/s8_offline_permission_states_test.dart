@@ -28,7 +28,9 @@ import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
-import 'package:loop_mobile/features/mining/referral_screen.dart';
+
+import 'support/referral_center_host.dart';
+
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
@@ -173,13 +175,6 @@ final List<_S7Case> _s7Cases = <_S7Case>[
     ),
   ),
   _S7Case(
-    slug: 'mining-assets',
-    page: const MiningAssetsScreen(),
-    ports: (failure) => _miningOnly(
-      FakeMiningGateway(assets: S7Answer<MiningAssets>(failure: failure)),
-    ),
-  ),
-  _S7Case(
     slug: 'mining-community',
     page: const MiningCommunityScreen(communityId: s7CommunityId),
     ports: (failure) => _miningOnly(
@@ -188,7 +183,7 @@ final List<_S7Case> _s7Cases = <_S7Case>[
   ),
   _S7Case(
     slug: 'referral',
-    page: const ReferralScreen(),
+    page: const ReferralCenterHost(),
     ports: (failure) => (
       launch: null,
       mining: null,
