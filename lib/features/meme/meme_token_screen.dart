@@ -1360,6 +1360,7 @@ class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
       children: <Widget>[
         LoopChartToolbar(
           keyPrefix: 'meme',
+          averagesOnOwnLine: true,
           averagesText: _averages && drawn
               ? loopChartAveragesText(series.candles)
               : '',
@@ -1372,6 +1373,7 @@ class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
         ),
         body,
         LoopChartIntervalRow(
+          fill: true,
           periodsKey: const ValueKey<String>('meme-interval-strip'),
           options: <LoopChartIntervalOption>[
             for (final (interval, label) in memeChartRanges)

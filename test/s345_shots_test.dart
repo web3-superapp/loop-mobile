@@ -83,6 +83,19 @@ void main() {
     await drainS345(tester);
   });
 
+  testWidgets('launch2-instance chart at 360', skip: !_shots, (tester) async {
+    await pumpS345Router(
+      tester,
+      initial: Launch2Route.instance(l2InstanceA),
+      launch2: S345Launch2(s345Graduated()),
+      size: const Size(360, 1400),
+    );
+    await tester.tap(_key('launch2-candles-chart-ma'));
+    await tester.pumpAndSettle();
+    await _shot(tester, 'S345-launch2-chart-360');
+    await drainS345(tester);
+  });
+
   testWidgets('launch2 chart-full', skip: !_shots, (tester) async {
     await pumpS345Router(
       tester,

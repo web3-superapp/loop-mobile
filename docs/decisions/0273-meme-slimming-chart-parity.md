@@ -34,3 +34,8 @@ Accepted · 2026-11-03（S345-mobile）。来源：需求方脑图 `Loop.xmind`�
 
 - 路由清单 slug 数不变；`docs/product/routes-manifest.json` 无需改动。
 - 测试：`test/s345_meme_chart_parity_test.dart`（战绩消失、两页工具栏四件、MA / VOL 开关、全屏进出、毕业标记、全屏五态），`test/s345_shots_test.dart`（`LOOP_SHOTS=true` 才跑）；`s117` / `s182` 相应用例按新结构更新。
+
+## Amendment · 2026-11-03（主代理验收截图后）
+
+- MEME 两页的周期行改为等分（`LoopChartIntervalRow(fill: true)` + `LoopChartPeriod`）：6 档各占一份、不滚动，全屏图标固定在最右；外观同 quiet `LoopSeg`（未选为纯文字，选中为紫色实心胶囊 + 白色粗体 + splat），每档触控 ≥ 44×44，文字在大字号下缩放而不溢出。360 / 390 宽下 6 档文字都完整可见（测试用 App 自带字体量）。行情 5 档仍是原来的可滚动 `LoopSeg` 行，不变。
+- MEME 两页的 MA 读数改为工具栏下方单独一行（`averagesOnOwnLine`，`LoopType.meta`，可换行不截断）；MA 关时不占行。行情仍是读数与开关同一行。

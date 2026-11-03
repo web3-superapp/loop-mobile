@@ -3,8 +3,10 @@
 // chart rows — K线 / MA / VOL above the plot, the periods and the full-screen
 // glyph under it — and open `chart-full` for their own series.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_candle_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -22,6 +24,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 import 'support/meme_fixtures.dart';
 import 'support/s345_charts.dart';
 import 'support/s7_page_harness.dart';
@@ -142,10 +145,8 @@ void main() {
       expect(chart.showVolume, isTrue);
       expect(chart.lastPriceTag, isFalse);
       expect(chart.candles.last.volume.toString(), isNot('0'));
-      expect(
-        tester.widget<Text>(_key('launch2-candles-moving-averages')).data,
-        '',
-      );
+      // MA off: no figures line at all.
+      expect(_key('launch2-candles-moving-averages'), findsNothing);
       await drainS345(tester);
     });
 
@@ -168,6 +169,26 @@ void main() {
           .data!;
       expect(averages, startsWith('MA7 '));
       expect(averages, contains('MA25 '));
+      // Its own line under the switches, in `meta`, never cut short.
+      final figures = _key('launch2-candles-moving-averages');
+      final text = tester.widget<Text>(figures);
+      expect(text.maxLines, isNull);
+      expect(text.overflow, isNull);
+      expect(text.style, LoopType.meta);
+      expect(
+        tester.getRect(figures).top,
+        greaterThanOrEqualTo(
+          tester.getRect(_key('launch2-candles-chart-ma')).bottom,
+        ),
+      );
+      expect(
+        tester.getRect(figures).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(LoopMarketChart)).top),
+      );
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: figures, matching: find.byType(RichText)),
+      );
+      expect(paragraph.didExceedMaxLines, isFalse);
 
       await tester.tap(_key('launch2-candles-chart-vol'));
       await tester.pumpAndSettle();
@@ -235,6 +256,91 @@ void main() {
       expect(find.byType(LoopMarketChart), findsNothing);
       await drainS345(tester);
     });
+  });
+
+  group('period row · six periods and 全屏 on one line', () {
+    /// Every period's word is drawn whole, inside the screen, left of the
+    /// full-screen glyph, and the row does not scroll.
+    void expectWhole(
+      WidgetTester tester,
+      String rowKey,
+      List<String> labels,
+      String expandKey,
+      double width,
+    ) {
+      final row = _key(rowKey);
+      expect(
+        find.descendant(of: row, matching: find.byType(Scrollable)),
+        findsNothing,
+      );
+      final expand = tester.getRect(_key(expandKey));
+      expect(expand.right, lessThanOrEqualTo(width));
+      for (final label in labels) {
+        final word = find.descendant(of: row, matching: find.text(label));
+        expect(word, findsOneWidget, reason: label);
+        final rect = tester.getRect(word);
+        expect(rect.left, greaterThanOrEqualTo(0), reason: label);
+        expect(rect.right, lessThanOrEqualTo(expand.left), reason: label);
+        // Drawn at its own size: the fit never had to shrink it.
+        final paragraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: word, matching: find.byType(RichText)),
+        );
+        expect(rect.width, closeTo(paragraph.size.width, 0.5), reason: label);
+        expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+      }
+      final first = tester.getRect(find.byKey(ValueKey<String>(rowKey)));
+      expect(first.right, lessThanOrEqualTo(expand.left + 0.5));
+    }
+
+    for (final width in <double>[360, 390]) {
+      testWidgets('launch2-instance at $width', (tester) async {
+        // The App's own faces: the test font draws every glyph a full em.
+        await tester.runAsync(loopLoadShotFonts);
+        await pumpS345Router(
+          tester,
+          initial: Launch2Route.instance(l2InstanceA),
+          launch2: S345Launch2(s345Public()),
+          size: Size(width, 2000),
+        );
+        expectWhole(
+          tester,
+          'launch2-candles-intervals',
+          <String>[for (final i in Launch2CandleInterval.values) i.label],
+          'launch2-candles-expand',
+          width,
+        );
+        // Each period keeps a finger-sized target.
+        for (final i in Launch2CandleInterval.values) {
+          final size = tester.getSize(
+            _key('launch2-candles-interval-${i.wireName}'),
+          );
+          expect(size.width, greaterThanOrEqualTo(44));
+          expect(size.height, greaterThanOrEqualTo(44));
+        }
+        expect(tester.takeException(), isNull);
+        await drainS345(tester);
+      });
+
+      testWidgets('meme-token at $width', (tester) async {
+        // The App's own faces: the test font draws every glyph a full em.
+        await tester.runAsync(loopLoadShotFonts);
+        await pumpS345Router(
+          tester,
+          initial: MemeRoute.token(memeTokenIdA),
+          meme: S345Meme(memeDetail()),
+          size: Size(width, 2000),
+        );
+        expectWhole(
+          tester,
+          'meme-interval-strip',
+          <String>[for (final (_, label) in memeChartRanges) label],
+          'meme-chart-expand',
+          width,
+        );
+        expect(tester.takeException(), isNull);
+        await drainS345(tester);
+      });
+    }
   });
 
   group('chart-full · a project\'s five states', () {

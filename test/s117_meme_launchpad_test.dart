@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/meme/meme_controllers.dart';
 import 'package:loop_mobile/features/meme/meme_create_screen.dart';
@@ -938,8 +939,10 @@ void main() {
         expect(_key('meme-interval-${interval.wireName}'), findsOneWidget);
       }
       expect(find.text('LIVE'), findsNothing);
-      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).selected, isTrue);
-      expect(tester.widget<LoopSeg>(_key('meme-interval-1m')).quiet, isTrue);
+      expect(
+        tester.widget<LoopChartPeriod>(_key('meme-interval-1m')).selected,
+        isTrue,
+      );
       expect(_key('meme-chart-expand'), findsOneWidget);
       await tester.tap(_key('meme-interval-1h'));
       await tester.pumpAndSettle();

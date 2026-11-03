@@ -345,6 +345,7 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
       children: <Widget>[
         LoopChartToolbar(
           keyPrefix: 'launch2-candles',
+          averagesOnOwnLine: true,
           averagesText: _averages && ready
               ? loopChartAveragesText(
                   _chartCandles(),
@@ -360,6 +361,7 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
         ),
         SizedBox(height: widget.height, child: _body()),
         LoopChartIntervalRow(
+          fill: true,
           periodsKey: const ValueKey<String>('launch2-candles-intervals'),
           options: <LoopChartIntervalOption>[
             for (final interval in intervals)

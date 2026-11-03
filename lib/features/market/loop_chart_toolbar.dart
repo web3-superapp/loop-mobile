@@ -1,9 +1,11 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ class LoopChartToolbar extends StatelessWidget {
     required this.onVolumeChanged,
     super.key,
     this.volumeAvailable = true,
+    this.averagesOnOwnLine = false,
   });
 
   final String keyPrefix;
@@ -61,9 +64,69 @@ class LoopChartToolbar extends StatelessWidget {
   /// A series without traded volume has no VOL switch.
   final bool volumeAvailable;
 
+  /// The MA figures take their own line under the switches (in the `meta`
+  /// style, wrapping rather than cut) instead of sharing the switches' line.
+  /// A MEME price is long (`$0.0₄576`), so two of them never fit beside
+  /// the three switches on a phone. Nothing is drawn while MA is off.
+  final bool averagesOnOwnLine;
+
   @override
   Widget build(BuildContext context) {
     final line = style == LoopChartStyle.line;
+    final switches = <Widget>[
+      LoopChartToggle(
+        key: ValueKey<String>('$keyPrefix-chart-style'),
+        label: line ? 'K线' : '折线',
+        semantic: line ? '切换到 K 线' : '切换到折线',
+        on: false,
+        onTap: () =>
+            onStyleChanged(line ? LoopChartStyle.candles : LoopChartStyle.line),
+      ),
+      LoopChartToggle(
+        key: ValueKey<String>('$keyPrefix-chart-ma'),
+        label: 'MA',
+        semantic: '均线',
+        on: averages,
+        onTap: () => onAveragesChanged(!averages),
+      ),
+      if (volumeAvailable)
+        LoopChartToggle(
+          key: ValueKey<String>('$keyPrefix-chart-vol'),
+          label: 'VOL',
+          semantic: '成交量',
+          on: volume,
+          onTap: () => onVolumeChanged(!volume),
+        ),
+    ];
+    if (averagesOnOwnLine) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: switches,
+            ),
+          ),
+          if (averagesText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                4,
+              ),
+              child: Text(
+                averagesText,
+                key: ValueKey<String>('$keyPrefix-moving-averages'),
+                style: LoopType.meta,
+              ),
+            ),
+        ],
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 4, 0),
       child: Row(
@@ -77,30 +140,7 @@ class LoopChartToolbar extends StatelessWidget {
               style: LoopType.figureXs.copyWith(color: LoopColors.text2),
             ),
           ),
-          LoopChartToggle(
-            key: ValueKey<String>('$keyPrefix-chart-style'),
-            label: line ? 'K线' : '折线',
-            semantic: line ? '切换到 K 线' : '切换到折线',
-            on: false,
-            onTap: () => onStyleChanged(
-              line ? LoopChartStyle.candles : LoopChartStyle.line,
-            ),
-          ),
-          LoopChartToggle(
-            key: ValueKey<String>('$keyPrefix-chart-ma'),
-            label: 'MA',
-            semantic: '均线',
-            on: averages,
-            onTap: () => onAveragesChanged(!averages),
-          ),
-          if (volumeAvailable)
-            LoopChartToggle(
-              key: ValueKey<String>('$keyPrefix-chart-vol'),
-              label: 'VOL',
-              semantic: '成交量',
-              on: volume,
-              onTap: () => onVolumeChanged(!volume),
-            ),
+          ...switches,
         ],
       ),
     );
@@ -152,18 +192,51 @@ class LoopChartIntervalRow extends StatelessWidget {
     super.key,
     this.periodsKey,
     this.trailing,
+    this.fill = false,
   });
 
   final List<LoopChartIntervalOption> options;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
-  /// The key of the scrolling periods alone (without [trailing]).
+  /// The key of the periods alone (without [trailing]).
   final Key? periodsKey;
   final Widget? trailing;
 
+  /// Every period takes an equal share of the line, so the whole row and
+  /// [trailing] fit on a 360 pt phone without scrolling (the MEME pages'
+  /// six periods). Unset, the periods are their own width and scroll (the
+  /// market's five).
+  final bool fill;
+
   @override
   Widget build(BuildContext context) {
+    if (fill) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Row(
+                key: periodsKey,
+                children: <Widget>[
+                  for (final (index, option) in options.indexed)
+                    Expanded(
+                      child: LoopChartPeriod(
+                        key: ValueKey<String>(option.keyName),
+                        label: option.label,
+                        selected: index == selectedIndex,
+                        onSelected: () => onSelected(index),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
       child: Row(
@@ -191,6 +264,74 @@ class LoopChartIntervalRow extends StatelessWidget {
           ?trailing,
         ],
       ),
+    );
+  }
+}
+
+/// One period of a filled [LoopChartIntervalRow]: the quiet [LoopSeg]'s look
+/// (a plain word; the chosen one a solid Purple pill with a white bold word
+/// and the splat) at the width its share of the line gives it, 44 tall. The
+/// word shrinks rather than overflows under a large text scale.
+class LoopChartPeriod extends StatelessWidget {
+  const LoopChartPeriod({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Material(
+      color: selected ? LoopColors.purpleSelected : Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          if (!selected) LoopHaptics.selection();
+          onSelected();
+        },
+        borderRadius: LoopRadius.pill,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: double.infinity,
+            minHeight: LoopTouch.minimum,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: ExcludeSemantics(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style:
+                        LoopTypography.withWeight(
+                          LoopType.action,
+                          selected ? FontWeight.w700 : FontWeight.w600,
+                        ).copyWith(
+                          color: selected
+                              ? LoopColors.onPurple
+                              : LoopColors.text2,
+                        ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: selected ? loopSplatted(chip) : chip,
     );
   }
 }
