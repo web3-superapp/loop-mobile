@@ -1224,7 +1224,7 @@ GoRouter _buildRouter(
               GoRoute(
                 path: '/intel',
                 builder: (context, state) => IntelScreen(
-                  onNavigate: (location) => context.push(location),
+                  onNavigate: (location) => _goTabOrPush(context, location),
                   tab: state.uri.queryParameters[IntelPowerRoute.tabKey],
                   sub: state.uri.queryParameters[IntelPowerRoute.subKey],
                   inviteCode: referralClaimCodeFromQuery(
