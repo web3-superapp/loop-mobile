@@ -270,6 +270,12 @@ final class FakeDappHost implements DappBridgeHost {
   bool agree;
   DappSignOutcome outcome;
 
+  /// When true, every confirmation sheet stays open until the test
+  /// completes its entry in [openSheets].
+  bool holdSheets = false;
+  final List<Completer<DappSignOutcome>> openSheets =
+      <Completer<DappSignOutcome>>[];
+
   int connectionPrompts = 0;
   final List<DappIntent> confirmed = <DappIntent>[];
   final List<String> toasts = <String>[];
@@ -293,6 +299,11 @@ final class FakeDappHost implements DappBridgeHost {
     DappSignRequest? sign,
   }) async {
     confirmed.add(intent);
+    if (holdSheets) {
+      final answer = Completer<DappSignOutcome>();
+      openSheets.add(answer);
+      return answer.future;
+    }
     return outcome;
   }
 

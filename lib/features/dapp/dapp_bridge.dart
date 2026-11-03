@@ -77,6 +77,25 @@ final class DappBridge {
   /// Requests refused by the origin check, for diagnostics and tests.
   int refusedFrames = 0;
 
+  /// The tail of the signing queue. The server keeps one open intent per
+  /// wallet and a new prepare supersedes the previous one (with the same
+  /// nonce for a transaction), so a page that fires two signing requests at
+  /// once is served one at a time: the second prepares only after the first
+  /// was signed, declined or refused.
+  Future<void> _signingTail = Future<void>.value();
+
+  /// Identical reads in flight share one request to the read channel; the
+  /// server limits reads per account and pages repeat the same poll.
+  final Map<String, Future<Object?>> _readsInFlight =
+      <String, Future<Object?>>{};
+
+  Future<T> _serialSigning<T>(Future<T> Function() task) {
+    final previous = _signingTail;
+    final done = Completer<void>();
+    _signingTail = done.future;
+    return previous.then((_) => task()).whenComplete(done.complete);
+  }
+
   String get chainId => _chainId;
 
   static const _signingMethods = <String>{
@@ -169,23 +188,17 @@ final class DappBridge {
         return _requestAccounts(origin);
       case 'wallet_switchEthereumChain':
         return _switchChain(params);
+      // The two chains are built in: adding one of them is switching to it,
+      // any other chain is unrecognized (4902).
+      case 'wallet_addEthereumChain':
+        return _addChain(params);
       case 'eth_sendTransaction':
       case 'personal_sign':
       case 'eth_signTypedData_v4':
-        return _sign(origin, method, params);
+        return _serialSigning(() => _sign(origin, method, params));
     }
     if (dappReadMethods.contains(method)) {
-      try {
-        return await reader.read(
-          chainId: _chainId,
-          method: method,
-          params: params,
-        );
-      } on DappRpcError {
-        rethrow;
-      } on Object {
-        throw const DappRpcError(DappRpcErrorCode.internal, 'Read failed');
-      }
+      return _read(method, params);
     }
     // `eth_sign` (a bare hash), `eth_signTransaction` and every method LOOP
     // does not serve.
@@ -193,6 +206,68 @@ final class DappBridge {
       DappRpcErrorCode.unsupportedMethod,
       'The method $method is not supported',
     );
+  }
+
+  Future<Object?> _read(String method, List<Object?> params) {
+    final chainId = _chainId;
+    final String key;
+    try {
+      key = '$chainId|$method|${jsonEncode(params)}';
+    } on Object {
+      throw const DappRpcError(
+        DappRpcErrorCode.invalidParams,
+        'Invalid params',
+      );
+    }
+    final pending = _readsInFlight[key];
+    if (pending != null) return pending;
+    // The callback must not return the removed future: `whenComplete`
+    // would then wait for the very request it belongs to.
+    final request = _readOnce(chainId, method, params).whenComplete(() {
+      _readsInFlight.remove(key);
+    });
+    _readsInFlight[key] = request;
+    return request;
+  }
+
+  Future<Object?> _readOnce(
+    String chainId,
+    String method,
+    List<Object?> params,
+  ) async {
+    try {
+      return await reader.read(
+        chainId: chainId,
+        method: method,
+        params: params,
+      );
+    } on DappRpcError {
+      rethrow;
+    } on LoopChainException catch (failure) {
+      // A server whose allowlist is older than this build.
+      if (failure.reasonCode == 'RPC_METHOD_NOT_ALLOWED') {
+        throw DappRpcError(
+          DappRpcErrorCode.unsupportedMethod,
+          'The method $method is not supported',
+        );
+      }
+      if (failure.reasonCode == 'RPC_LOG_RANGE_TOO_LARGE' ||
+          failure.kind == LoopChainFailureKind.invalidData) {
+        throw const DappRpcError(
+          DappRpcErrorCode.invalidParams,
+          'Invalid params',
+        );
+      }
+      if (failure.kind == LoopChainFailureKind.rateLimited) {
+        throw const DappRpcError(
+          DappRpcErrorCode.limitExceeded,
+          'Request limit exceeded',
+        );
+      }
+      throw const DappRpcError(DappRpcErrorCode.internal, 'Read failed');
+    } on Object {
+      throw const DappRpcError(DappRpcErrorCode.internal, 'Read failed');
+    }
   }
 
   Future<List<String>> _requestAccounts(String origin) async {
@@ -227,6 +302,17 @@ final class DappBridge {
     }
     await switchChain(target);
     return null;
+  }
+
+  Future<Object?> _addChain(List<Object?> params) async {
+    final first = params.isEmpty ? null : params.first;
+    if (first is! Map || first['chainId'] is! String) {
+      throw const DappRpcError(
+        DappRpcErrorCode.invalidParams,
+        'Invalid params',
+      );
+    }
+    return _switchChain(params);
   }
 
   /// Moves the page to [chainId] (top bar or `wallet_switchEthereumChain`).

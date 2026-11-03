@@ -1,4 +1,5 @@
 // S342 · decision 0270 · 内置 DApp 浏览器 (docs/55 §一, §三).
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -39,6 +40,7 @@ DappBridge _bridge(
   FakeDappHost host, {
   FakeDappIntentsGateway? intents,
   FakeDappRpcReader? reader,
+  DappRpcReader? customReader,
   Set<String>? connected,
   String chainId = s342Launch,
 }) {
@@ -47,7 +49,7 @@ DappBridge _bridge(
     nonce: 'n0nce',
     host: host,
     intents: intents ?? FakeDappIntentsGateway(),
-    reader: reader ?? FakeDappRpcReader(),
+    reader: customReader ?? reader ?? FakeDappRpcReader(),
     isConnected: origins.contains,
     setConnected: (origin, {required bool connected}) async {
       if (connected) {
@@ -75,6 +77,36 @@ List<Object?> _call(
 
 int? _code(Map<String, Object?> answer) =>
     (answer['error'] as Map<String, Object?>?)?['code'] as int?;
+
+/// Holds every read until [gate] completes.
+final class _GatedReader implements DappRpcReader {
+  final Completer<void> gate = Completer<void>();
+  final List<String> calls = <String>[];
+
+  @override
+  Future<Object?> read({
+    required String chainId,
+    required String method,
+    required List<Object?> params,
+  }) async {
+    calls.add(method);
+    await gate.future;
+    return '0x10';
+  }
+}
+
+final class _FailingReader implements DappRpcReader {
+  _FailingReader(this.failure);
+
+  final LoopChainException failure;
+
+  @override
+  Future<Object?> read({
+    required String chainId,
+    required String method,
+    required List<Object?> params,
+  }) async => throw failure;
+}
 
 void main() {
   loopWatchGround();
@@ -252,6 +284,49 @@ void main() {
       );
     });
 
+    test('wallet_addEthereumChain: 0x38 / 0x61 switch, else 4902', () async {
+      final host = FakeDappHost();
+      final bridge = _bridge(host);
+      Map<String, Object?> add(String chainId) => <String, Object?>{
+        'chainId': chainId,
+        'chainName': 'x',
+        'rpcUrls': <String>['https://rpc.example'],
+        'nativeCurrency': <String, Object?>{
+          'name': 'BNB',
+          'symbol': 'BNB',
+          'decimals': 18,
+        },
+      };
+      expect(
+        await bridge.handle(
+          _call('wallet_addEthereumChain', <Object?>[add('0x38')]),
+        ),
+        <String, Object?>{'ok': true, 'result': null},
+      );
+      expect(bridge.chainId, s342Mainnet);
+      expect(
+        await bridge.handle(
+          _call('wallet_addEthereumChain', <Object?>[add('0x61')]),
+        ),
+        <String, Object?>{'ok': true, 'result': null},
+      );
+      expect(bridge.chainId, s342Launch);
+      expect(host.chains, <String>[s342Mainnet, s342Launch]);
+      expect(
+        _code(
+          await bridge.handle(
+            _call('wallet_addEthereumChain', <Object?>[add('0x1')]),
+          ),
+        ),
+        DappRpcErrorCode.unrecognizedChain,
+      );
+      expect(
+        _code(await bridge.handle(_call('wallet_addEthereumChain'))),
+        DappRpcErrorCode.invalidParams,
+      );
+      expect(bridge.chainId, s342Launch);
+    });
+
     test(
       'eth_sign, eth_signTransaction and unknown methods are 4200',
       () async {
@@ -259,7 +334,6 @@ void main() {
         for (final method in <String>[
           'eth_sign',
           'eth_signTransaction',
-          'wallet_addEthereumChain',
           'eth_coinbase',
         ]) {
           expect(
@@ -394,6 +468,54 @@ void main() {
         'eth_signTypedData_v4',
       ]);
       expect(intents.prepared.last['payload'], s342TypedData);
+    });
+
+    test('signing requests are served one at a time: the second prepares '
+        'only after the first is answered', () async {
+      final host = FakeDappHost()..holdSheets = true;
+      final intents = FakeDappIntentsGateway();
+      final bridge = _bridge(
+        host,
+        intents: intents,
+        connected: <String>{s342Origin},
+      );
+      final first = bridge.handle(
+        _call('personal_sign', <Object?>['0x6869', s342Address]),
+      );
+      final second = bridge.handle(
+        _call('eth_sendTransaction', <Object?>[
+          <String, Object?>{'to': s342Token, 'data': '0x', 'value': '0x0'},
+        ]),
+      );
+      await pumpEventQueue();
+      // One intent at a time: the server would supersede the first.
+      expect(intents.prepared.map((p) => p['kind']), <Object?>['sign']);
+      expect(host.openSheets, hasLength(1));
+      host.openSheets.single.complete(const DappSignOutcome.rejected());
+      expect(_code(await first), DappRpcErrorCode.userRejected);
+      await pumpEventQueue();
+      expect(intents.prepared.map((p) => p['kind']), <Object?>['sign', 'tx']);
+      host.openSheets.last.complete(
+        const DappSignOutcome(
+          status: DappSignStatus.produced,
+          reasonCode: 'REPORTED',
+          value: '0xabc',
+          reported: true,
+        ),
+      );
+      expect(await second, <String, Object?>{'ok': true, 'result': '0xabc'});
+      // A request refused before the sheet does not block the queue either.
+      final wrongAccount = await bridge.handle(
+        _call('personal_sign', <Object?>['0x6869', '0x${'2' * 40}']),
+      );
+      expect(_code(wrongAccount), DappRpcErrorCode.unauthorized);
+      final third = bridge.handle(
+        _call('personal_sign', <Object?>['0x6869', s342Address]),
+      );
+      await pumpEventQueue();
+      expect(host.openSheets, hasLength(3));
+      host.openSheets.last.complete(const DappSignOutcome.rejected());
+      expect(_code(await third), DappRpcErrorCode.userRejected);
     });
 
     test('the owner declining the sheet is 4001', () async {
@@ -616,6 +738,101 @@ void main() {
   });
 
   group('read channel', () {
+    test('block and fee-history reads go through the read channel', () async {
+      expect(
+        dappReadMethods,
+        containsAll(<String>['eth_getBlockByNumber', 'eth_feeHistory']),
+      );
+      final reader = FakeDappRpcReader();
+      final bridge = _bridge(FakeDappHost(), reader: reader);
+      await bridge.handle(
+        _call('eth_getBlockByNumber', <Object?>['latest', false]),
+      );
+      await bridge.handle(
+        _call('eth_feeHistory', <Object?>[
+          '0x4',
+          'latest',
+          <Object?>[25, 75],
+        ]),
+      );
+      expect(reader.calls, <String>[
+        '$s342Launch:eth_getBlockByNumber',
+        '$s342Launch:eth_feeHistory',
+      ]);
+    });
+
+    test('identical reads in flight share one request', () async {
+      final reader = _GatedReader();
+      final bridge = _bridge(FakeDappHost(), customReader: reader);
+      final answers = Future.wait(<Future<Map<String, Object?>>>[
+        bridge.handle(_call('eth_blockNumber')),
+        bridge.handle(_call('eth_blockNumber')),
+        bridge.handle(_call('eth_gasPrice')),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      reader.gate.complete();
+      final results = await answers;
+      expect(results.map((r) => r['result']), <Object?>[
+        '0x10',
+        '0x10',
+        '0x10',
+      ]);
+      expect(reader.calls, <String>['eth_blockNumber', 'eth_gasPrice']);
+      // Settled: the next poll asks again.
+      await bridge.handle(_call('eth_blockNumber'));
+      expect(reader.calls.length, 3);
+    });
+
+    test('server refusals map to EIP-1193 codes', () async {
+      Future<int?> codeFor(LoopChainException failure) async {
+        final bridge = _bridge(
+          FakeDappHost(),
+          customReader: _FailingReader(failure),
+        );
+        return _code(await bridge.handle(_call('eth_blockNumber')));
+      }
+
+      expect(
+        await codeFor(
+          const LoopChainException(
+            LoopChainFailureKind.validationFailed,
+            reasonCode: 'RPC_METHOD_NOT_ALLOWED',
+          ),
+        ),
+        DappRpcErrorCode.unsupportedMethod,
+      );
+      expect(
+        await codeFor(
+          const LoopChainException(
+            LoopChainFailureKind.validationFailed,
+            reasonCode: 'RPC_LOG_RANGE_TOO_LARGE',
+          ),
+        ),
+        DappRpcErrorCode.invalidParams,
+      );
+      expect(
+        await codeFor(
+          const LoopChainException(LoopChainFailureKind.invalidData),
+        ),
+        DappRpcErrorCode.invalidParams,
+      );
+      expect(
+        await codeFor(
+          const LoopChainException(LoopChainFailureKind.rateLimited),
+        ),
+        DappRpcErrorCode.limitExceeded,
+      );
+      expect(
+        await codeFor(
+          const LoopChainException(
+            LoopChainFailureKind.unavailable,
+            reasonCode: 'DAPP_BROWSER_DISABLED',
+          ),
+        ),
+        DappRpcErrorCode.internal,
+      );
+    });
+
     test('rpc-read carries the method and hands a node error back', () async {
       final bodies = <Object?>[];
       final api = DioLoopV2DappApi(
@@ -667,6 +884,32 @@ void main() {
   });
 
   group('signing exit', () {
+    test('a pre-execution that did not pass names it on the sheet', () {
+      for (final code in <String>[
+        'BSC_CALL_REVERTED',
+        'GAS_ESTIMATE_UNAVAILABLE',
+        'INTENT_NOT_SIGNABLE',
+      ]) {
+        expect(dappSignReasonText(code), '这笔交易预执行未通过，没有签名。');
+      }
+      expect(dappSignReasonText('SIMULATION_UNAVAILABLE'), '这笔交易暂时无法预执行，没有签名。');
+      final refusal = DappSigner.refusalBeforeWallet(
+        LoopV2DappCodec.intent(<String, Object?>{
+          ...s342TxIntentBody(),
+          'state': 'prepared',
+          'signing': <String, Object?>{
+            'mode': 'device_eth_send_transaction',
+            'allowed': false,
+            'reasonCode': 'BSC_CALL_REVERTED',
+          },
+        }),
+        fromAddress: s342Address,
+        now: DateTime.utc(2026, 11, 3),
+        tx: s342TxRequest,
+      );
+      expect(refusal, 'BSC_CALL_REVERTED');
+    });
+
     test('DApp kinds are never permitted on BSC Mainnet', () {
       final intent = SigningIntent.backendCanonical(
         revision: s342IntentId,
