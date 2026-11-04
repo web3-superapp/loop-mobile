@@ -841,12 +841,7 @@ void main() {
         matching: find.byType(LoopRoundKey),
       );
       expect(keys, findsNWidgets(4));
-      for (final label in <String>[
-        'Add friend',
-        'Direct message',
-        'Share',
-        'More',
-      ]) {
+      for (final label in <String>['Add friend', 'Message', 'Share', 'More']) {
         expect(
           find.descendant(of: keys, matching: find.text(label)),
           findsOneWidget,

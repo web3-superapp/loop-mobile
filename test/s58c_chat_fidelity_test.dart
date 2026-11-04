@@ -63,7 +63,7 @@ void main() {
       );
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.ring, isFalse);
-      expect(folio.kicker, 'Direct message');
+      expect(folio.kicker, 'Message');
       expect(folio.stamp, 'Private');
       // The heading names the conversation; it is not the page's own title.
       expect(folio.heading, 'Direct message with NightOwl');

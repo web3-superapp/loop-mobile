@@ -480,7 +480,7 @@ void main() {
 
       expect(find.text('Voyager_09'), findsOneWidget);
       expect(find.text('LOOP-3HJKMNPQ'), findsOneWidget);
-      expect(find.text('Direct message'), findsNothing);
+      expect(find.text('Message'), findsNothing);
       expect(find.textContaining('loop_'), findsNothing);
       // The same word travels to the Stream widgets under the page, so the
       // `@` candidate row names the peer the header just named.
@@ -528,7 +528,7 @@ void main() {
         chat: FakeChatV2Gateway(),
       );
 
-      expect(find.text('Direct message'), findsOneWidget);
+      expect(find.text('Message'), findsOneWidget);
       expect(find.byType(LoopDirectPeerScope), findsNothing);
     });
 
@@ -716,7 +716,7 @@ void main() {
         'All',
         'Community',
         'Group chat',
-        'Direct message',
+        'Message',
       ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
@@ -733,7 +733,7 @@ void main() {
         chatSearchSenderLabel(LoopChatSurface.communityChat),
         loopGroupMemberNeutralLabel,
       );
-      expect(chatSearchSenderLabel(LoopChatSurface.direct), 'Direct message');
+      expect(chatSearchSenderLabel(LoopChatSurface.direct), 'Message');
     });
   });
 

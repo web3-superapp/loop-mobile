@@ -278,7 +278,7 @@ void main() {
       );
       final message = find.descendant(
         of: _key('user-profile-message'),
-        matching: find.text('Direct message'),
+        matching: find.text('Message'),
       );
       expect(_cut(tester, message), isFalse);
       expect(
