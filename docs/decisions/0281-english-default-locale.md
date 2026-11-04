@@ -37,7 +37,7 @@ Accepted · 2026-11-04（S354-mobile）。用户裁决：App 默认语言改成�
 ### 迁移流程（S355 每个目录照做）
 
 1. `python3 scripts/l10n/extract.py lib/features/<dir>` → `lib/l10n/fragments/<feature>.json`（zh 已填、en 空、`where` = 文件:行）。
-2. 人工按 `docs/59-英文文案术语表-2026-11-04.md`（LOOP/docs）填 en，可以改 key 名，不要改占位符名。
+2. 人工按术语表（`docs/l10n/glossary.md`，即 LOOP/docs/59-英文文案术语表-2026-11-04.md 的副本）填 en，可以改 key 名，不要改占位符名。
 3. `python3 scripts/l10n/apply.py lib/l10n/fragments/<feature>.json`：改源码（字面量 → getter / 带参调用，去最近的 `const`，常量声明 → getter）并把 `test/` 里对同一中文的 `find.text` / `textContaining` / `expect` 断言改成英文——仅当 lib 里已经没有任何地方再印这句中文。打印 `TODO`：enum 构造参数、switch-case 模式、参数默认值、const 集合声明里的字面量、插值表达式里的中文、`State` 非 build 方法（已用 current，请复核）、测试里只部分匹配的断言。
    apply 还会把 enum 的中文构造参数（`chat('chat', '聊天')` + `this.label`）改成 `String get label => switch (this) {...}`（只支持位置参数 `this.x`）。
 4. `python3 scripts/l10n/merge.py`（合 ARB + gen-l10n）→ `bin/dart fix --apply` → `bin/dart format lib test` → `flutter analyze` → 全量 `flutter test`；手工处理 TODO。
