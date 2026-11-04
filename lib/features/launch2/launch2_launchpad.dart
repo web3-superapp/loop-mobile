@@ -507,11 +507,9 @@ class Launch2DeskFolio extends ConsumerWidget {
     final kicker = launch2DeskKicker(chainId);
     final event = row;
     if (event == null) {
-      return Launch2DeskEventFace(
-        kicker: kicker,
-        title: '暂无进行中的发射',
-        caption: 'NFT 预售开始后会出现在这里',
-      );
+      // S350b · decision 0275: the empty desk says the fact and nothing
+      // about what will appear (需求方 10-26, decision 0248).
+      return Launch2DeskEventFace(kicker: kicker, title: '暂无进行中的发射');
     }
     final ticker = launch2HeroTicker(event.ticker);
     final status = launch2DeskStatus(event);
@@ -584,46 +582,49 @@ class Launch2DeskEventFace extends StatelessWidget {
         Positioned(
           left: Launch2BannerBackdrop.textLeft,
           top: Launch2BannerBackdrop.textTop,
-          width: Launch2BannerBackdrop.textWidth,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                kicker,
-                key: const ValueKey<String>('launch2-desk-event-kicker'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
-              ),
-              const SizedBox(height: 4),
-              Launch2BannerTitle(
-                text: title,
-                textKey: const ValueKey<String>('launch2-desk-event-title'),
-              ),
-              const SizedBox(height: 8),
-              if (line != null)
+          bottom: 0,
+          right: 0,
+          child: _BannerColumn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
                 Text(
-                  line,
-                  key: const ValueKey<String>('launch2-desk-event-status'),
+                  kicker,
+                  key: const ValueKey<String>('launch2-desk-event-kicker'),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.withWeight(
-                    LoopType.body,
-                    FontWeight.w600,
-                  ).copyWith(color: LoopColors.purpleInk),
-                ),
-              if (figures != null) ...<Widget>[
-                const SizedBox(height: 4),
-                Text(
-                  figures,
-                  key: const ValueKey<String>('launch2-desk-event-caption'),
-                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: LoopType.caption.copyWith(color: LoopColors.text2),
                 ),
+                const SizedBox(height: 4),
+                Launch2BannerTitle(
+                  text: title,
+                  textKey: const ValueKey<String>('launch2-desk-event-title'),
+                ),
+                const SizedBox(height: 8),
+                if (line != null)
+                  Text(
+                    line,
+                    key: const ValueKey<String>('launch2-desk-event-status'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.withWeight(
+                      LoopType.body,
+                      FontWeight.w600,
+                    ).copyWith(color: LoopColors.purpleInk),
+                  ),
+                if (figures != null) ...<Widget>[
+                  const SizedBox(height: 4),
+                  Text(
+                    figures,
+                    key: const ValueKey<String>('launch2-desk-event-caption'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.caption.copyWith(color: LoopColors.text2),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         if (left != null)
@@ -679,7 +680,18 @@ class Launch2BannerBackdrop extends StatelessWidget {
   /// How far a page's foot control (the countdown, 「去参与」) sits from
   /// the card's bottom edge.
   static const double footInset = 14;
+
+  /// The words' column at its widest (a 350 wide card and up).
   static const double textWidth = 186;
+
+  /// The narrowest the words' column gets.
+  static const double textMinWidth = 140;
+
+  /// S350b · decision 0275: the words' column for a card [cardWidth] wide —
+  /// it stops short of the chrome hand, which keeps its size, so on a 360
+  /// screen the words wrap instead of running under the hand.
+  static double textWidthFor(double cardWidth) =>
+      (cardWidth - textLeft - 160).clamp(textMinWidth, textWidth);
 
   @override
   Widget build(BuildContext context) {
@@ -804,14 +816,40 @@ class Launch2BannerTitle extends StatelessWidget {
               const SizedBox(width: 150),
         ),
       ),
-      Text(
-        text,
-        key: textKey,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: LoopType.display.copyWith(height: 1.2),
+      // S350b: a title wider than the column is set a little smaller, not
+      // cut to 「暂无进行中…」.
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          key: textKey,
+          maxLines: 1,
+          style: LoopType.display.copyWith(height: 1.2),
+        ),
       ),
     ],
+  );
+}
+
+/// The words' column of a banner page: [Launch2BannerBackdrop.textWidthFor]
+/// the card's width, from the top left.
+class _BannerColumn extends StatelessWidget {
+  const _BannerColumn({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) => Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: Launch2BannerBackdrop.textWidthFor(
+          box.maxWidth + Launch2BannerBackdrop.textLeft,
+        ),
+        child: child,
+      ),
+    ),
   );
 }
 
@@ -889,33 +927,38 @@ class _Launch2DeskCampaignCardState
             Positioned(
               left: Launch2BannerBackdrop.textLeft,
               top: Launch2BannerBackdrop.textTop,
-              width: Launch2BannerBackdrop.textWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Launch2BannerTitle(
-                    text: campaign.title,
-                    textKey: ValueKey<String>('launch2-campaign-title-$id'),
-                  ),
-                  const SizedBox(height: 8),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      key: ValueKey<String>('launch2-campaign-subtitle-$id'),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopType.bodySm.copyWith(color: LoopColors.chalk),
+              bottom: 0,
+              right: 0,
+              child: _BannerColumn(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Launch2BannerTitle(
+                      text: campaign.title,
+                      textKey: ValueKey<String>('launch2-campaign-title-$id'),
                     ),
-                  const SizedBox(height: 6),
-                  Text(
-                    launch2CampaignFootLine(campaign, now),
-                    key: ValueKey<String>('launch2-campaign-stamp-$id'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopType.caption.copyWith(color: LoopColors.text2),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        key: ValueKey<String>('launch2-campaign-subtitle-$id'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.bodySm.copyWith(
+                          color: LoopColors.chalk,
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      launch2CampaignFootLine(campaign, now),
+                      key: ValueKey<String>('launch2-campaign-stamp-$id'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.caption.copyWith(color: LoopColors.text2),
+                    ),
+                  ],
+                ),
               ),
             ),
             Positioned(

@@ -244,7 +244,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(_key('launch2-upcoming-empty'), findsOneWidget);
     expect(_key('launch2-upcoming-empty-crown'), findsOneWidget);
-    expect(find.text('还没有排队中的项目，第一个发射的就是你'), findsOneWidget);
+    // S350b · decision 0275: the fact alone; 我要发射 is the invitation.
+    expect(find.text('还没有排队中的项目'), findsOneWidget);
     await tester.ensureVisible(_key('launch2-upcoming-empty-launch'));
     await tester.pumpAndSettle();
     expect(

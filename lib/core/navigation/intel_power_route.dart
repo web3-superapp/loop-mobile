@@ -46,8 +46,9 @@ abstract final class IntelPowerRoute {
 
 /// The three tabs under 我的总算力, in the order they are drawn.
 enum IntelPowerTab {
-  nft('nft', 'NFT'),
+  // S350b · decision 0275: 代币 first, the tab most accounts hold power in.
   token('token', '代币'),
+  nft('nft', 'NFT'),
   invite('invite', '邀请');
 
   const IntelPowerTab(this.wireName, this.label);

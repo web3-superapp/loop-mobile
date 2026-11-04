@@ -521,7 +521,8 @@ void main() {
       await _pump(tester, _list(opened), _listGateway(rows));
       final folio = _desk(tester, 'launch2-desk');
       expect(folio.heading, '暂无进行中的发射');
-      expect(folio.caption, 'NFT 预售开始后会出现在这里');
+      // S350b · decision 0275: the fact alone, no sentence under it.
+      expect(folio.caption, isNull);
       expect(folio.stamp, isNull);
       // Decision 0223: the empty desk stands on the banner art too.
       expect(

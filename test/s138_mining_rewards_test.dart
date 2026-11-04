@@ -2478,7 +2478,8 @@ void main() {
         findsOneWidget,
       );
       expect(_key('mining-summary-hero-estimated-today'), findsOneWidget);
-      expect(_key('mining-summary-hero-claimable'), findsOneWidget);
+      // S350b · decision 0275: 待领取 has no figure here, so no 「—」 cell.
+      expect(_key('mining-summary-hero-claimable'), findsNothing);
       expect(_key('mining-summary-hero-power-only'), findsNothing);
       expect(_key('mining-summary-hero-last-hour-power'), findsNothing);
       await _drain(tester);

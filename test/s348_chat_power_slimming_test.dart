@@ -384,7 +384,9 @@ void main() {
         referral: _boosted(),
         invitees: _invitees(),
       );
-      final bar = tester.widget<LoopSegBar>(_key('referral-tabs'));
+      // S350b · decision 0275: the sub tabs are the filter step, a level
+      // under the page's capsules.
+      final bar = tester.widget<ReferralSubTabs>(_key('referral-tabs'));
       expect(bar.labels, <String>['邀请列表', '邀请加成']);
       expect(bar.selectedIndex, 0);
       expect(_key('referral-tab-invitees'), findsOneWidget);

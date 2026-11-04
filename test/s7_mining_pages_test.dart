@@ -161,7 +161,7 @@ void main() {
       );
     });
 
-    testWidgets('every metric is an em dash with the server reason', (
+    testWidgets('a reading with no figure is not drawn as an em dash', (
       tester,
     ) async {
       await pumpS7Page(
@@ -171,15 +171,15 @@ void main() {
         overrides: <Override>[s7TokenLive()],
       );
 
-      // The three readings the hero carries, each an em dash of its own.
+      // S350b · decision 0275: a cell the server gave no figure for is left
+      // out, not drawn as 「—」.
       for (final slug in <String>[
         'estimated-today',
         'accumulated',
         'claimable',
       ]) {
         final cell = find.byKey(ValueKey<String>('mining-summary-hero-$slug'));
-        expect(cell, findsOneWidget, reason: slug);
-        expect(tester.widget<Text>(cell).data, launchMissingFigure);
+        expect(cell, findsNothing, reason: slug);
       }
       // 我的算力 is the heading, and it says the absence in words.
       expect(
@@ -290,7 +290,8 @@ void main() {
       );
       expect(find.text('待领取：奖励发放还没有开启，暂时不能领取。'), findsNothing);
       expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('^待领取，')), findsOneWidget);
+      // S350b · decision 0275: a dash cell is not drawn at all.
+      expect(find.bySemanticsLabel(RegExp('^待领取，')), findsNothing);
     });
 
     testWidgets('a shared reason names the dashes it speaks for', (
@@ -312,7 +313,8 @@ void main() {
         findsNothing,
       );
       expect(find.textContaining('累计已挖、待领取：'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('^累计已挖，')), findsOneWidget);
+      // S350b · decision 0275: the two dashes are not drawn at all.
+      expect(find.bySemanticsLabel(RegExp('^累计已挖，')), findsNothing);
     });
 
     testWidgets('a settled page states the boost alone, not a whole outage', (

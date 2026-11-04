@@ -93,10 +93,12 @@ void main() {
     );
 
     // S315: 总算力, and the place without an English 「RANK」 prefix.
-    _expectStep(tester, '我的总算力', LoopType.kicker);
-    _expectStep(tester, '持仓', LoopType.kicker);
+    // S350b · decision 0275: the label is a 600 caption, a cell's label a
+    // caption under its figure, and the figure the plate's Anton 40.
+    _expectStep(tester, '我的总算力', LoopType.caption, weight: FontWeight.w600);
+    _expectStep(tester, '持仓', LoopType.caption);
     _expectStep(tester, '10', LoopType.figure);
-    _expectStep(tester, '1,234', LoopType.statFigure);
+    _expectStep(tester, '1,234', LoopType.plateFigure);
     _expectStep(tester, ' MP', LoopType.figureMd);
   });
 

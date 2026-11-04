@@ -242,7 +242,9 @@ String launch2RecordSubtitle(Launch2InstanceRow row) {
           '截止 ${launch2ShortDateTime(sale.endAt)}',
     Launch2Stage.priority =>
       next == null ? '提前购进行中' : '提前购进行中 · 截止 ${launch2ShortDateTime(next)}',
-    Launch2Stage.public => '公开内盘 · 人人可买，卖满即毕业',
+    // S350b: 卖满自动毕业 is the card's foot line; the subtitle names the
+    // stage only.
+    Launch2Stage.public => '公开内盘',
     Launch2Stage.upcoming => '${launch2ShortDateTime(sale.startAt)} 开始铸造',
     _ => launch2StageLabel(row.stage),
   };

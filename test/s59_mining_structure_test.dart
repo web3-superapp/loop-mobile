@@ -30,7 +30,7 @@ const _tall = Size(390, 9000);
 
 void main() {
   group('mining · block order', () {
-    testWidgets('情报 · 算力: network card, my card, then the tabs (0272)', (
+    testWidgets('情报 · 算力: one hero, 全网 inside it, then the tabs (0275)', (
       tester,
     ) async {
       await pumpS7Page(
@@ -59,8 +59,6 @@ void main() {
       for (final key in <String>[
         'mining-summary-hero-power',
         'mining-summary-hero-estimated-today',
-        'mining-summary-hero-accumulated',
-        'mining-summary-hero-claimable',
         'mining-summary-hero-claim',
         'mining-network-card',
         'mining-power-tabs',
@@ -68,6 +66,13 @@ void main() {
         'mining-composition',
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
+      }
+      // S350b · decision 0275: a reading with no figure is not drawn as 「—」.
+      for (final key in <String>[
+        'mining-summary-hero-accumulated',
+        'mining-summary-hero-claimable',
+      ]) {
+        expect(find.byKey(ValueKey<String>(key)), findsNothing, reason: key);
       }
       // Decision 0167 (docs/33 L22): the card's two next steps are shared
       // buttons — the yellow CTA for the first (S241b: the card is flat, so
@@ -114,7 +119,15 @@ void main() {
       final tabs = tester.getRect(
         find.byKey(const ValueKey<String>('mining-power-tabs')),
       );
-      expect(network.bottom, lessThanOrEqualTo(mine.top));
+      // S350b · decision 0275: 全网总算力 is the hero's supporting line.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-summary-hero')),
+          matching: find.byKey(const ValueKey<String>('mining-network-card')),
+        ),
+        findsOneWidget,
+      );
+      expect(network.top, greaterThan(mine.top));
       expect(mine.bottom, lessThan(tabs.top));
     });
 
