@@ -170,10 +170,7 @@ void main() {
       );
 
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
-        findsNothing,
-      );
+      expect(_anyLaunchUnavailableCard, findsNothing);
       final boost = find.byKey(const ValueKey<String>('referral-boost'));
       await scrollToS7Section(tester, boost);
       expect(find.text('12'), findsOneWidget);
@@ -207,10 +204,7 @@ void main() {
 
       // S348 (需求方不要说明性文案): until the boost is approved 邀请加成
       // is the total as the em dash, and nothing else.
-      expect(
-        find.byKey(const ValueKey<String>('launch-unavailable-邀请加成')),
-        findsNothing,
-      );
+      expect(_anyLaunchUnavailableCard, findsNothing);
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('referral-boost-total')),
@@ -518,3 +512,11 @@ void _expectClaimDisabled(WidgetTester tester) {
   expect(claim, findsOneWidget);
   expect(tester.widget<LoopButton>(claim).onPressed, isNull);
 }
+
+/// Any Launch unavailable card, whatever its id: the card's key no longer
+/// carries its (localized) label (decision 0281).
+final Finder _anyLaunchUnavailableCard = find.byWidgetPredicate(
+  (widget) =>
+      widget.key is ValueKey<String> &&
+      (widget.key! as ValueKey<String>).value.startsWith('launch-unavailable-'),
+);

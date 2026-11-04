@@ -971,7 +971,7 @@ void main() {
 
       expect(
         find.byKey(
-          const ValueKey<String>('launch-unavailable-Approved formula version'),
+          const ValueKey<String>('launch-unavailable-reason-$s7FormulaPending'),
         ),
         findsOneWidget,
       );

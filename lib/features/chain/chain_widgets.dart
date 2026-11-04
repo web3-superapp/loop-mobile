@@ -747,9 +747,9 @@ class LoopCapabilityBlockCard extends StatelessWidget {
 /// An unavailable fact renders its explanation, never `0` and never `—`.
 class LoopFactLine extends StatelessWidget {
   const LoopFactLine({
+    required this.id,
     required this.label,
     required this.fact,
-    this.id,
     super.key,
     this.formatter,
     this.now,
@@ -758,9 +758,9 @@ class LoopFactLine extends StatelessWidget {
 
   final String label;
 
-  /// A stable id for the keys (decision 0281: a key never carries copy).
-  /// Without it the key falls back to [label].
-  final String? id;
+  /// The stable id the keys are built from (decision 0281: a key never
+  /// carries copy, and [label] is copy).
+  final String id;
   final LoopFact fact;
 
   /// Formats the exact value. Defaults to grouped decimal text.
@@ -773,7 +773,7 @@ class LoopFactLine extends StatelessWidget {
     final value = fact.value;
     if (value == null) {
       return Padding(
-        key: ValueKey<String>('fact-${id ?? label}-unavailable'),
+        key: ValueKey<String>('fact-$id-unavailable'),
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,7 +791,7 @@ class LoopFactLine extends StatelessWidget {
     }
     final marker = loopFactQualityMarker(fact.quality);
     return Padding(
-      key: ValueKey<String>('fact-${id ?? label}'),
+      key: ValueKey<String>('fact-$id'),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,7 +826,7 @@ class LoopFactLine extends StatelessWidget {
                   ],
                 ),
                 fallback: LoopInfoTrigger(
-                  key: ValueKey<String>('fact-${id ?? label}-provenance'),
+                  key: ValueKey<String>('fact-$id-provenance'),
                   semanticsLabel: context.l10n.chain_widgetsSemanticsLabel(
                     loopFactProvenance(fact, now: now),
                   ),

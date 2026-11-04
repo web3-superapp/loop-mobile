@@ -130,10 +130,10 @@ void main() {
         quality: LoopFactQuality.fresh,
         reasonCode: null,
       );
-      await _host(tester, LoopFactLine(label: '价格', fact: fact));
+      await _host(tester, LoopFactLine(id: 'price', label: '价格', fact: fact));
       expect(find.text('747.39'), findsOneWidget);
       expect(find.textContaining('observed'), findsNothing);
-      await tester.tap(_key('fact-价格-provenance'));
+      await tester.tap(_key('fact-price-provenance'));
       await tester.pumpAndSettle();
       expect(_key('fact-provenance-sheet'), findsOneWidget);
       expect(find.textContaining('observed'), findsOneWidget);

@@ -236,7 +236,7 @@ class LoopStepUpSettingRow extends StatelessWidget {
   final LoopRowPosition position;
   final Widget Function(LoopRecordRow row)? rowBuilder;
 
-  static const rowKey = ValueKey<String>('security-大额交易二次验证');
+  static const rowKey = ValueKey<String>('security-large-amount-step-up');
 
   @override
   Widget build(BuildContext context) {

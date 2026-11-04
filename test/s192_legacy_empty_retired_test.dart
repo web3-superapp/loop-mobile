@@ -231,12 +231,13 @@ void main() {
       await _pump(
         tester,
         const LaunchUnavailableCard(
+          id: 'holder-distribution',
           label: '持有人分布',
           fact: LaunchUnavailable('LAUNCH_HOLDERS_DEFERRED'),
         ),
       );
       expect(
-        tester.widget(_key('launch-unavailable-持有人分布')),
+        tester.widget(_key('launch-unavailable-holder-distribution')),
         isA<LoopInlineUnavailable>(),
       );
       expect(find.text('持有人分布'), findsOneWidget);
