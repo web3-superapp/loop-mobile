@@ -179,7 +179,12 @@ void main() {
         );
 
         final segs = tester.widgetList<LoopSeg>(_segs).toList();
-        expect(segs.map((seg) => seg.label), <String>['全部', '代币', '社区', '用户']);
+        expect(segs.map((seg) => seg.label), <String>[
+          'All',
+          'Token',
+          'Community',
+          'User',
+        ]);
         final xs = <double>[
           for (final seg in segs) tester.getTopLeft(find.byWidget(seg)).dx,
         ];
@@ -375,12 +380,12 @@ void main() {
         const ValueKey<String>('search-recent-follow-user-$testMemberId'),
       );
       final pill = tester.widget<LoopPillAction>(follow);
-      expect(pill.label, '关注');
+      expect(pill.label, 'Follow');
       expect(pill.soft, isTrue);
       await tester.tap(follow);
       await tester.pumpAndSettle();
       expect(social.commands, contains('follow:$testMemberId:true'));
-      expect(tester.widget<LoopPillAction>(follow).label, '已关注');
+      expect(tester.widget<LoopPillAction>(follow).label, 'Following');
     });
 
     testWidgets('a Preview result is never written to the store', (
@@ -492,7 +497,7 @@ void main() {
       final badge = tester.widget<LoopBadge>(
         find.descendant(of: row, matching: find.byType(LoopBadge)),
       );
-      expect(badge.text, '代币');
+      expect(badge.text, 'Token');
       expect(badge.kind, LoopBadgeKind.mute);
       expect(
         find.descendant(
@@ -536,10 +541,10 @@ void main() {
       final field = tester.widget<TextField>(
         find.byKey(const ValueKey<String>('search-field')),
       );
-      expect(field.decoration?.hintText, '搜索代币、社区、用户…');
+      expect(field.decoration?.hintText, 'Search Token, Community, User…');
       final paste = find.byKey(const ValueKey<String>('search-paste-loop-id'));
       // S325 · decision 0255 (UX-007): a compact square button.
-      expect(tester.widget<LoopButton>(paste).label, '粘贴');
+      expect(tester.widget<LoopButton>(paste).label, 'Paste');
       expect(tester.widget<LoopButton>(paste).size, LoopButtonSize.compact);
       expect(
         tester.getRect(paste).left,

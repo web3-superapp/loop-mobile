@@ -510,7 +510,7 @@ void main() {
         launch2: launch2,
         switchOn: false,
       );
-      expect(find.text('发射台'), findsWidgets);
+      expect(find.text('Launchpad'), findsWidgets);
       expect(find.text('v2 launch'), findsNothing);
       expect(launch2.listCalls, isEmpty);
       await _drain(tester);

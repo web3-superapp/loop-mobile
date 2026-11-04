@@ -261,9 +261,9 @@ void main() {
       // 市值 was not reported; the cell says so instead of printing 0.
       expect(find.text('No data'), findsOneWidget);
       expect(find.textContaining('LOOP community PEPE 社区'), findsOneWidget);
-      expect(find.textContaining('检测到 mint 函数'), findsOneWidget);
+      expect(find.textContaining('Mint function detected'), findsOneWidget);
       // A fact the provider answered "false" for is not a card line.
-      expect(find.textContaining('合约已验证开源'), findsNothing);
+      expect(find.textContaining('Contract source verified'), findsNothing);
       expect(
         findProvenanceContaining('Quote Source DexScreener'),
         findsOneWidget,
@@ -383,7 +383,7 @@ void main() {
       );
       expect(
         find.text(
-          '这个地址暂时读不到 · '
+          "This address can't be loaded right now · "
           '${loopReasonCodeText('MARKET_PROVIDER_RATE_LIMITED')}',
         ),
         findsOneWidget,

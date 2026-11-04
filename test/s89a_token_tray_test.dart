@@ -62,7 +62,10 @@ void main() {
     expect(tokenSecurityFactIsRisk(fact('buyTax', '0.1')), isFalse);
     expect(tokenSecurityFactIsRisk(fact('mintable', 'unknown')), isFalse);
     // Short labels keep the claim: 未检测到 stays 未检测到.
-    expect(tokenSecurityFactShortText(fact('mintable', 'false')), '未检测到 mint');
+    expect(
+      tokenSecurityFactShortText(fact('mintable', 'false')),
+      'No mint detected',
+    );
     expect(tokenSecurityFactShortText(fact('mystery', 'x')), 'mystery = x');
   });
 
@@ -81,7 +84,7 @@ void main() {
       ),
     );
     await scrollToS5Section(tester, key('token-section-tabs'));
-    await tester.tap(key('token-tab-关于'));
+    await tester.tap(key('token-tab-about'));
     await tester.pumpAndSettle();
     await scrollToS5Section(tester, key('token-security-provenance'));
     final cells = find.byType(TokenFactCell);
@@ -97,7 +100,7 @@ void main() {
     expect(dot('proxy').color, LoopColors.text3);
     // S278 · decision 0236: the one source line is a (i) row.
     expect(
-      findProvenanceContaining('合约事实 ${facts.length} 项 · 来源 GoPlus'),
+      findProvenanceContaining('${facts.length} contract facts · 来源 GoPlus'),
       findsOneWidget,
     );
   });

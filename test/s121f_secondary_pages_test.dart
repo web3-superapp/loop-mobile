@@ -106,7 +106,12 @@ void main() {
         matching: find.byType(LoopRoundKey),
       );
       expect(keys, findsNWidgets(4));
-      for (final label in <String>['进群聊', '开语音房', '分享', '管理']) {
+      for (final label in <String>[
+        'Group chat',
+        'Start room',
+        'Share',
+        'Manage',
+      ]) {
         expect(
           find.descendant(of: keys, matching: find.text(label)),
           findsOneWidget,
@@ -151,7 +156,7 @@ void main() {
 
       final join = _key('community-join-action');
       expect(join, findsOneWidget);
-      expect(tester.widget<LoopButton>(join).label, '加入社区');
+      expect(tester.widget<LoopButton>(join).label, 'Join community');
       expect(tester.getSize(join).height, LoopTouch.primaryButton);
       expect(_key('community-profile-manage'), findsNothing);
       // Without membership the directory is not read and no strip drawn.
@@ -265,7 +270,7 @@ void main() {
       );
 
       expect(_key('community-manage-header'), findsOneWidget);
-      for (final title in <String>['资料', '成员', '语音房']) {
+      for (final title in <String>['Profile', 'Members', 'Voice rooms']) {
         expect(
           find.widgetWithText(LoopLabel, title),
           findsOneWidget,
@@ -522,7 +527,7 @@ void main() {
       }
       expect(
         tester.widget<LoopButton>(_key('community-apply-submit')).label,
-        '提交申请',
+        'Submit application',
       );
       // Picking a mark puts it in the 72 slot.
       await tester.tap(_key('community-apply-logo-avatar:preset/community-03'));

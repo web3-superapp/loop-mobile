@@ -225,7 +225,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Demo data'), findsOneWidget);
-      expect(find.text('4 个自选资产'), findsOneWidget);
+      expect(find.text('4 watchlist assets'), findsOneWidget);
       // A labelled Preview is never also an unavailable surface.
       expect(
         find.byKey(const ValueKey<String>('watchlist-capability-block')),

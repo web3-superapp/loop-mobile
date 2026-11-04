@@ -81,7 +81,7 @@ void main() {
       );
 
       // Decision 0118: the row's second line carries the marker.
-      expect(find.textContaining('延迟'), findsWidgets);
+      expect(find.textContaining('Delayed'), findsWidgets);
       expect(find.text('\$747.39'), findsWidgets);
     });
 
@@ -107,7 +107,7 @@ void main() {
         ),
       );
 
-      expect(find.text('没有交易对'), findsWidgets);
+      expect(find.text('No trading pair'), findsWidgets);
       expect(find.text('\$0'), findsNothing);
       expect(find.text('0'), findsNothing);
     });
@@ -164,9 +164,9 @@ void main() {
       expect(market.newPairs.resolves, 0);
 
       // The chips scroll sideways; bring this one into view first.
-      await tester.ensureVisible(find.text('新币'));
+      await tester.ensureVisible(find.text('New pairs'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('新币'));
+      await tester.tap(find.text('New pairs'));
       await tester.pumpAndSettle();
       expect(market.newPairs.resolves, 1);
       expect(find.textContaining('four.meme'), findsOneWidget);
@@ -196,8 +196,8 @@ void main() {
         ),
       );
 
-      expect(find.text('还没有自选'), findsOneWidget);
-      expect(find.text('去主流看看'), findsOneWidget);
+      expect(find.text('No watchlist yet'), findsOneWidget);
+      expect(find.text('Browse majors'), findsOneWidget);
       expect(find.text('0'), findsNothing);
     });
 
@@ -293,7 +293,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
@@ -324,16 +324,19 @@ void main() {
           findProvenanceContaining('Converted at trade price'),
           findsOneWidget,
         );
-        expect(findProvenanceContaining('最后一根进行中'), findsOneWidget);
+        expect(
+          findProvenanceContaining('Last candle in progress'),
+          findsOneWidget,
+        );
         // The price unit is the pool's other token, never USD. It is the
         // provider's own string and prints verbatim. S82a gave the card's
         // heading row to the periods and the averages, so the unit moved onto
         // the provenance line under the panel, where the source and the time
         // already are.
         // S278 · decision 0236: the unit stays printed beside the (i).
-        expect(find.textContaining('单位 USDT per WBNB'), findsOneWidget);
+        expect(find.textContaining('In USDT per WBNB'), findsOneWidget);
         expect(
-          find.textContaining('Converted at trade price · 单位 USDT per WBNB'),
+          find.textContaining('Converted at trade price · In USDT per WBNB'),
           findsOneWidget,
         );
       },
@@ -362,8 +365,11 @@ void main() {
         expect(findProvenanceContaining('Priced in WBNB'), findsOneWidget);
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
-        expect(findProvenanceContaining('按成交价折算'), findsOneWidget);
-        expect(findProvenanceContaining('单位 USD per WBNB'), findsOneWidget);
+        expect(
+          findProvenanceContaining('Derived from trade price'),
+          findsOneWidget,
+        );
+        expect(findProvenanceContaining('In USD per WBNB'), findsOneWidget);
       },
     );
 
@@ -389,10 +395,13 @@ void main() {
         ),
       );
 
-      expect(findProvenanceContaining('未登记池'), findsOneWidget);
+      expect(findProvenanceContaining('Unregistered pool'), findsOneWidget);
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
+      expect(
+        find.textContaining('Main pool from GeckoTerminal'),
+        findsOneWidget,
+      );
       // 「来源 X · 池 Y」 is the registered wording; it must not read as if
       // LOOP indexed this pool.
       expect(find.textContaining('来源 GeckoTerminal · 池'), findsNothing);
@@ -407,11 +416,11 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      expect(find.textContaining('未登记池'), findsNothing);
+      expect(find.textContaining('Unregistered pool'), findsNothing);
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
       expect(
-        find.textContaining('来源 LOOP on-chain index · 池 0x'),
+        find.textContaining('Source LOOP on-chain index · Pool 0x'),
         findsOneWidget,
       );
     });
@@ -464,13 +473,13 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-security-provenance')),
       );
-      expect(find.text('已验证开源'), findsOneWidget);
+      expect(find.text('Source verified'), findsOneWidget);
       expect(findProvenanceContaining('来源 GoPlus · 观察于'), findsOneWidget);
     });
 
@@ -517,7 +526,7 @@ void main() {
       );
       expect(
         find.textContaining(
-          '这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}',
+          "This address can't be loaded right now · ${loopTruncatedAssetId(s5WbnbAssetId)}",
         ),
         findsOneWidget,
       );
@@ -630,7 +639,10 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('chart-full-interval-notice')),
       );
-      expect(findProvenanceContaining('没有其他指标'), findsOneWidget);
+      expect(
+        findProvenanceContaining('There are no other indicators'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('changing the interval requests that exact interval', (
@@ -666,7 +678,7 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      expect(find.textContaining('8,019,338 持有人'), findsOneWidget);
+      expect(find.textContaining('8,019,338 holders'), findsOneWidget);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('token-holders-distribution')),
@@ -745,8 +757,11 @@ void main() {
         ),
       );
 
-      expect(find.text('买入 934.35 USDT'), findsOneWidget);
-      expect(find.textContaining('我 · Confirmed · 101 确认'), findsOneWidget);
+      expect(find.text('Buy 934.35 USDT'), findsOneWidget);
+      expect(
+        find.textContaining('Me · Confirmed · 101 confirmations'),
+        findsOneWidget,
+      );
       // Explanatory copy is absent from the page and its source sheet.
       expect(find.textContaining('不下发对手方地址'), findsNothing);
       final freshness = find.byKey(const ValueKey<String>('indexer-freshness'));
@@ -766,10 +781,12 @@ void main() {
       );
 
       expect(
-        find.byKey(const ValueKey<String>('market-seg-聪明钱')),
+        find.byKey(const ValueKey<String>('market-seg-smartMoney')),
         findsOneWidget,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('market-seg-聪明钱')));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('market-seg-smartMoney')),
+      );
       await tester.pump();
       // The disabled segment cannot become the selection, and it no longer
       // takes the tap in silence: a chip that answers nothing at all reads as
@@ -810,7 +827,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('new-pairs-risk-screening')),
       );
-      expect(find.textContaining('预筛不等于结论'), findsOneWidget);
+      expect(find.textContaining('Screening isn\'t a verdict'), findsOneWidget);
     });
 
     testWidgets('new-pairs states how many pools a pool id kept off the list', (
@@ -855,12 +872,12 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-omitted')),
         findsOneWidget,
       );
-      expect(find.text('另有 6 条数据无法解析'), findsOneWidget);
+      expect(find.text("6 more rows couldn't be parsed"), findsOneWidget);
       // The provider's DEX slug reads under the name the venue is known by,
       // and a zero quote address reads as the coin.
       expect(find.textContaining('four.meme'), findsOneWidget);
       expect(find.textContaining('four-meme'), findsNothing);
-      expect(find.textContaining('计价 BNB'), findsOneWidget);
+      expect(find.textContaining('Priced in BNB'), findsOneWidget);
     });
 
     testWidgets('a pool the provider left nameless still reads', (
@@ -908,7 +925,7 @@ void main() {
         find.byKey(ValueKey<String>('new-pair-address:$s5PoolAddress')),
         findsOneWidget,
       );
-      expect(find.text('未命名池'), findsOneWidget);
+      expect(find.text('Unnamed pool'), findsOneWidget);
       // The subtitle names the venue; the mark falls back to the same slug and
       // takes its two-character monogram from it, never the whole slug.
       expect(find.textContaining('four.meme'), findsOneWidget);
@@ -1035,7 +1052,7 @@ void main() {
       expect(find.text(r'$0'), findsNothing);
       expect(find.text(r'<$1'), findsNothing);
       expect(find.text(r'$0.0009'), findsOneWidget);
-      expect(find.textContaining(r'储备 $0.0041'), findsOneWidget);
+      expect(find.textContaining(r'Reserve $0.0041'), findsOneWidget);
     });
 
     testWidgets('a pool with no reserve figure says so instead of nothing', (
@@ -1078,8 +1095,11 @@ void main() {
 
       // The page promises a reason rather than a zero; an absent figure is
       // not an empty corner either.
-      expect(find.textContaining('储备暂时读不到'), findsOneWidget);
-      expect(find.textContaining('24 小时成交额暂时读不到'), findsOneWidget);
+      expect(find.textContaining('Reserve can\'t be loaded'), findsOneWidget);
+      expect(
+        find.textContaining('24h volume can\'t be loaded'),
+        findsOneWidget,
+      );
       expect(find.text(r'$0'), findsNothing);
     });
 
@@ -1125,7 +1145,7 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-omitted')),
         findsNothing,
       );
-      expect(find.textContaining('计价 BNB'), findsNothing);
+      expect(find.textContaining('Priced in BNB'), findsNothing);
     });
 
     testWidgets('smart-money never lists an address or a win rate', (
@@ -1145,7 +1165,7 @@ void main() {
         find.textContaining("Smart money tracking isn't available yet"),
         findsOneWidget,
       );
-      expect(findProvenanceContaining('胜率'), findsWidgets);
+      expect(findProvenanceContaining('win rates'), findsWidgets);
       expect(find.textContaining('0x'), findsNothing);
     });
   });

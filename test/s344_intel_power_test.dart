@@ -318,7 +318,9 @@ void main() {
         _key('market-alerts-action'),
       );
       expect(market.icon, 'alarm');
-      expect(market.label, intel.label);
+      // S355f: Market reads its label from ARB; Intel is still Chinese
+      // until its own batch lands (decision 0281, transition).
+      expect(market.label, 'Price alerts');
     });
   });
 

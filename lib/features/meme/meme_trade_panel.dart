@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -280,20 +281,26 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
     if (raw == null) return null;
     final balance = _balance;
     if (balance != null && raw > balance) {
-      return _side == MemeTradeSide.buy ? 'USD1 余额不足' : '卖出数量超过持有';
+      return _side == MemeTradeSide.buy
+          ? LoopL10n.current.meme_formatSwitch12
+          : LoopL10n.current.meme_formatSwitch13;
     }
     final quote = _quote;
     if (quote == null) return null;
     if (quote.belowMinBuy) {
-      return '最少买入 ${memeUsd1Label(_detail.curve.minBuyUsd1)}';
+      return LoopL10n.current.meme_createIf3(
+        memeUsd1Label(_detail.curve.minBuyUsd1),
+      );
     }
     if (quote.walletCapHit) {
       final left = quote.walletCapRemaining;
       return left == null
-          ? '超过单钱包 ${memeTokenFigure(_detail.curve.walletCapTokens)} 枚上限'
-          : '超过单钱包上限，最多还能买 ${memeTokenLabel(left, _ticker)}';
+          ? LoopL10n.current.meme_tradePanelIf(
+              memeTokenFigure(_detail.curve.walletCapTokens),
+            )
+          : LoopL10n.current.meme_tradePanelS(memeTokenLabel(left, _ticker));
     }
-    if (quote.out <= BigInt.zero) return '这个金额得不到代币，请调整';
+    if (quote.out <= BigInt.zero) return LoopL10n.current.meme_tradePanelIf2;
     return null;
   }
 
@@ -316,7 +323,9 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LoopSheetHeading(
-          _side == MemeTradeSide.buy ? '买入 $_ticker' : '卖出 $_ticker',
+          _side == MemeTradeSide.buy
+              ? context.l10n.meme_tradePanelLoopSheetHeading(_ticker)
+              : context.l10n.meme_tradePanelS2(_ticker),
         ),
         Padding(
           key: const ValueKey<String>('meme-trade-panel'),
@@ -329,7 +338,10 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
               LoopKeepsKeyboard(
                 child: LoopSegBar(
                   key: const ValueKey<String>('meme-trade-side'),
-                  labels: const <String>['买入', '卖出'],
+                  labels: <String>[
+                    context.l10n.common_buy,
+                    context.l10n.common_sell,
+                  ],
                   padding: const EdgeInsets.only(bottom: 14),
                   selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
                   onSelected: (index) {
@@ -356,7 +368,9 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                 maxLines: 1,
                 style: LoopType.figureLg,
                 decoration: InputDecoration(
-                  labelText: _side == MemeTradeSide.buy ? '支付' : '卖出',
+                  labelText: _side == MemeTradeSide.buy
+                      ? context.l10n.common_pay
+                      : context.l10n.common_sell,
                   suffixText: _side == MemeTradeSide.buy ? 'USD1' : _ticker,
                   hintText: '0',
                 ),
@@ -365,10 +379,18 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
               Text(
                 key: const ValueKey<String>('meme-trade-balance'),
                 balance == null
-                    ? '钱包读数暂时取不到 · ${memeReasonText(viewerReason ?? 'MEME_VIEWER_WALLET_MISSING')}'
+                    ? context.l10n.meme_tradePanelMemeTradeBalance(
+                        memeReasonText(
+                          viewerReason ?? 'MEME_VIEWER_WALLET_MISSING',
+                        ),
+                      )
                     : _side == MemeTradeSide.buy
-                    ? '可用 ${memeUsd1Label(balance)}'
-                    : '持有 ${memeTokenLabel(balance, _ticker)}',
+                    ? context.l10n.meme_tradePanelMemeTradeBalance2(
+                        memeUsd1Label(balance),
+                      )
+                    : context.l10n.meme_tokenBuild2(
+                        memeTokenLabel(balance, _ticker),
+                      ),
                 // R20, the same line as the launch panels (decision 0190 L24).
                 style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
@@ -419,7 +441,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                 ),
               const SizedBox(height: 10),
               Text(
-                '滑点上限',
+                context.l10n.common_slippageLimit,
                 style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
               const SizedBox(height: 6),
@@ -441,7 +463,9 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                   LoopSeg(
                     key: const ValueKey<String>('meme-trade-slippage-custom'),
                     quiet: true,
-                    label: '自定义',
+                    label: context
+                        .l10n
+                        .meme_tradePanelMemeTradeSlippageCustomLabel,
                     selected: _customSelected,
                     onSelected: () => setState(() => _customSelected = true),
                   ),
@@ -480,7 +504,9 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                 key: _confirmKey,
                 child: LoopButton(
                   key: const ValueKey<String>('meme-trade-confirm'),
-                  label: _side == MemeTradeSide.buy ? '确认买入' : '确认卖出',
+                  label: _side == MemeTradeSide.buy
+                      ? context.l10n.meme_signingBuy
+                      : context.l10n.meme_signingSell,
                   primary: true,
                   block: true,
                   onPressed: canConfirm
@@ -523,13 +549,17 @@ class _QuoteBlock extends StatelessWidget {
     if (failure != null) {
       return LoopInlineUnavailable(
         key: const ValueKey<String>('meme-trade-quote-failed'),
-        message: '没有取到报价 · ${memeFailureText(failure!)}',
+        message: context.l10n.meme_tradePanelMemeTradeQuoteFailedMessage(
+          memeFailureText(failure!),
+        ),
         padding: EdgeInsets.zero,
       );
     }
     if (value == null) {
       return Text(
-        quoting ? '正在报价…' : '输入金额后显示报价',
+        quoting
+            ? context.l10n.meme_tradePanelMemeTradeQuoteEmpty
+            : context.l10n.meme_tradePanelMemeTradeQuoteEmpty2,
         key: const ValueKey<String>('meme-trade-quote-empty'),
         style: LoopType.caption.copyWith(color: LoopColors.text3),
       );
@@ -540,36 +570,40 @@ class _QuoteBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LoopKeyValue(
-          label: '得',
+          label: context.l10n.meme_tradePanelLabel,
           value: side == MemeTradeSide.buy
               ? memeTokenLabel(value.out, ticker)
               : memeUsd1Label(value.out),
           padding: const EdgeInsets.symmetric(vertical: 4),
         ),
         LoopKeyValue(
-          label: '费',
+          label: context.l10n.meme_tradePanelLabel2,
           value: memeUsd1Label(value.fee, maxFractionDigits: 4),
           padding: const EdgeInsets.symmetric(vertical: 4),
         ),
         LoopKeyValue(
-          label: '影响',
+          label: context.l10n.meme_tradePanelLabel3,
           value: memeBpsLabel(value.priceImpactBps),
           padding: const EdgeInsets.symmetric(vertical: 4),
         ),
         if (refund != null && refund > BigInt.zero)
           LoopKeyValue(
-            label: '打满退回',
+            label: context.l10n.meme_signingLabel4,
             value: memeUsd1Label(refund),
             padding: const EdgeInsets.symmetric(vertical: 4),
           ),
         LoopProvenanceLine(
           key: const ValueKey<String>('meme-trade-quote-provenance'),
-          sources: <String>[value.basisFromChain ? '链上曲线' : 'LOOP 链上索引'],
+          sources: <String>[
+            value.basisFromChain
+                ? context.l10n.meme_tradePanelLoopProvenanceLine
+                : context.l10n.meme_tokenMemeProvenance,
+          ],
           observedAt: value.observedAt,
           padding: EdgeInsets.zero,
           detail: value.basisFromChain
-              ? '报价按链上当前曲线计算。'
-              : '链上暂时读不到，报价按索引快照计算，可能落后几个区块。',
+              ? context.l10n.meme_tradePanelMemeTradeQuoteProvenanceDetail
+              : context.l10n.meme_tradePanelMemeTradeQuoteProvenanceDetail2,
         ),
       ],
     );

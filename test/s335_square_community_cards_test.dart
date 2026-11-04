@@ -112,8 +112,8 @@ void main() {
       // The order stays, as one quiet word over the cards, right-aligned.
       final sort = _key('square-community-sort');
       expect(sort, findsOneWidget);
-      expect(find.text('成员最多'), findsOneWidget);
-      final sortWord = tester.widget<Text>(find.text('成员最多'));
+      expect(find.text('Most members'), findsOneWidget);
+      final sortWord = tester.widget<Text>(find.text('Most members'));
       expect(sortWord.style?.color, LoopColors.text3);
       // Decision 0277: meta is 12 / 500.
       expect(sortWord.style?.fontSize, LoopType.meta.fontSize);

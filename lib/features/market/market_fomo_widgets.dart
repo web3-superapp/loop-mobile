@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -53,22 +54,22 @@ String marketMoveLabel(Decimal percent) {
 /// was not read (decision 0100 §12). The server's reason, said in a few words;
 /// never a zero and never a dash.
 String marketQuoteUnavailableLabel(String? reasonCode) => switch (reasonCode) {
-  'MARKET_CHAIN_NOT_PRICED' => '暂无报价',
-  'MARKET_PROVIDER_RATE_LIMITED' => '行情限流中',
-  'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到',
-  'MARKET_PROVIDER_DEXSCREENER_DISABLED' => '行情源未开启',
-  'MARKET_PAIR_NOT_FOUND' => '没有交易对',
-  'MARKET_PAIR_UNREPRESENTABLE' => '交易对无法报价',
-  'MARKET_FACT_NOT_REPORTED' => '行情源未报告',
-  'MARKET_FACT_CACHE_UNAVAILABLE' => '行情缓存不可用',
+  'MARKET_CHAIN_NOT_PRICED' => LoopL10n.current.market_fomoSwitch,
+  'MARKET_PROVIDER_RATE_LIMITED' => LoopL10n.current.market_fomoSwitch2,
+  'MARKET_PROVIDER_UNREACHABLE' => LoopL10n.current.market_fomoSwitch3,
+  'MARKET_PROVIDER_DEXSCREENER_DISABLED' => LoopL10n.current.market_fomoSwitch4,
+  'MARKET_PAIR_NOT_FOUND' => LoopL10n.current.market_fomoSwitch5,
+  'MARKET_PAIR_UNREPRESENTABLE' => LoopL10n.current.market_fomoSwitch6,
+  'MARKET_FACT_NOT_REPORTED' => LoopL10n.current.market_fomoSwitch7,
+  'MARKET_FACT_CACHE_UNAVAILABLE' => LoopL10n.current.market_fomoSwitch8,
   _ => loopReasonCodeSummaryText(reasonCode),
 };
 
 /// The small marker a quote of lesser quality carries on its row.
 String? marketQuoteQualityMarker(LoopFactQuality quality) => switch (quality) {
-  LoopFactQuality.stale => '延迟',
-  LoopFactQuality.proxied => '以 WBNB 计价',
-  LoopFactQuality.derived => '按成交价折算',
+  LoopFactQuality.stale => LoopL10n.current.market_fomoStale,
+  LoopFactQuality.proxied => LoopL10n.current.market_fomoProxied,
+  LoopFactQuality.derived => LoopL10n.current.market_fomoDerived,
   LoopFactQuality.fresh || LoopFactQuality.unavailable => null,
 };
 
@@ -104,7 +105,9 @@ class MarketFomoRow extends StatelessWidget {
     return MarketFomoRow(
       key: key,
       symbol: row.symbol,
-      subtitle: cap == null ? row.name : '市值 ${loopFormatCompactFigure(cap)}',
+      subtitle: cap == null
+          ? row.name
+          : LoopL10n.current.market_fomoSubtitle(loopFormatCompactFigure(cap)),
       logoUrl: row.logoUrl,
       price: quote?.priceUsd,
       change: quote?.change24hPct,
@@ -115,7 +118,7 @@ class MarketFomoRow extends StatelessWidget {
       marker: quote == null
           ? null
           : quote.source == LoopFactSource.poolSlot0
-          ? '池子推算'
+          ? LoopL10n.current.market_fomoMarker
           : marketQuoteQualityMarker(quote.quality),
       onTap: onTap,
       trend: trend,
@@ -188,9 +191,9 @@ class MarketFomoRow extends StatelessWidget {
         trend
             ? marketTrendSpoken(move, hasSeries: _hasSeries)
             : move == null
-            ? '24 小时涨跌未报告'
-            : '24 小时 ${loopFormatPercent(move)}',
-    ].join('，');
+            ? context.l10n.market_fomoBuild
+            : context.l10n.market_fomoS(loopFormatPercent(move)),
+    ].join(LoopL10n.current.common_listSeparator);
     return LoopQuoteRow(
       leading: LoopTokenLogo(
         assetSymbol: symbol,
@@ -267,14 +270,19 @@ Color marketTrendLineColor(Decimal? change) =>
 
 /// 「24 小时走势上涨 8.40%」 with a line, 「24 小时涨跌 +8.40%」 without one.
 String marketTrendSpoken(Decimal? change, {required bool hasSeries}) {
-  if (change == null) return '24 小时涨跌未报告';
+  if (change == null) return LoopL10n.current.market_fomoBuild;
   final magnitude = change < Decimal.zero ? -change : change;
   final figure = '${magnitude.toStringAsFixed(2)}%';
-  if (!hasSeries) return '24 小时涨跌 ${loopSignedPercent(change)}';
+  if (!hasSeries) {
+    return LoopL10n.current.market_fomoMarketTrendSpoken(
+      loopSignedPercent(change),
+    );
+  }
   return switch (LoopPriceMove.of(change)) {
-    LoopPriceMove.up => '24 小时走势上涨 $figure',
-    LoopPriceMove.down => '24 小时走势下跌 $figure',
-    LoopPriceMove.flat || LoopPriceMove.unread => '24 小时走势持平 $figure',
+    LoopPriceMove.up => LoopL10n.current.market_fomoUp(figure),
+    LoopPriceMove.down => LoopL10n.current.market_fomoDown(figure),
+    LoopPriceMove.flat ||
+    LoopPriceMove.unread => LoopL10n.current.market_fomoUnread(figure),
   };
 }
 
@@ -331,7 +339,9 @@ class MarketTrendColumn extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
                 child: Text(
-                  move == null ? '未报告' : loopSignedPercent(move),
+                  move == null
+                      ? context.l10n.market_fomoMarketTrendPercent
+                      : loopSignedPercent(move),
                   key: const ValueKey<String>('market-trend-percent'),
                   maxLines: 1,
                   softWrap: false,
@@ -472,7 +482,7 @@ class _IntelPromotionCard extends StatelessWidget {
       label: <String>[
         promotion.title,
         if (promotion.subtitle.isNotEmpty) promotion.subtitle,
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: Material(
         color: LoopColors.card,

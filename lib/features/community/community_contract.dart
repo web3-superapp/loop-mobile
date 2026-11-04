@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the S3 ports
 /// (`community`, social graph and `search`).
@@ -45,7 +46,8 @@ enum CommunityFailureKind {
 /// The rule every bound-token field states beside itself (loop-api decision
 /// 0182): a token belongs to one community at a time; a rejected community
 /// does not hold it.
-const String communityBoundAssetUniqueHint = '每个代币只能被一个社区绑定。';
+String get communityBoundAssetUniqueHint =>
+    LoopL10n.current.community_contractCommunityBoundAssetUniqueHint;
 
 final class CommunityGatewayException implements Exception {
   const CommunityGatewayException(this.kind, {this.reasonCode, this.scope});
@@ -357,26 +359,41 @@ final class LoopPublicProfile {
 /// zh-CN copy for a failed community/social/search operation. It states what
 /// did not happen; it never claims a result the server did not confirm.
 String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
-  CommunityFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
-  CommunityFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
-  CommunityFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
-  CommunityFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
-  CommunityFailureKind.unavailable => '社区服务暂时不可用，请稍后再试。',
-  CommunityFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
-  CommunityFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
-  CommunityFailureKind.stale => '状态已经改变（可能已被他人处理）。请刷新后重新决定。',
-  CommunityFailureKind.activationRequired => '需要先完成 LOOP ID 激活才能执行社区与社交操作。',
-  CommunityFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
-  CommunityFailureKind.resourceConflict => '该短链接已被其他社区占用，请换一个。',
-  CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请换一个代币。',
-  CommunityFailureKind.validationFailed => '输入内容不符合要求，请修改后重试。',
-  CommunityFailureKind.aliasReserved => '该名称属于 LOOP 保留词，请换一个再试。',
-  CommunityFailureKind.aliasBlocked => '该名称在运营屏蔽名单内，请换一个再试。',
-  CommunityFailureKind.rateLimited => '搜索过于频繁，请稍等片刻再试。',
-  CommunityFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
-  CommunityFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
-  CommunityFailureKind.unexpected => '操作没有完成，请稍后再试。',
-  null => '操作没有完成。',
+  CommunityFailureKind.offline => LoopL10n.current.community_contractOffline,
+  CommunityFailureKind.timedOut => LoopL10n.current.community_contractTimedOut,
+  CommunityFailureKind.cancelled =>
+    LoopL10n.current.community_contractCancelled,
+  CommunityFailureKind.outcomeUnknown =>
+    LoopL10n.current.community_contractOutcomeUnknown,
+  CommunityFailureKind.unavailable =>
+    LoopL10n.current.community_contractUnavailable,
+  CommunityFailureKind.permissionDenied =>
+    LoopL10n.current.community_contractPermissionDenied,
+  CommunityFailureKind.notFound => LoopL10n.current.community_contractNotFound,
+  CommunityFailureKind.stale => LoopL10n.current.community_contractStale,
+  CommunityFailureKind.activationRequired =>
+    LoopL10n.current.community_contractActivationRequired,
+  CommunityFailureKind.bootstrapRequired =>
+    LoopL10n.current.community_contractBootstrapRequired,
+  CommunityFailureKind.resourceConflict =>
+    LoopL10n.current.community_contractResourceConflict,
+  CommunityFailureKind.boundAssetTaken =>
+    LoopL10n.current.community_contractBoundAssetTaken,
+  CommunityFailureKind.validationFailed =>
+    LoopL10n.current.community_contractValidationFailed,
+  CommunityFailureKind.aliasReserved =>
+    LoopL10n.current.community_contractAliasReserved,
+  CommunityFailureKind.aliasBlocked =>
+    LoopL10n.current.community_contractAliasBlocked,
+  CommunityFailureKind.rateLimited =>
+    LoopL10n.current.community_contractRateLimited,
+  CommunityFailureKind.idempotencyConflict =>
+    LoopL10n.current.community_contractIdempotencyConflict,
+  CommunityFailureKind.invalidData =>
+    LoopL10n.current.community_contractInvalidData,
+  CommunityFailureKind.unexpected =>
+    LoopL10n.current.community_contractUnexpected,
+  null => LoopL10n.current.common_actionIncomplete,
 };
 
 /// Whether the write's outcome is unknown, so its idempotency key must be
@@ -397,59 +414,75 @@ bool communityOutcomeIsUnresolved(CommunityFailureKind kind) =>
 String communityApplyFailureReason(CommunityFailureKind? kind) =>
     switch (kind) {
       CommunityFailureKind.aliasReserved =>
-        '社区名称撞上了 LOOP 保留词（如官方、支持、管理），请换一个名称再提交。',
-      CommunityFailureKind.aliasBlocked => '社区名称在当前的运营屏蔽名单内，请换一个名称再提交。',
-      CommunityFailureKind.resourceConflict => '这个短链接已经被另一个社区占用，请换一个再提交。',
-      CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请换一个代币再提交。',
+        LoopL10n.current.community_contractAliasReserved2,
+      CommunityFailureKind.aliasBlocked =>
+        LoopL10n.current.community_contractAliasBlocked2,
+      CommunityFailureKind.resourceConflict =>
+        LoopL10n.current.community_contractResourceConflict2,
+      CommunityFailureKind.boundAssetTaken =>
+        LoopL10n.current.community_contractBoundAssetTaken2,
       CommunityFailureKind.validationFailed =>
-        '名称或简介太长（名称 1–40 字，简介不超过 280 字），请修改后再提交。',
+        LoopL10n.current.community_contractValidationFailed2,
       CommunityFailureKind.activationRequired =>
-        '需要先完成 LOOP ID 激活才能申请社区。激活后可以重新提交这份申请。',
+        LoopL10n.current.community_contractActivationRequired2,
       _ => communityFailureReason(kind),
     };
 
 /// zh-CN explanation for one server `reasonCode`. An unknown code keeps a
 /// neutral sentence rather than inventing a cause.
 String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
-  'STREAM_UNREAD_NOT_CONNECTED' => '未读数暂时读不到。',
-  'STREAM_VOICE_NOT_CONNECTED' => '语音房状态暂时读不到。',
-  'STREAM_PRESENCE_NOT_CONNECTED' => '在线人数暂时读不到。',
+  'STREAM_UNREAD_NOT_CONNECTED' => LoopL10n.current.community_contractSwitch,
+  'STREAM_VOICE_NOT_CONNECTED' => LoopL10n.current.community_contractSwitch2,
+  'STREAM_PRESENCE_NOT_CONNECTED' => LoopL10n.current.community_contractSwitch3,
   // The presence read has its own failure modes (Decision 0047). Each says
   // what was not done, and none of them is a zero.
-  'COMMUNITY_CHANNEL_NOT_PROVISIONED' => '这个社区还没有官方频道，没有可以询问的在线人数。',
-  'COMMUNITY_CHANNEL_PROVISION_FAILED' => '这个社区的官方频道没有建成，暂时问不到在线人数。',
-  'STREAM_PRESENCE_READ_FAILED' => '这次没能问到在线人数，稍后重试。',
-  'STREAM_PRESENCE_READ_TIMEOUT' => '这次查询在线人数超时了，没有结果。',
-  'STREAM_PRESENCE_MEMBER_BOUND_EXCEEDED' => '这个社区的成员超过 500 人，这一版还数不了在线人数。',
-  'STREAM_PRESENCE_NOT_OBSERVED' => '这一步没有观察在线人数，回到社区详情可以重新读。',
-  'COMMUNICATION_RUNTIME_UNAVAILABLE' => '通信服务暂时不可用，问不到在线人数。',
-  'MINING_FORMULA_BASELINE_PENDING' => '挖矿规则还没有确定，暂时不显示算力。',
+  'COMMUNITY_CHANNEL_NOT_PROVISIONED' =>
+    LoopL10n.current.community_contractSwitch4,
+  'COMMUNITY_CHANNEL_PROVISION_FAILED' =>
+    LoopL10n.current.community_contractSwitch5,
+  'STREAM_PRESENCE_READ_FAILED' => LoopL10n.current.community_contractSwitch6,
+  'STREAM_PRESENCE_READ_TIMEOUT' => LoopL10n.current.community_contractSwitch7,
+  'STREAM_PRESENCE_MEMBER_BOUND_EXCEEDED' =>
+    LoopL10n.current.community_contractSwitch8,
+  'STREAM_PRESENCE_NOT_OBSERVED' => LoopL10n.current.community_contractSwitch9,
+  'COMMUNICATION_RUNTIME_UNAVAILABLE' =>
+    LoopL10n.current.community_contractSwitch10,
+  'MINING_FORMULA_BASELINE_PENDING' =>
+    LoopL10n.current.community_contractSwitch11,
   // The two discover orders and the row facts behind them (decision 0061).
   // None of them ever becomes a zero: a community nobody counted and a
   // community with nothing to count are different answers.
-  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有算出过算力，暂时不能按算力排序。',
-  'MINING_SNAPSHOT_INCOMPLETE' => '最近一次结算没有完成，暂时不能按算力排序。',
-  'MINING_SNAPSHOT_STALE' => '最近一次结算用的是旧规则，暂时不能按算力排序。',
-  'MINING_RUNTIME_UNAVAILABLE' => '挖矿暂时不可用，暂时不能按算力排序。',
-  'COMMUNITY_ACTIVITY_NOT_OBSERVED' => '讨论量暂时读不到，这个排序现在用不了。',
-  'COMMUNITY_ACTIVITY_CHANNEL_NOT_OBSERVED' => '这个社区的讨论量暂时读不到。',
-  'COMMUNITY_ASSET_NOT_BOUND' => '这个社区还没有绑定资产，没有算力。',
-  'COMMUNITY_WEIGHT_PENDING_REVIEW' => '这个社区的算力权重还在审核中。',
-  'COMMUNITY_ANNOUNCEMENTS_DEFERRED' => '社区公告还没有开放。',
-  'COMMUNITY_LINKS_DEFERRED' => '官方链接还没有开放。',
-  'MESSAGE_PREVIEW_DEFERRED' => '消息预览还没有开放。',
-  'AI_MODERATION_DEFERRED' => 'AI 巡查还没有开放。',
+  'MINING_SNAPSHOT_NOT_AVAILABLE' =>
+    LoopL10n.current.community_contractSwitch12,
+  'MINING_SNAPSHOT_INCOMPLETE' => LoopL10n.current.community_contractSwitch13,
+  'MINING_SNAPSHOT_STALE' => LoopL10n.current.community_contractSwitch14,
+  'MINING_RUNTIME_UNAVAILABLE' => LoopL10n.current.community_contractSwitch15,
+  'COMMUNITY_ACTIVITY_NOT_OBSERVED' =>
+    LoopL10n.current.community_contractSwitch16,
+  'COMMUNITY_ACTIVITY_CHANNEL_NOT_OBSERVED' =>
+    LoopL10n.current.community_contractSwitch17,
+  'COMMUNITY_ASSET_NOT_BOUND' => LoopL10n.current.community_contractSwitch18,
+  'COMMUNITY_WEIGHT_PENDING_REVIEW' =>
+    LoopL10n.current.community_contractSwitch19,
+  'COMMUNITY_ANNOUNCEMENTS_DEFERRED' =>
+    LoopL10n.current.community_contractSwitch20,
+  'COMMUNITY_LINKS_DEFERRED' => LoopL10n.current.community_contractSwitch21,
+  'MESSAGE_PREVIEW_DEFERRED' => LoopL10n.current.community_contractSwitch22,
+  'AI_MODERATION_DEFERRED' => LoopL10n.current.community_aiModelsSwitch4,
   // The two search domains that still answer nothing do so for different
   // reasons, and 「还没有开放」 said both (device walkthrough 2026-09-23 ·
   // a63–a65): the Launch module is here and has no project directory to
   // search, while no DApp directory has been integrated at all. Backend
   // decision 0071 gave each its own code and opened the asset domain.
-  'ASSET_REGISTRY_NOT_COMPOSED' => '资产注册表这次没有组合出来，稍后再试。',
-  'LAUNCH_PROJECT_DIRECTORY_PENDING' => 'LOOP 还没有 Launch 项目目录，这里没有可搜的条目。',
-  'DAPP_DIRECTORY_NOT_INTEGRATED' => 'DApp 目录暂未开放。',
-  'REFERRAL_GRAPH_DEFERRED' => '邀请数据还没有开放。',
-  'INVITE_CODE_DEFERRED' => '邀请码还没有开放，暂时不能分享。',
-  'COMMUNITY_RUNTIME_UNAVAILABLE' => '社区暂时不可用，稍后再试。',
-  'SEARCH_RUNTIME_UNAVAILABLE' => '搜索暂时不可用，稍后再试。',
-  _ => '这一项暂时读不到。',
+  'ASSET_REGISTRY_NOT_COMPOSED' => LoopL10n.current.community_contractSwitch23,
+  'LAUNCH_PROJECT_DIRECTORY_PENDING' =>
+    LoopL10n.current.community_contractSwitch24,
+  'DAPP_DIRECTORY_NOT_INTEGRATED' =>
+    LoopL10n.current.community_contractSwitch25,
+  'REFERRAL_GRAPH_DEFERRED' => LoopL10n.current.community_contractSwitch26,
+  'INVITE_CODE_DEFERRED' => LoopL10n.current.community_contractSwitch27,
+  'COMMUNITY_RUNTIME_UNAVAILABLE' =>
+    LoopL10n.current.community_contractSwitch28,
+  'SEARCH_RUNTIME_UNAVAILABLE' => LoopL10n.current.community_contractSwitch29,
+  _ => LoopL10n.current.common_itemUnavailable,
 };

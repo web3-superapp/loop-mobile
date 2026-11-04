@@ -589,7 +589,7 @@ void main() {
         voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
       );
       expect(opened, <String>[testCommunityId]);
-      expect(find.text('语音房已结束'), findsNothing);
+      expect(find.text('The voice room has ended'), findsNothing);
     });
 
     testWidgets('a link to a room that ended says so on the record', (
@@ -609,7 +609,7 @@ void main() {
         voiceRoom: FakeVoiceRoomGateway(),
       );
       expect(opened, isEmpty);
-      expect(find.text('语音房已结束'), findsOneWidget);
+      expect(find.text('The voice room has ended'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-profile-screen')),
         findsOneWidget,
@@ -661,7 +661,7 @@ void main() {
         findsWidgets,
       );
       expect(find.text('Close'), findsOneWidget);
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
       expect(notifications.written, isEmpty);
@@ -867,7 +867,8 @@ void main() {
         find.byKey(const ValueKey<String>('loop-unread-pill')),
       );
       expect((pill.decoration! as BoxDecoration).color, LoopColors.danger);
-      expect(find.bySemanticsLabel('打开消息面板，99+ 条未读'), findsOneWidget);
+      // S355f transition: the label is still Chinese, the count is ARB.
+      expect(find.bySemanticsLabel('打开消息面板, 99+ unread'), findsOneWidget);
 
       await pump(0);
       expect(

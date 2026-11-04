@@ -474,7 +474,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
@@ -502,7 +502,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-trades-empty')),
         findsOneWidget,
       );
-      expect(find.text('这一页没有成交'), findsOneWidget);
+      expect(find.text('No trades on this page'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('token-trades-state-empty')),
         findsNothing,
@@ -642,7 +642,7 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-empty')),
         findsOneWidget,
       );
-      expect(find.text('当前没有新的池'), findsOneWidget);
+      expect(find.text('No new pools right now'), findsOneWidget);
       // A source that reported nothing is not a missing source.
       expect(
         find.byKey(const ValueKey<String>('new-pairs-unavailable')),
@@ -1037,9 +1037,9 @@ void main() {
         findsNothing,
         reason: 'a save that reached nobody overwrote nothing on either side',
       );
-      expect(find.text('自选已保存'), findsNothing);
+      expect(find.text('Watchlist saved'), findsNothing);
       // The draft that was typed is still exactly what is on screen.
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
     });
   });
 
@@ -1079,7 +1079,7 @@ void main() {
           findsNothing,
           reason: 'a command that reached nobody deleted nothing',
         );
-        expect(find.text('提醒已删除'), findsNothing);
+        expect(find.text('Alert deleted'), findsNothing);
         // The list below is still the server's own answer.
         expect(
           find.byKey(const ValueKey<String>('alert-$s5AlertId')),
@@ -1127,8 +1127,8 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-save-offline')),
         findsNothing,
       );
-      expect(find.text('自选已保存'), findsNothing);
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(find.text('Watchlist saved'), findsNothing);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
     });
   });
 
@@ -1168,7 +1168,7 @@ void main() {
         find.byKey(const ValueKey<String>('alerts-command-offline')),
         findsNothing,
       );
-      expect(find.text('提醒已删除'), findsNothing);
+      expect(find.text('Alert deleted'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('alert-$s5AlertId')),
         findsOneWidget,

@@ -54,7 +54,7 @@ void _expectToolbar(WidgetTester tester, String prefix, String expandKey) {
   expect(tester.getRect(expand).top, greaterThanOrEqualTo(plot.bottom));
   // Same faces and sizes as the market's own toolbar.
   for (final (finder, label) in <(Finder, String)>[
-    (style, 'K线'),
+    (style, 'Candles'),
     (ma, 'MA'),
     (vol, 'VOL'),
   ]) {
@@ -159,7 +159,7 @@ void main() {
       await tester.tap(_key('launch2-candles-chart-style'));
       await tester.pumpAndSettle();
       expect(_chart(tester).style, LoopChartStyle.candles);
-      expect(find.text('折线'), findsOneWidget);
+      expect(find.text('Line'), findsOneWidget);
 
       await tester.tap(_key('launch2-candles-chart-ma'));
       await tester.pumpAndSettle();

@@ -310,7 +310,7 @@ void main() {
         alerts: gateway,
         notifications: FakeNotificationsGateway(),
       );
-      expect(find.textContaining('1 个提醒正在监听'), findsOneWidget);
+      expect(find.textContaining('1 alert watching'), findsOneWidget);
       expect(gateway.reads, 1);
 
       final hold = Completer<void>();
@@ -319,7 +319,7 @@ void main() {
 
       expect(gateway.reads, 2);
       // The list the page already read stays exactly where it was.
-      expect(find.textContaining('1 个提醒正在监听'), findsOneWidget);
+      expect(find.textContaining('1 alert watching'), findsOneWidget);
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(_updatingBadge, findsOneWidget);
 

@@ -58,7 +58,7 @@ void main() {
       expect(find.text(notLive), findsNothing);
       expect(find.textContaining('没有进行中的语音房'), findsNothing);
       final key = tester.widget<LoopRoundKey>(voiceKey);
-      expect(key.label, '语音房');
+      expect(key.label, 'Voice rooms');
       expect(key.onPressed, isNull);
       expect(key.onBlocked, isNotNull);
 
@@ -217,7 +217,7 @@ void main() {
     final leave = find.byKey(const ValueKey<String>('community-leave-action'));
     await scrollToCommunitySection(tester, leave);
     expect(
-      find.descendant(of: leave, matching: find.text('退出社区')),
+      find.descendant(of: leave, matching: find.text('Leave community')),
       findsOneWidget,
     );
     expect(find.textContaining('My role'), findsNothing);

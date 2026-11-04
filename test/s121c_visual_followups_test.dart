@@ -155,7 +155,7 @@ void main() {
       );
       expect(key('meme-graduated-tag'), findsOneWidget);
       expect(key('meme-row-progress'), findsNothing);
-      expect(find.text('已毕业'), findsOneWidget);
+      expect(find.text('Graduated'), findsOneWidget);
     });
 
     testWidgets('the 快打满 hero card draws its ring and name', (tester) async {
@@ -227,8 +227,11 @@ void main() {
     test('MEME links and the token community entry carry an icon', () {
       final meme = File('lib/features/meme/meme_token_screen.dart')
           .readAsStringSync();
-      expect(meme, contains("('X', links.twitter, 'link')"));
-      expect(meme, contains("('官网', links.website, 'globe')"));
+      expect(meme, contains("'X', links.twitter, 'link')"));
+      expect(
+        meme,
+        matches(RegExp(r"meme_tokenFor,\s+links\.website,\s+'globe',")),
+      );
       expect(meme, contains('leading: LoopRowIcon(icon: icon)'));
       final token = File('lib/features/market/token_screen.dart')
           .readAsStringSync();

@@ -1,0 +1,2033 @@
+{
+  "meme_createBody": {
+    "en": "What you've entered won't be saved.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:282",
+    "zh": "已填写的内容不会保存。"
+  },
+  "meme_createCancelLabel": {
+    "en": "Keep editing",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:284",
+    "zh": "继续编辑"
+  },
+  "meme_createConfirmLabel": {
+    "en": "Discard",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:283",
+    "zh": "放弃"
+  },
+  "meme_createConfirmStep": {
+    "en": "The address is set at creation",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:855",
+    "zh": "地址会在创建时确定"
+  },
+  "meme_createConfirmed": {
+    "en": "Created",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:605",
+    "zh": "已创建"
+  },
+  "meme_createEmptyMessage": {
+    "en": "This draft no longer exists",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:505",
+    "zh": "这个草稿已经不在了"
+  },
+  "meme_createErrorText": {
+    "en": "Enter an amount greater than 0, up to 18 decimal places",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:906",
+    "zh": "请输入大于 0 的金额，最多 18 位小数"
+  },
+  "meme_createHintText": {
+    "en": "1–32 characters",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:627",
+    "zh": "1–32 个字"
+  },
+  "meme_createHintText2": {
+    "en": "2–10 letters or digits",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:639",
+    "zh": "2–10 位字母或数字"
+  },
+  "meme_createIf": {
+    "en": "Only links starting with https:// are supported",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:72",
+    "zh": "只支持 https:// 开头的链接"
+  },
+  "meme_createIf2": {
+    "en": "You've used up today's creations. Come back tomorrow",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:773, lib/features/meme/meme_format.dart:100",
+    "zh": "今天的创建次数用完了，明天再来"
+  },
+  "meme_createIf3": {
+    "en": "Minimum buy {memeUsd1Label}",
+    "placeholders": {
+      "memeUsd1Label": {
+        "example": "memeUsd1Label(curve.minBuyUsd1)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:782, lib/features/meme/meme_trade_panel.dart:288",
+    "zh": "最少买入 {memeUsd1Label}"
+  },
+  "meme_createIf4": {
+    "en": "Exceeds the per-wallet limit of {memeTokenFigure}",
+    "placeholders": {
+      "memeTokenFigure": {
+        "example": "memeTokenFigure(curve.walletCapTokens)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:786",
+    "zh": "超过单钱包上限 {memeTokenFigure} 枚"
+  },
+  "meme_createLabel": {
+    "en": "Upload image",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:691",
+    "zh": "上传图片"
+  },
+  "meme_createLabel2": {
+    "en": "Change",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:691",
+    "zh": "换一张"
+  },
+  "meme_createLabel3": {
+    "en": "For sale",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:872",
+    "zh": "可售"
+  },
+  "meme_createLabel4": {
+    "en": "Trading fee",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:877, lib/features/meme/meme_token_screen.dart:753",
+    "zh": "交易费率"
+  },
+  "meme_createLabel5": {
+    "en": "Per-wallet limit",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:879, lib/features/meme/meme_token_screen.dart:757",
+    "zh": "单钱包上限"
+  },
+  "meme_createLabel6": {
+    "en": "Graduation condition",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:883",
+    "zh": "毕业条件"
+  },
+  "meme_createLabel7": {
+    "en": "Token address {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:1010",
+    "zh": "代币地址 {address}"
+  },
+  "meme_createLabelText": {
+    "en": "Symbol",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:638",
+    "zh": "符号"
+  },
+  "meme_createLabelText2": {
+    "en": "Bio (optional)",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:652",
+    "zh": "简介（可不填）"
+  },
+  "meme_createLabelText3": {
+    "en": "X (optional)",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:729",
+    "zh": "X（可不填）"
+  },
+  "meme_createLabelText4": {
+    "en": "Telegram (optional)",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:740",
+    "zh": "Telegram（可不填）"
+  },
+  "meme_createLabelText5": {
+    "en": "Website (optional)",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:751",
+    "zh": "官网（可不填）"
+  },
+  "meme_createLabelText6": {
+    "en": "First buy with USD1",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:901",
+    "zh": "用 USD1 首买"
+  },
+  "meme_createLoopButton": {
+    "en": "Create",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:606, lib/features/meme/meme_signing.dart:82",
+    "zh": "创建"
+  },
+  "meme_createLoopLabel": {
+    "en": "Token address",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:844, lib/features/meme/meme_signing.dart:99",
+    "zh": "代币地址"
+  },
+  "meme_createLoopLabel2": {
+    "en": "Parameters",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:866",
+    "zh": "参数"
+  },
+  "meme_createLoopLabel3": {
+    "en": "First buy (optional)",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:888",
+    "zh": "首买（可不填）"
+  },
+  "meme_createMedia": {
+    "en": "Image and links",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:41",
+    "zh": "图片与链接"
+  },
+  "meme_createMediaStep": {
+    "en": "Square image, crop before uploading. Without one, the symbol's first letter is used.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:700",
+    "zh": "方形图片，上传前可裁剪；不传就用符号首字母。"
+  },
+  "meme_createMemeCreateBlockedTitle": {
+    "en": "Tokens can't be created right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:526",
+    "zh": "现在不能创建代币"
+  },
+  "meme_createMemeCreateEvidencePendingBody": {
+    "en": "Contract check in progress. Creating may be unavailable for now.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:939",
+    "zh": "合约核对中，创建可能暂时不可用。"
+  },
+  "meme_createMemeCreateNextLabel": {
+    "en": "Generating address…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:580",
+    "zh": "正在生成地址…"
+  },
+  "meme_createMemeCreateNoVanityBody": {
+    "en": "A 6666 suffix can't be assigned this time. The token can still be created and traded normally.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:864",
+    "zh": "本次无法分配 6666 尾号，代币仍可正常创建和交易。"
+  },
+  "meme_createMemeCreateNoWalletBody": {
+    "en": "Loading wallet…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:933",
+    "zh": "正在读取钱包…"
+  },
+  "meme_createMemeCreateNoWalletBody2": {
+    "en": "No wallet available yet. Create or activate one in Wallet first.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:933",
+    "zh": "还没有可用的钱包，先在钱包里创建或激活一个。"
+  },
+  "meme_createMemeCreateResetLabel": {
+    "en": "Start over",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:990",
+    "zh": "重新发起"
+  },
+  "meme_createMemeCreateResumeLabel": {
+    "en": "Check again",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:974, lib/features/meme/meme_token_screen.dart:660",
+    "zh": "再查一次"
+  },
+  "meme_createMemeCreateRetiredOpenV2Label": {
+    "en": "Go to v2 launch",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:446",
+    "zh": "去 v2 发射"
+  },
+  "meme_createMemeCreateRetiredOpenV2Message": {
+    "en": "Use Loop Hook launch (v2 launch) to create new tokens.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:441",
+    "zh": "请使用 Loop Hook 发射（v2 发射）创建新代币。"
+  },
+  "meme_createMemeCreateRetiredOpenV2Title": {
+    "en": "Classic launch is retired",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:440, lib/features/meme/meme_token_screen.dart:496",
+    "zh": "经典发射已停用"
+  },
+  "meme_createMemeCreateRetiredTitle": {
+    "en": "Create token",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:434, lib/features/meme/meme_create_screen.dart:498, lib/features/meme/meme_create_screen.dart:520, lib/features/meme/meme_launchpad.dart:430",
+    "zh": "创建代币"
+  },
+  "meme_createMemeCreateRetryReportLabel": {
+    "en": "Report again",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:982, lib/features/meme/meme_token_screen.dart:668",
+    "zh": "重新上报"
+  },
+  "meme_createMemeCreateUploadFailedBody": {
+    "en": "The image didn't upload: {memeFailureText}",
+    "placeholders": {
+      "memeFailureText": {
+        "example": "memeFailureText(uploadFailure)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:716",
+    "zh": "图片没有上传成功：{memeFailureText}"
+  },
+  "meme_createPreparing": {
+    "en": "Preparing…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:603",
+    "zh": "正在准备…"
+  },
+  "meme_createS": {
+    "en": "This device can't pick images right now. Without one, the symbol's first letter is used.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:701",
+    "zh": "这台设备暂时不能选图，不传就用符号首字母。"
+  },
+  "meme_createSwitch": {
+    "en": "Name 1–32 characters",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:59",
+    "zh": "名称 1–32 个字"
+  },
+  "meme_createSwitch2": {
+    "en": "Symbol 2–10 letters or digits",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:62",
+    "zh": "符号 2–10 位字母或数字"
+  },
+  "meme_createSwitch3": {
+    "en": "Bio up to 500 characters",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:65",
+    "zh": "简介最多 500 字"
+  },
+  "meme_createText": {
+    "en": "About {memeTokenLabel}, fee {memeUsd1Label}, limit {memeTokenFigure}. The server quote applies before signing.",
+    "placeholders": {
+      "memeTokenFigure": {
+        "example": "memeTokenFigure(curve.walletCapTokens)",
+        "type": "Object"
+      },
+      "memeTokenLabel": {
+        "example": "memeTokenLabel(estimate.out, loopTickerLabel(symbol))",
+        "type": "Object"
+      },
+      "memeUsd1Label": {
+        "example": "memeUsd1Label(estimate.fee, maxFractionDigits: 4)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:921",
+    "zh": "约得 {memeTokenLabel}，手续费 {memeUsd1Label}；上限 {memeTokenFigure} 枚。签名前以服务端报价为准。"
+  },
+  "meme_createTitle": {
+    "en": "Discard token creation?",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:281",
+    "zh": "放弃创建？"
+  },
+  "meme_createValue": {
+    "en": "{memeTokenFigure}",
+    "placeholders": {
+      "memeTokenFigure": {
+        "example": "memeTokenFigure(curve.totalSupply)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:869, lib/features/meme/meme_create_screen.dart:874, lib/features/meme/meme_create_screen.dart:880, lib/features/meme/meme_token_screen.dart:750, lib/features/meme/meme_token_screen.dart:759, lib/features/meme/meme_token_screen.dart:768",
+    "zh": "{memeTokenFigure} 枚"
+  },
+  "meme_createValue2": {
+    "en": "{memeTokenFigure} ({memeBpsLabel})",
+    "placeholders": {
+      "memeBpsLabel": {
+        "example": "memeBpsLabel(saleShare)",
+        "type": "Object"
+      },
+      "memeTokenFigure": {
+        "example": "memeTokenFigure(curve.saleSupply)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:875",
+    "zh": "{memeTokenFigure} 枚（{memeBpsLabel}）"
+  },
+  "meme_createValue3": {
+    "en": "Lists on PancakeSwap automatically once the sale portion sells out",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:885",
+    "zh": "可售部分卖完后自动上 PancakeSwap"
+  },
+  "meme_createValue4": {
+    "en": "Lists on PancakeSwap automatically after raising about {memeUsd1Label}",
+    "placeholders": {
+      "memeUsd1Label": {
+        "example": "memeUsd1Label(fillTarget, maxFractionDigits: 0)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_create_screen.dart:886",
+    "zh": "募满约 {memeUsd1Label} 后自动上 PancakeSwap"
+  },
+  "meme_createWaiting": {
+    "en": "Broadcast, waiting for confirmation…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_create_screen.dart:604",
+    "zh": "已广播，等待确认…"
+  },
+  "meme_designSemantics": {
+    "en": "Not loaded",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_design.dart:153",
+    "zh": "未读取"
+  },
+  "meme_formatMemeAgeLabel": {
+    "en": "{inMinutes}m",
+    "placeholders": {
+      "inMinutes": {
+        "example": "age.inMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_format.dart:51",
+    "zh": "{inMinutes} 分钟"
+  },
+  "meme_formatMemeAgeLabel2": {
+    "en": "{inHours}h",
+    "placeholders": {
+      "inHours": {
+        "example": "age.inHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_format.dart:52",
+    "zh": "{inHours} 小时"
+  },
+  "meme_formatMemeAgeLabel3": {
+    "en": "{inDays}d",
+    "placeholders": {
+      "inDays": {
+        "example": "age.inDays",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_format.dart:53",
+    "zh": "{inDays} 天"
+  },
+  "meme_formatSwitch": {
+    "en": "No DEX pool quote yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:72",
+    "zh": "暂无外盘报价"
+  },
+  "meme_formatSwitch10": {
+    "en": "This transaction expired (not signed within about 30 seconds). Start again",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:86",
+    "zh": "这笔交易已过期（约 30 秒内未签名），请重新发起"
+  },
+  "meme_formatSwitch11": {
+    "en": "This transaction is no longer valid. Start again",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:88",
+    "zh": "这笔交易已失效，请重新发起"
+  },
+  "meme_formatSwitch12": {
+    "en": "Not enough USD1",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:89, lib/features/meme/meme_trade_panel.dart:283",
+    "zh": "USD1 余额不足"
+  },
+  "meme_formatSwitch13": {
+    "en": "Sell amount exceeds your holdings",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:90, lib/features/meme/meme_trade_panel.dart:283",
+    "zh": "卖出数量超过持有"
+  },
+  "meme_formatSwitch14": {
+    "en": "Not enough {loopLaunchNativeSymbolText} for fees",
+    "placeholders": {
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_format.dart:91",
+    "zh": "{loopLaunchNativeSymbolText} 手续费不足"
+  },
+  "meme_formatSwitch15": {
+    "en": "Exceeds the per-wallet limit of 40M",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:92",
+    "zh": "超过单钱包 4,000 万枚上限"
+  },
+  "meme_formatSwitch16": {
+    "en": "Minimum buy 1 USD1",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:93",
+    "zh": "最少买入 1 USD1"
+  },
+  "meme_formatSwitch17": {
+    "en": "Some details aren't valid. Check the name, symbol, bio and links",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:94",
+    "zh": "资料不符合要求，请检查名称、符号、简介和链接"
+  },
+  "meme_formatSwitch18": {
+    "en": "This image wasn't uploaded by this account. Upload it again",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:95",
+    "zh": "这张图片不是当前账号上传的，请重新上传"
+  },
+  "meme_formatSwitch19": {
+    "en": "The quote changed. Get a new quote",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:96",
+    "zh": "报价已变化，请重新报价"
+  },
+  "meme_formatSwitch2": {
+    "en": "DEX pool market data can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:73",
+    "zh": "外盘行情暂时取不到"
+  },
+  "meme_formatSwitch20": {
+    "en": "The on-chain transaction doesn't match what you confirmed",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:97",
+    "zh": "链上交易与确认内容不符"
+  },
+  "meme_formatSwitch21": {
+    "en": "The transaction didn't succeed on chain",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:98",
+    "zh": "交易在链上没有成功"
+  },
+  "meme_formatSwitch22": {
+    "en": "This transaction hasn't appeared on chain for a while",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:99",
+    "zh": "迟迟没有看到这笔交易上链"
+  },
+  "meme_formatSwitch23": {
+    "en": "Simulation failed. Get a new quote",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:101",
+    "zh": "试算没有通过，请重新报价"
+  },
+  "meme_formatSwitch24": {
+    "en": "Can't simulate right now. Try again later",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:102",
+    "zh": "暂时无法试算，请稍后再试"
+  },
+  "meme_formatSwitch25": {
+    "en": "Approval needed first. Can't simulate before approval",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:103",
+    "zh": "需要先授权，授权前无法试算"
+  },
+  "meme_formatSwitch26": {
+    "en": "Wallet not activated yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:104",
+    "zh": "还没有激活钱包"
+  },
+  "meme_formatSwitch27": {
+    "en": "On-chain data can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:105",
+    "zh": "链上读数暂时取不到"
+  },
+  "meme_formatSwitch28": {
+    "en": "Trading is closed for now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:106",
+    "zh": "交易暂时关闭"
+  },
+  "meme_formatSwitch29": {
+    "en": "Mainnet signing isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:107",
+    "zh": "主网签名暂未开放"
+  },
+  "meme_formatSwitch3": {
+    "en": "Not on chain yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:74",
+    "zh": "还没有上链"
+  },
+  "meme_formatSwitch30": {
+    "en": "Launchpad isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:108",
+    "zh": "发射台暂未开放"
+  },
+  "meme_formatSwitch31": {
+    "en": "Launchpad service isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:109",
+    "zh": "发射台服务暂时不可用"
+  },
+  "meme_formatSwitch32": {
+    "en": "Launchpad contract isn't configured yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:110",
+    "zh": "发射台合约还没有配置"
+  },
+  "meme_formatSwitch33": {
+    "en": "Exceeds the per-transaction limit",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:111",
+    "zh": "超过单笔金额上限"
+  },
+  "meme_formatSwitch34": {
+    "en": "Exceeds today's limit",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:112",
+    "zh": "超过今日金额上限"
+  },
+  "meme_formatSwitch35": {
+    "en": "This transaction isn't allowed right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:114",
+    "zh": "这笔交易暂不在允许范围内"
+  },
+  "meme_formatSwitch4": {
+    "en": "Price can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:75",
+    "zh": "价格暂时读不到"
+  },
+  "meme_formatSwitch5": {
+    "en": "Token doesn't exist",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:81, lib/features/meme/meme_token_screen.dart:425, lib/features/meme/meme_token_screen.dart:1516, lib/features/meme/meme_token_screen.dart:2014",
+    "zh": "代币不存在"
+  },
+  "meme_formatSwitch6": {
+    "en": "Not tradable right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:82",
+    "zh": "当前不可交易"
+  },
+  "meme_formatSwitch7": {
+    "en": "Filled, waiting to graduate",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:83",
+    "zh": "已打满，等待毕业"
+  },
+  "meme_formatSwitch8": {
+    "en": "Status changed. Refresh",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:84",
+    "zh": "状态已变化，请刷新"
+  },
+  "meme_formatSwitch9": {
+    "en": "Address already taken. Retry",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_format.dart:85",
+    "zh": "地址已被占用，请重试"
+  },
+  "meme_homeTopClosedReason": {
+    "en": "Wallet didn't load · {chainFailureReason}",
+    "placeholders": {
+      "chainFailureReason": {
+        "example": "loopChainFailureReason(directory.failureKind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:205",
+    "zh": "钱包没有读到 · {chainFailureReason}"
+  },
+  "meme_homeTopIf": {
+    "en": "Can't reach LOOP right now, so the balance can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:357",
+    "zh": "暂时连不上 LOOP，余额读不到"
+  },
+  "meme_homeTopIf2": {
+    "en": "Wallet balance can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(gate.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:359",
+    "zh": "钱包余额暂时读不到 · {reasonCodeText}"
+  },
+  "meme_homeTopLabel": {
+    "en": "{displayName} made {formatUsd} on {symbol}",
+    "placeholders": {
+      "displayName": {
+        "example": "trade.displayName",
+        "type": "Object"
+      },
+      "formatUsd": {
+        "example": "loopFormatUsd(trade.realizedUsd1)",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "trade.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:441",
+    "zh": "{displayName} 在 {symbol} 上赚了 {formatUsd}"
+  },
+  "meme_homeTopLoopLabel": {
+    "en": "Best trades this week",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:390",
+    "zh": "每周最佳交易"
+  },
+  "meme_homeTopMemeTopUpLabel": {
+    "en": "Top up",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:238",
+    "zh": "充值"
+  },
+  "meme_homeTopReason": {
+    "en": "Wallet balance can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:60, lib/features/meme/meme_home_top.dart:160",
+    "zh": "钱包余额暂时读不到"
+  },
+  "meme_homeTopReason2": {
+    "en": "No wallet yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:69",
+    "zh": "还没有钱包"
+  },
+  "meme_homeTopReason3": {
+    "en": "Balance didn't load · {chainFailureReason}",
+    "placeholders": {
+      "chainFailureReason": {
+        "example": "loopChainFailureReason(balances.failureKind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:85",
+    "zh": "余额没有读到 · {chainFailureReason}"
+  },
+  "meme_homeTopReason4": {
+    "en": "{count} assets have no price yet, so total assets aren't shown",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:94",
+    "zh": "{count} 项资产暂无价格，总资产暂不显示"
+  },
+  "meme_homeTopS": {
+    "en": "Wallet status hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_home_top.dart:357",
+    "zh": "钱包状态还没有读到"
+  },
+  "meme_homeTopText": {
+    "en": " · 24h{view}",
+    "placeholders": {
+      "view": {
+        "example": "view.quality == null ? '' : ' · ${view.quality}'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_home_top.dart:331",
+    "zh": " · 24 小时{view}"
+  },
+  "meme_launchpadEmptyMessage": {
+    "en": "No tokens yet. Create the first one",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:211",
+    "zh": "还没有代币，来创建第一个"
+  },
+  "meme_launchpadEmptyMessage2": {
+    "en": "No tokens here yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:211",
+    "zh": "这里还没有代币"
+  },
+  "meme_launchpadEmptyMessage3": {
+    "en": "Platform MEME assets appear here once they're live",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:488, lib/features/meme/meme_launchpad.dart:498",
+    "zh": "平台 MEME 资产上线后在这里显示"
+  },
+  "meme_launchpadIf": {
+    "en": "Can't reach LOOP right now, so the Launchpad can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:44",
+    "zh": "暂时连不上 LOOP，发射台读不到"
+  },
+  "meme_launchpadMemeEmptyCreateLabel": {
+    "en": "Create the first one",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:231",
+    "zh": "创建第一个"
+  },
+  "meme_launchpadMemeEmptyCreateMessage": {
+    "en": "Classic launch is retired. Use v2 launch for new tokens",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:224",
+    "zh": "经典发射已停用，新代币请走 v2 发射"
+  },
+  "meme_launchpadMemeEmptyCreateMessage2": {
+    "en": "Create the first one. It lists on PancakeSwap automatically when filled",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:226",
+    "zh": "来创建第一个，打满自动上 PancakeSwap"
+  },
+  "meme_launchpadMemeEmptyCreateTitle": {
+    "en": "No tokens yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:222",
+    "zh": "还没有代币"
+  },
+  "meme_launchpadMemeLaunchpadUnavailableMessage": {
+    "en": "Launchpad isn't available right now · {memeCapabilityText}",
+    "placeholders": {
+      "memeCapabilityText": {
+        "example": "memeCapabilityText(capability)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_launchpad.dart:140",
+    "zh": "发射台暂时不可用 · {memeCapabilityText}"
+  },
+  "meme_launchpadMemeListProvenanceDetail": {
+    "en": "Bonding pool token prices and market caps come from the LOOP curve. Graduated tokens come from DexScreener. Tokens without a price show the reason instead of 0.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:284",
+    "zh": "内盘代币的价格与市值读自 LOOP 曲线，已毕业代币读自 DexScreener；读不到价格的代币写明原因，不会显示 0。"
+  },
+  "meme_launchpadMemeMarketEmptyTitle": {
+    "en": "No MEME assets yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:497",
+    "zh": "还没有 MEME 资产"
+  },
+  "meme_launchpadMemeMarketProvenanceDetail": {
+    "en": "{orderingLabel}. Bonding pool tokens come from the LOOP curve and graduated tokens from DexScreener. Tokens without a quote show the reason.",
+    "placeholders": {
+      "orderingLabel": {
+        "example": "page.rules.orderingLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_launchpad.dart:538",
+    "zh": "{orderingLabel}。内盘代币读自 LOOP 曲线，已毕业代币读自 DexScreener；读不到报价的代币写明原因。"
+  },
+  "meme_launchpadMemeMarketUnavailableMessage": {
+    "en": "Market isn't available right now · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(capability.reasonCode ?? _marketFallbackReason)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_launchpad.dart:470",
+    "zh": "行情暂时不可用 · {reasonCodeText}"
+  },
+  "meme_launchpadMemeSearchEntryLabel": {
+    "en": "Search tokens",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:395, lib/features/meme/meme_launchpad.dart:415",
+    "zh": "搜索代币"
+  },
+  "meme_launchpadS": {
+    "en": "Launchpad status hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_launchpad.dart:44",
+    "zh": "发射台状态还没有读到"
+  },
+  "meme_modelsBroadcastReported": {
+    "en": "Broadcast, waiting for confirmation",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:690",
+    "zh": "已广播，等待确认"
+  },
+  "meme_modelsFailed": {
+    "en": "Didn't succeed",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:692",
+    "zh": "未成功"
+  },
+  "meme_modelsFiveMinutes": {
+    "en": "5m",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:568, lib/features/meme/meme_token_screen.dart:74",
+    "zh": "5分"
+  },
+  "meme_modelsFresh": {
+    "en": "New",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:58",
+    "zh": "新发"
+  },
+  "meme_modelsGraduating": {
+    "en": "Almost full",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:60",
+    "zh": "快打满"
+  },
+  "meme_modelsHot": {
+    "en": "Hot",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:59",
+    "zh": "热门"
+  },
+  "meme_modelsLoopCurve": {
+    "en": "LOOP curve",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:99",
+    "zh": "LOOP 曲线"
+  },
+  "meme_modelsOneMinute": {
+    "en": "1m",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_models.dart:567, lib/features/meme/meme_token_screen.dart:73",
+    "zh": "1分"
+  },
+  "meme_screenLaunch2ListAllUnavailableMessage": {
+    "en": "MEME v2 isn't available right now · {launch2CapabilityText}",
+    "placeholders": {
+      "launch2CapabilityText": {
+        "example": "launch2CapabilityText(capability)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_screen.dart:245",
+    "zh": "MEME v2 暂时不可用 · {launch2CapabilityText}"
+  },
+  "meme_signingBuy": {
+    "en": "Confirm buy",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:77, lib/features/meme/meme_trade_panel.dart:483",
+    "zh": "确认买入"
+  },
+  "meme_signingConfirmed": {
+    "en": "{noun} confirmed on chain.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:879",
+    "zh": "{noun}已在链上确认。"
+  },
+  "meme_signingCreate": {
+    "en": "Confirm create",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:76",
+    "zh": "确认创建"
+  },
+  "meme_signingExpired": {
+    "en": "{noun} expired: {memeReasonText}.",
+    "placeholders": {
+      "memeReasonText": {
+        "example": "memeReasonText(state.intent?.reasonCode ?? 'MEME_INTENT_EXPIRED')",
+        "type": "Object"
+      },
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:883",
+    "zh": "{noun}已过期：{memeReasonText}。"
+  },
+  "meme_signingFailed": {
+    "en": "{noun} didn't succeed: {memeReasonText}.",
+    "placeholders": {
+      "memeReasonText": {
+        "example": "memeReasonText(state.intent?.reasonCode)",
+        "type": "Object"
+      },
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:881",
+    "zh": "{noun}没有成功：{memeReasonText}。"
+  },
+  "meme_signingIf": {
+    "en": "Approval broadcast ({memeShortAddress}), but the wallet result of the {noun} transaction is unknown, so it's locked. Don't sign again. Refresh later.",
+    "placeholders": {
+      "memeShortAddress": {
+        "example": "memeShortAddress(outcome.approvalTxHash!)",
+        "type": "Object"
+      },
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:202",
+    "zh": "授权已广播（{memeShortAddress}），但{noun}交易的钱包结果未知，已锁定。不要重复签名，稍后刷新查看。"
+  },
+  "meme_signingIf2": {
+    "en": "The wallet result is unknown, so this {noun} is locked. Don't sign again. Refresh later.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:205",
+    "zh": "钱包的结果未知，这笔{noun}已锁定。不要重复签名，稍后刷新查看。"
+  },
+  "meme_signingIf3": {
+    "en": "Broadcast ({short}) and recorded by the server. Broadcast doesn't mean filled. Waiting for on-chain confirmation.",
+    "placeholders": {
+      "short": {
+        "example": "short",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:209",
+    "zh": "已广播（{short}），服务端已记录。广播不代表已成交，正在等待链上确认。"
+  },
+  "meme_signingIf4": {
+    "en": "Broadcast ({short}). {memeReportReasonText}",
+    "placeholders": {
+      "memeReportReasonText": {
+        "example": "memeReportReasonText(outcome.reasonCode)",
+        "type": "Object"
+      },
+      "short": {
+        "example": "short",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:211",
+    "zh": "已广播（{short}）。{memeReportReasonText}"
+  },
+  "meme_signingIntentField": {
+    "en": "Can't simulate before approval",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:139",
+    "zh": "授权前无法试算"
+  },
+  "meme_signingLabel": {
+    "en": "Estimated to receive",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:107",
+    "zh": "预计到手"
+  },
+  "meme_signingLabel2": {
+    "en": "Minimum received",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:108",
+    "zh": "最少到手"
+  },
+  "meme_signingLabel3": {
+    "en": "First buy payment",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:111",
+    "zh": "首买支付"
+  },
+  "meme_signingLabel4": {
+    "en": "Refund when full",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:120, lib/features/meme/meme_trade_panel.dart:561",
+    "zh": "打满退回"
+  },
+  "meme_signingLabel5": {
+    "en": "Fee",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:124",
+    "zh": "手续费"
+  },
+  "meme_signingLabel6": {
+    "en": "Approve first",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:129",
+    "zh": "先授权"
+  },
+  "meme_signingPollTimedOut": {
+    "en": "Broadcast, but no confirmation yet. It may still be confirming, so check again later. Don't repeat the {noun}.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:878",
+    "zh": "已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复{noun}。"
+  },
+  "meme_signingPreparing": {
+    "en": "Preparing {noun}. The wallet isn't open yet.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:859",
+    "zh": "正在准备{noun}，还没有打开钱包。"
+  },
+  "meme_signingReason": {
+    "en": "Your wallet opens twice: approve first, then {memeIntentNoun}. The approval covers only this transaction.",
+    "placeholders": {
+      "memeIntentNoun": {
+        "example": "memeIntentNoun(widget.intent.kind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:503",
+    "zh": "会依次打开两次钱包：先授权，再{memeIntentNoun}。授权金额只够这一笔。"
+  },
+  "meme_signingSell": {
+    "en": "Confirm sell",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:78, lib/features/meme/meme_trade_panel.dart:483",
+    "zh": "确认卖出"
+  },
+  "meme_signingSetState": {
+    "en": "Approval broadcast, but {memeIntentNoun} wasn't signed, so no {memeIntentNoun2} transaction was submitted. Close and start again.",
+    "placeholders": {
+      "memeIntentNoun": {
+        "example": "memeIntentNoun(widget.intent.kind)",
+        "type": "Object"
+      },
+      "memeIntentNoun2": {
+        "example": "memeIntentNoun(widget.intent.kind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:550",
+    "zh": "授权已广播，{memeIntentNoun}没有签名，没有提交{memeIntentNoun2}交易。可以关闭后重新发起。"
+  },
+  "meme_signingSwitch": {
+    "en": "Cancelled. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:163",
+    "zh": "已取消，没有发生任何变化。"
+  },
+  "meme_signingSwitch10": {
+    "en": "Simulation failed, so this transaction would be rejected on chain. Nothing was submitted. Get a new quote.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:173",
+    "zh": "试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易，请重新报价。"
+  },
+  "meme_signingSwitch11": {
+    "en": "The wallet didn't finish signing. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:175",
+    "zh": "钱包没有完成签名，没有提交任何交易。"
+  },
+  "meme_signingSwitch12": {
+    "en": "A different hash was already reported for this transaction, so this broadcast wasn't recorded. It may already be on chain. Don't sign again.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:181",
+    "zh": "这笔交易已经上报过另一笔哈希，本次广播没有被记录。交易可能已经上链，不要重复签名。"
+  },
+  "meme_signingSwitch13": {
+    "en": "The server no longer accepts reports for this transaction. The wallet already broadcast it and it may be on chain. Don't sign again.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:182",
+    "zh": "服务端已不再接受这笔交易的上报。钱包已经广播，交易可能已经上链，不要重复签名。"
+  },
+  "meme_signingSwitch14": {
+    "en": "This transaction expired and isn't visible on chain yet, so the report wasn't accepted. It may still be propagating. Don't sign again.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:183",
+    "zh": "这笔交易已过期，链上暂时还看不到它，上报没有被接受。交易可能仍在传播，不要重复签名。"
+  },
+  "meme_signingSwitch15": {
+    "en": "The on-chain transaction doesn't match what you confirmed, so the server didn't record it. Don't sign again, and contact support.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:184",
+    "zh": "链上这笔交易与确认内容不一致，服务端没有记录它。不要重复签名，并联系支持。"
+  },
+  "meme_signingSwitch16": {
+    "en": "The wallet already broadcast, but this report wasn't accepted or didn't arrive. The transaction may be on chain. You can report again later. Don't sign again.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:185",
+    "zh": "钱包已经广播，但这次上报没有被服务端接受或没有送达。交易可能已经上链，可以稍后重新上报；不要重复签名。"
+  },
+  "meme_signingSwitch17": {
+    "en": "Approval broadcast, but {noun} wasn't signed. You can start again.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:869",
+    "zh": "授权已广播，{noun}没有签名。可以重新发起。"
+  },
+  "meme_signingSwitch18": {
+    "en": "This {noun} is locked. Don't sign again.",
+    "placeholders": {
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:875",
+    "zh": "这笔{noun}已锁定，不要重复签名。"
+  },
+  "meme_signingSwitch2": {
+    "en": "Identity check failed. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:164",
+    "zh": "身份验证没有通过，没有发生任何变化。"
+  },
+  "meme_signingSwitch3": {
+    "en": "This transaction expired. Nothing was submitted. Start again.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:165, lib/features/meme/meme_signing.dart:174",
+    "zh": "这笔交易已过期，没有提交任何交易。请重新发起。"
+  },
+  "meme_signingSwitch4": {
+    "en": "The transaction doesn't match what you confirmed, so signing was refused. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:166",
+    "zh": "交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。"
+  },
+  "meme_signingSwitch5": {
+    "en": "The wallet for this transaction isn't in your wallet list. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:167",
+    "zh": "钱包目录里找不到这笔交易的钱包，没有提交任何交易。"
+  },
+  "meme_signingSwitch6": {
+    "en": "The server built this transaction for a different wallet, so signing was refused. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:168",
+    "zh": "服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。"
+  },
+  "meme_signingSwitch7": {
+    "en": "Signing isn't allowed on this chain. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:170",
+    "zh": "这条链不允许签名，没有提交任何交易。"
+  },
+  "meme_signingSwitch8": {
+    "en": "The wallet can't sign on this chain right now. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:171",
+    "zh": "钱包暂时不能在这条链上签名，没有提交任何交易。"
+  },
+  "meme_signingSwitch9": {
+    "en": "The signed-in wallet isn't this transaction's wallet. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:172",
+    "zh": "当前登录的钱包不是这笔交易的钱包，没有提交任何交易。"
+  },
+  "meme_signingTitle": {
+    "en": "Approve",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_signing.dart:269",
+    "zh": "授权"
+  },
+  "meme_signingValue": {
+    "en": "{memeTokenLabel} to the curve contract",
+    "placeholders": {
+      "memeTokenLabel": {
+        "example": "memeTokenLabel(approval.amount, ticker)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:131",
+    "zh": "{memeTokenLabel} 给曲线合约"
+  },
+  "meme_signingWaiting": {
+    "en": "Broadcast, waiting for on-chain confirmation (checked {attempts} times). Don't repeat the {noun}.",
+    "placeholders": {
+      "attempts": {
+        "example": "state.attempts",
+        "type": "Object"
+      },
+      "noun": {
+        "example": "noun",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_signing.dart:872",
+    "zh": "已广播，正在等待链上确认（已读取 {attempts} 次）。不要重复{noun}。"
+  },
+  "meme_tokenBuild": {
+    "en": "DEX pool price",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1065",
+    "zh": "外盘价格"
+  },
+  "meme_tokenBuild2": {
+    "en": "Holding {memeTokenLabel}",
+    "placeholders": {
+      "memeTokenLabel": {
+        "example": "memeTokenLabel(balance, loopTickerLabel(detail.row.symbol))",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1155, lib/features/meme/meme_trade_panel.dart:371",
+    "zh": "持有 {memeTokenLabel}"
+  },
+  "meme_tokenBuild3": {
+    "en": "100% · Graduated",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1180",
+    "zh": "100% · 已毕业"
+  },
+  "meme_tokenBuild4": {
+    "en": "{memeBpsLabel} · {memeCapLabel} to go",
+    "placeholders": {
+      "memeBpsLabel": {
+        "example": "memeBpsLabel(bps)",
+        "type": "Object"
+      },
+      "memeCapLabel": {
+        "example": "memeCapLabel(memeUnits(left))",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1182",
+    "zh": "{memeBpsLabel} · 还差 {memeCapLabel}"
+  },
+  "meme_tokenBuild5": {
+    "en": "Buy",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1807",
+    "zh": "买"
+  },
+  "meme_tokenCopy": {
+    "en": "Contract address copied",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:396",
+    "zh": "已复制合约地址"
+  },
+  "meme_tokenCopy2": {
+    "en": "Pool address copied",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:471",
+    "zh": "已复制池地址"
+  },
+  "meme_tokenCreatorBadge": {
+    "en": "Dev",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1734",
+    "zh": "创建者"
+  },
+  "meme_tokenDetail": {
+    "en": "Holding = net curve buys minus sells. Transfers between wallets don't count. Share is out of a 1B total supply.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1637",
+    "zh": "持仓 = 曲线买入减卖出的净额，钱包之间的转账不计；占比以 10 亿总量为分母。"
+  },
+  "meme_tokenDetail2": {
+    "en": "Buy amounts are what was paid (including the 1% fee, excluding refunds). Sell amounts are what was received (after fees).",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1773",
+    "zh": "买入金额是实付（含 1% 手续费、不含退回），卖出金额是实收（已扣费）。"
+  },
+  "meme_tokenEmptyMessage": {
+    "en": "No holders yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1559, lib/features/meme/meme_token_screen.dart:1593",
+    "zh": "还没有持有者"
+  },
+  "meme_tokenFor": {
+    "en": "Website",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:706",
+    "zh": "官网"
+  },
+  "meme_tokenFull": {
+    "en": "Filled",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:92",
+    "zh": "已打满"
+  },
+  "meme_tokenGraduatedChartHint": {
+    "en": " See the DEX pool market for the trend after graduation.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1466",
+    "zh": "毕业后的走势在外盘行情里看。"
+  },
+  "meme_tokenIf": {
+    "en": "{holderCount} holders · Counted from curve trades",
+    "placeholders": {
+      "holderCount": {
+        "example": "page.holderCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1574",
+    "zh": "{holderCount} 个持有者 · 按曲线买卖统计"
+  },
+  "meme_tokenLabel": {
+    "en": "Token contract",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:741",
+    "zh": "代币合约"
+  },
+  "meme_tokenLabel10": {
+    "en": "24h volume",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1205",
+    "zh": "24h 交易量"
+  },
+  "meme_tokenLabel11": {
+    "en": "All holders",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1583",
+    "zh": "全部持有者"
+  },
+  "meme_tokenLabel12": {
+    "en": "All activity",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1728",
+    "zh": "全部动态"
+  },
+  "meme_tokenLabel2": {
+    "en": "Curve contract",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:743",
+    "zh": "曲线合约"
+  },
+  "meme_tokenLabel3": {
+    "en": "Contract version",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:746",
+    "zh": "合约版本"
+  },
+  "meme_tokenLabel4": {
+    "en": "PancakeSwap pool",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:764",
+    "zh": "PancakeSwap 池"
+  },
+  "meme_tokenLabel5": {
+    "en": "USD1 added",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:766",
+    "zh": "注入 USD1"
+  },
+  "meme_tokenLabel6": {
+    "en": "Tokens added",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:768",
+    "zh": "注入代币"
+  },
+  "meme_tokenLabel7": {
+    "en": "LP burned",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:770",
+    "zh": "LP 已烧毁"
+  },
+  "meme_tokenLabel8": {
+    "en": "Graduated at",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:771",
+    "zh": "毕业时间"
+  },
+  "meme_tokenLabel9": {
+    "en": "Fill progress",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1199",
+    "zh": "打满进度"
+  },
+  "meme_tokenLoopInlineUnavailable": {
+    "en": "This token was hidden from the Launchpad · {text}",
+    "placeholders": {
+      "text": {
+        "example": "text",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:567",
+    "zh": "运营已将此代币从发射台隐藏 · {text}"
+  },
+  "meme_tokenLoopInlineUnavailable2": {
+    "en": "This token was hidden from the Launchpad",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:568",
+    "zh": "运营已将此代币从发射台隐藏"
+  },
+  "meme_tokenLoopLabel": {
+    "en": "Creator",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:720, lib/features/meme/meme_token_screen.dart:1657",
+    "zh": "创建者"
+  },
+  "meme_tokenLoopSheetHeading": {
+    "en": "Share token",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1873",
+    "zh": "分享代币"
+  },
+  "meme_tokenMemeAboutDexSubtitle": {
+    "en": "Price and candles after graduation",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:785",
+    "zh": "毕业后的价格与 K 线"
+  },
+  "meme_tokenMemeAboutDexTitle": {
+    "en": "DEX pool market",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:784",
+    "zh": "外盘行情"
+  },
+  "meme_tokenMemeAboutExplorerTitle": {
+    "en": "Block explorer",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:799",
+    "zh": "区块浏览器"
+  },
+  "meme_tokenMemeAboutProvenanceDetail": {
+    "en": "Curve status, holders and trades come from LOOP's index of curve contract events. Only tokens created through LOOP are listed.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:812",
+    "zh": "曲线状态、持有者与成交读自 LOOP 对曲线合约事件的索引；只列出经 LOOP 创建的代币。"
+  },
+  "meme_tokenMemeAboutResidualMessage": {
+    "en": "The DEX pool exists. Some funds remain in the contract",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:776",
+    "zh": "外盘池已存在，部分资金留在合约"
+  },
+  "meme_tokenMemeCandlesProvenanceDetail": {
+    "en": "Prices after each curve trade are grouped into candles by interval. Empty intervals aren't filled.{series}",
+    "placeholders": {
+      "series": {
+        "example": "series.frozenAt == null ? '' : '毕业后的走势在外盘行情里看。'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1403",
+    "zh": "每笔曲线成交后的价格按时段聚成 K 线；空时段不补。{series}"
+  },
+  "meme_tokenMemeCandlesProvenancePrefix": {
+    "en": "In USD1",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1401",
+    "zh": "单位 USD1"
+  },
+  "meme_tokenMemeCandlesProvenancePrefix2": {
+    "en": "Stops at graduation",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1401",
+    "zh": "毕业后停在毕业时"
+  },
+  "meme_tokenMemeChartEmptyMessage": {
+    "en": "A few more trades and the trend will appear",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1337",
+    "zh": "多几笔成交，走势就会画出来"
+  },
+  "meme_tokenMemeProvenance": {
+    "en": "LOOP on-chain index",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:809, lib/features/meme/meme_token_screen.dart:1399, lib/features/meme/meme_token_screen.dart:1635, lib/features/meme/meme_token_screen.dart:1771, lib/features/meme/meme_trade_panel.dart:567",
+    "zh": "LOOP 链上索引"
+  },
+  "meme_tokenMemeTokenBlockedTitle": {
+    "en": "Launchpad isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:413, lib/features/meme/meme_token_screen.dart:1485, lib/features/meme/meme_token_screen.dart:2004",
+    "zh": "发射台暂时不可用"
+  },
+  "meme_tokenMemeTokenCopyPoolLabel": {
+    "en": "Copy pool",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:469",
+    "zh": "复制池地址"
+  },
+  "meme_tokenMemeTokenEvidencePendingMessage": {
+    "en": "Contract check in progress. Trading may be unavailable for now",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:603",
+    "zh": "合约核对中，交易可能暂时不可用"
+  },
+  "meme_tokenMemeTokenFullLabel": {
+    "en": "Filled, graduating…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:519",
+    "zh": "打满，毕业中…"
+  },
+  "meme_tokenMemeTokenGraduatedCloseBody": {
+    "en": "The curve is filled, the token is on PancakeSwap and the LP is burned.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1256",
+    "zh": "曲线已打满，代币已上 PancakeSwap，LP 已烧毁。"
+  },
+  "meme_tokenMemeTokenInvalidIdentityMessage": {
+    "en": "No data was requested and no other token was used instead.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:329, lib/features/meme/meme_token_screen.dart:1467, lib/features/meme/meme_token_screen.dart:1955",
+    "zh": "没有请求任何数据，也没有回退到其他代币。"
+  },
+  "meme_tokenMemeTokenInvalidIdentityTitle": {
+    "en": "No usable token ID in the route",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:328, lib/features/meme/meme_token_screen.dart:1466, lib/features/meme/meme_token_screen.dart:1954",
+    "zh": "路由中没有可用的代币标识"
+  },
+  "meme_tokenMemeTokenInvalidRouteTitle": {
+    "en": "Can't open this token",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:322",
+    "zh": "无法打开这个代币"
+  },
+  "meme_tokenMemeTokenLiquidityLowBody": {
+    "en": "Low liquidity · Bonding pool reserve {memeCapLabel}. Large buys have high slippage",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(memeUnits(detail.curve.realUsd1))",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:588",
+    "zh": "流动性低 · 内盘储备 {memeCapLabel}，大额买入滑点高"
+  },
+  "meme_tokenMemeTokenPausedLabel": {
+    "en": "Trading paused",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:526",
+    "zh": "已暂停交易"
+  },
+  "meme_tokenMemeTokenPendingLabel": {
+    "en": "Creating…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:512",
+    "zh": "创建中…"
+  },
+  "meme_tokenMemeTokenPriceProvenanceDetail": {
+    "en": "Bonding pool price = ratio of the curve's virtual reserves. Market cap = price × 1B total supply.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:611",
+    "zh": "内盘价格 = 曲线虚拟储备之比，市值 = 价格 × 10 亿总量。"
+  },
+  "meme_tokenMemeTokenPriceProvenanceDetail2": {
+    "en": "Price and market cap after graduation come from DexScreener.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:612",
+    "zh": "毕业后的价格与市值读自 DexScreener。"
+  },
+  "meme_tokenMemeTokenProgressBarSemanticLabel": {
+    "en": "Bonding pool progress {memeBpsLabel}",
+    "placeholders": {
+      "memeBpsLabel": {
+        "example": "memeBpsLabel(bps)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1221, lib/features/meme/meme_widgets.dart:240, lib/features/meme/meme_widgets.dart:330, lib/features/meme/meme_widgets.dart:555",
+    "zh": "内盘进度 {memeBpsLabel}"
+  },
+  "meme_tokenMemeTokenQuickBuySurfaceLabel": {
+    "en": "Quick buy",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:904",
+    "zh": "快买"
+  },
+  "meme_tokenMemeTokenResumeLabel": {
+    "en": "Continue creating",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:503",
+    "zh": "继续创建"
+  },
+  "meme_tokenMemeTokenSwapLabel": {
+    "en": "Go to Swap",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:479",
+    "zh": "去兑换"
+  },
+  "meme_tokenMemeTokenSwapTestnetMessage": {
+    "en": "In-app swap isn't supported yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:462",
+    "zh": "暂不支持站内兑换"
+  },
+  "meme_tokenMemeTokenViewerUnavailableMessage": {
+    "en": "My holdings can't be loaded · {memeReasonText}",
+    "placeholders": {
+      "memeReasonText": {
+        "example": "memeReasonText(reason)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:597",
+    "zh": "我的持仓暂时读不到 · {memeReasonText}"
+  },
+  "meme_tokenMessage": {
+    "en": "No wallet available yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:253",
+    "zh": "还没有可用的钱包"
+  },
+  "meme_tokenMessage3": {
+    "en": "Holders appear here after the first buy",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1594",
+    "zh": "第一笔买入后，持有者会出现在这里"
+  },
+  "meme_tokenMessage4": {
+    "en": "Trades appear here after a buy or sell",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1738",
+    "zh": "买入或卖出后，成交会出现在这里"
+  },
+  "meme_tokenNoAddressYet": {
+    "en": "No address yet",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1025",
+    "zh": "还没有地址"
+  },
+  "meme_tokenPaused": {
+    "en": "Paused",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:93",
+    "zh": "暂停"
+  },
+  "meme_tokenPendingChain": {
+    "en": "Creating",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:90",
+    "zh": "创建中"
+  },
+  "meme_tokenS": {
+    "en": "{holderCount} holders · Counted from curve trades · Frozen at graduation",
+    "placeholders": {
+      "holderCount": {
+        "example": "page.holderCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1575",
+    "zh": "{holderCount} 个持有者 · 按曲线买卖统计 · 分布冻结于毕业时"
+  },
+  "meme_tokenS2": {
+    "en": "Sell",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1807",
+    "zh": "卖"
+  },
+  "meme_tokenSemanticLabel": {
+    "en": "{candles} {label} {style}, in USD1",
+    "placeholders": {
+      "candles": {
+        "example": "series.candles.length",
+        "type": "Object"
+      },
+      "label": {
+        "example": "widget.interval.label",
+        "type": "Object"
+      },
+      "style": {
+        "example": "_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1352",
+    "zh": "{candles} 根{label}{style}，单位 USD1"
+  },
+  "meme_tokenSemanticLabel2": {
+    "en": "Token contract address QR code",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:1890",
+    "zh": "代币合约地址二维码"
+  },
+  "meme_tokenShare": {
+    "en": "Contract {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:292",
+    "zh": "合约 {address}"
+  },
+  "meme_tokenShare2": {
+    "en": "View on LOOP Launchpad",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:293",
+    "zh": "在 LOOP 发射台查看"
+  },
+  "meme_tokenSubtitle": {
+    "en": "The creator has no public profile",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:731",
+    "zh": "创建者没有公开资料"
+  },
+  "meme_tokenSubtitle2": {
+    "en": "View public profile",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:731",
+    "zh": "查看公开资料"
+  },
+  "meme_tokenSubtitle3": {
+    "en": "#{rank} · {memeTokenCompact} {symbol}",
+    "placeholders": {
+      "memeTokenCompact": {
+        "example": "memeTokenCompact(holder.balance)",
+        "type": "Object"
+      },
+      "rank": {
+        "example": "rank",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_token_screen.dart:1668",
+    "zh": "第 {rank} · {memeTokenCompact} {symbol}"
+  },
+  "meme_tokenText": {
+    "en": "1D",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:78",
+    "zh": "1天"
+  },
+  "meme_tokenTitle": {
+    "en": "No public profile",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:730",
+    "zh": "未公开资料"
+  },
+  "meme_tokenTrading": {
+    "en": "Bonding pool",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:91",
+    "zh": "内盘"
+  },
+  "meme_tokenValue": {
+    "en": "No limit after graduation",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_token_screen.dart:760",
+    "zh": "毕业后不限"
+  },
+  "meme_tradePanelIf": {
+    "en": "Exceeds the per-wallet limit of {memeTokenFigure}",
+    "placeholders": {
+      "memeTokenFigure": {
+        "example": "memeTokenFigure(_detail.curve.walletCapTokens)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:293",
+    "zh": "超过单钱包 {memeTokenFigure} 枚上限"
+  },
+  "meme_tradePanelIf2": {
+    "en": "This amount gets no tokens. Adjust it",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:296",
+    "zh": "这个金额得不到代币，请调整"
+  },
+  "meme_tradePanelLabel": {
+    "en": "Get",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:543",
+    "zh": "得"
+  },
+  "meme_tradePanelLabel2": {
+    "en": "Fee",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:550",
+    "zh": "费"
+  },
+  "meme_tradePanelLabel3": {
+    "en": "Impact",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:555",
+    "zh": "影响"
+  },
+  "meme_tradePanelLoopProvenanceLine": {
+    "en": "On-chain curve",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:567",
+    "zh": "链上曲线"
+  },
+  "meme_tradePanelLoopSheetHeading": {
+    "en": "Buy {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "_ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:319",
+    "zh": "买入 {ticker}"
+  },
+  "meme_tradePanelMemeTradeBalance": {
+    "en": "Wallet data can't be loaded · {memeReasonText}",
+    "placeholders": {
+      "memeReasonText": {
+        "example": "memeReasonText(viewerReason ?? 'MEME_VIEWER_WALLET_MISSING')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:368",
+    "zh": "钱包读数暂时取不到 · {memeReasonText}"
+  },
+  "meme_tradePanelMemeTradeBalance2": {
+    "en": "Available {memeUsd1Label}",
+    "placeholders": {
+      "memeUsd1Label": {
+        "example": "memeUsd1Label(balance)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:370",
+    "zh": "可用 {memeUsd1Label}"
+  },
+  "meme_tradePanelMemeTradeQuoteEmpty": {
+    "en": "Getting quote…",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:532",
+    "zh": "正在报价…"
+  },
+  "meme_tradePanelMemeTradeQuoteEmpty2": {
+    "en": "Enter an amount to see a quote",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:532",
+    "zh": "输入金额后显示报价"
+  },
+  "meme_tradePanelMemeTradeQuoteFailedMessage": {
+    "en": "Couldn't get a quote · {memeFailureText}",
+    "placeholders": {
+      "memeFailureText": {
+        "example": "memeFailureText(failure!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:526",
+    "zh": "没有取到报价 · {memeFailureText}"
+  },
+  "meme_tradePanelMemeTradeQuoteProvenanceDetail": {
+    "en": "The quote uses the current on-chain curve.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:571",
+    "zh": "报价按链上当前曲线计算。"
+  },
+  "meme_tradePanelMemeTradeQuoteProvenanceDetail2": {
+    "en": "On-chain reads aren't available, so the quote uses the index snapshot and may lag a few blocks.",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:572",
+    "zh": "链上暂时读不到，报价按索引快照计算，可能落后几个区块。"
+  },
+  "meme_tradePanelMemeTradeSlippageCustomLabel": {
+    "en": "Custom",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_trade_panel.dart:444",
+    "zh": "自定义"
+  },
+  "meme_tradePanelS": {
+    "en": "Exceeds the per-wallet limit. You can buy up to {memeTokenLabel} more",
+    "placeholders": {
+      "memeTokenLabel": {
+        "example": "memeTokenLabel(left, _ticker)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:294",
+    "zh": "超过单钱包上限，最多还能买 {memeTokenLabel}"
+  },
+  "meme_tradePanelS2": {
+    "en": "Sell {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "_ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_trade_panel.dart:319",
+    "zh": "卖出 {ticker}"
+  },
+  "meme_widgetsBuild": {
+    "en": "{memeCapLabel} volume",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(volume)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_widgets.dart:410",
+    "zh": "{memeCapLabel} 交易量"
+  },
+  "meme_widgetsMemeChangeUnreported": {
+    "en": "1h change not reported",
+    "placeholders": {},
+    "where": "lib/features/meme/meme_widgets.dart:144, lib/features/meme/meme_widgets.dart:327",
+    "zh": "1h 涨跌未报告"
+  },
+  "meme_widgetsMemeTokenSpokenLabel": {
+    "en": "Market cap {memeCapLabel}",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(cap)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_widgets.dart:328, lib/features/meme/meme_widgets.dart:432, lib/features/meme/meme_widgets.dart:642",
+    "zh": "市值 {memeCapLabel}"
+  },
+  "meme_widgetsMemeTokenSpokenLabel2": {
+    "en": "{holderCount} holders",
+    "placeholders": {
+      "holderCount": {
+        "example": "row.holderCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_widgets.dart:329",
+    "zh": "{holderCount} 持有"
+  },
+  "meme_widgetsSemantics": {
+    "en": "Volume {memeCapLabel}",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(volume)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_widgets.dart:512",
+    "zh": "交易量 {memeCapLabel}"
+  },
+  "meme_widgetsSemantics2": {
+    "en": "Live {age}",
+    "placeholders": {
+      "age": {
+        "example": "age",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/meme/meme_widgets.dart:513",
+    "zh": "上线 {age}"
+  }
+}

@@ -229,22 +229,22 @@ void main() {
         find.byKey(const ValueKey<String>('profile-owned-communities')),
       );
 
-      expect(find.text('审核中'), findsOneWidget);
-      expect(find.text('已通过'), findsOneWidget);
-      expect(find.text('已驳回'), findsOneWidget);
+      expect(find.text('In review'), findsOneWidget);
+      expect(find.text('Approved'), findsOneWidget);
+      expect(find.text('Rejected'), findsOneWidget);
       // A pending or accepted row dates the version under review; a refused
       // one states the reason instead, because that is what its owner can act
       // on. The reason is elided at 30 code points.
       expect(
         _row(tester, 'profile-owned-$_ownedId').subtitle,
-        '提交于 ${_local(DateTime.utc(2026, 9, 10, 3, 5))}',
+        'Submitted ${_local(DateTime.utc(2026, 9, 10, 3, 5))}',
       );
       expect(
         _row(
           tester,
           'profile-owned-3fa85f64-5717-4562-b3fc-2c963f66af44',
         ).subtitle,
-        '驳回：社区名称与已经上线的官方社区重复，请换一个更具体的名称后再提…',
+        'Rejected: 社区名称与已经上线的官方社区重复，请换一个更具体的名称后再提…',
       );
     });
 
@@ -285,9 +285,9 @@ void main() {
 
       expect(
         _row(tester, 'profile-owned-$_ownedId').subtitle,
-        startsWith('创建于 '),
+        startsWith('Created '),
       );
-      expect(find.text('审核中'), findsOneWidget);
+      expect(find.text('In review'), findsOneWidget);
     });
   });
 
@@ -403,7 +403,7 @@ void main() {
 
       expect(find.text('Review notifications'), findsNothing);
       // The group above already carries the authoritative state.
-      expect(find.text('审核中'), findsOneWidget);
+      expect(find.text('In review'), findsOneWidget);
     });
   });
 
@@ -435,10 +435,17 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('审核中 · 提交于 ${_local(DateTime.utc(2026, 9, 10, 3, 5))}'),
+        find.text(
+          'In review · Submitted ${_local(DateTime.utc(2026, 9, 10, 3, 5))}',
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('通过后开放挖矿权重与官方群'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Mining weight and the official group open after approval',
+        ),
+        findsOneWidget,
+      );
       // Decision 0092: the card's own ground stands at the first of the two
       // milestones (submitted, decided), once the fill has settled.
       await tester.pumpAndSettle();
@@ -481,9 +488,10 @@ void main() {
         ),
       );
 
-      expect(find.text('已驳回'), findsOneWidget);
+      // 已驳回 (the card) and 未通过 (the badge) are both "Rejected" in English.
+      expect(find.text('Rejected'), findsNWidgets(2));
       expect(
-        find.text('原因：社区名称与已经上线的官方社区重复，请换一个更具体的名称后再提交申请。'),
+        find.text('Reason: 社区名称与已经上线的官方社区重复，请换一个更具体的名称后再提交申请。'),
         findsOneWidget,
       );
       expect(
@@ -600,7 +608,10 @@ void main() {
         'edit:$testCommunityId:Frog Holders DAO',
         'resubmit:$testCommunityId',
       ]);
-      expect(find.text('已重新提交，状态回到审核中'), findsOneWidget);
+      expect(
+        find.text('Resubmitted. Status is back to In review'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -762,13 +773,16 @@ void main() {
   group('row copy', () {
     test('a reason at the bound is not elided', () {
       final exact = 'x' * communityRejectedReasonPreviewRunes;
-      expect(communityRejectedReasonPreview(exact), '驳回：$exact');
-      expect(communityRejectedReasonPreview('${exact}y'), '驳回：$exact…');
+      expect(communityRejectedReasonPreview(exact), 'Rejected: $exact');
+      expect(communityRejectedReasonPreview('${exact}y'), 'Rejected: $exact…');
     });
 
     test('a blank reason is a refusal without one', () {
-      expect(communityRejectedReasonPreview('   '), '驳回：运维没有给出原因');
-      expect(communityRejectedReasonPreview(null), '驳回：运维没有给出原因');
+      expect(
+        communityRejectedReasonPreview('   '),
+        'Rejected: no reason given',
+      );
+      expect(communityRejectedReasonPreview(null), 'Rejected: no reason given');
     });
   });
 }

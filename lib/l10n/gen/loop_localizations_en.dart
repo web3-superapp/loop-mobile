@@ -4822,6 +4822,1567 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get common_watchlist => 'Watchlist';
 
   @override
+  String get community_aiBody => 'Answering…';
+
+  @override
+  String community_aiBuild(Object? communityAiTimestamp, Object? label) {
+    return '$label · Observed $communityAiTimestamp';
+  }
+
+  @override
+  String community_aiBuild2(Object? communityAiTimestamp) {
+    return 'Observed $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiBuild3 =>
+      'Choose a reason. The report records only this answer and your choice, not the question you asked.';
+
+  @override
+  String get community_aiCommunityAiCapabilitiesEmptyTitle =>
+      'This community has no assistant features yet';
+
+  @override
+  String get community_aiCommunityAiComposerHintText =>
+      'Ask this community\'s AI';
+
+  @override
+  String get community_aiCommunityAiComposerUnavailableHintText =>
+      'Questions aren\'t available yet';
+
+  @override
+  String get community_aiCommunityAiHeadline =>
+      'Community AI isn\'t available yet';
+
+  @override
+  String get community_aiCommunityAiHeroKicker => 'Community brief';
+
+  @override
+  String get community_aiCommunityAiReportSheetBarrierLabel =>
+      'Close report options';
+
+  @override
+  String get community_aiCommunityAiSourceSheetBarrierLabel =>
+      'Close source details';
+
+  @override
+  String get community_aiCommunityAiStateEmptyTitle =>
+      'Nothing to ask about in this community yet';
+
+  @override
+  String get community_aiCommunityAiStatePermissionTitle =>
+      'This account can\'t use this assistant yet';
+
+  @override
+  String get community_aiCommunityAiStateUnavailableMessage =>
+      'This page isn\'t available right now';
+
+  @override
+  String get community_aiLabel => 'Reported';
+
+  @override
+  String get community_aiLabel2 => 'Report this answer';
+
+  @override
+  String community_aiLabel3(Object? sourceId) {
+    return 'Source $sourceId';
+  }
+
+  @override
+  String get community_aiLoopLabel => 'What I can do';
+
+  @override
+  String get community_aiLoopLabel2 => 'Try these';
+
+  @override
+  String get community_aiLoopLabel3 => 'Planned features';
+
+  @override
+  String get community_aiLoopOfflineState => 'Ask';
+
+  @override
+  String get community_aiMessage => 'Report submitted';
+
+  @override
+  String get community_aiModelsCaption =>
+      'Generating from today\'s discussions. Pull down to refresh later.';
+
+  @override
+  String get community_aiModelsCaption2 =>
+      'Come back tomorrow. The rest of this page isn\'t affected.';
+
+  @override
+  String get community_aiModelsCommunityAiBriefPendingHeading =>
+      'Generating today\'s summary';
+
+  @override
+  String get community_aiModelsCommunityAiBriefQuotaHeading =>
+      'Today\'s summary quota is used up';
+
+  @override
+  String community_aiModelsCommunityAiGeneratedLabel(
+    Object? communityAiTimestamp,
+    Object? model,
+  ) {
+    return 'AI generated · $model · $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiModelsCommunityAiKnowledgeLine =>
+      'No sources available';
+
+  @override
+  String community_aiModelsCommunityAiKnowledgeLine2(
+    Object? communityAiTimestamp,
+    Object? sourceCount,
+  ) {
+    return '$sourceCount knowledge sources · Updated $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiModelsHarmful => 'Harmful or dangerous';
+
+  @override
+  String get community_aiModelsHeading => 'Couldn\'t load today\'s discussions';
+
+  @override
+  String get community_aiModelsInaccurate => 'Inaccurate';
+
+  @override
+  String get community_aiModelsOffTopic => 'Off topic';
+
+  @override
+  String get community_aiModelsOther => 'Other';
+
+  @override
+  String get community_aiModelsPrivacy => 'Involves personal privacy';
+
+  @override
+  String community_aiModelsS(Object? messageCount) {
+    return '$messageCount messages today';
+  }
+
+  @override
+  String get community_aiModelsSwitch =>
+      'No project documents yet, so this can\'t be answered.';
+
+  @override
+  String get community_aiModelsSwitch10 =>
+      'Couldn\'t read the official group\'s discussions this time.';
+
+  @override
+  String get community_aiModelsSwitch11 =>
+      'The AI didn\'t answer this time. Try again later.';
+
+  @override
+  String get community_aiModelsSwitch12 =>
+      'The AI declined this request. Trying again won\'t help.';
+
+  @override
+  String get community_aiModelsSwitch13 =>
+      'The AI\'s answer was incomplete, so it wasn\'t used.';
+
+  @override
+  String get community_aiModelsSwitch14 =>
+      'This community has no sources available, so you can\'t ask right now.';
+
+  @override
+  String get community_aiModelsSwitch15 =>
+      'The AI assistant isn\'t available yet.';
+
+  @override
+  String community_aiModelsSwitch16(Object? messageCount) {
+    return 'At least $messageCount messages today';
+  }
+
+  @override
+  String get community_aiModelsSwitch17 =>
+      'This community\'s question quota for today is used up. Come back tomorrow.';
+
+  @override
+  String get community_aiModelsSwitch18 =>
+      'Too many questions. Wait a minute and ask again.';
+
+  @override
+  String get community_aiModelsSwitch2 =>
+      'No beginner guides yet, so this can\'t be answered.';
+
+  @override
+  String get community_aiModelsSwitch3 =>
+      'Announcements and official updates aren\'t available yet, so this can\'t be answered.';
+
+  @override
+  String get community_aiModelsSwitch4 => 'AI moderation isn\'t available yet.';
+
+  @override
+  String get community_aiModelsSwitch5 =>
+      'Community analytics isn\'t available yet.';
+
+  @override
+  String get community_aiModelsSwitch6 =>
+      'Generating today\'s summary. Pull down to refresh later.';
+
+  @override
+  String get community_aiModelsSwitch7 =>
+      'Today\'s summary quota is used up. Come back tomorrow.';
+
+  @override
+  String get community_aiModelsSwitch8 =>
+      'Join this community to read its discussions.';
+
+  @override
+  String get community_aiModelsSwitch9 =>
+      'This community has no official group yet, so there\'s nothing to summarize.';
+
+  @override
+  String get community_aiOutlook =>
+      'Once available, answers will include sources and observation times. They don\'t replace project announcements.';
+
+  @override
+  String get community_aiSentenceGap => ' ';
+
+  @override
+  String community_aiSummary(Object? sources) {
+    return 'Sources used ($sources)';
+  }
+
+  @override
+  String community_aiSummary2(Object? omitted) {
+    return 'Sources not used ($omitted)';
+  }
+
+  @override
+  String get community_aiText => 'Project knowledge';
+
+  @override
+  String get community_aiText10 =>
+      'Price, market cap, liquidity, weight, community power';
+
+  @override
+  String get community_aiText11 => 'Community guidance';
+
+  @override
+  String get community_aiText12 =>
+      'Reminds you to join mining and when weight takes effect';
+
+  @override
+  String get community_aiText13 => 'AI moderation';
+
+  @override
+  String get community_aiText14 =>
+      'Detects scam links, fake CAs, phishing and fake admins';
+
+  @override
+  String get community_aiText15 => 'Community analytics';
+
+  @override
+  String get community_aiText16 => 'Admins only: DAU, conversion, sentiment';
+
+  @override
+  String get community_aiText17 => 'How are tokenomics allocated';
+
+  @override
+  String get community_aiText18 => 'How do I join mining';
+
+  @override
+  String get community_aiText19 => 'What\'s new this week';
+
+  @override
+  String get community_aiText2 => 'Whitepaper, tokenomics, roadmap, FAQ';
+
+  @override
+  String get community_aiText3 => 'Community support';
+
+  @override
+  String get community_aiText4 =>
+      'What a CA is, how to buy, how to join mining';
+
+  @override
+  String get community_aiText5 => 'Beginner education';
+
+  @override
+  String get community_aiText6 =>
+      'Project in 3 minutes, beginner guide, asset safety';
+
+  @override
+  String get community_aiText7 => 'Project updates';
+
+  @override
+  String get community_aiText8 =>
+      'Official X, announcements and blog in daily and weekly digests';
+
+  @override
+  String get community_aiText9 => 'Asset info';
+
+  @override
+  String get community_contractActivationRequired =>
+      'Activate your LOOP ID before using community and social features.';
+
+  @override
+  String get community_contractActivationRequired2 =>
+      'Activate your LOOP ID before applying for a community. You can resubmit this application after activation.';
+
+  @override
+  String get community_contractAliasBlocked =>
+      'This name is on the block list. Try another one.';
+
+  @override
+  String get community_contractAliasBlocked2 =>
+      'This community name is on the block list. Choose another name and submit again.';
+
+  @override
+  String get community_contractAliasReserved =>
+      'This name is reserved by LOOP. Try another one.';
+
+  @override
+  String get community_contractAliasReserved2 =>
+      'This community name uses a LOOP reserved word (such as official, support or admin). Choose another name and submit again.';
+
+  @override
+  String get community_contractBootstrapRequired =>
+      'Your account isn\'t set up yet. Try again later.';
+
+  @override
+  String get community_contractBoundAssetTaken =>
+      'This token is already linked to another community. Choose another token.';
+
+  @override
+  String get community_contractBoundAssetTaken2 =>
+      'This token is already linked to another community. Choose another token and submit again.';
+
+  @override
+  String get community_contractCancelled =>
+      'The request was cancelled and the result is unknown. Check the latest status before retrying.';
+
+  @override
+  String get community_contractCommunityBoundAssetUniqueHint =>
+      'Each token can be linked to only one community.';
+
+  @override
+  String get community_contractIdempotencyConflict =>
+      'The same action was already submitted with different content. Check the latest status and try again.';
+
+  @override
+  String get community_contractInvalidData =>
+      'The response was incomplete, so nothing on this page was used.';
+
+  @override
+  String get community_contractNotFound =>
+      'This doesn\'t exist, was removed, or isn\'t visible to this account.';
+
+  @override
+  String get community_contractOffline =>
+      'You\'re offline. Nothing was loaded and nothing was submitted.';
+
+  @override
+  String get community_contractOutcomeUnknown =>
+      'The response was incomplete and the result isn\'t confirmed. Refresh to check the latest status. Don\'t submit again.';
+
+  @override
+  String get community_contractPermissionDenied =>
+      'This account doesn\'t have permission for this action.';
+
+  @override
+  String get community_contractRateLimited =>
+      'Too many searches. Wait a moment and try again.';
+
+  @override
+  String get community_contractResourceConflict =>
+      'This short link is taken by another community. Choose another one.';
+
+  @override
+  String get community_contractResourceConflict2 =>
+      'This short link is taken by another community. Choose another one and submit again.';
+
+  @override
+  String get community_contractStale =>
+      'The status has changed (someone else may have handled it). Refresh and decide again.';
+
+  @override
+  String get community_contractSwitch =>
+      'Unread count can\'t be loaded right now.';
+
+  @override
+  String get community_contractSwitch10 =>
+      'The messaging service isn\'t available, so the online count can\'t be checked.';
+
+  @override
+  String get community_contractSwitch11 =>
+      'Mining rules aren\'t set yet, so power isn\'t shown.';
+
+  @override
+  String get community_contractSwitch12 =>
+      'Power hasn\'t been calculated yet, so you can\'t sort by power.';
+
+  @override
+  String get community_contractSwitch13 =>
+      'The last settlement didn\'t finish, so you can\'t sort by power.';
+
+  @override
+  String get community_contractSwitch14 =>
+      'The last settlement used old rules, so you can\'t sort by power.';
+
+  @override
+  String get community_contractSwitch15 =>
+      'Mining isn\'t available, so you can\'t sort by power.';
+
+  @override
+  String get community_contractSwitch16 =>
+      'Discussion counts can\'t be loaded, so this sort isn\'t available.';
+
+  @override
+  String get community_contractSwitch17 =>
+      'This community\'s discussion count can\'t be loaded right now.';
+
+  @override
+  String get community_contractSwitch18 =>
+      'This community has no linked asset, so it has no power.';
+
+  @override
+  String get community_contractSwitch19 =>
+      'This community\'s power weight is still in review.';
+
+  @override
+  String get community_contractSwitch2 =>
+      'Voice room status can\'t be loaded right now.';
+
+  @override
+  String get community_contractSwitch20 =>
+      'Community announcements aren\'t available yet.';
+
+  @override
+  String get community_contractSwitch21 =>
+      'Official links aren\'t available yet.';
+
+  @override
+  String get community_contractSwitch22 =>
+      'Message previews aren\'t available yet.';
+
+  @override
+  String get community_contractSwitch23 =>
+      'The asset registry couldn\'t be assembled this time. Try again later.';
+
+  @override
+  String get community_contractSwitch24 =>
+      'LOOP has no Launch project directory yet, so there\'s nothing to search.';
+
+  @override
+  String get community_contractSwitch25 =>
+      'The DApp directory isn\'t available yet.';
+
+  @override
+  String get community_contractSwitch26 =>
+      'Invitation metrics aren\'t available yet.';
+
+  @override
+  String get community_contractSwitch27 =>
+      'Invite codes aren\'t available yet, so you can\'t share.';
+
+  @override
+  String get community_contractSwitch28 =>
+      'Communities aren\'t available right now. Try again later.';
+
+  @override
+  String get community_contractSwitch29 =>
+      'Search isn\'t available right now. Try again later.';
+
+  @override
+  String get community_contractSwitch3 =>
+      'Online count can\'t be loaded right now.';
+
+  @override
+  String get community_contractSwitch4 =>
+      'This community has no official channel, so there\'s no online count to check.';
+
+  @override
+  String get community_contractSwitch5 =>
+      'This community\'s official channel isn\'t set up, so the online count can\'t be checked.';
+
+  @override
+  String get community_contractSwitch6 =>
+      'Couldn\'t check the online count this time. Retry later.';
+
+  @override
+  String get community_contractSwitch7 =>
+      'The online count check timed out with no result.';
+
+  @override
+  String get community_contractSwitch8 =>
+      'This community has more than 500 members, so this version can\'t count who\'s online.';
+
+  @override
+  String get community_contractSwitch9 =>
+      'Online count wasn\'t checked in this step. Go back to the community page to load it again.';
+
+  @override
+  String get community_contractTimedOut =>
+      'LOOP timed out. Nothing was loaded and nothing was submitted.';
+
+  @override
+  String get community_contractUnavailable =>
+      'The community service isn\'t available right now. Try again later.';
+
+  @override
+  String get community_contractUnexpected =>
+      'The action didn\'t finish. Try again later.';
+
+  @override
+  String get community_contractValidationFailed =>
+      'Some input isn\'t valid. Fix it and try again.';
+
+  @override
+  String get community_contractValidationFailed2 =>
+      'The name or bio is too long (name 1–40 characters, bio up to 280). Fix it and submit again.';
+
+  @override
+  String get community_discoverBody =>
+      'After you submit, the community is \"In review\" and you\'re the owner. The short link can\'t be changed once accepted.';
+
+  @override
+  String get community_discoverCaption =>
+      'Sorting uses only verifiable numbers: members, creation time, power and 7-day discussions. Popular doesn\'t mean recommended.';
+
+  @override
+  String get community_discoverCommunityApplyActionLabel => 'Apply to list';
+
+  @override
+  String get community_discoverCommunityDiscoverCapabilityUnavailableTitle =>
+      'Communities aren\'t available right now';
+
+  @override
+  String get community_discoverCommunityDiscoverOrderingBackLabel =>
+      'Sort by most members';
+
+  @override
+  String get community_discoverCommunityDiscoverScreenTitle =>
+      'Joined communities';
+
+  @override
+  String get community_discoverCommunityDiscoverScreenTitle2 =>
+      'Discover communities';
+
+  @override
+  String get community_discoverDiscussion => 'Most discussed';
+
+  @override
+  String get community_discoverEmptyMessage => 'No matching communities';
+
+  @override
+  String get community_discoverEmptyReason => 'No communities under this sort.';
+
+  @override
+  String community_discoverHeading(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items communities',
+      one: '1 community',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String community_discoverHeading2(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items communities loaded',
+      one: '1 community loaded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get community_discoverKicker => 'Community discovery';
+
+  @override
+  String get community_discoverMembers => 'Most members';
+
+  @override
+  String community_discoverMessage(Object? label) {
+    return '\"$label\" isn\'t available right now';
+  }
+
+  @override
+  String get community_discoverNewest => 'Newest';
+
+  @override
+  String get community_discoverPower => 'Highest power';
+
+  @override
+  String get community_discoverResource => 'Community directory';
+
+  @override
+  String get community_discoverTitle => 'Submit community application?';
+
+  @override
+  String community_homeActivitySentence(Object? clauses) {
+    return '$clauses.';
+  }
+
+  @override
+  String get community_homeBody =>
+      'Find communities worth joining by activity, holders and mining weight';
+
+  @override
+  String get community_homeBuild => 'Discover';
+
+  @override
+  String community_homeBuild2(Object? communityObservedAtLabel) {
+    return 'Data observed $communityObservedAtLabel';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption(Object? mostDiscussed) {
+    return '$mostDiscussed is the most active';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption2(Object? liveVoiceRooms) {
+    return '$liveVoiceRooms voice rooms live';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption3(Object? unreadMessages) {
+    return '$unreadMessages unread';
+  }
+
+  @override
+  String community_homeCommunityMemberCountLabel(Object? groupedFigure) {
+    return '$groupedFigure members';
+  }
+
+  @override
+  String community_homeLabel(Object? label, Object? unreadBadgeLabel) {
+    return '$label, $unreadBadgeLabel unread';
+  }
+
+  @override
+  String community_homeS(Object? count) {
+    return 'Discover, $count verified';
+  }
+
+  @override
+  String get community_homeTitle => 'Discover new communities';
+
+  @override
+  String community_logoSemanticLabel(Object? name) {
+    return '$name community icon';
+  }
+
+  @override
+  String community_manageAsyncData(Object? admin, Object? all, Object? owner) {
+    return 'Owner $owner · Admin $admin · $all total';
+  }
+
+  @override
+  String community_manageAsyncError(Object? memberCount) {
+    return '$memberCount members';
+  }
+
+  @override
+  String community_manageBody(Object? communityBoundAssetUniqueHint) {
+    return '$communityBoundAssetUniqueHint Linking a token immediately affects the token card and member buy activity on the community page. The short link and verification status can\'t be changed here.';
+  }
+
+  @override
+  String get community_manageBody2 =>
+      'The short link and verification status can\'t be changed here.';
+
+  @override
+  String get community_manageBoundAssetLine => 'Not linked';
+
+  @override
+  String get community_manageBoundAssetTaken =>
+      'This token is already linked to another community. Choose another token. Nothing was changed.';
+
+  @override
+  String get community_manageCommunityManageAnnouncementsSubtitle =>
+      'Announcements coming soon';
+
+  @override
+  String get community_manageCommunityManageAnnouncementsTitle =>
+      'Announcements';
+
+  @override
+  String get community_manageCommunityManageBoundAssetTitle => 'Linked token';
+
+  @override
+  String get community_manageCommunityManageEditProfileSubtitle => 'No bio yet';
+
+  @override
+  String get community_manageCommunityManageEditProfileTitle => 'Name and bio';
+
+  @override
+  String get community_manageCommunityManageLogoNote =>
+      'The community icon, short link and verification status can\'t be changed here. Communities can\'t be dissolved.';
+
+  @override
+  String get community_manageCommunityManageLogoNote2 =>
+      'The community icon, short link and verification status can\'t be changed here.';
+
+  @override
+  String get community_manageCommunityManageMembersTitle =>
+      'Members and permissions';
+
+  @override
+  String get community_manageCommunityManageMissingIdDetail =>
+      'Open this from \"Manage\" at the top right of the community page. This page doesn\'t guess which community to manage.';
+
+  @override
+  String get community_manageCommunityManageMissingIdMessage =>
+      'Missing community ID';
+
+  @override
+  String get community_manageCommunityManagePermissionDetail =>
+      'Your role in this community doesn\'t include management. You can still view the community page.';
+
+  @override
+  String get community_manageCommunityManagePermissionMessage =>
+      'Only the community owner and admins can manage it';
+
+  @override
+  String get community_manageCommunityManageScreenTitle =>
+      'Community management';
+
+  @override
+  String get community_manageCommunityManageShareSubtitle =>
+      'Share a poster or copy the community link';
+
+  @override
+  String get community_manageCommunityManageShareTitle => 'Community QR card';
+
+  @override
+  String get community_manageCommunityManageTransferSubtitle =>
+      'Pick a member on the members page. You become an admin after transferring';
+
+  @override
+  String get community_manageCommunityManageTransferTitle =>
+      'Transfer ownership';
+
+  @override
+  String get community_manageCommunityManageVoiceEnterSubtitle =>
+      'The community is live';
+
+  @override
+  String get community_manageCommunityManageVoiceEnterTitle =>
+      'Enter voice room';
+
+  @override
+  String get community_manageCommunityManageVoiceOpenSubtitle =>
+      'You\'re the host. Your mic is off by default';
+
+  @override
+  String get community_manageCommunityManageVoiceOpenTitle =>
+      'Start voice room';
+
+  @override
+  String get community_manageEmptyMessage => 'Community not found';
+
+  @override
+  String get community_manageEmptyReason =>
+      'It may have been removed, or isn\'t visible to this account.';
+
+  @override
+  String get community_manageGroups =>
+      'No registered pools yet, so member buy activity won\'t appear.';
+
+  @override
+  String community_manageIf(Object? truncatedAddress) {
+    return '$truncatedAddress · Token info can\'t be loaded right now';
+  }
+
+  @override
+  String get community_manageIf2 => 'Has registered pools';
+
+  @override
+  String get community_manageLoopTag => 'Owner only';
+
+  @override
+  String get community_manageMessage => 'Nothing was changed';
+
+  @override
+  String get community_manageMessage2 => 'Community profile updated';
+
+  @override
+  String get community_manageS => 'No registered pools yet';
+
+  @override
+  String get community_manageSwitch =>
+      'This token isn\'t registered on LOOP, so it can\'t be linked. Nothing was changed.';
+
+  @override
+  String get community_manageSwitch2 =>
+      'Only the owner can change the linked token. Nothing was changed.';
+
+  @override
+  String get community_manageTitle => 'Submit community profile changes?';
+
+  @override
+  String get community_membersAdmin => 'No members with this role.';
+
+  @override
+  String get community_membersAll => 'This community has no members to show.';
+
+  @override
+  String get community_membersBan => 'Ban';
+
+  @override
+  String get community_membersBan2 =>
+      'Banned members leave the official channel and are removed from the default member directory. You can unban them later under \"Banned\". Banning doesn\'t change personal follows.';
+
+  @override
+  String get community_membersBanned => 'Banned members';
+
+  @override
+  String get community_membersBanned2 =>
+      'This community has no banned members.';
+
+  @override
+  String community_membersBody(
+    Object? confirmationDetail,
+    Object? displayName,
+    Object? loopId,
+  ) {
+    return 'Target: $displayName ($loopId). $confirmationDetail';
+  }
+
+  @override
+  String get community_membersCommunityMembersMissingIdDetail =>
+      'Open this from the community profile. This page doesn\'t guess which community to open.';
+
+  @override
+  String get community_membersCommunityMembersSearchClearHintText =>
+      'Type the start of an alias';
+
+  @override
+  String get community_membersCommunityMembersSearchClearLabel => 'Clear';
+
+  @override
+  String get community_membersCommunityMembersSearchClearLabelText =>
+      'Search members by alias';
+
+  @override
+  String get community_membersCommunityMembersSearchLabel => 'Close search';
+
+  @override
+  String get community_membersCommunityMembersSearchLabel2 => 'Search members';
+
+  @override
+  String community_membersCommunityMissingHeading(num all) {
+    String _temp0 = intl.Intl.pluralLogic(
+      all,
+      locale: localeName,
+      other: '$all members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyMessage =>
+      'No matching members';
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyMessage2 =>
+      'No members under this filter';
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyReason =>
+      'Aliases match from the start. Try a different beginning.';
+
+  @override
+  String get community_membersCommunityStateEmptyPermissionTitle =>
+      'No permission to view the member directory';
+
+  @override
+  String community_membersConfirmTitle(Object? label) {
+    return '$label?';
+  }
+
+  @override
+  String get community_membersDemote => 'Remove admin';
+
+  @override
+  String get community_membersFilterSeg => 'Banned';
+
+  @override
+  String get community_membersLabel => 'Manage';
+
+  @override
+  String get community_membersMemberDirectoryPresenceNote =>
+      'The member directory doesn\'t track presence, so this page doesn\'t show an online count. The community page checks it once.';
+
+  @override
+  String get community_membersMembersSegOnlineLabel => 'Online';
+
+  @override
+  String community_membersMessage(Object? label) {
+    return '$label applied';
+  }
+
+  @override
+  String get community_membersMute => 'Mute';
+
+  @override
+  String get community_membersMuted => 'Muted';
+
+  @override
+  String get community_membersPromote => 'Make admin';
+
+  @override
+  String get community_membersResource => 'Member directory';
+
+  @override
+  String community_membersS(Object? all) {
+    return 'All $all';
+  }
+
+  @override
+  String community_membersS2(Object? owner) {
+    return '$owner owner';
+  }
+
+  @override
+  String community_membersS3(Object? admin) {
+    return '$admin admins';
+  }
+
+  @override
+  String community_membersSubtitle(Object? communityObservedAtLabel) {
+    return 'Joined $communityObservedAtLabel';
+  }
+
+  @override
+  String get community_membersSwitch =>
+      'This action is recorded in the community log.';
+
+  @override
+  String get community_membersSwitch2 => 'Owner permissions';
+
+  @override
+  String get community_membersSwitch3 => 'Admin permissions';
+
+  @override
+  String community_membersTitle(Object? displayName) {
+    return 'Me · $displayName';
+  }
+
+  @override
+  String get community_membersTransfer =>
+      'After transferring you become an admin. Editing the community profile, appointing admins and transferring again belong to the new owner. You can still mute and ban regular members. This can\'t be undone. Only the new owner can give ownership back.';
+
+  @override
+  String get community_membersUnban => 'Unban';
+
+  @override
+  String get community_membersUnban2 =>
+      'Unbanning restores this member as active, keeps their join date and adds them back to the official channel. They don\'t need to apply again.';
+
+  @override
+  String get community_membersUnmute => 'Unmute';
+
+  @override
+  String get community_profileBody =>
+      'Your profile is saved first, then goes back into the review queue. The short link and verification status can\'t be changed here.';
+
+  @override
+  String get community_profileBody2 =>
+      'You\'ll appear in the member list after joining.';
+
+  @override
+  String get community_profileBody3 =>
+      'You\'ll be removed from the member directory after leaving.';
+
+  @override
+  String get community_profileBoundAssetTaken =>
+      'This token is already linked to another community. Change the token in the profile, then resubmit.';
+
+  @override
+  String get community_profileCommunityJoinActionLabel => 'Join community';
+
+  @override
+  String get community_profileCommunityMembershipBannedBody =>
+      'Community chat and governance aren\'t available';
+
+  @override
+  String get community_profileCommunityMembershipBannedTitle =>
+      'You\'ve been banned from this community';
+
+  @override
+  String get community_profileCommunityOnlineCountExplainLabel =>
+      'How the online count works';
+
+  @override
+  String get community_profileCommunityOwnerCannotLeaveSemanticLabel =>
+      'Leave community, not available to the owner';
+
+  @override
+  String get community_profileCommunityOwnerCannotLeaveTitle =>
+      'Leave community';
+
+  @override
+  String get community_profileCommunityProfileCreateVoiceRoomLabel =>
+      'Start room';
+
+  @override
+  String get community_profileCommunityProfileOpenAiSubtitle =>
+      'Ask about this community';
+
+  @override
+  String get community_profileCommunityProfileOpenAiTitle => 'Community AI';
+
+  @override
+  String get community_profileCommunityProfileOpenChatLabel => 'Group chat';
+
+  @override
+  String get community_profileCommunityProfileOpenVoiceLabel => 'Live';
+
+  @override
+  String get community_profileCommunityProfileOpenVoiceSemanticLabel =>
+      'Enter voice room · Live';
+
+  @override
+  String get community_profileCommunityProfileShareSemanticLabel =>
+      'Share community';
+
+  @override
+  String get community_profileConfirmLabel => 'Join';
+
+  @override
+  String get community_profileLoopLabel => 'Official links';
+
+  @override
+  String community_profileLoopLabel2(Object? communityCountLabel) {
+    return 'Members $communityCountLabel';
+  }
+
+  @override
+  String community_profileMessage(Object? label) {
+    return '$label link copied';
+  }
+
+  @override
+  String get community_profileMessage2 =>
+      'Resubmitted. Status is back to In review';
+
+  @override
+  String get community_profileMessage3 => 'Joined community';
+
+  @override
+  String get community_profileMessage4 => 'Left community';
+
+  @override
+  String get community_profileResource => 'Community profile';
+
+  @override
+  String get community_profileStale =>
+      'This application is no longer \"Rejected\". The page has refreshed. Check the latest status.';
+
+  @override
+  String community_profileText(Object? communityCountLabel) {
+    return '$communityCountLabel online';
+  }
+
+  @override
+  String get community_profileTitle => 'Resubmit community application?';
+
+  @override
+  String get community_profileTitle2 => 'Join this community?';
+
+  @override
+  String get community_profileTitle3 => 'Leave this community?';
+
+  @override
+  String get community_profileVoiceRoomArrivalOutcome =>
+      'Join the community to enter the voice room';
+
+  @override
+  String get community_profileVoiceRoomArrivalOutcome2 =>
+      'The voice room has ended';
+
+  @override
+  String get community_screenCommunityCapabilityUnavailableDeferredMessage =>
+      'Communities aren\'t available yet.';
+
+  @override
+  String get community_screenCommunityCapabilityUnavailableUnknownMessage =>
+      'Communities aren\'t ready yet. Try again later.';
+
+  @override
+  String get community_screenCommunityFolioCaption =>
+      'Your joined community count appears here once it loads.';
+
+  @override
+  String get community_screenCommunityFolioCaption2 =>
+      'Community data can\'t be loaded right now, so no figures are shown.';
+
+  @override
+  String get community_screenCommunityFolioCaption3 =>
+      'Discussion activity and voice rooms aren\'t available yet.';
+
+  @override
+  String community_screenCommunityFolioHeading(num miningCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      miningCount,
+      locale: localeName,
+      other: '$miningCount communities mining',
+      one: '1 community mining',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get community_screenCommunityFolioKicker => 'Community index';
+
+  @override
+  String get community_screenCommunityJoinedEmptyMessage =>
+      'Start from \"Discover communities\". Communities you join appear here.';
+
+  @override
+  String get community_screenCommunityViewAllJoinedLabel =>
+      'View all joined communities';
+
+  @override
+  String get community_screenEmptyMessage => 'No communities joined yet';
+
+  @override
+  String get community_screenEmptyReason =>
+      'Communities you join are listed here.';
+
+  @override
+  String get community_screenHeading => 'Loading';
+
+  @override
+  String get community_screenLoopLabel => 'Token communities · Mining';
+
+  @override
+  String get community_screenLoopLabel2 => 'Other communities';
+
+  @override
+  String get community_screenResource => 'Community data';
+
+  @override
+  String community_searchControllerSearchFieldLabel(Object? searchableDomains) {
+    return 'Search $searchableDomains';
+  }
+
+  @override
+  String get community_searchControllerSearchScopeHint =>
+      'Nicknames find only discoverable accounts. LOOP IDs match exactly';
+
+  @override
+  String get community_searchLabel => 'Enter';
+
+  @override
+  String get community_searchLabel2 => 'Following';
+
+  @override
+  String community_searchLabel3(Object? name) {
+    return 'Remove $name from recent searches';
+  }
+
+  @override
+  String get community_searchMessage => 'Couldn\'t follow';
+
+  @override
+  String community_searchMessage2(Object? label) {
+    return '$label can\'t be searched right now';
+  }
+
+  @override
+  String community_searchMessage3(Object? label) {
+    return '$label can\'t be searched right now';
+  }
+
+  @override
+  String get community_searchMessage4 => 'Nothing to search on the clipboard';
+
+  @override
+  String get community_searchResource => 'Search results';
+
+  @override
+  String get community_searchSearchCapabilityUnavailableTitle =>
+      'Search isn\'t available right now';
+
+  @override
+  String get community_searchSearchEmptyEmptyMessage => 'No matching results';
+
+  @override
+  String community_searchSearchEmptyEmptyMessage2(Object? searchMinimumRunes) {
+    return 'Type at least $searchMinimumRunes characters to search';
+  }
+
+  @override
+  String get community_searchSearchEmptyEmptyReason =>
+      'No results in this category.';
+
+  @override
+  String get community_searchSearchEmptyEmptyReason2 =>
+      'Search matches from the start and shows only discoverable accounts and verified communities.';
+
+  @override
+  String get community_searchSearchEmptyMessage =>
+      'Try another keyword or switch the category above';
+
+  @override
+  String get community_searchSearchEmptyTitle => 'No matching results found';
+
+  @override
+  String get community_searchSearchEmptyTitle2 =>
+      'Search tokens, communities and users';
+
+  @override
+  String get community_searchSearchPasteLoopIdLabel => 'Paste';
+
+  @override
+  String get community_searchSearchPriceAbsentText => 'No price in search';
+
+  @override
+  String get community_searchSearchRecentLabelAction => 'Clear all';
+
+  @override
+  String get community_searchSearchRecentLabelLabel => 'Recent searches';
+
+  @override
+  String community_searchSemanticLabel(Object? title) {
+    return '$title, token, recent search';
+  }
+
+  @override
+  String community_searchSemanticLabel2(Object? memberCount, Object? title) {
+    return '$title, $memberCount members';
+  }
+
+  @override
+  String get community_voiceRoomOpenMessage => 'Voice room started';
+
+  @override
+  String get community_voiceRoomOpenMessage2 =>
+      'This community already has a live voice room, so no new one was created. Refresh to enter.';
+
+  @override
+  String get community_widgetsBarrierLabel => 'Close community profile editor';
+
+  @override
+  String get community_widgetsBarrierLabel2 => 'Close community application';
+
+  @override
+  String community_widgetsBoundAssetKey(Object? chainId) {
+    return 'Needs a 40-character hex contract address, optionally prefixed with $chainId:.';
+  }
+
+  @override
+  String get community_widgetsCaption => '7-day discussions';
+
+  @override
+  String get community_widgetsCommunityAnnouncementsEmptyText =>
+      'No announcements yet';
+
+  @override
+  String community_widgetsCommunityAnnouncementsUnavailableText(
+    Object? communityUnavailableReason,
+  ) {
+    return 'No announcements yet · $communityUnavailableReason';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationPendingBody =>
+      'Mining weight and the official group open after approval. Until it\'s verified, this community has no verified badge.';
+
+  @override
+  String community_widgetsCommunityApplicationPendingTitle(
+    Object? localTimestampLabel,
+  ) {
+    return 'In review · Submitted $localTimestampLabel';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationProgressHint =>
+      'Check review progress under Me → My communities → Created.';
+
+  @override
+  String get community_widgetsCommunityApplicationRejectedBody =>
+      'No reason was given. Edit the community profile and resubmit.';
+
+  @override
+  String community_widgetsCommunityApplicationRejectedBody2(Object? reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationResubmitLabel => 'Resubmit';
+
+  @override
+  String get community_widgetsCommunityApplySubmitLabel => 'Submit application';
+
+  @override
+  String get community_widgetsCommunityApplySubmittedOpenLabel =>
+      'View community';
+
+  @override
+  String community_widgetsCommunityBoundAssetChainNote(Object? name) {
+    return 'Just enter the contract address. $name is filled in for you. ';
+  }
+
+  @override
+  String community_widgetsCommunityBoundAssetHint(Object? chainId) {
+    return '0x… (or paste the full $chainId:0x…)';
+  }
+
+  @override
+  String get community_widgetsCommunityConfirmAcceptBarrierLabel =>
+      'Close confirmation';
+
+  @override
+  String get community_widgetsCommunityLinksEmptyText =>
+      'No official links yet';
+
+  @override
+  String community_widgetsCommunityLinksUnavailableText(
+    Object? communityUnavailableReason,
+  ) {
+    return 'No official links yet · $communityUnavailableReason';
+  }
+
+  @override
+  String get community_widgetsCommunityMiningPowerParticipantsTitle =>
+      'Members with power';
+
+  @override
+  String community_widgetsCommunityMiningPowerRowSubtitle(
+    Object? communitySettlementLabel,
+  ) {
+    return 'Latest power snapshot · $communitySettlementLabel';
+  }
+
+  @override
+  String get community_widgetsCommunityMiningPowerWeightTitle =>
+      'Community weight';
+
+  @override
+  String get community_widgetsCommunityMissingHeading => 'No value';
+
+  @override
+  String get community_widgetsCommunityMissingName => 'No name';
+
+  @override
+  String get community_widgetsCommunityOnlineMeaningSheetBarrierLabel =>
+      'Close online count details';
+
+  @override
+  String community_widgetsCommunityPreviewNoticeBody(Object? resource) {
+    return '$resource exists only in this development preview. It isn\'t saved to your account or uploaded.';
+  }
+
+  @override
+  String get community_widgetsCommunityRejectedReasonPreview =>
+      'Rejected: no reason given';
+
+  @override
+  String community_widgetsCommunityRejectedReasonPreview2(Object? text) {
+    return 'Rejected: $text';
+  }
+
+  @override
+  String community_widgetsCommunityRejectedReasonPreview3(Object? head) {
+    return 'Rejected: $head…';
+  }
+
+  @override
+  String get community_widgetsCommunityStateUnavailableMessage =>
+      'This feature isn\'t available right now';
+
+  @override
+  String get community_widgetsDescription =>
+      'The bio can be up to 280 characters with no control characters.';
+
+  @override
+  String get community_widgetsFor => 'My holdings';
+
+  @override
+  String get community_widgetsFor2 => 'My power';
+
+  @override
+  String get community_widgetsFor3 => 'Est./day';
+
+  @override
+  String get community_widgetsHint =>
+      'Short link: lowercase letters, digits and hyphens';
+
+  @override
+  String get community_widgetsHint2 => 'Bio (optional)';
+
+  @override
+  String community_widgetsHint3(Object? communityBoundAssetHint) {
+    return 'Linked token (optional) $communityBoundAssetHint';
+  }
+
+  @override
+  String community_widgetsIf(Object? localTimestampLabel) {
+    return 'Created $localTimestampLabel';
+  }
+
+  @override
+  String community_widgetsIf2(Object? localTimestampLabel) {
+    return 'Submitted $localTimestampLabel';
+  }
+
+  @override
+  String get community_widgetsLabel => 'Weight';
+
+  @override
+  String get community_widgetsLabel2 => 'Community power';
+
+  @override
+  String get community_widgetsLabel3 => 'Power snapshot';
+
+  @override
+  String get community_widgetsLabel4 => 'Short link (can\'t be changed)';
+
+  @override
+  String get community_widgetsLabel5 => 'No community ID';
+
+  @override
+  String community_widgetsLabel6(Object? reference) {
+    return 'Community ID $reference';
+  }
+
+  @override
+  String get community_widgetsLabelText => 'Community name';
+
+  @override
+  String get community_widgetsLabelText2 => 'Bio (optional)';
+
+  @override
+  String get community_widgetsLabelText3 =>
+      'Linked token (owner only, optional)';
+
+  @override
+  String get community_widgetsLoopOfflineState => 'Block';
+
+  @override
+  String get community_widgetsLoopOfflineState2 => 'Governance';
+
+  @override
+  String get community_widgetsLoopPageBlock => 'Try again later.';
+
+  @override
+  String get community_widgetsLoopSheetHeading =>
+      'This counts connections, not activity';
+
+  @override
+  String get community_widgetsLoopSheetHeading2 =>
+      'Application submitted · In review';
+
+  @override
+  String get community_widgetsLoopSheetHeading3 => 'Edit community profile';
+
+  @override
+  String get community_widgetsLoopSheetHeading4 => 'Create community';
+
+  @override
+  String get community_widgetsMiningCommunityWeightApproved =>
+      'Granted after review and included in the figure above';
+
+  @override
+  String get community_widgetsMiningCommunityWeightPending =>
+      'Weight is still in review, so no value is shown';
+
+  @override
+  String get community_widgetsMiningCommunityWeightPending2 =>
+      'No linked token, so there\'s no weight to review';
+
+  @override
+  String get community_widgetsMiningParticipantsCount =>
+      'People with power in the latest power snapshot';
+
+  @override
+  String get community_widgetsMiningParticipantsUnavailable =>
+      'This item can\'t be loaded right now';
+
+  @override
+  String get community_widgetsName =>
+      'The name needs 1–40 characters with no control characters.';
+
+  @override
+  String community_widgetsRankedSemantic(Object? caption, Object? value) {
+    return '$caption $value';
+  }
+
+  @override
+  String get community_widgetsRejected => 'Rejected';
+
+  @override
+  String community_widgetsS(Object? name) {
+    return 'Chain status isn\'t loaded yet. If you enter only the address, $name is filled in. ';
+  }
+
+  @override
+  String community_widgetsSemantic(Object? power, Object? weight) {
+    return 'Community mining panel, weight $weight, community power $power';
+  }
+
+  @override
+  String get community_widgetsSemanticValue => 'Can\'t be loaded right now';
+
+  @override
+  String community_widgetsSemanticValue2(Object? messageCount) {
+    return 'At least $messageCount';
+  }
+
+  @override
+  String community_widgetsSemanticValue3(Object? messageCount) {
+    return '$messageCount';
+  }
+
+  @override
+  String community_widgetsShowCommunityApplicationSubmittedSheet(
+    Object? communityApplicationProgressHint,
+    Object? communityName,
+  ) {
+    return '\"$communityName\" is in the review queue and you\'re its owner. $communityApplicationProgressHint The verified badge, mining weight and official group appear after approval.';
+  }
+
+  @override
+  String community_widgetsShowCommunityPresenceMeaningSheet(
+    Object? communityCountLabel,
+  ) {
+    return 'This is how many members of the community\'s official channel are connected to Stream right now ($communityCountLabel). It isn\'t \"watching this channel\", \"recently active\", or the total member count. It\'s a single observation, not a running count.';
+  }
+
+  @override
+  String get community_widgetsSlug =>
+      'The short link must be 3–32 lowercase letters, digits or hyphens.';
+
+  @override
+  String get community_widgetsSwitch => 'Community mining';
+
+  @override
+  String community_widgetsSwitch2(Object? identifier) {
+    return 'Formula version $identifier used by this power snapshot';
+  }
+
+  @override
+  String community_widgetsText(
+    Object? communityBoundAssetChainNote,
+    Object? communityBoundAssetUniqueHint,
+  ) {
+    return '$communityBoundAssetChainNote$communityBoundAssetUniqueHint After you submit it goes into review and you\'re the owner. The verified badge is set after verification.';
+  }
+
+  @override
+  String community_widgetsValue(Object? communityObservedAtLabel) {
+    return '$communityObservedAtLabel · Not updated';
+  }
+
+  @override
+  String get community_widgetsVerified => 'Verified';
+
+  @override
+  String get community_widgetsVerified2 => 'Approved';
+
+  @override
   String get coreAssets_loopLabel => 'Voyager_7 avatar';
 
   @override
@@ -12215,6 +13776,2476 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get launch_widgetsUnscheduled => 'Approved, awaiting schedule';
+
+  @override
+  String get marketAlerts_modelsAbove => 'Breaks above';
+
+  @override
+  String get marketAlerts_modelsActive => 'Watching';
+
+  @override
+  String get marketAlerts_modelsAtOrAbove => 'Rises to';
+
+  @override
+  String get marketAlerts_modelsAtOrBelow => 'Falls to';
+
+  @override
+  String get marketAlerts_modelsBelow => 'Breaks below';
+
+  @override
+  String get marketAlerts_modelsTriggered => 'Triggered';
+
+  @override
+  String get marketAlerts_screenAbove =>
+      'Break: price must be above the threshold (> threshold) to trigger. Exactly equal doesn\'t count.';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickLabel =>
+      'Pick an asset from your watchlist';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickerEmptyMessage =>
+      'Add assets to your watchlist on the market page first, or create an alert from a token page.';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickerEmptyTitle =>
+      'No assets in your watchlist yet';
+
+  @override
+  String get marketAlerts_screenAlertAssetRowSubtitle =>
+      'This asset\'s name can\'t be loaded right now';
+
+  @override
+  String get marketAlerts_screenAlertDeleteConfirmBodyBody =>
+      'Triggered records stay in the trigger history and aren\'t deleted.';
+
+  @override
+  String get marketAlerts_screenAlertDeleteConfirmBodyTitle =>
+      'This price won\'t be watched after deleting';
+
+  @override
+  String get marketAlerts_screenAlertsCapabilityBlockTitle =>
+      'Price alerts aren\'t available right now';
+
+  @override
+  String get marketAlerts_screenAlertsCommandErrorTitle =>
+      'Alert wasn\'t updated';
+
+  @override
+  String get marketAlerts_screenAlertsCreateActionLabel => 'New';
+
+  @override
+  String marketAlerts_screenAlertsEmptyTitle(Object? focusLabel) {
+    return 'No alerts for $focusLabel yet';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsEndText => 'No more alerts';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyMessage =>
+      'Each triggered alert leaves a record here with its source and time.';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyPageMessage =>
+      'There are more records. Keep scrolling.';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyPageTitle =>
+      'No price alert records on this page';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEndText => 'No more trigger records';
+
+  @override
+  String get marketAlerts_screenAlertsFeedMoreFailedMessage =>
+      'Couldn\'t load the next page of trigger records';
+
+  @override
+  String marketAlerts_screenAlertsFeedUnreadText(Object? unreadCount) {
+    return '$unreadCount unread';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsMoreFailedMessage =>
+      'Couldn\'t load the next page of alerts';
+
+  @override
+  String get marketAlerts_screenAlertsNotificationSettingsSubtitle =>
+      'With the price alert category off, events are still recorded but no notification is created';
+
+  @override
+  String get marketAlerts_screenAlertsPushNoticeBody =>
+      'Push notifications aren\'t available yet, so alerts appear only in the in-app notification list. Only the latest price triggers an alert.';
+
+  @override
+  String get marketAlerts_screenAlertsPushNoticeTitle =>
+      'Push isn\'t available yet';
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle(
+    num armed,
+    Object? focusLabel,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      armed,
+      locale: localeName,
+      other: '$armed alerts watching',
+      one: '1 alert watching',
+    );
+    return '$focusLabel · $_temp0 · Stops after one trigger';
+  }
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle2(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items alerts loaded',
+      one: '1 alert loaded',
+    );
+    return '$_temp0 · Stops after one trigger';
+  }
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle3(num armed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      armed,
+      locale: localeName,
+      other: '$armed alerts watching',
+      one: '1 alert watching',
+    );
+    return '$_temp0 · Stops after one trigger';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsShowEveryAssetLabel =>
+      'View alerts for all assets';
+
+  @override
+  String get marketAlerts_screenAtOrAbove =>
+      'Reach: triggers when price reaches or rises above the threshold (≥ threshold).';
+
+  @override
+  String get marketAlerts_screenAtOrBelow =>
+      'Reach: triggers when price reaches or falls below the threshold (≤ threshold).';
+
+  @override
+  String get marketAlerts_screenBelow =>
+      'Break: price must be below the threshold (< threshold) to trigger. Exactly equal doesn\'t count.';
+
+  @override
+  String get marketAlerts_screenEmptyMessage => 'No price alerts yet';
+
+  @override
+  String get marketAlerts_screenEmptyMessage2 => 'Watchlist hasn\'t loaded yet';
+
+  @override
+  String get marketAlerts_screenEmptyMessage3 => 'No trigger records yet';
+
+  @override
+  String get marketAlerts_screenEmptyReason =>
+      'Set a target price and you\'ll get a notification when it\'s reached.';
+
+  @override
+  String get marketAlerts_screenError => 'Pick an asset to watch first.';
+
+  @override
+  String get marketAlerts_screenHintText => 'e.g. 800.5';
+
+  @override
+  String get marketAlerts_screenLabel => 'Keep';
+
+  @override
+  String get marketAlerts_screenLabelText => 'Threshold (USD)';
+
+  @override
+  String get marketAlerts_screenLoopBadge => 'This trigger';
+
+  @override
+  String get marketAlerts_screenLoopBadge2 => 'Changeable';
+
+  @override
+  String get marketAlerts_screenLoopBadge3 => 'Not changeable';
+
+  @override
+  String get marketAlerts_screenLoopLabel => 'Alerts set';
+
+  @override
+  String get marketAlerts_screenLoopLabel2 => 'Trigger history';
+
+  @override
+  String get marketAlerts_screenLoopLabel3 => 'Trigger condition';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState => 'New alert';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState2 => 'Edit alert';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState3 => 'Delete alert';
+
+  @override
+  String get marketAlerts_screenLoopRecordRow =>
+      'This trigger is recorded in notifications';
+
+  @override
+  String marketAlerts_screenLoopRecordRow2(Object? formatPercent) {
+    return '$formatPercent from target';
+  }
+
+  @override
+  String get marketAlerts_screenLoopRecordRow3 => 'Not evaluated yet';
+
+  @override
+  String marketAlerts_screenLoopRecordRow4(Object? relativeTime) {
+    return 'Evaluated $relativeTime';
+  }
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading => 'Delete this alert?';
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading2 => 'New price alert';
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading3 => 'Choose asset';
+
+  @override
+  String get marketAlerts_screenMessage => 'Alert deleted';
+
+  @override
+  String get marketAlerts_screenMessage2 => 'Alert saved';
+
+  @override
+  String get marketAlerts_screenS => 'Edit price alert';
+
+  @override
+  String get marketAlerts_screenSetState =>
+      'This asset can\'t be used for price alerts. Choose another one.';
+
+  @override
+  String get marketAlerts_screenSetState2 =>
+      'The threshold must be a positive decimal number with up to 18 decimal places.';
+
+  @override
+  String get marketAlerts_screenSetState3 =>
+      'The expiry must be in the future.';
+
+  @override
+  String get marketAlerts_screenText => 'Delete this alert';
+
+  @override
+  String get marketAlerts_screenTitle =>
+      'This account can\'t change price alerts';
+
+  @override
+  String marketWatchlist_controllerAdd(Object? name) {
+    return 'Add group $name';
+  }
+
+  @override
+  String marketWatchlist_controllerAdd2(Object? name) {
+    return 'Remove group $name';
+  }
+
+  @override
+  String marketWatchlist_controllerAddedItems(Object? added) {
+    return '$added added';
+  }
+
+  @override
+  String marketWatchlist_controllerGroupChange(Object? change, Object? name) {
+    return '$name: $change';
+  }
+
+  @override
+  String marketWatchlist_controllerRemovedItems(Object? removed) {
+    return '$removed removed';
+  }
+
+  @override
+  String get marketWatchlist_controllerReordered => 'Reordered';
+
+  @override
+  String marketWatchlist_controllerStringBuffer(Object? version) {
+    return 'LOOP watchlist draft (based on version $version)';
+  }
+
+  @override
+  String marketWatchlist_editorBuild(Object? watchlistMaxGroups) {
+    return 'Groups take effect after saving. Up to $watchlistMaxGroups.';
+  }
+
+  @override
+  String get marketWatchlist_editorBuild2 => 'Reloading discards';
+
+  @override
+  String get marketWatchlist_editorEmptyMessage => 'No watchlist assets yet';
+
+  @override
+  String get marketWatchlist_editorEmptyReason =>
+      'Open a token page and tap the star at the top right to add it.';
+
+  @override
+  String marketWatchlist_editorHintText(Object? watchlistMaxNameCodePoints) {
+    return '1–$watchlistMaxNameCodePoints characters';
+  }
+
+  @override
+  String marketWatchlist_editorLabel(Object? displayName) {
+    return 'Remove $displayName';
+  }
+
+  @override
+  String get marketWatchlist_editorLabelText => 'Group name';
+
+  @override
+  String get marketWatchlist_editorLoopBadge => 'No data';
+
+  @override
+  String get marketWatchlist_editorLoopLabel => 'Groups';
+
+  @override
+  String get marketWatchlist_editorLoopOfflineState => 'Save watchlist';
+
+  @override
+  String get marketWatchlist_editorMessage => 'Draft copied';
+
+  @override
+  String get marketWatchlist_editorMessage2 => 'Watchlist saved';
+
+  @override
+  String get marketWatchlist_editorResource => 'Watchlist';
+
+  @override
+  String get marketWatchlist_editorTitle =>
+      'This account can\'t save the watchlist';
+
+  @override
+  String get marketWatchlist_editorUnsavedSuffix => ' · Unsaved';
+
+  @override
+  String get marketWatchlist_editorWatchlistCapabilityBlockTitle =>
+      'Watchlist editing isn\'t available right now';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictBody =>
+      'Your watchlist changed on another device. Reloading discards the changes below. Copy the draft before deciding.';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictCopyDraftLabel =>
+      'Copy current draft';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictNoDiff =>
+      'This draft matches the submitted version.';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictTitle =>
+      'Version conflict — nothing was overwritten';
+
+  @override
+  String get marketWatchlist_editorWatchlistDiscardLabel => 'Discard';
+
+  @override
+  String marketWatchlist_editorWatchlistEditorScreenSubtitle(
+    num distinctAssetCount,
+    Object? state,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      distinctAssetCount,
+      locale: localeName,
+      other: '$distinctAssetCount watchlist assets',
+      one: '1 watchlist asset',
+    );
+    return '$_temp0$state';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupEmptyAddLabel => 'Add asset';
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupEmptyTitle =>
+      'No assets in this group yet';
+
+  @override
+  String marketWatchlist_editorWatchlistGroupLabel(
+    Object? items,
+    Object? name,
+  ) {
+    return '$name $items · Drag to sort · Swipe left to delete';
+  }
+
+  @override
+  String marketWatchlist_editorWatchlistGroupLimitBody(
+    Object? watchlistMaxGroups,
+  ) {
+    return 'You\'ve reached the limit of $watchlistMaxGroups groups. Delete one before creating another.';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupNameConfirmLabel =>
+      'Add group';
+
+  @override
+  String get marketWatchlist_editorWatchlistNewGroupEmptyLabel => 'New group';
+
+  @override
+  String marketWatchlist_editorWatchlistNoGroupsMessage(
+    Object? watchlistDefaultGroupName,
+  ) {
+    return 'Two ways: tap the star at the top right of a token page and the asset goes into the default group \"$watchlistDefaultGroupName\", or create a group here first.';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistNoGroupsTitle => 'No groups yet';
+
+  @override
+  String get marketWatchlist_editorWatchlistNoticeText =>
+      'Prices and changes aren\'t shown here. This page only sorts, removes and creates groups. Add assets with the star on a token page. Assets must be registered on LOOP, or the whole watchlist won\'t save.';
+
+  @override
+  String get marketWatchlist_editorWatchlistNoticeTitle =>
+      'A watchlist isn\'t market data';
+
+  @override
+  String get marketWatchlist_editorWatchlistSaveErrorTitle =>
+      'Watchlist wasn\'t saved';
+
+  @override
+  String get marketWatchlist_editorWatchlistSaveLabel => 'Saving…';
+
+  @override
+  String get marketWatchlist_editorWatchlistUndoLabel => 'Undo';
+
+  @override
+  String marketWatchlist_editorWatchlistUndoMessage(Object? displayName) {
+    return 'Removed $displayName. Takes effect after saving';
+  }
+
+  @override
+  String get marketWatchlist_membershipControllerActionLabel =>
+      'Remove from watchlist';
+
+  @override
+  String get marketWatchlist_membershipControllerS => 'Add to watchlist';
+
+  @override
+  String get marketWatchlist_modelsDuplicate =>
+      'A group with this name already exists.';
+
+  @override
+  String get marketWatchlist_modelsEmpty => 'Group name can\'t be empty.';
+
+  @override
+  String marketWatchlist_modelsGroupLimitReached(Object? watchlistMaxGroups) {
+    return 'You\'ve reached the limit of $watchlistMaxGroups groups. Remove one before creating another.';
+  }
+
+  @override
+  String get marketWatchlist_modelsInvalidCharacters =>
+      'The group name has hidden characters that can\'t be used.';
+
+  @override
+  String get marketWatchlist_modelsNotEditable =>
+      'The watchlist hasn\'t loaded yet, so groups can\'t be created.';
+
+  @override
+  String marketWatchlist_modelsTooLong(Object? watchlistMaxNameCodePoints) {
+    return 'Group names can be up to $watchlistMaxNameCodePoints characters.';
+  }
+
+  @override
+  String get market_chartFifteenMinutes => '15m';
+
+  @override
+  String get market_chartFourHours => '4h';
+
+  @override
+  String get market_chartOneDay => '1D';
+
+  @override
+  String get market_chartOneHour => '1h';
+
+  @override
+  String get market_chartOneWeek => '1W';
+
+  @override
+  String get market_chartToolbarLabel => 'Candles';
+
+  @override
+  String get market_chartToolbarLabel2 => 'Line';
+
+  @override
+  String market_chartToolbarS(Object? labels) {
+    return '$labels · Calculated on device';
+  }
+
+  @override
+  String get market_chartToolbarSemantic => 'Switch to candles';
+
+  @override
+  String get market_chartToolbarSemantic2 => 'Switch to line';
+
+  @override
+  String get market_chartToolbarSemantic3 => 'Moving averages';
+
+  @override
+  String get market_chartToolbarSemantic4 => 'Volume';
+
+  @override
+  String get market_fomoBuild => '24h change not reported';
+
+  @override
+  String get market_fomoDerived => 'Derived from trade price';
+
+  @override
+  String market_fomoDown(Object? figure) {
+    return '24h trend down $figure';
+  }
+
+  @override
+  String get market_fomoMarker => 'Pool estimate';
+
+  @override
+  String get market_fomoMarketTrendPercent => 'Not reported';
+
+  @override
+  String market_fomoMarketTrendSpoken(Object? signedPercent) {
+    return '24h change $signedPercent';
+  }
+
+  @override
+  String get market_fomoProxied => 'Priced in WBNB';
+
+  @override
+  String market_fomoS(Object? formatPercent) {
+    return '24h $formatPercent';
+  }
+
+  @override
+  String get market_fomoStale => 'Delayed';
+
+  @override
+  String market_fomoSubtitle(Object? formatCompactFigure) {
+    return 'Market cap $formatCompactFigure';
+  }
+
+  @override
+  String get market_fomoSwitch => 'No quote yet';
+
+  @override
+  String get market_fomoSwitch2 => 'Market data rate-limited';
+
+  @override
+  String get market_fomoSwitch3 => 'Market data can\'t be loaded';
+
+  @override
+  String get market_fomoSwitch4 => 'Market source not enabled';
+
+  @override
+  String get market_fomoSwitch5 => 'No trading pair';
+
+  @override
+  String get market_fomoSwitch6 => 'Pair can\'t be quoted';
+
+  @override
+  String get market_fomoSwitch7 => 'Not reported by market source';
+
+  @override
+  String get market_fomoSwitch8 => 'Market cache unavailable';
+
+  @override
+  String market_fomoUnread(Object? figure) {
+    return '24h trend flat $figure';
+  }
+
+  @override
+  String market_fomoUp(Object? figure) {
+    return '24h trend up $figure';
+  }
+
+  @override
+  String get market_readModelsCommunity => 'Community tokens';
+
+  @override
+  String get market_readModelsMajor => 'Majors';
+
+  @override
+  String get market_readModelsMarketAssetUnavailableLead =>
+      'This address can\'t be loaded right now';
+
+  @override
+  String market_readModelsProvider(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  ) {
+    return 'Main pool from $factSourceLabel · Unregistered pool $truncatedAddress';
+  }
+
+  @override
+  String market_readModelsRegistry(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  ) {
+    return 'Source $factSourceLabel · Pool $truncatedAddress';
+  }
+
+  @override
+  String get market_readModelsSwitch => 'Sorted by DexScreener 24h volume';
+
+  @override
+  String market_readModelsSwitch2(Object? ordering) {
+    return 'Sort rule $ordering';
+  }
+
+  @override
+  String market_readModelsSwitch3(Object? fact) {
+    return 'Buy tax $fact';
+  }
+
+  @override
+  String market_readModelsSwitch4(Object? fact) {
+    return 'Sell tax $fact';
+  }
+
+  @override
+  String market_readModelsSwitch5(Object? labelKey) {
+    return 'Source label $labelKey';
+  }
+
+  @override
+  String get market_readModelsSwitch6 => 'DexScreener market cap, high to low';
+
+  @override
+  String get market_readModelsSwitch7 => 'DexScreener 24h change, high to low';
+
+  @override
+  String get market_readModelsSwitch8 => 'DexScreener 24h volume, high to low';
+
+  @override
+  String get market_readModelsYesNo => 'Contract source verified';
+
+  @override
+  String get market_readModelsYesNo10 => 'Owner can\'t change balances';
+
+  @override
+  String get market_readModelsYesNo11 => 'Hidden owner detected';
+
+  @override
+  String get market_readModelsYesNo12 => 'No hidden owner detected';
+
+  @override
+  String get market_readModelsYesNo13 => 'Self-destruct function detected';
+
+  @override
+  String get market_readModelsYesNo14 => 'No self-destruct function detected';
+
+  @override
+  String get market_readModelsYesNo15 => 'External call detected';
+
+  @override
+  String get market_readModelsYesNo16 => 'No external call detected';
+
+  @override
+  String get market_readModelsYesNo17 => 'Honeypot traits detected';
+
+  @override
+  String get market_readModelsYesNo18 => 'No honeypot traits detected';
+
+  @override
+  String get market_readModelsYesNo19 => 'Transfers can be paused';
+
+  @override
+  String get market_readModelsYesNo2 => 'Contract source not verified';
+
+  @override
+  String get market_readModelsYesNo20 => 'Transfers can\'t be paused';
+
+  @override
+  String get market_readModelsYesNo21 => 'Blacklist function detected';
+
+  @override
+  String get market_readModelsYesNo22 => 'No blacklist function detected';
+
+  @override
+  String get market_readModelsYesNo23 => 'Whitelist function detected';
+
+  @override
+  String get market_readModelsYesNo24 => 'No whitelist function detected';
+
+  @override
+  String get market_readModelsYesNo25 => 'Holding limit detected';
+
+  @override
+  String get market_readModelsYesNo26 => 'No holding limit detected';
+
+  @override
+  String get market_readModelsYesNo27 => 'Trading cooldown detected';
+
+  @override
+  String get market_readModelsYesNo28 => 'No trading cooldown detected';
+
+  @override
+  String get market_readModelsYesNo29 => 'Can\'t sell all at once';
+
+  @override
+  String get market_readModelsYesNo3 => 'Proxy contract';
+
+  @override
+  String get market_readModelsYesNo30 => 'Can sell all at once';
+
+  @override
+  String get market_readModelsYesNo31 => 'Listed on a DEX';
+
+  @override
+  String get market_readModelsYesNo32 => 'Not listed on a DEX';
+
+  @override
+  String get market_readModelsYesNo4 => 'Not a proxy contract';
+
+  @override
+  String get market_readModelsYesNo5 => 'Mint function detected';
+
+  @override
+  String get market_readModelsYesNo6 => 'No mint function detected';
+
+  @override
+  String get market_readModelsYesNo7 => 'Reclaimable ownership detected';
+
+  @override
+  String get market_readModelsYesNo8 => 'No reclaimable ownership detected';
+
+  @override
+  String get market_readModelsYesNo9 => 'Owner can change balances';
+
+  @override
+  String get market_screenCommunity =>
+      'No verified community has linked a token yet.';
+
+  @override
+  String get market_screenEmptyMessage => 'No market data to show yet';
+
+  @override
+  String get market_screenEmptyMessage2 => 'No tokens in this category yet';
+
+  @override
+  String get market_screenMajor => 'No assets in the majors list to show yet.';
+
+  @override
+  String get market_screenMarketCapabilityBlockTitle =>
+      'Market isn\'t available right now';
+
+  @override
+  String get market_screenMarketSmartMoneyEntryTitle => 'Smart money tracker';
+
+  @override
+  String get market_screenMarketWatchlistBrowseMajorLabel => 'Browse majors';
+
+  @override
+  String get market_screenMarketWatchlistEmptyMessage =>
+      'Tap the star at the top right of a token page to add it to your watchlist';
+
+  @override
+  String get market_screenMarketWatchlistEmptyTitle => 'No watchlist yet';
+
+  @override
+  String get market_screenMarketWatchlistManageSubtitle =>
+      'Sort, group and remove';
+
+  @override
+  String get market_screenMarketWatchlistManageTitle => 'Manage watchlist';
+
+  @override
+  String market_screenMarketWatchlistUnavailableMessage(
+    Object? reasonCodeText,
+  ) {
+    return 'Watchlist prices can\'t be loaded · $reasonCodeText';
+  }
+
+  @override
+  String get market_screenMeme => 'No registered Launch project tokens yet.';
+
+  @override
+  String get market_screenNewPairs => 'New pairs';
+
+  @override
+  String market_screenTitle(Object? label) {
+    return 'No tokens in \"$label\" yet';
+  }
+
+  @override
+  String get market_secondaryScreensChartFullBlockedTitle =>
+      'Full-screen chart';
+
+  @override
+  String get market_secondaryScreensChartFullIntervalNoticeText =>
+      'Intervals: 15m / 1h / 4h / 1D / 1W. Drag sideways for earlier data, pinch to zoom, long-press to see a candle\'s price and time. MA and VOL are calculated on device from the chart\'s closes and volume, with no separate data source. There are no other indicators and no drawing tools.';
+
+  @override
+  String get market_secondaryScreensChartFullIntervalNoticeTitle =>
+      'What this chart does';
+
+  @override
+  String get market_secondaryScreensFact => 'Total holders';
+
+  @override
+  String get market_secondaryScreensInvalidAssetIdentityMessage =>
+      'This page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.';
+
+  @override
+  String get market_secondaryScreensInvalidAssetIdentityTitle =>
+      'No usable asset ID in the route';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage =>
+      'Can\'t open this chart';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage2 =>
+      'Can\'t open holder distribution';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage3 =>
+      'Can\'t open trade activity';
+
+  @override
+  String get market_secondaryScreensLabel => 'Top 10 concentration';
+
+  @override
+  String get market_secondaryScreensLabel2 =>
+      'Watchlist isn\'t available right now';
+
+  @override
+  String get market_secondaryScreensLoopLabel => 'Distribution';
+
+  @override
+  String get market_secondaryScreensLoopLabel2 => 'Risk screening';
+
+  @override
+  String get market_secondaryScreensLoopLabel3 => 'Watched addresses';
+
+  @override
+  String get market_secondaryScreensLoopLabel4 => 'Recent moves';
+
+  @override
+  String market_secondaryScreensLoopProvenanceFooter(Object? groupedFigure) {
+    return 'Indexed height $groupedFigure';
+  }
+
+  @override
+  String market_secondaryScreensLoopProvenanceFooter2(Object? groupedFigure) {
+    return 'Data $groupedFigure blocks behind';
+  }
+
+  @override
+  String market_secondaryScreensLoopRecordRow(Object? groupedFigure) {
+    return '$groupedFigure confirmations';
+  }
+
+  @override
+  String market_secondaryScreensLoopRecordRow2(Object? groupedFigure) {
+    return 'Block $groupedFigure';
+  }
+
+  @override
+  String get market_secondaryScreensMarketSegmentBar => 'Large trades';
+
+  @override
+  String get market_secondaryScreensMarketSegmentBar2 => 'Smart money';
+
+  @override
+  String get market_secondaryScreensNewPairsEmptyMessage =>
+      'This is what the data shows, not a filtered conclusion.';
+
+  @override
+  String get market_secondaryScreensNewPairsEmptyTitle =>
+      'No new pools right now';
+
+  @override
+  String get market_secondaryScreensNewPairsFolioCaption =>
+      'Check liquidity, contract status and data source before short-term price.';
+
+  @override
+  String market_secondaryScreensNewPairsFolioHeading(Object? items) {
+    return '$items new pairs · High risk';
+  }
+
+  @override
+  String get market_secondaryScreensNewPairsFolioHeading2 =>
+      'New pools can\'t be loaded right now';
+
+  @override
+  String get market_secondaryScreensNewPairsFolioHeading3 =>
+      'Loading new pools';
+
+  @override
+  String get market_secondaryScreensNewPairsNoticeBody =>
+      'Without risk screening data, this page won\'t judge risk on its own. New pools have thin liquidity and prices are easy to manipulate.';
+
+  @override
+  String get market_secondaryScreensNewPairsNoticeTitle =>
+      'Screening isn\'t a verdict';
+
+  @override
+  String get market_secondaryScreensNewPairsOmittedBody =>
+      'These rows\' pool IDs are neither a contract address nor a pool id, so rows that can\'t be verified aren\'t shown.';
+
+  @override
+  String market_secondaryScreensNewPairsOmittedTitle(Object? omittedCount) {
+    return '$omittedCount more rows couldn\'t be parsed';
+  }
+
+  @override
+  String get market_secondaryScreensNewPairsRiskScreeningLabel =>
+      'Risk screening unavailable';
+
+  @override
+  String get market_secondaryScreensNewPairsScreenTitle => 'New pair discovery';
+
+  @override
+  String get market_secondaryScreensNewPairsUnavailableLabel =>
+      'New pair discovery unavailable';
+
+  @override
+  String get market_secondaryScreensSmartMoneyFolioCaption =>
+      'Moves by watched addresses are leads, not copy-trade promises or return advice.';
+
+  @override
+  String get market_secondaryScreensSmartMoneyFolioHeading =>
+      'No addresses to watch yet';
+
+  @override
+  String get market_secondaryScreensSmartMoneyMovesUnavailableMessage =>
+      'Moves come from watched addresses, which aren\'t available yet.';
+
+  @override
+  String get market_secondaryScreensSmartMoneyMovesUnavailableTitle =>
+      'No moves to list yet';
+
+  @override
+  String get market_secondaryScreensSmartMoneyNoticeText =>
+      'Even when available, address labels and win rates are only historical stats from public on-chain data, not advice to follow.';
+
+  @override
+  String get market_secondaryScreensSmartMoneyNoticeTitle =>
+      'Win rate isn\'t a prediction';
+
+  @override
+  String get market_secondaryScreensSmartMoneyUnavailableLabel =>
+      'Watched addresses unavailable';
+
+  @override
+  String market_secondaryScreensText(
+    Object? factSourceLabel,
+    Object? relativeTime,
+  ) {
+    return 'Source $factSourceLabel · Observed $relativeTime';
+  }
+
+  @override
+  String get market_secondaryScreensTokenHoldersDistributionLabel =>
+      'Top holders, concentration and cluster labels unavailable';
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioCaption =>
+      'Holder facts haven\'t loaded yet.';
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioHeading =>
+      'Total holders unavailable';
+
+  @override
+  String market_secondaryScreensTokenHoldersFolioHeading2(
+    Object? formatDecimal,
+  ) {
+    return '$formatDecimal holders';
+  }
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioTitle =>
+      'Holder distribution';
+
+  @override
+  String get market_secondaryScreensTokenHoldersPageBlockTitle =>
+      'Holder distribution isn\'t available right now';
+
+  @override
+  String market_secondaryScreensTokenHoldersProvenanceSemanticsLabel(
+    Object? factProvenance,
+  ) {
+    return '$factProvenance, view data source details';
+  }
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyMessage =>
+      'Large trades are picked on device by trade value, not officially labeled.';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyMessage2 =>
+      'The indexer has read this range, but it has no trades.';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyTitle =>
+      'No large trades on this page';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyTitle2 =>
+      'No trades on this page';
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioCaption =>
+      'Direction, amount and time are scanned together from Swap events in registered PancakeSwap V3 pools.';
+
+  @override
+  String market_secondaryScreensTokenTradesFolioHeading(Object? items) {
+    return '$items on-chain trades';
+  }
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioHeading2 =>
+      'Latest on-chain trades';
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioTitle => 'Trade activity';
+
+  @override
+  String get market_secondaryScreensTokenTradesMoreFailedMessage =>
+      'Couldn\'t load the next page of trades';
+
+  @override
+  String get market_secondaryScreensTokenTradesSmartMoneyLabel =>
+      'Smart money filter unavailable';
+
+  @override
+  String get market_secondaryScreensTokenTradesUnavailableLabel =>
+      'Trade history unavailable';
+
+  @override
+  String get market_secondaryScreensTrailingCaption => 'Out of pool';
+
+  @override
+  String get market_secondaryScreensTrailingCaption2 => 'Into pool';
+
+  @override
+  String market_tokenBuild(Object? reasonCodeSummaryText) {
+    return '24h change$reasonCodeSummaryText';
+  }
+
+  @override
+  String get market_tokenCandleLastOpen => ', last candle still open';
+
+  @override
+  String market_tokenCandleSourceSentence(Object? source) {
+    return '$source.';
+  }
+
+  @override
+  String get market_tokenCandleStyleCandle => 'candles';
+
+  @override
+  String get market_tokenCandleStyleLine => 'close line';
+
+  @override
+  String get market_tokenCandlesEmptyMessage =>
+      'Only intervals with trades are drawn. Empty intervals aren\'t filled with 0.';
+
+  @override
+  String market_tokenCandlesUnavailableMessage(Object? reasonCodeText) {
+    return 'Chart can\'t be loaded · $reasonCodeText';
+  }
+
+  @override
+  String market_tokenCardChartSemanticLabel(
+    Object? closes,
+    Object? factSourceLabel,
+    Object? priceUnit,
+  ) {
+    return 'Trend line of $closes 1H closes, in $priceUnit, source $factSourceLabel';
+  }
+
+  @override
+  String get market_tokenCardChartTokenCardSparklineAbsence =>
+      'Loading 1H candles. No trend is drawn until they load.';
+
+  @override
+  String get market_tokenCardChartTokenCardSparklineAbsence2 =>
+      'No trades in this range. Only intervals with trades are drawn. Empty intervals aren\'t filled with 0.';
+
+  @override
+  String get market_tokenEmptyMessage => 'No facts to show for this asset yet';
+
+  @override
+  String get market_tokenEmptyMessage2 => 'No trades in this range';
+
+  @override
+  String get market_tokenEmptyMessage3 =>
+      'No notifications about this asset yet';
+
+  @override
+  String get market_tokenFact => '24h volume';
+
+  @override
+  String get market_tokenFact2 => 'Fully diluted valuation';
+
+  @override
+  String get market_tokenHolderSections => 'Holder count';
+
+  @override
+  String get market_tokenHolders => 'Holders';
+
+  @override
+  String get market_tokenIf => 'Price alert triggered';
+
+  @override
+  String market_tokenIf2(Object? observed, Object? symbol, Object? threshold) {
+    return '$symbol triggered $threshold (observed $observed)';
+  }
+
+  @override
+  String get market_tokenLoopLabel => 'About';
+
+  @override
+  String get market_tokenLoopLabel2 => 'Pool and contract facts';
+
+  @override
+  String market_tokenLoopProvenanceLine(Object? groupedFigure) {
+    return 'Data $groupedFigure blocks behind.';
+  }
+
+  @override
+  String get market_tokenLoopProvenanceLine2 =>
+      'Trades come from Swap events in registered pools. LOOP doesn\'t send counterparty addresses and only marks the trades your own wallet made.';
+
+  @override
+  String market_tokenLoopProvenanceLine3(Object? priceUnit) {
+    return 'In $priceUnit';
+  }
+
+  @override
+  String get market_tokenLoopProvenanceLine4 => 'Unregistered pool';
+
+  @override
+  String get market_tokenLoopProvenanceLine5 => 'Last candle in progress';
+
+  @override
+  String get market_tokenLoopProvenanceLine6 =>
+      'The last candle hasn\'t closed and may still change.';
+
+  @override
+  String get market_tokenLoopProvenanceLine7 =>
+      'MA and VOL are calculated on device from the chart\'s closes and volume, with no separate data source.';
+
+  @override
+  String get market_tokenMarker => 'Includes delayed or derived values';
+
+  @override
+  String get market_tokenMarketRangeCell => '24h high';
+
+  @override
+  String get market_tokenMarketRangeCell2 => '24h low';
+
+  @override
+  String get market_tokenMessage => 'System share can\'t open right now';
+
+  @override
+  String get market_tokenMessage2 => 'Contract address copied';
+
+  @override
+  String get market_tokenSentenceGap => ' ';
+
+  @override
+  String market_tokenShare(Object? address) {
+    return 'Contract $address';
+  }
+
+  @override
+  String get market_tokenShare2 => 'View market on LOOP';
+
+  @override
+  String get market_tokenTokenAboutContractValue => 'Native chain asset';
+
+  @override
+  String get market_tokenTokenAssetBlockedLabel =>
+      'This asset is marked as hidden';
+
+  @override
+  String market_tokenTokenCandleChartSemanticLabel(
+    Object? block,
+    Object? chartIntervalLabel,
+    Object? items,
+    Object? priceUnit,
+    Object? style,
+  ) {
+    return '$items $chartIntervalLabel $style, in $priceUnit$block';
+  }
+
+  @override
+  String get market_tokenTokenChartExpandLabel => 'Open full-screen chart';
+
+  @override
+  String market_tokenTokenCommunityEntrySubtitle(
+    Object? memberCount,
+    Object? name,
+  ) {
+    return '$name · $memberCount members';
+  }
+
+  @override
+  String get market_tokenTokenCommunityEntryTitle => 'Open LOOP community';
+
+  @override
+  String market_tokenTokenCommunityUnavailableMessage(Object? reasonCodeText) {
+    return 'No linked LOOP community yet · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenCopyAddressLabel => 'Copy contract address';
+
+  @override
+  String get market_tokenTokenFactsPair =>
+      'Main pair: no pair with this asset as base';
+
+  @override
+  String market_tokenTokenFactsPair2(
+    Object? marketDexLabel,
+    Object? quoteTokenSymbol,
+    Object? truncatedAddress,
+  ) {
+    return 'Main pair: $marketDexLabel · Quote $quoteTokenSymbol · $truncatedAddress';
+  }
+
+  @override
+  String get market_tokenTokenFeedEmptyMessage =>
+      'Triggered price alerts appear here. Push notifications aren\'t available yet.';
+
+  @override
+  String get market_tokenTokenHoldersDistributionUnavailableMessage =>
+      'Holder distribution isn\'t available right now';
+
+  @override
+  String get market_tokenTokenInvalidIdentityMessage =>
+      'The token page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.';
+
+  @override
+  String get market_tokenTokenInvalidRouteTitle => 'Can\'t open this asset';
+
+  @override
+  String market_tokenTokenLiveSuppressedMessage(Object? reasonCodeText) {
+    return 'On-chain reads aren\'t available right now · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenMiningWeightText => 'Mining weight';
+
+  @override
+  String market_tokenTokenPriceUnavailableMessage(
+    Object? reasonCodeSummaryText,
+    Object? reasonCodeText,
+  ) {
+    return 'Price$reasonCodeSummaryText · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenSecurityEmptyMessage =>
+      'Contract info can\'t be loaded right now. A missing item doesn\'t mean safe or unsafe';
+
+  @override
+  String get market_tokenTokenSecurityProvenanceDetail =>
+      'No rating, score or verdict is given here. A missing item only means it couldn\'t be read, not that it\'s safe or unsafe.';
+
+  @override
+  String market_tokenTokenSecurityProvenancePrefix(Object? facts) {
+    return '$facts contract facts';
+  }
+
+  @override
+  String market_tokenTokenSecurityUnavailableMessage(Object? reasonCodeText) {
+    return 'Contract facts can\'t be loaded · $reasonCodeText';
+  }
+
+  @override
+  String market_tokenTokenSwapUnavailableMessage(Object? reasonCodeText) {
+    return 'Buy, sell and swap aren\'t available right now · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenTradesEmptyMessage =>
+      'No one has traded in this pool recently';
+
+  @override
+  String market_tokenTokenTradesUnavailableMessage(Object? reasonCodeText) {
+    return 'Trade history can\'t be loaded · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenYesNo => 'Source verified';
+
+  @override
+  String get market_tokenYesNo10 => 'Owner can\'t change balances';
+
+  @override
+  String get market_tokenYesNo11 => 'Self-destruct detected';
+
+  @override
+  String get market_tokenYesNo12 => 'No self-destruct detected';
+
+  @override
+  String get market_tokenYesNo13 => 'Transfers pausable';
+
+  @override
+  String get market_tokenYesNo14 => 'Transfers not pausable';
+
+  @override
+  String get market_tokenYesNo15 => 'Blacklist detected';
+
+  @override
+  String get market_tokenYesNo16 => 'No blacklist detected';
+
+  @override
+  String get market_tokenYesNo17 => 'Whitelist detected';
+
+  @override
+  String get market_tokenYesNo18 => 'No whitelist detected';
+
+  @override
+  String get market_tokenYesNo19 => 'Can\'t sell all';
+
+  @override
+  String get market_tokenYesNo2 => 'Source not verified';
+
+  @override
+  String get market_tokenYesNo20 => 'Can sell all';
+
+  @override
+  String get market_tokenYesNo3 => 'Proxy contract';
+
+  @override
+  String get market_tokenYesNo4 => 'Not a proxy';
+
+  @override
+  String get market_tokenYesNo5 => 'Mint detected';
+
+  @override
+  String get market_tokenYesNo6 => 'No mint detected';
+
+  @override
+  String get market_tokenYesNo7 => 'Ownership reclaimable';
+
+  @override
+  String get market_tokenYesNo8 => 'No ownership reclaim detected';
+
+  @override
+  String get market_tokenYesNo9 => 'Owner can change balances';
+
+  @override
+  String get market_widgetsLoopRecordRow => 'Priced in BNB';
+
+  @override
+  String market_widgetsLoopRecordRow2(Object? formatCompactFigure) {
+    return 'Reserve $formatCompactFigure';
+  }
+
+  @override
+  String get market_widgetsLoopRecordRow3 => 'Reserve can\'t be loaded';
+
+  @override
+  String get market_widgetsLoopRecordRow4 => '24h volume can\'t be loaded';
+
+  @override
+  String get market_widgetsMarketBrowseOnlyLabel => 'View only';
+
+  @override
+  String get market_widgetsMarketNewPairsPageSubtitle =>
+      'Risk screening, collapsed rows and full notes are on this page';
+
+  @override
+  String get market_widgetsMarketNewPairsStamp => 'High risk';
+
+  @override
+  String market_widgetsMarketNewPairsUnavailableMessage(
+    Object? reasonCodeText,
+  ) {
+    return 'New pair discovery unavailable · $reasonCodeText';
+  }
+
+  @override
+  String get market_widgetsMarketSearchFieldLabel =>
+      'Search token or contract address';
+
+  @override
+  String get market_widgetsMarketSignalsKicker => 'Market overview';
+
+  @override
+  String get market_widgetsMarketTradesKicker => 'Trade history';
+
+  @override
+  String get market_widgetsMarketWatchlistKicker => 'Edit watchlist';
+
+  @override
+  String get market_widgetsMessage => 'Added to watchlist';
+
+  @override
+  String get market_widgetsMessage2 => 'Removed from watchlist';
+
+  @override
+  String market_widgetsMessage3(Object? watchlistMaxItems) {
+    return 'Your watchlist has reached $watchlistMaxItems items. Remove one in watchlist management first.';
+  }
+
+  @override
+  String market_widgetsMessage4(
+    Object? watchlistDefaultGroupName,
+    Object? watchlistMaxGroups,
+  ) {
+    return 'You\'ve reached $watchlistMaxGroups groups, so the default group \"$watchlistDefaultGroupName\" can\'t be created.';
+  }
+
+  @override
+  String get market_widgetsMessage5 =>
+      'Your watchlist changed on another device, so this wasn\'t saved. Retry.';
+
+  @override
+  String get market_widgetsSwitch => 'Search token / contract address';
+
+  @override
+  String get market_widgetsTitle => 'Unnamed pool';
+
+  @override
+  String get meme_createBody => 'What you\'ve entered won\'t be saved.';
+
+  @override
+  String get meme_createCancelLabel => 'Keep editing';
+
+  @override
+  String get meme_createConfirmLabel => 'Discard';
+
+  @override
+  String get meme_createConfirmStep => 'The address is set at creation';
+
+  @override
+  String get meme_createConfirmed => 'Created';
+
+  @override
+  String get meme_createEmptyMessage => 'This draft no longer exists';
+
+  @override
+  String get meme_createErrorText =>
+      'Enter an amount greater than 0, up to 18 decimal places';
+
+  @override
+  String get meme_createHintText => '1–32 characters';
+
+  @override
+  String get meme_createHintText2 => '2–10 letters or digits';
+
+  @override
+  String get meme_createIf => 'Only links starting with https:// are supported';
+
+  @override
+  String get meme_createIf2 =>
+      'You\'ve used up today\'s creations. Come back tomorrow';
+
+  @override
+  String meme_createIf3(Object? memeUsd1Label) {
+    return 'Minimum buy $memeUsd1Label';
+  }
+
+  @override
+  String meme_createIf4(Object? memeTokenFigure) {
+    return 'Exceeds the per-wallet limit of $memeTokenFigure';
+  }
+
+  @override
+  String get meme_createLabel => 'Upload image';
+
+  @override
+  String get meme_createLabel2 => 'Change';
+
+  @override
+  String get meme_createLabel3 => 'For sale';
+
+  @override
+  String get meme_createLabel4 => 'Trading fee';
+
+  @override
+  String get meme_createLabel5 => 'Per-wallet limit';
+
+  @override
+  String get meme_createLabel6 => 'Graduation condition';
+
+  @override
+  String meme_createLabel7(Object? address) {
+    return 'Token address $address';
+  }
+
+  @override
+  String get meme_createLabelText => 'Symbol';
+
+  @override
+  String get meme_createLabelText2 => 'Bio (optional)';
+
+  @override
+  String get meme_createLabelText3 => 'X (optional)';
+
+  @override
+  String get meme_createLabelText4 => 'Telegram (optional)';
+
+  @override
+  String get meme_createLabelText5 => 'Website (optional)';
+
+  @override
+  String get meme_createLabelText6 => 'First buy with USD1';
+
+  @override
+  String get meme_createLoopButton => 'Create';
+
+  @override
+  String get meme_createLoopLabel => 'Token address';
+
+  @override
+  String get meme_createLoopLabel2 => 'Parameters';
+
+  @override
+  String get meme_createLoopLabel3 => 'First buy (optional)';
+
+  @override
+  String get meme_createMedia => 'Image and links';
+
+  @override
+  String get meme_createMediaStep =>
+      'Square image, crop before uploading. Without one, the symbol\'s first letter is used.';
+
+  @override
+  String get meme_createMemeCreateBlockedTitle =>
+      'Tokens can\'t be created right now';
+
+  @override
+  String get meme_createMemeCreateEvidencePendingBody =>
+      'Contract check in progress. Creating may be unavailable for now.';
+
+  @override
+  String get meme_createMemeCreateNextLabel => 'Generating address…';
+
+  @override
+  String get meme_createMemeCreateNoVanityBody =>
+      'A 6666 suffix can\'t be assigned this time. The token can still be created and traded normally.';
+
+  @override
+  String get meme_createMemeCreateNoWalletBody => 'Loading wallet…';
+
+  @override
+  String get meme_createMemeCreateNoWalletBody2 =>
+      'No wallet available yet. Create or activate one in Wallet first.';
+
+  @override
+  String get meme_createMemeCreateResetLabel => 'Start over';
+
+  @override
+  String get meme_createMemeCreateResumeLabel => 'Check again';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Label => 'Go to v2 launch';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Message =>
+      'Use Loop Hook launch (v2 launch) to create new tokens.';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Title =>
+      'Classic launch is retired';
+
+  @override
+  String get meme_createMemeCreateRetiredTitle => 'Create token';
+
+  @override
+  String get meme_createMemeCreateRetryReportLabel => 'Report again';
+
+  @override
+  String meme_createMemeCreateUploadFailedBody(Object? memeFailureText) {
+    return 'The image didn\'t upload: $memeFailureText';
+  }
+
+  @override
+  String get meme_createPreparing => 'Preparing…';
+
+  @override
+  String get meme_createS =>
+      'This device can\'t pick images right now. Without one, the symbol\'s first letter is used.';
+
+  @override
+  String get meme_createSwitch => 'Name 1–32 characters';
+
+  @override
+  String get meme_createSwitch2 => 'Symbol 2–10 letters or digits';
+
+  @override
+  String get meme_createSwitch3 => 'Bio up to 500 characters';
+
+  @override
+  String meme_createText(
+    Object? memeTokenFigure,
+    Object? memeTokenLabel,
+    Object? memeUsd1Label,
+  ) {
+    return 'About $memeTokenLabel, fee $memeUsd1Label, limit $memeTokenFigure. The server quote applies before signing.';
+  }
+
+  @override
+  String get meme_createTitle => 'Discard token creation?';
+
+  @override
+  String meme_createValue(Object? memeTokenFigure) {
+    return '$memeTokenFigure';
+  }
+
+  @override
+  String meme_createValue2(Object? memeBpsLabel, Object? memeTokenFigure) {
+    return '$memeTokenFigure ($memeBpsLabel)';
+  }
+
+  @override
+  String get meme_createValue3 =>
+      'Lists on PancakeSwap automatically once the sale portion sells out';
+
+  @override
+  String meme_createValue4(Object? memeUsd1Label) {
+    return 'Lists on PancakeSwap automatically after raising about $memeUsd1Label';
+  }
+
+  @override
+  String get meme_createWaiting => 'Broadcast, waiting for confirmation…';
+
+  @override
+  String get meme_designSemantics => 'Not loaded';
+
+  @override
+  String meme_formatMemeAgeLabel(Object? inMinutes) {
+    return '${inMinutes}m';
+  }
+
+  @override
+  String meme_formatMemeAgeLabel2(Object? inHours) {
+    return '${inHours}h';
+  }
+
+  @override
+  String meme_formatMemeAgeLabel3(Object? inDays) {
+    return '${inDays}d';
+  }
+
+  @override
+  String get meme_formatSwitch => 'No DEX pool quote yet';
+
+  @override
+  String get meme_formatSwitch10 =>
+      'This transaction expired (not signed within about 30 seconds). Start again';
+
+  @override
+  String get meme_formatSwitch11 =>
+      'This transaction is no longer valid. Start again';
+
+  @override
+  String get meme_formatSwitch12 => 'Not enough USD1';
+
+  @override
+  String get meme_formatSwitch13 => 'Sell amount exceeds your holdings';
+
+  @override
+  String meme_formatSwitch14(Object? loopLaunchNativeSymbolText) {
+    return 'Not enough $loopLaunchNativeSymbolText for fees';
+  }
+
+  @override
+  String get meme_formatSwitch15 => 'Exceeds the per-wallet limit of 40M';
+
+  @override
+  String get meme_formatSwitch16 => 'Minimum buy 1 USD1';
+
+  @override
+  String get meme_formatSwitch17 =>
+      'Some details aren\'t valid. Check the name, symbol, bio and links';
+
+  @override
+  String get meme_formatSwitch18 =>
+      'This image wasn\'t uploaded by this account. Upload it again';
+
+  @override
+  String get meme_formatSwitch19 => 'The quote changed. Get a new quote';
+
+  @override
+  String get meme_formatSwitch2 => 'DEX pool market data can\'t be loaded';
+
+  @override
+  String get meme_formatSwitch20 =>
+      'The on-chain transaction doesn\'t match what you confirmed';
+
+  @override
+  String get meme_formatSwitch21 => 'The transaction didn\'t succeed on chain';
+
+  @override
+  String get meme_formatSwitch22 =>
+      'This transaction hasn\'t appeared on chain for a while';
+
+  @override
+  String get meme_formatSwitch23 => 'Simulation failed. Get a new quote';
+
+  @override
+  String get meme_formatSwitch24 =>
+      'Can\'t simulate right now. Try again later';
+
+  @override
+  String get meme_formatSwitch25 =>
+      'Approval needed first. Can\'t simulate before approval';
+
+  @override
+  String get meme_formatSwitch26 => 'Wallet not activated yet';
+
+  @override
+  String get meme_formatSwitch27 => 'On-chain data can\'t be loaded right now';
+
+  @override
+  String get meme_formatSwitch28 => 'Trading is closed for now';
+
+  @override
+  String get meme_formatSwitch29 => 'Mainnet signing isn\'t available yet';
+
+  @override
+  String get meme_formatSwitch3 => 'Not on chain yet';
+
+  @override
+  String get meme_formatSwitch30 => 'Launchpad isn\'t available yet';
+
+  @override
+  String get meme_formatSwitch31 =>
+      'Launchpad service isn\'t available right now';
+
+  @override
+  String get meme_formatSwitch32 => 'Launchpad contract isn\'t configured yet';
+
+  @override
+  String get meme_formatSwitch33 => 'Exceeds the per-transaction limit';
+
+  @override
+  String get meme_formatSwitch34 => 'Exceeds today\'s limit';
+
+  @override
+  String get meme_formatSwitch35 => 'This transaction isn\'t allowed right now';
+
+  @override
+  String get meme_formatSwitch4 => 'Price can\'t be loaded right now';
+
+  @override
+  String get meme_formatSwitch5 => 'Token doesn\'t exist';
+
+  @override
+  String get meme_formatSwitch6 => 'Not tradable right now';
+
+  @override
+  String get meme_formatSwitch7 => 'Filled, waiting to graduate';
+
+  @override
+  String get meme_formatSwitch8 => 'Status changed. Refresh';
+
+  @override
+  String get meme_formatSwitch9 => 'Address already taken. Retry';
+
+  @override
+  String meme_homeTopClosedReason(Object? chainFailureReason) {
+    return 'Wallet didn\'t load · $chainFailureReason';
+  }
+
+  @override
+  String get meme_homeTopIf =>
+      'Can\'t reach LOOP right now, so the balance can\'t be loaded';
+
+  @override
+  String meme_homeTopIf2(Object? reasonCodeText) {
+    return 'Wallet balance can\'t be loaded · $reasonCodeText';
+  }
+
+  @override
+  String meme_homeTopLabel(
+    Object? displayName,
+    Object? formatUsd,
+    Object? symbol,
+  ) {
+    return '$displayName made $formatUsd on $symbol';
+  }
+
+  @override
+  String get meme_homeTopLoopLabel => 'Best trades this week';
+
+  @override
+  String get meme_homeTopMemeTopUpLabel => 'Top up';
+
+  @override
+  String get meme_homeTopReason => 'Wallet balance can\'t be loaded right now';
+
+  @override
+  String get meme_homeTopReason2 => 'No wallet yet';
+
+  @override
+  String meme_homeTopReason3(Object? chainFailureReason) {
+    return 'Balance didn\'t load · $chainFailureReason';
+  }
+
+  @override
+  String meme_homeTopReason4(Object? count) {
+    return '$count assets have no price yet, so total assets aren\'t shown';
+  }
+
+  @override
+  String get meme_homeTopS => 'Wallet status hasn\'t loaded yet';
+
+  @override
+  String meme_homeTopText(Object? view) {
+    return ' · 24h$view';
+  }
+
+  @override
+  String get meme_launchpadEmptyMessage =>
+      'No tokens yet. Create the first one';
+
+  @override
+  String get meme_launchpadEmptyMessage2 => 'No tokens here yet';
+
+  @override
+  String get meme_launchpadEmptyMessage3 =>
+      'Platform MEME assets appear here once they\'re live';
+
+  @override
+  String get meme_launchpadIf =>
+      'Can\'t reach LOOP right now, so the Launchpad can\'t be loaded';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateLabel => 'Create the first one';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateMessage =>
+      'Classic launch is retired. Use v2 launch for new tokens';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateMessage2 =>
+      'Create the first one. It lists on PancakeSwap automatically when filled';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateTitle => 'No tokens yet';
+
+  @override
+  String meme_launchpadMemeLaunchpadUnavailableMessage(
+    Object? memeCapabilityText,
+  ) {
+    return 'Launchpad isn\'t available right now · $memeCapabilityText';
+  }
+
+  @override
+  String get meme_launchpadMemeListProvenanceDetail =>
+      'Bonding pool token prices and market caps come from the LOOP curve. Graduated tokens come from DexScreener. Tokens without a price show the reason instead of 0.';
+
+  @override
+  String get meme_launchpadMemeMarketEmptyTitle => 'No MEME assets yet';
+
+  @override
+  String meme_launchpadMemeMarketProvenanceDetail(Object? orderingLabel) {
+    return '$orderingLabel. Bonding pool tokens come from the LOOP curve and graduated tokens from DexScreener. Tokens without a quote show the reason.';
+  }
+
+  @override
+  String meme_launchpadMemeMarketUnavailableMessage(Object? reasonCodeText) {
+    return 'Market isn\'t available right now · $reasonCodeText';
+  }
+
+  @override
+  String get meme_launchpadMemeSearchEntryLabel => 'Search tokens';
+
+  @override
+  String get meme_launchpadS => 'Launchpad status hasn\'t loaded yet';
+
+  @override
+  String get meme_modelsBroadcastReported =>
+      'Broadcast, waiting for confirmation';
+
+  @override
+  String get meme_modelsFailed => 'Didn\'t succeed';
+
+  @override
+  String get meme_modelsFiveMinutes => '5m';
+
+  @override
+  String get meme_modelsFresh => 'New';
+
+  @override
+  String get meme_modelsGraduating => 'Almost full';
+
+  @override
+  String get meme_modelsHot => 'Hot';
+
+  @override
+  String get meme_modelsLoopCurve => 'LOOP curve';
+
+  @override
+  String get meme_modelsOneMinute => '1m';
+
+  @override
+  String meme_screenLaunch2ListAllUnavailableMessage(
+    Object? launch2CapabilityText,
+  ) {
+    return 'MEME v2 isn\'t available right now · $launch2CapabilityText';
+  }
+
+  @override
+  String get meme_signingBuy => 'Confirm buy';
+
+  @override
+  String meme_signingConfirmed(Object? noun) {
+    return '$noun confirmed on chain.';
+  }
+
+  @override
+  String get meme_signingCreate => 'Confirm create';
+
+  @override
+  String meme_signingExpired(Object? memeReasonText, Object? noun) {
+    return '$noun expired: $memeReasonText.';
+  }
+
+  @override
+  String meme_signingFailed(Object? memeReasonText, Object? noun) {
+    return '$noun didn\'t succeed: $memeReasonText.';
+  }
+
+  @override
+  String meme_signingIf(Object? memeShortAddress, Object? noun) {
+    return 'Approval broadcast ($memeShortAddress), but the wallet result of the $noun transaction is unknown, so it\'s locked. Don\'t sign again. Refresh later.';
+  }
+
+  @override
+  String meme_signingIf2(Object? noun) {
+    return 'The wallet result is unknown, so this $noun is locked. Don\'t sign again. Refresh later.';
+  }
+
+  @override
+  String meme_signingIf3(Object? short) {
+    return 'Broadcast ($short) and recorded by the server. Broadcast doesn\'t mean filled. Waiting for on-chain confirmation.';
+  }
+
+  @override
+  String meme_signingIf4(Object? memeReportReasonText, Object? short) {
+    return 'Broadcast ($short). $memeReportReasonText';
+  }
+
+  @override
+  String get meme_signingIntentField => 'Can\'t simulate before approval';
+
+  @override
+  String get meme_signingLabel => 'Estimated to receive';
+
+  @override
+  String get meme_signingLabel2 => 'Minimum received';
+
+  @override
+  String get meme_signingLabel3 => 'First buy payment';
+
+  @override
+  String get meme_signingLabel4 => 'Refund when full';
+
+  @override
+  String get meme_signingLabel5 => 'Fee';
+
+  @override
+  String get meme_signingLabel6 => 'Approve first';
+
+  @override
+  String meme_signingPollTimedOut(Object? noun) {
+    return 'Broadcast, but no confirmation yet. It may still be confirming, so check again later. Don\'t repeat the $noun.';
+  }
+
+  @override
+  String meme_signingPreparing(Object? noun) {
+    return 'Preparing $noun. The wallet isn\'t open yet.';
+  }
+
+  @override
+  String meme_signingReason(Object? memeIntentNoun) {
+    return 'Your wallet opens twice: approve first, then $memeIntentNoun. The approval covers only this transaction.';
+  }
+
+  @override
+  String get meme_signingSell => 'Confirm sell';
+
+  @override
+  String meme_signingSetState(Object? memeIntentNoun, Object? memeIntentNoun2) {
+    return 'Approval broadcast, but $memeIntentNoun wasn\'t signed, so no $memeIntentNoun2 transaction was submitted. Close and start again.';
+  }
+
+  @override
+  String get meme_signingSwitch => 'Cancelled. Nothing changed.';
+
+  @override
+  String get meme_signingSwitch10 =>
+      'Simulation failed, so this transaction would be rejected on chain. Nothing was submitted. Get a new quote.';
+
+  @override
+  String get meme_signingSwitch11 =>
+      'The wallet didn\'t finish signing. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch12 =>
+      'A different hash was already reported for this transaction, so this broadcast wasn\'t recorded. It may already be on chain. Don\'t sign again.';
+
+  @override
+  String get meme_signingSwitch13 =>
+      'The server no longer accepts reports for this transaction. The wallet already broadcast it and it may be on chain. Don\'t sign again.';
+
+  @override
+  String get meme_signingSwitch14 =>
+      'This transaction expired and isn\'t visible on chain yet, so the report wasn\'t accepted. It may still be propagating. Don\'t sign again.';
+
+  @override
+  String get meme_signingSwitch15 =>
+      'The on-chain transaction doesn\'t match what you confirmed, so the server didn\'t record it. Don\'t sign again, and contact support.';
+
+  @override
+  String get meme_signingSwitch16 =>
+      'The wallet already broadcast, but this report wasn\'t accepted or didn\'t arrive. The transaction may be on chain. You can report again later. Don\'t sign again.';
+
+  @override
+  String meme_signingSwitch17(Object? noun) {
+    return 'Approval broadcast, but $noun wasn\'t signed. You can start again.';
+  }
+
+  @override
+  String meme_signingSwitch18(Object? noun) {
+    return 'This $noun is locked. Don\'t sign again.';
+  }
+
+  @override
+  String get meme_signingSwitch2 => 'Identity check failed. Nothing changed.';
+
+  @override
+  String get meme_signingSwitch3 =>
+      'This transaction expired. Nothing was submitted. Start again.';
+
+  @override
+  String get meme_signingSwitch4 =>
+      'The transaction doesn\'t match what you confirmed, so signing was refused. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch5 =>
+      'The wallet for this transaction isn\'t in your wallet list. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch6 =>
+      'The server built this transaction for a different wallet, so signing was refused. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch7 =>
+      'Signing isn\'t allowed on this chain. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch8 =>
+      'The wallet can\'t sign on this chain right now. Nothing was submitted.';
+
+  @override
+  String get meme_signingSwitch9 =>
+      'The signed-in wallet isn\'t this transaction\'s wallet. Nothing was submitted.';
+
+  @override
+  String get meme_signingTitle => 'Approve';
+
+  @override
+  String meme_signingValue(Object? memeTokenLabel) {
+    return '$memeTokenLabel to the curve contract';
+  }
+
+  @override
+  String meme_signingWaiting(Object? attempts, Object? noun) {
+    return 'Broadcast, waiting for on-chain confirmation (checked $attempts times). Don\'t repeat the $noun.';
+  }
+
+  @override
+  String get meme_tokenBuild => 'DEX pool price';
+
+  @override
+  String meme_tokenBuild2(Object? memeTokenLabel) {
+    return 'Holding $memeTokenLabel';
+  }
+
+  @override
+  String get meme_tokenBuild3 => '100% · Graduated';
+
+  @override
+  String meme_tokenBuild4(Object? memeBpsLabel, Object? memeCapLabel) {
+    return '$memeBpsLabel · $memeCapLabel to go';
+  }
+
+  @override
+  String get meme_tokenBuild5 => 'Buy';
+
+  @override
+  String get meme_tokenCopy => 'Contract address copied';
+
+  @override
+  String get meme_tokenCopy2 => 'Pool address copied';
+
+  @override
+  String get meme_tokenCreatorBadge => 'Dev';
+
+  @override
+  String get meme_tokenDetail =>
+      'Holding = net curve buys minus sells. Transfers between wallets don\'t count. Share is out of a 1B total supply.';
+
+  @override
+  String get meme_tokenDetail2 =>
+      'Buy amounts are what was paid (including the 1% fee, excluding refunds). Sell amounts are what was received (after fees).';
+
+  @override
+  String get meme_tokenEmptyMessage => 'No holders yet';
+
+  @override
+  String get meme_tokenFor => 'Website';
+
+  @override
+  String get meme_tokenFull => 'Filled';
+
+  @override
+  String get meme_tokenGraduatedChartHint =>
+      ' See the DEX pool market for the trend after graduation.';
+
+  @override
+  String meme_tokenIf(Object? holderCount) {
+    return '$holderCount holders · Counted from curve trades';
+  }
+
+  @override
+  String get meme_tokenLabel => 'Token contract';
+
+  @override
+  String get meme_tokenLabel10 => '24h volume';
+
+  @override
+  String get meme_tokenLabel11 => 'All holders';
+
+  @override
+  String get meme_tokenLabel12 => 'All activity';
+
+  @override
+  String get meme_tokenLabel2 => 'Curve contract';
+
+  @override
+  String get meme_tokenLabel3 => 'Contract version';
+
+  @override
+  String get meme_tokenLabel4 => 'PancakeSwap pool';
+
+  @override
+  String get meme_tokenLabel5 => 'USD1 added';
+
+  @override
+  String get meme_tokenLabel6 => 'Tokens added';
+
+  @override
+  String get meme_tokenLabel7 => 'LP burned';
+
+  @override
+  String get meme_tokenLabel8 => 'Graduated at';
+
+  @override
+  String get meme_tokenLabel9 => 'Fill progress';
+
+  @override
+  String meme_tokenLoopInlineUnavailable(Object? text) {
+    return 'This token was hidden from the Launchpad · $text';
+  }
+
+  @override
+  String get meme_tokenLoopInlineUnavailable2 =>
+      'This token was hidden from the Launchpad';
+
+  @override
+  String get meme_tokenLoopLabel => 'Creator';
+
+  @override
+  String get meme_tokenLoopSheetHeading => 'Share token';
+
+  @override
+  String get meme_tokenMemeAboutDexSubtitle =>
+      'Price and candles after graduation';
+
+  @override
+  String get meme_tokenMemeAboutDexTitle => 'DEX pool market';
+
+  @override
+  String get meme_tokenMemeAboutExplorerTitle => 'Block explorer';
+
+  @override
+  String get meme_tokenMemeAboutProvenanceDetail =>
+      'Curve status, holders and trades come from LOOP\'s index of curve contract events. Only tokens created through LOOP are listed.';
+
+  @override
+  String get meme_tokenMemeAboutResidualMessage =>
+      'The DEX pool exists. Some funds remain in the contract';
+
+  @override
+  String meme_tokenMemeCandlesProvenanceDetail(Object? series) {
+    return 'Prices after each curve trade are grouped into candles by interval. Empty intervals aren\'t filled.$series';
+  }
+
+  @override
+  String get meme_tokenMemeCandlesProvenancePrefix => 'In USD1';
+
+  @override
+  String get meme_tokenMemeCandlesProvenancePrefix2 => 'Stops at graduation';
+
+  @override
+  String get meme_tokenMemeChartEmptyMessage =>
+      'A few more trades and the trend will appear';
+
+  @override
+  String get meme_tokenMemeProvenance => 'LOOP on-chain index';
+
+  @override
+  String get meme_tokenMemeTokenBlockedTitle =>
+      'Launchpad isn\'t available right now';
+
+  @override
+  String get meme_tokenMemeTokenCopyPoolLabel => 'Copy pool';
+
+  @override
+  String get meme_tokenMemeTokenEvidencePendingMessage =>
+      'Contract check in progress. Trading may be unavailable for now';
+
+  @override
+  String get meme_tokenMemeTokenFullLabel => 'Filled, graduating…';
+
+  @override
+  String get meme_tokenMemeTokenGraduatedCloseBody =>
+      'The curve is filled, the token is on PancakeSwap and the LP is burned.';
+
+  @override
+  String get meme_tokenMemeTokenInvalidIdentityMessage =>
+      'No data was requested and no other token was used instead.';
+
+  @override
+  String get meme_tokenMemeTokenInvalidIdentityTitle =>
+      'No usable token ID in the route';
+
+  @override
+  String get meme_tokenMemeTokenInvalidRouteTitle => 'Can\'t open this token';
+
+  @override
+  String meme_tokenMemeTokenLiquidityLowBody(Object? memeCapLabel) {
+    return 'Low liquidity · Bonding pool reserve $memeCapLabel. Large buys have high slippage';
+  }
+
+  @override
+  String get meme_tokenMemeTokenPausedLabel => 'Trading paused';
+
+  @override
+  String get meme_tokenMemeTokenPendingLabel => 'Creating…';
+
+  @override
+  String get meme_tokenMemeTokenPriceProvenanceDetail =>
+      'Bonding pool price = ratio of the curve\'s virtual reserves. Market cap = price × 1B total supply.';
+
+  @override
+  String get meme_tokenMemeTokenPriceProvenanceDetail2 =>
+      'Price and market cap after graduation come from DexScreener.';
+
+  @override
+  String meme_tokenMemeTokenProgressBarSemanticLabel(Object? memeBpsLabel) {
+    return 'Bonding pool progress $memeBpsLabel';
+  }
+
+  @override
+  String get meme_tokenMemeTokenQuickBuySurfaceLabel => 'Quick buy';
+
+  @override
+  String get meme_tokenMemeTokenResumeLabel => 'Continue creating';
+
+  @override
+  String get meme_tokenMemeTokenSwapLabel => 'Go to Swap';
+
+  @override
+  String get meme_tokenMemeTokenSwapTestnetMessage =>
+      'In-app swap isn\'t supported yet';
+
+  @override
+  String meme_tokenMemeTokenViewerUnavailableMessage(Object? memeReasonText) {
+    return 'My holdings can\'t be loaded · $memeReasonText';
+  }
+
+  @override
+  String get meme_tokenMessage => 'No wallet available yet';
+
+  @override
+  String get meme_tokenMessage3 => 'Holders appear here after the first buy';
+
+  @override
+  String get meme_tokenMessage4 => 'Trades appear here after a buy or sell';
+
+  @override
+  String get meme_tokenNoAddressYet => 'No address yet';
+
+  @override
+  String get meme_tokenPaused => 'Paused';
+
+  @override
+  String get meme_tokenPendingChain => 'Creating';
+
+  @override
+  String meme_tokenS(Object? holderCount) {
+    return '$holderCount holders · Counted from curve trades · Frozen at graduation';
+  }
+
+  @override
+  String get meme_tokenS2 => 'Sell';
+
+  @override
+  String meme_tokenSemanticLabel(
+    Object? candles,
+    Object? label,
+    Object? style,
+  ) {
+    return '$candles $label $style, in USD1';
+  }
+
+  @override
+  String get meme_tokenSemanticLabel2 => 'Token contract address QR code';
+
+  @override
+  String meme_tokenShare(Object? address) {
+    return 'Contract $address';
+  }
+
+  @override
+  String get meme_tokenShare2 => 'View on LOOP Launchpad';
+
+  @override
+  String get meme_tokenSubtitle => 'The creator has no public profile';
+
+  @override
+  String get meme_tokenSubtitle2 => 'View public profile';
+
+  @override
+  String meme_tokenSubtitle3(
+    Object? memeTokenCompact,
+    Object? rank,
+    Object? symbol,
+  ) {
+    return '#$rank · $memeTokenCompact $symbol';
+  }
+
+  @override
+  String get meme_tokenText => '1D';
+
+  @override
+  String get meme_tokenTitle => 'No public profile';
+
+  @override
+  String get meme_tokenTrading => 'Bonding pool';
+
+  @override
+  String get meme_tokenValue => 'No limit after graduation';
+
+  @override
+  String meme_tradePanelIf(Object? memeTokenFigure) {
+    return 'Exceeds the per-wallet limit of $memeTokenFigure';
+  }
+
+  @override
+  String get meme_tradePanelIf2 => 'This amount gets no tokens. Adjust it';
+
+  @override
+  String get meme_tradePanelLabel => 'Get';
+
+  @override
+  String get meme_tradePanelLabel2 => 'Fee';
+
+  @override
+  String get meme_tradePanelLabel3 => 'Impact';
+
+  @override
+  String get meme_tradePanelLoopProvenanceLine => 'On-chain curve';
+
+  @override
+  String meme_tradePanelLoopSheetHeading(Object? ticker) {
+    return 'Buy $ticker';
+  }
+
+  @override
+  String meme_tradePanelMemeTradeBalance(Object? memeReasonText) {
+    return 'Wallet data can\'t be loaded · $memeReasonText';
+  }
+
+  @override
+  String meme_tradePanelMemeTradeBalance2(Object? memeUsd1Label) {
+    return 'Available $memeUsd1Label';
+  }
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteEmpty => 'Getting quote…';
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteEmpty2 =>
+      'Enter an amount to see a quote';
+
+  @override
+  String meme_tradePanelMemeTradeQuoteFailedMessage(Object? memeFailureText) {
+    return 'Couldn\'t get a quote · $memeFailureText';
+  }
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail =>
+      'The quote uses the current on-chain curve.';
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail2 =>
+      'On-chain reads aren\'t available, so the quote uses the index snapshot and may lag a few blocks.';
+
+  @override
+  String get meme_tradePanelMemeTradeSlippageCustomLabel => 'Custom';
+
+  @override
+  String meme_tradePanelS(Object? memeTokenLabel) {
+    return 'Exceeds the per-wallet limit. You can buy up to $memeTokenLabel more';
+  }
+
+  @override
+  String meme_tradePanelS2(Object? ticker) {
+    return 'Sell $ticker';
+  }
+
+  @override
+  String meme_widgetsBuild(Object? memeCapLabel) {
+    return '$memeCapLabel volume';
+  }
+
+  @override
+  String get meme_widgetsMemeChangeUnreported => '1h change not reported';
+
+  @override
+  String meme_widgetsMemeTokenSpokenLabel(Object? memeCapLabel) {
+    return 'Market cap $memeCapLabel';
+  }
+
+  @override
+  String meme_widgetsMemeTokenSpokenLabel2(Object? holderCount) {
+    return '$holderCount holders';
+  }
+
+  @override
+  String meme_widgetsSemantics(Object? memeCapLabel) {
+    return 'Volume $memeCapLabel';
+  }
+
+  @override
+  String meme_widgetsSemantics2(Object? age) {
+    return 'Live $age';
+  }
 
   @override
   String get notifications_applicationNoReason =>

@@ -1,0 +1,2762 @@
+{
+  "community_aiBody": {
+    "en": "Answering…",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:451",
+    "zh": "正在回答…"
+  },
+  "community_aiBuild": {
+    "en": "{label} · Observed {communityAiTimestamp}",
+    "placeholders": {
+      "communityAiTimestamp": {
+        "example": "communityAiTimestamp(source.observedAt)",
+        "type": "Object"
+      },
+      "label": {
+        "example": "source.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_screen.dart:790",
+    "zh": "{label} · 观察于 {communityAiTimestamp}"
+  },
+  "community_aiBuild2": {
+    "en": "Observed {communityAiTimestamp}",
+    "placeholders": {
+      "communityAiTimestamp": {
+        "example": "communityAiTimestamp(source.observedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_screen.dart:925",
+    "zh": "观察于 {communityAiTimestamp}"
+  },
+  "community_aiBuild3": {
+    "en": "Choose a reason. The report records only this answer and your choice, not the question you asked.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:972",
+    "zh": "选择一个原因。举报只记录这条回答和你的选择，不会上传你问过的问题。"
+  },
+  "community_aiCommunityAiCapabilitiesEmptyTitle": {
+    "en": "This community has no assistant features yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:382",
+    "zh": "这个社区还没有开放的助理能力"
+  },
+  "community_aiCommunityAiComposerHintText": {
+    "en": "Ask this community's AI",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:173",
+    "zh": "问这个社区的 AI"
+  },
+  "community_aiCommunityAiComposerUnavailableHintText": {
+    "en": "Questions aren't available yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:1054",
+    "zh": "提问还没有开放"
+  },
+  "community_aiCommunityAiHeadline": {
+    "en": "Community AI isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:56",
+    "zh": "Community AI 还没有开放"
+  },
+  "community_aiCommunityAiHeroKicker": {
+    "en": "Community brief",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:265, lib/features/community/community_ai_screen.dart:282, lib/features/community/community_ai_screen.dart:1048",
+    "zh": "社区简报"
+  },
+  "community_aiCommunityAiReportSheetBarrierLabel": {
+    "en": "Close report options",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:953",
+    "zh": "关闭举报选项"
+  },
+  "community_aiCommunityAiSourceSheetBarrierLabel": {
+    "en": "Close source details",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:906",
+    "zh": "关闭来源说明"
+  },
+  "community_aiCommunityAiStateEmptyTitle": {
+    "en": "Nothing to ask about in this community yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:340",
+    "zh": "这个社区还没有可以问的内容"
+  },
+  "community_aiCommunityAiStatePermissionTitle": {
+    "en": "This account can't use this assistant yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:358",
+    "zh": "当前账号还不能用这个助理"
+  },
+  "community_aiCommunityAiStateUnavailableMessage": {
+    "en": "This page isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:350",
+    "zh": "这一页暂时不可用"
+  },
+  "community_aiLabel": {
+    "en": "Reported",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:662, lib/features/community/community_ai_screen.dart:681",
+    "zh": "已举报"
+  },
+  "community_aiLabel2": {
+    "en": "Report this answer",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:662, lib/features/community/community_ai_screen.dart:959",
+    "zh": "举报这条回答"
+  },
+  "community_aiLabel3": {
+    "en": "Source {sourceId}",
+    "placeholders": {
+      "sourceId": {
+        "example": "source.sourceId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_screen.dart:741",
+    "zh": "来源 {sourceId}"
+  },
+  "community_aiLoopLabel": {
+    "en": "What I can do",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:204",
+    "zh": "我能做什么"
+  },
+  "community_aiLoopLabel2": {
+    "en": "Try these",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:210, lib/features/community/community_ai_screen.dart:1092",
+    "zh": "试试这些"
+  },
+  "community_aiLoopLabel3": {
+    "en": "Planned features",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:1069",
+    "zh": "规划中的能力"
+  },
+  "community_aiLoopOfflineState": {
+    "en": "Ask",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:346",
+    "zh": "提问"
+  },
+  "community_aiMessage": {
+    "en": "Report submitted",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:299",
+    "zh": "已提交举报"
+  },
+  "community_aiModelsCaption": {
+    "en": "Generating from today's discussions. Pull down to refresh later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:532",
+    "zh": "正在根据今天的讨论生成，稍后下拉刷新。"
+  },
+  "community_aiModelsCaption2": {
+    "en": "Come back tomorrow. The rest of this page isn't affected.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:536",
+    "zh": "明天再来。这一页的其余内容不受影响。"
+  },
+  "community_aiModelsCommunityAiBriefPendingHeading": {
+    "en": "Generating today's summary",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:543",
+    "zh": "今日摘要生成中"
+  },
+  "community_aiModelsCommunityAiBriefQuotaHeading": {
+    "en": "Today's summary quota is used up",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:546",
+    "zh": "今日摘要配额已用完"
+  },
+  "community_aiModelsCommunityAiGeneratedLabel": {
+    "en": "AI generated · {model} · {communityAiTimestamp}",
+    "placeholders": {
+      "communityAiTimestamp": {
+        "example": "communityAiTimestamp(generatedAt)",
+        "type": "Object"
+      },
+      "model": {
+        "example": "model",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_models.dart:558",
+    "zh": "AI 生成 · {model} · {communityAiTimestamp}"
+  },
+  "community_aiModelsCommunityAiKnowledgeLine": {
+    "en": "No sources available",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:516",
+    "zh": "暂无可用来源"
+  },
+  "community_aiModelsCommunityAiKnowledgeLine2": {
+    "en": "{sourceCount} knowledge sources · Updated {communityAiTimestamp}",
+    "placeholders": {
+      "communityAiTimestamp": {
+        "example": "communityAiTimestamp(updatedAt)",
+        "type": "Object"
+      },
+      "sourceCount": {
+        "example": "knowledge.sourceCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_models.dart:517",
+    "zh": "知识源 {sourceCount} 项 · 更新于 {communityAiTimestamp}"
+  },
+  "community_aiModelsHarmful": {
+    "en": "Harmful or dangerous",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:357",
+    "zh": "有害或危险"
+  },
+  "community_aiModelsHeading": {
+    "en": "Couldn't load today's discussions",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:538",
+    "zh": "今日讨论读不到"
+  },
+  "community_aiModelsInaccurate": {
+    "en": "Inaccurate",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:356",
+    "zh": "内容不准确"
+  },
+  "community_aiModelsOffTopic": {
+    "en": "Off topic",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:358",
+    "zh": "答非所问"
+  },
+  "community_aiModelsOther": {
+    "en": "Other",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:360",
+    "zh": "其他问题"
+  },
+  "community_aiModelsPrivacy": {
+    "en": "Involves personal privacy",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:359",
+    "zh": "涉及个人隐私"
+  },
+  "community_aiModelsS": {
+    "en": "{messageCount} messages today",
+    "placeholders": {
+      "messageCount": {
+        "example": "brief.messageCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_models.dart:551",
+    "zh": "今日 {messageCount} 条讨论"
+  },
+  "community_aiModelsSwitch": {
+    "en": "No project documents yet, so this can't be answered.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:491",
+    "zh": "还没有收录项目文档，这一项暂时答不了。"
+  },
+  "community_aiModelsSwitch10": {
+    "en": "Couldn't read the official group's discussions this time.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:502",
+    "zh": "这次没能读到官方群的讨论。"
+  },
+  "community_aiModelsSwitch11": {
+    "en": "The AI didn't answer this time. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:504",
+    "zh": "AI 这次没有答上来，稍后可以再试。"
+  },
+  "community_aiModelsSwitch12": {
+    "en": "The AI declined this request. Trying again won't help.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:505",
+    "zh": "AI 拒绝了这次请求，再试也不会有结果。"
+  },
+  "community_aiModelsSwitch13": {
+    "en": "The AI's answer was incomplete, so it wasn't used.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:506",
+    "zh": "AI 返回的内容不完整，这次没有采用。"
+  },
+  "community_aiModelsSwitch14": {
+    "en": "This community has no sources available, so you can't ask right now.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:507",
+    "zh": "这个社区现在没有任何可用来源，暂时问不了。"
+  },
+  "community_aiModelsSwitch15": {
+    "en": "The AI assistant isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:508",
+    "zh": "AI 助理暂未开放。"
+  },
+  "community_aiModelsSwitch16": {
+    "en": "At least {messageCount} messages today",
+    "placeholders": {
+      "messageCount": {
+        "example": "brief.messageCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_models.dart:550",
+    "zh": "今日至少 {messageCount} 条讨论"
+  },
+  "community_aiModelsSwitch17": {
+    "en": "This community's question quota for today is used up. Come back tomorrow.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:574",
+    "zh": "这个社区今天的提问额度用完了，明天再来。"
+  },
+  "community_aiModelsSwitch18": {
+    "en": "Too many questions. Wait a minute and ask again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:575",
+    "zh": "提问太频繁了，等一分钟再问。"
+  },
+  "community_aiModelsSwitch2": {
+    "en": "No beginner guides yet, so this can't be answered.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:492",
+    "zh": "还没有收录新手教程，这一项暂时答不了。"
+  },
+  "community_aiModelsSwitch3": {
+    "en": "Announcements and official updates aren't available yet, so this can't be answered.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:493",
+    "zh": "公告和官方动态暂未开放，这一项暂时答不了。"
+  },
+  "community_aiModelsSwitch4": {
+    "en": "AI moderation isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:494, lib/features/community/community_contract.dart:441",
+    "zh": "AI 巡查还没有开放。"
+  },
+  "community_aiModelsSwitch5": {
+    "en": "Community analytics isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:495",
+    "zh": "社区分析还没有开放。"
+  },
+  "community_aiModelsSwitch6": {
+    "en": "Generating today's summary. Pull down to refresh later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:498",
+    "zh": "今日摘要生成中，稍后下拉刷新。"
+  },
+  "community_aiModelsSwitch7": {
+    "en": "Today's summary quota is used up. Come back tomorrow.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:499",
+    "zh": "今日摘要配额已用完，明天再来。"
+  },
+  "community_aiModelsSwitch8": {
+    "en": "Join this community to read its discussions.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:500",
+    "zh": "先加入这个社区，才能读到社区里的讨论。"
+  },
+  "community_aiModelsSwitch9": {
+    "en": "This community has no official group yet, so there's nothing to summarize.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_models.dart:501",
+    "zh": "这个社区还没有开通官方群，没有可以总结的讨论。"
+  },
+  "community_aiOutlook": {
+    "en": "Once available, answers will include sources and observation times. They don't replace project announcements.",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:66",
+    "zh": "开放后，回答会带上来源和观察时间，不替代项目方公告。"
+  },
+  "community_aiSentenceGap": {
+    "en": " ",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:101",
+    "zh": ""
+  },
+  "community_aiSummary": {
+    "en": "Sources used ({sources})",
+    "placeholders": {
+      "sources": {
+        "example": "answer.sources.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_screen.dart:648",
+    "zh": "本次使用的来源（{sources}）"
+  },
+  "community_aiSummary2": {
+    "en": "Sources not used ({omitted})",
+    "placeholders": {
+      "omitted": {
+        "example": "omitted.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_ai_screen.dart:811",
+    "zh": "本次未使用的来源（{omitted}）"
+  },
+  "community_aiText": {
+    "en": "Project knowledge",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:32",
+    "zh": "项目知识"
+  },
+  "community_aiText10": {
+    "en": "Price, market cap, liquidity, weight, community power",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:36",
+    "zh": "价格、市值、流动性、权重、社区算力"
+  },
+  "community_aiText11": {
+    "en": "Community guidance",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:37",
+    "zh": "社区引导"
+  },
+  "community_aiText12": {
+    "en": "Reminds you to join mining and when weight takes effect",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:37",
+    "zh": "提醒你还没参与挖矿、权重已生效"
+  },
+  "community_aiText13": {
+    "en": "AI moderation",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:38",
+    "zh": "AI 巡查"
+  },
+  "community_aiText14": {
+    "en": "Detects scam links, fake CAs, phishing and fake admins",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:38",
+    "zh": "检测诈骗链接、假 CA、钓鱼、假管理员"
+  },
+  "community_aiText15": {
+    "en": "Community analytics",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:39",
+    "zh": "社区分析"
+  },
+  "community_aiText16": {
+    "en": "Admins only: DAU, conversion, sentiment",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:39",
+    "zh": "仅管理员可见：DAU、转化、情绪变化"
+  },
+  "community_aiText17": {
+    "en": "How are tokenomics allocated",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:47",
+    "zh": "Tokenomics 怎么分配"
+  },
+  "community_aiText18": {
+    "en": "How do I join mining",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:48",
+    "zh": "怎么参与挖矿"
+  },
+  "community_aiText19": {
+    "en": "What's new this week",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:49",
+    "zh": "这周有什么动态"
+  },
+  "community_aiText2": {
+    "en": "Whitepaper, tokenomics, roadmap, FAQ",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:32",
+    "zh": "白皮书、Tokenomics、Roadmap、FAQ"
+  },
+  "community_aiText3": {
+    "en": "Community support",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:33",
+    "zh": "社区客服"
+  },
+  "community_aiText4": {
+    "en": "What a CA is, how to buy, how to join mining",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:33",
+    "zh": "CA 是什么、怎么买、怎么参与挖矿"
+  },
+  "community_aiText5": {
+    "en": "Beginner education",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:34",
+    "zh": "新手教育"
+  },
+  "community_aiText6": {
+    "en": "Project in 3 minutes, beginner guide, asset safety",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:34",
+    "zh": "3 分钟了解项目、新手指南、资产安全"
+  },
+  "community_aiText7": {
+    "en": "Project updates",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:35",
+    "zh": "项目动态"
+  },
+  "community_aiText8": {
+    "en": "Official X, announcements and blog in daily and weekly digests",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:35",
+    "zh": "官方 X、公告、Blog 汇总成日报周报"
+  },
+  "community_aiText9": {
+    "en": "Asset info",
+    "placeholders": {},
+    "where": "lib/features/community/community_ai_screen.dart:36",
+    "zh": "资产信息"
+  },
+  "community_contractActivationRequired": {
+    "en": "Activate your LOOP ID before using community and social features.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:368",
+    "zh": "需要先完成 LOOP ID 激活才能执行社区与社交操作。"
+  },
+  "community_contractActivationRequired2": {
+    "en": "Activate your LOOP ID before applying for a community. You can resubmit this application after activation.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:407",
+    "zh": "需要先完成 LOOP ID 激活才能申请社区。激活后可以重新提交这份申请。"
+  },
+  "community_contractAliasBlocked": {
+    "en": "This name is on the block list. Try another one.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:374",
+    "zh": "该名称在运营屏蔽名单内，请换一个再试。"
+  },
+  "community_contractAliasBlocked2": {
+    "en": "This community name is on the block list. Choose another name and submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:401",
+    "zh": "社区名称在当前的运营屏蔽名单内，请换一个名称再提交。"
+  },
+  "community_contractAliasReserved": {
+    "en": "This name is reserved by LOOP. Try another one.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:373",
+    "zh": "该名称属于 LOOP 保留词，请换一个再试。"
+  },
+  "community_contractAliasReserved2": {
+    "en": "This community name uses a LOOP reserved word (such as official, support or admin). Choose another name and submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:400",
+    "zh": "社区名称撞上了 LOOP 保留词（如官方、支持、管理），请换一个名称再提交。"
+  },
+  "community_contractBootstrapRequired": {
+    "en": "Your account isn't set up yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:369",
+    "zh": "账号尚未完成初始化，请稍后重试。"
+  },
+  "community_contractBoundAssetTaken": {
+    "en": "This token is already linked to another community. Choose another token.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:371",
+    "zh": "这个代币已被其他社区绑定，请换一个代币。"
+  },
+  "community_contractBoundAssetTaken2": {
+    "en": "This token is already linked to another community. Choose another token and submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:403",
+    "zh": "这个代币已被其他社区绑定，请换一个代币再提交。"
+  },
+  "community_contractCancelled": {
+    "en": "The request was cancelled and the result is unknown. Check the latest status before retrying.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:362",
+    "zh": "请求已被取消，结果未知。请查看最新状态后再决定是否重试。"
+  },
+  "community_contractCommunityBoundAssetUniqueHint": {
+    "en": "Each token can be linked to only one community.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:48",
+    "zh": "每个代币只能被一个社区绑定。"
+  },
+  "community_contractIdempotencyConflict": {
+    "en": "The same action was already submitted with different content. Check the latest status and try again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:376",
+    "zh": "同一操作已被提交过且内容不同，请检查最新状态后再试。"
+  },
+  "community_contractInvalidData": {
+    "en": "The response was incomplete, so nothing on this page was used.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:377",
+    "zh": "返回的数据不完整，这一页没有采用任何内容。"
+  },
+  "community_contractNotFound": {
+    "en": "This doesn't exist, was removed, or isn't visible to this account.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:366",
+    "zh": "目标不存在、已被移除，或对当前账号不可见。"
+  },
+  "community_contractOffline": {
+    "en": "You're offline. Nothing was loaded and nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:360",
+    "zh": "设备已离线，这一页没有读到数据，也没有提交任何操作。"
+  },
+  "community_contractOutcomeUnknown": {
+    "en": "The response was incomplete and the result isn't confirmed. Refresh to check the latest status. Don't submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:363",
+    "zh": "返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。"
+  },
+  "community_contractPermissionDenied": {
+    "en": "This account doesn't have permission for this action.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:365",
+    "zh": "当前账号没有执行这个操作的权限。"
+  },
+  "community_contractRateLimited": {
+    "en": "Too many searches. Wait a moment and try again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:375",
+    "zh": "搜索过于频繁，请稍等片刻再试。"
+  },
+  "community_contractResourceConflict": {
+    "en": "This short link is taken by another community. Choose another one.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:370",
+    "zh": "该短链接已被其他社区占用，请换一个。"
+  },
+  "community_contractResourceConflict2": {
+    "en": "This short link is taken by another community. Choose another one and submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:402",
+    "zh": "这个短链接已经被另一个社区占用，请换一个再提交。"
+  },
+  "community_contractStale": {
+    "en": "The status has changed (someone else may have handled it). Refresh and decide again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:367",
+    "zh": "状态已经改变（可能已被他人处理）。请刷新后重新决定。"
+  },
+  "community_contractSwitch": {
+    "en": "Unread count can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:414",
+    "zh": "未读数暂时读不到。"
+  },
+  "community_contractSwitch10": {
+    "en": "The messaging service isn't available, so the online count can't be checked.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:425",
+    "zh": "通信服务暂时不可用，问不到在线人数。"
+  },
+  "community_contractSwitch11": {
+    "en": "Mining rules aren't set yet, so power isn't shown.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:426",
+    "zh": "挖矿规则还没有确定，暂时不显示算力。"
+  },
+  "community_contractSwitch12": {
+    "en": "Power hasn't been calculated yet, so you can't sort by power.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:430",
+    "zh": "还没有算出过算力，暂时不能按算力排序。"
+  },
+  "community_contractSwitch13": {
+    "en": "The last settlement didn't finish, so you can't sort by power.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:431",
+    "zh": "最近一次结算没有完成，暂时不能按算力排序。"
+  },
+  "community_contractSwitch14": {
+    "en": "The last settlement used old rules, so you can't sort by power.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:432",
+    "zh": "最近一次结算用的是旧规则，暂时不能按算力排序。"
+  },
+  "community_contractSwitch15": {
+    "en": "Mining isn't available, so you can't sort by power.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:433",
+    "zh": "挖矿暂时不可用，暂时不能按算力排序。"
+  },
+  "community_contractSwitch16": {
+    "en": "Discussion counts can't be loaded, so this sort isn't available.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:434",
+    "zh": "讨论量暂时读不到，这个排序现在用不了。"
+  },
+  "community_contractSwitch17": {
+    "en": "This community's discussion count can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:435",
+    "zh": "这个社区的讨论量暂时读不到。"
+  },
+  "community_contractSwitch18": {
+    "en": "This community has no linked asset, so it has no power.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:436",
+    "zh": "这个社区还没有绑定资产，没有算力。"
+  },
+  "community_contractSwitch19": {
+    "en": "This community's power weight is still in review.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:437",
+    "zh": "这个社区的算力权重还在审核中。"
+  },
+  "community_contractSwitch2": {
+    "en": "Voice room status can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:415",
+    "zh": "语音房状态暂时读不到。"
+  },
+  "community_contractSwitch20": {
+    "en": "Community announcements aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:438",
+    "zh": "社区公告还没有开放。"
+  },
+  "community_contractSwitch21": {
+    "en": "Official links aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:439",
+    "zh": "官方链接还没有开放。"
+  },
+  "community_contractSwitch22": {
+    "en": "Message previews aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:440",
+    "zh": "消息预览还没有开放。"
+  },
+  "community_contractSwitch23": {
+    "en": "The asset registry couldn't be assembled this time. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:447",
+    "zh": "资产注册表这次没有组合出来，稍后再试。"
+  },
+  "community_contractSwitch24": {
+    "en": "LOOP has no Launch project directory yet, so there's nothing to search.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:448",
+    "zh": "LOOP 还没有 Launch 项目目录，这里没有可搜的条目。"
+  },
+  "community_contractSwitch25": {
+    "en": "The DApp directory isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:449",
+    "zh": "DApp 目录暂未开放。"
+  },
+  "community_contractSwitch26": {
+    "en": "Invitation metrics aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:450",
+    "zh": "邀请数据还没有开放。"
+  },
+  "community_contractSwitch27": {
+    "en": "Invite codes aren't available yet, so you can't share.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:451",
+    "zh": "邀请码还没有开放，暂时不能分享。"
+  },
+  "community_contractSwitch28": {
+    "en": "Communities aren't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:452",
+    "zh": "社区暂时不可用，稍后再试。"
+  },
+  "community_contractSwitch29": {
+    "en": "Search isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:453",
+    "zh": "搜索暂时不可用，稍后再试。"
+  },
+  "community_contractSwitch3": {
+    "en": "Online count can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:416",
+    "zh": "在线人数暂时读不到。"
+  },
+  "community_contractSwitch4": {
+    "en": "This community has no official channel, so there's no online count to check.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:419",
+    "zh": "这个社区还没有官方频道，没有可以询问的在线人数。"
+  },
+  "community_contractSwitch5": {
+    "en": "This community's official channel isn't set up, so the online count can't be checked.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:420",
+    "zh": "这个社区的官方频道没有建成，暂时问不到在线人数。"
+  },
+  "community_contractSwitch6": {
+    "en": "Couldn't check the online count this time. Retry later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:421",
+    "zh": "这次没能问到在线人数，稍后重试。"
+  },
+  "community_contractSwitch7": {
+    "en": "The online count check timed out with no result.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:422",
+    "zh": "这次查询在线人数超时了，没有结果。"
+  },
+  "community_contractSwitch8": {
+    "en": "This community has more than 500 members, so this version can't count who's online.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:423",
+    "zh": "这个社区的成员超过 500 人，这一版还数不了在线人数。"
+  },
+  "community_contractSwitch9": {
+    "en": "Online count wasn't checked in this step. Go back to the community page to load it again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:424",
+    "zh": "这一步没有观察在线人数，回到社区详情可以重新读。"
+  },
+  "community_contractTimedOut": {
+    "en": "LOOP timed out. Nothing was loaded and nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:361",
+    "zh": "LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。"
+  },
+  "community_contractUnavailable": {
+    "en": "The community service isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:364",
+    "zh": "社区服务暂时不可用，请稍后再试。"
+  },
+  "community_contractUnexpected": {
+    "en": "The action didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:378",
+    "zh": "操作没有完成，请稍后再试。"
+  },
+  "community_contractValidationFailed": {
+    "en": "Some input isn't valid. Fix it and try again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:372",
+    "zh": "输入内容不符合要求，请修改后重试。"
+  },
+  "community_contractValidationFailed2": {
+    "en": "The name or bio is too long (name 1–40 characters, bio up to 280). Fix it and submit again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_contract.dart:405",
+    "zh": "名称或简介太长（名称 1–40 字，简介不超过 280 字），请修改后再提交。"
+  },
+  "community_discoverBody": {
+    "en": "After you submit, the community is \"In review\" and you're the owner. The short link can't be changed once accepted.",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:65",
+    "zh": "提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。"
+  },
+  "community_discoverCaption": {
+    "en": "Sorting uses only verifiable numbers: members, creation time, power and 7-day discussions. Popular doesn't mean recommended.",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:175",
+    "zh": "排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。"
+  },
+  "community_discoverCommunityApplyActionLabel": {
+    "en": "Apply to list",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:340",
+    "zh": "申请入驻"
+  },
+  "community_discoverCommunityDiscoverCapabilityUnavailableTitle": {
+    "en": "Communities aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:215, lib/features/community/community_manage_screen.dart:123, lib/features/community/community_members_screen.dart:293, lib/features/community/community_profile_screen.dart:356, lib/features/community/community_screen.dart:160",
+    "zh": "社区模块当前不可用"
+  },
+  "community_discoverCommunityDiscoverOrderingBackLabel": {
+    "en": "Sort by most members",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:262",
+    "zh": "按成员最多排序"
+  },
+  "community_discoverCommunityDiscoverScreenTitle": {
+    "en": "Joined communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:157, lib/features/community/community_screen.dart:193",
+    "zh": "已加入的社区"
+  },
+  "community_discoverCommunityDiscoverScreenTitle2": {
+    "en": "Discover communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:157",
+    "zh": "发现社区"
+  },
+  "community_discoverDiscussion": {
+    "en": "Most discussed",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:33",
+    "zh": "讨论最多"
+  },
+  "community_discoverEmptyMessage": {
+    "en": "No matching communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:274",
+    "zh": "没有符合条件的社区"
+  },
+  "community_discoverEmptyReason": {
+    "en": "No communities under this sort.",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:275",
+    "zh": "这个排序下没有社区。"
+  },
+  "community_discoverHeading": {
+    "en": "{items, plural, =1{1 community} other{{items} communities}}",
+    "placeholders": {
+      "items": {
+        "example": "state.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_discover_screen.dart:173",
+    "zh": "{items} 个社区"
+  },
+  "community_discoverHeading2": {
+    "en": "{items, plural, =1{1 community loaded} other{{items} communities loaded}}",
+    "placeholders": {
+      "items": {
+        "example": "state.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_discover_screen.dart:174",
+    "zh": "已载入 {items} 个社区"
+  },
+  "community_discoverKicker": {
+    "en": "Community discovery",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:165",
+    "zh": "社区发现"
+  },
+  "community_discoverMembers": {
+    "en": "Most members",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:31",
+    "zh": "成员最多"
+  },
+  "community_discoverMessage": {
+    "en": "\"{label}\" isn't available right now",
+    "placeholders": {
+      "label": {
+        "example": "selectedSegment.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_discover_screen.dart:246",
+    "zh": "「{label}」暂时不可用"
+  },
+  "community_discoverNewest": {
+    "en": "Newest",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:34",
+    "zh": "新社区"
+  },
+  "community_discoverPower": {
+    "en": "Highest power",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:32",
+    "zh": "算力最高"
+  },
+  "community_discoverResource": {
+    "en": "Community directory",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:226",
+    "zh": "社区目录"
+  },
+  "community_discoverTitle": {
+    "en": "Submit community application?",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart:64",
+    "zh": "提交社区申请？"
+  },
+  "community_homeActivitySentence": {
+    "en": "{clauses}.",
+    "placeholders": {
+      "clauses": {
+        "example": "clauses",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:243",
+    "zh": "{clauses}。"
+  },
+  "community_homeBody": {
+    "en": "Find communities worth joining by activity, holders and mining weight",
+    "placeholders": {},
+    "where": "lib/features/community/community_home_widgets.dart:114",
+    "zh": "按活跃度、持有人与 Mining 权重找到值得加入的社区"
+  },
+  "community_homeBuild": {
+    "en": "Discover",
+    "placeholders": {},
+    "where": "lib/features/community/community_home_widgets.dart:119",
+    "zh": "发现"
+  },
+  "community_homeBuild2": {
+    "en": "Data observed {communityObservedAtLabel}",
+    "placeholders": {
+      "communityObservedAtLabel": {
+        "example": "communityObservedAtLabel(observedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:205",
+    "zh": "数据观察于 {communityObservedAtLabel}"
+  },
+  "community_homeCommunityActivityCaption": {
+    "en": "{mostDiscussed} is the most active",
+    "placeholders": {
+      "mostDiscussed": {
+        "example": "mostDiscussed",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:227",
+    "zh": "{mostDiscussed} 讨论最活跃"
+  },
+  "community_homeCommunityActivityCaption2": {
+    "en": "{liveVoiceRooms} voice rooms live",
+    "placeholders": {
+      "liveVoiceRooms": {
+        "example": "liveVoiceRooms",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:228",
+    "zh": "{liveVoiceRooms} 个语音房正在进行"
+  },
+  "community_homeCommunityActivityCaption3": {
+    "en": "{unreadMessages} unread",
+    "placeholders": {
+      "unreadMessages": {
+        "example": "unreadMessages",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:229",
+    "zh": "{unreadMessages} 条未读"
+  },
+  "community_homeCommunityMemberCountLabel": {
+    "en": "{groupedFigure} members",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(memberCount.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:22",
+    "zh": "{groupedFigure} 成员"
+  },
+  "community_homeLabel": {
+    "en": "{label}, {unreadBadgeLabel} unread",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "unreadBadgeLabel": {
+        "example": "loopUnreadBadgeLabel(count)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:69",
+    "zh": "{label}，{unreadBadgeLabel} 条未读"
+  },
+  "community_homeS": {
+    "en": "Discover, {count} verified",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_home_widgets.dart:119",
+    "zh": "发现，{count} 个已验证"
+  },
+  "community_homeTitle": {
+    "en": "Discover new communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_home_widgets.dart:113",
+    "zh": "发现新社区"
+  },
+  "community_logoSemanticLabel": {
+    "en": "{name} community icon",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_logo.dart:235, lib/features/community/community_logo.dart:242, lib/features/community/community_logo.dart:258, lib/features/community/community_logo.dart:269",
+    "zh": "{name} 社区图标"
+  },
+  "community_manageAsyncData": {
+    "en": "Owner {owner} · Admin {admin} · {all} total",
+    "placeholders": {
+      "admin": {
+        "example": "value.admin",
+        "type": "Object"
+      },
+      "all": {
+        "example": "value.all",
+        "type": "Object"
+      },
+      "owner": {
+        "example": "value.owner",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_manage_screen.dart:256",
+    "zh": "Owner {owner} · Admin {admin} · 共 {all} 人"
+  },
+  "community_manageAsyncError": {
+    "en": "{memberCount} members",
+    "placeholders": {
+      "memberCount": {
+        "example": "community.memberCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_manage_screen.dart:257, lib/features/community/community_manage_screen.dart:258, lib/features/community/search_screen.dart:747",
+    "zh": "{memberCount} 位成员"
+  },
+  "community_manageBody": {
+    "en": "{communityBoundAssetUniqueHint} Linking a token immediately affects the token card and member buy activity on the community page. The short link and verification status can't be changed here.",
+    "placeholders": {
+      "communityBoundAssetUniqueHint": {
+        "example": "communityBoundAssetUniqueHint",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_manage_screen.dart:378",
+    "zh": "{communityBoundAssetUniqueHint}绑定代币会立刻影响社区页的代币卡片与群友买入动态。短链接与验证状态不能在这里修改。"
+  },
+  "community_manageBody2": {
+    "en": "The short link and verification status can't be changed here.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:380",
+    "zh": "短链接与验证状态不能在这里修改。"
+  },
+  "community_manageBoundAssetLine": {
+    "en": "Not linked",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:345",
+    "zh": "未绑定"
+  },
+  "community_manageBoundAssetTaken": {
+    "en": "This token is already linked to another community. Choose another token. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:405",
+    "zh": "这个代币已被其他社区绑定，请换一个代币；资料没有修改。"
+  },
+  "community_manageCommunityManageAnnouncementsSubtitle": {
+    "en": "Announcements coming soon",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:240",
+    "zh": "公告发布即将推出"
+  },
+  "community_manageCommunityManageAnnouncementsTitle": {
+    "en": "Announcements",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:239, lib/features/community/community_profile_screen.dart:476",
+    "zh": "公告"
+  },
+  "community_manageCommunityManageBoundAssetTitle": {
+    "en": "Linked token",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:197, lib/features/community/community_profile_screen.dart:1112",
+    "zh": "绑定代币"
+  },
+  "community_manageCommunityManageEditProfileSubtitle": {
+    "en": "No bio yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:186",
+    "zh": "还没有简介"
+  },
+  "community_manageCommunityManageEditProfileTitle": {
+    "en": "Name and bio",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:185",
+    "zh": "名称与简介"
+  },
+  "community_manageCommunityManageLogoNote": {
+    "en": "The community icon, short link and verification status can't be changed here. Communities can't be dissolved.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:334",
+    "zh": "社区图标、短链接与验证状态不能在这里修改；不提供解散社区。"
+  },
+  "community_manageCommunityManageLogoNote2": {
+    "en": "The community icon, short link and verification status can't be changed here.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:334",
+    "zh": "社区图标、短链接与验证状态不能在这里修改。"
+  },
+  "community_manageCommunityManageMembersTitle": {
+    "en": "Members and permissions",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:253",
+    "zh": "成员与权限"
+  },
+  "community_manageCommunityManageMissingIdDetail": {
+    "en": "Open this from \"Manage\" at the top right of the community page. This page doesn't guess which community to manage.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:134",
+    "zh": "请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。"
+  },
+  "community_manageCommunityManageMissingIdMessage": {
+    "en": "Missing community ID",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:133, lib/features/community/community_members_screen.dart:325, lib/features/community/community_profile_screen.dart:376",
+    "zh": "缺少社区标识"
+  },
+  "community_manageCommunityManagePermissionDetail": {
+    "en": "Your role in this community doesn't include management. You can still view the community page.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:154",
+    "zh": "你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。"
+  },
+  "community_manageCommunityManagePermissionMessage": {
+    "en": "Only the community owner and admins can manage it",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:153",
+    "zh": "只有社区所有者与管理员可以管理"
+  },
+  "community_manageCommunityManageScreenTitle": {
+    "en": "Community management",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:94, lib/features/community/community_manage_screen.dart:129",
+    "zh": "社区管理"
+  },
+  "community_manageCommunityManageShareSubtitle": {
+    "en": "Share a poster or copy the community link",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:219",
+    "zh": "分享海报或复制社区链接"
+  },
+  "community_manageCommunityManageShareTitle": {
+    "en": "Community QR card",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:218",
+    "zh": "社区二维码名片"
+  },
+  "community_manageCommunityManageTransferSubtitle": {
+    "en": "Pick a member on the members page. You become an admin after transferring",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:272",
+    "zh": "在成员页选择成员，转让后你会降为 Admin"
+  },
+  "community_manageCommunityManageTransferTitle": {
+    "en": "Transfer ownership",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:271, lib/features/community/community_members_screen.dart:37",
+    "zh": "转让所有者"
+  },
+  "community_manageCommunityManageVoiceEnterSubtitle": {
+    "en": "The community is live",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:293",
+    "zh": "社区正在开播"
+  },
+  "community_manageCommunityManageVoiceEnterTitle": {
+    "en": "Enter voice room",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:292",
+    "zh": "进入语音房"
+  },
+  "community_manageCommunityManageVoiceOpenSubtitle": {
+    "en": "You're the host. Your mic is off by default",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:306",
+    "zh": "你是主持人，麦克风默认关闭"
+  },
+  "community_manageCommunityManageVoiceOpenTitle": {
+    "en": "Start voice room",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:305, lib/features/community/community_profile_screen.dart:911",
+    "zh": "开启语音房"
+  },
+  "community_manageEmptyMessage": {
+    "en": "Community not found",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:145, lib/features/community/community_profile_screen.dart:384, lib/features/community/community_profile_screen.dart:389",
+    "zh": "找不到这个社区"
+  },
+  "community_manageEmptyReason": {
+    "en": "It may have been removed, or isn't visible to this account.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:146, lib/features/community/community_profile_screen.dart:385",
+    "zh": "它可能已被移除，或对当前账号不可见。"
+  },
+  "community_manageGroups": {
+    "en": "No registered pools yet, so member buy activity won't appear.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:213",
+    "zh": "尚无已注册池子，群友买入动态不会出现。"
+  },
+  "community_manageIf": {
+    "en": "{truncatedAddress} · Token info can't be loaded right now",
+    "placeholders": {
+      "truncatedAddress": {
+        "example": "loopTruncatedAddress(key.split(':').last)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_manage_screen.dart:349",
+    "zh": "{truncatedAddress} · 代币信息暂时读不到"
+  },
+  "community_manageIf2": {
+    "en": "Has registered pools",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:352",
+    "zh": "已有注册池子"
+  },
+  "community_manageLoopTag": {
+    "en": "Owner only",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:198",
+    "zh": "仅所有者"
+  },
+  "community_manageMessage": {
+    "en": "Nothing was changed",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:371",
+    "zh": "没有修改任何内容"
+  },
+  "community_manageMessage2": {
+    "en": "Community profile updated",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:388",
+    "zh": "社区资料已更新"
+  },
+  "community_manageS": {
+    "en": "No registered pools yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:352",
+    "zh": "尚无注册池子"
+  },
+  "community_manageSwitch": {
+    "en": "This token isn't registered on LOOP, so it can't be linked. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:406",
+    "zh": "这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。"
+  },
+  "community_manageSwitch2": {
+    "en": "Only the owner can change the linked token. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:407",
+    "zh": "只有所有者能改绑定代币；资料没有修改。"
+  },
+  "community_manageTitle": {
+    "en": "Submit community profile changes?",
+    "placeholders": {},
+    "where": "lib/features/community/community_manage_screen.dart:376",
+    "zh": "提交社区资料修改？"
+  },
+  "community_membersAdmin": {
+    "en": "No members with this role.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:623",
+    "zh": "这个角色下没有成员。"
+  },
+  "community_membersAll": {
+    "en": "This community has no members to show.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:622",
+    "zh": "这个社区目前没有可显示的成员。"
+  },
+  "community_membersBan": {
+    "en": "Ban",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:40",
+    "zh": "封禁"
+  },
+  "community_membersBan2": {
+    "en": "Banned members leave the official channel and are removed from the default member directory. You can unban them later under \"Banned\". Banning doesn't change personal follows.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:56",
+    "zh": "被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。"
+  },
+  "community_membersBanned": {
+    "en": "Banned members",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:615",
+    "zh": "已封禁的成员"
+  },
+  "community_membersBanned2": {
+    "en": "This community has no banned members.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:624",
+    "zh": "这个社区目前没有被封禁的成员。"
+  },
+  "community_membersBody": {
+    "en": "Target: {displayName} ({loopId}). {confirmationDetail}",
+    "placeholders": {
+      "confirmationDetail": {
+        "example": "chosen.confirmationDetail",
+        "type": "Object"
+      },
+      "displayName": {
+        "example": "entry.profile.displayName",
+        "type": "Object"
+      },
+      "loopId": {
+        "example": "entry.profile.loopId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:545",
+    "zh": "目标：{displayName}（{loopId}）。{confirmationDetail}"
+  },
+  "community_membersCommunityMembersMissingIdDetail": {
+    "en": "Open this from the community profile. This page doesn't guess which community to open.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:326",
+    "zh": "请从社区档案进入，本页不会猜测要打开哪个社区。"
+  },
+  "community_membersCommunityMembersSearchClearHintText": {
+    "en": "Type the start of an alias",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:203",
+    "zh": "输入别名开头即可"
+  },
+  "community_membersCommunityMembersSearchClearLabel": {
+    "en": "Clear",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:212",
+    "zh": "清除"
+  },
+  "community_membersCommunityMembersSearchClearLabelText": {
+    "en": "Search members by alias",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:202",
+    "zh": "按别名搜索成员"
+  },
+  "community_membersCommunityMembersSearchLabel": {
+    "en": "Close search",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:179",
+    "zh": "关闭搜索"
+  },
+  "community_membersCommunityMembersSearchLabel2": {
+    "en": "Search members",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:179, lib/features/community/community_members_screen.dart:317",
+    "zh": "搜索成员"
+  },
+  "community_membersCommunityMissingHeading": {
+    "en": "{all, plural, =1{1 member} other{{all} members}}",
+    "placeholders": {
+      "all": {
+        "example": "counts.all",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:610",
+    "zh": "{all} 名成员"
+  },
+  "community_membersCommunityStateEmptyEmptyMessage": {
+    "en": "No matching members",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:334, lib/features/community/community_members_screen.dart:342",
+    "zh": "没有匹配的成员"
+  },
+  "community_membersCommunityStateEmptyEmptyMessage2": {
+    "en": "No members under this filter",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:334, lib/features/community/community_members_screen.dart:342",
+    "zh": "这个筛选下没有成员"
+  },
+  "community_membersCommunityStateEmptyEmptyReason": {
+    "en": "Aliases match from the start. Try a different beginning.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:336, lib/features/community/community_members_screen.dart:344",
+    "zh": "别名要从开头对上才算匹配，换个开头再试。"
+  },
+  "community_membersCommunityStateEmptyPermissionTitle": {
+    "en": "No permission to view the member directory",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:338",
+    "zh": "没有权限查看成员目录"
+  },
+  "community_membersConfirmTitle": {
+    "en": "{label}?",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:586",
+    "zh": "{label}？"
+  },
+  "community_membersDemote": {
+    "en": "Remove admin",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:36",
+    "zh": "撤销 Admin"
+  },
+  "community_membersFilterSeg": {
+    "en": "Banned",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:261, lib/features/community/community_members_screen.dart:452, lib/features/community/community_widgets.dart:824",
+    "zh": "已封禁"
+  },
+  "community_membersLabel": {
+    "en": "Manage",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:509, lib/features/community/community_profile_screen.dart:949",
+    "zh": "管理"
+  },
+  "community_membersMemberDirectoryPresenceNote": {
+    "en": "The member directory doesn't track presence, so this page doesn't show an online count. The community page checks it once.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:628",
+    "zh": "成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。"
+  },
+  "community_membersMembersSegOnlineLabel": {
+    "en": "Online",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:271",
+    "zh": "在线"
+  },
+  "community_membersMessage": {
+    "en": "{label} applied",
+    "placeholders": {
+      "label": {
+        "example": "chosen.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:586",
+    "zh": "{label}已生效"
+  },
+  "community_membersMute": {
+    "en": "Mute",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:38",
+    "zh": "禁言"
+  },
+  "community_membersMuted": {
+    "en": "Muted",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:451, lib/features/community/community_widgets.dart:823",
+    "zh": "已禁言"
+  },
+  "community_membersPromote": {
+    "en": "Make admin",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:35",
+    "zh": "任命为 Admin"
+  },
+  "community_membersResource": {
+    "en": "Member directory",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:302",
+    "zh": "成员目录"
+  },
+  "community_membersS": {
+    "en": "All {all}",
+    "placeholders": {
+      "all": {
+        "example": "counts.all",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:235",
+    "zh": "全部 {all}"
+  },
+  "community_membersS2": {
+    "en": "{owner} owner",
+    "placeholders": {
+      "owner": {
+        "example": "counts.owner",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:612",
+    "zh": "{owner} 名 Owner"
+  },
+  "community_membersS3": {
+    "en": "{admin} admins",
+    "placeholders": {
+      "admin": {
+        "example": "counts.admin",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:614",
+    "zh": "{admin} 名 Admin"
+  },
+  "community_membersSubtitle": {
+    "en": "Joined {communityObservedAtLabel}",
+    "placeholders": {
+      "communityObservedAtLabel": {
+        "example": "communityObservedAtLabel(entry.joinedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:494",
+    "zh": "加入于 {communityObservedAtLabel}"
+  },
+  "community_membersSwitch": {
+    "en": "This action is recorded in the community log.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:59",
+    "zh": "这次操作会记入社区日志。"
+  },
+  "community_membersSwitch2": {
+    "en": "Owner permissions",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:612",
+    "zh": "Owner 权限"
+  },
+  "community_membersSwitch3": {
+    "en": "Admin permissions",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:614",
+    "zh": "Admin 权限"
+  },
+  "community_membersTitle": {
+    "en": "Me · {displayName}",
+    "placeholders": {
+      "displayName": {
+        "example": "entry.profile.displayName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_members_screen.dart:489",
+    "zh": "我 · {displayName}"
+  },
+  "community_membersTransfer": {
+    "en": "After transferring you become an admin. Editing the community profile, appointing admins and transferring again belong to the new owner. You can still mute and ban regular members. This can't be undone. Only the new owner can give ownership back.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:53",
+    "zh": "转让后你会降为 Admin：编辑社区资料、任免 Admin 和再次转让都归新的所有者，你仍可禁言、封禁普通成员。这一步不可撤销，只有新的所有者能把权限交还给你。"
+  },
+  "community_membersUnban": {
+    "en": "Unban",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:41",
+    "zh": "解除封禁"
+  },
+  "community_membersUnban2": {
+    "en": "Unbanning restores this member as active, keeps their join date and adds them back to the official channel. They don't need to apply again.",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:58",
+    "zh": "解除封禁会把该成员恢复为活跃成员，加入时间不变，并重新加回官方频道。对方不需要重新申请加入。"
+  },
+  "community_membersUnmute": {
+    "en": "Unmute",
+    "placeholders": {},
+    "where": "lib/features/community/community_members_screen.dart:39",
+    "zh": "解除禁言"
+  },
+  "community_profileBody": {
+    "en": "Your profile is saved first, then goes back into the review queue. The short link and verification status can't be changed here.",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:602",
+    "zh": "资料会先保存，然后重新进入审核队列。短链接与验证状态不能在这里修改。"
+  },
+  "community_profileBody2": {
+    "en": "You'll appear in the member list after joining.",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:652",
+    "zh": "加入后你会出现在成员列表里。"
+  },
+  "community_profileBody3": {
+    "en": "You'll be removed from the member directory after leaving.",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:652",
+    "zh": "退出后你将从成员目录中移除。"
+  },
+  "community_profileBoundAssetTaken": {
+    "en": "This token is already linked to another community. Change the token in the profile, then resubmit.",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1236",
+    "zh": "这个代币已被其他社区绑定，请先在资料里换一个代币再重新提交。"
+  },
+  "community_profileCommunityJoinActionLabel": {
+    "en": "Join community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:978",
+    "zh": "加入社区"
+  },
+  "community_profileCommunityMembershipBannedBody": {
+    "en": "Community chat and governance aren't available",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1172",
+    "zh": "社区聊天与治理不可用"
+  },
+  "community_profileCommunityMembershipBannedTitle": {
+    "en": "You've been banned from this community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1171",
+    "zh": "你已被该社区封禁"
+  },
+  "community_profileCommunityOnlineCountExplainLabel": {
+    "en": "How the online count works",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:798",
+    "zh": "在线人数是怎么数的"
+  },
+  "community_profileCommunityOwnerCannotLeaveSemanticLabel": {
+    "en": "Leave community, not available to the owner",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1186",
+    "zh": "退出社区，所有者不可用"
+  },
+  "community_profileCommunityOwnerCannotLeaveTitle": {
+    "en": "Leave community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1184, lib/features/community/community_profile_screen.dart:1195, lib/features/community/community_profile_screen.dart:1198",
+    "zh": "退出社区"
+  },
+  "community_profileCommunityProfileCreateVoiceRoomLabel": {
+    "en": "Start room",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:910",
+    "zh": "开语音房"
+  },
+  "community_profileCommunityProfileOpenAiSubtitle": {
+    "en": "Ask about this community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1058",
+    "zh": "问问这个社区的事"
+  },
+  "community_profileCommunityProfileOpenAiTitle": {
+    "en": "Community AI",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1056, lib/features/community/community_profile_screen.dart:1064",
+    "zh": "社区 AI"
+  },
+  "community_profileCommunityProfileOpenChatLabel": {
+    "en": "Group chat",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:930",
+    "zh": "进群聊"
+  },
+  "community_profileCommunityProfileOpenVoiceLabel": {
+    "en": "Live",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:902",
+    "zh": "直播中"
+  },
+  "community_profileCommunityProfileOpenVoiceSemanticLabel": {
+    "en": "Enter voice room · Live",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:903",
+    "zh": "进入语音房 · 进行中"
+  },
+  "community_profileCommunityProfileShareSemanticLabel": {
+    "en": "Share community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:940",
+    "zh": "分享社区"
+  },
+  "community_profileConfirmLabel": {
+    "en": "Join",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:653, lib/features/community/community_widgets.dart:178",
+    "zh": "加入"
+  },
+  "community_profileLoopLabel": {
+    "en": "Official links",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:485",
+    "zh": "官方链接"
+  },
+  "community_profileLoopLabel2": {
+    "en": "Members {communityCountLabel}",
+    "placeholders": {
+      "communityCountLabel": {
+        "example": "communityCountLabel(community.memberCount)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_profile_screen.dart:1012",
+    "zh": "成员 {communityCountLabel}"
+  },
+  "community_profileMessage": {
+    "en": "{label} link copied",
+    "placeholders": {
+      "label": {
+        "example": "link.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_profile_screen.dart:579",
+    "zh": "已复制 {label} 链接"
+  },
+  "community_profileMessage2": {
+    "en": "Resubmitted. Status is back to In review",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:622",
+    "zh": "已重新提交，状态回到审核中"
+  },
+  "community_profileMessage3": {
+    "en": "Joined community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:660",
+    "zh": "已加入社区"
+  },
+  "community_profileMessage4": {
+    "en": "Left community",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:660",
+    "zh": "已退出社区"
+  },
+  "community_profileResource": {
+    "en": "Community profile",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:372",
+    "zh": "社区档案"
+  },
+  "community_profileStale": {
+    "en": "This application is no longer \"Rejected\". The page has refreshed. Check the latest status.",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1235",
+    "zh": "这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。"
+  },
+  "community_profileText": {
+    "en": "{communityCountLabel} online",
+    "placeholders": {
+      "communityCountLabel": {
+        "example": "communityCountLabel(observed.count)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_profile_screen.dart:701",
+    "zh": "{communityCountLabel} 在线"
+  },
+  "community_profileTitle": {
+    "en": "Resubmit community application?",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:601",
+    "zh": "重新提交社区申请？"
+  },
+  "community_profileTitle2": {
+    "en": "Join this community?",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:651",
+    "zh": "加入这个社区？"
+  },
+  "community_profileTitle3": {
+    "en": "Leave this community?",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:651",
+    "zh": "退出这个社区？"
+  },
+  "community_profileVoiceRoomArrivalOutcome": {
+    "en": "Join the community to enter the voice room",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1208",
+    "zh": "加入社区后才能进入语音房"
+  },
+  "community_profileVoiceRoomArrivalOutcome2": {
+    "en": "The voice room has ended",
+    "placeholders": {},
+    "where": "lib/features/community/community_profile_screen.dart:1209",
+    "zh": "语音房已结束"
+  },
+  "community_screenCommunityCapabilityUnavailableDeferredMessage": {
+    "en": "Communities aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:161",
+    "zh": "社区还没有开放。"
+  },
+  "community_screenCommunityCapabilityUnavailableUnknownMessage": {
+    "en": "Communities aren't ready yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:162",
+    "zh": "社区还没有准备好，请稍后再试。"
+  },
+  "community_screenCommunityFolioCaption": {
+    "en": "Your joined community count appears here once it loads.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:147",
+    "zh": "已加入的社区数量读到之后显示在这里。"
+  },
+  "community_screenCommunityFolioCaption2": {
+    "en": "Community data can't be loaded right now, so no figures are shown.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:148",
+    "zh": "社区数据暂时读不到，这一页不显示任何数字。"
+  },
+  "community_screenCommunityFolioCaption3": {
+    "en": "Discussion activity and voice rooms aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:149",
+    "zh": "讨论热度与语音房活动还没有开放。"
+  },
+  "community_screenCommunityFolioHeading": {
+    "en": "{miningCount, plural, =1{1 community mining} other{{miningCount} communities mining}}",
+    "placeholders": {
+      "miningCount": {
+        "example": "miningCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_screen.dart:141",
+    "zh": "{miningCount} 个社区在挖矿"
+  },
+  "community_screenCommunityFolioKicker": {
+    "en": "Community index",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:134",
+    "zh": "社区索引"
+  },
+  "community_screenCommunityJoinedEmptyMessage": {
+    "en": "Start from \"Discover communities\". Communities you join appear here.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:198",
+    "zh": "从\"发现社区\"开始，加入后这里会显示你的社区。"
+  },
+  "community_screenCommunityViewAllJoinedLabel": {
+    "en": "View all joined communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:245",
+    "zh": "查看全部已加入的社区"
+  },
+  "community_screenEmptyMessage": {
+    "en": "No communities joined yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:185, lib/features/community/community_screen.dart:197",
+    "zh": "还没有加入任何社区"
+  },
+  "community_screenEmptyReason": {
+    "en": "Communities you join are listed here.",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:186",
+    "zh": "加入社区后，这里会列出你的社区。"
+  },
+  "community_screenHeading": {
+    "en": "Loading",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:140",
+    "zh": "正在读取"
+  },
+  "community_screenLoopLabel": {
+    "en": "Token communities · Mining",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:208",
+    "zh": "带币社区 · 可挖矿"
+  },
+  "community_screenLoopLabel2": {
+    "en": "Other communities",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:221",
+    "zh": "其他社区"
+  },
+  "community_screenResource": {
+    "en": "Community data",
+    "placeholders": {},
+    "where": "lib/features/community/community_screen.dart:177",
+    "zh": "社区数据"
+  },
+  "community_searchControllerSearchFieldLabel": {
+    "en": "Search {searchableDomains}",
+    "placeholders": {
+      "searchableDomains": {
+        "example": "searchableDomains.map((domain) => domain.label).join('、')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_controller.dart:56",
+    "zh": "搜索{searchableDomains}"
+  },
+  "community_searchControllerSearchScopeHint": {
+    "en": "Nicknames find only discoverable accounts. LOOP IDs match exactly",
+    "placeholders": {},
+    "where": "lib/features/community/search_controller.dart:40",
+    "zh": "按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索"
+  },
+  "community_searchLabel": {
+    "en": "Enter",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:393",
+    "zh": "进入"
+  },
+  "community_searchLabel2": {
+    "en": "Following",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:407",
+    "zh": "关注中"
+  },
+  "community_searchLabel3": {
+    "en": "Remove {name} from recent searches",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:789",
+    "zh": "从最近搜索移除 {name}"
+  },
+  "community_searchMessage": {
+    "en": "Couldn't follow",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:142",
+    "zh": "没有关注成功"
+  },
+  "community_searchMessage2": {
+    "en": "{label} can't be searched right now",
+    "placeholders": {
+      "label": {
+        "example": "state.domain.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:251",
+    "zh": "{label} 暂时搜不到"
+  },
+  "community_searchMessage3": {
+    "en": "{label} can't be searched right now",
+    "placeholders": {
+      "label": {
+        "example": "domain.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:557",
+    "zh": "{label}暂时搜不到"
+  },
+  "community_searchMessage4": {
+    "en": "Nothing to search on the clipboard",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:673",
+    "zh": "剪贴板里没有可以搜索的内容"
+  },
+  "community_searchResource": {
+    "en": "Search results",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:243",
+    "zh": "搜索结果"
+  },
+  "community_searchSearchCapabilityUnavailableTitle": {
+    "en": "Search isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:230",
+    "zh": "搜索当前不可用"
+  },
+  "community_searchSearchEmptyEmptyMessage": {
+    "en": "No matching results",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:261",
+    "zh": "没有匹配的结果"
+  },
+  "community_searchSearchEmptyEmptyMessage2": {
+    "en": "Type at least {searchMinimumRunes} characters to search",
+    "placeholders": {
+      "searchMinimumRunes": {
+        "example": "searchMinimumRunes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:262, lib/features/community/search_screen.dart:274",
+    "zh": "输入至少 {searchMinimumRunes} 个字符开始搜索"
+  },
+  "community_searchSearchEmptyEmptyReason": {
+    "en": "No results in this category.",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:264",
+    "zh": "这个分类下没有结果。"
+  },
+  "community_searchSearchEmptyEmptyReason2": {
+    "en": "Search matches from the start and shows only discoverable accounts and verified communities.",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:265",
+    "zh": "搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。"
+  },
+  "community_searchSearchEmptyMessage": {
+    "en": "Try another keyword or switch the category above",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:273",
+    "zh": "换个关键词，或切换上面的分类试试"
+  },
+  "community_searchSearchEmptyTitle": {
+    "en": "No matching results found",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:271",
+    "zh": "没有找到匹配的结果"
+  },
+  "community_searchSearchEmptyTitle2": {
+    "en": "Search tokens, communities and users",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:271",
+    "zh": "搜索代币、社区与用户"
+  },
+  "community_searchSearchPasteLoopIdLabel": {
+    "en": "Paste",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:596",
+    "zh": "粘贴"
+  },
+  "community_searchSearchPriceAbsentText": {
+    "en": "No price in search",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:773",
+    "zh": "搜索不含价格"
+  },
+  "community_searchSearchRecentLabelAction": {
+    "en": "Clear all",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:333",
+    "zh": "清除全部"
+  },
+  "community_searchSearchRecentLabelLabel": {
+    "en": "Recent searches",
+    "placeholders": {},
+    "where": "lib/features/community/search_screen.dart:332",
+    "zh": "最近搜索"
+  },
+  "community_searchSemanticLabel": {
+    "en": "{title}, token, recent search",
+    "placeholders": {
+      "title": {
+        "example": "entry.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:369",
+    "zh": "{title}，代币，最近搜索"
+  },
+  "community_searchSemanticLabel2": {
+    "en": "{title}, {memberCount} members",
+    "placeholders": {
+      "memberCount": {
+        "example": "result.memberCount",
+        "type": "Object"
+      },
+      "title": {
+        "example": "result.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/search_screen.dart:752",
+    "zh": "{title}，{memberCount} 位成员"
+  },
+  "community_voiceRoomOpenMessage": {
+    "en": "Voice room started",
+    "placeholders": {},
+    "where": "lib/features/community/community_voice_room_open.dart:31",
+    "zh": "语音房已开启"
+  },
+  "community_voiceRoomOpenMessage2": {
+    "en": "This community already has a live voice room, so no new one was created. Refresh to enter.",
+    "placeholders": {},
+    "where": "lib/features/community/community_voice_room_open.dart:55",
+    "zh": "这个社区已经有进行中的语音房，没有重复创建。请刷新后进入。"
+  },
+  "community_widgetsBarrierLabel": {
+    "en": "Close community profile editor",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1369",
+    "zh": "关闭社区资料编辑"
+  },
+  "community_widgetsBarrierLabel2": {
+    "en": "Close community application",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1560",
+    "zh": "关闭社区申请"
+  },
+  "community_widgetsBoundAssetKey": {
+    "en": "Needs a 40-character hex contract address, optionally prefixed with {chainId}:.",
+    "placeholders": {
+      "chainId": {
+        "example": "chainId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1940",
+    "zh": "需要 40 位十六进制合约地址，可带 {chainId}: 前缀。"
+  },
+  "community_widgetsCaption": {
+    "en": "7-day discussions",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1197, lib/features/community/community_widgets.dart:1202, lib/features/community/community_widgets.dart:1207",
+    "zh": "7 天讨论"
+  },
+  "community_widgetsCommunityAnnouncementsEmptyText": {
+    "en": "No announcements yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:551",
+    "zh": "暂无公告"
+  },
+  "community_widgetsCommunityAnnouncementsUnavailableText": {
+    "en": "No announcements yet · {communityUnavailableReason}",
+    "placeholders": {
+      "communityUnavailableReason": {
+        "example": "communityUnavailableReason(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:545",
+    "zh": "暂无公告 · {communityUnavailableReason}"
+  },
+  "community_widgetsCommunityApplicationPendingBody": {
+    "en": "Mining weight and the official group open after approval. Until it's verified, this community has no verified badge.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1047",
+    "zh": "通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。"
+  },
+  "community_widgetsCommunityApplicationPendingTitle": {
+    "en": "In review · Submitted {localTimestampLabel}",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(state.submittedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1046",
+    "zh": "审核中 · 提交于 {localTimestampLabel}"
+  },
+  "community_widgetsCommunityApplicationProgressHint": {
+    "en": "Check review progress under Me → My communities → Created.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1293",
+    "zh": "可以在「我的 → 我的社区 → 我创建的」查看审核进度。"
+  },
+  "community_widgetsCommunityApplicationRejectedBody": {
+    "en": "No reason was given. Edit the community profile and resubmit.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1064",
+    "zh": "运维没有给出原因。修改社区资料后可以重新提交。"
+  },
+  "community_widgetsCommunityApplicationRejectedBody2": {
+    "en": "Reason: {reason}",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1065",
+    "zh": "原因：{reason}"
+  },
+  "community_widgetsCommunityApplicationResubmitLabel": {
+    "en": "Resubmit",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1074",
+    "zh": "修改资料后重新提交"
+  },
+  "community_widgetsCommunityApplySubmitLabel": {
+    "en": "Submit application",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1796",
+    "zh": "提交申请"
+  },
+  "community_widgetsCommunityApplySubmittedOpenLabel": {
+    "en": "View community",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1341",
+    "zh": "查看社区"
+  },
+  "community_widgetsCommunityBoundAssetChainNote": {
+    "en": "Just enter the contract address. {name} is filled in for you. ",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1882",
+    "zh": "只填合约地址即可，将按 {name} 补全。"
+  },
+  "community_widgetsCommunityBoundAssetHint": {
+    "en": "0x… (or paste the full {chainId}:0x…)",
+    "placeholders": {
+      "chainId": {
+        "example": "chainId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1874",
+    "zh": "0x…（也可粘贴 {chainId}:0x… 整串）"
+  },
+  "community_widgetsCommunityConfirmAcceptBarrierLabel": {
+    "en": "Close confirmation",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1244, lib/features/community/community_widgets.dart:1309",
+    "zh": "关闭确认弹层"
+  },
+  "community_widgetsCommunityLinksEmptyText": {
+    "en": "No official links yet",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:604",
+    "zh": "暂无官方链接"
+  },
+  "community_widgetsCommunityLinksUnavailableText": {
+    "en": "No official links yet · {communityUnavailableReason}",
+    "placeholders": {
+      "communityUnavailableReason": {
+        "example": "communityUnavailableReason(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:598",
+    "zh": "暂无官方链接 · {communityUnavailableReason}"
+  },
+  "community_widgetsCommunityMiningPowerParticipantsTitle": {
+    "en": "Members with power",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:779",
+    "zh": "有算力的成员"
+  },
+  "community_widgetsCommunityMiningPowerRowSubtitle": {
+    "en": "Latest power snapshot · {communitySettlementLabel}",
+    "placeholders": {
+      "communitySettlementLabel": {
+        "example": "communitySettlementLabel(computedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:709",
+    "zh": "最近一次算力快照 · {communitySettlementLabel}"
+  },
+  "community_widgetsCommunityMiningPowerWeightTitle": {
+    "en": "Community weight",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:756",
+    "zh": "社区权重"
+  },
+  "community_widgetsCommunityMissingHeading": {
+    "en": "No value",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:807",
+    "zh": "暂无数值"
+  },
+  "community_widgetsCommunityMissingName": {
+    "en": "No name",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:812",
+    "zh": "暂无名称"
+  },
+  "community_widgetsCommunityOnlineMeaningSheetBarrierLabel": {
+    "en": "Close online count details",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:287",
+    "zh": "关闭在线人数说明"
+  },
+  "community_widgetsCommunityPreviewNoticeBody": {
+    "en": "{resource} exists only in this development preview. It isn't saved to your account or uploaded.",
+    "placeholders": {
+      "resource": {
+        "example": "resource",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:108",
+    "zh": "{resource}只存在于这次开发预览里，不会写入账号，也不会上传。"
+  },
+  "community_widgetsCommunityRejectedReasonPreview": {
+    "en": "Rejected: no reason given",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:928",
+    "zh": "驳回：运维没有给出原因"
+  },
+  "community_widgetsCommunityRejectedReasonPreview2": {
+    "en": "Rejected: {text}",
+    "placeholders": {
+      "text": {
+        "example": "text",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:930",
+    "zh": "驳回：{text}"
+  },
+  "community_widgetsCommunityRejectedReasonPreview3": {
+    "en": "Rejected: {head}…",
+    "placeholders": {
+      "head": {
+        "example": "head",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:934",
+    "zh": "驳回：{head}…"
+  },
+  "community_widgetsCommunityStateUnavailableMessage": {
+    "en": "This feature isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:183",
+    "zh": "该功能当前不可用"
+  },
+  "community_widgetsDescription": {
+    "en": "The bio can be up to 280 characters with no control characters.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1939",
+    "zh": "简介最多 280 个字符，且不能包含控制字符。"
+  },
+  "community_widgetsFor": {
+    "en": "My holdings",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:477",
+    "zh": "我的持仓"
+  },
+  "community_widgetsFor2": {
+    "en": "My power",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:478",
+    "zh": "我的算力"
+  },
+  "community_widgetsFor3": {
+    "en": "Est./day",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:479",
+    "zh": "预估/日"
+  },
+  "community_widgetsHint": {
+    "en": "Short link: lowercase letters, digits and hyphens",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1756",
+    "zh": "短链接，小写字母、数字与连字符"
+  },
+  "community_widgetsHint2": {
+    "en": "Bio (optional)",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1767",
+    "zh": "简介（选填）"
+  },
+  "community_widgetsHint3": {
+    "en": "Linked token (optional) {communityBoundAssetHint}",
+    "placeholders": {
+      "communityBoundAssetHint": {
+        "example": "communityBoundAssetHint(chain.chainId)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1776",
+    "zh": "绑定代币（选填）{communityBoundAssetHint}"
+  },
+  "community_widgetsIf": {
+    "en": "Created {localTimestampLabel}",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(entry.community.createdAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:945",
+    "zh": "创建于 {localTimestampLabel}"
+  },
+  "community_widgetsIf2": {
+    "en": "Submitted {localTimestampLabel}",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(review.submittedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:950",
+    "zh": "提交于 {localTimestampLabel}"
+  },
+  "community_widgetsLabel": {
+    "en": "Weight",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:454",
+    "zh": "权重"
+  },
+  "community_widgetsLabel2": {
+    "en": "Community power",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:460",
+    "zh": "社区总算力"
+  },
+  "community_widgetsLabel3": {
+    "en": "Power snapshot",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:469",
+    "zh": "算力快照"
+  },
+  "community_widgetsLabel4": {
+    "en": "Short link (can't be changed)",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1522",
+    "zh": "短链接（不可修改）"
+  },
+  "community_widgetsLabel5": {
+    "en": "No community ID",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1694",
+    "zh": "不设置社区标识"
+  },
+  "community_widgetsLabel6": {
+    "en": "Community ID {reference}",
+    "placeholders": {
+      "reference": {
+        "example": "reference.split('-').last",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1695",
+    "zh": "社区标识 {reference}"
+  },
+  "community_widgetsLabelText": {
+    "en": "Community name",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1483, lib/features/community/community_widgets.dart:1747",
+    "zh": "社区名称"
+  },
+  "community_widgetsLabelText2": {
+    "en": "Bio (optional)",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1490",
+    "zh": "简介（可留空）"
+  },
+  "community_widgetsLabelText3": {
+    "en": "Linked token (owner only, optional)",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1505",
+    "zh": "绑定代币（仅所有者，可留空）"
+  },
+  "community_widgetsLoopOfflineState": {
+    "en": "Block",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:178",
+    "zh": "屏蔽"
+  },
+  "community_widgetsLoopOfflineState2": {
+    "en": "Governance",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:178",
+    "zh": "治理"
+  },
+  "community_widgetsLoopPageBlock": {
+    "en": "Try again later.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:80, lib/features/community/community_widgets.dart:81, lib/features/community/community_widgets.dart:82",
+    "zh": "请稍后再试。"
+  },
+  "community_widgetsLoopSheetHeading": {
+    "en": "This counts connections, not activity",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:293",
+    "zh": "这里数的是连接，不是活跃"
+  },
+  "community_widgetsLoopSheetHeading2": {
+    "en": "Application submitted · In review",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1315",
+    "zh": "申请已提交 · 审核中"
+  },
+  "community_widgetsLoopSheetHeading3": {
+    "en": "Edit community profile",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1468",
+    "zh": "编辑社区资料"
+  },
+  "community_widgetsLoopSheetHeading4": {
+    "en": "Create community",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1663",
+    "zh": "创建社区"
+  },
+  "community_widgetsMiningCommunityWeightApproved": {
+    "en": "Granted after review and included in the figure above",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:758",
+    "zh": "已按审核结果授予，算在上面的数里"
+  },
+  "community_widgetsMiningCommunityWeightPending": {
+    "en": "Weight is still in review, so no value is shown",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:764",
+    "zh": "权重还在审核中，这里不显示数值"
+  },
+  "community_widgetsMiningCommunityWeightPending2": {
+    "en": "No linked token, so there's no weight to review",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:765",
+    "zh": "没有绑定代币，没有权重可审"
+  },
+  "community_widgetsMiningParticipantsCount": {
+    "en": "People with power in the latest power snapshot",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:781",
+    "zh": "最近一次算力快照里算出了算力的人"
+  },
+  "community_widgetsMiningParticipantsUnavailable": {
+    "en": "This item can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:782",
+    "zh": "这一项暂时读不到"
+  },
+  "community_widgetsName": {
+    "en": "The name needs 1–40 characters with no control characters.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1937",
+    "zh": "名称需要 1–40 个字符，且不能包含控制字符。"
+  },
+  "community_widgetsRankedSemantic": {
+    "en": "{caption} {value}",
+    "placeholders": {
+      "caption": {
+        "example": "caption",
+        "type": "Object"
+      },
+      "value": {
+        "example": "value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1197",
+    "zh": "{caption}{value}"
+  },
+  "community_widgetsRejected": {
+    "en": "Rejected",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:913, lib/features/community/community_widgets.dart:1062",
+    "zh": "已驳回"
+  },
+  "community_widgetsS": {
+    "en": "Chain status isn't loaded yet. If you enter only the address, {name} is filled in. ",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1883",
+    "zh": "暂未取到链状态，只填地址时将按 {name} 补全。"
+  },
+  "community_widgetsSemantic": {
+    "en": "Community mining panel, weight {weight}, community power {power}",
+    "placeholders": {
+      "power": {
+        "example": "power",
+        "type": "Object"
+      },
+      "weight": {
+        "example": "weight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:427",
+    "zh": "社区挖矿面板，权重 {weight}，社区算力 {power}"
+  },
+  "community_widgetsSemanticValue": {
+    "en": "Can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1186, lib/features/community/community_widgets.dart:1208",
+    "zh": "暂时读不到"
+  },
+  "community_widgetsSemanticValue2": {
+    "en": "At least {messageCount}",
+    "placeholders": {
+      "messageCount": {
+        "example": "messageCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1198",
+    "zh": "至少 {messageCount} 条"
+  },
+  "community_widgetsSemanticValue3": {
+    "en": "{messageCount}",
+    "placeholders": {
+      "messageCount": {
+        "example": "messageCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1198",
+    "zh": "{messageCount} 条"
+  },
+  "community_widgetsShowCommunityApplicationSubmittedSheet": {
+    "en": "\"{communityName}\" is in the review queue and you're its owner. {communityApplicationProgressHint} The verified badge, mining weight and official group appear after approval.",
+    "placeholders": {
+      "communityApplicationProgressHint": {
+        "example": "communityApplicationProgressHint",
+        "type": "Object"
+      },
+      "communityName": {
+        "example": "communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1328",
+    "zh": "「{communityName}」已进入审核队列，你是它的所有者。{communityApplicationProgressHint}通过后才会显示验证标记，并开放挖矿权重与官方群。"
+  },
+  "community_widgetsShowCommunityPresenceMeaningSheet": {
+    "en": "This is how many members of the community's official channel are connected to Stream right now ({communityCountLabel}). It isn't \"watching this channel\", \"recently active\", or the total member count. It's a single observation, not a running count.",
+    "placeholders": {
+      "communityCountLabel": {
+        "example": "communityCountLabel(count)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:306",
+    "zh": "这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数（{communityCountLabel} 人），不是「正在看这个频道」，不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。"
+  },
+  "community_widgetsSlug": {
+    "en": "The short link must be 3–32 lowercase letters, digits or hyphens.",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:1938",
+    "zh": "短链接只能是 3–32 位小写字母、数字或连字符。"
+  },
+  "community_widgetsSwitch": {
+    "en": "Community mining",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:443",
+    "zh": "社区挖矿"
+  },
+  "community_widgetsSwitch2": {
+    "en": "Formula version {identifier} used by this power snapshot",
+    "placeholders": {
+      "identifier": {
+        "example": "identifier",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:739",
+    "zh": "这次算力快照所用的公式版本 {identifier}"
+  },
+  "community_widgetsText": {
+    "en": "{communityBoundAssetChainNote}{communityBoundAssetUniqueHint} After you submit it goes into review and you're the owner. The verified badge is set after verification.",
+    "placeholders": {
+      "communityBoundAssetChainNote": {
+        "example": "communityBoundAssetChainNote(chain)",
+        "type": "Object"
+      },
+      "communityBoundAssetUniqueHint": {
+        "example": "communityBoundAssetUniqueHint",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:1785",
+    "zh": "{communityBoundAssetChainNote}{communityBoundAssetUniqueHint}提交后进入审核，你是所有者；验证标记由运维核验后设置。"
+  },
+  "community_widgetsValue": {
+    "en": "{communityObservedAtLabel} · Not updated",
+    "placeholders": {
+      "communityObservedAtLabel": {
+        "example": "communityObservedAtLabel(staleAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/community/community_widgets.dart:470",
+    "zh": "{communityObservedAtLabel} · 未更新"
+  },
+  "community_widgetsVerified": {
+    "en": "Verified",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:833",
+    "zh": "已验证"
+  },
+  "community_widgetsVerified2": {
+    "en": "Approved",
+    "placeholders": {},
+    "where": "lib/features/community/community_widgets.dart:912",
+    "zh": "已通过"
+  }
+}

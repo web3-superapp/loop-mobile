@@ -66,7 +66,7 @@ void main() {
       final word = tester.widget<Text>(
         find.descendant(
           of: key('watchlist-swipe-background'),
-          matching: find.text('删除'),
+          matching: find.text('Delete'),
         ),
       );
       expect(word.style?.color, LoopColors.chalk);
@@ -91,13 +91,13 @@ void main() {
         ),
       );
       expect(view.entry.kind, LoopToastKind.ok);
-      expect(view.entry.action?.label, '撤销');
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(view.entry.action?.label, 'Undo');
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
 
       await tester.tap(key('watchlist-undo'));
       await tester.pumpAndSettle();
       expect(key('watchlist-undo-toast'), findsNothing);
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
+      expect(find.textContaining('3 watchlist assets'), findsOneWidget);
     });
   });
 
@@ -114,7 +114,7 @@ void main() {
       final capsule = tester.widget<Container>(
         find
             .descendant(
-              of: key('token-tab-${TokenSectionTab.holders.label}'),
+              of: key('token-tab-${TokenSectionTab.holders.name}'),
               matching: find.byWidgetPredicate(
                 (widget) =>
                     widget is Container && widget.decoration is BoxDecoration,

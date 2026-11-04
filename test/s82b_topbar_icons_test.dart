@@ -88,9 +88,9 @@ void main() {
         tester,
         const ValueKey<String>('alerts-create-action'),
         icon: 'plus',
-        name: '新建',
+        name: 'New',
       );
-      await tapByName(tester, '新建');
+      await tapByName(tester, 'New');
 
       expect(
         find.byKey(const ValueKey<String>('alert-threshold-field')),
@@ -114,7 +114,7 @@ void main() {
         tester,
         const ValueKey<String>('watchlist-save-action'),
         icon: 'check',
-        name: '完成',
+        name: 'Done',
       );
       // Nothing to save yet: the control is off, exactly as the word was.
       expect(
@@ -135,9 +135,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tapByName(tester, '完成');
+      await tapByName(tester, 'Done');
 
-      expect(find.text('自选已保存'), findsOneWidget);
+      expect(find.text('Watchlist saved'), findsOneWidget);
     });
   });
 

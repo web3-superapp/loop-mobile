@@ -81,8 +81,8 @@ void main() {
         watchlist: watchlist,
       );
 
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
-      expect(find.bySemanticsLabel('加入自选'), findsOneWidget);
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
+      expect(find.bySemanticsLabel('Add to watchlist'), findsOneWidget);
 
       await tester.tap(star);
       await tester.pumpAndSettle();
@@ -94,9 +94,12 @@ void main() {
       expect(written.single.key, watchlistDefaultGroupKey);
       expect(written.single.name, watchlistDefaultGroupName);
       expect(written.single.items.single.assetId, s5WbnbAssetId);
-      expect(find.text('已加入自选'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '移出自选');
-      expect(find.bySemanticsLabel('移出自选'), findsOneWidget);
+      expect(find.text('Added to watchlist'), findsOneWidget);
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Remove from watchlist',
+      );
+      expect(find.bySemanticsLabel('Remove from watchlist'), findsOneWidget);
       semantics.dispose();
     });
 
@@ -148,7 +151,10 @@ void main() {
         watchlist: watchlist,
       );
 
-      expect(tester.widget<LoopIconButton>(star).label, '移出自选');
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Remove from watchlist',
+      );
       expect(tester.widget<LoopIconButton>(star).color, LoopColors.lime);
 
       await tester.tap(star);
@@ -160,8 +166,8 @@ void main() {
         watchlist.written.single.single.items.map((item) => item.assetId),
         <String>[s5UsdtAssetId, s5NativeAssetId],
       );
-      expect(find.text('已移出自选'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(find.text('Removed from watchlist'), findsOneWidget);
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
     });
 
     testWidgets('a version conflict re-reads and retries exactly once', (
@@ -205,8 +211,11 @@ void main() {
         'mining',
         watchlistDefaultGroupKey,
       ]);
-      expect(find.text('已加入自选'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '移出自选');
+      expect(find.text('Added to watchlist'), findsOneWidget);
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Remove from watchlist',
+      );
     });
 
     testWidgets('a second conflict is reported, not retried again', (
@@ -227,8 +236,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(watchlist.expectedVersions.length, 2);
-      expect(find.textContaining('自选已在其他设备上改动'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(
+        find.textContaining('Your watchlist changed on another device'),
+        findsOneWidget,
+      );
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
     });
 
     testWidgets('offline says nothing was written', (tester) async {
@@ -248,7 +260,7 @@ void main() {
 
       expect(watchlist.expectedVersions, <int>[4]);
       expect(find.textContaining('This device is offline'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
     });
 
     testWidgets('a refused write keeps the star honest', (tester) async {
@@ -266,7 +278,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // The server refused, so the asset is still watched.
-      expect(tester.widget<LoopIconButton>(star).label, '移出自选');
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Remove from watchlist',
+      );
       expect(
         find.textContaining(
           "This account doesn't have permission for this action",
@@ -300,10 +315,15 @@ void main() {
       // Refused on device: no request, and the sentence is about the limit
       // rather than the server's "asset is not registered".
       expect(watchlist.written, isEmpty);
-      expect(find.textContaining('自选已达 $watchlistMaxItems 项'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Your watchlist has reached $watchlistMaxItems items',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('未登记'), findsNothing);
       expect(find.textContaining('unregistered asset'), findsNothing);
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
     });
 
     testWidgets('a full group budget names the group limit', (tester) async {
@@ -323,7 +343,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(watchlist.written, isEmpty);
-      expect(find.textContaining('分组已达 $watchlistMaxGroups 个'), findsOneWidget);
+      expect(
+        find.textContaining("You've reached $watchlistMaxGroups groups"),
+        findsOneWidget,
+      );
       expect(find.textContaining('未登记'), findsNothing);
     });
 
@@ -365,8 +388,11 @@ void main() {
       // thing twice, so the reload is the outcome.
       expect(watchlist.expectedVersions, <int>[4]);
       expect(watchlist.written.length, 1);
-      expect(find.text('已加入自选'), findsOneWidget);
-      expect(tester.widget<LoopIconButton>(star).label, '移出自选');
+      expect(find.text('Added to watchlist'), findsOneWidget);
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Remove from watchlist',
+      );
     });
 
     testWidgets('an unread list is neither watched nor unwatched', (
@@ -385,7 +411,7 @@ void main() {
       );
 
       final button = tester.widget<LoopIconButton>(star);
-      expect(button.label, '加入自选');
+      expect(button.label, 'Add to watchlist');
       // No colour claim and no toggle claim while the answer is unknown.
       expect(button.color, isNull);
       expect(button.toggled, isNull);
@@ -393,7 +419,7 @@ void main() {
       expect(
         tester.getSemantics(star),
         matchesSemantics(
-          label: '加入自选',
+          label: 'Add to watchlist',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -423,7 +449,7 @@ void main() {
 
       // The read failed, so nothing is claimed and the star still invites a
       // press — which re-reads before it would write.
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
       expect(tester.widget<LoopIconButton>(star).toggled, isNull);
 
       await tester.tap(star);
@@ -445,7 +471,10 @@ void main() {
         watchlist: watchlist,
       );
 
-      expect(tester.widget<LoopIconButton>(star).label, '自选当前不可用');
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Watchlist isn\'t available right now',
+      );
       expect(tester.widget<LoopIconButton>(star).onPressed, isNull);
       expect(tester.widget<LoopIconButton>(star).toggled, isNull);
       expect(watchlist.loads, 0);
@@ -465,7 +494,10 @@ void main() {
         ),
       );
 
-      expect(tester.widget<LoopIconButton>(star).label, '自选当前不可用');
+      expect(
+        tester.widget<LoopIconButton>(star).label,
+        'Watchlist isn\'t available right now',
+      );
       expect(tester.widget<LoopIconButton>(star).onPressed, isNull);
       expect(watchlist.written, isEmpty);
     });
@@ -493,7 +525,10 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-no-groups')),
         findsOneWidget,
       );
-      expect(find.textContaining('在代币页点右上角星标'), findsOneWidget);
+      expect(
+        find.textContaining('tap the star at the top right of a token page'),
+        findsOneWidget,
+      );
       expect(find.textContaining('本页只编辑已存在的分组'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('watchlist-new-group-empty')),
@@ -535,7 +570,9 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('分组已达上限 $watchlistMaxGroups 个'),
+        find.textContaining(
+          "You've reached the limit of $watchlistMaxGroups groups",
+        ),
         findsOneWidget,
       );
     });
@@ -581,7 +618,7 @@ void main() {
       expect(written.last.key, 'g1');
       expect(written.last.name, '长期观察');
       expect(written.last.items, isEmpty);
-      expect(find.text('自选已保存'), findsOneWidget);
+      expect(find.text('Watchlist saved'), findsOneWidget);
     });
 
     testWidgets('放弃修改 undoes a new group', (tester) async {
@@ -673,7 +710,7 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-group-name-error')),
         findsOneWidget,
       );
-      expect(find.text('分组名称不能为空。'), findsOneWidget);
+      expect(find.text('Group name can\'t be empty.'), findsOneWidget);
       // The sheet stays open on the refusal, with the typed value intact.
       expect(
         find.byKey(const ValueKey<String>('watchlist-group-name-field')),
@@ -702,7 +739,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('已经有同名分组了。'), findsOneWidget);
+      expect(
+        find.text('A group with this name already exists.'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -765,7 +805,7 @@ void main() {
       );
       expect(
         watchlistGroupNameIssue(
-          '自选',
+          watchlistDefaultGroupName,
           existing: <WatchlistGroup>[
             WatchlistGroup(
               key: watchlistDefaultGroupKey,

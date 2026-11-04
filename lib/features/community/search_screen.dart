@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_recent.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -139,7 +140,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       setState(() => _follows[id] = outcome.viewerFollows);
       LoopToast.show(
         context,
-        message: outcome.viewerFollows ? '已关注' : '没有关注成功',
+        message: outcome.viewerFollows
+            ? LoopL10n.current.common_following
+            : LoopL10n.current.community_searchMessage,
         kind: outcome.viewerFollows ? LoopToastKind.ok : LoopToastKind.warn,
       );
     } on CommunityGatewayException catch (error) {
@@ -191,7 +194,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       child: LoopStreamPage(
         key: const ValueKey<String>('global-search-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '搜索',
+        title: context.l10n.common_search,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         // Decision 0178 (docs/35 「搜索」): one row of segments — 全部 first —
@@ -205,7 +208,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             children: <Widget>[
               _seg(
                 key: 'search-seg-all',
-                label: '全部',
+                label: context.l10n.common_all,
                 selected: state.all,
                 onSelected: controller.selectAll,
               ),
@@ -227,7 +230,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             ? CommunityCapabilityPageBlock(
                 key: const ValueKey<String>('search-capability-unavailable'),
                 capability: capability,
-                title: '搜索当前不可用',
+                title: context
+                    .l10n
+                    .community_searchSearchCapabilityUnavailableTitle,
               )
             : null,
         collection: Column(
@@ -240,7 +245,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 children: <Widget>[
-                  CommunityPreviewNotice(mode: mode, resource: '搜索结果'),
+                  CommunityPreviewNotice(
+                    mode: mode,
+                    resource: context.l10n.community_searchResource,
+                  ),
                   if (!submittable && recents.isNotEmpty)
                     ..._recentSection(recents)
                   else if (state.domainUnavailable)
@@ -248,7 +256,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       key: ValueKey<String>(
                         'search-domain-unavailable-${state.domain.wireName}',
                       ),
-                      message: '${state.domain.label} 暂时搜不到',
+                      message: context.l10n.community_searchMessage2(
+                        state.domain.label,
+                      ),
                       detail: communityUnavailableReason(state.reasonCode!),
                       detailMaxLines: 3,
                     )
@@ -258,20 +268,30 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       phase: state.phase,
                       failureKind: state.failureKind,
                       emptyMessage: submittable
-                          ? '没有匹配的结果'
-                          : '输入至少 $searchMinimumRunes 个字符开始搜索',
+                          ? context.l10n.community_searchSearchEmptyEmptyMessage
+                          : context.l10n
+                                .community_searchSearchEmptyEmptyMessage2(
+                                  searchMinimumRunes,
+                                ),
                       emptyReason: submittable
-                          ? '这个分类下没有结果。'
-                          : '搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。',
+                          ? context.l10n.community_searchSearchEmptyEmptyReason
+                          : context
+                                .l10n
+                                .community_searchSearchEmptyEmptyReason2,
                       // Decision 0122: the centred search illustration.
                       empty: LoopEmptyState(
                         showMessage: true,
                         key: const ValueKey<String>('search-empty'),
                         illustration: LoopIllustration.search,
-                        title: submittable ? '没有找到匹配的结果' : '搜索代币、社区与用户',
+                        title: submittable
+                            ? context.l10n.community_searchSearchEmptyTitle
+                            : context.l10n.community_searchSearchEmptyTitle2,
                         message: submittable
-                            ? '换个关键词，或切换上面的分类试试'
-                            : '输入至少 $searchMinimumRunes 个字符开始搜索',
+                            ? context.l10n.community_searchSearchEmptyMessage
+                            : context.l10n
+                                  .community_searchSearchEmptyEmptyMessage2(
+                                    searchMinimumRunes,
+                                  ),
                       ),
                       onRetry: () => unawaited(controller.submit(state.query)),
                     ),
@@ -329,8 +349,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     return <Widget>[
       _labelRow(
         key: const ValueKey<String>('search-recent-label'),
-        label: '最近搜索',
-        action: '清除全部',
+        label: LoopL10n.current.community_searchSearchRecentLabelLabel,
+        action: LoopL10n.current.community_searchSearchRecentLabelAction,
         actionKey: const ValueKey<String>('search-recent-clear'),
         onAction: recentController.clear,
       ),
@@ -359,14 +379,16 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           key: ValueKey<String>(_recentKey(entry)),
           leading: _assetLogo(entry.title, null),
           title: entry.title,
-          tag: const LoopBadge('代币'),
+          tag: LoopBadge(LoopL10n.current.common_token),
           trailing: _RecentDismiss(
             key: ValueKey<String>('search-recent-remove-${_recentId(entry)}'),
             name: entry.title,
             onPressed: () => recentController.remove(entry),
           ),
           onTap: () => _open(entry.toResult()),
-          semanticLabel: '${entry.title}，代币，最近搜索',
+          semanticLabel: LoopL10n.current.community_searchSemanticLabel(
+            entry.title,
+          ),
         ),
     ];
   }
@@ -390,21 +412,23 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     if (!user) {
       pill = LoopPillAction(
         key: ValueKey<String>('search-recent-enter-${_recentId(entry)}'),
-        label: '进入',
+        label: LoopL10n.current.community_searchLabel,
         soft: true,
         onPressed: () => _open(entry.toResult()),
       );
     } else if (followed) {
       pill = LoopPillAction(
         key: ValueKey<String>('search-recent-follow-${_recentId(entry)}'),
-        label: '已关注',
+        label: LoopL10n.current.common_following,
         primary: false,
         onPressed: () => _open(entry.toResult()),
       );
     } else {
       pill = LoopPillAction(
         key: ValueKey<String>('search-recent-follow-${_recentId(entry)}'),
-        label: pending ? '关注中' : '关注',
+        label: pending
+            ? LoopL10n.current.community_searchLabel2
+            : LoopL10n.current.common_follow,
         soft: true,
         onPressed: pending || social == CommunityGatewayMode.unavailable
             ? null
@@ -535,7 +559,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           _labelRow(
             key: ValueKey<String>('search-section-${domain.wireName}'),
             label: domain.label,
-            action: more ? '更多' : null,
+            action: more ? LoopL10n.current.common_more : null,
             actionKey: ValueKey<String>('search-more-${domain.wireName}'),
             onAction: () => controller.selectDomain(domain),
             tight: true,
@@ -554,7 +578,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         if (state.failedDomains.contains(domain))
           LoopInlineUnavailable(
             key: ValueKey<String>('search-domain-failed-${domain.wireName}'),
-            message: '${domain.label}暂时搜不到',
+            message: LoopL10n.current.community_searchMessage3(domain.label),
           ),
   ];
 
@@ -593,7 +617,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               // a capsule chip.
               LoopButton(
                 key: const ValueKey<String>('search-paste-loop-id'),
-                label: '粘贴',
+                label: LoopL10n.current.community_searchSearchPasteLoopIdLabel,
                 size: LoopButtonSize.compact,
                 onPressed: () => unawaited(_paste(controller)),
               ),
@@ -636,7 +660,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         prefixIcon: LoopIconButton(
           key: const ValueKey<String>('search-submit'),
           icon: 'search',
-          label: '搜索',
+          label: LoopL10n.current.common_search,
           color: LoopColors.text3,
           onPressed: () => unawaited(controller.submit(_query.text)),
         ),
@@ -670,7 +694,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         !searchQueryIsSubmittable(pasted)) {
       LoopToast.show(
         context,
-        message: '剪贴板里没有可以搜索的内容',
+        message: LoopL10n.current.community_searchMessage4,
         kind: LoopToastKind.warn,
       );
       return;
@@ -711,7 +735,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   Widget _resultRow(SearchResult result) {
     final semantic =
-        '${result.title}${result.subtitle == null ? '' : '，${result.subtitle}'}';
+        '${result.title}${result.subtitle == null ? '' : '${LoopL10n.current.common_listSeparator}${result.subtitle}'}';
     return switch (result.resultType) {
       // `.row` with a 44 tile: ticker, a mute type badge, the token's name.
       // The search snapshot carries no price, change or market cap, so the
@@ -720,15 +744,20 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         key: ValueKey<String>('search-result-${result.stableId}'),
         leading: _assetLogo(result.title, result.logoUrl),
         title: result.title,
-        tag: const LoopBadge('代币'),
+        tag: LoopBadge(LoopL10n.current.common_token),
         subtitle: result.subtitle,
-        trailing: Text(
-          searchPriceAbsentText,
-          key: ValueKey<String>('search-result-price-${result.stableId}'),
-          style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+        trailing: Flexible(
+          child: Text(
+            searchPriceAbsentText,
+            key: ValueKey<String>('search-result-price-${result.stableId}'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
+          ),
         ),
         onTap: () => _open(result),
-        semanticLabel: '$semantic，$searchPriceAbsentText',
+        semanticLabel:
+            '$semantic${LoopL10n.current.common_listSeparator}$searchPriceAbsentText',
       ),
       // A community's subtitle is its slug — 「mock-vol-01」 under 「Alpha
       // Signals 1」 — and names nothing a reader can use. The row keeps the
@@ -744,12 +773,15 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         title: result.title,
         subtitle: result.memberCount == null
             ? null
-            : '${result.memberCount} 位成员',
+            : LoopL10n.current.community_manageAsyncError(result.memberCount),
         chevron: true,
         onTap: () => _open(result),
         semanticLabel: result.memberCount == null
             ? result.title
-            : '${result.title}，${result.memberCount} 位成员',
+            : LoopL10n.current.community_searchSemanticLabel2(
+                result.memberCount,
+                result.title,
+              ),
       ),
       SearchResultType.user => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
@@ -770,7 +802,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
 /// What a token row says where a price would be: the search snapshot has
 /// none (backend decision 0071), and a figure is never invented for it.
-const String searchPriceAbsentText = '搜索不含价格';
+String get searchPriceAbsentText =>
+    LoopL10n.current.community_searchSearchPriceAbsentText;
 
 /// The × on a recent entry: removes that one entry, 44 square.
 class _RecentDismiss extends StatelessWidget {
@@ -786,7 +819,7 @@ class _RecentDismiss extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '从最近搜索移除 $name',
+    label: context.l10n.community_searchLabel3(name),
     excludeSemantics: true,
     child: LoopPressable(
       onTap: onPressed,

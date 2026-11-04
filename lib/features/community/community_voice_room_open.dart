@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Opens a room for this community. The button exists only for a viewer the
@@ -28,7 +29,10 @@ Future<void> openCommunityVoiceRoom(
   final failure = outcome.failure;
   if (failure == null) {
     if (outcome.isOpen) {
-      LoopToast.show(context, message: '语音房已开启');
+      LoopToast.show(
+        context,
+        message: context.l10n.community_voiceRoomOpenMessage,
+      );
       unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
       onOpened?.call(detail.community.communityId);
       return;
@@ -52,7 +56,7 @@ Future<void> openCommunityVoiceRoom(
     message: failure == CommunityFailureKind.resourceConflict
         // The shared copy for this code is about a taken slug; here the
         // conflict is a room that is already live.
-        ? '这个社区已经有进行中的语音房，没有重复创建。请刷新后进入。'
+        ? context.l10n.community_voiceRoomOpenMessage2
         : communityFailureReason(failure),
     kind: LoopToastKind.err,
   );

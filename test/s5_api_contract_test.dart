@@ -934,11 +934,14 @@ void main() {
       );
       expect(
         marketAssetUnavailableSentence(identity),
-        '这个地址暂时读不到 · ${loopReasonCodeText('MARKET_PROVIDER_RATE_LIMITED')}',
+        // S355f transition: the reason text is still core copy.
+        "This address can't be loaded right now · "
+        "${loopReasonCodeText('MARKET_PROVIDER_RATE_LIMITED')}",
       );
       expect(
         marketAssetUnavailableHeading(identity),
-        '这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}',
+        "This address can't be loaded right now · "
+        '${loopTruncatedAssetId(s5WbnbAssetId)}',
       );
     });
 

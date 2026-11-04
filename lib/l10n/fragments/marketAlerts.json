@@ -1,0 +1,443 @@
+{
+  "marketAlerts_modelsAbove": {
+    "en": "Breaks above",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:14",
+    "zh": "涨破"
+  },
+  "marketAlerts_modelsActive": {
+    "en": "Watching",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:36",
+    "zh": "监听中"
+  },
+  "marketAlerts_modelsAtOrAbove": {
+    "en": "Rises to",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:15",
+    "zh": "涨到"
+  },
+  "marketAlerts_modelsAtOrBelow": {
+    "en": "Falls to",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:17",
+    "zh": "跌到"
+  },
+  "marketAlerts_modelsBelow": {
+    "en": "Breaks below",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:16",
+    "zh": "跌破"
+  },
+  "marketAlerts_modelsTriggered": {
+    "en": "Triggered",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alert_models.dart:37",
+    "zh": "已触发"
+  },
+  "marketAlerts_screenAbove": {
+    "en": "Break: price must be above the threshold (> threshold) to trigger. Exactly equal doesn't count.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:481",
+    "zh": "突破：价格必须高于阈值（> 阈值）才触发，正好等于阈值不算。"
+  },
+  "marketAlerts_screenAlertAssetPickLabel": {
+    "en": "Pick an asset from your watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:637",
+    "zh": "从自选里选择资产"
+  },
+  "marketAlerts_screenAlertAssetPickerEmptyMessage": {
+    "en": "Add assets to your watchlist on the market page first, or create an alert from a token page.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:812",
+    "zh": "先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。"
+  },
+  "marketAlerts_screenAlertAssetPickerEmptyTitle": {
+    "en": "No assets in your watchlist yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:811",
+    "zh": "自选里还没有资产"
+  },
+  "marketAlerts_screenAlertAssetRowSubtitle": {
+    "en": "This asset's name can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:654, lib/features/market/alerts/alerts_screen.dart:833",
+    "zh": "这个资产的名称暂时读不到"
+  },
+  "marketAlerts_screenAlertDeleteConfirmBodyBody": {
+    "en": "Triggered records stay in the trigger history and aren't deleted.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:594",
+    "zh": "已经触发过的记录留在触发历史里，不会被删掉。"
+  },
+  "marketAlerts_screenAlertDeleteConfirmBodyTitle": {
+    "en": "This price won't be watched after deleting",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:593",
+    "zh": "删除之后不会再监听这个价格"
+  },
+  "marketAlerts_screenAlertsCapabilityBlockTitle": {
+    "en": "Price alerts aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:154",
+    "zh": "价格提醒当前不可用"
+  },
+  "marketAlerts_screenAlertsCommandErrorTitle": {
+    "en": "Alert wasn't updated",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:189",
+    "zh": "提醒没有更新"
+  },
+  "marketAlerts_screenAlertsCreateActionLabel": {
+    "en": "New",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:128",
+    "zh": "新建"
+  },
+  "marketAlerts_screenAlertsEmptyTitle": {
+    "en": "No alerts for {focusLabel} yet",
+    "placeholders": {
+      "focusLabel": {
+        "example": "focusLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:198",
+    "zh": "{focusLabel} 还没有提醒"
+  },
+  "marketAlerts_screenAlertsEndText": {
+    "en": "No more alerts",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:242",
+    "zh": "没有更多提醒"
+  },
+  "marketAlerts_screenAlertsFeedEmptyMessage": {
+    "en": "Each triggered alert leaves a record here with its source and time.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:904",
+    "zh": "提醒触发后会在这里留下一条记录，标注出处和时间。"
+  },
+  "marketAlerts_screenAlertsFeedEmptyPageMessage": {
+    "en": "There are more records. Keep scrolling.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:916",
+    "zh": "后面还有记录，继续往下滑。"
+  },
+  "marketAlerts_screenAlertsFeedEmptyPageTitle": {
+    "en": "No price alert records on this page",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:915",
+    "zh": "这一页没有价格提醒的记录"
+  },
+  "marketAlerts_screenAlertsFeedEndText": {
+    "en": "No more trigger records",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:972",
+    "zh": "没有更多触发记录"
+  },
+  "marketAlerts_screenAlertsFeedMoreFailedMessage": {
+    "en": "Couldn't load the next page of trigger records",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:962",
+    "zh": "下一页触发记录没有读到"
+  },
+  "marketAlerts_screenAlertsFeedUnreadText": {
+    "en": "{unreadCount} unread",
+    "placeholders": {
+      "unreadCount": {
+        "example": "feed.unreadCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:978",
+    "zh": "未读 {unreadCount} 条"
+  },
+  "marketAlerts_screenAlertsMoreFailedMessage": {
+    "en": "Couldn't load the next page of alerts",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:224",
+    "zh": "下一页提醒没有读到"
+  },
+  "marketAlerts_screenAlertsNotificationSettingsSubtitle": {
+    "en": "With the price alert category off, events are still recorded but no notification is created",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:273",
+    "zh": "关闭价格提醒类别后仍会记录事件，但不会生成通知"
+  },
+  "marketAlerts_screenAlertsPushNoticeBody": {
+    "en": "Push notifications aren't available yet, so alerts appear only in the in-app notification list. Only the latest price triggers an alert.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:265",
+    "zh": "推送还没有开放，提醒只出现在应用内的通知列表里。只有最新价格会触发提醒。"
+  },
+  "marketAlerts_screenAlertsPushNoticeTitle": {
+    "en": "Push isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:264",
+    "zh": "推送尚不可用"
+  },
+  "marketAlerts_screenAlertsScreenSubtitle": {
+    "en": "{focusLabel} · {armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
+    "placeholders": {
+      "armed": {
+        "example": "armed.length",
+        "type": "Object"
+      },
+      "focusLabel": {
+        "example": "focusLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:147",
+    "zh": "{focusLabel} · {armed} 个提醒正在监听 · 触发一次即停"
+  },
+  "marketAlerts_screenAlertsScreenSubtitle2": {
+    "en": "{items, plural, =1{1 alert loaded} other{{items} alerts loaded}} · Stops after one trigger",
+    "placeholders": {
+      "items": {
+        "example": "state.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:149",
+    "zh": "已载入 {items} 条提醒 · 触发一次即停"
+  },
+  "marketAlerts_screenAlertsScreenSubtitle3": {
+    "en": "{armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
+    "placeholders": {
+      "armed": {
+        "example": "armed.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:150",
+    "zh": "{armed} 个提醒正在监听 · 触发一次即停"
+  },
+  "marketAlerts_screenAlertsShowEveryAssetLabel": {
+    "en": "View alerts for all assets",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:251",
+    "zh": "查看全部资产的提醒"
+  },
+  "marketAlerts_screenAtOrAbove": {
+    "en": "Reach: triggers when price reaches or rises above the threshold (≥ threshold).",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:482",
+    "zh": "到达：价格达到或高于阈值（≥ 阈值）就触发。"
+  },
+  "marketAlerts_screenAtOrBelow": {
+    "en": "Reach: triggers when price reaches or falls below the threshold (≤ threshold).",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:484",
+    "zh": "到达：价格达到或低于阈值（≤ 阈值）就触发。"
+  },
+  "marketAlerts_screenBelow": {
+    "en": "Break: price must be below the threshold (< threshold) to trigger. Exactly equal doesn't count.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:483",
+    "zh": "突破：价格必须低于阈值（< 阈值）才触发，正好等于阈值不算。"
+  },
+  "marketAlerts_screenEmptyMessage": {
+    "en": "No price alerts yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:165, lib/features/market/alerts/alerts_screen.dart:198",
+    "zh": "还没有价格提醒"
+  },
+  "marketAlerts_screenEmptyMessage2": {
+    "en": "Watchlist hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:802",
+    "zh": "自选列表还没有读到"
+  },
+  "marketAlerts_screenEmptyMessage3": {
+    "en": "No trigger records yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:886, lib/features/market/alerts/alerts_screen.dart:903",
+    "zh": "还没有触发记录"
+  },
+  "marketAlerts_screenEmptyReason": {
+    "en": "Set a target price and you'll get a notification when it's reached.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:166, lib/features/market/alerts/alerts_screen.dart:199",
+    "zh": "设一个目标价，价格到了会在通知里告诉你。"
+  },
+  "marketAlerts_screenError": {
+    "en": "Pick an asset to watch first.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:535",
+    "zh": "先选择要监听的资产。"
+  },
+  "marketAlerts_screenHintText": {
+    "en": "e.g. 800.5",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:711",
+    "zh": "例如 800.5"
+  },
+  "marketAlerts_screenLabel": {
+    "en": "Keep",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:600",
+    "zh": "不删除"
+  },
+  "marketAlerts_screenLabelText": {
+    "en": "Threshold (USD)",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:710",
+    "zh": "阈值（USD）"
+  },
+  "marketAlerts_screenLoopBadge": {
+    "en": "This trigger",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:332",
+    "zh": "本次触发"
+  },
+  "marketAlerts_screenLoopBadge2": {
+    "en": "Changeable",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:661",
+    "zh": "可更换"
+  },
+  "marketAlerts_screenLoopBadge3": {
+    "en": "Not changeable",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:662",
+    "zh": "不可更换"
+  },
+  "marketAlerts_screenLoopLabel": {
+    "en": "Alerts set",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:193",
+    "zh": "已设提醒"
+  },
+  "marketAlerts_screenLoopLabel2": {
+    "en": "Trigger history",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:256",
+    "zh": "触发历史"
+  },
+  "marketAlerts_screenLoopLabel3": {
+    "en": "Trigger condition",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:667",
+    "zh": "触发条件"
+  },
+  "marketAlerts_screenLoopOfflineState": {
+    "en": "New alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:176, lib/features/market/alerts/alerts_screen.dart:202",
+    "zh": "新建提醒"
+  },
+  "marketAlerts_screenLoopOfflineState2": {
+    "en": "Edit alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:176",
+    "zh": "修改提醒"
+  },
+  "marketAlerts_screenLoopOfflineState3": {
+    "en": "Delete alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:176",
+    "zh": "删除提醒"
+  },
+  "marketAlerts_screenLoopRecordRow": {
+    "en": "This trigger is recorded in notifications",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:320",
+    "zh": "通知已记录这次触发"
+  },
+  "marketAlerts_screenLoopRecordRow2": {
+    "en": "{formatPercent} from target",
+    "placeholders": {
+      "formatPercent": {
+        "example": "loopFormatPercent(distance)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:322",
+    "zh": "距目标 {formatPercent}"
+  },
+  "marketAlerts_screenLoopRecordRow3": {
+    "en": "Not evaluated yet",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:324",
+    "zh": "评估器还没有看过这条"
+  },
+  "marketAlerts_screenLoopRecordRow4": {
+    "en": "Evaluated {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(alert.lastEvaluatedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/alerts/alerts_screen.dart:326",
+    "zh": "评估于 {relativeTime}"
+  },
+  "marketAlerts_screenLoopSheetHeading": {
+    "en": "Delete this alert?",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:584",
+    "zh": "删除这个提醒？"
+  },
+  "marketAlerts_screenLoopSheetHeading2": {
+    "en": "New price alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:628",
+    "zh": "新建价格提醒"
+  },
+  "marketAlerts_screenLoopSheetHeading3": {
+    "en": "Choose asset",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:792",
+    "zh": "选择资产"
+  },
+  "marketAlerts_screenMessage": {
+    "en": "Alert deleted",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:409",
+    "zh": "提醒已删除"
+  },
+  "marketAlerts_screenMessage2": {
+    "en": "Alert saved",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:409",
+    "zh": "提醒已保存"
+  },
+  "marketAlerts_screenS": {
+    "en": "Edit price alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:628",
+    "zh": "编辑价格提醒"
+  },
+  "marketAlerts_screenSetState": {
+    "en": "This asset can't be used for price alerts. Choose another one.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:548",
+    "zh": "这个资产不能用于价格提醒，请换一个。"
+  },
+  "marketAlerts_screenSetState2": {
+    "en": "The threshold must be a positive decimal number with up to 18 decimal places.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:549",
+    "zh": "阈值必须是正的十进制数字，最多 18 位小数。"
+  },
+  "marketAlerts_screenSetState3": {
+    "en": "The expiry must be in the future.",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:550",
+    "zh": "过期时间必须在未来。"
+  },
+  "marketAlerts_screenText": {
+    "en": "Delete this alert",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:747",
+    "zh": "删除这个提醒"
+  },
+  "marketAlerts_screenTitle": {
+    "en": "This account can't change price alerts",
+    "placeholders": {},
+    "where": "lib/features/market/alerts/alerts_screen.dart:183",
+    "zh": "当前账号无权修改价格提醒"
+  }
+}

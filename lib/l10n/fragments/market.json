@@ -1,0 +1,1819 @@
+{
+  "market_chartFifteenMinutes": {
+    "en": "15m",
+    "placeholders": {},
+    "where": "lib/features/market/loop_market_chart.dart:209",
+    "zh": "15分"
+  },
+  "market_chartFourHours": {
+    "en": "4h",
+    "placeholders": {},
+    "where": "lib/features/market/loop_market_chart.dart:211",
+    "zh": "4时"
+  },
+  "market_chartOneDay": {
+    "en": "1D",
+    "placeholders": {},
+    "where": "lib/features/market/loop_market_chart.dart:212",
+    "zh": "1日"
+  },
+  "market_chartOneHour": {
+    "en": "1h",
+    "placeholders": {},
+    "where": "lib/features/market/loop_market_chart.dart:210",
+    "zh": "1时"
+  },
+  "market_chartOneWeek": {
+    "en": "1W",
+    "placeholders": {},
+    "where": "lib/features/market/loop_market_chart.dart:213",
+    "zh": "1周"
+  },
+  "market_chartToolbarLabel": {
+    "en": "Candles",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:79",
+    "zh": "K线"
+  },
+  "market_chartToolbarLabel2": {
+    "en": "Line",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:79",
+    "zh": "折线"
+  },
+  "market_chartToolbarS": {
+    "en": "{labels} · Calculated on device",
+    "placeholders": {
+      "labels": {
+        "example": "labels.join(' · ')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/loop_chart_toolbar.dart:34",
+    "zh": "{labels} · 本机计算"
+  },
+  "market_chartToolbarSemantic": {
+    "en": "Switch to candles",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:80",
+    "zh": "切换到 K 线"
+  },
+  "market_chartToolbarSemantic2": {
+    "en": "Switch to line",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:80",
+    "zh": "切换到折线"
+  },
+  "market_chartToolbarSemantic3": {
+    "en": "Moving averages",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:88",
+    "zh": "均线"
+  },
+  "market_chartToolbarSemantic4": {
+    "en": "Volume",
+    "placeholders": {},
+    "where": "lib/features/market/loop_chart_toolbar.dart:96",
+    "zh": "成交量"
+  },
+  "market_fomoBuild": {
+    "en": "24h change not reported",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:191, lib/features/market/market_fomo_widgets.dart:270",
+    "zh": "24 小时涨跌未报告"
+  },
+  "market_fomoDerived": {
+    "en": "Derived from trade price",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:71, lib/features/market/market_read_models.dart:678",
+    "zh": "按成交价折算"
+  },
+  "market_fomoDown": {
+    "en": "24h trend down {figure}",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:276",
+    "zh": "24 小时走势下跌 {figure}"
+  },
+  "market_fomoMarker": {
+    "en": "Pool estimate",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:118",
+    "zh": "池子推算"
+  },
+  "market_fomoMarketTrendPercent": {
+    "en": "Not reported",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:334",
+    "zh": "未报告"
+  },
+  "market_fomoMarketTrendSpoken": {
+    "en": "24h change {signedPercent}",
+    "placeholders": {
+      "signedPercent": {
+        "example": "loopSignedPercent(change)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:273",
+    "zh": "24 小时涨跌 {signedPercent}"
+  },
+  "market_fomoProxied": {
+    "en": "Priced in WBNB",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:70",
+    "zh": "以 WBNB 计价"
+  },
+  "market_fomoS": {
+    "en": "24h {formatPercent}",
+    "placeholders": {
+      "formatPercent": {
+        "example": "loopFormatPercent(move)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:192",
+    "zh": "24 小时 {formatPercent}"
+  },
+  "market_fomoStale": {
+    "en": "Delayed",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:69",
+    "zh": "延迟"
+  },
+  "market_fomoSubtitle": {
+    "en": "Market cap {formatCompactFigure}",
+    "placeholders": {
+      "formatCompactFigure": {
+        "example": "loopFormatCompactFigure(cap)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:107",
+    "zh": "市值 {formatCompactFigure}"
+  },
+  "market_fomoSwitch": {
+    "en": "No quote yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:56",
+    "zh": "暂无报价"
+  },
+  "market_fomoSwitch2": {
+    "en": "Market data rate-limited",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:57",
+    "zh": "行情限流中"
+  },
+  "market_fomoSwitch3": {
+    "en": "Market data can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:58",
+    "zh": "行情暂时取不到"
+  },
+  "market_fomoSwitch4": {
+    "en": "Market source not enabled",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:59",
+    "zh": "行情源未开启"
+  },
+  "market_fomoSwitch5": {
+    "en": "No trading pair",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:60",
+    "zh": "没有交易对"
+  },
+  "market_fomoSwitch6": {
+    "en": "Pair can't be quoted",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:61",
+    "zh": "交易对无法报价"
+  },
+  "market_fomoSwitch7": {
+    "en": "Not reported by market source",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:62",
+    "zh": "行情源未报告"
+  },
+  "market_fomoSwitch8": {
+    "en": "Market cache unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_fomo_widgets.dart:63",
+    "zh": "行情缓存不可用"
+  },
+  "market_fomoUnread": {
+    "en": "24h trend flat {figure}",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:277",
+    "zh": "24 小时走势持平 {figure}"
+  },
+  "market_fomoUp": {
+    "en": "24h trend up {figure}",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_fomo_widgets.dart:275",
+    "zh": "24 小时走势上涨 {figure}"
+  },
+  "market_readModelsCommunity": {
+    "en": "Community tokens",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:967, lib/features/market/market_screen.dart:35",
+    "zh": "社区代币"
+  },
+  "market_readModelsMajor": {
+    "en": "Majors",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:965, lib/features/market/market_screen.dart:33",
+    "zh": "主流"
+  },
+  "market_readModelsMarketAssetUnavailableLead": {
+    "en": "This address can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:419",
+    "zh": "这个地址暂时读不到"
+  },
+  "market_readModelsProvider": {
+    "en": "Main pool from {factSourceLabel} · Unregistered pool {truncatedAddress}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(source)",
+        "type": "Object"
+      },
+      "truncatedAddress": {
+        "example": "loopTruncatedAddress(pool.address)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:694",
+    "zh": "主池来自 {factSourceLabel} · 未登记池 {truncatedAddress}"
+  },
+  "market_readModelsRegistry": {
+    "en": "Source {factSourceLabel} · Pool {truncatedAddress}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(source)",
+        "type": "Object"
+      },
+      "truncatedAddress": {
+        "example": "loopTruncatedAddress(pool.address)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:692",
+    "zh": "来源 {factSourceLabel} · 池 {truncatedAddress}"
+  },
+  "market_readModelsSwitch": {
+    "en": "Sorted by DexScreener 24h volume",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:150",
+    "zh": "按 DexScreener 24h 成交量排序"
+  },
+  "market_readModelsSwitch2": {
+    "en": "Sort rule {ordering}",
+    "placeholders": {
+      "ordering": {
+        "example": "ordering",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:151, lib/features/market/market_read_models.dart:1095",
+    "zh": "排序规则 {ordering}"
+  },
+  "market_readModelsSwitch3": {
+    "en": "Buy tax {fact}",
+    "placeholders": {
+      "fact": {
+        "example": "fact.value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:312",
+    "zh": "买入税 {fact}"
+  },
+  "market_readModelsSwitch4": {
+    "en": "Sell tax {fact}",
+    "placeholders": {
+      "fact": {
+        "example": "fact.value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:313",
+    "zh": "卖出税 {fact}"
+  },
+  "market_readModelsSwitch5": {
+    "en": "Source label {labelKey}",
+    "placeholders": {
+      "labelKey": {
+        "example": "labelKey",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_read_models.dart:680",
+    "zh": "来源标注 {labelKey}"
+  },
+  "market_readModelsSwitch6": {
+    "en": "DexScreener market cap, high to low",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:1092",
+    "zh": "按 DexScreener 市值从高到低"
+  },
+  "market_readModelsSwitch7": {
+    "en": "DexScreener 24h change, high to low",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:1093",
+    "zh": "按 DexScreener 24h 涨跌从高到低"
+  },
+  "market_readModelsSwitch8": {
+    "en": "DexScreener 24h volume, high to low",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:1094",
+    "zh": "按 DexScreener 24h 成交额从高到低"
+  },
+  "market_readModelsYesNo": {
+    "en": "Contract source verified",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:296",
+    "zh": "合约已验证开源"
+  },
+  "market_readModelsYesNo10": {
+    "en": "Owner can't change balances",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:300",
+    "zh": "所有者不可改动余额"
+  },
+  "market_readModelsYesNo11": {
+    "en": "Hidden owner detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:301, lib/features/market/token_screen.dart:1252",
+    "zh": "检测到隐藏所有者"
+  },
+  "market_readModelsYesNo12": {
+    "en": "No hidden owner detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:301, lib/features/market/token_screen.dart:1252",
+    "zh": "未检测到隐藏所有者"
+  },
+  "market_readModelsYesNo13": {
+    "en": "Self-destruct function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:302",
+    "zh": "检测到自毁函数"
+  },
+  "market_readModelsYesNo14": {
+    "en": "No self-destruct function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:302",
+    "zh": "未检测到自毁函数"
+  },
+  "market_readModelsYesNo15": {
+    "en": "External call detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:303, lib/features/market/token_screen.dart:1254",
+    "zh": "检测到外部调用"
+  },
+  "market_readModelsYesNo16": {
+    "en": "No external call detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:303, lib/features/market/token_screen.dart:1254",
+    "zh": "未检测到外部调用"
+  },
+  "market_readModelsYesNo17": {
+    "en": "Honeypot traits detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:304, lib/features/market/token_screen.dart:1255",
+    "zh": "检测到蜜罐特征"
+  },
+  "market_readModelsYesNo18": {
+    "en": "No honeypot traits detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:304, lib/features/market/token_screen.dart:1255",
+    "zh": "未检测到蜜罐特征"
+  },
+  "market_readModelsYesNo19": {
+    "en": "Transfers can be paused",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:305",
+    "zh": "转账可被暂停"
+  },
+  "market_readModelsYesNo2": {
+    "en": "Contract source not verified",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:296",
+    "zh": "合约未验证开源"
+  },
+  "market_readModelsYesNo20": {
+    "en": "Transfers can't be paused",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:305",
+    "zh": "转账不可被暂停"
+  },
+  "market_readModelsYesNo21": {
+    "en": "Blacklist function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:306",
+    "zh": "检测到黑名单函数"
+  },
+  "market_readModelsYesNo22": {
+    "en": "No blacklist function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:306",
+    "zh": "未检测到黑名单函数"
+  },
+  "market_readModelsYesNo23": {
+    "en": "Whitelist function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:307",
+    "zh": "检测到白名单函数"
+  },
+  "market_readModelsYesNo24": {
+    "en": "No whitelist function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:307",
+    "zh": "未检测到白名单函数"
+  },
+  "market_readModelsYesNo25": {
+    "en": "Holding limit detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:308, lib/features/market/token_screen.dart:1259",
+    "zh": "检测到持仓上限"
+  },
+  "market_readModelsYesNo26": {
+    "en": "No holding limit detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:308, lib/features/market/token_screen.dart:1259",
+    "zh": "未检测到持仓上限"
+  },
+  "market_readModelsYesNo27": {
+    "en": "Trading cooldown detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:309, lib/features/market/token_screen.dart:1260",
+    "zh": "检测到交易冷却"
+  },
+  "market_readModelsYesNo28": {
+    "en": "No trading cooldown detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:309, lib/features/market/token_screen.dart:1260",
+    "zh": "未检测到交易冷却"
+  },
+  "market_readModelsYesNo29": {
+    "en": "Can't sell all at once",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:310",
+    "zh": "不能一次卖出全部"
+  },
+  "market_readModelsYesNo3": {
+    "en": "Proxy contract",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:297",
+    "zh": "是代理合约"
+  },
+  "market_readModelsYesNo30": {
+    "en": "Can sell all at once",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:310",
+    "zh": "可以一次卖出全部"
+  },
+  "market_readModelsYesNo31": {
+    "en": "Listed on a DEX",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:311, lib/features/market/token_screen.dart:1262",
+    "zh": "已在 DEX 上架"
+  },
+  "market_readModelsYesNo32": {
+    "en": "Not listed on a DEX",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:311, lib/features/market/token_screen.dart:1262",
+    "zh": "未在 DEX 上架"
+  },
+  "market_readModelsYesNo4": {
+    "en": "Not a proxy contract",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:297",
+    "zh": "不是代理合约"
+  },
+  "market_readModelsYesNo5": {
+    "en": "Mint function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:298",
+    "zh": "检测到 mint 函数"
+  },
+  "market_readModelsYesNo6": {
+    "en": "No mint function detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:298",
+    "zh": "未检测到 mint 函数"
+  },
+  "market_readModelsYesNo7": {
+    "en": "Reclaimable ownership detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:299",
+    "zh": "检测到所有权可收回"
+  },
+  "market_readModelsYesNo8": {
+    "en": "No reclaimable ownership detected",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:299",
+    "zh": "未检测到所有权可收回"
+  },
+  "market_readModelsYesNo9": {
+    "en": "Owner can change balances",
+    "placeholders": {},
+    "where": "lib/features/market/market_read_models.dart:300",
+    "zh": "所有者可改动余额"
+  },
+  "market_screenCommunity": {
+    "en": "No verified community has linked a token yet.",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:380",
+    "zh": "还没有已认证社区绑定代币。"
+  },
+  "market_screenEmptyMessage": {
+    "en": "No market data to show yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:275",
+    "zh": "暂时没有可展示的行情"
+  },
+  "market_screenEmptyMessage2": {
+    "en": "No tokens in this category yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:366",
+    "zh": "这个分类还没有代币"
+  },
+  "market_screenMajor": {
+    "en": "No assets in the majors list to show yet.",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:378",
+    "zh": "主流资产名单里暂时没有可展示的资产。"
+  },
+  "market_screenMarketCapabilityBlockTitle": {
+    "en": "Market isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:187, lib/features/market/market_secondary_screens.dart:136, lib/features/market/market_secondary_screens.dart:307, lib/features/market/market_secondary_screens.dart:445, lib/features/market/market_secondary_screens.dart:692, lib/features/market/market_secondary_screens.dart:886, lib/features/market/token_screen.dart:291",
+    "zh": "行情模块当前不可用"
+  },
+  "market_screenMarketSmartMoneyEntryTitle": {
+    "en": "Smart money tracker",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:240, lib/features/market/market_secondary_screens.dart:871",
+    "zh": "聪明钱追踪"
+  },
+  "market_screenMarketWatchlistBrowseMajorLabel": {
+    "en": "Browse majors",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:304",
+    "zh": "去主流看看"
+  },
+  "market_screenMarketWatchlistEmptyMessage": {
+    "en": "Tap the star at the top right of a token page to add it to your watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:301",
+    "zh": "在代币页点右上角的星标，就能加进自选"
+  },
+  "market_screenMarketWatchlistEmptyTitle": {
+    "en": "No watchlist yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:300",
+    "zh": "还没有自选"
+  },
+  "market_screenMarketWatchlistManageSubtitle": {
+    "en": "Sort, group and remove",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:328",
+    "zh": "排序、分组与移除"
+  },
+  "market_screenMarketWatchlistManageTitle": {
+    "en": "Manage watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:327",
+    "zh": "管理自选"
+  },
+  "market_screenMarketWatchlistUnavailableMessage": {
+    "en": "Watchlist prices can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(block.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_screen.dart:287",
+    "zh": "自选行情暂时读不到 · {reasonCodeText}"
+  },
+  "market_screenMeme": {
+    "en": "No registered Launch project tokens yet.",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:379",
+    "zh": "还没有已登记的 Launch 项目代币。"
+  },
+  "market_screenNewPairs": {
+    "en": "New pairs",
+    "placeholders": {},
+    "where": "lib/features/market/market_screen.dart:36, lib/features/market/market_widgets.dart:106",
+    "zh": "新币"
+  },
+  "market_screenTitle": {
+    "en": "No tokens in \"{label}\" yet",
+    "placeholders": {
+      "label": {
+        "example": "category.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_screen.dart:376",
+    "zh": "「{label}」里还没有代币"
+  },
+  "market_secondaryScreensChartFullBlockedTitle": {
+    "en": "Full-screen chart",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:131",
+    "zh": "全屏图表"
+  },
+  "market_secondaryScreensChartFullIntervalNoticeText": {
+    "en": "Intervals: 15m / 1h / 4h / 1D / 1W. Drag sideways for earlier data, pinch to zoom, long-press to see a candle's price and time. MA and VOL are calculated on device from the chart's closes and volume, with no separate data source. There are no other indicators and no drawing tools.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:189",
+    "zh": "周期可选 15分 / 1时 / 4时 / 1日 / 1周；左右拖动看更早的数据，双指缩放，长按看某一根的价格和时间。MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源；除此之外没有其他指标，也没有画线工具。"
+  },
+  "market_secondaryScreensChartFullIntervalNoticeTitle": {
+    "en": "What this chart does",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:187",
+    "zh": "这张图能做什么"
+  },
+  "market_secondaryScreensFact": {
+    "en": "Total holders",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:338, lib/features/market/market_secondary_screens.dart:352, lib/features/market/market_secondary_screens.dart:355",
+    "zh": "持有人总数"
+  },
+  "market_secondaryScreensInvalidAssetIdentityMessage": {
+    "en": "This page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:68",
+    "zh": "本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。"
+  },
+  "market_secondaryScreensInvalidAssetIdentityTitle": {
+    "en": "No usable asset ID in the route",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:67, lib/features/market/token_screen.dart:132",
+    "zh": "路由中没有可用的资产标识"
+  },
+  "market_secondaryScreensInvalidAssetPage": {
+    "en": "Can't open this chart",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:125",
+    "zh": "无法打开这张图表"
+  },
+  "market_secondaryScreensInvalidAssetPage2": {
+    "en": "Can't open holder distribution",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:224",
+    "zh": "无法打开持有人分布"
+  },
+  "market_secondaryScreensInvalidAssetPage3": {
+    "en": "Can't open trade activity",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:405",
+    "zh": "无法打开交易活动"
+  },
+  "market_secondaryScreensLabel": {
+    "en": "Top 10 concentration",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:344",
+    "zh": "Top 10 集中度"
+  },
+  "market_secondaryScreensLabel2": {
+    "en": "Watchlist isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:826, lib/features/market/token_screen.dart:270",
+    "zh": "自选当前不可用"
+  },
+  "market_secondaryScreensLoopLabel": {
+    "en": "Distribution",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:362",
+    "zh": "分布"
+  },
+  "market_secondaryScreensLoopLabel2": {
+    "en": "Risk screening",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:764",
+    "zh": "风险预筛"
+  },
+  "market_secondaryScreensLoopLabel3": {
+    "en": "Watched addresses",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:904",
+    "zh": "关注地址"
+  },
+  "market_secondaryScreensLoopLabel4": {
+    "en": "Recent moves",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:910",
+    "zh": "最近动向"
+  },
+  "market_secondaryScreensLoopProvenanceFooter": {
+    "en": "Indexed height {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(freshness.indexerBlockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:614, lib/features/market/token_screen.dart:529",
+    "zh": "索引高度 {groupedFigure}"
+  },
+  "market_secondaryScreensLoopProvenanceFooter2": {
+    "en": "Data {groupedFigure} blocks behind",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(lag.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:615",
+    "zh": "数据落后 {groupedFigure} 块"
+  },
+  "market_secondaryScreensLoopRecordRow": {
+    "en": "{groupedFigure} confirmations",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(trade.confirmations.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:584",
+    "zh": "{groupedFigure} 确认"
+  },
+  "market_secondaryScreensLoopRecordRow2": {
+    "en": "Block {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(trade.blockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:585",
+    "zh": "区块 {groupedFigure}"
+  },
+  "market_secondaryScreensMarketSegmentBar": {
+    "en": "Large trades",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:532, lib/features/market/market_secondary_screens.dart:595",
+    "zh": "大单"
+  },
+  "market_secondaryScreensMarketSegmentBar2": {
+    "en": "Smart money",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:532, lib/features/market/market_widgets.dart:110",
+    "zh": "聪明钱"
+  },
+  "market_secondaryScreensNewPairsEmptyMessage": {
+    "en": "This is what the data shows, not a filtered conclusion.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:723, lib/features/market/market_widgets.dart:489",
+    "zh": "这是数据本身的结果，不是筛选后的结论。"
+  },
+  "market_secondaryScreensNewPairsEmptyTitle": {
+    "en": "No new pools right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:722, lib/features/market/market_widgets.dart:488",
+    "zh": "当前没有新的池"
+  },
+  "market_secondaryScreensNewPairsFolioCaption": {
+    "en": "Check liquidity, contract status and data source before short-term price.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:683",
+    "zh": "先看流动性、合约状态与数据出处，再看短期价格。"
+  },
+  "market_secondaryScreensNewPairsFolioHeading": {
+    "en": "{items} new pairs · High risk",
+    "placeholders": {
+      "items": {
+        "example": "block.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:679",
+    "zh": "{items} 个新对 · 高风险"
+  },
+  "market_secondaryScreensNewPairsFolioHeading2": {
+    "en": "New pools can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:681",
+    "zh": "新的池暂时读不到"
+  },
+  "market_secondaryScreensNewPairsFolioHeading3": {
+    "en": "Loading new pools",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:682",
+    "zh": "正在读取新的池"
+  },
+  "market_secondaryScreensNewPairsNoticeBody": {
+    "en": "Without risk screening data, this page won't judge risk on its own. New pools have thin liquidity and prices are easy to manipulate.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:774",
+    "zh": "读不到风险预筛数据时，这里不会自行判断风险。新池流动性薄，价格容易被操纵。"
+  },
+  "market_secondaryScreensNewPairsNoticeTitle": {
+    "en": "Screening isn't a verdict",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:773",
+    "zh": "预筛不等于结论"
+  },
+  "market_secondaryScreensNewPairsOmittedBody": {
+    "en": "These rows' pool IDs are neither a contract address nor a pool id, so rows that can't be verified aren't shown.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:754",
+    "zh": "这些行的池标识既不是合约地址也不是 pool id，本页不展示无法核对的行。"
+  },
+  "market_secondaryScreensNewPairsOmittedTitle": {
+    "en": "{omittedCount} more rows couldn't be parsed",
+    "placeholders": {
+      "omittedCount": {
+        "example": "block.omittedCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:753",
+    "zh": "另有 {omittedCount} 条数据无法解析"
+  },
+  "market_secondaryScreensNewPairsRiskScreeningLabel": {
+    "en": "Risk screening unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:767",
+    "zh": "风险预筛不可用"
+  },
+  "market_secondaryScreensNewPairsScreenTitle": {
+    "en": "New pair discovery",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:667, lib/features/market/market_widgets.dart:514",
+    "zh": "新币发现"
+  },
+  "market_secondaryScreensNewPairsUnavailableLabel": {
+    "en": "New pair discovery unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:712",
+    "zh": "新币发现不可用"
+  },
+  "market_secondaryScreensSmartMoneyFolioCaption": {
+    "en": "Moves by watched addresses are leads, not copy-trade promises or return advice.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:880",
+    "zh": "观察地址的动作是线索，不是跟单承诺或收益推荐。"
+  },
+  "market_secondaryScreensSmartMoneyFolioHeading": {
+    "en": "No addresses to watch yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:879",
+    "zh": "还没有可观察的地址"
+  },
+  "market_secondaryScreensSmartMoneyMovesUnavailableMessage": {
+    "en": "Moves come from watched addresses, which aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:918",
+    "zh": "动向来自关注地址，而关注地址还没有开放。"
+  },
+  "market_secondaryScreensSmartMoneyMovesUnavailableTitle": {
+    "en": "No moves to list yet",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:917",
+    "zh": "还没有可列的动向"
+  },
+  "market_secondaryScreensSmartMoneyNoticeText": {
+    "en": "Even when available, address labels and win rates are only historical stats from public on-chain data, not advice to follow.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:926",
+    "zh": "即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。"
+  },
+  "market_secondaryScreensSmartMoneyNoticeTitle": {
+    "en": "Win rate isn't a prediction",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:925",
+    "zh": "胜率不是预测"
+  },
+  "market_secondaryScreensSmartMoneyUnavailableLabel": {
+    "en": "Watched addresses unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:907",
+    "zh": "关注地址不可用"
+  },
+  "market_secondaryScreensText": {
+    "en": "Source {factSourceLabel} · Observed {relativeTime}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(block.source)",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(block.fetchedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:758, lib/features/market/market_widgets.dart:505",
+    "zh": "来源 {factSourceLabel} · 观察于 {relativeTime}"
+  },
+  "market_secondaryScreensTokenHoldersDistributionLabel": {
+    "en": "Top holders, concentration and cluster labels unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:365",
+    "zh": "Top 持有人、集中度与聚类标注不可用"
+  },
+  "market_secondaryScreensTokenHoldersFolioCaption": {
+    "en": "Holder facts haven't loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:270",
+    "zh": "持有人事实尚未读取成功。"
+  },
+  "market_secondaryScreensTokenHoldersFolioHeading": {
+    "en": "Total holders unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:265",
+    "zh": "持有人总数不可用"
+  },
+  "market_secondaryScreensTokenHoldersFolioHeading2": {
+    "en": "{formatDecimal} holders",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(count.value!, maxFractionDigits: 0)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:266",
+    "zh": "{formatDecimal} 持有人"
+  },
+  "market_secondaryScreensTokenHoldersFolioTitle": {
+    "en": "Holder distribution",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:253",
+    "zh": "持有人分布"
+  },
+  "market_secondaryScreensTokenHoldersPageBlockTitle": {
+    "en": "Holder distribution isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:312",
+    "zh": "持有人分布当前不可用"
+  },
+  "market_secondaryScreensTokenHoldersProvenanceSemanticsLabel": {
+    "en": "{factProvenance}, view data source details",
+    "placeholders": {
+      "factProvenance": {
+        "example": "loopFactProvenance(count)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:285",
+    "zh": "{factProvenance}，查看数据来源说明"
+  },
+  "market_secondaryScreensTokenTradesEmptyMessage": {
+    "en": "Large trades are picked on device by trade value, not officially labeled.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:555",
+    "zh": "大单是按成交金额在本机筛出来的，不是官方标注。"
+  },
+  "market_secondaryScreensTokenTradesEmptyMessage2": {
+    "en": "The indexer has read this range, but it has no trades.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:556",
+    "zh": "索引器已经读到这个区间，但其中没有成交。"
+  },
+  "market_secondaryScreensTokenTradesEmptyTitle": {
+    "en": "No large trades on this page",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:553",
+    "zh": "这一页没有大单"
+  },
+  "market_secondaryScreensTokenTradesEmptyTitle2": {
+    "en": "No trades on this page",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:553",
+    "zh": "这一页没有成交"
+  },
+  "market_secondaryScreensTokenTradesFolioCaption": {
+    "en": "Direction, amount and time are scanned together from Swap events in registered PancakeSwap V3 pools.",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:439",
+    "zh": "方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。"
+  },
+  "market_secondaryScreensTokenTradesFolioHeading": {
+    "en": "{items} on-chain trades",
+    "placeholders": {
+      "items": {
+        "example": "block.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_secondary_screens.dart:437",
+    "zh": "{items} 笔链上成交"
+  },
+  "market_secondaryScreensTokenTradesFolioHeading2": {
+    "en": "Latest on-chain trades",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:438",
+    "zh": "最新链上成交记录"
+  },
+  "market_secondaryScreensTokenTradesFolioTitle": {
+    "en": "Trade activity",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:428",
+    "zh": "交易活动"
+  },
+  "market_secondaryScreensTokenTradesMoreFailedMessage": {
+    "en": "Couldn't load the next page of trades",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:492",
+    "zh": "下一页成交没有读到"
+  },
+  "market_secondaryScreensTokenTradesSmartMoneyLabel": {
+    "en": "Smart money filter unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:545",
+    "zh": "聪明钱筛选不可用"
+  },
+  "market_secondaryScreensTokenTradesUnavailableLabel": {
+    "en": "Trade history unavailable",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:465",
+    "zh": "成交记录不可用"
+  },
+  "market_secondaryScreensTrailingCaption": {
+    "en": "Out of pool",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:591",
+    "zh": "流出池"
+  },
+  "market_secondaryScreensTrailingCaption2": {
+    "en": "Into pool",
+    "placeholders": {},
+    "where": "lib/features/market/market_secondary_screens.dart:591",
+    "zh": "流入池"
+  },
+  "market_tokenBuild": {
+    "en": "24h change{reasonCodeSummaryText}",
+    "placeholders": {
+      "reasonCodeSummaryText": {
+        "example": "loopReasonCodeSummaryText(change.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:753",
+    "zh": "24h 涨跌{reasonCodeSummaryText}"
+  },
+  "market_tokenCandleLastOpen": {
+    "en": ", last candle still open",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1103",
+    "zh": "，最后一根尚未收盘"
+  },
+  "market_tokenCandleSourceSentence": {
+    "en": "{source}.",
+    "placeholders": {
+      "source": {
+        "example": "source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1170",
+    "zh": "{source}。"
+  },
+  "market_tokenCandleStyleCandle": {
+    "en": "candles",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1107",
+    "zh": "K 线"
+  },
+  "market_tokenCandleStyleLine": {
+    "en": "close line",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1107",
+    "zh": "收盘价折线"
+  },
+  "market_tokenCandlesEmptyMessage": {
+    "en": "Only intervals with trades are drawn. Empty intervals aren't filled with 0.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1036",
+    "zh": "只画有成交的桶，空桶不会补 0。"
+  },
+  "market_tokenCandlesUnavailableMessage": {
+    "en": "Chart can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1013",
+    "zh": "图表暂时读不到 · {reasonCodeText}"
+  },
+  "market_tokenCardChartSemanticLabel": {
+    "en": "Trend line of {closes} 1H closes, in {priceUnit}, source {factSourceLabel}",
+    "placeholders": {
+      "closes": {
+        "example": "closes.length",
+        "type": "Object"
+      },
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(available.source)",
+        "type": "Object"
+      },
+      "priceUnit": {
+        "example": "available.priceUnit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_card_chart.dart:103",
+    "zh": "{closes} 个 1H 收盘价的走势线，单位 {priceUnit}，来源 {factSourceLabel}"
+  },
+  "market_tokenCardChartTokenCardSparklineAbsence": {
+    "en": "Loading 1H candles. No trend is drawn until they load.",
+    "placeholders": {},
+    "where": "lib/features/market/token_card_chart.dart:136",
+    "zh": "1H K 线读取中，读到之前不画任何走势。"
+  },
+  "market_tokenCardChartTokenCardSparklineAbsence2": {
+    "en": "No trades in this range. Only intervals with trades are drawn. Empty intervals aren't filled with 0.",
+    "placeholders": {},
+    "where": "lib/features/market/token_card_chart.dart:150",
+    "zh": "这个区间没有成交，只画有成交的桶，空桶不会补 0。"
+  },
+  "market_tokenEmptyMessage": {
+    "en": "No facts to show for this asset yet",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:303",
+    "zh": "这个资产还没有可展示的事实"
+  },
+  "market_tokenEmptyMessage2": {
+    "en": "No trades in this range",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:998, lib/features/market/token_screen.dart:1035",
+    "zh": "这个区间没有成交"
+  },
+  "market_tokenEmptyMessage3": {
+    "en": "No notifications about this asset yet",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1394, lib/features/market/token_screen.dart:1407",
+    "zh": "还没有与这个资产相关的通知"
+  },
+  "market_tokenFact": {
+    "en": "24h volume",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:553",
+    "zh": "24h 成交额"
+  },
+  "market_tokenFact2": {
+    "en": "Fully diluted valuation",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:568",
+    "zh": "完全稀释估值"
+  },
+  "market_tokenHolderSections": {
+    "en": "Holder count",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:421, lib/features/market/token_screen.dart:444",
+    "zh": "持有人数"
+  },
+  "market_tokenHolders": {
+    "en": "Holders",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:72",
+    "zh": "持有者"
+  },
+  "market_tokenIf": {
+    "en": "Price alert triggered",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1440",
+    "zh": "价格提醒已触发"
+  },
+  "market_tokenIf2": {
+    "en": "{symbol} triggered {threshold} (observed {observed})",
+    "placeholders": {
+      "observed": {
+        "example": "observed",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "symbol",
+        "type": "Object"
+      },
+      "threshold": {
+        "example": "threshold",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1442",
+    "zh": "{symbol} 触发 {threshold}（观察值 {observed}）"
+  },
+  "market_tokenLoopLabel": {
+    "en": "About",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:546",
+    "zh": "简介"
+  },
+  "market_tokenLoopLabel2": {
+    "en": "Pool and contract facts",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:610",
+    "zh": "池与合约事实"
+  },
+  "market_tokenLoopProvenanceLine": {
+    "en": "Data {groupedFigure} blocks behind.",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(lag.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:531",
+    "zh": "数据落后 {groupedFigure} 块。"
+  },
+  "market_tokenLoopProvenanceLine2": {
+    "en": "Trades come from Swap events in registered pools. LOOP doesn't send counterparty addresses and only marks the trades your own wallet made.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:532",
+    "zh": "成交来自已登记池的 Swap 事件。LOOP 不下发对手方地址，只标出哪一笔是你自己的钱包发起的。"
+  },
+  "market_tokenLoopProvenanceLine3": {
+    "en": "In {priceUnit}",
+    "placeholders": {
+      "priceUnit": {
+        "example": "block.priceUnit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1090, lib/features/market/token_screen.dart:1098",
+    "zh": "单位 {priceUnit}"
+  },
+  "market_tokenLoopProvenanceLine4": {
+    "en": "Unregistered pool",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1096",
+    "zh": "未登记池"
+  },
+  "market_tokenLoopProvenanceLine5": {
+    "en": "Last candle in progress",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1097",
+    "zh": "最后一根进行中"
+  },
+  "market_tokenLoopProvenanceLine6": {
+    "en": "The last candle hasn't closed and may still change.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1104",
+    "zh": "最后一根尚未收盘，收盘前还会变化。"
+  },
+  "market_tokenLoopProvenanceLine7": {
+    "en": "MA and VOL are calculated on device from the chart's closes and volume, with no separate data source.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1105",
+    "zh": "MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源。"
+  },
+  "market_tokenMarker": {
+    "en": "Includes delayed or derived values",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:641, lib/features/market/token_screen.dart:642, lib/features/market/token_screen.dart:644",
+    "zh": "含延迟或折算的数值"
+  },
+  "market_tokenMarketRangeCell": {
+    "en": "24h high",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:550",
+    "zh": "24h 高"
+  },
+  "market_tokenMarketRangeCell2": {
+    "en": "24h low",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:551",
+    "zh": "24h 低"
+  },
+  "market_tokenMessage": {
+    "en": "System share can't open right now",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:116",
+    "zh": "系统分享暂时打不开"
+  },
+  "market_tokenMessage2": {
+    "en": "Contract address copied",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:704",
+    "zh": "已复制合约地址"
+  },
+  "market_tokenSentenceGap": {
+    "en": " ",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:564",
+    "zh": ""
+  },
+  "market_tokenShare": {
+    "en": "Contract {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:111",
+    "zh": "合约 {address}"
+  },
+  "market_tokenShare2": {
+    "en": "View market on LOOP",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:112",
+    "zh": "在 LOOP 查看行情"
+  },
+  "market_tokenTokenAboutContractValue": {
+    "en": "Native chain asset",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:584",
+    "zh": "链上原生资产"
+  },
+  "market_tokenTokenAssetBlockedLabel": {
+    "en": "This asset is marked as hidden",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:313",
+    "zh": "该资产已被标记为不可展示"
+  },
+  "market_tokenTokenCandleChartSemanticLabel": {
+    "en": "{items} {chartIntervalLabel} {style}, in {priceUnit}{block}",
+    "placeholders": {
+      "block": {
+        "example": "block.items.last.isOpen ? '，最后一根尚未收盘' : ''",
+        "type": "Object"
+      },
+      "chartIntervalLabel": {
+        "example": "loopChartIntervalLabel(widget.interval)",
+        "type": "Object"
+      },
+      "items": {
+        "example": "block.items.length",
+        "type": "Object"
+      },
+      "priceUnit": {
+        "example": "block.priceUnit",
+        "type": "Object"
+      },
+      "style": {
+        "example": "_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1050",
+    "zh": "{items} 根{chartIntervalLabel}{style}，单位 {priceUnit}{block}"
+  },
+  "market_tokenTokenChartExpandLabel": {
+    "en": "Open full-screen chart",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:358",
+    "zh": "打开全屏图表"
+  },
+  "market_tokenTokenCommunityEntrySubtitle": {
+    "en": "{name} · {memberCount} members",
+    "placeholders": {
+      "memberCount": {
+        "example": "memberCount",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1350",
+    "zh": "{name} · {memberCount} 名成员"
+  },
+  "market_tokenTokenCommunityEntryTitle": {
+    "en": "Open LOOP community",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1349",
+    "zh": "进入 LOOP 社区"
+  },
+  "market_tokenTokenCommunityUnavailableMessage": {
+    "en": "No linked LOOP community yet · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1337",
+    "zh": "还没有绑定的 LOOP 社区 · {reasonCodeText}"
+  },
+  "market_tokenTokenCopyAddressLabel": {
+    "en": "Copy contract address",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:702",
+    "zh": "复制合约地址"
+  },
+  "market_tokenTokenFactsPair": {
+    "en": "Main pair: no pair with this asset as base",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1132",
+    "zh": "主交易对：没有以该资产为 base 的交易对"
+  },
+  "market_tokenTokenFactsPair2": {
+    "en": "Main pair: {marketDexLabel} · Quote {quoteTokenSymbol} · {truncatedAddress}",
+    "placeholders": {
+      "marketDexLabel": {
+        "example": "marketDexLabel(resolved.dexId)",
+        "type": "Object"
+      },
+      "quoteTokenSymbol": {
+        "example": "resolved.quoteTokenSymbol",
+        "type": "Object"
+      },
+      "truncatedAddress": {
+        "example": "loopTruncatedAddress(resolved.pairAddress)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1133",
+    "zh": "主交易对：{marketDexLabel} · 报价币 {quoteTokenSymbol} · {truncatedAddress}"
+  },
+  "market_tokenTokenFeedEmptyMessage": {
+    "en": "Triggered price alerts appear here. Push notifications aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1408",
+    "zh": "价格提醒触发后会出现在这里。推送还没有开放。"
+  },
+  "market_tokenTokenHoldersDistributionUnavailableMessage": {
+    "en": "Holder distribution isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:439",
+    "zh": "持有人分布暂不可用"
+  },
+  "market_tokenTokenInvalidIdentityMessage": {
+    "en": "The token page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:133",
+    "zh": "Token 页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。"
+  },
+  "market_tokenTokenInvalidRouteTitle": {
+    "en": "Can't open this asset",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:126",
+    "zh": "无法打开这个资产"
+  },
+  "market_tokenTokenLiveSuppressedMessage": {
+    "en": "On-chain reads aren't available right now · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(detail.capability.reasonCode ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:342",
+    "zh": "链上读取暂时不可用 · {reasonCodeText}"
+  },
+  "market_tokenTokenMiningWeightText": {
+    "en": "Mining weight",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:606",
+    "zh": "挖矿权重"
+  },
+  "market_tokenTokenPriceUnavailableMessage": {
+    "en": "Price{reasonCodeSummaryText} · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeSummaryText": {
+        "example": "loopReasonCodeSummaryText(price.reasonCode)",
+        "type": "Object"
+      },
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(price.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:786",
+    "zh": "价格{reasonCodeSummaryText} · {reasonCodeText}"
+  },
+  "market_tokenTokenSecurityEmptyMessage": {
+    "en": "Contract info can't be loaded right now. A missing item doesn't mean safe or unsafe",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1157",
+    "zh": "暂时读不到合约信息；少了某一项不代表安全或不安全"
+  },
+  "market_tokenTokenSecurityProvenanceDetail": {
+    "en": "No rating, score or verdict is given here. A missing item only means it couldn't be read, not that it's safe or unsafe.",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1198",
+    "zh": "这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。"
+  },
+  "market_tokenTokenSecurityProvenancePrefix": {
+    "en": "{facts} contract facts",
+    "placeholders": {
+      "facts": {
+        "example": "facts.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1195",
+    "zh": "合约事实 {facts} 项"
+  },
+  "market_tokenTokenSecurityUnavailableMessage": {
+    "en": "Contract facts can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:1149",
+    "zh": "合约事实暂时读不到 · {reasonCodeText}"
+  },
+  "market_tokenTokenSwapUnavailableMessage": {
+    "en": "Buy, sell and swap aren't available right now · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(swapBlockedReason)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:397",
+    "zh": "买入、卖出与兑换当前不可用 · {reasonCodeText}"
+  },
+  "market_tokenTokenTradesEmptyMessage": {
+    "en": "No one has traded in this pool recently",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:488",
+    "zh": "这个池子最近还没有人交易"
+  },
+  "market_tokenTokenTradesUnavailableMessage": {
+    "en": "Trade history can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/token_screen.dart:479",
+    "zh": "成交记录暂时读不到 · {reasonCodeText}"
+  },
+  "market_tokenYesNo": {
+    "en": "Source verified",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1247",
+    "zh": "已验证开源"
+  },
+  "market_tokenYesNo10": {
+    "en": "Owner can't change balances",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1251",
+    "zh": "所有者不可改余额"
+  },
+  "market_tokenYesNo11": {
+    "en": "Self-destruct detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1253",
+    "zh": "检测到自毁"
+  },
+  "market_tokenYesNo12": {
+    "en": "No self-destruct detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1253",
+    "zh": "未检测到自毁"
+  },
+  "market_tokenYesNo13": {
+    "en": "Transfers pausable",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1256",
+    "zh": "转账可暂停"
+  },
+  "market_tokenYesNo14": {
+    "en": "Transfers not pausable",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1256",
+    "zh": "转账不可暂停"
+  },
+  "market_tokenYesNo15": {
+    "en": "Blacklist detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1257",
+    "zh": "检测到黑名单"
+  },
+  "market_tokenYesNo16": {
+    "en": "No blacklist detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1257",
+    "zh": "未检测到黑名单"
+  },
+  "market_tokenYesNo17": {
+    "en": "Whitelist detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1258",
+    "zh": "检测到白名单"
+  },
+  "market_tokenYesNo18": {
+    "en": "No whitelist detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1258",
+    "zh": "未检测到白名单"
+  },
+  "market_tokenYesNo19": {
+    "en": "Can't sell all",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1261",
+    "zh": "不能全部卖出"
+  },
+  "market_tokenYesNo2": {
+    "en": "Source not verified",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1247",
+    "zh": "未验证开源"
+  },
+  "market_tokenYesNo20": {
+    "en": "Can sell all",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1261",
+    "zh": "可以全部卖出"
+  },
+  "market_tokenYesNo3": {
+    "en": "Proxy contract",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1248",
+    "zh": "代理合约"
+  },
+  "market_tokenYesNo4": {
+    "en": "Not a proxy",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1248",
+    "zh": "非代理合约"
+  },
+  "market_tokenYesNo5": {
+    "en": "Mint detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1249",
+    "zh": "检测到 mint"
+  },
+  "market_tokenYesNo6": {
+    "en": "No mint detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1249",
+    "zh": "未检测到 mint"
+  },
+  "market_tokenYesNo7": {
+    "en": "Ownership reclaimable",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1250",
+    "zh": "所有权可收回"
+  },
+  "market_tokenYesNo8": {
+    "en": "No ownership reclaim detected",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1250",
+    "zh": "未检测到收回所有权"
+  },
+  "market_tokenYesNo9": {
+    "en": "Owner can change balances",
+    "placeholders": {},
+    "where": "lib/features/market/token_screen.dart:1251",
+    "zh": "所有者可改余额"
+  },
+  "market_widgetsLoopRecordRow": {
+    "en": "Priced in BNB",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:392",
+    "zh": "计价 BNB"
+  },
+  "market_widgetsLoopRecordRow2": {
+    "en": "Reserve {formatCompactFigure}",
+    "placeholders": {
+      "formatCompactFigure": {
+        "example": "loopFormatCompactFigure(pair.reserveUsd!, preciseBelowOne: true)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_widgets.dart:400",
+    "zh": "储备 {formatCompactFigure}"
+  },
+  "market_widgetsLoopRecordRow3": {
+    "en": "Reserve can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:403",
+    "zh": "储备暂时读不到"
+  },
+  "market_widgetsLoopRecordRow4": {
+    "en": "24h volume can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:406",
+    "zh": "24 小时成交额暂时读不到"
+  },
+  "market_widgetsMarketBrowseOnlyLabel": {
+    "en": "View only",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:91",
+    "zh": "仅浏览"
+  },
+  "market_widgetsMarketNewPairsPageSubtitle": {
+    "en": "Risk screening, collapsed rows and full notes are on this page",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:515",
+    "zh": "风险预筛、被折叠的行与完整说明都在这一页"
+  },
+  "market_widgetsMarketNewPairsStamp": {
+    "en": "High risk",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:107",
+    "zh": "高风险"
+  },
+  "market_widgetsMarketNewPairsUnavailableMessage": {
+    "en": "New pair discovery unavailable · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_widgets.dart:478",
+    "zh": "新币发现不可用 · {reasonCodeText}"
+  },
+  "market_widgetsMarketSearchFieldLabel": {
+    "en": "Search token or contract address",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:237",
+    "zh": "搜索代币或合约地址"
+  },
+  "market_widgetsMarketSignalsKicker": {
+    "en": "Market overview",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:105",
+    "zh": "行情概览"
+  },
+  "market_widgetsMarketTradesKicker": {
+    "en": "Trade history",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:109",
+    "zh": "成交记录"
+  },
+  "market_widgetsMarketWatchlistKicker": {
+    "en": "Edit watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:112",
+    "zh": "自选管理"
+  },
+  "market_widgetsMessage": {
+    "en": "Added to watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:611",
+    "zh": "已加入自选"
+  },
+  "market_widgetsMessage2": {
+    "en": "Removed from watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:613",
+    "zh": "已移出自选"
+  },
+  "market_widgetsMessage3": {
+    "en": "Your watchlist has reached {watchlistMaxItems} items. Remove one in watchlist management first.",
+    "placeholders": {
+      "watchlistMaxItems": {
+        "example": "watchlistMaxItems",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_widgets.dart:619",
+    "zh": "自选已达 {watchlistMaxItems} 项，先在自选管理里移除一个再加入。"
+  },
+  "market_widgetsMessage4": {
+    "en": "You've reached {watchlistMaxGroups} groups, so the default group \"{watchlistDefaultGroupName}\" can't be created.",
+    "placeholders": {
+      "watchlistDefaultGroupName": {
+        "example": "watchlistDefaultGroupName",
+        "type": "Object"
+      },
+      "watchlistMaxGroups": {
+        "example": "watchlistMaxGroups",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/market_widgets.dart:626",
+    "zh": "分组已达 {watchlistMaxGroups} 个，无法新建默认分组「{watchlistDefaultGroupName}」。"
+  },
+  "market_widgetsMessage5": {
+    "en": "Your watchlist changed on another device, so this wasn't saved. Retry.",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:633",
+    "zh": "自选已在其他设备上改动，这次没有保存。请重试。"
+  },
+  "market_widgetsSwitch": {
+    "en": "Search token / contract address",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:257",
+    "zh": "搜索代币 / 合约地址"
+  },
+  "market_widgetsTitle": {
+    "en": "Unnamed pool",
+    "placeholders": {},
+    "where": "lib/features/market/market_widgets.dart:386",
+    "zh": "未命名池"
+  }
+}

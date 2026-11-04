@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -31,7 +32,9 @@ import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 /// `开发预览` eyebrow for a Preview-backed S3 page. Production and unavailable
 /// modes carry no kicker, so the label can never appear outside Preview.
 String? communityPreviewKicker(CommunityGatewayMode mode) =>
-    mode == CommunityGatewayMode.preview ? '开发预览' : null;
+    mode == CommunityGatewayMode.preview
+    ? LoopL10n.current.common_devPreview
+    : null;
 
 /// Whether the page must stop at the capability gate instead of reading.
 ///
@@ -77,9 +80,11 @@ class CommunityCapabilityPageBlock extends StatelessWidget {
     return LoopPageBlock(
       title: title,
       message: switch (capability.decision) {
-        LoopCapabilityDecision.unknown => unknownMessage ?? '请稍后再试。',
-        LoopCapabilityDecision.deferred => deferredMessage ?? '请稍后再试。',
-        _ => '请稍后再试。',
+        LoopCapabilityDecision.unknown =>
+          unknownMessage ?? context.l10n.community_widgetsLoopPageBlock,
+        LoopCapabilityDecision.deferred =>
+          deferredMessage ?? context.l10n.community_widgetsLoopPageBlock,
+        _ => context.l10n.community_widgetsLoopPageBlock,
       },
     );
   }
@@ -104,8 +109,8 @@ class CommunityPreviewNotice extends StatelessWidget {
       key: const ValueKey<String>('community-preview-notice'),
       icon: 'info',
       tone: LoopNoticeTone.warn,
-      title: '演示数据',
-      body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
+      title: context.l10n.common_demoData,
+      body: context.l10n.community_widgetsCommunityPreviewNoticeBody(resource),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         14,
@@ -123,9 +128,9 @@ class CommunityStateBlock extends StatelessWidget {
     required this.failureKind,
     super.key,
     this.onRetry,
-    this.emptyMessage = '这里还没有内容',
+    this.emptyMessage,
     this.emptyReason,
-    this.permissionTitle = '当前账号没有权限',
+    this.permissionTitle,
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
     this.refreshing = false,
@@ -135,13 +140,13 @@ class CommunityStateBlock extends StatelessWidget {
   final CommunityViewPhase phase;
   final CommunityFailureKind? failureKind;
   final VoidCallback? onRetry;
-  final String emptyMessage;
+  final String? emptyMessage;
   final String? emptyReason;
 
   /// What the empty phase draws instead of the default — a centred
   /// `LoopEmptyState` (decision 0122). [emptyMessage] stays its fallback.
   final Widget? empty;
-  final String permissionTitle;
+  final String? permissionTitle;
   final LoopSkeletonType skeleton;
   final int rows;
 
@@ -164,7 +169,7 @@ class CommunityStateBlock extends StatelessWidget {
               showMessage: true,
               key: const ValueKey<String>('community-state-empty'),
               illustration: LoopIllustration.members,
-              title: emptyMessage,
+              title: emptyMessage ?? context.l10n.common_nothingHereYet,
               message: emptyReason,
               compact: true,
             );
@@ -175,12 +180,18 @@ class CommunityStateBlock extends StatelessWidget {
               ? LoopOfflineCause.timeout
               : LoopOfflineCause.connection,
           onRetry: onRetry,
-          pausedActions: const <String>['加入', '关注', '屏蔽', '治理'],
+          pausedActions: <String>[
+            context.l10n.community_profileConfirmLabel,
+            context.l10n.common_follow,
+            context.l10n.community_widgetsLoopOfflineState,
+            context.l10n.community_widgetsLoopOfflineState2,
+          ],
         );
       case CommunityViewPhase.unavailable:
         return LoopInlineUnavailable(
           key: const ValueKey<String>('community-state-unavailable'),
-          message: '该功能当前不可用',
+          message:
+              context.l10n.community_widgetsCommunityStateUnavailableMessage,
           detail: communityFailureReason(failureKind),
           maxLines: 2,
           detailMaxLines: 4,
@@ -189,7 +200,7 @@ class CommunityStateBlock extends StatelessWidget {
         return LoopPermissionState(
           key: const ValueKey<String>('community-state-permission'),
           icon: 'shield',
-          title: permissionTitle,
+          title: permissionTitle ?? context.l10n.common_noPermission,
           purpose: communityFailureReason(failureKind),
         );
       case CommunityViewPhase.error:
@@ -284,13 +295,14 @@ Future<void> showCommunityPresenceMeaningSheet(
 }) async {
   await showLoopSheet<void>(
     context,
-    barrierLabel: '关闭在线人数说明',
+    barrierLabel:
+        context.l10n.community_widgetsCommunityOnlineMeaningSheetBarrierLabel,
     builder: (sheetContext) => Column(
       key: const ValueKey<String>('community-online-meaning-sheet'),
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('这里数的是连接，不是活跃'),
+        LoopSheetHeading(context.l10n.community_widgetsLoopSheetHeading),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -303,14 +315,16 @@ Future<void> showCommunityPresenceMeaningSheet(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数'
-                '（${communityCountLabel(count)} 人），不是「正在看这个频道」，'
-                '不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。',
+                context.l10n.community_widgetsShowCommunityPresenceMeaningSheet(
+                  communityCountLabel(count),
+                ),
                 style: LoopType.bodySm,
               ),
               const SizedBox(height: 10),
               Text(
-                '观察于 ${communityObservedAtLabel(observedAt)}',
+                context.l10n.community_aiBuild2(
+                  communityObservedAtLabel(observedAt),
+                ),
                 // L2 R21 provenance: captionSm 11 (decision 0191).
                 style: LoopType.captionSm,
               ),
@@ -322,7 +336,7 @@ Future<void> showCommunityPresenceMeaningSheet(
                     key: const ValueKey<String>(
                       'community-online-meaning-close',
                     ),
-                    label: '知道了',
+                    label: context.l10n.common_gotIt,
                     onPressed: () => Navigator.of(sheetContext).pop(),
                   ),
                 ],
@@ -409,7 +423,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
       MiningCommunityWeightPending(
         reviewStatus: MiningWeightReviewStatus.pendingReview,
       ) =>
-        '审核中',
+        context.l10n.common_inReview,
       _ => communityMissingFigure,
     };
     // 531381.12 is read digit by digit; 531,381 is read at a glance. Power
@@ -424,7 +438,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
       LoopMiningPowerSettled(:final computedAt, stale: true) => computedAt,
       _ => null,
     };
-    final semantic = '社区挖矿面板，权重 $weight，社区算力 $power';
+    final semantic = LoopL10n.current.community_widgetsSemantic(power, weight);
     // Decision 0170 (docs/33 M2): one `.record-card` of `.kv` rows — the
     // community's two figures, a hairline, the reader's three — every figure
     // in Chalk mono. Lime stays for the page's one primary action.
@@ -440,7 +454,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '社区挖矿',
+                  context.l10n.community_widgetsSwitch,
                   // L13 R4 a card head: title 15 (decision 0191).
                   style: LoopType.title,
                 ),
@@ -451,13 +465,13 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           LoopKeyValue(
-            label: '权重',
+            label: context.l10n.community_widgetsLabel,
             value: weight,
             valueKey: const ValueKey<String>('community-mining-weight'),
             padding: _miningFactPadding,
           ),
           LoopKeyValue(
-            label: '社区总算力',
+            label: context.l10n.community_widgetsLabel2,
             // S336 · decision 0265: the figure alone; the formula is one
             // tap away behind the card's own 「社区挖矿 ›」.
             value: power,
@@ -466,21 +480,28 @@ class CommunityMiningSummaryCard extends StatelessWidget {
           ),
           if (staleAt != null)
             LoopKeyValue(
-              label: '算力快照',
-              value: '${communityObservedAtLabel(staleAt)} · 未更新',
+              label: context.l10n.community_widgetsLabel3,
+              value: context.l10n.community_widgetsValue(
+                communityObservedAtLabel(staleAt),
+              ),
               valueKey: const ValueKey<String>('community-mining-stale'),
               padding: _miningFactPadding,
             ),
           const LoopHairline(margin: EdgeInsets.symmetric(vertical: 6)),
           for (final (slug, label, cell)
               in <(String, String, CommunityMiningCell)>[
-                ('holding', '我的持仓', reading.holding),
-                ('power', '我的算力', reading.power),
-                ('estimated', '预估/日', reading.estimatedDaily),
+                ('holding', context.l10n.community_widgetsFor, reading.holding),
+                ('power', context.l10n.community_widgetsFor2, reading.power),
+                (
+                  'estimated',
+                  context.l10n.community_widgetsFor3,
+                  reading.estimatedDaily,
+                ),
               ])
             Semantics(
               container: true,
-              label: '$label，${cell.value ?? communityMissingFigure}',
+              label:
+                  '$label${LoopL10n.current.common_listSeparator}${cell.value ?? communityMissingFigure}',
               child: ExcludeSemantics(
                 child: LoopKeyValue(
                   label: label,
@@ -542,13 +563,16 @@ class CommunityAnnouncementBoard extends StatelessWidget {
         // announced nothing.
         return CommunityQuietLine(
           key: const ValueKey<String>('community-announcements-unavailable'),
-          text: '暂无公告 · ${communityUnavailableReason(reasonCode)}',
+          text: context.l10n
+              .community_widgetsCommunityAnnouncementsUnavailableText(
+                communityUnavailableReason(reasonCode),
+              ),
         );
       case CommunityAnnouncementFeedPublished(:final items):
         if (items.isEmpty) {
-          return const CommunityQuietLine(
+          return CommunityQuietLine(
             key: ValueKey<String>('community-announcements-empty'),
-            text: '暂无公告',
+            text: context.l10n.community_widgetsCommunityAnnouncementsEmptyText,
           );
         }
         return LoopRecordGroup(
@@ -595,13 +619,15 @@ class CommunityOfficialLinkRow extends StatelessWidget {
       case CommunityOfficialLinksUnavailable(:final reasonCode):
         return CommunityQuietLine(
           key: const ValueKey<String>('community-links-unavailable'),
-          text: '暂无官方链接 · ${communityUnavailableReason(reasonCode)}',
+          text: context.l10n.community_widgetsCommunityLinksUnavailableText(
+            communityUnavailableReason(reasonCode),
+          ),
         );
       case CommunityOfficialLinksPublished(:final items):
         if (items.isEmpty) {
-          return const CommunityQuietLine(
+          return CommunityQuietLine(
             key: ValueKey<String>('community-links-empty'),
-            text: '暂无官方链接',
+            text: context.l10n.community_widgetsCommunityLinksEmptyText,
           );
         }
         return SingleChildScrollView(
@@ -706,7 +732,10 @@ class CommunityMiningPowerCard extends StatelessWidget {
                               computedAt,
                             ),
                           )
-                        : '最近一次算力快照 · ${communitySettlementLabel(computedAt)}',
+                        : context.l10n
+                              .community_widgetsCommunityMiningPowerRowSubtitle(
+                                communitySettlementLabel(computedAt),
+                              ),
                     // The stamp ended at 「10:23 U…」, which drops the zone
                     // the time is stated in.
                     subtitleMaxLines: 2,
@@ -715,8 +744,12 @@ class CommunityMiningPowerCard extends StatelessWidget {
                     // number; the version string is never read for meaning.
                     trailingCaption: isBaseline ? miningBaselineLabel : null,
                     semanticLabel: isBaseline
-                        ? '$label，$power，$miningBaselineLabel'
-                        : '$label，$power',
+                        ? <String>[
+                            label,
+                            power,
+                            miningBaselineLabel,
+                          ].join(LoopL10n.current.common_listSeparator)
+                        : '$label${LoopL10n.current.common_listSeparator}$power',
                     position: fact is LoopCommunityMiningPower
                         ? LoopRowPosition.first
                         : LoopRowPosition.single,
@@ -732,11 +765,11 @@ class CommunityMiningPowerCard extends StatelessWidget {
               ),
               LoopDisclosure(
                 key: const ValueKey<String>('community-mining-power-details'),
-                summary: '详情',
+                summary: context.l10n.common_details,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                   child: Text(
-                    '这次算力快照所用的公式版本 $identifier',
+                    context.l10n.community_widgetsSwitch2(identifier),
                     style: LoopType.captionSm,
                   ),
                 ),
@@ -753,16 +786,18 @@ class CommunityMiningPowerCard extends StatelessWidget {
 /// value it does not have.
 LoopRecordRow _weightRow(LoopCommunityMiningPower fact) => LoopRecordRow(
   key: const ValueKey<String>('community-mining-power-weight'),
-  title: '社区权重',
+  title: LoopL10n.current.community_widgetsCommunityMiningPowerWeightTitle,
   subtitle: switch (fact.weight) {
-    MiningCommunityWeightApproved() => '已按审核结果授予，算在上面的数里',
+    MiningCommunityWeightApproved() =>
+      LoopL10n.current.community_widgetsMiningCommunityWeightApproved,
     // An unbound community is not waiting for anything: saying 审核中 would
     // promise a review nobody is performing (Decision 0046).
     MiningCommunityWeightPending(
       reviewStatus: MiningWeightReviewStatus.pendingReview,
     ) =>
-      '权重还在审核中，这里不显示数值',
-    MiningCommunityWeightPending() => '没有绑定代币，没有权重可审',
+      LoopL10n.current.community_widgetsMiningCommunityWeightPending,
+    MiningCommunityWeightPending() =>
+      LoopL10n.current.community_widgetsMiningCommunityWeightPending2,
   },
   subtitleMaxLines: 2,
   trailing: switch (fact.weight) {
@@ -776,10 +811,13 @@ LoopRecordRow _weightRow(LoopCommunityMiningPower fact) => LoopRecordRow(
 /// community is settled and nobody held anything that counted.
 LoopRecordRow _participantsRow(LoopCommunityMiningPower fact) => LoopRecordRow(
   key: const ValueKey<String>('community-mining-power-participants'),
-  title: '有算力的成员',
+  title:
+      LoopL10n.current.community_widgetsCommunityMiningPowerParticipantsTitle,
   subtitle: switch (fact.participants) {
-    MiningParticipantsCount() => '最近一次算力快照里算出了算力的人',
-    MiningParticipantsUnavailable() => '这一项暂时读不到',
+    MiningParticipantsCount() =>
+      LoopL10n.current.community_widgetsMiningParticipantsCount,
+    MiningParticipantsUnavailable() =>
+      LoopL10n.current.community_widgetsMiningParticipantsUnavailable,
   },
   subtitleMaxLines: 2,
   trailing: switch (fact.participants) {
@@ -804,12 +842,14 @@ const String communityMissingFigure = '—';
 /// green rule floating over the card. The heading therefore says it: never
 /// `0`, never blank, and still the plain statement that this page has no
 /// number to show yet.
-const String communityMissingHeading = '暂无数值';
+String get communityMissingHeading =>
+    LoopL10n.current.community_widgetsCommunityMissingHeading;
 
 /// The same placeholder for a heading that was never a number. A community
 /// whose record did not load has no name to print, and saying 暂无数值 there
 /// would describe the wrong kind of gap.
-const String communityMissingName = '暂无名称';
+String get communityMissingName =>
+    LoopL10n.current.community_widgetsCommunityMissingName;
 
 /// The one label for a server-confirmed membership, shared by the community
 /// home rows and the profile page's 我的社区 entry.
@@ -820,8 +860,9 @@ const String communityMissingName = '暂无名称';
 String communityMembershipLabel(CommunityMembership membership) =>
     switch (membership.status) {
       CommunityMemberStatus.active => membership.role.label,
-      CommunityMemberStatus.muted => '已禁言',
-      CommunityMemberStatus.banned => '已封禁',
+      CommunityMemberStatus.muted => LoopL10n.current.community_membersMuted,
+      CommunityMemberStatus.banned =>
+        LoopL10n.current.community_membersFilterSeg,
     };
 
 /// The server's own verification state for a community, in words.
@@ -830,9 +871,10 @@ String communityMembershipLabel(CommunityMembership membership) =>
 /// be 审核中 while the reader is a full member of it.
 String communityVerificationLabel(CommunityVerification status) =>
     switch (status) {
-      CommunityVerification.verified => '已验证',
-      CommunityVerification.pending => '审核中',
-      CommunityVerification.rejected => '未通过',
+      CommunityVerification.verified =>
+        LoopL10n.current.community_widgetsVerified,
+      CommunityVerification.pending => LoopL10n.current.common_inReview,
+      CommunityVerification.rejected => LoopL10n.current.common_rejected,
     };
 
 /// How a community's free-text label is drawn (decision 0239).
@@ -906,12 +948,13 @@ class CommunityLabelBadge extends StatelessWidget {
 /// and this one is what an applicant is told about a review they are waiting
 /// on. 「已通过」 and 「已驳回」 name the decision that was made about their
 /// submission; 「已验证」 and 「未通过」 name a property of the community.
-String communityApplicationStatusLabel(CommunityVerification status) =>
-    switch (status) {
-      CommunityVerification.pending => '审核中',
-      CommunityVerification.verified => '已通过',
-      CommunityVerification.rejected => '已驳回',
-    };
+String communityApplicationStatusLabel(
+  CommunityVerification status,
+) => switch (status) {
+  CommunityVerification.pending => LoopL10n.current.common_inReview,
+  CommunityVerification.verified => LoopL10n.current.community_widgetsVerified2,
+  CommunityVerification.rejected => LoopL10n.current.community_widgetsRejected,
+};
 
 /// How many code points of an operator's reason a list row carries before it
 /// elides. The whole reason is on the community record; a row states enough of
@@ -925,13 +968,21 @@ const int communityRejectedReasonPreviewRunes = 30;
 /// reason this device failed to load.
 String communityRejectedReasonPreview(String? reason) {
   final text = reason?.trim();
-  if (text == null || text.isEmpty) return '驳回：运维没有给出原因';
+  if (text == null || text.isEmpty) {
+    return LoopL10n.current.community_widgetsCommunityRejectedReasonPreview;
+  }
   final runes = text.runes.toList(growable: false);
-  if (runes.length <= communityRejectedReasonPreviewRunes) return '驳回：$text';
+  if (runes.length <= communityRejectedReasonPreviewRunes) {
+    return LoopL10n.current.community_widgetsCommunityRejectedReasonPreview2(
+      text,
+    );
+  }
   final head = String.fromCharCodes(
     runes.take(communityRejectedReasonPreviewRunes),
   );
-  return '驳回：$head…';
+  return LoopL10n.current.community_widgetsCommunityRejectedReasonPreview3(
+    head,
+  );
 }
 
 /// The second line of a 我创建的 row: when it was submitted, or why it was
@@ -942,12 +993,16 @@ String communityApplicationRowLine(OwnedCommunity entry) {
   if (review == null) {
     // A deployment that carries no review block still has a community with a
     // creation time on it, and that is what the row dates.
-    return '创建于 ${loopLocalTimestampLabel(entry.community.createdAt)}';
+    return LoopL10n.current.community_widgetsIf(
+      loopLocalTimestampLabel(entry.community.createdAt),
+    );
   }
   if (review.isRejected) {
     return communityRejectedReasonPreview(review.rejectedReason);
   }
-  return '提交于 ${loopLocalTimestampLabel(review.submittedAt)}';
+  return LoopL10n.current.community_widgetsIf2(
+    loopLocalTimestampLabel(review.submittedAt),
+  );
 }
 
 /// `.badge` for an application's review state.
@@ -1043,8 +1098,11 @@ class CommunityApplicationStatusCard extends StatelessWidget {
           child: LoopNotice(
             key: const ValueKey<String>('community-application-pending'),
             icon: 'clock',
-            title: '审核中 · 提交于 ${loopLocalTimestampLabel(state.submittedAt)}',
-            body: '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。',
+            title: context.l10n
+                .community_widgetsCommunityApplicationPendingTitle(
+                  loopLocalTimestampLabel(state.submittedAt),
+                ),
+            body: context.l10n.community_widgetsCommunityApplicationPendingBody,
             margin: EdgeInsets.zero,
             // The progress fill is drawn behind this card; on the flat
             // community record it must stay a card (decision 0170).
@@ -1059,10 +1117,12 @@ class CommunityApplicationStatusCard extends StatelessWidget {
       key: const ValueKey<String>('community-application-rejected'),
       icon: 'warn',
       tone: LoopNoticeTone.danger,
-      title: '已驳回',
+      title: context.l10n.community_widgetsRejected,
       body: reason == null || reason.isEmpty
-          ? '运维没有给出原因。修改社区资料后可以重新提交。'
-          : '原因：$reason',
+          ? context.l10n.community_widgetsCommunityApplicationRejectedBody
+          : context.l10n.community_widgetsCommunityApplicationRejectedBody2(
+              reason,
+            ),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         0,
@@ -1071,7 +1131,7 @@ class CommunityApplicationStatusCard extends StatelessWidget {
       ),
       trailing: LoopButton(
         key: const ValueKey<String>('community-application-resubmit'),
-        label: '修改资料后重新提交',
+        label: context.l10n.community_widgetsCommunityApplicationResubmitLabel,
         onPressed: busy ? null : onResubmit,
       ),
     );
@@ -1099,7 +1159,9 @@ LoopRecordRow communityDirectoryRow({
   final label = community.label == null
       ? null
       : communityLabelDisplay(community.label!);
-  final members = '${community.memberCount} 名成员';
+  final members = LoopL10n.current.community_membersCommunityMissingHeading(
+    community.memberCount,
+  );
   final ranked = communityDirectoryRowFigure(community, sort: sort);
   if (ranked == null) {
     return LoopRecordRow(
@@ -1115,7 +1177,11 @@ LoopRecordRow communityDirectoryRow({
       subtitle: label == null ? members : '$members · $label',
       onTap: onTap,
       position: position,
-      semanticLabel: <String>[community.name, ?label, members].join('，'),
+      semanticLabel: <String>[
+        community.name,
+        ?label,
+        members,
+      ].join(LoopL10n.current.common_listSeparator),
     );
   }
   // The column the list is ranked by is the one the value slot states; the
@@ -1133,9 +1199,15 @@ LoopRecordRow communityDirectoryRow({
     trailingCaption: ranked.caption,
     onTap: onTap,
     position: position,
-    semanticLabel:
-        '${<String>[community.name, ?label, members].join('，')}，'
-        '${ranked.caption}${ranked.semanticValue}',
+    semanticLabel: <String>[
+      community.name,
+      ?label,
+      members,
+      LoopL10n.current.community_widgetsRankedSemantic(
+        ranked.caption,
+        ranked.semanticValue,
+      ),
+    ].join(LoopL10n.current.common_listSeparator),
   );
 }
 
@@ -1172,18 +1244,18 @@ CommunityRowFigure? communityDirectoryRowFigure(
       return switch (fact) {
         LoopMiningPowerSettled(:final power) => CommunityRowFigure(
           value: loopPowerFigure(power),
-          caption: '算力',
+          caption: LoopL10n.current.common_power,
           semanticValue: loopPowerFigure(power),
         ),
         LoopMiningPowerUnavailable(:final reasonCode) => CommunityRowFigure(
           value: launchMissingFigure,
-          caption: '算力',
+          caption: LoopL10n.current.common_power,
           semanticValue: communityUnavailableReason(reasonCode),
         ),
-        null => const CommunityRowFigure(
+        null => CommunityRowFigure(
           value: launchMissingFigure,
-          caption: '算力',
-          semanticValue: '暂时读不到',
+          caption: LoopL10n.current.common_power,
+          semanticValue: LoopL10n.current.community_widgetsSemanticValue,
         ),
       };
     case CommunityDirectorySort.activity:
@@ -1194,18 +1266,22 @@ CommunityRowFigure? communityDirectoryRowFigure(
         CommunityActivityCount(:final messageCount, :final bounded) =>
           CommunityRowFigure(
             value: bounded ? '≥$messageCount' : '$messageCount',
-            caption: '7 天讨论',
-            semanticValue: bounded ? '至少 $messageCount 条' : '$messageCount 条',
+            caption: LoopL10n.current.community_widgetsCaption,
+            semanticValue: bounded
+                ? LoopL10n.current.community_widgetsSemanticValue2(messageCount)
+                : LoopL10n.current.community_widgetsSemanticValue3(
+                    messageCount,
+                  ),
           ),
         CommunityActivityUnavailable(:final reasonCode) => CommunityRowFigure(
           value: launchMissingFigure,
-          caption: '7 天讨论',
+          caption: LoopL10n.current.community_widgetsCaption,
           semanticValue: communityUnavailableReason(reasonCode),
         ),
-        null => const CommunityRowFigure(
+        null => CommunityRowFigure(
           value: launchMissingFigure,
-          caption: '7 天讨论',
-          semanticValue: '暂时读不到',
+          caption: LoopL10n.current.community_widgetsCaption,
+          semanticValue: LoopL10n.current.community_widgetsSemanticValue,
         ),
       };
   }
@@ -1236,12 +1312,13 @@ Future<bool> confirmCommunityAction(
   required String title,
   required String body,
   required String confirmLabel,
-  String cancelLabel = '取消',
+  String? cancelLabel,
   String sheetKey = 'community-confirm-sheet',
 }) async {
   final confirmed = await showLoopSheet<bool>(
     context,
-    barrierLabel: '关闭确认弹层',
+    barrierLabel:
+        context.l10n.community_widgetsCommunityConfirmAcceptBarrierLabel,
     builder: (sheetContext) => Column(
       key: ValueKey<String>(sheetKey),
       mainAxisSize: MainAxisSize.min,
@@ -1272,7 +1349,7 @@ Future<bool> confirmCommunityAction(
                   ),
                   LoopButton(
                     key: const ValueKey<String>('community-confirm-cancel'),
-                    label: cancelLabel,
+                    label: cancelLabel ?? context.l10n.common_cancel,
                     onPressed: () => Navigator.of(sheetContext).pop(false),
                   ),
                 ],
@@ -1290,7 +1367,8 @@ Future<bool> confirmCommunityAction(
 ///
 /// One sentence, held in one place, because it is said twice: on the sheet
 /// that confirms the submission and nowhere else it could drift from.
-const String communityApplicationProgressHint = '可以在「我的 → 我的社区 → 我创建的」查看审核进度。';
+String get communityApplicationProgressHint =>
+    LoopL10n.current.community_widgetsCommunityApplicationProgressHint;
 
 /// The confirmation an accepted application gets.
 ///
@@ -1306,13 +1384,14 @@ Future<void> showCommunityApplicationSubmittedSheet(
 }) async {
   await showLoopSheet<void>(
     context,
-    barrierLabel: '关闭确认弹层',
+    barrierLabel:
+        context.l10n.community_widgetsCommunityConfirmAcceptBarrierLabel,
     builder: (sheetContext) => Column(
       key: const ValueKey<String>('community-apply-submitted-sheet'),
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('申请已提交 · 审核中'),
+        LoopSheetHeading(context.l10n.community_widgetsLoopSheetHeading2),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -1325,9 +1404,11 @@ Future<void> showCommunityApplicationSubmittedSheet(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                '「$communityName」已进入审核队列，你是它的所有者。'
-                '$communityApplicationProgressHint'
-                '通过后才会显示验证标记，并开放挖矿权重与官方群。',
+                context.l10n
+                    .community_widgetsShowCommunityApplicationSubmittedSheet(
+                      communityApplicationProgressHint,
+                      communityName,
+                    ),
                 style: LoopType.bodySm,
               ),
               const SizedBox(height: 18),
@@ -1338,7 +1419,9 @@ Future<void> showCommunityApplicationSubmittedSheet(
                     key: const ValueKey<String>(
                       'community-apply-submitted-open',
                     ),
-                    label: '查看社区',
+                    label: context
+                        .l10n
+                        .community_widgetsCommunityApplySubmittedOpenLabel,
                     primary: true,
                     onPressed: () => Navigator.of(sheetContext).pop(),
                   ),
@@ -1366,7 +1449,7 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
 }) {
   return showLoopSheet<CommunityProfileEdit>(
     context,
-    barrierLabel: '关闭社区资料编辑',
+    barrierLabel: context.l10n.community_widgetsBarrierLabel,
     builder: (sheetContext) => _CommunityProfileEditForm(
       community: community,
       includeBoundAsset: includeBoundAsset,
@@ -1465,7 +1548,7 @@ class _CommunityProfileEditFormState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('编辑社区资料'),
+        LoopSheetHeading(context.l10n.community_widgetsLoopSheetHeading3),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -1480,14 +1563,18 @@ class _CommunityProfileEditFormState
               TextField(
                 key: const ValueKey<String>('community-edit-name'),
                 controller: _name,
-                decoration: const InputDecoration(labelText: '社区名称'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.community_widgetsLabelText,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 key: const ValueKey<String>('community-edit-description'),
                 controller: _description,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: '简介（可留空）'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.community_widgetsLabelText2,
+                ),
               ),
               const SizedBox(height: 12),
               if (widget.includeBoundAsset) ...<Widget>[
@@ -1502,7 +1589,7 @@ class _CommunityProfileEditFormState
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: '绑定代币（仅所有者，可留空）',
+                    labelText: context.l10n.community_widgetsLabelText3,
                     hintText: communityBoundAssetHint(chain.chainId),
                     helperText:
                         '${communityBoundAssetChainNote(chain)}'
@@ -1519,7 +1606,7 @@ class _CommunityProfileEditFormState
                 const SizedBox(height: 12),
               ],
               LoopKeyValue(
-                label: '短链接（不可修改）',
+                label: context.l10n.community_widgetsLabel4,
                 value: community.slug,
                 padding: EdgeInsets.zero,
               ),
@@ -1529,13 +1616,13 @@ class _CommunityProfileEditFormState
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('community-edit-submit'),
-                    label: '下一步',
+                    label: context.l10n.common_next,
                     primary: true,
                     onPressed: _submit,
                   ),
                   LoopButton(
                     key: const ValueKey<String>('community-edit-cancel'),
-                    label: '取消',
+                    label: context.l10n.common_cancel,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -1557,7 +1644,7 @@ class _CommunityProfileEditFormState
 Future<CommunityApplication?> showCommunityApplySheet(BuildContext context) {
   return showLoopSheet<CommunityApplication>(
     context,
-    barrierLabel: '关闭社区申请',
+    barrierLabel: context.l10n.community_widgetsBarrierLabel2,
     builder: (sheetContext) => const _CommunityApplyForm(),
   );
 }
@@ -1660,7 +1747,7 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('创建社区'),
+        LoopSheetHeading(context.l10n.community_widgetsLoopSheetHeading4),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -1691,8 +1778,10 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                       button: true,
                       selected: selected,
                       label: reference == null
-                          ? '不设置社区标识'
-                          : '社区标识 ${reference.split('-').last}',
+                          ? context.l10n.community_widgetsLabel5
+                          : context.l10n.community_widgetsLabel6(
+                              reference.split('-').last,
+                            ),
                       excludeSemantics: true,
                       child: GestureDetector(
                         key: ValueKey<String>(
@@ -1744,7 +1833,7 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                 controller: _name,
                 onChanged: (_) => setState(() {}),
                 decoration: loopFormFieldDecoration(
-                  hint: '社区名称',
+                  hint: context.l10n.community_widgetsLabelText,
                   error: _errorFor(CommunityApplicationField.name),
                 ),
               ),
@@ -1753,7 +1842,7 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                 key: const ValueKey<String>('community-apply-slug'),
                 controller: _slug,
                 decoration: loopFormFieldDecoration(
-                  hint: '短链接，小写字母、数字与连字符',
+                  hint: context.l10n.community_widgetsHint,
                   error: _errorFor(CommunityApplicationField.slug),
                 ),
               ),
@@ -1764,7 +1853,7 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                 maxLines: 2,
                 minLines: 1,
                 decoration: loopFormFieldDecoration(
-                  hint: '简介（选填）',
+                  hint: context.l10n.community_widgetsHint2,
                   error: _errorFor(CommunityApplicationField.description),
                 ),
               ),
@@ -1773,7 +1862,9 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                 key: const ValueKey<String>('community-apply-asset-key'),
                 controller: _assetKey,
                 decoration: loopFormFieldDecoration(
-                  hint: '绑定代币（选填）${communityBoundAssetHint(chain.chainId)}',
+                  hint: context.l10n.community_widgetsHint3(
+                    communityBoundAssetHint(chain.chainId),
+                  ),
                   error: _errorFor(
                     CommunityApplicationField.boundAssetKey,
                     chainId: chain.chainId,
@@ -1782,8 +1873,10 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
               ),
               const SizedBox(height: 8),
               Text(
-                '${communityBoundAssetChainNote(chain)}'
-                '$communityBoundAssetUniqueHint提交后进入审核，你是所有者；验证标记由运维核验后设置。',
+                context.l10n.community_widgetsText(
+                  communityBoundAssetChainNote(chain),
+                  communityBoundAssetUniqueHint,
+                ),
                 textAlign: TextAlign.center,
                 style: LoopType.captionSm,
               ),
@@ -1793,7 +1886,8 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
               LoopFlat(
                 child: LoopButton(
                   key: const ValueKey<String>('community-apply-submit'),
-                  label: '提交申请',
+                  label:
+                      context.l10n.community_widgetsCommunityApplySubmitLabel,
                   primary: true,
                   block: true,
                   onPressed: _submit,
@@ -1805,7 +1899,7 @@ class _CommunityApplyFormState extends ConsumerState<_CommunityApplyForm>
                   key: const ValueKey<String>('community-apply-cancel'),
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(
-                    '取消',
+                    context.l10n.common_cancel,
                     // R17 an inline text action: label 12 at 600 (0191 L21).
                     style: LoopTypography.withWeight(
                       LoopType.label,
@@ -1871,7 +1965,8 @@ final class CommunityBoundAssetChain {
 
 /// The bound-asset field's hint for [chainId]: the bare address is the
 /// expected input, the full key is still accepted.
-String communityBoundAssetHint(String chainId) => '0x…（也可粘贴 $chainId:0x… 整串）';
+String communityBoundAssetHint(String chainId) =>
+    LoopL10n.current.community_widgetsCommunityBoundAssetHint(chainId);
 
 /// One sentence saying which chain a bare address is completed with. It is
 /// never silent about the fallback: when the published chain is not known
@@ -1879,8 +1974,8 @@ String communityBoundAssetHint(String chainId) => '0x…（也可粘贴 $chainId
 String communityBoundAssetChainNote(CommunityBoundAssetChain chain) {
   final name = loopChainName(chain.chainId);
   return chain.published
-      ? '只填合约地址即可，将按 $name 补全。'
-      : '暂未取到链状态，只填地址时将按 $name 补全。';
+      ? LoopL10n.current.community_widgetsCommunityBoundAssetChainNote(name)
+      : LoopL10n.current.community_widgetsS(name);
 }
 
 /// Reads the chain the server published for a bound token, loading the chain
@@ -1934,8 +2029,10 @@ String communityApplicationFieldReason(
   CommunityApplicationField field, {
   String chainId = loopPrimaryChainId,
 }) => switch (field) {
-  CommunityApplicationField.name => '名称需要 1–40 个字符，且不能包含控制字符。',
-  CommunityApplicationField.slug => '短链接只能是 3–32 位小写字母、数字或连字符。',
-  CommunityApplicationField.description => '简介最多 280 个字符，且不能包含控制字符。',
-  CommunityApplicationField.boundAssetKey => '需要 40 位十六进制合约地址，可带 $chainId: 前缀。',
+  CommunityApplicationField.name => LoopL10n.current.community_widgetsName,
+  CommunityApplicationField.slug => LoopL10n.current.community_widgetsSlug,
+  CommunityApplicationField.description =>
+    LoopL10n.current.community_widgetsDescription,
+  CommunityApplicationField.boundAssetKey =>
+    LoopL10n.current.community_widgetsBoundAssetKey(chainId),
 };

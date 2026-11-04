@@ -72,7 +72,7 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
-      expect(find.widgetWithText(LoopLabel, '挖矿'), findsOneWidget);
+      expect(find.widgetWithText(LoopLabel, 'Mining'), findsOneWidget);
       _expectNoV1Accent(tester);
     });
 
@@ -95,7 +95,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(LoopSectionTitle), findsNothing);
-      for (final title in <String>['资料', '成员', '语音房']) {
+      for (final title in <String>['Profile', 'Members', 'Voice rooms']) {
         expect(find.widgetWithText(LoopLabel, title), findsOneWidget);
       }
       _expectNoV1Accent(tester);
@@ -178,7 +178,13 @@ void main() {
           )
           .map((row) => row.label)
           .toList();
-      expect(rows, <String>['权重', '社区总算力', '我的持仓', '我的算力', '预估/日']);
+      expect(rows, <String>[
+        'Weight',
+        'Community power',
+        'My holdings',
+        'My power',
+        'Est./day',
+      ]);
       for (final key in <String>[
         'community-mining-weight',
         'community-mining-power',

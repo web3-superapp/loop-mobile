@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The Token Card's small line, driven by the real `1h` candle series.
 ///
@@ -99,9 +100,11 @@ class TokenCardSparklineView extends StatelessWidget {
     return LoopSparkline(
       key: ValueKey<String>('$keyPrefix-line'),
       closes: closes,
-      semanticLabel:
-          '${closes.length} 个 1H 收盘价的走势线，单位 ${available.priceUnit}，'
-          '来源 ${loopFactSourceLabel(available.source)}',
+      semanticLabel: context.l10n.market_tokenCardChartSemanticLabel(
+        closes.length,
+        loopFactSourceLabel(available.source),
+        available.priceUnit,
+      ),
     );
   }
 }
@@ -133,7 +136,7 @@ TokenCardSparklineAbsence? tokenCardSparklineAbsence(
       // A read that did not answer states what happened, not a reason code
       // the server never sent.
       state.phase == LoopChainViewPhase.loading
-          ? '1H K 线读取中，读到之前不画任何走势。'
+          ? LoopL10n.current.market_tokenCardChartTokenCardSparklineAbsence
           : unavailableText ?? loopChainFailureReason(state.failureKind),
     );
   }
@@ -147,7 +150,8 @@ TokenCardSparklineAbsence? tokenCardSparklineAbsence(
   if (loopSparklineCloses(available.items).isEmpty) {
     return TokenCardSparklineAbsence(
       'empty',
-      unavailableText ?? '这个区间没有成交，只画有成交的桶，空桶不会补 0。',
+      unavailableText ??
+          LoopL10n.current.market_tokenCardChartTokenCardSparklineAbsence2,
     );
   }
   return null;

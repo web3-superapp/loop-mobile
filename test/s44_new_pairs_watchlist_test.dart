@@ -82,7 +82,7 @@ void main() {
       contains(_newAssetId),
     );
     // The same sentence the Token page's star says, from the same helper.
-    expect(find.text('已加入自选'), findsOneWidget);
+    expect(find.text('Added to watchlist'), findsOneWidget);
   });
 
   testWidgets('a pool the registry does not carry offers nothing to press', (
@@ -192,6 +192,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(watchlist.written, isEmpty);
-    expect(find.textContaining('自选已达'), findsOneWidget);
+    expect(find.textContaining('Your watchlist has reached'), findsOneWidget);
   });
 }

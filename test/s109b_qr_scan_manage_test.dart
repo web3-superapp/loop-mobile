@@ -742,15 +742,30 @@ void main() {
         await scrollToCommunitySection(tester, finder);
         expect(finder, findsOneWidget, reason: key);
       }
-      expect(find.textContaining('FROG · 尚无注册池子'), findsOneWidget);
-      expect(find.text('尚无已注册池子，群友买入动态不会出现。'), findsOneWidget);
+      expect(
+        find.textContaining('FROG · No registered pools yet'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'No registered pools yet, so member buy activity won\'t appear.',
+        ),
+        findsOneWidget,
+      );
       // Decision 0170 (docs/33 L25): the no-pool line is a Text3 sentence,
       // not the v1 warning yellow.
       expect(
-        tester.widget<Text>(find.text('尚无已注册池子，群友买入动态不会出现。')).style?.color,
+        tester
+            .widget<Text>(
+              find.text(
+                'No registered pools yet, so member buy activity won\'t appear.',
+              ),
+            )
+            .style
+            ?.color,
         LoopColors.text3,
       );
-      expect(find.text('Owner 1 · Admin 3 · 共 128 人'), findsOneWidget);
+      expect(find.text('Owner 1 · Admin 3 · 128 total'), findsOneWidget);
     });
 
     testWidgets('an admin sees no bound token and no ownership', (
@@ -933,7 +948,7 @@ void main() {
             reasonCode: 'ASSET_NOT_REGISTERED',
           ),
         ),
-        '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
+        'This token isn\'t registered on LOOP, so it can\'t be linked. Nothing was changed.',
       );
       expect(
         communityProfileEditFailureText(
@@ -942,7 +957,7 @@ void main() {
             reasonCode: 'OWNER_ONLY_FIELD',
           ),
         ),
-        '只有所有者能改绑定代币；资料没有修改。',
+        'Only the owner can change the linked token. Nothing was changed.',
       );
       expect(
         communityProfileEditFailureText(
@@ -987,7 +1002,12 @@ void main() {
         find.byKey(const ValueKey<String>('community-confirm-accept')),
       );
       expect(gateway.commands.last, startsWith('edit:$testCommunityId'));
-      expect(find.text('这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。'), findsOneWidget);
+      expect(
+        find.text(
+          'This token isn\'t registered on LOOP, so it can\'t be linked. Nothing was changed.',
+        ),
+        findsOneWidget,
+      );
     });
 
     test('the community resource reads the optional boundAsset block', () {

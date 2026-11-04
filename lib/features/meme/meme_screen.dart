@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/meme/meme_launchpad.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
@@ -45,11 +46,17 @@ class MemeScreen extends ConsumerWidget {
   final VoidCallback? onOpenEconomy;
   final VoidCallback? onOpenApply;
 
-  static const segments = <String>['发射台', '行情'];
+  static List<String> get segments => <String>[
+    LoopL10n.current.common_launchpad,
+    LoopL10n.current.common_market,
+  ];
 
   /// S259 · decision 0217: with the IDO switch on, the v2 desk and IDO are
   /// the only two segments; otherwise the MEME Tab has no segment row.
-  static const v2SegmentsWithIdo = <String>['发射台', 'IDO'];
+  static List<String> get v2SegmentsWithIdo => <String>[
+    LoopL10n.current.common_launchpad,
+    'IDO',
+  ];
 
   /// The index of the IDO segment while the switch is on.
   static const int idoSegment = 2;
@@ -242,7 +249,9 @@ class _MemeV2Closed extends ConsumerWidget {
       sections: <Widget>[
         LoopInlineUnavailable(
           key: const ValueKey<String>('launch2-list-all-unavailable'),
-          message: 'MEME v2 暂时不可用 · ${launch2CapabilityText(capability)}',
+          message: context.l10n.meme_screenLaunch2ListAllUnavailableMessage(
+            launch2CapabilityText(capability),
+          ),
         ),
       ],
     );

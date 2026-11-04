@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -32,13 +33,17 @@ import 'package:loop_mobile/features/social/profile_face_link.dart';
 /// permission matrix; this file states no rule about who may do what.
 extension CommunityGovernanceActionCopy on CommunityGovernanceAction {
   String get label => switch (this) {
-    CommunityGovernanceAction.promote => '任命为 Admin',
-    CommunityGovernanceAction.demote => '撤销 Admin',
-    CommunityGovernanceAction.transfer => '转让所有者',
-    CommunityGovernanceAction.mute => '禁言',
-    CommunityGovernanceAction.unmute => '解除禁言',
-    CommunityGovernanceAction.ban => '封禁',
-    CommunityGovernanceAction.unban => '解除封禁',
+    CommunityGovernanceAction.promote =>
+      LoopL10n.current.community_membersPromote,
+    CommunityGovernanceAction.demote =>
+      LoopL10n.current.community_membersDemote,
+    CommunityGovernanceAction.transfer =>
+      LoopL10n.current.community_manageCommunityManageTransferTitle,
+    CommunityGovernanceAction.mute => LoopL10n.current.community_membersMute,
+    CommunityGovernanceAction.unmute =>
+      LoopL10n.current.community_membersUnmute,
+    CommunityGovernanceAction.ban => LoopL10n.current.community_membersBan,
+    CommunityGovernanceAction.unban => LoopL10n.current.community_membersUnban,
   };
 
   /// Extra copy the second confirmation shows before the command runs.
@@ -50,13 +55,10 @@ extension CommunityGovernanceActionCopy on CommunityGovernanceAction {
   /// profile, assigning or revoking Admin, and transferring again.
   String get confirmationDetail => switch (this) {
     CommunityGovernanceAction.transfer =>
-      '转让后你会降为 Admin：编辑社区资料、任免 Admin 和再次转让都归新的所有者，你仍可禁言、封禁普通成员。'
-          '这一步不可撤销，只有新的所有者能把权限交还给你。',
-    CommunityGovernanceAction.ban =>
-      '被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。',
-    CommunityGovernanceAction.unban =>
-      '解除封禁会把该成员恢复为活跃成员，加入时间不变，并重新加回官方频道。对方不需要重新申请加入。',
-    _ => '这次操作会记入社区日志。',
+      LoopL10n.current.community_membersTransfer,
+    CommunityGovernanceAction.ban => LoopL10n.current.community_membersBan2,
+    CommunityGovernanceAction.unban => LoopL10n.current.community_membersUnban2,
+    _ => LoopL10n.current.community_membersSwitch,
   };
 }
 
@@ -169,14 +171,16 @@ class _CommunityMembersScreenState
       child: LoopStreamPage(
         key: const ValueKey<String>('community-members-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '成员',
+        title: context.l10n.common_members,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         actions: <Widget>[
           LoopIconButton(
             key: const ValueKey<String>('community-members-search'),
             icon: _searchOpen ? 'close' : 'search',
-            label: _searchOpen ? '关闭搜索' : '搜索成员',
+            label: _searchOpen
+                ? context.l10n.community_membersCommunityMembersSearchLabel
+                : context.l10n.community_membersCommunityMembersSearchLabel2,
             onPressed: () => _toggleSearch(controller),
           ),
         ],
@@ -199,8 +203,12 @@ class _CommunityMembersScreenState
                   maxLength: memberSearchMaximumRunes,
                   onChanged: controller.search,
                   decoration: InputDecoration(
-                    labelText: '按别名搜索成员',
-                    hintText: '输入别名开头即可',
+                    labelText: context
+                        .l10n
+                        .community_membersCommunityMembersSearchClearLabelText,
+                    hintText: context
+                        .l10n
+                        .community_membersCommunityMembersSearchClearHintText,
                     counterText: '',
                     suffixIcon: !searching
                         ? null
@@ -209,7 +217,9 @@ class _CommunityMembersScreenState
                               'community-members-search-clear',
                             ),
                             icon: 'close',
-                            label: '清除',
+                            label: context
+                                .l10n
+                                .community_membersCommunityMembersSearchClearLabel,
                             onPressed: () {
                               _query.clear();
                               unawaited(controller.clearSearch());
@@ -232,7 +242,9 @@ class _CommunityMembersScreenState
                       controller,
                       state,
                       CommunityMemberFilter.all,
-                      counts == null || searching ? '全部' : '全部 ${counts.all}',
+                      counts == null || searching
+                          ? context.l10n.common_all
+                          : context.l10n.community_membersS(counts.all),
                     ),
                     _filterSeg(
                       controller,
@@ -258,7 +270,7 @@ class _CommunityMembersScreenState
                         controller,
                         state,
                         CommunityMemberFilter.banned,
-                        '已封禁',
+                        context.l10n.community_membersFilterSeg,
                       ),
                     // Presence has no source; the segment stays disabled with its
                     // server reason rather than showing a fabricated online count.
@@ -268,7 +280,8 @@ class _CommunityMembersScreenState
                       child: LoopSeg(
                         key: const ValueKey<String>('members-seg-online'),
                         quiet: true,
-                        label: '在线',
+                        label:
+                            context.l10n.community_membersMembersSegOnlineLabel,
                         selected: false,
                         onSelected: null,
                         onBlocked: () => LoopToast.show(
@@ -290,7 +303,9 @@ class _CommunityMembersScreenState
                   'community-members-capability-unavailable',
                 ),
                 capability: capability,
-                title: '社区模块当前不可用',
+                title: context
+                    .l10n
+                    .community_discoverCommunityDiscoverCapabilityUnavailableTitle,
               )
             : null,
         onRefresh: id == null ? null : controller.refresh,
@@ -299,7 +314,10 @@ class _CommunityMembersScreenState
           key: const ValueKey<String>('community-members-list'),
           padding: const EdgeInsets.only(bottom: 24),
           children: <Widget>[
-            CommunityPreviewNotice(mode: mode, resource: '成员目录'),
+            CommunityPreviewNotice(
+              mode: mode,
+              resource: context.l10n.community_membersResource,
+            ),
             // Decision 0127: whose directory this is — the community's face and
             // name in one row — instead of a hero card with an English eyebrow.
             if (community != null && !typing)
@@ -314,16 +332,20 @@ class _CommunityMembersScreenState
                 ),
                 title: community.name,
                 subtitle: searching
-                    ? '搜索成员'
+                    ? context.l10n.community_membersCommunityMembersSearchLabel2
                     : counts == null
                     ? null
                     : _directoryHeading(state.filter, counts),
               ),
             if (id == null)
-              const LoopInlineUnavailable(
+              LoopInlineUnavailable(
                 key: ValueKey<String>('community-members-missing-id'),
-                message: '缺少社区标识',
-                detail: '请从社区档案进入，本页不会猜测要打开哪个社区。',
+                message: context
+                    .l10n
+                    .community_manageCommunityManageMissingIdMessage,
+                detail: context
+                    .l10n
+                    .community_membersCommunityMembersMissingIdDetail,
                 maxLines: 2,
                 detailMaxLines: 4,
               )
@@ -331,17 +353,35 @@ class _CommunityMembersScreenState
               CommunityStateBlock(
                 phase: state.phase,
                 failureKind: state.failureKind,
-                emptyMessage: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+                emptyMessage: searching
+                    ? context
+                          .l10n
+                          .community_membersCommunityStateEmptyEmptyMessage
+                    : context
+                          .l10n
+                          .community_membersCommunityStateEmptyEmptyMessage2,
                 emptyReason: searching
-                    ? '别名要从开头对上才算匹配，换个开头再试。'
+                    ? context
+                          .l10n
+                          .community_membersCommunityStateEmptyEmptyReason
                     : _emptyFilterReason(state.filter),
-                permissionTitle: '没有权限查看成员目录',
+                permissionTitle: context
+                    .l10n
+                    .community_membersCommunityStateEmptyPermissionTitle,
                 empty: LoopEmptyState(
                   key: const ValueKey<String>('community-state-empty'),
                   illustration: LoopIllustration.members,
-                  title: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+                  title: searching
+                      ? context
+                            .l10n
+                            .community_membersCommunityStateEmptyEmptyMessage
+                      : context
+                            .l10n
+                            .community_membersCommunityStateEmptyEmptyMessage2,
                   message: searching
-                      ? '别名要从开头对上才算匹配，换个开头再试。'
+                      ? context
+                            .l10n
+                            .community_membersCommunityStateEmptyEmptyReason
                       : _emptyFilterReason(state.filter),
                   showMessage: true,
                 ),
@@ -371,7 +411,7 @@ class _CommunityMembersScreenState
                   ),
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '上一次操作没有完成',
+                  title: context.l10n.common_lastActionIncomplete,
                   body: communityFailureReason(state.failureKind),
                   margin: const EdgeInsets.fromLTRB(
                     LoopSpacing.page,
@@ -448,8 +488,9 @@ class _CommunityMembersScreenState
   }) {
     final status = switch (entry.status) {
       CommunityMemberStatus.active => entry.role.label,
-      CommunityMemberStatus.muted => '已禁言',
-      CommunityMemberStatus.banned => '已封禁',
+      CommunityMemberStatus.muted => LoopL10n.current.community_membersMuted,
+      CommunityMemberStatus.banned =>
+        LoopL10n.current.community_membersFilterSeg,
     };
     final identity = entry.profile.publicProfileId ?? entry.profile.loopId;
     final governs =
@@ -486,12 +527,14 @@ class _CommunityMembersScreenState
         ),
       ),
       title: entry.isSelf
-          ? '我 · ${entry.profile.displayName}'
+          ? LoopL10n.current.community_membersTitle(entry.profile.displayName)
           : entry.profile.displayName,
       // A member with no alias already carries the LOOP ID as the title, so
       // the grey line says when the member joined instead of repeating it.
       subtitle: entry.profile.alias == null
-          ? '加入于 ${communityObservedAtLabel(entry.joinedAt)}'
+          ? LoopL10n.current.community_membersSubtitle(
+              communityObservedAtLabel(entry.joinedAt),
+            )
           : entry.profile.loopId,
       tag:
           entry.role == CommunityRole.member &&
@@ -506,12 +549,16 @@ class _CommunityMembersScreenState
           ? null
           : LoopPillAction(
               key: ValueKey<String>('member-manage-$identity'),
-              label: '管理',
+              label: LoopL10n.current.community_membersLabel,
               primary: false,
               onPressed: open,
             ),
       onTap: open,
-      semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
+      semanticLabel: <String>[
+        entry.profile.displayName,
+        entry.role.label,
+        status,
+      ].join(LoopL10n.current.common_listSeparator),
     );
   }
 
@@ -540,10 +587,12 @@ class _CommunityMembersScreenState
     if (chosen == null || !mounted) return;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '${chosen.label}？',
-      body:
-          '目标：${entry.profile.displayName}（${entry.profile.loopId}）。'
-          '${chosen.confirmationDetail}',
+      title: LoopL10n.current.community_membersConfirmTitle(chosen.label),
+      body: LoopL10n.current.community_membersBody(
+        chosen.confirmationDetail,
+        entry.profile.displayName,
+        entry.profile.loopId,
+      ),
       confirmLabel: chosen.label,
       sheetKey: 'member-confirm-sheet',
     );
@@ -583,7 +632,10 @@ class _CommunityMembersScreenState
     if (!mounted) return;
     if (failure == null) {
       // Only a 2xx reaches this line.
-      LoopToast.show(context, message: '${chosen.label}已生效');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.community_membersMessage(chosen.label),
+      );
       return;
     }
     LoopToast.show(
@@ -607,22 +659,30 @@ String _directoryHeading(
   CommunityMemberCounts? counts,
 ) => switch (filter) {
   CommunityMemberFilter.all =>
-    counts == null ? communityMissingHeading : '${counts.all} 名成员',
+    counts == null
+        ? communityMissingHeading
+        : LoopL10n.current.community_membersCommunityMissingHeading(counts.all),
   CommunityMemberFilter.owner =>
-    counts == null ? 'Owner 权限' : '${counts.owner} 名 Owner',
+    counts == null
+        ? LoopL10n.current.community_membersSwitch2
+        : LoopL10n.current.community_membersS2(counts.owner),
   CommunityMemberFilter.admin =>
-    counts == null ? 'Admin 权限' : '${counts.admin} 名 Admin',
-  CommunityMemberFilter.banned => '已封禁的成员',
+    counts == null
+        ? LoopL10n.current.community_membersSwitch3
+        : LoopL10n.current.community_membersS3(counts.admin),
+  CommunityMemberFilter.banned => LoopL10n.current.community_membersBanned,
 };
 
 /// Why a filter came back with no rows. 已封禁 is a status the server keeps on
 /// a membership, not one of the three roles, and the empty state said 「这个角色
 /// 下没有成员」 over it.
 String _emptyFilterReason(CommunityMemberFilter filter) => switch (filter) {
-  CommunityMemberFilter.all => '这个社区目前没有可显示的成员。',
-  CommunityMemberFilter.owner || CommunityMemberFilter.admin => '这个角色下没有成员。',
-  CommunityMemberFilter.banned => '这个社区目前没有被封禁的成员。',
+  CommunityMemberFilter.all => LoopL10n.current.community_membersAll,
+  CommunityMemberFilter.owner ||
+  CommunityMemberFilter.admin => LoopL10n.current.community_membersAdmin,
+  CommunityMemberFilter.banned => LoopL10n.current.community_membersBanned2,
 };
 
 /// What this page carries instead of an online count.
-const String memberDirectoryPresenceNote = '成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。';
+String get memberDirectoryPresenceNote =>
+    LoopL10n.current.community_membersMemberDirectoryPresenceNote;

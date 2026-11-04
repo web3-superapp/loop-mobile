@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -91,7 +92,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('community-manage-screen'),
         archetype: LoopPageArchetype.action,
-        title: '社区管理',
+        title: context.l10n.community_manageCommunityManageScreenTitle,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         // Decision 0127: the community's face and name head the page as one
@@ -111,8 +112,9 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
                 tag: viewer?.membership == null
                     ? null
                     : LoopTag(viewer!.membership!.role.label, lime: true),
-                subtitle:
-                    '${communityCountLabel(detail.community.memberCount)} 成员',
+                subtitle: context.l10n.community_homeCommunityMemberCountLabel(
+                  communityCountLabel(detail.community.memberCount),
+                ),
               ),
         block: id != null && blocked
             ? CommunityCapabilityPageBlock(
@@ -120,18 +122,25 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
                   'community-manage-capability-unavailable',
                 ),
                 capability: capability,
-                title: '社区模块当前不可用',
+                title: context
+                    .l10n
+                    .community_discoverCommunityDiscoverCapabilityUnavailableTitle,
               )
             : null,
         onRefresh: id == null ? null : controller.reload,
         updating: state.refreshing || state.busy || opening,
         sections: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '社区管理'),
+          CommunityPreviewNotice(
+            mode: mode,
+            resource: context.l10n.community_manageCommunityManageScreenTitle,
+          ),
           if (id == null)
-            const LoopInlineUnavailable(
+            LoopInlineUnavailable(
               key: ValueKey<String>('community-manage-missing-id'),
-              message: '缺少社区标识',
-              detail: '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。',
+              message:
+                  context.l10n.community_manageCommunityManageMissingIdMessage,
+              detail:
+                  context.l10n.community_manageCommunityManageMissingIdDetail,
               maxLines: 2,
               detailMaxLines: 4,
             )
@@ -142,16 +151,18 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
                   : state.phase,
               failureKind: state.failureKind,
               skeleton: LoopSkeletonType.list,
-              emptyMessage: '找不到这个社区',
-              emptyReason: '它可能已被移除，或对当前账号不可见。',
+              emptyMessage: context.l10n.community_manageEmptyMessage,
+              emptyReason: context.l10n.community_manageEmptyReason,
               onRetry: () => unawaited(controller.reload()),
             )
           else if (!detail.viewer.mayManage)
-            const LoopInlineUnavailable(
+            LoopInlineUnavailable(
               key: ValueKey<String>('community-manage-permission'),
               icon: 'lock',
-              message: '只有社区所有者与管理员可以管理',
-              detail: '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。',
+              message:
+                  context.l10n.community_manageCommunityManagePermissionMessage,
+              detail:
+                  context.l10n.community_manageCommunityManagePermissionDetail,
               maxLines: 2,
               detailMaxLines: 4,
             )
@@ -174,7 +185,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     final counts = ref.watch(communityManageCountsProvider(id));
     return <Widget>[
       // 资料
-      const LoopLabel('资料'),
+      LoopLabel(context.l10n.common_profile),
       Column(
         key: const ValueKey<String>('community-manage-profile-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,8 +193,10 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-edit-profile'),
             leading: const LoopEntryIcon('id'),
-            title: '名称与简介',
-            subtitle: community.description ?? '还没有简介',
+            title: context.l10n.community_manageCommunityManageEditProfileTitle,
+            subtitle:
+                community.description ??
+                context.l10n.community_manageCommunityManageEditProfileSubtitle,
             chevron: true,
             onTap: busy
                 ? null
@@ -194,8 +207,9 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-bound-asset'),
               leading: const LoopEntryIcon('wallet'),
-              title: '绑定代币',
-              tag: const LoopTag('仅所有者'),
+              title:
+                  context.l10n.community_manageCommunityManageBoundAssetTitle,
+              tag: LoopTag(context.l10n.community_manageLoopTag),
               subtitle: _boundAssetLine(community),
               chevron: true,
               onTap: busy
@@ -210,13 +224,16 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             Padding(
               key: const ValueKey<String>('community-manage-no-pool'),
               padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
-              child: Text('尚无已注册池子，群友买入动态不会出现。', style: LoopType.captionSm),
+              child: Text(
+                context.l10n.community_manageGroups,
+                style: LoopType.captionSm,
+              ),
             ),
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-share'),
             leading: const LoopEntryIcon('share'),
-            title: '社区二维码名片',
-            subtitle: '分享海报或复制社区链接',
+            title: context.l10n.community_manageCommunityManageShareTitle,
+            subtitle: context.l10n.community_manageCommunityManageShareSubtitle,
             chevron: true,
             onTap: () => unawaited(
               showLoopQrCardSheet(
@@ -233,16 +250,19 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           ),
           // Publishing waits on the operator console; the row says so in its
           // grey line and takes no tap.
-          const LoopPersonRow(
+          LoopPersonRow(
             key: ValueKey<String>('community-manage-announcements'),
             leading: LoopEntryIcon('news'),
-            title: '公告',
-            subtitle: '公告发布即将推出',
+            title:
+                context.l10n.community_manageCommunityManageAnnouncementsTitle,
+            subtitle: context
+                .l10n
+                .community_manageCommunityManageAnnouncementsSubtitle,
           ),
         ],
       ),
       // 成员
-      const LoopLabel('成员'),
+      LoopLabel(context.l10n.common_members),
       Column(
         key: const ValueKey<String>('community-manage-members-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -250,12 +270,19 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-members'),
             leading: const LoopEntryIcon('users'),
-            title: '成员与权限',
+            title: context.l10n.community_manageCommunityManageMembersTitle,
             subtitle: switch (counts) {
-              AsyncData(:final value) =>
-                'Owner ${value.owner} · Admin ${value.admin} · 共 ${value.all} 人',
-              AsyncError() => '${community.memberCount} 位成员',
-              _ => '${community.memberCount} 位成员',
+              AsyncData(:final value) => context.l10n.community_manageAsyncData(
+                value.admin,
+                value.all,
+                value.owner,
+              ),
+              AsyncError() => context.l10n.community_manageAsyncError(
+                community.memberCount,
+              ),
+              _ => context.l10n.community_manageAsyncError(
+                community.memberCount,
+              ),
             },
             chevron: true,
             onTap: () => unawaited(
@@ -268,8 +295,9 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-transfer'),
               leading: const LoopEntryIcon('crown'),
-              title: '转让所有者',
-              subtitle: '在成员页选择成员，转让后你会降为 Admin',
+              title: context.l10n.community_manageCommunityManageTransferTitle,
+              subtitle:
+                  context.l10n.community_manageCommunityManageTransferSubtitle,
               chevron: true,
               onTap: () => unawaited(
                 context.push<void>(
@@ -280,7 +308,7 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         ],
       ),
       // 语音房
-      const LoopLabel('语音房'),
+      LoopLabel(context.l10n.common_voiceRooms),
       Column(
         key: const ValueKey<String>('community-manage-voice-group'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -289,8 +317,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-enter'),
               leading: const LoopEntryIcon('voice'),
-              title: '进入语音房',
-              subtitle: '社区正在开播',
+              title:
+                  context.l10n.community_manageCommunityManageVoiceEnterTitle,
+              subtitle: context
+                  .l10n
+                  .community_manageCommunityManageVoiceEnterSubtitle,
               chevron: true,
               onTap: () => unawaited(
                 context.push<void>(
@@ -302,8 +333,9 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-open'),
               leading: const LoopEntryIcon('mic'),
-              title: '开启语音房',
-              subtitle: '你是主持人，麦克风默认关闭',
+              title: context.l10n.community_manageCommunityManageVoiceOpenTitle,
+              subtitle:
+                  context.l10n.community_manageCommunityManageVoiceOpenSubtitle,
               chevron: true,
               onTap: ref.watch(voiceRoomOpenControllerProvider)
                   ? null
@@ -331,7 +363,9 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           0,
         ),
         child: Text(
-          isOwner ? '社区图标、短链接与验证状态不能在这里修改；不提供解散社区。' : '社区图标、短链接与验证状态不能在这里修改。',
+          isOwner
+              ? context.l10n.community_manageCommunityManageLogoNote
+              : context.l10n.community_manageCommunityManageLogoNote2,
           key: const ValueKey<String>('community-manage-logo-note'),
           style: LoopType.captionSm,
         ),
@@ -342,14 +376,18 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
 
   String _boundAssetLine(CommunitySummary community) {
     final key = community.boundAssetKey;
-    if (key == null) return '未绑定';
+    if (key == null) return LoopL10n.current.community_manageBoundAssetLine;
     final asset = community.boundAsset;
     if (asset == null) {
       // An API that predates the `boundAsset` block: the key is all there is.
-      return '${loopTruncatedAddress(key.split(':').last)} · 代币信息暂时读不到';
+      return LoopL10n.current.community_manageIf(
+        loopTruncatedAddress(key.split(':').last),
+      );
     }
     final name = asset.name;
-    final pool = asset.hasRegisteredPool ? '已有注册池子' : '尚无注册池子';
+    final pool = asset.hasRegisteredPool
+        ? LoopL10n.current.community_manageIf2
+        : LoopL10n.current.community_manageS;
     return name == null || name == asset.symbol
         ? '${asset.symbol} · $pool'
         : '${asset.symbol} · $name · $pool';
@@ -368,24 +406,29 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
     );
     if (edit == null || !mounted) return;
     if (edit.isEmpty) {
-      LoopToast.show(context, message: '没有修改任何内容');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.community_manageMessage,
+      );
       return;
     }
     final confirmed = await confirmCommunityAction(
       context,
-      title: '提交社区资料修改？',
+      title: LoopL10n.current.community_manageTitle,
       body: edit.touchesBoundAsset
-          ? '$communityBoundAssetUniqueHint'
-                '绑定代币会立刻影响社区页的代币卡片与群友买入动态。短链接与验证状态不能在这里修改。'
-          : '短链接与验证状态不能在这里修改。',
-      confirmLabel: '提交',
+          ? LoopL10n.current.community_manageBody(communityBoundAssetUniqueHint)
+          : LoopL10n.current.community_manageBody2,
+      confirmLabel: LoopL10n.current.common_submit,
       sheetKey: 'community-edit-confirm-sheet',
     );
     if (!confirmed) return;
     final failure = await controller.submitProfileEdit(edit);
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: '社区资料已更新');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.community_manageMessage2,
+      );
       return;
     }
     LoopToast.show(
@@ -402,8 +445,8 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
 String communityProfileEditFailureText(CommunityGatewayException failure) =>
     switch (failure.reasonCode) {
       _ when failure.kind == CommunityFailureKind.boundAssetTaken =>
-        '这个代币已被其他社区绑定，请换一个代币；资料没有修改。',
-      'ASSET_NOT_REGISTERED' => '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。',
-      'OWNER_ONLY_FIELD' => '只有所有者能改绑定代币；资料没有修改。',
+        LoopL10n.current.community_manageBoundAssetTaken,
+      'ASSET_NOT_REGISTERED' => LoopL10n.current.community_manageSwitch,
+      'OWNER_ONLY_FIELD' => LoopL10n.current.community_manageSwitch2,
       _ => communityFailureReason(failure.kind),
     };

@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_loading.dart';
@@ -111,7 +112,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('community-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '社区',
+      title: context.l10n.common_community,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       primary: Column(
@@ -131,22 +132,27 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             key: const ValueKey<String>('community-folio'),
             variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.listing,
-            kicker: '社区索引',
+            kicker: context.l10n.community_screenCommunityFolioKicker,
             // A read that is still running is not a read that failed.
             // The skeleton below was already saying 「正在读取」 while
             // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
             // first seconds of every cold start.
             heading: home == null
-                ? (loading ? '正在读取' : communityMissingHeading)
-                : '$miningCount 个社区在挖矿',
+                ? (loading
+                      ? context.l10n.community_screenHeading
+                      : communityMissingHeading)
+                : context.l10n.community_screenCommunityFolioHeading(
+                    miningCount,
+                  ),
             // Decision 0095: the count is drawn as a skeleton of its
             // own height until it is read.
             headingLoading: home == null && loading,
             caption: home == null
                 ? loading
-                      ? '已加入的社区数量读到之后显示在这里。'
-                      : '社区数据暂时读不到，这一页不显示任何数字。'
-                : activity ?? '讨论热度与语音房活动还没有开放。',
+                      ? context.l10n.community_screenCommunityFolioCaption
+                      : context.l10n.community_screenCommunityFolioCaption2
+                : activity ??
+                      context.l10n.community_screenCommunityFolioCaption3,
             // `.folio-stamp` is 「N LIVE」 in the prototype. Nothing
             // here counts live rooms, so the corner stays empty; it
             // is not a slot for the word DATABASE.
@@ -157,9 +163,15 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>('community-capability-unavailable'),
               capability: capability,
-              title: '社区模块当前不可用',
-              deferredMessage: '社区还没有开放。',
-              unknownMessage: '社区还没有准备好，请稍后再试。',
+              title: context
+                  .l10n
+                  .community_discoverCommunityDiscoverCapabilityUnavailableTitle,
+              deferredMessage: context
+                  .l10n
+                  .community_screenCommunityCapabilityUnavailableDeferredMessage,
+              unknownMessage: context
+                  .l10n
+                  .community_screenCommunityCapabilityUnavailableUnknownMessage,
             )
           : null,
       onRefresh: () =>
@@ -174,7 +186,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           refreshFailed: home != null && state.failureKind != null,
           onRetry: () => unawaited(controller.reload()),
         ),
-        CommunityPreviewNotice(mode: mode, resource: '社区数据'),
+        CommunityPreviewNotice(
+          mode: mode,
+          resource: context.l10n.community_screenResource,
+        ),
         if (state.phase != CommunityViewPhase.ready || home == null)
           CommunityStateBlock(
             // Rows of the index's own height (decision 0095).
@@ -182,20 +197,22 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
             rows: 4,
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '还没有加入任何社区',
-            emptyReason: '加入社区后，这里会列出你的社区。',
+            emptyMessage: context.l10n.community_screenEmptyMessage,
+            emptyReason: context.l10n.community_screenEmptyReason,
             onRetry: () => unawaited(
               ref.read(communityHomeControllerProvider.notifier).reload(),
             ),
           )
         else ...<Widget>[
           if (joined.isEmpty) ...<Widget>[
-            const LoopLabel('已加入的社区'),
-            const LoopEmptyState(
+            LoopLabel(
+              context.l10n.community_discoverCommunityDiscoverScreenTitle,
+            ),
+            LoopEmptyState(
               key: ValueKey<String>('community-joined-empty'),
               illustration: LoopIllustration.members,
-              title: '还没有加入任何社区',
-              message: '从"发现社区"开始，加入后这里会显示你的社区。',
+              title: context.l10n.community_screenEmptyMessage,
+              message: context.l10n.community_screenCommunityJoinedEmptyMessage,
               compact: true,
             ),
           ],
@@ -205,7 +222,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           if (mining.isNotEmpty) ...<Widget>[
             // `<p class="label" style="padding-top:0">` — the first
             // label on this page sits against the folio.
-            const LoopLabel('带币社区 · 可挖矿', tight: true),
+            LoopLabel(context.l10n.community_screenLoopLabel, tight: true),
             LoopContentArrival(
               animate: _sawSkeleton,
               child: LoopRecordGroup(
@@ -218,7 +235,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           ],
           if (others.isNotEmpty) ...<Widget>[
             LoopLabel(
-              '其他社区',
+              context.l10n.community_screenLoopLabel2,
               followsLabel: mining.isNotEmpty,
               tight: mining.isEmpty,
             ),
@@ -242,7 +259,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               ),
               child: LoopButton(
                 key: const ValueKey<String>('community-view-all-joined'),
-                label: '查看全部已加入的社区',
+                label: context.l10n.community_screenCommunityViewAllJoinedLabel,
                 block: true,
                 onPressed: () => _open('/community/discover?membership=joined'),
               ),
@@ -306,8 +323,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       // never drawn.
       onTap: () => _open('/community/profile?id=${community.communityId}'),
       semanticLabel:
-          '${community.name}，$members'
-          '${accent == null ? '' : '，$accent'}',
+          '${community.name}${LoopL10n.current.common_listSeparator}$members'
+          '${accent == null ? '' : '${LoopL10n.current.common_listSeparator}$accent'}',
     );
   }
 }

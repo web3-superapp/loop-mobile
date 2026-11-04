@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -114,7 +115,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
-      title: '价格提醒',
+      title: context.l10n.common_priceAlerts,
       onBack: widget.onBack,
       actions: <Widget>[
         // The prototype's 新建 was a `.topbar .seg` text pill; decision 0087
@@ -125,7 +126,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         LoopIconButton(
           key: const ValueKey<String>('alerts-create-action'),
           icon: 'plus',
-          label: '新建',
+          label: context.l10n.marketAlerts_screenAlertsCreateActionLabel,
           framed: true,
           onPressed: blocked || state.busy
               ? null
@@ -144,14 +145,19 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       subtitle: !state.isReady
           ? null
           : focusLabel != null
-          ? '$focusLabel · ${armed.length} 个提醒正在监听 · 触发一次即停'
+          ? context.l10n.marketAlerts_screenAlertsScreenSubtitle(
+              armed.length,
+              focusLabel,
+            )
           : state.page!.nextCursor != null
-          ? '已载入 ${state.items.length} 条提醒 · 触发一次即停'
-          : '${armed.length} 个提醒正在监听 · 触发一次即停',
+          ? context.l10n.marketAlerts_screenAlertsScreenSubtitle2(
+              state.items.length,
+            )
+          : context.l10n.marketAlerts_screenAlertsScreenSubtitle3(armed.length),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('alerts-capability-block'),
-              title: '价格提醒当前不可用',
+              title: context.l10n.marketAlerts_screenAlertsCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'ALERTS_RUNTIME_UNAVAILABLE',
             )
@@ -162,8 +168,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             keyPrefix: 'alerts',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '还没有价格提醒',
-            emptyReason: '设一个目标价，价格到了会在通知里告诉你。',
+            emptyMessage: context.l10n.marketAlerts_screenEmptyMessage,
+            emptyReason: context.l10n.marketAlerts_screenEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -173,33 +179,41 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             LoopOfflineState(
               cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('alerts-command-offline'),
-              pausedActions: const <String>['新建提醒', '修改提醒', '删除提醒'],
+              pausedActions: <String>[
+                context.l10n.marketAlerts_screenLoopOfflineState,
+                context.l10n.marketAlerts_screenLoopOfflineState2,
+                context.l10n.marketAlerts_screenLoopOfflineState3,
+              ],
               onRetry: () => unawaited(controller.reload()),
             )
           else if (LoopChainCommandPermission.covers(state.failureKind))
             LoopChainCommandPermission(
               blockKey: 'alerts-command-permission',
               failureKind: state.failureKind,
-              title: '当前账号无权修改价格提醒',
+              title: context.l10n.marketAlerts_screenTitle,
               onOpenSecurity: () => _open('/profile/security'),
             )
           else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('alerts-command-error'),
-              title: '提醒没有更新',
+              title: context.l10n.marketAlerts_screenAlertsCommandErrorTitle,
               reason: loopChainFailureReason(state.failureKind),
               onRetry: () => unawaited(controller.reload()),
             ),
-          const LoopLabel('已设提醒'),
+          LoopLabel(context.l10n.marketAlerts_screenLoopLabel),
           if (visible.isEmpty)
             LoopEmptyState(
               key: const ValueKey<String>('alerts-empty'),
               illustration: LoopIllustration.history,
-              title: focusLabel == null ? '还没有价格提醒' : '$focusLabel 还没有提醒',
-              message: '设一个目标价，价格到了会在通知里告诉你。',
+              title: focusLabel == null
+                  ? context.l10n.marketAlerts_screenEmptyMessage
+                  : context.l10n.marketAlerts_screenAlertsEmptyTitle(
+                      focusLabel,
+                    ),
+              message: context.l10n.marketAlerts_screenEmptyReason,
               action: LoopButton(
                 key: const ValueKey<String>('alerts-empty-create'),
-                label: '新建提醒',
+                label: context.l10n.marketAlerts_screenLoopOfflineState,
                 onPressed: () => unawaited(
                   _openEditor(controller, presetAssetId: focusAssetId),
                 ),
@@ -221,7 +235,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           if (state.appendFailed && !state.loadingMore)
             LoopInlineUnavailable(
               key: const ValueKey<String>('alerts-more-failed'),
-              message: '下一页提醒没有读到',
+              message: context.l10n.marketAlerts_screenAlertsMoreFailedMessage,
               onRetry: () => unawaited(controller.loadMore()),
             )
           else if (state.page?.nextCursor case final String cursor) ...<Widget>[
@@ -237,9 +251,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 rows: 2,
               ),
           ] else if (visible.isNotEmpty)
-            const LoopFootnote(
+            LoopFootnote(
               key: ValueKey<String>('alerts-end'),
-              text: '没有更多提醒',
+              text: context.l10n.marketAlerts_screenAlertsEndText,
             ),
           // The narrowed list says so, and says where the rest went. Without
           // this the page looks like the whole list with rows missing.
@@ -248,29 +262,32 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               child: LoopButton(
                 key: const ValueKey<String>('alerts-show-every-asset'),
-                label: '查看全部资产的提醒',
+                label:
+                    context.l10n.marketAlerts_screenAlertsShowEveryAssetLabel,
                 block: true,
                 onPressed: () => setState(() => _showEveryAsset = true),
               ),
             ),
-          const LoopLabel('触发历史'),
+          LoopLabel(context.l10n.marketAlerts_screenLoopLabel2),
           _AlertNotificationFeed(
             alertIds: focusAssetId == null
                 ? null
                 : <String>{for (final alert in visible) alert.alertId},
           ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('alerts-push-notice'),
-            title: '推送尚不可用',
-            body: '推送还没有开放，提醒只出现在应用内的通知列表里。只有最新价格会触发提醒。',
+            title: context.l10n.marketAlerts_screenAlertsPushNoticeTitle,
+            body: context.l10n.marketAlerts_screenAlertsPushNoticeBody,
             tone: LoopNoticeTone.warn,
           ),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('alerts-notification-settings'),
-                title: '通知设置',
-                subtitle: '关闭价格提醒类别后仍会记录事件，但不会生成通知',
+                title: context.l10n.common_notificationSettings,
+                subtitle: context
+                    .l10n
+                    .marketAlerts_screenAlertsNotificationSettingsSubtitle,
                 onTap: () => _open('/profile/notifications'),
               ),
             ],
@@ -317,19 +334,26 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           '${alert.displayName} ${alert.condition.label} '
           '${loopGroupedFigure(alert.thresholdText)}',
       subtitle: <String>[
-        if (highlighted) '通知已记录这次触发',
+        if (highlighted) LoopL10n.current.marketAlerts_screenLoopRecordRow,
         alert.state.label,
-        if (distance != null) '距目标 ${loopFormatPercent(distance)}',
+        if (distance != null)
+          LoopL10n.current.marketAlerts_screenLoopRecordRow2(
+            loopFormatPercent(distance),
+          ),
         if (alert.lastEvaluatedAt == null)
-          '评估器还没有看过这条'
+          LoopL10n.current.marketAlerts_screenLoopRecordRow3
         else
-          '评估于 ${loopRelativeTime(alert.lastEvaluatedAt!)}',
+          LoopL10n.current.marketAlerts_screenLoopRecordRow4(
+            loopRelativeTime(alert.lastEvaluatedAt!),
+          ),
       ].join(' · '),
       // Four facts do not fit one line: 「距目标 -5....」 cut a number in the
       // middle of its decimals.
       subtitleMaxLines: 2,
       trailingBadge: LoopBadge(
-        highlighted ? '本次触发' : alert.state.label,
+        highlighted
+            ? LoopL10n.current.marketAlerts_screenLoopBadge
+            : alert.state.label,
         kind: switch (alert.state) {
           LoopAlertState.active => LoopBadgeKind.up,
           LoopAlertState.triggered => LoopBadgeKind.mining,
@@ -406,7 +430,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     if (applied) {
       LoopToast.show(
         context,
-        message: result.delete ? '提醒已删除' : '提醒已保存',
+        message: result.delete
+            ? LoopL10n.current.marketAlerts_screenMessage
+            : LoopL10n.current.marketAlerts_screenMessage2,
         kind: LoopToastKind.ok,
       );
     }
@@ -476,13 +502,14 @@ final class _AlertAssetChoice {
 /// column read as four buttons rather than one choice. They are one segmented
 /// control now, and the sentence under it says which comparison the chosen
 /// one makes — 到达 is `≥` / `≤`, 突破 is strict.
-String alertConditionExplanation(LoopAlertCondition condition) =>
-    switch (condition) {
-      LoopAlertCondition.above => '突破：价格必须高于阈值（> 阈值）才触发，正好等于阈值不算。',
-      LoopAlertCondition.atOrAbove => '到达：价格达到或高于阈值（≥ 阈值）就触发。',
-      LoopAlertCondition.below => '突破：价格必须低于阈值（< 阈值）才触发，正好等于阈值不算。',
-      LoopAlertCondition.atOrBelow => '到达：价格达到或低于阈值（≤ 阈值）就触发。',
-    };
+String alertConditionExplanation(
+  LoopAlertCondition condition,
+) => switch (condition) {
+  LoopAlertCondition.above => LoopL10n.current.marketAlerts_screenAbove,
+  LoopAlertCondition.atOrAbove => LoopL10n.current.marketAlerts_screenAtOrAbove,
+  LoopAlertCondition.below => LoopL10n.current.marketAlerts_screenBelow,
+  LoopAlertCondition.atOrBelow => LoopL10n.current.marketAlerts_screenAtOrBelow,
+};
 
 class _AlertEditorSheet extends ConsumerStatefulWidget {
   const _AlertEditorSheet({
@@ -532,7 +559,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
   void _submit() {
     final choice = _choice;
     if (choice == null) {
-      setState(() => _error = '先选择要监听的资产。');
+      setState(() => _error = LoopL10n.current.marketAlerts_screenError);
       return;
     }
     final draft = LoopAlertDraft(
@@ -545,9 +572,9 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
     if (invalid != null) {
       setState(() {
         _error = switch (invalid) {
-          'assetId' => '这个资产不能用于价格提醒，请换一个。',
-          'threshold' => '阈值必须是正的十进制数字，最多 18 位小数。',
-          _ => '过期时间必须在未来。',
+          'assetId' => LoopL10n.current.marketAlerts_screenSetState,
+          'threshold' => LoopL10n.current.marketAlerts_screenSetState2,
+          _ => LoopL10n.current.marketAlerts_screenSetState3,
         };
       });
       return;
@@ -581,28 +608,34 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('删除这个提醒？'),
+          LoopSheetHeading(
+            LoopL10n.current.marketAlerts_screenLoopSheetHeading,
+          ),
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('alert-delete-confirm-body'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '删除之后不会再监听这个价格',
-                body: '已经触发过的记录留在触发历史里，不会被删掉。',
+                title: LoopL10n
+                    .current
+                    .marketAlerts_screenAlertDeleteConfirmBodyTitle,
+                body: LoopL10n
+                    .current
+                    .marketAlerts_screenAlertDeleteConfirmBodyBody,
                 margin: EdgeInsets.fromLTRB(0, 0, 0, 12),
               ),
               LoopButtonPair(
                 children: <Widget>[
                   LoopButton(
-                    label: '不删除',
+                    label: LoopL10n.current.marketAlerts_screenLabel,
                     onPressed: () => Navigator.of(sheetContext).pop(false),
                   ),
                   LoopButton(
                     key: const ValueKey<String>('alert-delete-confirm-yes'),
-                    label: '删除',
+                    label: LoopL10n.current.common_delete,
                     primary: true,
                     onPressed: () => Navigator.of(sheetContext).pop(true),
                   ),
@@ -625,16 +658,20 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSheetHeading(existing == null ? '新建价格提醒' : '编辑价格提醒'),
+        LoopSheetHeading(
+          existing == null
+              ? context.l10n.marketAlerts_screenLoopSheetHeading2
+              : context.l10n.marketAlerts_screenS,
+        ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const LoopLabel('资产'),
+            LoopLabel(context.l10n.common_assets),
             if (choice == null)
               LoopButton(
                 key: const ValueKey<String>('alert-asset-pick'),
-                label: '从自选里选择资产',
+                label: context.l10n.marketAlerts_screenAlertAssetPickLabel,
                 block: true,
                 onPressed: () => unawaited(_pickAsset()),
               )
@@ -651,20 +688,25 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
                     ),
                     title:
                         choice.symbol ?? loopTruncatedAssetId(choice.assetId),
-                    subtitle: choice.name ?? '这个资产的名称暂时读不到',
+                    subtitle:
+                        choice.name ??
+                        context.l10n.marketAlerts_screenAlertAssetRowSubtitle,
                     // An existing alert is bound to its asset: the contract has
                     // no way to move one, so this row is a fact, not a control.
                     onTap: existing == null
                         ? () => unawaited(_pickAsset())
                         : null,
                     trailingBadge: existing == null
-                        ? const LoopBadge('可更换')
-                        : const LoopBadge('不可更换', kind: LoopBadgeKind.mute),
+                        ? LoopBadge(context.l10n.marketAlerts_screenLoopBadge2)
+                        : LoopBadge(
+                            context.l10n.marketAlerts_screenLoopBadge3,
+                            kind: LoopBadgeKind.mute,
+                          ),
                   ),
                 ],
               ),
             const SizedBox(height: 12),
-            const LoopLabel('触发条件'),
+            LoopLabel(context.l10n.marketAlerts_screenLoopLabel3),
             // `.segs`: one row, four segments — the same control the prototype
             // uses everywhere a choice is exclusive.
             SingleChildScrollView(
@@ -706,9 +748,9 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
-              decoration: const InputDecoration(
-                labelText: '阈值（USD）',
-                hintText: '例如 800.5',
+              decoration: InputDecoration(
+                labelText: context.l10n.marketAlerts_screenLabelText,
+                hintText: context.l10n.marketAlerts_screenHintText,
               ),
             ),
             if (_error != null) ...<Widget>[
@@ -723,12 +765,12 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
             LoopButtonPair(
               children: <Widget>[
                 LoopButton(
-                  label: '取消',
+                  label: context.l10n.common_cancel,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 LoopButton(
                   key: const ValueKey<String>('alert-editor-submit'),
-                  label: '保存',
+                  label: context.l10n.common_save,
                   primary: true,
                   onPressed: _submit,
                 ),
@@ -744,7 +786,7 @@ class _AlertEditorSheetState extends ConsumerState<_AlertEditorSheet> {
                 child: TextButton(
                   key: const ValueKey<String>('alert-editor-delete'),
                   onPressed: () => unawaited(_confirmDelete()),
-                  child: const Text('删除这个提醒'),
+                  child: Text(context.l10n.marketAlerts_screenText),
                 ),
               ),
             ],
@@ -789,7 +831,7 @@ class _AlertAssetPickerSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('选择资产'),
+        LoopSheetHeading(context.l10n.marketAlerts_screenLoopSheetHeading3),
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -799,17 +841,20 @@ class _AlertAssetPickerSheetState
                 keyPrefix: 'alert-asset-picker',
                 phase: state.phase,
                 failureKind: state.failureKind,
-                emptyMessage: '自选列表还没有读到',
+                emptyMessage: context.l10n.marketAlerts_screenEmptyMessage2,
                 onRetry: () => unawaited(
                   ref.read(watchlistEditorControllerProvider.notifier).reload(),
                 ),
               )
             else if (items.isEmpty)
-              const LoopEmptyState(
+              LoopEmptyState(
                 key: ValueKey<String>('alert-asset-picker-empty'),
                 illustration: LoopIllustration.history,
-                title: '自选里还没有资产',
-                message: '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。',
+                title:
+                    context.l10n.marketAlerts_screenAlertAssetPickerEmptyTitle,
+                message: context
+                    .l10n
+                    .marketAlerts_screenAlertAssetPickerEmptyMessage,
                 compact: true,
               )
             else
@@ -830,7 +875,9 @@ class _AlertAssetPickerSheetState
                       title:
                           item.asset?.symbol ??
                           loopTruncatedAssetId(item.assetId),
-                      subtitle: item.asset?.name ?? '这个资产的名称暂时读不到',
+                      subtitle:
+                          item.asset?.name ??
+                          context.l10n.marketAlerts_screenAlertAssetRowSubtitle,
                       onTap: () => Navigator.of(context).pop(
                         _AlertAssetChoice(
                           assetId: item.assetId,
@@ -883,7 +930,7 @@ class _AlertNotificationFeedState
         phase: state.phase,
         failureKind: state.failureKind,
         rows: 2,
-        emptyMessage: '还没有触发记录',
+        emptyMessage: context.l10n.marketAlerts_screenEmptyMessage3,
         onRetry: () => unawaited(
           ref.read(notificationFeedControllerProvider.notifier).reload(),
         ),
@@ -897,11 +944,11 @@ class _AlertNotificationFeedState
               .toList(growable: false);
     final more = feed.nextCursor != null;
     if (entries.isEmpty && !more) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('alerts-feed-empty'),
         illustration: LoopIllustration.history,
-        title: '还没有触发记录',
-        message: '提醒触发后会在这里留下一条记录，标注出处和时间。',
+        title: context.l10n.marketAlerts_screenEmptyMessage3,
+        message: context.l10n.marketAlerts_screenAlertsFeedEmptyMessage,
         compact: true,
       );
     }
@@ -909,11 +956,11 @@ class _AlertNotificationFeedState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (entries.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('alerts-feed-empty-page'),
             illustration: LoopIllustration.history,
-            title: '这一页没有价格提醒的记录',
-            message: '后面还有记录，继续往下滑。',
+            title: context.l10n.marketAlerts_screenAlertsFeedEmptyPageTitle,
+            message: context.l10n.marketAlerts_screenAlertsFeedEmptyPageMessage,
             compact: true,
           )
         else
@@ -928,7 +975,9 @@ class _AlertNotificationFeedState
                   title: _feedTitle(entry),
                   subtitle: _feedDetail(entry),
                   subtitleMaxLines: 2,
-                  trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
+                  trailingBadge: entry.isUnread
+                      ? LoopBadge(context.l10n.common_unread)
+                      : null,
                   onTap: entry.isUnread
                       ? () => unawaited(
                           ref
@@ -959,7 +1008,8 @@ class _AlertNotificationFeedState
           else if (state.failureKind != null)
             LoopInlineUnavailable(
               key: const ValueKey<String>('alerts-feed-more-failed'),
-              message: '下一页触发记录没有读到',
+              message:
+                  context.l10n.marketAlerts_screenAlertsFeedMoreFailedMessage,
               onRetry: () => unawaited(
                 ref
                     .read(notificationFeedControllerProvider.notifier)
@@ -967,15 +1017,17 @@ class _AlertNotificationFeedState
               ),
             ),
         ] else
-          const LoopFootnote(
+          LoopFootnote(
             key: ValueKey<String>('alerts-feed-end'),
-            text: '没有更多触发记录',
+            text: context.l10n.marketAlerts_screenAlertsFeedEndText,
           ),
         // The push reason is the notice below this block, printed once: the
         // footer used to carry the same sentence two lines above it.
         LoopFootnote(
           key: const ValueKey<String>('alerts-feed-unread'),
-          text: '未读 ${feed.unreadCount} 条',
+          text: context.l10n.marketAlerts_screenAlertsFeedUnreadText(
+            feed.unreadCount,
+          ),
         ),
       ],
     );
@@ -987,9 +1039,9 @@ String _feedTitle(LoopNotificationEntry entry) {
   final threshold = entry.payload['threshold'];
   final observed = entry.payload['observedValue'];
   if (symbol == null || threshold == null || observed == null) {
-    return '价格提醒已触发';
+    return LoopL10n.current.market_tokenIf;
   }
-  return '$symbol 触发 $threshold（观察值 $observed）';
+  return LoopL10n.current.market_tokenIf2(observed, symbol, threshold);
 }
 
 String _feedDetail(LoopNotificationEntry entry) {
@@ -1010,6 +1062,7 @@ String _feedDetail(LoopNotificationEntry entry) {
   final provenance = loopNotificationSourceLabel(source);
   return <String>[
     ?provenance,
-    if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
+    if (observedAt != null)
+      LoopL10n.current.community_aiBuild2(loopRelativeTime(observedAt)),
   ].join(' · ');
 }

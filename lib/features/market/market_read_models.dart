@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // market · GET /v2/market/overview
@@ -147,8 +148,8 @@ final class MarketTrendingRules {
   final String ordering;
 
   String get orderingLabel => switch (ordering) {
-    'dexscreener_volume_h24_desc' => '按 DexScreener 24h 成交量排序',
-    _ => '排序规则 $ordering',
+    'dexscreener_volume_h24_desc' => LoopL10n.current.market_readModelsSwitch,
+    _ => LoopL10n.current.market_readModelsSwitch2(ordering),
   };
 }
 
@@ -293,24 +294,72 @@ String marketSecurityFactText(MarketSecurityFact fact) {
       ? whenTrue
       : (isFalse ? whenFalse : '${fact.fact} = ${fact.value}');
   return switch (fact.fact) {
-    'openSource' => yesNo('合约已验证开源', '合约未验证开源'),
-    'proxy' => yesNo('是代理合约', '不是代理合约'),
-    'mintable' => yesNo('检测到 mint 函数', '未检测到 mint 函数'),
-    'ownershipTakeBack' => yesNo('检测到所有权可收回', '未检测到所有权可收回'),
-    'ownerChangeBalance' => yesNo('所有者可改动余额', '所有者不可改动余额'),
-    'hiddenOwner' => yesNo('检测到隐藏所有者', '未检测到隐藏所有者'),
-    'selfDestruct' => yesNo('检测到自毁函数', '未检测到自毁函数'),
-    'externalCall' => yesNo('检测到外部调用', '未检测到外部调用'),
-    'honeypot' => yesNo('检测到蜜罐特征', '未检测到蜜罐特征'),
-    'transferPausable' => yesNo('转账可被暂停', '转账不可被暂停'),
-    'blacklist' => yesNo('检测到黑名单函数', '未检测到黑名单函数'),
-    'whitelist' => yesNo('检测到白名单函数', '未检测到白名单函数'),
-    'antiWhale' => yesNo('检测到持仓上限', '未检测到持仓上限'),
-    'tradingCooldown' => yesNo('检测到交易冷却', '未检测到交易冷却'),
-    'cannotSellAll' => yesNo('不能一次卖出全部', '可以一次卖出全部'),
-    'listedOnDex' => yesNo('已在 DEX 上架', '未在 DEX 上架'),
-    'buyTax' => '买入税 ${fact.value}',
-    'sellTax' => '卖出税 ${fact.value}',
+    'openSource' => yesNo(
+      LoopL10n.current.market_readModelsYesNo,
+      LoopL10n.current.market_readModelsYesNo2,
+    ),
+    'proxy' => yesNo(
+      LoopL10n.current.market_readModelsYesNo3,
+      LoopL10n.current.market_readModelsYesNo4,
+    ),
+    'mintable' => yesNo(
+      LoopL10n.current.market_readModelsYesNo5,
+      LoopL10n.current.market_readModelsYesNo6,
+    ),
+    'ownershipTakeBack' => yesNo(
+      LoopL10n.current.market_readModelsYesNo7,
+      LoopL10n.current.market_readModelsYesNo8,
+    ),
+    'ownerChangeBalance' => yesNo(
+      LoopL10n.current.market_readModelsYesNo9,
+      LoopL10n.current.market_readModelsYesNo10,
+    ),
+    'hiddenOwner' => yesNo(
+      LoopL10n.current.market_readModelsYesNo11,
+      LoopL10n.current.market_readModelsYesNo12,
+    ),
+    'selfDestruct' => yesNo(
+      LoopL10n.current.market_readModelsYesNo13,
+      LoopL10n.current.market_readModelsYesNo14,
+    ),
+    'externalCall' => yesNo(
+      LoopL10n.current.market_readModelsYesNo15,
+      LoopL10n.current.market_readModelsYesNo16,
+    ),
+    'honeypot' => yesNo(
+      LoopL10n.current.market_readModelsYesNo17,
+      LoopL10n.current.market_readModelsYesNo18,
+    ),
+    'transferPausable' => yesNo(
+      LoopL10n.current.market_readModelsYesNo19,
+      LoopL10n.current.market_readModelsYesNo20,
+    ),
+    'blacklist' => yesNo(
+      LoopL10n.current.market_readModelsYesNo21,
+      LoopL10n.current.market_readModelsYesNo22,
+    ),
+    'whitelist' => yesNo(
+      LoopL10n.current.market_readModelsYesNo23,
+      LoopL10n.current.market_readModelsYesNo24,
+    ),
+    'antiWhale' => yesNo(
+      LoopL10n.current.market_readModelsYesNo25,
+      LoopL10n.current.market_readModelsYesNo26,
+    ),
+    'tradingCooldown' => yesNo(
+      LoopL10n.current.market_readModelsYesNo27,
+      LoopL10n.current.market_readModelsYesNo28,
+    ),
+    'cannotSellAll' => yesNo(
+      LoopL10n.current.market_readModelsYesNo29,
+      LoopL10n.current.market_readModelsYesNo30,
+    ),
+    'listedOnDex' => yesNo(
+      LoopL10n.current.market_readModelsYesNo31,
+      LoopL10n.current.market_readModelsYesNo32,
+    ),
+    'buyTax' => LoopL10n.current.market_readModelsSwitch3(fact.value),
+    'sellTax' => LoopL10n.current.market_readModelsSwitch4(fact.value),
     _ => '${fact.fact} = ${fact.value}',
   };
 }
@@ -416,7 +465,8 @@ String marketAssetIdentityLabel(MarketAssetIdentity identity) =>
 /// The phrase every surface leads with when nothing could describe the
 /// contract. It says what happened to the read, not what the address is: an
 /// address LOOP cannot read is not an address that was judged.
-const String marketAssetUnavailableLead = '这个地址暂时读不到';
+String get marketAssetUnavailableLead =>
+    LoopL10n.current.market_readModelsMarketAssetUnavailableLead;
 
 /// For a surface whose heading is already the address: the lead, then the
 /// server's own reason for having no answer.
@@ -675,9 +725,9 @@ final class MarketCandlesUnavailable extends MarketCandleBlock {
 
 /// zh-CN copy for a candle `labelKey`. Unknown keys keep a neutral sentence.
 String marketCandleLabelText(String? labelKey) => switch (labelKey) {
-  'market.candles.onChainSwapAggregate' => '按成交价折算',
+  'market.candles.onChainSwapAggregate' => LoopL10n.current.market_fomoDerived,
   null => '',
-  _ => '来源标注 $labelKey',
+  _ => LoopL10n.current.market_readModelsSwitch5(labelKey),
 };
 
 /// zh-CN attribution for a candle series: who answered, and which pool was
@@ -688,10 +738,14 @@ String marketCandleSourcePoolText(
   LoopFactSource source,
   LoopCandlePool pool,
 ) => switch (pool.origin) {
-  LoopCandlePoolOrigin.registry =>
-    '来源 ${loopFactSourceLabel(source)} · 池 ${loopTruncatedAddress(pool.address)}',
-  LoopCandlePoolOrigin.provider =>
-    '主池来自 ${loopFactSourceLabel(source)} · 未登记池 ${loopTruncatedAddress(pool.address)}',
+  LoopCandlePoolOrigin.registry => LoopL10n.current.market_readModelsRegistry(
+    loopFactSourceLabel(source),
+    loopTruncatedAddress(pool.address),
+  ),
+  LoopCandlePoolOrigin.provider => LoopL10n.current.market_readModelsProvider(
+    loopFactSourceLabel(source),
+    loopTruncatedAddress(pool.address),
+  ),
 };
 
 @immutable
@@ -962,14 +1016,18 @@ final class MarketNewPairsPage {
 
 /// The three lists 情报 · 行情 offers beside 自选.
 enum MarketCategory {
-  major('major', '主流'),
-  meme('meme', 'MEME'),
-  community('community', '社区代币');
+  major('major'),
+  meme('meme'),
+  community('community');
 
-  const MarketCategory(this.wireName, this.label);
+  const MarketCategory(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    MarketCategory.major => LoopL10n.current.market_readModelsMajor,
+    MarketCategory.meme => 'MEME',
+    MarketCategory.community => LoopL10n.current.market_readModelsCommunity,
+  };
 
   static MarketCategory? tryParse(String value) {
     for (final category in values) {
@@ -1089,10 +1147,11 @@ final class MarketCategoryRules {
   final String ordering;
 
   String get orderingLabel => switch (ordering) {
-    'dexscreener_market_cap_desc' => '按 DexScreener 市值从高到低',
-    'dexscreener_price_change_h24_desc' => '按 DexScreener 24h 涨跌从高到低',
-    'dexscreener_volume_h24_desc' => '按 DexScreener 24h 成交额从高到低',
-    _ => '排序规则 $ordering',
+    'dexscreener_market_cap_desc' => LoopL10n.current.market_readModelsSwitch6,
+    'dexscreener_price_change_h24_desc' =>
+      LoopL10n.current.market_readModelsSwitch7,
+    'dexscreener_volume_h24_desc' => LoopL10n.current.market_readModelsSwitch8,
+    _ => LoopL10n.current.market_readModelsSwitch2(ordering),
   };
 }
 

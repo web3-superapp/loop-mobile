@@ -749,6 +749,7 @@ class LoopFactLine extends StatelessWidget {
   const LoopFactLine({
     required this.label,
     required this.fact,
+    this.id,
     super.key,
     this.formatter,
     this.now,
@@ -756,6 +757,10 @@ class LoopFactLine extends StatelessWidget {
   });
 
   final String label;
+
+  /// A stable id for the keys (decision 0281: a key never carries copy).
+  /// Without it the key falls back to [label].
+  final String? id;
   final LoopFact fact;
 
   /// Formats the exact value. Defaults to grouped decimal text.
@@ -768,7 +773,7 @@ class LoopFactLine extends StatelessWidget {
     final value = fact.value;
     if (value == null) {
       return Padding(
-        key: ValueKey<String>('fact-$label-unavailable'),
+        key: ValueKey<String>('fact-${id ?? label}-unavailable'),
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,7 +791,7 @@ class LoopFactLine extends StatelessWidget {
     }
     final marker = loopFactQualityMarker(fact.quality);
     return Padding(
-      key: ValueKey<String>('fact-$label'),
+      key: ValueKey<String>('fact-${id ?? label}'),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,7 +826,7 @@ class LoopFactLine extends StatelessWidget {
                   ],
                 ),
                 fallback: LoopInfoTrigger(
-                  key: ValueKey<String>('fact-$label-provenance'),
+                  key: ValueKey<String>('fact-${id ?? label}-provenance'),
                   semanticsLabel: context.l10n.chain_widgetsSemanticsLabel(
                     loopFactProvenance(fact, now: now),
                   ),

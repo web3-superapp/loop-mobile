@@ -247,7 +247,10 @@ void main() {
         balances: <LoopWalletBalances>[s5Balances()],
       );
       expect(_text(tester, 'meme-balance-figure'), memeBalanceUnread);
-      expect(_text(tester, 'meme-balance-reason'), contains('钱包余额暂时读不到'));
+      expect(
+        _text(tester, 'meme-balance-reason'),
+        contains("Wallet balance can't be loaded"),
+      );
     });
 
     testWidgets('a partial net worth is not a total', (tester) async {
@@ -272,7 +275,10 @@ void main() {
         ],
       );
       expect(_text(tester, 'meme-balance-figure'), memeBalanceUnread);
-      expect(_text(tester, 'meme-balance-reason'), contains('2 项资产暂无价格'));
+      expect(
+        _text(tester, 'meme-balance-reason'),
+        contains('2 assets have no price yet'),
+      );
     });
 
     testWidgets('a valued total draws the figure and the 24h change', (
@@ -285,7 +291,7 @@ void main() {
       expect(figure.style!.fontWeight, LoopType.figureXl.fontWeight);
       expect(
         _text(tester, 'meme-balance-change'),
-        startsWith(r'+$302.52 · 24 小时'),
+        startsWith(r'+$302.52 · 24h'),
       );
       final change = tester.widget<Text>(_key('meme-balance-change'));
       final span = change.textSpan! as TextSpan;
@@ -313,7 +319,7 @@ void main() {
           .where((button) => button.primary)
           .toList();
       expect(primaries, hasLength(1));
-      expect(primaries.single.label, '充值');
+      expect(primaries.single.label, 'Top up');
       await tester.tap(_key('meme-top-up'));
       await tester.pumpAndSettle();
       expect(opened.last, '/wallet/receive?walletId=$memeWalletId');
@@ -329,7 +335,7 @@ void main() {
       testWidgets('a ${kind.name} board draws nothing', (tester) async {
         await _pump(tester, board: _Board(failure: kind));
         expect(_key('meme-best-trades'), findsNothing);
-        expect(find.text('每周最佳交易'), findsNothing);
+        expect(find.text('Best trades this week'), findsNothing);
         // The list below is untouched.
         expect(_key('meme-row-$memeTokenIdA'), findsOneWidget);
       });
@@ -349,7 +355,7 @@ void main() {
         ),
       );
       final opened = await _pump(tester, board: board);
-      expect(find.text('每周最佳交易'), findsOneWidget);
+      expect(find.text('Best trades this week'), findsOneWidget);
       for (var rank = 1; rank <= 10; rank += 1) {
         expect(_key('meme-best-trade-$rank'), findsOneWidget);
       }
@@ -380,10 +386,10 @@ void main() {
         board: _Board(board: _boardOf(2)),
       );
       final bar = tester.widget<MarketTabBar>(_key('meme-home-tabs'));
-      expect(bar.labels, <String>['自选', '代币', '已毕业']);
+      expect(bar.labels, <String>['Watchlist', 'Token', 'Graduated']);
       expect(bar.selectedIndex, 1);
       final chips = tester.widget<LoopSegBar>(_key('meme-list-chips'));
-      expect(chips.labels, <String>['新发', '热门', '快打满', '已毕业']);
+      expect(chips.labels, <String>['New', 'Hot', 'Almost full', 'Graduated']);
       double top(String key) => tester.getTopLeft(_key(key)).dy;
       expect(top('meme-balance'), lessThan(top('meme-best-trades')));
       expect(top('meme-best-trades'), lessThan(top('meme-home-tabs')));
@@ -396,10 +402,10 @@ void main() {
     ) async {
       var graduated = 0;
       final opened = await _pump(tester, onOpenGraduated: () => graduated++);
-      await tester.tap(_key('meme-home-tab-自选'));
+      await tester.tap(_key('meme-home-tab-watchlist'));
       await tester.pumpAndSettle();
       expect(opened.last, '/market');
-      await tester.tap(_key('meme-home-tab-已毕业'));
+      await tester.tap(_key('meme-home-tab-graduated'));
       await tester.pumpAndSettle();
       expect(graduated, 1);
     });
@@ -408,7 +414,7 @@ void main() {
       tester,
     ) async {
       await _pump(tester);
-      await tester.tap(_key('meme-home-tab-已毕业'));
+      await tester.tap(_key('meme-home-tab-graduated'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<MarketTabBar>(_key('meme-home-tabs')).selectedIndex,

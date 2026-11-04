@@ -31,6 +31,7 @@ import 'package:loop_mobile/features/social/public_profile/user_profile_screen.d
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -322,7 +323,7 @@ class _CommunityProfileScreenState
         archetype: LoopPageArchetype.record,
         // Decision 0127: the bar says where the reader is; the name is the
         // header's, once, at 22.
-        title: '社区',
+        title: context.l10n.common_community,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         primary: community == null
@@ -353,7 +354,9 @@ class _CommunityProfileScreenState
                   'community-profile-capability-unavailable',
                 ),
                 capability: capability,
-                title: '社区模块当前不可用',
+                title: context
+                    .l10n
+                    .community_discoverCommunityDiscoverCapabilityUnavailableTitle,
               )
             : null,
         onRefresh: id == null
@@ -369,11 +372,15 @@ class _CommunityProfileScreenState
               )
             : null,
         sections: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '社区档案'),
+          CommunityPreviewNotice(
+            mode: mode,
+            resource: context.l10n.community_profileResource,
+          ),
           if (id == null)
-            const LoopInlineUnavailable(
+            LoopInlineUnavailable(
               key: ValueKey<String>('community-profile-missing-id'),
-              message: '缺少社区标识',
+              message:
+                  context.l10n.community_manageCommunityManageMissingIdMessage,
               maxLines: 2,
             )
           else if (detail == null)
@@ -381,12 +388,12 @@ class _CommunityProfileScreenState
               phase: state.phase,
               failureKind: state.failureKind,
               skeleton: LoopSkeletonType.detail,
-              emptyMessage: '找不到这个社区',
-              emptyReason: '它可能已被移除，或对当前账号不可见。',
-              empty: const LoopEmptyState(
+              emptyMessage: context.l10n.community_manageEmptyMessage,
+              emptyReason: context.l10n.community_manageEmptyReason,
+              empty: LoopEmptyState(
                 key: ValueKey<String>('community-profile-not-found'),
                 illustration: LoopIllustration.holders,
-                title: '找不到这个社区',
+                title: context.l10n.community_manageEmptyMessage,
               ),
               onRetry: () => unawaited(controller.reload()),
             )
@@ -436,7 +443,7 @@ class _CommunityProfileScreenState
                 key: const ValueKey<String>('community-profile-action-failure'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '上一次操作没有完成',
+                title: context.l10n.common_lastActionIncomplete,
                 body: communityFailureReason(state.failureKind),
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
@@ -462,7 +469,7 @@ class _CommunityProfileScreenState
             _AiEntryRow(
               onOpen: () => widget.onOpenAi?.call(detail.community.communityId),
             ),
-            const LoopLabel('挖矿'),
+            LoopLabel(context.l10n.common_mining),
             CommunityMiningSummaryCard(
               fact: detail.miningPower,
               account: _accountReading(detail, miningReads),
@@ -473,7 +480,9 @@ class _CommunityProfileScreenState
             ),
             // What the community published about itself — only when it has.
             if (_hasAnnouncements(detail)) ...<Widget>[
-              const LoopLabel('公告'),
+              LoopLabel(
+                context.l10n.community_manageCommunityManageAnnouncementsTitle,
+              ),
               CommunityAnnouncementBoard(
                 feed: detail.announcements,
                 onOpen: detail.chat.isAvailable || detail.chat.isSyncing
@@ -482,7 +491,7 @@ class _CommunityProfileScreenState
               ),
             ],
             if (_hasLinks(detail)) ...<Widget>[
-              const LoopLabel('官方链接'),
+              LoopLabel(context.l10n.community_profileLoopLabel),
               CommunityOfficialLinkRow(
                 links: detail.officialLinks,
                 onCopy: _copyLink,
@@ -576,7 +585,11 @@ class _CommunityProfileScreenState
 
   /// LOOP opens no browser here, so the pill hands over the address itself.
   Future<void> _copyLink(CommunityOfficialLink link) async {
-    await LoopCopy.text(context, link.url, message: '已复制 ${link.label} 链接');
+    await LoopCopy.text(
+      context,
+      link.url,
+      message: LoopL10n.current.community_profileMessage(link.label),
+    );
   }
 
   /// 修改资料后重新提交: the edit, and then the new review.
@@ -598,9 +611,9 @@ class _CommunityProfileScreenState
     if (edit == null || !mounted) return;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '重新提交社区申请？',
-      body: '资料会先保存，然后重新进入审核队列。短链接与验证状态不能在这里修改。',
-      confirmLabel: '提交',
+      title: LoopL10n.current.community_profileTitle,
+      body: LoopL10n.current.community_profileBody,
+      confirmLabel: LoopL10n.current.common_submit,
       sheetKey: 'community-resubmit-confirm-sheet',
     );
     if (!confirmed) return;
@@ -619,7 +632,10 @@ class _CommunityProfileScreenState
     final failure = await controller.resubmitApplication();
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: '已重新提交，状态回到审核中');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.community_profileMessage2,
+      );
       return;
     }
     LoopToast.show(
@@ -648,16 +664,27 @@ class _CommunityProfileScreenState
   }) async {
     final confirmed = await confirmCommunityAction(
       context,
-      title: joined ? '加入这个社区？' : '退出这个社区？',
-      body: joined ? '加入后你会出现在成员列表里。' : '退出后你将从成员目录中移除。',
-      confirmLabel: joined ? '加入' : '退出',
+      title: joined
+          ? LoopL10n.current.community_profileTitle2
+          : LoopL10n.current.community_profileTitle3,
+      body: joined
+          ? LoopL10n.current.community_profileBody2
+          : LoopL10n.current.community_profileBody3,
+      confirmLabel: joined
+          ? LoopL10n.current.community_profileConfirmLabel
+          : LoopL10n.current.common_exit,
       sheetKey: 'community-membership-sheet',
     );
     if (!confirmed) return;
     final failure = await controller.setMembership(joined: joined);
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: joined ? '已加入社区' : '已退出社区');
+      LoopToast.show(
+        context,
+        message: joined
+            ? LoopL10n.current.community_profileMessage3
+            : LoopL10n.current.community_profileMessage4,
+      );
       return;
     }
     LoopToast.show(
@@ -694,11 +721,17 @@ class _CommunityHeader extends StatelessWidget {
         : null;
     final symbol = community.boundAsset?.symbol;
     final counts = <InlineSpan>[
-      TextSpan(text: '${communityCountLabel(community.memberCount)} 成员'),
+      TextSpan(
+        text: context.l10n.community_homeCommunityMemberCountLabel(
+          communityCountLabel(community.memberCount),
+        ),
+      ),
       if (observed != null) ...<InlineSpan>[
         const TextSpan(text: ' · '),
         TextSpan(
-          text: '${communityCountLabel(observed.count)} 在线',
+          text: context.l10n.community_profileText(
+            communityCountLabel(observed.count),
+          ),
           style: LoopTypography.withWeight(
             LoopType.figureSm,
             FontWeight.w700,
@@ -795,7 +828,9 @@ class _CommunityHeader extends StatelessWidget {
                       // tapped; the line is the control, 44 tall.
                       Semantics(
                         button: true,
-                        label: '在线人数是怎么数的',
+                        label: context
+                            .l10n
+                            .community_profileCommunityOnlineCountExplainLabel,
                         child: GestureDetector(
                           key: const ValueKey<String>(
                             'community-online-count-explain',
@@ -899,24 +934,28 @@ class _CommunityKeys extends ConsumerWidget {
       voiceKey = LoopRoundKey(
         key: const ValueKey<String>('community-profile-open-voice'),
         icon: 'voice',
-        label: '直播中',
-        semanticLabel: '进入语音房 · 进行中',
+        label: context.l10n.community_profileCommunityProfileOpenVoiceLabel,
+        semanticLabel: context
+            .l10n
+            .community_profileCommunityProfileOpenVoiceSemanticLabel,
         onPressed: onOpenVoiceRoom,
       );
     } else if (mayOpenRoom) {
       voiceKey = LoopRoundKey(
         key: const ValueKey<String>('community-profile-create-voice-room'),
         icon: 'voice',
-        label: '开语音房',
-        semanticLabel: '开启语音房',
+        label:
+            context.l10n.community_profileCommunityProfileCreateVoiceRoomLabel,
+        semanticLabel:
+            context.l10n.community_manageCommunityManageVoiceOpenTitle,
         onPressed: opening ? null : onCreateVoiceRoom,
       );
     } else {
       voiceKey = LoopRoundKey(
         key: const ValueKey<String>('community-profile-open-voice'),
         icon: 'voice-off',
-        label: '语音房',
-        semanticLabel: '语音房',
+        label: context.l10n.common_voiceRooms,
+        semanticLabel: context.l10n.common_voiceRooms,
         onPressed: null,
         onBlocked: voiceReason == null ? null : () => say(voiceReason),
       );
@@ -927,7 +966,7 @@ class _CommunityKeys extends ConsumerWidget {
         LoopRoundKey(
           key: const ValueKey<String>('community-profile-open-chat'),
           icon: 'chat',
-          label: '进群聊',
+          label: context.l10n.community_profileCommunityProfileOpenChatLabel,
           tone: LoopRoundKeyTone.primary,
           onPressed: chatOpenable ? onOpenChat : null,
           onBlocked: chatReason == null ? null : () => say(chatReason),
@@ -936,8 +975,9 @@ class _CommunityKeys extends ConsumerWidget {
         LoopRoundKey(
           key: const ValueKey<String>('community-profile-share'),
           icon: 'share',
-          label: '分享',
-          semanticLabel: '分享社区',
+          label: context.l10n.common_share,
+          semanticLabel:
+              context.l10n.community_profileCommunityProfileShareSemanticLabel,
           onPressed: onShare,
         ),
         // Decision 0113: only the owner and admins are offered the
@@ -946,7 +986,7 @@ class _CommunityKeys extends ConsumerWidget {
           LoopRoundKey(
             key: const ValueKey<String>('community-profile-manage'),
             icon: 'settings',
-            label: '管理',
+            label: context.l10n.community_membersLabel,
             onPressed: onManage,
           ),
       ],
@@ -975,7 +1015,9 @@ class _JoinBar extends StatelessWidget {
       // form button (decision 0183); busy, it takes no tap.
       child: LoopButton(
         key: const ValueKey<String>('community-join-action'),
-        label: busy ? '正在加入…' : '加入社区',
+        label: busy
+            ? context.l10n.common_joining
+            : context.l10n.community_profileCommunityJoinActionLabel,
         primary: true,
         block: true,
         onPressed: busy ? null : onJoin,
@@ -1009,7 +1051,9 @@ class _MembersSection extends ConsumerWidget {
           children: <Widget>[
             Expanded(
               child: LoopLabel(
-                '成员 ${communityCountLabel(community.memberCount)}',
+                context.l10n.community_profileLoopLabel2(
+                  communityCountLabel(community.memberCount),
+                ),
               ),
             ),
             Padding(
@@ -1053,15 +1097,16 @@ class _AiEntryRow extends ConsumerWidget {
       child: LoopPersonRow(
         key: const ValueKey<String>('community-profile-open-ai'),
         leading: const LoopEntryIcon('ai'),
-        title: '社区 AI',
+        title: context.l10n.community_profileCommunityProfileOpenAiTitle,
         subtitle: capability.isAvailable
-            ? '问问这个社区的事'
+            ? context.l10n.community_profileCommunityProfileOpenAiSubtitle
             : communicationUnavailableReason(
                 capability.reasonCode ?? _aiDeferred,
               ),
         chevron: true,
         onTap: onOpen,
-        semanticLabel: '社区 AI',
+        semanticLabel:
+            context.l10n.community_profileCommunityProfileOpenAiTitle,
       ),
     );
   }
@@ -1109,7 +1154,7 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('绑定代币'),
+        LoopLabel(context.l10n.community_manageCommunityManageBoundAssetTitle),
         LoopQuoteRow(
           key: const ValueKey<String>('community-bound-asset'),
           leading: LoopTokenLogo(
@@ -1137,7 +1182,7 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
               : null,
           onTap: open == null ? null : () => open(widget.assetKey),
           semanticLabel: priced
-              ? '$symbol，${loopFormatUsd(price.value!)}'
+              ? '$symbol${LoopL10n.current.common_listSeparator}${loopFormatUsd(price.value!)}'
               : symbol,
         ),
       ],
@@ -1164,12 +1209,12 @@ class _MembershipFooter extends StatelessWidget {
     final membership = detail.viewer.membership;
     if (membership == null) return const SizedBox.shrink();
     if (membership.status == CommunityMemberStatus.banned) {
-      return const LoopNotice(
+      return LoopNotice(
         key: ValueKey<String>('community-membership-banned'),
         icon: 'shield',
         tone: LoopNoticeTone.danger,
-        title: '你已被该社区封禁',
-        body: '社区聊天与治理不可用',
+        title: context.l10n.community_profileCommunityMembershipBannedTitle,
+        body: context.l10n.community_profileCommunityMembershipBannedBody,
         margin: EdgeInsets.fromLTRB(LoopSpacing.page, 22, LoopSpacing.page, 0),
       );
     }
@@ -1181,9 +1226,11 @@ class _MembershipFooter extends StatelessWidget {
         child: LoopPersonRow(
           key: const ValueKey<String>('community-owner-cannot-leave'),
           leading: const LoopEntryIcon('close'),
-          title: '退出社区',
+          title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
           titleColor: LoopColors.text3,
-          semanticLabel: '退出社区，所有者不可用',
+          semanticLabel: context
+              .l10n
+              .community_profileCommunityOwnerCannotLeaveSemanticLabel,
         ),
       );
     }
@@ -1192,10 +1239,11 @@ class _MembershipFooter extends StatelessWidget {
       child: LoopPersonRow(
         key: const ValueKey<String>('community-leave-action'),
         leading: const LoopEntryIcon('close'),
-        title: '退出社区',
+        title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
         titleColor: LoopColors.fall,
         onTap: busy ? null : onLeave,
-        semanticLabel: '退出社区',
+        semanticLabel:
+            context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
       ),
     );
   }
@@ -1205,8 +1253,12 @@ class _MembershipFooter extends StatelessWidget {
 /// opens the live room, anything else is the sentence the reader is shown
 /// instead, on the record page.
 String? voiceRoomArrivalOutcome(CommunityDetail detail) {
-  if (!detail.viewer.hasJoined) return '加入社区后才能进入语音房';
-  if (!detail.voice.isLive) return '语音房已结束';
+  if (!detail.viewer.hasJoined) {
+    return LoopL10n.current.community_profileVoiceRoomArrivalOutcome;
+  }
+  if (!detail.voice.isLive) {
+    return LoopL10n.current.community_profileVoiceRoomArrivalOutcome2;
+  }
   return null;
 }
 
@@ -1232,7 +1284,8 @@ bool communityChatIsBelow(BuildContext context, String communityId) {
 /// own next step; everything else keeps the shared copy for its kind.
 String communityResubmitFailureText(CommunityFailureKind failure) =>
     switch (failure) {
-      CommunityFailureKind.stale => '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。',
-      CommunityFailureKind.boundAssetTaken => '这个代币已被其他社区绑定，请先在资料里换一个代币再重新提交。',
+      CommunityFailureKind.stale => LoopL10n.current.community_profileStale,
+      CommunityFailureKind.boundAssetTaken =>
+        LoopL10n.current.community_profileBoundAssetTaken,
       _ => communityFailureReason(failure),
     };

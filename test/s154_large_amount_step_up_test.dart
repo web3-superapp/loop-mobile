@@ -1009,7 +1009,10 @@ void main() {
   });
 
   test('every exit speaks the step-up in the same words', () {
-    expect(memeSignReasonText(loopStepUpFailedCode), '身份验证没有通过，没有发生任何变化。');
+    expect(
+      memeSignReasonText(loopStepUpFailedCode),
+      'Identity check failed. Nothing changed.',
+    );
     expect(loopStepUpStopped('wallet_outcome_unknown'), isFalse);
     expect(loopStepUpFailureKind('privy_broadcast_rejected'), isNull);
     expect(LoopStepUpVerdict.notRequired.allowsSigning, isTrue);

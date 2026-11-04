@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Server-enforced Watchlist limits (`docs/frontend-v2-wallet-api.md` §9).
 const int watchlistMaxGroups = 20;
@@ -22,7 +23,7 @@ final RegExp _forbiddenDisplayCodePoint = RegExp(
 /// this constant is the whole of it — one key, looked up by equality, created
 /// in the same replacement that adds the first asset.
 const String watchlistDefaultGroupKey = 'default';
-const String watchlistDefaultGroupName = '自选';
+String get watchlistDefaultGroupName => LoopL10n.current.common_watchlist;
 
 /// Why a proposed group name cannot be written.
 ///
@@ -68,17 +69,23 @@ WatchlistGroupNameIssue? watchlistGroupNameIssue(
 }
 
 /// The sentence the input field and the editor both show for one issue.
-String watchlistGroupNameIssueText(WatchlistGroupNameIssue issue) =>
-    switch (issue) {
-      WatchlistGroupNameIssue.empty => '分组名称不能为空。',
-      WatchlistGroupNameIssue.tooLong =>
-        '分组名称最多 $watchlistMaxNameCodePoints 个字符。',
-      WatchlistGroupNameIssue.invalidCharacters => '分组名称里有不能使用的隐藏字符。',
-      WatchlistGroupNameIssue.duplicate => '已经有同名分组了。',
-      WatchlistGroupNameIssue.groupLimitReached =>
-        '分组已达上限 $watchlistMaxGroups 个，先移除一个再新建。',
-      WatchlistGroupNameIssue.notEditable => '自选还没有读取成功，暂时不能新建分组。',
-    };
+String watchlistGroupNameIssueText(
+  WatchlistGroupNameIssue issue,
+) => switch (issue) {
+  WatchlistGroupNameIssue.empty => LoopL10n.current.marketWatchlist_modelsEmpty,
+  WatchlistGroupNameIssue.tooLong =>
+    LoopL10n.current.marketWatchlist_modelsTooLong(watchlistMaxNameCodePoints),
+  WatchlistGroupNameIssue.invalidCharacters =>
+    LoopL10n.current.marketWatchlist_modelsInvalidCharacters,
+  WatchlistGroupNameIssue.duplicate =>
+    LoopL10n.current.marketWatchlist_modelsDuplicate,
+  WatchlistGroupNameIssue.groupLimitReached =>
+    LoopL10n.current.marketWatchlist_modelsGroupLimitReached(
+      watchlistMaxGroups,
+    ),
+  WatchlistGroupNameIssue.notEditable =>
+    LoopL10n.current.marketWatchlist_modelsNotEditable,
+};
 
 /// The first free `g<n>` key, so a new group never collides with an existing
 /// one. The key is an identity the owner never sees; the name is what they

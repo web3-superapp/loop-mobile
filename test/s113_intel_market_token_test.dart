@@ -466,14 +466,19 @@ void main() {
         const MarketScreen(embedded: true),
         market: market,
       );
-      for (final label in <String>['自选', '主流', 'MEME', '社区代币']) {
+      for (final label in <String>[
+        'Watchlist',
+        'Majors',
+        'MEME',
+        'Community tokens',
+      ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
       // 新币 and 聪明钱 are hidden by the switch (decision 0118).
-      expect(find.text('新币'), findsNothing);
+      expect(find.text('New pairs'), findsNothing);
       expect(_key('market-smart-money-entry'), findsNothing);
 
-      await tester.tap(find.text('主流'));
+      await tester.tap(find.text('Majors'));
       await tester.pumpAndSettle();
       expect(market.categoryRequests.first, (
         MarketCategory.major,
@@ -484,7 +489,7 @@ void main() {
       expect(row, findsOneWidget);
       expect(tester.getSize(row).height, marketFomoRowHeight);
       expect(find.text('WBNB'), findsWidgets);
-      expect(find.text('市值 \$1.6B'), findsOneWidget);
+      expect(find.text('Market cap \$1.6B'), findsOneWidget);
       expect(find.text('\$747.39'), findsOneWidget);
       // Decision 0247 (E 稿): the move sits in the trend column, signed,
       // with no pill ground.
@@ -500,7 +505,7 @@ void main() {
       // The unpriced row says why, inline, and prints no price.
       final unpriced = _key('market-asset-$s5UsdtAssetId');
       expect(
-        find.descendant(of: unpriced, matching: find.text('暂无报价')),
+        find.descendant(of: unpriced, matching: find.text('No quote yet')),
         findsOneWidget,
       );
       expect(
@@ -546,6 +551,8 @@ void main() {
         const MarketScreen(embedded: true),
         market: market,
       );
+      await tester.ensureVisible(find.text('MEME'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('MEME'));
       await tester.pumpAndSettle();
       expect(market.categoryRequests.map((request) => request.$3), <String?>[
@@ -574,7 +581,7 @@ void main() {
         const MarketScreen(embedded: true),
         market: market,
       );
-      expect(find.text('还没有自选'), findsOneWidget);
+      expect(find.text('No watchlist yet'), findsOneWidget);
       await tester.tap(_key('market-watchlist-browse-major'));
       await tester.pumpAndSettle();
       expect(market.categoryRequests.single.$1, MarketCategory.major);
@@ -657,7 +664,7 @@ void main() {
           ),
         ],
       );
-      expect(find.text('新币'), findsOneWidget);
+      expect(find.text('New pairs'), findsOneWidget);
       expect(_key('market-smart-money-entry'), findsOneWidget);
     });
   });
@@ -885,11 +892,11 @@ void main() {
       expect(chart.showMovingAverages, isTrue);
       expect(chart.showVolume, isFalse);
 
-      // 15分 / 1时 / 4时 / 1日 / 1周.
-      for (final label in <String>['15分', '1时', '4时', '1日', '1周']) {
+      // 15m / 1h / 4h / 1D / 1W.
+      for (final label in <String>['15m', '1h', '4h', '1D', '1W']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
-      await tester.tap(find.text('4时'));
+      await tester.tap(find.text('4h'));
       await tester.pumpAndSettle();
       expect(market.intervals.last, LoopCandleInterval.fourHours);
     });
@@ -942,19 +949,19 @@ void main() {
         const TokenDetailScreen(assetId: s5WbnbAssetId),
         market: market,
       );
-      for (final label in <String>['持有者', '动态', '关于']) {
+      for (final label in <String>['holders', 'activity', 'about']) {
         expect(_key('token-tab-$label'), findsOneWidget, reason: label);
       }
       expect(_key('token-holders-distribution-unavailable'), findsOneWidget);
 
-      await tester.tap(_key('token-tab-动态'));
+      await tester.tap(_key('token-tab-activity'));
       await tester.pumpAndSettle();
       expect(market.tradeCursors, <String?>[null, 'trades.two']);
-      expect(find.text('买入'), findsWidgets);
-      expect(find.text('卖出'), findsWidgets);
+      expect(find.text('Buy'), findsWidgets);
+      expect(find.text('Sell'), findsWidgets);
       expect(_key('token-trades-end'), findsOneWidget);
 
-      await tester.tap(_key('token-tab-关于'));
+      await tester.tap(_key('token-tab-about'));
       await tester.pumpAndSettle();
       expect(_key('token-pool-contract-facts'), findsOneWidget);
       expect(_key('token-swap-unavailable'), findsOneWidget);
