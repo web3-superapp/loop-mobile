@@ -521,7 +521,7 @@ void main() {
         ),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
     });
   });
 

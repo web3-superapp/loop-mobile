@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum LoopTone { neutral, positive, market, conversation, warning, danger }
 
@@ -494,14 +495,18 @@ class _LinePainter extends CustomPainter {
 /// at a glance, while `Current loop stage: discuss` was an English sentence
 /// with a Dart identifier in it, read out to an owner using a zh-CN reader.
 enum LoopStage {
-  discover('DISCOVER', '发现'),
-  discuss('DISCUSS', '讨论'),
-  execute('EXECUTE', '执行');
+  discover('DISCOVER'),
+  discuss('DISCUSS'),
+  execute('EXECUTE');
 
-  const LoopStage(this.chip, this.label);
+  const LoopStage(this.chip);
 
   final String chip;
-  final String label;
+  String get label => switch (this) {
+    LoopStage.discover => LoopL10n.current.widgets_uiDiscover,
+    LoopStage.discuss => LoopL10n.current.widgets_uiDiscuss,
+    LoopStage.execute => LoopL10n.current.widgets_uiExecute,
+  };
 }
 
 class LoopContextRail extends StatelessWidget {
@@ -522,7 +527,7 @@ class LoopContextRail extends StatelessWidget {
     // and the container carries the whole sentence.
     return Semantics(
       container: true,
-      label: '当前阶段：${stage.label}',
+      label: context.l10n.widgets_uiLabel(stage.label),
       excludeSemantics: true,
       child: Container(
         padding: EdgeInsets.all(compact ? 5 : 7),

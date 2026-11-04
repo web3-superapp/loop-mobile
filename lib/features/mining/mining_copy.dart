@@ -1,5 +1,6 @@
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Copy shared by the mining pages, where one sentence would otherwise be
 /// written three times and drift in two of them.
@@ -15,20 +16,27 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 ///
 /// It is a conclusion, not a page title: 算力明细 heads its card with the
 /// expression and prints the total it produces underneath.
-const String miningPowerFormulaHeading = '持有量 × 权重';
+String get miningPowerFormulaHeading =>
+    LoopL10n.current.mining_copyMiningPowerFormulaHeading;
 
 /// The three conditions a holding must meet before it counts (loop-api
 /// decision 0183, 需求方 2026-10-25), one fact per sentence. Every page that
 /// says a holding produces power points at these instead of restating them.
-const String miningConditionVerified = '社区币只在绑定它的社区已通过审核时计入，待审核社区不算。';
-const String miningConditionMember = '你须加入该社区，按在社区的时段计入；没有绑定社区的币不要求。';
-const String miningConditionEmbedded = '按绑定到 LOOP 账号的钱包持仓计算。';
+String get miningConditionVerified =>
+    LoopL10n.current.mining_copyMiningConditionVerified;
+String get miningConditionMember =>
+    LoopL10n.current.mining_copyMiningConditionMember;
+String get miningConditionEmbedded =>
+    LoopL10n.current.mining_copyMiningConditionEmbedded;
 
 /// The conditions in one line, for a caption with room for a single clause.
-const String miningConditionsShort = '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。';
+String get miningConditionsShort =>
+    LoopL10n.current.mining_copyMiningConditionsShort;
 
-const String miningSnapshotSectionLabel = '算力快照';
-const String miningSnapshotRowTitle = '最近一次算力快照';
+String get miningSnapshotSectionLabel =>
+    LoopL10n.current.mining_copyMiningSnapshotSectionLabel;
+String get miningSnapshotRowTitle =>
+    LoopL10n.current.mining_copyMiningSnapshotRowTitle;
 
 /// What a page may state when a snapshot reference came back unavailable.
 ///
@@ -40,12 +48,12 @@ const String miningSnapshotRowTitle = '最近一次算力快照';
 /// whether a snapshot exists. Saying "there is none" there would turn a
 /// failed read into a fact.
 String miningSnapshotAbsenceMessage(String reasonCode) => switch (reasonCode) {
-  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有算力快照',
+  'MINING_SNAPSHOT_NOT_AVAILABLE' => LoopL10n.current.mining_copySwitch,
   // Runs happened and none of them completed, so there is nothing to fall
   // back to. It is a different sentence from 「还没有算过」 (Decision 0057).
-  'MINING_SNAPSHOT_INCOMPLETE' => '还没有完整的算力快照',
-  'MINING_SNAPSHOT_PENDING' => '下一次算力快照之后显示',
-  _ => '暂时读不到算力快照',
+  'MINING_SNAPSHOT_INCOMPLETE' => LoopL10n.current.mining_copySwitch2,
+  'MINING_SNAPSHOT_PENDING' => LoopL10n.current.mining_copySwitch3,
+  _ => LoopL10n.current.mining_copySwitch4,
 };
 
 /// The second line under [miningSnapshotAbsenceMessage].
@@ -63,15 +71,15 @@ String miningSnapshotAbsenceReason(
 }) {
   if (reasonCode == 'MINING_SNAPSHOT_NOT_AVAILABLE' ||
       reasonCode == 'MINING_SNAPSHOT_PENDING') {
-    return '下一次算力快照之后，这里会显示区块与时间。';
+    return LoopL10n.current.mining_copyIf;
   }
   if (reasonCode == 'MINING_SNAPSHOT_INCOMPLETE') {
     final cause = attempt == null
         ? null
         : miningAttemptCause(attempt, symbols: symbols);
     return cause == null
-        ? '最近一次计算没有完成，没有可以回退的完整快照。'
-        : '最近一次计算没有完成（$cause），没有可以回退的完整快照。';
+        ? LoopL10n.current.mining_copyIf2
+        : LoopL10n.current.mining_copyS(cause);
   }
   return launchReasonCodeText(reasonCode);
 }
@@ -91,10 +99,12 @@ String miningUnreadInputText(
     assetId: input.assetId,
   );
   return switch (input.reasonCode) {
-    'MINING_PRICE_PAIR_NOT_FOUND' => '$label 暂时没有可用报价',
-    'MINING_PRICE_NOT_FRESH' => '$label 的参考价不够新',
-    'MINING_PRICE_PROXY_NOT_DECLARED' => '$label 的参考价来自未登记的代币',
-    _ => '$label 的参考价这次读不到',
+    'MINING_PRICE_PAIR_NOT_FOUND' => LoopL10n.current.mining_copySwitch5(label),
+    'MINING_PRICE_NOT_FRESH' => LoopL10n.current.mining_copySwitch6(label),
+    'MINING_PRICE_PROXY_NOT_DECLARED' => LoopL10n.current.mining_copySwitch7(
+      label,
+    ),
+    _ => LoopL10n.current.mining_copySwitch8(label),
   };
 }
 
@@ -113,15 +123,16 @@ String? miningAttemptCause(
     final named = attempt.unreadInputs
         .take(limit)
         .map((input) => miningUnreadInputText(input, symbols: symbols))
-        .join('、');
+        .join(LoopL10n.current.widgets_enumerationSeparator);
     final rest = attempt.unreadInputs.length - limit;
-    return rest > 0 ? '$named，另有 $rest 个资产' : named;
+    return rest > 0 ? LoopL10n.current.mining_copyIf3(named, rest) : named;
   }
   return switch (attempt.status) {
-    MiningSnapshotAttemptStatus.incomplete => '有资产的参考价这次读不到',
+    MiningSnapshotAttemptStatus.incomplete =>
+      LoopL10n.current.mining_copyIncomplete,
     MiningSnapshotAttemptStatus.invalidated =>
       attempt.reasonCode == 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE'
-          ? '那次快照的数据不完整'
+          ? LoopL10n.current.mining_copySwitch9
           : null,
     MiningSnapshotAttemptStatus.complete => null,
   };
@@ -142,11 +153,13 @@ String miningStaleLine({
   Map<String, String> symbols = const <String, String>{},
 }) {
   final tail = attempt != null && attempt.isInvalidated
-      ? '最近一次快照已作废'
-      : '最近一次快照未完成';
+      ? LoopL10n.current.mining_copyMiningStaleLine
+      : LoopL10n.current.mining_copyS2;
   final cause = attempt == null
       ? null
       : miningAttemptCause(attempt, symbols: symbols);
-  final head = '显示的是 $computedAtLabel 的算力快照';
-  return cause == null ? '$head · $tail' : '$head · $tail（$cause）';
+  final head = LoopL10n.current.mining_copyHead(computedAtLabel);
+  return cause == null
+      ? '$head · $tail'
+      : LoopL10n.current.mining_copyStaleWithCause(cause, head, tail);
 }

@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -33,7 +34,7 @@ Widget _miningCapabilityBlock(
   LoopCapabilityProjection capability,
 ) => LoopCapabilityPageBlock.of(
   key: ValueKey<String>(key),
-  title: '$subject当前不可用',
+  title: LoopL10n.current.mining_secondaryScreensTitle(subject),
   capability: capability,
 );
 
@@ -91,13 +92,17 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: community?.community.name ?? '社区挖矿面板',
+      title:
+          community?.community.name ??
+          context.l10n.mining_secondaryScreensMiningCommunityScreenTitle,
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('mining-community-rank-action'),
           icon: 'chart',
-          label: '查看排行榜',
+          label: context
+              .l10n
+              .mining_secondaryScreensMiningCommunityRankActionLabel,
           onPressed: widget.onOpenRank,
         ),
       ],
@@ -106,18 +111,23 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
         detail: <Widget>[
           MiningDetailRow(
             key: const ValueKey<String>('mining-community-reading'),
-            label: '社区排名',
+            label:
+                context.l10n.mining_secondaryScreensMiningCommunityReadingLabel,
             value: switch (community?.rank) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
+              MiningRankPositionSettled(:final position) =>
+                context.l10n.intel_rankBoardText4(position),
               _ => launchMissingFigure,
             },
             spoken: switch (community?.rank) {
-              MiningRankPositionSettled(:final position) => '第 $position 名',
+              MiningRankPositionSettled(:final position) =>
+                context.l10n.intel_rankBoardText4(position),
               MiningRankPositionUnavailable(:final reasonCode) =>
                 launchReasonCodeText(reasonCode),
-              null => '还没有读到',
+              null => context.l10n.mining_screenSpoken,
             },
-            trailingLabel: '参与人数',
+            trailingLabel: context
+                .l10n
+                .mining_secondaryScreensMiningCommunityReadingTrailingLabel,
             trailingValue: switch (community?.participants) {
               MiningParticipantsCount(:final count) => '$count',
               _ => launchMissingFigure,
@@ -128,7 +138,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       block: blocked
           ? _miningCapabilityBlock(
               'mining-community-capability-unavailable',
-              '社区挖矿面板',
+              context.l10n.mining_secondaryScreensMiningCommunityScreenTitle,
               capability,
             )
           : null,
@@ -139,8 +149,8 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到这个社区',
-            emptyReason: '社区可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.mining_secondaryScreensEmptyMessage,
+            emptyReason: context.l10n.mining_secondaryScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -149,37 +159,40 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             slug: 'community',
             snapshot: community.snapshot,
           ),
-          const LoopLabel('我的贡献'),
+          LoopLabel(context.l10n.mining_secondaryScreensLoopLabel),
           _MyContributionCard(community: community),
-          const LoopLabel('社区记录'),
+          LoopLabel(context.l10n.mining_secondaryScreensLoopLabel2),
           _CommunityRecords(community: community),
-          const LoopLabel('社区权重'),
+          LoopLabel(context.l10n.mining_secondaryScreensLoopLabel3),
           _WeightBlock(weight: community.weight),
-          const LoopLabel(miningSnapshotSectionLabel),
+          LoopLabel(miningSnapshotSectionLabel),
           _CommunitySnapshotBlock(snapshot: community.snapshot),
-          const LoopLabel('绑定资产'),
+          LoopLabel(context.l10n.mining_secondaryScreensLoopLabel4),
           LoopRecordGroup(
             key: const ValueKey<String>('mining-community-asset'),
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('mining-community-asset-row'),
-                title: '绑定资产',
+                title: context.l10n.mining_secondaryScreensLoopLabel4,
                 subtitle: community.community.boundAssetId == null
-                    ? '这个社区还没有绑定资产'
+                    ? context
+                          .l10n
+                          .mining_secondaryScreensMiningCommunityAssetRowSubtitle
                     : community.community.boundAssetId!,
                 trailing: community.community.boundAssetId == null
                     ? launchMissingFigure
-                    : '已绑定',
+                    : context
+                          .l10n
+                          .mining_secondaryScreensMiningCommunityAssetRowTrailing,
               ),
             ],
           ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('mining-community-notice'),
             icon: 'shield',
-            title: '权重由平台综合评定',
-            body:
-                '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。'
-                '持有人须加入该社区，持仓才计入算力。',
+            title:
+                context.l10n.mining_secondaryScreensMiningCommunityNoticeTitle,
+            body: context.l10n.mining_secondaryScreensMiningCommunityNoticeBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -217,19 +230,27 @@ class _WeightBlock extends StatelessWidget {
               rows: <LoopRecordRow>[
                 LoopRecordRow(
                   key: const ValueKey<String>('mining-community-weight-row'),
-                  title: '已授予权重',
-                  subtitle: '审核于 ${launchTimestampLabel(reviewedAt)}',
+                  title: context
+                      .l10n
+                      .mining_secondaryScreensMiningCommunityWeightRowTitle,
+                  subtitle: context.l10n
+                      .mining_secondaryScreensMiningCommunityWeightRowSubtitle(
+                        launchTimestampLabel(reviewedAt),
+                      ),
                   trailing: value,
                 ),
               ],
             ),
             LoopDisclosure(
               key: const ValueKey<String>('mining-community-weight-details'),
-              summary: '详情',
+              summary: context.l10n.common_details,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                 child: Text(
-                  '已生效的公式版本 $identifier',
+                  context.l10n
+                      .mining_secondaryScreensMiningCommunityWeightVersion(
+                        identifier,
+                      ),
                   key: const ValueKey<String>(
                     'mining-community-weight-version',
                   ),
@@ -248,14 +269,18 @@ class _WeightBlock extends StatelessWidget {
         LoopInlineUnavailable(
           key: const ValueKey<String>('mining-community-weight-pending'),
           icon: 'clock',
-          message: '权重审核中',
+          message: context
+              .l10n
+              .mining_secondaryScreensMiningCommunityWeightPendingMessage,
           detail: launchReasonCodeText(reasonCode),
           maxLines: 2,
           detailMaxLines: 4,
         ),
       MiningCommunityWeightPending(:final reasonCode) => LoopInlineUnavailable(
         key: const ValueKey<String>('mining-community-weight-not-applicable'),
-        message: '没有可审的权重',
+        message: context
+            .l10n
+            .mining_secondaryScreensMiningCommunityWeightNotApplicableMessage,
         detail: launchReasonCodeText(reasonCode),
         maxLines: 2,
         detailMaxLines: 4,
@@ -279,20 +304,26 @@ LoopFolioPrimary _communityHero(
   final (String heading, String caption) = switch (community?.communityPower) {
     MiningFigureValue(:final value) => (
       loopPowerFigure(value),
-      '成员在绑定资产上的算力之和，权重已经算在里面。',
+      LoopL10n.current.mining_secondaryScreensSwitch,
     ),
     MiningFigureUnavailable(:final reasonCode) => (
       launchMissingHeading,
       launchReasonCodeText(reasonCode),
     ),
-    null when phase == LaunchViewPhase.loading => ('正在读取', '社区总算力读到之后显示在这里。'),
-    null => (launchMissingHeading, '这一页还没有读到这个社区的算力。'),
+    null when phase == LaunchViewPhase.loading => (
+      LoopL10n.current.mining_screenHeading,
+      LoopL10n.current.mining_secondaryScreensSwitch2,
+    ),
+    null => (
+      launchMissingHeading,
+      LoopL10n.current.mining_secondaryScreensSwitch3,
+    ),
   };
   final reference = community?.community;
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: '社区算力',
+    kicker: LoopL10n.current.mining_secondaryScreensMiningCommunityLogoKicker,
     heading: heading,
     caption: caption,
     // The heading is a figure and the page title is the community's name, so
@@ -363,7 +394,10 @@ class _MyContributionCard extends StatelessWidget {
       ),
       child: Semantics(
         container: true,
-        label: '我的算力，$spokenContribution。社区权重，$spokenWeight',
+        label: context.l10n.mining_secondaryScreensLabel(
+          spokenContribution,
+          spokenWeight,
+        ),
         child: ExcludeSemantics(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -371,9 +405,19 @@ class _MyContributionCard extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Expanded(child: _cell('我的算力', contribution)),
+                  Expanded(
+                    child: _cell(
+                      context.l10n.mining_secondaryScreensCell,
+                      contribution,
+                    ),
+                  ),
                   const SizedBox(width: 14),
-                  Expanded(child: _cell('社区权重', weight)),
+                  Expanded(
+                    child: _cell(
+                      context.l10n.mining_secondaryScreensLoopLabel3,
+                      weight,
+                    ),
+                  ),
                 ],
               ),
               Padding(
@@ -381,7 +425,7 @@ class _MyContributionCard extends StatelessWidget {
                 child: Container(height: 1, color: LoopColors.line),
               ),
               Text(
-                '权重由平台审核结果授予，已经算在上面的算力里。',
+                context.l10n.mining_secondaryScreensSwitch4,
                 style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
@@ -420,11 +464,14 @@ class _CommunityRecords extends StatelessWidget {
       rows: <LoopRecordRow>[
         LoopRecordRow(
           key: const ValueKey<String>('mining-community-metric-participants'),
-          title: '参与挖矿的持有人',
+          title: context
+              .l10n
+              .mining_secondaryScreensMiningCommunityMetricParticipantsTitle,
           subtitle: switch (community.participants) {
             MiningParticipantsUnavailable(:final reasonCode) =>
               launchReasonCodeText(reasonCode),
-            MiningParticipantsCount() => '最近一次算力快照里算出了算力的成员',
+            MiningParticipantsCount() =>
+              context.l10n.mining_secondaryScreensMiningParticipantsCount,
           },
           subtitleMaxLines: 2,
           trailing: switch (community.participants) {
@@ -435,11 +482,14 @@ class _CommunityRecords extends StatelessWidget {
         ),
         LoopRecordRow(
           key: const ValueKey<String>('mining-community-metric-power'),
-          title: '社区总算力',
+          title: context
+              .l10n
+              .mining_secondaryScreensMiningCommunityMetricPowerTitle,
           // The folio heads this same figure and already carries its reason.
           subtitle: switch (community.communityPower) {
             MiningFigureUnavailable() => null,
-            MiningFigureValue() => '成员在绑定资产上的算力之和',
+            MiningFigureValue() =>
+              context.l10n.mining_secondaryScreensMiningFigureValue,
           },
           subtitleMaxLines: 2,
           trailing: switch (community.communityPower) {
@@ -482,10 +532,10 @@ class _CommunitySnapshotBlock extends StatelessWidget {
             LoopRecordRow(
               key: const ValueKey<String>('mining-community-snapshot-row'),
               title: miningSnapshotRowTitle,
-              subtitle:
-                  '区块 ${loopGroupedFigure(blockNumber)} · '
-                  '${launchTimestampLabel(computedAt)} · '
-                  '这是算出算力的时间',
+              subtitle: context.l10n.mining_screenMiningSnapshotComputed(
+                loopGroupedFigure(blockNumber),
+                launchTimestampLabel(computedAt),
+              ),
               subtitleMaxLines: 2,
             ),
           ],
@@ -558,28 +608,31 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         // The prototype's topbar says 挖矿规则 and its hero names the rule
         // (visual audit §I.7). Decision 0146: the asset track is weighted by
         // quantity, so the hero is 权重与算力规则, not 权重与价格保护.
-        title: '挖矿规则',
+        title: context.l10n.mining_secondaryScreensMiningRulesScreenTitle,
         onBack: widget.onBack,
         primary: LoopLedgerComposite(
           primary: LoopFolioPrimary(
             variant: LoopFolioVariant.quiet,
             archetype: LoopFolioArchetype.record,
-            kicker: '算力规则',
+            kicker: context.l10n.mining_secondaryScreensKicker,
             // The hero used to announce a draft over a page whose first section
             // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
             // said both that the rule was pending and that it was approved. The
             // sentence now follows whether a version has been approved, and the
             // big line shows the rule in force when there is one.
-            heading: '权重与算力规则',
+            heading: context.l10n.mining_secondaryScreensHeading,
             caption: switch ((approved, draft)) {
-              (null, null) => '还没有已批准的公式，也没有待批准的草案。',
-              (null, _) => '还没有已批准的公式。下面这条是等待批准的草案。',
-              (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
-              (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
+              (null, null) =>
+                context.l10n.mining_secondaryScreensLoopFolioPrimary,
+              (null, _) =>
+                context.l10n.mining_secondaryScreensLoopFolioPrimary2,
+              (_, null) =>
+                context.l10n.mining_secondaryScreensLoopFolioPrimary3,
+              (_, _) => context.l10n.mining_secondaryScreensLoopFolioPrimary4,
             },
             stamp: switch ((approved, draft)) {
-              (_?, _) => '已批准',
-              (null, _?) => '待批准',
+              (_?, _) => context.l10n.mining_modelsApproved,
+              (null, _?) => context.l10n.mining_modelsPendingApproval,
               (null, null) => null,
             },
             ring: false,
@@ -587,13 +640,16 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             squareBottom: true,
           ),
           detail: <Widget>[
-            Text('每日产出', style: LoopType.eyebrow),
+            Text(
+              context.l10n.mining_secondaryScreensIf,
+              style: LoopType.eyebrow,
+            ),
             const SizedBox(height: 8),
             Text.rich(
               TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
-                    text: '每日产出 ',
+                    text: context.l10n.mining_secondaryScreensText,
                     style: LoopTypography.withWeight(
                       LoopType.captionSm.copyWith(color: LoopColors.chalk),
                       FontWeight.w700,
@@ -617,7 +673,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         block: blocked
             ? _miningCapabilityBlock(
                 'mining-rules-capability-unavailable',
-                '挖矿规则',
+                context.l10n.mining_secondaryScreensMiningRulesScreenTitle,
                 capability,
               )
             : null,
@@ -628,12 +684,12 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               phase: state.phase,
               failureKind: state.failureKind,
               skeleton: LoopSkeletonType.detail,
-              emptyMessage: '没有读到规则',
-              emptyReason: '暂时读不到公式版本。',
+              emptyMessage: context.l10n.mining_secondaryScreensEmptyMessage2,
+              emptyReason: context.l10n.mining_secondaryScreensEmptyReason2,
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
-            const LoopLabel('已批准的版本'),
+            LoopLabel(context.l10n.mining_secondaryScreensLoopLabel5),
             // The version in force, said the way every other mining page says
             // it. Without one, the block keeps the server's own reason.
             switch (rules.baseline) {
@@ -641,7 +697,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                 formula: rules.baseline,
               ),
               MiningFormulaPending(:final reasonCode) => LaunchUnavailableCard(
-                label: '已批准的公式版本',
+                label: context.l10n.mining_secondaryScreensLabel2,
                 fact: LaunchUnavailable(reasonCode),
               ),
             },
@@ -655,22 +711,28 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             if (rules.approved?.scope.isBaseline ?? false)
               // Decision 0121: what a baseline means is in the ⓘ, not a
               // banner.
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: LoopProvenanceLine(
                   key: ValueKey<String>('mining-rules-baseline-notice'),
                   prefix: miningBaselineLabel,
-                  sources: <String>['LOOP 挖矿规则'],
+                  sources: <String>[
+                    context.l10n.mining_secondaryScreensLoopProvenanceLine,
+                  ],
                   detail: miningBaselineDetail,
                 ),
               ),
-            const LoopLabel('待批准的版本'),
+            LoopLabel(context.l10n.mining_secondaryScreensLoopLabel6),
             if (rules.pendingApproval.isEmpty)
-              const LoopEmptyState(
+              LoopEmptyState(
                 key: ValueKey<String>('mining-rules-no-pending'),
                 illustration: LoopIllustration.history,
-                title: '没有待批准的版本',
-                message: '目前没有草案版本。',
+                title: context
+                    .l10n
+                    .mining_secondaryScreensMiningRulesNoPendingTitle,
+                message: context
+                    .l10n
+                    .mining_secondaryScreensMiningRulesNoPendingMessage,
                 compact: true,
               )
             else
@@ -681,7 +743,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                   symbols: symbols,
                   live: live,
                 ),
-            const LoopLabel('邀请关系规则'),
+            LoopLabel(context.l10n.mining_secondaryScreensLoopLabel7),
             LoopRecordGroup(
               key: const ValueKey<String>('mining-rules-referral'),
               rows: <LoopRecordRow>[
@@ -696,9 +758,10 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                       '${rules.referral.levels[index].level}',
                     ),
                     title: 'L${rules.referral.levels[index].level}',
-                    subtitle:
-                        '生效于 '
-                        '${launchTimestampLabel(rules.referral.effectiveAt)}',
+                    subtitle: context.l10n
+                        .mining_secondaryScreensMiningRulesReferralLSubtitle(
+                          launchTimestampLabel(rules.referral.effectiveAt),
+                        ),
                     trailing: '${rules.referral.levels[index].boostPercent}%',
                     position: launchRowPosition(
                       index,
@@ -711,7 +774,9 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('mining-rules-open-referral'),
-                  label: '查看我的邀请关系',
+                  label: context
+                      .l10n
+                      .mining_secondaryScreensMiningRulesOpenReferralLabel,
                   onPressed: widget.onOpenReferral,
                 ),
               ],
@@ -721,11 +786,12 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             // sentence would be the same screen calling those numbers absent.
             // What the approved version is, the baseline notice already says.
             if (rules.approved == null)
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('mining-rules-notice'),
                 icon: 'shield',
-                title: '草案不是生效规则',
-                body: '待批准的版本不会参与任何计算。权重区间只有规则条目，没有数值；批准之后才会公布。',
+                title:
+                    context.l10n.mining_secondaryScreensMiningRulesNoticeTitle,
+                body: context.l10n.mining_secondaryScreensMiningRulesNoticeBody,
                 margin: EdgeInsets.fromLTRB(
                   LoopSpacing.page,
                   14,
@@ -770,7 +836,7 @@ class _FormulaVersionBlock extends StatelessWidget {
     final rows = <LoopRecordRow>[
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-expression'),
-        title: '算力公式',
+        title: context.l10n.mining_secondaryScreensTitle2,
         subtitle: miningRuleKeyText(version.expressionKey),
         trailingBadge: LoopBadge(
           miningFormulaStatusLabel(version.status),
@@ -782,7 +848,7 @@ class _FormulaVersionBlock extends StatelessWidget {
       ),
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-daily-output'),
-        title: '每日产出',
+        title: context.l10n.mining_secondaryScreensIf,
         // The expression itself is the composite strip's, stated once at the
         // top of the page; this row carries the budget the version pins.
         // The budget is published with its own status, so it is printed with
@@ -795,14 +861,16 @@ class _FormulaVersionBlock extends StatelessWidget {
         trailingCaption: version.dailyOutput == null
             ? null
             : !live
-            ? 'LOOP 代币上线后公布'
-            : (version.dailyOutput!.isPlaceholder ? '预估产量' : '当日产量'),
+            ? context.l10n.mining_secondaryScreensTrailingCaption
+            : (version.dailyOutput!.isPlaceholder
+                  ? context.l10n.mining_secondaryScreensTrailingCaption2
+                  : context.l10n.mining_secondaryScreensTrailingCaption3),
         position: LoopRowPosition.middle,
       ),
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-referral-boost'),
-        title: '邀请加成',
-        subtitle: '邀请加成只计入算力',
+        title: context.l10n.mining_secondaryScreensTitle3,
+        subtitle: context.l10n.mining_secondaryScreensSubtitle,
         trailingCaption: miningFormulaStatusLabel(version.referralBoostStatus),
         position: LoopRowPosition.last,
       ),
@@ -828,7 +896,7 @@ class _FormulaVersionBlock extends StatelessWidget {
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-weight-community'),
         leading: const LoopRowIcon(monogram: 'COMM'),
-        title: '经审核的社区币',
+        title: context.l10n.mining_secondaryScreensTitle4,
         subtitle: miningRuleKeyText(
           version.weightRange.community.descriptionKey,
         ),
@@ -858,14 +926,16 @@ class _FormulaVersionBlock extends StatelessWidget {
               // version is printed.
               if (version.scope.isBaseline) miningBaselineLabel,
               if (version.approvedAt != null)
-                '批准于 ${launchTimestampLabel(version.approvedAt!)}',
+                context.l10n.mining_secondaryScreensSwitch5(
+                  launchTimestampLabel(version.approvedAt!),
+                ),
             ].join(' · '),
             key: ValueKey<String>('$keyPrefix-status'),
             style: LoopType.captionSm,
           ),
         ),
         if (version.assetWeights.isNotEmpty) ...<Widget>[
-          const LoopLabel('资产权重'),
+          LoopLabel(context.l10n.mining_secondaryScreensLoopLabel8),
           LoopRecordGroup(
             key: ValueKey<String>('$keyPrefix-asset-weights'),
             rows: <LoopRecordRow>[
@@ -925,7 +995,7 @@ class _FormulaVersionBlock extends StatelessWidget {
                 child: Container(height: 1, color: LoopColors.line),
               ),
               Text(
-                '具体量化分值不公开，权重以平台综合评定结果为准。',
+                context.l10n.mining_secondaryScreensText2,
                 style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],

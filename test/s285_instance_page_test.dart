@@ -512,7 +512,7 @@ void main() {
       expect(_key('launch2-pool-trades-failed'), findsOneWidget);
       offline.answer = s285Value(s285SampleTrades());
       final before = offline.reads;
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(offline.reads, greaterThan(before));
       expect(_key('launch2-pool-trades-failed'), findsNothing);

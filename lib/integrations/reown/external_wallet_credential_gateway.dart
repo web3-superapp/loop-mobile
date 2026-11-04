@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/reown/reown_external_wallet_connector.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum ExternalWalletCredentialIntent { login, link }
 
@@ -41,7 +42,11 @@ class PrivyExternalWalletCredentialGateway
         (expectedPrivyUserId == null ||
             expectedPrivyUserId.isEmpty ||
             expectedPrivyUserId != expectedPrivyUserId.trim())) {
-      throw const PrivyGatewayException('缺少当前 Privy 账号，钱包未绑定。');
+      throw PrivyGatewayException(
+        LoopL10n
+            .current
+            .integrations_externalWalletCredentialGatewayPrivyGatewayException,
+      );
     }
 
     var messageRequested = false;
@@ -52,9 +57,11 @@ class PrivyExternalWalletCredentialGateway
       context: context,
       createMessage: (identity) async {
         if (messageRequested) {
-          throw const ExternalWalletConnectorException(
+          throw ExternalWalletConnectorException(
             ExternalWalletConnectorFailure.invalidResponse,
-            '钱包返回了重复的登录请求，请重新连接。',
+            LoopL10n
+                .current
+                .integrations_externalWalletCredentialGatewayExternalWalletConnectorException,
           );
         }
         messageRequested = true;
@@ -75,9 +82,11 @@ class PrivyExternalWalletCredentialGateway
         !_sameIdentity(identity, proof.identity) ||
         proof.message != message ||
         !ExternalWalletProtocol.isSignature(proof.signature)) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.invalidResponse,
-        '钱包返回的地址、消息或签名与本次登录请求不匹配。',
+        LoopL10n
+            .current
+            .integrations_externalWalletCredentialGatewayExternalWalletConnectorException2,
       );
     }
 

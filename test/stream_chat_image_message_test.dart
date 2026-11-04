@@ -159,8 +159,12 @@ void main() {
       for (final refusal in LoopChatImageRefusal.values) {
         final message = loopChatImageRefusalMessage(refusal);
         expect(message, isNotEmpty);
-        expect(message.contains('附件'), isFalse, reason: message);
-        expect(message.contains('图片'), isTrue, reason: message);
+        expect(
+          message.toLowerCase().contains('attachment'),
+          isFalse,
+          reason: message,
+        );
+        expect(message.contains('image'), isTrue, reason: message);
       }
       expect(
         loopChatImageRefusalMessage(LoopChatImageRefusal.tooLarge),
@@ -267,23 +271,31 @@ void main() {
         message: '',
         type: StreamChatNetworkErrorType.connectionError,
       );
-      expect(loopChatImageFailureMessage(offline), contains('离线'));
-      expect(loopChatImageFailureMessage(offline), contains('没有发出去'));
+      expect(loopChatImageFailureMessage(offline), contains('offline'));
+      expect(loopChatImageFailureMessage(offline), contains("wasn't sent"));
 
       final refused = StreamChatNetworkError.raw(
         code: 17,
         message: 'forbidden',
         statusCode: 403,
       );
-      expect(loopChatImageFailureMessage(refused), contains('服务端拒绝'));
-      expect(loopChatImageFailureMessage(refused), contains('没有发出去'));
+      expect(
+        loopChatImageFailureMessage(refused),
+        contains('The server rejected'),
+      );
+      expect(loopChatImageFailureMessage(refused), contains("wasn't sent"));
 
       expect(
         loopChatImageFailureMessage(Exception('boom')),
-        contains('没有上传成功'),
+        contains("didn't upload"),
       );
       for (final error in <Object>[offline, refused, Exception('boom')]) {
-        expect(loopChatImageFailureMessage(error).contains('附件'), isFalse);
+        expect(
+          loopChatImageFailureMessage(error)
+              .toLowerCase()
+              .contains('attachment'),
+          isFalse,
+        );
       }
     });
   });
@@ -342,8 +354,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('图片没有加载出来'), findsOneWidget);
-      expect(find.text('点按重试'), findsOneWidget);
+      expect(find.text('Image didn\'t load'), findsOneWidget);
+      expect(find.text('Tap to retry'), findsOneWidget);
       expect(find.textContaining('http'), findsNothing);
       expect(find.textContaining('cdn.example'), findsNothing);
 
@@ -384,7 +396,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(LoopChatImageViewer), findsOneWidget);
-      expect(find.text('第 1 张 / 共 3 张'), findsOneWidget);
+      expect(find.text('1 / 3'), findsOneWidget);
       expect(find.text('别人'), findsOneWidget);
 
       await tester.drag(
@@ -392,7 +404,7 @@ void main() {
         const Offset(-600, 0),
       );
       await tester.pumpAndSettle();
-      expect(find.text('第 2 张 / 共 3 张'), findsOneWidget);
+      expect(find.text('2 / 3'), findsOneWidget);
 
       // LOOP has proven neither a download nor a share capability, so the
       // viewer offers neither.

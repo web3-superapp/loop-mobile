@@ -1,0 +1,744 @@
+{
+  "integrations_chatCameraLoopChatCameraPermissionMessage": {
+    "en": "No camera access. Allow LOOP to use the camera in system settings, then try again.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_camera.dart:46",
+    "zh": "没有相机权限，去系统设置里允许 LOOP 使用相机后再试"
+  },
+  "integrations_chatCameraLoopChatCameraUnavailableMessage": {
+    "en": "The camera didn't take a photo, so nothing was added.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_camera.dart:51",
+    "zh": "相机没有拍成照片，这次没有加进来。"
+  },
+  "integrations_chatImageAttachmentsFailureMessage": {
+    "en": "Image didn't load",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_attachments.dart:60",
+    "zh": "图片没有加载出来"
+  },
+  "integrations_chatImageAttachmentsLoopChatImageViewerCounter": {
+    "en": "{page} / {total}",
+    "placeholders": {
+      "page": {
+        "example": "page + 1",
+        "type": "Object"
+      },
+      "total": {
+        "example": "total",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/communication/loop_chat_image_attachments.dart:403",
+    "zh": "第 {page} 张 / 共 {total} 张"
+  },
+  "integrations_chatImageAttachmentsRetryMessage": {
+    "en": "Tap to retry",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_attachments.dart:61",
+    "zh": "点按重试"
+  },
+  "integrations_chatImageComposerIf": {
+    "en": "This device is offline. The image wasn't uploaded and the message wasn't sent.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_composer.dart:141",
+    "zh": "设备当前离线，图片没有上传，这条消息也没有发出去。"
+  },
+  "integrations_chatImageComposerIf2": {
+    "en": "The server rejected this image upload. The message wasn't sent.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_composer.dart:144",
+    "zh": "服务端拒绝了这次图片上传，这条消息没有发出去。"
+  },
+  "integrations_chatImageComposerIf3": {
+    "en": "The image didn't upload. The message wasn't sent.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_composer.dart:146",
+    "zh": "图片没有上传成功，这条消息没有发出去。"
+  },
+  "integrations_chatImagePolicyNotAnImage": {
+    "en": "Only images can be sent here. What you picked isn't an image, so it wasn't added.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_policy.dart:67",
+    "zh": "这里只能发图片，刚才选的不是图片，没有加进来。"
+  },
+  "integrations_chatImagePolicyTooLarge": {
+    "en": "Each image must be 10 MB or less. The larger one wasn't added.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_policy.dart:70",
+    "zh": "单张图片不能超过 10 MB，超出的那张没有加进来。"
+  },
+  "integrations_chatImagePolicyTooMany": {
+    "en": "A message can have up to 9 images. The extra ones weren't added.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_policy.dart:71",
+    "zh": "一条消息最多 9 张图片，多出来的没有加进来。"
+  },
+  "integrations_chatImagePolicyUnsupportedFormat": {
+    "en": "Only JPG, PNG, WebP and GIF images are supported. Other formats weren't added.",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_chat_image_policy.dart:69",
+    "zh": "只支持 JPG、PNG、WebP、GIF 四种图片，其他格式没有加进来。"
+  },
+  "integrations_externalWalletCredentialGatewayExternalWalletConnectorException": {
+    "en": "The wallet returned a duplicate sign-in request. Reconnect.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/external_wallet_credential_gateway.dart:57",
+    "zh": "钱包返回了重复的登录请求，请重新连接。"
+  },
+  "integrations_externalWalletCredentialGatewayExternalWalletConnectorException2": {
+    "en": "The address, message or signature from the wallet doesn't match this sign-in request.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/external_wallet_credential_gateway.dart:80",
+    "zh": "钱包返回的地址、消息或签名与本次登录请求不匹配。"
+  },
+  "integrations_externalWalletCredentialGatewayPrivyGatewayException": {
+    "en": "No current Privy account. The wallet wasn't linked.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/external_wallet_credential_gateway.dart:44",
+    "zh": "缺少当前 Privy 账号，钱包未绑定。"
+  },
+  "integrations_memoryChatGatewaysCommunityName": {
+    "en": "Preview community",
+    "placeholders": {},
+    "where": "lib/integrations/communication/memory_chat_v2_gateways.dart:130, lib/integrations/communication/memory_live_voice_rooms.dart:25",
+    "zh": "开发预览社区"
+  },
+  "integrations_memoryCommunityGatewaysDescription": {
+    "en": "A sample community in development preview. Member counts and roles are local in-memory values.",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:61",
+    "zh": "开发预览中的示例社区，成员数与角色都是本地内存值。"
+  },
+  "integrations_memoryCommunityGatewaysLabel": {
+    "en": "Power community",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:69",
+    "zh": "算力社区"
+  },
+  "integrations_memoryCommunityGatewaysName": {
+    "en": "Demo community · Frogs",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:58",
+    "zh": "演示社区 · Frogs"
+  },
+  "integrations_memoryCommunityGatewaysName2": {
+    "en": "Demo community · Builders",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:73",
+    "zh": "演示社区 · Builders"
+  },
+  "integrations_memoryCommunityGatewaysName3": {
+    "en": "Demo community · In review",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:80",
+    "zh": "演示社区 · 审核中"
+  },
+  "integrations_memoryCommunityGatewaysRejectedReason": {
+    "en": "Demo data: this name duplicates a live community. Pick another and resubmit.",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:222",
+    "zh": "演示数据：社区名称与已上线社区重复，请换一个再提交。"
+  },
+  "integrations_memoryCommunityGatewaysTitle": {
+    "en": "Demo notice · This week's roadmap",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:149",
+    "zh": "演示公告 · 本周路线图"
+  },
+  "integrations_memoryCommunityGatewaysTitle2": {
+    "en": "Demo notice · Thursday voice room",
+    "placeholders": {},
+    "where": "lib/integrations/community/memory_community_gateways.dart:157",
+    "zh": "演示公告 · 周四语音房"
+  },
+  "integrations_memoryLiveVoiceRoomsCommunityName": {
+    "en": "Preview community (not joined)",
+    "placeholders": {},
+    "where": "lib/integrations/communication/memory_live_voice_rooms.dart:61",
+    "zh": "预览未加入社区"
+  },
+  "integrations_memoryLiveVoiceRoomsDisplayName": {
+    "en": "Preview host",
+    "placeholders": {},
+    "where": "lib/integrations/communication/memory_live_voice_rooms.dart:30, lib/integrations/communication/memory_live_voice_rooms.dart:38",
+    "zh": "预览主持人"
+  },
+  "integrations_memoryLiveVoiceRoomsDisplayName2": {
+    "en": "Preview speaker",
+    "placeholders": {},
+    "where": "lib/integrations/communication/memory_live_voice_rooms.dart:43",
+    "zh": "预览发言人"
+  },
+  "integrations_memoryLiveVoiceRoomsTitle": {
+    "en": "Development preview · Friday AMA",
+    "placeholders": {},
+    "where": "lib/integrations/communication/memory_live_voice_rooms.dart:27",
+    "zh": "开发预览 · 周五 AMA"
+  },
+  "integrations_memoryPublicProfilesAlias": {
+    "en": "Preview user",
+    "placeholders": {},
+    "where": "lib/integrations/social/memory_public_profiles.dart:31",
+    "zh": "预览用户"
+  },
+  "integrations_memoryPublicProfilesBio": {
+    "en": "Development preview account. Profile and holdings are demo data.",
+    "placeholders": {},
+    "where": "lib/integrations/social/memory_public_profiles.dart:33",
+    "zh": "开发预览账号，资料与持仓都是演示数据。"
+  },
+  "integrations_memoryPublicProfilesLabel": {
+    "en": "Featured community",
+    "placeholders": {},
+    "where": "lib/integrations/social/memory_public_profiles.dart:113",
+    "zh": "精选社区"
+  },
+  "integrations_memoryPublicProfilesName": {
+    "en": "Preview community",
+    "placeholders": {},
+    "where": "lib/integrations/social/memory_public_profiles.dart:107",
+    "zh": "预览社区"
+  },
+  "integrations_memoryPublicProfilesName2": {
+    "en": "Demo data group",
+    "placeholders": {},
+    "where": "lib/integrations/social/memory_public_profiles.dart:117",
+    "zh": "演示数据小组"
+  },
+  "integrations_memoryWatchlistGatewayName": {
+    "en": "Default",
+    "placeholders": {},
+    "where": "lib/integrations/market/memory_watchlist_gateway.dart:62",
+    "zh": "默认"
+  },
+  "integrations_memoryWatchlistGatewayName2": {
+    "en": "Watching",
+    "placeholders": {},
+    "where": "lib/integrations/market/memory_watchlist_gateway.dart:94",
+    "zh": "观察中"
+  },
+  "integrations_networkProbeName": {
+    "en": "LOOP service · Ready",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:195",
+    "zh": "LOOP 服务 · 就绪"
+  },
+  "integrations_networkProbeName2": {
+    "en": "LOOP service · Capabilities",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:207",
+    "zh": "LOOP 服务 · 能力清单"
+  },
+  "integrations_networkProbeName3": {
+    "en": "Sign-in service Privy",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:220",
+    "zh": "登录服务 Privy"
+  },
+  "integrations_networkProbeName4": {
+    "en": "Chat service Stream",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:238",
+    "zh": "聊天服务 Stream"
+  },
+  "integrations_networkProbeName5": {
+    "en": "Voice service Stream",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:248",
+    "zh": "语音服务 Stream"
+  },
+  "integrations_networkProbeName6": {
+    "en": "Token icons",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:258",
+    "zh": "代币图标"
+  },
+  "integrations_networkProbeName7": {
+    "en": "Push service Firebase",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:273",
+    "zh": "推送服务 Firebase"
+  },
+  "integrations_networkProbeName8": {
+    "en": "BSC mainnet node",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:285",
+    "zh": "BSC 主网节点"
+  },
+  "integrations_networkProbeName9": {
+    "en": "Network baseline Apple",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:300",
+    "zh": "网络基线 Apple"
+  },
+  "integrations_networkProbePurpose": {
+    "en": "The app's main data",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:196",
+    "zh": "应用的主要数据"
+  },
+  "integrations_networkProbePurpose2": {
+    "en": "Two requests in a row, the second is recorded (reused connection)",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:208",
+    "zh": "连续请求两次，记第二次（复用连接）"
+  },
+  "integrations_networkProbePurpose3": {
+    "en": "Sign-in and built-in wallet",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:221",
+    "zh": "登录与内置钱包"
+  },
+  "integrations_networkProbePurpose4": {
+    "en": "Conversations and messages",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:239",
+    "zh": "会话与消息"
+  },
+  "integrations_networkProbePurpose5": {
+    "en": "Icon image source",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:259",
+    "zh": "图标图片源"
+  },
+  "integrations_networkProbePurpose6": {
+    "en": "System push notifications",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:274",
+    "zh": "系统推送通知"
+  },
+  "integrations_networkProbePurpose7": {
+    "en": "Reference only; the app doesn't connect to nodes directly",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:286",
+    "zh": "仅供参考，应用不直接连接节点"
+  },
+  "integrations_networkProbePurpose8": {
+    "en": "Baseline for DNS and secure connections",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:301",
+    "zh": "域名解析与安全连接的对照"
+  },
+  "integrations_networkProbeSubject": {
+    "en": "LOOP network diagnosis",
+    "placeholders": {},
+    "where": "lib/integrations/diagnostics/loop_network_probe.dart:354",
+    "zh": "LOOP 网络诊断"
+  },
+  "integrations_privyAuthGatewayAuthentication": {
+    "en": "Your sign-in has expired. Sign in again.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:434",
+    "zh": "登录状态已失效，请重新登录。"
+  },
+  "integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage": {
+    "en": "This wallet is linked to another LOOP account. Sign in to that account and unlink it first, then come back to link it.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:116",
+    "zh": "这个钱包已绑定在另一个 LOOP 账号上。请先用那个账号登录并解绑，再回来绑定。"
+  },
+  "integrations_privyAuthGatewayLoopUndecidedSessionMessage": {
+    "en": "Can't confirm your sign-in right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:111",
+    "zh": "暂时无法确认登录状态，请稍后重试。"
+  },
+  "integrations_privyAuthGatewayMessage": {
+    "en": "The Privy App Client ID isn't configured, so real sign-in isn't available.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:297",
+    "zh": "Privy App Client ID 尚未配置，真实登录暂不可用。"
+  },
+  "integrations_privyAuthGatewayNetwork": {
+    "en": "Can't confirm your sign-in right now. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:435",
+    "zh": "暂时无法确认登录状态，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage": {
+    "en": "{label} sign-in cancelled.",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:814",
+    "zh": "已取消 {label} 登录。"
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage2": {
+    "en": "{label} sign-in can't reach the network. Try again later.",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:819",
+    "zh": "{label} 登录网络不可用，请稍后重试。"
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage3": {
+    "en": "{label} sign-in couldn't return to the app. Check the app configuration and retry.",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:824",
+    "zh": "{label} 登录回跳失败，请检查应用配置后重试。"
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage4": {
+    "en": "{label} sign-in didn't finish. Retry.",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:826",
+    "zh": "{label} 登录未完成，请重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException": {
+    "en": "Couldn't send the code. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:454",
+    "zh": "验证码发送失败，请稍后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException10": {
+    "en": "Invalid wallet address. Nothing was unlinked.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:601",
+    "zh": "钱包地址无效，没有解绑。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException11": {
+    "en": "The account changed. Refresh to check whether the wallet was unlinked.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:608",
+    "zh": "账号已变化，请刷新后确认钱包是否已解绑。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException12": {
+    "en": "Unlinking didn't finish. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:618, lib/integrations/privy/privy_auth_gateway.dart:867",
+    "zh": "解绑没有完成，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException14": {
+    "en": "The previous account's wallet action is still finishing. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:637",
+    "zh": "上一账号的钱包操作仍在结束，请稍后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException15": {
+    "en": "Wallet creation isn't confirmed. Refresh and try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:681",
+    "zh": "钱包创建状态未确认，请稍后刷新重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException16": {
+    "en": "Finish Privy sign-in first.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:697",
+    "zh": "请先完成 Privy 登录。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException17": {
+    "en": "Can't reach the sign-in service right now. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:709",
+    "zh": "暂时无法连接登录服务，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException18": {
+    "en": "Your sign-in credential has expired. Try again.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:713",
+    "zh": "登录凭证已失效，请重新尝试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException19": {
+    "en": "Couldn't sign out. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:723",
+    "zh": "退出登录失败，请稍后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException2": {
+    "en": "The code is invalid or has expired. Check it again.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:469",
+    "zh": "验证码无效或已过期，请重新检查。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException3": {
+    "en": "Sign-in didn't finish. Check your network and return configuration, then retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:498",
+    "zh": "登录未完成，请检查网络和回跳配置后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException4": {
+    "en": "Privy didn't return a sign-in message to sign. Retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:512",
+    "zh": "Privy 未返回可签名的登录消息，请重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException5": {
+    "en": "Couldn't create the wallet sign-in message. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:514, lib/integrations/privy/privy_auth_gateway.dart:519",
+    "zh": "无法生成钱包登录消息，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException6": {
+    "en": "Wallet sign-in didn't finish. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:546",
+    "zh": "钱包登录未完成，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException8": {
+    "en": "Wallet linking didn't finish. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:584",
+    "zh": "钱包绑定未完成，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException9": {
+    "en": "The account changed and the wallet wasn't unlinked. Try again.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:598",
+    "zh": "账号已变化，钱包没有解绑，请重新尝试。"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage": {
+    "en": "This wallet already belongs to another Privy account. LOOP won't move or delete accounts automatically.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:833",
+    "zh": "该钱包已属于另一个 Privy 账号，LOOP 不会自动转移或删除账号。"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage2": {
+    "en": "Couldn't submit the wallet credential. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:839, lib/integrations/privy/privy_auth_gateway.dart:856",
+    "zh": "钱包凭据提交失败，请检查网络后重试。"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage3": {
+    "en": "Privy didn't accept this wallet credential; it may be linked to another account. LOOP won't move or delete accounts automatically.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:841",
+    "zh": "Privy 未接受该钱包凭据；它可能已绑定其他账号。LOOP 不会自动转移或删除账号。"
+  },
+  "integrations_privyAuthGatewaySiweLinkFailureMessage": {
+    "en": "Wallet linking didn't finish. Retry.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:858",
+    "zh": "钱包绑定没有完成，请重试。"
+  },
+  "integrations_privyAuthGatewaySiweUnlinkFailureMessage": {
+    "en": "This is the account's only sign-in method and can't be unlinked. Link an email or another sign-in method first.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:873",
+    "zh": "这是账号唯一的登录方式，不能解绑。请先绑定邮箱或其他登录方式。"
+  },
+  "integrations_privyAuthGatewaySiweUnlinkFailureMessage2": {
+    "en": "Unlinking didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_auth_gateway.dart:875",
+    "zh": "解绑没有完成，请稍后重试。"
+  },
+  "integrations_privyMfaGatewayReleasedMessage": {
+    "en": "LOOP doesn't yet offer a way to enter a code for actions held by two-step verification. This action was cancelled.",
+    "placeholders": {},
+    "where": "lib/integrations/privy/privy_mfa_gateway.dart:234",
+    "zh": "LOOP 还没有为被二次验证拦住的操作提供输入验证码的入口，这次操作已经取消。"
+  },
+  "integrations_reactionsLoopReactionFallbackLabel": {
+    "en": "Reaction",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:32",
+    "zh": "表态"
+  },
+  "integrations_reactionsS": {
+    "en": "Like",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:21",
+    "zh": "点赞"
+  },
+  "integrations_reactionsS2": {
+    "en": "Haha",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:22",
+    "zh": "大笑"
+  },
+  "integrations_reactionsS3": {
+    "en": "Love",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:23",
+    "zh": "喜欢"
+  },
+  "integrations_reactionsS4": {
+    "en": "Wow",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:24",
+    "zh": "惊讶"
+  },
+  "integrations_reactionsS5": {
+    "en": "Sad",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_reactions.dart:25",
+    "zh": "难过"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException": {
+    "en": "The wallet connection or signature request was rejected.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:65",
+    "zh": "已拒绝钱包连接或签名请求。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException10": {
+    "en": "The Reown Project ID isn't configured, so external wallets aren't available.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:290",
+    "zh": "Reown Project ID 尚未配置，外部钱包暂不可用。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException11": {
+    "en": "A sign-in or wallet connection is already in progress.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:337",
+    "zh": "已有登录或钱包连接操作正在进行。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException12": {
+    "en": "This page was closed. Start the wallet connection again.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:343",
+    "zh": "当前页面已关闭，请重新发起钱包连接。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException13": {
+    "en": "The sign-in message is empty. Reconnect the wallet.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:392",
+    "zh": "登录消息为空，请重新连接钱包。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException14": {
+    "en": "The wallet connection or return didn't finish. Go back to LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:413",
+    "zh": "钱包连接或回跳未完成，请返回 LOOP 后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException15": {
+    "en": "Wallet connection cancelled.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:491",
+    "zh": "已取消钱包连接。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException16": {
+    "en": "The wallet picker didn't open. Retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:501",
+    "zh": "钱包选择页未能打开，请重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException17": {
+    "en": "The wallet connection timed out. Go back to LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:518",
+    "zh": "钱包连接等待超时，请返回 LOOP 后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException18": {
+    "en": "This wallet session didn't authorize personal_sign. Reconnect.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:531",
+    "zh": "该钱包会话没有授权 personal_sign，请重新连接。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException19": {
+    "en": "The wallet didn't return a usable EVM address.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:543",
+    "zh": "钱包没有返回可用的 EVM 地址。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException2": {
+    "en": "Wallet app not found. Install it and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:71",
+    "zh": "未找到该钱包 App，请先安装后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException20": {
+    "en": "Invalid wallet session. Reconnect.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:572",
+    "zh": "钱包会话无效，请重新连接。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException21": {
+    "en": "The wallet signature timed out. Go back to LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:593",
+    "zh": "钱包签名等待超时，请返回 LOOP 后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException22": {
+    "en": "The wallet didn't return a valid signature.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:599",
+    "zh": "钱包没有返回有效签名。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException3": {
+    "en": "Couldn't open the wallet app or return to LOOP. Retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:77",
+    "zh": "无法打开钱包 App 或返回 LOOP，请重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException4": {
+    "en": "The wallet connection can't reach the network. Try again later.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:87",
+    "zh": "钱包连接网络不可用，请稍后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException5": {
+    "en": "The wallet connection or return didn't finish. Retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:92",
+    "zh": "钱包连接或回跳未完成，请重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException6": {
+    "en": "Reown setup didn't finish. Restart LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:176",
+    "zh": "Reown 初始化未完成，请重启 LOOP 后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException7": {
+    "en": "Reown setup failed. Restart LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:196, lib/integrations/reown/reown_external_wallet_connector.dart:219",
+    "zh": "Reown 初始化失败，请重启 LOOP 后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException8": {
+    "en": "The Reown service timed out. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:208",
+    "zh": "Reown 服务连接超时，请检查网络后重试。"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException9": {
+    "en": "The Reown service isn't ready. Restart LOOP and retry.",
+    "placeholders": {},
+    "where": "lib/integrations/reown/reown_external_wallet_connector.dart:232",
+    "zh": "Reown 服务尚未就绪，请重启 LOOP 后重试。"
+  },
+  "integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel": {
+    "en": "View profile",
+    "placeholders": {},
+    "where": "lib/integrations/communication/stream_chat_appearance.dart:731",
+    "zh": "查看资料"
+  },
+  "integrations_streamReactionIconResolverHint": {
+    "en": "Remove reaction",
+    "placeholders": {},
+    "where": "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366",
+    "zh": "取消回应"
+  },
+  "integrations_streamReactionIconResolverHint2": {
+    "en": "React with {reactionLabel}",
+    "placeholders": {
+      "reactionLabel": {
+        "example": "loopReactionLabel(type)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366",
+    "zh": "回应{reactionLabel}"
+  },
+  "integrations_streamUnreadPillBandLoopUnreadPillDismissLabel": {
+    "en": "Mark as read",
+    "placeholders": {},
+    "where": "lib/integrations/communication/stream_unread_pill_band.dart:274",
+    "zh": "标为已读"
+  }
+}

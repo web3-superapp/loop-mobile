@@ -190,7 +190,7 @@ void main() {
         ];
         expect(xs, orderedEquals(List<double>.of(xs)..sort()));
         // 算力榜 has no search domain on the server, so it is not drawn.
-        expect(find.text('算力榜'), findsNothing);
+        expect(find.text('Power Ranking'), findsNothing);
         // Decision 0210 (S241b): the chosen segment carries the purple selected
         // state, so no solid yellow block is left on the screen.
         expect(

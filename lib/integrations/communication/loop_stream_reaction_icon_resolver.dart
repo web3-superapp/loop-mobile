@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
@@ -363,7 +364,11 @@ class LoopReactionCapsule extends StatelessWidget {
       button: true,
       selected: own,
       label: '${loopReactionLabel(type)} $count',
-      hint: own ? '取消回应' : '回应${loopReactionLabel(type)}',
+      hint: own
+          ? context.l10n.integrations_streamReactionIconResolverHint
+          : context.l10n.integrations_streamReactionIconResolverHint2(
+              loopReactionLabel(type),
+            ),
       excludeSemantics: true,
       child: GestureDetector(
         key: ValueKey<String>('loop-reaction-capsule-target-$type'),

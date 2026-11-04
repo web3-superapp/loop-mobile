@@ -420,7 +420,7 @@ void main() {
       );
       expect(facts['Claimable now'], '2,500 MCAT');
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       final handed = wallet.handed.single;
       expect(handed.kind, IntentKind.launchPurchase);
@@ -429,7 +429,7 @@ void main() {
       expect(payload.transaction['data'], _data('0x379607f5'));
       expect(gateway.reports, <String>['$s83cIntentId:$s83cTxHash']);
 
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch-settlement-state-submitted'));
       expect(_key('launch-settlement-state-submitted'), findsOneWidget);
@@ -555,11 +555,11 @@ void main() {
         'Executed by the contract; LOOP never holds the funds',
       );
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       final payload = wallet.handed.single.payload! as DeviceTransactionPayload;
       expect(payload.transaction['data'], _data('0x5b7baf64'));
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 
       await tester.pump(const Duration(seconds: 1));
@@ -607,9 +607,9 @@ void main() {
       await _scrollTo(tester, _key('launch-settlement-refund'));
       await tester.tap(_key('launch-settlement-refund'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();

@@ -96,7 +96,7 @@ void main() {
     _expectStep(tester, r'$612.40', LoopType.figureMd);
     _expectStep(tester, '0.52 BNB', LoopType.figureSm);
     _expectStep(tester, '+2.50%', LoopType.figure, weight: FontWeight.w700);
-    _expectStep(tester, '未报告', LoopType.caption);
+    _expectStep(tester, 'Not reported', LoopType.caption);
   });
 
   for (final flat in <bool>[false, true]) {
@@ -150,7 +150,7 @@ void main() {
     _expectStep(tester, 'LOOP ID 1024', LoopType.caption);
     _expectStep(tester, '主持', LoopType.kicker, weight: FontWeight.w600);
     _expectStep(tester, '接受', LoopType.titleSm, weight: FontWeight.w600);
-    _expectStep(tester, '查看全部', LoopType.bodySm);
+    _expectStep(tester, 'View all', LoopType.bodySm);
   });
 
   testWidgets('R2 · every sheet title is LoopType.heading', (tester) async {
@@ -298,7 +298,7 @@ void main() {
     _expectStep(tester, '卡片说明', LoopType.caption);
     _expectStep(tester, '平铺说明', LoopType.caption);
     _expectStep(tester, '余额读不到', LoopType.captionSm);
-    _expectStep(tester, '重试', LoopType.label, weight: FontWeight.w600);
+    _expectStep(tester, 'Retry', LoopType.label, weight: FontWeight.w600);
     // Decision 0277: an empty state's title is emptyTitle 17 / 700; the one
     // fact under it (only on request) is emptyMessage 12 / 400.
     _expectStep(tester, '还没有持有者', LoopType.emptyTitle);

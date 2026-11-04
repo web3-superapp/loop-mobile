@@ -103,7 +103,7 @@ void main() {
     expect(find.text(r'$42.8M'), findsOneWidget);
     expect(find.text('LOOP 社区 128K 成员 · 0.35×'), findsOneWidget);
     expect(tester.widget<Text>(find.text('买入')).style?.color, LoopColors.lime);
-    expect(find.bySemanticsLabel('PEPE Token Card · 正常'), findsOneWidget);
+    expect(find.bySemanticsLabel('PEPE Token Card · Normal'), findsOneWidget);
     expect(
       tester.getSize(find.bySemanticsLabel('买入')).height,
       greaterThanOrEqualTo(44),
@@ -165,8 +165,8 @@ void main() {
         ],
       ),
     );
-    expect(find.text('识别中…'), findsOneWidget);
-    expect(find.text('识别中'), findsOneWidget);
+    expect(find.text('Identifying…'), findsOneWidget);
+    expect(find.text('Identifying'), findsOneWidget);
     expect(find.text('PEPE'), findsNothing);
     expect(find.text('等待数据'), findsNWidgets(3));
     expect(
@@ -330,8 +330,11 @@ void main() {
       find.byKey(const ValueKey<String>('loop-token-card-risk-facts')),
       findsOneWidget,
     );
-    expect(find.textContaining('来源 GoPlus，观察于 2 分钟前'), findsOneWidget);
-    expect(find.textContaining('来源 链上比对'), findsOneWidget);
+    expect(
+      find.textContaining('source GoPlus, observed at 2 分钟前'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('source 链上比对'), findsOneWidget);
     expect(find.textContaining('危险'), findsNothing);
     expect(find.textContaining('不安全'), findsNothing);
   });

@@ -1155,12 +1155,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(gateway.nftCalls, 1);
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed, hasLength(2));
       expect(wallet.handed.first.kind, IntentKind.launchApproval);
       expect(wallet.handed.last.kind, IntentKind.launchPurchase);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(_key('launch2-pending'), findsOneWidget);
       expect(find.textContaining('Broadcast'), findsOneWidget);
@@ -1409,10 +1409,10 @@ void main() {
       await tester.tap(_key('launch2-trade-confirm'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await _drain(tester);
     });
@@ -1522,13 +1522,13 @@ void main() {
       expect(_key('launch2-bar-failure'), findsNothing);
       expect(_key('launch2-action-failed'), findsNothing);
       // S355a: the English sheet is taller; at 360×640 it scrolls.
-      await tester.ensureVisible(find.text('确认签名'));
+      await tester.ensureVisible(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('关闭'));
+      await tester.ensureVisible(find.text('Close'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(_key('launch2-bar-failure'), findsNothing);
       await _drain(tester);
@@ -1642,9 +1642,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsOneWidget);
       expect(_key('launch2-trade-prepare-failed'), findsNothing);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await _drain(tester);
     });

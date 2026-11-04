@@ -529,7 +529,9 @@ void main() {
       );
       // Embedded: the tab page owns the bar.
       expect(find.text('算力排行榜'), findsNothing);
-      await tester.tap(find.text('邀请'));
+      await tester.ensureVisible(find.text('Invitation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invitation'));
       await tester.pumpAndSettle();
       expect(mining.scopes, contains(MiningRankScope.referrals));
       expect(

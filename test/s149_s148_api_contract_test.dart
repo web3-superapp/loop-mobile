@@ -215,7 +215,10 @@ void main() {
       );
       final approved = rules.approved!;
       expect(approved.expressionKey, 'mining.rules.formula.holdingTimesWeight');
-      expect(miningRuleKeyText(approved.expressionKey), '算力 = 持有量 × 权重');
+      expect(
+        miningRuleKeyText(approved.expressionKey),
+        'Power = holdings × weight',
+      );
       // Deprecated, still published, still parsed.
       expect(
         approved.priceGuardRules.single.ruleKey,
@@ -236,7 +239,7 @@ void main() {
         const MiningRulesScreen(),
         mining: FakeMiningGateway(rules: S7Answer<MiningRules>(value: rules)),
       );
-      expect(find.text('算力 = 持有量 × 权重'), findsWidgets);
+      expect(find.text('Power = holdings × weight'), findsWidgets);
       expect(find.textContaining('参考价'), findsNothing);
       expect(find.text('Reference Price Guard'), findsNothing);
       expect(

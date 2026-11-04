@@ -671,7 +671,7 @@ void main() {
         find.byKey(const ValueKey<String>('user-profile-holdings-hidden')),
         findsOneWidget,
       );
-      await tester.tap(find.text('交易'));
+      await tester.tap(find.text('Trades'));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('user-profile-trades-hidden')),
@@ -770,7 +770,7 @@ void main() {
         ],
       );
       await _pump(tester, profiles: profiles);
-      await tester.tap(find.text('交易'));
+      await tester.tap(find.text('Trades'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Sell BNB'),
@@ -800,7 +800,7 @@ void main() {
         communitiesFailure: null,
       );
       await _pump(tester, profiles: profiles);
-      await tester.tap(find.text('社区').last);
+      await tester.tap(find.text('Communities').last);
       await tester.pumpAndSettle();
       expect(profiles.calls, contains('communities:null'));
       expect(find.text('社区列表暂未开放查看。'), findsNothing);

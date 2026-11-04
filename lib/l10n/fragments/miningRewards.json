@@ -1,0 +1,1030 @@
+{
+  "miningRewards_inviteHeadActive": {
+    "en": "Active",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1356",
+    "zh": "有效邀请"
+  },
+  "miningRewards_inviteHeadAsset": {
+    "en": "Assets",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1356",
+    "zh": "资产算力"
+  },
+  "miningRewards_inviteHeadNft": {
+    "en": "NFT",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1356",
+    "zh": "NFT 算力"
+  },
+  "miningRewards_modelsMiningPowerOnlyNotice": {
+    "en": "Mining starts once the LOOP token launches; until then only power is tracked",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_models.dart:449",
+    "zh": "LOOP 代币上线后开始正式开挖，上线前只统计算力"
+  },
+  "miningRewards_screenBuild": {
+    "en": "Not enough BNB for the network fee. Swap {from} for {to} first.{need} Come back to claim after the swap; your claimable balance won't change.",
+    "placeholders": {
+      "from": {
+        "example": "from",
+        "type": "Object"
+      },
+      "need": {
+        "example": "need",
+        "type": "Object"
+      },
+      "to": {
+        "example": "to",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1063",
+    "zh": "BNB 不足以支付网络费，先用 {from} 兑换 {to}。{need}兑换完成后回来再领取，可领取余额不变。"
+  },
+  "miningRewards_screenBuild2": {
+    "en": "Shown after an hour with power is settled",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1130",
+    "zh": "有算力的小时结算后显示"
+  },
+  "miningRewards_screenBuild3": {
+    "en": "No meme coins counted toward mining last hour",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1207",
+    "zh": "上一小时没有计入挖矿的 Meme 币"
+  },
+  "miningRewards_screenBuild4": {
+    "en": "Level",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1361",
+    "zh": "层级"
+  },
+  "miningRewards_screenBuild5": {
+    "en": "Rate",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1362",
+    "zh": "比例"
+  },
+  "miningRewards_screenCaption": {
+    "en": "Updates after the next hour is settled",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:535, lib/features/mining_rewards/mining_rewards_screen.dart:563",
+    "zh": "下一小时结算后更新"
+  },
+  "miningRewards_screenCaption2": {
+    "en": "{completedMinutes}/60 · next {clockLabel}",
+    "placeholders": {
+      "clockLabel": {
+        "example": "loopClockLabel(progress.nextUpdateAt!)",
+        "type": "Object"
+      },
+      "completedMinutes": {
+        "example": "progress.completedMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:536",
+    "zh": "{completedMinutes}/60 · 下次 {clockLabel}"
+  },
+  "miningRewards_screenConfirming": {
+    "en": "Confirming on-chain",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:731",
+    "zh": "链上确认中"
+  },
+  "miningRewards_screenConfirming2": {
+    "en": "On-chain and waiting for confirmation. Don't claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:751",
+    "zh": "已上链，正在等待确认。不要重复领取。"
+  },
+  "miningRewards_screenDisabledReason": {
+    "en": "Loading the latest claimable amount",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:875",
+    "zh": "正在读取最新的可领取数量"
+  },
+  "miningRewards_screenExpired": {
+    "en": "Voucher expired",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:734",
+    "zh": "凭证已过期"
+  },
+  "miningRewards_screenExpired2": {
+    "en": "The claim voucher expired and nothing was paid out. Your claimable balance is unchanged. You can claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:766",
+    "zh": "领取凭证已过期，没有发放，可领取余额不变。可以重新领取。"
+  },
+  "miningRewards_screenFact": {
+    "en": "Own weighted power",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1157",
+    "zh": "本人加权算力"
+  },
+  "miningRewards_screenFact2": {
+    "en": "Invite power",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1158, lib/features/mining_rewards/mining_rewards_screen.dart:1228",
+    "zh": "邀请算力"
+  },
+  "miningRewards_screenFact4": {
+    "en": "Excluded ({miningExcludedReasonText})",
+    "placeholders": {
+      "miningExcludedReasonText": {
+        "example": "miningExcludedReasonText(item.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1221",
+    "zh": "已退出（{miningExcludedReasonText}）"
+  },
+  "miningRewards_screenFact5": {
+    "en": "Own power",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1227",
+    "zh": "本人算力"
+  },
+  "miningRewards_screenFailed": {
+    "en": "The on-chain claim failed. Your claimable balance didn't go down.{reasonSuffix}",
+    "placeholders": {
+      "reasonSuffix": {
+        "example": "switch (state.record?.failureReasonCode) {\n            null || miningClaimContractNotConfiguredCode => '',\n            final String code => '（$code）',\n          }",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:761",
+    "zh": "链上领取失败，可领取余额没有减少。{reasonSuffix}"
+  },
+  "miningRewards_screenFailedCode": {
+    "en": " ({code})",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:762",
+    "zh": "（{code}）"
+  },
+  "miningRewards_screenGasInsufficient": {
+    "en": "Not enough BNB for the network fee. Swap USDT first.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:745",
+    "zh": "BNB 不足以支付网络费，先用 USDT 兑换。"
+  },
+  "miningRewards_screenHeading": {
+    "en": "Settlement results can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:503",
+    "zh": "暂时读不到结算结果"
+  },
+  "miningRewards_screenIf": {
+    "en": "No LOOP to claim right now",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:886",
+    "zh": "现在没有可领取的 LOOP"
+  },
+  "miningRewards_screenIf2": {
+    "en": "Loading wallet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:892",
+    "zh": "正在读取钱包"
+  },
+  "miningRewards_screenLabel": {
+    "en": "Showing {figure} LOOP",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:526",
+    "zh": "已展示 {figure} LOOP"
+  },
+  "miningRewards_screenLabel2": {
+    "en": "Total settled LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:655",
+    "zh": "累计已结算 LOOP"
+  },
+  "miningRewards_screenLabel3": {
+    "en": "Total claimed LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:660",
+    "zh": "累计已领取 LOOP"
+  },
+  "miningRewards_screenLabel4": {
+    "en": "Claimable LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:665",
+    "zh": "当前可领取 LOOP"
+  },
+  "miningRewards_screenLabel6": {
+    "en": "Meme coin power",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:708",
+    "zh": "Meme 币算力"
+  },
+  "miningRewards_screenLoopLabel": {
+    "en": "Power summary",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:321",
+    "zh": "算力汇总"
+  },
+  "miningRewards_screenLoopLabel2": {
+    "en": "Rewards summary",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:326",
+    "zh": "奖励汇总"
+  },
+  "miningRewards_screenLoopLabel3": {
+    "en": "NFT track",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:348",
+    "zh": "NFT 轨道"
+  },
+  "miningRewards_screenLoopLabel4": {
+    "en": "Meme coin track",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:350",
+    "zh": "Meme 币轨道"
+  },
+  "miningRewards_screenLoopLabel5": {
+    "en": "Five-level invites",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:352",
+    "zh": "五级邀请"
+  },
+  "miningRewards_screenLoopLabel6": {
+    "en": "Claim history",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:355",
+    "zh": "领取记录"
+  },
+  "miningRewards_screenLoopProvenanceLine": {
+    "en": "LOOP hourly settlement",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:373",
+    "zh": "LOOP 小时结算"
+  },
+  "miningRewards_screenLoopSheetHeading": {
+    "en": "Not enough for network fee",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1058",
+    "zh": "网络费不足"
+  },
+  "miningRewards_screenMessage": {
+    "en": "BscScan link copied",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1027, lib/features/mining_rewards/mining_rewards_screen.dart:1518",
+    "zh": "BscScan 链接已复制"
+  },
+  "miningRewards_screenMessage2": {
+    "en": "Couldn't load earlier records",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1529",
+    "zh": "更早的记录没有读到"
+  },
+  "miningRewards_screenMiningAssetBasisNote": {
+    "en": "Weighted by amount held: power = average amount held that hour × mining weight",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1373",
+    "zh": "按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重"
+  },
+  "miningRewards_screenMiningClaimAmountLabel": {
+    "en": "Claimable now",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:936",
+    "zh": "本次可领取"
+  },
+  "miningRewards_screenMiningClaimButtonLabel": {
+    "en": "Claim in progress",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:967",
+    "zh": "领取处理中"
+  },
+  "miningRewards_screenMiningClaimButtonSemanticLabel": {
+    "en": "Claim, unavailable",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:972",
+    "zh": "领取，当前不可用"
+  },
+  "miningRewards_screenMiningClaimGasGoLabel": {
+    "en": "Swap",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1075",
+    "zh": "去兑换"
+  },
+  "miningRewards_screenMiningClaimGasGoLabel2": {
+    "en": "Top up",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1075",
+    "zh": "去充值"
+  },
+  "miningRewards_screenMiningClaimMinimumLabel": {
+    "en": "Minimum claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:944",
+    "zh": "最低领取"
+  },
+  "miningRewards_screenMiningClaimResumeLabel": {
+    "en": "Keep checking",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:960",
+    "zh": "继续查询"
+  },
+  "miningRewards_screenMiningClaimRetryReportLabel": {
+    "en": "Report again",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:953",
+    "zh": "重新上报"
+  },
+  "miningRewards_screenMiningClaimTxSubtitle": {
+    "en": "Copy BscScan link",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1025",
+    "zh": "复制 BscScan 链接"
+  },
+  "miningRewards_screenMiningClaimTxTitle": {
+    "en": "Successful transaction {miningShortHash}",
+    "placeholders": {
+      "miningShortHash": {
+        "example": "miningShortHash(tx.txHash)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1024",
+    "zh": "成功交易 {miningShortHash}"
+  },
+  "miningRewards_screenMiningClaimsEmptyTitle": {
+    "en": "No claims yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1487",
+    "zh": "还没有领取记录"
+  },
+  "miningRewards_screenMiningHourCountedNote": {
+    "en": "Active last hour and counted toward power",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1382",
+    "zh": "上一小时有效，已计入算力统计"
+  },
+  "miningRewards_screenMiningInviteNote": {
+    "en": "Only invitees' own power counts; invitees with zero own power don't count. Equivalent NFT power is used only for reward calculation.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1369",
+    "zh": "只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。"
+  },
+  "miningRewards_screenMiningMinuteBarSemanticLabel": {
+    "en": "Minute {completedMinutes} of 60",
+    "placeholders": {
+      "completedMinutes": {
+        "example": "progress.completedMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:545",
+    "zh": "第 {completedMinutes} / 60 分钟"
+  },
+  "miningRewards_screenMiningMinuteEpochBody": {
+    "en": "Settlement period {clockLabel}–{clockLabel2} · this hour's rewards are fully claimable after settlement",
+    "placeholders": {
+      "clockLabel": {
+        "example": "loopClockLabel(epoch.epochStart)",
+        "type": "Object"
+      },
+      "clockLabel2": {
+        "example": "loopClockLabel(epoch.epochEnd)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1415",
+    "zh": "结算时段 {clockLabel}–{clockLabel2} · 本小时奖励结算后已全部计入可领取"
+  },
+  "miningRewards_screenMiningMinuteKicker": {
+    "en": "Last hour rewards",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:431, lib/features/mining_rewards/mining_rewards_screen.dart:1163, lib/features/mining_rewards/mining_rewards_screen.dart:1233",
+    "zh": "上一小时奖励"
+  },
+  "miningRewards_screenMiningMinuteTotalBody": {
+    "en": "Last hour {miningLoopFigure} LOOP",
+    "placeholders": {
+      "miningLoopFigure": {
+        "example": "miningLoopFigure(progress.total)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1409",
+    "zh": "上一小时 {miningLoopFigure} LOOP"
+  },
+  "miningRewards_screenMiningNftBasisNote": {
+    "en": "NFT power = amount held × community factor",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1376",
+    "zh": "NFT 算力 = 持有数量 × 所属社区系数"
+  },
+  "miningRewards_screenMiningNftRealCount": {
+    "en": "NFTs held (actual count)",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1153",
+    "zh": "持有 NFT（真实数量）"
+  },
+  "miningRewards_screenMiningPowerEpochBody": {
+    "en": "Period {clockLabel}–{clockLabel2} · counted every hour on the hour",
+    "placeholders": {
+      "clockLabel": {
+        "example": "loopClockLabel(epoch.epochStart)",
+        "type": "Object"
+      },
+      "clockLabel2": {
+        "example": "loopClockLabel(epoch.epochEnd)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1436",
+    "zh": "统计时段 {clockLabel}–{clockLabel2} · 每个整点统计一次"
+  },
+  "miningRewards_screenMiningPowerFolioHeading": {
+    "en": "{figure} power",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:575",
+    "zh": "{figure} 算力"
+  },
+  "miningRewards_screenMiningPowerTracksBody": {
+    "en": "NFT power {nftPower} · Meme coin power {assetPower}",
+    "placeholders": {
+      "assetPower": {
+        "example": "assetPower == null ? loopFigureDash : miningPowerFigure(assetPower)",
+        "type": "Object"
+      },
+      "nftPower": {
+        "example": "nftPower == null ? loopFigureDash : miningPowerFigure(nftPower)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1429",
+    "zh": "NFT 算力 {nftPower} · Meme 币算力 {assetPower}"
+  },
+  "miningRewards_screenMiningRewardsInfoActionTitle": {
+    "en": "About mining rewards",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:267, lib/features/mining_rewards/mining_rewards_screen.dart:268",
+    "zh": "挖矿奖励说明"
+  },
+  "miningRewards_screenMiningRewardsProvenanceDetail": {
+    "en": "Every hour on the hour (UTC), the previous hour's NFT and meme coin tracks are settled; that hour's rewards are claimable once settled. The per-minute growth only displays last hour's rewards and doesn't change the claimable amount.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:377",
+    "zh": "每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，不改变可领取数量。"
+  },
+  "miningRewards_screenMiningRewardsProvenanceDetail2": {
+    "en": "Every hour on the hour (UTC), power on the previous hour's NFT and meme coin tracks is counted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:380",
+    "zh": "每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力。"
+  },
+  "miningRewards_screenMiningRewardsProvenancePrefix": {
+    "en": "Last read",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:375",
+    "zh": "上次读取"
+  },
+  "miningRewards_screenMiningRewardsStateEmptyMessage": {
+    "en": "No reward records yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:297",
+    "zh": "还没有奖励记录"
+  },
+  "miningRewards_screenNoGasSource": {
+    "en": "There's no BNB in your wallet for the network fee. Top up BNB first.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:746",
+    "zh": "钱包里没有 BNB 支付网络费，先充值 BNB。"
+  },
+  "miningRewards_screenNull": {
+    "en": "No power last hour",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:563",
+    "zh": "上一小时没有算力"
+  },
+  "miningRewards_screenPollTimedOut": {
+    "en": "Broadcast, but no confirmation read yet. It may still be confirming; check again later and don't claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:758",
+    "zh": "已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复领取。"
+  },
+  "miningRewards_screenPowerFolio": {
+    "en": "The previous hour settles every hour on the hour; the next hour displays by the minute.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:593",
+    "zh": "每个整点结算上一小时，下一小时按分钟展示。"
+  },
+  "miningRewards_screenPreparing": {
+    "en": "Creating the claim voucher. The wallet hasn't opened yet.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:741",
+    "zh": "正在生成领取凭证，还没有打开钱包。"
+  },
+  "miningRewards_screenRow": {
+    "en": "Level {level}",
+    "placeholders": {
+      "level": {
+        "example": "level.level",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1334",
+    "zh": "第 {level} 级"
+  },
+  "miningRewards_screenRow2": {
+    "en": "Total",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1343",
+    "zh": "合计"
+  },
+  "miningRewards_screenS": {
+    "en": "Power appears after the first hour is settled",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:419",
+    "zh": "首个小时结算后开始展示算力"
+  },
+  "miningRewards_screenS2": {
+    "en": "Power for the previous hour is counted every hour on the hour.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:593",
+    "zh": "每个整点统计上一小时的算力。"
+  },
+  "miningRewards_screenS3": {
+    "en": "Nothing to claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:729, lib/features/mining_rewards/mining_rewards_screen.dart:779",
+    "zh": "暂无可领取"
+  },
+  "miningRewards_screenS4": {
+    "en": "Claimable amount is below the minimum claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:783",
+    "zh": "可领取数量未达到最低领取数量"
+  },
+  "miningRewards_screenS5": {
+    "en": "No wallet available",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:892",
+    "zh": "没有可用的钱包"
+  },
+  "miningRewards_screenS6": {
+    "en": " This claim needs about {requiredNative} BNB.",
+    "placeholders": {
+      "requiredNative": {
+        "example": "requiredNative",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1048",
+    "zh": "这次领取约需 {requiredNative} BNB。"
+  },
+  "miningRewards_screenS7": {
+    "en": "BNB needed for network fee",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1058",
+    "zh": "需要 BNB 支付网络费"
+  },
+  "miningRewards_screenS8": {
+    "en": "Your wallet has no BNB and no USDT to swap.{need} Top up a little BNB first, then come back to claim.",
+    "placeholders": {
+      "need": {
+        "example": "need",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1065",
+    "zh": "钱包里没有 BNB，也没有可兑换的 USDT。{need}先向钱包充值少量 BNB，再回来领取。"
+  },
+  "miningRewards_screenStamp": {
+    "en": "Settling",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:537, lib/features/mining_rewards/mining_rewards_screen.dart:581",
+    "zh": "结算中"
+  },
+  "miningRewards_screenSucceeded": {
+    "en": "Claimed. LOOP has arrived.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:759",
+    "zh": "领取成功，LOOP 已到账。"
+  },
+  "miningRewards_screenSwitch": {
+    "en": "Mining rules aren't in effect yet, so nothing is settled.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:399",
+    "zh": "挖矿规则待生效，暂时没有结算。"
+  },
+  "miningRewards_screenSwitch10": {
+    "en": "This claim is locked. Don't claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:756",
+    "zh": "这笔领取已锁定，不要重复领取。"
+  },
+  "miningRewards_screenSwitch11": {
+    "en": "The settlement service isn't available right now, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:776",
+    "zh": "结算服务暂时不可用，暂不能领取"
+  },
+  "miningRewards_screenSwitch12": {
+    "en": "Mining rules aren't in effect yet, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:777",
+    "zh": "挖矿规则待生效，暂不能领取"
+  },
+  "miningRewards_screenSwitch13": {
+    "en": "Claimable after an hour with power is settled",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:778",
+    "zh": "有算力的小时结算后可领取"
+  },
+  "miningRewards_screenSwitch14": {
+    "en": "Claimable at {miningLoopFigure} LOOP",
+    "placeholders": {
+      "miningLoopFigure": {
+        "example": "miningLoopFigure(minimum)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:782, lib/features/mining_rewards/mining_rewards_screen.dart:889",
+    "zh": "满 {miningLoopFigure} LOOP 可领取"
+  },
+  "miningRewards_screenSwitch15": {
+    "en": "The previous claim is still processing. Claim after it finishes",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:784",
+    "zh": "上一笔领取还在处理中，完成后再领取"
+  },
+  "miningRewards_screenSwitch16": {
+    "en": "The claim chain isn't configured yet, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:788",
+    "zh": "领取所在的链尚未配置，暂不能领取"
+  },
+  "miningRewards_screenSwitch17": {
+    "en": "Claim voucher issuing isn't configured yet, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:789",
+    "zh": "领取凭证签发尚未配置，暂不能领取"
+  },
+  "miningRewards_screenSwitch18": {
+    "en": "On-chain writes are off right now, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:790",
+    "zh": "链上写入暂时关闭，暂不能领取"
+  },
+  "miningRewards_screenSwitch19": {
+    "en": "Mainnet claims aren't open yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:791",
+    "zh": "主网领取尚未开放"
+  },
+  "miningRewards_screenSwitch2": {
+    "en": "Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:402",
+    "zh": "挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。"
+  },
+  "miningRewards_screenSwitch20": {
+    "en": "The claim contract is paused, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:794",
+    "zh": "领取合约已暂停，暂不能领取"
+  },
+  "miningRewards_screenSwitch21": {
+    "en": "The claim contract can't be read right now, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:795",
+    "zh": "领取合约暂时读不到，暂不能领取"
+  },
+  "miningRewards_screenSwitch22": {
+    "en": "The claim contract's balance is too low, so you can't claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:796",
+    "zh": "领取合约余额不足，暂不能领取"
+  },
+  "miningRewards_screenSwitch23": {
+    "en": "Claims aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:797",
+    "zh": "领取暂不可用"
+  },
+  "miningRewards_screenSwitch24": {
+    "en": "No LOOP to claim right now.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:803",
+    "zh": "现在没有可领取的 LOOP。"
+  },
+  "miningRewards_screenSwitch25": {
+    "en": "Claimable amount is below the minimum claim.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:804",
+    "zh": "可领取数量低于最低领取数量。"
+  },
+  "miningRewards_screenSwitch26": {
+    "en": "The previous claim is still processing. Claim after it finishes.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:805",
+    "zh": "上一笔领取还在处理中，完成后再领取。"
+  },
+  "miningRewards_screenSwitch27": {
+    "en": "The simulation didn't pass; this claim would be rejected on-chain. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:807, lib/features/mining_rewards/mining_rewards_signing.dart:87",
+    "zh": "试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。"
+  },
+  "miningRewards_screenSwitch28": {
+    "en": "The claim contract is paused. Your balance is unchanged.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:808",
+    "zh": "领取合约已暂停，余额不变。"
+  },
+  "miningRewards_screenSwitch29": {
+    "en": "The claim contract can't be read right now. No voucher was created and your balance is unchanged.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:809",
+    "zh": "领取合约暂时读不到，没有生成领取凭证，余额不变。"
+  },
+  "miningRewards_screenSwitch3": {
+    "en": "The settlement service isn't available right now. The numbers below may not be current.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:403",
+    "zh": "结算服务暂时不可用，下面的数字可能不是最新的。"
+  },
+  "miningRewards_screenSwitch30": {
+    "en": "The claim contract's balance is too low to claim right now. Your balance is unchanged.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:810",
+    "zh": "领取合约余额不足，暂时不能领取，余额不变。"
+  },
+  "miningRewards_screenSwitch31": {
+    "en": "The claim voucher expired. No transaction was submitted. Claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:811",
+    "zh": "领取凭证已过期，没有提交任何交易。请重新领取。"
+  },
+  "miningRewards_screenSwitch32": {
+    "en": "Claims go only to your LOOP built-in wallet.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:812",
+    "zh": "只能领取到 LOOP 内置钱包。"
+  },
+  "miningRewards_screenSwitch33": {
+    "en": "No voucher was created and no transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:817",
+    "zh": "没有生成领取凭证，没有提交任何交易。"
+  },
+  "miningRewards_screenSwitch34": {
+    "en": "Claim status",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:924",
+    "zh": "领取状态"
+  },
+  "miningRewards_screenSwitch35": {
+    "en": "Graduated; DEX pool holdings are still syncing",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1178",
+    "zh": "已毕业，外盘持有数量还在同步"
+  },
+  "miningRewards_screenSwitch36": {
+    "en": "Graduated; DEX pool holdings can't be read right now",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1179",
+    "zh": "已毕业，外盘持有数量暂读不到"
+  },
+  "miningRewards_screenSwitch37": {
+    "en": "Mining weight not configured yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1180",
+    "zh": "还没有配置挖矿权重"
+  },
+  "miningRewards_screenSwitch38": {
+    "en": "Not counted yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1181",
+    "zh": "暂不计入"
+  },
+  "miningRewards_screenSwitch4": {
+    "en": "Mining rules are in effect. The previous hour settles every hour on the hour; it's then shown here by the minute and can be claimed.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:409",
+    "zh": "挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。"
+  },
+  "miningRewards_screenSwitch5": {
+    "en": "Settlement data can't be loaded right now. The numbers below may not be current.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:410",
+    "zh": "结算数据暂时读不到，下面的数字可能不是最新的。"
+  },
+  "miningRewards_screenSwitch6": {
+    "en": "Hours you had power in aren't settled yet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:418",
+    "zh": "你有算力的小时还没有结算"
+  },
+  "miningRewards_screenSwitch7": {
+    "en": "Rewards appear after the first hour is settled",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:419",
+    "zh": "首个小时结算后开始展示奖励"
+  },
+  "miningRewards_screenSwitch8": {
+    "en": "Claimable",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:729",
+    "zh": "可领取"
+  },
+  "miningRewards_screenSwitch9": {
+    "en": "Submitted and waiting to land on-chain (checked {attempts} times). Don't claim again.",
+    "placeholders": {
+      "attempts": {
+        "example": "state.attempts",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:752",
+    "zh": "已提交，正在等待上链（已读取 {attempts} 次）。不要重复领取。"
+  },
+  "miningRewards_screenTimedOut": {
+    "en": "Network unavailable. No claim voucher was created.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:815",
+    "zh": "网络不可用，没有生成领取凭证。"
+  },
+  "miningRewards_screenTitle": {
+    "en": "Claim {miningLoopFigure} LOOP",
+    "placeholders": {
+      "miningLoopFigure": {
+        "example": "miningLoopFigure(item.amount)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:1504",
+    "zh": "领取 {miningLoopFigure} LOOP"
+  },
+  "miningRewards_screenUnavailable": {
+    "en": "Claims aren't available right now. Your balance is unchanged.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_screen.dart:816",
+    "zh": "领取暂不可用，余额不变。"
+  },
+  "miningRewards_signingIf": {
+    "en": "The wallet result is unknown, so this claim is locked. Don't claim again; refresh later to check.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:361",
+    "zh": "钱包的结果未知，这笔领取已锁定。不要重复领取，稍后刷新查看。"
+  },
+  "miningRewards_signingIf2": {
+    "en": "Broadcast ({short}) and recorded by the server; waiting for on-chain confirmation.",
+    "placeholders": {
+      "short": {
+        "example": "short",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:365",
+    "zh": "已广播（{short}），服务端已记录，正在等待链上确认。"
+  },
+  "miningRewards_signingIf3": {
+    "en": "Broadcast ({short}). {miningClaimReportReasonText}",
+    "placeholders": {
+      "miningClaimReportReasonText": {
+        "example": "miningClaimReportReasonText(outcome.reasonCode)",
+        "type": "Object"
+      },
+      "short": {
+        "example": "short",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:367",
+    "zh": "已广播（{short}）。{miningClaimReportReasonText}"
+  },
+  "miningRewards_signingLabel": {
+    "en": "Claim amount",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:62",
+    "zh": "领取数量"
+  },
+  "miningRewards_signingLabel2": {
+    "en": "Receiving wallet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:64",
+    "zh": "收款钱包"
+  },
+  "miningRewards_signingLabel3": {
+    "en": "Network fee",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:69",
+    "zh": "网络费"
+  },
+  "miningRewards_signingLabel4": {
+    "en": "Voucher valid until",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:70",
+    "zh": "凭证有效至"
+  },
+  "miningRewards_signingSwitch": {
+    "en": "Cancelled. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:77",
+    "zh": "已取消，没有发生任何变化。"
+  },
+  "miningRewards_signingSwitch10": {
+    "en": "The wallet didn't finish signing. No transaction was submitted and your claimable balance is unchanged.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:88",
+    "zh": "钱包没有完成签名，没有提交任何交易，可领取余额不变。"
+  },
+  "miningRewards_signingSwitch11": {
+    "en": "A different hash was already reported for this claim, so this broadcast wasn't recorded. Don't claim again; refresh later to check.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:95",
+    "zh": "这笔领取已经上报过另一笔哈希，本次广播没有被记录。不要重复领取，稍后刷新查看。"
+  },
+  "miningRewards_signingSwitch12": {
+    "en": "This on-chain transaction doesn't match the claim voucher, so the server didn't record it. Don't claim again, and contact support.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:97",
+    "zh": "链上这笔交易与领取凭证不一致，服务端没有记录它。不要重复领取，并联系支持。"
+  },
+  "miningRewards_signingSwitch13": {
+    "en": "The wallet broadcast it, but the report didn't arrive. The transaction may be on-chain; you can report the same hash again. Don't claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:98",
+    "zh": "钱包已经广播，但上报没有送达。交易可能已经上链，可以重新上报同一笔哈希；不要重复领取。"
+  },
+  "miningRewards_signingSwitch2": {
+    "en": "Verification didn't pass. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:78",
+    "zh": "身份验证没有通过，没有发生任何变化。"
+  },
+  "miningRewards_signingSwitch3": {
+    "en": "The claim voucher expired. No transaction was submitted and your claimable balance is unchanged. Claim again.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:79",
+    "zh": "领取凭证已过期，没有提交任何交易，可领取余额不变。请重新领取。"
+  },
+  "miningRewards_signingSwitch4": {
+    "en": "The transaction doesn't match what you confirmed, so signing was refused. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:80",
+    "zh": "交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。"
+  },
+  "miningRewards_signingSwitch5": {
+    "en": "Couldn't find the wallet for this claim. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:81",
+    "zh": "找不到这笔领取的钱包，没有提交任何交易。"
+  },
+  "miningRewards_signingSwitch6": {
+    "en": "The voucher's wallet doesn't match the current wallet, so signing was refused. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:82",
+    "zh": "领取凭证对应的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。"
+  },
+  "miningRewards_signingSwitch7": {
+    "en": "Signing isn't allowed on this chain. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:84",
+    "zh": "这条链不允许签名，没有提交任何交易。"
+  },
+  "miningRewards_signingSwitch8": {
+    "en": "The wallet can't sign on this chain right now. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:85",
+    "zh": "钱包暂时不能在这条链上签名，没有提交任何交易。"
+  },
+  "miningRewards_signingSwitch9": {
+    "en": "The signed-in wallet isn't the one for this claim. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:86",
+    "zh": "当前登录的钱包不是这笔领取的钱包，没有提交任何交易。"
+  },
+  "miningRewards_signingTitle": {
+    "en": "Confirm claim",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:114, lib/features/mining_rewards/mining_rewards_signing.dart:342, lib/features/mining_rewards/mining_rewards_signing.dart:349",
+    "zh": "确认领取"
+  },
+  "miningRewards_signingValue": {
+    "en": "Claim mining rewards",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:61",
+    "zh": "领取挖矿奖励"
+  },
+  "miningRewards_signingValue2": {
+    "en": "Paid with BNB in wallet",
+    "placeholders": {},
+    "where": "lib/features/mining_rewards/mining_rewards_signing.dart:69",
+    "zh": "钱包内 BNB 支付"
+  }
+}

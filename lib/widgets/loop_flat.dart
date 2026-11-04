@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The OKX flat list voice for second-level pages (decision 0126).
 ///
@@ -76,7 +77,7 @@ class LoopStepDots extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       key: const ValueKey<String>('loop-step-dots'),
-      label: '第 $step 步，共 $total 步，$label',
+      label: context.l10n.widgets_flatLoopStepDotsLabel(label, step, total),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(

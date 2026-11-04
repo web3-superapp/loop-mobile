@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:reown_appkit/reown_appkit.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 @immutable
 class ExternalWalletIdentity {
@@ -60,21 +61,27 @@ abstract final class ExternalWalletProtocol {
 
   static ExternalWalletConnectorException mapModalError(ModalError error) {
     if (error is UserRejectedConnection || error is UserRejectedRequest) {
-      return const ExternalWalletConnectorException(
+      return ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.rejected,
-        '已拒绝钱包连接或签名请求。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException,
       );
     }
     if (error is WalletNotInstalled) {
-      return const ExternalWalletConnectorException(
+      return ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.notInstalled,
-        '未找到该钱包 App，请先安装后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException2,
       );
     }
     if (error is ErrorOpeningWallet) {
-      return const ExternalWalletConnectorException(
+      return ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
-        '无法打开钱包 App 或返回 LOOP，请重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException3,
       );
     }
     final normalized = '${error.message} ${error.description ?? ''}'
@@ -82,14 +89,18 @@ abstract final class ExternalWalletProtocol {
     if (normalized.contains('network') ||
         normalized.contains('socket') ||
         normalized.contains('relay')) {
-      return const ExternalWalletConnectorException(
+      return ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.network,
-        '钱包连接网络不可用，请稍后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException4,
       );
     }
-    return const ExternalWalletConnectorException(
+    return ExternalWalletConnectorException(
       ExternalWalletConnectorFailure.callback,
-      '钱包连接或回跳未完成，请重试。',
+      LoopL10n
+          .current
+          .integrations_reownExternalWalletConnectorExternalWalletConnectorException5,
     );
   }
 }
@@ -171,9 +182,11 @@ class ExternalWalletInitializationGate<T extends Object> {
       try {
         await teardown.timeout(timeout);
       } on TimeoutException {
-        throw const ExternalWalletConnectorException(
+        throw ExternalWalletConnectorException(
           ExternalWalletConnectorFailure.callback,
-          'Reown 初始化未完成，请重启 LOOP 后重试。',
+          LoopL10n
+              .current
+              .integrations_reownExternalWalletConnectorExternalWalletConnectorException6,
         );
       }
     }
@@ -191,9 +204,11 @@ class ExternalWalletInitializationGate<T extends Object> {
       } catch (error, stack) {
         _onFailure('create', error, stack);
         _discard(created, dispose);
-        throw const ExternalWalletConnectorException(
+        throw ExternalWalletConnectorException(
           ExternalWalletConnectorFailure.callback,
-          'Reown 初始化失败，请重启 LOOP 后重试。',
+          LoopL10n
+              .current
+              .integrations_reownExternalWalletConnectorExternalWalletConnectorException7,
         );
       }
     } else {
@@ -203,9 +218,11 @@ class ExternalWalletInitializationGate<T extends Object> {
     try {
       await initialization.timeout(timeout);
     } on TimeoutException {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.network,
-        'Reown 服务连接超时，请检查网络后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException8,
       );
     } on ExternalWalletConnectorException catch (error, stack) {
       _onFailure('initialize', error, stack);
@@ -214,9 +231,11 @@ class ExternalWalletInitializationGate<T extends Object> {
     } catch (error, stack) {
       _onFailure('initialize', error, stack);
       _discard(owner, dispose);
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
-        'Reown 初始化失败，请重启 LOOP 后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException7,
       );
     }
 
@@ -227,9 +246,11 @@ class ExternalWalletInitializationGate<T extends Object> {
         StackTrace.current,
       );
       _discard(owner, dispose);
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.network,
-        'Reown 服务尚未就绪，请重启 LOOP 后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException9,
       );
     }
     return owner;
@@ -285,9 +306,11 @@ class UnconfiguredExternalWalletConnector implements ExternalWalletConnector {
     required Future<String> Function(ExternalWalletIdentity identity)
     createMessage,
   }) {
-    throw const ExternalWalletConnectorException(
+    throw ExternalWalletConnectorException(
       ExternalWalletConnectorFailure.configuration,
-      'Reown Project ID 尚未配置，外部钱包暂不可用。',
+      LoopL10n
+          .current
+          .integrations_reownExternalWalletConnectorExternalWalletConnectorException10,
     );
   }
 }
@@ -332,15 +355,19 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
     createMessage,
   }) async {
     if (_active) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.cancelled,
-        '已有登录或钱包连接操作正在进行。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException11,
       );
     }
     if (!context.mounted) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
-        '当前页面已关闭，请重新发起钱包连接。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException12,
       );
     }
 
@@ -387,9 +414,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
       final identity = _identityFrom(modal, session);
       final message = await createMessage(identity);
       if (message.isEmpty) {
-        throw const ExternalWalletConnectorException(
+        throw ExternalWalletConnectorException(
           ExternalWalletConnectorFailure.invalidResponse,
-          '登录消息为空，请重新连接钱包。',
+          LoopL10n
+              .current
+              .integrations_reownExternalWalletConnectorExternalWalletConnectorException13,
         );
       }
 
@@ -408,9 +437,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
     } on ExternalWalletConnectorException {
       rethrow;
     } catch (_) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
-        '钱包连接或回跳未完成，请返回 LOOP 后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException14,
       );
     } finally {
       if (modal != null) {
@@ -486,9 +517,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
         (_) {
           if (!connected.isCompleted && !modalClosed.isCompleted) {
             modalClosed.completeError(
-              const ExternalWalletConnectorException(
+              ExternalWalletConnectorException(
                 ExternalWalletConnectorFailure.cancelled,
-                '已取消钱包连接。',
+                LoopL10n
+                    .current
+                    .integrations_reownExternalWalletConnectorExternalWalletConnectorException15,
               ),
             );
           }
@@ -496,9 +529,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
         onError: (_) {
           if (!modalClosed.isCompleted) {
             modalClosed.completeError(
-              const ExternalWalletConnectorException(
+              ExternalWalletConnectorException(
                 ExternalWalletConnectorFailure.callback,
-                '钱包选择页未能打开，请重试。',
+                LoopL10n
+                    .current
+                    .integrations_reownExternalWalletConnectorExternalWalletConnectorException16,
               ),
             );
           }
@@ -513,9 +548,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
       ],
     ).timeout(
       const Duration(minutes: 3),
-      onTimeout: () => throw const ExternalWalletConnectorException(
+      onTimeout: () => throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.callback,
-        '钱包连接等待超时，请返回 LOOP 后重试。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException17,
       ),
     );
   }
@@ -526,9 +563,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
   ) {
     final methods = session.getApprovedMethods(namespace: NetworkUtils.eip155);
     if (methods == null || !methods.contains('personal_sign')) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.invalidResponse,
-        '该钱包会话没有授权 personal_sign，请重新连接。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException18,
       );
     }
     final accounts =
@@ -538,9 +577,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
         .whereType<EvmCaip10Account>()
         .toList(growable: false);
     if (parsed.isEmpty) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.invalidResponse,
-        '钱包没有返回可用的 EVM 地址。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException19,
       );
     }
 
@@ -567,9 +608,11 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
   }) async {
     final topic = session.topic;
     if (topic == null || topic.isEmpty) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.invalidResponse,
-        '钱包会话无效，请重新连接。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException20,
       );
     }
     final response =
@@ -588,15 +631,19 @@ class ReownExternalWalletConnector implements ExternalWalletConnector {
           failure.future.then<dynamic>((error) => throw error),
         ]).timeout(
           const Duration(minutes: 3),
-          onTimeout: () => throw const ExternalWalletConnectorException(
+          onTimeout: () => throw ExternalWalletConnectorException(
             ExternalWalletConnectorFailure.callback,
-            '钱包签名等待超时，请返回 LOOP 后重试。',
+            LoopL10n
+                .current
+                .integrations_reownExternalWalletConnectorExternalWalletConnectorException21,
           ),
         );
     if (response is! String || !ExternalWalletProtocol.isSignature(response)) {
-      throw const ExternalWalletConnectorException(
+      throw ExternalWalletConnectorException(
         ExternalWalletConnectorFailure.invalidResponse,
-        '钱包没有返回有效签名。',
+        LoopL10n
+            .current
+            .integrations_reownExternalWalletConnectorExternalWalletConnectorException22,
       );
     }
     return response;

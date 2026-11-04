@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// What this run knows about provisioning the account's embedded wallet.
 enum LoopWalletProvisioningStage {
@@ -131,7 +132,7 @@ final class LoopWalletProvisioningController
       _fail(generation, error.userMessage);
       return false;
     } catch (_) {
-      _fail(generation, '钱包创建没有完成，账号与登录状态没有变化，可以稍后再试。');
+      _fail(generation, LoopL10n.current.app_walletProvisioningControllerFail);
       return false;
     }
     if (!ref.mounted || generation != _principalGeneration) return false;

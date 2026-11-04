@@ -806,7 +806,7 @@ void main() {
       );
       await scrollToCommunitySection(tester, action);
       expect(action, findsOneWidget);
-      expect(tester.widget<LoopSeeAll>(action).label, '查看全部');
+      expect(tester.widget<LoopSeeAll>(action).label, 'View all');
       expect(tester.getSize(action).height, greaterThanOrEqualTo(44));
 
       await tester.tap(action);

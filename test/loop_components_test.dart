@@ -266,12 +266,14 @@ void main() {
       LoopColors.warning.withValues(alpha: 0.13),
     );
     expect(deco('loop-notice-danger').color, LoopColors.card);
-    expect(find.textContaining('发生了什么'), findsOneWidget);
-    expect(find.textContaining('影响什么'), findsOneWidget);
-    expect(find.textContaining('下一步'), findsOneWidget);
+    expect(find.textContaining('What happened'), findsOneWidget);
+    expect(find.textContaining('What\'s affected'), findsOneWidget);
+    expect(find.textContaining('Next'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
-        RegExp('风险事实.*发生了什么：合约含 mint 函数.*影响什么：发行方可增发.*下一步：确认事实后再买入'),
+        RegExp(
+          "风险事实.*What happened: 合约含 mint 函数.*What's affected: 发行方可增发.*Next: 确认事实后再买入",
+        ),
       ),
       findsOneWidget,
     );
@@ -556,8 +558,8 @@ void main() {
         find.byKey(const ValueKey<String>('loop-skeleton-chart')),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('列表加载中'), findsOneWidget);
-      expect(find.bySemanticsLabel('图表加载中'), findsOneWidget);
+      expect(find.bySemanticsLabel('Loading list'), findsOneWidget);
+      expect(find.bySemanticsLabel('Loading chart'), findsOneWidget);
       expect(find.byType(Text), findsNothing);
       expect(find.byType(LoopSkeletonBlock), findsNWidgets(3 * 3 + 6 + 4));
       final block = tester.widget<Container>(
@@ -637,24 +639,30 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('缓存为空'), findsOneWidget);
-      expect(find.text('追踪号 7f3a2c9e · 来源 Wallet API'), findsOneWidget);
-      await tester.tap(find.text('重试'));
+      expect(
+        find.text('Trace ID 7f3a2c9e · Source Wallet API'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Retry'));
       await tester.tap(find.text('联系客服'));
       expect(retries, 1);
       expect(alternative, 1);
-      expect(find.text('缓存 09:38'), findsOneWidget);
+      expect(find.text('Cached 09:38'), findsOneWidget);
       // S88d: without a cache time there is no cache stamp and no claim to
       // be showing one.
-      expect(find.text('缓存 —'), findsNothing);
-      expect(find.text('离线 · 显示缓存'), findsOneWidget);
-      expect(find.text('连不上 LOOP'), findsOneWidget);
-      expect(find.textContaining('已暂停：发送、兑换、跨链、签名'), findsNWidgets(2));
+      expect(find.text('Cached —'), findsNothing);
+      expect(find.text('Offline · Showing cache'), findsOneWidget);
+      expect(find.text("Can't reach LOOP"), findsOneWidget);
+      expect(
+        find.textContaining('Paused: Send, Swap, Bridge, Sign'),
+        findsNWidgets(2),
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-permission-state')),
         findsOneWidget,
       );
-      await tester.ensureVisible(find.text('前往系统设置'));
-      await tester.tap(find.text('前往系统设置'));
+      await tester.ensureVisible(find.text('Open system settings'));
+      await tester.tap(find.text('Open system settings'));
       expect(settings, 1);
     },
   );

@@ -91,6 +91,7 @@ class _LoopFilterChipState extends State<LoopFilterChip> {
                     child: Text(
                       widget.label,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: selected ? LoopType.chip : LoopType.chipIdle,
                     ),
                   ),
@@ -161,7 +162,25 @@ class LoopFilterChips extends StatelessWidget {
     }
     return Padding(
       padding: padding,
-      child: Row(children: <Widget>[...chips, const Spacer(), ?trailing]),
+      child: Row(
+        children: <Widget>[
+          // A line too narrow for every chip at its natural width shrinks
+          // them (English copy runs longer than Chinese). Each chip's share
+          // follows its label's length, so a line that fits keeps them whole.
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                for (final chip in chips)
+                  if (chip is LoopFilterChip)
+                    Flexible(flex: chip.label.length + 3, child: chip)
+                  else
+                    chip,
+              ],
+            ),
+          ),
+          ?trailing,
+        ],
+      ),
     );
   }
 }

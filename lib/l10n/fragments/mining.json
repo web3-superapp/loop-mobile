@@ -1,0 +1,1910 @@
+{
+  "mining_controllersActivationRequired": {
+    "en": "Activate your LOOP ID before binding an invite code. You can bind any time after activation.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:423",
+    "zh": "需要先完成 LOOP ID 激活才能绑定邀请码。激活后随时可以再来绑定。"
+  },
+  "mining_controllersIdempotencyConflict": {
+    "en": "This binding was already submitted with a different invite code. Refresh to see the latest status.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:428",
+    "zh": "同一次绑定已经用不同的邀请码提交过，请刷新查看最新状态。"
+  },
+  "mining_controllersNotFound": {
+    "en": "This invite code doesn't exist. Check with the person who invited you and try again; codes can't be guessed, so more attempts won't help.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:425",
+    "zh": "这个邀请码不存在。请向邀请人确认后再试；邀请码不可枚举，多次尝试不会提高成功率。"
+  },
+  "mining_controllersPolicyBlocked": {
+    "en": "You can't bind an invite code right now. Each account can bind only once. Refresh to see the latest status.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:424",
+    "zh": "当前不能绑定邀请码。每个账号只能绑定一次，请刷新查看最新状态。"
+  },
+  "mining_controllersStale": {
+    "en": "This account already has an inviter. It can't be changed after binding.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:427",
+    "zh": "这个账号已经绑定过邀请人。绑定后不能更换。"
+  },
+  "mining_controllersValidationFailed": {
+    "en": "This invite code can't be bound: you can't invite yourself or bind a code from someone you invited.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_controllers.dart:426",
+    "zh": "这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。"
+  },
+  "mining_copyHead": {
+    "en": "Showing the power snapshot from {computedAtLabel}",
+    "placeholders": {
+      "computedAtLabel": {
+        "example": "computedAtLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:150",
+    "zh": "显示的是 {computedAtLabel} 的算力快照"
+  },
+  "mining_copyIf": {
+    "en": "Block and time appear here after the next power snapshot.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:66",
+    "zh": "下一次算力快照之后，这里会显示区块与时间。"
+  },
+  "mining_copyIf2": {
+    "en": "The latest calculation didn't finish and there's no complete snapshot to fall back on.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:73",
+    "zh": "最近一次计算没有完成，没有可以回退的完整快照。"
+  },
+  "mining_copyIf3": {
+    "en": "{named}, and {rest} more assets",
+    "placeholders": {
+      "named": {
+        "example": "named",
+        "type": "Object"
+      },
+      "rest": {
+        "example": "rest",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:118",
+    "zh": "{named}，另有 {rest} 个资产"
+  },
+  "mining_copyIncomplete": {
+    "en": "Reference prices for some assets couldn't be read this time",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:121",
+    "zh": "有资产的参考价这次读不到"
+  },
+  "mining_copyMiningConditionEmbedded": {
+    "en": "Calculated from holdings in wallets linked to your LOOP account.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:25",
+    "zh": "按绑定到 LOOP 账号的钱包持仓计算。"
+  },
+  "mining_copyMiningConditionMember": {
+    "en": "You must join the community; only the time you're a member counts. Tokens without a bound community don't require this.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:24",
+    "zh": "你须加入该社区，按在社区的时段计入；没有绑定社区的币不要求。"
+  },
+  "mining_copyMiningConditionVerified": {
+    "en": "Community tokens count only when their bound community is approved; communities in review don't count.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:23",
+    "zh": "社区币只在绑定它的社区已通过审核时计入，待审核社区不算。"
+  },
+  "mining_copyMiningConditionsShort": {
+    "en": "Calculated from linked wallet holdings. Community tokens require joining their approved community.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:28",
+    "zh": "按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。"
+  },
+  "mining_copyMiningPowerFormulaHeading": {
+    "en": "Holdings × weight",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:18",
+    "zh": "持有量 × 权重"
+  },
+  "mining_copyMiningSnapshotRowTitle": {
+    "en": "Latest power snapshot",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:31",
+    "zh": "最近一次算力快照"
+  },
+  "mining_copyMiningSnapshotSectionLabel": {
+    "en": "Power snapshot",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:30",
+    "zh": "算力快照"
+  },
+  "mining_copyMiningStaleLine": {
+    "en": "The latest snapshot was invalidated",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:145",
+    "zh": "最近一次快照已作废"
+  },
+  "mining_copyS": {
+    "en": "The latest calculation didn't finish ({cause}) and there's no complete snapshot to fall back on.",
+    "placeholders": {
+      "cause": {
+        "example": "cause",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:74",
+    "zh": "最近一次计算没有完成（{cause}），没有可以回退的完整快照。"
+  },
+  "mining_copyS2": {
+    "en": "The latest snapshot didn't finish",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:146",
+    "zh": "最近一次快照未完成"
+  },
+  "mining_copyStaleWithCause": {
+    "en": "{head} · {tail} ({cause})",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:152",
+    "zh": "{head} · {tail}（{cause}）"
+  },
+  "mining_copySwitch": {
+    "en": "No power snapshot has been taken yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:43",
+    "zh": "还没有算力快照"
+  },
+  "mining_copySwitch2": {
+    "en": "No complete power snapshot yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:46",
+    "zh": "还没有完整的算力快照"
+  },
+  "mining_copySwitch3": {
+    "en": "Shown after the next power snapshot",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:47",
+    "zh": "下一次算力快照之后显示"
+  },
+  "mining_copySwitch4": {
+    "en": "Power snapshot can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:48",
+    "zh": "暂时读不到算力快照"
+  },
+  "mining_copySwitch5": {
+    "en": "{label} has no available quote right now",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:94",
+    "zh": "{label} 暂时没有可用报价"
+  },
+  "mining_copySwitch6": {
+    "en": "{label}'s reference price isn't recent enough",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:95",
+    "zh": "{label} 的参考价不够新"
+  },
+  "mining_copySwitch7": {
+    "en": "{label}'s reference price comes from an unregistered token",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:96",
+    "zh": "{label} 的参考价来自未登记的代币"
+  },
+  "mining_copySwitch8": {
+    "en": "{label}'s reference price couldn't be read this time",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_copy.dart:97",
+    "zh": "{label} 的参考价这次读不到"
+  },
+  "mining_copySwitch9": {
+    "en": "That snapshot's data was incomplete",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_copy.dart:124",
+    "zh": "那次快照的数据不完整"
+  },
+  "mining_modelsApproved": {
+    "en": "Approved",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1059, lib/features/mining/mining_secondary_screens.dart:581",
+    "zh": "已批准"
+  },
+  "mining_modelsCommunities": {
+    "en": "Communities",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:615",
+    "zh": "社区榜"
+  },
+  "mining_modelsMiningAssetLabel": {
+    "en": "{chainName} native token",
+    "placeholders": {
+      "chainName": {
+        "example": "loopChainName(chainId)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_models.dart:577",
+    "zh": "{chainName} 原生代币"
+  },
+  "mining_modelsMiningBaselineDetail": {
+    "en": "Token power = amount held × asset weight, not multiplied by price; NFT power = amount held × community factor. Community tokens count only when their bound community is approved and you've joined it. Calculated from holdings in wallets linked to your LOOP account. Current version: every asset's weight is 1, the daily output is an estimate, and the reward token isn't decided yet. These numbers aren't earnings or a promise.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:235",
+    "zh": "持币算力 = 持有数量 × 资产权重，不乘价格；NFT 算力 = 持有数量 × 所属社区系数。社区币只在绑定它的社区已通过审核、且你已加入该社区时计入。按绑定到 LOOP 账号的钱包持仓计算。当前版本：每个资产的权重都定为 1，当日产量为预估值，奖励代币还没有确定。算出来的数字不是收益，也不构成承诺。"
+  },
+  "mining_modelsMiningBaselineLabel": {
+    "en": "Current power formula",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:231",
+    "zh": "当前算力公式"
+  },
+  "mining_modelsMiningReferralRankLabel": {
+    "en": "Invites",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:620",
+    "zh": "推广榜"
+  },
+  "mining_modelsPendingApproval": {
+    "en": "Pending approval",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1058, lib/features/mining/mining_secondary_screens.dart:582, lib/features/mining/mining_widgets.dart:43",
+    "zh": "待批准"
+  },
+  "mining_modelsRetired": {
+    "en": "Retired",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1060",
+    "zh": "已退役"
+  },
+  "mining_modelsS": {
+    "en": "Native token",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:578",
+    "zh": "原生代币"
+  },
+  "mining_modelsSwitch": {
+    "en": "Power = holdings × weight",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1227",
+    "zh": "算力 = 持有量 × 权重"
+  },
+  "mining_modelsSwitch10": {
+    "en": "Market stability",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1240",
+    "zh": "市场稳定性"
+  },
+  "mining_modelsSwitch11": {
+    "en": "User quality",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1241",
+    "zh": "用户质量"
+  },
+  "mining_modelsSwitch12": {
+    "en": "Depth of partnership with LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1243",
+    "zh": "与 LOOP 的合作深度"
+  },
+  "mining_modelsSwitch13": {
+    "en": "TWAP (time-weighted average price): keeps a single trade from skewing the reference price.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1244",
+    "zh": "TWAP 时间加权均价：避免单笔成交扭曲参考价。"
+  },
+  "mining_modelsSwitch14": {
+    "en": "Multi-period, multi-source comparison to cross-check unusual moves.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1245",
+    "zh": "多周期、多渠道比对，交叉验证异常波动。"
+  },
+  "mining_modelsSwitch15": {
+    "en": "Liquidity cap: limits the value counted for low-liquidity assets.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1246",
+    "zh": "Liquidity Cap：低流动性资产限制可计入价值。"
+  },
+  "mining_modelsSwitch16": {
+    "en": "Anonymous member",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1247",
+    "zh": "匿名成员"
+  },
+  "mining_modelsSwitch17": {
+    "en": "Whether others see an alias or \"Anonymous member\" depends only on that account's anonymous mode; \"Discoverable\" isn't involved, and you always see your own alias.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1249",
+    "zh": "别人看到的是别名还是「匿名成员」，只由该账号的匿名模式决定；「可被发现」不参与，自己永远看得到自己的别名。"
+  },
+  "mining_modelsSwitch18": {
+    "en": "Power values follow that account's own \"Mining power\" visibility; when set to only me, others can't see the value, but rank and entry counts stay public.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1251",
+    "zh": "算力数值按该账号自己的「挖矿算力」可见范围显示；设为仅自己时别人看不到数值，名次与参与条目数仍然公开。"
+  },
+  "mining_modelsSwitch19": {
+    "en": "A rule item defined by LOOP.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1252",
+    "zh": "LOOP 定义的规则项。"
+  },
+  "mining_modelsSwitch2": {
+    "en": "Power = holdings × reference price × weight",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1231",
+    "zh": "算力 = 持有量 × 参考价 × 权重"
+  },
+  "mining_modelsSwitch3": {
+    "en": "Daily output = my power ÷ network power × daily output",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1232",
+    "zh": "每日产出 = 我的算力 ÷ 全网算力 × 当日产量"
+  },
+  "mining_modelsSwitch4": {
+    "en": "LOOP uses a fixed top weight tier (value pending approval).",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1233",
+    "zh": "LOOP 采用固定的最高权重档位（数值待批准）。"
+  },
+  "mining_modelsSwitch5": {
+    "en": "Community token weights are granted by review; the range is pending approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1234",
+    "zh": "社区币权重按审核结果授予，区间待批准。"
+  },
+  "mining_modelsSwitch6": {
+    "en": "Community quality",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1235",
+    "zh": "社区质量"
+  },
+  "mining_modelsSwitch7": {
+    "en": "Community size",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1237",
+    "zh": "社区规模"
+  },
+  "mining_modelsSwitch8": {
+    "en": "Token liquidity",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1238",
+    "zh": "Token 流动性"
+  },
+  "mining_modelsSwitch9": {
+    "en": "Project quality",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:1239",
+    "zh": "项目质量"
+  },
+  "mining_modelsUsers": {
+    "en": "Users",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_models.dart:614",
+    "zh": "用户榜"
+  },
+  "mining_referralAppliesMiningPower": {
+    "en": "mining power",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:342",
+    "zh": "挖矿算力"
+  },
+  "mining_referralBarrierLabel": {
+    "en": "Close invite code binding",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:228",
+    "zh": "关闭绑定邀请码"
+  },
+  "mining_referralBarrierLabel2": {
+    "en": "Close invite poster",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:509",
+    "zh": "关闭邀请海报"
+  },
+  "mining_referralBuild": {
+    "en": "Invite code",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:423, lib/features/mining/referral_screen.dart:983",
+    "zh": "邀请码"
+  },
+  "mining_referralBuild2": {
+    "en": "Invite link",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:456",
+    "zh": "邀请链接"
+  },
+  "mining_referralBuild3": {
+    "en": "Enter the invite code any time after signing up and mine together.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:960",
+    "zh": "注册后随时可以填写邀请码，一起挖矿。"
+  },
+  "mining_referralBuild4": {
+    "en": "Enter the invite code after signing up on LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:994",
+    "zh": "在 LOOP 注册后填写邀请码"
+  },
+  "mining_referralBuild5": {
+    "en": "Inviter bound. The relation is locked and can't be changed",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1032",
+    "zh": "已绑定邀请人，关系锁定后不能更换"
+  },
+  "mining_referralBuild6": {
+    "en": "Each account can bind only once, and the relation can't be changed once locked. You can't bind your own code or a code from someone you invited.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1184",
+    "zh": "一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。"
+  },
+  "mining_referralDepthMax": {
+    "en": ", up to L{maximumDepth}",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:313",
+    "zh": "，最深到 L{maximumDepth}"
+  },
+  "mining_referralEmptyMessage": {
+    "en": "Couldn't load invite relations",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:128",
+    "zh": "没有读到邀请关系"
+  },
+  "mining_referralEmptyMessage2": {
+    "en": "No invitations yet",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:714, lib/features/mining/referral_screen.dart:723",
+    "zh": "还没有邀请"
+  },
+  "mining_referralEmptyReason": {
+    "en": "Invite code and invite count can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:129",
+    "zh": "暂时读不到邀请码和邀请人数。"
+  },
+  "mining_referralErrorText": {
+    "en": "Invalid invite code format. Check it and try again.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1195",
+    "zh": "邀请码格式不对，请检查后再试。"
+  },
+  "mining_referralIf": {
+    "en": "Mine with me on LOOP. Sign up and enter my invite code {code}",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:545",
+    "zh": "来 LOOP 一起挖矿，注册后填写我的邀请码 {code}"
+  },
+  "mining_referralInvitees": {
+    "en": "Invite list",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:83",
+    "zh": "邀请列表"
+  },
+  "mining_referralLabel": {
+    "en": "My invite code {code}",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:429",
+    "zh": "我的邀请码 {code}"
+  },
+  "mining_referralLabelText": {
+    "en": "Invite code (like LOOP-XXXXX)",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1194",
+    "zh": "邀请码（形如 LOOP-XXXXX）"
+  },
+  "mining_referralLoopLabel": {
+    "en": "My inviter",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:178",
+    "zh": "我的邀请人"
+  },
+  "mining_referralLoopRecordRow": {
+    "en": "{shown, plural, =1{1 active member} other{{shown} active members}}",
+    "placeholders": {
+      "shown": {
+        "example": "shown[index].effectiveMembers",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:674",
+    "zh": "有效成员 {shown} 人"
+  },
+  "mining_referralLoopSheetHeading": {
+    "en": "Invite poster",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:823",
+    "zh": "邀请海报"
+  },
+  "mining_referralMessage": {
+    "en": "This account already has an inviter, so {code} from the invite link won't be bound",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:217",
+    "zh": "这个账号已经绑定过邀请人，邀请链接里的 {code} 不会再绑定"
+  },
+  "mining_referralMessage2": {
+    "en": "This account can't bind an invite code right now, so {code} from the invite link wasn't submitted",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:218",
+    "zh": "这个账号现在不能绑定邀请码，邀请链接里的 {code} 没有提交"
+  },
+  "mining_referralMessage3": {
+    "en": "Invite code bound",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:237",
+    "zh": "邀请码已绑定"
+  },
+  "mining_referralMessage4": {
+    "en": "The share sheet didn't open. Copy the link instead",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:536",
+    "zh": "系统分享没有打开，可以先复制链接"
+  },
+  "mining_referralModelsInvalid": {
+    "en": "Invalid",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:338",
+    "zh": "已失效"
+  },
+  "mining_referralModelsInvalidated": {
+    "en": "Invalidated",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:80",
+    "zh": "已作废"
+  },
+  "mining_referralModelsPending": {
+    "en": "Pending",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:337",
+    "zh": "待生效"
+  },
+  "mining_referralModelsPendingActivation": {
+    "en": "Pending activation",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:76",
+    "zh": "待激活"
+  },
+  "mining_referralModelsPendingMining": {
+    "en": "Pending mining",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:78",
+    "zh": "待挖矿生效"
+  },
+  "mining_referralModelsPendingWallet": {
+    "en": "Pending wallet link",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:77",
+    "zh": "待绑定钱包"
+  },
+  "mining_referralModelsSwitch": {
+    "en": "People I invited directly and verified",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:379",
+    "zh": "我直接邀请并已验证的人"
+  },
+  "mining_referralModelsSwitch2": {
+    "en": "People my L1 invited",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:380",
+    "zh": "我的 L1 再邀请的人"
+  },
+  "mining_referralModelsSwitch3": {
+    "en": "People my L2 invited",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:381",
+    "zh": "我的 L2 再邀请的人"
+  },
+  "mining_referralModelsSwitch4": {
+    "en": "People my L3 invited",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:382",
+    "zh": "我的 L3 再邀请的人"
+  },
+  "mining_referralModelsSwitch5": {
+    "en": "People my L4 invited",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:383",
+    "zh": "我的 L4 再邀请的人"
+  },
+  "mining_referralModelsSwitch6": {
+    "en": "Invite relation level",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:384",
+    "zh": "邀请关系的层级"
+  },
+  "mining_referralModelsValid": {
+    "en": "Active",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_models.dart:79, lib/features/mining/referral_models.dart:336",
+    "zh": "有效"
+  },
+  "mining_referralOverviewCounts": {
+    "en": "\n{valid} active · {pending} pending verification.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:306",
+    "zh": "\n当前 {valid} 个有效关系 · {pending} 个待验证。"
+  },
+  "mining_referralReferralBoostTotalTitle": {
+    "en": "Total boost",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:659",
+    "zh": "总加成"
+  },
+  "mining_referralReferralBoundRowSubtitle": {
+    "en": "Depth L{depth} · {referralValidationStatusLabel} · locked {launchTimestampLabel}",
+    "placeholders": {
+      "depth": {
+        "example": "inviter.depth",
+        "type": "Object"
+      },
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(inviter.lockedAt)",
+        "type": "Object"
+      },
+      "referralValidationStatusLabel": {
+        "example": "referralValidationStatusLabel(inviter.validationStatus)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:1056",
+    "zh": "深度 L{depth} · {referralValidationStatusLabel} · 锁定于 {launchTimestampLabel}"
+  },
+  "mining_referralReferralBoundRowTitle": {
+    "en": "Inviter bound",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1053",
+    "zh": "已绑定邀请人"
+  },
+  "mining_referralReferralCapabilityInlineMessage": {
+    "en": "Invite relations aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:117",
+    "zh": "邀请关系当前不可用"
+  },
+  "mining_referralReferralClaimFailureTitle": {
+    "en": "This binding didn't finish",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1107",
+    "zh": "这次绑定没有完成"
+  },
+  "mining_referralReferralClaimShapeInvalidBody": {
+    "en": "An invite code is LOOP- followed by 5 characters. Clearly invalid codes aren't submitted, so your one binding isn't wasted.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1094",
+    "zh": "邀请码形如 LOOP- 加 5 位字符。格式明显不对时不会提交，以免浪费唯一的一次绑定机会。"
+  },
+  "mining_referralReferralClaimShapeInvalidTitle": {
+    "en": "Invalid invite code format",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1093",
+    "zh": "邀请码格式不对"
+  },
+  "mining_referralReferralClaimSubmitLabel": {
+    "en": "Bind",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1204",
+    "zh": "绑定"
+  },
+  "mining_referralReferralClaimSuccessBody": {
+    "en": "This relation is confirmed. It can't be changed after binding.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1121",
+    "zh": "这条关系已确认。绑定后不能更换。"
+  },
+  "mining_referralReferralClaimSuccessTitle": {
+    "en": "Relation locked",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1120",
+    "zh": "关系已锁定"
+  },
+  "mining_referralReferralClaimWindowTimed": {
+    "en": "You can't bind an invite code right now. Refresh and try again later",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:1036",
+    "zh": "当前不能绑定邀请码，请稍后刷新再试"
+  },
+  "mining_referralReferralClaimWindowUnavailable": {
+    "en": "Can't bind yet: {launchReasonCodeText}",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "example": "launchReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:1035",
+    "zh": "还不能绑定：{launchReasonCodeText}"
+  },
+  "mining_referralReferralCopyCodeLabel": {
+    "en": "Copy invite code",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:443",
+    "zh": "复制邀请码"
+  },
+  "mining_referralReferralCopyCodeMessage": {
+    "en": "Invite code copied",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:444",
+    "zh": "邀请码已复制"
+  },
+  "mining_referralReferralCopyLinkLabel": {
+    "en": "Copy invite link",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:476",
+    "zh": "复制邀请链接"
+  },
+  "mining_referralReferralCopyLinkMessage": {
+    "en": "Invite link copied",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:477",
+    "zh": "邀请链接已复制"
+  },
+  "mining_referralReferralInfoBindingBody": {
+    "en": "Invitees can bind any time after activating their LOOP ID; each account can bind only once, and the relation can't be changed once locked. You can't bind your own code or a code from someone you invited.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:333",
+    "zh": "被邀请人激活 LOOP ID 后随时可以绑定；一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。"
+  },
+  "mining_referralReferralInfoBindingTitle": {
+    "en": "Bind invite code",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:331, lib/features/mining/referral_screen.dart:1066, lib/features/mining/referral_screen.dart:1176",
+    "zh": "绑定邀请码"
+  },
+  "mining_referralReferralInfoDepthBody": {
+    "en": "People you invite directly and who are verified are L1, people L1 invites are L2, and so on{rules}. Each level's boost rate follows what the server publishes and counts only that level's active relations.",
+    "placeholders": {
+      "rules": {
+        "example": "rules == null ? '' : '，最深到 L${rules.maximumDepth}'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:308",
+    "zh": "你直接邀请并已验证的人是 L1，L1 再邀请的人是 L2，依此类推{rules}。每一级的加成比例以服务端公布的为准，只按该级的有效关系计入。"
+  },
+  "mining_referralReferralInfoDepthTitle": {
+    "en": "How depth is counted",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:306",
+    "zh": "关系深度如何计算"
+  },
+  "mining_referralReferralInfoMiningOnlyBody": {
+    "en": "Invite boost counts only toward mining power. It isn't income, commission or a rebate.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:293",
+    "zh": "邀请加成只计入挖矿算力，不是收入、佣金或返佣。"
+  },
+  "mining_referralReferralInfoMiningOnlyTitle": {
+    "en": "Counts only toward mining power",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:292",
+    "zh": "只计入挖矿算力"
+  },
+  "mining_referralReferralInfoRelationshipBody": {
+    "en": "Each account has one invite code. Sharing doesn't create a relation until it's verified; \"Active\" counts only verified relations, and the rest show as pending verification and add no boost.{overview}",
+    "placeholders": {
+      "overview": {
+        "example": "overview == null ? '' : '\\n当前 ${overview.validRelationships} 个有效关系 · '\n                    '${overview.pendingRelationships} 个待验证。'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:299",
+    "zh": "每个账号只有一个邀请码。分享完成不代表关系成立，还需要验证；「有效」只统计已验证的关系，其余一律显示为待验证，不计入任何加成。{overview}"
+  },
+  "mining_referralReferralInfoRelationshipTitle": {
+    "en": "How a relation is formed",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:297",
+    "zh": "关系怎样成立"
+  },
+  "mining_referralReferralInfoRulesBody": {
+    "en": "Effective {launchTimestampLabel} · max depth L{maximumDepth} · applies to {rules}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(rules.effectiveAt)",
+        "type": "Object"
+      },
+      "maximumDepth": {
+        "example": "rules.maximumDepth",
+        "type": "Object"
+      },
+      "rules": {
+        "example": "rules.appliesTo == 'miningPower' ? '挖矿算力' : ' ${rules.appliesTo}'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:341",
+    "zh": "生效于 {launchTimestampLabel} · 最大深度 L{maximumDepth} · 作用于{rules}"
+  },
+  "mining_referralReferralInfoRulesTitle": {
+    "en": "Rule version",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:339",
+    "zh": "规则版本"
+  },
+  "mining_referralReferralInfoValidMemberBody": {
+    "en": "An invitee is an active member only if they had power in the latest settled hour.{stats}",
+    "placeholders": {
+      "stats": {
+        "example": "stats == null\n              ? ''\n              : asOf == null\n              ? '\\n还没有结算过的小时，有效成员暂为 0。'\n              : '\\n当前数字截至 ${launchTimestampLabel(asOf)}。'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:322",
+    "zh": "被邀请人本人在最近一个结算小时有算力，才算有效成员。{stats}"
+  },
+  "mining_referralReferralInfoValidMemberTitle": {
+    "en": "Active members",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:320",
+    "zh": "有效成员"
+  },
+  "mining_referralReferralInviteLinkLabel": {
+    "en": "Invite link {link}",
+    "placeholders": {
+      "link": {
+        "example": "link",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:462",
+    "zh": "邀请链接 {link}"
+  },
+  "mining_referralReferralPosterLabel": {
+    "en": "Create poster",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:505",
+    "zh": "生成海报"
+  },
+  "mining_referralReferralPosterLabel2": {
+    "en": "LOOP invite poster, invite code {code}",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:937",
+    "zh": "LOOP 邀请海报，邀请码 {code}"
+  },
+  "mining_referralReferralPosterNoLink": {
+    "en": "Invite links aren't open yet, so the poster shows only the invite code.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:851",
+    "zh": "邀请链接还没有开放，海报上只印邀请码。"
+  },
+  "mining_referralReferralPosterQrSemanticLabel": {
+    "en": "Invite link QR code",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:977",
+    "zh": "邀请链接二维码"
+  },
+  "mining_referralReferralPosterShareLabel": {
+    "en": "Creating…",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:862",
+    "zh": "正在生成…"
+  },
+  "mining_referralReferralPosterShareLabel2": {
+    "en": "Save or share poster",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:862",
+    "zh": "保存或分享海报"
+  },
+  "mining_referralReferralShareLinkLabel": {
+    "en": "Share link",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:492",
+    "zh": "分享邀请链接"
+  },
+  "mining_referralRow": {
+    "en": "Hidden member",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:749",
+    "zh": "未公开的成员"
+  },
+  "mining_referralS": {
+    "en": "Mine with me on LOOP. Sign up and enter my invite code {code}\n{link}",
+    "placeholders": {
+      "code": {
+        "example": "code",
+        "type": "Object"
+      },
+      "link": {
+        "example": "link",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:546",
+    "zh": "来 LOOP 一起挖矿，注册后填写我的邀请码 {code}\n{link}"
+  },
+  "mining_referralS2": {
+    "en": "Scan to open the invite page",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:994",
+    "zh": "扫码打开邀请页"
+  },
+  "mining_referralSemanticLabel": {
+    "en": "{name}, joined {launchTimestampLabel}, {referralInviteeStatusLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(invitee.boundAt)",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      },
+      "referralInviteeStatusLabel": {
+        "example": "referralInviteeStatusLabel(invitee.status)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:788",
+    "zh": "{name}，加入于 {launchTimestampLabel}，{referralInviteeStatusLabel}"
+  },
+  "mining_referralSubject": {
+    "en": "Join me on LOOP",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957",
+    "zh": "邀请你加入 LOOP"
+  },
+  "mining_referralSubtitle": {
+    "en": "NFT {powerFigure} · Assets {powerFigure2}",
+    "placeholders": {
+      "powerFigure": {
+        "example": "loopPowerFigure(shown[index].nftPower)",
+        "type": "Object"
+      },
+      "powerFigure2": {
+        "example": "loopPowerFigure(shown[index].assetPower)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:677",
+    "zh": "NFT {powerFigure} · 资产 {powerFigure2}"
+  },
+  "mining_referralSubtitle2": {
+    "en": "Joined {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(invitee.boundAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:775",
+    "zh": "加入于 {launchTimestampLabel}"
+  },
+  "mining_referralTitle": {
+    "en": "L{level} · Boost {boostPercent}%",
+    "placeholders": {
+      "boostPercent": {
+        "example": "level.boostPercent",
+        "type": "Object"
+      },
+      "level": {
+        "example": "level.level",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/referral_screen.dart:315",
+    "zh": "L{level} · 加成 {boostPercent}%"
+  },
+  "mining_referralValidAsOf": {
+    "en": "\nFigures as of {time}.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:329",
+    "zh": "\n当前数字截至 {time}。"
+  },
+  "mining_referralValidNoHour": {
+    "en": "\nNo settled hour yet, so active members are 0 for now.",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart:328",
+    "zh": "\n还没有结算过的小时，有效成员暂为 0。"
+  },
+  "mining_screenCell": {
+    "en": "Token power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:499",
+    "zh": "代币算力"
+  },
+  "mining_screenCell2": {
+    "en": "NFT power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:500, lib/features/mining/mining_widgets.dart:1165",
+    "zh": "NFT 算力"
+  },
+  "mining_screenCell3": {
+    "en": "Token power · Last hour",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:511",
+    "zh": "代币算力 · 上一小时"
+  },
+  "mining_screenCell4": {
+    "en": "NFT power · Last hour",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:512",
+    "zh": "NFT 算力 · 上一小时"
+  },
+  "mining_screenClaimSemanticLabel": {
+    "en": "Claim rewards, open rewards and claims",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:187",
+    "zh": "领取奖励，打开奖励与领取"
+  },
+  "mining_screenEmptyLine": {
+    "en": "No power snapshot yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:573",
+    "zh": "暂无算力快照"
+  },
+  "mining_screenEmptyMessage": {
+    "en": "No power data yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:152",
+    "zh": "暂无算力数据"
+  },
+  "mining_screenEmptyMessage2": {
+    "en": "No power breakdown yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:551",
+    "zh": "暂无算力构成"
+  },
+  "mining_screenEmptyTitle": {
+    "en": "No NFT power yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:599",
+    "zh": "暂无 NFT 算力"
+  },
+  "mining_screenHeading": {
+    "en": "Loading",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:478, lib/features/mining/mining_secondary_screens.dart:288",
+    "zh": "正在读取"
+  },
+  "mining_screenKicker": {
+    "en": "Total power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:477",
+    "zh": "总算力"
+  },
+  "mining_screenLabel": {
+    "en": "Total mined",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:168",
+    "zh": "累计已挖"
+  },
+  "mining_screenLabel2": {
+    "en": "Claimable",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:176",
+    "zh": "待领取"
+  },
+  "mining_screenLabel3": {
+    "en": "Last hour power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:433",
+    "zh": "上一小时算力"
+  },
+  "mining_screenLabel4": {
+    "en": "Active invites",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:439",
+    "zh": "有效邀请"
+  },
+  "mining_screenLabel5": {
+    "en": "Today's estimate",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:449, lib/features/mining/mining_screen.dart:455",
+    "zh": "今日预估"
+  },
+  "mining_screenLoopInfoNote": {
+    "en": "No power snapshot loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:369",
+    "zh": "还没有读到算力快照。"
+  },
+  "mining_screenLoopInfoNote2": {
+    "en": "LOOP doesn't accumulate points or estimate earnings on this device. Not loaded doesn't mean \"zero power\".",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:384",
+    "zh": "LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。"
+  },
+  "mining_screenMiningCapabilityUnavailableLabel": {
+    "en": "Mining isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:142",
+    "zh": "挖矿当前不可用"
+  },
+  "mining_screenMiningCompositionNftUnavailableMessage": {
+    "en": "NFT power isn't provided separately yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:563",
+    "zh": "NFT 算力暂未单独提供"
+  },
+  "mining_screenMiningFormulaEffective": {
+    "en": "LOOP doesn't accumulate points or estimate earnings on this device. Every number on this page comes from the latest power snapshot.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:383",
+    "zh": "LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。"
+  },
+  "mining_screenMiningInfoConditionsBody": {
+    "en": "Token power = amount held × asset weight, not multiplied by price; NFTs use their community factor.\n{miningConditionVerified}\n{miningConditionMember}\n{miningConditionEmbedded}",
+    "placeholders": {
+      "miningConditionEmbedded": {
+        "example": "miningConditionEmbedded",
+        "type": "Object"
+      },
+      "miningConditionMember": {
+        "example": "miningConditionMember",
+        "type": "Object"
+      },
+      "miningConditionVerified": {
+        "example": "miningConditionVerified",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:393",
+    "zh": "持币算力 = 持有数量 × 资产权重，不乘价格；NFT 按所属社区系数计。\n{miningConditionVerified}\n{miningConditionMember}\n{miningConditionEmbedded}"
+  },
+  "mining_screenMiningInfoConditionsTitle": {
+    "en": "Which holdings count toward power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:391",
+    "zh": "哪些持仓计入算力"
+  },
+  "mining_screenMiningInfoFormulaTitle": {
+    "en": "Formula version",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:362",
+    "zh": "公式版本"
+  },
+  "mining_screenMiningInfoOpenRulesLabel": {
+    "en": "View mining rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:307",
+    "zh": "查看挖矿规则"
+  },
+  "mining_screenMiningInfoTruthTitle": {
+    "en": "No local estimates",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:381",
+    "zh": "不做本地估算"
+  },
+  "mining_screenMiningInviteInfoTitle": {
+    "en": "About invites",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:216, lib/features/mining/mining_screen.dart:217",
+    "zh": "邀请说明"
+  },
+  "mining_screenMiningRulesActionTitle": {
+    "en": "About mining",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:299, lib/features/mining/mining_screen.dart:300",
+    "zh": "挖矿说明"
+  },
+  "mining_screenMiningSnapshotComputed": {
+    "en": "Block {groupedFigure} · {launchTimestampLabel} · when power was calculated",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(blockNumber)",
+        "type": "Object"
+      },
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(computedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486",
+    "zh": "区块 {groupedFigure} · {launchTimestampLabel} · 这是算出算力的时间"
+  },
+  "mining_screenMiningSnapshotComputed2": {
+    "en": "Snapshot · {launchTimestampLabel}{stale}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(computedAt)",
+        "type": "Object"
+      },
+      "stale": {
+        "example": "stale ? ' · 未更新' : ''",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:419",
+    "zh": "快照 · {launchTimestampLabel}{stale}"
+  },
+  "mining_screenParenthetical": {
+    "en": " ({text})",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:345",
+    "zh": "（{text}）"
+  },
+  "mining_screenS": {
+    "en": "No token power yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:573, lib/features/mining/mining_screen.dart:625",
+    "zh": "暂无代币算力"
+  },
+  "mining_screenSpoken": {
+    "en": "Not loaded yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:283, lib/features/mining/mining_screen.dart:441, lib/features/mining/mining_secondary_screens.dart:118",
+    "zh": "还没有读到"
+  },
+  "mining_screenSpoken2": {
+    "en": "No settled hour yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:435, lib/features/mining/mining_screen.dart:508",
+    "zh": "还没有结算的小时"
+  },
+  "mining_screenSwitch": {
+    "en": "Mining summary not loaded yet. The formula version appears here once loaded.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:325",
+    "zh": "还没有读到挖矿摘要，公式版本读到之后显示在这里。"
+  },
+  "mining_screenSwitch2": {
+    "en": "No approved mining formula version: {launchReasonCodeText}",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "example": "launchReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:327",
+    "zh": "挖矿公式还没有批准的版本：{launchReasonCodeText}"
+  },
+  "mining_screenSwitch3": {
+    "en": "Mining formula pending approval. Numbers on this page have a source only after approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:332",
+    "zh": "挖矿公式待批准。批准后，页面上的数字才会有来源。"
+  },
+  "mining_screenSwitch4": {
+    "en": "Formula version pending approval",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:333, lib/features/mining/mining_widgets.dart:46",
+    "zh": "待批准的公式版本"
+  },
+  "mining_screenSwitch5": {
+    "en": "Mining formula in effect{scope} · effective {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(effectiveAt)",
+        "type": "Object"
+      },
+      "scope": {
+        "example": "scope.isBaseline ? '（$miningBaselineLabel）' : ''",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:342",
+    "zh": "挖矿公式已生效{scope} · 生效于 {launchTimestampLabel}"
+  },
+  "mining_screenSwitch6": {
+    "en": "Formula version in effect",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_screen.dart:344, lib/features/mining/mining_widgets.dart:58",
+    "zh": "已生效的公式版本"
+  },
+  "mining_screenValue": {
+    "en": "{invites, plural, =1{1 person} other{{invites} people}}",
+    "placeholders": {
+      "invites": {
+        "example": "invites",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_screen.dart:440, lib/features/mining/mining_screen.dart:441",
+    "zh": "{invites} 人"
+  },
+  "mining_secondaryScreensCell": {
+    "en": "My power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:374",
+    "zh": "我的算力"
+  },
+  "mining_secondaryScreensEmptyMessage": {
+    "en": "Couldn't load this community",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:142",
+    "zh": "没有读到这个社区"
+  },
+  "mining_secondaryScreensEmptyMessage2": {
+    "en": "Couldn't load rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:631",
+    "zh": "没有读到规则"
+  },
+  "mining_secondaryScreensEmptyReason": {
+    "en": "The community may not exist or isn't visible to this account.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:143",
+    "zh": "社区可能不存在，或对当前账号不可见。"
+  },
+  "mining_secondaryScreensEmptyReason2": {
+    "en": "Formula version can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:632",
+    "zh": "暂时读不到公式版本。"
+  },
+  "mining_secondaryScreensHeading": {
+    "en": "Weights and power rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:573",
+    "zh": "权重与算力规则"
+  },
+  "mining_secondaryScreensIf": {
+    "en": "Daily output",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:590, lib/features/mining/mining_secondary_screens.dart:785",
+    "zh": "每日产出"
+  },
+  "mining_secondaryScreensKicker": {
+    "en": "Power rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:567",
+    "zh": "算力规则"
+  },
+  "mining_secondaryScreensLabel": {
+    "en": "My power, {spokenContribution}. Community weight, {spokenWeight}",
+    "placeholders": {
+      "spokenContribution": {
+        "example": "spokenContribution",
+        "type": "Object"
+      },
+      "spokenWeight": {
+        "example": "spokenWeight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:366",
+    "zh": "我的算力，{spokenContribution}。社区权重，{spokenWeight}"
+  },
+  "mining_secondaryScreensLabel2": {
+    "en": "Approved formula version",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:644",
+    "zh": "已批准的公式版本"
+  },
+  "mining_secondaryScreensLoopFolioPrimary": {
+    "en": "No approved formula and no draft pending approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:575",
+    "zh": "还没有已批准的公式，也没有待批准的草案。"
+  },
+  "mining_secondaryScreensLoopFolioPrimary2": {
+    "en": "No approved formula yet. The one below is a draft pending approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:576",
+    "zh": "还没有已批准的公式。下面这条是等待批准的草案。"
+  },
+  "mining_secondaryScreensLoopFolioPrimary3": {
+    "en": "This version is approved and in effect; no draft pending approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:577",
+    "zh": "这一版已批准，当前生效；没有待批准的草案。"
+  },
+  "mining_secondaryScreensLoopFolioPrimary4": {
+    "en": "This version is approved and in effect. A draft pending approval is below.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:578",
+    "zh": "这一版已批准，当前生效。下面另有等待批准的草案。"
+  },
+  "mining_secondaryScreensLoopLabel": {
+    "en": "My contribution",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:152",
+    "zh": "我的贡献"
+  },
+  "mining_secondaryScreensLoopLabel2": {
+    "en": "Community record",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:154",
+    "zh": "社区记录"
+  },
+  "mining_secondaryScreensLoopLabel3": {
+    "en": "Community weight",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:156, lib/features/mining/mining_secondary_screens.dart:376",
+    "zh": "社区权重"
+  },
+  "mining_secondaryScreensLoopLabel4": {
+    "en": "Bound assets",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:160, lib/features/mining/mining_secondary_screens.dart:166",
+    "zh": "绑定资产"
+  },
+  "mining_secondaryScreensLoopLabel5": {
+    "en": "Approved version",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:636",
+    "zh": "已批准的版本"
+  },
+  "mining_secondaryScreensLoopLabel6": {
+    "en": "Version pending approval",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:667",
+    "zh": "待批准的版本"
+  },
+  "mining_secondaryScreensLoopLabel7": {
+    "en": "Invite relation rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:684",
+    "zh": "邀请关系规则"
+  },
+  "mining_secondaryScreensLoopLabel8": {
+    "en": "Asset weights",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:868",
+    "zh": "资产权重"
+  },
+  "mining_secondaryScreensLoopProvenanceLine": {
+    "en": "LOOP mining rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:663, lib/features/mining/mining_widgets.dart:279",
+    "zh": "LOOP 挖矿规则"
+  },
+  "mining_secondaryScreensMiningCommunityAssetRowSubtitle": {
+    "en": "This community has no bound assets yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:168",
+    "zh": "这个社区还没有绑定资产"
+  },
+  "mining_secondaryScreensMiningCommunityAssetRowTrailing": {
+    "en": "Bound",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:172",
+    "zh": "已绑定"
+  },
+  "mining_secondaryScreensMiningCommunityLogoKicker": {
+    "en": "Community power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:295",
+    "zh": "社区算力"
+  },
+  "mining_secondaryScreensMiningCommunityMetricParticipantsTitle": {
+    "en": "Holders mining",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:423",
+    "zh": "参与挖矿的持有人"
+  },
+  "mining_secondaryScreensMiningCommunityMetricPowerTitle": {
+    "en": "Community total power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:438",
+    "zh": "社区总算力"
+  },
+  "mining_secondaryScreensMiningCommunityNoticeBody": {
+    "en": "Weights come from review; the review factors are public, the exact scores aren't. Communities that aren't approved have no weight and no power. Holders must join the community for their holdings to count.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:181",
+    "zh": "权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。持有人须加入该社区，持仓才计入算力。"
+  },
+  "mining_secondaryScreensMiningCommunityNoticeTitle": {
+    "en": "Weights are set by platform review",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:179",
+    "zh": "权重由平台综合评定"
+  },
+  "mining_secondaryScreensMiningCommunityRankActionLabel": {
+    "en": "View leaderboard",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:100",
+    "zh": "查看排行榜"
+  },
+  "mining_secondaryScreensMiningCommunityReadingLabel": {
+    "en": "Community rank",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:109",
+    "zh": "社区排名"
+  },
+  "mining_secondaryScreensMiningCommunityReadingTrailingLabel": {
+    "en": "Participants",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:120",
+    "zh": "参与人数"
+  },
+  "mining_secondaryScreensMiningCommunityScreenTitle": {
+    "en": "Community mining",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:94, lib/features/mining/mining_secondary_screens.dart:131",
+    "zh": "社区挖矿面板"
+  },
+  "mining_secondaryScreensMiningCommunityWeightNotApplicableMessage": {
+    "en": "No weight to review",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:258",
+    "zh": "没有可审的权重"
+  },
+  "mining_secondaryScreensMiningCommunityWeightPendingMessage": {
+    "en": "Weight in review",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:251",
+    "zh": "权重审核中"
+  },
+  "mining_secondaryScreensMiningCommunityWeightRowSubtitle": {
+    "en": "Reviewed {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(reviewedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:221",
+    "zh": "审核于 {launchTimestampLabel}"
+  },
+  "mining_secondaryScreensMiningCommunityWeightRowTitle": {
+    "en": "Weight granted",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:220",
+    "zh": "已授予权重"
+  },
+  "mining_secondaryScreensMiningCommunityWeightVersion": {
+    "en": "Formula version in effect {identifier}",
+    "placeholders": {
+      "identifier": {
+        "example": "identifier",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:232",
+    "zh": "已生效的公式版本 {identifier}"
+  },
+  "mining_secondaryScreensMiningFigureValue": {
+    "en": "Sum of members' power on bound assets",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:442",
+    "zh": "成员在绑定资产上的算力之和"
+  },
+  "mining_secondaryScreensMiningParticipantsCount": {
+    "en": "Members with power in the latest power snapshot",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:427",
+    "zh": "最近一次算力快照里算出了算力的成员"
+  },
+  "mining_secondaryScreensMiningRulesNoPendingMessage": {
+    "en": "No draft version right now.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:673",
+    "zh": "目前没有草案版本。"
+  },
+  "mining_secondaryScreensMiningRulesNoPendingTitle": {
+    "en": "No version pending approval",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:672",
+    "zh": "没有待批准的版本"
+  },
+  "mining_secondaryScreensMiningRulesNoticeBody": {
+    "en": "Versions pending approval aren't used in any calculation. Weight ranges list rule items only, with no values; values are published after approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:728",
+    "zh": "待批准的版本不会参与任何计算。权重区间只有规则条目，没有数值；批准之后才会公布。"
+  },
+  "mining_secondaryScreensMiningRulesNoticeTitle": {
+    "en": "Drafts aren't rules in effect",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:727",
+    "zh": "草案不是生效规则"
+  },
+  "mining_secondaryScreensMiningRulesOpenReferralLabel": {
+    "en": "View my invite relations",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:714",
+    "zh": "查看我的邀请关系"
+  },
+  "mining_secondaryScreensMiningRulesReferralLSubtitle": {
+    "en": "Effective {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(rules.referral.effectiveAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:700",
+    "zh": "生效于 {launchTimestampLabel}"
+  },
+  "mining_secondaryScreensMiningRulesScreenTitle": {
+    "en": "Mining rules",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:561, lib/features/mining/mining_secondary_screens.dart:620",
+    "zh": "挖矿规则"
+  },
+  "mining_secondaryScreensSubtitle": {
+    "en": "Invite boost counts only toward power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:805",
+    "zh": "邀请加成只计入算力"
+  },
+  "mining_secondaryScreensSwitch": {
+    "en": "Sum of members' power on bound assets, weights included.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:282",
+    "zh": "成员在绑定资产上的算力之和，权重已经算在里面。"
+  },
+  "mining_secondaryScreensSwitch2": {
+    "en": "Community total power appears here once loaded.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:288",
+    "zh": "社区总算力读到之后显示在这里。"
+  },
+  "mining_secondaryScreensSwitch3": {
+    "en": "This page hasn't loaded this community's power yet.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:289",
+    "zh": "这一页还没有读到这个社区的算力。"
+  },
+  "mining_secondaryScreensSwitch4": {
+    "en": "Weights are granted by platform review and are already included in the power above.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:384",
+    "zh": "权重由平台审核结果授予，已经算在上面的算力里。"
+  },
+  "mining_secondaryScreensSwitch5": {
+    "en": "Approved {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(version.approvedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:861",
+    "zh": "批准于 {launchTimestampLabel}"
+  },
+  "mining_secondaryScreensText": {
+    "en": "Daily output ",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:596",
+    "zh": "每日产出 "
+  },
+  "mining_secondaryScreensText2": {
+    "en": "Exact scores aren't public; weights follow the platform's overall review.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:928",
+    "zh": "具体量化分值不公开，权重以平台综合评定结果为准。"
+  },
+  "mining_secondaryScreensTitle": {
+    "en": "{subject} isn't available right now",
+    "placeholders": {
+      "subject": {
+        "example": "subject",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_secondary_screens.dart:36",
+    "zh": "{subject}当前不可用"
+  },
+  "mining_secondaryScreensTitle2": {
+    "en": "Power formula",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:773",
+    "zh": "算力公式"
+  },
+  "mining_secondaryScreensTitle3": {
+    "en": "Invite boost",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:804, lib/features/mining/referral_screen.dart:84",
+    "zh": "邀请加成"
+  },
+  "mining_secondaryScreensTitle4": {
+    "en": "Reviewed community tokens",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:831",
+    "zh": "经审核的社区币"
+  },
+  "mining_secondaryScreensTrailingCaption": {
+    "en": "Published after the LOOP token launches",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:798",
+    "zh": "LOOP 代币上线后公布"
+  },
+  "mining_secondaryScreensTrailingCaption2": {
+    "en": "Estimated output",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:799",
+    "zh": "预估产量"
+  },
+  "mining_secondaryScreensTrailingCaption3": {
+    "en": "Daily output",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_secondary_screens.dart:799",
+    "zh": "当日产量"
+  },
+  "mining_widgetsLoopRecordRow": {
+    "en": "Holding {amountFigure}",
+    "placeholders": {
+      "amountFigure": {
+        "example": "loopAmountFigure(row.holding)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:1137",
+    "zh": "持有 {amountFigure}"
+  },
+  "mining_widgetsLoopRecordRow4": {
+    "en": "NFT power {powerFigure}",
+    "placeholders": {
+      "powerFigure": {
+        "example": "loopPowerFigure(nftPower)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:1168",
+    "zh": "NFT 算力 {powerFigure}"
+  },
+  "mining_widgetsMarker": {
+    "en": "Not updated",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:291",
+    "zh": "未更新"
+  },
+  "mining_widgetsMiningCompositionExpression": {
+    "en": "{amountFigure} × weight {weight}",
+    "placeholders": {
+      "amountFigure": {
+        "example": "loopAmountFigure(row.holding)",
+        "type": "Object"
+      },
+      "weight": {
+        "example": "row.weight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:1179",
+    "zh": "{amountFigure} × 权重 {weight}"
+  },
+  "mining_widgetsMiningDemoHoldingsDetail": {
+    "en": "This power includes demo holdings: they aren't on-chain, nobody actually holds them, and the numbers are for trying things out.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:234",
+    "zh": "这次算力里含演示持仓：它们不在链上，没有人真的持有，数字只用来体验。"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel": {
+    "en": "Mining formula not decided yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:44",
+    "zh": "挖矿公式尚未确定"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel2": {
+    "en": "Mining formula pending approval",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:44",
+    "zh": "挖矿公式待批准"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel3": {
+    "en": "Mining formula in effect",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:56",
+    "zh": "挖矿公式已生效"
+  },
+  "mining_widgetsMiningFormulaRowSubtitle": {
+    "en": "The numbers above have a source only after approval.",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:42",
+    "zh": "批准后，上面的数字才会有来源。"
+  },
+  "mining_widgetsMiningFormulaRowSubtitle2": {
+    "en": "In effect · {launchTimestampLabel}",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "example": "launchTimestampLabel(effectiveAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:54",
+    "zh": "已生效 · {launchTimestampLabel}"
+  },
+  "mining_widgetsMiningFormulaRowTitle": {
+    "en": "Mining formula",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:36, lib/features/mining/mining_widgets.dart:51",
+    "zh": "挖矿公式"
+  },
+  "mining_widgetsMiningFormulaRowTrailing": {
+    "en": "In effect",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:55",
+    "zh": "已生效"
+  },
+  "mining_widgetsMiningNetworkKicker": {
+    "en": "Network power · Last hour",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781",
+    "zh": "全网总算力 · 上一小时"
+  },
+  "mining_widgetsMiningNetworkKicker2": {
+    "en": "Network power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781",
+    "zh": "全网总算力"
+  },
+  "mining_widgetsMiningNetworkRankActionLabel2": {
+    "en": "Power Ranking, my rank {place}",
+    "placeholders": {
+      "place": {
+        "example": "place",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:592",
+    "zh": "算力榜，我的名次{place}"
+  },
+  "mining_widgetsMiningNetworkTotalLabel": {
+    "en": "Network power, {spoken}",
+    "placeholders": {
+      "spoken": {
+        "example": "spoken",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart:706, lib/features/mining/mining_widgets.dart:791",
+    "zh": "全网总算力，{spoken}"
+  },
+  "mining_widgetsMiningSummaryHeroAssetsLabel": {
+    "en": "Power details",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:555",
+    "zh": "算力明细"
+  },
+  "mining_widgetsMiningSummaryHeroClaimLabel": {
+    "en": "Mining rewards",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:536",
+    "zh": "挖矿奖励"
+  },
+  "mining_widgetsMiningSummaryHeroClaimLabel2": {
+    "en": "Claim rewards",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:536",
+    "zh": "领取奖励"
+  },
+  "mining_widgetsMiningSummaryHeroClaimSemanticLabel": {
+    "en": "Mining rewards, open the mining rewards page",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:540",
+    "zh": "挖矿奖励，打开挖矿奖励页"
+  },
+  "mining_widgetsText": {
+    "en": "My total power",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart:455",
+    "zh": "我的总算力"
+  }
+}

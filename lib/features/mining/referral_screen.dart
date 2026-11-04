@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart'
     show LoopQrView, loopPosterExportMessage;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -80,12 +81,16 @@ class ReferralCenterSections extends ConsumerStatefulWidget {
 
 /// The two tabs under the invite card (S348).
 enum ReferralCenterTab {
-  invitees('邀请列表'),
-  boost('邀请加成');
+  invitees(),
+  boost();
 
-  const ReferralCenterTab(this.label);
+  const ReferralCenterTab();
 
-  final String label;
+  String get label => switch (this) {
+    ReferralCenterTab.invitees => LoopL10n.current.mining_referralInvitees,
+
+    ReferralCenterTab.boost => LoopL10n.current.mining_secondaryScreensTitle3,
+  };
 }
 
 class _ReferralCenterSectionsState
@@ -114,7 +119,7 @@ class _ReferralCenterSectionsState
         LoopInlineUnavailable(
           key: const ValueKey<String>('referral-capability-inline'),
           icon: 'users',
-          message: '邀请关系当前不可用',
+          message: context.l10n.mining_referralReferralCapabilityInlineMessage,
           detail: launchReasonCodeText(
             capability.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
           ),
@@ -125,8 +130,8 @@ class _ReferralCenterSectionsState
           phase: state.phase,
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.detail,
-          emptyMessage: '没有读到邀请关系',
-          emptyReason: '暂时读不到邀请码和邀请人数。',
+          emptyMessage: context.l10n.mining_referralEmptyMessage,
+          emptyReason: context.l10n.mining_referralEmptyReason,
           onRetry: () => unawaited(controller.reload()),
         )
       else ...<Widget>[
@@ -175,7 +180,7 @@ class _ReferralCenterSectionsState
             ),
           },
         ),
-        const LoopLabel('我的邀请人'),
+        LoopLabel(context.l10n.mining_referralLoopLabel),
         _BindingBlock(
           binding: overview.binding,
           busy: state.busy,
@@ -214,8 +219,8 @@ class _ReferralCenterSectionsState
         LoopToast.show(
           context,
           message: overview.binding.isBound
-              ? '这个账号已经绑定过邀请人，邀请链接里的 $code 不会再绑定'
-              : '这个账号现在不能绑定邀请码，邀请链接里的 $code 没有提交',
+              ? LoopL10n.current.mining_referralMessage(code)
+              : LoopL10n.current.mining_referralMessage2(code),
           kind: LoopToastKind.warn,
         );
       }
@@ -225,7 +230,7 @@ class _ReferralCenterSectionsState
   Future<void> _openClaimSheet({String? initialCode}) async {
     final code = await showLoopSheet<String>(
       context,
-      barrierLabel: '关闭绑定邀请码',
+      barrierLabel: LoopL10n.current.mining_referralBarrierLabel,
       builder: (sheetContext) => _ClaimForm(initialCode: initialCode),
     );
     if (code == null || !mounted) return;
@@ -234,7 +239,11 @@ class _ReferralCenterSectionsState
     final state = ref.read(referralControllerProvider);
     // A success Toast only after the server confirmed the binding.
     if (state.claimed) {
-      LoopToast.show(context, message: '邀请码已绑定', kind: LoopToastKind.ok);
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.mining_referralMessage3,
+        kind: LoopToastKind.ok,
+      );
     }
   }
 }
@@ -287,60 +296,70 @@ List<LoopInfoNote> referralInfoNotes(ReferralOverview? overview) {
   final levels = overview?.levels ?? const <ReferralLevel>[];
   final asOf = stats?.validAsOf;
   return <LoopInfoNote>[
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('referral-info-mining-only'),
-      title: '只计入挖矿算力',
-      body: '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
+      title: LoopL10n.current.mining_referralReferralInfoMiningOnlyTitle,
+      body: LoopL10n.current.mining_referralReferralInfoMiningOnlyBody,
     ),
     LoopInfoNote(
       key: const ValueKey<String>('referral-info-relationship'),
-      title: '关系怎样成立',
-      body:
-          '每个账号只有一个邀请码。分享完成不代表关系成立，还需要验证；'
-          '「有效」只统计已验证的关系，其余一律显示为待验证，不计入任何加成。'
-          '${overview == null ? '' : '\n当前 ${overview.validRelationships} 个有效关系 · '
-                    '${overview.pendingRelationships} 个待验证。'}',
+      title: LoopL10n.current.mining_referralReferralInfoRelationshipTitle,
+      body: LoopL10n.current.mining_referralReferralInfoRelationshipBody(
+        overview == null
+            ? ''
+            : LoopL10n.current.mining_referralOverviewCounts(
+                overview.pendingRelationships,
+                overview.validRelationships,
+              ),
+      ),
     ),
     LoopInfoNote(
       key: const ValueKey<String>('referral-info-depth'),
-      title: '关系深度如何计算',
-      body:
-          '你直接邀请并已验证的人是 L1，L1 再邀请的人是 L2，依此类推'
-          '${rules == null ? '' : '，最深到 L${rules.maximumDepth}'}。'
-          '每一级的加成比例以服务端公布的为准，只按该级的有效关系计入。',
+      title: LoopL10n.current.mining_referralReferralInfoDepthTitle,
+      body: LoopL10n.current.mining_referralReferralInfoDepthBody(
+        rules == null
+            ? ''
+            : LoopL10n.current.mining_referralDepthMax(rules.maximumDepth),
+      ),
     ),
     for (final level in levels)
       LoopInfoNote(
         key: ValueKey<String>('referral-level-${level.level}'),
-        title: 'L${level.level} · 加成 ${level.boostPercent}%',
+        title: LoopL10n.current.mining_referralTitle(
+          level.boostPercent,
+          level.level,
+        ),
         body: referralLevelDescription(level.level),
       ),
     LoopInfoNote(
       key: const ValueKey<String>('referral-info-valid-member'),
-      title: '有效成员',
-      body:
-          '被邀请人本人在最近一个结算小时有算力，才算有效成员。'
-          '${stats == null
-              ? ''
-              : asOf == null
-              ? '\n还没有结算过的小时，有效成员暂为 0。'
-              : '\n当前数字截至 ${launchTimestampLabel(asOf)}。'}',
+      title: LoopL10n.current.mining_referralReferralInfoValidMemberTitle,
+      body: LoopL10n.current.mining_referralReferralInfoValidMemberBody(
+        stats == null
+            ? ''
+            : asOf == null
+            ? LoopL10n.current.mining_referralValidNoHour
+            : LoopL10n.current.mining_referralValidAsOf(
+                launchTimestampLabel(asOf),
+              ),
+      ),
     ),
     LoopInfoNote(
       key: const ValueKey<String>('referral-info-binding'),
-      title: '绑定邀请码',
-      body:
-          '被邀请人激活 LOOP ID 后随时可以绑定；一个账号只能绑定一次，关系锁定后不可更换。'
-          '不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
+      title: LoopL10n.current.mining_referralReferralInfoBindingTitle,
+      body: LoopL10n.current.mining_referralReferralInfoBindingBody,
     ),
     if (rules != null)
       LoopInfoNote(
         key: const ValueKey<String>('referral-info-rules'),
-        title: '规则版本',
-        body:
-            '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
-            '最大深度 L${rules.maximumDepth} · '
-            '作用于${rules.appliesTo == 'miningPower' ? '挖矿算力' : ' ${rules.appliesTo}'}',
+        title: LoopL10n.current.mining_referralReferralInfoRulesTitle,
+        body: LoopL10n.current.mining_referralReferralInfoRulesBody(
+          launchTimestampLabel(rules.effectiveAt),
+          rules.maximumDepth,
+          rules.appliesTo == 'miningPower'
+              ? LoopL10n.current.mining_referralAppliesMiningPower
+              : ' ${rules.appliesTo}',
+        ),
       ),
   ];
 }
@@ -391,7 +410,7 @@ class _ReferralCopyGlyphState extends State<ReferralCopyGlyph> {
   @override
   Widget build(BuildContext context) => LoopIconButton(
     icon: _copied ? 'check' : 'copy',
-    label: _copied ? '已复制' : widget.label,
+    label: _copied ? context.l10n.common_copied : widget.label,
     color: _copied ? LoopColors.yellow : null,
     onPressed: () => unawaited(_copy()),
   );
@@ -420,13 +439,13 @@ class _InviteCardBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text('邀请码', style: caption),
+        Text(context.l10n.mining_referralBuild, style: caption),
         Row(
           children: <Widget>[
             Expanded(
               child: Semantics(
                 container: true,
-                label: '我的邀请码 $code',
+                label: context.l10n.mining_referralLabel(code),
                 excludeSemantics: true,
                 child: Text(
                   code,
@@ -440,8 +459,8 @@ class _InviteCardBody extends ConsumerWidget {
             ReferralCopyGlyph(
               key: const ValueKey<String>('referral-copy-code'),
               text: code,
-              label: '复制邀请码',
-              message: '邀请码已复制',
+              label: context.l10n.mining_referralReferralCopyCodeLabel,
+              message: context.l10n.mining_referralReferralCopyCodeMessage,
             ),
           ],
         ),
@@ -453,13 +472,15 @@ class _InviteCardBody extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(height: 1, thickness: 1, color: LoopColors.line),
           ),
-          Text('邀请链接', style: caption),
+          Text(context.l10n.mining_referralBuild2, style: caption),
           Row(
             key: const ValueKey<String>('referral-link-block'),
             children: <Widget>[
               Expanded(
                 child: Semantics(
-                  label: '邀请链接 $link',
+                  label: context.l10n.mining_referralReferralInviteLinkLabel(
+                    link,
+                  ),
                   excludeSemantics: true,
                   // The scheme is dropped on screen only; copy and share
                   // carry the full link.
@@ -473,8 +494,8 @@ class _InviteCardBody extends ConsumerWidget {
               ReferralCopyGlyph(
                 key: const ValueKey<String>('referral-copy-link'),
                 text: link,
-                label: '复制邀请链接',
-                message: '邀请链接已复制',
+                label: context.l10n.mining_referralReferralCopyLinkLabel,
+                message: context.l10n.mining_referralReferralCopyLinkMessage,
               ),
             ],
           ),
@@ -489,7 +510,7 @@ class _InviteCardBody extends ConsumerWidget {
                 flex: 4,
                 child: LoopButton(
                   key: const ValueKey<String>('referral-share-link'),
-                  label: '分享邀请链接',
+                  label: context.l10n.mining_referralReferralShareLinkLabel,
                   // S350b: no glyph, so the label holds one line in half the
                   // card at 360 wide.
                   primary: true,
@@ -502,11 +523,11 @@ class _InviteCardBody extends ConsumerWidget {
               flex: 3,
               child: LoopButton(
                 key: const ValueKey<String>('referral-poster'),
-                label: '生成海报',
+                label: context.l10n.mining_referralReferralPosterLabel,
                 onPressed: () => unawaited(
                   showLoopSheet<void>(
                     context,
-                    barrierLabel: '关闭邀请海报',
+                    barrierLabel: context.l10n.mining_referralBarrierLabel2,
                     useRootNavigator: true,
                     builder: (sheetContext) =>
                         ReferralPosterSheet(code: code, link: link),
@@ -528,12 +549,12 @@ class _InviteCardBody extends ConsumerWidget {
   ) async {
     final shown = await ref.read(loopTextShareProvider)(
       referralInviteText(code, link),
-      subject: '邀请你加入 LOOP',
+      subject: context.l10n.mining_referralSubject,
     );
     if (!shown && context.mounted) {
       LoopToast.show(
         context,
-        message: '系统分享没有打开，可以先复制链接',
+        message: context.l10n.mining_referralMessage4,
         kind: LoopToastKind.warn,
       );
     }
@@ -542,8 +563,8 @@ class _InviteCardBody extends ConsumerWidget {
 
 /// The text 「分享邀请链接」 hands to the system sheet.
 String referralInviteText(String code, String? link) => link == null
-    ? '来 LOOP 一起挖矿，注册后填写我的邀请码 $code'
-    : '来 LOOP 一起挖矿，注册后填写我的邀请码 $code\n$link';
+    ? LoopL10n.current.mining_referralIf(code)
+    : LoopL10n.current.mining_referralS(code, link);
 
 /// One line of text that keeps its start and its end and drops the middle
 /// for 「…」 when it does not fit (decision 0235: the invite link keeps the
@@ -656,9 +677,9 @@ class ReferralBoostPanel extends StatelessWidget {
       rows: <LoopRecordRow>[
         LoopRecordRow(
           key: const ValueKey<String>('referral-boost-total'),
-          title: '总加成',
+          title: context.l10n.mining_referralReferralBoostTotalTitle,
           trailing: total,
-          trailingCaption: value == null ? null : '算力',
+          trailingCaption: value == null ? null : context.l10n.common_power,
           trailingStrong: true,
           trailingColor: value == null ? null : LoopColors.yellow,
           chevron: false,
@@ -671,11 +692,14 @@ class ReferralBoostPanel extends StatelessWidget {
               'L${shown[index].level}',
               if (percents[shown[index].level] case final String percent)
                 '$percent%',
-              '有效成员 ${shown[index].effectiveMembers} 人',
+              context.l10n.mining_referralLoopRecordRow(
+                shown[index].effectiveMembers,
+              ),
             ].join(' · '),
-            subtitle:
-                'NFT ${loopPowerFigure(shown[index].nftPower)} · '
-                '资产 ${loopPowerFigure(shown[index].assetPower)}',
+            subtitle: context.l10n.mining_referralSubtitle(
+              loopPowerFigure(shown[index].nftPower),
+              loopPowerFigure(shown[index].assetPower),
+            ),
             chevron: false,
             position: launchRowPosition(index + 1, shown.length + 1),
           ),
@@ -711,16 +735,16 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
         failureKind: state.failureKind,
         skeleton: LoopSkeletonType.record,
         rows: 3,
-        emptyMessage: '还没有邀请',
+        emptyMessage: context.l10n.mining_referralEmptyMessage2,
         onRetry: () => unawaited(controller.reload()),
       );
     }
     final items = state.items;
     if (items.isEmpty) {
-      return const LoopInlineUnavailable(
+      return LoopInlineUnavailable(
         key: ValueKey<String>('referral-invitees-empty'),
         icon: 'users',
-        message: '还没有邀请',
+        message: context.l10n.mining_referralEmptyMessage2,
       );
     }
     return Column(
@@ -746,7 +770,7 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
   }
 
   LoopRecordRow _row(ReferralInvitee invitee, int index, int length) {
-    final name = invitee.alias ?? '未公开的成员';
+    final name = invitee.alias ?? LoopL10n.current.mining_referralRow;
     final id = invitee.publicProfileId;
     final location = loopProfileFaceLocation(id);
     void open(String target) {
@@ -772,7 +796,9 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
         ),
       ),
       title: name,
-      subtitle: '加入于 ${launchTimestampLabel(invitee.boundAt)}',
+      subtitle: LoopL10n.current.mining_referralSubtitle2(
+        launchTimestampLabel(invitee.boundAt),
+      ),
       trailingBadge: LoopBadge(
         referralInviteeStatusLabel(invitee.status),
         kind: switch (invitee.status) {
@@ -784,9 +810,11 @@ class _InviteeListState extends ConsumerState<_InviteeList> {
       chevron: location != null,
       onTap: location == null ? null : () => open(location),
       position: launchRowPosition(index, length),
-      semanticLabel:
-          '$name，加入于 ${launchTimestampLabel(invitee.boundAt)}，'
-          '${referralInviteeStatusLabel(invitee.status)}',
+      semanticLabel: LoopL10n.current.mining_referralSemanticLabel(
+        launchTimestampLabel(invitee.boundAt),
+        name,
+        referralInviteeStatusLabel(invitee.status),
+      ),
     );
   }
 }
@@ -820,7 +848,7 @@ class _ReferralPosterSheetState extends ConsumerState<ReferralPosterSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('邀请海报'),
+        LoopSheetHeading(context.l10n.mining_referralLoopSheetHeading),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -848,7 +876,7 @@ class _ReferralPosterSheetState extends ConsumerState<ReferralPosterSheet> {
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
-                    '邀请链接还没有开放，海报上只印邀请码。',
+                    context.l10n.mining_referralReferralPosterNoLink,
                     key: const ValueKey<String>('referral-poster-no-link'),
                     style: LoopType.captionSm,
                   ),
@@ -859,7 +887,9 @@ class _ReferralPosterSheetState extends ConsumerState<ReferralPosterSheet> {
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('referral-poster-share'),
-                    label: _exporting ? '正在生成…' : '保存或分享海报',
+                    label: _exporting
+                        ? context.l10n.mining_referralReferralPosterShareLabel
+                        : context.l10n.mining_referralReferralPosterShareLabel2,
                     primary: true,
                     onPressed: _exporting ? null : () => unawaited(_export()),
                   ),
@@ -934,7 +964,7 @@ class ReferralPoster extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('referral-poster'),
       container: true,
-      label: 'LOOP 邀请海报，邀请码 $code',
+      label: context.l10n.mining_referralReferralPosterLabel2(code),
       child: DefaultTextStyle(
         style: LoopType.body,
         child: Container(
@@ -954,10 +984,17 @@ class ReferralPoster extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 36),
-              Text('邀请你加入 LOOP', style: LoopType.headingLg),
+              Text(
+                context.l10n.mining_referralSubject,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.headingLg,
+              ),
               const SizedBox(height: 8),
               Text(
-                '注册后随时可以填写邀请码，一起挖矿。',
+                context.l10n.mining_referralBuild3,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: LoopType.bodySm.copyWith(color: LoopColors.text2),
               ),
               const Spacer(),
@@ -974,13 +1011,15 @@ class ReferralPoster extends StatelessWidget {
                     child: LoopQrView(
                       key: const ValueKey<String>('referral-poster-qr'),
                       code: symbol,
-                      semanticLabel: '邀请链接二维码',
+                      semanticLabel: context
+                          .l10n
+                          .mining_referralReferralPosterQrSemanticLabel,
                     ),
                   ),
                 ),
               const Spacer(),
               Text(
-                '邀请码',
+                context.l10n.mining_referralBuild,
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
               const SizedBox(height: 6),
@@ -991,7 +1030,9 @@ class ReferralPoster extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                symbol == null ? '在 LOOP 注册后填写邀请码' : '扫码打开邀请页',
+                symbol == null
+                    ? context.l10n.mining_referralBuild4
+                    : context.l10n.mining_referralS2,
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ],
@@ -1029,11 +1070,14 @@ class _BindingBlock extends StatelessWidget {
     final String? blockedLine = binding.canClaim
         ? null
         : binding.isBound || inviter != null
-        ? '已绑定邀请人，关系锁定后不能更换'
+        ? context.l10n.mining_referralBuild5
         : switch (binding.claimWindow) {
             ReferralClaimWindowUnavailable(:final reasonCode) =>
-              '还不能绑定：${launchReasonCodeText(reasonCode)}',
-            ReferralClaimWindowTimed() => '当前不能绑定邀请码，请稍后刷新再试',
+              context.l10n.mining_referralReferralClaimWindowUnavailable(
+                launchReasonCodeText(reasonCode),
+              ),
+            ReferralClaimWindowTimed() =>
+              context.l10n.mining_referralReferralClaimWindowTimed,
           };
     final String blockedKey = binding.isBound || inviter != null
         ? 'referral-claim-bound-note'
@@ -1050,12 +1094,13 @@ class _BindingBlock extends StatelessWidget {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('referral-bound-row'),
-                title: '已绑定邀请人',
+                title: context.l10n.mining_referralReferralBoundRowTitle,
                 // Never the inviter's identity: only depth and state.
-                subtitle:
-                    '深度 L${inviter.depth} · '
-                    '${referralValidationStatusLabel(inviter.validationStatus)} · '
-                    '锁定于 ${launchTimestampLabel(inviter.lockedAt)}',
+                subtitle: context.l10n.mining_referralReferralBoundRowSubtitle(
+                  inviter.depth,
+                  launchTimestampLabel(inviter.lockedAt),
+                  referralValidationStatusLabel(inviter.validationStatus),
+                ),
               ),
             ],
           ),
@@ -1063,7 +1108,7 @@ class _BindingBlock extends StatelessWidget {
           children: <Widget>[
             LoopButton(
               key: const ValueKey<String>('referral-claim'),
-              label: '绑定邀请码',
+              label: context.l10n.mining_referralReferralInfoBindingTitle,
               primary: true,
               onPressed: blockedLine != null || busy ? null : onClaim,
             ),
@@ -1086,12 +1131,12 @@ class _BindingBlock extends StatelessWidget {
             ),
           ),
         if (claimShapeInvalid)
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('referral-claim-shape-invalid'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '邀请码格式不对',
-            body: '邀请码形如 LOOP- 加 5 位字符。格式明显不对时不会提交，以免浪费唯一的一次绑定机会。',
+            title: context.l10n.mining_referralReferralClaimShapeInvalidTitle,
+            body: context.l10n.mining_referralReferralClaimShapeInvalidBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -1104,7 +1149,7 @@ class _BindingBlock extends StatelessWidget {
             key: const ValueKey<String>('referral-claim-failure'),
             icon: 'warn',
             tone: LoopNoticeTone.danger,
-            title: '这次绑定没有完成',
+            title: context.l10n.mining_referralReferralClaimFailureTitle,
             body: referralClaimFailureReason(claimFailureKind),
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -1114,11 +1159,11 @@ class _BindingBlock extends StatelessWidget {
             ),
           ),
         if (claimed)
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('referral-claim-success'),
             icon: 'check',
-            title: '关系已锁定',
-            body: '这条关系已确认。绑定后不能更换。',
+            title: context.l10n.mining_referralReferralClaimSuccessTitle,
+            body: context.l10n.mining_referralReferralClaimSuccessBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -1173,7 +1218,9 @@ class _ClaimFormState extends State<_ClaimForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('绑定邀请码'),
+          LoopSheetHeading(
+            context.l10n.mining_referralReferralInfoBindingTitle,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -1181,7 +1228,7 @@ class _ClaimFormState extends State<_ClaimForm> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Text(
-                  '一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
+                  context.l10n.mining_referralBuild6,
                   style: LoopType.bodySm,
                 ),
                 const SizedBox(height: 14),
@@ -1191,8 +1238,10 @@ class _ClaimFormState extends State<_ClaimForm> {
                   autocorrect: false,
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    labelText: '邀请码（形如 LOOP-XXXXX）',
-                    errorText: _invalid ? '邀请码格式不对，请检查后再试。' : null,
+                    labelText: context.l10n.mining_referralLabelText,
+                    errorText: _invalid
+                        ? context.l10n.mining_referralErrorText
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1201,13 +1250,14 @@ class _ClaimFormState extends State<_ClaimForm> {
                   children: <Widget>[
                     LoopButton(
                       key: const ValueKey<String>('referral-claim-submit'),
-                      label: '绑定',
+                      label:
+                          context.l10n.mining_referralReferralClaimSubmitLabel,
                       primary: true,
                       onPressed: _submit,
                     ),
                     LoopButton(
                       key: const ValueKey<String>('referral-claim-cancel'),
-                      label: '取消',
+                      label: context.l10n.common_cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],

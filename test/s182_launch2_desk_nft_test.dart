@@ -1682,13 +1682,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(gateway.nftCalls, 1);
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.map((intent) => intent.kind), <IntentKind>[
         IntentKind.launchApproval,
         IntentKind.launchPurchase,
       ]);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(_medal(tester).bottomLabel, '#7');
@@ -1968,7 +1968,7 @@ void main() {
         matching: find.textContaining(absent),
       );
       expect(onSheet, findsNothing);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.last.title, 'Confirm $noun');
       await _drain(tester);
@@ -2685,7 +2685,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(_key('launch2-nft-confirm-button'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pump();
       await tester.pump();
       // The wallet broadcast: 已广播, nothing confirmed yet.
@@ -2782,7 +2782,7 @@ void main() {
         gateway.detailReads,
         lessThanOrEqualTo(1 + launch2ConfirmationReads),
       );
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsNothing);
       await _drain(tester);
@@ -2861,7 +2861,7 @@ void main() {
       // The watch did read the second answer (soldCount 2).
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(find.text('Confirmed'), findsNothing);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await _drain(tester);
     });
@@ -2891,7 +2891,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(_key('launch2-nft-confirm-button'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pump();
       await tester.pump();
       final sheet = _key('loop-sign-sheet-complete');
@@ -2907,7 +2907,7 @@ void main() {
       }
       expect(gateway.detailReads, reads);
       expect(find.text('Confirmed'), findsNothing);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await _drain(tester);
     });

@@ -2,6 +2,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Explicit Development Preview Watchlist, written against the V2 contract.
 ///
@@ -59,7 +60,7 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
   groups: <WatchlistGroup>[
     WatchlistGroup(
       key: 'default',
-      name: '默认',
+      name: LoopL10n.current.integrations_memoryWatchlistGatewayName,
       items: <WatchlistItem>[
         WatchlistItem(
           assetId: 'eip155:56:native',
@@ -91,7 +92,7 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
     ),
     WatchlistGroup(
       key: 'watching',
-      name: '观察中',
+      name: LoopL10n.current.integrations_memoryWatchlistGatewayName2,
       items: <WatchlistItem>[
         WatchlistItem(
           assetId: 'eip155:56:0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',

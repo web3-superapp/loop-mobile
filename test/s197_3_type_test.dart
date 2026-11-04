@@ -248,7 +248,7 @@ void main() {
       tester,
     ) async {
       await pump(tester);
-      await tester.tap(find.text('交易'));
+      await tester.tap(find.text('Trades'));
       await tester.pumpAndSettle();
       final row = find.byKey(
         const ValueKey<String>('user-profile-trade-evt_1'),

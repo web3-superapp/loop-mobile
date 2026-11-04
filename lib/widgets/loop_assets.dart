@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_media_image.dart';
 
 /// Line icon from the prototype SVG sprite (`i-<name>.svg`).
@@ -683,7 +684,10 @@ class _LoopIdentityAvatarState extends State<LoopIdentityAvatar> {
     final cornerRadius =
         widget.radius ??
         (atlas == LoopIdentityAtlas.people ? size / 2 : LoopRadius.innerValue);
-    final label = widget.semanticLabel ?? cell?.label ?? '${widget.slot} 头像';
+    final label =
+        widget.semanticLabel ??
+        cell?.label ??
+        context.l10n.widgets_assetsBuild(widget.slot);
     final monogram =
         widget.fallbackMonogram ?? cell?.fallback ?? loopMonogram(widget.slot);
     if (cell == null || _failed) {

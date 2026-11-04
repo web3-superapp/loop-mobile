@@ -1,6 +1,7 @@
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Memory-only S4 adapters for the explicit Development Preview entry point.
 ///
@@ -127,7 +128,8 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
     room: VoiceRoomRecord(
       voiceRoomId: _roomId,
       communityId: _communityId,
-      communityName: '开发预览社区',
+      communityName:
+          LoopL10n.current.integrations_memoryChatGatewaysCommunityName,
       callCid: 'audio_room:loop_voice_0123456789abcdef0123456789abcdef',
       state: _ended ? VoiceRoomState.ended : VoiceRoomState.live,
       provisionState: VoiceRoomProvisionState.provisioned,

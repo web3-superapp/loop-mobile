@@ -129,7 +129,7 @@ void main() {
       expect(
         find.descendant(
           of: cake,
-          matching: find.textContaining('1,543,209.8625 × 权重 0.8'),
+          matching: find.textContaining('1,543,209.8625 × weight 0.8'),
         ),
         findsOneWidget,
       );
@@ -152,7 +152,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('mining-composition'),
-          matching: find.text('邀请加成'),
+          matching: find.text('Invite boost'),
         ),
         findsNothing,
       );
@@ -173,7 +173,7 @@ void main() {
         tester.widget(_key('mining-composition-nft-empty')),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('暂无 NFT 算力'), findsOneWidget);
+      expect(find.text('No NFT power yet'), findsOneWidget);
     });
 
     testWidgets('NFT only: the token group is the empty style', (tester) async {
@@ -186,7 +186,7 @@ void main() {
         nftPower: '3000',
       );
 
-      expect(find.text('暂无代币算力'), findsOneWidget);
+      expect(find.text('No token power yet'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsNothing);
       await _openNftTab(tester);
       expect(_text(tester, 'mining-composition-nft-subtotal'), '3,000');
@@ -201,10 +201,10 @@ void main() {
         nftPower: '0',
       );
 
-      expect(find.text('暂无代币算力'), findsOneWidget);
+      expect(find.text('No token power yet'), findsOneWidget);
       expect(_text(tester, 'mining-composition-token-subtotal'), '0');
       await _openNftTab(tester);
-      expect(find.text('暂无 NFT 算力'), findsOneWidget);
+      expect(find.text('No NFT power yet'), findsOneWidget);
     });
   });
 
@@ -235,11 +235,11 @@ void main() {
           s7MiningBaselineSummary(assetPower: '5.9', nftPower: '2'),
           null,
         ).map((cell) => '${cell.label} ${cell.value}'),
-        <String>['代币算力 5', 'NFT 算力 2'],
+        <String>['Token power 5', 'NFT power 2'],
       );
       expect(
         miningPoolSplitMetrics(null, null).map((cell) => cell.label),
-        <String>['代币算力 · 上一小时', 'NFT 算力 · 上一小时'],
+        <String>['Token power · Last hour', 'NFT power · Last hour'],
       );
     });
   });

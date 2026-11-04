@@ -13,6 +13,7 @@
 // Everything here is a pure function over `Attachment`, so the rule can be
 // read, tested and quoted without a widget tree.
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The largest single image LOOP will hand to the upload.
 const int loopChatImageMaxBytes = 10 * 1024 * 1024;
@@ -64,11 +65,14 @@ enum LoopChatImageRefusal {
 /// never has to be walked back.
 String loopChatImageRefusalMessage(LoopChatImageRefusal refusal) =>
     switch (refusal) {
-      LoopChatImageRefusal.notAnImage => '这里只能发图片，刚才选的不是图片，没有加进来。',
+      LoopChatImageRefusal.notAnImage =>
+        LoopL10n.current.integrations_chatImagePolicyNotAnImage,
       LoopChatImageRefusal.unsupportedFormat =>
-        '只支持 JPG、PNG、WebP、GIF 四种图片，其他格式没有加进来。',
-      LoopChatImageRefusal.tooLarge => '单张图片不能超过 10 MB，超出的那张没有加进来。',
-      LoopChatImageRefusal.tooMany => '一条消息最多 9 张图片，多出来的没有加进来。',
+        LoopL10n.current.integrations_chatImagePolicyUnsupportedFormat,
+      LoopChatImageRefusal.tooLarge =>
+        LoopL10n.current.integrations_chatImagePolicyTooLarge,
+      LoopChatImageRefusal.tooMany =>
+        LoopL10n.current.integrations_chatImagePolicyTooMany,
     };
 
 /// What survives LOOP's rule, and the first reason something did not.

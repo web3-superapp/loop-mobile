@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// A small outlined mono tag naming the backend environment (`DEV`,
 /// `STAGING`, …) on a non-release build (decision 0100).
@@ -19,7 +20,7 @@ class LoopEnvironmentTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '服务端 $label',
+      label: context.l10n.widgets_environmentTagLabel(label),
       excludeSemantics: true,
       child: Container(
         height: height,

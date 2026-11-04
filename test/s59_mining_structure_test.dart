@@ -153,7 +153,7 @@ void main() {
         ),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('暂无代币算力'), findsOneWidget);
+      expect(find.text('No token power yet'), findsOneWidget);
     });
 
     testWidgets('社区挖矿面板 carries the contribution card', (tester) async {
@@ -168,7 +168,13 @@ void main() {
         size: _tall,
       );
 
-      expect(_labels(tester), <String>['我的贡献', '社区记录', '社区权重', '算力快照', '绑定资产']);
+      expect(_labels(tester), <String>[
+        'My contribution',
+        'Community record',
+        'Community weight',
+        'Power snapshot',
+        'Bound assets',
+      ]);
       expect(
         find.byKey(const ValueKey<String>('mining-community-contribution')),
         findsOneWidget,
@@ -197,8 +203,8 @@ void main() {
 
       // The topbar says 挖矿规则 and the hero names the rule; decision 0146
       // retitled it 权重与算力规则 (quantity basis, no price).
-      expect(find.text('挖矿规则'), findsOneWidget);
-      expect(find.text('权重与算力规则'), findsOneWidget);
+      expect(find.text('Mining rules'), findsOneWidget);
+      expect(find.text('Weights and power rules'), findsOneWidget);
       expect(find.text('权重与价格保护'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('mining-rules-daily-output')),
@@ -207,11 +213,11 @@ void main() {
       expect(
         _labels(tester).where((label) => label != '资产权重').toList(),
         containsAllInOrder(<String>[
-          '已批准的版本',
+          'Approved version',
           'Weight Range',
           'Review Factors',
-          '待批准的版本',
-          '邀请关系规则',
+          'Version pending approval',
+          'Invite relation rules',
         ]),
       );
       // Decision 0147: the deprecated price guards are not shown.

@@ -810,8 +810,8 @@ void main() {
         find.byKey(const ValueKey<String>('market-state-loading')),
         findsNothing,
       );
-      expect(_stripText(tester), contains('数据来自'));
-      expect(_stripText(tester), contains('秒前，正在更新'));
+      expect(_stripText(tester), contains('Data from'));
+      expect(_stripText(tester), contains('s ago, updating'));
     });
 
     testWidgets('the strip leaves once the live answer lands', (tester) async {
@@ -887,7 +887,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byType(MarketFomoRow), findsWidgets);
-      expect(_stripText(tester), startsWith('更新失败，显示的是'));
+      expect(_stripText(tester), startsWith('Update failed. Last read'));
       expect(
         find.byKey(const ValueKey<String>('loop-freshness-retry')),
         findsOneWidget,
@@ -1050,7 +1050,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(LoopSkeleton), findsNothing);
-      expect(_stripText(tester), '数据来自2 分钟前，正在更新');
+      expect(_stripText(tester), 'Data from 2m ago, updating');
       // The block the figures were read at is still stated under them.
       expect(findProvenanceContaining('Block 120,628,164'), findsOneWidget);
     });
@@ -1085,7 +1085,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(row, findsOneWidget);
-      expect(_stripText(tester), startsWith('更新失败，显示的是'));
+      expect(_stripText(tester), startsWith('Update failed. Last read'));
       expect(wallet.balanceReads, 2);
     });
   });
@@ -1115,7 +1115,7 @@ void main() {
       await _frames(tester);
       expect(find.text('Joined 0'), findsOneWidget);
       expect(find.byType(LoopSkeleton), findsNothing);
-      expect(_stripText(tester), contains('正在更新'));
+      expect(_stripText(tester), contains('updating'));
     });
 
     testWidgets('no snapshot loads as rows of the index\'s own height', (
@@ -1194,7 +1194,7 @@ void main() {
       await _frames(tester);
       expect(find.textContaining('registered project'), findsOneWidget);
       expect(find.byType(LoopSkeleton), findsNothing);
-      expect(_stripText(tester), contains('正在更新'));
+      expect(_stripText(tester), contains('updating'));
     });
 
     testWidgets('no snapshot loads as rows and a heading skeleton', (
@@ -1275,7 +1275,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(_stripText(tester), '数据来自12 秒前，正在更新');
+      expect(_stripText(tester), 'Data from 12s ago, updating');
     });
 
     testWidgets('a failed refresh names the age of what stays', (tester) async {
@@ -1290,19 +1290,22 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(_stripText(tester), '更新失败，显示的是3 分钟前读到的数据');
+      expect(_stripText(tester), 'Update failed. Last read 3m ago');
     });
 
     test('age wording', () {
-      expect(loopAgeLabel(now, now: now), '刚刚');
-      expect(loopAgeLabel(now.add(const Duration(minutes: 1)), now: now), '刚刚');
+      expect(loopAgeLabel(now, now: now), 'Just now');
+      expect(
+        loopAgeLabel(now.add(const Duration(minutes: 1)), now: now),
+        'Just now',
+      );
       expect(
         loopAgeLabel(now.subtract(const Duration(seconds: 59)), now: now),
-        '59 秒前',
+        '59s ago',
       );
       expect(
         loopAgeLabel(now.subtract(const Duration(minutes: 9)), now: now),
-        '9 分钟前',
+        '9m ago',
       );
     });
   });

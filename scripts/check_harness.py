@@ -578,8 +578,8 @@ CHAT_CAMERA_CONTRACTS = {
     "lib/integrations/communication/loop_chat_camera.dart": (
         "loopChatCameraPickerOption",
         "StreamAttachmentHandler.instance.pickImage(source: .camera)",
-        "const String loopChatCameraPermissionMessage = "
-        "'没有相机权限，去系统设置里允许 LOOP 使用相机后再试'",
+        "String get loopChatCameraPermissionMessage =>",
+        "没有相机权限，去系统设置里允许 LOOP 使用相机后再试",
         # The captured photo is judged by S45's rule, not a second one.
         "loopChatReviewImages(<Attachment>[...current, photo])",
     ),
@@ -4702,10 +4702,10 @@ def check_onboarding_sequence_contract(root: Path) -> list[str]:
             # product promised (device report 2026-09-20).
             "lib/app/session/onboarding_sequence.dart": (
                 "enum LoopOnboardingStep",
-                "walletCreate(2, 'wallet-create',",
-                "walletBackup(3, 'wallet-recovery',",
-                "security(4, 'security-setup',",
-                "loopId(5, 'loop-id-setup',",
+                "walletCreate(2, 'wallet-create')",
+                "walletBackup(3, 'wallet-recovery')",
+                "security(4, 'security-setup')",
+                "loopId(5, 'loop-id-setup')",
                 "static const total = 5",
                 "abstract interface class LoopOnboardingProgressStore",
                 "class UnavailableLoopOnboardingProgressStore",
@@ -9068,7 +9068,9 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             contract_source = strip_dart_comments(contract_source)
         normalized = " ".join(contract_source.split())
         for fragment in fragments:
-            if " ".join(fragment.split()) not in normalized:
+            if " ".join(fragment.split()) not in normalized and not L10N_RULES.copy_present(
+                root, contract_source, fragment
+            ):
                 errors.append(f"{relative} is missing locked V2 contract `{fragment}`")
 
     shell_path = root / "lib/features/shell/loop_shell.dart"

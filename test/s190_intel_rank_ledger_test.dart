@@ -163,11 +163,11 @@ void main() {
         intelRankLedgerKicker(
           _rank(MiningRankScope.communities, _communities()),
         ),
-        '算力榜，快照 ${intelRankMonthDayClock(snapshot.computedAt)}',
+        'Power Ranking, snapshot ${intelRankMonthDayClock(snapshot.computedAt)}',
       );
       expect(
         intelRankLedgerKicker(_rank(MiningRankScope.referrals, _referrals)),
-        '算力榜，实时',
+        'Power Ranking, live',
       );
       expect(
         intelRankLedgerKicker(
@@ -177,7 +177,7 @@ void main() {
             snapshot: const MiningSnapshotUnavailable('X'),
           ),
         ),
-        '算力榜',
+        'Power Ranking',
       );
       expect(
         intelRankMonthDayClock(DateTime(2026, 10, 5, 4, 7)),
@@ -194,11 +194,11 @@ void main() {
             me: const MiningRankMe(rank: 37, value: '320'),
           ),
         ),
-        '我的名次\n第 37 名',
+        'My rank\nRank #37',
       );
       expect(
         intelRankLedgerHeading(_rank(MiningRankScope.users, _users())),
-        '我的名次\n还没有名次',
+        'My rank\nNot ranked yet',
       );
     });
 
@@ -209,7 +209,10 @@ void main() {
         _users(),
         me: const MiningRankMe(rank: 12, value: '2380'),
       );
-      expect(intelRankLedgerCaption(read, const {}), '算力 2,380，距第 11 名还差 40');
+      expect(
+        intelRankLedgerCaption(read, const {}),
+        'Power 2,380, 40 to reach Rank #11',
+      );
       // Place 36 is not on the pages read so far.
       final unread = _rank(
         MiningRankScope.users,
@@ -217,7 +220,7 @@ void main() {
         me: const MiningRankMe(rank: 37, value: '320'),
       );
       expect(intelRankGapToNext(unread), isNull);
-      expect(intelRankLedgerCaption(unread, const {}), '算力 320');
+      expect(intelRankLedgerCaption(unread, const {}), 'Power 320');
       // The leader has nobody above.
       expect(
         intelRankGapToNext(
@@ -243,14 +246,14 @@ void main() {
       );
       expect(
         intelRankLedgerCaption(inRows, const {}),
-        '算力 3,210，距第 4 名还差 1,660，社区 社区5 权重 1.2',
+        'Power 3,210, 1,660 to reach Rank #4, Community 社区5, weight 1.2',
       );
       final known = _rank(
         MiningRankScope.communities,
         _communities(),
         me: const MiningRankMe(rank: 12, value: '1240', communityId: 'mine'),
       );
-      expect(intelRankLedgerCaption(known, const {}), '算力 1,240');
+      expect(intelRankLedgerCaption(known, const {}), 'Power 1,240');
     });
 
     test('caption on 推广 and without a place', () {
@@ -263,21 +266,21 @@ void main() {
           ),
           const {},
         ),
-        '直接邀请 5 人，距第 2 名还差 3 人',
+        'Direct invites 5, 3 more to reach Rank #2',
       );
       expect(
         intelRankLedgerCaption(
           _rank(MiningRankScope.referrals, _referrals),
           const {},
         ),
-        '邀请到第一位好友后上榜',
+        'Invite your first friend to get ranked',
       );
       expect(
         intelRankLedgerCaption(
           _rank(MiningRankScope.users, _users()),
           const {},
         ),
-        '有算力后，下一次算力快照上榜',
+        'Once you have power, you\'ll be ranked at the next snapshot',
       );
     });
 
@@ -335,12 +338,12 @@ void main() {
         ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
         LoopChromePlate.faceColors,
       );
-      expect(find.text('我的名次\n第 12 名'), findsOneWidget);
-      expect(find.text('算力 1,240'), findsOneWidget);
+      expect(find.text('My rank\nRank #12'), findsOneWidget);
+      expect(find.text('Power 1,240'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(
         find.text(
-          '算力榜，快照 '
+          'Power Ranking, snapshot '
           '${intelRankMonthDayClock(s7MiningSnapshot().computedAt)}',
         ),
         findsOneWidget,
@@ -354,7 +357,7 @@ void main() {
       );
       // One full Lime surface on the screen: the ledger card.
       expect(_filledBoxes(tester, LoopColors.yellow), 0);
-      expect(find.text('前三名'), findsOneWidget);
+      expect(find.text('Podium'), findsOneWidget);
       for (final place in <int>[1, 2, 3]) {
         // Decision 0224: the place is an Anton index, not a medal dot.
         expect(_key('intel-rank-medal-$place'), findsNothing);
@@ -390,17 +393,20 @@ void main() {
       expect(head, findsOneWidget);
       // Decision 0229: one word per column, no centre-dot chain.
       expect(
-        find.descendant(of: head, matching: find.text('社区')),
+        find.descendant(of: head, matching: find.text('Community')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: head, matching: find.text('算力')),
+        find.descendant(of: head, matching: find.text('Power')),
         findsOneWidget,
       );
       final row = _key('intel-rank-community-community-4');
       // Decision 0229: the weight joins the second line, no badge.
       expect(
-        find.descendant(of: row, matching: find.text('权重 1.0，27 人有算力')),
+        find.descendant(
+          of: row,
+          matching: find.text('Weight 1.0, 27 people have power'),
+        ),
         findsOneWidget,
       );
       expect(
@@ -511,7 +517,9 @@ void main() {
       );
       expect((other.decoration! as BoxDecoration).color, isNull);
       expect(
-        find.text('算力 3,210，距第 4 名还差 1,660，社区 社区5 权重 1.2'),
+        find.text(
+          'Power 3,210, 1,660 to reach Rank #4, Community 社区5, weight 1.2',
+        ),
         findsOneWidget,
       );
     });
@@ -522,16 +530,18 @@ void main() {
         IntelRankBoard(onNavigate: (_) {}),
         mining: _BoardMining(_boards),
       );
-      expect(find.text('我的名次\n第 12 名'), findsOneWidget);
+      expect(find.text('My rank\nRank #12'), findsOneWidget);
 
-      await tester.tap(find.text('用户'));
+      await tester.ensureVisible(find.text('User'));
       await tester.pumpAndSettle();
-      expect(find.text('算力 2,380，距第 11 名还差 40'), findsOneWidget);
+      await tester.tap(find.text('User'));
+      await tester.pumpAndSettle();
+      expect(find.text('Power 2,380, 40 to reach Rank #11'), findsOneWidget);
       expect(find.text('TOP 5%'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('intel-rank-list-head'),
-          matching: find.text('用户'),
+          matching: find.text('User'),
         ),
         findsOneWidget,
       );
@@ -552,18 +562,23 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.text('邀请'));
+      await tester.ensureVisible(find.text('Invitation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invitation'));
       await tester.pumpAndSettle();
       // UX-012 (decision 0257): title, place, sentence, live dot.
-      expect(find.text('我的实时排名'), findsOneWidget);
-      expect(find.text('第 3 名'), findsOneWidget);
-      expect(find.text('榜单实时更新'), findsOneWidget);
-      expect(find.text('直接邀请 5 人，距第 2 名还差 3 人'), findsOneWidget);
+      expect(find.text('My live rank'), findsOneWidget);
+      expect(find.text('Rank #3'), findsOneWidget);
+      expect(find.text('Leaderboard updates live'), findsOneWidget);
+      expect(
+        find.text('Direct invites 5, 3 more to reach Rank #2'),
+        findsOneWidget,
+      );
       expect(find.text('TOP 8%'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('intel-rank-list-head'),
-          matching: find.text('直接邀请'),
+          matching: find.text('Direct invites'),
         ),
         findsOneWidget,
       );
@@ -591,7 +606,7 @@ void main() {
           ),
         ),
       );
-      expect(find.textContaining('还没有名次'), findsOneWidget);
+      expect(find.textContaining('Not ranked yet'), findsOneWidget);
       // Decision 0224: the grey crown line where the figure would be.
       expect(
         find.byKey(const ValueKey<String>('intel-rank-me-empty-crown')),
@@ -599,7 +614,9 @@ void main() {
       );
       expect(find.textContaining('TOP '), findsNothing);
       expect(_key('intel-rank-self-row'), findsNothing);
-      await tester.tap(find.text('邀请'));
+      await tester.ensureVisible(find.text('Invitation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invitation'));
       await tester.pumpAndSettle();
       expect(_key('intel-rank-empty'), findsOneWidget);
       final invite = tester.widget<LoopButton>(_key('intel-rank-empty-invite'));

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -165,11 +166,11 @@ class LoopTokenCard extends StatelessWidget {
         ? LoopColors.ink.withValues(alpha: 0.055)
         : LoopColors.ink;
     final stateLabel = switch (state) {
-      LoopTokenCardState.normal => '正常',
-      LoopTokenCardState.loading => '识别中',
-      LoopTokenCardState.graduated => '已毕业',
-      LoopTokenCardState.partial => '数据缺失',
-      LoopTokenCardState.risk => '风险事实',
+      LoopTokenCardState.normal => context.l10n.common_normal,
+      LoopTokenCardState.loading => context.l10n.widgets_tokenCardLoading,
+      LoopTokenCardState.graduated => context.l10n.common_graduated,
+      LoopTokenCardState.partial => context.l10n.widgets_tokenCardPartial,
+      LoopTokenCardState.risk => context.l10n.widgets_tokenCardRisk,
     };
     return Padding(
       padding: margin,
@@ -355,7 +356,7 @@ class _Head extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       state == LoopTokenCardState.loading
-                          ? '识别中…'
+                          ? context.l10n.widgets_tokenCardSwitch
                           : model.symbol,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -387,7 +388,7 @@ class _Head extends StatelessWidget {
               children: <Widget>[
                 if (state == LoopTokenCardState.loading)
                   Text(
-                    '识别中',
+                    context.l10n.widgets_tokenCardLoading,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.figureMd.copyWith(color: secondary),
@@ -645,11 +646,14 @@ class _Footnotes extends StatelessWidget {
           if (provenance.isNotEmpty)
             LoopInfoTrigger(
               key: const ValueKey<String>('loop-token-card-provenance'),
-              semanticsLabel: '${provenance.join('；')}，查看数据来源说明',
+              semanticsLabel: context.l10n
+                  .widgets_inlineStatesLoopProvenanceLineSemanticsLabel(
+                    provenance.join(LoopL10n.current.widgets_clauseJoin),
+                  ),
               onTap: () => unawaited(
                 showLoopInfoSheet(
                   context,
-                  title: '数据来源',
+                  title: context.l10n.common_dataSource,
                   sheetKey: 'loop-token-card-provenance-sheet',
                   notes: <LoopInfoNote>[
                     for (final line in provenance) LoopInfoNote(body: line),
@@ -699,7 +703,11 @@ class _RiskBar extends StatelessWidget {
               children: <Widget>[
                 for (final fact in facts)
                   Text(
-                    '${fact.fact} —— 来源 ${fact.source}，观察于 ${fact.observedLabel}',
+                    context.l10n.widgets_tokenCardBuild(
+                      fact.fact,
+                      fact.observedLabel,
+                      fact.source,
+                    ),
                     style: LoopType.captionSm.copyWith(color: foreground),
                   ),
               ],

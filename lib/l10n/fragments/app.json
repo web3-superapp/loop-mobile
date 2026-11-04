@@ -1,0 +1,98 @@
+{
+  "app_appUnknownRouteHomeLabel": {
+    "en": "Back to Chat",
+    "placeholders": {},
+    "where": "lib/app.dart:2720",
+    "zh": "回到聊天"
+  },
+  "app_appUnknownRouteScreenTitle": {
+    "en": "Page not found",
+    "placeholders": {},
+    "where": "lib/app.dart:2708",
+    "zh": "页面不存在"
+  },
+  "app_appUnknownRouteStateMessage": {
+    "en": "This visit has been logged.",
+    "placeholders": {},
+    "where": "lib/app.dart:2717",
+    "zh": "这次访问已记录。"
+  },
+  "app_appUnknownRouteStateTitle": {
+    "en": "This address isn't a LOOP page",
+    "placeholders": {},
+    "where": "lib/app.dart:2716",
+    "zh": "这个地址不在 LOOP 的页面里"
+  },
+  "app_onboardingSequenceLoopId": {
+    "en": "Create LOOP ID",
+    "placeholders": {},
+    "where": "lib/app/session/onboarding_sequence.dart:16",
+    "zh": "创建 LOOP ID"
+  },
+  "app_onboardingSequenceSecurity": {
+    "en": "Security settings",
+    "placeholders": {},
+    "where": "lib/app/session/onboarding_sequence.dart:15",
+    "zh": "安全设置"
+  },
+  "app_onboardingSequenceWalletBackup": {
+    "en": "Set up recovery",
+    "placeholders": {},
+    "where": "lib/app/session/onboarding_sequence.dart:14",
+    "zh": "设置恢复方式"
+  },
+  "app_onboardingSequenceWalletCreate": {
+    "en": "Create wallet",
+    "placeholders": {},
+    "where": "lib/app/session/onboarding_sequence.dart:13",
+    "zh": "创建钱包"
+  },
+  "app_sessionControllerErrorMessage": {
+    "en": "You're signed out on this device, but LOOP hasn't confirmed the server session was revoked.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:691",
+    "zh": "本地会话已退出，但 LOOP 后端会话撤销尚未确认。"
+  },
+  "app_sessionControllerErrorMessage2": {
+    "en": "You're signed out on this device, but Privy hasn't confirmed the remote sign-out.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:696",
+    "zh": "本地会话已退出，但 Privy 远端退出尚未确认。"
+  },
+  "app_sessionControllerPrivyGatewayException": {
+    "en": "Signing out. Try again when it finishes.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:564",
+    "zh": "正在退出登录，请完成后再试。"
+  },
+  "app_sessionControllerPrivyGatewayException2": {
+    "en": "The account changed and no wallet is linked. Try again.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:584",
+    "zh": "账号已变化，钱包未绑定，请重新尝试。"
+  },
+  "app_sessionControllerPrivyGatewayException3": {
+    "en": "Development previews and restricted sessions don't create real wallets.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:597",
+    "zh": "开发预览或受限会话不会创建真实钱包。"
+  },
+  "app_sessionControllerPrivyGatewayException4": {
+    "en": "The account changed. Check the wallet status again.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:616",
+    "zh": "账号已变化，请重新检查钱包状态。"
+  },
+  "app_sessionControllerPrivyGatewayException5": {
+    "en": "The wallet status changed. Check it again before continuing.",
+    "placeholders": {},
+    "where": "lib/app/session/loop_session_controller.dart:623",
+    "zh": "钱包状态已变化，请重新检查后再继续。"
+  },
+  "app_walletProvisioningControllerFail": {
+    "en": "Wallet creation didn't finish. Your account and sign-in are unchanged. Try again later.",
+    "placeholders": {},
+    "where": "lib/app/session/wallet_provisioning_controller.dart:134",
+    "zh": "钱包创建没有完成，账号与登录状态没有变化，可以稍后再试。"
+  }
+}

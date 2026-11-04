@@ -842,7 +842,7 @@ void main() {
         find.text('This send didn\'t pass simulation. Try again later'),
         findsOneWidget,
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
 
       await pumpS6Page(
@@ -962,12 +962,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('money-sign-sheet'), findsOneWidget);
       expect(find.text('Frog Launch #7'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(signing.handoffs.single.kind, IntentKind.nftTransfer);
       expect(signing.handoffs.single.chainId, s339Chain);
       expect(intents.reportCalls, 1);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(routes, <String>['/wallet/tx/result?intentId=$s6IntentId']);
       expect(launch2.positionReads, greaterThan(readsBefore));

@@ -290,13 +290,13 @@ void main() {
     testWidgets('the segments are 算力 / 行情; 算力 is the power page', (
       tester,
     ) async {
-      expect(IntelScreen.segments, <String>['算力', '行情']);
+      expect(IntelScreen.segments, <String>['Power', 'Market']);
       await pumpS7Page(
         tester,
         IntelScreen(onNavigate: (_) {}),
         mining: FakeMiningGateway(),
       );
-      expect(find.text('算力榜'), findsNothing);
+      expect(find.text('Power Ranking'), findsNothing);
       expect(_key('intel-power'), findsOneWidget);
       expect(_key('mining-screen'), findsOneWidget);
       // The segment's one (i) is 挖矿说明.
@@ -318,9 +318,7 @@ void main() {
         _key('market-alerts-action'),
       );
       expect(market.icon, 'alarm');
-      // S355f: Market reads its label from ARB; Intel is still Chinese
-      // until its own batch lands (decision 0281, transition).
-      expect(market.label, 'Price alerts');
+      expect(market.label, intel.label);
     });
   });
 
@@ -447,7 +445,7 @@ void main() {
         onOpenRewards: () => rewards += 1,
       );
       expect(_key('mining-network-card'), findsOneWidget);
-      expect(find.text('全网总算力 · 上一小时'), findsOneWidget);
+      expect(find.text('Network power · Last hour'), findsOneWidget);
       // 5,000,000.6 + 25,000.5.
       expect(
         tester
@@ -471,7 +469,7 @@ void main() {
       expect(_text(tester, 'mining-summary-hero-last-hour-power'), '1,237,577');
       final claim = _key('mining-summary-hero-claim');
       expect(
-        find.descendant(of: claim, matching: find.text('挖矿奖励')),
+        find.descendant(of: claim, matching: find.text('Mining rewards')),
         findsOneWidget,
       );
       expect(find.text('小时算力'), findsNothing);
@@ -484,7 +482,7 @@ void main() {
       tester,
     ) async {
       await _pumpPower(tester, hour: false, rows: const <MiningAssetRow>[]);
-      expect(find.text('全网总算力'), findsOneWidget);
+      expect(find.text('Network power'), findsOneWidget);
       expect(_key('mining-network-split'), findsNothing);
       expect(
         tester
@@ -523,13 +521,17 @@ void main() {
       expect(_key('referral-poster'), findsOneWidget);
       // Not open yet on the server: left out, not explained.
       expect(_key('referral-link-block'), findsNothing);
-      expect(find.text('邀请链接'), findsNothing);
+      expect(find.text('Invite link'), findsNothing);
       expect(_key('referral-stats'), findsNothing);
       expect(find.textContaining('还没有开放'), findsNothing);
       expect(find.textContaining('还没有批准'), findsNothing);
-      expect(find.text('还没有邀请'), findsOneWidget);
+      expect(find.text('No invitations yet'), findsOneWidget);
       expect(find.textContaining('绑定后，会出现在这里'), findsNothing);
-      for (final label in <String>['邀请列表', '邀请加成', '我的邀请人']) {
+      for (final label in <String>[
+        'Invite list',
+        'Invite boost',
+        'My inviter',
+      ]) {
         expect(find.text(label), findsWidgets, reason: label);
       }
     });
@@ -616,17 +618,21 @@ void main() {
         mining: mining,
         size: const Size(390, 1600),
       );
-      expect(find.text('算力榜'), findsWidgets);
+      expect(find.text('Power Ranking'), findsWidgets);
       final chips = tester.widget<LoopSegBar>(_key('intel-rank-scope'));
-      expect(chips.labels, <String>['社区', '用户', '邀请']);
+      expect(chips.labels, <String>['Community', 'User', 'Invitation']);
       expect(_key('intel-rank-community-community-4'), findsOneWidget);
 
-      await tester.tap(find.text('用户'));
+      await tester.ensureVisible(find.text('User'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('User'));
       await tester.pumpAndSettle();
       expect(mining.scopes, contains(MiningRankScope.users));
       expect(find.text('member4'), findsOneWidget);
 
-      await tester.tap(find.text('邀请'));
+      await tester.ensureVisible(find.text('Invitation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invitation'));
       await tester.pumpAndSettle();
       expect(mining.scopes, contains(MiningRankScope.referrals));
       expect(find.text('inviter'), findsOneWidget);

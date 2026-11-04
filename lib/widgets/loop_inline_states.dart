@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart' show LoopInfoNote;
@@ -108,7 +109,11 @@ class LoopInlineUnavailable extends StatelessWidget {
             if (retry != null || retrying)
               _InlineTextAction(
                 key: const ValueKey<String>('loop-inline-unavailable-retry'),
-                label: retrying ? '重试中' : '重试',
+                label: retrying
+                    ? context
+                          .l10n
+                          .widgets_inlineStatesLoopInlineUnavailableRetryLabel
+                    : context.l10n.common_retry,
                 onTap: retrying ? null : retry,
               ),
           ],
@@ -246,8 +251,10 @@ class LoopProvenanceLine extends StatelessWidget {
     final at = observedAt;
     return <String>[
       ?prefix,
-      if (named.isNotEmpty) '来源 ${named.join(' · ')}',
-      if (at != null) '观察于 ${_timeLabel(at)}',
+      if (named.isNotEmpty)
+        LoopL10n.current.widgets_componentsBuild2(named.join(' · ')),
+      if (at != null)
+        LoopL10n.current.widgets_inlineStatesText2(_timeLabel(at)),
     ].join(' · ');
   }
 
@@ -290,7 +297,8 @@ class LoopProvenanceLine extends StatelessWidget {
               child: Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: Semantics(
-                  label: '$text，数据来源在页面右上角的说明里',
+                  label: context.l10n
+                      .widgets_inlineStatesLoopProvenanceMarkerLabel(text),
                   excludeSemantics: true,
                   child: Text(
                     marker,
@@ -308,7 +316,8 @@ class LoopProvenanceLine extends StatelessWidget {
         padding: padding,
         child: LoopInfoTrigger(
           key: const ValueKey<String>('loop-provenance-line'),
-          semanticsLabel: '$text，查看数据来源说明',
+          semanticsLabel: context.l10n
+              .widgets_inlineStatesLoopProvenanceLineSemanticsLabel(text),
           expand: true,
           leading: marker,
           onTap: () => _open(context),
@@ -335,13 +344,15 @@ Future<void> showLoopProvenanceSheet(
   String? prefix,
   String? detail,
   List<String> notes = const <String>[],
-  String title = '数据来源',
+  String? title,
 }) {
+  final sheetTitle = title ?? LoopL10n.current.common_dataSource;
   final named = <String>{...sources}.toList();
   final at = observedAt;
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭数据来源说明',
+    barrierLabel:
+        context.l10n.widgets_inlineStatesLoopProvenanceSheetBarrierLabel,
     builder: (sheetContext) => SingleChildScrollView(
       key: const ValueKey<String>('loop-provenance-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -349,18 +360,24 @@ Future<void> showLoopProvenanceSheet(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(title, style: LoopType.headingSm),
+          Text(sheetTitle, style: LoopType.headingSm),
           const SizedBox(height: 12),
           if (prefix != null)
-            LoopKeyValue(label: '范围', value: prefix, padding: EdgeInsets.zero),
+            LoopKeyValue(
+              label: context.l10n.widgets_inlineStatesLabel,
+              value: prefix,
+              padding: EdgeInsets.zero,
+            ),
           LoopKeyValue(
-            label: '来源',
-            value: named.isEmpty ? '来源未标注' : named.join(' · '),
+            label: context.l10n.widgets_inlineStatesLabel2,
+            value: named.isEmpty
+                ? context.l10n.widgets_inlineStatesValue
+                : named.join(' · '),
             padding: EdgeInsets.zero,
           ),
           if (at != null)
             LoopKeyValue(
-              label: '观察于',
+              label: context.l10n.widgets_inlineStatesLabel3,
               value: loopDateTimeLabel(at),
               padding: EdgeInsets.zero,
             ),
@@ -375,7 +392,7 @@ Future<void> showLoopProvenanceSheet(
           ],
           const SizedBox(height: 16),
           LoopButton(
-            label: '知道了',
+            label: context.l10n.common_gotIt,
             block: true,
             onPressed: () => Navigator.of(sheetContext).pop(),
           ),
@@ -394,7 +411,7 @@ class LoopInfoTrigger extends StatelessWidget {
     required this.semanticsLabel,
     required this.onTap,
     super.key,
-    this.label = '来源',
+    this.label = defaultLabel,
     this.expand = false,
     this.leading,
   });
@@ -411,6 +428,10 @@ class LoopInfoTrigger extends StatelessWidget {
   /// The word after the glyph; null draws the glyph alone.
   final String? label;
 
+  /// Stands in for 「来源」 / "Source" in the current language; `null` prints
+  /// no word.
+  static const String defaultLabel = '\u0000source';
+
   /// The line under a block: the whole 44 dp row answers the finger (as the
   /// printed line did), and the glyph sits at its trailing edge.
   final bool expand;
@@ -418,7 +439,9 @@ class LoopInfoTrigger extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auxiliary = LoopGround.auxiliaryOf(context);
-    final label = this.label;
+    final label = this.label == defaultLabel
+        ? context.l10n.widgets_inlineStatesLabel2
+        : this.label;
     return Semantics(
       button: true,
       label: semanticsLabel,

@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -257,15 +258,17 @@ class _MiningRewardsHourlyScreenState
       child: LoopDashboardPage(
         key: const ValueKey<String>('mining-rewards-hourly-screen'),
         archetype: LoopPageArchetype.record,
-        title: '挖矿奖励',
+        title: context.l10n.mining_widgetsMiningSummaryHeroClaimLabel,
         onBack: widget.onBack,
         // S336 · decision 0265: the page's one (i) holds its explanations,
         // then the settlement source the foot reports.
         actions: <Widget>[
           LoopPageInfoAction(
             key: const ValueKey<String>('mining-rewards-info-action'),
-            title: '挖矿奖励说明',
-            label: '挖矿奖励说明',
+            title:
+                context.l10n.miningRewards_screenMiningRewardsInfoActionTitle,
+            label:
+                context.l10n.miningRewards_screenMiningRewardsInfoActionTitle,
             notes: miningRewardsInfoNotes(
               view,
               live: live,
@@ -294,7 +297,9 @@ class _MiningRewardsHourlyScreenState
                   keyPrefix: 'mining-rewards',
                   phase: state.phase,
                   failureKind: state.failureKind,
-                  emptyMessage: '还没有奖励记录',
+                  emptyMessage: context
+                      .l10n
+                      .miningRewards_screenMiningRewardsStateEmptyMessage,
                   onRetry: () => unawaited(controller.reload()),
                 ),
               )
@@ -318,14 +323,14 @@ class _MiningRewardsHourlyScreenState
                     onRetry: () => unawaited(controller.reload()),
                   ),
                 if (!live) ...<Widget>[
-                  const LoopLabel('算力汇总'),
+                  LoopLabel(context.l10n.miningRewards_screenLoopLabel),
                   MiningPowerSummary(view: view),
                   // S336 · decision 0265: 「LOOP 代币上线后开始正式开挖…」
                   // is said in the page's (i), not under the grid.
                 ] else ...<Widget>[
-                  const LoopLabel('奖励汇总'),
+                  LoopLabel(context.l10n.miningRewards_screenLoopLabel2),
                   MiningRewardsSummary(view: view),
-                  const LoopLabel('领取'),
+                  LoopLabel(context.l10n.common_claim),
                   MiningClaimPanel(
                     view: view,
                     claim: claim,
@@ -345,14 +350,14 @@ class _MiningRewardsHourlyScreenState
                         .reset(),
                   ),
                 ],
-                const LoopLabel('NFT 轨道'),
+                LoopLabel(context.l10n.miningRewards_screenLoopLabel3),
                 MiningNftTrackCard(track: view.nft, live: live),
-                const LoopLabel('Meme 币轨道'),
+                LoopLabel(context.l10n.miningRewards_screenLoopLabel4),
                 MiningAssetTrackCard(track: view.asset, live: live),
-                const LoopLabel('五级邀请'),
+                LoopLabel(context.l10n.miningRewards_screenLoopLabel5),
                 MiningInviteTable(invites: view.invites),
                 if (live) ...<Widget>[
-                  const LoopLabel('领取记录'),
+                  LoopLabel(context.l10n.miningRewards_screenLoopLabel6),
                   MiningClaimRecords(
                     state: claims,
                     onRetry: () => unawaited(
@@ -370,14 +375,22 @@ class _MiningRewardsHourlyScreenState
                 const SizedBox(height: 16),
                 LoopProvenanceLine(
                   key: const ValueKey<String>('mining-rewards-provenance'),
-                  sources: const <String>['LOOP 小时结算'],
+                  sources: <String>[
+                    context.l10n.miningRewards_screenLoopProvenanceLine,
+                  ],
                   observedAt: controller.valueObservedAt,
-                  prefix: restored ? '上次读取' : null,
+                  prefix: restored
+                      ? context
+                            .l10n
+                            .miningRewards_screenMiningRewardsProvenancePrefix
+                      : null,
                   detail: live
-                      ? '每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；'
-                            '结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，'
-                            '不改变可领取数量。'
-                      : '每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力。',
+                      ? context
+                            .l10n
+                            .miningRewards_screenMiningRewardsProvenanceDetail
+                      : context
+                            .l10n
+                            .miningRewards_screenMiningRewardsProvenanceDetail2,
                 ),
                 const SizedBox(height: 24),
               ],
@@ -396,18 +409,21 @@ class _MiningRewardsHourlyScreenState
 /// settled yet (decision 0143).
 String miningDisplayReasonText(String? reasonCode, {bool live = true}) =>
     switch (reasonCode) {
-      'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂时没有结算。',
+      'MINING_PARAMETERS_PENDING' =>
+        LoopL10n.current.miningRewards_screenSwitch,
       // Decision 0184: before the token is live nothing is shown by the minute
       // and nothing is claimed; the hour's power is what appears.
-      'MINING_NOTHING_SETTLED' when !live => '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。',
-      'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，下面的数字可能不是最新的。',
+      'MINING_NOTHING_SETTLED' when !live =>
+        LoopL10n.current.miningRewards_screenSwitch2,
+      'MINING_SETTLEMENT_UNAVAILABLE' =>
+        LoopL10n.current.miningRewards_screenSwitch3,
       // Loop-api 0125 (client 0147): judged on the caller's own hours — no hour
       // with power or reward has settled for this account yet, whatever the
       // network has settled.
       // Decision 0149: the hero's title now says the state (「你有算力的小时还没有
       // 结算」), so this line no longer repeats it — it says what happens next.
-      'MINING_NOTHING_SETTLED' => '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
-      _ => '结算数据暂时读不到，下面的数字可能不是最新的。',
+      'MINING_NOTHING_SETTLED' => LoopL10n.current.miningRewards_screenSwitch4,
+      _ => LoopL10n.current.miningRewards_screenSwitch5,
     };
 
 /// The awaiting hero's title (decision 0149). Judged on the caller's own
@@ -415,8 +431,10 @@ String miningDisplayReasonText(String? reasonCode, {bool live = true}) =>
 /// network's: the network may have settled many hours already.
 String miningAwaitingTitle(String? awaitingReason, {bool live = true}) =>
     awaitingReason == 'MINING_NOTHING_SETTLED'
-    ? '你有算力的小时还没有结算'
-    : (live ? '首个小时结算后开始展示奖励' : '首个小时结算后开始展示算力');
+    ? LoopL10n.current.miningRewards_screenSwitch6
+    : (live
+          ? LoopL10n.current.miningRewards_screenSwitch7
+          : LoopL10n.current.miningRewards_screenS);
 
 /// Why nothing has settled yet: `hourly.reasonCode` when the server names
 /// one (`MINING_PARAMETERS_PENDING`), otherwise `MINING_NOTHING_SETTLED` from
@@ -428,10 +446,11 @@ String? miningAwaitingReason(MiningRewardsView view) =>
         : null);
 
 /// The folio's kicker in every phase (decision 0167).
-const String miningMinuteKicker = '上一小时奖励';
+String get miningMinuteKicker =>
+    LoopL10n.current.miningRewards_screenMiningMinuteKicker;
 
 /// The kicker while the token is not live (decision 0184).
-const String miningPowerKicker = '上一小时算力';
+String get miningPowerKicker => LoopL10n.current.mining_screenLabel3;
 
 /// The page's one primary (decision 0167, docs/33 H2): the prototype's
 /// `mining-rewards` lime ledger folio welded into a `.ledger-composite`.
@@ -500,7 +519,7 @@ class MiningMinuteHero extends StatelessWidget {
             squareBottom: true,
             headingTone: LoopFolioHeadingTone.neutral,
             kicker: kicker,
-            heading: '暂时读不到结算结果',
+            heading: context.l10n.miningRewards_screenHeading,
           ),
           detail: const <Widget>[],
         );
@@ -523,7 +542,7 @@ class MiningMinuteHero extends StatelessWidget {
             heading: '$figure LOOP',
             headingMaxLines: 1,
             headingBuilder: (heading) => Semantics(
-              label: '已展示 $figure LOOP',
+              label: context.l10n.miningRewards_screenLabel(figure),
               excludeSemantics: true,
               child: _MinuteFigure(
                 figure: figure,
@@ -532,9 +551,12 @@ class MiningMinuteHero extends StatelessWidget {
               ),
             ),
             caption: settling
-                ? '下一小时结算后更新'
-                : '${progress.completedMinutes}/60 · 下次 ${loopClockLabel(progress.nextUpdateAt!)}',
-            stamp: settling ? '结算中' : null,
+                ? context.l10n.miningRewards_screenCaption
+                : context.l10n.miningRewards_screenCaption2(
+                    loopClockLabel(progress.nextUpdateAt!),
+                    progress.completedMinutes,
+                  ),
+            stamp: settling ? context.l10n.miningRewards_screenStamp : null,
           ),
           detail: <Widget>[
             // S336 · decision 0265: the strip is the minute bar alone; the
@@ -542,7 +564,10 @@ class MiningMinuteHero extends StatelessWidget {
             LoopProgressBar(
               key: const ValueKey<String>('mining-minute-bar'),
               value: progress.completedMinutes / 60,
-              semanticLabel: '第 ${progress.completedMinutes} / 60 分钟',
+              semanticLabel: context.l10n
+                  .miningRewards_screenMiningMinuteBarSemanticLabel(
+                    progress.completedMinutes,
+                  ),
             ),
           ],
         );
@@ -560,7 +585,9 @@ class MiningMinuteHero extends StatelessWidget {
         : (nftPower ?? Decimal.zero) + (assetPower ?? Decimal.zero);
     final figure = total == null ? loopFigureDash : miningPowerFigure(total);
     final counted = total != null && total > Decimal.zero;
-    final caption = settling ? '下一小时结算后更新' : (counted ? null : '上一小时没有算力');
+    final caption = settling
+        ? LoopL10n.current.miningRewards_screenCaption
+        : (counted ? null : LoopL10n.current.miningRewards_screenNull);
     return LoopLedgerComposite(
       key: ValueKey<String>(
         settling ? 'mining-power-settling' : 'mining-power-displaying',
@@ -572,13 +599,15 @@ class MiningMinuteHero extends StatelessWidget {
         ring: false,
         margin: EdgeInsets.zero,
         kicker: miningPowerKicker,
-        heading: '$figure 算力',
+        heading: LoopL10n.current.miningRewards_screenMiningPowerFolioHeading(
+          figure,
+        ),
         headingMaxLines: 1,
         caption: caption,
         // With no caption the card closes under its heading (as 邀请中心,
         // decision 0243 S293b).
         minHeight: caption == null ? 0 : null,
-        stamp: settling ? '结算中' : null,
+        stamp: settling ? LoopL10n.current.miningRewards_screenStamp : null,
       ),
       detail: const <Widget>[],
     );
@@ -590,7 +619,9 @@ String miningMinuteAwaitingCaption(
   String? awaitingReason, {
   bool live = true,
 }) => awaitingReason == null
-    ? (live ? '每个整点结算上一小时，下一小时按分钟展示。' : '每个整点统计上一小时的算力。')
+    ? (live
+          ? LoopL10n.current.miningRewards_screenPowerFolio
+          : LoopL10n.current.miningRewards_screenS2)
     : miningDisplayReasonText(awaitingReason, live: live);
 
 /// The stepping number. Each new minute slides the folio's heading up once;
@@ -652,17 +683,17 @@ class MiningRewardsSummary extends StatelessWidget {
       stats: <LoopStat>[
         LoopStat(
           statKey: const ValueKey<String>('mining-summary-settled'),
-          label: '累计已结算 LOOP',
+          label: context.l10n.miningRewards_screenLabel2,
           value: miningLoopFigure(view.settledTotal),
         ),
         LoopStat(
           statKey: const ValueKey<String>('mining-summary-claimed'),
-          label: '累计已领取 LOOP',
+          label: context.l10n.miningRewards_screenLabel3,
           value: miningLoopFigure(view.claimedTotal),
         ),
         LoopStat(
           statKey: const ValueKey<String>('mining-summary-claimable'),
-          label: '当前可领取 LOOP',
+          label: context.l10n.miningRewards_screenLabel4,
           value: miningLoopFigure(view.claimable),
           // Decision 0149: Lime marks something to take; 0.0000 is not.
           tone: view.claimable > BigInt.zero
@@ -692,7 +723,7 @@ class MiningPowerSummary extends StatelessWidget {
       stats: <LoopStat>[
         LoopStat(
           statKey: const ValueKey<String>('mining-power-summary-total'),
-          label: '上一小时算力',
+          label: context.l10n.mining_screenLabel3,
           value: total == null ? loopFigureDash : miningPowerFigure(total),
           tone: total != null && total > Decimal.zero
               ? LoopStatTone.up
@@ -700,18 +731,20 @@ class MiningPowerSummary extends StatelessWidget {
         ),
         LoopStat(
           statKey: const ValueKey<String>('mining-power-summary-nft'),
-          label: 'NFT 算力',
+          label: context.l10n.mining_screenCell2,
           value: nft == null ? loopFigureDash : miningPowerFigure(nft),
         ),
         LoopStat(
           statKey: const ValueKey<String>('mining-power-summary-asset'),
-          label: 'Meme 币算力',
+          label: context.l10n.miningRewards_screenLabel6,
           value: asset == null ? loopFigureDash : miningPowerFigure(asset),
         ),
         LoopStat(
           statKey: const ValueKey<String>('mining-power-summary-invites'),
-          label: '有效邀请',
-          value: invites == null ? loopFigureDash : '$invites 人',
+          label: context.l10n.mining_screenLabel4,
+          value: invites == null
+              ? loopFigureDash
+              : context.l10n.mining_screenValue(invites),
         ),
       ],
     );
@@ -725,45 +758,56 @@ class MiningPowerSummary extends StatelessWidget {
 /// The five states the requirer names, as the reader sees them.
 String miningClaimStatusLabel(MiningClaimStatus status, {required bool any}) =>
     switch (status) {
-      MiningClaimStatus.none ||
-      MiningClaimStatus.claimable => any ? '可领取' : '暂无可领取',
-      MiningClaimStatus.submitting => '提交中',
-      MiningClaimStatus.confirming => '链上确认中',
-      MiningClaimStatus.succeeded => '成功',
-      MiningClaimStatus.failed => '失败',
-      MiningClaimStatus.expired => '凭证已过期',
+      MiningClaimStatus.none || MiningClaimStatus.claimable =>
+        any
+            ? LoopL10n.current.miningRewards_screenSwitch8
+            : LoopL10n.current.miningRewards_screenS3,
+      MiningClaimStatus.submitting => LoopL10n.current.common_submitting,
+      MiningClaimStatus.confirming =>
+        LoopL10n.current.miningRewards_screenConfirming,
+      MiningClaimStatus.succeeded => LoopL10n.current.common_success,
+      MiningClaimStatus.failed => LoopL10n.current.common_failed,
+      MiningClaimStatus.expired => LoopL10n.current.miningRewards_screenExpired,
     };
 
 /// What the page says about the claim in progress on this device.
 String? miningClaimPhaseText(MiningClaimState state) {
   return switch (state.phase) {
     MiningClaimPhase.idle || MiningClaimPhase.prepared => null,
-    MiningClaimPhase.preparing => '正在生成领取凭证，还没有打开钱包。',
+    MiningClaimPhase.preparing =>
+      LoopL10n.current.miningRewards_screenPreparing,
     MiningClaimPhase.prepareFailed => miningClaimPrepareFailureText(
       state.failure,
     ),
-    MiningClaimPhase.gasInsufficient => 'BNB 不足以支付网络费，先用 USDT 兑换。',
-    MiningClaimPhase.noGasSource => '钱包里没有 BNB 支付网络费，先充值 BNB。',
+    MiningClaimPhase.gasInsufficient =>
+      LoopL10n.current.miningRewards_screenGasInsufficient,
+    MiningClaimPhase.noGasSource =>
+      LoopL10n.current.miningRewards_screenNoGasSource,
     MiningClaimPhase.signRefused => miningClaimSignReasonText(
       state.outcome?.reasonCode ?? '',
     ),
     MiningClaimPhase.waiting => switch (state.record?.status) {
-      MiningClaimStatus.confirming => '已上链，正在等待确认。不要重复领取。',
-      _ => '已提交，正在等待上链（已读取 ${state.attempts} 次）。不要重复领取。',
+      MiningClaimStatus.confirming =>
+        LoopL10n.current.miningRewards_screenConfirming2,
+      _ => LoopL10n.current.miningRewards_screenSwitch9(state.attempts),
     },
     MiningClaimPhase.locked =>
       state.outcome == null
-          ? '这笔领取已锁定，不要重复领取。'
+          ? LoopL10n.current.miningRewards_screenSwitch10
           : miningClaimBroadcastText(state.outcome!),
-    MiningClaimPhase.pollTimedOut => '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复领取。',
-    MiningClaimPhase.succeeded => '领取成功，LOOP 已到账。',
-    MiningClaimPhase.failed =>
-      '链上领取失败，可领取余额没有减少。'
-          '${switch (state.record?.failureReasonCode) {
-            null || miningClaimContractNotConfiguredCode => '',
-            final String code => '（$code）',
-          }}',
-    MiningClaimPhase.expired => '领取凭证已过期，没有发放，可领取余额不变。可以重新领取。',
+    MiningClaimPhase.pollTimedOut =>
+      LoopL10n.current.miningRewards_screenPollTimedOut,
+    MiningClaimPhase.succeeded =>
+      LoopL10n.current.miningRewards_screenSucceeded,
+    MiningClaimPhase.failed => LoopL10n.current.miningRewards_screenFailed(
+      switch (state.record?.failureReasonCode) {
+        null || miningClaimContractNotConfiguredCode => '',
+        final String code => LoopL10n.current.miningRewards_screenFailedCode(
+          code,
+        ),
+      },
+    ),
+    MiningClaimPhase.expired => LoopL10n.current.miningRewards_screenExpired2,
   };
 }
 
@@ -771,50 +815,70 @@ String? miningClaimPhaseText(MiningClaimState state) {
 /// contract's order (§3.4, loop-api decision 0123; decision 0143). The
 /// claimable balance is shown as it is either way. [minimum] is
 /// `parameters.minimumClaimRaw`, named by the below-minimum line.
-String miningClaimUnavailableText(String? reasonCode, {BigInt? minimum}) =>
-    switch (reasonCode) {
-      'MINING_SETTLEMENT_UNAVAILABLE' => '结算服务暂时不可用，暂不能领取',
-      'MINING_PARAMETERS_PENDING' => '挖矿规则待生效，暂不能领取',
-      'MINING_NOTHING_SETTLED' => '有算力的小时结算后可领取',
-      'MINING_CLAIM_NOTHING_TO_CLAIM' => '暂无可领取',
-      'MINING_CLAIM_BELOW_MINIMUM' =>
-        minimum != null && minimum > BigInt.zero
-            ? '满 ${miningLoopFigure(minimum)} LOOP 可领取'
-            : '可领取数量未达到最低领取数量',
-      'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取',
-      // Decisions 0155 / 0184: not an outage — the token is not on chain
-      // yet. The page shows its power-only notice; no configuration wording.
-      miningClaimContractNotConfiguredCode => miningPowerOnlyNotice,
-      'MINING_CLAIM_CHAIN_NOT_CONFIGURED' => '领取所在的链尚未配置，暂不能领取',
-      'MINING_CLAIM_SIGNER_NOT_CONFIGURED' => '领取凭证签发尚未配置，暂不能领取',
-      'MINING_CLAIM_WRITES_DISABLED' => '链上写入暂时关闭，暂不能领取',
-      'MINING_CLAIM_MAINNET_CLOSED' => '主网领取尚未开放',
-      // Loop-api 0125 §8.2: read from the chain only once the first seven
-      // gates pass (decision 0147).
-      'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，暂不能领取',
-      'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，暂不能领取',
-      'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂不能领取',
-      _ => '领取暂不可用',
-    };
+String miningClaimUnavailableText(
+  String? reasonCode, {
+  BigInt? minimum,
+}) => switch (reasonCode) {
+  'MINING_SETTLEMENT_UNAVAILABLE' =>
+    LoopL10n.current.miningRewards_screenSwitch11,
+  'MINING_PARAMETERS_PENDING' => LoopL10n.current.miningRewards_screenSwitch12,
+  'MINING_NOTHING_SETTLED' => LoopL10n.current.miningRewards_screenSwitch13,
+  'MINING_CLAIM_NOTHING_TO_CLAIM' => LoopL10n.current.miningRewards_screenS3,
+  'MINING_CLAIM_BELOW_MINIMUM' =>
+    minimum != null && minimum > BigInt.zero
+        ? LoopL10n.current.miningRewards_screenSwitch14(
+            miningLoopFigure(minimum),
+          )
+        : LoopL10n.current.miningRewards_screenS4,
+  'MINING_CLAIM_IN_FLIGHT' => LoopL10n.current.miningRewards_screenSwitch15,
+  // Decisions 0155 / 0184: not an outage — the token is not on chain
+  // yet. The page shows its power-only notice; no configuration wording.
+  miningClaimContractNotConfiguredCode => miningPowerOnlyNotice,
+  'MINING_CLAIM_CHAIN_NOT_CONFIGURED' =>
+    LoopL10n.current.miningRewards_screenSwitch16,
+  'MINING_CLAIM_SIGNER_NOT_CONFIGURED' =>
+    LoopL10n.current.miningRewards_screenSwitch17,
+  'MINING_CLAIM_WRITES_DISABLED' =>
+    LoopL10n.current.miningRewards_screenSwitch18,
+  'MINING_CLAIM_MAINNET_CLOSED' =>
+    LoopL10n.current.miningRewards_screenSwitch19,
+  // Loop-api 0125 §8.2: read from the chain only once the first seven
+  // gates pass (decision 0147).
+  'MINING_CLAIM_CONTRACT_PAUSED' =>
+    LoopL10n.current.miningRewards_screenSwitch20,
+  'MINING_CLAIM_CHAIN_READ_FAILED' =>
+    LoopL10n.current.miningRewards_screenSwitch21,
+  'MINING_CLAIM_FUNDING_INSUFFICIENT' =>
+    LoopL10n.current.miningRewards_screenSwitch22,
+  _ => LoopL10n.current.miningRewards_screenSwitch23,
+};
 
 String miningClaimPrepareFailureText(LoopChainException? failure) {
   final reason = failure?.reasonCode;
   return switch (reason) {
-    'MINING_CLAIM_NOTHING_TO_CLAIM' => '现在没有可领取的 LOOP。',
-    'MINING_CLAIM_BELOW_MINIMUM' => '可领取数量低于最低领取数量。',
-    'MINING_CLAIM_IN_FLIGHT' => '上一笔领取还在处理中，完成后再领取。',
+    'MINING_CLAIM_NOTHING_TO_CLAIM' =>
+      LoopL10n.current.miningRewards_screenSwitch24,
+    'MINING_CLAIM_BELOW_MINIMUM' =>
+      LoopL10n.current.miningRewards_screenSwitch25,
+    'MINING_CLAIM_IN_FLIGHT' => LoopL10n.current.miningRewards_screenSwitch26,
     miningClaimContractNotConfiguredCode => miningPowerOnlyNotice,
-    'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
-    'MINING_CLAIM_CONTRACT_PAUSED' => '领取合约已暂停，余额不变。',
-    'MINING_CLAIM_CHAIN_READ_FAILED' => '领取合约暂时读不到，没有生成领取凭证，余额不变。',
-    'MINING_CLAIM_FUNDING_INSUFFICIENT' => '领取合约余额不足，暂时不能领取，余额不变。',
-    'MINING_CLAIM_EXPIRED' => '领取凭证已过期，没有提交任何交易。请重新领取。',
-    'MINING_CLAIM_WALLET_NOT_EMBEDDED' => '只能领取到 LOOP 内置钱包。',
+    'MINING_CLAIM_SIMULATION_REVERTED' =>
+      LoopL10n.current.miningRewards_screenSwitch27,
+    'MINING_CLAIM_CONTRACT_PAUSED' =>
+      LoopL10n.current.miningRewards_screenSwitch28,
+    'MINING_CLAIM_CHAIN_READ_FAILED' =>
+      LoopL10n.current.miningRewards_screenSwitch29,
+    'MINING_CLAIM_FUNDING_INSUFFICIENT' =>
+      LoopL10n.current.miningRewards_screenSwitch30,
+    'MINING_CLAIM_EXPIRED' => LoopL10n.current.miningRewards_screenSwitch31,
+    'MINING_CLAIM_WALLET_NOT_EMBEDDED' =>
+      LoopL10n.current.miningRewards_screenSwitch32,
     _ => switch (failure?.kind) {
-      LoopChainFailureKind.offline ||
-      LoopChainFailureKind.timedOut => '网络不可用，没有生成领取凭证。',
-      LoopChainFailureKind.unavailable => '领取暂不可用，余额不变。',
-      _ => '没有生成领取凭证，没有提交任何交易。',
+      LoopChainFailureKind.offline || LoopChainFailureKind.timedOut =>
+        LoopL10n.current.miningRewards_screenTimedOut,
+      LoopChainFailureKind.unavailable =>
+        LoopL10n.current.miningRewards_screenUnavailable,
+      _ => LoopL10n.current.miningRewards_screenSwitch33,
     },
   };
 }
@@ -872,7 +936,7 @@ class MiningClaimPanel extends StatelessWidget {
   }
 
   String? get _disabledReason {
-    if (restored) return '正在读取最新的可领取数量';
+    if (restored) return LoopL10n.current.miningRewards_screenDisabledReason;
     if (claim.busy || claim.locked) return null;
     if (view.claim.status.inFlight) {
       return miningClaimUnavailableText('MINING_CLAIM_IN_FLIGHT');
@@ -883,13 +947,19 @@ class MiningClaimPanel extends StatelessWidget {
         minimum: view.minimumClaim,
       );
     }
-    if (view.claimable <= BigInt.zero) return '现在没有可领取的 LOOP';
+    if (view.claimable <= BigInt.zero) {
+      return LoopL10n.current.miningRewards_screenIf;
+    }
     final minimum = view.minimumClaim;
     if (minimum != null && view.claimable < minimum) {
-      return '满 ${miningLoopFigure(minimum)} LOOP 可领取';
+      return LoopL10n.current.miningRewards_screenSwitch14(
+        miningLoopFigure(minimum),
+      );
     }
     if (wallet.walletId == null) {
-      return wallet.loading ? '正在读取钱包' : '没有可用的钱包';
+      return wallet.loading
+          ? LoopL10n.current.miningRewards_screenIf2
+          : LoopL10n.current.miningRewards_screenS5;
     }
     return null;
   }
@@ -921,7 +991,12 @@ class MiningClaimPanel extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(child: Text('领取状态', style: LoopType.eyebrow)),
+              Expanded(
+                child: Text(
+                  context.l10n.miningRewards_screenSwitch34,
+                  style: LoopType.eyebrow,
+                ),
+              ),
               // Status, never a price move: no rise / fall (0117).
               LoopBadge(
                 miningClaimStatusLabel(status, any: any),
@@ -933,7 +1008,7 @@ class MiningClaimPanel extends StatelessWidget {
           const SizedBox(height: 6),
           LoopKeyValue(
             key: const ValueKey<String>('mining-claim-amount'),
-            label: '本次可领取',
+            label: context.l10n.miningRewards_screenMiningClaimAmountLabel,
             value: '${miningLoopFigure(view.claimable)} LOOP',
             padding: const EdgeInsets.symmetric(vertical: 6),
           ),
@@ -941,7 +1016,7 @@ class MiningClaimPanel extends StatelessWidget {
               when minimum > BigInt.zero)
             LoopKeyValue(
               key: const ValueKey<String>('mining-claim-minimum'),
-              label: '最低领取',
+              label: context.l10n.miningRewards_screenMiningClaimMinimumLabel,
               value: '${miningLoopFigure(minimum)} LOOP',
               padding: const EdgeInsets.symmetric(vertical: 6),
             ),
@@ -950,26 +1025,33 @@ class MiningClaimPanel extends StatelessWidget {
               claim.outcome?.status == MoneySignStatus.reportRefused)
             LoopButton(
               key: const ValueKey<String>('mining-claim-retry-report'),
-              label: '重新上报',
+              label:
+                  context.l10n.miningRewards_screenMiningClaimRetryReportLabel,
               block: true,
               onPressed: onRetryReport,
             )
           else if (claim.phase == MiningClaimPhase.pollTimedOut)
             LoopButton(
               key: const ValueKey<String>('mining-claim-resume'),
-              label: '继续查询',
+              label: context.l10n.miningRewards_screenMiningClaimResumeLabel,
               block: true,
               onPressed: onResume,
             )
           else
             LoopButton(
               key: const ValueKey<String>('mining-claim-button'),
-              label: claim.busy || claim.locked ? '领取处理中' : '领取',
+              label: claim.busy || claim.locked
+                  ? context.l10n.miningRewards_screenMiningClaimButtonLabel
+                  : context.l10n.common_claim,
               // The folio above is the screen's one full Lime (docs/33
               // §1.5): the claim is the quiet block button.
               block: true,
               onPressed: canClaim ? onClaim : null,
-              semanticLabel: canClaim ? '领取' : '领取，当前不可用',
+              semanticLabel: canClaim
+                  ? context.l10n.common_claim
+                  : context
+                        .l10n
+                        .miningRewards_screenMiningClaimButtonSemanticLabel,
             ),
           if (note != null) ...<Widget>[
             const SizedBox(height: 10),
@@ -1021,10 +1103,16 @@ class _ClaimTxLink extends StatelessWidget {
     return LoopRecordRow(
       key: const ValueKey<String>('mining-claim-tx'),
       leading: const LoopRowIcon(icon: 'link'),
-      title: '成功交易 ${miningShortHash(tx.txHash)}',
-      subtitle: '复制 BscScan 链接',
+      title: context.l10n.miningRewards_screenMiningClaimTxTitle(
+        miningShortHash(tx.txHash),
+      ),
+      subtitle: context.l10n.miningRewards_screenMiningClaimTxSubtitle,
       onTap: () => unawaited(
-        LoopCopy.text(context, tx.explorerUrl, message: 'BscScan 链接已复制'),
+        LoopCopy.text(
+          context,
+          tx.explorerUrl,
+          message: context.l10n.miningRewards_screenMessage,
+        ),
       ),
     );
   }
@@ -1045,7 +1133,9 @@ class MiningClaimGasSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final need = requiredNative == null ? '' : '这次领取约需 $requiredNative BNB。';
+    final need = requiredNative == null
+        ? ''
+        : context.l10n.miningRewards_screenS6(requiredNative);
     final from = swap?.fromSymbol ?? 'USDT';
     final to = swap?.toSymbol ?? 'BNB';
     return Column(
@@ -1055,15 +1145,17 @@ class MiningClaimGasSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSheetHeading(swapAvailable ? '网络费不足' : '需要 BNB 支付网络费'),
+        LoopSheetHeading(
+          swapAvailable
+              ? context.l10n.miningRewards_screenLoopSheetHeading
+              : context.l10n.miningRewards_screenS7,
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             swapAvailable
-                ? 'BNB 不足以支付网络费，先用 $from 兑换 $to。$need'
-                      '兑换完成后回来再领取，可领取余额不变。'
-                : '钱包里没有 BNB，也没有可兑换的 USDT。$need'
-                      '先向钱包充值少量 BNB，再回来领取。',
+                ? context.l10n.miningRewards_screenBuild(from, need, to)
+                : context.l10n.miningRewards_screenS8(need),
             style: LoopType.body.copyWith(color: LoopColors.text2),
           ),
         ),
@@ -1072,7 +1164,9 @@ class MiningClaimGasSheet extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: LoopButton(
             key: const ValueKey<String>('mining-claim-gas-go'),
-            label: swapAvailable ? '去兑换' : '去充值',
+            label: swapAvailable
+                ? context.l10n.miningRewards_screenMiningClaimGasGoLabel
+                : context.l10n.miningRewards_screenMiningClaimGasGoLabel2,
             primary: true,
             block: true,
             onPressed: () => Navigator.of(context).pop(true),
@@ -1083,7 +1177,7 @@ class MiningClaimGasSheet extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: LoopButton(
             key: const ValueKey<String>('mining-claim-gas-cancel'),
-            label: '取消',
+            label: context.l10n.common_cancel,
             block: true,
             onPressed: () => Navigator.of(context).pop(false),
           ),
@@ -1127,7 +1221,7 @@ Widget _trackPending(String key) => Padding(
   child: Text(
     // Decision 0149: the hero names whose hour (「你有算力的小时」); the
     // track lines no longer repeat 「首个小时」 under it.
-    '有算力的小时结算后显示',
+    LoopL10n.current.miningRewards_screenBuild2,
     style: LoopType.caption,
   ),
 );
@@ -1150,17 +1244,26 @@ class MiningNftTrackCard extends StatelessWidget {
         // The real count and the weighted power are two facts; an invite
         // power never reads as NFTs held (requirer §8.1).
         _fact(
-          '持有 NFT（真实数量）',
+          context.l10n.miningRewards_screenMiningNftRealCount,
           nft.realCount.toString(),
           key: const ValueKey<String>('mining-nft-real-count'),
         ),
-        _fact('本人加权算力', miningPowerFigure(nft.ownPower)),
-        _fact('邀请算力', miningPowerFigure(nft.invitePower)),
-        _fact('总算力', miningPowerFigure(nft.totalPower)),
+        _fact(
+          context.l10n.miningRewards_screenFact,
+          miningPowerFigure(nft.ownPower),
+        ),
+        _fact(
+          context.l10n.miningRewards_screenFact2,
+          miningPowerFigure(nft.invitePower),
+        ),
+        _fact(
+          context.l10n.mining_screenKicker,
+          miningPowerFigure(nft.totalPower),
+        ),
         if (live) ...<Widget>[
           const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
           _fact(
-            '上一小时奖励',
+            context.l10n.miningRewards_screenMiningMinuteKicker,
             '${miningLoopFigure(nft.reward)} LOOP',
             key: const ValueKey<String>('mining-nft-reward'),
           ),
@@ -1175,10 +1278,13 @@ class MiningNftTrackCard extends StatelessWidget {
 /// synced, never a price; the unreadable code is left for replayed
 /// pre-0123 hours. A code without a line is 「暂不计入」, never the code.
 String miningExcludedReasonText(String reasonCode) => switch (reasonCode) {
-  'MINING_ASSET_GRADUATED_BALANCE_PENDING' => '已毕业，外盘持有数量还在同步',
-  'MINING_ASSET_GRADUATED_UNREADABLE' => '已毕业，外盘持有数量暂读不到',
-  'MINING_ASSET_WEIGHT_NOT_CONFIGURED' => '还没有配置挖矿权重',
-  _ => '暂不计入',
+  'MINING_ASSET_GRADUATED_BALANCE_PENDING' =>
+    LoopL10n.current.miningRewards_screenSwitch35,
+  'MINING_ASSET_GRADUATED_UNREADABLE' =>
+    LoopL10n.current.miningRewards_screenSwitch36,
+  'MINING_ASSET_WEIGHT_NOT_CONFIGURED' =>
+    LoopL10n.current.miningRewards_screenSwitch37,
+  _ => LoopL10n.current.miningRewards_screenSwitch38,
 };
 
 class MiningAssetTrackCard extends StatelessWidget {
@@ -1204,7 +1310,10 @@ class MiningAssetTrackCard extends StatelessWidget {
           Padding(
             key: const ValueKey<String>('mining-asset-empty'),
             padding: const EdgeInsets.symmetric(vertical: 7),
-            child: Text('上一小时没有计入挖矿的 Meme 币', style: LoopType.caption),
+            child: Text(
+              context.l10n.miningRewards_screenBuild3,
+              style: LoopType.caption,
+            ),
           )
         else
           for (final item in asset.assets)
@@ -1218,19 +1327,30 @@ class MiningAssetTrackCard extends StatelessWidget {
         for (final item in asset.excluded)
           _fact(
             item.label,
-            '已退出（${miningExcludedReasonText(item.reasonCode)}）',
+            context.l10n.miningRewards_screenFact4(
+              miningExcludedReasonText(item.reasonCode),
+            ),
             key: ValueKey<String>('mining-asset-excluded-${item.assetId}'),
           ),
         // S336 · decision 0265: the three formula lines (decisions 0123,
         // 0183) are said in the page's (i) — [miningRewardsInfoNotes].
         const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
-        _fact('本人算力', miningPowerFigure(asset.ownPower)),
-        _fact('邀请算力', miningPowerFigure(asset.invitePower)),
-        _fact('总算力', miningPowerFigure(asset.totalPower)),
+        _fact(
+          context.l10n.miningRewards_screenFact5,
+          miningPowerFigure(asset.ownPower),
+        ),
+        _fact(
+          context.l10n.miningRewards_screenFact2,
+          miningPowerFigure(asset.invitePower),
+        ),
+        _fact(
+          context.l10n.mining_screenKicker,
+          miningPowerFigure(asset.totalPower),
+        ),
         if (live) ...<Widget>[
           const LoopHairline(margin: EdgeInsets.symmetric(vertical: 4)),
           _fact(
-            '上一小时奖励',
+            context.l10n.miningRewards_screenMiningMinuteKicker,
             '${miningLoopFigure(asset.reward)} LOOP',
             key: const ValueKey<String>('mining-asset-reward'),
           ),
@@ -1331,7 +1451,7 @@ class MiningInviteTable extends StatelessWidget {
         _row(miningInviteHeads, head: true),
         for (final level in data.levels)
           _row(<String>[
-            '第 ${level.level} 级',
+            context.l10n.miningRewards_screenRow(level.level),
             miningRateLabel(level.ratePercent),
             '${level.activeMembers}',
             miningPowerFigure(level.nftPower),
@@ -1340,7 +1460,7 @@ class MiningInviteTable extends StatelessWidget {
         const LoopHairline(margin: EdgeInsets.symmetric(vertical: 2)),
         _row(
           <String>[
-            '合计',
+            context.l10n.miningRewards_screenRow2,
             '',
             '${data.total.activeMembers}',
             miningPowerFigure(data.total.nftPower),
@@ -1357,29 +1477,34 @@ class MiningInviteTable extends StatelessWidget {
 }
 
 /// The 五级邀请 table's column heads.
-const List<String> miningInviteHeads = <String>[
-  '层级',
-  '比例',
-  '有效邀请',
-  'NFT 算力',
-  '资产算力',
+List<String> get miningInviteHeads => <String>[
+  LoopL10n.current.miningRewards_screenBuild4,
+  LoopL10n.current.miningRewards_screenBuild5,
+  LoopL10n.current.miningRewards_inviteHeadActive,
+  LoopL10n.current.miningRewards_inviteHeadNft,
+  LoopL10n.current.miningRewards_inviteHeadAsset,
 ];
 
 /// What the 五级邀请 table counts (the footnote that stood under it).
-const String miningInviteNote = '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。';
+String get miningInviteNote =>
+    LoopL10n.current.miningRewards_screenMiningInviteNote;
 
 /// The Meme 币 track's basis (decision 0123, loop-api): the hour's average
 /// holding quantity times the approved mining weight; no price enters it.
-const String miningAssetBasisNote = '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重';
+String get miningAssetBasisNote =>
+    LoopL10n.current.miningRewards_screenMiningAssetBasisNote;
 
 /// The NFT track's basis (decision 0183).
-const String miningNftBasisNote = 'NFT 算力 = 持有数量 × 所属社区系数';
+String get miningNftBasisNote =>
+    LoopL10n.current.miningRewards_screenMiningNftBasisNote;
 
 /// The conditions (decision 0183).
-const String miningConditionsNote = '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。';
+String get miningConditionsNote =>
+    LoopL10n.current.mining_copyMiningConditionsShort;
 
 /// The hour that counted, as the hero's caption used to say it.
-const String miningHourCountedNote = '上一小时有效，已计入算力统计';
+String get miningHourCountedNote =>
+    LoopL10n.current.miningRewards_screenMiningHourCountedNote;
 
 /// S336 · decision 0265: everything the page used to explain on its face —
 /// the hero's caption and strip, the power-only line, the Meme 币 track's
@@ -1406,55 +1531,60 @@ List<LoopInfoNote> miningRewardsInfoNotes(
       if (shown)
         LoopInfoNote(
           key: const ValueKey<String>('mining-minute-total'),
-          body: '上一小时 ${miningLoopFigure(progress.total)} LOOP',
+          body: LoopL10n.current.miningRewards_screenMiningMinuteTotalBody(
+            miningLoopFigure(progress.total),
+          ),
         ),
       if (epoch != null)
         LoopInfoNote(
           key: const ValueKey<String>('mining-minute-epoch'),
-          body:
-              '结算时段 ${loopClockLabel(epoch.epochStart)}–${loopClockLabel(epoch.epochEnd)} · '
-              '本小时奖励结算后已全部计入可领取',
+          body: LoopL10n.current.miningRewards_screenMiningMinuteEpochBody(
+            loopClockLabel(epoch.epochStart),
+            loopClockLabel(epoch.epochEnd),
+          ),
         ),
     ],
     if (!live && view != null) ...<LoopInfoNote>[
       if (hasPower && !settling && total > Decimal.zero)
-        const LoopInfoNote(
+        LoopInfoNote(
           key: ValueKey<String>('mining-info-hour-counted'),
           body: miningHourCountedNote,
         ),
       if (hasPower)
         LoopInfoNote(
           key: const ValueKey<String>('mining-power-tracks'),
-          body:
-              'NFT 算力 ${nftPower == null ? loopFigureDash : miningPowerFigure(nftPower)} · '
-              'Meme 币算力 ${assetPower == null ? loopFigureDash : miningPowerFigure(assetPower)}',
+          body: LoopL10n.current.miningRewards_screenMiningPowerTracksBody(
+            assetPower == null ? loopFigureDash : miningPowerFigure(assetPower),
+            nftPower == null ? loopFigureDash : miningPowerFigure(nftPower),
+          ),
         ),
       if (epoch != null)
         LoopInfoNote(
           key: const ValueKey<String>('mining-power-epoch'),
-          body:
-              '统计时段 ${loopClockLabel(epoch.epochStart)}–${loopClockLabel(epoch.epochEnd)} · '
-              '每个整点统计一次',
+          body: LoopL10n.current.miningRewards_screenMiningPowerEpochBody(
+            loopClockLabel(epoch.epochStart),
+            loopClockLabel(epoch.epochEnd),
+          ),
         ),
     ],
     if (!live)
-      const LoopInfoNote(
+      LoopInfoNote(
         key: ValueKey<String>('mining-power-only-notice'),
         body: miningPowerOnlyNotice,
       ),
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('mining-asset-basis'),
       body: miningAssetBasisNote,
     ),
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('mining-asset-basis-nft'),
       body: miningNftBasisNote,
     ),
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('mining-asset-basis-conditions'),
       body: miningConditionsNote,
     ),
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('mining-invite-note'),
       body: miningInviteNote,
     ),
@@ -1481,10 +1611,10 @@ class MiningClaimRecords extends StatelessWidget {
   Widget build(BuildContext context) {
     if (state.items.isEmpty) {
       if (state.phase == LoopChainViewPhase.empty) {
-        return const LoopEmptyState(
+        return LoopEmptyState(
           key: ValueKey<String>('mining-claims-empty'),
           illustration: LoopIllustration.history,
-          title: '还没有领取记录',
+          title: context.l10n.miningRewards_screenMiningClaimsEmptyTitle,
           compact: true,
         );
       }
@@ -1501,7 +1631,9 @@ class MiningClaimRecords extends StatelessWidget {
         LoopRecordRow(
           key: ValueKey<String>('mining-claim-record-${item.claimId}'),
           leading: const LoopRowIcon(icon: 'parachute'),
-          title: '领取 ${miningLoopFigure(item.amount)} LOOP',
+          title: context.l10n.miningRewards_screenTitle(
+            miningLoopFigure(item.amount),
+          ),
           subtitle: <String>[
             miningClaimStatusLabel(item.status, any: true),
             loopDateTimeLabel(item.createdAt),
@@ -1515,7 +1647,7 @@ class MiningClaimRecords extends StatelessWidget {
                   LoopCopy.text(
                     context,
                     item.tx!.explorerUrl,
-                    message: 'BscScan 链接已复制',
+                    message: context.l10n.miningRewards_screenMessage,
                   ),
                 ),
         ),
@@ -1526,7 +1658,10 @@ class MiningClaimRecords extends StatelessWidget {
         LoopRecordGroup(rows: rows),
         if (state.nextCursor case final String cursor)
           state.moreFailed
-              ? LoopInlineUnavailable(message: '更早的记录没有读到', onRetry: onLoadMore)
+              ? LoopInlineUnavailable(
+                  message: context.l10n.miningRewards_screenMessage2,
+                  onRetry: onLoadMore,
+                )
               : LoopLoadMoreSentinel(cursor: cursor, onLoadMore: onLoadMore),
       ],
     );

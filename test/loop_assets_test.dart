@@ -623,7 +623,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('NO'), findsOneWidget);
-    expect(find.bySemanticsLabel('nobody 头像'), findsOneWidget);
+    expect(find.bySemanticsLabel('nobody avatar'), findsOneWidget);
     semantics.dispose();
   });
 }

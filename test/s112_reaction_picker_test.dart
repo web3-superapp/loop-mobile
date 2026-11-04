@@ -308,7 +308,11 @@ void main() {
         loopReactions: false,
       );
 
-      await tester.tap(find.text('点赞').first);
+      // Stream draws the reaction's word in a glyph-sized box; the English
+      // word is wider than the box, so the tap lands inside its start.
+      await tester.tapAt(
+        tester.getTopLeft(find.text('Like').first) + const Offset(4, 4),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(ReactionDetailSheet), findsOneWidget);

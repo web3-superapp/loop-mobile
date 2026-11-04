@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 
@@ -107,7 +108,9 @@ class _Cell extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: count == null ? label : '$label，$count',
+      label: count == null
+          ? label
+          : '$label${LoopL10n.current.common_listSeparator}$count',
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,

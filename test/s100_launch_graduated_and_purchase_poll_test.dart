@@ -237,10 +237,10 @@ Future<FakeLaunchGateway> _signPurchase(
   await scrollToS7Section(tester, _key('launch-trade-sign'));
   await tester.tap(_key('launch-trade-sign'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('确认签名'));
+  await tester.tap(find.text('Confirm signature'));
   await tester.pumpAndSettle();
   expect(gateway.reports, <String>['$s83cIntentId:$s83cTxHash']);
-  await tester.tap(find.text('关闭'));
+  await tester.tap(find.text('Close'));
   await tester.pumpAndSettle();
   return gateway;
 }

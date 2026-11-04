@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_store.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The four account steps that follow a verified credential.
 ///
@@ -10,12 +11,12 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_store.dart';
 /// these four carry 02 … 05. The numbers live here so a page can never print
 /// a position the sequence does not actually put it in.
 enum LoopOnboardingStep {
-  walletCreate(2, 'wallet-create', '创建钱包'),
-  walletBackup(3, 'wallet-recovery', '设置恢复方式'),
-  security(4, 'security-setup', '安全设置'),
-  loopId(5, 'loop-id-setup', '创建 LOOP ID');
+  walletCreate(2, 'wallet-create'),
+  walletBackup(3, 'wallet-recovery'),
+  security(4, 'security-setup'),
+  loopId(5, 'loop-id-setup');
 
-  const LoopOnboardingStep(this.number, this.slug, this.label);
+  const LoopOnboardingStep(this.number, this.slug);
 
   /// Position in the five-step opening, as printed on the page.
   final int number;
@@ -23,7 +24,18 @@ enum LoopOnboardingStep {
   /// The manifest slug this step is rendered by.
   final String slug;
 
-  final String label;
+  String get label => switch (this) {
+    LoopOnboardingStep.walletCreate =>
+      LoopL10n.current.app_onboardingSequenceWalletCreate,
+
+    LoopOnboardingStep.walletBackup =>
+      LoopL10n.current.app_onboardingSequenceWalletBackup,
+
+    LoopOnboardingStep.security =>
+      LoopL10n.current.app_onboardingSequenceSecurity,
+
+    LoopOnboardingStep.loopId => LoopL10n.current.app_onboardingSequenceLoopId,
+  };
 
   static const total = 5;
 

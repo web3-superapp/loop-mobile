@@ -56,8 +56,8 @@ void main() {
       // Decision 0118: no statistics line; one weak source line instead.
       expect(find.textContaining('自选 1 · '), findsNothing);
       expect(find.text('\$747.39'), findsWidgets);
-      expect(findProvenanceContaining('来源 DexScreener'), findsWidgets);
-      expect(findProvenanceContaining('观察于'), findsWidgets);
+      expect(findProvenanceContaining('Source DexScreener'), findsWidgets);
+      expect(findProvenanceContaining('Observed at'), findsWidgets);
     });
 
     testWidgets('a stale price is shown with a marker, not silently', (
@@ -480,7 +480,10 @@ void main() {
         find.byKey(const ValueKey<String>('token-security-provenance')),
       );
       expect(find.text('Source verified'), findsOneWidget);
-      expect(findProvenanceContaining('来源 GoPlus · 观察于'), findsOneWidget);
+      expect(
+        findProvenanceContaining('Source GoPlus · Observed at'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a blocked asset hides every fact', (tester) async {

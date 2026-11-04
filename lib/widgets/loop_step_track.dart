@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Where a multi-step flow or a project's milestones stand (decision 0169).
 ///
@@ -59,7 +60,11 @@ class LoopStepTrack extends StatelessWidget {
   Widget build(BuildContext context) {
     final label =
         semanticLabel ??
-        '第 ${current + 1} 步，共 ${labels.length} 步，${labels[current]}';
+        context.l10n.widgets_flatLoopStepDotsLabel(
+          labels[current],
+          current + 1,
+          labels.length,
+        );
     return Padding(
       padding: EdgeInsets.fromLTRB(
         LoopSpacing.page,

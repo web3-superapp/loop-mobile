@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -57,8 +58,10 @@ class _LoopChatImagePlaceholder extends StatelessWidget {
 
   final VoidCallback? onRetry;
 
-  static const String failureMessage = '图片没有加载出来';
-  static const String retryMessage = '点按重试';
+  static String get failureMessage =>
+      LoopL10n.current.integrations_chatImageAttachmentsFailureMessage;
+  static String get retryMessage =>
+      LoopL10n.current.integrations_chatImageAttachmentsRetryMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +104,9 @@ class _LoopChatImagePlaceholder extends StatelessWidget {
 
     return Semantics(
       key: const ValueKey<String>('loop-chat-image-unavailable'),
-      label: onRetry == null ? failureMessage : '$failureMessage，$retryMessage',
+      label: onRetry == null
+          ? failureMessage
+          : '$failureMessage${LoopL10n.current.common_listSeparator}$retryMessage',
       button: onRetry != null,
       child: onRetry == null
           ? body
@@ -354,7 +359,7 @@ class _LoopChatImageViewerHeader extends StatelessWidget {
               child: IconButton(
                 key: const ValueKey<String>('loop-chat-image-viewer-close'),
                 onPressed: Navigator.of(context).maybePop,
-                tooltip: '返回',
+                tooltip: context.l10n.common_back,
                 icon: const LoopIcon('close', size: 20),
               ),
             ),
@@ -400,7 +405,11 @@ class _LoopChatImageViewerFooter extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           key: const ValueKey<String>('loop-chat-image-viewer-counter'),
-          '第 ${page + 1} 张 / 共 $total 张',
+          context.l10n
+              .integrations_chatImageAttachmentsLoopChatImageViewerCounter(
+                page + 1,
+                total,
+              ),
           style: LoopMono.stamp,
         ),
       ),

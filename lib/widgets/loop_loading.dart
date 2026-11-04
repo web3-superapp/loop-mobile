@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
 /// How long ago [at] was, in the product's own words: 「12 秒前」,
 /// 「3 分钟前」. A time ahead of this device's clock is 「刚刚」.
 String loopAgeLabel(DateTime at, {DateTime? now}) {
   final delta = (now ?? DateTime.now()).toUtc().difference(at.toUtc());
-  if (delta.isNegative || delta.inSeconds < 1) return '刚刚';
-  if (delta.inSeconds < 60) return '${delta.inSeconds} 秒前';
-  if (delta.inMinutes < 60) return '${delta.inMinutes} 分钟前';
-  if (delta.inHours < 24) return '${delta.inHours} 小时前';
-  return '${delta.inDays} 天前';
+  if (delta.isNegative || delta.inSeconds < 1) {
+    return LoopL10n.current.common_justNow;
+  }
+  if (delta.inSeconds < 60) {
+    return LoopL10n.current.widgets_loadingLoopAgeLabel(delta.inSeconds);
+  }
+  if (delta.inMinutes < 60) {
+    return LoopL10n.current.widgets_loadingLoopAgeLabel2(delta.inMinutes);
+  }
+  if (delta.inHours < 24) {
+    return LoopL10n.current.widgets_loadingLoopAgeLabel3(delta.inHours);
+  }
+  return LoopL10n.current.widgets_loadingLoopAgeLabel4(delta.inDays);
 }
 
 /// The one line at the top of a page that says how old the answer on screen
@@ -58,11 +67,13 @@ class LoopFreshnessStrip extends StatelessWidget {
     final String? text;
     if (failed) {
       text = at == null
-          ? '更新失败，显示的是上次读到的数据'
-          : '更新失败，显示的是${loopAgeLabel(at, now: now)}读到的数据';
+          ? context.l10n.widgets_loadingIf
+          : context.l10n.widgets_loadingS(loopAgeLabel(at, now: now));
     } else if (restoredAt != null) {
       final age = loopAgeLabel(restoredAt!, now: now);
-      text = refreshing ? '数据来自$age，正在更新' : '数据来自$age';
+      text = refreshing
+          ? context.l10n.widgets_loadingIf2(age)
+          : context.l10n.widgets_loadingS2(age);
     } else {
       text = null;
     }
@@ -153,7 +164,7 @@ class _FreshnessLine extends StatelessWidget {
                     foregroundColor: LoopColors.chalk,
                     textStyle: LoopType.titleSm,
                   ),
-                  child: const Text('重试'),
+                  child: Text(context.l10n.common_retry),
                 )
               else
                 const SizedBox(width: 8),

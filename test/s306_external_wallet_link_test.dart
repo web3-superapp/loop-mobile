@@ -334,7 +334,10 @@ void main() {
 
         await _tapAdd(tester);
 
-        expect(find.text('已拒绝钱包连接或签名请求。'), findsNothing);
+        expect(
+          find.text('The wallet connection or signature request was rejected.'),
+          findsNothing,
+        );
         expect(
           find.byKey(const ValueKey<String>('wallets-link-error')),
           findsNothing,
@@ -557,7 +560,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('解绑没有完成，请检查网络后重试。'), findsOneWidget);
+      expect(
+        find.text("Unlinking didn't finish. Check your network and retry."),
+        findsOneWidget,
+      );
       expect(harness.sync.calls, 0);
     });
 
@@ -596,11 +602,11 @@ void main() {
     test('network and unknown link failures', () {
       expect(
         PrivySdkAuthGateway.siweLinkFailureMessage('Request timed out'),
-        '钱包凭据提交失败，请检查网络后重试。',
+        'Couldn\'t submit the wallet credential. Check your network and retry.',
       );
       expect(
         PrivySdkAuthGateway.siweLinkFailureMessage('Invalid signature'),
-        '钱包绑定没有完成，请重试。',
+        "Wallet linking didn't finish. Retry.",
       );
     });
 
@@ -609,11 +615,11 @@ void main() {
         PrivySdkAuthGateway.siweUnlinkFailureMessage(
           'Cannot unlink the last linked account',
         ),
-        contains('唯一的登录方式'),
+        contains('only sign-in method'),
       );
       expect(
         PrivySdkAuthGateway.siweUnlinkFailureMessage('internal error'),
-        '解绑没有完成，请稍后重试。',
+        "Unlinking didn't finish. Try again later.",
       );
     });
   });

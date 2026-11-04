@@ -28,6 +28,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter/widgets.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Captures one photo, or returns null when the member backed out.
 ///
@@ -43,12 +44,14 @@ const String loopChatCameraOptionKey = 'loop-camera';
 /// It names the one thing that will change the outcome. LOOP cannot open the
 /// system settings page itself — no permission plugin is in the lockfile — so
 /// it does not offer a button that would have to fake the trip.
-const String loopChatCameraPermissionMessage = '没有相机权限，去系统设置里允许 LOOP 使用相机后再试';
+String get loopChatCameraPermissionMessage =>
+    LoopL10n.current.integrations_chatCameraLoopChatCameraPermissionMessage;
 
 /// What LOOP says when the capture itself failed.
 ///
 /// Not "sent", not "saved": nothing was added to the message.
-const String loopChatCameraUnavailableMessage = '相机没有拍成照片，这次没有加进来。';
+String get loopChatCameraUnavailableMessage =>
+    LoopL10n.current.integrations_chatCameraLoopChatCameraUnavailableMessage;
 
 /// Opens the device camera through Stream's own attachment handler.
 ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
@@ -38,16 +39,16 @@ class LoopSignSheet extends StatelessWidget {
     required this.state,
     required this.facts,
     super.key,
-    this.title = '确认交易',
+    this._title,
     this.networkBadge,
     this.reason,
     this.onConfirm,
     this.onCancel,
     this.onAdjustPolicy,
-    this.confirmLabel = '确认签名',
-    this.cancelLabel = '取消',
-    this.signingTitle = '正在签名并广播',
-    this.completeLabel = '已广播',
+    this._confirmLabel,
+    this._cancelLabel,
+    this._signingTitle,
+    this._completeLabel,
   });
 
   final LoopSignSheetState state;
@@ -57,7 +58,8 @@ class LoopSignSheet extends StatelessWidget {
 
   /// Prototype `#sign-title`. The showcase cards override the confirm label
   /// with the compact 「确认」 used by the inline examples.
-  final String title;
+  final String? _title;
+  String get title => _title ?? LoopL10n.current.widgets_signSheetTitle;
 
   /// A chain the owner must be told about before signing, e.g. "BSC 测试网"
   /// (loop-api decision 0038). It is a statement of fact next to the sheet's
@@ -73,17 +75,24 @@ class LoopSignSheet extends StatelessWidget {
 
   /// Shown only for [LoopSignSheetState.policyRejected].
   final VoidCallback? onAdjustPolicy;
-  final String confirmLabel;
-  final String cancelLabel;
+  final String? _confirmLabel;
+  String get confirmLabel =>
+      _confirmLabel ?? LoopL10n.current.widgets_signSheetConfirmLabel;
+  final String? _cancelLabel;
+  String get cancelLabel => _cancelLabel ?? LoopL10n.current.common_cancel;
 
   /// What the busy body says. Decision 0152: 「正在验证身份」 while the
   /// device's own prompt runs before the wallet opens.
-  final String signingTitle;
+  final String? _signingTitle;
+  String get signingTitle =>
+      _signingTitle ?? LoopL10n.current.widgets_signSheetSigningTitle;
 
   /// The state badge in [LoopSignSheetState.complete]. Decision 0203: an
   /// owner that watched the read model show the broadcast may say 「已确认」;
   /// the sheet itself never decides that.
-  final String completeLabel;
+  final String? _completeLabel;
+  String get completeLabel =>
+      _completeLabel ?? LoopL10n.current.common_broadcast;
 
   bool get confirmEnabled =>
       state == LoopSignSheetState.pending && onConfirm != null;
@@ -116,10 +125,12 @@ class LoopSignSheet extends StatelessWidget {
       _ => Colors.transparent,
     };
     final stateLabel = switch (state) {
-      LoopSignSheetState.pending => '待确认',
-      LoopSignSheetState.simulationFailed => '模拟失败',
-      LoopSignSheetState.signing => '签名中',
-      LoopSignSheetState.policyRejected => '被策略拒绝',
+      LoopSignSheetState.pending => context.l10n.common_pendingConfirmation,
+      LoopSignSheetState.simulationFailed =>
+        context.l10n.widgets_signSheetSimulationFailed,
+      LoopSignSheetState.signing => context.l10n.widgets_signSheetSigning,
+      LoopSignSheetState.policyRejected =>
+        context.l10n.widgets_signSheetPolicyRejected,
       // Decision 0089: the sheet closes on a broadcast, never on a result.
       // What the chain did is the result page's to say.
       LoopSignSheetState.complete => completeLabel,
@@ -159,21 +170,25 @@ class LoopSignSheet extends StatelessWidget {
                             ),
                           ),
                           if (networkBadge != null) ...<Widget>[
-                            LoopBadge(
-                              key: const ValueKey<String>(
-                                'loop-sign-sheet-network-badge',
+                            Flexible(
+                              child: LoopBadge(
+                                key: const ValueKey<String>(
+                                  'loop-sign-sheet-network-badge',
+                                ),
+                                networkBadge!,
                               ),
-                              networkBadge!,
                             ),
                             const SizedBox(width: 6),
                           ],
-                          LoopBadge(
-                            stateLabel,
-                            kind:
-                                state == LoopSignSheetState.pending ||
-                                    state == LoopSignSheetState.complete
-                                ? LoopBadgeKind.up
-                                : LoopBadgeKind.mute,
+                          Flexible(
+                            child: LoopBadge(
+                              stateLabel,
+                              kind:
+                                  state == LoopSignSheetState.pending ||
+                                      state == LoopSignSheetState.complete
+                                  ? LoopBadgeKind.up
+                                  : LoopBadgeKind.mute,
+                            ),
                           ),
                         ],
                       ),
@@ -204,14 +219,14 @@ class LoopSignSheet extends StatelessWidget {
                           if (state == LoopSignSheetState.policyRejected &&
                               onAdjustPolicy != null)
                             LoopButton(
-                              label: '调整策略',
+                              label: context.l10n.widgets_signSheetLabel,
                               onPressed: onAdjustPolicy,
                             ),
                           LoopButton(
                             label:
                                 state == LoopSignSheetState.complete ||
                                     state == LoopSignSheetState.policyRejected
-                                ? '关闭'
+                                ? context.l10n.common_close
                                 : cancelLabel,
                             onPressed: cancelEnabled ? onCancel : null,
                           ),
@@ -296,7 +311,7 @@ class _SigningBody extends StatelessWidget {
         Text(title, textAlign: TextAlign.center, style: LoopType.title),
         const SizedBox(height: 4),
         Text(
-          '请勿关闭 App',
+          context.l10n.widgets_signSheetBuild,
           textAlign: TextAlign.center,
           style: LoopType.captionSm,
         ),
@@ -305,7 +320,10 @@ class _SigningBody extends StatelessWidget {
           padded: false,
           children: <Widget>[
             LoopButton(label: cancelLabel),
-            const LoopButton(label: '签名中', primary: true),
+            LoopButton(
+              label: context.l10n.widgets_signSheetSigning,
+              primary: true,
+            ),
           ],
         ),
       ],

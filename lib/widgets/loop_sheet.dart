@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// `.sheet` + `.veil` (chapter 5.5): bottom sheet with top-only 26px radius,
 /// Line2 top edge, Ink ground with a faint Lime glow, veil rgba(5,6,4,.76),
@@ -8,7 +9,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 Future<T?> showLoopSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
-  String barrierLabel = '关闭弹层',
+  String? barrierLabel,
   bool isDismissible = true,
 
   /// Decision 0128 (B3): every sheet goes on the root navigator, over the
@@ -27,6 +28,7 @@ Future<T?> showLoopSheet<T>(
   /// that refuses the drag would promise a gesture that does nothing.
   bool showDragHandle = true,
 }) async {
+  barrierLabel ??= LoopL10n.current.widgets_sheetBarrierLabel;
   final draggable = enableDrag ?? isDismissible;
   final previousFocus = FocusManager.instance.primaryFocus;
   final reduceMotion = MediaQuery.disableAnimationsOf(context);

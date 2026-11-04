@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
@@ -81,7 +82,8 @@ class LoopEmptyState extends StatelessWidget {
         SizedBox(height: compact ? 12 : 16),
         Semantics(
           label: switch (message) {
-            final String line => '$title，$line',
+            final String line =>
+              '$title${LoopL10n.current.common_listSeparator}$line',
             null => title,
           },
           excludeSemantics: true,

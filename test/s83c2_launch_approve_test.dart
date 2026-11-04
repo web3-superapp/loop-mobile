@@ -1007,15 +1007,15 @@ void main() {
         expect(_key('money-sign-sheet'), findsOneWidget);
         expect(find.text(loopTestnetBadgeLabel), findsWidgets);
 
-        await tester.tap(find.text('确认签名'));
+        await tester.tap(find.text('Confirm signature'));
         await tester.pumpAndSettle();
         final handed = wallet.handed.single;
         expect(handed.kind, IntentKind.launchApproval);
         expect(handed.chainId, loopLaunchTestnetChainId);
         expect(intents.reports, <String>[_approveHash]);
         // The shared sheet says what happened: a broadcast.
-        expect(find.text('已广播'), findsOneWidget);
-        await tester.tap(find.text('关闭'));
+        expect(find.text('Broadcast'), findsOneWidget);
+        await tester.tap(find.text('Close'));
         await tester.pumpAndSettle();
 
         // First read after the broadcast: still short, so the page waits.
@@ -1069,9 +1069,9 @@ void main() {
       await scrollToS7Section(tester, _key('launch-trade-approve'));
       await tester.tap(_key('launch-trade-approve'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
@@ -1105,9 +1105,9 @@ void main() {
       await scrollToS7Section(tester, _key('launch-trade-approve'));
       await tester.tap(_key('launch-trade-approve'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
@@ -1166,9 +1166,9 @@ void main() {
       await scrollToS7Section(tester, _key('launch-trade-approve'));
       await tester.tap(_key('launch-trade-approve'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(intents.reports, isEmpty);
       expect(
@@ -1311,7 +1311,7 @@ void main() {
       await scrollToS7Section(tester, _key('launch-trade-sign'));
       await tester.tap(_key('launch-trade-sign'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       return (gateway, wallet);
     }
@@ -1328,13 +1328,13 @@ void main() {
         ),
       );
       expect(gateway.reports, <String>['$s83cIntentId:$s83cTxHash']);
-      expect(find.text('已广播'), findsOneWidget);
+      expect(find.text('Broadcast'), findsOneWidget);
       expect(find.text('Done'), findsNothing);
       expect(
         find.textContaining("Broadcast doesn't mean it was filled"),
         findsWidgets,
       );
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).title,
@@ -1364,7 +1364,7 @@ void main() {
         tester,
       ) async {
         await signWith(tester, failure: LaunchFailureKind.stale, reason: code);
-        await tester.tap(find.text('关闭'));
+        await tester.tap(find.text('Close'));
         await tester.pumpAndSettle();
         final body = _noticeBody(tester, 'launch-trade-locked');
         expect(body, contains(phrase));
@@ -1384,7 +1384,7 @@ void main() {
         tester,
         failure: LaunchFailureKind.offline,
       );
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(
         _noticeBody(tester, 'launch-trade-locked'),
@@ -1442,7 +1442,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('已广播'), findsOneWidget);
+      expect(find.text('Broadcast'), findsOneWidget);
       expect(find.text('Done'), findsNothing);
       expect(find.text('广播不代表已成交。'), findsOneWidget);
     });

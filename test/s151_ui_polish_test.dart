@@ -169,15 +169,21 @@ void main() {
   });
 
   test('rewards awaiting title names the account state for its own hours', () {
-    expect(miningAwaitingTitle('MINING_NOTHING_SETTLED'), '你有算力的小时还没有结算');
-    expect(miningAwaitingTitle(null), '首个小时结算后开始展示奖励');
+    expect(
+      miningAwaitingTitle('MINING_NOTHING_SETTLED'),
+      'Hours you had power in aren\'t settled yet',
+    );
+    expect(
+      miningAwaitingTitle(null),
+      'Rewards appear after the first hour is settled',
+    );
     expect(
       miningDisplayReasonText('MINING_NOTHING_SETTLED'),
       isNot(contains('首个有算力的小时结算后开始展示')),
     );
     expect(
       miningClaimUnavailableText('MINING_NOTHING_SETTLED'),
-      '有算力的小时结算后可领取',
+      'Claimable after an hour with power is settled',
     );
   });
 
@@ -194,7 +200,7 @@ void main() {
     );
     expect(colourOf('Approve'), LoopColors.chalk);
     expect(colourOf('卖出'), LoopColors.text2);
-    expect(find.text('下一步，待签名'), findsOneWidget);
+    expect(find.text('Next, Awaiting signature'), findsOneWidget);
     expect(find.text('Awaiting signature'), findsOneWidget);
     await _pump(
       tester,

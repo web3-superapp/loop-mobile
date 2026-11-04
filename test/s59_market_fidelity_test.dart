@@ -84,7 +84,7 @@ void main() {
         find.byKey(const ValueKey<String>('market-list-provenance')),
         findsOneWidget,
       );
-      expect(findProvenanceContaining('来源 DexScreener'), findsWidgets);
+      expect(findProvenanceContaining('Source DexScreener'), findsWidgets);
     });
   });
 

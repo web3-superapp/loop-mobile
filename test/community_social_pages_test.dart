@@ -193,8 +193,9 @@ void main() {
       expect(find.text('230.5'), findsOneWidget);
       expect(
         find.textContaining(
-          '显示的是 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
-          '的算力快照 · 最近一次快照未完成',
+          'Showing the power snapshot from '
+          '${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
+          "· The latest snapshot didn't finish",
         ),
         findsOneWidget,
       );

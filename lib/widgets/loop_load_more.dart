@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:flutter/widgets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -80,7 +81,7 @@ class LoopLoadMoreFooter extends StatefulWidget {
     required this.loading,
     required this.onLoadMore,
     super.key,
-    this.failedMessage = '下一页没有读到',
+    this._failedMessage,
     this.skeletonRows = 1,
     this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 0),
   });
@@ -95,7 +96,9 @@ class LoopLoadMoreFooter extends StatefulWidget {
   final bool canLoadMore;
   final bool loading;
   final Future<void> Function() onLoadMore;
-  final String failedMessage;
+  final String? _failedMessage;
+  String get failedMessage =>
+      _failedMessage ?? LoopL10n.current.common_nextPageFailed;
   final int skeletonRows;
   final EdgeInsets padding;
 

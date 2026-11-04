@@ -375,7 +375,7 @@ void main() {
         find.byKey(const ValueKey<String>('beta-feedback-mine-error')),
         findsOneWidget,
       );
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('第 1 条反馈'), findsOneWidget);
       expect(gateway.listCursors, <String?>[null, null]);

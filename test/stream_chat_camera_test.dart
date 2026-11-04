@@ -95,7 +95,9 @@ void main() {
         onProblem: said.add,
       );
 
-      expect(said, <String>['没有相机权限，去系统设置里允许 LOOP 使用相机后再试']);
+      expect(said, <String>[
+        'No camera access. Allow LOOP to use the camera in system settings, then try again.',
+      ]);
       expect(said.single, loopChatCameraPermissionMessage);
       expect(controller.value.attachments, isEmpty);
       // LOOP cannot open that settings page itself, so it never promises to.

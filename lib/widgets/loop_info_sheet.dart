@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
@@ -47,7 +48,7 @@ Future<void> showLoopInfoSheet(
 }) {
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭说明',
+    barrierLabel: context.l10n.widgets_infoSheetBarrierLabel,
     builder: (sheetContext) => SingleChildScrollView(
       key: ValueKey<String>(sheetKey),
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
@@ -115,7 +116,7 @@ class LoopInfoButton extends StatelessWidget {
     entry: LoopProvenanceEntry(heading: title, notes: notes),
     fallback: LoopIconButton(
       icon: 'info',
-      label: label ?? '关于$title',
+      label: label ?? context.l10n.widgets_infoSheetLabel(title),
       color: color ?? LoopColors.text3,
       onPressed: () => unawaited(
         showLoopInfoSheet(

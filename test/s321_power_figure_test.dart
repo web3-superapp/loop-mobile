@@ -137,7 +137,7 @@ void main() {
       IntelRankBoard(onNavigate: (_) {}),
       mining: _BoardMining(),
     );
-    await tester.tap(find.text('用户'));
+    await tester.tap(find.text('User'));
     await tester.pumpAndSettle();
 
     Text figure(int place) =>
@@ -163,7 +163,7 @@ void main() {
     expect(find.textContaining('.549'), findsNothing);
     expect(find.textContaining('.604'), findsNothing);
     // The gap is the difference of the two whole figures on screen.
-    expect(find.text('算力 860,511，距第 3 名还差 87,444'), findsOneWidget);
+    expect(find.text('Power 860,511, 87,444 to reach Rank #3'), findsOneWidget);
   });
 
   test('the podium style shrinks all three together', () {

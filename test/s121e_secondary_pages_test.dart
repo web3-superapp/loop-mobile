@@ -123,7 +123,7 @@ void main() {
           ],
         ),
       );
-      final line = tester.widget<Text>(find.text('说明。这是一句话。'));
+      final line = tester.widget<Text>(find.text('说明. 这是一句话。'));
       // R20: a notice line is `LoopType.caption` (decision 0189).
       expect(line.style?.fontSize, LoopType.caption.fontSize);
       expect(

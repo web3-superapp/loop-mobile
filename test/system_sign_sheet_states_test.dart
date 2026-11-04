@@ -98,7 +98,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-sign-sheet-pending')),
       findsOneWidget,
     );
-    await tester.tap(find.text('取消').last);
+    await tester.tap(find.text('Cancel').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byKey(const ValueKey<String>('loop-sheet')), findsNothing);

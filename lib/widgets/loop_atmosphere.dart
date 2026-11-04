@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
@@ -804,7 +805,7 @@ class LoopSprayHeading extends StatelessWidget {
           if (more != null)
             Semantics(
               button: true,
-              label: '$title 全部',
+              label: context.l10n.widgets_atmosphereLabel(title),
               excludeSemantics: true,
               child: LoopPressable(
                 key: moreKey,
@@ -825,7 +826,7 @@ class LoopSprayHeading extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           Text(
-                            '全部',
+                            context.l10n.common_all,
                             style: LoopTypography.withWeight(
                               LoopType.titleSm,
                               FontWeight.w600,
@@ -989,7 +990,9 @@ class LoopAtmoEmpty extends StatelessWidget {
               LoopEmptyArt(crownKey: crownKey),
               const SizedBox(height: 12),
               Semantics(
-                label: title == null ? heading : '$heading，$message',
+                label: title == null
+                    ? heading
+                    : '$heading${LoopL10n.current.common_listSeparator}$message',
                 excludeSemantics: true,
                 child: Text(
                   heading,

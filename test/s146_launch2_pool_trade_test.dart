@@ -1074,7 +1074,7 @@ void main() {
       expect(_key('launch2-sign-steps'), findsOneWidget);
       expect(_key('launch2-sign-step-approval-waiting'), findsOneWidget);
       expect(_key('launch2-sign-step-main-waiting'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.map((i) => i.kind).toList(), <IntentKind>[
         IntentKind.launchApproval,
@@ -1082,7 +1082,7 @@ void main() {
       ]);
       expect(_key('launch2-sign-step-approval-done'), findsOneWidget);
       expect(_key('launch2-sign-step-main-done'), findsOneWidget);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(_key('launch2-pending'), findsOneWidget);
       expect(
@@ -1116,9 +1116,9 @@ void main() {
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(
@@ -1482,7 +1482,7 @@ void main() {
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       // Quote once for the panel, once for the refresh; prepare twice with
       // the same trade.
@@ -1501,7 +1501,7 @@ void main() {
       expect(_key('launch2-sign-refreshed'), findsOneWidget);
       expect(find.textContaining('Quote refreshed'), findsOneWidget);
       expect(_key('launch2-sign-step-main-done'), findsOneWidget);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(
         find.textContaining("Broadcast doesn't mean filled"),
@@ -1536,7 +1536,7 @@ void main() {
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.map((i) => i.kind).toList(), <IntentKind>[
         IntentKind.launchApproval,
@@ -1549,7 +1549,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       // The page says the same; nothing was broadcast, so nothing is locked.
       expect(_key('launch2-pending'), findsOneWidget);
@@ -1589,7 +1589,7 @@ void main() {
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       // The first prepare, then four refreshes that still carry approvals.
       expect(gateway.prepareCalls, hasLength(5));
@@ -1640,9 +1640,9 @@ void main() {
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       // The re-read after the broadcast: only the pool moved.
       expect(gateway.detailReads, 2);

@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -121,7 +122,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       onRefresh: () => _reload(tab),
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '算力',
+      title: context.l10n.common_power,
       onBack: widget.onBack,
       embedded: widget.embedded,
       tabPage: widget.embedded || widget.onBack == null,
@@ -139,7 +140,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         if (blocked)
           LoopCapabilityBlockCard(
             key: const ValueKey<String>('mining-capability-unavailable'),
-            label: '挖矿当前不可用',
+            label: context.l10n.mining_screenMiningCapabilityUnavailableLabel,
             capability: capability,
           )
         else if (summary == null) ...<Widget>[
@@ -149,7 +150,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '暂无算力数据',
+            emptyMessage: context.l10n.mining_screenEmptyMessage,
             onRetry: () => unawaited(controller.reload()),
           ),
         ] else ...<Widget>[
@@ -165,7 +166,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                     _dailyMetric(summary.estimatedToday),
                     MiningHeroMetric(
                       slug: 'accumulated',
-                      label: '累计已挖',
+                      label: context.l10n.mining_screenLabel,
                       value: launchMissingFigure,
                       spoken: launchReasonCodeText(
                         summary.accumulated.reasonCode,
@@ -173,7 +174,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                     ),
                     MiningHeroMetric(
                       slug: 'claimable',
-                      label: '待领取',
+                      label: context.l10n.mining_screenLabel2,
                       value: launchMissingFigure,
                       spoken: launchReasonCodeText(
                         summary.claimable.reasonCode,
@@ -184,7 +185,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             // The claim itself lives on 奖励与领取, which states whether it
             // can be executed; this button is how the reader gets there.
             onClaim: widget.onOpenRewards,
-            claimSemanticLabel: '领取奖励，打开奖励与领取',
+            claimSemanticLabel: context.l10n.mining_screenClaimSemanticLabel,
             powerOnly: !live,
             network: _networkCard(summary, rewards, inline: true),
             onOpenRank: widget.onOpenRank,
@@ -213,8 +214,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
               onNavigate: widget.onNavigate,
               info: LoopInfoButton(
                 key: const ValueKey<String>('mining-invite-info'),
-                title: '邀请说明',
-                label: '邀请说明',
+                title: context.l10n.mining_screenMiningInviteInfoTitle,
+                label: context.l10n.mining_screenMiningInviteInfoTitle,
                 notes: referralInfoNotes(
                   ref.watch(referralControllerProvider).value,
                 ),
@@ -280,7 +281,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       ),
       null => MiningNetworkPowerCard(
         total: launchMissingFigure,
-        spoken: '还没有读到',
+        spoken: LoopL10n.current.mining_screenSpoken,
         onOpenRank: widget.onOpenRank,
         inline: inline,
       ),
@@ -296,15 +297,15 @@ LoopPageInfoAction miningInfoAction({
   VoidCallback? onOpenRules,
 }) => LoopPageInfoAction(
   key: const ValueKey<String>('mining-rules-action'),
-  title: '挖矿说明',
-  label: '挖矿说明',
+  title: LoopL10n.current.mining_screenMiningRulesActionTitle,
+  label: LoopL10n.current.mining_screenMiningRulesActionTitle,
   notes: miningInfoNotes(summary),
   sheetKey: 'mining-info-sheet',
   footer: onOpenRules == null
       ? null
       : (sheetContext) => LoopButton(
           key: const ValueKey<String>('mining-info-open-rules'),
-          label: '查看挖矿规则',
+          label: LoopL10n.current.mining_screenMiningInfoOpenRulesLabel,
           block: true,
           onPressed: () {
             Navigator.of(sheetContext).pop();
@@ -322,15 +323,15 @@ String _formulaInfoBody(MiningFormulaGate? formula) {
     String? label,
     String? identifier,
   ) = switch (formula) {
-    null => ('还没有读到挖矿摘要，公式版本读到之后显示在这里。', null, null),
+    null => (LoopL10n.current.mining_screenSwitch, null, null),
     MiningFormulaPending(:final reasonCode, pendingVersion: null) => (
-      '挖矿公式还没有批准的版本：${launchReasonCodeText(reasonCode)}',
+      LoopL10n.current.mining_screenSwitch2(launchReasonCodeText(reasonCode)),
       null,
       null,
     ),
     MiningFormulaPending(:final pendingVersion) => (
-      '挖矿公式待批准。批准后，页面上的数字才会有来源。',
-      '待批准的公式版本',
+      LoopL10n.current.mining_screenSwitch3,
+      LoopL10n.current.mining_screenSwitch4,
       pendingVersion,
     ),
     MiningFormulaEffective(
@@ -339,9 +340,13 @@ String _formulaInfoBody(MiningFormulaGate? formula) {
       :final configVersion,
     ) =>
       (
-        '挖矿公式已生效${scope.isBaseline ? '（$miningBaselineLabel）' : ''}'
-            ' · 生效于 ${launchTimestampLabel(effectiveAt)}',
-        '已生效的公式版本',
+        LoopL10n.current.mining_screenSwitch5(
+          launchTimestampLabel(effectiveAt),
+          scope.isBaseline
+              ? LoopL10n.current.mining_screenParenthetical(miningBaselineLabel)
+              : '',
+        ),
+        LoopL10n.current.mining_screenSwitch6,
         configVersion,
       ),
   };
@@ -359,41 +364,43 @@ List<LoopInfoNote> miningInfoNotes(MiningSummary? summary) {
   return <LoopInfoNote>[
     LoopInfoNote(
       key: const ValueKey<String>('mining-info-formula'),
-      title: '公式版本',
+      title: LoopL10n.current.mining_screenMiningInfoFormulaTitle,
       body: _formulaInfoBody(formula),
     ),
     LoopInfoNote(
       key: const ValueKey<String>('mining-info-snapshot'),
       title: miningSnapshotRowTitle,
       body: switch (snapshot) {
-        null => '还没有读到算力快照。',
+        null => LoopL10n.current.mining_screenLoopInfoNote,
         MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
-          '${miningSnapshotAbsenceMessage(reasonCode)}。'
+          '${miningSnapshotAbsenceMessage(reasonCode)}${LoopL10n.current.widgets_sentenceJoin}'
               '${miningSnapshotAbsenceReason(reasonCode, attempt: latestAttempt)}',
         MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
-          '区块 ${loopGroupedFigure(blockNumber)} · '
-              '${launchTimestampLabel(computedAt)} · '
-              '这是算出算力的时间',
+          LoopL10n.current.mining_screenMiningSnapshotComputed(
+            loopGroupedFigure(blockNumber),
+            launchTimestampLabel(computedAt),
+          ),
       },
     ),
     LoopInfoNote(
       key: const ValueKey<String>('mining-info-truth'),
-      title: '不做本地估算',
+      title: LoopL10n.current.mining_screenMiningInfoTruthTitle,
       body: switch (formula) {
-        MiningFormulaEffective() => 'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
-        _ => 'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
+        MiningFormulaEffective() =>
+          LoopL10n.current.mining_screenMiningFormulaEffective,
+        _ => LoopL10n.current.mining_screenLoopInfoNote2,
       },
     ),
     // Decision 0183 (需求方 2026-10-25): what a holding needs before it
     // counts, one condition per line.
-    const LoopInfoNote(
+    LoopInfoNote(
       key: ValueKey<String>('mining-info-conditions'),
-      title: '哪些持仓计入算力',
-      body:
-          '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 按所属社区系数计。\n'
-          '$miningConditionVerified\n'
-          '$miningConditionMember\n'
-          '$miningConditionEmbedded',
+      title: LoopL10n.current.mining_screenMiningInfoConditionsTitle,
+      body: LoopL10n.current.mining_screenMiningInfoConditionsBody(
+        miningConditionEmbedded,
+        miningConditionMember,
+        miningConditionVerified,
+      ),
     ),
   ];
 }
@@ -416,7 +423,10 @@ String? _heroUnit(MiningSummary summary) =>
 /// sentence about formulas or promises; the (i) carries those.
 String? _heroCaption(MiningSummary summary) => switch (summary.snapshot) {
   MiningSnapshotComputed(:final computedAt, :final stale) =>
-    '快照 · ${launchTimestampLabel(computedAt)}${stale ? ' · 未更新' : ''}',
+    LoopL10n.current.mining_screenMiningSnapshotComputed2(
+      launchTimestampLabel(computedAt),
+      stale ? ' · ${LoopL10n.current.mining_widgetsMarker}' : '',
+    ),
   _ => null,
 };
 
@@ -430,15 +440,21 @@ List<MiningHeroMetric> _powerMetrics(MiningRewardsView? rewards) {
   return <MiningHeroMetric>[
     MiningHeroMetric(
       slug: 'last-hour-power',
-      label: '上一小时算力',
+      label: LoopL10n.current.mining_screenLabel3,
       value: hour == null ? launchMissingFigure : miningPowerFigure(hour),
-      spoken: hour == null ? '还没有结算的小时' : miningPowerFigure(hour),
+      spoken: hour == null
+          ? LoopL10n.current.mining_screenSpoken2
+          : miningPowerFigure(hour),
     ),
     MiningHeroMetric(
       slug: 'active-invites',
-      label: '有效邀请',
-      value: invites == null ? launchMissingFigure : '$invites 人',
-      spoken: invites == null ? '还没有读到' : '$invites 人',
+      label: LoopL10n.current.mining_screenLabel4,
+      value: invites == null
+          ? launchMissingFigure
+          : LoopL10n.current.mining_screenValue(invites),
+      spoken: invites == null
+          ? LoopL10n.current.mining_screenSpoken
+          : LoopL10n.current.mining_screenValue(invites),
     ),
   ];
 }
@@ -446,13 +462,13 @@ List<MiningHeroMetric> _powerMetrics(MiningRewardsView? rewards) {
 MiningHeroMetric _dailyMetric(MiningDailyOutput output) => switch (output) {
   MiningDailyOutputEstimate(:final value) => MiningHeroMetric(
     slug: 'estimated-today',
-    label: '今日预估',
+    label: LoopL10n.current.mining_screenLabel5,
     value: loopGroupedFigure(value),
     spoken: loopGroupedFigure(value),
   ),
   MiningDailyOutputUnavailable(:final reasonCode) => MiningHeroMetric(
     slug: 'estimated-today',
-    label: '今日预估',
+    label: LoopL10n.current.mining_screenLabel5,
     value: launchMissingFigure,
     spoken: launchReasonCodeText(reasonCode),
   ),
@@ -461,7 +477,8 @@ MiningHeroMetric _dailyMetric(MiningDailyOutput output) => switch (output) {
 /// 第 1,284 名. It prints only a place the server settled; a board this
 /// reader is not on, and a board that did not load, both leave it out.
 String? _rankBadge(MiningRank? rank) => switch (rank?.myPosition) {
-  MiningRankPositionSettled(:final position) => '第 $position 名',
+  MiningRankPositionSettled(:final position) =>
+    LoopL10n.current.intel_rankBoardText4(position),
   _ => null,
 };
 
@@ -474,8 +491,10 @@ LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
     ring: false,
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
-    kicker: '总算力',
-    heading: loading ? '正在读取' : launchMissingHeading,
+    kicker: LoopL10n.current.mining_screenKicker,
+    heading: loading
+        ? LoopL10n.current.mining_screenHeading
+        : launchMissingHeading,
   );
 }
 
@@ -496,8 +515,12 @@ List<MiningHeroMetric> miningPoolSplitMetrics(
           spoken: loopPowerFigure(value),
         );
     return <MiningHeroMetric>[
-      cell('token-power', '代币算力', summary.assetPower!),
-      cell('nft-power', 'NFT 算力', summary.nftPower!),
+      cell(
+        'token-power',
+        LoopL10n.current.mining_screenCell,
+        summary.assetPower!,
+      ),
+      cell('nft-power', LoopL10n.current.mining_screenCell2, summary.nftPower!),
     ];
   }
   MiningHeroMetric cell(String slug, String label, Decimal? value) =>
@@ -505,11 +528,21 @@ List<MiningHeroMetric> miningPoolSplitMetrics(
         slug: slug,
         label: label,
         value: value == null ? launchMissingFigure : miningPowerFigure(value),
-        spoken: value == null ? '还没有结算的小时' : miningPowerFigure(value),
+        spoken: value == null
+            ? LoopL10n.current.mining_screenSpoken2
+            : miningPowerFigure(value),
       );
   return <MiningHeroMetric>[
-    cell('token-power', '代币算力 · 上一小时', rewards?.asset?.totalPower),
-    cell('nft-power', 'NFT 算力 · 上一小时', rewards?.nft?.totalPower),
+    cell(
+      'token-power',
+      LoopL10n.current.mining_screenCell3,
+      rewards?.asset?.totalPower,
+    ),
+    cell(
+      'nft-power',
+      LoopL10n.current.mining_screenCell4,
+      rewards?.nft?.totalPower,
+    ),
   ];
 }
 
@@ -548,7 +581,7 @@ class _CompositionBlock extends ConsumerWidget {
         phase: phase,
         failureKind: failureKind,
         rows: 2,
-        emptyMessage: '暂无算力构成',
+        emptyMessage: context.l10n.mining_screenEmptyMessage2,
         onRetry: () => unawaited(
           ref.read(miningAssetsControllerProvider.notifier).reload(),
         ),
@@ -557,10 +590,11 @@ class _CompositionBlock extends ConsumerWidget {
     final nftTab = tab == IntelPowerTab.nft;
     if (!summary.hasPoolSplit) {
       if (nftTab) {
-        return const LoopInlineUnavailable(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('mining-composition-nft-unavailable'),
           icon: 'clock',
-          message: 'NFT 算力暂未单独提供',
+          message:
+              context.l10n.mining_screenMiningCompositionNftUnavailableMessage,
         );
       }
       final counted = <MiningAssetRow>[
@@ -570,7 +604,9 @@ class _CompositionBlock extends ConsumerWidget {
       return counted.isEmpty
           ? _emptyLine(
               'mining-composition-empty',
-              value.isUnsettled ? '暂无算力快照' : '暂无代币算力',
+              value.isUnsettled
+                  ? context.l10n.mining_screenEmptyLine
+                  : context.l10n.mining_screenS,
             )
           : LoopRecordGroup(
               key: const ValueKey<String>('mining-composition'),
@@ -596,7 +632,7 @@ class _CompositionBlock extends ConsumerWidget {
           slug: 'nft',
           title: 'NFT',
           subtotal: summary.nftPower!,
-          emptyTitle: '暂无 NFT 算力',
+          emptyTitle: context.l10n.mining_screenEmptyTitle,
           rows: <LoopRecordRow>[
             for (var index = 0; index < nftRows.length; index += 1)
               miningNftCompositionRow(
@@ -620,9 +656,9 @@ class _CompositionBlock extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: _group(
         slug: 'token',
-        title: '代币',
+        title: context.l10n.common_token,
         subtotal: summary.assetPower!,
-        emptyTitle: '暂无代币算力',
+        emptyTitle: context.l10n.mining_screenS,
         rows: <LoopRecordRow>[
           for (var index = 0; index < tokenRows.length; index += 1)
             miningCompositionRow(

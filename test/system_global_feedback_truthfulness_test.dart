@@ -96,9 +96,9 @@ void main() {
     var actions = 0;
     var dismissed = 0;
     for (final (kind, key, prefix) in <(LoopNoticeKind, String, String)>[
-      (LoopNoticeKind.success, 'loop-toast-ok', '成功'),
-      (LoopNoticeKind.warning, 'loop-toast-warn', '警告'),
-      (LoopNoticeKind.error, 'loop-toast-err', '错误'),
+      (LoopNoticeKind.success, 'loop-toast-ok', 'Success'),
+      (LoopNoticeKind.warning, 'loop-toast-warn', 'Warning'),
+      (LoopNoticeKind.error, 'loop-toast-err', 'Error'),
     ]) {
       await pumpSystemSurface(
         tester,
@@ -126,7 +126,7 @@ void main() {
         reason: key,
       );
       expect(
-        find.bySemanticsLabel('$prefix：来自功能的 ${kind.name} 结果'),
+        find.bySemanticsLabel('$prefix: 来自功能的 ${kind.name} 结果'),
         findsOneWidget,
       );
       expect(find.text('Back to LOOP'), findsNothing);

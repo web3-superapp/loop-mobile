@@ -734,6 +734,58 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get account_screensWalletRecoveryUnavailableTitle => '现在还不能再加一种';
 
   @override
+  String get app_appUnknownRouteHomeLabel => '回到聊天';
+
+  @override
+  String get app_appUnknownRouteScreenTitle => '页面不存在';
+
+  @override
+  String get app_appUnknownRouteStateMessage => '这次访问已记录。';
+
+  @override
+  String get app_appUnknownRouteStateTitle => '这个地址不在 LOOP 的页面里';
+
+  @override
+  String get app_onboardingSequenceLoopId => '创建 LOOP ID';
+
+  @override
+  String get app_onboardingSequenceSecurity => '安全设置';
+
+  @override
+  String get app_onboardingSequenceWalletBackup => '设置恢复方式';
+
+  @override
+  String get app_onboardingSequenceWalletCreate => '创建钱包';
+
+  @override
+  String get app_sessionControllerErrorMessage => '本地会话已退出，但 LOOP 后端会话撤销尚未确认。';
+
+  @override
+  String get app_sessionControllerErrorMessage2 => '本地会话已退出，但 Privy 远端退出尚未确认。';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException => '正在退出登录，请完成后再试。';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException2 =>
+      '账号已变化，钱包未绑定，请重新尝试。';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException3 =>
+      '开发预览或受限会话不会创建真实钱包。';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException4 => '账号已变化，请重新检查钱包状态。';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException5 =>
+      '钱包状态已变化，请重新检查后再继续。';
+
+  @override
+  String get app_walletProvisioningControllerFail =>
+      '钱包创建没有完成，账号与登录状态没有变化，可以稍后再试。';
+
+  @override
   String get betaFeedback_cameraFailed => '无法打开相机';
 
   @override
@@ -6626,6 +6678,660 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get dapp_signingTransaction => '确认交易';
+
+  @override
+  String get integrations_chatCameraLoopChatCameraPermissionMessage =>
+      '没有相机权限，去系统设置里允许 LOOP 使用相机后再试';
+
+  @override
+  String get integrations_chatCameraLoopChatCameraUnavailableMessage =>
+      '相机没有拍成照片，这次没有加进来。';
+
+  @override
+  String get integrations_chatImageAttachmentsFailureMessage => '图片没有加载出来';
+
+  @override
+  String integrations_chatImageAttachmentsLoopChatImageViewerCounter(
+    Object? page,
+    Object? total,
+  ) {
+    return '第 $page 张 / 共 $total 张';
+  }
+
+  @override
+  String get integrations_chatImageAttachmentsRetryMessage => '点按重试';
+
+  @override
+  String get integrations_chatImageComposerIf => '设备当前离线，图片没有上传，这条消息也没有发出去。';
+
+  @override
+  String get integrations_chatImageComposerIf2 => '服务端拒绝了这次图片上传，这条消息没有发出去。';
+
+  @override
+  String get integrations_chatImageComposerIf3 => '图片没有上传成功，这条消息没有发出去。';
+
+  @override
+  String get integrations_chatImagePolicyNotAnImage =>
+      '这里只能发图片，刚才选的不是图片，没有加进来。';
+
+  @override
+  String get integrations_chatImagePolicyTooLarge =>
+      '单张图片不能超过 10 MB，超出的那张没有加进来。';
+
+  @override
+  String get integrations_chatImagePolicyTooMany => '一条消息最多 9 张图片，多出来的没有加进来。';
+
+  @override
+  String get integrations_chatImagePolicyUnsupportedFormat =>
+      '只支持 JPG、PNG、WebP、GIF 四种图片，其他格式没有加进来。';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException =>
+      '钱包返回了重复的登录请求，请重新连接。';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException2 =>
+      '钱包返回的地址、消息或签名与本次登录请求不匹配。';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayPrivyGatewayException =>
+      '缺少当前 Privy 账号，钱包未绑定。';
+
+  @override
+  String get integrations_memoryChatGatewaysCommunityName => '开发预览社区';
+
+  @override
+  String get integrations_memoryCommunityGatewaysDescription =>
+      '开发预览中的示例社区，成员数与角色都是本地内存值。';
+
+  @override
+  String get integrations_memoryCommunityGatewaysLabel => '算力社区';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName => '演示社区 · Frogs';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName2 => '演示社区 · Builders';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName3 => '演示社区 · 审核中';
+
+  @override
+  String get integrations_memoryCommunityGatewaysRejectedReason =>
+      '演示数据：社区名称与已上线社区重复，请换一个再提交。';
+
+  @override
+  String get integrations_memoryCommunityGatewaysTitle => '演示公告 · 本周路线图';
+
+  @override
+  String get integrations_memoryCommunityGatewaysTitle2 => '演示公告 · 周四语音房';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsCommunityName => '预览未加入社区';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsDisplayName => '预览主持人';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsDisplayName2 => '预览发言人';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsTitle => '开发预览 · 周五 AMA';
+
+  @override
+  String get integrations_memoryPublicProfilesAlias => '预览用户';
+
+  @override
+  String get integrations_memoryPublicProfilesBio => '开发预览账号，资料与持仓都是演示数据。';
+
+  @override
+  String get integrations_memoryPublicProfilesLabel => '精选社区';
+
+  @override
+  String get integrations_memoryPublicProfilesName => '预览社区';
+
+  @override
+  String get integrations_memoryPublicProfilesName2 => '演示数据小组';
+
+  @override
+  String get integrations_memoryWatchlistGatewayName => '默认';
+
+  @override
+  String get integrations_memoryWatchlistGatewayName2 => '观察中';
+
+  @override
+  String get integrations_networkProbeName => 'LOOP 服务 · 就绪';
+
+  @override
+  String get integrations_networkProbeName2 => 'LOOP 服务 · 能力清单';
+
+  @override
+  String get integrations_networkProbeName3 => '登录服务 Privy';
+
+  @override
+  String get integrations_networkProbeName4 => '聊天服务 Stream';
+
+  @override
+  String get integrations_networkProbeName5 => '语音服务 Stream';
+
+  @override
+  String get integrations_networkProbeName6 => '代币图标';
+
+  @override
+  String get integrations_networkProbeName7 => '推送服务 Firebase';
+
+  @override
+  String get integrations_networkProbeName8 => 'BSC 主网节点';
+
+  @override
+  String get integrations_networkProbeName9 => '网络基线 Apple';
+
+  @override
+  String get integrations_networkProbePurpose => '应用的主要数据';
+
+  @override
+  String get integrations_networkProbePurpose2 => '连续请求两次，记第二次（复用连接）';
+
+  @override
+  String get integrations_networkProbePurpose3 => '登录与内置钱包';
+
+  @override
+  String get integrations_networkProbePurpose4 => '会话与消息';
+
+  @override
+  String get integrations_networkProbePurpose5 => '图标图片源';
+
+  @override
+  String get integrations_networkProbePurpose6 => '系统推送通知';
+
+  @override
+  String get integrations_networkProbePurpose7 => '仅供参考，应用不直接连接节点';
+
+  @override
+  String get integrations_networkProbePurpose8 => '域名解析与安全连接的对照';
+
+  @override
+  String get integrations_networkProbeSubject => 'LOOP 网络诊断';
+
+  @override
+  String get integrations_privyAuthGatewayAuthentication => '登录状态已失效，请重新登录。';
+
+  @override
+  String
+  get integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage =>
+      '这个钱包已绑定在另一个 LOOP 账号上。请先用那个账号登录并解绑，再回来绑定。';
+
+  @override
+  String get integrations_privyAuthGatewayLoopUndecidedSessionMessage =>
+      '暂时无法确认登录状态，请稍后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayMessage =>
+      'Privy App Client ID 尚未配置，真实登录暂不可用。';
+
+  @override
+  String get integrations_privyAuthGatewayNetwork => '暂时无法确认登录状态，请检查网络后重试。';
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage(Object? label) {
+    return '已取消 $label 登录。';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage2(Object? label) {
+    return '$label 登录网络不可用，请稍后重试。';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage3(Object? label) {
+    return '$label 登录回跳失败，请检查应用配置后重试。';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage4(Object? label) {
+    return '$label 登录未完成，请重试。';
+  }
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException =>
+      '验证码发送失败，请稍后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException10 =>
+      '钱包地址无效，没有解绑。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException11 =>
+      '账号已变化，请刷新后确认钱包是否已解绑。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException12 =>
+      '解绑没有完成，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException14 =>
+      '上一账号的钱包操作仍在结束，请稍后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException15 =>
+      '钱包创建状态未确认，请稍后刷新重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException16 =>
+      '请先完成 Privy 登录。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException17 =>
+      '暂时无法连接登录服务，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException18 =>
+      '登录凭证已失效，请重新尝试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException19 =>
+      '退出登录失败，请稍后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException2 =>
+      '验证码无效或已过期，请重新检查。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException3 =>
+      '登录未完成，请检查网络和回跳配置后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException4 =>
+      'Privy 未返回可签名的登录消息，请重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException5 =>
+      '无法生成钱包登录消息，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException6 =>
+      '钱包登录未完成，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException8 =>
+      '钱包绑定未完成，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException9 =>
+      '账号已变化，钱包没有解绑，请重新尝试。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage =>
+      '该钱包已属于另一个 Privy 账号，LOOP 不会自动转移或删除账号。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage2 =>
+      '钱包凭据提交失败，请检查网络后重试。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage3 =>
+      'Privy 未接受该钱包凭据；它可能已绑定其他账号。LOOP 不会自动转移或删除账号。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweLinkFailureMessage =>
+      '钱包绑定没有完成，请重试。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage =>
+      '这是账号唯一的登录方式，不能解绑。请先绑定邮箱或其他登录方式。';
+
+  @override
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage2 =>
+      '解绑没有完成，请稍后重试。';
+
+  @override
+  String get integrations_privyMfaGatewayReleasedMessage =>
+      'LOOP 还没有为被二次验证拦住的操作提供输入验证码的入口，这次操作已经取消。';
+
+  @override
+  String get integrations_reactionsLoopReactionFallbackLabel => '表态';
+
+  @override
+  String get integrations_reactionsS => '点赞';
+
+  @override
+  String get integrations_reactionsS2 => '大笑';
+
+  @override
+  String get integrations_reactionsS3 => '喜欢';
+
+  @override
+  String get integrations_reactionsS4 => '惊讶';
+
+  @override
+  String get integrations_reactionsS5 => '难过';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException =>
+      '已拒绝钱包连接或签名请求。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException10 =>
+      'Reown Project ID 尚未配置，外部钱包暂不可用。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException11 =>
+      '已有登录或钱包连接操作正在进行。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException12 =>
+      '当前页面已关闭，请重新发起钱包连接。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException13 =>
+      '登录消息为空，请重新连接钱包。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException14 =>
+      '钱包连接或回跳未完成，请返回 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException15 =>
+      '已取消钱包连接。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException16 =>
+      '钱包选择页未能打开，请重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException17 =>
+      '钱包连接等待超时，请返回 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException18 =>
+      '该钱包会话没有授权 personal_sign，请重新连接。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException19 =>
+      '钱包没有返回可用的 EVM 地址。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException2 =>
+      '未找到该钱包 App，请先安装后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException20 =>
+      '钱包会话无效，请重新连接。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException21 =>
+      '钱包签名等待超时，请返回 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException22 =>
+      '钱包没有返回有效签名。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException3 =>
+      '无法打开钱包 App 或返回 LOOP，请重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException4 =>
+      '钱包连接网络不可用，请稍后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException5 =>
+      '钱包连接或回跳未完成，请重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException6 =>
+      'Reown 初始化未完成，请重启 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException7 =>
+      'Reown 初始化失败，请重启 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException8 =>
+      'Reown 服务连接超时，请检查网络后重试。';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException9 =>
+      'Reown 服务尚未就绪，请重启 LOOP 后重试。';
+
+  @override
+  String
+  get integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel =>
+      '查看资料';
+
+  @override
+  String get integrations_streamReactionIconResolverHint => '取消回应';
+
+  @override
+  String integrations_streamReactionIconResolverHint2(Object? reactionLabel) {
+    return '回应$reactionLabel';
+  }
+
+  @override
+  String get integrations_streamUnreadPillBandLoopUnreadPillDismissLabel =>
+      '标为已读';
+
+  @override
+  String get intel_rankBoardAlias => '匿名';
+
+  @override
+  String get intel_rankBoardBuild => '暂未上榜';
+
+  @override
+  String get intel_rankBoardBuild2 => '榜单实时更新';
+
+  @override
+  String intel_rankBoardCaption(num participants) {
+    return '$participants 人有算力';
+  }
+
+  @override
+  String get intel_rankBoardCaption2 => '直接邀请';
+
+  @override
+  String get intel_rankBoardCaption3 => '其他人看到的是匿名成员';
+
+  @override
+  String get intel_rankBoardEmptyMessage => '没有读到算力榜';
+
+  @override
+  String get intel_rankBoardEmptyReason => '暂时读不到排行数据。';
+
+  @override
+  String get intel_rankBoardFigure => '仅本人可见';
+
+  @override
+  String intel_rankBoardIf(Object? vString) {
+    return '有算力的成员：$vString。';
+  }
+
+  @override
+  String intel_rankBoardIf2(Object? intelRankLedgerKickerBase) {
+    return '$intelRankLedgerKickerBase，实时';
+  }
+
+  @override
+  String intel_rankBoardIf3(Object? name, Object? weight) {
+    return '社区 $name 权重 $weight';
+  }
+
+  @override
+  String get intel_rankBoardIf4 => '邀请到第一位好友后上榜';
+
+  @override
+  String intel_rankBoardIf5(Object? me) {
+    return '直接邀请 $me 人';
+  }
+
+  @override
+  String intel_rankBoardIf6(Object? powerFigure) {
+    return '算力 $powerFigure';
+  }
+
+  @override
+  String get intel_rankBoardIf7 => '我的社区';
+
+  @override
+  String get intel_rankBoardIntelRankBoardTitle => '算力榜';
+
+  @override
+  String get intel_rankBoardIntelRankCapabilityBlockTitle => '算力榜当前不可用';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyInviteLabel => '去邀请';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyMessage => '邀请到第一位好友后，这里按直接邀请人数排名';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyMessage2 => '下一次算力快照后再来看看';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyTitle => '还没有人邀请到好友';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyTitle2 => '这一次还没有条目上榜';
+
+  @override
+  String intel_rankBoardIntelRankGapToNext(Object? above, Object? figure) {
+    return '距第 $above 名还差 $figure 人';
+  }
+
+  @override
+  String get intel_rankBoardIntelRankLedgerHeading => '我的名次\n还没有名次';
+
+  @override
+  String get intel_rankBoardIntelRankMeLoadingHeading => '我的名次读取中';
+
+  @override
+  String get intel_rankBoardIntelRankPodiumLabel => '前三名';
+
+  @override
+  String get intel_rankBoardIntelRankProvenancePrefix => '按直接邀请人数';
+
+  @override
+  String intel_rankBoardIntelRankUnavailableMessage(
+    Object? launchReasonCodeText,
+  ) {
+    return '榜单暂时读不到 · $launchReasonCodeText';
+  }
+
+  @override
+  String get intel_rankBoardIntelReferralLedgerTitle => '我的实时排名';
+
+  @override
+  String intel_rankBoardLabel(Object? place) {
+    return '第 $place 名，虚位以待';
+  }
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine => 'LOOP 邀请关系';
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine2 =>
+      '推广榜按当前有效的直接邀请人数排名，人数相同名次相同；邀请关系实时读取，不等待算力快照。';
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine3 =>
+      '名次来自最近一次算力快照，其他账号或社区的算力变化会改变名次；不会在这台设备上计算。';
+
+  @override
+  String intel_rankBoardLoopProvenanceLine4(
+    Object? miningRuleKeyText,
+    Object? miningRuleKeyText2,
+  ) {
+    return '$miningRuleKeyText匿名时显示「$miningRuleKeyText2」。';
+  }
+
+  @override
+  String get intel_rankBoardMiningFormulaEffective => '按当前生效的算力公式';
+
+  @override
+  String get intel_rankBoardMiningFormulaPending => '算力公式待生效';
+
+  @override
+  String intel_rankBoardMiningSnapshotComputed(
+    Object? intelRankLedgerKickerBase,
+    Object? intelRankMonthDayClock,
+  ) {
+    return '$intelRankLedgerKickerBase，快照 $intelRankMonthDayClock';
+  }
+
+  @override
+  String intel_rankBoardNull(Object? name) {
+    return '社区 $name';
+  }
+
+  @override
+  String intel_rankBoardParticipantEntry(Object? count, Object? name) {
+    return '$name $count 人';
+  }
+
+  @override
+  String get intel_rankBoardReferrals => '邀请';
+
+  @override
+  String get intel_rankBoardS => 'LOOP 算力快照';
+
+  @override
+  String intel_rankBoardS2(Object? rank) {
+    return '我的名次\n第 $rank 名';
+  }
+
+  @override
+  String intel_rankBoardS3(Object? above, Object? figure) {
+    return '距第 $above 名还差 $figure';
+  }
+
+  @override
+  String get intel_rankBoardS4 => '有算力后，下一次算力快照上榜';
+
+  @override
+  String get intel_rankBoardSpoken => '邀请人数';
+
+  @override
+  String get intel_rankBoardText3 => '未上榜';
+
+  @override
+  String intel_rankBoardText4(Object? position) {
+    return '第 $position 名';
+  }
+
+  @override
+  String intel_rankBoardText5(Object? weight) {
+    return '权重 $weight';
+  }
+
+  @override
+  String get intel_rankBoardText6 => '虚位以待';
+
+  @override
+  String get intel_screenIntelScreenTitle => '情报';
 
   @override
   String launch2Creator_figureWithNote(Object? figure, Object? note) {
@@ -14881,6 +15587,1500 @@ class LoopLocalizationsZh extends LoopLocalizations {
   }
 
   @override
+  String get miningRewards_inviteHeadActive => '有效邀请';
+
+  @override
+  String get miningRewards_inviteHeadAsset => '资产算力';
+
+  @override
+  String get miningRewards_inviteHeadNft => 'NFT 算力';
+
+  @override
+  String get miningRewards_modelsMiningPowerOnlyNotice =>
+      'LOOP 代币上线后开始正式开挖，上线前只统计算力';
+
+  @override
+  String miningRewards_screenBuild(Object? from, Object? need, Object? to) {
+    return 'BNB 不足以支付网络费，先用 $from 兑换 $to。$need兑换完成后回来再领取，可领取余额不变。';
+  }
+
+  @override
+  String get miningRewards_screenBuild2 => '有算力的小时结算后显示';
+
+  @override
+  String get miningRewards_screenBuild3 => '上一小时没有计入挖矿的 Meme 币';
+
+  @override
+  String get miningRewards_screenBuild4 => '层级';
+
+  @override
+  String get miningRewards_screenBuild5 => '比例';
+
+  @override
+  String get miningRewards_screenCaption => '下一小时结算后更新';
+
+  @override
+  String miningRewards_screenCaption2(
+    Object? clockLabel,
+    Object? completedMinutes,
+  ) {
+    return '$completedMinutes/60 · 下次 $clockLabel';
+  }
+
+  @override
+  String get miningRewards_screenConfirming => '链上确认中';
+
+  @override
+  String get miningRewards_screenConfirming2 => '已上链，正在等待确认。不要重复领取。';
+
+  @override
+  String get miningRewards_screenDisabledReason => '正在读取最新的可领取数量';
+
+  @override
+  String get miningRewards_screenExpired => '凭证已过期';
+
+  @override
+  String get miningRewards_screenExpired2 => '领取凭证已过期，没有发放，可领取余额不变。可以重新领取。';
+
+  @override
+  String get miningRewards_screenFact => '本人加权算力';
+
+  @override
+  String get miningRewards_screenFact2 => '邀请算力';
+
+  @override
+  String miningRewards_screenFact4(Object? miningExcludedReasonText) {
+    return '已退出（$miningExcludedReasonText）';
+  }
+
+  @override
+  String get miningRewards_screenFact5 => '本人算力';
+
+  @override
+  String miningRewards_screenFailed(Object? reasonSuffix) {
+    return '链上领取失败，可领取余额没有减少。$reasonSuffix';
+  }
+
+  @override
+  String miningRewards_screenFailedCode(Object? code) {
+    return '（$code）';
+  }
+
+  @override
+  String get miningRewards_screenGasInsufficient => 'BNB 不足以支付网络费，先用 USDT 兑换。';
+
+  @override
+  String get miningRewards_screenHeading => '暂时读不到结算结果';
+
+  @override
+  String get miningRewards_screenIf => '现在没有可领取的 LOOP';
+
+  @override
+  String get miningRewards_screenIf2 => '正在读取钱包';
+
+  @override
+  String miningRewards_screenLabel(Object? figure) {
+    return '已展示 $figure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenLabel2 => '累计已结算 LOOP';
+
+  @override
+  String get miningRewards_screenLabel3 => '累计已领取 LOOP';
+
+  @override
+  String get miningRewards_screenLabel4 => '当前可领取 LOOP';
+
+  @override
+  String get miningRewards_screenLabel6 => 'Meme 币算力';
+
+  @override
+  String get miningRewards_screenLoopLabel => '算力汇总';
+
+  @override
+  String get miningRewards_screenLoopLabel2 => '奖励汇总';
+
+  @override
+  String get miningRewards_screenLoopLabel3 => 'NFT 轨道';
+
+  @override
+  String get miningRewards_screenLoopLabel4 => 'Meme 币轨道';
+
+  @override
+  String get miningRewards_screenLoopLabel5 => '五级邀请';
+
+  @override
+  String get miningRewards_screenLoopLabel6 => '领取记录';
+
+  @override
+  String get miningRewards_screenLoopProvenanceLine => 'LOOP 小时结算';
+
+  @override
+  String get miningRewards_screenLoopSheetHeading => '网络费不足';
+
+  @override
+  String get miningRewards_screenMessage => 'BscScan 链接已复制';
+
+  @override
+  String get miningRewards_screenMessage2 => '更早的记录没有读到';
+
+  @override
+  String get miningRewards_screenMiningAssetBasisNote =>
+      '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重';
+
+  @override
+  String get miningRewards_screenMiningClaimAmountLabel => '本次可领取';
+
+  @override
+  String get miningRewards_screenMiningClaimButtonLabel => '领取处理中';
+
+  @override
+  String get miningRewards_screenMiningClaimButtonSemanticLabel => '领取，当前不可用';
+
+  @override
+  String get miningRewards_screenMiningClaimGasGoLabel => '去兑换';
+
+  @override
+  String get miningRewards_screenMiningClaimGasGoLabel2 => '去充值';
+
+  @override
+  String get miningRewards_screenMiningClaimMinimumLabel => '最低领取';
+
+  @override
+  String get miningRewards_screenMiningClaimResumeLabel => '继续查询';
+
+  @override
+  String get miningRewards_screenMiningClaimRetryReportLabel => '重新上报';
+
+  @override
+  String get miningRewards_screenMiningClaimTxSubtitle => '复制 BscScan 链接';
+
+  @override
+  String miningRewards_screenMiningClaimTxTitle(Object? miningShortHash) {
+    return '成功交易 $miningShortHash';
+  }
+
+  @override
+  String get miningRewards_screenMiningClaimsEmptyTitle => '还没有领取记录';
+
+  @override
+  String get miningRewards_screenMiningHourCountedNote => '上一小时有效，已计入算力统计';
+
+  @override
+  String get miningRewards_screenMiningInviteNote =>
+      '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。';
+
+  @override
+  String miningRewards_screenMiningMinuteBarSemanticLabel(
+    Object? completedMinutes,
+  ) {
+    return '第 $completedMinutes / 60 分钟';
+  }
+
+  @override
+  String miningRewards_screenMiningMinuteEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  ) {
+    return '结算时段 $clockLabel–$clockLabel2 · 本小时奖励结算后已全部计入可领取';
+  }
+
+  @override
+  String get miningRewards_screenMiningMinuteKicker => '上一小时奖励';
+
+  @override
+  String miningRewards_screenMiningMinuteTotalBody(Object? miningLoopFigure) {
+    return '上一小时 $miningLoopFigure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenMiningNftBasisNote => 'NFT 算力 = 持有数量 × 所属社区系数';
+
+  @override
+  String get miningRewards_screenMiningNftRealCount => '持有 NFT（真实数量）';
+
+  @override
+  String miningRewards_screenMiningPowerEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  ) {
+    return '统计时段 $clockLabel–$clockLabel2 · 每个整点统计一次';
+  }
+
+  @override
+  String miningRewards_screenMiningPowerFolioHeading(Object? figure) {
+    return '$figure 算力';
+  }
+
+  @override
+  String miningRewards_screenMiningPowerTracksBody(
+    Object? assetPower,
+    Object? nftPower,
+  ) {
+    return 'NFT 算力 $nftPower · Meme 币算力 $assetPower';
+  }
+
+  @override
+  String get miningRewards_screenMiningRewardsInfoActionTitle => '挖矿奖励说明';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenanceDetail =>
+      '每个整点（UTC）结算上一小时的 NFT 与 Meme 币两条轨道；结算完成后该小时奖励即可领取。分钟增长只是展示上一小时的奖励，不改变可领取数量。';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenanceDetail2 =>
+      '每个整点（UTC）统计上一小时 NFT 与 Meme 币两条轨道的算力。';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenancePrefix => '上次读取';
+
+  @override
+  String get miningRewards_screenMiningRewardsStateEmptyMessage => '还没有奖励记录';
+
+  @override
+  String get miningRewards_screenNoGasSource => '钱包里没有 BNB 支付网络费，先充值 BNB。';
+
+  @override
+  String get miningRewards_screenNull => '上一小时没有算力';
+
+  @override
+  String get miningRewards_screenPollTimedOut =>
+      '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复领取。';
+
+  @override
+  String get miningRewards_screenPowerFolio => '每个整点结算上一小时，下一小时按分钟展示。';
+
+  @override
+  String get miningRewards_screenPreparing => '正在生成领取凭证，还没有打开钱包。';
+
+  @override
+  String miningRewards_screenRow(Object? level) {
+    return '第 $level 级';
+  }
+
+  @override
+  String get miningRewards_screenRow2 => '合计';
+
+  @override
+  String get miningRewards_screenS => '首个小时结算后开始展示算力';
+
+  @override
+  String get miningRewards_screenS2 => '每个整点统计上一小时的算力。';
+
+  @override
+  String get miningRewards_screenS3 => '暂无可领取';
+
+  @override
+  String get miningRewards_screenS4 => '可领取数量未达到最低领取数量';
+
+  @override
+  String get miningRewards_screenS5 => '没有可用的钱包';
+
+  @override
+  String miningRewards_screenS6(Object? requiredNative) {
+    return '这次领取约需 $requiredNative BNB。';
+  }
+
+  @override
+  String get miningRewards_screenS7 => '需要 BNB 支付网络费';
+
+  @override
+  String miningRewards_screenS8(Object? need) {
+    return '钱包里没有 BNB，也没有可兑换的 USDT。$need先向钱包充值少量 BNB，再回来领取。';
+  }
+
+  @override
+  String get miningRewards_screenStamp => '结算中';
+
+  @override
+  String get miningRewards_screenSucceeded => '领取成功，LOOP 已到账。';
+
+  @override
+  String get miningRewards_screenSwitch => '挖矿规则待生效，暂时没有结算。';
+
+  @override
+  String get miningRewards_screenSwitch10 => '这笔领取已锁定，不要重复领取。';
+
+  @override
+  String get miningRewards_screenSwitch11 => '结算服务暂时不可用，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch12 => '挖矿规则待生效，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch13 => '有算力的小时结算后可领取';
+
+  @override
+  String miningRewards_screenSwitch14(Object? miningLoopFigure) {
+    return '满 $miningLoopFigure LOOP 可领取';
+  }
+
+  @override
+  String get miningRewards_screenSwitch15 => '上一笔领取还在处理中，完成后再领取';
+
+  @override
+  String get miningRewards_screenSwitch16 => '领取所在的链尚未配置，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch17 => '领取凭证签发尚未配置，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch18 => '链上写入暂时关闭，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch19 => '主网领取尚未开放';
+
+  @override
+  String get miningRewards_screenSwitch2 => '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。';
+
+  @override
+  String get miningRewards_screenSwitch20 => '领取合约已暂停，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch21 => '领取合约暂时读不到，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch22 => '领取合约余额不足，暂不能领取';
+
+  @override
+  String get miningRewards_screenSwitch23 => '领取暂不可用';
+
+  @override
+  String get miningRewards_screenSwitch24 => '现在没有可领取的 LOOP。';
+
+  @override
+  String get miningRewards_screenSwitch25 => '可领取数量低于最低领取数量。';
+
+  @override
+  String get miningRewards_screenSwitch26 => '上一笔领取还在处理中，完成后再领取。';
+
+  @override
+  String get miningRewards_screenSwitch27 => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。';
+
+  @override
+  String get miningRewards_screenSwitch28 => '领取合约已暂停，余额不变。';
+
+  @override
+  String get miningRewards_screenSwitch29 => '领取合约暂时读不到，没有生成领取凭证，余额不变。';
+
+  @override
+  String get miningRewards_screenSwitch3 => '结算服务暂时不可用，下面的数字可能不是最新的。';
+
+  @override
+  String get miningRewards_screenSwitch30 => '领取合约余额不足，暂时不能领取，余额不变。';
+
+  @override
+  String get miningRewards_screenSwitch31 => '领取凭证已过期，没有提交任何交易。请重新领取。';
+
+  @override
+  String get miningRewards_screenSwitch32 => '只能领取到 LOOP 内置钱包。';
+
+  @override
+  String get miningRewards_screenSwitch33 => '没有生成领取凭证，没有提交任何交易。';
+
+  @override
+  String get miningRewards_screenSwitch34 => '领取状态';
+
+  @override
+  String get miningRewards_screenSwitch35 => '已毕业，外盘持有数量还在同步';
+
+  @override
+  String get miningRewards_screenSwitch36 => '已毕业，外盘持有数量暂读不到';
+
+  @override
+  String get miningRewards_screenSwitch37 => '还没有配置挖矿权重';
+
+  @override
+  String get miningRewards_screenSwitch38 => '暂不计入';
+
+  @override
+  String get miningRewards_screenSwitch4 =>
+      '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。';
+
+  @override
+  String get miningRewards_screenSwitch5 => '结算数据暂时读不到，下面的数字可能不是最新的。';
+
+  @override
+  String get miningRewards_screenSwitch6 => '你有算力的小时还没有结算';
+
+  @override
+  String get miningRewards_screenSwitch7 => '首个小时结算后开始展示奖励';
+
+  @override
+  String get miningRewards_screenSwitch8 => '可领取';
+
+  @override
+  String miningRewards_screenSwitch9(Object? attempts) {
+    return '已提交，正在等待上链（已读取 $attempts 次）。不要重复领取。';
+  }
+
+  @override
+  String get miningRewards_screenTimedOut => '网络不可用，没有生成领取凭证。';
+
+  @override
+  String miningRewards_screenTitle(Object? miningLoopFigure) {
+    return '领取 $miningLoopFigure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenUnavailable => '领取暂不可用，余额不变。';
+
+  @override
+  String get miningRewards_signingIf => '钱包的结果未知，这笔领取已锁定。不要重复领取，稍后刷新查看。';
+
+  @override
+  String miningRewards_signingIf2(Object? short) {
+    return '已广播（$short），服务端已记录，正在等待链上确认。';
+  }
+
+  @override
+  String miningRewards_signingIf3(
+    Object? miningClaimReportReasonText,
+    Object? short,
+  ) {
+    return '已广播（$short）。$miningClaimReportReasonText';
+  }
+
+  @override
+  String get miningRewards_signingLabel => '领取数量';
+
+  @override
+  String get miningRewards_signingLabel2 => '收款钱包';
+
+  @override
+  String get miningRewards_signingLabel3 => '网络费';
+
+  @override
+  String get miningRewards_signingLabel4 => '凭证有效至';
+
+  @override
+  String get miningRewards_signingSwitch => '已取消，没有发生任何变化。';
+
+  @override
+  String get miningRewards_signingSwitch10 => '钱包没有完成签名，没有提交任何交易，可领取余额不变。';
+
+  @override
+  String get miningRewards_signingSwitch11 =>
+      '这笔领取已经上报过另一笔哈希，本次广播没有被记录。不要重复领取，稍后刷新查看。';
+
+  @override
+  String get miningRewards_signingSwitch12 =>
+      '链上这笔交易与领取凭证不一致，服务端没有记录它。不要重复领取，并联系支持。';
+
+  @override
+  String get miningRewards_signingSwitch13 =>
+      '钱包已经广播，但上报没有送达。交易可能已经上链，可以重新上报同一笔哈希；不要重复领取。';
+
+  @override
+  String get miningRewards_signingSwitch2 => '身份验证没有通过，没有发生任何变化。';
+
+  @override
+  String get miningRewards_signingSwitch3 => '领取凭证已过期，没有提交任何交易，可领取余额不变。请重新领取。';
+
+  @override
+  String get miningRewards_signingSwitch4 => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingSwitch5 => '找不到这笔领取的钱包，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingSwitch6 =>
+      '领取凭证对应的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingSwitch7 => '这条链不允许签名，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingSwitch8 => '钱包暂时不能在这条链上签名，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingSwitch9 => '当前登录的钱包不是这笔领取的钱包，没有提交任何交易。';
+
+  @override
+  String get miningRewards_signingTitle => '确认领取';
+
+  @override
+  String get miningRewards_signingValue => '领取挖矿奖励';
+
+  @override
+  String get miningRewards_signingValue2 => '钱包内 BNB 支付';
+
+  @override
+  String get mining_controllersActivationRequired =>
+      '需要先完成 LOOP ID 激活才能绑定邀请码。激活后随时可以再来绑定。';
+
+  @override
+  String get mining_controllersIdempotencyConflict =>
+      '同一次绑定已经用不同的邀请码提交过，请刷新查看最新状态。';
+
+  @override
+  String get mining_controllersNotFound =>
+      '这个邀请码不存在。请向邀请人确认后再试；邀请码不可枚举，多次尝试不会提高成功率。';
+
+  @override
+  String get mining_controllersPolicyBlocked =>
+      '当前不能绑定邀请码。每个账号只能绑定一次，请刷新查看最新状态。';
+
+  @override
+  String get mining_controllersStale => '这个账号已经绑定过邀请人。绑定后不能更换。';
+
+  @override
+  String get mining_controllersValidationFailed =>
+      '这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。';
+
+  @override
+  String mining_copyHead(Object? computedAtLabel) {
+    return '显示的是 $computedAtLabel 的算力快照';
+  }
+
+  @override
+  String get mining_copyIf => '下一次算力快照之后，这里会显示区块与时间。';
+
+  @override
+  String get mining_copyIf2 => '最近一次计算没有完成，没有可以回退的完整快照。';
+
+  @override
+  String mining_copyIf3(Object? named, Object? rest) {
+    return '$named，另有 $rest 个资产';
+  }
+
+  @override
+  String get mining_copyIncomplete => '有资产的参考价这次读不到';
+
+  @override
+  String get mining_copyMiningConditionEmbedded => '按绑定到 LOOP 账号的钱包持仓计算。';
+
+  @override
+  String get mining_copyMiningConditionMember =>
+      '你须加入该社区，按在社区的时段计入；没有绑定社区的币不要求。';
+
+  @override
+  String get mining_copyMiningConditionVerified =>
+      '社区币只在绑定它的社区已通过审核时计入，待审核社区不算。';
+
+  @override
+  String get mining_copyMiningConditionsShort => '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。';
+
+  @override
+  String get mining_copyMiningPowerFormulaHeading => '持有量 × 权重';
+
+  @override
+  String get mining_copyMiningSnapshotRowTitle => '最近一次算力快照';
+
+  @override
+  String get mining_copyMiningSnapshotSectionLabel => '算力快照';
+
+  @override
+  String get mining_copyMiningStaleLine => '最近一次快照已作废';
+
+  @override
+  String mining_copyS(Object? cause) {
+    return '最近一次计算没有完成（$cause），没有可以回退的完整快照。';
+  }
+
+  @override
+  String get mining_copyS2 => '最近一次快照未完成';
+
+  @override
+  String mining_copyStaleWithCause(Object? cause, Object? head, Object? tail) {
+    return '$head · $tail（$cause）';
+  }
+
+  @override
+  String get mining_copySwitch => '还没有算力快照';
+
+  @override
+  String get mining_copySwitch2 => '还没有完整的算力快照';
+
+  @override
+  String get mining_copySwitch3 => '下一次算力快照之后显示';
+
+  @override
+  String get mining_copySwitch4 => '暂时读不到算力快照';
+
+  @override
+  String mining_copySwitch5(Object? label) {
+    return '$label 暂时没有可用报价';
+  }
+
+  @override
+  String mining_copySwitch6(Object? label) {
+    return '$label 的参考价不够新';
+  }
+
+  @override
+  String mining_copySwitch7(Object? label) {
+    return '$label 的参考价来自未登记的代币';
+  }
+
+  @override
+  String mining_copySwitch8(Object? label) {
+    return '$label 的参考价这次读不到';
+  }
+
+  @override
+  String get mining_copySwitch9 => '那次快照的数据不完整';
+
+  @override
+  String get mining_modelsApproved => '已批准';
+
+  @override
+  String get mining_modelsCommunities => '社区榜';
+
+  @override
+  String mining_modelsMiningAssetLabel(Object? chainName) {
+    return '$chainName 原生代币';
+  }
+
+  @override
+  String get mining_modelsMiningBaselineDetail =>
+      '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 算力 = 持有数量 × 所属社区系数。社区币只在绑定它的社区已通过审核、且你已加入该社区时计入。按绑定到 LOOP 账号的钱包持仓计算。当前版本：每个资产的权重都定为 1，当日产量为预估值，奖励代币还没有确定。算出来的数字不是收益，也不构成承诺。';
+
+  @override
+  String get mining_modelsMiningBaselineLabel => '当前算力公式';
+
+  @override
+  String get mining_modelsMiningReferralRankLabel => '推广榜';
+
+  @override
+  String get mining_modelsPendingApproval => '待批准';
+
+  @override
+  String get mining_modelsRetired => '已退役';
+
+  @override
+  String get mining_modelsS => '原生代币';
+
+  @override
+  String get mining_modelsSwitch => '算力 = 持有量 × 权重';
+
+  @override
+  String get mining_modelsSwitch10 => '市场稳定性';
+
+  @override
+  String get mining_modelsSwitch11 => '用户质量';
+
+  @override
+  String get mining_modelsSwitch12 => '与 LOOP 的合作深度';
+
+  @override
+  String get mining_modelsSwitch13 => 'TWAP 时间加权均价：避免单笔成交扭曲参考价。';
+
+  @override
+  String get mining_modelsSwitch14 => '多周期、多渠道比对，交叉验证异常波动。';
+
+  @override
+  String get mining_modelsSwitch15 => 'Liquidity Cap：低流动性资产限制可计入价值。';
+
+  @override
+  String get mining_modelsSwitch16 => '匿名成员';
+
+  @override
+  String get mining_modelsSwitch17 =>
+      '别人看到的是别名还是「匿名成员」，只由该账号的匿名模式决定；「可被发现」不参与，自己永远看得到自己的别名。';
+
+  @override
+  String get mining_modelsSwitch18 =>
+      '算力数值按该账号自己的「挖矿算力」可见范围显示；设为仅自己时别人看不到数值，名次与参与条目数仍然公开。';
+
+  @override
+  String get mining_modelsSwitch19 => 'LOOP 定义的规则项。';
+
+  @override
+  String get mining_modelsSwitch2 => '算力 = 持有量 × 参考价 × 权重';
+
+  @override
+  String get mining_modelsSwitch3 => '每日产出 = 我的算力 ÷ 全网算力 × 当日产量';
+
+  @override
+  String get mining_modelsSwitch4 => 'LOOP 采用固定的最高权重档位（数值待批准）。';
+
+  @override
+  String get mining_modelsSwitch5 => '社区币权重按审核结果授予，区间待批准。';
+
+  @override
+  String get mining_modelsSwitch6 => '社区质量';
+
+  @override
+  String get mining_modelsSwitch7 => '社区规模';
+
+  @override
+  String get mining_modelsSwitch8 => 'Token 流动性';
+
+  @override
+  String get mining_modelsSwitch9 => '项目质量';
+
+  @override
+  String get mining_modelsUsers => '用户榜';
+
+  @override
+  String get mining_referralAppliesMiningPower => '挖矿算力';
+
+  @override
+  String get mining_referralBarrierLabel => '关闭绑定邀请码';
+
+  @override
+  String get mining_referralBarrierLabel2 => '关闭邀请海报';
+
+  @override
+  String get mining_referralBuild => '邀请码';
+
+  @override
+  String get mining_referralBuild2 => '邀请链接';
+
+  @override
+  String get mining_referralBuild3 => '注册后随时可以填写邀请码，一起挖矿。';
+
+  @override
+  String get mining_referralBuild4 => '在 LOOP 注册后填写邀请码';
+
+  @override
+  String get mining_referralBuild5 => '已绑定邀请人，关系锁定后不能更换';
+
+  @override
+  String get mining_referralBuild6 =>
+      '一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。';
+
+  @override
+  String mining_referralDepthMax(Object? maximumDepth) {
+    return '，最深到 L$maximumDepth';
+  }
+
+  @override
+  String get mining_referralEmptyMessage => '没有读到邀请关系';
+
+  @override
+  String get mining_referralEmptyMessage2 => '还没有邀请';
+
+  @override
+  String get mining_referralEmptyReason => '暂时读不到邀请码和邀请人数。';
+
+  @override
+  String get mining_referralErrorText => '邀请码格式不对，请检查后再试。';
+
+  @override
+  String mining_referralIf(Object? code) {
+    return '来 LOOP 一起挖矿，注册后填写我的邀请码 $code';
+  }
+
+  @override
+  String get mining_referralInvitees => '邀请列表';
+
+  @override
+  String mining_referralLabel(Object? code) {
+    return '我的邀请码 $code';
+  }
+
+  @override
+  String get mining_referralLabelText => '邀请码（形如 LOOP-XXXXX）';
+
+  @override
+  String get mining_referralLoopLabel => '我的邀请人';
+
+  @override
+  String mining_referralLoopRecordRow(num shown) {
+    return '有效成员 $shown 人';
+  }
+
+  @override
+  String get mining_referralLoopSheetHeading => '邀请海报';
+
+  @override
+  String mining_referralMessage(Object? code) {
+    return '这个账号已经绑定过邀请人，邀请链接里的 $code 不会再绑定';
+  }
+
+  @override
+  String mining_referralMessage2(Object? code) {
+    return '这个账号现在不能绑定邀请码，邀请链接里的 $code 没有提交';
+  }
+
+  @override
+  String get mining_referralMessage3 => '邀请码已绑定';
+
+  @override
+  String get mining_referralMessage4 => '系统分享没有打开，可以先复制链接';
+
+  @override
+  String get mining_referralModelsInvalid => '已失效';
+
+  @override
+  String get mining_referralModelsInvalidated => '已作废';
+
+  @override
+  String get mining_referralModelsPending => '待生效';
+
+  @override
+  String get mining_referralModelsPendingActivation => '待激活';
+
+  @override
+  String get mining_referralModelsPendingMining => '待挖矿生效';
+
+  @override
+  String get mining_referralModelsPendingWallet => '待绑定钱包';
+
+  @override
+  String get mining_referralModelsSwitch => '我直接邀请并已验证的人';
+
+  @override
+  String get mining_referralModelsSwitch2 => '我的 L1 再邀请的人';
+
+  @override
+  String get mining_referralModelsSwitch3 => '我的 L2 再邀请的人';
+
+  @override
+  String get mining_referralModelsSwitch4 => '我的 L3 再邀请的人';
+
+  @override
+  String get mining_referralModelsSwitch5 => '我的 L4 再邀请的人';
+
+  @override
+  String get mining_referralModelsSwitch6 => '邀请关系的层级';
+
+  @override
+  String get mining_referralModelsValid => '有效';
+
+  @override
+  String mining_referralOverviewCounts(Object? pending, Object? valid) {
+    return '\n当前 $valid 个有效关系 · $pending 个待验证。';
+  }
+
+  @override
+  String get mining_referralReferralBoostTotalTitle => '总加成';
+
+  @override
+  String mining_referralReferralBoundRowSubtitle(
+    Object? depth,
+    Object? launchTimestampLabel,
+    Object? referralValidationStatusLabel,
+  ) {
+    return '深度 L$depth · $referralValidationStatusLabel · 锁定于 $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_referralReferralBoundRowTitle => '已绑定邀请人';
+
+  @override
+  String get mining_referralReferralCapabilityInlineMessage => '邀请关系当前不可用';
+
+  @override
+  String get mining_referralReferralClaimFailureTitle => '这次绑定没有完成';
+
+  @override
+  String get mining_referralReferralClaimShapeInvalidBody =>
+      '邀请码形如 LOOP- 加 5 位字符。格式明显不对时不会提交，以免浪费唯一的一次绑定机会。';
+
+  @override
+  String get mining_referralReferralClaimShapeInvalidTitle => '邀请码格式不对';
+
+  @override
+  String get mining_referralReferralClaimSubmitLabel => '绑定';
+
+  @override
+  String get mining_referralReferralClaimSuccessBody => '这条关系已确认。绑定后不能更换。';
+
+  @override
+  String get mining_referralReferralClaimSuccessTitle => '关系已锁定';
+
+  @override
+  String get mining_referralReferralClaimWindowTimed => '当前不能绑定邀请码，请稍后刷新再试';
+
+  @override
+  String mining_referralReferralClaimWindowUnavailable(
+    Object? launchReasonCodeText,
+  ) {
+    return '还不能绑定：$launchReasonCodeText';
+  }
+
+  @override
+  String get mining_referralReferralCopyCodeLabel => '复制邀请码';
+
+  @override
+  String get mining_referralReferralCopyCodeMessage => '邀请码已复制';
+
+  @override
+  String get mining_referralReferralCopyLinkLabel => '复制邀请链接';
+
+  @override
+  String get mining_referralReferralCopyLinkMessage => '邀请链接已复制';
+
+  @override
+  String get mining_referralReferralInfoBindingBody =>
+      '被邀请人激活 LOOP ID 后随时可以绑定；一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。';
+
+  @override
+  String get mining_referralReferralInfoBindingTitle => '绑定邀请码';
+
+  @override
+  String mining_referralReferralInfoDepthBody(Object? rules) {
+    return '你直接邀请并已验证的人是 L1，L1 再邀请的人是 L2，依此类推$rules。每一级的加成比例以服务端公布的为准，只按该级的有效关系计入。';
+  }
+
+  @override
+  String get mining_referralReferralInfoDepthTitle => '关系深度如何计算';
+
+  @override
+  String get mining_referralReferralInfoMiningOnlyBody =>
+      '邀请加成只计入挖矿算力，不是收入、佣金或返佣。';
+
+  @override
+  String get mining_referralReferralInfoMiningOnlyTitle => '只计入挖矿算力';
+
+  @override
+  String mining_referralReferralInfoRelationshipBody(Object? overview) {
+    return '每个账号只有一个邀请码。分享完成不代表关系成立，还需要验证；「有效」只统计已验证的关系，其余一律显示为待验证，不计入任何加成。$overview';
+  }
+
+  @override
+  String get mining_referralReferralInfoRelationshipTitle => '关系怎样成立';
+
+  @override
+  String mining_referralReferralInfoRulesBody(
+    Object? launchTimestampLabel,
+    Object? maximumDepth,
+    Object? rules,
+  ) {
+    return '生效于 $launchTimestampLabel · 最大深度 L$maximumDepth · 作用于$rules';
+  }
+
+  @override
+  String get mining_referralReferralInfoRulesTitle => '规则版本';
+
+  @override
+  String mining_referralReferralInfoValidMemberBody(Object? stats) {
+    return '被邀请人本人在最近一个结算小时有算力，才算有效成员。$stats';
+  }
+
+  @override
+  String get mining_referralReferralInfoValidMemberTitle => '有效成员';
+
+  @override
+  String mining_referralReferralInviteLinkLabel(Object? link) {
+    return '邀请链接 $link';
+  }
+
+  @override
+  String get mining_referralReferralPosterLabel => '生成海报';
+
+  @override
+  String mining_referralReferralPosterLabel2(Object? code) {
+    return 'LOOP 邀请海报，邀请码 $code';
+  }
+
+  @override
+  String get mining_referralReferralPosterNoLink => '邀请链接还没有开放，海报上只印邀请码。';
+
+  @override
+  String get mining_referralReferralPosterQrSemanticLabel => '邀请链接二维码';
+
+  @override
+  String get mining_referralReferralPosterShareLabel => '正在生成…';
+
+  @override
+  String get mining_referralReferralPosterShareLabel2 => '保存或分享海报';
+
+  @override
+  String get mining_referralReferralShareLinkLabel => '分享邀请链接';
+
+  @override
+  String get mining_referralRow => '未公开的成员';
+
+  @override
+  String mining_referralS(Object? code, Object? link) {
+    return '来 LOOP 一起挖矿，注册后填写我的邀请码 $code\n$link';
+  }
+
+  @override
+  String get mining_referralS2 => '扫码打开邀请页';
+
+  @override
+  String mining_referralSemanticLabel(
+    Object? launchTimestampLabel,
+    Object? name,
+    Object? referralInviteeStatusLabel,
+  ) {
+    return '$name，加入于 $launchTimestampLabel，$referralInviteeStatusLabel';
+  }
+
+  @override
+  String get mining_referralSubject => '邀请你加入 LOOP';
+
+  @override
+  String mining_referralSubtitle(Object? powerFigure, Object? powerFigure2) {
+    return 'NFT $powerFigure · 资产 $powerFigure2';
+  }
+
+  @override
+  String mining_referralSubtitle2(Object? launchTimestampLabel) {
+    return '加入于 $launchTimestampLabel';
+  }
+
+  @override
+  String mining_referralTitle(Object? boostPercent, Object? level) {
+    return 'L$level · 加成 $boostPercent%';
+  }
+
+  @override
+  String mining_referralValidAsOf(Object? time) {
+    return '\n当前数字截至 $time。';
+  }
+
+  @override
+  String get mining_referralValidNoHour => '\n还没有结算过的小时，有效成员暂为 0。';
+
+  @override
+  String get mining_screenCell => '代币算力';
+
+  @override
+  String get mining_screenCell2 => 'NFT 算力';
+
+  @override
+  String get mining_screenCell3 => '代币算力 · 上一小时';
+
+  @override
+  String get mining_screenCell4 => 'NFT 算力 · 上一小时';
+
+  @override
+  String get mining_screenClaimSemanticLabel => '领取奖励，打开奖励与领取';
+
+  @override
+  String get mining_screenEmptyLine => '暂无算力快照';
+
+  @override
+  String get mining_screenEmptyMessage => '暂无算力数据';
+
+  @override
+  String get mining_screenEmptyMessage2 => '暂无算力构成';
+
+  @override
+  String get mining_screenEmptyTitle => '暂无 NFT 算力';
+
+  @override
+  String get mining_screenHeading => '正在读取';
+
+  @override
+  String get mining_screenKicker => '总算力';
+
+  @override
+  String get mining_screenLabel => '累计已挖';
+
+  @override
+  String get mining_screenLabel2 => '待领取';
+
+  @override
+  String get mining_screenLabel3 => '上一小时算力';
+
+  @override
+  String get mining_screenLabel4 => '有效邀请';
+
+  @override
+  String get mining_screenLabel5 => '今日预估';
+
+  @override
+  String get mining_screenLoopInfoNote => '还没有读到算力快照。';
+
+  @override
+  String get mining_screenLoopInfoNote2 =>
+      'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。';
+
+  @override
+  String get mining_screenMiningCapabilityUnavailableLabel => '挖矿当前不可用';
+
+  @override
+  String get mining_screenMiningCompositionNftUnavailableMessage =>
+      'NFT 算力暂未单独提供';
+
+  @override
+  String get mining_screenMiningFormulaEffective =>
+      'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。';
+
+  @override
+  String mining_screenMiningInfoConditionsBody(
+    Object? miningConditionEmbedded,
+    Object? miningConditionMember,
+    Object? miningConditionVerified,
+  ) {
+    return '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 按所属社区系数计。\n$miningConditionVerified\n$miningConditionMember\n$miningConditionEmbedded';
+  }
+
+  @override
+  String get mining_screenMiningInfoConditionsTitle => '哪些持仓计入算力';
+
+  @override
+  String get mining_screenMiningInfoFormulaTitle => '公式版本';
+
+  @override
+  String get mining_screenMiningInfoOpenRulesLabel => '查看挖矿规则';
+
+  @override
+  String get mining_screenMiningInfoTruthTitle => '不做本地估算';
+
+  @override
+  String get mining_screenMiningInviteInfoTitle => '邀请说明';
+
+  @override
+  String get mining_screenMiningRulesActionTitle => '挖矿说明';
+
+  @override
+  String mining_screenMiningSnapshotComputed(
+    Object? groupedFigure,
+    Object? launchTimestampLabel,
+  ) {
+    return '区块 $groupedFigure · $launchTimestampLabel · 这是算出算力的时间';
+  }
+
+  @override
+  String mining_screenMiningSnapshotComputed2(
+    Object? launchTimestampLabel,
+    Object? stale,
+  ) {
+    return '快照 · $launchTimestampLabel$stale';
+  }
+
+  @override
+  String mining_screenParenthetical(Object? text) {
+    return '（$text）';
+  }
+
+  @override
+  String get mining_screenS => '暂无代币算力';
+
+  @override
+  String get mining_screenSpoken => '还没有读到';
+
+  @override
+  String get mining_screenSpoken2 => '还没有结算的小时';
+
+  @override
+  String get mining_screenSwitch => '还没有读到挖矿摘要，公式版本读到之后显示在这里。';
+
+  @override
+  String mining_screenSwitch2(Object? launchReasonCodeText) {
+    return '挖矿公式还没有批准的版本：$launchReasonCodeText';
+  }
+
+  @override
+  String get mining_screenSwitch3 => '挖矿公式待批准。批准后，页面上的数字才会有来源。';
+
+  @override
+  String get mining_screenSwitch4 => '待批准的公式版本';
+
+  @override
+  String mining_screenSwitch5(Object? launchTimestampLabel, Object? scope) {
+    return '挖矿公式已生效$scope · 生效于 $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_screenSwitch6 => '已生效的公式版本';
+
+  @override
+  String mining_screenValue(num invites) {
+    return '$invites 人';
+  }
+
+  @override
+  String get mining_secondaryScreensCell => '我的算力';
+
+  @override
+  String get mining_secondaryScreensEmptyMessage => '没有读到这个社区';
+
+  @override
+  String get mining_secondaryScreensEmptyMessage2 => '没有读到规则';
+
+  @override
+  String get mining_secondaryScreensEmptyReason => '社区可能不存在，或对当前账号不可见。';
+
+  @override
+  String get mining_secondaryScreensEmptyReason2 => '暂时读不到公式版本。';
+
+  @override
+  String get mining_secondaryScreensHeading => '权重与算力规则';
+
+  @override
+  String get mining_secondaryScreensIf => '每日产出';
+
+  @override
+  String get mining_secondaryScreensKicker => '算力规则';
+
+  @override
+  String mining_secondaryScreensLabel(
+    Object? spokenContribution,
+    Object? spokenWeight,
+  ) {
+    return '我的算力，$spokenContribution。社区权重，$spokenWeight';
+  }
+
+  @override
+  String get mining_secondaryScreensLabel2 => '已批准的公式版本';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary => '还没有已批准的公式，也没有待批准的草案。';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary2 =>
+      '还没有已批准的公式。下面这条是等待批准的草案。';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary3 =>
+      '这一版已批准，当前生效；没有待批准的草案。';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary4 =>
+      '这一版已批准，当前生效。下面另有等待批准的草案。';
+
+  @override
+  String get mining_secondaryScreensLoopLabel => '我的贡献';
+
+  @override
+  String get mining_secondaryScreensLoopLabel2 => '社区记录';
+
+  @override
+  String get mining_secondaryScreensLoopLabel3 => '社区权重';
+
+  @override
+  String get mining_secondaryScreensLoopLabel4 => '绑定资产';
+
+  @override
+  String get mining_secondaryScreensLoopLabel5 => '已批准的版本';
+
+  @override
+  String get mining_secondaryScreensLoopLabel6 => '待批准的版本';
+
+  @override
+  String get mining_secondaryScreensLoopLabel7 => '邀请关系规则';
+
+  @override
+  String get mining_secondaryScreensLoopLabel8 => '资产权重';
+
+  @override
+  String get mining_secondaryScreensLoopProvenanceLine => 'LOOP 挖矿规则';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityAssetRowSubtitle =>
+      '这个社区还没有绑定资产';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityAssetRowTrailing => '已绑定';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityLogoKicker => '社区算力';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityMetricParticipantsTitle =>
+      '参与挖矿的持有人';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityMetricPowerTitle => '社区总算力';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityNoticeBody =>
+      '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。持有人须加入该社区，持仓才计入算力。';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityNoticeTitle => '权重由平台综合评定';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityRankActionLabel => '查看排行榜';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityReadingLabel => '社区排名';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityReadingTrailingLabel =>
+      '参与人数';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityScreenTitle => '社区挖矿面板';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightNotApplicableMessage =>
+      '没有可审的权重';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightPendingMessage =>
+      '权重审核中';
+
+  @override
+  String mining_secondaryScreensMiningCommunityWeightRowSubtitle(
+    Object? launchTimestampLabel,
+  ) {
+    return '审核于 $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightRowTitle => '已授予权重';
+
+  @override
+  String mining_secondaryScreensMiningCommunityWeightVersion(
+    Object? identifier,
+  ) {
+    return '已生效的公式版本 $identifier';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningFigureValue => '成员在绑定资产上的算力之和';
+
+  @override
+  String get mining_secondaryScreensMiningParticipantsCount =>
+      '最近一次算力快照里算出了算力的成员';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoPendingMessage => '目前没有草案版本。';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoPendingTitle => '没有待批准的版本';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoticeBody =>
+      '待批准的版本不会参与任何计算。权重区间只有规则条目，没有数值；批准之后才会公布。';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoticeTitle => '草案不是生效规则';
+
+  @override
+  String get mining_secondaryScreensMiningRulesOpenReferralLabel => '查看我的邀请关系';
+
+  @override
+  String mining_secondaryScreensMiningRulesReferralLSubtitle(
+    Object? launchTimestampLabel,
+  ) {
+    return '生效于 $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningRulesScreenTitle => '挖矿规则';
+
+  @override
+  String get mining_secondaryScreensSubtitle => '邀请加成只计入算力';
+
+  @override
+  String get mining_secondaryScreensSwitch => '成员在绑定资产上的算力之和，权重已经算在里面。';
+
+  @override
+  String get mining_secondaryScreensSwitch2 => '社区总算力读到之后显示在这里。';
+
+  @override
+  String get mining_secondaryScreensSwitch3 => '这一页还没有读到这个社区的算力。';
+
+  @override
+  String get mining_secondaryScreensSwitch4 => '权重由平台审核结果授予，已经算在上面的算力里。';
+
+  @override
+  String mining_secondaryScreensSwitch5(Object? launchTimestampLabel) {
+    return '批准于 $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensText => '每日产出 ';
+
+  @override
+  String get mining_secondaryScreensText2 => '具体量化分值不公开，权重以平台综合评定结果为准。';
+
+  @override
+  String mining_secondaryScreensTitle(Object? subject) {
+    return '$subject当前不可用';
+  }
+
+  @override
+  String get mining_secondaryScreensTitle2 => '算力公式';
+
+  @override
+  String get mining_secondaryScreensTitle3 => '邀请加成';
+
+  @override
+  String get mining_secondaryScreensTitle4 => '经审核的社区币';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption => 'LOOP 代币上线后公布';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption2 => '预估产量';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption3 => '当日产量';
+
+  @override
+  String mining_widgetsLoopRecordRow(Object? amountFigure) {
+    return '持有 $amountFigure';
+  }
+
+  @override
+  String mining_widgetsLoopRecordRow4(Object? powerFigure) {
+    return 'NFT 算力 $powerFigure';
+  }
+
+  @override
+  String get mining_widgetsMarker => '未更新';
+
+  @override
+  String mining_widgetsMiningCompositionExpression(
+    Object? amountFigure,
+    Object? weight,
+  ) {
+    return '$amountFigure × 权重 $weight';
+  }
+
+  @override
+  String get mining_widgetsMiningDemoHoldingsDetail =>
+      '这次算力里含演示持仓：它们不在链上，没有人真的持有，数字只用来体验。';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel => '挖矿公式尚未确定';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel2 => '挖矿公式待批准';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel3 => '挖矿公式已生效';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSubtitle => '批准后，上面的数字才会有来源。';
+
+  @override
+  String mining_widgetsMiningFormulaRowSubtitle2(Object? launchTimestampLabel) {
+    return '已生效 · $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_widgetsMiningFormulaRowTitle => '挖矿公式';
+
+  @override
+  String get mining_widgetsMiningFormulaRowTrailing => '已生效';
+
+  @override
+  String get mining_widgetsMiningNetworkKicker => '全网总算力 · 上一小时';
+
+  @override
+  String get mining_widgetsMiningNetworkKicker2 => '全网总算力';
+
+  @override
+  String mining_widgetsMiningNetworkRankActionLabel2(Object? place) {
+    return '算力榜，我的名次$place';
+  }
+
+  @override
+  String mining_widgetsMiningNetworkTotalLabel(Object? spoken) {
+    return '全网总算力，$spoken';
+  }
+
+  @override
+  String get mining_widgetsMiningSummaryHeroAssetsLabel => '算力明细';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimLabel => '挖矿奖励';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimLabel2 => '领取奖励';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
+      '挖矿奖励，打开挖矿奖励页';
+
+  @override
+  String get mining_widgetsText => '我的总算力';
+
+  @override
   String get notifications_applicationNoReason => '运维没有给出原因。修改社区资料后可以重新提交。';
 
   @override
@@ -21453,4 +23653,348 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get wallet_txResultWalletMoneyActionsMoneyFactsFooterText => '确认数读不到';
+
+  @override
+  String widgets_assetsBuild(Object? slot) {
+    return '$slot 头像';
+  }
+
+  @override
+  String widgets_atmosphereLabel(Object? title) {
+    return '$title 全部';
+  }
+
+  @override
+  String widgets_avatarStackBuild(Object? remaining) {
+    return '另外 $remaining 人';
+  }
+
+  @override
+  String get widgets_blocksUnread => '未读取';
+
+  @override
+  String get widgets_clauseJoin => '；';
+
+  @override
+  String widgets_componentsBuild(Object? traceId) {
+    return '追踪号 $traceId';
+  }
+
+  @override
+  String widgets_componentsBuild2(Object? source) {
+    return '来源 $source';
+  }
+
+  @override
+  String get widgets_componentsCacheStale => '缓存值可能已过期。';
+
+  @override
+  String get widgets_componentsCachedHeadline => '离线 · 显示缓存';
+
+  @override
+  String get widgets_componentsCachedTimeoutHeadline => 'LOOP 响应超时 · 显示缓存';
+
+  @override
+  String get widgets_componentsCard => '卡片加载中';
+
+  @override
+  String get widgets_componentsChart => '图表加载中';
+
+  @override
+  String get widgets_componentsConnectionHeadline => '连不上 LOOP';
+
+  @override
+  String get widgets_componentsDetail => '详情加载中';
+
+  @override
+  String get widgets_componentsFigure => '数字加载中';
+
+  @override
+  String get widgets_componentsHintText => '发送消息';
+
+  @override
+  String widgets_componentsLabel(Object? title, Object? trailing) {
+    return '$title，$trailing，不可更改';
+  }
+
+  @override
+  String get widgets_componentsLabel2 => '发生了什么';
+
+  @override
+  String get widgets_componentsLabel3 => '影响什么';
+
+  @override
+  String get widgets_componentsLabel4 => '更新中';
+
+  @override
+  String get widgets_componentsLabel5 => '其他方式';
+
+  @override
+  String get widgets_componentsLabel6 => '重试连接';
+
+  @override
+  String widgets_componentsLoopOfflineCachedAt(Object? cachedAt) {
+    return '缓存 $cachedAt';
+  }
+
+  @override
+  String widgets_componentsLoopOfflineCachedAtSemanticsLabel(Object? cachedAt) {
+    return '缓存时间 $cachedAt';
+  }
+
+  @override
+  String get widgets_componentsNoCacheBody => '这次读取没有完成，还没有可显示的缓存。';
+
+  @override
+  String get widgets_componentsPriceRow => '列表加载中';
+
+  @override
+  String get widgets_componentsRetryFailedMessage => '刚才这次还是没连上。等网络恢复后再试一次。';
+
+  @override
+  String get widgets_componentsRetryingLabel => '正在重试…';
+
+  @override
+  String widgets_componentsS(Object? pausedActions) {
+    return '已暂停：$pausedActions。';
+  }
+
+  @override
+  String get widgets_componentsSettingsLabel => '前往系统设置';
+
+  @override
+  String widgets_componentsSwitch(Object? happened) {
+    return '发生了什么：$happened';
+  }
+
+  @override
+  String widgets_componentsSwitch2(Object? impact) {
+    return '影响什么：$impact';
+  }
+
+  @override
+  String widgets_componentsSwitch3(Object? next) {
+    return '下一步：$next';
+  }
+
+  @override
+  String get widgets_componentsTimeoutHeadline => 'LOOP 响应超时';
+
+  @override
+  String get widgets_componentsTitle => '暂时无法完成';
+
+  @override
+  String get widgets_componentsUnreachableMessage =>
+      '这一页没有读到任何内容，也没有提交任何操作。请检查网络后重试。';
+
+  @override
+  String get widgets_componentsUnreachableTitle => '现在连不上 LOOP';
+
+  @override
+  String get widgets_enumerationSeparator => '、';
+
+  @override
+  String widgets_environmentTagLabel(Object? label) {
+    return '服务端 $label';
+  }
+
+  @override
+  String widgets_flatLoopStepDotsLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return '第 $step 步，共 $total 步，$label';
+  }
+
+  @override
+  String get widgets_infoSheetBarrierLabel => '关闭说明';
+
+  @override
+  String widgets_infoSheetLabel(Object? title) {
+    return '关于$title';
+  }
+
+  @override
+  String get widgets_inlineStatesLabel => '范围';
+
+  @override
+  String get widgets_inlineStatesLabel2 => '来源';
+
+  @override
+  String get widgets_inlineStatesLabel3 => '观察于';
+
+  @override
+  String get widgets_inlineStatesLoopInlineUnavailableRetryLabel => '重试中';
+
+  @override
+  String widgets_inlineStatesLoopProvenanceLineSemanticsLabel(Object? text) {
+    return '$text，查看数据来源说明';
+  }
+
+  @override
+  String widgets_inlineStatesLoopProvenanceMarkerLabel(Object? text) {
+    return '$text，数据来源在页面右上角的说明里';
+  }
+
+  @override
+  String get widgets_inlineStatesLoopProvenanceSheetBarrierLabel => '关闭数据来源说明';
+
+  @override
+  String widgets_inlineStatesText2(Object? timeLabel) {
+    return '观察于 $timeLabel';
+  }
+
+  @override
+  String get widgets_inlineStatesValue => '来源未标注';
+
+  @override
+  String get widgets_labelColon => '：';
+
+  @override
+  String get widgets_loadingIf => '更新失败，显示的是上次读到的数据';
+
+  @override
+  String widgets_loadingIf2(Object? age) {
+    return '数据来自$age，正在更新';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel(Object? inSeconds) {
+    return '$inSeconds 秒前';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel2(Object? inMinutes) {
+    return '$inMinutes 分钟前';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel3(Object? inHours) {
+    return '$inHours 小时前';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel4(Object? inDays) {
+    return '$inDays 天前';
+  }
+
+  @override
+  String widgets_loadingS(Object? ageLabel) {
+    return '更新失败，显示的是$ageLabel读到的数据';
+  }
+
+  @override
+  String widgets_loadingS2(Object? age) {
+    return '数据来自$age';
+  }
+
+  @override
+  String get widgets_pagesLoopKeyboardDoneLabel => '完成，收起键盘';
+
+  @override
+  String get widgets_personRowLabel => '查看全部';
+
+  @override
+  String get widgets_profileSectionCommunities => '社区';
+
+  @override
+  String get widgets_profileSectionTrades => '交易';
+
+  @override
+  String get widgets_provenanceScopeLabel => '数据来源与说明';
+
+  @override
+  String get widgets_quoteRowSwitch => '未报告';
+
+  @override
+  String get widgets_roundKeyLabel => '，暂不可用';
+
+  @override
+  String get widgets_sentenceGap => '';
+
+  @override
+  String get widgets_sentenceJoin => '。';
+
+  @override
+  String get widgets_sheetBarrierLabel => '关闭弹层';
+
+  @override
+  String get widgets_signSheetBuild => '请勿关闭 App';
+
+  @override
+  String get widgets_signSheetConfirmLabel => '确认签名';
+
+  @override
+  String get widgets_signSheetLabel => '调整策略';
+
+  @override
+  String get widgets_signSheetPolicyRejected => '被策略拒绝';
+
+  @override
+  String get widgets_signSheetSigning => '签名中';
+
+  @override
+  String get widgets_signSheetSigningTitle => '正在签名并广播';
+
+  @override
+  String get widgets_signSheetSimulationFailed => '模拟失败';
+
+  @override
+  String get widgets_signSheetTitle => '确认交易';
+
+  @override
+  String widgets_signStepsLabel(
+    Object? caption,
+    Object? label,
+    Object? number,
+  ) {
+    return '第 $number 步 $label，$caption';
+  }
+
+  @override
+  String widgets_signStepsStep(Object? waitingCaption) {
+    return '下一步，$waitingCaption';
+  }
+
+  @override
+  String get widgets_toastSwitch => '警告';
+
+  @override
+  String get widgets_toastSwitch2 => '错误';
+
+  @override
+  String widgets_tokenCardBuild(
+    Object? fact,
+    Object? observedLabel,
+    Object? source,
+  ) {
+    return '$fact —— 来源 $source，观察于 $observedLabel';
+  }
+
+  @override
+  String get widgets_tokenCardLoading => '识别中';
+
+  @override
+  String get widgets_tokenCardPartial => '数据缺失';
+
+  @override
+  String get widgets_tokenCardRisk => '风险事实';
+
+  @override
+  String get widgets_tokenCardSwitch => '识别中…';
+
+  @override
+  String get widgets_uiDiscover => '发现';
+
+  @override
+  String get widgets_uiDiscuss => '讨论';
+
+  @override
+  String get widgets_uiExecute => '执行';
+
+  @override
+  String widgets_uiLabel(Object? label) {
+    return '当前阶段：$label';
+  }
 }

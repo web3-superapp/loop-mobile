@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -21,7 +22,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.bySemanticsLabel('当前阶段：讨论'), findsOneWidget);
+      expect(find.bySemanticsLabel('Current stage: Discuss'), findsOneWidget);
       // The Dart identifier never reaches the reader, and neither does the
       // English sentence it used to sit in.
       expect(find.bySemanticsLabel(RegExp('discuss')), findsNothing);
@@ -35,6 +36,11 @@ void main() {
       for (final stage in LoopStage.values) {
         expect(stage.chip, stage.chip.toUpperCase());
         expect(stage.label, isNot(stage.chip));
+      }
+      // Decision 0281: the spoken label is ARB copy — in Chinese it is the
+      // reader's own word, not the Latin chip.
+      LoopL10n.use(LoopL10n.simplifiedChinese);
+      for (final stage in LoopStage.values) {
         expect(RegExp(r'^[\x00-\x7F]+$').hasMatch(stage.label), isFalse);
       }
     });

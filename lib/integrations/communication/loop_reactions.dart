@@ -1,3 +1,5 @@
+import 'package:loop_mobile/l10n/loop_l10n.dart';
+
 /// LOOP's five message reactions: the glyph each one is drawn as and the word
 /// that names it to a screen reader.
 ///
@@ -17,19 +19,20 @@ const Map<String, String> loopReactionIconNames = <String, String>{
 
 /// The word each reaction is announced as, and printed as wherever a glyph
 /// cannot be drawn.
-const Map<String, String> loopReactionLabels = <String, String>{
-  'like': '点赞',
-  'haha': '大笑',
-  'love': '喜欢',
-  'wow': '惊讶',
-  'sad': '难过',
+Map<String, String> loopReactionLabels = <String, String>{
+  'like': LoopL10n.current.integrations_reactionsS,
+  'haha': LoopL10n.current.integrations_reactionsS2,
+  'love': LoopL10n.current.integrations_reactionsS3,
+  'wow': LoopL10n.current.integrations_reactionsS4,
+  'sad': LoopL10n.current.integrations_reactionsS5,
 };
 
 /// The word a reaction that is not one of LOOP's five is drawn as.
 ///
 /// Another client can store any type on a message; LOOP neither guesses an
 /// Emoji for it nor prints the raw type string.
-const String loopReactionFallbackLabel = '表态';
+String get loopReactionFallbackLabel =>
+    LoopL10n.current.integrations_reactionsLoopReactionFallbackLabel;
 
 /// The word [type] is drawn as.
 String loopReactionLabel(String type) =>

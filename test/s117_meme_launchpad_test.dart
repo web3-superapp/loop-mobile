@@ -661,7 +661,7 @@ void main() {
       );
 
       // Back and forward again with the same content reuses the draft.
-      await tester.tap(find.byTooltip('返回').first, warnIfMissed: false);
+      await tester.tap(find.byTooltip('Back').first, warnIfMissed: false);
       await tester.pumpAndSettle();
       if (find
           .byKey(const ValueKey<String>('meme-create-step-2'))
@@ -784,16 +784,16 @@ void main() {
         expect(find.text('Confirm create'), findsOneWidget);
         expect(find.text('Approve first'), findsOneWidget);
 
-        await tester.tap(find.text('确认签名'));
+        await tester.tap(find.text('Confirm signature'));
         await tester.pumpAndSettle();
         expect(wallet.handed, hasLength(2));
         expect(wallet.handed.first.kind, IntentKind.launchApproval);
         expect(wallet.handed.last.kind, IntentKind.launchPurchase);
         expect(wallet.handed.first.payloadDigest, isNotNull);
         expect(meme.reportCalls.single, _hash);
-        expect(find.text('已广播'), findsOneWidget);
+        expect(find.text('Broadcast'), findsOneWidget);
 
-        await tester.tap(find.text('关闭'));
+        await tester.tap(find.text('Close'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
         await tester.pumpAndSettle();
@@ -911,7 +911,7 @@ void main() {
       expect(find.text('打满后自动上 PancakeSwap'), findsNothing);
       expect(_key('meme-token-liquidity-low'), findsNothing);
       expect(_key('meme-token-price-provenance'), findsOneWidget);
-      expect(findProvenanceContaining('来源 LOOP curve'), findsWidgets);
+      expect(findProvenanceContaining('Source LOOP curve'), findsWidgets);
       expect(_key('meme-chart-1m'), findsOneWidget);
       // The holder count is in its tab's title.
       expect(_key('meme-token-tab-holders'), findsOneWidget);
@@ -1124,7 +1124,7 @@ void main() {
         // The same exit as 买入: one prepared intent, the signing sheet.
         expect(meme.prepareCalls.single['usd1Amount'], '25');
         expect(_key('meme-sign-sheet'), findsOneWidget);
-        await tester.tap(find.text('确认签名'));
+        await tester.tap(find.text('Confirm signature'));
         await tester.pumpAndSettle();
         expect(wallet.handed, hasLength(1));
         // The amount just confirmed is what 快买 offers next.
@@ -1210,7 +1210,7 @@ void main() {
         ),
       );
       await _pump(tester, page(onNavigate: opened.add), meme: meme);
-      expect(findProvenanceContaining('来源 Pool estimate'), findsWidgets);
+      expect(findProvenanceContaining('Source Pool estimate'), findsWidgets);
       await tester.tap(_key('meme-token-swap'));
       expect(opened.single, '/wallet/swap?to=eip155%3A56%3A$memeTokenAddress');
       await _drain(tester);
@@ -1464,11 +1464,11 @@ void main() {
       expect(meme.prepareCalls.single['slippageBps'], 300);
       expect(_key('meme-sign-sheet'), findsOneWidget);
       expect(find.text('Confirm buy'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
       expect(meme.reportCalls.single, _hash);
-      expect(find.text('已广播'), findsOneWidget);
+      expect(find.text('Broadcast'), findsOneWidget);
       await _drain(tester);
     });
 

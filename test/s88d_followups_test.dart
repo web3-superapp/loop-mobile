@@ -219,11 +219,14 @@ void main() {
   group('the offline card claims a cache only when it has one', () {
     testWidgets('cached · offline, with the cache time', (tester) async {
       await _pumpCard(tester, const LoopOfflineState(cachedAtLabel: '09:38'));
-      expect(find.text('离线 · 显示缓存'), findsOneWidget);
-      expect(find.text('缓存 09:38'), findsOneWidget);
-      expect(find.textContaining('缓存值可能已过期'), findsOneWidget);
-      expect(find.text('重试连接'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('缓存时间 09:38')), findsOneWidget);
+      expect(find.text('Offline · Showing cache'), findsOneWidget);
+      expect(find.text('Cached 09:38'), findsOneWidget);
+      expect(
+        find.textContaining('Cached values may be out of date'),
+        findsOneWidget,
+      );
+      expect(find.text('Reconnect'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('Cached at 09:38')), findsOneWidget);
     });
 
     testWidgets('no cache · cannot reach LOOP, no cache stamp, retry kept', (
@@ -231,12 +234,17 @@ void main() {
     ) async {
       var retries = 0;
       await _pumpCard(tester, LoopOfflineState(onRetry: () => retries += 1));
-      expect(find.text('连不上 LOOP'), findsOneWidget);
-      expect(find.text('离线 · 显示缓存'), findsNothing);
+      expect(find.text("Can't reach LOOP"), findsOneWidget);
+      expect(find.text('Offline · Showing cache'), findsNothing);
       expect(find.textContaining('缓存 '), findsNothing);
       expect(_key('loop-offline-cached-at'), findsNothing);
-      expect(find.textContaining('这次读取没有完成，还没有可显示的缓存。'), findsOneWidget);
-      await tester.tap(find.text('重试连接'));
+      expect(
+        find.textContaining(
+          'This read didn\'t finish and there\'s no cache to show yet.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Reconnect'));
       expect(retries, 1);
     });
 
@@ -245,10 +253,15 @@ void main() {
         tester,
         LoopOfflineState(cause: LoopOfflineCause.timeout, onRetry: () {}),
       );
-      expect(find.text('LOOP 响应超时'), findsOneWidget);
+      expect(find.text('LOOP timed out'), findsOneWidget);
       expect(find.text('连不上 LOOP'), findsNothing);
-      expect(find.textContaining('这次读取没有完成，还没有可显示的缓存。'), findsOneWidget);
-      expect(find.text('重试连接'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'This read didn\'t finish and there\'s no cache to show yet.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Reconnect'), findsOneWidget);
     });
 
     testWidgets('a chain read that timed out reaches the page as a timeout', (
@@ -263,7 +276,7 @@ void main() {
         ),
       );
       expect(_key('wallet-balances-state-offline'), findsOneWidget);
-      expect(find.text('LOOP 响应超时'), findsOneWidget);
+      expect(find.text('LOOP timed out'), findsOneWidget);
     });
 
     test('a read timeout is worded apart; a write timeout stays offline', () {

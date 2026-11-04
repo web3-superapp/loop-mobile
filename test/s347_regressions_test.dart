@@ -136,7 +136,9 @@ void main() {
         ),
         mining: _SelfBoard(),
       );
-      await tester.tap(find.text('用户'));
+      await tester.ensureVisible(find.text('User'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('User'));
       await tester.pumpAndSettle();
       final self = find.byKey(const ValueKey<String>('intel-rank-user-4'));
       await tester.ensureVisible(self);

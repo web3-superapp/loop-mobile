@@ -215,7 +215,7 @@ void main() {
       );
       expect(box.height, greaterThanOrEqualTo(LoopTouch.minimum));
       expect(
-        find.bySemanticsLabel('成员预览，pepe_founder、NightOwl、匿名成员，另外 2 人'),
+        find.bySemanticsLabel('成员预览, pepe_founder, NightOwl, 匿名成员, 2 more'),
         findsOneWidget,
       );
       handle.dispose();

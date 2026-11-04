@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart'
@@ -249,7 +250,7 @@ class LoopProvenanceHosted extends StatelessWidget {
 class LoopPageInfoAction extends StatefulWidget {
   const LoopPageInfoAction({
     super.key,
-    this.title = '数据来源',
+    this._title,
     this.label,
     this.notes = const <LoopInfoNote>[],
     this.footer,
@@ -257,7 +258,8 @@ class LoopPageInfoAction extends StatefulWidget {
   });
 
   /// The sheet's heading.
-  final String title;
+  final String? _title;
+  String get title => _title ?? LoopL10n.current.common_dataSource;
 
   /// The control's accessible name; 「数据来源与说明」 by default.
   final String? label;
@@ -301,7 +303,7 @@ class _LoopPageInfoActionState extends State<LoopPageInfoAction> {
       icon: 'info',
       // Android's 48 dp guideline: this control is often the bar's only one.
       target: 48,
-      label: widget.label ?? '数据来源与说明',
+      label: widget.label ?? context.l10n.widgets_provenanceScopeLabel,
       onPressed: () => unawaited(
         showLoopPageInfoSheet(
           context,
@@ -328,7 +330,7 @@ Future<void> showLoopPageInfoSheet(
 }) {
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭说明',
+    barrierLabel: context.l10n.widgets_infoSheetBarrierLabel,
     builder: (sheetContext) => SingleChildScrollView(
       key: ValueKey<String>(sheetKey),
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
@@ -397,15 +399,15 @@ class _LoopProvenanceSection extends StatelessWidget {
           ),
         if (entry.attributed) ...<Widget>[
           LoopKeyValue(
-            label: '来源',
+            label: context.l10n.widgets_inlineStatesLabel2,
             value: entry.sources.isEmpty
-                ? '来源未标注'
+                ? context.l10n.widgets_inlineStatesValue
                 : <String>{...entry.sources}.join(' · '),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           ),
           if (at != null)
             LoopKeyValue(
-              label: '观察于',
+              label: context.l10n.widgets_inlineStatesLabel3,
               value: loopDateTimeLabel(at),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             ),
