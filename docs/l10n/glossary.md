@@ -4,7 +4,7 @@
 
 决策 0281（loop-mobile `docs/decisions/0281-english-default-locale.md`）把 App 默认语言改成英文，简体中文可切。S355a–f 填 `lib/l10n/fragments/*.json` 的 `en` 时**一律按本表**；表里没有的词，先查 `lib/l10n/fragments/common.json`（已按本表填好），再按「用法规则」自拟，并在批次汇报里列出新词给主代理补表。需求方 Figma 图层名（Intelligence、Power Ranking、Launchpad Banner…）优先采用。
 
-标「待拍板」的是我拿不准、需要主代理 / 需求方确认的选择；S355 先按表里的写法做，改词只需改 fragment。
+原标「待拍板」的 7 项主代理已于 11-04 全部按本表裁决（见第四节）；改词只需改 fragment。
 
 ## 一、用法规则
 
@@ -66,7 +66,7 @@
 | 静音 / 取消静音 | Mute / Unmute | |
 | 举报 | Report | |
 | 屏蔽名单 | Block list | |
-| 转发 / 多选 / 合并转发 | Forward / Select / Forward as one | 待拍板：合并转发 |
+| 转发 / 多选 / 合并转发 | Forward / Select / Forward as one | 主代理 11-04 裁决 |
 
 ### MEME · Launch
 
@@ -74,7 +74,7 @@
 |---|---|---|
 | 发射 | Launch | |
 | 发射台 | Launchpad | 专名；稿：Launchpad Banner |
-| 内盘 | Bonding pool | **选择**：Bonding pool / DEX pool。理由：读者是加密用户，bonding curve / DEX 是 four.meme 类产品的通用词；Inner / Outer 是直译，英文读者看不出含义。待拍板 |
+| 内盘 | Bonding pool | **选择**：Bonding pool / DEX pool。理由：读者是加密用户，bonding curve / DEX 是 four.meme 类产品的通用词；Inner / Outer 是直译，英文读者看不出含义。主代理 11-04 裁决采用 |
 | 外盘 | DEX pool | 同上；「外盘奖励」DEX pool rewards |
 | 公开内盘 | Public pool | |
 | 预告 | Upcoming | |
@@ -192,7 +192,9 @@
 
 月份缩写用英文三字母（Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec），不依赖 intl 的 locale 数据也能手写；若 S355 决定用 `intl` 的 `DateFormat`，它已是直接依赖（0.20.3），但要先 `initializeDateFormatting` 或只用 `en` / `zh` 内置符号。
 
-## 四、待主代理 / 需求方拍板
+## 四、主代理裁决（2026-11-04）
+
+以下 7 项全部按本表写法执行，不再待定；需求方若改口再改 fragment。情报：Tab 写 Intel、页面 / 模块标题写 Intelligence（与 Figma 图层名一致）。专名清单就是这五个加 LOOP / MEME。
 
 1. 内盘 / 外盘：本表选 **Bonding pool / DEX pool**（备选 Inner / Outer pool、Bonding curve / DEX）。
 2. 大小写：本表定 **Sentence case**，专名清单（Launchpad、Power Ranking、Invite Center、Security Center、Privacy Center）是否就这些。
