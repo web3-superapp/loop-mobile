@@ -8633,14 +8633,14 @@ abstract class LoopLocalizations {
   /// lib/features/community/community_discover_screen.dart:173
   ///
   /// In en, this message translates to:
-  /// **'{items} communities'**
-  String community_discoverHeading(Object? items);
+  /// **'{items, plural, =1{1 community} other{{items} communities}}'**
+  String community_discoverHeading(num items);
 
   /// lib/features/community/community_discover_screen.dart:174
   ///
   /// In en, this message translates to:
-  /// **'{items} communities loaded'**
-  String community_discoverHeading2(Object? items);
+  /// **'{items, plural, =1{1 community loaded} other{{items} communities loaded}}'**
+  String community_discoverHeading2(num items);
 
   /// lib/features/community/community_discover_screen.dart:165
   ///
@@ -9075,8 +9075,8 @@ abstract class LoopLocalizations {
   /// lib/features/community/community_members_screen.dart:610
   ///
   /// In en, this message translates to:
-  /// **'{all} members'**
-  String community_membersCommunityMissingHeading(Object? all);
+  /// **'{all, plural, =1{1 member} other{{all} members}}'**
+  String community_membersCommunityMissingHeading(num all);
 
   /// lib/features/community/community_members_screen.dart:334, lib/features/community/community_members_screen.dart:342
   ///
@@ -9465,8 +9465,8 @@ abstract class LoopLocalizations {
   /// lib/features/community/community_screen.dart:141
   ///
   /// In en, this message translates to:
-  /// **'{miningCount} communities mining'**
-  String community_screenCommunityFolioHeading(Object? miningCount);
+  /// **'{miningCount, plural, =1{1 community mining} other{{miningCount} communities mining}}'**
+  String community_screenCommunityFolioHeading(num miningCount);
 
   /// lib/features/community/community_screen.dart:134
   ///
@@ -21896,23 +21896,20 @@ abstract class LoopLocalizations {
   /// lib/features/market/alerts/alerts_screen.dart:147
   ///
   /// In en, this message translates to:
-  /// **'{focusLabel} · {armed} alerts watching · Stops after one trigger'**
-  String marketAlerts_screenAlertsScreenSubtitle(
-    Object? armed,
-    Object? focusLabel,
-  );
+  /// **'{focusLabel} · {armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle(num armed, Object? focusLabel);
 
   /// lib/features/market/alerts/alerts_screen.dart:149
   ///
   /// In en, this message translates to:
-  /// **'{items} alerts loaded · Stops after one trigger'**
-  String marketAlerts_screenAlertsScreenSubtitle2(Object? items);
+  /// **'{items, plural, =1{1 alert loaded} other{{items} alerts loaded}} · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle2(num items);
 
   /// lib/features/market/alerts/alerts_screen.dart:150
   ///
   /// In en, this message translates to:
-  /// **'{armed} alerts watching · Stops after one trigger'**
-  String marketAlerts_screenAlertsScreenSubtitle3(Object? armed);
+  /// **'{armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle3(num armed);
 
   /// lib/features/market/alerts/alerts_screen.dart:251
   ///
@@ -22301,9 +22298,9 @@ abstract class LoopLocalizations {
   /// lib/features/market/watchlist/watchlist_editor_screen.dart:170
   ///
   /// In en, this message translates to:
-  /// **'{distinctAssetCount} watchlist assets{state}'**
+  /// **'{distinctAssetCount, plural, =1{1 watchlist asset} other{{distinctAssetCount} watchlist assets}}{state}'**
   String marketWatchlist_editorWatchlistEditorScreenSubtitle(
-    Object? distinctAssetCount,
+    num distinctAssetCount,
     Object? state,
   );
 

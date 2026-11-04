@@ -371,6 +371,7 @@ class _HolderDistributionScreenState
           LoopLabel(context.l10n.market_secondaryScreensFact),
           LoopRecordCard(
             child: LoopFactLine(
+              id: 'holder-count',
               label: context.l10n.market_secondaryScreensFact,
               fact: holders.holderCount,
               emphasize: true,

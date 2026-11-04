@@ -651,7 +651,7 @@ void main() {
       // The end of the list was in view, so the next cursor page was read
       // without a button; the repeated row is not drawn twice and the same
       // cursor coming back is not read again.
-      expect(find.text('1 communities loaded'), findsOneWidget);
+      expect(find.text('1 community loaded'), findsOneWidget);
       expect(find.text('1 个社区'), findsNothing);
 
       // With the last page in, the loaded rows are the whole answer and the
@@ -680,7 +680,7 @@ void main() {
       // The longer English segments scrolled the row into view; bring the
       // folio heading back before reading it.
       await tester.scrollUntilVisible(
-        find.text('1 communities'),
+        find.text('1 community'),
         -200,
         scrollable: find
             .byWidgetPredicate(
@@ -690,7 +690,7 @@ void main() {
             )
             .first,
       );
-      expect(find.text('1 communities'), findsOneWidget);
+      expect(find.text('1 community'), findsOneWidget);
     });
 
     testWidgets('choosing 新社区 refetches with the newest sort', (tester) async {

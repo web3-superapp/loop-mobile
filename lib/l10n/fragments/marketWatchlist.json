@@ -217,7 +217,7 @@
     "zh": "放弃修改"
   },
   "marketWatchlist_editorWatchlistEditorScreenSubtitle": {
-    "en": "{distinctAssetCount} watchlist assets{state}",
+    "en": "{distinctAssetCount, plural, =1{1 watchlist asset} other{{distinctAssetCount} watchlist assets}}{state}",
     "placeholders": {
       "distinctAssetCount": {
         "example": "state.distinctAssetCount",

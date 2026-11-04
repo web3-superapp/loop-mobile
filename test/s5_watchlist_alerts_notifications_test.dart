@@ -252,7 +252,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.textContaining('1 alerts watching'), findsOneWidget);
+      expect(find.textContaining('1 alert watching'), findsOneWidget);
       expect(find.text('WBNB Rises to 800.5'), findsOneWidget);
       expect(find.textContaining('Evaluated'), findsOneWidget);
     });
@@ -276,7 +276,7 @@ void main() {
 
       // One page of an unknown number: the hero may not call its armed rows
       // the alerts that are listening, and it never prints 「N ACTIVE」.
-      expect(find.textContaining('1 alerts loaded'), findsOneWidget);
+      expect(find.textContaining('1 alert loaded'), findsOneWidget);
       expect(find.textContaining('个提醒正在监听'), findsNothing);
       expect(find.textContaining('ACTIVE'), findsNothing);
     });

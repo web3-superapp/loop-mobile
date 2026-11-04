@@ -5371,13 +5371,25 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get community_discoverEmptyReason => 'No communities under this sort.';
 
   @override
-  String community_discoverHeading(Object? items) {
-    return '$items communities';
+  String community_discoverHeading(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items communities',
+      one: '1 community',
+    );
+    return '$_temp0';
   }
 
   @override
-  String community_discoverHeading2(Object? items) {
-    return '$items communities loaded';
+  String community_discoverHeading2(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items communities loaded',
+      one: '1 community loaded',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5657,8 +5669,14 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get community_membersCommunityMembersSearchLabel2 => 'Search members';
 
   @override
-  String community_membersCommunityMissingHeading(Object? all) {
-    return '$all members';
+  String community_membersCommunityMissingHeading(num all) {
+    String _temp0 = intl.Intl.pluralLogic(
+      all,
+      locale: localeName,
+      other: '$all members',
+      one: '1 member',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5904,8 +5922,14 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'Discussion activity and voice rooms aren\'t available yet.';
 
   @override
-  String community_screenCommunityFolioHeading(Object? miningCount) {
-    return '$miningCount communities mining';
+  String community_screenCommunityFolioHeading(num miningCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      miningCount,
+      locale: localeName,
+      other: '$miningCount communities mining',
+      one: '1 community mining',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -13860,20 +13884,38 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String marketAlerts_screenAlertsScreenSubtitle(
-    Object? armed,
+    num armed,
     Object? focusLabel,
   ) {
-    return '$focusLabel · $armed alerts watching · Stops after one trigger';
+    String _temp0 = intl.Intl.pluralLogic(
+      armed,
+      locale: localeName,
+      other: '$armed alerts watching',
+      one: '1 alert watching',
+    );
+    return '$focusLabel · $_temp0 · Stops after one trigger';
   }
 
   @override
-  String marketAlerts_screenAlertsScreenSubtitle2(Object? items) {
-    return '$items alerts loaded · Stops after one trigger';
+  String marketAlerts_screenAlertsScreenSubtitle2(num items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items alerts loaded',
+      one: '1 alert loaded',
+    );
+    return '$_temp0 · Stops after one trigger';
   }
 
   @override
-  String marketAlerts_screenAlertsScreenSubtitle3(Object? armed) {
-    return '$armed alerts watching · Stops after one trigger';
+  String marketAlerts_screenAlertsScreenSubtitle3(num armed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      armed,
+      locale: localeName,
+      other: '$armed alerts watching',
+      one: '1 alert watching',
+    );
+    return '$_temp0 · Stops after one trigger';
   }
 
   @override
@@ -14109,10 +14151,16 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String marketWatchlist_editorWatchlistEditorScreenSubtitle(
-    Object? distinctAssetCount,
+    num distinctAssetCount,
     Object? state,
   ) {
-    return '$distinctAssetCount watchlist assets$state';
+    String _temp0 = intl.Intl.pluralLogic(
+      distinctAssetCount,
+      locale: localeName,
+      other: '$distinctAssetCount watchlist assets',
+      one: '1 watchlist asset',
+    );
+    return '$_temp0$state';
   }
 
   @override

@@ -6527,21 +6527,21 @@
   "@community_discoverEmptyReason": {
     "description": "lib/features/community/community_discover_screen.dart:275"
   },
-  "community_discoverHeading": "{items} communities",
+  "community_discoverHeading": "{items, plural, =1{1 community} other{{items} communities}}",
   "@community_discoverHeading": {
     "description": "lib/features/community/community_discover_screen.dart:173",
     "placeholders": {
       "items": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
-  "community_discoverHeading2": "{items} communities loaded",
+  "community_discoverHeading2": "{items, plural, =1{1 community loaded} other{{items} communities loaded}}",
   "@community_discoverHeading2": {
     "description": "lib/features/community/community_discover_screen.dart:174",
     "placeholders": {
       "items": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
@@ -6919,12 +6919,12 @@
   "@community_membersCommunityMembersSearchLabel2": {
     "description": "lib/features/community/community_members_screen.dart:179, lib/features/community/community_members_screen.dart:317"
   },
-  "community_membersCommunityMissingHeading": "{all} members",
+  "community_membersCommunityMissingHeading": "{all, plural, =1{1 member} other{{all} members}}",
   "@community_membersCommunityMissingHeading": {
     "description": "lib/features/community/community_members_screen.dart:610",
     "placeholders": {
       "all": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
@@ -7234,12 +7234,12 @@
   "@community_screenCommunityFolioCaption3": {
     "description": "lib/features/community/community_screen.dart:149"
   },
-  "community_screenCommunityFolioHeading": "{miningCount} communities mining",
+  "community_screenCommunityFolioHeading": "{miningCount, plural, =1{1 community mining} other{{miningCount} communities mining}}",
   "@community_screenCommunityFolioHeading": {
     "description": "lib/features/community/community_screen.dart:141",
     "placeholders": {
       "miningCount": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
@@ -17667,33 +17667,33 @@
   "@marketAlerts_screenAlertsPushNoticeTitle": {
     "description": "lib/features/market/alerts/alerts_screen.dart:264"
   },
-  "marketAlerts_screenAlertsScreenSubtitle": "{focusLabel} · {armed} alerts watching · Stops after one trigger",
+  "marketAlerts_screenAlertsScreenSubtitle": "{focusLabel} · {armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
   "@marketAlerts_screenAlertsScreenSubtitle": {
     "description": "lib/features/market/alerts/alerts_screen.dart:147",
     "placeholders": {
       "armed": {
-        "type": "Object?"
+        "type": "num"
       },
       "focusLabel": {
         "type": "Object?"
       }
     }
   },
-  "marketAlerts_screenAlertsScreenSubtitle2": "{items} alerts loaded · Stops after one trigger",
+  "marketAlerts_screenAlertsScreenSubtitle2": "{items, plural, =1{1 alert loaded} other{{items} alerts loaded}} · Stops after one trigger",
   "@marketAlerts_screenAlertsScreenSubtitle2": {
     "description": "lib/features/market/alerts/alerts_screen.dart:149",
     "placeholders": {
       "items": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
-  "marketAlerts_screenAlertsScreenSubtitle3": "{armed} alerts watching · Stops after one trigger",
+  "marketAlerts_screenAlertsScreenSubtitle3": "{armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
   "@marketAlerts_screenAlertsScreenSubtitle3": {
     "description": "lib/features/market/alerts/alerts_screen.dart:150",
     "placeholders": {
       "armed": {
-        "type": "Object?"
+        "type": "num"
       }
     }
   },
@@ -18011,12 +18011,12 @@
   "@marketWatchlist_editorWatchlistDiscardLabel": {
     "description": "lib/features/market/watchlist/watchlist_editor_screen.dart:359"
   },
-  "marketWatchlist_editorWatchlistEditorScreenSubtitle": "{distinctAssetCount} watchlist assets{state}",
+  "marketWatchlist_editorWatchlistEditorScreenSubtitle": "{distinctAssetCount, plural, =1{1 watchlist asset} other{{distinctAssetCount} watchlist assets}}{state}",
   "@marketWatchlist_editorWatchlistEditorScreenSubtitle": {
     "description": "lib/features/market/watchlist/watchlist_editor_screen.dart:170",
     "placeholders": {
       "distinctAssetCount": {
-        "type": "Object?"
+        "type": "num"
       },
       "state": {
         "type": "Object?"

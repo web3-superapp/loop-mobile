@@ -909,7 +909,7 @@
     "zh": "这个排序下没有社区。"
   },
   "community_discoverHeading": {
-    "en": "{items} communities",
+    "en": "{items, plural, =1{1 community} other{{items} communities}}",
     "placeholders": {
       "items": {
         "example": "state.items.length",
@@ -920,7 +920,7 @@
     "zh": "{items} 个社区"
   },
   "community_discoverHeading2": {
-    "en": "{items} communities loaded",
+    "en": "{items, plural, =1{1 community loaded} other{{items} communities loaded}}",
     "placeholders": {
       "items": {
         "example": "state.items.length",
@@ -1452,7 +1452,7 @@
     "zh": "搜索成员"
   },
   "community_membersCommunityMissingHeading": {
-    "en": "{all} members",
+    "en": "{all, plural, =1{1 member} other{{all} members}}",
     "placeholders": {
       "all": {
         "example": "counts.all",
@@ -1897,7 +1897,7 @@
     "zh": "讨论热度与语音房活动还没有开放。"
   },
   "community_screenCommunityFolioHeading": {
-    "en": "{miningCount} communities mining",
+    "en": "{miningCount, plural, =1{1 community mining} other{{miningCount} communities mining}}",
     "placeholders": {
       "miningCount": {
         "example": "miningCount",

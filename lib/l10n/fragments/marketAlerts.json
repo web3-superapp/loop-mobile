@@ -178,7 +178,7 @@
     "zh": "推送尚不可用"
   },
   "marketAlerts_screenAlertsScreenSubtitle": {
-    "en": "{focusLabel} · {armed} alerts watching · Stops after one trigger",
+    "en": "{focusLabel} · {armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
     "placeholders": {
       "armed": {
         "example": "armed.length",
@@ -193,7 +193,7 @@
     "zh": "{focusLabel} · {armed} 个提醒正在监听 · 触发一次即停"
   },
   "marketAlerts_screenAlertsScreenSubtitle2": {
-    "en": "{items} alerts loaded · Stops after one trigger",
+    "en": "{items, plural, =1{1 alert loaded} other{{items} alerts loaded}} · Stops after one trigger",
     "placeholders": {
       "items": {
         "example": "state.items.length",
@@ -204,7 +204,7 @@
     "zh": "已载入 {items} 条提醒 · 触发一次即停"
   },
   "marketAlerts_screenAlertsScreenSubtitle3": {
-    "en": "{armed} alerts watching · Stops after one trigger",
+    "en": "{armed, plural, =1{1 alert watching} other{{armed} alerts watching}} · Stops after one trigger",
     "placeholders": {
       "armed": {
         "example": "armed.length",

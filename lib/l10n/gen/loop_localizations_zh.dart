@@ -4803,12 +4803,12 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get community_discoverEmptyReason => '这个排序下没有社区。';
 
   @override
-  String community_discoverHeading(Object? items) {
+  String community_discoverHeading(num items) {
     return '$items 个社区';
   }
 
   @override
-  String community_discoverHeading2(Object? items) {
+  String community_discoverHeading2(num items) {
     return '已载入 $items 个社区';
   }
 
@@ -5069,7 +5069,7 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get community_membersCommunityMembersSearchLabel2 => '搜索成员';
 
   @override
-  String community_membersCommunityMissingHeading(Object? all) {
+  String community_membersCommunityMissingHeading(num all) {
     return '$all 名成员';
   }
 
@@ -5296,7 +5296,7 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get community_screenCommunityFolioCaption3 => '讨论热度与语音房活动还没有开放。';
 
   @override
-  String community_screenCommunityFolioHeading(Object? miningCount) {
+  String community_screenCommunityFolioHeading(num miningCount) {
     return '$miningCount 个社区在挖矿';
   }
 
@@ -12654,19 +12654,19 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String marketAlerts_screenAlertsScreenSubtitle(
-    Object? armed,
+    num armed,
     Object? focusLabel,
   ) {
     return '$focusLabel · $armed 个提醒正在监听 · 触发一次即停';
   }
 
   @override
-  String marketAlerts_screenAlertsScreenSubtitle2(Object? items) {
+  String marketAlerts_screenAlertsScreenSubtitle2(num items) {
     return '已载入 $items 条提醒 · 触发一次即停';
   }
 
   @override
-  String marketAlerts_screenAlertsScreenSubtitle3(Object? armed) {
+  String marketAlerts_screenAlertsScreenSubtitle3(num armed) {
     return '$armed 个提醒正在监听 · 触发一次即停';
   }
 
@@ -12888,7 +12888,7 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String marketWatchlist_editorWatchlistEditorScreenSubtitle(
-    Object? distinctAssetCount,
+    num distinctAssetCount,
     Object? state,
   ) {
     return '$distinctAssetCount 个自选资产$state';
