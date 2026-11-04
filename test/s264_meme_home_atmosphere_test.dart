@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_list.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
+import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
@@ -202,25 +203,36 @@ void main() {
     expect(find.byType(Launch2Board), findsOneWidget);
     expect(_key('launch2-board-live'), findsOneWidget);
     expect(_key('launch2-tile-${_id(3)}'), findsNothing);
-    // Rows: 80 high (decision 0229), the chrome medal, no letter tile.
-    expect(tester.getSize(_key('launch2-row-${_id(1)}')).height, 80);
+    // Rows: S353b · decision 0279 (docs/58 §5.4) — 71 with the 1 px line
+    // the board draws, the chrome medal, no letter tile.
+    expect(tester.getSize(_key('launch2-row-${_id(1)}')).height, 70);
     expect(_key('launch2-avatar-chrome-${_id(1)}'), findsOneWidget);
     expect(_key('launch2-avatar-chrome-${_id(2)}'), findsOneWidget);
     expect(find.text('天才'), findsOneWidget);
     expect(find.text('TC'), findsOneWidget);
-    // The drip hangs at the end of a bar past 0, at 25 % of its width (88
-    // at most since decision 0229; it gives way first on a narrow row).
+    // S353b · decision 0279 (docs/58 §5.4): the white 80 % bar on its 4
+    // high track, 142 at most (it gives way first on a narrow row), filled
+    // to the share sold; no drip any more.
+    double fill(String id) => tester
+        .widget<FractionallySizedBox>(
+          find.descendant(
+            of: _key('launch2-bar-$id'),
+            matching: find.byType(FractionallySizedBox),
+          ),
+        )
+        .widthFactor!;
     final bar = tester.getRect(_key('launch2-bar-${_id(1)}'));
-    final drip = tester.getRect(_key('launch2-drip-${_id(1)}'));
-    expect(bar.width, lessThanOrEqualTo(88));
-    expect(drip.left, moreOrLessEquals(bar.left + bar.width * 0.25 - 3));
+    expect(bar.width, lessThanOrEqualTo(Launch2ProgressBar.figmaWidth));
+    expect(bar.height, Launch2ProgressBar.height);
+    expect(fill(_id(1)), moreOrLessEquals(0.25));
+    expect(_key('launch2-drip-${_id(1)}'), findsNothing);
     expect(_key('launch2-bar-${_id(2)}'), findsOneWidget);
-    expect(_key('launch2-drip-${_id(2)}'), findsNothing);
+    expect(fill(_id(2)), 0);
     await tester.tap(_key('launch2-desk-tab-graduated'));
     await tester.pumpAndSettle();
     expect(_key('launch2-board-graduated'), findsOneWidget);
     expect(_key('launch2-board-live'), findsNothing);
-    expect(_key('launch2-drip-${_id(3)}'), findsOneWidget);
+    expect(fill(_id(3)), 1);
     // 已毕业 is a light Purple word on Purple 18 %.
     final pill = tester.widget<Container>(
       find
@@ -278,7 +290,7 @@ void main() {
     ]);
     // The nearest preview is the main event: the home opens on 预告, its
     // record card first and the next preview on the 预告 board.
-    expect(_key('launch2-desk-tab-splat-upcoming'), findsOneWidget);
+    expect(_tabOn(tester, 'upcoming'), isTrue);
     expect(_key('launch2-upcoming-empty'), findsNothing);
     expect(_key('launch2-desk-record-${_id(2)}'), findsOneWidget);
     expect(
@@ -315,14 +327,18 @@ void main() {
     expect(_key('launch2-avatar-chrome-b'), findsOneWidget);
   });
 
-  testWidgets('the chosen tab carries the Yellow splat', (tester) async {
+  testWidgets('the chosen tab is white over the Yellow line (S353b)', (
+    tester,
+  ) async {
     await _pump(tester, <Map<String, Object?>>[
       _row(1, 'public', soldBps: 2500),
       _row(2, 'graduated', soldBps: 10000),
     ]);
-    // No main event: the first tab holding projects is on.
-    expect(_key('launch2-desk-tab-splat-live'), findsOneWidget);
-    expect(_key('launch2-desk-tab-splat-graduated'), findsNothing);
+    // No main event: the first tab holding projects is on. S353b · decision
+    // 0279: no splat on it any more.
+    expect(_tabOn(tester, 'live'), isTrue);
+    expect(_tabOn(tester, 'graduated'), isFalse);
+    expect(_key('launch2-desk-tab-splat-live'), findsNothing);
     expect(
       find.descendant(
         of: _key('launch2-desk-tab-live'),
@@ -330,10 +346,26 @@ void main() {
       ),
       findsOneWidget,
     );
+    // The cell and the strip's 2 + 2 make the 44 finger floor.
     expect(
-      tester.getSize(_key('launch2-desk-tab-live')).height,
+      tester.getSize(find.byType(LoopTabStrip)).height,
       greaterThanOrEqualTo(44),
     );
     await _drain(tester);
   });
 }
+
+/// Whether the home's tab [id] reads as chosen.
+bool _tabOn(WidgetTester tester, String id) =>
+    tester
+        .widget<Semantics>(
+          find
+              .descendant(
+                of: _key('launch2-desk-tab-$id'),
+                matching: find.byType(Semantics),
+              )
+              .first,
+        )
+        .properties
+        .selected ??
+    false;

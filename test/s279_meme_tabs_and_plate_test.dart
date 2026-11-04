@@ -271,7 +271,8 @@ void main() {
       await tester.pumpAndSettle();
       shown.value = true;
       await tester.pumpAndSettle();
-      expect(_key('launch2-desk-tab-splat-upcoming'), findsOneWidget);
+      // S353b · decision 0279: the chosen tab reads selected (no splat).
+      expect(_tabOn(tester, 'upcoming'), isTrue);
       expect(_key('launch2-tile-${_id(2)}'), findsOneWidget);
       await _drain(tester);
     });
@@ -316,7 +317,7 @@ void main() {
         _Gateway(<Map<String, Object?>>[_row(3, 'graduated', soldBps: 10000)]),
       );
       // The only row is graduated: the home opens on 已毕业.
-      expect(_key('launch2-desk-tab-splat-graduated'), findsOneWidget);
+      expect(_tabOn(tester, 'graduated'), isTrue);
       await tester.tap(_key('launch2-desk-tab-live'));
       await tester.pumpAndSettle();
       expect(_key('launch2-live-empty'), findsOneWidget);
@@ -468,3 +469,19 @@ void main() {
     });
   });
 }
+
+/// Whether the home's tab [id] reads as chosen (S353b: a [LoopTabStrip]
+/// cell).
+bool _tabOn(WidgetTester tester, String id) =>
+    tester
+        .widget<Semantics>(
+          find
+              .descendant(
+                of: _key('launch2-desk-tab-$id'),
+                matching: find.byType(Semantics),
+              )
+              .first,
+        )
+        .properties
+        .selected ??
+    false;

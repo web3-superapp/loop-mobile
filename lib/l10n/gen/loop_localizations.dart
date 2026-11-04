@@ -28606,6 +28606,24 @@ abstract class LoopLocalizations {
     Object? referralInviteeStatusLabel,
   );
 
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Active members'**
+  String get mining_referralStatsActive;
+
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Levels 2–5'**
+  String get mining_referralStatsDeep;
+
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Direct invites'**
+  String get mining_referralStatsDirect;
+
   /// lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957
   ///
   /// In en, this message translates to:
@@ -29285,6 +29303,12 @@ abstract class LoopLocalizations {
   /// **'Daily output'**
   String get mining_secondaryScreensTrailingCaption3;
 
+  /// lib/features/mining/mining_widgets.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Current rank'**
+  String get mining_widgetsCurrentRank;
+
   /// lib/features/mining/mining_widgets.dart:1137
   ///
   /// In en, this message translates to:
@@ -29407,6 +29431,12 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Mining rewards, open the mining rewards page'**
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel;
+
+  /// lib/features/mining/mining_widgets.dart
+  ///
+  /// In en, this message translates to:
+  /// **'#{position}'**
+  String mining_widgetsRankPlace(Object? position);
 
   /// lib/features/mining/mining_widgets.dart:455
   ///

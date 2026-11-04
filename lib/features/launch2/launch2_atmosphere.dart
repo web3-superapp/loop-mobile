@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -16,6 +17,7 @@ import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 
 // ---------------------------------------------------------------------------
 // MEME 主页 · 氛围层 (S264, decision 0220 — the S262 design A, plus the
@@ -64,9 +66,37 @@ class Launch2AtmosphereBackdrop extends StatelessWidget {
   /// The design's reference width; the fog sizes scale with the screen.
   static const double referenceWidth = LoopWallBackdrop.referenceWidth;
 
+  /// The Figma's ambient glow (2001:22): a 420 round Purple light at
+  /// (−175, 70) of the 393 frame, behind the banner's left half.
+  static const String glowAsset = 'assets/figma/ambient-glow.svg';
+
   @override
-  Widget build(BuildContext context) =>
-      const LoopWallBackdrop(keyPrefix: 'launch2-atmo');
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final k = constraints.maxWidth / 393;
+      return Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          const LoopWallBackdrop(keyPrefix: 'launch2-atmo'),
+          // S353b · decision 0279 (docs/58 §9.4): the Figma's Purple
+          // #a62eff glow over the wall.
+          Positioned(
+            left: -175 * k,
+            top: 70 * k,
+            width: 420 * k,
+            height: 420 * k,
+            child: IgnorePointer(
+              child: SvgPicture.asset(
+                glowAsset,
+                key: const ValueKey<String>('launch2-atmo-glow'),
+                excludeFromSemantics: true,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 /// The MEME title with the wall crown peeking out behind it (60 %, −8°).
@@ -139,14 +169,17 @@ class Launch2TradeTicker extends ConsumerStatefulWidget {
   /// 「全部」: the full list of recent trades.
   final VoidCallback onOpenAll;
 
-  /// The band's height inside its 44 dp tap row.
-  static const double bandHeight = 36;
+  /// The band's height inside its 44 dp tap row (docs/58 §5.5: 35).
+  static const double bandHeight = 35;
 
   /// How far the line moves per second.
   static const double speed = 24;
 
-  /// The band's ground: the card surface, no accent (decision 0256).
-  static const Color ground = LoopColors.card;
+  /// The band's ground: white 3 % glass (docs/58 §5.5, decision 0279).
+  static const Color ground = LoopColors.surfaceGlass;
+
+  /// What the right end fades into before the chevron (Figma `#0e0f10`).
+  static const Color fade = LoopColors.searchBg;
 
   @override
   ConsumerState<Launch2TradeTicker> createState() => _Launch2TradeTickerState();
@@ -244,14 +277,15 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                 key: const ValueKey<String>('launch2-ticker-band'),
                 decoration: BoxDecoration(
                   color: Launch2TradeTicker.ground,
-                  borderRadius: LoopRadius.control,
-                  border: Border.all(color: LoopColors.line),
+                  borderRadius: LoopRadius.chip,
+                  border: Border.all(color: LoopColors.white3),
+                  boxShadow: LoopDepth.ticker,
                 ),
                 child: ClipRRect(
-                  borderRadius: LoopRadius.control,
+                  borderRadius: LoopRadius.chip,
                   child: Row(
                     children: <Widget>[
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       const _LiveLabel(),
                       const SizedBox(width: 2),
                       Expanded(
@@ -308,16 +342,16 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                         ),
                         margin: const EdgeInsets.only(right: 1),
                         padding: const EdgeInsets.fromLTRB(22, 0, 12, 0),
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.horizontal(
-                            right: Radius.circular(11),
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.horizontal(
+                            right: Radius.circular(LoopRadius.chipValue),
                           ),
                           gradient: LinearGradient(
                             colors: <Color>[
-                              Color(0x00121318),
-                              Launch2TradeTicker.ground,
+                              Launch2TradeTicker.fade.withValues(alpha: 0),
+                              Launch2TradeTicker.fade,
                             ],
-                            stops: <double>[0, 0.45],
+                            stops: const <double>[0, 0.55],
                           ),
                         ),
                         alignment: Alignment.centerRight,
@@ -387,46 +421,32 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
   );
 }
 
-/// 「● 实时」 fixed at the band's left end: a Purple dot and a light Purple
-/// word on the soft Purple capsule — never the rise green the 「买入」 tag
-/// wears (decision 0256).
+/// 「● 实时」 fixed at the band's left end (docs/58 §5.5): a 5 Purple dot
+/// and, 6 after it, the Purple word at 12 / 600 — no capsule; never the rise
+/// green the 「买入」 tag wears (decision 0256).
 class _LiveLabel extends StatelessWidget {
   const _LiveLabel();
 
   /// The dot and the word.
-  static const Color ink = LoopColors.purpleInk;
+  static const Color ink = LoopColors.purple;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => Row(
     key: const ValueKey<String>('launch2-ticker-live'),
-    height: 22,
-    padding: const EdgeInsets.symmetric(horizontal: 8),
-    decoration: const BoxDecoration(
-      color: LoopColors.purpleTint,
-      borderRadius: LoopRadius.pill,
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          key: const ValueKey<String>('launch2-ticker-live-dot'),
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: LoopColors.purple,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          context.l10n.launch2_launch2AtmosphereText,
-          style: LoopTypography.withWeight(
-            LoopType.captionSm,
-            FontWeight.w600,
-          ).copyWith(color: ink),
-        ),
-      ],
-    ),
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Container(
+        key: const ValueKey<String>('launch2-ticker-live-dot'),
+        width: 5,
+        height: 5,
+        decoration: const BoxDecoration(color: ink, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 6),
+      Text(
+        context.l10n.launch2_launch2AtmosphereText,
+        style: LoopType.tickerFigure.copyWith(color: ink),
+      ),
+    ],
   );
 }
 
@@ -440,10 +460,8 @@ class _TickerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final words = LoopTypography.withWeight(
-      LoopType.bodySm,
-      FontWeight.w500,
-    ).copyWith(color: LoopColors.text2);
+    // docs/58 §5.5: the name 12 / 500 textSecondary.
+    final words = LoopType.meta.copyWith(color: LoopColors.text2);
     final verb = switch (item.kind) {
       Launch2ActivityKind.curveBuy => (
         context.l10n.common_buy,
@@ -464,14 +482,16 @@ class _TickerItem extends StatelessWidget {
             Text(launch2ActivityWho(item).trim(), style: words),
             Container(
               key: ValueKey<String>('launch2-ticker-verb-${item.kind.name}'),
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              height: 17,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: verb.$3,
-                borderRadius: LoopRadius.badge,
+                borderRadius: LoopRadius.stage,
               ),
               child: Text(
                 verb.$1,
-                style: LoopType.kicker.copyWith(color: verb.$2, height: 1),
+                style: LoopType.buyTag.copyWith(color: verb.$2),
               ),
             ),
             Text(
@@ -681,11 +701,11 @@ typedef Launch2DeskTabSpec = ({
 });
 
 /// The MEME home's tab bar (S279 · decision 0237): 「内盘 / 预告 / 已毕业」
-/// across the page, each tab a third of it. The chosen tab is solid Purple
-/// with white words and the Yellow splat on its corner; the others stand on
-/// the block ground so the bar reads as one control. S326 · decision 0256
-/// (UX-004 ⑤): the 「01 / 02 / 03」 index is gone and the count is a small
-/// figure set apart from the word.
+/// across the page, each tab a third of it. S353b · decision 0279 (docs/58
+/// §5.2): the Figma's first-level [LoopTabStrip] — the chosen word white
+/// 16 / 600 over a 2 px Yellow line the width of its cell, the others
+/// textSecondary, a count chip after each word, a 1 px white 10 % rule across
+/// the page. The Purple ground and the Yellow splat are gone.
 class Launch2DeskTabs extends StatelessWidget {
   const Launch2DeskTabs({
     required this.tabs,
@@ -698,124 +718,102 @@ class Launch2DeskTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      12,
-      LoopSpacing.page,
-      0,
-    ),
+    // Figma: the ticker → 16 → the strip.
+    padding: const EdgeInsets.only(top: LoopSpacing.bannerGap - 4),
     child: Semantics(
       container: true,
       explicitChildNodes: true,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: LoopRadius.pill,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: <Widget>[
-              for (final (index, tab) in tabs.indexed)
-                Expanded(
-                  child: _DeskTab(tab: tab, onTap: () => onSelected(index)),
-                ),
-            ],
-          ),
-        ),
+      child: LoopTabStrip(
+        labels: <String>[for (final tab in tabs) tab.title],
+        counts: <int?>[for (final tab in tabs) tab.count],
+        keys: <Key>[
+          for (final tab in tabs)
+            ValueKey<String>('launch2-desk-tab-${tab.id}'),
+        ],
+        selectedIndex: math.max(0, tabs.indexWhere((tab) => tab.selected)),
+        onSelected: onSelected,
+        scaleDownLabels: true,
       ),
     ),
   );
 }
 
-class _DeskTab extends StatelessWidget {
-  const _DeskTab({required this.tab, required this.onTap});
-
-  final Launch2DeskTabSpec tab;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final on = tab.selected;
-    final ink = on ? LoopColors.onPurple : LoopColors.text2;
-    return Semantics(
-      button: true,
-      selected: on,
-      label: '${tab.title} ${tab.count}',
-      excludeSemantics: true,
-      child: LoopPressable(
-        key: ValueKey<String>('launch2-desk-tab-${tab.id}'),
-        onTap: onTap,
-        scale: false,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            // The ground and the words change in the same frame: a fading
-            // Purple under words already turned grey would read as nothing.
-            Container(
-              height: LoopTouch.minimum,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: on ? LoopColors.purple : const Color(0x00000000),
-                borderRadius: LoopRadius.pill,
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: <Widget>[
-                    Text(
-                      tab.title,
-                      maxLines: 1,
-                      style: LoopType.button.copyWith(color: ink),
-                    ),
-                    const SizedBox(width: 4),
-                    // S326 · decision 0256 (UX-004 ⑤): the count is a
-                    // smaller, lighter figure after the word, not a second
-                    // word of the same weight.
-                    Text(
-                      '${tab.count}',
-                      key: ValueKey<String>('launch2-desk-tab-count-${tab.id}'),
-                      maxLines: 1,
-                      style:
-                          LoopTypography.withWeight(
-                            LoopType.figureXs,
-                            FontWeight.w500,
-                          ).copyWith(
-                            fontSize: 12,
-                            color: on
-                                ? LoopColors.onPurple.withValues(alpha: 0.72)
-                                : LoopColors.muted,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (on)
-              Positioned(
-                left: -6,
-                top: -8,
-                width: 24,
-                child: LoopSplatSticker(
-                  key: ValueKey<String>('launch2-desk-tab-splat-${tab.id}'),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---- the board -------------------------------------------------------------------
 
-/// One card-ground board, 16 radius, its rows split by 1 px lines.
-class Launch2Board extends LoopAtmoBoard {
-  const Launch2Board({required super.children, super.key});
+/// The list under the home's tabs. S353b · decision 0279 (docs/58 §5.4,
+/// §9.4): no card ground any more — the rows stand on the page between its
+/// 20 margins, each closed by a 1 px white 5 % line across the content.
+class Launch2Board extends StatelessWidget {
+  const Launch2Board({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    // A row's ink splash paints on this.
+    child: Material(
+      type: MaterialType.transparency,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final child in children) ...<Widget>[
+            child,
+            const Divider(height: 1, thickness: 1, color: LoopColors.divider),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+/// A board row's progress (docs/58 §5.4): a 4 high track in
+/// [LoopColors.progressTrack], round-ended (the Figma's 2.5 corner on a 4
+/// high bar), filled white 80 %.
+class Launch2ProgressBar extends StatelessWidget {
+  const Launch2ProgressBar({
+    required this.fraction,
+    required this.identity,
+    super.key,
+    this.width = Launch2ProgressBar.figmaWidth,
+  });
+
+  final double fraction;
+  final String identity;
+  final double width;
+
+  /// The Figma's track width.
+  static const double figmaWidth = 142;
+
+  /// The track's height.
+  static const double height = 4;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: ValueKey<String>('launch2-bar-$identity'),
+    width: width,
+    height: height,
+    child: DecoratedBox(
+      decoration: const BoxDecoration(
+        color: LoopColors.progressTrack,
+        borderRadius: LoopRadius.round,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: fraction.clamp(0.0, 1.0),
+          heightFactor: 1,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              color: LoopColors.progressFill,
+              borderRadius: LoopRadius.round,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// A project's 44 round face: its own logo when it has one, else the chrome
@@ -865,16 +863,16 @@ class Launch2DripBar extends StatelessWidget {
   );
 }
 
-/// The stage capsule at a board row's right: Yellow on Yellow-soft while it
-/// takes orders, Purple-soft with a light Purple word once graduated, grey
-/// while it waits.
+/// The stage capsule at a board row's right (docs/58 §5.4): 19 high, a 4
+/// corner, the word 11 / 400 — Yellow on Yellow-soft while it takes orders,
+/// the Purple tag once graduated, grey while it waits.
 class Launch2BoardStage extends StatelessWidget {
   const Launch2BoardStage({required this.stage, super.key});
 
   final Launch2Stage stage;
 
   /// The capsule's height.
-  static const double height = 20;
+  static const double height = 19;
 
   @override
   Widget build(BuildContext context) {
@@ -882,36 +880,29 @@ class Launch2BoardStage extends StatelessWidget {
       Launch2Stage.priority ||
       Launch2Stage.public ||
       Launch2Stage.nftSale => (LoopColors.yellowSoft, LoopColors.yellow),
-      Launch2Stage.graduated => (
-        LoopColors.purpleCapsule,
-        LoopColors.purpleInk,
-      ),
-      _ => (LoopColors.card2, LoopColors.text2),
+      Launch2Stage.graduated => (LoopColors.tagPurpleBg, LoopColors.tagPurple),
+      _ => (LoopColors.white8, LoopColors.text2),
     };
-    // S326 · decision 0256 (UX-004 ⑥): a 12 word on a 20 high
-    // capsule, its right edge on the price's right edge above it.
     return Container(
       key: ValueKey<String>('launch2-stage-pill-${stage.wireName}'),
       height: Launch2BoardStage.height,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(color: ground, borderRadius: LoopRadius.badge),
+      decoration: BoxDecoration(color: ground, borderRadius: LoopRadius.stage),
       // Sized by its word, never by the column it stands in.
       child: Center(
         widthFactor: 1,
         child: Text(
           launch2StageLabel(stage),
           maxLines: 1,
-          style: LoopTypography.withWeight(
-            LoopType.captionSm,
-            FontWeight.w600,
-          ).copyWith(color: ink, fontSize: 12, height: 1.2),
+          style: LoopType.stageTag.copyWith(color: ink),
         ),
       ),
     );
   }
 }
 
-/// One board row (v3, decision 0229: 80 high, one primary line each side).
+/// One board row (v3, decision 0229; S353b · decision 0279, docs/58 §5.4:
+/// 71 high plus its 1 px line, the face 44).
 ///
 /// Left: the face, the name (body1 17) with its ticker (caption 13), and
 /// under it the bar with the share sold (or the stage's own caption line).
@@ -931,7 +922,8 @@ class Launch2BoardRow extends ConsumerWidget {
   final VoidCallback? onTap;
   final VoidCallback? onElapsed;
 
-  static const double height = LoopSpacing.rowMinWithSub;
+  /// The Figma's 71, less the 1 px line the board draws under it.
+  static const double height = 70;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -939,12 +931,8 @@ class Launch2BoardRow extends ConsumerWidget {
     final id = row.instanceId;
     final next = row.nextChangeAt;
     final words = LoopType.caption.copyWith(color: LoopColors.text2);
-    // S350b · decision 0275: the share sold is the bar's own reading — grey
-    // and 600, a step under the name and the price.
-    final pct = LoopTypography.withWeight(
-      LoopType.figureSm,
-      FontWeight.w600,
-    ).copyWith(color: LoopColors.text2);
+    // docs/58 §5.4: the share sold is the bar's reading at 10 / 300.
+    final pct = LoopType.progress;
     Widget countdown(String prefix) => next == null
         ? Text(
             context.l10n.launch2_launch2AtmosphereBuild(prefix),
@@ -956,7 +944,7 @@ class Launch2BoardRow extends ConsumerWidget {
             target: next,
             prefix: prefix,
             onElapsed: onElapsed,
-            style: LoopType.figureSm,
+            style: LoopType.caption.copyWith(color: LoopColors.text2),
           );
     final trading =
         row.stage == Launch2Stage.priority || row.stage == Launch2Stage.public;
@@ -967,10 +955,10 @@ class Launch2BoardRow extends ConsumerWidget {
         // The bar gives way first on a narrow screen; the share stays.
         Flexible(
           child: LayoutBuilder(
-            builder: (context, box) => Launch2DripBar(
+            builder: (context, box) => Launch2ProgressBar(
               fraction: launch2Fraction(row.curve.soldBps),
               identity: id,
-              width: math.min(88, box.maxWidth),
+              width: math.min(Launch2ProgressBar.figmaWidth, box.maxWidth),
             ),
           ),
         ),
@@ -1049,8 +1037,7 @@ class Launch2BoardRow extends ConsumerWidget {
         scale: false,
         child: SizedBox(
           height: height,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
+          child: KeyedSubtree(
             child: Row(
               children: <Widget>[
                 Launch2ProjectAvatar(identity: id, logoUrl: row.logoUrl),
@@ -1066,11 +1053,11 @@ class Launch2BoardRow extends ConsumerWidget {
                         name: row.name,
                         ticker: showTicker ? row.ticker : null,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 5),
                       Row(
                         children: <Widget>[
                           for (var i = 0; i < meta.length; i++) ...<Widget>[
-                            if (i > 0) const SizedBox(width: 8),
+                            if (i > 0) const SizedBox(width: 9),
                             meta[i],
                           ],
                         ],

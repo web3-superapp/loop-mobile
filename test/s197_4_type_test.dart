@@ -95,16 +95,13 @@ void main() {
     // S315: 总算力, and the place without an English 「RANK」 prefix.
     // S350b · decision 0275: the label is a 600 caption, a cell's label a
     // caption under its figure, and the figure the plate's Anton 40.
-    _expectStep(
-      tester,
-      'My total power',
-      LoopType.caption,
-      weight: FontWeight.w600,
-    );
+    // S353b · decision 0279 (docs/58 §5.14): the power card's label 13 /
+    // 500 and its value Inter 30 / 700.
+    _expectStep(tester, 'My total power', LoopType.eyebrow);
     _expectStep(tester, '持仓', LoopType.caption);
     _expectStep(tester, '10', LoopType.figure);
-    _expectStep(tester, '1,234', LoopType.plateFigure);
-    _expectStep(tester, ' MP', LoopType.figureMd);
+    _expectStep(tester, '1,234', LoopType.heroFigure);
+    _expectStep(tester, ' MP', LoopType.figureSm);
   });
 
   testWidgets('M37 · a mining metric row: kicker label, figureLg value', (

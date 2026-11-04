@@ -190,9 +190,12 @@ void main() {
   });
 
   group('前三名 · 领奖台', () {
-    testWidgets('three columns on the wall: the winner in the middle at 72 in '
-        'a chrome ring, 01 / 02 / 03 in Anton, chrome medals for faces with '
-        'no logo, the winner\'s figure Yellow', (tester) async {
+    testWidgets('three columns (S353b · decision 0279, docs/58 §5.15): the '
+        'winner in the middle at 62 in a Yellow ring under the line crown, '
+        'second and third 54, 01 / 02 / 03 at 17 / 700 (01 Yellow), chrome '
+        'medals for faces with no logo, the Purple glow behind', (
+      tester,
+    ) async {
       await pumpS7Page(
         tester,
         IntelRankBoard(onNavigate: (_) {}, onBack: () {}),
@@ -206,46 +209,36 @@ void main() {
       final third = tester.getRect(_key('intel-rank-community-community-3'));
       expect(second.right, lessThan(first.left));
       expect(first.right, lessThan(third.left));
-      expect(tester.getSize(_key('intel-rank-face-1')), const Size(72, 72));
-      expect(tester.getSize(_key('intel-rank-face-2')), const Size(56, 56));
-      expect(_key('intel-rank-ring-1'), findsOneWidget);
+      expect(tester.getSize(_key('intel-rank-face-1')), const Size(62, 62));
+      expect(tester.getSize(_key('intel-rank-face-2')), const Size(54, 54));
+      final ring =
+          tester.widget<Container>(_key('intel-rank-ring-1')).decoration!
+              as BoxDecoration;
+      expect((ring.border! as Border).top.color, LoopColors.yellow);
       for (final place in <int>[1, 2, 3]) {
+        final index = tester.widget<Text>(_key('intel-rank-index-$place'));
+        expect(index.data, '0$place');
+        expect(index.style?.fontSize, LoopType.emptyTitle.fontSize);
         expect(
-          find.descendant(
-            of: _key('intel-rank-index-$place'),
-            matching: find.text('0$place'),
-          ),
-          findsOneWidget,
+          index.style?.color,
+          place == 1 ? LoopColors.yellow : LoopColors.text2,
         );
-        final index = tester.widget<Text>(
-          find.descendant(
-            of: _key('intel-rank-index-$place'),
-            matching: find.text('0$place'),
-          ),
-        );
-        expect(index.style?.fontFamily, LoopType.sectionIndex.fontFamily);
-        expect(index.style?.color, LoopColors.yellow);
         expect(_key('community-logo-chrome-community-$place'), findsOneWidget);
         expect(_key('intel-rank-medal-$place'), findsNothing);
       }
       expect(
-        tester.widget<Text>(_key('intel-rank-figure-1')).style?.color,
-        LoopColors.yellow,
-      );
-      expect(
-        tester.widget<Text>(_key('intel-rank-figure-2')).style?.color,
-        LoopColors.chalk,
+        tester.widget<Text>(_key('intel-rank-figure-1')).style?.fontSize,
+        LoopType.figureXs.fontSize,
       );
       expect(
         find.text('Weight 1.5').evaluate().length,
         greaterThanOrEqualTo(3),
       );
-      // The crown is wider than half the winner's face and sits on its top.
+      // The line crown stands over the winner's face.
       final crown = tester.getRect(_key('intel-rank-crown-1'));
       final face = tester.getRect(_key('intel-rank-face-1'));
-      expect(crown.width, moreOrLessEquals(72 * 0.7));
-      expect(crown.top, lessThan(face.top));
-      expect(crown.bottom, greaterThan(face.top));
+      expect(crown.width, 27);
+      expect(crown.bottom, lessThanOrEqualTo(face.top));
     });
 
     testWidgets('one place: the other two are 「虚位以待」 under a grey crown', (
@@ -328,8 +321,9 @@ void main() {
     });
   });
 
-  test('the podium face size is 72 for the winner and 56 beside it', () {
-    expect(intelPodiumFaceSize(1), 72);
-    expect(intelPodiumFaceSize(2), 56);
+  test('the podium face size is 62 for the winner and 54 beside it', () {
+    // S353b · decision 0279 (docs/58 §5.15).
+    expect(intelPodiumFaceSize(1), 62);
+    expect(intelPodiumFaceSize(2), 54);
   });
 }

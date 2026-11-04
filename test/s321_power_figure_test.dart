@@ -148,9 +148,16 @@ void main() {
     final size = figure(1).style!.fontSize;
     expect(figure(2).style!.fontSize, size);
     expect(figure(3).style!.fontSize, size);
-    expect(figure(1).style!.color, LoopColors.yellow);
-    expect(figure(2).style!.color, LoopColors.chalk);
-    expect(figure(3).style!.color, LoopColors.chalk);
+    // S353b · decision 0279 (docs/58 §5.15): the three figures share the
+    // grey; #1 alone is Yellow in its 「01」.
+    expect(figure(1).style!.color, LoopColors.text2);
+    expect(figure(2).style!.color, LoopColors.text2);
+    expect(figure(3).style!.color, LoopColors.text2);
+    Text index(int place) =>
+        tester.widget<Text>(_key('intel-rank-index-$place'));
+    expect(index(1).style!.color, LoopColors.yellow);
+    expect(index(2).style!.color, LoopColors.text2);
+    expect(index(3).style!.color, LoopColors.text2);
     // The three render at one scale: none is shrunk on its own.
     final heights = <double>[
       for (final place in <int>[1, 2, 3])
@@ -167,7 +174,8 @@ void main() {
   });
 
   test('the podium style shrinks all three together', () {
-    final base = LoopType.figureLg;
+    // S353b · decision 0279 (docs/58 §5.15): the podium figure is 13 / 600.
+    final base = LoopType.figureXs;
     final wide = intelPodiumFigureStyle(
       figures: const <String>['5,000,001', '2,500,000', '123,456,789,012,345'],
       slotWidth: 80,

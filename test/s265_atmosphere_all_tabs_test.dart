@@ -5,6 +5,7 @@
 // App lands on MEME and every other tab's back returns there.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
@@ -12,6 +13,7 @@ import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -248,8 +250,8 @@ void main() {
       );
     });
 
-    testWidgets('情报: the wall stays while the board scrolls; 我的名次 is a '
-        'chrome plate with a Yellow place; the first three wear crowns', (
+    testWidgets('情报: the wall stays while the board scrolls; 我的名次 is '
+        'the power card (S353b); the winner wears the line crown', (
       tester,
     ) async {
       await pumpS7Page(
@@ -263,27 +265,23 @@ void main() {
       expect(_key('intel-rank-atmo-backdrop'), findsWidgets);
       final wall = tester.getRect(_key('intel-rank-atmo-backdrop').first);
 
-      // 我的名次: the chrome edge around the dark card face.
+      // 我的名次: S353b · decision 0279 (docs/58 §5.14) — the power card,
+      // the place at 30 / 700.
       final plate = find.descendant(
         of: _key('intel-rank-me'),
-        matching: find.byType(LoopChromePlate),
+        matching: find.byType(IntelPowerCard),
       );
       expect(plate, findsOneWidget);
-      final edge = tester.widget<DecoratedBox>(
-        find.descendant(of: plate, matching: _key('loop-chrome-plate-edge')),
-      );
-      final gradient =
-          (edge.decoration as BoxDecoration).gradient! as LinearGradient;
-      // S279 · decision 0237: the bevel opens on the mid steel.
-      expect(gradient.colors, LoopChromePlate.bevelColors);
-      expect(gradient.colors, contains(LoopColors.chrome3));
-      final face = tester.widget<DecoratedBox>(
-        find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),
-      );
-      expect(
-        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
-        LoopChromePlate.faceColors,
-      );
+      final card =
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(of: plate, matching: find.byType(Container))
+                        .first,
+                  )
+                  .decoration!
+              as BoxDecoration;
+      expect(card.gradient, LoopColors.powerCardGradient);
       final place = tester.widget<Text>(
         find.descendant(of: plate, matching: find.byType(Text)).at(1),
       );
@@ -292,42 +290,18 @@ void main() {
         if (span is TextSpan && span.text == '12') spans.add(span);
         return true;
       });
-      // Decision 0224: the place is the plate's Anton 40 Yellow figure.
-      expect(spans.single.style?.color, LoopColors.yellow);
-      expect(spans.single.style?.fontSize, 40);
-      expect(spans.single.style?.fontFamily, LoopType.plateFigure.fontFamily);
+      expect(spans.single.style?.color, MiningRankEntry.placeColor(12));
+      expect(spans.single.style?.fontSize, LoopType.heroFigure.fontSize);
 
-      // The podium: a Yellow crown on the first, chrome-grey on 2 and 3.
-      // Decision 0224: the winner's drip crown is the Yellow picture itself.
-      expect(tester.widget(_key('intel-rank-crown-1')), isA<Image>());
-      for (final place in <int>[2, 3]) {
-        final crown = tester.widget<LoopRankCrown>(
-          _key('intel-rank-crown-$place'),
-        );
-        expect(crown.place, place);
-      }
-      for (final place in <int>[1, 2, 3]) {
-        final face = tester.getRect(_key('intel-rank-face-$place'));
-        final at = tester.getRect(_key('intel-rank-crown-$place'));
-        // Pressed onto the face's top edge, centred over it.
-        expect(at.overlaps(face), isTrue, reason: '$place');
-        expect(at.center.dx, moreOrLessEquals(face.center.dx, epsilon: 1));
-        expect(at.top, lessThan(face.top), reason: '$place');
-      }
-      expect(
-        find.descendant(
-          of: _key('intel-rank-crown-1'),
-          matching: find.byType(ColorFiltered),
-        ),
-        findsNothing,
-      );
-      expect(
-        find.descendant(
-          of: _key('intel-rank-crown-2'),
-          matching: find.byType(ColorFiltered),
-        ),
-        findsOneWidget,
-      );
+      // The podium (docs/58 §5.15): the Yellow line crown over the winner
+      // alone, centred over its face and above it.
+      expect(tester.widget(_key('intel-rank-crown-1')), isA<SvgPicture>());
+      expect(_key('intel-rank-crown-2'), findsNothing);
+      expect(_key('intel-rank-crown-3'), findsNothing);
+      final face = tester.getRect(_key('intel-rank-face-1'));
+      final at = tester.getRect(_key('intel-rank-crown-1'));
+      expect(at.center.dx, moreOrLessEquals(face.center.dx, epsilon: 1));
+      expect(at.bottom, lessThanOrEqualTo(face.top));
 
       // The wall does not scroll with the board.
       await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));

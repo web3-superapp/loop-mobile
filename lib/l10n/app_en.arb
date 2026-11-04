@@ -23242,6 +23242,18 @@
       }
     }
   },
+  "mining_referralStatsActive": "Active members",
+  "@mining_referralStatsActive": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
+  "mining_referralStatsDeep": "Levels 2–5",
+  "@mining_referralStatsDeep": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
+  "mining_referralStatsDirect": "Direct invites",
+  "@mining_referralStatsDirect": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
   "mining_referralSubject": "Join me on LOOP",
   "@mining_referralSubject": {
     "description": "lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957"
@@ -23791,6 +23803,10 @@
   "@mining_secondaryScreensTrailingCaption3": {
     "description": "lib/features/mining/mining_secondary_screens.dart:799"
   },
+  "mining_widgetsCurrentRank": "Current rank",
+  "@mining_widgetsCurrentRank": {
+    "description": "lib/features/mining/mining_widgets.dart"
+  },
   "mining_widgetsLoopRecordRow": "Holding {amountFigure}",
   "@mining_widgetsLoopRecordRow": {
     "description": "lib/features/mining/mining_widgets.dart:1137",
@@ -23903,6 +23919,15 @@
   "mining_widgetsMiningSummaryHeroClaimSemanticLabel": "Mining rewards, open the mining rewards page",
   "@mining_widgetsMiningSummaryHeroClaimSemanticLabel": {
     "description": "lib/features/mining/mining_widgets.dart:540"
+  },
+  "mining_widgetsRankPlace": "#{position}",
+  "@mining_widgetsRankPlace": {
+    "description": "lib/features/mining/mining_widgets.dart",
+    "placeholders": {
+      "position": {
+        "type": "Object?"
+      }
+    }
   },
   "mining_widgetsText": "My total power",
   "@mining_widgetsText": {

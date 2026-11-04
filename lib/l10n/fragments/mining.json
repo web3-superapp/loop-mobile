@@ -980,6 +980,24 @@
     "where": "lib/features/mining/referral_screen.dart:788",
     "zh": "{name}，加入于 {launchTimestampLabel}，{referralInviteeStatusLabel}"
   },
+  "mining_referralStatsActive": {
+    "en": "Active members",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "有效成员"
+  },
+  "mining_referralStatsDeep": {
+    "en": "Levels 2–5",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "二至五级"
+  },
+  "mining_referralStatsDirect": {
+    "en": "Direct invites",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "直接邀请"
+  },
   "mining_referralSubject": {
     "en": "Join me on LOOP",
     "placeholders": {},
@@ -1747,6 +1765,12 @@
     "where": "lib/features/mining/mining_secondary_screens.dart:799",
     "zh": "当日产量"
   },
+  "mining_widgetsCurrentRank": {
+    "en": "Current rank",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "当前排名"
+  },
   "mining_widgetsLoopRecordRow": {
     "en": "Holding {amountFigure}",
     "placeholders": {
@@ -1900,6 +1924,17 @@
     "placeholders": {},
     "where": "lib/features/mining/mining_widgets.dart:540",
     "zh": "挖矿奖励，打开挖矿奖励页"
+  },
+  "mining_widgetsRankPlace": {
+    "en": "#{position}",
+    "placeholders": {
+      "position": {
+        "example": "position",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "第 {position} 名"
   },
   "mining_widgetsText": {
     "en": "My total power",

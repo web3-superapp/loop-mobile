@@ -14,6 +14,7 @@ import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 /// The formula gate, as the summary, the composition page and the ranking all
 /// read it.
@@ -337,7 +338,12 @@ class MiningSummaryHero extends StatelessWidget {
     this.split = const <MiningHeroMetric>[],
     this.network,
     this.onOpenRank,
+    this.rankPosition,
   });
+
+  /// The reader's settled place as a number (S353b: it sets the colour of
+  /// 「第 N 名」); null with no place.
+  final int? rankPosition;
 
   /// S350b · decision 0275: 全网总算力 under a hairline inside the hero
   /// ([MiningNetworkPowerCard] with `inline: true`); null draws none.
@@ -403,212 +409,260 @@ class MiningSummaryHero extends StatelessWidget {
           if (unit != null)
             TextSpan(
               text: ' $unit',
-              style: LoopType.figureMd.copyWith(color: muted),
+              style: LoopType.figureSm.copyWith(color: muted),
             ),
         ],
       ),
       key: const ValueKey<String>('mining-summary-hero-power'),
       maxLines: settled ? 1 : 2,
       overflow: TextOverflow.ellipsis,
-      // Decision 0192 / S241b: a settled figure is the page's hero figure;
-      // words in that slot stay a Chalk folio heading. S350b: the figure
-      // takes the plate's Inter Bold 40 (as 「我的名次」 on 算力榜).
+      // S353b · decision 0279 (docs/58 §5.14): the power card's value is
+      // Inter 30 / 700 white; words in that slot stay a Chalk heading.
       style: settled
-          ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
+          ? LoopType.heroFigure.copyWith(color: LoopColors.textPrimary)
           : LoopType.displayXl.copyWith(color: LoopColors.chalk),
     );
-    return LoopRecordCard(
+    // docs/58 §5.14: the power card — a 12 corner, the 107° gradient
+    // #14151a → #1b1028 and the doodle wall at 30 % over it.
+    return Container(
       key: const ValueKey<String>('mining-summary-hero'),
-      padding: EdgeInsets.zero,
-      child: ClipRRect(
+      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      clipBehavior: Clip.antiAlias,
+      decoration: const BoxDecoration(
+        gradient: LoopColors.powerCardGradient,
         borderRadius: LoopRadius.card,
-        child: Stack(
-          children: <Widget>[
-            // The faded crown in the corner, as on the old hero and on
-            // 「我的名次」's plate.
-            Positioned(
-              right: -10,
-              top: 52,
-              width: 92,
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity: 0.08,
-                  child: ColorFiltered(
-                    colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-                    child: Transform.rotate(
-                      angle: -0.17,
-                      child: loopAtmoArt(
-                        LoopAtmoAssets.crownFlat,
-                        key: const ValueKey<String>(
-                          'mining-summary-hero-watermark',
-                        ),
-                      ),
-                    ),
-                  ),
+      ),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.3,
+                child: loopAtmoArt(
+                  LoopAtmoAssets.wall,
+                  fit: BoxFit.cover,
+                  key: const ValueKey<String>('mining-summary-hero-watermark'),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                LoopSpacing.card + 2,
-                8,
-                LoopSpacing.card - 4,
-                LoopSpacing.card,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  SizedBox(
-                    height: LoopTouch.minimum,
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            context.l10n.mining_widgetsText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: LoopTypography.withWeight(
-                              LoopType.caption,
-                              FontWeight.w600,
-                            ).copyWith(color: LoopColors.text2),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.card + 1,
+              14,
+              LoopSpacing.card - 4,
+              LoopSpacing.card,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          context.l10n.mining_widgetsText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.eyebrow.copyWith(
+                            color: LoopColors.text2,
                           ),
                         ),
-                        MiningRankEntry(rank: rank, onTap: onOpenRank),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: settled
-                        ? FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: figure,
-                          )
-                        : figure,
-                  ),
-                  if (caption case final String caption) ...<Widget>[
-                    const SizedBox(height: 6),
-                    Text(
-                      caption,
-                      key: const ValueKey<String>(
-                        'mining-summary-hero-caption',
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopType.caption.copyWith(color: muted),
-                    ),
-                  ],
-                  if (stamp != null) ...<Widget>[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: LoopFolioStamp(
-                        stamp!,
-                        key: const ValueKey<String>(
-                          'mining-summary-hero-stamp',
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (shown.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 14),
-                    _MiningHeroStrip(metrics: shown, top: true),
-                  ],
-                  if (shownSplit.isNotEmpty)
-                    _MiningHeroStrip(
-                      key: const ValueKey<String>('mining-summary-hero-split'),
-                      metrics: shownSplit,
-                      top: shown.isEmpty,
-                    ),
-                  if (network case final Widget network) ...<Widget>[
-                    SizedBox(
-                      height: shown.isEmpty && shownSplit.isEmpty ? 14 : 0,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: network,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          // `.mining-summary-actions button:first-child`: the
-                          // yellow CTA.
-                          child: LoopButton(
-                            key: const ValueKey<String>(
-                              'mining-summary-hero-claim',
-                            ),
-                            // Decision 0184: before the token is live the
-                            // page it opens counts power, so the button says
-                            // so.
-                            label: powerOnly
-                                ? context
-                                      .l10n
-                                      .mining_widgetsMiningSummaryHeroClaimLabel
-                                : context
-                                      .l10n
-                                      .mining_widgetsMiningSummaryHeroClaimLabel2,
-                            primary: true,
-                            onPressed: onClaim,
-                            semanticLabel: powerOnly
-                                ? context
-                                      .l10n
-                                      .mining_widgetsMiningSummaryHeroClaimSemanticLabel
-                                : claimSemanticLabel,
-                          ),
-                        ),
-                        // Decision 0272: on 情报 · 算力 the composition is the
-                        // tabs right under this card, so the second button is
-                        // drawn only where a separate composition page is
-                        // still reachable.
-                        if (onOpenAssets != null) ...<Widget>[
-                          const SizedBox(width: 9),
-                          Expanded(
-                            child: LoopButton(
+                      // docs/58 §5.14: the snapshot at the top right,
+                      // 10 / 400 white 30 %.
+                      if (caption case final String caption) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              caption,
                               key: const ValueKey<String>(
-                                'mining-summary-hero-assets',
+                                'mining-summary-hero-caption',
                               ),
-                              label: context
-                                  .l10n
-                                  .mining_widgetsMiningSummaryHeroAssetsLabel,
-                              onPressed: onOpenAssets,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: LoopType.metaSm.copyWith(
+                                color: LoopColors.white30,
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: settled
+                      ? FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: figure,
+                        )
+                      : figure,
+                ),
+                MiningRankEntry(
+                  rank: rank,
+                  position: rankPosition,
+                  onTap: onOpenRank,
+                ),
+                if (stamp != null) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: LoopFolioStamp(
+                      stamp!,
+                      key: const ValueKey<String>('mining-summary-hero-stamp'),
                     ),
                   ),
                 ],
-              ),
+                if (shown.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 14),
+                  _MiningHeroStrip(metrics: shown, top: true),
+                ],
+                if (shownSplit.isNotEmpty)
+                  _MiningHeroStrip(
+                    key: const ValueKey<String>('mining-summary-hero-split'),
+                    metrics: shownSplit,
+                    top: shown.isEmpty,
+                  ),
+                if (network case final Widget network) ...<Widget>[
+                  SizedBox(
+                    height: shown.isEmpty && shownSplit.isEmpty ? 14 : 0,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: network,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        // `.mining-summary-actions button:first-child`: the
+                        // yellow CTA.
+                        child: LoopButton(
+                          key: const ValueKey<String>(
+                            'mining-summary-hero-claim',
+                          ),
+                          // Decision 0184: before the token is live the
+                          // page it opens counts power, so the button says
+                          // so.
+                          label: powerOnly
+                              ? context
+                                    .l10n
+                                    .mining_widgetsMiningSummaryHeroClaimLabel
+                              : context
+                                    .l10n
+                                    .mining_widgetsMiningSummaryHeroClaimLabel2,
+                          primary: true,
+                          onPressed: onClaim,
+                          semanticLabel: powerOnly
+                              ? context
+                                    .l10n
+                                    .mining_widgetsMiningSummaryHeroClaimSemanticLabel
+                              : claimSemanticLabel,
+                        ),
+                      ),
+                      // Decision 0272: on 情报 · 算力 the composition is the
+                      // tabs right under this card, so the second button is
+                      // drawn only where a separate composition page is
+                      // still reachable.
+                      if (onOpenAssets != null) ...<Widget>[
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: LoopButton(
+                            key: const ValueKey<String>(
+                              'mining-summary-hero-assets',
+                            ),
+                            label: context
+                                .l10n
+                                .mining_widgetsMiningSummaryHeroAssetsLabel,
+                            onPressed: onOpenAssets,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// The way into 算力榜 at the hero's top right (S350b · decision 0275): the
-/// Yellow crown, the reader's place when the server settled one, and a
-/// chevron, on a small raised capsule inside a 44 target.
+/// The way into 算力榜 (S350b · decision 0275), drawn as the power card's
+/// 「当前排名 第 N 名」 line since S353b · decision 0279 (docs/58 §5.14): the
+/// label 12 / 500, the place 13 / 600 with its number in Inter Black Italic
+/// 16 — Yellow for the first, bronze for the third — and the crown bitmap
+/// after it, inside a 44 target. With no place it is the crown and a
+/// chevron, read aloud as 「算力榜」.
 class MiningRankEntry extends StatelessWidget {
-  const MiningRankEntry({super.key, this.rank, this.onTap});
+  const MiningRankEntry({super.key, this.rank, this.position, this.onTap});
 
   /// 「第 12 名」, or null when the reader has no place.
   final String? rank;
+
+  /// The place as a number, for its colour.
+  final int? position;
 
   /// Null while no 算力榜 is reachable from here: the entry is drawn but
   /// does nothing, as the crown icon it replaces did.
   final VoidCallback? onTap;
 
+  /// The crown bitmap's box (the Figma's 61 × 37).
+  static const Size crownSize = Size(61, 37);
+
+  /// The place number's colour.
+  static Color placeColor(int? position) => switch (position) {
+    1 => LoopColors.yellow,
+    3 => LoopColors.bronze,
+    _ => LoopColors.textPrimary,
+  };
+
   @override
   Widget build(BuildContext context) {
     final place = rank;
+    final number = position;
+    final label = LoopType.meta.copyWith(color: LoopColors.text2);
+    Widget placeText(String text) {
+      final digits = number?.toString();
+      final at = digits == null ? -1 : text.indexOf(digits);
+      final word = LoopType.figureXs.copyWith(color: placeColor(number));
+      return Text.rich(
+        TextSpan(
+          style: word,
+          children: at < 0
+              ? <InlineSpan>[TextSpan(text: text)]
+              : <InlineSpan>[
+                  TextSpan(text: text.substring(0, at)),
+                  TextSpan(
+                    text: digits,
+                    style: LoopType.rankFigure.copyWith(
+                      color: placeColor(number),
+                    ),
+                  ),
+                  TextSpan(text: text.substring(at + digits!.length)),
+                ],
+        ),
+        key: const ValueKey<String>('mining-summary-hero-rank'),
+        maxLines: 1,
+      );
+    }
+
     return Semantics(
       button: true,
       enabled: onTap != null,
@@ -625,36 +679,45 @@ class MiningRankEntry extends StatelessWidget {
             minHeight: LoopTouch.minimum,
             minWidth: LoopTouch.minimum,
           ),
-          child: Center(
-            widthFactor: 1,
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.fromLTRB(10, 0, 8, 0),
-              decoration: const BoxDecoration(
-                color: LoopColors.card2,
-                borderRadius: LoopRadius.pill,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const LoopIcon('crown', size: 16, color: LoopColors.yellow),
-                  if (place != null) ...<Widget>[
-                    const SizedBox(width: 6),
-                    Text(
-                      place,
-                      key: const ValueKey<String>('mining-summary-hero-rank'),
-                      maxLines: 1,
-                      style: LoopTypography.withWeight(
-                        LoopType.figureSm,
-                        FontWeight.w600,
-                      ).copyWith(color: LoopColors.chalk),
-                    ),
-                  ],
-                  const SizedBox(width: 2),
-                  const LoopIcon('chevron', size: 14, color: LoopColors.text3),
-                ],
-              ),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              if (place == null) ...<Widget>[
+                // No place: the crown and a chevron, read as 「算力榜」.
+                SizedBox.fromSize(
+                  size: crownSize * 0.8,
+                  child: loopAtmoArt(
+                    LoopFigmaAssets.crownPowerCard,
+                    fit: BoxFit.contain,
+                    key: const ValueKey<String>('mining-summary-hero-crown'),
+                  ),
+                ),
+                const LoopIcon('chevron', size: 14, color: LoopColors.text3),
+              ] else ...<Widget>[
+                Text(
+                  context.l10n.mining_widgetsCurrentRank,
+                  maxLines: 1,
+                  style: label,
+                ),
+                const SizedBox(width: 8),
+                // 「第 12 名」 / 「#12」: the label already says 当前排名.
+                placeText(
+                  number == null
+                      ? place
+                      : context.l10n.mining_widgetsRankPlace(number),
+                ),
+                const SizedBox(width: 2),
+                SizedBox.fromSize(
+                  size: crownSize * 0.8,
+                  child: loopAtmoArt(
+                    LoopFigmaAssets.crownPowerCard,
+                    fit: BoxFit.contain,
+                    key: const ValueKey<String>('mining-summary-hero-crown'),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

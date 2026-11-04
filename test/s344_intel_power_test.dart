@@ -33,6 +33,8 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_pro
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
+import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
@@ -500,7 +502,8 @@ void main() {
   group('the three tabs', () {
     testWidgets('代币 first; NFT and 邀请 switch the body', (tester) async {
       await _pumpPower(tester);
-      final bar = tester.widget<LoopSegBar>(_key('mining-power-tabs'));
+      // S353b · decision 0279: the shared filter chips (docs/58 §5.3).
+      final bar = tester.widget<LoopFilterChips>(_key('mining-power-tabs'));
       // S350b · decision 0275: 代币 / NFT / 邀请.
       expect(bar.labels, <String>['Token', 'NFT', 'Invitation']);
       expect(_key('mining-power-tab-token'), findsOneWidget);
@@ -619,7 +622,8 @@ void main() {
         size: const Size(390, 1600),
       );
       expect(find.text('Power Ranking'), findsWidgets);
-      final chips = tester.widget<LoopSegBar>(_key('intel-rank-scope'));
+      // S353b · decision 0279: the first-level tab strip (docs/58 §5.2).
+      final chips = tester.widget<LoopTabStrip>(_key('intel-rank-scope'));
       expect(chips.labels, <String>['Community', 'User', 'Invitation']);
       expect(_key('intel-rank-community-community-4'), findsOneWidget);
 

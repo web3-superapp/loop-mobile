@@ -572,6 +572,7 @@ class LoopFolioPrimary extends StatelessWidget {
     this.footer,
     this.headingBuilder,
     this.minHeight,
+    this.stampWidthFactor = stampMaxWidthFactor,
   });
 
   final String heading;
@@ -676,6 +677,11 @@ class LoopFolioPrimary extends StatelessWidget {
   /// `.folio-stamp{max-width:42%}`.
   static const double stampMaxWidthFactor = 0.42;
 
+  /// S353b · optional: the stamp's ceiling as a share of the card's width;
+  /// [stampMaxWidthFactor] unless a page's stamp runs longer (an English
+  /// countdown, 「Ends in 2d 03:04:05」).
+  final double stampWidthFactor;
+
   /// `.folio-stamp{padding:7px 9px;border:1px solid}` and the 11px screen
   /// floor the prototype's `.scr :is(…,.folio-stamp,small)` rule sets.
   static const EdgeInsets _stampPadding = EdgeInsets.fromLTRB(9, 7, 9, 7);
@@ -702,7 +708,7 @@ class LoopFolioPrimary extends StatelessWidget {
     )..layout();
     final width = painter.width + _stampPadding.horizontal + _stampBorder * 2;
     painter.dispose();
-    return math.min(width, contentWidth * stampMaxWidthFactor);
+    return math.min(width, contentWidth * stampWidthFactor);
   }
 
   /// The caption's own ceiling, with the stamp's measured width taken out.
@@ -848,7 +854,7 @@ class LoopFolioPrimary extends StatelessWidget {
       variant == LoopFolioVariant.quiet ? 1 : 0.68,
     );
     final stampMaxWidth = contentWidth.isFinite
-        ? contentWidth * stampMaxWidthFactor
+        ? contentWidth * stampWidthFactor
         : double.infinity;
     return Stack(
       children: <Widget>[

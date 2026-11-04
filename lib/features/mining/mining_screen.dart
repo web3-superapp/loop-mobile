@@ -19,7 +19,9 @@ import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.d
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -161,6 +163,10 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             // S344 review: the scope chip and the split cells are gone — the
             // formula is the (i)'s, the split is the tabs'.
             rank: _rankBadge(rankState.value),
+            rankPosition: switch (rankState.value?.myPosition) {
+              MiningRankPositionSettled(:final position) => position,
+              _ => null,
+            },
             metrics: live
                 ? <MiningHeroMetric>[
                     _dailyMetric(summary.estimatedToday),
@@ -197,14 +203,21 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             markStale: true,
           ),
         ],
-        LoopSegBar(
+        // S353b · decision 0279 (docs/58 §5.3, §9.4): the second-level
+        // 54 × 32 filter chips — the Purple capsule is gone.
+        LoopFilterChips(
           key: const ValueKey<String>('mining-power-tabs'),
           labels: <String>[for (final tab in IntelPowerTab.values) tab.label],
           selectedIndex: IntelPowerTab.values.indexOf(tab),
           onSelected: (index) => ref
               .read(intelPowerTabProvider.notifier)
               .select(IntelPowerTab.values[index]),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            LoopSpacing.rowGap,
+            LoopSpacing.page,
+            LoopSpacing.chipGap - 6,
+          ),
         ),
         KeyedSubtree(
           key: ValueKey<String>('mining-power-tab-${tab.wireName}'),

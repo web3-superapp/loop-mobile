@@ -18121,6 +18121,15 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
+  String get mining_referralStatsActive => 'Active members';
+
+  @override
+  String get mining_referralStatsDeep => 'Levels 2–5';
+
+  @override
+  String get mining_referralStatsDirect => 'Direct invites';
+
+  @override
   String get mining_referralSubject => 'Join me on LOOP';
 
   @override
@@ -18553,6 +18562,9 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get mining_secondaryScreensTrailingCaption3 => 'Daily output';
 
   @override
+  String get mining_widgetsCurrentRank => 'Current rank';
+
+  @override
   String mining_widgetsLoopRecordRow(Object? amountFigure) {
     return 'Holding $amountFigure';
   }
@@ -18632,6 +18644,11 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
       'Mining rewards, open the mining rewards page';
+
+  @override
+  String mining_widgetsRankPlace(Object? position) {
+    return '#$position';
+  }
 
   @override
   String get mining_widgetsText => 'My total power';

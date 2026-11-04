@@ -25,6 +25,7 @@ class LoopTabStrip extends StatelessWidget {
       horizontal: LoopSpacing.page,
       vertical: 2,
     ),
+    this.scaleDownLabels = false,
   }) : assert(counts == null || counts.length == labels.length),
        assert(keys == null || keys.length == labels.length);
 
@@ -38,6 +39,11 @@ class LoopTabStrip extends StatelessWidget {
   /// The widget key of each cell.
   final List<Key>? keys;
   final EdgeInsets padding;
+
+  /// S353b · optional: a word and its count wider than the cell are set a
+  /// little smaller instead of being cut with an ellipsis (MEME's English
+  /// 「Bonding pool」 at 360). Off by default.
+  final bool scaleDownLabels;
 
   /// The 2 px Yellow line under the chosen cell.
   static const double underline = 2;
@@ -73,6 +79,7 @@ class LoopTabStrip extends StatelessWidget {
                   label: labels[index],
                   count: counts?[index],
                   selected: index == selectedIndex,
+                  scaleDown: scaleDownLabels,
                   onTap: () {
                     if (index != selectedIndex) LoopHaptics.selection();
                     onSelected(index);
@@ -94,12 +101,21 @@ class _Cell extends StatelessWidget {
     required this.selected,
     required this.onTap,
     super.key,
+    this.scaleDown = false,
   });
 
+  final bool scaleDown;
   final String label;
   final int? count;
   final bool selected;
   final VoidCallback onTap;
+
+  Widget _fit(Widget row) => scaleDown
+      ? Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: FittedBox(fit: BoxFit.scaleDown, child: row),
+        )
+      : row;
 
   @override
   Widget build(BuildContext context) {
@@ -121,42 +137,51 @@ class _Cell extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: selected ? LoopType.tab : LoopType.tabIdle,
-                      ),
-                    ),
-                    if (count != null) ...<Widget>[
-                      const SizedBox(width: 4),
-                      DecoratedBox(
-                        key: const ValueKey<String>('loop-tab-strip-count'),
-                        decoration: const BoxDecoration(
-                          color: LoopColors.white5,
-                          borderRadius: LoopRadius.count,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1,
-                          ),
+                child: _fit(
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (scaleDown)
+                        Text(
+                          label,
+                          maxLines: 1,
+                          style: selected ? LoopType.tab : LoopType.tabIdle,
+                        )
+                      else
+                        Flexible(
                           child: Text(
-                            '$count',
-                            style: LoopType.count.copyWith(
-                              color: selected
-                                  ? LoopColors.purple
-                                  : LoopColors.white60,
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: selected ? LoopType.tab : LoopType.tabIdle,
+                          ),
+                        ),
+                      if (count != null) ...<Widget>[
+                        const SizedBox(width: 4),
+                        DecoratedBox(
+                          key: const ValueKey<String>('loop-tab-strip-count'),
+                          decoration: const BoxDecoration(
+                            color: LoopColors.white5,
+                            borderRadius: LoopRadius.count,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            child: Text(
+                              '$count',
+                              style: LoopType.count.copyWith(
+                                color: selected
+                                    ? LoopColors.purple
+                                    : LoopColors.white60,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               Positioned(

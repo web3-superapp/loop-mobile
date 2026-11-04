@@ -186,7 +186,8 @@ void main() {
       final capsule =
           tester.widget<Container>(_key('launch2-create-capsule')).decoration!
               as BoxDecoration;
-      expect(capsule.borderRadius, LoopRadius.button);
+      // S353b · decision 0279 (docs/58 §5.20): 发射 is the 6 corner.
+      expect(capsule.borderRadius, LoopRadius.compactButton);
       expect(capsule.boxShadow, isNull);
       final wall = tester
           .widgetList<Container>(

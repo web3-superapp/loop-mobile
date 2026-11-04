@@ -25,7 +25,6 @@ import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -138,17 +137,30 @@ class _ReferralCenterSectionsState
         // UX-012 (decision 0257): the hero is the one invite card — the
         // code and the link, each with its own copy glyph, and 分享邀请链接 /
         // 生成海报. S348: the five depths moved into 邀请加成.
-        LoopLedgerComposite(
+        // S353b · decision 0279 (docs/58 §5.17): the invite code card — an
+        // 8 corner on #121318, 19 inside.
+        Container(
           key: const ValueKey<String>('referral-hero'),
-          primary: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-            child: _InviteCardBody(
-              overview: overview,
-              codeKey: const ValueKey<String>('referral-invite-code'),
-            ),
+          margin: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            LoopSpacing.rowGap,
           ),
-          detail: const <Widget>[],
+          padding: const EdgeInsets.fromLTRB(19, 14, 10, 16),
+          decoration: const BoxDecoration(
+            color: LoopColors.card,
+            borderRadius: LoopRadius.chip,
+          ),
+          child: _InviteCardBody(
+            overview: overview,
+            codeKey: const ValueKey<String>('referral-invite-code'),
+          ),
         ),
+        // S353b · decision 0279 (docs/58 §5.17): the three counts the server
+        // sends; none drawn while it sends none.
+        if (overview.stats case final ReferralStats stats)
+          ReferralStatsCard(stats: stats),
         Row(
           children: <Widget>[
             Expanded(
@@ -245,6 +257,88 @@ class _ReferralCenterSectionsState
         kind: LoopToastKind.ok,
       );
     }
+  }
+}
+
+/// 邀请's three counts (S353b · decision 0279, docs/58 §5.17): 直接邀请 /
+/// 有效成员 / 二至五级 in three equal cells on an 8 corner `#121318` card,
+/// each a 11 / 400 label over its 18 / 600 figure, the cells split by 1 × 37
+/// white 5 % rules.
+class ReferralStatsCard extends StatelessWidget {
+  const ReferralStatsCard({
+    required this.stats,
+    super.key = const ValueKey<String>('referral-stats'),
+  });
+
+  final ReferralStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = LoopType.stageTag.copyWith(
+      color: LoopColors.text2,
+      height: 15 / 11,
+    );
+    // 18 / 600: the Figma's count, the same step as a post's author.
+    final figure = LoopType.postAuthor.copyWith(color: LoopColors.textPrimary);
+    Widget cell(String slug, String name, int value) => Expanded(
+      child: Semantics(
+        container: true,
+        label: '$name${LoopL10n.current.common_listSeparator}$value',
+        excludeSemantics: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: label,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              '$value',
+              key: ValueKey<String>('referral-stats-$slug'),
+              maxLines: 1,
+              style: figure,
+            ),
+          ],
+        ),
+      ),
+    );
+    const rule = SizedBox(
+      width: 1,
+      height: 37,
+      child: ColoredBox(color: LoopColors.divider),
+    );
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      padding: const EdgeInsets.fromLTRB(4, 9, 4, 7),
+      decoration: const BoxDecoration(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.chip,
+      ),
+      child: Row(
+        children: <Widget>[
+          cell(
+            'direct',
+            context.l10n.mining_referralStatsDirect,
+            stats.directCount,
+          ),
+          rule,
+          cell(
+            'active',
+            context.l10n.mining_referralStatsActive,
+            stats.validCount,
+          ),
+          rule,
+          cell(
+            'deep',
+            context.l10n.mining_referralStatsDeep,
+            stats.level2to5Count,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -433,7 +527,11 @@ class _InviteCardBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final code = overview.inviteCode.code;
     final link = overview.inviteLink;
-    final caption = LoopType.caption.copyWith(color: LoopColors.text2);
+    // docs/58 §5.17: the two labels 11 / 400, textSecondary.
+    final caption = LoopType.stageTag.copyWith(
+      color: LoopColors.text2,
+      height: 15 / 11,
+    );
     return Column(
       key: const ValueKey<String>('referral-invite-card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -452,7 +550,7 @@ class _InviteCardBody extends ConsumerWidget {
                   key: codeKey,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.keyFigure.copyWith(color: LoopColors.yellow),
+                  style: LoopType.inviteCode,
                 ),
               ),
             ),
@@ -469,8 +567,8 @@ class _InviteCardBody extends ConsumerWidget {
         // stay.
         if (link != null) ...<Widget>[
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Divider(height: 1, thickness: 1, color: LoopColors.line),
+            padding: EdgeInsets.only(right: 9, top: 2, bottom: 10),
+            child: Divider(height: 1, thickness: 1, color: LoopColors.divider),
           ),
           Text(context.l10n.mining_referralBuild2, style: caption),
           Row(
@@ -487,7 +585,7 @@ class _InviteCardBody extends ConsumerWidget {
                   child: _MiddleEllipsisText(
                     link.replaceFirst(RegExp(r'^https?://'), ''),
                     key: const ValueKey<String>('referral-invite-link'),
-                    style: LoopType.code.copyWith(color: LoopColors.chalk),
+                    style: LoopType.codeSm.copyWith(color: LoopColors.chalk),
                   ),
                 ),
               ),
@@ -500,42 +598,50 @@ class _InviteCardBody extends ConsumerWidget {
             ],
           ),
         ],
-        const SizedBox(height: 12),
-        // S350b: the share button takes the larger part, so 「分享邀请链接」
-        // holds one line at 360 wide.
-        Row(
-          children: <Widget>[
-            if (link != null) ...<Widget>[
-              Expanded(
-                flex: 4,
-                child: LoopButton(
-                  key: const ValueKey<String>('referral-share-link'),
-                  label: context.l10n.mining_referralReferralShareLinkLabel,
-                  // S350b: no glyph, so the label holds one line in half the
-                  // card at 360 wide.
-                  primary: true,
-                  onPressed: () => unawaited(_share(context, ref, code, link)),
+        const SizedBox(height: 8),
+        // docs/58 §5.17 / §5.20: 分享邀请链接 is the 36 Yellow button with
+        // the share glyph, 生成海报 the white 8 % one with a Yellow word,
+        // 12 apart.
+        Padding(
+          padding: const EdgeInsets.only(right: 9),
+          child: Row(
+            children: <Widget>[
+              if (link != null) ...<Widget>[
+                Expanded(
+                  flex: 1,
+                  child: LoopButton(
+                    key: const ValueKey<String>('referral-share-link'),
+                    label: context.l10n.mining_referralReferralShareLinkLabel,
+                    icon: 'share',
+                    size: LoopButtonSize.medium,
+                    block: true,
+                    primary: true,
+                    onPressed: () =>
+                        unawaited(_share(context, ref, code, link)),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              flex: 3,
-              child: LoopButton(
-                key: const ValueKey<String>('referral-poster'),
-                label: context.l10n.mining_referralReferralPosterLabel,
-                onPressed: () => unawaited(
-                  showLoopSheet<void>(
-                    context,
-                    barrierLabel: context.l10n.mining_referralBarrierLabel2,
-                    useRootNavigator: true,
-                    builder: (sheetContext) =>
-                        ReferralPosterSheet(code: code, link: link),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                flex: 1,
+                child: LoopButton(
+                  key: const ValueKey<String>('referral-poster'),
+                  size: LoopButtonSize.medium,
+                  block: true,
+                  label: context.l10n.mining_referralReferralPosterLabel,
+                  onPressed: () => unawaited(
+                    showLoopSheet<void>(
+                      context,
+                      barrierLabel: context.l10n.mining_referralBarrierLabel2,
+                      useRootNavigator: true,
+                      builder: (sheetContext) =>
+                          ReferralPosterSheet(code: code, link: link),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

@@ -231,32 +231,42 @@ void main() {
       );
     });
 
-    testWidgets('S348: 我的邀请 is not drawn, with or without stats', (
-      tester,
-    ) async {
-      await pumpS7Page(
-        tester,
-        const ReferralCenterHost(),
-        referral: FakeReferralGateway(
-          overview: S7Answer(
-            value: _center(
-              stats: ReferralStats(
-                directCount: 3,
-                validCount: 1,
-                level2to5Count: 4,
-                validAsOf: DateTime.utc(2026, 10, 19, 9),
+    testWidgets(
+      'S348: 我的邀请 is not drawn; S353b: the stats are the three cells',
+      (tester) async {
+        await pumpS7Page(
+          tester,
+          const ReferralCenterHost(),
+          referral: FakeReferralGateway(
+            overview: S7Answer(
+              value: _center(
+                stats: ReferralStats(
+                  directCount: 3,
+                  validCount: 1,
+                  level2to5Count: 4,
+                  validAsOf: DateTime.utc(2026, 10, 19, 9),
+                ),
               ),
             ),
           ),
-        ),
-      );
-      expect(
-        find.byKey(const ValueKey<String>('referral-stats')),
-        findsNothing,
-      );
-      expect(find.text('我的邀请'), findsNothing);
-      expect(find.text('Direct invites'), findsNothing);
-    });
+        );
+        // S353b · decision 0279 (主代理 11-04): the counts the server sent
+        // stand as the Figma's three cells; 我的邀请 stays gone.
+        expect(
+          find.byKey(const ValueKey<String>('referral-stats')),
+          findsOneWidget,
+        );
+        expect(find.text('我的邀请'), findsNothing);
+        expect(
+          tester
+              .widget<Text>(
+                find.byKey(const ValueKey<String>('referral-stats-deep')),
+              )
+              .data,
+          '4',
+        );
+      },
+    );
     testWidgets('an available boost is drawn in power, not money', (
       tester,
     ) async {
@@ -525,7 +535,9 @@ void main() {
       expect(shared.single.$2, 'Join me on LOOP');
     });
 
-    testWidgets('one invite card; no counts under it (S348)', (tester) async {
+    testWidgets('one invite card; no counts inside it (S348, S353b)', (
+      tester,
+    ) async {
       await pumpCard(tester);
       expect(
         find.descendant(
@@ -534,8 +546,13 @@ void main() {
         ),
         findsOneWidget,
       );
+      // S353b · decision 0279: the three counts are their own card under
+      // the invite card, never inside it.
       expect(
-        find.byKey(const ValueKey<String>('referral-stats-direct')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('referral-hero')),
+          matching: find.byKey(const ValueKey<String>('referral-stats-direct')),
+        ),
         findsNothing,
       );
       expect(

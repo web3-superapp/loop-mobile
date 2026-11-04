@@ -87,8 +87,14 @@ void main() {
         findsNothing,
       );
       // S348: 我的邀请 and the five-depth strip are gone; the two tabs stand.
+      // S353b · decision 0279 (主代理 11-04): the Figma's three counts stand
+      // under the invite card as one plain card, no explanation.
       expect(
         find.byKey(const ValueKey<String>('referral-stats')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('referral-levels')),
         findsNothing,
       );
       expect(

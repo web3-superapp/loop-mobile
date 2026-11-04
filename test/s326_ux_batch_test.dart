@@ -535,12 +535,11 @@ void main() {
       expect(find.text('02'), findsNothing);
       expect(find.text('03'), findsNothing);
       final title = tester.widget<Text>(find.text('内盘')).style!.fontSize!;
-      final count = tester
-          .widget<Text>(_key('launch2-desk-tab-count-live'))
-          .style!
-          .fontSize!;
+      // S353b · decision 0279 (docs/58 §5.2): the count is the strip's
+      // 11 / 500 chip after the word.
+      final count = tester.widget<Text>(find.text('4')).style!.fontSize!;
       expect(count, lessThan(title));
-      expect(count, greaterThanOrEqualTo(12));
+      expect(count, LoopType.count.fontSize);
     });
 
     testWidgets('the tab bar floats: a blur under it and a light edge all '

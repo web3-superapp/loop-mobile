@@ -383,7 +383,8 @@ List<Launch2DeskPage> launch2DeskPages(
 /// atmosphere banner; 200 before). Since decision 0223 the event pages share
 /// it — 232 before. S326 · decision 0256 (UX-004 ⑧): 180 (220 before) —
 /// the words sit closer and the banner gives the list more of the screen.
-const double launch2DeskCampaignHeight = 180;
+/// S353b · decision 0279 (docs/58 §5.5): the Figma's 162 (353 × 162).
+const double launch2DeskCampaignHeight = 162;
 
 /// The height of the dot row under the pager (decision 0211).
 const double launch2DeskDotsHeight = 18;
@@ -563,6 +564,8 @@ class Launch2DeskFolio extends ConsumerWidget {
       return Launch2DeskEventFace(
         kicker: kicker,
         title: context.l10n.launch2_launch2LaunchpadTitle,
+        // S353b: a sentence, not a ticker — it wraps instead of shrinking.
+        titleWraps: true,
       );
     }
     final ticker = launch2HeroTicker(event.ticker);
@@ -601,7 +604,12 @@ class Launch2DeskEventFace extends StatelessWidget {
     this.status,
     this.caption,
     this.stamp,
+    this.titleWraps = false,
   });
+
+  /// The title is a sentence (the empty desk): two lines at 19 / 700
+  /// rather than one line shrunk to fit (S353b, English copy).
+  final bool titleWraps;
 
   /// 「发射台 · BSC TESTNET」: 12, Text2.
   final String kicker;
@@ -654,8 +662,12 @@ class Launch2DeskEventFace extends StatelessWidget {
                 Launch2BannerTitle(
                   text: title,
                   textKey: const ValueKey<String>('launch2-desk-event-title'),
+                  wraps: titleWraps,
                 ),
-                const SizedBox(height: 8),
+                // S353b · decision 0279: the 162 banner (docs/58 §5.5) holds
+                // the stage line at 14 and, beside a countdown, one line of
+                // figures.
+                const SizedBox(height: 4),
                 if (line != null)
                   Text(
                     line,
@@ -663,7 +675,7 @@ class Launch2DeskEventFace extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopTypography.withWeight(
-                      LoopType.body,
+                      LoopType.body1,
                       FontWeight.w600,
                     ).copyWith(color: LoopColors.purpleInk),
                   ),
@@ -672,7 +684,7 @@ class Launch2DeskEventFace extends StatelessWidget {
                   Text(
                     figures,
                     key: const ValueKey<String>('launch2-desk-event-caption'),
-                    maxLines: 2,
+                    maxLines: left == null ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
@@ -763,7 +775,7 @@ class Launch2BannerBackdrop extends StatelessWidget {
       fit: StackFit.expand,
       children: <Widget>[
         ClipRRect(
-          borderRadius: LoopRadius.card,
+          borderRadius: LoopRadius.chip,
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
@@ -802,10 +814,14 @@ class Launch2BannerBackdrop extends StatelessWidget {
                   ),
                 ),
               ),
+              // docs/58 §5.5: an 8 corner and a 1 px white 15 % edge.
               const DecoratedBox(
+                key: ValueKey<String>('launch2-banner-edge'),
                 decoration: BoxDecoration(
-                  borderRadius: LoopRadius.card,
-                  border: Border(top: BorderSide(color: Color(0x24F0F0F3))),
+                  borderRadius: LoopRadius.chip,
+                  border: Border.fromBorderSide(
+                    BorderSide(color: LoopColors.bannerEdge),
+                  ),
                 ),
               ),
             ],
@@ -847,10 +863,18 @@ class Launch2BannerBackdrop extends StatelessWidget {
 /// The title of a banner page: 26 / 700 Chalk on one line, over the Purple
 /// brush stroke (the same on every page).
 class Launch2BannerTitle extends StatelessWidget {
-  const Launch2BannerTitle({required this.text, super.key, this.textKey});
+  const Launch2BannerTitle({
+    required this.text,
+    super.key,
+    this.textKey,
+    this.wraps = false,
+  });
 
   final String text;
   final Key? textKey;
+
+  /// Two lines at [LoopType.headline] instead of one shrunk line.
+  final bool wraps;
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -872,16 +896,25 @@ class Launch2BannerTitle extends StatelessWidget {
       ),
       // S350b: a title wider than the column is set a little smaller, not
       // cut to 「暂无进行中…」.
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text(
+      if (wraps)
+        Text(
           text,
           key: textKey,
-          maxLines: 1,
-          style: LoopType.display.copyWith(height: 1.2),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LoopType.headline.copyWith(height: 1.3),
+        )
+      else
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            text,
+            key: textKey,
+            maxLines: 1,
+            style: LoopType.display.copyWith(height: 1.2),
+          ),
         ),
-      ),
     ],
   );
 }
@@ -929,8 +962,8 @@ class Launch2DeskCampaignCard extends ConsumerStatefulWidget {
   /// Pushes an in-app route.
   final void Function(String location) onNavigate;
 
-  /// The 「去参与」 button's height.
-  static const double ctaHeight = 40;
+  /// The 「去参与」 button's height: the Figma's 36 medium button (S353b).
+  static const double ctaHeight = LoopTouch.buttonMedium;
 
   @override
   ConsumerState<Launch2DeskCampaignCard> createState() =>
@@ -992,18 +1025,20 @@ class _Launch2DeskCampaignCardState
                       text: campaign.title,
                       textKey: ValueKey<String>('launch2-campaign-title-$id'),
                     ),
-                    const SizedBox(height: 8),
+                    // S353b · decision 0279: two caption lines fit the 162
+                    // banner above its button.
+                    const SizedBox(height: 4),
                     if (subtitle != null)
                       Text(
                         subtitle,
                         key: ValueKey<String>('launch2-campaign-subtitle-$id'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopType.bodySm.copyWith(
+                        style: LoopType.caption.copyWith(
                           color: LoopColors.chalk,
                         ),
                       ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       launch2CampaignFootLine(campaign, now),
                       key: ValueKey<String>('launch2-campaign-stamp-$id'),
