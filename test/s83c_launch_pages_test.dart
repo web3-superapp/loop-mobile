@@ -277,9 +277,15 @@ void main() {
       );
 
       // The identity card now names the registered contract's tail.
-      expect(find.textContaining('合约 …11111111'), findsOneWidget);
-      expect(find.textContaining('销售成功，流动性准备中'), findsWidgets);
-      expect(find.text('链上读数来自同一区块'), findsOneWidget);
+      expect(find.textContaining('Contract …11111111'), findsOneWidget);
+      expect(
+        find.textContaining('Sale succeeded, preparing liquidity'),
+        findsWidgets,
+      );
+      expect(
+        find.text('On-chain readings come from one block'),
+        findsOneWidget,
+      );
       // The first round's fixed price is the one grid figure a round proves.
       expect(find.text('0.01 USD1'), findsWidgets);
 
@@ -288,15 +294,15 @@ void main() {
         const ValueKey<String>('launch-detail-facts'),
       );
       for (final (label, value) in <(String, String)>[
-        ('销售状态', 'SUCCEEDED'),
-        ('权益状态', 'FROZEN'),
-        ('流动性状态', 'PREPARING'),
-        ('运营状态', 'ACTIVE'),
+        ('sale', 'SUCCEEDED'),
+        ('entitlement', 'FROZEN'),
+        ('liquidity', 'PREPARING'),
+        ('operational', 'ACTIVE'),
       ]) {
         final row = tester.widget<LoopRecordRow>(_key('launch-axis-$label'));
         expect(row.trailing, value, reason: label);
       }
-      expect(find.textContaining('快照区块 45,000,000'), findsWidgets);
+      expect(find.textContaining('Snapshot block 45,000,000'), findsWidgets);
       expect(_key('launch-detail-sale-config'), findsOneWidget);
     });
 
@@ -339,8 +345,11 @@ void main() {
       final notice = tester.widget<LoopNotice>(
         _key('launch-detail-baseline-notice'),
       );
-      expect(notice.body, contains('还没有登记到链上'));
-      expect(notice.body, isNot(contains('Launch 合约还没有上线')));
+      expect(notice.body, contains("isn't registered on chain yet"));
+      expect(
+        notice.body,
+        isNot(contains("The Launch contract isn't live yet")),
+      );
     });
   });
 
@@ -355,27 +364,31 @@ void main() {
           detail: S7Answer<LaunchDetail>(value: s83cDetail()),
         ),
       );
-      expect(find.text('2 个轮次'), findsOneWidget);
+      expect(find.text('2 rounds'), findsOneWidget);
       final first = tester.widget<LoopRecordRow>(_key('launch-round-1'));
-      expect(first.title, 'Round 1，名单轮');
+      expect(first.title, 'Round 1, Allowlist round');
       expect(first.trailing, '0.01 USD1');
       expect(first.subtitle, contains('2026-09-21 14:13 UTC'));
-      expect(first.subtitle, contains('轮次上限 40,000 USD1'));
-      expect(first.subtitle, contains('钱包上限 500 USD1'));
-      expect(first.subtitle, contains('已募集 1,234 USD1'));
+      expect(first.subtitle, contains('Round cap 40,000 USD1'));
+      expect(first.subtitle, contains('wallet cap 500 USD1'));
+      expect(first.subtitle, contains('Raised 1,234 USD1'));
       final second = tester.widget<LoopRecordRow>(_key('launch-round-2'));
-      expect(second.title, 'Round 2，公开轮');
-      expect(find.text('Round 1 单钱包上限'), findsOneWidget);
+      expect(second.title, 'Round 2, Public round');
+      expect(find.text('Round 1 per-wallet cap'), findsOneWidget);
       await openS7Disclosure(
         tester,
         const ValueKey<String>('launch-rounds-facts'),
       );
       expect(
-        tester.widget<LoopRecordRow>(_key('launch-sale-config-协议费')).trailing,
+        tester
+            .widget<LoopRecordRow>(_key('launch-sale-config-protocol-fee'))
+            .trailing,
         '3%',
       );
       expect(
-        tester.widget<LoopRecordRow>(_key('launch-sale-config-池费率档位')).trailing,
+        tester
+            .widget<LoopRecordRow>(_key('launch-sale-config-pool-fee-tier'))
+            .trailing,
         '0.25%',
       );
     });
@@ -415,7 +428,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('毕业中'), findsOneWidget);
+      expect(find.text('Graduating'), findsOneWidget);
       String badge(String step) =>
           (tester
                       .widget<LoopRecordRow>(
@@ -424,10 +437,10 @@ void main() {
                       .trailingBadge!
                   as LoopBadge)
               .text;
-      expect(badge('stop_internal_trading'), '已完成');
-      expect(badge('prepare_pool'), '已完成');
-      expect(badge('add_and_lock_liquidity'), '进行中');
-      expect(badge('open_external_trading'), '待触发');
+      expect(badge('stop_internal_trading'), 'Done');
+      expect(badge('prepare_pool'), 'Done');
+      expect(badge('add_and_lock_liquidity'), 'In progress');
+      expect(badge('open_external_trading'), 'Pending');
     });
 
     testWidgets('only a locked pool says graduated', (tester) async {
@@ -446,7 +459,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('已毕业'), findsOneWidget);
+      expect(find.text('Graduated'), findsOneWidget);
     });
   });
 
@@ -465,7 +478,7 @@ void main() {
       expect(find.text('44,999,000'), findsOneWidget);
       expect(
         tester.widget<LoopRecordRow>(_key('launch-tier-proof')).trailing,
-        '2 条',
+        '2 entries',
       );
     });
 
@@ -479,7 +492,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('不在名单'), findsOneWidget);
+      expect(find.text('Not on the list'), findsOneWidget);
     });
 
     testWidgets('holders render count, my position and my caps', (
@@ -492,10 +505,10 @@ void main() {
           holders: S7Answer<LaunchHolders>(value: s83cHolders()),
         ),
       );
-      expect(find.text('1,842 位参与者'), findsOneWidget);
+      expect(find.text('1,842 participants'), findsOneWidget);
       final me = tester.widget<LoopRecordRow>(_key('launch-holders-me'));
-      expect(me.subtitle, contains('已认购 20,000 枚'));
-      expect(me.subtitle, contains('累计支付 200 USD1'));
+      expect(me.subtitle, contains('Bought 20,000'));
+      expect(me.subtitle, contains('paid 200 USD1 in total'));
       expect(_key('launch-holders-cap-1'), findsOneWidget);
       // Concentration has no source in any schema: still the dash.
       expect(find.textContaining('%'), findsNothing);
@@ -509,9 +522,9 @@ void main() {
           history: S7Answer<LaunchHistory>(value: s83cHistory()),
         ),
       );
-      expect(find.text('1 笔认购'), findsOneWidget);
+      expect(find.text('1 purchase'), findsOneWidget);
       expect(_key('launch-history-purchases'), findsOneWidget);
-      expect(find.text('已确认'), findsOneWidget);
+      expect(find.text('Confirmed'), findsOneWidget);
     });
 
     testWidgets('an indexed empty history is a real empty, with its block', (
@@ -571,7 +584,7 @@ void main() {
         tester.widget<LoopButton>(_key('launch-trade-submit')).onPressed,
         isNull,
       );
-      expect(find.textContaining('已暂停，销售进行中'), findsOneWidget);
+      expect(find.textContaining('Paused, Sale in progress'), findsOneWidget);
     });
 
     testWidgets('a round LOOP has no id for cannot be chosen', (tester) async {
@@ -585,7 +598,7 @@ void main() {
       );
       final row = tester.widget<LoopRecordRow>(_key('launch-round-1'));
       expect(row.onTap, isNull);
-      expect(row.subtitle, contains('不能在这里认购'));
+      expect(row.subtitle, contains("You can't buy here"));
     });
 
     testWidgets('a named refusal is stated; an unknown code is quoted', (
@@ -598,8 +611,11 @@ void main() {
       await _pumpTrade(tester, gateway: gateway);
       await _fillAndSubmit(tester);
       expect(gateway.intents, <String>['$s7LaunchId:$s7RoundId:500']);
-      expect(find.text('这次认购没有通过'), findsOneWidget);
-      expect(find.textContaining('还没有登记到链上'), findsOneWidget);
+      expect(find.text('This purchase didn\'t go through'), findsOneWidget);
+      expect(
+        find.textContaining("isn't registered on chain yet"),
+        findsOneWidget,
+      );
 
       final unknown = FakeLaunchGateway(
         detail: S7Answer<LaunchDetail>(value: s83cDetail()),
@@ -644,15 +660,15 @@ void main() {
         // wallet balances' `launchChain.usd1` (decision 0089).
         expect(_key('launch-trade-review'), findsOneWidget);
         expect(
-          tester.widget<LoopRecordRow>(_key('launch-review-支付')).trailing,
+          tester.widget<LoopRecordRow>(_key('launch-review-1')).trailing,
           '500 USD1',
         );
         expect(
-          tester.widget<LoopRecordRow>(_key('launch-review-预计获得')).trailing,
+          tester.widget<LoopRecordRow>(_key('launch-review-2')).trailing,
           '50,000 MCAT',
         );
-        expect(find.textContaining('USD1 余额 900 USD1'), findsOneWidget);
-        expect(find.textContaining('授权额度 500 USD1'), findsOneWidget);
+        expect(find.textContaining('USD1 balance 900 USD1'), findsOneWidget);
+        expect(find.textContaining('allowance 500 USD1'), findsOneWidget);
 
         await scrollToS7Section(tester, _key('launch-trade-sign'));
         await tester.tap(_key('launch-trade-sign'));
@@ -680,8 +696,11 @@ void main() {
           prepared.intent.unsignedTransaction.toWire(),
         );
         // A broadcast is not a result: it says so and never says success.
-        expect(find.textContaining('广播不代表已成交'), findsWidgets);
-        expect(find.textContaining('成功'), findsNothing);
+        expect(
+          find.textContaining("Broadcast doesn't mean it was filled"),
+          findsWidgets,
+        );
+        expect(find.textContaining('succeeded'), findsNothing);
 
         await tester.tap(find.text('关闭'));
         await tester.pumpAndSettle();
@@ -716,7 +735,7 @@ void main() {
       expect(find.text(loopTestnetBadgeLabel), findsWidgets);
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('没有提交任何交易'), findsWidgets);
+      expect(find.textContaining('No transaction was submitted'), findsWidgets);
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
       // Nothing was broadcast, so the form is not locked.
@@ -742,7 +761,7 @@ void main() {
       await scrollToS7Section(tester, _key('launch-trade-sign'));
       await tester.tap(_key('launch-trade-sign'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('已过期'), findsOneWidget);
+      expect(find.textContaining('This purchase expired'), findsOneWidget);
       expect(
         tester.widget<LoopSignSheet>(_key('launch-sign-sheet')).confirmEnabled,
         isFalse,

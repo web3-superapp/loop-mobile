@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // S342 · decision 0270 · 内置 DApp 浏览器 (docs/55)
@@ -77,7 +78,7 @@ abstract final class DappChains {
   /// the Launch slot, because the owner chooses between them; the testnet
   /// name itself stays a test hint (decision 0204).
   static String label(String chainId) => chainId == loopPrimaryChainId
-      ? 'BSC 主网'
+      ? LoopL10n.current.dapp_modelsFor
       : loopChainName(loopLaunchTestnetChainId);
 
   /// Signing is closed on BSC Mainnet (docs/00 rule 8).
@@ -87,26 +88,32 @@ abstract final class DappChains {
 /// The risk facts the server attaches to a DApp intent (docs/55 §二). The
 /// strip on the confirmation is drawn only when at least one is present.
 enum DappRiskFlag {
-  unlimitedApproval('UNLIMITED_APPROVAL', '无限授权', forcesStepUp: true),
-  approvalForAll('APPROVAL_FOR_ALL', '授权全部 NFT', forcesStepUp: true),
+  unlimitedApproval('UNLIMITED_APPROVAL', forcesStepUp: true),
+  approvalForAll('APPROVAL_FOR_ALL', forcesStepUp: true),
   // S346 (api finding A5): an approval whose spender has no code.
-  eoaSpender('EOA_SPENDER', '授权给个人地址', forcesStepUp: true),
-  permitSignature('PERMIT_SIGNATURE', '签名授权（Permit）', forcesStepUp: true),
+  eoaSpender('EOA_SPENDER', forcesStepUp: true),
+  permitSignature('PERMIT_SIGNATURE', forcesStepUp: true),
   // S346 (api finding A2): a personal_sign of exactly 32 bytes of hex.
-  rawHashSignature('RAW_HASH_SIGNATURE', '原始哈希签名', forcesStepUp: true),
+  rawHashSignature('RAW_HASH_SIGNATURE', forcesStepUp: true),
   // S346 (api finding A2): typed data whose primaryType is not recognised.
-  unrecognizedTypedData(
-    'UNRECOGNIZED_TYPED_DATA',
-    '不可识别的签名结构',
-    forcesStepUp: true,
-  ),
-  unverifiedContract('UNVERIFIED_CONTRACT', '未验证合约'),
-  simulationFailed('SIMULATION_FAILED', '预执行失败');
+  unrecognizedTypedData('UNRECOGNIZED_TYPED_DATA', forcesStepUp: true),
+  unverifiedContract('UNVERIFIED_CONTRACT'),
+  simulationFailed('SIMULATION_FAILED');
 
-  const DappRiskFlag(this.wireName, this.label, {this.forcesStepUp = false});
+  const DappRiskFlag(this.wireName, {this.forcesStepUp = false});
 
   final String wireName;
-  final String label;
+
+  String get label => switch (this) {
+    unlimitedApproval => LoopL10n.current.dapp_modelsUnlimitedApproval,
+    approvalForAll => LoopL10n.current.dapp_modelsApprovalForAll,
+    eoaSpender => LoopL10n.current.dapp_modelsEoaSpender,
+    permitSignature => LoopL10n.current.dapp_modelsPermitSignature,
+    rawHashSignature => LoopL10n.current.dapp_modelsRawHashSignature,
+    unrecognizedTypedData => LoopL10n.current.dapp_modelsUnrecognizedTypedData,
+    unverifiedContract => LoopL10n.current.dapp_modelsUnverifiedContract,
+    simulationFailed => LoopL10n.current.dapp_modelsSimulationFailed,
+  };
 
   /// The large-amount step-up asks for a request carrying this flag whatever
   /// its amount (S346).

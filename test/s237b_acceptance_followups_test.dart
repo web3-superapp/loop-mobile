@@ -218,7 +218,7 @@ void main() {
       expect(launch2ReasonText('LAUNCH2_SNAPSHOT_UNVERIFIED'), '名单核验中，提前购暂不可用');
       final text = launchReasonCodeText('LAUNCH_CONTRACT_VERIFICATION_PENDING');
       expect(text, isNot(contains('还在核对')));
-      expect(text, contains('Launch 合约'));
+      expect(text, contains('Launch contract'));
     });
 
     testWidgets('the IDO chain block (and its screen-reader sentence) is '

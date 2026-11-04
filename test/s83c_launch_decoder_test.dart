@@ -608,7 +608,10 @@ void main() {
         clientVersion: _clientVersion,
         launchId: _launchId,
       );
-      expect(history.purchaseRecords.single.confirmationState.label, '待确认');
+      expect(
+        history.purchaseRecords.single.confirmationState.label,
+        'Pending confirmation',
+      );
       expect(history.entitlements, isEmpty);
     });
   });
@@ -699,7 +702,7 @@ void main() {
             LaunchLiquidityState.preparing,
           ),
         ),
-        '销售成功，流动性准备中',
+        'Sale succeeded, preparing liquidity',
       );
       expect(
         launchStateProjection(
@@ -709,7 +712,7 @@ void main() {
             LaunchLiquidityState.v3Live,
           ),
         ),
-        isNot(contains('已毕业')),
+        isNot(contains('Graduated')),
       );
       expect(
         launchStateProjection(
@@ -720,7 +723,7 @@ void main() {
             LaunchOperationalState.paused,
           ),
         ),
-        '已暂停，销售进行中',
+        'Paused, Sale in progress',
       );
       expect(
         axes(
@@ -782,7 +785,7 @@ void main() {
       expect(launchBpsLabel(300), '3%');
       expect(launchBpsLabel(25), '0.25%');
       expect(launchPoolFeeTierLabel(2500), '0.25%');
-      expect(launchDurationLabel(7776000), '90 天');
+      expect(launchDurationLabel(7776000), '90 days');
     });
 
     test('a refusal names a known reason, and an unknown one by its code', () {
@@ -791,14 +794,17 @@ void main() {
           LaunchFailureKind.unavailable,
           'LAUNCH_SALE_NOT_REGISTERED',
         ),
-        contains('还没有登记到链上'),
+        contains("isn't registered on chain yet"),
       );
       expect(
         launchPurchaseRefusalText(
           LaunchFailureKind.validationFailed,
           'LAUNCH_ROUND_CAP_EXCEEDED',
         ),
-        allOf(contains('错误代码'), isNot(contains('LAUNCH_ROUND_CAP_EXCEEDED'))),
+        allOf(
+          contains('Error code'),
+          isNot(contains('LAUNCH_ROUND_CAP_EXCEEDED')),
+        ),
       );
       expect(
         launchUnexplainedReasonCode('LAUNCH_ROUND_CAP_EXCEEDED'),

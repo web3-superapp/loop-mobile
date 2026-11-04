@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The USD1 approval in front of a Launch purchase (decision 0089).
 ///
@@ -417,14 +418,15 @@ final launchApprovalControllerProvider =
 /// before a balances read says so.
 String? launchApprovalText(LaunchApprovalState state) => switch (state.phase) {
   LaunchApprovalPhase.idle => null,
-  LaunchApprovalPhase.preparing => '正在准备授权，还没有打开钱包。',
+  LaunchApprovalPhase.preparing => LoopL10n.current.launch_approvalPreparing,
   LaunchApprovalPhase.prepareFailed => null,
-  LaunchApprovalPhase.signRefused => '授权没有签名，没有提交任何交易。可以重新发起授权。',
-  LaunchApprovalPhase.polling =>
-    '授权已提交给钱包，正在等待链上授权额度更新'
-        '（已读取 ${state.attempts} 次）。额度到账前不能购买，不要重复授权。',
+  LaunchApprovalPhase.signRefused =>
+    LoopL10n.current.launch_approvalSignRefused,
+  LaunchApprovalPhase.polling => LoopL10n.current.launch_approvalPolling(
+    state.attempts,
+  ),
   LaunchApprovalPhase.pollTimedOut =>
-    '授权已提交，但授权额度还没有更新。它可能仍在确认中，'
-        '请稍后重新读取；不要重复授权。',
-  LaunchApprovalPhase.failedOnChain => '授权交易在链上没有成功，授权额度没有变化。可以重新发起授权。',
+    LoopL10n.current.launch_approvalPollTimedOut,
+  LaunchApprovalPhase.failedOnChain =>
+    LoopL10n.current.launch_approvalFailedOnChain,
 };

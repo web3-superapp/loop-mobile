@@ -31,7 +31,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('0 个已登记项目'), findsOneWidget);
+      expect(find.textContaining('0 registered projects'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('launch-rules-action')),
         findsNothing,

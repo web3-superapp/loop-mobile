@@ -10,6 +10,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
@@ -121,7 +122,7 @@ String _sortLabel(WidgetTester tester) => tester
     )
     .properties
     .label!
-    .replaceFirst('排序，', '');
+    .replaceFirst('Sort, ', '');
 
 Future<void> _chooseSort(WidgetTester tester, String key) async {
   await _tapChip(tester, 'square-community-sort');
@@ -130,6 +131,9 @@ Future<void> _chooseSort(WidgetTester tester, String key) async {
 }
 
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the cards are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   loopWatchGround();
 
   group('S111 · compact head and search entry', () {
@@ -142,7 +146,7 @@ void main() {
       expect(find.text('DISCOVERY DESK'), findsNothing);
       expect(find.textContaining('已载入'), findsNothing);
       // UX-013: the page title and 「规则与入驻 ›」 replace the rule line.
-      expect(find.text('发现社区'), findsOneWidget);
+      expect(find.text('Discover communities'), findsOneWidget);
       expect(find.text(squareCommunityRuleLine), findsNothing);
 
       await tester.tap(
@@ -203,7 +207,7 @@ void main() {
         const Offset(0, -900),
       );
       await tester.pumpAndSettle();
-      expect(find.text('发现社区').hitTestable(), findsNothing);
+      expect(find.text('Discover communities').hitTestable(), findsNothing);
       expect(chips.hitTestable(), findsOneWidget);
       expect(tester.getTopLeft(chips).dy, lessThan(before));
       await _drain(tester);
@@ -258,7 +262,7 @@ void main() {
         find.byKey(const ValueKey<String>('square-community-joined-empty')),
         findsOneWidget,
       );
-      expect(find.text('还没有加入社区'), findsOneWidget);
+      expect(find.text('No joined communities yet'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('square-community-joined-empty-all')),
@@ -336,9 +340,9 @@ void main() {
       }
       expect(capsule('pending', ids[6]), findsOneWidget);
       // S335 (decision 0264): no 热门社区 banner repeats a row any more.
-      expect(find.text('加入'), findsOneWidget);
-      expect(find.text('已加入'), findsNWidgets(2));
-      expect(find.text('我的'), findsOneWidget);
+      expect(find.text('Join'), findsOneWidget);
+      // 已加入 and the 我加入的 chip are both 「Joined」 in English (glossary).\n      expect(find.text('Joined'), findsNWidgets(3));
+      expect(find.text('Mine'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -355,7 +359,7 @@ void main() {
       );
       // S335 (decision 0264): members and the token are two pieces, the
       // token a chip with its logo; nothing joins them into one sentence.
-      expect(find.text('128 成员'), findsNWidgets(2));
+      expect(find.text('128 members'), findsNWidgets(2));
       final chip = find.byKey(
         const ValueKey<String>('square-community-token-$testCommunityId'),
       );
@@ -392,7 +396,7 @@ void main() {
         onOpenCommunity: opened.add,
       );
       await _chooseSort(tester, 'square-sort-power');
-      expect(find.text('128 成员'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('square-community-ranked-$testCommunityId'),
@@ -460,8 +464,8 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('129 成员'), findsOneWidget);
-      expect(find.text('已加入'), findsWidgets);
+      expect(find.text('129 members'), findsOneWidget);
+      expect(find.text('Joined'), findsWidgets);
       await _drain(tester);
     });
 
@@ -506,7 +510,7 @@ void main() {
         find.byKey(const ValueKey<String>('square-community-state')),
         findsOneWidget,
       );
-      expect(find.text('发现社区'), findsOneWidget);
+      expect(find.text('Discover communities'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -515,7 +519,7 @@ void main() {
         tester,
         FakeCommunityGateway(directoryPage: _page(const <CommunitySummary>[])),
       );
-      expect(find.text('没有符合条件的社区'), findsOneWidget);
+      expect(find.text('No matching communities'), findsOneWidget);
       await _drain(tester);
     });
 

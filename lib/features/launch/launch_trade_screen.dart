@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -420,7 +421,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             key: const ValueKey<String>('launch-trade-approve'),
             label: _checkingCapability
                 ? moneyCapabilityCheckingLabel
-                : '先授权 USD1',
+                : context.l10n.launch_tradeLaunchTradeApproveLabel,
             primary: true,
             block: true,
             onPressed: canApprove
@@ -434,14 +435,16 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                   )
                 : null,
             semanticLabel: _checkingCapability
-                ? '先授权 USD1，$moneyCapabilityCheckingLabel'
+                ? context.l10n.launch_tradeLaunchTradeApproveSemanticLabel(
+                    moneyCapabilityCheckingLabel,
+                  )
                 : canApprove
-                ? '先授权 USD1'
-                : '先授权 USD1，当前不可执行',
+                ? context.l10n.launch_tradeLaunchTradeApproveLabel
+                : context.l10n.launch_tradeLaunchTradeApproveSemanticLabel2,
           )
         : LoopButton(
             key: const ValueKey<String>('launch-trade-submit'),
-            label: '买入',
+            label: context.l10n.common_buy,
             primary: true,
             block: true,
             onPressed: canSubmit
@@ -454,7 +457,9 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                     ),
                   )
                 : null,
-            semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
+            semanticLabel: canSubmit
+                ? context.l10n.common_buy
+                : context.l10n.launch_tradeLaunchTradeSubmitSemanticLabel,
           );
     // With the keyboard up the page keeps about a third of its height; the
     // folio folds away so the amount, the balance line and the allowance
@@ -464,8 +469,12 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('launch-trade-screen'),
       archetype: LoopPageArchetype.action,
-      title: detail?.launch.ticker ?? 'Launch 认购',
-      subtitle: '内盘，只买不卖，手续费 ${fee ?? launchMissingFigure}',
+      title:
+          detail?.launch.ticker ??
+          context.l10n.launch_tradeLaunchTradeScreenTitle,
+      subtitle: context.l10n.launch_tradeLaunchTradeScreenSubtitle(
+        fee ?? launchMissingFigure,
+      ),
       onBack: widget.onBack,
       keyboardAccessory: true,
       folioCollapsed: typing,
@@ -474,7 +483,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         LoopIconButton(
           key: const ValueKey<String>('launch-trade-holders-action'),
           icon: 'users',
-          label: '查看持有人',
+          label: context.l10n.launch_tradeLaunchTradeHoldersActionLabel,
           framed: true,
           onPressed: widget.onOpenHolders,
         ),
@@ -482,24 +491,29 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
-        kicker: '最终买入报价',
+        kicker: context.l10n.launch_tradeKicker,
         // The quote is the server's, after prepare; nothing before it.
         heading: prepared == null
             ? launchMissingHeading
             : '${launchUnitsFigure(prepared.intent.expectedTokenAmount)} '
                   '$ticker',
         caption: prepared == null
-            ? '支付、获得、费用与剩余额度在签名前完成最终复核。提交后才有服务端报价。'
-            : '报价来自区块 ${prepared.intent.snapshotBlockNumber} 的合约读数，'
-                  '签名前以下方复核为准。',
-        stamp: purchasable ? '可买入' : '不可买入',
+            ? context.l10n.launch_tradeCaption
+            : context.l10n.launch_tradeCaption2(
+                prepared.intent.snapshotBlockNumber,
+              ),
+        stamp: purchasable
+            ? context.l10n.launch_tradeStamp
+            : context.l10n.launch_tradeStamp2,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>(
                 'launch-trade-capability-unavailable',
               ),
-              title: '内盘认购当前不可用',
+              title: context
+                  .l10n
+                  .launch_tradeLaunchTradeCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -511,7 +525,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             prefix: 'launch-trade',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '这个 Launch 没有可读的认购信息',
+            emptyMessage: context.l10n.launch_tradeEmptyMessage,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -555,7 +569,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                 }
               },
             ),
-          const LoopLabel('本轮参数'),
+          LoopLabel(context.l10n.launch_tradeLoopLabel),
           if (roundLocked && lockedRoundIndex != null)
             Padding(
               key: const ValueKey<String>('launch-trade-round-locked'),
@@ -566,7 +580,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                 LoopSpacing.tight,
               ),
               child: Text(
-                '本次认购：Round $lockedRoundIndex',
+                context.l10n.launch_tradeIf(lockedRoundIndex),
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ),
@@ -598,15 +612,19 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               key: const ValueKey<String>('launch-trade-refusal'),
               icon: 'shield',
               tone: LoopNoticeTone.warn,
-              title: trade.attempted ? '这次认购没有通过' : '认购入口当前不可执行',
+              title: trade.attempted
+                  ? context.l10n.launch_tradeLaunchTradeRefusalTitle
+                  : context.l10n.launch_tradeLaunchTradeRefusalTitle2,
               body: trade.refusalKind != null
                   ? launchPurchaseRefusalText(
                       trade.refusalKind,
                       trade.refusalReasonCode,
                     )
                   : refusedByEvidence
-                  ? '${launchReasonCodeText(capability.evidenceReasonCode)}'
-                        '本页因此不构造任何交易，也不打开签名。'
+                  ? context.l10n
+                        .launch_settlementSectionLaunchSettlementEvidenceBody(
+                          launchReasonCodeText(capability.evidenceReasonCode),
+                        )
                   : _closedReason(
                       onChainState: detail?.launch.onChainState,
                       walletId: walletId,
@@ -639,7 +657,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               launchUnexplainedReasonCode(trade.refusalReasonCode) != null)
             LoopDisclosure(
               key: const ValueKey<String>('launch-trade-refusal-code'),
-              summary: '错误代码',
+              summary: context.l10n.launch_tradeLaunchTradeRefusalCodeSummary,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: SelectableText(
@@ -648,11 +666,11 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                 ),
               ),
             ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('launch-trade-buy-only'),
             icon: 'info',
-            title: '未毕业只买不卖',
-            body: '内盘阶段没有卖出接口。毕业并建立外部流动性之后，交易才会转到行情模块。',
+            title: context.l10n.launch_tradeLaunchTradeBuyOnlyTitle,
+            body: context.l10n.launch_tradeLaunchTradeBuyOnlyBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -662,7 +680,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
           ),
           LoopDisclosure(
             key: const ValueKey<String>('launch-trade-facts'),
-            summary: '固定价格与合约限制',
+            summary: context.l10n.launch_tradeLaunchTradeFactsSummary,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: _TradeLimitsCard(detail: detail, selected: selected),
@@ -690,17 +708,18 @@ class _TradeInFlightBanner extends StatelessWidget {
     final state = trade.reported?.state;
     final String title;
     if (hash == null) {
-      title = '已提交给钱包，结果未确认';
+      title = context.l10n.launch_settlementSectionTitle4;
     } else if (state == null || state == LaunchIntentState.submitted) {
-      title = '已广播，等待链上索引';
+      title = context.l10n.launch_tradeTitle;
     } else {
-      title = '已广播，${state.label}';
+      title = context.l10n.launch_tradeTitle2(state.label);
     }
-    final round = roundIndex == null ? '' : 'Round $roundIndex，';
+    final round = roundIndex == null
+        ? ''
+        : context.l10n.launch_roundComma(roundIndex);
     final body = hash == null
-        ? '$round这笔认购已锁定，不要重复签名。结果会出现在「我的参与记录」。'
-        : '$round交易 ${launchShortHex(hash)}。广播不代表已成交，'
-              '结果以链上索引为准，会出现在「我的参与记录」。';
+        ? context.l10n.launch_tradeIf2(round)
+        : context.l10n.launch_tradeS(launchShortHex(hash), round);
     return LoopNotice(
       key: const ValueKey<String>('launch-trade-in-flight'),
       icon: 'clock',
@@ -729,35 +748,43 @@ String _closedReason({
 }) {
   switch (onChainState) {
     case LaunchOnChainUnavailable(:final reasonCode):
-      return '${launchReasonCodeText(reasonCode)}本页因此不构造任何交易，也不打开签名。';
+      return LoopL10n.current
+          .launch_settlementSectionLaunchSettlementEvidenceBody(
+            launchReasonCodeText(reasonCode),
+          );
     case final LaunchOnChainAvailable chain when !chain.isPurchasable:
-      return '当前链上状态：${launchStateProjection(chain)}。'
-          '只有销售进行中且未暂停时才能认购。';
+      return LoopL10n.current.launch_tradeSwitch(launchStateProjection(chain));
     case null:
-      return '还没有读到链上状态，本页不构造任何交易。';
+      return LoopL10n.current.launch_tradeNull;
     default:
       break;
   }
-  if (walletId == null) return '还没有可用的支付钱包，请先在钱包中选择一个。';
-  if (round == null || round.roundId == null) return '请先选择要参与的轮次。';
+  if (walletId == null) return LoopL10n.current.launch_tradeSwitch2;
+  if (round == null || round.roundId == null) {
+    return LoopL10n.current.launch_tradeSwitch3;
+  }
   if (now.isBefore(round.startAt)) {
-    return 'Round ${round.roundIndex} 尚未开始，'
-        '${launchTimestampLabel(round.startAt)} 开放后才能认购。';
+    return LoopL10n.current.launch_tradeSwitch4(
+      launchTimestampLabel(round.startAt),
+      round.roundIndex,
+    );
   }
   if (!round.isOpenAt(now)) {
-    return 'Round ${round.roundIndex} 已于 '
-        '${launchTimestampLabel(round.endAt)} 结束，请选择进行中的轮次。';
+    return LoopL10n.current.launch_tradeSwitch5(
+      launchTimestampLabel(round.endAt),
+      round.roundIndex,
+    );
   }
-  if (payAmount == null) return '请输入一个有效的支付数量（最多 18 位小数）。';
+  if (payAmount == null) return LoopL10n.current.launch_tradeSwitch6;
   switch (allowance) {
     case LaunchAllowanceStatus.reading:
-      return '正在读取 USD1 授权额度，读到之前不能购买。';
+      return LoopL10n.current.launch_tradeReading;
     case LaunchAllowanceStatus.unread:
-      return '授权状态未读取，本页不猜测授权额度，因此暂不能购买。';
+      return LoopL10n.current.launch_tradeUnread;
     case LaunchAllowanceStatus.insufficient:
-      return 'USD1 授权额度不足，需要先授权本次金额，授权到账后才能购买。';
+      return LoopL10n.current.launch_tradeInsufficient;
     case LaunchAllowanceStatus.sufficient:
-      return '可以提交，结果以提交后的状态为准。';
+      return LoopL10n.current.launch_tradeSufficient;
   }
 }
 
@@ -790,9 +817,11 @@ class _TradeQuoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final intent = prepared?.intent;
     final reading = usd1;
-    final balance = reading == null ? '未读取' : launchUsd1Label(reading.balance);
+    final balance = reading == null
+        ? context.l10n.launch_tradeBuild
+        : launchUsd1Label(reading.balance);
     final allowance = reading == null
-        ? '未读取'
+        ? context.l10n.launch_tradeBuild
         : launchUsd1Label(reading.allowance);
     return LoopChalkCard(
       key: const ValueKey<String>('launch-trade-quote'),
@@ -811,7 +840,7 @@ class _TradeQuoteCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                '支付 $payAsset',
+                context.l10n.launch_detailScreensTitle(payAsset),
                 style: LoopType.kicker.copyWith(color: auxiliary),
               ),
               const SizedBox(height: 4),
@@ -861,7 +890,7 @@ class _TradeQuoteCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          '预计获得',
+                          context.l10n.common_estimatedReceive,
                           style: LoopType.captionSm.copyWith(color: auxiliary),
                         ),
                         const SizedBox(height: 3),
@@ -880,8 +909,11 @@ class _TradeQuoteCard extends StatelessWidget {
               ),
               const SizedBox(height: 7),
               Text(
-                '包含本轮手续费 ${feeLabel ?? launchMissingFigure}，'
-                'USD1 余额 $balance，授权额度 $allowance',
+                context.l10n.launch_tradeLaunchTradeBalance(
+                  allowance,
+                  balance,
+                  feeLabel ?? launchMissingFigure,
+                ),
                 key: const ValueKey<String>('launch-trade-balance'),
                 style: LoopType.captionSm.copyWith(color: auxiliary),
               ),
@@ -926,12 +958,12 @@ class _TradeReview extends StatelessWidget {
       key: const ValueKey<String>('launch-trade-review'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('签名前复核'),
+        LoopLabel(context.l10n.launch_tradeLoopLabel2),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             for (var index = 1; index < fields.length; index += 1)
               LoopRecordRow(
-                key: ValueKey<String>('launch-review-${fields[index].label}'),
+                key: ValueKey<String>('launch-review-$index'),
                 title: fields[index].label,
                 trailing: fields[index].value,
                 position: launchRowPosition(index - 1, fields.length - 1),
@@ -968,7 +1000,7 @@ class _TradeReview extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('launch-trade-settled-done'),
-              label: '重新认购',
+              label: context.l10n.launch_tradeLaunchTradeSettledDoneLabel,
               block: true,
               onPressed: onDiscard,
             ),
@@ -979,8 +1011,8 @@ class _TradeReview extends StatelessWidget {
             icon: 'clock',
             tone: LoopNoticeTone.warn,
             title: reported == null
-                ? '已提交给钱包，结果未确认'
-                : '已广播，${reported.state.label}',
+                ? context.l10n.launch_settlementSectionTitle4
+                : context.l10n.launch_tradeTitle2(reported.state.label),
             body:
                 launchBroadcastText(
                   LaunchSignOutcome(
@@ -992,7 +1024,7 @@ class _TradeReview extends StatelessWidget {
                     reported: reported,
                   ),
                 ) +
-                (trade.pollTimedOut ? '还没有读到链上结果，可以稍后重新查询。' : ''),
+                (trade.pollTimedOut ? context.l10n.launch_tradeBody : ''),
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -1005,7 +1037,9 @@ class _TradeReview extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: LoopButton(
                 key: const ValueKey<String>('launch-trade-poll-resume'),
-                label: '重新查询',
+                label: context
+                    .l10n
+                    .launch_settlementSectionLaunchSettlementPollResumeLabel,
                 block: true,
                 onPressed: onResumePolling,
               ),
@@ -1015,7 +1049,13 @@ class _TradeReview extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: LoopButton(
                 key: const ValueKey<String>('launch-trade-report-retry'),
-                label: trade.reporting ? '正在重新上报' : '重新上报',
+                label: trade.reporting
+                    ? context
+                          .l10n
+                          .launch_settlementSectionLaunchSettlementReportRetryLabel
+                    : context
+                          .l10n
+                          .launch_settlementSectionLaunchSettlementReportRetryLabel2,
                 block: true,
                 onPressed: onRetryReport,
               ),
@@ -1026,7 +1066,9 @@ class _TradeReview extends StatelessWidget {
               key: const ValueKey<String>('launch-trade-sign-refused'),
               icon: 'shield',
               tone: LoopNoticeTone.warn,
-              title: '没有签名',
+              title: context
+                  .l10n
+                  .launch_settlementSectionLaunchSettlementSignRefusedTitle,
               body: launchSignReasonText(reason),
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
@@ -1039,14 +1081,14 @@ class _TradeReview extends StatelessWidget {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('launch-trade-discard'),
-                label: '重新报价',
+                label: context.l10n.launch_tradeLaunchTradeDiscardLabel,
                 onPressed: onDiscard,
               ),
               LoopButton(
                 key: const ValueKey<String>('launch-trade-sign'),
                 label: checkingCapability
                     ? moneyCapabilityCheckingLabel
-                    : '签名认购',
+                    : context.l10n.launch_tradeLaunchTradeSignLabel,
                 primary: true,
                 onPressed: onSign,
               ),
@@ -1084,7 +1126,7 @@ class _AllowanceNotice extends StatelessWidget {
     var reread = false;
     if (approval.phase == LaunchApprovalPhase.prepareFailed &&
         failure != null) {
-      title = '授权没有准备成功';
+      title = context.l10n.launch_tradeTitle3;
       body =
           MoneyPolicyNotice.covers(failure) ||
               failure.kind == LoopChainFailureKind.permissionDenied
@@ -1092,34 +1134,40 @@ class _AllowanceNotice extends StatelessWidget {
           : loopChainFailureReason(failure.kind);
     } else if (approvalText != null) {
       title = switch (approval.phase) {
-        LaunchApprovalPhase.polling => '等待授权到账',
-        LaunchApprovalPhase.pollTimedOut => '授权额度还没有更新',
-        LaunchApprovalPhase.failedOnChain => '授权没有生效',
-        LaunchApprovalPhase.signRefused => '授权没有签名',
-        _ => '正在准备授权',
+        LaunchApprovalPhase.polling => context.l10n.launch_tradePolling,
+        LaunchApprovalPhase.pollTimedOut =>
+          context.l10n.launch_tradePollTimedOut,
+        LaunchApprovalPhase.failedOnChain =>
+          context.l10n.launch_tradeFailedOnChain,
+        LaunchApprovalPhase.signRefused => context.l10n.launch_tradeSignRefused,
+        _ => context.l10n.launch_tradeSwitch7,
       };
       body = approvalText;
       reread = approval.phase == LaunchApprovalPhase.pollTimedOut;
     } else {
       switch (allowance.status) {
         case LaunchAllowanceStatus.reading:
-          title = '正在读取授权状态';
-          body = '正在读取这个钱包在 Launch 链上的 USD1 授权额度，读到之前不能购买。';
+          title = context.l10n.launch_tradeTitle4;
+          body = context.l10n.launch_tradeBody2;
         case LaunchAllowanceStatus.unread:
-          title = '授权状态未读取';
+          title = context.l10n.launch_tradeTitle5;
           body = allowance.failureKind == null
-              ? '没有读到这个钱包在 Launch 链上的 USD1 授权额度。本页不猜测授权额度，'
-                    '因此暂不能购买。'
-              : '${loopChainFailureReason(allowance.failureKind)}'
-                    '授权额度读到之前不能购买。';
+              ? context.l10n.launch_tradeSwitch8
+              : context.l10n.launch_tradeS2(
+                  loopChainFailureReason(allowance.failureKind),
+                );
           reread = true;
         case LaunchAllowanceStatus.insufficient:
           final usd1 = allowance.usd1;
-          title = '需要先授权 USD1';
-          body =
-              '${usd1 == null ? '' : '当前授权 ${launchUsd1Label(usd1.allowance)}，'}'
-              '本次需要 $amount USD1。授权额度只按本次金额，不是无限额度；'
-              '授权到账后才能购买。';
+          title = context.l10n.launch_tradeTitle6;
+          body = context.l10n.launch_tradeBody3(
+            amount,
+            usd1 == null
+                ? ''
+                : context.l10n.launch_tradeCurrentAllowance(
+                    launchUsd1Label(usd1.allowance),
+                  ),
+          );
         case LaunchAllowanceStatus.sufficient:
           return const SizedBox.shrink();
       }
@@ -1149,7 +1197,7 @@ class _AllowanceNotice extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('launch-trade-allowance-reread'),
-              label: '重新读取',
+              label: context.l10n.launch_tradeLaunchTradeAllowanceRereadLabel,
               block: true,
               onPressed: onReread,
             ),
@@ -1185,12 +1233,14 @@ class _FundingGuidance extends StatelessWidget {
     final gas = reasonCode == launchGasInsufficientCode;
     final fact = gas
         ? (native == null
-              ? '网络费余额未读取'
-              : '网络费余额 ${loopFormatDecimal(native.displayBalance)} '
-                    '${native.symbol}')
+              ? context.l10n.launch_tradeIf3
+              : context.l10n.launch_tradeS3(
+                  loopFormatDecimal(native.displayBalance),
+                  native.symbol,
+                ))
         : (usd1 == null
-              ? 'USD1 余额未读取'
-              : 'USD1 余额 ${launchUsd1Label(usd1.balance)}');
+              ? context.l10n.launch_tradeIf4
+              : context.l10n.launch_tradeS4(launchUsd1Label(usd1.balance)));
     return Column(
       key: ValueKey<String>('launch-trade-funding-$reasonCode'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1198,8 +1248,10 @@ class _FundingGuidance extends StatelessWidget {
       children: <Widget>[
         LoopNotice(
           icon: 'wallet',
-          title: gas ? '先补充网络费' : '先补充 USD1',
-          body: '$fact。转入后重新读取余额，再重新买入。',
+          title: gas
+              ? context.l10n.launch_tradeTitle7
+              : context.l10n.launch_tradeTitle8,
+          body: context.l10n.launch_tradeBody4(fact),
           margin: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
             10,
@@ -1211,7 +1263,9 @@ class _FundingGuidance extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
           child: LoopButton(
             key: const ValueKey<String>('launch-trade-funding-reread'),
-            label: refreshing ? '正在读取余额' : '重新读取余额',
+            label: refreshing
+                ? context.l10n.launch_tradeLaunchTradeFundingRereadLabel
+                : context.l10n.launch_tradeLaunchTradeFundingRereadLabel2,
             block: true,
             onPressed: refreshing ? null : onReread,
           ),
@@ -1274,7 +1328,7 @@ class _TradeLimitsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text('固定价格', style: LoopType.kicker),
+                    Text(context.l10n.launch_tradeIf5, style: LoopType.kicker),
                     const SizedBox(height: 5),
                     Text(price, style: LoopType.figureLg),
                   ],
@@ -1285,20 +1339,25 @@ class _TradeLimitsCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(window, style: LoopType.figure),
-                  Text('本轮截止', style: LoopType.captionSm),
+                  Text(
+                    context.l10n.launch_detailScreensIf12,
+                    style: LoopType.captionSm,
+                  ),
                 ],
               ),
             ],
           ),
           const LoopHairline(),
           Text(
-            '已募集 $raisedLabel / 硬顶 $hardCap',
+            context.l10n.launch_detailScreensS5(raisedLabel, hardCap),
             style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const SizedBox(height: 10),
           LoopProgressBar(
             value: progress,
-            semanticLabel: progress == null ? '募集进度暂时读不到' : '募集进度',
+            semanticLabel: progress == null
+                ? context.l10n.launch_tradeSemanticLabel
+                : context.l10n.launch_tradeSemanticLabel2,
           ),
         ],
       ),
@@ -1342,11 +1401,11 @@ class _TradeParameters extends StatelessWidget {
     }
     final rounds = detail?.rounds ?? const <LaunchRound>[];
     if (rounds.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('launch-trade-no-round'),
         illustration: LoopIllustration.launchpad,
-        title: '没有可参与的轮次',
-        message: '轮次配置尚未确认，因此没有价格、资格或额度可以展示。',
+        title: context.l10n.launch_tradeLaunchTradeNoRoundTitle,
+        message: context.l10n.launch_tradeLaunchTradeNoRoundMessage,
         compact: true,
       );
     }

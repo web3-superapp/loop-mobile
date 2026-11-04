@@ -1657,7 +1657,7 @@ void main() {
       expect(_key('launch2-status-rejected'), findsOneWidget);
       expect(_key('launch2-milestones-rejected'), findsOneWidget);
       expect(_key('launch2-rejection-other'), findsOneWidget);
-      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.text('审核未通过：Other'), findsOneWidget);
       expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
       expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
       expect(_key('launch2-project-sign'), findsNothing);
@@ -1691,7 +1691,10 @@ void main() {
           ],
         ),
       );
-      expect(find.text('审核未通过：名称或代码与已有项目冲突'), findsOneWidget);
+      expect(
+        find.text('审核未通过：Name or ticker conflicts with an existing project'),
+        findsOneWidget,
+      );
       expect(find.textContaining('项目资料未通过审核'), findsOneWidget);
       expect(find.textContaining('审核意见'), findsNothing);
       // No more 「重新发起」: the same project is edited and resubmitted.
@@ -1965,7 +1968,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
+      expect(find.text('已拒绝 · Other'), findsOneWidget);
       expect(find.text('回购收币地址需要更新'), findsOneWidget);
       await tester.tap(_key('launch2-project-row-$second'));
       expect(opened.single, Launch2CreatorRoute.project(second));
@@ -2217,7 +2220,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(creator.configReads, 2);
-      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
+      expect(find.text('已拒绝 · Other'), findsOneWidget);
       expect(_key('launch2-status-rejected'), findsOneWidget);
       await _drain(tester);
     });
@@ -2241,7 +2244,7 @@ void main() {
         ),
       );
       expect(_key('launch2-create-rejection'), findsOneWidget);
-      expect(find.text('审核未通过：其他原因'), findsOneWidget);
+      expect(find.text('审核未通过：Other'), findsOneWidget);
       expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
       expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
       // The banner stays on every step.

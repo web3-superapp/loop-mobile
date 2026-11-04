@@ -27,6 +27,7 @@ import 'package:loop_mobile/widgets/loop_tab_segments.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s7_page_harness.dart';
+import 'support/loop_shots.dart';
 
 const _roomA = '8c7b6a59-4d3e-4f21-8a0b-1c2d3e4f5a6b';
 const _roomB = '2b3c4d5e-6f70-4182-9394-a5b6c7d8e9f0';
@@ -116,6 +117,9 @@ const _session = VoiceRoomSession(
 );
 
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; these pages are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   loopWatchGround();
 
   group('chat · the room this account is in', () {
@@ -178,7 +182,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('已在房间'), findsOneWidget);
+      expect(find.text('In room'), findsOneWidget);
     });
   });
 

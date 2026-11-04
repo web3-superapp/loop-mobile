@@ -28,6 +28,7 @@ import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s7_page_harness.dart';
+import 'support/loop_shots.dart';
 
 const _roomA = '8c7b6a59-4d3e-4f21-8a0b-1c2d3e4f5a6b';
 const _roomB = '2b3c4d5e-6f70-4182-9394-a5b6c7d8e9f0';
@@ -141,6 +142,9 @@ Future<void> _pumpRooms(
 );
 
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; these pages are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   // Two tests mount pages through their own `pumpWidget`.
   loopWatchGround();
 
@@ -257,7 +261,7 @@ void main() {
       );
       // Decision 0122: the centred voice-room illustration, its title and
       // one step back to the communities.
-      expect(find.text('还没有人开播'), findsOneWidget);
+      expect(find.text('No one is live yet'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('loop-empty-illustration-voice-room'),
@@ -308,10 +312,10 @@ void main() {
       // Decision 0115: the card is the room's title, its community, the host
       // and the room's own total (host + speakers + listeners).
       expect(find.text('Builders Guild 语音房'), findsOneWidget);
-      expect(find.text('主持 frog_maxi'), findsOneWidget);
-      expect(find.text('6 在听 · 开播 1 小时'), findsOneWidget);
-      expect(find.text('主持 匿名成员'), findsOneWidget);
-      expect(find.text('1 在听 · 开播 3 小时'), findsOneWidget);
+      expect(find.text('Host frog_maxi'), findsOneWidget);
+      expect(find.text('6 listening · Live 1h'), findsOneWidget);
+      expect(find.text('Host 匿名成员'), findsOneWidget);
+      expect(find.text('1 listening · Live 3h'), findsOneWidget);
       expect(find.textContaining('在线'), findsNothing);
       expect(find.textContaining('演示数据'), findsNothing);
 
@@ -334,7 +338,10 @@ void main() {
       await tester.pump();
       expect(rooms, isEmpty);
       expect(communities, <String>[_communityB]);
-      expect(find.text('加入「Frog Holders」后才能进入语音房'), findsOneWidget);
+      expect(
+        find.text('Join "Frog Holders" to enter the voice room'),
+        findsOneWidget,
+      );
       await tester.pump(const Duration(seconds: 3));
     });
 
@@ -419,7 +426,7 @@ void main() {
         findsOneWidget,
       );
       // The segment is the page heading; there is no bar title above it.
-      expect(find.text('发现社区'), findsNothing);
+      expect(find.text('Discover communities'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey<String>('square-segment-1')));
       await tester.pumpAndSettle();

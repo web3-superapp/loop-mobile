@@ -223,7 +223,7 @@ void main() {
         // 「我加入的」 is drawn whole.
         final joined = find.descendant(
           of: _key('square-filter-joined'),
-          matching: find.text('我加入的'),
+          matching: find.text('Joined'),
         );
         expect(joined, findsOneWidget);
         expect(tester.getRect(joined).right, lessThanOrEqualTo(chips.right));

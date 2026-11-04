@@ -84,7 +84,7 @@ void main() {
       expect(testnetNotice, findsOneWidget);
       expect(find.text(loopTestnetNoticeTitle), findsOneWidget);
       // The row keeps its on-chain state badge as well as the chain badge.
-      expect(find.text('链上待确认'), findsWidgets);
+      expect(find.text('On-chain pending'), findsWidgets);
     });
 
     testWidgets('the row badge follows the launch, not the capability', (

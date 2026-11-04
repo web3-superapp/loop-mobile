@@ -226,11 +226,14 @@ void main() {
       );
       final card = find.byKey(const ValueKey<String>('loop-economy-onchain'));
       await scrollToS7Section(tester, card);
-      expect(find.text('链上账本'), findsOneWidget);
+      expect(find.text('On-chain ledger'), findsOneWidget);
       expect(find.text('170 USD1'), findsOneWidget);
-      expect(find.text('已登记发售'), findsOneWidget);
-      expect(find.text('已锁 LP'), findsOneWidget);
-      expect(find.text('读自区块 67,123,456，LOOP 链上事件索引'), findsOneWidget);
+      expect(find.text('Registered sales'), findsOneWidget);
+      expect(find.text('LP locked'), findsOneWidget);
+      expect(
+        find.text('Read at block 67,123,456, LOOP on-chain event index'),
+        findsOneWidget,
+      );
       expect(find.textContaining('loop_indexer'), findsNothing);
     });
 
@@ -254,9 +257,15 @@ void main() {
       await scrollToS7Section(tester, strip);
       expect(strip, findsOneWidget);
       expect(tester.widget(strip), isA<LoopInlineUnavailable>());
-      expect(find.textContaining('链上事件索引还没有开始'), findsOneWidget);
+      expect(
+        find.textContaining("on-chain event index hasn't started yet"),
+        findsOneWidget,
+      );
       // The list-row sentence of the global mapping would be wrong here.
-      expect(find.textContaining('列表不逐个读链'), findsNothing);
+      expect(
+        find.textContaining("The list doesn't read the chain per item"),
+        findsNothing,
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-economy-onchain')),
         findsNothing,
@@ -273,7 +282,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('loop-economy-loop-stats')),
       );
-      expect(find.text('链上账本'), findsNothing);
+      expect(find.text('On-chain ledger'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('loop-economy-onchain')),
         findsNothing,
@@ -294,8 +303,10 @@ void main() {
           meta: s7MetaSnapshot(launchEvidenceConfirmed: confirmed),
         );
 
-    const live = '总量、发行与生态税还没有开放读取，这里只显示 LOOP 能核对的数量。';
-    const pending = '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。';
+    const live =
+        "Total supply, issuance and ecosystem tax aren't open yet. Only amounts LOOP can verify are shown here.";
+    const pending =
+        'Total supply, issuance and ecosystem tax wait for the contract. Only amounts LOOP can verify are shown here.';
 
     testWidgets(
       'confirmed: not open for reading, no waiting for the contract',
@@ -308,7 +319,7 @@ void main() {
         );
         await scrollToS7Section(tester, strip);
         expect(find.text(live), findsOneWidget);
-        expect(find.textContaining('要等合约上线'), findsNothing);
+        expect(find.textContaining('wait for the contract'), findsNothing);
       },
     );
 

@@ -931,7 +931,7 @@ void main() {
         expect(LaunchReviewStatus.rejected.isEditable, isTrue);
         expect(
           launchReviewStatusHint(LaunchReviewStatus.rejected),
-          contains('重新提交'),
+          contains('resubmit'),
         );
         // Every code has its own words.
         expect(

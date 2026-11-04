@@ -405,7 +405,10 @@ void main() {
             DappRpcErrorCode.unauthorized,
           );
         }
-        expect(host.toasts, List<String>.filled(3, '暂不支持在这个网络签名'));
+        expect(
+          host.toasts,
+          List<String>.filled(3, "Signing isn't supported on this network yet"),
+        );
         expect(intents.prepared, isEmpty);
       },
     );
@@ -577,7 +580,9 @@ void main() {
         ),
         DappRpcErrorCode.unauthorized,
       );
-      expect(host.toasts, <String>['暂不支持在这个网络签名']);
+      expect(host.toasts, <String>[
+        'Signing isn\'t supported on this network yet',
+      ]);
     });
   });
 
@@ -914,9 +919,15 @@ void main() {
         'GAS_ESTIMATE_UNAVAILABLE',
         'INTENT_NOT_SIGNABLE',
       ]) {
-        expect(dappSignReasonText(code), '这笔交易预执行未通过，没有签名。');
+        expect(
+          dappSignReasonText(code),
+          'This transaction failed simulation and wasn\'t signed.',
+        );
       }
-      expect(dappSignReasonText('SIMULATION_UNAVAILABLE'), '这笔交易暂时无法预执行，没有签名。');
+      expect(
+        dappSignReasonText('SIMULATION_UNAVAILABLE'),
+        'This transaction can\'t be simulated right now and wasn\'t signed.',
+      );
       final refusal = DappSigner.refusalBeforeWallet(
         LoopV2DappCodec.intent(<String, Object?>{
           ...s342TxIntentBody(),
@@ -1055,7 +1066,7 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-risk-strip')),
         findsOneWidget,
       );
-      expect(find.text('无限授权'), findsOneWidget);
+      expect(find.text('Unlimited approval'), findsOneWidget);
       expect(find.text(s342Origin), findsOneWidget);
       expect(find.text('approve'), findsOneWidget);
       expect(find.text(s342Token), findsOneWidget);
@@ -1310,7 +1321,7 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-browser-home')),
         findsOneWidget,
       );
-      expect(find.text('DApp 浏览器'), findsWidgets);
+      expect(find.text('DApp browser'), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('dapp-browser-empty')),
         findsOneWidget,
@@ -1322,7 +1333,7 @@ void main() {
       await tester.enterText(field, 'http://plain.example');
       await tester.tap(find.byKey(const ValueKey<String>('dapp-browser-go')));
       await tester.pumpAndSettle();
-      expect(find.text('这个网址不能打开'), findsOneWidget);
+      expect(find.text('This address can\'t be opened'), findsOneWidget);
       expect(opened, isEmpty);
 
       await tester.enterText(field, 'https://app.example.org:8443/swap');
@@ -1351,7 +1362,7 @@ void main() {
       final store = MemoryDappBrowserStore(<String, DappBrowserLocalState>{
         s342Account: DappBrowserLocalState(
           recents: const <DappPageEntry>[
-            DappPageEntry(url: 'https://r.example/', title: 'Recent'),
+            DappPageEntry(url: 'https://r.example/', title: 'Recent site'),
           ],
           bookmarks: const <DappPageEntry>[
             DappPageEntry(url: 'https://b.example/', title: 'Saved'),
@@ -1359,15 +1370,15 @@ void main() {
         ),
       });
       await pumpPage(tester, const DappEntryScreen(), store: store);
-      expect(find.text('收藏'), findsOneWidget);
-      expect(find.text('最近访问'), findsOneWidget);
-      expect(find.text('Saved'), findsOneWidget);
+      expect(find.text('Bookmarks'), findsOneWidget);
       expect(find.text('Recent'), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.text('Recent site'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('dapp-browser-clear-recents')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Recent'), findsNothing);
+      expect(find.text('Recent site'), findsNothing);
       expect((await store.read(s342Account)).recents, isEmpty);
     });
 
@@ -1426,7 +1437,7 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-url-full')),
         findsOneWidget,
       );
-      expect(find.text('来源一致'), findsOneWidget);
+      expect(find.text('Same origin'), findsOneWidget);
       await tester.tapAt(const Offset(195, 40));
       await tester.pumpAndSettle();
 
@@ -1436,7 +1447,7 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-chain-eip155:56')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('BSC 主网'), findsOneWidget);
+      expect(find.text('BSC Mainnet'), findsOneWidget);
       expect(factory.controller.scripts.last, contains('chainChanged'));
       expect(
         factory.controller.scripts.last,

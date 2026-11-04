@@ -1,0 +1,803 @@
+{
+  "square_communityListBarrierLabel": {
+    "en": "Close sorting rules",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:99",
+    "zh": "关闭排序规则"
+  },
+  "square_communityListBarrierLabel2": {
+    "en": "Close sorting",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:119",
+    "zh": "关闭排序"
+  },
+  "square_communityListBuild": {
+    "en": "Discover communities",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:354",
+    "zh": "发现社区"
+  },
+  "square_communityListBuild2": {
+    "en": "Sorting uses only verifiable numbers: members, creation time, power and 7-day discussion count. Popular doesn't mean recommended.",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1172",
+    "zh": "排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。"
+  },
+  "square_communityListBuild3": {
+    "en": "How to list a community",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1184",
+    "zh": "社区怎么入驻"
+  },
+  "square_communityListBuild4": {
+    "en": "Any community can apply. After applying the status is \"In review\"; only communities verified by operations show a verified mark. This page doesn't imply any Mining weight.",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1187",
+    "zh": "任何社区都可以提交申请。申请后状态为\"审核中\"，只有运维核验通过才会显示验证标记；本页不代表任何 Mining 权重结论。"
+  },
+  "square_communityListJoin": {
+    "en": ", not joined",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:719",
+    "zh": "，未加入"
+  },
+  "square_communityListJoined": {
+    "en": "Joined",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:584",
+    "zh": "我加入的"
+  },
+  "square_communityListJoined2": {
+    "en": ", joined",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:720",
+    "zh": "，已加入"
+  },
+  "square_communityListLoopSheetHeading": {
+    "en": "Sort",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:481",
+    "zh": "排序"
+  },
+  "square_communityListLoopSheetHeading2": {
+    "en": "Sorting rules",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1159",
+    "zh": "排序规则"
+  },
+  "square_communityListMessage": {
+    "en": "Joined",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:85, lib/features/square/square_community_list.dart:1089",
+    "zh": "已加入"
+  },
+  "square_communityListMessage2": {
+    "en": "\"{label}\" isn't available right now",
+    "placeholders": {
+      "label": {
+        "example": "selectedSegment.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_community_list.dart:172",
+    "zh": "「{label}」暂时不可用"
+  },
+  "square_communityListMine": {
+    "en": ", my community",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:721",
+    "zh": "，我的社区"
+  },
+  "square_communityListPending": {
+    "en": ", in review",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:722",
+    "zh": "，审核中"
+  },
+  "square_communityListPlaceholder": {
+    "en": "Search communities",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:535",
+    "zh": "搜索社区"
+  },
+  "square_communityListResource": {
+    "en": "Community directory",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:152",
+    "zh": "社区目录"
+  },
+  "square_communityListSquareCommunityApplyLabel": {
+    "en": "Apply to list",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1197",
+    "zh": "申请入驻"
+  },
+  "square_communityListSquareCommunityCapabilityUnavailableTitle": {
+    "en": "Communities aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:287",
+    "zh": "社区模块当前不可用"
+  },
+  "square_communityListSquareCommunityJoinedEmptyAllLabel": {
+    "en": "View all",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:201",
+    "zh": "去看看全部"
+  },
+  "square_communityListSquareCommunityJoinedEmptyTitle": {
+    "en": "No joined communities yet",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:198",
+    "zh": "还没有加入社区"
+  },
+  "square_communityListSquareCommunityOrderingBackLabel": {
+    "en": "Sort by most members",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:186",
+    "zh": "按成员最多排序"
+  },
+  "square_communityListSquareCommunityRuleLine": {
+    "en": "Sorted by members / power / discussions / newest. Popular doesn't mean recommended.",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:35",
+    "zh": "按成员数 / 算力 / 讨论量 / 新建排序，热门不等于推荐"
+  },
+  "square_communityListSquareCommunityRulesLabel": {
+    "en": "Rules and listing",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:363",
+    "zh": "规则与入驻"
+  },
+  "square_communityListSquareCommunitySortLabel": {
+    "en": "Sort, {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_community_list.dart:431",
+    "zh": "排序，{label}"
+  },
+  "square_communityListSquareCommunityStateEmptyMessage": {
+    "en": "No matching communities",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:217",
+    "zh": "没有符合条件的社区"
+  },
+  "square_communityListSquareCommunitySubline": {
+    "en": "{memberCount, plural, =1{1 member} other{{memberCount} members}}",
+    "placeholders": {
+      "memberCount": {
+        "example": "community.memberCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_community_list.dart:651, lib/features/square/square_community_list.dart:800",
+    "zh": "{memberCount} 成员"
+  },
+  "square_communityListSquareMiningLabel": {
+    "en": "Power community",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:991",
+    "zh": "算力社区"
+  },
+  "square_communityListSwitch": {
+    "en": "Join",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1085",
+    "zh": "加入"
+  },
+  "square_communityListSwitch2": {
+    "en": "Mine",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1090",
+    "zh": "我的"
+  },
+  "square_communityListSwitch3": {
+    "en": "Joining",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart:1094",
+    "zh": "加入中"
+  },
+  "square_feedCancelled": {
+    "en": "Result unconfirmed. Pull to refresh to check whether it was posted.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:641",
+    "zh": "结果未确认，下拉刷新看看是否已发出"
+  },
+  "square_feedGlobal": {
+    "en": "Global",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:18",
+    "zh": "全球"
+  },
+  "square_feedIdempotencyConflict": {
+    "en": "This was already submitted. Pull to refresh to check.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:642",
+    "zh": "这条已经提交过，下拉刷新看看"
+  },
+  "square_feedSwitch": {
+    "en": "Posting too fast. Wait a minute and try again.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:630, lib/features/square/square_feed.dart:637",
+    "zh": "发得太快了，稍等一分钟再发"
+  },
+  "square_feedSwitch2": {
+    "en": "Write something before posting",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:631",
+    "zh": "写点内容再发布"
+  },
+  "square_feedSwitch3": {
+    "en": "500 characters max. Shorten it and post again.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:632",
+    "zh": "最多 500 字，删减一些再发布"
+  },
+  "square_feedSwitch4": {
+    "en": "The text has unsupported characters. Remove them and post again.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:633",
+    "zh": "内容里有不支持的字符，删掉后再发布"
+  },
+  "square_feedSwitch5": {
+    "en": "The quoted token can't be loaded. Pick another or post without a token.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:634",
+    "zh": "引用的代币读不到了，换一个或不带代币"
+  },
+  "square_feedSwitch6": {
+    "en": "Finish account setup before posting",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:635",
+    "zh": "先完成开户设置再发帖"
+  },
+  "square_feedSwitch7": {
+    "en": "Not posted. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:644",
+    "zh": "没有发出去，稍后再试"
+  },
+  "square_feedTimedOut": {
+    "en": "No network connection. Not posted.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:639",
+    "zh": "网络不通，没有发出去"
+  },
+  "square_feedUnavailable": {
+    "en": "The feed isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed.dart:643",
+    "zh": "动态暂时不可用，稍后再试"
+  },
+  "square_feedViewBuild": {
+    "en": "LOOP Official",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:372, lib/features/square/square_feed_view.dart:833",
+    "zh": "LOOP 官方"
+  },
+  "square_feedViewBuild2": {
+    "en": "Show more",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:915",
+    "zh": "展开"
+  },
+  "square_feedViewBuild3": {
+    "en": "Once deleted, no one can see it and it can't be restored.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1083",
+    "zh": "删除后所有人都看不到它，也不能恢复。"
+  },
+  "square_feedViewClaimHeadJoined": {
+    "en": "{got} {where}",
+    "placeholders": {
+      "got": {
+        "example": "got",
+        "type": "Object"
+      },
+      "where": {
+        "example": "where",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:750",
+    "zh": "{where}{got}"
+  },
+  "square_feedViewClaimHeadSpaced": {
+    "en": "{got} {where}",
+    "placeholders": {
+      "got": {
+        "example": "got",
+        "type": "Object"
+      },
+      "where": {
+        "example": "where",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:750",
+    "zh": "{where} {got}"
+  },
+  "square_feedViewClaimSentence": {
+    "en": "{head}.",
+    "placeholders": {
+      "head": {
+        "example": "head",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:750",
+    "zh": "{head}。"
+  },
+  "square_feedViewHint": {
+    "en": "Search by ticker or name",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1320",
+    "zh": "按代码或名称搜索"
+  },
+  "square_feedViewHint2": {
+    "en": "Say something…",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1362",
+    "zh": "说点什么…"
+  },
+  "square_feedViewLoopLabel": {
+    "en": "Linked token (optional)",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1366",
+    "zh": "关联代币（可不选）"
+  },
+  "square_feedViewLoopSheetHeading": {
+    "en": "Delete this post?",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1074",
+    "zh": "删除这条动态？"
+  },
+  "square_feedViewMessage": {
+    "en": "Posted",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:102",
+    "zh": "已发布"
+  },
+  "square_feedViewMessage2": {
+    "en": "Couldn't unlike. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:112",
+    "zh": "没有取消点赞，请稍后再试"
+  },
+  "square_feedViewMessage3": {
+    "en": "Couldn't like. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:112",
+    "zh": "没有点上赞，请稍后再试"
+  },
+  "square_feedViewMessage4": {
+    "en": "Deleted",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:132",
+    "zh": "已删除"
+  },
+  "square_feedViewMessage5": {
+    "en": "Couldn't delete. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:132",
+    "zh": "没有删掉，请稍后再试"
+  },
+  "square_feedViewNull": {
+    "en": "Market cap {memeCapLabel}",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(cap)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:579",
+    "zh": "市值 {memeCapLabel}"
+  },
+  "square_feedViewS": {
+    "en": "{named} filled the bonding pool. The official pool is live and buybacks have started.",
+    "placeholders": {
+      "named": {
+        "example": "named",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:733",
+    "zh": "{named} 打满内盘，官方池已建，回购开始。"
+  },
+  "square_feedViewS2": {
+    "en": "Bought {amount} of {named}.",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      },
+      "named": {
+        "example": "named",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:737",
+    "zh": "买入 {amount} 的 {named}。"
+  },
+  "square_feedViewS3": {
+    "en": "Claimed {amount}",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:747",
+    "zh": "领到 {amount}"
+  },
+  "square_feedViewS4": {
+    "en": "{head}, weight {formatDecimal}%.",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(weight, maxFractionDigits: 2)",
+        "type": "Object"
+      },
+      "head": {
+        "example": "head",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:756",
+    "zh": "{head}，权重 {formatDecimal}%。"
+  },
+  "square_feedViewSquareComposerFieldLabel": {
+    "en": "Content",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1351",
+    "zh": "内容"
+  },
+  "square_feedViewSquareComposerSendLabel": {
+    "en": "Posting…",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1386",
+    "zh": "发布中…"
+  },
+  "square_feedViewSquareComposerSendLabel2": {
+    "en": "Post",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1386",
+    "zh": "发布"
+  },
+  "square_feedViewSquareComposerTokenEmpty": {
+    "en": "Loading tokens…",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1244",
+    "zh": "正在读取代币…"
+  },
+  "square_feedViewSquareComposerTokenEmpty2": {
+    "en": "Tokens can't be loaded right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1244",
+    "zh": "暂时读不到代币，稍后再试"
+  },
+  "square_feedViewSquareComposerTokenMoreLabel": {
+    "en": "{hidden} more",
+    "placeholders": {
+      "hidden": {
+        "example": "hidden",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:1293",
+    "zh": "更多 {hidden}"
+  },
+  "square_feedViewSquareComposerTokenNoMatch": {
+    "en": "No matching tokens",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1327",
+    "zh": "没有匹配的代币"
+  },
+  "square_feedViewSquareComposerTokenNoneLabel": {
+    "en": "No token",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1281",
+    "zh": "不带代币"
+  },
+  "square_feedViewSquareComposerTokenSearchLabel": {
+    "en": "Search tokens",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1300",
+    "zh": "搜索代币"
+  },
+  "square_feedViewSquareFeedAgeLabel": {
+    "en": "{month} {day}",
+    "placeholders": {
+      "day": {
+        "example": "local.day",
+        "type": "Object"
+      },
+      "month": {
+        "example": "local.month",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:812",
+    "zh": "{month} 月 {day} 日"
+  },
+  "square_feedViewSquareFeedComposeLabel": {
+    "en": "Post",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:289, lib/features/square/square_feed_view.dart:1349",
+    "zh": "发帖"
+  },
+  "square_feedViewSquareFeedEmptyTitle": {
+    "en": "No posts yet",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:182",
+    "zh": "还没有动态"
+  },
+  "square_feedViewSquareFeedUnavailableMessage": {
+    "en": "The feed can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:321",
+    "zh": "动态暂时读不到"
+  },
+  "square_feedViewSquarePostBadgeClaim": {
+    "en": "Claim",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:774",
+    "zh": "领奖"
+  },
+  "square_feedViewSquarePostBadgeOpinion": {
+    "en": "Opinion",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:765",
+    "zh": "观点"
+  },
+  "square_feedViewSquarePostBadgePinned": {
+    "en": "Pinned",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:786",
+    "zh": "置顶"
+  },
+  "square_feedViewSquarePostLikeLabel": {
+    "en": "Unlike",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1029",
+    "zh": "取消点赞"
+  },
+  "square_feedViewSquarePostLikeLabel2": {
+    "en": "Like",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:1029",
+    "zh": "点赞"
+  },
+  "square_feedViewSquarePostOwnOnLongPressHint": {
+    "en": "Delete this post",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:508",
+    "zh": "删除这条动态"
+  },
+  "square_feedViewSwitch": {
+    "en": "This token filled the bonding pool. The official pool is live and buybacks have started.",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:733",
+    "zh": "这个代币打满内盘，官方池已建，回购开始。"
+  },
+  "square_feedViewSwitch2": {
+    "en": "Bought {amount}.",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:737",
+    "zh": "买入 {amount}。"
+  },
+  "square_feedViewSwitch3": {
+    "en": "in {named}",
+    "placeholders": {
+      "named": {
+        "example": "named",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:744",
+    "zh": "在 {named}"
+  },
+  "square_feedViewSwitch4": {
+    "en": "round {round}",
+    "placeholders": {
+      "round": {
+        "example": "round",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:745",
+    "zh": "第 {round} 轮"
+  },
+  "square_feedViewSwitch5": {
+    "en": "Claimed a reward",
+    "placeholders": {},
+    "where": "lib/features/square/square_feed_view.dart:747",
+    "zh": "领到奖励"
+  },
+  "square_liveVoiceRoomsLiveVoiceRoomElapsedLabel": {
+    "en": "Just started",
+    "placeholders": {},
+    "where": "lib/features/square/live_voice_rooms.dart:275",
+    "zh": "刚开播"
+  },
+  "square_liveVoiceRoomsLiveVoiceRoomElapsedLabel2": {
+    "en": "Live {inMinutes}m",
+    "placeholders": {
+      "inMinutes": {
+        "example": "elapsed.inMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/live_voice_rooms.dart:276",
+    "zh": "开播 {inMinutes} 分钟"
+  },
+  "square_liveVoiceRoomsLiveVoiceRoomElapsedLabel3": {
+    "en": "Live {inHours}h",
+    "placeholders": {
+      "inHours": {
+        "example": "elapsed.inHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/live_voice_rooms.dart:277",
+    "zh": "开播 {inHours} 小时"
+  },
+  "square_liveVoiceRoomsLiveVoiceRoomElapsedLabel4": {
+    "en": "Live {inDays}d",
+    "placeholders": {
+      "inDays": {
+        "example": "elapsed.inDays",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/live_voice_rooms.dart:278",
+    "zh": "开播 {inDays} 天"
+  },
+  "square_screenListening": {
+    "en": "{room} listening",
+    "placeholders": {
+      "room": {
+        "example": "room.listenerCount + room.speakerCount + 1",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_screen.dart:345",
+    "zh": "{room} 在听"
+  },
+  "square_screenLoopBadge": {
+    "en": "Live",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:355",
+    "zh": "直播中"
+  },
+  "square_screenLoopBadge2": {
+    "en": "Join first",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:356",
+    "zh": "需加入"
+  },
+  "square_screenMessage": {
+    "en": "Join \"{communityName}\" to enter the voice room",
+    "placeholders": {
+      "communityName": {
+        "example": "room.communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_screen.dart:157",
+    "zh": "加入「{communityName}」后才能进入语音房"
+  },
+  "square_screenResource": {
+    "en": "Voice room list",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:186",
+    "zh": "语音房列表"
+  },
+  "square_screenSquareScreenTitle": {
+    "en": "Square",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:85",
+    "zh": "广场"
+  },
+  "square_screenSquareVoiceRoomBrowseLabel": {
+    "en": "Browse communities",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:212",
+    "zh": "去社区看看"
+  },
+  "square_screenSquareVoiceRoomEmptyMessage": {
+    "en": "Communities show up here when they go live",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:209",
+    "zh": "社区开播时会出现在这里"
+  },
+  "square_screenSquareVoiceRoomEmptyTitle": {
+    "en": "No one is live yet",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:208",
+    "zh": "还没有人开播"
+  },
+  "square_screenSquareVoiceRoomInRoom": {
+    "en": "In room",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:350",
+    "zh": "已在房间"
+  },
+  "square_screenSquareVoiceRoomStateEmptyMessage": {
+    "en": "No voice rooms are live now",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:203",
+    "zh": "现在没有正在直播的语音房"
+  },
+  "square_screenSquareVoiceRoomStateEmptyReason": {
+    "en": "Rooms show up here when a community goes live.",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:204",
+    "zh": "有社区开播时会出现在这里。"
+  },
+  "square_screenSquareVoiceRoomTitleLabel": {
+    "en": "{title}, {communityName}, host {host}, {listening}, {elapsed}{inRoom}{room}",
+    "placeholders": {
+      "communityName": {
+        "example": "room.communityName",
+        "type": "Object"
+      },
+      "elapsed": {
+        "example": "elapsed",
+        "type": "Object"
+      },
+      "host": {
+        "example": "host",
+        "type": "Object"
+      },
+      "inRoom": {
+        "example": "inRoom ? '，你已在房间里' : ''",
+        "type": "Object"
+      },
+      "listening": {
+        "example": "listening",
+        "type": "Object"
+      },
+      "room": {
+        "example": "room.joinable ? '' : '，加入社区后可进入'",
+        "type": "Object"
+      },
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_screen.dart:367",
+    "zh": "{title}，{communityName}，主持 {host}，{listening}，{elapsed}{inRoom}{room}"
+  },
+  "square_screenText": {
+    "en": "Host {host}",
+    "placeholders": {
+      "host": {
+        "example": "host",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_screen.dart:431",
+    "zh": "主持 {host}"
+  },
+  "square_screenVoiceRoomInRoomSuffix": {
+    "en": ", you are in the room",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:375",
+    "zh": "，你已在房间里"
+  },
+  "square_screenVoiceRoomJoinFirstSuffix": {
+    "en": ", join the community to enter",
+    "placeholders": {},
+    "where": "lib/features/square/square_screen.dart:375",
+    "zh": "，加入社区后可进入"
+  }
+}

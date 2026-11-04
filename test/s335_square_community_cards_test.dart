@@ -9,6 +9,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
@@ -86,6 +87,9 @@ Future<void> _drain(WidgetTester tester) async {
 
 void main() {
   loopWatchGround();
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the cards are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
 
   group('S335 · community cards', () {
     testWidgets('one card per community at the 390 measures', (tester) async {
@@ -150,7 +154,7 @@ void main() {
       final members = tester.widget<Text>(
         _key('square-community-members-${_id(0)}'),
       );
-      expect(members.data, '28 成员');
+      expect(members.data, '28 members');
       expect(members.style?.fontSize, LoopType.meta.fontSize);
       // S350a · decision 0274: one grey step under the description.
       expect(members.style?.color, LoopColors.muted);
@@ -234,7 +238,8 @@ void main() {
           of: _key('square-community-meta-${_id(3)}'),
           matching: find.byWidgetPredicate(
             (widget) =>
-                widget is Semantics && widget.properties.label == '\$DOGE，算力社区',
+                widget is Semantics &&
+                widget.properties.label == '\$DOGE, 算力社区',
           ),
         ),
         findsOneWidget,
@@ -270,7 +275,7 @@ void main() {
             .widget<Text>(
               find.descendant(
                 of: _key('square-community-pill-${_id(1)}'),
-                matching: find.text('加入'),
+                matching: find.text('Join'),
               ),
             )
             .style
@@ -282,7 +287,7 @@ void main() {
             .widget<Text>(
               find.descendant(
                 of: _key('square-community-pill-${_id(1)}'),
-                matching: find.text('加入'),
+                matching: find.text('Join'),
               ),
             )
             .style
@@ -295,7 +300,7 @@ void main() {
             .widget<Text>(
               find.descendant(
                 of: _key('square-community-pill-${_id(0)}'),
-                matching: find.text('已加入'),
+                matching: find.text('Joined'),
               ),
             )
             .style

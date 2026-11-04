@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_settlement_section.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_accordion_strip.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -34,18 +35,25 @@ String launchHoldersRowText(
 }) {
   final holders = state.value;
   if (holders == null) {
-    return state.phase == LaunchViewPhase.loading ? '正在读取参与人数' : '参与人数暂时读不到';
+    return state.phase == LaunchViewPhase.loading
+        ? LoopL10n.current.launch_detailScreensIf
+        : LoopL10n.current.launch_detailScreensS;
   }
   return switch (holders.holders) {
     LaunchReadingAvailable<LaunchHolderCount>(:final value) =>
-      '${loopGroupedFigure(value.holderCount.toString())} 位参与者',
+      LoopL10n.current.launch_detailScreensSwitch(
+        loopGroupedFigure(value.holderCount.toString()),
+      ),
     LaunchReadingUnavailable<LaunchHolderCount>(:final reasonCode) =>
       switch (reasonCode) {
         'LAUNCH_CONTRACT_BASELINE_PENDING' =>
-          contractLive ? '参与人数还没有开放读取' : 'Launch 合约还没有上线，参与人数暂时不可用。',
+          contractLive
+              ? LoopL10n.current.launch_detailScreensSwitch2
+              : LoopL10n.current.launch_detailScreensS2,
         'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' ||
-        'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' => '链上记录索引中，参与人数稍后可见。',
-        _ => '参与人数暂时读不到',
+        'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' =>
+          LoopL10n.current.launch_detailScreensSwitch3,
+        _ => LoopL10n.current.launch_detailScreensS,
       },
   };
 }
@@ -55,7 +63,11 @@ String launchHoldersRowText(
 /// [launchMissingName] only for a read record without one, and a plain
 /// "not read" once the read has ended without a record.
 String launchDetailHeading(LaunchDetail? detail, {required bool loading}) {
-  if (detail == null) return loading ? '项目资料读取中' : '没有读到项目资料';
+  if (detail == null) {
+    return loading
+        ? LoopL10n.current.launch_detailScreensLaunchDetailHeading
+        : LoopL10n.current.launch_detailScreensS3;
+  }
   final name = detail.launch.name.trim();
   return name.isEmpty ? launchMissingName : name;
 }
@@ -67,12 +79,14 @@ String launchDetailCaption(
   LaunchOnChainAvailable? onChain, {
   required bool loading,
 }) {
-  if (loading) return '正在读取项目资料与链上状态';
+  if (loading) return LoopL10n.current.launch_detailScreensLaunchDetailCaption;
   if (onChain == null) {
-    return '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。';
+    return LoopL10n.current.launch_detailScreensIf2;
   }
-  return '${launchStateProjection(onChain)}。四轴、轮次与参数读自区块 '
-      '${loopGroupedFigure(onChain.snapshotBlockNumber)}。';
+  return LoopL10n.current.launch_detailScreensIf3(
+    loopGroupedFigure(onChain.snapshotBlockNumber),
+    launchStateProjection(onChain),
+  );
 }
 
 /// The 我的资格 row on `launch-detail`, from the eligibility resource the
@@ -84,12 +98,16 @@ String launchDetailCaption(
 String launchEligibilityRowText(LaunchResourceState<LaunchEligibility> state) {
   final evaluated = state.value?.evaluated;
   if (evaluated == null) {
-    return '资格结果 $launchPendingConfirmationLabel，由这次发射的资格模式决定';
+    return LoopL10n.current.launch_detailScreensIf4(
+      launchPendingConfirmationLabel,
+    );
   }
-  if (evaluated.rootIsZero) return '公开轮，无需资格';
+  if (evaluated.rootIsZero) return LoopL10n.current.launch_detailScreensIf5;
   final tier = state.value!.tier;
-  return 'Round ${evaluated.roundIndex}，'
-      '${tier == null ? '不在名单' : launchTierLabel(tier)}';
+  return LoopL10n.current.launch_roundComma(evaluated.roundIndex) +
+      (tier == null
+          ? LoopL10n.current.launch_detailScreensHeading4
+          : launchTierLabel(tier));
 }
 
 /// The 我的参与记录 row on `launch-detail`, from the history resource the
@@ -97,7 +115,7 @@ String launchEligibilityRowText(LaunchResourceState<LaunchEligibility> state) {
 /// say "none"; anything else keeps the reminder that an empty list proves
 /// nothing.
 String launchHistoryRowText(LaunchResourceState<LaunchHistory> state) {
-  const unread = '空列表不代表你没有参与';
+  final unread = LoopL10n.current.launch_detailScreensUnread;
   final history = state.value;
   if (history == null) return unread;
   final indexed = switch (history.source) {
@@ -122,15 +140,19 @@ String launchHistoryRowText(LaunchResourceState<LaunchHistory> state) {
         .length;
     final refunded = settlements.length - claimed;
     final parts = <String>[
-      if (purchases.isNotEmpty) '${purchases.length} 笔认购',
-      if (claimed > 0) '$claimed 笔领取',
-      if (refunded > 0) '$refunded 笔退款',
+      if (purchases.isNotEmpty)
+        LoopL10n.current.launch_detailScreensIf6(purchases.length),
+      if (claimed > 0) LoopL10n.current.launch_detailScreensIf7(claimed),
+      if (refunded > 0) LoopL10n.current.launch_detailScreensIf8(refunded),
     ];
-    return '${parts.join('，')}，最近 ${launchTimestampLabel(latest!)}';
+    return LoopL10n.current.launch_detailScreensIf9(
+      launchTimestampLabel(latest!),
+      parts.join(LoopL10n.current.common_listSeparator),
+    );
   }
   final block = loopGroupedFigure(indexed.indexedBlockNumber);
-  if (history.isEmpty) return '暂无记录（已索引到区块 $block）';
-  return '暂无认购，有权益或退款记录（已索引到区块 $block）';
+  if (history.isEmpty) return LoopL10n.current.launch_detailScreensIf10(block);
+  return LoopL10n.current.launch_detailScreensIf11(block);
 }
 
 /// One row of 我的参与记录: a purchase or a claim / refund (decision 0103).
@@ -305,14 +327,16 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
       ]),
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: detail?.launch.ticker ?? '项目详情',
+      title:
+          detail?.launch.ticker ??
+          context.l10n.launch_detailScreensLaunchDetailScreenTitle,
       onBack: widget.onBack,
       framedTools: true,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('launch-detail-rounds-action'),
           icon: 'info',
-          label: '轮次规则',
+          label: context.l10n.launch_detailScreensLaunchDetailRoundsActionLabel,
           framed: true,
           onPressed: widget.onOpenRounds,
         ),
@@ -332,7 +356,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '发射记录',
+          kicker: context.l10n.launch_detailScreensKicker,
           heading: launchDetailHeading(detail, loading: loading),
           // Decision 0095/0097: while the record is being read the heading is
           // a skeleton of its own height and the caption says it is reading;
@@ -365,7 +389,9 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               key: const ValueKey<String>(
                 'launch-detail-capability-unavailable',
               ),
-              title: '项目详情当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchDetailCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -376,8 +402,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到这个项目',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -390,7 +416,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             key: const ValueKey<String>('launch-detail-stats'),
             stats: launchRecordStats(price: launchCurrentPriceLabel(detail)),
           ),
-          const LoopLabel('我的资格'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
@@ -399,7 +425,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                   icon: 'ticket',
                   tone: LoopRowIconTone.accent,
                 ),
-                title: '我的资格',
+                title: context.l10n.launch_detailScreensLoopLabel,
                 // Decision 0053: the mode is read, never assumed. Decision
                 // 0094: the row states the eligibility resource's answer,
                 // and an open round is the server's open branch only.
@@ -418,7 +444,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               detail: detail,
               clock: widget.clock,
             ),
-          const LoopLabel('发射轨道'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel2),
           _TrackBlock(
             rounds: detail.rounds,
             chainRounds: detail.chainRounds,
@@ -428,13 +454,15 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             now: (widget.clock ?? DateTime.now)().toUtc(),
           ),
           _LinksBlock(links: detail.project.officialLinks),
-          const LoopLabel('记录'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel3),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-holders'),
                 leading: const LoopRowIcon(icon: 'users'),
-                title: '内盘持有人',
+                title: context
+                    .l10n
+                    .launch_detailScreensLaunchDetailOpenHoldersTitle,
                 subtitle: launchHoldersRowText(
                   holdersState,
                   contractLive: capability.evidenceConfirmed,
@@ -446,7 +474,9 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-history'),
                 leading: const LoopRowIcon(icon: 'book'),
-                title: '我的参与记录',
+                title: context
+                    .l10n
+                    .launch_detailScreensLaunchDetailOpenHistoryTitle,
                 subtitle: launchHistoryRowText(historyState),
                 subtitleMaxLines: 2,
                 onTap: widget.onOpenHistory,
@@ -474,7 +504,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           // control (`details.focus-disclosure`).
           LoopDisclosure(
             key: const ValueKey<String>('launch-detail-facts'),
-            summary: '链上四轴与配置',
+            summary: context.l10n.launch_detailScreensLaunchDetailFactsSummary,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: Column(
@@ -487,20 +517,27 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                       launch: detail.launch,
                     ),
                   ),
-                  const LoopLabel('链上四轴', tight: true),
+                  LoopLabel(
+                    context.l10n.launch_detailScreensLoopLabel4,
+                    tight: true,
+                  ),
                   LaunchAxisBlock(state: detail.launch.onChainState),
-                  const LoopLabel('配置'),
+                  LoopLabel(context.l10n.launch_detailScreensLoopLabel5),
                   if (detail.saleConfig != null)
                     LaunchSaleConfigGroup(
                       key: const ValueKey<String>('launch-detail-sale-config'),
                       config: detail.saleConfig!,
                     )
                   else if (config == null)
-                    const LoopEmptyState(
+                    LoopEmptyState(
                       key: ValueKey<String>('launch-detail-no-config'),
                       illustration: LoopIllustration.launchpad,
-                      title: '还没有任何配置版本',
-                      message: '轮次、上限与费率都要等到配置版本被确认后才有数值。',
+                      title: context
+                          .l10n
+                          .launch_detailScreensLaunchDetailNoConfigTitle,
+                      message: context
+                          .l10n
+                          .launch_detailScreensLaunchDetailNoConfigMessage,
                       compact: true,
                     )
                   else
@@ -524,7 +561,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                     ),
                   if (detail.configPending != null)
                     LaunchUnavailableCard(
-                      label: '已确认的配置版本',
+                      id: 'confirmed-config',
+                      label: context.l10n.launch_detailScreensLabel,
                       fact: detail.configPending!,
                     ),
                 ],
@@ -535,11 +573,26 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             key: const ValueKey<String>('launch-detail-baseline-notice'),
             icon: 'shield',
             tone: onChain == null ? LoopNoticeTone.warn : LoopNoticeTone.normal,
-            title: onChain == null ? '不显示未经证明的数字' : '链上读数来自同一区块',
-            body:
-                '${onChain == null ? launchReasonCodeText(detail.launch.onChainState.reasonCode) : '四轴、轮次与合约参数都读自区块 ${loopGroupedFigure(onChain.snapshotBlockNumber)}，状态摘要 ${launchShortHex(onChain.stateTupleDigest)}。'}'
-                '资料版本 ${detail.project.materialVersion}，'
-                '登记于 ${launchTimestampLabel(detail.launch.createdAt)}。',
+            title: onChain == null
+                ? context
+                      .l10n
+                      .launch_detailScreensLaunchDetailBaselineNoticeTitle
+                : context
+                      .l10n
+                      .launch_detailScreensLaunchDetailBaselineNoticeTitle2,
+            body: context.l10n
+                .launch_detailScreensLaunchDetailBaselineNoticeBody(
+                  launchTimestampLabel(detail.launch.createdAt),
+                  detail.project.materialVersion,
+                  onChain == null
+                      ? launchReasonCodeText(
+                          detail.launch.onChainState.reasonCode,
+                        )
+                      : context.l10n.launch_detailScreensBaselineOnChain(
+                          loopGroupedFigure(onChain.snapshotBlockNumber),
+                          launchShortHex(onChain.stateTupleDigest),
+                        ),
+                ),
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -605,10 +658,10 @@ class _LaunchRoundProgressCard extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         index == null
-                            ? '本轮截止'
+                            ? context.l10n.launch_detailScreensIf12
                             : current == null
-                            ? 'Round $index 剩余'
-                            : 'Round $index 截止',
+                            ? context.l10n.launch_detailScreensIf13(index)
+                            : context.l10n.launch_detailScreensS4(index),
                         style: LoopType.captionSm,
                       ),
                       const SizedBox(height: 4),
@@ -641,14 +694,21 @@ class _LaunchRoundProgressCard extends StatelessWidget {
             const SizedBox(height: 10),
             LoopProgressBar(
               value: progress,
-              semanticLabel: progress == null ? '毕业进度暂时读不到' : '已募集占硬顶的比例',
+              semanticLabel: progress == null
+                  ? context.l10n.launch_detailScreensSemanticLabel
+                  : context.l10n.launch_detailScreensSemanticLabel2,
             ),
             const SizedBox(height: 8),
             Text(
               raised == null || config == null
-                  ? '市值 $launchMissingFigure / 毕业线 $launchMissingFigure'
-                  : '已募集 ${launchUsd1Label(raised.toString())} / '
-                        '硬顶 ${launchUsd1Label(config.hardCapUsd1)}',
+                  ? context.l10n.launch_detailScreensIf14(
+                      launchMissingFigure,
+                      launchMissingFigure,
+                    )
+                  : context.l10n.launch_detailScreensS5(
+                      launchUsd1Label(raised.toString()),
+                      launchUsd1Label(config.hardCapUsd1),
+                    ),
               style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ],
@@ -707,7 +767,7 @@ class _TrackBlock extends StatelessWidget {
         ],
       );
       final badge = _graduationBadge;
-      final pending = badge == '待触发';
+      final pending = launchTrackEndPending(onChain);
       final block = onChain?.snapshotBlockNumber;
       return LoopAccordionStrip(
         keyPrefix: 'launch-track',
@@ -726,11 +786,13 @@ class _TrackBlock extends StatelessWidget {
           for (final round in chainRounds) _roundItem(round),
           LoopAccordionItem(
             id: 'end',
-            shortTitle: '终',
+            shortTitle: context.l10n.launch_detailScreensShortTitle,
             dot: pending ? LoopAccordionDot.idle : LoopAccordionDot.live,
             tone: pending ? LoopAccordionTone.upcoming : LoopAccordionTone.live,
-            stateLabel: '毕业',
-            semanticLabel: '毕业与迁移，$badge',
+            stateLabel: context.l10n.common_graduate,
+            semanticLabel: context.l10n.launch_detailScreensSemanticLabel3(
+              badge,
+            ),
             badge: LoopBadge(
               badge,
               kind: pending ? LoopBadgeKind.mute : LoopBadgeKind.launch,
@@ -741,18 +803,22 @@ class _TrackBlock extends StatelessWidget {
             ),
             footer: block == null
                 ? null
-                : _TrackFooter('读自区块 ${loopGroupedFigure(block)}'),
+                : _TrackFooter(
+                    context.l10n.launch_detailScreensTrackFooter(
+                      loopGroupedFigure(block),
+                    ),
+                  ),
           ),
         ],
       );
     }
     if (rounds.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         showMessage: true,
         key: ValueKey<String>('launch-track-empty'),
         illustration: LoopIllustration.launchpad,
-        title: '还没有配置任何轮次',
-        message: '轮次数量由每次发射自己决定。',
+        title: context.l10n.launch_detailScreensLaunchTrackEmptyTitle,
+        message: context.l10n.launch_detailScreensLaunchTrackEmptyMessage,
         compact: true,
       );
     }
@@ -803,14 +869,19 @@ class _TrackBlock extends StatelessWidget {
       stateLabel: phase,
       progress: launchRoundRaisedFraction(round),
       semanticLabel:
-          'Round ${round.roundIndex}，'
-          '${round.hasAllowlist ? '名单轮' : '公开轮'}，$phase',
+          '${LoopL10n.current.launch_roundComma(round.roundIndex)}'
+          '${round.hasAllowlist ? LoopL10n.current.launch_detailScreensBuild : LoopL10n.current.launch_detailScreensS6}'
+          '${LoopL10n.current.common_listSeparator}$phase',
       badge: LoopBadge(
         badgeText,
         kind: live && !paused ? LoopBadgeKind.launch : LoopBadgeKind.mute,
       ),
       detail: LaunchTrackRoundDetail(round: round, tone: tone),
-      footer: _TrackFooter('钱包上限 ${launchUsd1Label(round.walletRoundCapUsd1)}'),
+      footer: _TrackFooter(
+        LoopL10n.current.launch_detailScreensTrackFooter2(
+          launchUsd1Label(round.walletRoundCapUsd1),
+        ),
+      ),
     );
   }
 
@@ -820,18 +891,34 @@ class _TrackBlock extends StatelessWidget {
     final badge = _graduationBadge;
     return LoopRecordRow(
       key: const ValueKey<String>('launch-track-graduation'),
-      leading: const LoopMonoTile(label: '终'),
-      title: '毕业与迁移',
+      leading: LoopMonoTile(
+        label: LoopL10n.current.launch_detailScreensShortTitle,
+      ),
+      title: LoopL10n.current.launch_detailScreensLaunchTrackGraduationTitle,
       subtitle: launchTrackEndDetail(onChain),
       trailingBadge: LoopBadge(
         badge,
-        kind: badge == '待触发' ? LoopBadgeKind.mute : LoopBadgeKind.launch,
+        kind: launchTrackEndPending(onChain)
+            ? LoopBadgeKind.mute
+            : LoopBadgeKind.launch,
       ),
       onTap: onOpenGraduation,
       position: launchRowPosition(length - 1, length),
-      semanticLabel: '毕业与迁移，$badge',
+      semanticLabel: LoopL10n.current.launch_detailScreensSemanticLabel3(badge),
     );
   }
+}
+
+/// Whether [launchTrackEndBadge] says 待触发 — read from the state, not the
+/// copy (decision 0281).
+bool launchTrackEndPending(LaunchOnChainAvailable? state) {
+  if (state == null) return true;
+  return switch (state.entitlementState) {
+    LaunchEntitlementState.vesting ||
+    LaunchEntitlementState.completed ||
+    LaunchEntitlementState.refunding => false,
+    _ => launchGraduationProjection(state) == null,
+  };
 }
 
 /// The END step's badge on `launch-detail`'s 发射轨道.
@@ -841,22 +928,29 @@ class _TrackBlock extends StatelessWidget {
 /// instead of 待触发. Otherwise the graduation projection of 03 §8.3, or
 /// 待触发 when there is none.
 String launchTrackEndBadge(LaunchOnChainAvailable? state) {
-  if (state == null) return '待触发';
+  if (state == null) return LoopL10n.current.launch_chainModelsPending;
   return switch (state.entitlementState) {
-    LaunchEntitlementState.vesting => '领取中',
-    LaunchEntitlementState.completed => '已完成',
-    LaunchEntitlementState.refunding => '退款中',
-    _ => launchGraduationProjection(state) ?? '待触发',
+    LaunchEntitlementState.vesting =>
+      LoopL10n.current.launch_detailScreensVesting,
+    LaunchEntitlementState.completed => LoopL10n.current.launch_chainModelsDone,
+    LaunchEntitlementState.refunding =>
+      LoopL10n.current.launch_detailScreensRefunding,
+    _ =>
+      launchGraduationProjection(state) ??
+          LoopL10n.current.launch_chainModelsPending,
   };
 }
 
 /// The END step's one line, following [launchTrackEndBadge].
 String launchTrackEndDetail(LaunchOnChainAvailable? state) =>
     switch (state?.entitlementState) {
-      LaunchEntitlementState.vesting => '已开放领取，按释放计划逐步成熟，可在「我的份额」领取。',
-      LaunchEntitlementState.completed => '释放计划已全部到期，未领完的部分仍可在「我的份额」领取。',
-      LaunchEntitlementState.refunding => '销售没有成功，可在「我的份额」申请退款。',
-      _ => '达到毕业条件后由服务端权威状态推进',
+      LaunchEntitlementState.vesting =>
+        LoopL10n.current.launch_detailScreensVesting2,
+      LaunchEntitlementState.completed =>
+        LoopL10n.current.launch_detailScreensCompleted,
+      LaunchEntitlementState.refunding =>
+        LoopL10n.current.launch_detailScreensRefunding2,
+      _ => LoopL10n.current.launch_detailScreensSwitch4,
     };
 
 /// The strip `launch-detail`'s 发射轨道 opens on arrival (decision 0097):
@@ -891,9 +985,11 @@ int? launchTrackInitialIndex(List<LaunchChainRound> rounds, DateTime now) {
 
 /// Where [round] stands at [now], in the words the track strip reads out.
 String launchChainRoundPhaseLabel(LaunchChainRound round, DateTime now) {
-  if (round.isOpenAt(now)) return '进行中';
-  if (now.isBefore(round.startAt)) return '未开始';
-  return '已结束';
+  if (round.isOpenAt(now)) return LoopL10n.current.common_inProgress;
+  if (now.isBefore(round.startAt)) {
+    return LoopL10n.current.launch_detailScreensLaunchChainRoundPhaseLabel;
+  }
+  return LoopL10n.current.common_ended;
 }
 
 /// Raised against the round cap, in pixel space only: `null` when the cap
@@ -935,13 +1031,15 @@ class LaunchTrackRoundDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = launchRoundRaisedFraction(round);
-    final access = round.hasAllowlist ? '名单轮' : '公开轮';
+    final access = round.hasAllowlist
+        ? context.l10n.launch_detailScreensBuild
+        : context.l10n.launch_detailScreensS6;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
-          'Round ${round.roundIndex}，$access',
+          'Round ${round.roundIndex}${LoopL10n.current.common_listSeparator}$access',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.withWeight(
@@ -958,8 +1056,14 @@ class LaunchTrackRoundDetail extends StatelessWidget {
                 child: _TrackCard(
                   key: const ValueKey<String>('launch-track-card-window'),
                   entries: <(String, String)>[
-                    ('开始 UTC', _time(round.startAt)),
-                    ('结束 UTC', _time(round.endAt)),
+                    (
+                      context.l10n.launch_detailScreensEntries,
+                      _time(round.startAt),
+                    ),
+                    (
+                      context.l10n.launch_detailScreensEntries2,
+                      _time(round.endAt),
+                    ),
                   ],
                 ),
               ),
@@ -968,8 +1072,14 @@ class LaunchTrackRoundDetail extends StatelessWidget {
                 child: _TrackCard(
                   key: const ValueKey<String>('launch-track-card-price'),
                   entries: <(String, String)>[
-                    ('单价 USD1', launchUnitsFigure(round.priceUsd1PerToken)),
-                    ('轮次上限 USD1', launchUnitsFigure(round.roundCapUsd1)),
+                    (
+                      context.l10n.launch_detailScreensEntries3,
+                      launchUnitsFigure(round.priceUsd1PerToken),
+                    ),
+                    (
+                      context.l10n.launch_detailScreensEntries4,
+                      launchUnitsFigure(round.roundCapUsd1),
+                    ),
                   ],
                 ),
               ),
@@ -980,7 +1090,7 @@ class LaunchTrackRoundDetail extends StatelessWidget {
         Row(
           children: <Widget>[
             Text(
-              '已募集',
+              context.l10n.launch_detailScreensBuild2,
               maxLines: 1,
               style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
@@ -1014,12 +1124,14 @@ class LaunchTrackRoundDetail extends StatelessWidget {
             LoopAccordionTone.live ||
             LoopAccordionTone.neutral => LoopColors.yellow,
           },
-          semanticLabel: progress == null ? '本轮进度暂时读不到' : '本轮已募集占轮次上限的比例',
+          semanticLabel: progress == null
+              ? context.l10n.launch_detailScreensSemanticLabel4
+              : context.l10n.launch_detailScreensSemanticLabel5,
         ),
         if (round.roundId == null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            'LOOP 没有这一轮的记录，不能在这里认购',
+            context.l10n.launch_detailScreensSwitch5,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: LoopType.captionSm.copyWith(
@@ -1125,7 +1237,7 @@ class _TrackGraduationDetail extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
-          '毕业与迁移',
+          context.l10n.launch_detailScreensLaunchTrackGraduationTitle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.withWeight(
@@ -1147,7 +1259,8 @@ class _TrackGraduationDetail extends StatelessWidget {
           const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('launch-track-open-graduation'),
-            label: '查看毕业流程',
+            label:
+                context.l10n.launch_detailScreensLaunchTrackOpenGraduationLabel,
             onPressed: onOpenGraduation,
           ),
         ],
@@ -1171,12 +1284,12 @@ class _AccessTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rounds.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         showMessage: true,
         key: ValueKey<String>('launch-rounds-empty'),
         illustration: LoopIllustration.launchpad,
-        title: '还没有配置任何轮次',
-        message: '轮次数量由每次发射自己决定。',
+        title: context.l10n.launch_detailScreensLaunchTrackEmptyTitle,
+        message: context.l10n.launch_detailScreensLaunchTrackEmptyMessage,
         compact: true,
       );
     }
@@ -1209,7 +1322,7 @@ class _LinksBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('链接'),
+        LoopLabel(context.l10n.common_link),
         LoopChipRow(
           children: <Widget>[
             for (final entry in links.entries)
@@ -1263,28 +1376,29 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
       onRefresh: subject == null ? null : controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '销售轮次规则',
+      title: context.l10n.launch_detailScreensLaunchRoundsScreenTitle,
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '轮次配置',
+          kicker: context.l10n.launch_detailScreensKicker2,
           // The number of rounds comes from the configuration, never from a
           // fixed three-round story.
           heading: detail == null
               ? launchMissingHeading
               : chainRounds.isNotEmpty
-              ? '${chainRounds.length} 个轮次'
-              : '${detail.rounds.length} 个轮次',
+              ? context.l10n.launch_detailScreensHeading(chainRounds.length)
+              : context.l10n.launch_detailScreensHeading(detail.rounds.length),
           caption: chainRounds.isNotEmpty
-              ? '轮次、时间窗、价格与上限读自合约，区块 '
-                    '${loopGroupedFigure(detail!.onChain!.snapshotBlockNumber)}。'
-              : '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
+              ? context.l10n.launch_detailScreensCaption(
+                  loopGroupedFigure(detail!.onChain!.snapshotBlockNumber),
+                )
+              : context.l10n.launch_detailScreensCaption2,
           stamp: detail == null
               ? null
               : chainRounds.isNotEmpty
-              ? '链上'
+              ? context.l10n.launch_detailScreensStamp
               : launchPendingConfirmationLabel,
           margin: EdgeInsets.zero,
           squareBottom: true,
@@ -1293,24 +1407,26 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
         // this folio, with the two caps the contract fixes, or the em dash
         // while no contract configuration was read.
         detail: <Widget>[
-          const LoopCompositeDetailNote('准入逐步开放，合约规则不因用户改变'),
+          LoopCompositeDetailNote(
+            context.l10n.launch_detailScreensLoopCompositeDetailNote,
+          ),
           const LoopHairline(),
           if (saleConfig == null)
-            const LoopCompositeDetailRow(
-              label: '总量',
+            LoopCompositeDetailRow(
+              label: context.l10n.common_totalSupply,
               value: loopFigureDash,
               valueSize: 18,
-              trailingLabel: '毕业线',
+              trailingLabel: context.l10n.launch_detailScreensTrailingLabel,
               trailingValue: loopFigureDash,
               spoken: launchPendingConfirmationLabel,
             )
           else
             LoopCompositeDetailRow(
               key: const ValueKey<String>('launch-rounds-caps-chain'),
-              label: '硬顶',
+              label: context.l10n.launch_chainModelsEntries2,
               value: launchUsd1Label(saleConfig.hardCapUsd1),
               valueSize: 15,
-              trailingLabel: '软顶',
+              trailingLabel: context.l10n.launch_chainModelsEntries,
               trailingValue: launchUsd1Label(saleConfig.softCapUsd1),
             ),
         ],
@@ -1320,19 +1436,20 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
               key: const ValueKey<String>(
                 'launch-rounds-capability-unavailable',
               ),
-              title: '轮次规则当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchRoundsCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
       sections: <Widget>[
         if (subject == null)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('launch-rounds-no-subject'),
             illustration: LoopIllustration.launchpad,
-            title: '还没有选定要看哪次发射',
+            title: context.l10n.launch_detailScreensLaunchRoundsNoSubjectTitle,
             message:
-                '轮次配置属于某一次具体发射，不是全站统一的规则。'
-                '回到 Launch 目录打开一个项目，再看它的轮次配置。',
+                context.l10n.launch_detailScreensLaunchRoundsNoSubjectMessage,
             compact: true,
           )
         else if (detail == null)
@@ -1341,12 +1458,12 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到轮次配置',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage2,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('准入时间线'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel6),
           if (chainRounds.isNotEmpty)
             LoopRecordGroup(
               key: const ValueKey<String>('launch-rounds-list'),
@@ -1360,12 +1477,13 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             )
           else
             _AccessTimeline(rounds: detail.rounds, config: config),
-          const LoopLabel('合约上限'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel7),
           if (saleConfig != null) ...<Widget>[
             LaunchChainCapCard(config: saleConfig, rounds: chainRounds),
             LoopDisclosure(
               key: const ValueKey<String>('launch-rounds-facts'),
-              summary: '其余合约参数',
+              summary:
+                  context.l10n.launch_detailScreensLaunchRoundsFactsSummary,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Column(
@@ -1387,11 +1505,12 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
               ),
             ),
           ] else if (config == null)
-            const LoopEmptyState(
+            LoopEmptyState(
               key: ValueKey<String>('launch-rounds-no-config'),
               illustration: LoopIllustration.launchpad,
-              title: '还没有任何配置版本',
-              message: '上限与费率要等到配置版本被确认后才有数值。',
+              title: context.l10n.launch_detailScreensLaunchDetailNoConfigTitle,
+              message:
+                  context.l10n.launch_detailScreensLaunchRoundsNoConfigMessage,
               compact: true,
             )
           else ...<Widget>[
@@ -1401,7 +1520,8 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             // of a rule page that are not the rule itself.
             LoopDisclosure(
               key: const ValueKey<String>('launch-rounds-facts'),
-              summary: '其余合约参数',
+              summary:
+                  context.l10n.launch_detailScreensLaunchRoundsFactsSummary,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Column(
@@ -1439,19 +1559,22 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
           ],
           if (detail.configPending != null)
             LaunchUnavailableCard(
-              label: '已确认的配置版本',
+              id: 'confirmed-config',
+              label: context.l10n.launch_detailScreensLabel,
               fact: detail.configPending!,
             ),
           LoopNotice(
             key: const ValueKey<String>('launch-rounds-notice'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: saleConfig == null ? '以最终确认的规则为准' : '以签名前的合约读数为准',
+            title: saleConfig == null
+                ? context.l10n.launch_detailScreensLaunchRoundsNoticeTitle
+                : context.l10n.launch_detailScreensLaunchRoundsNoticeTitle2,
             body: saleConfig == null
-                ? '本页不写入任何固定的轮数、手续费率、持仓上限或毕业市值。'
-                      '${launchReasonCodeText('LAUNCH_CONFIG_PENDING_CONFIRMATION')}'
-                : '本页的数字是合约在快照区块的读数，不是 LOOP 写下的规则。'
-                      '认购时以签名前复核的读数为准。',
+                ? context.l10n.launch_detailScreensLaunchRoundsNoticeBody(
+                    launchReasonCodeText('LAUNCH_CONFIG_PENDING_CONFIRMATION'),
+                  )
+                : context.l10n.launch_detailScreensLaunchRoundsNoticeBody2,
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -1510,22 +1633,27 @@ class _LaunchGraduationScreenState
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '毕业与迁移',
+      title: context.l10n.launch_detailScreensLaunchTrackGraduationTitle,
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '毕业进度',
+          kicker: context.l10n.launch_detailScreensKicker3,
           // Never a percentage: progress is a count of steps the liquidity
           // and entitlement axes prove, and nothing without them.
           heading: onChain == null
               ? launchMissingHeading
-              : launchGraduationProjection(onChain) ?? '$done / 4 步',
+              : launchGraduationProjection(onChain) ??
+                    context.l10n.launch_detailScreensHeading3(done),
           caption: onChain == null
-              ? '毕业进度看的是流动性。合约上线前还没有可核对的进度。'
-              : '${launchStateProjection(onChain)}。步骤只由流动性与权益两条轴推导。',
-          stamp: onChain == null ? launchPendingConfirmationLabel : '链上',
+              ? context.l10n.launch_detailScreensCaption3
+              : context.l10n.launch_detailScreensCaption4(
+                  launchStateProjection(onChain),
+                ),
+          stamp: onChain == null
+              ? launchPendingConfirmationLabel
+              : context.l10n.launch_detailScreensStamp,
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -1538,16 +1666,25 @@ class _LaunchGraduationScreenState
                 ? null
                 : done / steps.length,
             semanticLabel: onChain == null
-                ? '毕业进度暂时读不到'
-                : '已完成 $done 步，共 ${steps.length} 步',
+                ? context.l10n.launch_detailScreensSemanticLabel
+                : context.l10n
+                      .launch_detailScreensLaunchGraduationBarSemanticLabel(
+                        done,
+                        steps.length,
+                      ),
           ),
           const LoopHairline(),
           LoopCompositeDetailNote(
             onChain == null
-                ? '市值 $launchMissingFigure / 毕业线 $launchMissingFigure，达线后立即触发迁移'
-                : '快照区块 ${loopGroupedFigure(onChain.snapshotBlockNumber)}，'
-                      '流动性 ${onChain.liquidityState.wireName}，'
-                      '权益 ${onChain.entitlementState.wireName}',
+                ? context.l10n.launch_detailScreensLoopCompositeDetailNote2(
+                    launchMissingFigure,
+                    launchMissingFigure,
+                  )
+                : context.l10n.launch_detailScreensS7(
+                    loopGroupedFigure(onChain.snapshotBlockNumber),
+                    onChain.liquidityState.wireName,
+                    onChain.entitlementState.wireName,
+                  ),
           ),
         ],
       ),
@@ -1556,7 +1693,9 @@ class _LaunchGraduationScreenState
               key: const ValueKey<String>(
                 'launch-graduation-capability-unavailable',
               ),
-              title: '毕业进度当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchGraduationCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -1567,12 +1706,12 @@ class _LaunchGraduationScreenState
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到毕业记录',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage3,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('迁移步骤'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel8),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-graduation-steps'),
             rows: <LoopRecordRow>[
@@ -1599,29 +1738,26 @@ class _LaunchGraduationScreenState
                   ),
                   position: launchRowPosition(index, steps.length),
                   semanticLabel:
-                      '${launchGraduationStepLabel(steps[index].step)}，'
-                      '${launchGraduationStepDetail(steps[index].step)}，'
+                      '${launchGraduationStepLabel(steps[index].step)}${LoopL10n.current.common_listSeparator}'
+                      '${launchGraduationStepDetail(steps[index].step)}${LoopL10n.current.common_listSeparator}'
                       '${progress[index].label}',
                 ),
             ],
           ),
-          const LoopLabel('流动性池'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel9),
           LaunchUnavailableCard(
-            label: '池地址与锁定信息',
+            id: 'pool-evidence',
+            label: context.l10n.launch_detailScreensLabel2,
             fact: detail.graduation.poolEvidence,
           ),
           LoopNotice(
             key: const ValueKey<String>('launch-graduation-notice'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: '毕业不是排期状态',
+            title: context.l10n.launch_detailScreensLaunchGraduationNoticeTitle,
             body: onChain == null
-                ? '「已结束」只表示排期结束，不等于已毕业。'
-                      '是否毕业要看流动性和交易池，两项目前都读不到。'
-                      '迁移由服务端权威状态推进，每一步完成后才进入下一步。'
-                : '「已结束」只表示排期结束，不等于已毕业。'
-                      'V3 池上线不代表 LP 已锁定；只有 LP_LOCKED 或 COMPLETED '
-                      '才算已毕业。每一步完成后才进入下一步。',
+                ? context.l10n.launch_detailScreensLaunchGraduationNoticeBody
+                : context.l10n.launch_detailScreensLaunchGraduationNoticeBody2,
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -1674,13 +1810,13 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '我的资格',
+      title: context.l10n.launch_detailScreensLoopLabel,
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '参与资格',
+          kicker: context.l10n.launch_detailScreensKicker4,
           // No evaluator: the heading says there is no value, never a guessed
           // "Public". An evaluator that answered `null` is "not listed".
           // Decision 0094: the server's open branch (an all-zero root) is a
@@ -1688,13 +1824,13 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
           heading: evaluated == null
               ? launchMissingResult
               : evaluated.rootIsZero
-              ? '公开轮'
+              ? context.l10n.launch_detailScreensS6
               : tier == null
-              ? '不在名单'
+              ? context.l10n.launch_detailScreensHeading4
               : launchTierLabel(tier),
           caption: evaluated != null && evaluated.rootIsZero
-              ? '本轮公开，任何钱包都可参与。'
-              : '这是当前资格结果，不是等级；条件与快照时间同时展示。',
+              ? context.l10n.launch_detailScreensCaption5
+              : context.l10n.launch_detailScreensCaption6,
           stamp: eligibility == null
               ? null
               : launchEligibilityModeLabel(eligibility.mode),
@@ -1707,10 +1843,10 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
           if (eligibility != null)
             LoopCompositeDetailRow(
               key: const ValueKey<String>('launch-tier-conditions'),
-              label: '资格模式',
+              label: context.l10n.launch_detailScreensLaunchTierConditionsLabel,
               value: launchEligibilityModeLabel(eligibility.mode),
               valueSize: 18,
-              trailingLabel: '快照区块',
+              trailingLabel: context.l10n.common_snapshotBlock,
               trailingValue: eligibility.snapshotBlock == null
                   ? loopFigureDash
                   : loopGroupedFigure(eligibility.snapshotBlock!),
@@ -1723,7 +1859,9 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('launch-tier-capability-unavailable'),
-              title: '资格查询当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchTierCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -1734,8 +1872,8 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到资格结果',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage4,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -1747,7 +1885,8 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('launch-tier-open-stake'),
-                  label: '查看 LOOP 质押',
+                  label:
+                      context.l10n.launch_detailScreensLaunchTierOpenStakeLabel,
                   primary: true,
                   onPressed: widget.onOpenStake,
                 ),
@@ -1763,44 +1902,52 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
                 0,
               ),
               child: Text(
-                '本次发射的资格不依赖 LOOP 质押',
+                context.l10n.launch_detailScreensText,
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ),
           if (evaluated != null) ...<Widget>[
-            const LoopLabel('资格结果'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel10),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-tier-result-rows'),
               rows: <LoopRecordRow>[
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-tier-round'),
-                  title: '适用轮次',
+                  title: context.l10n.launch_detailScreensLaunchTierRoundTitle,
                   trailing: 'Round ${evaluated.roundIndex}',
                   position: LoopRowPosition.first,
                   chevron: false,
                 ),
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-tier-root'),
-                  title: '名单根',
-                  subtitle: evaluated.rootIsZero ? '该轮不设资格' : '按快照区块算出的名单',
+                  title: context.l10n.launch_detailScreensLaunchTierRootTitle,
+                  subtitle: evaluated.rootIsZero
+                      ? context.l10n.launch_detailScreensLaunchTierRootSubtitle
+                      : context
+                            .l10n
+                            .launch_detailScreensLaunchTierRootSubtitle2,
                   trailing: evaluated.rootIsZero
-                      ? '无'
+                      ? context.l10n.launch_detailScreensLaunchTierRootTrailing
                       : launchShortHex(evaluated.allowlistRoot),
                   position: LoopRowPosition.middle,
                   chevron: false,
                 ),
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-tier-proof'),
-                  title: '资格证明',
-                  subtitle: '认购时原样交给合约校验',
-                  trailing: '${evaluated.eligibilityProof.length} 条',
+                  title: context.l10n.launch_detailScreensLaunchTierProofTitle,
+                  subtitle:
+                      context.l10n.launch_detailScreensLaunchTierProofSubtitle,
+                  trailing: context.l10n
+                      .launch_detailScreensLaunchTierProofTrailing(
+                        evaluated.eligibilityProof.length,
+                      ),
                   position: LoopRowPosition.last,
                   chevron: false,
                 ),
               ],
             ),
           ],
-          const LoopLabel('资格模式'),
+          LoopLabel(context.l10n.launch_detailScreensLaunchTierConditionsLabel),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-tier-mode'),
             rows: <LoopRecordRow>[
@@ -1812,8 +1959,8 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
                 subtitle: launchEligibilityModeDescription(eligibility.mode),
                 trailingBadge: LoopBadge(
                   eligibility.mode == LaunchEligibilityMode.unavailable
-                      ? '未配置'
-                      : '已配置',
+                      ? context.l10n.common_notConfigured
+                      : context.l10n.launch_detailScreensS8,
                   kind: eligibility.mode == LaunchEligibilityMode.unavailable
                       ? LoopBadgeKind.mute
                       : LoopBadgeKind.launch,
@@ -1822,22 +1969,39 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('launch-tier-config-version'),
-                title: '资格规则',
+                title: context
+                    .l10n
+                    .launch_detailScreensLaunchTierConfigVersionTitle,
                 // The version that carries the rule is a backend identifier;
                 // when it takes effect is the part a reader can use.
                 subtitle: eligibility.effectiveAt == null
-                    ? '尚未生效'
-                    : '生效于 ${launchTimestampLabel(eligibility.effectiveAt!)}',
+                    ? context
+                          .l10n
+                          .launch_detailScreensLaunchTierConfigVersionSubtitle
+                    : context.l10n
+                          .launch_detailScreensLaunchTierConfigVersionSubtitle2(
+                            launchTimestampLabel(eligibility.effectiveAt!),
+                          ),
                 position: LoopRowPosition.middle,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('launch-tier-depends-on-staking'),
-                title: '是否依赖质押',
+                title: context
+                    .l10n
+                    .launch_detailScreensLaunchTierDependsOnStakingTitle,
                 // Decision 0053: the mode decides. The row reports what this
                 // launch's approved mode answered, and claims nothing about
                 // the next one.
-                subtitle: '由这次发射的资格模式决定',
-                trailing: eligibility.dependsOnStaking ? '是' : '否',
+                subtitle: context
+                    .l10n
+                    .launch_detailScreensLaunchTierDependsOnStakingSubtitle,
+                trailing: eligibility.dependsOnStaking
+                    ? context
+                          .l10n
+                          .launch_detailScreensLaunchTierDependsOnStakingTrailing
+                    : context
+                          .l10n
+                          .launch_detailScreensLaunchTierDependsOnStakingTrailing2,
                 position: LoopRowPosition.last,
               ),
             ],
@@ -1845,11 +2009,12 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
           LoopNotice(
             key: const ValueKey<String>('launch-tier-result'),
             icon: 'ticket',
-            title: '资格不是等级，也不是权益',
-            body:
-                '${eligibility.reasonCode == null ? '' : launchReasonCodeText(eligibility.reasonCode)}'
-                '资格是这次发射的准入结果，会随配置和快照变化；'
-                '这里不显示任何门槛、费率或时间窗口。',
+            title: context.l10n.launch_detailScreensLaunchTierResultTitle,
+            body: context.l10n.launch_detailScreensLaunchTierResultBody(
+              eligibility.reasonCode == null
+                  ? ''
+                  : launchReasonCodeText(eligibility.reasonCode),
+            ),
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
               22,
@@ -1906,24 +2071,28 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '内盘持有人',
+      title: context.l10n.launch_detailScreensLaunchDetailOpenHoldersTitle,
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '持有分布',
+          kicker: context.l10n.launch_detailScreensKicker5,
           heading: count == null
               ? launchMissingHeading
               // Decision 0077 ruling 7 / 0089: `holderCount` counts distinct
               // buyers, not the wallets holding the token today.
-              : '${loopGroupedFigure(count.holderCount.toString())} 位参与者',
+              : context.l10n.launch_detailScreensSwitch(
+                  loopGroupedFigure(count.holderCount.toString()),
+                ),
           caption: count == null
-              ? '参与人数、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。'
-              : '参与人数是在内盘买过的不同地址数，不是当前持币人数；'
-                    '来自链上索引，索引到区块 '
-                    '${loopGroupedFigure(count.indexedBlockNumber)}。',
-          stamp: count == null ? '不可用' : '已索引',
+              ? context.l10n.launch_detailScreensCaption7
+              : context.l10n.launch_detailScreensCaption8(
+                  loopGroupedFigure(count.indexedBlockNumber),
+                ),
+          stamp: count == null
+              ? context.l10n.common_unavailable
+              : context.l10n.launch_detailScreensStamp2,
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -1931,10 +2100,10 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
         // Concentration has no source in any schema, so it keeps the em dash.
         detail: <Widget>[
           LoopCompositeDetailRow(
-            label: 'Top 10 合计',
+            label: context.l10n.launch_detailScreensLabel3,
             value: loopFigureDash,
             valueSize: 18,
-            trailingLabel: '单地址持仓上限',
+            trailingLabel: context.l10n.launch_detailScreensTrailingLabel2,
             trailingValue: cap == null
                 ? loopFigureDash
                 : launchUsd1Label(cap.walletProjectCapUsd1),
@@ -1945,7 +2114,9 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
                 : null,
           ),
           const LoopHairline(),
-          const LoopCompositeDetailNote('上限由 LOOP 内盘合约执行'),
+          LoopCompositeDetailNote(
+            context.l10n.launch_detailScreensLoopCompositeDetailNote3,
+          ),
         ],
       ),
       block: blocked
@@ -1953,7 +2124,9 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               key: const ValueKey<String>(
                 'launch-holders-capability-unavailable',
               ),
-              title: '持有人分布当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchHoldersCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -1963,12 +2136,12 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             prefix: 'launch-holders',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '没有读到持有人记录',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage5,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('持有排行'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel11),
           // The ranking has no source, so no address is invented. The one row
           // the reader owns keeps its place, with the Lime `YOU` tile.
           LoopRecordGroup(
@@ -1977,36 +2150,48 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               if (position == null)
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-holders-me'),
-                  leading: const LoopMonoTile(label: '我'),
+                  leading: LoopMonoTile(label: context.l10n.common_me),
                   selected: true,
-                  title: '我的仓位',
-                  subtitle: '持仓 $launchMissingFigure，还可买 $launchMissingFigure',
+                  title: context.l10n.launch_detailScreensLaunchHoldersMeTitle,
+                  subtitle: context.l10n
+                      .launch_detailScreensLaunchHoldersMeSubtitle(
+                        launchMissingFigure,
+                        launchMissingFigure,
+                      ),
                   trailing: launchMissingFigure,
-                  semanticLabel:
-                      '我的仓位，'
-                      '${launchReasonCodeText(holders.myPosition.reasonCode)}',
+                  semanticLabel: context.l10n
+                      .launch_detailScreensLaunchHoldersMeSemanticLabel(
+                        launchReasonCodeText(holders.myPosition.reasonCode),
+                      ),
                 )
               else
                 LoopRecordRow(
                   key: const ValueKey<String>('launch-holders-me'),
-                  leading: const LoopMonoTile(label: '我'),
+                  leading: LoopMonoTile(label: context.l10n.common_me),
                   selected: true,
-                  title: '我的仓位',
-                  subtitle:
-                      '已认购 ${launchUnitsFigure(position.purchasedTokens)} 枚，'
-                      '累计支付 ${launchUsd1Label(position.cumulativeUsd1)}\n'
-                      '可领取 ${launchUnitsFigure(position.claimableTokens)} 枚，'
-                      '已领取 ${launchUnitsFigure(position.claimedTokens)} 枚，'
-                      '可退款 ${launchUsd1Label(position.refundableUsd1)}',
+                  title: context.l10n.launch_detailScreensLaunchHoldersMeTitle,
+                  subtitle: context.l10n
+                      .launch_detailScreensLaunchHoldersMeSubtitle2(
+                        launchUnitsFigure(position.purchasedTokens),
+                        launchUnitsFigure(position.claimableTokens),
+                        launchUnitsFigure(position.claimedTokens),
+                        launchUsd1Label(position.cumulativeUsd1),
+                        launchUsd1Label(position.refundableUsd1),
+                      ),
                   subtitleMaxLines: 3,
                   trailing: launchUnitsFigure(position.entitledTokens),
-                  trailingCaption: '已冻结权益',
-                  semanticLabel: '我的仓位，快照区块 ${position.snapshotBlockNumber}',
+                  trailingCaption: context
+                      .l10n
+                      .launch_detailScreensLaunchHoldersMeTrailingCaption,
+                  semanticLabel: context.l10n
+                      .launch_detailScreensLaunchHoldersMeSemanticLabel2(
+                        position.snapshotBlockNumber,
+                      ),
                 ),
             ],
           ),
           if (cap != null) ...<Widget>[
-            const LoopLabel('我的额度'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel12),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-holders-cap'),
               rows: <LoopRecordRow>[
@@ -2016,12 +2201,14 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
                       'launch-holders-cap-${cap.rounds[index].roundIndex}',
                     ),
                     title: 'Round ${cap.rounds[index].roundIndex}',
-                    subtitle:
-                        '已用 ${launchUsd1Label(cap.rounds[index].cumulativeUsd1)}',
+                    subtitle: context.l10n.launch_detailScreensSubtitle(
+                      launchUsd1Label(cap.rounds[index].cumulativeUsd1),
+                    ),
                     trailing: launchUsd1Label(
                       cap.rounds[index].walletRoundCapUsd1,
                     ),
-                    trailingCaption: '本轮上限',
+                    trailingCaption:
+                        context.l10n.launch_detailScreensTrailingCaption,
                     position: launchRowPosition(index, cap.rounds.length),
                     chevron: false,
                   ),
@@ -2030,7 +2217,11 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
           ],
           switch (holders.holders) {
             LaunchReadingUnavailable<LaunchHolderCount>(:final fact) =>
-              LaunchUnavailableCard(label: '持有人分布', fact: fact),
+              LaunchUnavailableCard(
+                id: 'holder-distribution',
+                label: context.l10n.launch_detailScreensLabel4,
+                fact: fact,
+              ),
             LaunchReadingAvailable<LaunchHolderCount>() =>
               const SizedBox.shrink(),
           },
@@ -2077,38 +2268,43 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '我的参与记录',
+      title: context.l10n.launch_detailScreensLaunchDetailOpenHistoryTitle,
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '参与记录',
+          kicker: context.l10n.launch_detailScreensKicker6,
           heading: indexed == null
               ? launchMissingHeading
-              : '${purchases.length} 笔认购',
+              : context.l10n.launch_detailScreensIf6(purchases.length),
           caption: indexed == null
-              ? '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。'
-              : '记录来自链上索引，索引到区块 '
-                    '${loopGroupedFigure(indexed.indexedBlockNumber)}；不显示盈亏。',
-          stamp: indexed == null ? '不可用' : '已索引',
+              ? context.l10n.launch_detailScreensCaption9
+              : context.l10n.launch_detailScreensCaption10(
+                  loopGroupedFigure(indexed.indexedBlockNumber),
+                ),
+          stamp: indexed == null
+              ? context.l10n.common_unavailable
+              : context.l10n.launch_detailScreensStamp2,
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
         detail: <Widget>[
           LoopCompositeDetailRow(
-            label: '参与次数',
+            label: context.l10n.launch_detailScreensLabel5,
             value: indexed == null
                 ? loopFigureDash
                 : purchases.length.toString(),
             valueSize: 18,
             // No schema carries a result or a profit, so it stays the dash.
-            trailingLabel: '累计结果',
+            trailingLabel: context.l10n.launch_detailScreensTrailingLabel3,
             trailingValue: loopFigureDash,
             spoken: indexed == null ? launchPendingConfirmationLabel : null,
           ),
           const LoopHairline(),
-          const LoopCompositeDetailNote('内盘与毕业后记录统一归档'),
+          LoopCompositeDetailNote(
+            context.l10n.launch_detailScreensLoopCompositeDetailNote4,
+          ),
         ],
       ),
       block: blocked
@@ -2116,7 +2312,9 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
               key: const ValueKey<String>(
                 'launch-history-capability-unavailable',
               ),
-              title: '参与记录当前不可用',
+              title: context
+                  .l10n
+                  .launch_detailScreensLaunchHistoryCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -2126,15 +2324,19 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             prefix: 'launch-history',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '没有读到参与记录',
-            emptyReason: '项目可能不存在，或对当前账号不可见。',
+            emptyMessage: context.l10n.launch_detailScreensEmptyMessage6,
+            emptyReason: context.l10n.launch_detailScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else if (indexed == null) ...<Widget>[
-          const LoopLabel('参与明细'),
+          LoopLabel(context.l10n.launch_detailScreensLoopLabel13),
           switch (history.source) {
             LaunchReadingUnavailable<LaunchIndexedSource>(:final fact) =>
-              LaunchUnavailableCard(label: '购买、权益与退款记录', fact: fact),
+              LaunchUnavailableCard(
+                id: 'history-records',
+                label: context.l10n.launch_detailScreensLabel6,
+                fact: fact,
+              ),
             LaunchReadingAvailable<LaunchIndexedSource>() =>
               const SizedBox.shrink(),
           },
@@ -2143,10 +2345,12 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
           LoopEmptyState(
             key: const ValueKey<String>('launch-history-indexed-empty'),
             illustration: LoopIllustration.history,
-            title: '这个钱包在本次发射没有记录',
-            message:
-                '链上索引到区块 ${loopGroupedFigure(indexed.indexedBlockNumber)}，'
-                '其中没有这个钱包的认购、权益或退款。',
+            title:
+                context.l10n.launch_detailScreensLaunchHistoryIndexedEmptyTitle,
+            message: context.l10n
+                .launch_detailScreensLaunchHistoryIndexedEmptyMessage(
+                  loopGroupedFigure(indexed.indexedBlockNumber),
+                ),
             compact: true,
           ),
           const SizedBox(height: 20),
@@ -2154,7 +2358,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
           // Decision 0103: once the server lists claims and refunds they sit
           // on one timeline with the purchases.
           if (history.settlements?.isNotEmpty ?? false) ...<Widget>[
-            const LoopLabel('认购与结算'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel14),
             _HistoryTimeline(
               entries: launchHistoryTimeline(history),
               ticker: ref
@@ -2164,7 +2368,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
                   .ticker,
             ),
           ] else if (purchases.isNotEmpty) ...<Widget>[
-            const LoopLabel('认购'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel15),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-history-purchases'),
               rows: <LoopRecordRow>[
@@ -2176,12 +2380,15 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
                     leading: LoopMonoTile(
                       label: 'R${purchases[index].roundIndex}',
                     ),
-                    title: '支付 ${launchUsd1Label(purchases[index].usd1Amount)}',
-                    subtitle:
-                        '获得 ${launchUnitsFigure(purchases[index].tokenAmount)} 枚，'
-                        '区块 ${loopGroupedFigure(purchases[index].blockNumber)}\n'
-                        '交易 ${launchShortHex(purchases[index].transactionHash)}，'
-                        '观察于 ${launchTimestampLabel(purchases[index].observedAt)}',
+                    title: context.l10n.launch_detailScreensTitle(
+                      launchUsd1Label(purchases[index].usd1Amount),
+                    ),
+                    subtitle: context.l10n.launch_detailScreensSubtitle2(
+                      loopGroupedFigure(purchases[index].blockNumber),
+                      launchShortHex(purchases[index].transactionHash),
+                      launchTimestampLabel(purchases[index].observedAt),
+                      launchUnitsFigure(purchases[index].tokenAmount),
+                    ),
                     subtitleMaxLines: 2,
                     trailingBadge: LoopBadge(
                       purchases[index].confirmationState.label,
@@ -2198,7 +2405,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             ),
           ],
           if (history.entitlements.isNotEmpty) ...<Widget>[
-            const LoopLabel('权益'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel16),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-history-entitlements'),
               rows: <LoopRecordRow>[
@@ -2212,10 +2419,18 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
                       'launch-history-entitlement-'
                       '${history.entitlements[index].entitlementId}',
                     ),
-                    title:
-                        '权益 ${launchUnitsFigure(history.entitlements[index].entitledTokens)} 枚',
-                    subtitle:
-                        '已领取 ${launchUnitsFigure(history.entitlements[index].claimedTokens)} 枚',
+                    title: context.l10n
+                        .launch_detailScreensLaunchHistoryEntitlementTitle(
+                          launchUnitsFigure(
+                            history.entitlements[index].entitledTokens,
+                          ),
+                        ),
+                    subtitle: context.l10n
+                        .launch_detailScreensLaunchHistoryEntitlementSubtitle(
+                          launchUnitsFigure(
+                            history.entitlements[index].claimedTokens,
+                          ),
+                        ),
                     trailingBadge: LoopBadge(
                       history.entitlements[index].state.label,
                       kind: LoopBadgeKind.mute,
@@ -2230,7 +2445,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             ),
           ],
           if (history.refunds.isNotEmpty) ...<Widget>[
-            const LoopLabel('退款'),
+            LoopLabel(context.l10n.launch_detailScreensLoopLabel17),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-history-refunds'),
               rows: <LoopRecordRow>[
@@ -2240,10 +2455,16 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
                       'launch-history-refund-'
                       '${history.refunds[index].refundLiabilityId}',
                     ),
-                    title:
-                        '可退款 ${launchUsd1Label(history.refunds[index].refundableUsd1)}',
-                    subtitle:
-                        '已退款 ${launchUsd1Label(history.refunds[index].refundedUsd1)}',
+                    title: context.l10n
+                        .launch_detailScreensLaunchHistoryRefundTitle(
+                          launchUsd1Label(
+                            history.refunds[index].refundableUsd1,
+                          ),
+                        ),
+                    subtitle: context.l10n
+                        .launch_detailScreensLaunchHistoryRefundSubtitle(
+                          launchUsd1Label(history.refunds[index].refundedUsd1),
+                        ),
                     trailingBadge: LoopBadge(
                       history.refunds[index].state.label,
                       kind: LoopBadgeKind.mute,
@@ -2288,12 +2509,15 @@ class _HistoryTimeline extends StatelessWidget {
           'launch-history-purchase-${purchase.purchaseRecordId}',
         ),
         leading: LoopMonoTile(label: 'R${purchase.roundIndex}'),
-        title: '支付 ${launchUsd1Label(purchase.usd1Amount)}',
-        subtitle:
-            '获得 ${launchUnitsFigure(purchase.tokenAmount)} 枚，'
-            '区块 ${loopGroupedFigure(purchase.blockNumber)}\n'
-            '交易 ${launchShortHex(purchase.transactionHash)}，'
-            '观察于 ${launchTimestampLabel(purchase.observedAt)}',
+        title: LoopL10n.current.launch_detailScreensTitle(
+          launchUsd1Label(purchase.usd1Amount),
+        ),
+        subtitle: LoopL10n.current.launch_detailScreensSubtitle2(
+          loopGroupedFigure(purchase.blockNumber),
+          launchShortHex(purchase.transactionHash),
+          launchTimestampLabel(purchase.observedAt),
+          launchUnitsFigure(purchase.tokenAmount),
+        ),
         subtitleMaxLines: 2,
         trailingBadge: LoopBadge(
           purchase.confirmationState.label,
@@ -2308,27 +2532,41 @@ class _HistoryTimeline extends StatelessWidget {
     final settlement = entry.settlement!;
     final claimed = settlement.kind == LaunchSettlementKind.claimed;
     final amount = claimed
-        ? '${launchUnitsFigure(settlement.amount)} ${ticker ?? '代币'}'
+        ? '${launchUnitsFigure(settlement.amount)} ${ticker ?? LoopL10n.current.launch_tokensUnit}'
         : launchUsd1Label(settlement.amount);
     final total = claimed
-        ? '累计领取 ${launchUnitsFigure(settlement.cumulativeAmount)}'
-        : '累计退回 ${launchUsd1Label(settlement.cumulativeAmount)}';
+        ? LoopL10n.current.launch_detailScreensIf15(
+            launchUnitsFigure(settlement.cumulativeAmount),
+          )
+        : LoopL10n.current.launch_detailScreensS9(
+            launchUsd1Label(settlement.cumulativeAmount),
+          );
     final reorged =
         settlement.confirmationState == LaunchConfirmationState.reorged;
     return LoopRecordRow(
       key: ValueKey<String>(
         'launch-history-settlement-${settlement.settlementRecordId}',
       ),
-      leading: LoopMonoTile(label: claimed ? '领' : '退'),
-      title: '${claimed ? '领取' : '退回'} $amount',
-      subtitle:
-          '$total，${settlement.confirmationState.label}，'
-          '区块 ${loopGroupedFigure(settlement.blockNumber)}\n'
-          '交易 ${launchShortHex(settlement.transactionHash)}，'
-          '观察于 ${launchTimestampLabel(settlement.observedAt)}',
+      leading: LoopMonoTile(
+        label: claimed
+            ? LoopL10n.current.launch_detailScreensLabel7
+            : LoopL10n.current.launch_detailScreensLabel8,
+      ),
+      title: claimed
+          ? LoopL10n.current.launch_detailScreensClaimAmount(amount)
+          : LoopL10n.current.launch_detailScreensRefundAmount(amount),
+      subtitle: LoopL10n.current.launch_detailScreensSubtitle3(
+        loopGroupedFigure(settlement.blockNumber),
+        settlement.confirmationState.label,
+        launchShortHex(settlement.transactionHash),
+        launchTimestampLabel(settlement.observedAt),
+        total,
+      ),
       subtitleMaxLines: 2,
       trailingBadge: LoopBadge(
-        reorged ? '已失效' : settlement.kind.label,
+        reorged
+            ? LoopL10n.current.launch_detailScreensLoopBadge
+            : settlement.kind.label,
         kind: settlement.confirmationState == LaunchConfirmationState.confirmed
             ? LoopBadgeKind.launch
             : LoopBadgeKind.mute,

@@ -18,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/launch2_fixtures.dart';
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 import 'support/s7_page_harness.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
@@ -208,15 +209,24 @@ Future<void> _teardown(WidgetTester tester) async {
 
 void main() {
   loopWatchGround();
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the feed head is measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
 
   testWidgets('a fresh run still offers tokens, from the MEME v2 list', (
     tester,
   ) async {
     final launch2 = _Launch2(page: _projects(3, withFrog: false));
     await _openComposer(tester, launch2: launch2);
-    expect(find.text('关联代币（可不选）'), findsOneWidget);
+    expect(find.text('Linked token (optional)'), findsOneWidget);
     expect(find.text('引用代币（可不选）'), findsNothing);
-    expect(_chips(tester), <String>['不带代币', 'PRJ1', 'PRJ2', 'PRJ3', '搜索代币']);
+    expect(_chips(tester), <String>[
+      'No token',
+      'PRJ1',
+      'PRJ2',
+      'PRJ3',
+      'Search tokens',
+    ]);
     expect(_key('square-composer-token-empty'), findsNothing);
     expect(launch2.listReads, 1);
     await _teardown(tester);
@@ -239,7 +249,7 @@ void main() {
     );
     // PEPE (recent) · FROG (held, also listed last: drawn once) · PRJ1…6.
     expect(_chips(tester), <String>[
-      '不带代币',
+      'No token',
       'PEPE',
       'FROG',
       'PRJ1',
@@ -248,8 +258,8 @@ void main() {
       'PRJ4',
       'PRJ5',
       'PRJ6',
-      '更多 4',
-      '搜索代币',
+      '4 more',
+      'Search tokens',
     ]);
     await tester.tap(_key('square-composer-token-more'));
     await tester.pumpAndSettle();
@@ -268,19 +278,19 @@ void main() {
     await tester.enterText(_key('square-composer-token-search-field'), 'prj1');
     await tester.pumpAndSettle();
     expect(_chips(tester), <String>[
-      '不带代币',
+      'No token',
       'PRJ1',
       'PRJ10',
       'PRJ11',
       'PRJ12',
-      '搜索代币',
+      'Search tokens',
     ]);
     await tester.enterText(
       _key('square-composer-token-search-field'),
       'project 11',
     );
     await tester.pumpAndSettle();
-    expect(_chips(tester), <String>['不带代币', 'PRJ11', '搜索代币']);
+    expect(_chips(tester), <String>['No token', 'PRJ11', 'Search tokens']);
     await tester.tap(_key('square-composer-token-${_uuid(111)}'));
     await tester.pumpAndSettle();
 
@@ -288,7 +298,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(_key('square-composer-token-no-match'), findsOneWidget);
     // The chosen token stays on the row while the search hides it.
-    expect(_chips(tester), <String>['不带代币', 'PRJ11', '搜索代币']);
+    expect(_chips(tester), <String>['No token', 'PRJ11', 'Search tokens']);
 
     // Closing the search clears it; the choice stays.
     await tester.tap(_key('square-composer-token-search'));
@@ -351,9 +361,12 @@ void main() {
     // The list is empty and positions fail.
     final launch2 = _Launch2(page: l2Page(const <Map<String, Object?>>[]));
     await _openComposer(tester, launch2: launch2);
-    expect(find.text('关联代币（可不选）'), findsOneWidget);
+    expect(find.text('Linked token (optional)'), findsOneWidget);
     expect(_key('square-composer-token-empty'), findsOneWidget);
-    expect(find.text('暂时读不到代币，稍后再试'), findsOneWidget);
+    expect(
+      find.text('Tokens can\'t be loaded right now. Try again later.'),
+      findsOneWidget,
+    );
     // Posting without a token still works.
     expect(_key('square-composer-send'), findsOneWidget);
     await _teardown(tester);
@@ -363,7 +376,10 @@ void main() {
     tester,
   ) async {
     await _openComposer(tester);
-    expect(find.text('暂时读不到代币，稍后再试'), findsOneWidget);
+    expect(
+      find.text('Tokens can\'t be loaded right now. Try again later.'),
+      findsOneWidget,
+    );
     await _teardown(tester);
   });
 

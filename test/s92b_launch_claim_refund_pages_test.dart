@@ -253,7 +253,7 @@ void main() {
       expect(result.stage, LaunchSettlementStage.claim);
       expect(result.kind, LaunchIntentKind.claim);
       expect(result.amount, _claimable);
-      expect(launchSettlementActionLabel(result), '领取 2,500 代币');
+      expect(launchSettlementActionLabel(result), 'Claim 2,500 tokens');
     });
 
     test('COMPLETED can still claim what is left', () {
@@ -294,7 +294,10 @@ void main() {
         )!;
         expect(result.stage, LaunchSettlementStage.refund);
         expect(result.kind, LaunchIntentKind.claimRefund);
-        expect(launchSettlementActionLabel(result), '申请退款 100 USD1');
+        expect(
+          launchSettlementActionLabel(result),
+          'Request refund of 100 USD1',
+        );
       }
     });
 
@@ -397,7 +400,7 @@ void main() {
 
       await _scrollTo(tester, _key('launch-settlement-claim'));
       final button = tester.widget<LoopButton>(_key('launch-settlement-claim'));
-      expect(button.label, '领取 2,500 代币');
+      expect(button.label, 'Claim 2,500 tokens');
       expect(button.onPressed, isNotNull);
       expect(_key('launch-settlement-claimable'), findsOneWidget);
 
@@ -408,17 +411,20 @@ void main() {
       ]);
       expect(_key('launch-sign-sheet'), findsOneWidget);
       final sheet = tester.widget<LoopSignSheet>(_key('launch-sign-sheet'));
-      expect(sheet.title, '确认领取');
+      expect(sheet.title, 'Confirm claim');
       final facts = {for (final fact in sheet.facts) fact.label: fact.value};
-      expect(facts['操作'], '领取 2,500 代币到当前钱包');
-      expect(facts['资金'], '合约执行，LOOP 不经手资金');
-      expect(facts['本次可领取'], '2,500 MCAT');
+      expect(facts['Actions'], 'Claim 2,500 tokens to the current wallet');
+      expect(
+        facts['Funds'],
+        'Executed by the contract; LOOP never holds the funds',
+      );
+      expect(facts['Claimable now'], '2,500 MCAT');
 
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
       final handed = wallet.handed.single;
       expect(handed.kind, IntentKind.launchPurchase);
-      expect(handed.title, '确认领取');
+      expect(handed.title, 'Confirm claim');
       final payload = handed.payload! as DeviceTransactionPayload;
       expect(payload.transaction['data'], _data('0x379607f5'));
       expect(gateway.reports, <String>['$s83cIntentId:$s83cTxHash']);
@@ -427,7 +433,10 @@ void main() {
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch-settlement-state-submitted'));
       expect(_key('launch-settlement-state-submitted'), findsOneWidget);
-      expect(find.text('已广播，等待链上确认'), findsOneWidget);
+      expect(
+        find.text('Broadcast, awaiting on-chain confirmation'),
+        findsOneWidget,
+      );
       // Locked while the server has not settled it.
       expect(
         tester.widget<LoopButton>(_key('launch-settlement-claim')).onPressed,
@@ -441,7 +450,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(gateway.intentReadCount, 2);
       expect(_key('launch-settlement-state-confirmed'), findsOneWidget);
-      expect(find.text('已领取'), findsWidgets);
+      expect(find.text('Claimed'), findsWidgets);
       // A confirmed claim re-reads the detail, the position and the records.
       expect(gateway.requestedLaunchIds.length, greaterThan(holderReads));
     });
@@ -461,7 +470,7 @@ void main() {
         tester.widget<LoopButton>(_key('launch-settlement-claim')).onPressed,
         isNull,
       );
-      expect(find.text('合约已暂停'), findsOneWidget);
+      expect(find.text('Contract paused'), findsOneWidget);
     });
 
     testWidgets('pending evidence keeps the button closed', (tester) async {
@@ -489,7 +498,7 @@ void main() {
         ),
       );
       await _scrollTo(tester, _key('launch-settlement-claimed-all'));
-      expect(find.text('已全部领取'), findsOneWidget);
+      expect(find.text('Fully claimed'), findsOneWidget);
       expect(_key('launch-settlement-claim'), findsNothing);
     });
   });
@@ -530,7 +539,7 @@ void main() {
       await _scrollTo(tester, _key('launch-settlement-refund'));
       expect(
         tester.widget<LoopButton>(_key('launch-settlement-refund')).label,
-        '申请退款 100 USD1',
+        'Request refund of 100 USD1',
       );
       await tester.tap(_key('launch-settlement-refund'));
       await tester.pumpAndSettle();
@@ -538,10 +547,13 @@ void main() {
         'claimRefund:$s7LaunchId:$s7WalletId',
       ]);
       final sheet = tester.widget<LoopSignSheet>(_key('launch-sign-sheet'));
-      expect(sheet.title, '确认退款');
+      expect(sheet.title, 'Confirm refund');
       final facts = {for (final fact in sheet.facts) fact.label: fact.value};
-      expect(facts['操作'], '退回 100 USD1 到当前钱包');
-      expect(facts['资金'], '合约执行，LOOP 不经手资金');
+      expect(facts['Actions'], 'Refund 100 USD1 to the current wallet');
+      expect(
+        facts['Funds'],
+        'Executed by the contract; LOOP never holds the funds',
+      );
 
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
@@ -553,7 +565,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch-settlement-state-confirmed'));
-      expect(find.text('已退款'), findsWidgets);
+      expect(find.text('Refunded'), findsWidgets);
     });
 
     testWidgets('a reverted refund says gas only and opens a new attempt', (
@@ -602,7 +614,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch-settlement-state-reverted'));
-      expect(find.text('交易失败（仅消耗 gas）'), findsOneWidget);
+      expect(find.text('Transaction failed (gas only)'), findsOneWidget);
       expect(
         tester.widget<LoopButton>(_key('launch-settlement-refund')).onPressed,
         isNotNull,
@@ -624,43 +636,43 @@ void main() {
           (
             code: 'LAUNCH_CLAIM_NOT_OPEN',
             kind: LaunchIntentKind.claim,
-            title: '尚未开放领取',
-            fragment: '开放后这里会出现领取按钮',
+            title: 'Claims not open yet',
+            fragment: 'the claim button appears here once it opens',
             hidden: false,
           ),
           (
             code: 'LAUNCH_REFUND_NOT_OPEN',
             kind: LaunchIntentKind.claimRefund,
-            title: '当前不可退款',
-            fragment: '退款窗口开放时才能退款',
+            title: 'Refunds not available',
+            fragment: 'the refund window is open',
             hidden: false,
           ),
           (
             code: 'LAUNCH_SALE_PAUSED',
             kind: LaunchIntentKind.claim,
-            title: '合约已暂停',
-            fragment: '请稍后再试',
+            title: 'Contract paused',
+            fragment: 'Try again later.',
             hidden: false,
           ),
           (
             code: 'LAUNCH_NOT_PARTICIPANT',
             kind: LaunchIntentKind.claimRefund,
-            title: '这个钱包没有参与',
-            fragment: '请在钱包中切换后再来',
+            title: "This wallet didn't take part",
+            fragment: 'switch to it in Wallet and come back',
             hidden: true,
           ),
           (
             code: 'LAUNCH_NOTHING_TO_CLAIM',
             kind: LaunchIntentKind.claim,
-            title: '暂无可领取',
-            fragment: '下一次释放后再来',
+            title: 'Nothing to claim',
+            fragment: 'Come back after the next unlock',
             hidden: false,
           ),
           (
             code: 'LAUNCH_NOTHING_TO_REFUND',
             kind: LaunchIntentKind.claimRefund,
-            title: '已退款',
-            fragment: '已经全部退回',
+            title: 'Refunded',
+            fragment: 'has been fully refunded',
             hidden: false,
           ),
         ];
@@ -743,7 +755,7 @@ void main() {
         ),
       );
       await _scrollTo(tester, _key('launch-settlement-awaiting-finalize'));
-      expect(find.text('等待最终化'), findsOneWidget);
+      expect(find.text('Awaiting finalization'), findsOneWidget);
       expect(_key('launch-settlement-claim'), findsNothing);
       expect(_key('launch-settlement-refund'), findsNothing);
     });
@@ -757,7 +769,7 @@ void main() {
         ),
       );
       await _scrollTo(tester, _key('launch-settlement-awaiting-tge'));
-      expect(find.text('等待 TGE'), findsOneWidget);
+      expect(find.text('Awaiting TGE'), findsOneWidget);
     });
 
     testWidgets('a live sale draws no block', (tester) async {
@@ -804,7 +816,10 @@ void main() {
           ),
         );
         await _scrollTo(tester, _key('launch-settlement-unread'));
-        expect(find.text('我的份额暂时读不到'), findsOneWidget);
+        expect(
+          find.text('My allocation can\'t be loaded right now'),
+          findsOneWidget,
+        );
         expect(_key('launch-settlement-claim'), findsNothing);
       });
     }
@@ -831,31 +846,37 @@ void main() {
         ),
       );
       await _scrollTo(tester, _key('launch-settlement-unread'));
-      expect(find.textContaining('读取 Launch 合约失败'), findsOneWidget);
+      expect(
+        find.textContaining("Couldn't read the Launch contract"),
+        findsOneWidget,
+      );
     });
   });
 
   group('发射轨道 END', () {
     test('badge and line follow the entitlement axis', () {
-      expect(launchTrackEndBadge(null), '待触发');
-      expect(launchTrackEndBadge(s83cOnChain()), '待触发');
-      expect(launchTrackEndBadge(_vesting()), '领取中');
+      expect(launchTrackEndBadge(null), 'Pending');
+      expect(launchTrackEndBadge(s83cOnChain()), 'Pending');
+      expect(launchTrackEndBadge(_vesting()), 'Claiming');
       expect(
         launchTrackEndBadge(
           _vesting(entitlement: LaunchEntitlementState.completed),
         ),
-        '已完成',
+        'Done',
       );
-      expect(launchTrackEndBadge(_refunding()), '退款中');
+      expect(launchTrackEndBadge(_refunding()), 'Refunding');
       expect(
         launchTrackEndBadge(
           _vesting(entitlement: LaunchEntitlementState.frozen),
         ),
-        '已毕业',
+        'Graduated',
       );
-      expect(launchTrackEndDetail(_vesting()), contains('已开放领取'));
-      expect(launchTrackEndDetail(_refunding()), contains('申请退款'));
-      expect(launchTrackEndDetail(null), '达到毕业条件后由服务端权威状态推进');
+      expect(launchTrackEndDetail(_vesting()), contains('Claims are open'));
+      expect(launchTrackEndDetail(_refunding()), contains('Request a refund'));
+      expect(
+        launchTrackEndDetail(null),
+        'Advanced by the server\'s authoritative status once graduation conditions are met',
+      );
     });
 
     testWidgets('the END strip says 领取中 on a vesting sale', (tester) async {
@@ -872,14 +893,14 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch-track-strip-end'),
-          matching: find.text('领取中'),
+          matching: find.text('Claiming'),
         ),
         findsOneWidget,
       );
-      expect(find.text('待触发'), findsNothing);
+      expect(find.text('Pending'), findsNothing);
       expect(
         tester.widget<Text>(_key('launch-track-end-line')).data,
-        contains('已开放领取'),
+        contains('Claims are open'),
       );
     });
   });
@@ -970,14 +991,14 @@ void main() {
         'launch-history-settlement-b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
       );
       expect(
-        find.descendant(of: claimed, matching: find.text('已领取')),
+        find.descendant(of: claimed, matching: find.text('Claimed')),
         findsOneWidget,
       );
       final reorged = _key(
         'launch-history-settlement-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
       );
       expect(
-        find.descendant(of: reorged, matching: find.text('已失效')),
+        find.descendant(of: reorged, matching: find.text('Invalidated')),
         findsOneWidget,
       );
     });
@@ -1009,24 +1030,24 @@ void main() {
           ]),
         ),
       );
-      expect(text, startsWith('1 笔认购，1 笔领取，最近'));
+      expect(text, startsWith('1 purchase, 1 claim, latest'));
     });
   });
 
   test('sheet copy names the kind', () {
-    expect(launchIntentTitle(LaunchIntentKind.claim), '确认领取');
-    expect(launchIntentTitle(LaunchIntentKind.claimRefund), '确认退款');
-    expect(launchIntentTitle(LaunchIntentKind.buy), '确认认购');
+    expect(launchIntentTitle(LaunchIntentKind.claim), 'Confirm claim');
+    expect(launchIntentTitle(LaunchIntentKind.claimRefund), 'Confirm refund');
+    expect(launchIntentTitle(LaunchIntentKind.buy), 'Confirm purchase');
     expect(
       launchSignReasonTextFor(LaunchIntentKind.claim, 'INTENT_EXPIRED'),
-      isNot(contains('报价')),
+      isNot(contains('quote')),
     );
     expect(
       launchReportReasonTextFor(
         LaunchIntentKind.claimRefund,
         'LAUNCH_INTENT_EXPIRED',
       ),
-      contains('这笔退款已过期'),
+      contains('This refund expired'),
     );
   });
 }

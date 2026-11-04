@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -29,9 +30,9 @@ class LaunchStateBlock extends StatelessWidget {
     required this.failureKind,
     super.key,
     this.onRetry,
-    this.emptyMessage = '这里还没有内容',
+    this.emptyMessage,
     this.emptyReason,
-    this.permissionTitle = '当前账号没有权限',
+    this.permissionTitle,
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
   });
@@ -41,9 +42,9 @@ class LaunchStateBlock extends StatelessWidget {
   final LaunchViewPhase phase;
   final LaunchFailureKind? failureKind;
   final VoidCallback? onRetry;
-  final String emptyMessage;
+  final String? emptyMessage;
   final String? emptyReason;
-  final String permissionTitle;
+  final String? permissionTitle;
   final LoopSkeletonType skeleton;
   final int rows;
 
@@ -61,7 +62,7 @@ class LaunchStateBlock extends StatelessWidget {
           showMessage: true,
           key: ValueKey<String>('$prefix-state-empty'),
           illustration: LoopIllustration.launchpad,
-          title: emptyMessage,
+          title: emptyMessage ?? context.l10n.common_nothingHereYet,
           message: emptyReason,
           compact: true,
         );
@@ -72,12 +73,18 @@ class LaunchStateBlock extends StatelessWidget {
               ? LoopOfflineCause.timeout
               : LoopOfflineCause.connection,
           onRetry: onRetry,
-          pausedActions: const <String>['申请', '提交', '认购', '领取', '绑定'],
+          pausedActions: <String>[
+            context.l10n.launch_widgetsLoopOfflineState,
+            context.l10n.common_submit,
+            context.l10n.launch_intentActionBuy,
+            context.l10n.common_claim,
+            context.l10n.launch_widgetsLoopOfflineState2,
+          ],
         );
       case LaunchViewPhase.unavailable:
         return LoopInlineUnavailable(
           key: ValueKey<String>('$prefix-state-unavailable'),
-          message: '该功能当前不可用',
+          message: context.l10n.launch_widgetsMessage,
           detail: launchFailureReason(failureKind),
           maxLines: 2,
           detailMaxLines: 4,
@@ -86,7 +93,7 @@ class LaunchStateBlock extends StatelessWidget {
         return LoopPermissionState(
           key: ValueKey<String>('$prefix-state-permission'),
           icon: 'shield',
-          title: permissionTitle,
+          title: permissionTitle ?? context.l10n.common_noPermission,
           purpose: launchFailureReason(failureKind),
         );
       case LaunchViewPhase.error:
@@ -110,10 +117,15 @@ class LaunchUnavailableCard extends StatelessWidget {
     super.key,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
     this.reason,
+    this.id,
   });
 
   final String label;
   final LaunchUnavailable fact;
+
+  /// A stable id for the card's key; [label] is copy and changes with the
+  /// language (decision 0281). Callers that have not migrated pass none.
+  final String? id;
   final EdgeInsets margin;
 
   /// The page's own sentence for [fact], when it knows more than the code
@@ -123,7 +135,7 @@ class LaunchUnavailableCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopInlineUnavailable(
-      key: ValueKey<String>('launch-unavailable-$label'),
+      key: ValueKey<String>('launch-unavailable-${id ?? label}'),
       message: label,
       detail: reason ?? launchReasonCodeText(fact.reasonCode),
       maxLines: 2,
@@ -165,9 +177,10 @@ class LaunchEmptyMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Semantics(
         container: true,
-        label:
-            '$label，暂无数值。'
-            '${launchMetricReasonLine(reasonCode: reasonCode, note: note)}',
+        label: context.l10n.launch_widgetsLabel(
+          label,
+          launchMetricReasonLine(reasonCode: reasonCode, note: note),
+        ),
         child: ExcludeSemantics(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +207,7 @@ class LaunchEmptyMetric extends StatelessWidget {
 String launchMetricReasonLine({required String reasonCode, String? note}) =>
     note == null
     ? launchReasonCodeText(reasonCode)
-    : '$note，${launchReasonCodeText(reasonCode)}';
+    : '$note${LoopL10n.current.common_listSeparator}${launchReasonCodeText(reasonCode)}';
 
 /// A grid of [LaunchEmptyMetric]s. Every S7 dashboard block uses it so no page
 /// can accidentally render one figure and one placeholder side by side.
@@ -278,7 +291,10 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
               // unless it speaks for every one of them.
               subjects.length == metrics.length
                   ? shared
-                  : '${subjects.join('、')}：$shared',
+                  : LoopL10n.current.launch_widgetsSubjectsShared(
+                      shared,
+                      subjects.join(LoopL10n.current.common_listSeparator),
+                    ),
               style: LoopType.captionSm.copyWith(color: LoopColors.text2),
             ),
           ),
@@ -306,19 +322,20 @@ LoopRecordRow launchConfigSlotRow({
     LaunchConfigSlotConfirmed(:final value) => LoopRecordRow(
       key: ValueKey<String>('launch-slot-$label'),
       title: label,
-      subtitle: '已确认',
+      subtitle: LoopL10n.current.common_confirmed,
       trailing: value,
       position: position,
-      semanticLabel: '$label，$value',
+      semanticLabel: '$label${LoopL10n.current.common_listSeparator}$value',
     ),
     LaunchConfigSlotPending(:final reasonCode) => LoopRecordRow(
       key: ValueKey<String>('launch-slot-$label'),
       title: label,
       subtitle:
-          '$launchPendingConfirmationLabel，${launchReasonCodeText(reasonCode)}',
+          '$launchPendingConfirmationLabel${LoopL10n.current.common_listSeparator}${launchReasonCodeText(reasonCode)}',
       trailing: launchMissingFigure,
       position: position,
-      semanticLabel: '$label，$launchPendingConfirmationLabel',
+      semanticLabel:
+          '$label${LoopL10n.current.common_listSeparator}$launchPendingConfirmationLabel',
     ),
   };
 }
@@ -330,28 +347,40 @@ LoopRecordRow launchRoundRow({
   VoidCallback? onTap,
   bool selected = false,
 }) {
-  const pendingLabel = launchPendingConfirmationLabel;
+  final pendingLabel = launchPendingConfirmationLabel;
   final tier = round.eligibilityTier;
   final parts = <String>[
-    tier == null ? '资格 $pendingLabel' : '资格 ${launchTierLabel(tier)}',
+    tier == null
+        ? LoopL10n.current.launch_widgetsLaunchRoundRow(pendingLabel)
+        : LoopL10n.current.launch_widgetsLaunchRoundRow(launchTierLabel(tier)),
     round.startsAt == null
-        ? '时间 $pendingLabel'
-        : '开始 ${launchTimestampLabel(round.startsAt!)}',
-    round.priceUsd1 == null ? '价格 $pendingLabel' : '价格 ${round.priceUsd1} USD1',
+        ? LoopL10n.current.launch_widgetsLaunchRoundRow2(pendingLabel)
+        : LoopL10n.current.launch_widgetsS2(
+            launchTimestampLabel(round.startsAt!),
+          ),
+    round.priceUsd1 == null
+        ? LoopL10n.current.launch_widgetsLaunchRoundRow3(pendingLabel)
+        : LoopL10n.current.launch_widgetsS3(round.priceUsd1),
     round.walletRoundCapRaw == null
-        ? '上限 $pendingLabel'
-        : '上限 ${round.walletRoundCapRaw}',
+        ? LoopL10n.current.launch_widgetsLaunchRoundRow4(pendingLabel)
+        : LoopL10n.current.launch_widgetsLaunchRoundRow4(
+            round.walletRoundCapRaw,
+          ),
   ];
   return LoopRecordRow(
     key: ValueKey<String>('launch-round-${round.roundIndex}'),
     leading: _RoundIndexTile(index: round.roundIndex),
     title: 'Round ${round.roundIndex}',
-    subtitle: parts.join('，'),
+    subtitle: parts.join(LoopL10n.current.common_listSeparator),
     // Four pending facts joined by `·` ran past the value column and lost the
     // last one entirely; the row takes the second line the audit asks for.
     subtitleMaxLines: 2,
     trailingBadge: LoopBadge(
-      selected ? '已选择' : (round.isConfirmed ? '已确认' : '待确认'),
+      selected
+          ? LoopL10n.current.launch_widgetsLoopBadge
+          : (round.isConfirmed
+                ? LoopL10n.current.common_confirmed
+                : LoopL10n.current.common_pendingConfirmation),
       kind: selected || round.isConfirmed
           ? LoopBadgeKind.launch
           : LoopBadgeKind.mute,
@@ -359,8 +388,8 @@ LoopRecordRow launchRoundRow({
     onTap: onTap,
     position: position,
     semanticLabel:
-        'Round ${round.roundIndex}，${parts.join('，')}'
-        '${selected ? '，已选择' : ''}',
+        'Round ${round.roundIndex}${LoopL10n.current.common_listSeparator}${parts.join(LoopL10n.current.common_listSeparator)}'
+        '${selected ? LoopL10n.current.launch_widgetsSelectedSuffix : ''}',
   );
 }
 
@@ -399,14 +428,18 @@ String launchTimestampLabel(DateTime observedAt) {
 /// names it.
 enum LaunchSourceKind {
   /// The list of projects and launches LOOP keeps.
-  catalog('LOOP 目录'),
+  catalog(),
 
   /// The counts LOOP's own ledger can prove.
-  ledger('LOOP 账本');
+  ledger();
 
-  const LaunchSourceKind(this.label);
+  const LaunchSourceKind();
 
-  final String label;
+  String get label => switch (this) {
+    LaunchSourceKind.catalog => LoopL10n.current.launch_widgetsCatalog,
+
+    LaunchSourceKind.ledger => LoopL10n.current.launch_widgetsLedger,
+  };
 }
 
 /// The user-facing name of one source.
@@ -441,8 +474,10 @@ class LaunchSourceFooter extends StatelessWidget {
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 ${launchSourceLabel(source, kind)}，'
-        '观察于 ${launchTimestampLabel(observedAt)}',
+        context.l10n.launch_widgetsBuild(
+          launchSourceLabel(source, kind),
+          launchTimestampLabel(observedAt),
+        ),
         style: LoopType.captionSm,
       ),
     );
@@ -471,14 +506,16 @@ LoopRecordRow launchCatalogRow({
           LaunchOnChainUnavailable() => saleSegmentLabel,
         }
       : switch (launch.scheduleStatus) {
-          LaunchScheduleStatus.unscheduled => '已批准，待排期',
-          LaunchScheduleStatus.scheduled => '已排期',
-          LaunchScheduleStatus.live => '发射中',
-          LaunchScheduleStatus.ended => '已结束',
+          LaunchScheduleStatus.unscheduled =>
+            LoopL10n.current.launch_widgetsUnscheduled,
+          LaunchScheduleStatus.scheduled =>
+            LoopL10n.current.launch_modelsEntries3,
+          LaunchScheduleStatus.live => LoopL10n.current.launch_controllersLive,
+          LaunchScheduleStatus.ended => LoopL10n.current.common_ended,
         };
   final config = launch.configVersion == null
       ? launchPendingConfirmationLabel
-      : '配置已确认';
+      : LoopL10n.current.launch_widgetsLaunchPendingConfirmationLabel;
   // The chain is the launch's own published value. It is stated, never
   // inferred from the segment or from the catalogue's own chain.
   final testnet = launch.isTestnetChain;
@@ -486,7 +523,8 @@ LoopRecordRow launchCatalogRow({
     key: ValueKey<String>('$keyPrefix-${launch.launchId}'),
     leading: LaunchTickerTile(ticker: launch.ticker),
     title: launch.name,
-    subtitle: '${launch.ticker}，$schedule，$config',
+    subtitle:
+        '${launch.ticker}${LoopL10n.current.common_listSeparator}$schedule${LoopL10n.current.common_listSeparator}$config',
     // The trailing column is a state, never a figure: the four on-chain axes
     // are unavailable, so a number there would be an invention.
     trailingBadge: Column(
@@ -508,9 +546,9 @@ LoopRecordRow launchCatalogRow({
     onTap: onTap,
     position: position,
     semanticLabel:
-        '${launch.name}，${launch.ticker}，$schedule，'
-        '${testnet ? '$loopTestnetBadgeLabel，' : ''}'
-        '${launch.onChainState.isProvable ? launchAxesBadge(launch.onChainState) : '链上状态待确认'}',
+        '${launch.name}${LoopL10n.current.common_listSeparator}${launch.ticker}${LoopL10n.current.common_listSeparator}$schedule${LoopL10n.current.common_listSeparator}'
+        '${testnet ? '$loopTestnetBadgeLabel${LoopL10n.current.common_listSeparator}' : ''}'
+        '${launch.onChainState.isProvable ? launchAxesBadge(launch.onChainState) : LoopL10n.current.launch_widgetsOnChainPending}',
   );
 }
 
@@ -570,13 +608,13 @@ class LaunchAxisBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             for (var index = 0; index < axes.length; index += 1)
               LoopRecordRow(
-                key: ValueKey<String>('launch-axis-${axes[index].label}'),
+                key: ValueKey<String>('launch-axis-${launchAxisIds[index]}'),
                 title: axes[index].label,
                 subtitle: axes[index].meaning,
                 trailing: axes[index].wireName,
                 position: launchRowPosition(index, axes.length),
                 semanticLabel:
-                    '${axes[index].label}，${axes[index].wireName}，'
+                    '${axes[index].label}${LoopL10n.current.common_listSeparator}${axes[index].wireName}${LoopL10n.current.common_listSeparator}'
                     '${axes[index].meaning}',
               ),
           ],
@@ -584,8 +622,10 @@ class LaunchAxisBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '快照区块 ${loopGroupedFigure(chain.snapshotBlockNumber)}，'
-            '状态摘要 ${launchShortHex(chain.stateTupleDigest)}',
+            LoopL10n.current.launch_widgetsLaunchAxisSnapshot(
+              loopGroupedFigure(chain.snapshotBlockNumber),
+              launchShortHex(chain.stateTupleDigest),
+            ),
             key: const ValueKey<String>('launch-axis-snapshot'),
             style: LoopType.captionSm,
           ),
@@ -602,19 +642,21 @@ class LaunchAxisBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             for (var index = 0; index < launchAxisLabels.length; index += 1)
               LoopRecordRow(
-                key: ValueKey<String>('launch-axis-${launchAxisLabels[index]}'),
+                key: ValueKey<String>('launch-axis-${launchAxisIds[index]}'),
                 title: launchAxisLabels[index],
                 subtitle: launchReasonCodeText(unavailable.reasonCode),
                 trailing: launchMissingFigure,
                 position: launchRowPosition(index, launchAxisLabels.length),
-                semanticLabel: '${launchAxisLabels[index]}，暂无可证明的链上状态',
+                semanticLabel: LoopL10n.current.launch_widgetsSemanticLabel(
+                  launchAxisLabels[index],
+                ),
               ),
           ],
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '链上信息暂时读不到，因此这一页不显示合约地址、总量、税率或上限。',
+            LoopL10n.current.launch_widgetsUnavailable,
             style: LoopType.captionSm,
           ),
         ),
@@ -626,14 +668,16 @@ class LaunchAxisBlock extends StatelessWidget {
 /// The sale axis in the few words a catalogue row's subtitle carries
 /// (decision 0097). A pause is stated on its own.
 String launchSaleStateLabel(LaunchOnChainAvailable state) {
-  if (state.operationalState == LaunchOperationalState.paused) return '已暂停';
+  if (state.operationalState == LaunchOperationalState.paused) {
+    return LoopL10n.current.common_paused;
+  }
   return switch (state.saleState) {
-    LaunchSaleState.scheduled => '已排期，未开售',
-    LaunchSaleState.live => '销售进行中',
-    LaunchSaleState.ended => '销售已结束',
-    LaunchSaleState.succeeded => '销售成功',
-    LaunchSaleState.failed => '未达软顶',
-    LaunchSaleState.cancelled => '已取消',
+    LaunchSaleState.scheduled => LoopL10n.current.launch_chainModelsScheduled,
+    LaunchSaleState.live => LoopL10n.current.launch_chainModelsBody,
+    LaunchSaleState.ended => LoopL10n.current.launch_widgetsEnded,
+    LaunchSaleState.succeeded => LoopL10n.current.launch_chainModelsNotStarted2,
+    LaunchSaleState.failed => LoopL10n.current.launch_chainModelsSwitch,
+    LaunchSaleState.cancelled => LoopL10n.current.common_cancelled,
   };
 }
 
@@ -641,9 +685,10 @@ String launchSaleStateLabel(LaunchOnChainAvailable state) {
 String launchAxesBadge(LaunchOnChainState state) => switch (state) {
   final LaunchOnChainAvailable chain =>
     chain.operationalState == LaunchOperationalState.paused
-        ? '已暂停'
+        ? LoopL10n.current.common_paused
         : launchGraduationProjection(chain) ?? launchSaleStateLabel(chain),
-  LaunchOnChainUnavailable() => '链上待确认',
+  LaunchOnChainUnavailable() =>
+    LoopL10n.current.launch_widgetsLaunchOnChainUnavailable,
 };
 
 /// One row of a contract round (`getRounds`): the round, its window, its
@@ -655,29 +700,42 @@ LoopRecordRow launchChainRoundRow({
   VoidCallback? onTap,
   bool selected = false,
 }) {
-  final access = round.hasAllowlist ? '名单轮' : '公开轮';
+  final access = round.hasAllowlist
+      ? LoopL10n.current.launch_detailScreensBuild
+      : LoopL10n.current.launch_detailScreensS6;
   final lines = <String>[
     '${launchTimestampLabel(round.startAt)} – ${launchTimestampLabel(round.endAt)}',
-    '轮次上限 ${launchUsd1Label(round.roundCapUsd1)}，'
-        '钱包上限 ${launchUsd1Label(round.walletRoundCapUsd1)}',
-    '已募集 ${launchUsd1Label(round.raisedUsd1)}',
-    if (round.roundId == null) 'LOOP 没有这一轮的记录，不能在这里认购',
+    LoopL10n.current.launch_widgetsLaunchChainRoundRow(
+      launchUsd1Label(round.roundCapUsd1),
+      launchUsd1Label(round.walletRoundCapUsd1),
+    ),
+    LoopL10n.current.launch_widgetsLaunchChainRoundRow2(
+      launchUsd1Label(round.raisedUsd1),
+    ),
+    if (round.roundId == null) LoopL10n.current.launch_detailScreensSwitch5,
   ];
   final price = '${launchUnitsFigure(round.priceUsd1PerToken)} USD1';
   return LoopRecordRow(
     key: ValueKey<String>('$keyPrefix-${round.roundIndex}'),
     leading: LoopMonoTile(label: 'R${round.roundIndex}'),
-    title: 'Round ${round.roundIndex}，$access',
+    title:
+        'Round ${round.roundIndex}${LoopL10n.current.common_listSeparator}$access',
     subtitle: lines.join('\n'),
     subtitleMaxLines: 4,
     trailing: price,
-    trailingCaption: selected ? '已选择' : '单价',
+    trailingCaption: selected
+        ? LoopL10n.current.launch_widgetsLoopBadge
+        : LoopL10n.current.launch_widgetsTrailingCaption,
     onTap: onTap,
     position: position,
     selected: selected,
-    semanticLabel:
-        'Round ${round.roundIndex}，$access，单价 $price，${lines.join('，')}'
-        '${selected ? '，已选择' : ''}',
+    semanticLabel: LoopL10n.current.launch_widgetsSemanticLabel2(
+      access,
+      lines.join(LoopL10n.current.common_listSeparator),
+      price,
+      round.roundIndex,
+      selected ? LoopL10n.current.launch_widgetsSelectedSuffix : '',
+    ),
   );
 }
 
@@ -691,30 +749,40 @@ LoopRecordRow launchMilestoneRow({
   LoopRowPosition position = LoopRowPosition.single,
 }) {
   final track =
-      '${launchVenueLabel(milestone.venue)}，'
+      '${launchVenueLabel(milestone.venue)}${LoopL10n.current.common_listSeparator}'
       '${launchMarketTypeLabel(milestone.marketType)}';
   final lines = <String>[];
   if (milestone.isImplicit) {
     // The track is always listed; nothing has been recorded against it.
-    lines.add('尚无记录');
+    lines.add(LoopL10n.current.launch_widgetsAdd);
   } else {
-    lines.add('更新于 ${launchTimestampLabel(milestone.updatedAt!)}');
+    lines.add(
+      LoopL10n.current.launch_widgetsAdd2(
+        launchTimestampLabel(milestone.updatedAt!),
+      ),
+    );
   }
   final evidence = milestone.evidence;
   if (milestone.state.carriesEvidence) {
     lines.add(
       evidence.recordedAt == null
-          ? '复核记录时间 $launchMissingFigure'
-          : '复核记录于 ${launchTimestampLabel(evidence.recordedAt!)}',
+          ? LoopL10n.current.launch_widgetsAdd3(launchMissingFigure)
+          : LoopL10n.current.launch_widgetsS5(
+              launchTimestampLabel(evidence.recordedAt!),
+            ),
     );
     lines.add(
       evidence.observedAt == null
-          ? '平台可核验时间 $launchMissingFigure（操作员未提供）'
-          : '平台可核验于 ${launchTimestampLabel(evidence.observedAt!)}',
+          ? LoopL10n.current.launch_widgetsAdd4(launchMissingFigure)
+          : LoopL10n.current.launch_widgetsS6(
+              launchTimestampLabel(evidence.observedAt!),
+            ),
     );
-    if (evidence.reviewer != null) lines.add('复核人 ${evidence.reviewer}');
+    if (evidence.reviewer != null) {
+      lines.add(LoopL10n.current.launch_widgetsAdd5(evidence.reviewer));
+    }
   } else {
-    lines.add('这一状态没有可查材料');
+    lines.add(LoopL10n.current.launch_widgetsAdd6);
   }
   return LoopRecordRow(
     key: ValueKey<String>('launch-milestone-${milestone.trackKey}'),
@@ -728,8 +796,8 @@ LoopRecordRow launchMilestoneRow({
     ),
     position: position,
     semanticLabel:
-        '$track，${launchMilestoneStateLabel(milestone.state)}，'
-        '${lines.join('，')}',
+        '$track${LoopL10n.current.common_listSeparator}${launchMilestoneStateLabel(milestone.state)}${LoopL10n.current.common_listSeparator}'
+        '${lines.join(LoopL10n.current.common_listSeparator)}',
   );
 }
 
@@ -783,13 +851,15 @@ class LaunchChainBlock extends StatelessWidget {
             LoopRecordRow(
               key: const ValueKey<String>('launch-chain-row'),
               title: loopChainName(loopLaunchTestnetChainId),
-              subtitle:
-                  '$loopLaunchTestnetChainId，Launch 链；'
-                  '钱包余额、行情、兑换与授权仍在主网',
+              subtitle: context.l10n.launch_widgetsLaunchChainRowSubtitle(
+                loopLaunchTestnetChainId,
+              ),
               trailingBadge: const LoopTestnetBadge(),
-              semanticLabel:
-                  'Launch 运行在 $loopTestnetBadgeLabel，'
-                  '$loopLaunchTestnetChainId，主网功能不受影响',
+              semanticLabel: context.l10n
+                  .launch_widgetsLaunchChainRowSemanticLabel(
+                    loopLaunchTestnetChainId,
+                    loopTestnetBadgeLabel,
+                  ),
             ),
           ],
         ),
@@ -829,10 +899,14 @@ class LaunchIdentityStrip extends StatelessWidget {
     final address = contractAddress;
     return Semantics(
       container: true,
-      label:
-          '$name，$ticker。'
-          '${narrative ?? '还没有项目简介。'}'
-          '合约 ${address == null ? '待登记' : suffixOf(address)}',
+      label: context.l10n.launch_widgetsLabel2(
+        address == null
+            ? context.l10n.launch_widgetsAddressUnregistered
+            : suffixOf(address),
+        name,
+        narrative ?? context.l10n.launch_widgetsNoNarrative,
+        ticker,
+      ),
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -865,7 +939,9 @@ class LaunchIdentityStrip extends StatelessWidget {
                   ],
                   const SizedBox(height: 6),
                   Text(
-                    '合约 ${address == null ? launchMissingFigure : suffixOf(address)}',
+                    context.l10n.launch_widgetsBuild2(
+                      address == null ? launchMissingFigure : suffixOf(address),
+                    ),
                     style: LoopTypography.withWeight(
                       LoopType.figureXs,
                       FontWeight.w600,
@@ -888,10 +964,13 @@ class LaunchIdentityStrip extends StatelessWidget {
 /// The price is the one of the four a contract round can prove: it is the
 /// fixed price of the first round read on chain, and the em dash otherwise.
 List<LoopStat> launchRecordStats({String? price}) => <LoopStat>[
-  const LoopStat(label: '总量', value: loopFigureDash),
-  const LoopStat(label: '持有人', value: loopFigureDash),
-  LoopStat(label: '当前价', value: price ?? loopFigureDash),
-  const LoopStat(label: '成交量', value: loopFigureDash),
+  LoopStat(label: LoopL10n.current.common_totalSupply, value: loopFigureDash),
+  LoopStat(label: LoopL10n.current.common_holders, value: loopFigureDash),
+  LoopStat(
+    label: LoopL10n.current.launch_widgetsLabel3,
+    value: price ?? loopFigureDash,
+  ),
+  LoopStat(label: LoopL10n.current.launch_widgetsLabel4, value: loopFigureDash),
 ];
 
 /// The first contract round's fixed price, or `null` while none was read.
@@ -914,13 +993,16 @@ class LaunchSaleConfigGroup extends StatelessWidget {
       rows: <LoopRecordRow>[
         for (var index = 0; index < entries.length; index += 1)
           LoopRecordRow(
-            key: ValueKey<String>('launch-sale-config-${entries[index].$1}'),
+            key: ValueKey<String>(
+              'launch-sale-config-${launchSaleConfigIds[index]}',
+            ),
             title: entries[index].$1,
-            subtitle: '合约读数',
+            subtitle: context.l10n.launch_widgetsSubtitle,
             trailing: entries[index].$2,
             position: launchRowPosition(index, entries.length),
             chevron: false,
-            semanticLabel: '${entries[index].$1}，${entries[index].$2}',
+            semanticLabel:
+                '${entries[index].$1}${LoopL10n.current.common_listSeparator}${entries[index].$2}',
           ),
       ],
     );
@@ -953,21 +1035,26 @@ LoopRecordRow launchTrackRow({
   final start = round.startsAt;
   final title = tier == null
       ? 'Round ${round.roundIndex}'
-      : 'Round ${round.roundIndex}，${launchTierLabel(tier)}';
+      : 'Round ${round.roundIndex}${LoopL10n.current.common_listSeparator}${launchTierLabel(tier)}';
   final subtitle = start == null
-      ? '开放时间 $launchPendingConfirmationLabel'
-      : '开放于 ${launchTimestampLabel(start)}';
+      ? LoopL10n.current.launch_widgetsLaunchTrackRow(
+          launchPendingConfirmationLabel,
+        )
+      : LoopL10n.current.launch_widgetsS7(launchTimestampLabel(start));
   return LoopRecordRow(
     key: ValueKey<String>('$keyPrefix-${round.roundIndex}'),
     leading: LoopMonoTile(label: launchRoundTimeCode(round)),
     title: title,
     subtitle: subtitle,
     trailing: feeLabel ?? launchMissingFigure,
-    trailingCaption: '手续费',
+    trailingCaption: LoopL10n.current.launch_widgetsTrailingCaption2,
     onTap: onTap,
     position: position,
-    semanticLabel:
-        '$title，$subtitle，手续费 ${feeLabel ?? launchPendingConfirmationLabel}',
+    semanticLabel: LoopL10n.current.launch_widgetsSemanticLabel3(
+      feeLabel ?? launchPendingConfirmationLabel,
+      subtitle,
+      title,
+    ),
   );
 }
 
@@ -1015,13 +1102,20 @@ class LaunchCapCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            _row(context, '单钱包单轮上限', _value(slots?.walletRoundCap)),
+            _row(
+              context,
+              context.l10n.launch_modelsEntries,
+              _value(slots?.walletRoundCap),
+            ),
             const SizedBox(height: 10),
-            _row(context, '单钱包项目上限', _value(slots?.walletProjectCap)),
+            _row(
+              context,
+              context.l10n.launch_chainModelsEntries3,
+              _value(slots?.walletProjectCap),
+            ),
             const LoopHairline(),
             Text(
-              '上限只在内盘阶段生效，由合约执行；本页不写入任何固定比例或数量，'
-              '数值以这次发射被确认的配置为准。',
+              context.l10n.launch_widgetsBuild3,
               style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
@@ -1035,7 +1129,7 @@ class LaunchCapCard extends StatelessWidget {
   Widget _row(BuildContext context, String label, String value) => Semantics(
     container: true,
     label:
-        '$label，${value == launchMissingFigure ? launchPendingConfirmationLabel : value}',
+        '$label${LoopL10n.current.common_listSeparator}${value == launchMissingFigure ? launchPendingConfirmationLabel : value}',
     child: ExcludeSemantics(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1075,13 +1169,19 @@ class LaunchChainCapCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = <(String, String)>[
-      ('单钱包项目上限', launchUsd1Label(config.walletProjectCapUsd1)),
+      (
+        context.l10n.launch_chainModelsEntries3,
+        launchUsd1Label(config.walletProjectCapUsd1),
+      ),
       for (final round in rounds)
         (
-          'Round ${round.roundIndex} 单钱包上限',
+          context.l10n.launch_widgetsBuild4(round.roundIndex),
           launchUsd1Label(round.walletRoundCapUsd1),
         ),
-      ('最低单笔', launchUsd1Label(config.minPurchaseUsd1)),
+      (
+        context.l10n.launch_chainModelsEntries4,
+        launchUsd1Label(config.minPurchaseUsd1),
+      ),
     ];
     return LoopChalkCard(
       key: const ValueKey<String>('launch-rounds-caps'),
@@ -1094,7 +1194,8 @@ class LaunchChainCapCard extends StatelessWidget {
               if (index > 0) const SizedBox(height: 10),
               Semantics(
                 container: true,
-                label: '${rows[index].$1}，${rows[index].$2}',
+                label:
+                    '${rows[index].$1}${LoopL10n.current.common_listSeparator}${rows[index].$2}',
                 child: ExcludeSemantics(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1121,8 +1222,7 @@ class LaunchChainCapCard extends StatelessWidget {
             ],
             const LoopHairline(),
             Text(
-              '上限由合约在每次认购时执行；这里是合约在快照区块的读数，'
-              '不是 LOOP 写下的固定比例或数量。',
+              context.l10n.launch_widgetsBuild5,
               style: LoopType.captionSm.copyWith(
                 color: LoopGround.auxiliaryOf(context),
               ),
@@ -1146,26 +1246,31 @@ class LaunchChainCapCard extends StatelessWidget {
   LaunchOnChainState onChain,
 ) {
   if (onChain is! LaunchOnChainAvailable) {
-    return (label: '进入内盘交易', enabled: true);
+    return (label: LoopL10n.current.launch_widgetsLabel5, enabled: true);
   }
   if (onChain.operationalState == LaunchOperationalState.paused) {
-    return (label: '内盘已暂停', enabled: false);
+    return (label: LoopL10n.current.launch_widgetsLabel6, enabled: false);
   }
   switch (onChain.saleState) {
     case LaunchSaleState.live:
-      return (label: '进入内盘交易', enabled: true);
+      return (label: LoopL10n.current.launch_widgetsLabel5, enabled: true);
     case LaunchSaleState.scheduled:
-      return (label: '内盘未开始', enabled: false);
+      return (label: LoopL10n.current.launch_widgetsLabel7, enabled: false);
     case LaunchSaleState.ended:
-      return (label: '内盘已结束，等待最终化', enabled: false);
+      return (label: LoopL10n.current.launch_widgetsLabel8, enabled: false);
     case LaunchSaleState.succeeded:
       final graduated =
           onChain.liquidityState == LaunchLiquidityState.lpLocked ||
           onChain.liquidityState == LaunchLiquidityState.completed;
-      return (label: graduated ? '已毕业，内盘已关闭' : '内盘已结束，募集成功', enabled: false);
+      return (
+        label: graduated
+            ? LoopL10n.current.launch_widgetsLabel9
+            : LoopL10n.current.launch_widgetsLabel10,
+        enabled: false,
+      );
     case LaunchSaleState.failed:
-      return (label: '内盘已结束，未达软顶', enabled: false);
+      return (label: LoopL10n.current.launch_widgetsLabel11, enabled: false);
     case LaunchSaleState.cancelled:
-      return (label: '内盘已取消', enabled: false);
+      return (label: LoopL10n.current.launch_widgetsLabel12, enabled: false);
   }
 }

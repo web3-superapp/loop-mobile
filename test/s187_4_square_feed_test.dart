@@ -14,6 +14,7 @@ import 'package:loop_mobile/integrations/backend/v2/square/loop_v2_square_feed_a
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 import 'support/s7_page_harness.dart';
 
 // ---------------------------------------------------------------------------
@@ -183,15 +184,18 @@ int _primaryButtons(WidgetTester tester) => tester
 
 void main() {
   loopWatchGround();
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the feed head is measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
 
   group('segments and the capability', () {
     testWidgets('squareFeed usable: 动态 / 社区 / 语音房, opens on 社区 (0181)', (
       tester,
     ) async {
       await _pumpSquare(tester, capability: true, feed: _Feed());
-      expect(_segmentLabel(tester, 0), '动态');
-      expect(_segmentLabel(tester, 1), '社区');
-      expect(_segmentLabel(tester, 2), '语音房');
+      expect(_segmentLabel(tester, 0), 'Feed');
+      expect(_segmentLabel(tester, 1), 'Community');
+      expect(_segmentLabel(tester, 2), 'Voice rooms');
       // Decision 0181: 动态 is in front, but the page opens on 社区.
       expect(_key('square-feed'), findsNothing);
       expect(_key('square-community-list'), findsOneWidget);
@@ -205,8 +209,8 @@ void main() {
       tester,
     ) async {
       await _pumpSquare(tester, capability: false, feed: _Feed());
-      expect(_segmentLabel(tester, 0), '社区');
-      expect(_segmentLabel(tester, 1), '语音房');
+      expect(_segmentLabel(tester, 0), 'Community');
+      expect(_segmentLabel(tester, 1), 'Voice rooms');
       expect(_key('square-segment-2'), findsNothing);
       expect(_key('square-feed'), findsNothing);
       expect(_key('square-community-list'), findsOneWidget);
@@ -217,7 +221,7 @@ void main() {
       tester,
     ) async {
       await _pumpSquare(tester, capability: true);
-      expect(_segmentLabel(tester, 0), '社区');
+      expect(_segmentLabel(tester, 0), 'Community');
       expect(_key('square-feed'), findsNothing);
       await _teardown(tester);
     });
@@ -262,23 +266,23 @@ void main() {
         ),
       );
       expect(_key('square-post-badge-pinned'), findsOneWidget);
-      expect(find.text('置顶'), findsOneWidget);
-      expect(find.text('观点'), findsOneWidget);
-      expect(find.text('买入'), findsOneWidget);
-      expect(find.text('领奖'), findsOneWidget);
+      expect(find.text('Pinned'), findsOneWidget);
+      expect(find.text('Opinion'), findsOneWidget);
+      expect(find.text('Buy'), findsOneWidget);
+      expect(find.text('Claim'), findsOneWidget);
       // The claim's amount is in its sentence now (decision 0187).
-      expect(find.text('领到 10.94 USD1。'), findsOneWidget);
-      expect(find.text('毕业'), findsOneWidget);
+      expect(find.text('Claimed 10.94 USD1.'), findsOneWidget);
+      expect(find.text('Graduate'), findsOneWidget);
       final badges = tester
           .widgetList<LoopBadge>(find.byType(LoopBadge))
           .toList();
       expect(badges, hasLength(5));
       LoopBadge badge(String text) => badges.singleWhere((b) => b.text == text);
-      expect(badge('观点').kind, LoopBadgeKind.mute);
-      expect(badge('置顶').kind, LoopBadgeKind.mute);
-      expect(badge('买入').kind, LoopBadgeKind.launch);
-      expect(badge('毕业').kind, LoopBadgeKind.launch);
-      expect(badge('领奖').kind, LoopBadgeKind.up);
+      expect(badge('Opinion').kind, LoopBadgeKind.mute);
+      expect(badge('Pinned').kind, LoopBadgeKind.mute);
+      expect(badge('Buy').kind, LoopBadgeKind.launch);
+      expect(badge('Graduate').kind, LoopBadgeKind.launch);
+      expect(badge('Claim').kind, LoopBadgeKind.up);
       // The pinned post is first and its text sits in a record card.
       final pinnedTop = tester.getTopLeft(_key('square-post-${_uuid(1)}')).dy;
       final opinionTop = tester.getTopLeft(_key('square-post-${_uuid(2)}')).dy;
@@ -458,7 +462,7 @@ void main() {
             token: token('S1371AE4'),
           ),
         ),
-        'S1371AE4 打满内盘，官方池已建，回购开始。',
+        'S1371AE4 filled the bonding pool. The official pool is live and buybacks have started.',
       );
       expect(
         squareFeedPostSentence(
@@ -474,7 +478,7 @@ void main() {
             },
           ),
         ),
-        '在 S1376B5B 第 2 轮领到 10.94 USD1，权重 50%。',
+        'Claimed 10.94 USD1 in S1376B5B round 2, weight 50%.',
       );
       // A fact that was not sent is left out, never written as 0.
       expect(
@@ -487,7 +491,7 @@ void main() {
             event: const <String, String>{'amountUsd1': '10.94'},
           ),
         ),
-        '在 S1376B5B 领到 10.94 USD1。',
+        'Claimed 10.94 USD1 in S1376B5B.',
       );
       expect(
         squareFeedPostSentence(
@@ -499,7 +503,7 @@ void main() {
             event: const <String, String>{'amountUsd1': '40'},
           ),
         ),
-        '买入 40 USD1 的 S1378A05。',
+        'Bought 40 USD1 of S1378A05.',
       );
       expect(
         squareFeedPostSentence(
@@ -520,15 +524,15 @@ void main() {
     test('badge by kind', () {
       LoopBadge? badge(SquareFeedPostKind kind, {bool pinned = false}) =>
           squareFeedBadge(_post(1, kind: kind, pinned: pinned)) as LoopBadge?;
-      expect(badge(SquareFeedPostKind.opinion)!.text, '观点');
+      expect(badge(SquareFeedPostKind.opinion)!.text, 'Opinion');
       expect(badge(SquareFeedPostKind.opinion)!.kind, LoopBadgeKind.mute);
-      expect(badge(SquareFeedPostKind.buy)!.text, '买入');
+      expect(badge(SquareFeedPostKind.buy)!.text, 'Buy');
       expect(badge(SquareFeedPostKind.buy)!.kind, LoopBadgeKind.launch);
-      expect(badge(SquareFeedPostKind.claim)!.text, '领奖');
+      expect(badge(SquareFeedPostKind.claim)!.text, 'Claim');
       expect(badge(SquareFeedPostKind.claim)!.kind, LoopBadgeKind.up);
-      expect(badge(SquareFeedPostKind.graduation)!.text, '毕业');
+      expect(badge(SquareFeedPostKind.graduation)!.text, 'Graduate');
       expect(badge(SquareFeedPostKind.graduation)!.kind, LoopBadgeKind.launch);
-      expect(badge(SquareFeedPostKind.system, pinned: true)!.text, '置顶');
+      expect(badge(SquareFeedPostKind.system, pinned: true)!.text, 'Pinned');
       expect(badge(SquareFeedPostKind.system), isNull);
     });
 
@@ -548,7 +552,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(count().data, '4');
-      expect(find.text('没有点上赞，请稍后再试'), findsOneWidget);
+      expect(find.text('Couldn\'t like. Try again later.'), findsOneWidget);
       await tester.pump(const Duration(seconds: 5));
 
       // A server answer is the count that stays.
@@ -567,7 +571,7 @@ void main() {
     testWidgets('empty and unavailable', (tester) async {
       await _pumpSegment(tester, _Feed());
       expect(_key('square-feed-empty'), findsOneWidget);
-      expect(find.text('还没有动态'), findsOneWidget);
+      expect(find.text('No posts yet'), findsOneWidget);
       await _teardown(tester);
 
       await _pumpSegment(
@@ -620,11 +624,14 @@ void main() {
       expect(_primaryButtons(tester), 1);
       expect(
         tester.widget<LoopButton>(_key('square-composer-send')).label,
-        '发布',
+        'Post',
       );
       await tester.tap(_key('square-composer-send'));
       await tester.pumpAndSettle();
-      expect(find.text('发得太快了，稍等一分钟再发'), findsOneWidget);
+      expect(
+        find.text('Posting too fast. Wait a minute and try again.'),
+        findsOneWidget,
+      );
 
       // The same text retried keeps its key; the server succeeds.
       feed.createFailure = null;
@@ -652,12 +659,27 @@ void main() {
           reasonCode: code,
         ),
       );
-      expect(text('SQUARE_POST_RATE_LIMITED'), '发得太快了，稍等一分钟再发');
-      expect(text('SQUARE_POST_TEXT_EMPTY'), '写点内容再发布');
-      expect(text('SQUARE_POST_TEXT_TOO_LONG'), '最多 500 字，删减一些再发布');
-      expect(text('SQUARE_POST_TEXT_INVALID'), '内容里有不支持的字符，删掉后再发布');
-      expect(text('SQUARE_TOKEN_REF_INVALID'), '引用的代币读不到了，换一个或不带代币');
-      expect(text('PROFILE_ACTIVATION_REQUIRED'), '先完成开户设置再发帖');
+      expect(
+        text('SQUARE_POST_RATE_LIMITED'),
+        'Posting too fast. Wait a minute and try again.',
+      );
+      expect(text('SQUARE_POST_TEXT_EMPTY'), 'Write something before posting');
+      expect(
+        text('SQUARE_POST_TEXT_TOO_LONG'),
+        '500 characters max. Shorten it and post again.',
+      );
+      expect(
+        text('SQUARE_POST_TEXT_INVALID'),
+        'The text has unsupported characters. Remove them and post again.',
+      );
+      expect(
+        text('SQUARE_TOKEN_REF_INVALID'),
+        'The quoted token can\'t be loaded. Pick another or post without a token.',
+      );
+      expect(
+        text('PROFILE_ACTIVATION_REQUIRED'),
+        'Finish account setup before posting',
+      );
     });
   });
 

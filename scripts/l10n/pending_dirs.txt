@@ -10,9 +10,7 @@ lib/features/account
 lib/features/chain
 lib/features/chat
 lib/features/community
-lib/features/dapp
 lib/features/intel
-lib/features/launch
 lib/features/launch2
 lib/features/market
 lib/features/meme
@@ -21,7 +19,6 @@ lib/features/mining_rewards
 lib/features/profile
 lib/features/security
 lib/features/social
-lib/features/square
 lib/features/system
 lib/features/wallet
 lib/integrations

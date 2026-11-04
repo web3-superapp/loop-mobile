@@ -219,7 +219,10 @@ void main() {
         );
       }
       expect(find.textContaining('还没有批准邀请加成'), findsNothing);
-      expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
+      expect(
+        find.textContaining("The mining formula isn't approved yet"),
+        findsNothing,
+      );
       // The prototype's final boost figure never returns.
       expect(find.textContaining('2,840'), findsNothing);
       expect(find.textContaining('182 位'), findsNothing);
@@ -289,7 +292,7 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('需要先完成 LOOP ID 激活'), findsOneWidget);
+      expect(find.textContaining('Activate your LOOP ID'), findsOneWidget);
       _expectClaimDisabled(tester);
     });
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// One person on a live room's card — the host, or one of the faces in
 /// `speakersPreview` — under the leaderboard display rule.
@@ -272,8 +273,20 @@ final liveVoiceRoomsControllerProvider =
 /// start time reads as just started rather than a negative duration.
 String liveVoiceRoomElapsedLabel(DateTime startedAt, DateTime now) {
   final elapsed = now.difference(startedAt);
-  if (elapsed.inMinutes < 1) return '刚开播';
-  if (elapsed.inMinutes < 60) return '开播 ${elapsed.inMinutes} 分钟';
-  if (elapsed.inHours < 24) return '开播 ${elapsed.inHours} 小时';
-  return '开播 ${elapsed.inDays} 天';
+  if (elapsed.inMinutes < 1) {
+    return LoopL10n.current.square_liveVoiceRoomsLiveVoiceRoomElapsedLabel;
+  }
+  if (elapsed.inMinutes < 60) {
+    return LoopL10n.current.square_liveVoiceRoomsLiveVoiceRoomElapsedLabel2(
+      elapsed.inMinutes,
+    );
+  }
+  if (elapsed.inHours < 24) {
+    return LoopL10n.current.square_liveVoiceRoomsLiveVoiceRoomElapsedLabel3(
+      elapsed.inHours,
+    );
+  }
+  return LoopL10n.current.square_liveVoiceRoomsLiveVoiceRoomElapsedLabel4(
+    elapsed.inDays,
+  );
 }

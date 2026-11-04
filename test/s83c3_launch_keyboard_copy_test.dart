@@ -174,7 +174,7 @@ void main() {
           tester
               .widget<LoopNotice>(_key('launch-trade-allowance-notice'))
               .title,
-          '授权状态未读取',
+          'Approval status not loaded',
         );
 
         // 完成 puts the keyboard away.
@@ -280,7 +280,7 @@ void main() {
   group('launch-detail · 内盘持有人 follows the holders branch', () {
     testWidgets('available · N 位参与者', (tester) async {
       await _pumpDetail(tester, S7Answer<LaunchHolders>(value: s83cHolders()));
-      expect(_holdersSubtitle(tester), '1,842 位参与者');
+      expect(_holdersSubtitle(tester), '1,842 participants');
       expect(find.textContaining('合约还没有上线'), findsNothing);
     });
 
@@ -293,7 +293,10 @@ void main() {
           value: _holdersUnavailable('LAUNCH_CONTRACT_BASELINE_PENDING'),
         ),
       );
-      expect(_holdersSubtitle(tester), 'Launch 合约还没有上线，参与人数暂时不可用。');
+      expect(
+        _holdersSubtitle(tester),
+        'The Launch contract isn\'t live yet. Participant count isn\'t available.',
+      );
     });
 
     for (final code in <String>[
@@ -305,7 +308,10 @@ void main() {
           tester,
           S7Answer<LaunchHolders>(value: _holdersUnavailable(code)),
         );
-        expect(_holdersSubtitle(tester), '链上记录索引中，参与人数稍后可见。');
+        expect(
+          _holdersSubtitle(tester),
+          'Indexing on-chain records. Participant count will show later.',
+        );
       });
     }
 
@@ -316,7 +322,10 @@ void main() {
           value: _holdersUnavailable('LAUNCH_CHAIN_RPC_UNREACHABLE'),
         ),
       );
-      expect(_holdersSubtitle(tester), '参与人数暂时读不到');
+      expect(
+        _holdersSubtitle(tester),
+        'Participants can\'t be loaded right now',
+      );
     });
 
     testWidgets('a failed read · 暂时读不到, never 合约还没有上线', (tester) async {
@@ -324,7 +333,10 @@ void main() {
         tester,
         S7Answer<LaunchHolders>(failure: LaunchFailureKind.offline),
       );
-      expect(_holdersSubtitle(tester), '参与人数暂时读不到');
+      expect(
+        _holdersSubtitle(tester),
+        'Participants can\'t be loaded right now',
+      );
     });
 
     testWidgets('a read in flight · 正在读取', (tester) async {
@@ -338,7 +350,7 @@ void main() {
         settle: false,
       );
       await tester.pump();
-      expect(_holdersSubtitle(tester), '正在读取参与人数');
+      expect(_holdersSubtitle(tester), 'Loading participants');
     });
   });
 
@@ -362,9 +374,14 @@ void main() {
     ) async {
       await pumpTier(tester, staking: false);
       expect(_key('launch-tier-open-stake'), findsNothing);
-      expect(find.text('查看 LOOP 质押'), findsNothing);
+      expect(find.text('View LOOP staking'), findsNothing);
       expect(_key('launch-tier-staking-independent'), findsOneWidget);
-      expect(find.text('本次发射的资格不依赖 LOOP 质押'), findsOneWidget);
+      expect(
+        find.text(
+          'Eligibility for this launch doesn\'t depend on LOOP staking',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('dependsOnStaking true · the primary entry stays', (

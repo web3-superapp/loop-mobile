@@ -11,11 +11,15 @@ import 'support/loop_ground_probe.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
+import 'support/loop_shots.dart';
 
 /// Decision 0100 · the 发射轨道 accordion reworked: the row is as tall as the
 /// open strip's content (at least 160), narrow strips carry their phase and
 /// raised bar, and the surface follows the phase.
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the strips are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   loopWatchGround();
   final now = DateTime.utc(2026, 9, 22, 12);
 
@@ -108,7 +112,7 @@ void main() {
     final footer = tester.getRect(
       find.descendant(
         of: key('launch-track-strip-2'),
-        matching: find.text('钱包上限 500 USD1'),
+        matching: find.text('Wallet cap 500 USD1'),
       ),
     );
     expect(strip.bottom - footer.bottom, lessThanOrEqualTo(11 + 4));
@@ -131,7 +135,7 @@ void main() {
     final footer = tester.getRect(
       find.descendant(
         of: key('launch-track-strip-end'),
-        matching: find.text('读自区块 45,000,000'),
+        matching: find.text('Read at block 45,000,000'),
       ),
     );
     expect(strip.bottom - footer.bottom, lessThanOrEqualTo(11 + 4));
@@ -181,7 +185,11 @@ void main() {
     'narrow strips read their phase upright, one character per line',
     (tester) async {
       await pumpDetail(tester);
-      final words = <String, String>{'1': '已结束', '3': '未开始', 'end': '毕业'};
+      final words = <String, String>{
+        '1': 'Ended',
+        '3': 'Not started',
+        'end': 'Graduate',
+      };
       words.forEach((id, word) {
         final column = key('loop-accordion-word-$id');
         expect(
@@ -194,7 +202,7 @@ void main() {
           find.ancestor(of: column, matching: find.byType(RotatedBox)),
           findsNothing,
         );
-        final chars = word.split('');
+        final chars = loopVerticalRuns(word);
         final rects = <Rect>[
           for (final char in chars)
             tester.getRect(
@@ -239,7 +247,7 @@ void main() {
       // The word is the screen reader's too, through the strip's own label.
       expect(
         tester.getSemantics(key('launch-track-strip-1')).label,
-        contains('已结束'),
+        contains('Ended'),
       );
     },
   );
@@ -260,7 +268,7 @@ void main() {
     expect(
       find.descendant(
         of: key('launch-track-strip-2'),
-        matching: find.text('销售进行中'),
+        matching: find.text('Sale in progress'),
       ),
       findsOneWidget,
     );
@@ -269,8 +277,8 @@ void main() {
   testWidgets('the measuring copies are not on screen for finders or '
       'readers', (tester) async {
     await pumpDetail(tester);
-    expect(find.text('Round 2，公开轮'), findsOneWidget);
-    expect(find.text('毕业与迁移'), findsNothing);
+    expect(find.text('Round 2, Public round'), findsOneWidget);
+    expect(find.text('Graduation and migration'), findsNothing);
     expect(
       find.descendant(
         of: key('launch-track'),
@@ -278,7 +286,7 @@ void main() {
       ),
       findsNothing,
     );
-    expect(find.bySemanticsLabel('查看毕业流程'), findsNothing);
+    expect(find.bySemanticsLabel('View graduation steps'), findsNothing);
   });
 
   test('upright runs: Han one per line, Latin and digits kept together', () {

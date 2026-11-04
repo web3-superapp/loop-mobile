@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -21,8 +22,8 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// The empty card of a segment other than 待排期 (S88d). Since loop-api S83b7
 /// the segments follow the on-chain sale state; a launch with no chain reading
 /// is filed by its schedule.
-const String launchSegmentEmptyBody =
-    '这个分段目前没有项目。分段按链上销售状态划分；没有链上读数的项目按排期状态归类。';
+String get launchSegmentEmptyBody =>
+    LoopL10n.current.launch_screenLaunchSegmentEmptyBody;
 
 /// `launch` · the Launch destination.
 ///
@@ -48,7 +49,7 @@ List<Widget> launchTopbarActions({
   LoopIconButton(
     key: const ValueKey<String>('launch-stake-action'),
     icon: 'lock',
-    label: '管理质押',
+    label: LoopL10n.current.launch_screenLaunchStakeActionLabel,
     framed: true,
     onPressed: onOpenStake,
   ),
@@ -60,7 +61,7 @@ List<Widget> launchTopbarActions({
     LoopIconButton(
       key: const ValueKey<String>('launch-rules-action'),
       icon: 'info',
-      label: 'Launch 规则',
+      label: LoopL10n.current.launch_screenLaunchRulesActionLabel,
       framed: true,
       onPressed: onOpenRules,
     ),
@@ -140,12 +141,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         // the two saturated Lime heroes in the module.
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
-        kicker: '发射台',
+        kicker: context.l10n.common_launchpad,
         // No countdown, no graduation percentage, no "my tier": all three are
         // contract facts and none of them can be proven in this step.
         heading: overview == null
-            ? (loading ? '目录读取中' : launchMissingHeading)
-            : '${overview.segments.total} 个已登记项目',
+            ? (loading
+                  ? context.l10n.launch_screenHeading
+                  : launchMissingHeading)
+            : context.l10n.launch_screenHeading2(overview.segments.total),
         // Decision 0095: the count is a skeleton of its own height until the
         // catalogue is read, never a stand-in sentence.
         headingLoading: loading,
@@ -156,13 +159,13 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         stamp: overview == null
             ? null
             : launchOverviewReadsChain(overview)
-            ? '链上'
-            : '链下',
+            ? context.l10n.launch_detailScreensStamp
+            : context.l10n.launch_screenStamp,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('launch-capability-unavailable'),
-              title: 'Launch 当前不可用',
+              title: context.l10n.launch_screenLaunchCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -183,8 +186,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             prefix: 'launch',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '目录里还没有已批准的项目',
-            emptyReason: '通过审核的项目会出现在这里。',
+            emptyMessage: context.l10n.launch_screenEmptyMessage,
+            emptyReason: context.l10n.launch_screenEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -226,7 +229,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
               onOpenLaunch: widget.onOpenLaunch,
             ),
           ),
-          const LoopLabel('已毕业'),
+          LoopLabel(context.l10n.common_graduated),
           // Graduation is a liquidity fact. It is never derived from a
           // schedule that says "ended".
           LaunchGraduatedBlock(
@@ -252,8 +255,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-open-economy'),
                 leading: const LoopRowIcon(icon: 'droplet'),
-                title: '生态经济面板',
-                subtitle: '只显示 LOOP 账本可以证明的计数',
+                title: context.l10n.launch_screenLaunchOpenEconomyTitle,
+                subtitle: context.l10n.launch_screenLaunchOpenEconomySubtitle,
                 onTap: widget.onOpenEconomy,
               ),
             ],
@@ -262,7 +265,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('launch-open-apply'),
-                label: '申请发射',
+                label: context.l10n.launch_actionScreensLaunchApplyScreenTitle,
                 primary: true,
                 onPressed: widget.onOpenApply,
               ),
@@ -294,12 +297,13 @@ String launchOverviewCaption(
   required bool testnet,
 }) {
   if (overview != null && launchOverviewReadsChain(overview)) {
-    return '目录、申请与轮次配置由 LOOP 提供；链上状态读自 '
-        // Decision 0204: the hidden IDO page is left as it was; the testnet
-        // name now comes from the one hints file.
-        '${testnet ? loopTestnetChainLabel : 'BSC 主网'}。';
+    return LoopL10n.current.launch_screenLaunchOverviewCaption(
+      testnet
+          ? loopTestnetChainLabel
+          : LoopL10n.current.launch_screenBscMainnet,
+    );
   }
-  return '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。';
+  return LoopL10n.current.launch_screenLaunchOverviewCaption2;
 }
 
 /// The permanent Launch notice: the capability reads `available` because the
@@ -316,7 +320,7 @@ class _EvidenceNotice extends StatelessWidget {
       key: const ValueKey<String>('launch-evidence-notice'),
       icon: 'warn',
       tone: LoopNoticeTone.warn,
-      title: '目录可用，合约未就绪',
+      title: context.l10n.launch_screenLaunchEvidenceNoticeTitle,
       body: launchReasonCodeText(capability.evidenceReasonCode),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -349,7 +353,8 @@ class LaunchGraduatedBlock extends StatelessWidget {
     switch (graduated) {
       case LaunchGraduatedUnavailable(:final fact):
         return LaunchUnavailableCard(
-          label: '已毕业项目',
+          id: 'graduated-projects',
+          label: context.l10n.launch_screenLabel,
           fact: fact,
           reason: launchGraduatedReasonText(
             fact.reasonCode,
@@ -357,11 +362,11 @@ class LaunchGraduatedBlock extends StatelessWidget {
           ),
         );
       case LaunchGraduatedAvailable(:final launches) when launches.isEmpty:
-        return const LoopEmptyState(
+        return LoopEmptyState(
           key: ValueKey<String>('launch-graduated-empty'),
           illustration: LoopIllustration.launchpad,
-          title: '还没有已毕业的项目',
-          message: '流动性锁定后的项目会出现在这里。',
+          title: context.l10n.launch_screenLaunchGraduatedEmptyTitle,
+          message: context.l10n.launch_screenLaunchGraduatedEmptyMessage,
           compact: true,
         );
       case LaunchGraduatedAvailable(:final launches):
@@ -375,7 +380,7 @@ class LaunchGraduatedBlock extends StatelessWidget {
                     ? null
                     : () => onOpenLaunch!(launches[index].launchId),
                 position: launchRowPosition(index, launches.length),
-                saleSegmentLabel: '已毕业',
+                saleSegmentLabel: context.l10n.common_graduated,
                 keyPrefix: 'launch-graduated-row',
               ),
           ],
@@ -411,9 +416,9 @@ class _SegmentList extends StatelessWidget {
       return LoopNotice(
         key: ValueKey<String>('launch-segment-empty-${segment.name}'),
         icon: 'target',
-        title: '${launchSegmentLabel(segment)}：暂无项目',
+        title: context.l10n.launch_screenTitle(launchSegmentLabel(segment)),
         body: segment == LaunchSegment.awaitingSchedule
-            ? '通过审核但还没有排期的项目会出现在这里。'
+            ? context.l10n.launch_screenBody
             : launchSegmentEmptyBody,
         margin: const EdgeInsets.fromLTRB(
           LoopSpacing.page,

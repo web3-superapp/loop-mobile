@@ -495,9 +495,9 @@ void main() {
         ),
       );
       expect(intent.riskFlags.map((flag) => flag.label), <String>[
-        '授权给个人地址',
-        '原始哈希签名',
-        '不可识别的签名结构',
+        'Approval to a personal address',
+        'Raw hash signature',
+        'Unrecognized signature structure',
       ]);
     });
 
@@ -526,7 +526,7 @@ void main() {
         ),
         DappRpcErrorCode.userRejected,
       );
-      expect(host.toasts, <String>['钱包有待处理的操作']);
+      expect(host.toasts, <String>['The wallet has a pending action']);
       expect(DioLoopV2DappApi.writeErrors[409], contains('RESOURCE_CONFLICT'));
     });
 
@@ -555,7 +555,7 @@ void main() {
         ),
         DappRpcErrorCode.invalidParams,
       );
-      expect(host.toasts, <String>['这笔请求没有通过检查']);
+      expect(host.toasts, <String>['This request didn\'t pass the checks']);
     });
 
     test('503 RPC_UPSTREAM_LIMITED and 429 RATE_LIMITED are -32005', () async {
@@ -961,7 +961,7 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-dapp-entry')),
       );
       // S349: the key never names the browser; `/wallet/dapp` decides.
-      expect(find.text('DApp 浏览器'), findsNothing);
+      expect(find.text('DApp browser'), findsNothing);
       expect(find.text('DApp'), findsOneWidget);
     });
 
