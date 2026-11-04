@@ -171,6 +171,7 @@ final class _ApprovalIntents implements WalletIntentsGateway {
   Future<LoopWalletIntent> execute({
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
   }) => _unused();
 
   @override

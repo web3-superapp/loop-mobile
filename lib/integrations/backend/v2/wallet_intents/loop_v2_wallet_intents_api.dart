@@ -92,6 +92,7 @@ abstract interface class LoopV2WalletIntentsApi {
     required String idempotencyKey,
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
     LoopV2WriteOrigin? origin,
   });
 
@@ -446,15 +447,25 @@ final class DioLoopV2WalletIntentsApi implements LoopV2WalletIntentsApi {
     required String idempotencyKey,
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
     LoopV2WriteOrigin? origin,
   }) {
     if (authorizationSignature.isEmpty ||
         authorizationSignature.length > 4096) {
       _badRequest();
     }
+    // loop-api decision 0198: the digest of the review the device rendered
+    // and signed. Optional on the wire; a malformed one is never sent.
+    if (reviewSha256 != null &&
+        !LoopV2IntentCodec.sha256Pattern.hasMatch(reviewSha256)) {
+      _badRequest();
+    }
     return _transition(
       '$intentsPath/${_uuid(intentId)}/execute',
-      <String, Object?>{'authorizationSignature': authorizationSignature},
+      <String, Object?>{
+        'authorizationSignature': authorizationSignature,
+        'reviewSha256': ?reviewSha256,
+      },
       accessToken: accessToken,
       clientVersion: clientVersion,
       idempotencyKey: idempotencyKey,

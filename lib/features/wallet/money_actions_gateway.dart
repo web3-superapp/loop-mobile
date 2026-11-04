@@ -64,9 +64,14 @@ abstract interface class WalletIntentsGateway {
 
   /// Hands the device's authorization signature to the server, which performs
   /// exactly one provider execution. It is never retried by the client.
+  ///
+  /// [reviewSha256] is the digest of the review the device rendered and
+  /// signed (loop-api decision 0198): the server refuses with `DATA_STALE`
+  /// and sends nothing when it is not the intent's own.
   Future<LoopWalletIntent> execute({
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
   });
 
   Future<LoopWalletIntent> cancel(String intentId);
@@ -170,6 +175,7 @@ final class UnavailableWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopWalletIntent> execute({
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
   }) => _unavailable();
 
   @override

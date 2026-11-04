@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_capability_refresh.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -24,6 +26,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
+import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -32,12 +35,52 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// 0131, the MEME panel's pattern).
 const Duration swapQuoteDebounce = Duration(milliseconds: 400);
 
+/// Decision 0282 (loop-api 0198): Privy swaps on BSC mainnet only. An asset
+/// on any other chain slot — the Launch testnet — never reaches the swap
+/// picker and is never quoted.
+bool swapIsMainnetAssetId(String assetId) =>
+    assetId.startsWith('$loopPrimaryChainId:');
+
+/// [balances] with only the rows a swap may pay from or receive into.
+LoopWalletBalances swapMainnetBalances(LoopWalletBalances balances) {
+  if (balances.balances.every((row) => swapIsMainnetAssetId(row.assetId))) {
+    return balances;
+  }
+  return LoopWalletBalances(
+    walletId: balances.walletId,
+    snapshot: balances.snapshot,
+    gasReservePolicy: balances.gasReservePolicy,
+    balances: <LoopAssetBalanceRow>[
+      for (final row in balances.balances)
+        if (swapIsMainnetAssetId(row.assetId)) row,
+    ],
+    netWorth: balances.netWorth,
+    launchChain: balances.launchChain,
+    launchUsd1: balances.launchUsd1,
+  );
+}
+
+/// True only when every mainnet row was read and every one is zero
+/// (decision 0282). A failed read is not zero: the page then keeps its form
+/// and the picker says which row could not be read.
+bool swapHasNoMainnetBalance(LoopWalletBalances balances) =>
+    balances.balances.every(
+      (row) => switch (row.balance) {
+        LoopBalanceAvailable(displayBalance: final display) =>
+          display <= Decimal.zero,
+        LoopBalanceUnavailable() => false,
+      },
+    );
+
 /// `swap` · quote, review and confirm one Privy swap.
 ///
 /// The confirm button has two independent gates: the `privySwap` capability
 /// (backend configuration) and its `evidence` (device proof). While evidence
 /// is pending the page still quotes and still shows every figure — it simply
-/// cannot execute, and says so.
+/// cannot execute, and says so. Once the server records it `confirmed`
+/// (loop-api decision 0198, `PRIVY_SWAP_EXECUTION_ENABLED=on`) the button is
+/// gated by the capability and, on the sheet, by the intent's own
+/// `signing.allowed` — the quote's unavailable simulation never closes it.
 class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({
     super.key,
@@ -70,6 +113,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   int _slippageBps = 50;
   bool _confirmPriceImpact = false;
 
+  /// Another page asked for an asset that is not on BSC mainnet (decision
+  /// 0282). It was dropped, and the page says why once.
+  bool _pairOffMainnet = false;
+
   LoopSwapQuoteView? _quote;
   LoopChainException? _failure;
   bool _busy = false;
@@ -87,8 +134,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   @override
   void initState() {
     super.initState();
-    _sourceAssetId = widget.initialSourceAssetId;
-    _destinationAssetId = widget.initialDestinationAssetId;
+    _sourceAssetId = _mainnetOnly(widget.initialSourceAssetId);
+    _destinationAssetId = _mainnetOnly(widget.initialDestinationAssetId);
+  }
+
+  String? _mainnetOnly(String? assetId) {
+    if (assetId == null || swapIsMainnetAssetId(assetId)) return assetId;
+    _pairOffMainnet = true;
+    return null;
   }
 
   @override
@@ -134,7 +187,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         }
       });
     }
-    final balances = balancesState?.value;
+    final read = balancesState?.value;
+    final balances = read == null ? null : swapMainnetBalances(read);
+    final empty =
+        !blocked &&
+        walletId != null &&
+        (balancesState?.isReady ?? false) &&
+        balances != null &&
+        swapHasNoMainnetBalance(balances);
     final quote = _quote;
     // With the keyboard up the quote folio folds away so both amount boxes
     // stay in view, and the amount pad can always be put away (decision 0091).
@@ -168,7 +228,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             onPressed: () => _open('/wallet/swap/route', extra: quote),
           ),
       ],
-      primaryAction: blocked ? null : _primaryAction(capability, quote),
+      primaryAction: blocked || empty
+          ? null
+          : _primaryAction(capability, quote),
       body: <Widget>[
         // A closed gate used to take the whole page. The prototype's swap is
         // two figure boxes and a button; the page keeps them, every figure a
@@ -204,6 +266,22 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               ref.read(walletDirectoryControllerProvider.notifier).reload(),
             ),
           )
+        else if (empty)
+          // Decision 0282: nothing on BSC mainnet to pay with. The form would
+          // only offer a picker whose every row is folded away; the page says
+          // so and hands over the one next step, 接收.
+          LoopEmptyState(
+            key: const ValueKey<String>('swap-no-mainnet-balance'),
+            title: context.l10n.wallet_swapNoMainnetBalanceTitle,
+            message: context.l10n.wallet_swapMainnetOnly,
+            showMessage: true,
+            action: LoopButton(
+              key: const ValueKey<String>('swap-receive-entry'),
+              label: context.l10n.common_receive,
+              primary: true,
+              onPressed: () => _open(WalletRoute.receive(walletId)),
+            ),
+          )
         else if (!balancesState.isReady)
           LoopChainStateBlock(
             keyPrefix: 'swap-balances',
@@ -217,6 +295,19 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           )
         else ...<Widget>[
+          if (_pairOffMainnet)
+            LoopNotice(
+              key: const ValueKey<String>('swap-mainnet-only'),
+              tone: LoopNoticeTone.warn,
+              icon: 'warn',
+              body: context.l10n.wallet_swapMainnetOnly,
+              margin: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                12,
+              ),
+            ),
           // One sentence, not two: the title used to restate the reason code
           // printed directly under it (「兑换还在验证中，暂时不能执行」 over
           // 「兑换还在验证中，可以查看报价，但不能执行。」).

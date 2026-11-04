@@ -40092,6 +40092,18 @@ abstract class LoopLocalizations {
   /// **'This wallet has an unfinished action'**
   String get wallet_sendScreensTitle;
 
+  /// lib/features/wallet/swap_screens.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Swap supports BNB Chain mainnet assets only.'**
+  String get wallet_swapMainnetOnly;
+
+  /// lib/features/wallet/swap_screens.dart
+  ///
+  /// In en, this message translates to:
+  /// **'No BNB Chain mainnet balance'**
+  String get wallet_swapNoMainnetBalanceTitle;
+
   /// lib/features/wallet/swap_screens.dart:471
   ///
   /// In en, this message translates to:

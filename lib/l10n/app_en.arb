@@ -32616,6 +32616,14 @@
   "@wallet_sendScreensTitle": {
     "description": "lib/features/wallet/send_screens.dart:1694"
   },
+  "wallet_swapMainnetOnly": "Swap supports BNB Chain mainnet assets only.",
+  "@wallet_swapMainnetOnly": {
+    "description": "lib/features/wallet/swap_screens.dart"
+  },
+  "wallet_swapNoMainnetBalanceTitle": "No BNB Chain mainnet balance",
+  "@wallet_swapNoMainnetBalanceTitle": {
+    "description": "lib/features/wallet/swap_screens.dart"
+  },
   "wallet_swapScreensBalanceLineFor": "Choose the asset to pay with first; its usable balance shows here.",
   "@wallet_swapScreensBalanceLineFor": {
     "description": "lib/features/wallet/swap_screens.dart:471"

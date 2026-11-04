@@ -23334,6 +23334,12 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get wallet_sendScreensTitle => '这个钱包还有一笔未完成的操作';
 
   @override
+  String get wallet_swapMainnetOnly => '兑换只支持 BSC 主网资产。';
+
+  @override
+  String get wallet_swapNoMainnetBalanceTitle => 'BSC 主网暂无余额';
+
+  @override
   String get wallet_swapScreensBalanceLineFor => '先选择要支付的资产，这里会显示它的可动用余额。';
 
   @override

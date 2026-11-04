@@ -623,6 +623,9 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // The Privy BSC swap device evidence is pending until a real device proves
   // it; a test may clear it to exercise the open path.
   bool swapEvidencePending = true,
+  // loop-api decision 0198: `PRIVY_SWAP_EXECUTION_ENABLED=on` publishes the
+  // swap evidence as `confirmed`. Only read while it is not pending.
+  bool swapEvidenceConfirmed = false,
   LoopV2CapabilityAvailability pushNotifications =
       LoopV2CapabilityAvailability.unavailable,
   // `pushNotifications` records that no real device has been seen receiving
@@ -752,6 +755,11 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 ? const LoopV2CapabilityEvidence(
                     status: LoopV2CapabilityEvidenceStatus.pending,
                     reasonCode: 'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING',
+                  )
+                : id == LoopV2CapabilityId.privySwap && swapEvidenceConfirmed
+                ? const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.confirmed,
+                    reasonCode: null,
                   )
                 : const LoopV2CapabilityEvidence(
                     status: LoopV2CapabilityEvidenceStatus.notApplicable,
