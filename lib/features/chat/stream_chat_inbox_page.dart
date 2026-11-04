@@ -385,7 +385,8 @@ class _ChatSearchEntry extends StatelessWidget {
           child: Row(
             children: <Widget>[
               const SizedBox(width: 14),
-              const LoopIcon('search', size: 18, color: LoopColors.text2),
+              // S350a: the same quiet glyph as 广场's search field.
+              const LoopIcon('search', size: 18, color: LoopColors.text3),
               const SizedBox(width: 8),
               Text(
                 '搜索聊天',
@@ -933,15 +934,24 @@ class _StreamChannelListBodyState
                   return _boardRow(
                     channels,
                     index,
-                    ChatInboxSwipeRow(
-                      key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
-                      // Not connected yet: no action can be carried out.
-                      actions: () => localOnly
-                          ? const <ChatInboxRowAction>[]
-                          : chatInboxRowActions(ChatInboxRowFacts.of(channel)),
-                      onAction: (action) =>
-                          unawaited(_runAction(channel, action, controller)),
-                      child: loopStreamChannelListIdentityItem(defaultItem),
+                    // S350a · decision 0274: a pinned row is told apart by
+                    // its lifted ground, live as the pin changes.
+                    StreamBuilder<bool>(
+                      initialData: channel.isPinned,
+                      stream: channel.isPinnedStream,
+                      builder: (context, pinned) => ChatInboxSwipeRow(
+                        key: ValueKey<String>('chat-inbox-row-${channel.cid}'),
+                        pinned: pinned.data ?? false,
+                        // Not connected yet: no action can be carried out.
+                        actions: () => localOnly
+                            ? const <ChatInboxRowAction>[]
+                            : chatInboxRowActions(
+                                ChatInboxRowFacts.of(channel),
+                              ),
+                        onAction: (action) =>
+                            unawaited(_runAction(channel, action, controller)),
+                        child: loopStreamChannelListIdentityItem(defaultItem),
+                      ),
                     ),
                   );
                 },
@@ -962,7 +972,8 @@ class _StreamChannelListBodyState
                   child: LoopAtmoEmpty(
                     key: const ValueKey<String>('stream-chat-empty'),
                     crownKey: const ValueKey<String>('stream-chat-empty-crown'),
-                    message: '还没有会话，加入社区或添加好友后会出现在这里',
+                    // Decision 0248: one fact, no how-to.
+                    message: '还没有会话',
                     actionLabel: '找朋友',
                     actionKey: const ValueKey<String>(
                       'stream-chat-empty-find-friends',

@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart' show BuildContext, TextSpan;
+import 'package:flutter/widgets.dart'
+    show BuildContext, FontWeight, InlineSpan, TextSpan, TextStyle;
 import 'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
@@ -36,20 +37,24 @@ final class LoopStreamTokenCardMessagePreviewFormatter
     if (!LoopStreamTokenCardAttachmentPolicy.containsRawTokenCard(
       message.attachments,
     )) {
-      return super.formatMessage(
+      return loopQuietSenderPrefix(
+        super.formatMessage(
+          context,
+          message,
+          showCaption: showCaption,
+          channel: channel,
+          currentUser: currentUser,
+        ),
+      );
+    }
+    return loopQuietSenderPrefix(
+      super.formatMessage(
         context,
-        message,
+        _sanitizedMessage(message),
         showCaption: showCaption,
         channel: channel,
         currentUser: currentUser,
-      );
-    }
-    return super.formatMessage(
-      context,
-      _sanitizedMessage(message),
-      showCaption: showCaption,
-      channel: channel,
-      currentUser: currentUser,
+      ),
     );
   }
 
@@ -208,3 +213,33 @@ final class LoopStreamTokenCardMessagePreviewFormatter
     );
   }
 }
+
+/// S350a · decision 0274: the 「你: 」 / 「名字: 」 sender prefix Stream sets in
+/// bold is drawn at the preview's own weight, so an inbox row's second line
+/// stays one quiet line under the conversation's name. Mentions inside the
+/// text keep their bold.
+TextSpan loopQuietSenderPrefix(TextSpan span) {
+  final children = span.children;
+  if (children == null || children.isEmpty) return span;
+  final first = children.first;
+  if (first is! TextSpan) return span;
+  final text = first.text;
+  final bold = first.style?.fontWeight == FontWeight.bold;
+  if (!bold || text == null || !_senderPrefix.hasMatch(text)) return span;
+  return TextSpan(
+    text: span.text,
+    style: span.style,
+    children: <InlineSpan>[
+      TextSpan(
+        text: text,
+        style: (first.style ?? const TextStyle()).copyWith(
+          fontWeight: FontWeight.w400,
+        ),
+        children: first.children,
+      ),
+      ...children.skip(1),
+    ],
+  );
+}
+
+final RegExp _senderPrefix = RegExp(r'[:：]\s*$');

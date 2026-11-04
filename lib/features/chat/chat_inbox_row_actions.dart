@@ -259,13 +259,26 @@ class _ChatInboxSwipeInherited extends InheritedWidget {
 /// conversation when tapped — the tap closes it — so the swipe and the tap
 /// never act on the same touch. A vertical drag is the list's: the swipe
 /// starts only once the finger has moved sideways.
+/// A pinned conversation's row on the board (S350a · decision 0274): Chalk
+/// 5 % over [loopChatBoardFill], one step lighter than its neighbours.
+final Color loopChatBoardPinnedFill = Color.alphaBlend(
+  LoopColors.chalk.withValues(alpha: 0.05),
+  loopChatBoardFill,
+);
+
 class ChatInboxSwipeRow extends StatefulWidget {
   const ChatInboxSwipeRow({
     required this.actions,
     required this.onAction,
     required this.child,
     super.key,
+    this.pinned = false,
   });
+
+  /// A pinned conversation (S350a · decision 0274): on the wall's board its
+  /// ground is lifted a step, so the pinned rows read as one group at the
+  /// top of the mixed list without a 「置顶」 heading.
+  final bool pinned;
 
   /// Every action the row offers; each is drawn on its own side. Read when a
   /// swipe starts, so the row always offers what the channel allows now.
@@ -386,7 +399,7 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
   Widget build(BuildContext context) {
     // Decisions 0221, 0224: on the wall the row is the translucent board.
     final ground = LoopBackdropScope.on(context)
-        ? loopChatBoardFill
+        ? (widget.pinned ? loopChatBoardPinnedFill : loopChatBoardFill)
         : Theme.of(context).scaffoldBackgroundColor;
     return GestureDetector(
       key: const ValueKey<String>('chat-inbox-swipe-row'),
