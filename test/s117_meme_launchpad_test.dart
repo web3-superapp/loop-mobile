@@ -1312,7 +1312,7 @@ void main() {
       expect(meme.tradeCalls, <String?>[null, 'trades.two']);
       final buy = tester.widget<Text>(_key('meme-trade-side-buy').first);
       final sell = tester.widget<Text>(_key('meme-trade-side-sell'));
-      expect(buy.style?.color, const Color(0xFF22C55E));
+      expect(buy.style?.color, const Color(0xFF22C982));
       expect(sell.style?.color, const Color(0xFFEF4444));
       expect(_key('meme-trades-end'), findsOneWidget);
       await _drain(tester);

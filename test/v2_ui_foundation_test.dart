@@ -13,11 +13,12 @@ void main() {
   loopWatchGround();
 
   test('the looplabs foundation keeps its canonical colors (0210)', () {
-    expect(LoopColors.ink, const Color(0xFF09090B));
-    expect(LoopColors.yellow, const Color(0xFFFFD600));
-    expect(LoopColors.purple, const Color(0xFF9C36FF));
-    expect(LoopColors.chalk, const Color(0xFFF2F2F4));
-    expect(LoopColors.graphite, const Color(0xFF111114));
+    // Decision 0277: the Figma's values (docs/58 §9.3).
+    expect(LoopColors.ink, const Color(0xFF070809));
+    expect(LoopColors.yellow, const Color(0xFFFFD21C));
+    expect(LoopColors.purple, const Color(0xFFA62EFF));
+    expect(LoopColors.chalk, const Color(0xFFF4F5F7));
+    expect(LoopColors.graphite, const Color(0xFF111214));
     expect(
       _contrastRatio(LoopColors.muted, LoopColors.graphite),
       greaterThanOrEqualTo(4.5),

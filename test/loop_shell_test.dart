@@ -8,7 +8,7 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
 void main() {
-  testWidgets('Chalk bar reserves 90 + safe area and floats 8 + safe area', (
+  testWidgets('the bar reserves 92 + safe area and floats 24 + safe area', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -39,12 +39,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(MediaQuery.paddingOf(bodyContext).bottom, 90 + 34);
+    // Decision 0277: the 68 bar on its 24 inset.
+    expect(MediaQuery.paddingOf(bodyContext).bottom, 92 + 34);
 
     final barBox = tester.getRect(
       find.byKey(const ValueKey<String>('loop-tab-bar')),
     );
-    expect(barBox.height, 90 + 34);
+    expect(barBox.height, 92 + 34);
 
     final chalk = tester.widget<Container>(
       find.descendant(
@@ -60,8 +61,8 @@ void main() {
     );
     final chalkRect = tester.getRect(find.byWidget(chalk));
     expect(chalkRect.height, LoopTouch.tabBarHeight);
-    expect(chalkRect.left, LoopLayout.tabBarInset);
-    expect(chalkRect.right, 390 - LoopLayout.tabBarInset);
+    expect(chalkRect.left, LoopLayout.tabBarSideInset);
+    expect(chalkRect.right, 390 - LoopLayout.tabBarSideInset);
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);

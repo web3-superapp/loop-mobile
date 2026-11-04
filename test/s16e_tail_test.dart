@@ -70,7 +70,9 @@ void main() {
       );
       // The whole name, in the same bar, with all four tools still in it.
       expect(title.didExceedMaxLines, isFalse);
-      expect(title.text.style!.fontSize, LoopType.headingSm.fontSize);
+      // Decision 0277: headingSm is the Figma's 19 now; the dense bar takes
+      // the 16 small heading.
+      expect(title.text.style!.fontSize, LoopType.headlineSm.fontSize);
       expect(find.byType(LoopIconButton), findsNWidgets(5));
       expect(tester.getSize(find.byType(LoopTopbar)).height, lessThan(90));
     });

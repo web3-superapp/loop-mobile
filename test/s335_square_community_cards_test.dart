@@ -111,7 +111,8 @@ void main() {
       expect(find.text('成员最多'), findsOneWidget);
       final sortWord = tester.widget<Text>(find.text('成员最多'));
       expect(sortWord.style?.color, LoopColors.text3);
-      expect(sortWord.style?.fontSize, 13);
+      // Decision 0277: meta is 12 / 500.
+      expect(sortWord.style?.fontSize, LoopType.meta.fontSize);
 
       final first = tester.getRect(_key('square-community-card-${_id(0)}'));
       final second = tester.getRect(_key('square-community-card-${_id(1)}'));
@@ -133,23 +134,24 @@ void main() {
       expect(tester.getRect(logo).left - first.left, 16);
       expect(tester.widget<CommunityLogo>(logo).radius, 14);
 
-      // Three lines: 17/600 Chalk name, 14 Text2 description, 13 Text3 facts.
+      // Three lines: a body1 Chalk name (decision 0277: 14 / 500), a Text2
+      // description, Text3 facts.
       final name = tester.widget<Text>(_key('square-community-name-${_id(0)}'));
-      expect(name.style?.fontSize, 17);
-      expect(name.style?.fontWeight, FontWeight.w600);
+      expect(name.style?.fontSize, LoopType.body1.fontSize);
+      expect(name.style?.fontWeight, LoopType.body1.fontWeight);
       expect(name.style?.color, LoopColors.chalk);
       expect(name.maxLines, 1);
       final description = tester.widget<Text>(
         _key('square-community-description-${_id(0)}'),
       );
-      expect(description.style?.fontSize, 14);
+      expect(description.style?.fontSize, LoopType.caption.fontSize);
       expect(description.style?.color, LoopColors.text2);
       expect(description.maxLines, 1);
       final members = tester.widget<Text>(
         _key('square-community-members-${_id(0)}'),
       );
       expect(members.data, '28 成员');
-      expect(members.style?.fontSize, 13);
+      expect(members.style?.fontSize, LoopType.meta.fontSize);
       // S350a · decision 0274: one grey step under the description.
       expect(members.style?.color, LoopColors.muted);
 
@@ -285,7 +287,8 @@ void main() {
             )
             .style
             ?.fontWeight,
-        FontWeight.w700,
+        // Decision 0277: the label step is 14 / 500.
+        LoopType.label.fontWeight,
       );
       expect(
         tester

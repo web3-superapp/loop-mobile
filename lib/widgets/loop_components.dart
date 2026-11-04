@@ -199,8 +199,11 @@ class LoopTopbar extends StatelessWidget {
                             ? (LoopFlat.stepOf(context)
                                   ? LoopType.stepTitle
                                   : loopFlatTitleStyle())
+                            // Decision 0277: headline is the Figma's 19 now,
+                            // so the dense bar takes the 16 small heading to
+                            // keep the four-tool column's room for a name.
                             : dense
-                            ? theme.textTheme.headlineSmall
+                            ? LoopType.headlineSm
                             : onBack != null ||
                                   kicker != null ||
                                   subtitle != null

@@ -468,7 +468,7 @@ class Launch2CreateStepBar extends StatelessWidget {
               height: height,
               decoration: BoxDecoration(
                 color: index <= current ? LoopColors.yellow : LoopColors.card2,
-                borderRadius: LoopRadius.pill,
+                borderRadius: LoopRadius.round,
               ),
             ),
           ),

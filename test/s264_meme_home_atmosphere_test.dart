@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
@@ -229,7 +230,8 @@ void main() {
           )
           .first,
     );
-    expect((pill.decoration! as BoxDecoration).color, const Color(0x2E9C36FF));
+    // Decision 0277: the Figma's tag ground, solid (`#290a3b`).
+    expect((pill.decoration! as BoxDecoration).color, LoopColors.tagPurpleBg);
     await _drain(tester);
   });
 

@@ -304,7 +304,7 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                           ),
                           gradient: LinearGradient(
                             colors: <Color>[
-                              Color(0x001A1920),
+                              Color(0x00121318),
                               Launch2TradeTicker.ground,
                             ],
                             stops: <double>[0, 0.45],

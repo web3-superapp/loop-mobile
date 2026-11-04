@@ -24,7 +24,7 @@ void main() {
         'Chalk', () {
       final theme = loopStreamMessageItemTheme();
       final background = theme.bubble!.backgroundColor!;
-      expect(background.resolve(_outgoing), LoopColors.purpleSelected);
+      expect(background.resolve(_outgoing), LoopColors.purple);
       expect(background.resolve(_incoming), LoopColors.card2);
 
       final textColor = theme.text!.textColor!;
@@ -312,7 +312,7 @@ void main() {
       final itemTheme = StreamMessageItemTheme.of(captured);
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_outgoing),
-        LoopColors.purpleSelected,
+        LoopColors.purple,
       );
       expect(
         itemTheme.bubble!.backgroundColor!.resolve(_incoming),

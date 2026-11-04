@@ -58,14 +58,14 @@ void _expectStep(
 
 void main() {
   test('the new steps hold their documented values', () {
-    // Decision 0229: the v3 ladder (docs/46 §2).
-    expect(LoopType.kicker.fontSize, 14);
-    expect(LoopType.kicker.fontWeight, FontWeight.w700);
+    // Decision 0277: the Figma ladder (docs/58 §9.2).
+    expect(LoopType.kicker.fontSize, 13);
+    expect(LoopType.kicker.fontWeight, FontWeight.w500);
     expect(LoopType.stepTitle.fontSize, 28);
     expect(LoopType.stepTitle.fontFamily, LoopFonts.body);
     expect(LoopType.flatTitle.fontSize, 22);
     expect(LoopType.flatTitle.fontFamily, LoopFonts.body);
-    expect(LoopType.figure.fontSize, 17);
+    expect(LoopType.figure.fontSize, 16);
     expect(LoopType.figure.fontWeight, FontWeight.w600);
   });
 

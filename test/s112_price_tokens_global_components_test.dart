@@ -42,9 +42,10 @@ void main() {
     test(
       'the tokens are the market green and red, outside the brand three',
       () {
-        expect(LoopColors.rise, const Color(0xFF22C55E));
+        expect(LoopColors.rise, const Color(0xFF22C982));
         expect(LoopColors.fall, const Color(0xFFEF4444));
-        expect(LoopColors.riseSoft, const Color(0x2122C55E));
+        // Decision 0277: the 「买入」 tag's ground is solid `#123025`.
+        expect(LoopColors.riseSoft, const Color(0xFF123025));
         expect(LoopColors.fallSoft, const Color(0x21EF4444));
         expect(LoopColors.rise, isNot(LoopColors.lime));
         expect(LoopColors.fall, isNot(LoopColors.danger));

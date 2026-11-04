@@ -314,7 +314,7 @@ const SystemUiOverlayStyle loopTabSystemOverlay = SystemUiOverlayStyle(
 /// The tab bar's ground (decision 0226): the card surface, see-through.
 /// S326 · decision 0256 (UX-004 ⑦): 72 % over a background blur
 /// ([loopTabBarBlur]) — the page under the bar is frosted, not hidden.
-const Color loopTabBarGround = Color(0xB8111114);
+const Color loopTabBarGround = Color(0xB8111214);
 
 /// The blur under the tab bar (decision 0256).
 const double loopTabBarBlur = 20;
@@ -517,8 +517,8 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final padding = MediaQuery.paddingOf(context);
     final bottomInset = math.max(LoopLayout.tabBarInset, padding.bottom);
-    final leftInset = math.max(LoopLayout.tabBarInset, padding.left);
-    final rightInset = math.max(LoopLayout.tabBarInset, padding.right);
+    final leftInset = math.max(LoopLayout.tabBarSideInset, padding.left);
+    final rightInset = math.max(LoopLayout.tabBarSideInset, padding.right);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final count = LoopShell._destinations.length;
     final selectedIndex = widget.selectedIndex;
@@ -830,7 +830,7 @@ class LoopTabItem extends StatelessWidget {
                                         colors: <Color>[
                                           LoopColors.yellow,
                                           LoopColors.yellow,
-                                          Color(0x00FFD600),
+                                          Color(0x00FFD21C),
                                         ],
                                         stops: <double>[0, 0.6, 1],
                                       ),

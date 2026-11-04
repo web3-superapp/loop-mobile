@@ -204,7 +204,7 @@ void main() {
       findsOneWidget,
     );
     // S279 · decision 0237: the bar is a floating layer, so it keeps the
-    // surface (#111114) when blocks moved up to the plate.
+    // surface (#111214) when blocks moved up to the plate.
     expect(loopTabBarGround.withValues(alpha: 1), LoopColors.graphite);
     final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
       find

@@ -1307,7 +1307,7 @@ class LoopProgressBar extends StatelessWidget {
       child: ExcludeSemantics(
         child: ClipRRect(
           // Decision 0211: a progress bar has round ends.
-          borderRadius: LoopRadius.pill,
+          borderRadius: LoopRadius.round,
           child: Container(
             height: 6,
             color: LoopGround.fillOf(context),

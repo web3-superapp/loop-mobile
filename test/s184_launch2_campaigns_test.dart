@@ -774,7 +774,7 @@ void main() {
       final dot = tester.widget<Container>(_key('launch2-desk-dot-0'));
       // Decision 0211: round dots, the current page in Purple.
       expect((dot.decoration! as BoxDecoration).color, LoopColors.purple);
-      expect((dot.decoration! as BoxDecoration).borderRadius, LoopRadius.pill);
+      expect((dot.decoration! as BoxDecoration).borderRadius, LoopRadius.round);
     });
   });
 

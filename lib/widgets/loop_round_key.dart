@@ -156,7 +156,7 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: LoopColors.yellow,
-                            borderRadius: LoopRadius.pill,
+                            borderRadius: LoopRadius.round,
                             border: Border.all(color: LoopColors.ink, width: 2),
                           ),
                           child: Text(

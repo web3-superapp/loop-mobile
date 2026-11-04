@@ -414,9 +414,9 @@ class LoopWallBackdrop extends StatelessWidget {
                   // so the foot of the page — behind the floating tab bar —
                   // is wall, not a black band (it went to Ink 70 %).
                   colors: <Color>[
-                    Color(0x2609090B),
-                    Color(0x7309090B),
-                    Color(0x7309090B),
+                    Color(0x26070809),
+                    Color(0x73070809),
+                    Color(0x73070809),
                   ],
                   stops: <double>[0, 0.55, 1],
                 ),
@@ -896,10 +896,10 @@ class LoopAtmoBoard extends StatelessWidget {
 /// as a light grey slab beside every other block). One fill, not two
 /// layers: a row slides over its swipe actions, and two translucent layers
 /// would double where they meet.
-const Color loopChatBoardFill = Color(0xEB1A1920);
+const Color loopChatBoardFill = Color(0xEB121318);
 
 /// The hairline between two rows on [loopChatBoardFill]: Chalk 8 %.
-const Color loopChatBoardHairline = Color(0x14F2F2F4);
+const Color loopChatBoardHairline = Color(0x14F4F5F7);
 
 /// The greyscale matrix the empty-state crown and the 2nd / 3rd crowns use.
 const List<double> loopGreyMatrix = <double>[
@@ -1251,7 +1251,7 @@ class LoopChromePlate extends StatelessWidget {
           child: DecoratedBox(
             key: const ValueKey<String>('loop-chrome-plate-inner'),
             decoration: BoxDecoration(
-              color: const Color(0x4D09090B),
+              color: const Color(0x4D070809),
               borderRadius: BorderRadius.circular(LoopRadius.cardValue - edge),
             ),
             child: Padding(
@@ -1438,7 +1438,7 @@ class LoopDripBar extends StatelessWidget {
               decoration: BoxDecoration(
                 // The track is the raised ground: the bar sits in a block.
                 color: LoopColors.card2,
-                borderRadius: LoopRadius.pill,
+                borderRadius: LoopRadius.round,
               ),
             ),
           ),
@@ -1450,12 +1450,12 @@ class LoopDripBar extends StatelessWidget {
               width: fill,
               child: const DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: LoopRadius.pill,
+                  borderRadius: LoopRadius.round,
                   gradient: LinearGradient(
                     colors: <Color>[Color(0xFFE6BE00), LoopColors.yellow],
                   ),
                   boxShadow: <BoxShadow>[
-                    BoxShadow(color: Color(0x73FFD600), blurRadius: 6),
+                    BoxShadow(color: Color(0x73FFD21C), blurRadius: 6),
                   ],
                 ),
               ),

@@ -179,7 +179,7 @@ class IdentityStepBar extends StatelessWidget {
                       color: index < step
                           ? LoopColors.yellow
                           : LoopColors.line2,
-                      borderRadius: LoopRadius.pill,
+                      borderRadius: LoopRadius.round,
                     ),
                   ),
                 ),

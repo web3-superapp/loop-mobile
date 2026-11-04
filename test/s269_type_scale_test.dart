@@ -55,35 +55,37 @@ List<(String, double)> _paintedSizes(WidgetTester tester) {
   return found;
 }
 
+/// Decision 0277: the Figma's floor is 10 (a tag, a count, a progress
+/// figure); 0229 had 12.
 void _expectNothingUnder12(WidgetTester tester, String page) {
   final sizes = _paintedSizes(tester);
   expect(sizes, isNotEmpty, reason: page);
   for (final (text, size) in sizes) {
-    expect(size, greaterThanOrEqualTo(12), reason: '$page · 「$text」 at $size');
+    expect(size, greaterThanOrEqualTo(10), reason: '$page · 「$text」 at $size');
   }
 }
 
 void main() {
   loopWatchGround();
 
-  test('the v3 ladder and spacing hold their documented values', () {
+  test('the Figma ladder (0277) and spacing hold their documented values', () {
     expect(LoopType.title1.fontSize, 28);
     expect(LoopType.title1.fontWeight, FontWeight.w700);
     expect(LoopType.title2.fontSize, 22);
-    expect(LoopType.headline.fontSize, 18);
+    expect(LoopType.headline.fontSize, 19);
     expect(LoopType.headline.fontWeight, FontWeight.w700);
-    expect(LoopType.body1.fontSize, 17);
-    expect(LoopType.body1.fontWeight, FontWeight.w600);
-    expect(LoopType.figure.fontSize, 17);
+    expect(LoopType.body1.fontSize, 14);
+    expect(LoopType.body1.fontWeight, FontWeight.w500);
+    expect(LoopType.figure.fontSize, 16);
     expect(
       LoopType.figure.fontFeatures,
       contains(const FontFeature.tabularFigures()),
     );
     expect(LoopType.body2.fontSize, 16);
-    expect(LoopType.body2.height, 1.5);
-    expect(LoopType.caption.fontSize, 14);
+    expect(LoopType.body2.height, closeTo(25 / 16, 0.001));
+    expect(LoopType.caption.fontSize, 12);
     expect(LoopType.button.fontSize, 16);
-    expect(LoopType.button.fontWeight, FontWeight.w700);
+    expect(LoopType.button.fontWeight, FontWeight.w600);
     expect(LoopType.tag.fontSize, 12);
     // Older names land on their v3 step.
     expect(LoopType.headingLg, same(LoopType.title1));
@@ -92,7 +94,7 @@ void main() {
     expect(LoopType.title, same(LoopType.body1));
     expect(LoopType.captionSm, same(LoopType.caption));
     expect(LoopType.action, same(LoopType.button));
-    // Nothing on the ladder under 13 but the tag.
+    // Nothing on the ladder under 10.
     for (final style in <TextStyle>[
       LoopType.caption,
       LoopType.captionSm,
@@ -106,16 +108,16 @@ void main() {
       LoopType.code,
       LoopType.codeSm,
     ]) {
-      expect(style.fontSize, greaterThanOrEqualTo(13));
+      expect(style.fontSize, greaterThanOrEqualTo(10));
     }
 
     expect(LoopSpacing.page, 20);
-    expect(LoopSpacing.sectionTop, 36);
-    expect(LoopSpacing.sectionBottom, 16);
+    expect(LoopSpacing.sectionTop, 24);
+    expect(LoopSpacing.sectionBottom, 12);
     expect(LoopSpacing.rowMin, 72);
     expect(LoopSpacing.rowMinWithSub, 80);
     expect(LoopSpacing.rowGap, 12);
-    expect(LoopSpacing.bannerGap, 28);
+    expect(LoopSpacing.bannerGap, 16);
     expect(LoopSpacing.segmentGap, 16);
   });
 
@@ -145,15 +147,15 @@ void main() {
     final row = _key('launch2-row-${_id(1)}');
     expect(
       _size(tester, find.descendant(of: row, matching: find.text('天才少年'))),
-      17,
+      LoopType.body1.fontSize,
     );
-    // One primary figure on the right: the price at 17.
+    // One primary figure on the right: the price at the figure step (16).
     expect(
       _size(
         tester,
         find.descendant(of: row, matching: _key('launch2-row-price')),
       ),
-      17,
+      LoopType.figure.fontSize,
     );
     expect(tester.getSize(row).height, 80);
     // The board stands on the 20 page margin.
@@ -187,7 +189,7 @@ void main() {
           matching: find.text('DeFi 早读会 0'),
         ),
       ),
-      17,
+      LoopType.body1.fontSize,
     );
     _expectNothingUnder12(tester, '广场');
     await drainS269(tester);
@@ -207,7 +209,7 @@ void main() {
     await drainS269(tester);
 
     await pumpS269IntelRank(tester);
-    expect(_size(tester, find.text('前三名')), 18);
+    expect(_size(tester, find.text('前三名')), LoopType.headline.fontSize);
     _expectNothingUnder12(tester, '算力榜');
   });
 
@@ -234,10 +236,10 @@ void main() {
       // The chat Tab carries no title word (decision 0122's OKX social head);
       // its rows take the v3 steps through the Stream theme.
       final row = loopStreamChatThemeData().channelListItemTheme;
-      expect(row.titleStyle?.fontSize, 17);
-      expect(row.titleStyle?.fontWeight, FontWeight.w600);
-      expect(row.subtitleStyle?.fontSize, 16);
-      expect(row.timestampStyle?.fontSize, 14);
+      expect(row.titleStyle?.fontSize, LoopType.body1.fontSize);
+      expect(row.titleStyle?.fontWeight, LoopType.body1.fontWeight);
+      expect(row.subtitleStyle?.fontSize, LoopType.bodySm.fontSize);
+      expect(row.timestampStyle?.fontSize, LoopType.caption.fontSize);
     },
   );
 

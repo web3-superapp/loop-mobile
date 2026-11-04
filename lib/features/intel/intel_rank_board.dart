@@ -1070,7 +1070,7 @@ class _PodiumGround extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <Color>[Color(0x0009090B), Color(0x9909090B)],
+            colors: <Color>[Color(0x00070809), Color(0x99070809)],
           ),
         ),
       ),
@@ -1375,10 +1375,10 @@ class IntelRankRow extends StatelessWidget {
                   ? LoopType.caption
                   // S350b: the place is a quiet column beside the face, a
                   // step under the name and the figure.
-                  : LoopTypography.withWeight(
-                      LoopType.figureSm,
-                      FontWeight.w600,
-                    ).copyWith(color: accent ?? LoopColors.text3),
+                  // Decision 0277: the Figma's place, figureXs 13 / 600.
+                  : LoopType.figureXs.copyWith(
+                      color: accent ?? LoopColors.text3,
+                    ),
             ),
           ),
           const SizedBox(width: 12),

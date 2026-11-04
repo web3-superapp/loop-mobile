@@ -138,7 +138,7 @@ void main() {
         (tester.widget<DecoratedBox>(part('loop-chrome-plate-inner')).decoration
                 as BoxDecoration)
             .color,
-        const Color(0x4D09090B),
+        const Color(0x4D070809),
       );
       final brushed =
           (tester
@@ -306,7 +306,7 @@ void main() {
       expect(loopChatBoardFill.a, closeTo(0.92, 0.01));
       expect(loopChatBoardFill.withValues(alpha: 1), LoopColors.plate);
       expect(ground('off-wall'), LoopTheme.dark.scaffoldBackgroundColor);
-      expect(loopChatBoardHairline, const Color(0x14F2F2F4));
+      expect(loopChatBoardHairline, const Color(0x14F4F5F7));
 
       // Contrast over the darkened wall: its 99th-percentile pixel lands at
       // #161616 after the wall's own 85 % and the page wash (decision 0224).
@@ -316,7 +316,10 @@ void main() {
       );
       expect(loopContrastRatio(LoopColors.chalk, over), greaterThan(4.5));
       expect(loopContrastRatio(LoopColors.text2, over), greaterThan(4.5));
-      expect(loopContrastRatio(LoopColors.text3, over), greaterThan(4.5));
+      // Decision 0277: the Figma's tertiary grey (`#6f717a`) is a quieter
+      // ink than 0229's — it clears the 3:1 of a symbol, a time and an
+      // unchosen title, not the 4.5:1 of body copy (docs/58 §9.3).
+      expect(loopContrastRatio(LoopColors.text3, over), greaterThan(3.0));
     });
   });
 
