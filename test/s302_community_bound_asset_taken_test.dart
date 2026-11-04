@@ -110,21 +110,21 @@ void main() {
     test('create, edit and resubmit each say it in one sentence', () {
       expect(
         communityApplyFailureReason(CommunityFailureKind.boundAssetTaken),
-        '这个代币已被其他社区绑定，请换一个代币再提交。',
+        'This token is already linked to another community. Choose another token and submit again.',
       );
       expect(
         communityProfileEditFailureText(
           const CommunityGatewayException(CommunityFailureKind.boundAssetTaken),
         ),
-        '这个代币已被其他社区绑定，请换一个代币；资料没有修改。',
+        'This token is already linked to another community. Choose another token. Nothing was changed.',
       );
       expect(
         communityResubmitFailureText(CommunityFailureKind.boundAssetTaken),
-        '这个代币已被其他社区绑定，请先在资料里换一个代币再重新提交。',
+        'This token is already linked to another community. Change the token in the profile, then resubmit.',
       );
       expect(
         communityFailureReason(CommunityFailureKind.boundAssetTaken),
-        '这个代币已被其他社区绑定，请换一个代币。',
+        'This token is already linked to another community. Choose another token.',
       );
     });
 
@@ -144,7 +144,7 @@ void main() {
     test('resubmit keeps its stale wording and the shared fallback', () {
       expect(
         communityResubmitFailureText(CommunityFailureKind.stale),
-        '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。',
+        'This application is no longer "Rejected". The page has refreshed. Check the latest status.',
       );
       expect(
         communityResubmitFailureText(CommunityFailureKind.unavailable),

@@ -39,7 +39,7 @@ Future<void> _openAbout(WidgetTester tester) async {
     tester,
     find.byKey(const ValueKey<String>('token-section-tabs')),
   );
-  await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+  await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
   await tester.pumpAndSettle();
 }
 
@@ -197,7 +197,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-mining-unavailable')),
         findsNothing,
       );
-      expect(find.textContaining('挖矿权重'), findsOneWidget);
+      expect(find.textContaining('Mining weight'), findsOneWidget);
     });
 
     testWidgets('no weight keeps the module-wide refusal, never a 1×', (
@@ -419,8 +419,8 @@ void main() {
         market: FakeMarketReadGateway(),
       );
       await expectChalk(tester, const SizedBox.shrink());
-      expect(find.text('关注地址'), findsOneWidget);
-      expect(find.text('最近动向'), findsOneWidget);
+      expect(find.text('Watched addresses'), findsOneWidget);
+      expect(find.text('Recent moves'), findsOneWidget);
       expect(_folios(tester).first.kicker, marketSmartMoneyKicker);
     });
 
@@ -437,7 +437,7 @@ void main() {
       final create = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('alerts-create-action')),
       );
-      expect(create.label, '新建');
+      expect(create.label, 'New');
       expect(create.icon, 'plus');
     });
 
@@ -454,14 +454,18 @@ void main() {
       final done = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('watchlist-save-action')),
       );
-      expect(done.label, '完成');
+      expect(done.label, 'Done');
       expect(done.icon, 'check');
       // The prototype's order: the list the page exists to edit comes first.
-      final hint = tester.getTopLeft(find.text('Mining 3 · 拖动排序 · 左滑删除')).dy;
-      final groups = tester.getTopLeft(find.text('分组')).dy;
+      final hint = tester
+          .getTopLeft(
+            find.text('Mining 3 · Drag to sort · Swipe left to delete'),
+          )
+          .dy;
+      final groups = tester.getTopLeft(find.text('Groups')).dy;
       expect(hint, lessThan(groups));
       // `.badge.badge-down`: a word, not a bin glyph.
-      expect(find.text('删除'), findsWidgets);
+      expect(find.text('Delete'), findsWidgets);
     });
   });
 }

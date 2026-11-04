@@ -91,11 +91,14 @@ void main() {
       final folio = tester.widget<LoopFolioPrimary>(
         find.byKey(const ValueKey<String>('community-folio')),
       );
-      expect(folio.heading, '正在读取');
+      expect(folio.heading, 'Loading');
       expect(folio.headingLoading, isTrue);
-      expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
+      expect(find.textContaining('appears here once it loads'), findsOneWidget);
       expect(find.text(communityMissingHeading), findsNothing);
-      expect(find.textContaining('社区数据暂时读不到'), findsNothing);
+      expect(
+        find.textContaining("Community data can't be loaded right now"),
+        findsNothing,
+      );
       expect(find.text(communityMissingFigure), findsNothing);
       expect(find.textContaining('个已加入的社区'), findsNothing);
     });
@@ -113,8 +116,11 @@ void main() {
       );
 
       expect(find.text(communityMissingHeading), findsOneWidget);
-      expect(find.textContaining('社区数据暂时读不到'), findsOneWidget);
-      expect(find.text('正在读取'), findsNothing);
+      expect(
+        find.textContaining("Community data can't be loaded right now"),
+        findsOneWidget,
+      );
+      expect(find.text('Loading'), findsNothing);
     });
 
     testWidgets('ready renders only server figures', (tester) async {
@@ -129,7 +135,7 @@ void main() {
 
       // The prototype's own heading: how many of the reader's communities
       // bound an asset, not how many were joined.
-      expect(find.text('2 个社区在挖矿'), findsOneWidget);
+      expect(find.text('2 communities mining'), findsOneWidget);
       // `discover` is a preview the server cut to a handful. Its length was
       // printed as the number of verified communities, which read 5 while the
       // directory held 36, and then as 「这里先给 3 个」, which is the same
@@ -188,9 +194,9 @@ void main() {
 
         // The membership is a full one — 审核中 is the community's own state,
         // and the row used to read exactly like a verified community's.
-        expect(find.textContaining('审核中'), findsOneWidget);
+        expect(find.textContaining('In review'), findsOneWidget);
         // It bound no asset, so it is not one of the mining communities.
-        expect(find.text('0 个社区在挖矿'), findsOneWidget);
+        expect(find.text('0 communities mining'), findsOneWidget);
       },
     );
 
@@ -202,7 +208,7 @@ void main() {
         community: gateway,
       );
 
-      expect(find.text('0 个社区在挖矿'), findsOneWidget);
+      expect(find.text('0 communities mining'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-joined-empty')),
         findsOneWidget,
@@ -269,7 +275,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-permission')),
         findsOneWidget,
       );
-      expect(find.textContaining('LOOP ID 激活'), findsOneWidget);
+      expect(find.textContaining('Activate your LOOP ID'), findsOneWidget);
     });
 
     testWidgets('a deferred module issues no request at all', (tester) async {
@@ -308,9 +314,9 @@ void main() {
         ),
       );
 
-      expect(find.text('演示数据'), findsOneWidget);
-      expect(find.text('开发预览'), findsWidgets);
-      expect(find.text('0 个社区在挖矿'), findsOneWidget);
+      expect(find.text('Demo data'), findsOneWidget);
+      expect(find.text('Development preview'), findsWidgets);
+      expect(find.text('0 communities mining'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-capability-unavailable')),
         findsNothing,
@@ -348,8 +354,8 @@ void main() {
           reason: '${order[index]} must sit below ${order[index - 1]}',
         );
       }
-      expect(find.text('带币社区 · 可挖矿'), findsOneWidget);
-      expect(find.text('其他社区'), findsOneWidget);
+      expect(find.text('Token communities · Mining'), findsOneWidget);
+      expect(find.text('Other communities'), findsOneWidget);
     });
 
     testWidgets('the index folio carries no report vocabulary', (tester) async {
@@ -374,7 +380,7 @@ void main() {
       // it rather than pinned to one timezone.
       expect(
         find.textContaining(
-          '数据观察于 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 1))}',
+          'Data observed ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 1))}',
         ),
         findsOneWidget,
       );
@@ -419,7 +425,7 @@ void main() {
 
       // 「48120 成员」 is six digits a reader has to count; grouping is
       // display-only and reversible.
-      expect(find.textContaining('48,120 成员'), findsOneWidget);
+      expect(find.textContaining('48,120 members'), findsOneWidget);
       // The weight belongs to a per-community mining read this page does not
       // issue, so the row carries no 「×」 at all rather than a placeholder.
       expect(find.textContaining('×'), findsNothing);
@@ -564,11 +570,19 @@ void main() {
       }
       // The two orders decision 0061 added are asked for by name, so a
       // deployment that cannot apply one answers for itself.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-power')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-power')),
       );
       await tester.pumpAndSettle();
       expect(gateway.commands.last, startsWith('list:miningPower:'));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-discussion')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-discussion')),
       );
@@ -637,7 +651,7 @@ void main() {
       // The end of the list was in view, so the next cursor page was read
       // without a button; the repeated row is not drawn twice and the same
       // cursor coming back is not read again.
-      expect(find.text('已载入 1 个社区'), findsOneWidget);
+      expect(find.text('1 communities loaded'), findsOneWidget);
       expect(find.text('1 个社区'), findsNothing);
 
       // With the last page in, the loaded rows are the whole answer and the
@@ -655,11 +669,28 @@ void main() {
           ruleVersion: 'rule:verified-members-v1',
         ),
       );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-newest')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-newest')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('1 个社区'), findsOneWidget);
+      // The longer English segments scrolled the row into view; bring the
+      // folio heading back before reading it.
+      await tester.scrollUntilVisible(
+        find.text('1 communities'),
+        -200,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
+      expect(find.text('1 communities'), findsOneWidget);
     });
 
     testWidgets('choosing 新社区 refetches with the newest sort', (tester) async {
@@ -684,6 +715,10 @@ void main() {
         community: gateway,
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-newest')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-newest')),
       );
@@ -877,7 +912,7 @@ void main() {
       // Dropping the stamp must not drop the two states it was the only
       // carrier of.
       expect(find.text('PENDING'), findsNothing);
-      expect(find.text('审核中'), findsOneWidget);
+      expect(find.text('In review'), findsOneWidget);
     });
 
     testWidgets('an observed online count prints the number and the time', (
@@ -899,21 +934,21 @@ void main() {
 
       // The reading sits in the identity line, beside the member count, which
       // is where a reader looks for it.
-      expect(find.textContaining('128 成员 · 1 在线'), findsOneWidget);
+      expect(find.textContaining('128 members · 1 online'), findsOneWidget);
       // 「1 在线」 alone would be read as "active recently" or as the
       // membership, so the explanation is one tap away, on the reading
       // itself — not four permanent lines halfway down the record.
-      expect(find.textContaining('与 Stream 保持连接'), findsNothing);
+      expect(find.textContaining('connected to Stream'), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('community-online-count-explain')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('与 Stream 保持连接'), findsOneWidget);
-      expect(find.textContaining('最近活跃'), findsOneWidget);
+      expect(find.textContaining('connected to Stream'), findsOneWidget);
+      expect(find.textContaining('recently active'), findsOneWidget);
       // The observation carries its own time, on the reader's wall clock.
       expect(
         find.text(
-          '观察于 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 16, 6, 44))}',
+          'Observed ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 16, 6, 44))}',
         ),
         findsOneWidget,
       );
@@ -938,7 +973,7 @@ void main() {
 
       // Stream answered zero: the page prints it instead of hiding behind the
       // silence it keeps when nobody asked.
-      expect(find.textContaining('128 成员 · 0 在线'), findsOneWidget);
+      expect(find.textContaining('128 members · 0 online'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-online-count-explain')),
         findsOneWidget,
@@ -962,7 +997,7 @@ void main() {
 
       // A reading that was not taken has no segment in the identity line and
       // no explanation to offer: the line carries the member count alone.
-      expect(find.text('128 成员'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
       expect(find.textContaining('在线'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-online-count-explain')),
@@ -1008,9 +1043,9 @@ void main() {
       // The three per-account columns are still the prototype's three, and
       // this community has no token bound, so they say that rather than
       // offering to estimate.
-      expect(find.text('我的持仓'), findsOneWidget);
-      expect(find.text('我的算力'), findsOneWidget);
-      expect(find.text('预估/日'), findsOneWidget);
+      expect(find.text('My holdings'), findsOneWidget);
+      expect(find.text('My power'), findsOneWidget);
+      expect(find.text('Est./day'), findsOneWidget);
       // S315: no sentence saying why; the three cells are dashes.
       expect(find.textContaining('这个社区没有绑定代币'), findsNothing);
       expect(
@@ -1140,7 +1175,7 @@ void main() {
               find.byKey(const ValueKey<String>('community-mining-stale')),
             )
             .data,
-        endsWith('· 未更新'),
+        endsWith('· Not updated'),
       );
       // The figure is still the one the last complete snapshot settled.
       expect(_communityPowerFigure(tester), startsWith('0'));
@@ -1177,7 +1212,7 @@ void main() {
               find.byKey(const ValueKey<String>('community-mining-weight')),
             )
             .data,
-        '审核中',
+        'In review',
       );
       expect(_communityPowerFigure(tester), startsWith('0'));
     });
@@ -1306,12 +1341,12 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.textContaining('暂无公告'), findsNothing);
+      expect(find.textContaining('No announcements yet'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-links-unavailable')),
         findsNothing,
       );
-      expect(find.textContaining('暂无官方链接'), findsNothing);
+      expect(find.textContaining('No official links yet'), findsNothing);
     });
 
     testWidgets('a verified community is not told its channel waits on '
@@ -1385,7 +1420,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(gateway.commands, <String>['join:$testCommunityId']);
-      expect(find.text('已加入社区'), findsOneWidget);
+      expect(find.text('Joined community'), findsOneWidget);
     });
 
     testWidgets('a refused join shows no success toast', (tester) async {
@@ -1408,8 +1443,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('已加入社区'), findsNothing);
-      expect(find.textContaining('没有执行这个操作的权限'), findsWidgets);
+      expect(find.text('Joined community'), findsNothing);
+      expect(
+        find.textContaining("doesn't have permission for this action"),
+        findsWidgets,
+      );
     });
 
     // Decision 0113: editing moved into the manage center; the record's
@@ -1493,7 +1531,10 @@ void main() {
         find.byKey(const ValueKey<String>('community-membership-banned')),
         findsOneWidget,
       );
-      expect(find.text('社区聊天与治理不可用'), findsOneWidget);
+      expect(
+        find.text('Community chat and governance aren\'t available'),
+        findsOneWidget,
+      );
       // Nothing on a banned membership can act.
       expect(
         find.byKey(const ValueKey<String>('community-leave-action')),
@@ -1687,8 +1728,11 @@ void main() {
       expect(createButton, findsNothing);
       expect(tester.widget<LoopRoundKey>(enter).onPressed, isNotNull);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
+      expect(
+        tester.widget<LoopRoundKey>(enter).semanticLabel,
+        'Enter voice room · Live',
+      );
+      expect(tester.widget<LoopRoundKey>(enter).label, 'Live');
     });
 
     testWidgets('ending the room drops the row the community page had read', (
@@ -1807,7 +1851,7 @@ void main() {
       expect(voiceRoom.commands, contains('create:$testCommunityId'));
       // Decision 0115: a title left empty is not sent at all.
       expect(voiceRoom.createTitles, <String?>[null]);
-      expect(find.text('语音房已开启'), findsOneWidget);
+      expect(find.text('Voice room started'), findsOneWidget);
       expect(entered, <String>[testCommunityId]);
     });
 
@@ -1839,8 +1883,11 @@ void main() {
       expect(voiceRoom.commands, contains('current:$testCommunityId'));
       expect(tester.widget<LoopRoundKey>(enter).onPressed, isNotNull);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
+      expect(
+        tester.widget<LoopRoundKey>(enter).semanticLabel,
+        'Enter voice room · Live',
+      );
+      expect(tester.widget<LoopRoundKey>(enter).label, 'Live');
     });
 
     testWidgets('a room that ends takes the entry with it', (tester) async {
@@ -1862,8 +1909,11 @@ void main() {
       );
       await scrollToVoice(tester, enter);
       // S77d: a room that is running is marked on the control itself.
-      expect(tester.widget<LoopRoundKey>(enter).semanticLabel, '进入语音房 · 进行中');
-      expect(tester.widget<LoopRoundKey>(enter).label, '直播中');
+      expect(
+        tester.widget<LoopRoundKey>(enter).semanticLabel,
+        'Enter voice room · Live',
+      );
+      expect(tester.widget<LoopRoundKey>(enter).label, 'Live');
 
       // The room ends somewhere else.
       voiceRoom.snapshot = null;
@@ -1933,7 +1983,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(voiceRoom.commands, contains('create:$testCommunityId'));
-      expect(find.text('语音房已开启'), findsNothing);
+      expect(find.text('Voice room started'), findsNothing);
       expect(entered, isEmpty);
       // The host's own two sentences: what is missing, and the one control
       // that finishes it.
@@ -1967,8 +2017,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(voiceRoom.commands, contains('create:$testCommunityId'));
-      expect(find.textContaining('已经有进行中的语音房'), findsOneWidget);
-      expect(find.text('语音房已开启'), findsNothing);
+      expect(
+        find.textContaining('already has a live voice room'),
+        findsOneWidget,
+      );
+      expect(find.text('Voice room started'), findsNothing);
       expect(entered, isEmpty);
     });
   });
@@ -1990,7 +2043,7 @@ void main() {
         ),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('缺少社区标识'), findsOneWidget);
+      expect(find.text('Missing community ID'), findsOneWidget);
     });
 
     testWidgets('every row is a face, a name, a role mark and the LOOP ID', (
@@ -2055,7 +2108,7 @@ void main() {
         community: FakeCommunityGateway(members: testDirectory()),
       );
 
-      expect(find.text('全部 128'), findsOneWidget);
+      expect(find.text('All 128'), findsOneWidget);
       expect(find.text('Owner 1'), findsOneWidget);
       expect(find.text('Admin 3'), findsOneWidget);
       expect(
@@ -2141,7 +2194,7 @@ void main() {
         ),
       );
 
-      expect(find.text('128 名成员'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
 
       final bannedSeg = find.byKey(
         const ValueKey<String>('members-seg-banned'),
@@ -2171,7 +2224,7 @@ void main() {
       // The server counts roles, never this filter: the directory's 128 is
       // not the number of banned members and is not printed over them.
       expect(find.text('128 名成员'), findsNothing);
-      expect(find.text('已封禁的成员'), findsOneWidget);
+      expect(find.text('Banned members'), findsOneWidget);
       // And the directory-wide power card is about a row this page no longer
       // shows, so it says nothing instead of 「这一项暂时读不到」.
       expect(find.text('成员算力'), findsNothing);
@@ -2199,8 +2252,11 @@ void main() {
       await tester.tap(bannedSeg);
       await tester.pumpAndSettle();
 
-      expect(find.text('这个筛选下没有成员'), findsOneWidget);
-      expect(find.text('这个社区目前没有被封禁的成员。'), findsOneWidget);
+      expect(find.text('No members under this filter'), findsOneWidget);
+      expect(
+        find.text('This community has no banned members.'),
+        findsOneWidget,
+      );
       expect(find.textContaining('这个角色下没有成员'), findsNothing);
     });
 
@@ -2230,7 +2286,7 @@ void main() {
       final rendered = tester.widget<LoopPersonRow>(row);
       expect(rendered.title, 'LOOP-3HJKMNPQ');
       expect(rendered.subtitle, isNot('LOOP-3HJKMNPQ'));
-      expect(rendered.subtitle, startsWith('加入于 '));
+      expect(rendered.subtitle, startsWith('Joined '));
     });
 
     testWidgets('a row renders exactly the commands the server published', (
@@ -2457,10 +2513,16 @@ void main() {
       );
 
       // What the previous owner becomes, what they lose, and what they keep.
-      expect(find.textContaining('降为 Admin'), findsOneWidget);
-      expect(find.textContaining('编辑社区资料'), findsOneWidget);
-      expect(find.textContaining('禁言、封禁普通成员'), findsOneWidget);
-      expect(find.textContaining('不可撤销'), findsOneWidget);
+      expect(find.textContaining('you become an admin'), findsOneWidget);
+      expect(
+        find.textContaining('Editing the community profile'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('mute and ban regular members'),
+        findsOneWidget,
+      );
+      expect(find.textContaining("can't be undone"), findsOneWidget);
       // The demotion the server never performs must not be promised back.
       expect(find.textContaining('变成普通成员'), findsNothing);
       expect(find.textContaining('不能再编辑资料或执行治理动作'), findsNothing);
@@ -2501,7 +2563,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(gateway.commands, contains('mute:$testMemberId:true'));
-        expect(find.text('禁言已生效'), findsOneWidget);
+        expect(find.text('Mute applied'), findsOneWidget);
       },
     );
 
@@ -2530,7 +2592,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('封禁已生效'), findsNothing);
-      expect(find.textContaining('状态已经改变'), findsWidgets);
+      expect(find.textContaining('The status has changed'), findsWidgets);
     });
 
     testWidgets('the banned view is reachable and unban restores the member', (
@@ -2575,12 +2637,12 @@ void main() {
       // non-banned directory's.
       final seg = find.byKey(const ValueKey<String>('members-seg-banned'));
       expect(seg, findsOneWidget);
-      expect(tester.widget<LoopSeg>(seg).label, '已封禁');
+      expect(tester.widget<LoopSeg>(seg).label, 'Banned');
 
       await tester.tap(seg);
       await tester.pumpAndSettle();
       expect(gateway.commands, contains('members:banned:null:null'));
-      expect(find.text('已封禁'), findsWidgets);
+      expect(find.text('Banned'), findsWidgets);
 
       // A banned row offers only the restore, and the second confirmation
       // still stands in front of it.
@@ -2606,7 +2668,10 @@ void main() {
         find.byKey(const ValueKey<String>('public-profile-action-unban')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('恢复为活跃成员'), findsOneWidget);
+      expect(
+        find.textContaining('restores this member as active'),
+        findsOneWidget,
+      );
       await tester.tap(
         find.byKey(const ValueKey<String>('community-confirm-accept')),
       );
@@ -2619,7 +2684,7 @@ void main() {
         gateway.commands.where((c) => c == 'members:banned:null:null'),
         hasLength(2),
       );
-      expect(find.text('解除封禁已生效'), findsOneWidget);
+      expect(find.text('Unban applied'), findsOneWidget);
     });
 
     testWidgets('a transfer is offered to the owner and states its finality', (
@@ -2639,7 +2704,7 @@ void main() {
         find.byKey(const ValueKey<String>('public-profile-action-transfer')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('这一步不可撤销'), findsOneWidget);
+      expect(find.textContaining("This can't be undone"), findsOneWidget);
       expect(gateway.commands.where((c) => c.startsWith('role:')), isEmpty);
 
       await tester.tap(
@@ -2691,7 +2756,10 @@ void main() {
       );
       // Decision 0170: the directory is a flat page, so the permission
       // notice is its one grey line — title and reason together.
-      expect(find.textContaining('没有权限查看成员目录'), findsOneWidget);
+      expect(
+        find.textContaining('No permission to view the member directory'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('loading renders the skeleton without a count', (tester) async {
@@ -2789,7 +2857,7 @@ void main() {
       await tester.enterText(searchField(), 'zzz');
       await settleSearch(tester);
 
-      expect(find.text('没有匹配的成员'), findsOneWidget);
+      expect(find.text('No matching members'), findsOneWidget);
       // The counts describe the whole directory, never this query, so the
       // page stops printing them while it is narrowed: "128 名成员" and
       // "全部 128" over "没有匹配的成员" contradicted each other on one screen.
@@ -2797,9 +2865,9 @@ void main() {
       expect(find.text('Owner 1'), findsNothing);
       expect(find.text('128 名成员'), findsNothing);
       // The segments stay selectable, they just carry no figure.
-      expect(find.text('全部'), findsOneWidget);
+      expect(find.text('All'), findsOneWidget);
       // And the hero states what the page is now showing instead.
-      expect(find.text('搜索成员'), findsOneWidget);
+      expect(find.text('Search members'), findsOneWidget);
       // The field survives its own empty result, so the query can be edited.
       expect(searchField(), findsOneWidget);
     });
@@ -2824,7 +2892,7 @@ void main() {
       expect(find.text('128 名成员'), findsNothing);
       expect(find.text('全部 128'), findsNothing);
       expect(find.text('1 名成员'), findsNothing);
-      expect(find.text('搜索成员'), findsOneWidget);
+      expect(find.text('Search members'), findsOneWidget);
     });
 
     testWidgets('the clear control drops q and reads the directory again', (
@@ -2837,7 +2905,7 @@ void main() {
 
       await tester.enterText(searchField(), 'zzz');
       await settleSearch(tester);
-      expect(find.text('没有匹配的成员'), findsOneWidget);
+      expect(find.text('No matching members'), findsOneWidget);
 
       final clear = find.byKey(
         const ValueKey<String>('community-members-search-clear'),
@@ -2847,12 +2915,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.commands.last, 'members:all:null:null');
-      expect(find.text('没有匹配的成员'), findsNothing);
+      expect(find.text('No matching members'), findsNothing);
       expect(find.text('frog_member'), findsOneWidget);
       // The directory is whole again, so its counts come back unchanged.
-      expect(find.text('全部 128'), findsOneWidget);
-      expect(find.text('128 名成员'), findsOneWidget);
-      expect(find.text('搜索成员'), findsNothing);
+      expect(find.text('All 128'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
+      expect(find.text('Search members'), findsNothing);
     });
 
     // R3-3: on the device the field never took a character. Tapping it opened
@@ -3159,7 +3227,7 @@ class _VoiceRoomReturnHarnessState extends State<_VoiceRoomReturnHarness> {
 /// The community's own power, as the mining record card prints it
 /// (decision 0170: a `.kv` row labelled 社区总算力).
 String? _communityPowerFigure(WidgetTester tester) {
-  expect(find.text('社区总算力'), findsOneWidget);
+  expect(find.text('Community power'), findsOneWidget);
   return tester
       .widget<Text>(
         find.byKey(const ValueKey<String>('community-mining-power')),

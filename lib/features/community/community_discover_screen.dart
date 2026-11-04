@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -28,14 +29,25 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// back unavailable states the reason and offers the member order instead.
 /// There is no 「增长最快」 segment, because nothing measures growth.
 enum CommunityDiscoverSegment {
-  members('成员最多', CommunityDirectorySort.members),
-  power('算力最高', CommunityDirectorySort.miningPower),
-  discussion('讨论最多', CommunityDirectorySort.activity),
-  newest('新社区', CommunityDirectorySort.newest);
+  members(CommunityDirectorySort.members),
+  power(CommunityDirectorySort.miningPower),
+  discussion(CommunityDirectorySort.activity),
+  newest(CommunityDirectorySort.newest);
 
-  const CommunityDiscoverSegment(this.label, this.sort);
+  const CommunityDiscoverSegment(this.sort);
 
-  final String label;
+  String get label => switch (this) {
+    CommunityDiscoverSegment.members =>
+      LoopL10n.current.community_discoverMembers,
+
+    CommunityDiscoverSegment.power => LoopL10n.current.community_discoverPower,
+
+    CommunityDiscoverSegment.discussion =>
+      LoopL10n.current.community_discoverDiscussion,
+
+    CommunityDiscoverSegment.newest =>
+      LoopL10n.current.community_discoverNewest,
+  };
   final CommunityDirectorySort sort;
 
   static CommunityDiscoverSegment of(CommunityDirectorySort sort) {
@@ -61,9 +73,9 @@ Future<void> startCommunityApplication(
   if (application == null || !context.mounted) return;
   final confirmed = await confirmCommunityAction(
     context,
-    title: '提交社区申请？',
-    body: '提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。',
-    confirmLabel: '提交',
+    title: context.l10n.community_discoverTitle,
+    body: context.l10n.community_discoverBody,
+    confirmLabel: context.l10n.common_submit,
     sheetKey: 'community-apply-confirm-sheet',
   );
   if (!confirmed || !context.mounted) return;
@@ -154,7 +166,9 @@ class _CommunityDiscoverScreenState
     return LoopStreamPage(
       key: const ValueKey<String>('community-discover-screen'),
       archetype: LoopPageArchetype.listing,
-      title: widget.joinedOnly ? '已加入的社区' : '发现社区',
+      title: widget.joinedOnly
+          ? context.l10n.community_discoverCommunityDiscoverScreenTitle
+          : context.l10n.community_discoverCommunityDiscoverScreenTitle2,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       embedded: widget.embedded,
@@ -162,7 +176,7 @@ class _CommunityDiscoverScreenState
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
-        kicker: '社区发现',
+        kicker: context.l10n.community_discoverKicker,
         // The directory answers one cursor page at a time and carries no
         // total, so a heading may only count what is loaded — and it says
         // that it is what it is counting until the last page is in.
@@ -170,9 +184,9 @@ class _CommunityDiscoverScreenState
             state.phase != CommunityViewPhase.ready || orderingReason != null
             ? communityMissingHeading
             : state.nextCursor == null
-            ? '${state.items.length} 个社区'
-            : '已载入 ${state.items.length} 个社区',
-        caption: '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
+            ? context.l10n.community_discoverHeading(state.items.length)
+            : context.l10n.community_discoverHeading2(state.items.length),
+        caption: context.l10n.community_discoverCaption,
         stamp: state.recommendation == null ? null : 'RULE',
       ),
       // `.refined-page .folio-body>.segs{padding:0 16px 16px;gap:7px}` — the
@@ -212,7 +226,9 @@ class _CommunityDiscoverScreenState
                 'community-discover-capability-unavailable',
               ),
               capability: capability,
-              title: '社区模块当前不可用',
+              title: context
+                  .l10n
+                  .community_discoverCommunityDiscoverCapabilityUnavailableTitle,
             )
           : null,
       onRefresh: controller.refresh,
@@ -223,7 +239,10 @@ class _CommunityDiscoverScreenState
         key: const ValueKey<String>('community-discover-list'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '社区目录'),
+          CommunityPreviewNotice(
+            mode: mode,
+            resource: context.l10n.community_discoverResource,
+          ),
           // A refresh that failed over rows already shown keeps them and
           // says so here; its retry is the refresh, not a next page.
           LoopFreshnessStrip(
@@ -243,7 +262,9 @@ class _CommunityDiscoverScreenState
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 LoopInlineUnavailable(
-                  message: '「${selectedSegment.label}」暂时不可用',
+                  message: context.l10n.community_discoverMessage(
+                    selectedSegment.label,
+                  ),
                   detail: communityUnavailableReason(orderingReason),
                   maxLines: 2,
                   detailMaxLines: 4,
@@ -259,7 +280,9 @@ class _CommunityDiscoverScreenState
                     key: const ValueKey<String>(
                       'community-discover-ordering-back',
                     ),
-                    label: '按成员最多排序',
+                    label: context
+                        .l10n
+                        .community_discoverCommunityDiscoverOrderingBackLabel,
                     onPressed: () => unawaited(
                       controller.selectSort(CommunityDirectorySort.members),
                     ),
@@ -271,8 +294,8 @@ class _CommunityDiscoverScreenState
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '没有符合条件的社区',
-              emptyReason: '这个排序下没有社区。',
+              emptyMessage: context.l10n.community_discoverEmptyMessage,
+              emptyReason: context.l10n.community_discoverEmptyReason,
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -300,7 +323,7 @@ class _CommunityDiscoverScreenState
                 ),
                 child: LoopButton(
                   key: const ValueKey<String>('community-discover-retry-more'),
-                  label: '重试',
+                  label: context.l10n.common_retry,
                   block: true,
                   onPressed: () => unawaited(controller.loadMore()),
                 ),
@@ -337,7 +360,7 @@ class _CommunityDiscoverScreenState
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('community-apply-action'),
-                label: '申请入驻',
+                label: context.l10n.community_discoverCommunityApplyActionLabel,
                 onPressed: communityCapabilityBlocks(mode, capability)
                     ? null
                     : () => unawaited(_apply()),

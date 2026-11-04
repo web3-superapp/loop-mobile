@@ -230,11 +230,11 @@ void main() {
       expect(gateway.commands.last, 'list:members:all:null');
       expect(_selected(tester, 'square-filter-all'), isTrue);
       expect(_selected(tester, 'square-filter-joined'), isFalse);
-      expect(_sortLabel(tester), '成员最多');
+      expect(_sortLabel(tester), 'Most members');
 
       await _chooseSort(tester, 'square-sort-newest');
       expect(gateway.commands.last, 'list:newest:all:null');
-      expect(_sortLabel(tester), '新社区');
+      expect(_sortLabel(tester), 'Newest');
       expect(_selected(tester, 'square-filter-all'), isTrue);
 
       await _tapChip(tester, 'square-filter-joined');
@@ -242,7 +242,7 @@ void main() {
       expect(gateway.commands.last, 'list:newest:joined:null');
       expect(_selected(tester, 'square-filter-joined'), isTrue);
       expect(_selected(tester, 'square-filter-all'), isFalse);
-      expect(_sortLabel(tester), '新社区');
+      expect(_sortLabel(tester), 'Newest');
 
       await _tapChip(tester, 'square-filter-all');
       expect(gateway.commands.last, 'list:newest:all:null');
@@ -403,7 +403,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('算力 '), findsOneWidget);
+      expect(find.textContaining('Power '), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(

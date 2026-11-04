@@ -241,12 +241,12 @@ void main() {
         community: testCommunity(memberCount: 312, label: '精选社区'),
         onTap: () {},
       );
-      expect(labelled.subtitle, '312 名成员 · 精选社区');
+      expect(labelled.subtitle, '312 members · 精选社区');
       final plain = communityDirectoryRow(
         community: testCommunity(memberCount: 312),
         onTap: () {},
       );
-      expect(plain.subtitle, '312 名成员');
+      expect(plain.subtitle, '312 members');
       final pending = communityDirectoryRow(
         community: testCommunity(
           memberCount: 312,
@@ -255,7 +255,7 @@ void main() {
         onTap: () {},
       );
       // A visitor is never told the review state.
-      expect(pending.subtitle, '312 名成员');
+      expect(pending.subtitle, '312 members');
     });
 
     testWidgets('square: a labelled row wears the label, the others nothing', (
@@ -442,7 +442,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('community-profile-owner-review'),
-          matching: find.text('审核中'),
+          matching: find.text('In review'),
         ),
         findsOneWidget,
       );

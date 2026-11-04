@@ -180,7 +180,7 @@ void main() {
         mediaUrl: memeTestMediaUrl,
       );
       expect(row.priceSource?.source, MemePriceSource.poolSlot0);
-      expect(row.priceSource?.source.label, '池子推算');
+      expect(row.priceSource?.source.label, 'Pool estimate');
     });
 
     test('a graduated row without a price carries its reason', () {

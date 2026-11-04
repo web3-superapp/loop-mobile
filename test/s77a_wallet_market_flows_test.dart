@@ -744,12 +744,20 @@ void main() {
       expect(tops.toSet(), hasLength(1), reason: '四个条件在同一行');
 
       // The chosen one explains which comparison it makes.
-      expect(find.textContaining('到达：价格达到或高于阈值'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Reach: triggers when price reaches or rises above the threshold',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(
         find.byKey(const ValueKey<String>('alert-condition-above')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('突破：价格必须高于阈值'), findsOneWidget);
+      expect(
+        find.textContaining('Break: price must be above the threshold'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('删除 is not a peer of 保存 and it asks first', (tester) async {

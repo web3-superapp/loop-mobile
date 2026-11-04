@@ -29,6 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
@@ -232,14 +233,14 @@ class CommunityLogo extends StatelessWidget {
         slot: slot,
         size: size,
         radius: corner,
-        semanticLabel: '$name 社区图标',
+        semanticLabel: context.l10n.community_logoSemanticLabel(name),
         fallbackMonogram: monogram,
       );
     }
     final tile = chromeFallback
         ? Semantics(
             image: true,
-            label: '$name 社区图标',
+            label: context.l10n.community_logoSemanticLabel(name),
             child: LoopChromeMedal(
               key: ValueKey<String>('community-logo-chrome-$identity'),
               size: size,
@@ -255,7 +256,7 @@ class CommunityLogo extends StatelessWidget {
         size: size,
         shape: BoxShape.rectangle,
         radius: corner,
-        semanticLabel: '$name 社区图标',
+        semanticLabel: context.l10n.community_logoSemanticLabel(name),
         fallback: tile,
       );
     }
@@ -266,7 +267,7 @@ class CommunityLogo extends StatelessWidget {
     final ground = communityLogoGroundFor(identity);
     return Semantics(
       image: true,
-      label: '$name 社区图标',
+      label: context.l10n.community_logoSemanticLabel(name),
       child: Container(
         key: ValueKey<String>('community-logo-monogram-${ground.id}'),
         width: size,

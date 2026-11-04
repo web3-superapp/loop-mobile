@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The five domain segments in prototype order. `launch` and `dapps` are
 /// selectable but carry the server's own unavailable reason.
@@ -37,7 +38,8 @@ List<SearchDomain> visibleSearchDomains({required bool outboundVisible}) =>
     outboundVisible ? searchDomainOrder : searchableDomains;
 
 /// The one line under the search field (decision 0121).
-const String searchScopeHint = '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索';
+String get searchScopeHint =>
+    LoopL10n.current.community_searchControllerSearchScopeHint;
 
 /// The domains this build can actually search, in prototype order.
 final List<SearchDomain> searchableDomains = List<SearchDomain>.unmodifiable(
@@ -52,9 +54,12 @@ final List<SearchDomain> searchableDomains = List<SearchDomain>.unmodifiable(
 /// page could not keep (device walkthrough 2026-09-23 · a55–a65). A domain
 /// that gains a backend leaves [searchDomainIsDeferred] and appears here in
 /// the same commit, so the two cannot drift apart.
-final String searchFieldLabel =
-    '搜索'
-    '${searchableDomains.map((domain) => domain.label).join('、')}';
+String get searchFieldLabel =>
+    LoopL10n.current.community_searchControllerSearchFieldLabel(
+      searchableDomains
+          .map((domain) => domain.label)
+          .join(LoopL10n.current.common_listSeparator),
+    );
 
 /// Prefix bounds enforced by the server. A shorter query is not sent, so the
 /// public search quota is never spent on a request that would be rejected.

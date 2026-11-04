@@ -6835,7 +6835,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "chart-full-interval-notice",
                 "没有其他指标",
             ):
-                if required not in chart_source:
+                if not L10N_RULES.copy_present(root, chart_source, required):
                     errors.append(
                         "C3 must return through the application router and state "
                         f"what it can and cannot draw; missing `{required}`"
@@ -8838,7 +8838,7 @@ def check_community_ai_contract(root: Path) -> list[str]:
             ),
             "lib/features/community/community_ai_models.dart": (
                 "String communityAiBriefHeading(CommunityAiBriefAvailable brief)",
-                "'今日至少 ${brief.messageCount} 条讨论'",
+                "community_aiModelsSwitch16(brief.messageCount)",
                 "List<CommunityAiAnswerRun> communityAiAnswerRuns(",
             ),
             # A Preview composition must not answer for a model: decision 0066

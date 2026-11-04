@@ -246,7 +246,10 @@ void main() {
       expect(percent.style!.color, LoopColors.rise);
       expect(percent.style!.fontSize, 14);
       expect(percent.style!.fontWeight, FontWeight.w700);
-      expect(find.bySemanticsLabel(RegExp('24 小时走势上涨 8.40%')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('24h trend up 8.40%')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a falling series is fall red', (tester) async {
@@ -258,7 +261,10 @@ void main() {
       final percent = tester.widget<Text>(_key('market-trend-percent'));
       expect(percent.data, '-1.45%');
       expect(percent.style!.color, LoopColors.fall);
-      expect(find.bySemanticsLabel(RegExp('24 小时走势下跌 1.45%')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('24h trend down 1.45%')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a flat move: line3 grey line and an ink 0.00%', (
@@ -273,7 +279,10 @@ void main() {
       expect(percent.data, '0.00%');
       expect(percent.style!.color, isNot(LoopColors.rise));
       expect(percent.style!.color, isNot(LoopColors.fall));
-      expect(find.bySemanticsLabel(RegExp('24 小时走势持平 0.00%')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('24h trend flat 0.00%')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('no series: percent only, same width and right edge', (
@@ -305,15 +314,18 @@ void main() {
         tester.getBottomRight(percents.at(1)),
       );
       expect(
-        find.bySemanticsLabel(RegExp(r'24 小时涨跌 \+184.00%')),
+        find.bySemanticsLabel(RegExp(r'24h change \+184.00%')),
         findsOneWidget,
       );
     });
 
     testWidgets('an unreported move prints 未报告 and no colour', (tester) async {
       await _pumpRow(tester, _trendRow(change: null));
-      expect(find.text('未报告'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('24 小时涨跌未报告')), findsOneWidget);
+      expect(find.text('Not reported'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('24h change not reported')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('with motion the line draws in, then settles whole', (
@@ -388,7 +400,7 @@ void main() {
         const MarketScreen(embedded: true),
         market: market,
       );
-      await tester.tap(find.text('主流'));
+      await tester.tap(find.text('Majors'));
       await tester.pumpAndSettle();
       final row = _key('market-asset-$s5WbnbAssetId');
       expect(

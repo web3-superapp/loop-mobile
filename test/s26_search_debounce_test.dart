@@ -66,7 +66,7 @@ void main() {
 
       // And one line under the field says what a nickname search reaches
       // (decision 0121).
-      expect(find.textContaining('允许被发现'), findsOneWidget);
+      expect(find.textContaining('discoverable'), findsOneWidget);
       expect(find.textContaining('显示 LOOP ID'), findsNothing);
     });
 
@@ -108,7 +108,7 @@ void main() {
       // bare — 「mock-vol-01」 under 「Alpha Signals 1」 — and names nothing a
       // reader can use.
       expect(find.text('alpha-holders'), findsNothing);
-      expect(find.text('128 位成员'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
     });
 
     testWidgets('one word is one request, not one per keystroke', (
@@ -168,7 +168,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.queries, isEmpty);
-      expect(find.textContaining('输入至少'), findsOneWidget);
+      expect(find.textContaining('Type at least'), findsOneWidget);
     });
   });
 }

@@ -24,6 +24,7 @@ import 'package:loop_mobile/features/notifications/notification_controllers.dart
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -69,13 +70,19 @@ class TokenDetailScreen extends ConsumerStatefulWidget {
 
 /// The three tabs under the chart, in the reference's order.
 enum TokenSectionTab {
-  holders('持有者'),
-  activity('动态'),
-  about('关于');
+  holders(),
+  activity(),
+  about();
 
-  const TokenSectionTab(this.label);
+  const TokenSectionTab();
 
-  final String label;
+  String get label => switch (this) {
+    TokenSectionTab.holders => LoopL10n.current.market_tokenHolders,
+
+    TokenSectionTab.activity => LoopL10n.current.common_feed,
+
+    TokenSectionTab.about => LoopL10n.current.common_aboutSection,
+  };
 }
 
 class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
@@ -108,12 +115,19 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     final asset = detail?.asset.settled;
     final text = <String>[
       if (asset != null) '${loopAssetSymbolLabel(asset)} · ${asset.name}',
-      if (asset?.address case final address?) '合约 $address' else assetId,
-      '在 LOOP 查看行情',
+      if (asset?.address case final address?)
+        LoopL10n.current.market_tokenShare(address)
+      else
+        assetId,
+      LoopL10n.current.market_tokenShare2,
     ].join('\n');
     final shown = await ref.read(loopTextShareProvider)(text);
     if (!mounted || shown) return;
-    LoopToast.show(context, message: '系统分享暂时打不开', kind: LoopToastKind.warn);
+    LoopToast.show(
+      context,
+      message: LoopL10n.current.market_tokenMessage,
+      kind: LoopToastKind.warn,
+    );
   }
 
   @override
@@ -123,14 +137,15 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('token-invalid-route'),
         archetype: LoopPageArchetype.record,
-        title: '无法打开这个资产',
+        title: context.l10n.market_tokenTokenInvalidRouteTitle,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('token-invalid-identity'),
             illustration: LoopIllustration.chartEmpty,
-            title: '路由中没有可用的资产标识',
-            message: 'Token 页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+            title:
+                context.l10n.market_secondaryScreensInvalidAssetIdentityTitle,
+            message: context.l10n.market_tokenTokenInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -259,7 +274,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         LoopIconButton(
           key: const ValueKey<String>('token-alerts-action'),
           icon: 'bell',
-          label: '价格提醒',
+          label: context.l10n.common_priceAlerts,
           onPressed: () => _open(MarketAssetRoute.alerts(assetId)),
         ),
         // The star is the whole "add to watchlist" path: it states membership
@@ -267,7 +282,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         LoopIconButton(
           key: const ValueKey<String>('token-watchlist-action'),
           icon: 'star',
-          label: watchlistBlocked ? '自选当前不可用' : membership.actionLabel,
+          label: watchlistBlocked
+              ? context.l10n.market_secondaryScreensLabel2
+              : membership.actionLabel,
           color: membership.isWatched ? LoopColors.yellow : null,
           // An unread list has no on/off state to report; claiming
           // `false` would say the asset is not watched.
@@ -281,14 +298,14 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         LoopIconButton(
           key: const ValueKey<String>('token-share-action'),
           icon: 'share',
-          label: '分享',
+          label: context.l10n.common_share,
           onPressed: () => unawaited(_share(assetId, detail)),
         ),
       ],
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('token-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
             )
@@ -300,7 +317,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '这个资产还没有可展示的事实',
+            emptyMessage: context.l10n.market_tokenEmptyMessage,
             onRetry: () => unawaited(
               ref
                   .read(marketAssetControllerProvider(assetId).notifier)
@@ -310,7 +327,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         else if (detail.capability.blocksEntirePage)
           LoopUnavailableLine(
             key: const ValueKey<String>('token-asset-blocked'),
-            label: '该资产已被标记为不可展示',
+            label: context.l10n.market_tokenTokenAssetBlockedLabel,
             reasonCode: detail.capability.reasonCode ?? 'ASSET_BLOCKED',
           )
         else ...<Widget>[
@@ -338,8 +355,12 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           else if (detail.capability.suppressesLiveFigures)
             LoopInlineUnavailable(
               key: const ValueKey<String>('token-live-suppressed'),
-              message:
-                  '链上读取暂时不可用 · ${loopReasonCodeText(detail.capability.reasonCode ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE')}',
+              message: context.l10n.market_tokenTokenLiveSuppressedMessage(
+                loopReasonCodeText(
+                  detail.capability.reasonCode ??
+                      'BSC_CHAIN_RUNTIME_UNAVAILABLE',
+                ),
+              ),
             ),
           TokenPriceHeader(
             key: const ValueKey<String>('token-quote'),
@@ -355,7 +376,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             trailing: LoopIconButton(
               key: const ValueKey<String>('token-chart-expand'),
               icon: 'expand',
-              label: '打开全屏图表',
+              label: context.l10n.market_tokenTokenChartExpandLabel,
               onPressed: () => _open(MarketAssetRoute.chart(assetId)),
             ),
           ),
@@ -364,6 +385,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           MarketTabBar(
             key: const ValueKey<String>('token-section-tabs'),
             keyPrefix: 'token-tab',
+            ids: <String>[for (final tab in TokenSectionTab.values) tab.name],
             labels: <String>[
               for (final tab in TokenSectionTab.values) tab.label,
             ],
@@ -383,7 +405,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               if (detail.capability.swappable)
                 LoopButton(
                   key: const ValueKey<String>('token-swap-entry'),
-                  label: '兑换',
+                  label: context.l10n.common_swap,
                   primary: true,
                   block: true,
                   onPressed: () => _open('/wallet/swap'),
@@ -393,8 +415,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                   key: const ValueKey<String>('token-swap-unavailable'),
                   // A closed gate is the whole app's answer and outranks this
                   // asset's own.
-                  message:
-                      '买入、卖出与兑换当前不可用 · ${loopReasonCodeText(swapBlockedReason)}',
+                  message: context.l10n.market_tokenTokenSwapUnavailableMessage(
+                    loopReasonCodeText(swapBlockedReason),
+                  ),
                 ),
             ],
           },
@@ -418,7 +441,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         child: Row(
           children: <Widget>[
             Text(
-              '持有人数',
+              LoopL10n.current.market_tokenHolderSections,
               style: LoopType.body.copyWith(color: LoopColors.text2),
             ),
             const Spacer(),
@@ -433,15 +456,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           ],
         ),
       ),
-      const LoopInlineUnavailable(
+      LoopInlineUnavailable(
         key: ValueKey<String>('token-holders-distribution-unavailable'),
         icon: 'info',
-        message: '持有人分布暂不可用',
+        message: LoopL10n
+            .current
+            .market_tokenTokenHoldersDistributionUnavailableMessage,
       ),
       _factsProvenance(
         key: const ValueKey<String>('token-holders-provenance'),
         facts: <LoopFact>[count],
-        prefix: '持有人数',
+        prefix: LoopL10n.current.market_tokenHolderSections,
       ),
     ];
   }
@@ -466,7 +491,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           phase: state.phase,
           failureKind: state.failureKind,
           rows: 4,
-          emptyMessage: '还没有成交',
+          emptyMessage: LoopL10n.current.common_noTradesYet,
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
@@ -476,16 +501,18 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         return <Widget>[
           LoopInlineUnavailable(
             key: const ValueKey<String>('token-trades-unavailable'),
-            message: '成交记录暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+            message: LoopL10n.current.market_tokenTokenTradesUnavailableMessage(
+              loopReasonCodeText(reasonCode),
+            ),
           ),
         ];
       case MarketTradesAvailable(:final items) when items.isEmpty:
         return <Widget>[
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('token-trades-empty'),
             illustration: LoopIllustration.chartEmpty,
-            title: '还没有成交',
-            message: '这个池子最近还没有人交易',
+            title: LoopL10n.current.common_noTradesYet,
+            message: LoopL10n.current.market_tokenTokenTradesEmptyMessage,
             compact: true,
           ),
           _tradesProvenance(block),
@@ -496,7 +523,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           if (controller.appendFailed && !state.busy)
             LoopInlineUnavailable(
               key: const ValueKey<String>('token-trades-more-failed'),
-              message: '下一页没有读到',
+              message: LoopL10n.current.common_nextPageFailed,
               onRetry: () => unawaited(controller.loadMore()),
             )
           else if (nextCursor != null) ...<Widget>[
@@ -525,12 +552,16 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       key: const ValueKey<String>('token-trades-provenance'),
       sources: <String>[loopFactSourceLabel(block.source)],
       observedAt: freshness.observedAt,
-      prefix:
-          '索引高度 ${loopGroupedFigure(freshness.indexerBlockNumber.toString())}',
+      prefix: LoopL10n.current.market_secondaryScreensLoopProvenanceFooter(
+        loopGroupedFigure(freshness.indexerBlockNumber.toString()),
+      ),
       detail: <String>[
-        if (lag != null) '数据落后 ${loopGroupedFigure(lag.toString())} 块。',
-        '成交来自已登记池的 Swap 事件。LOOP 不下发对手方地址，只标出哪一笔是你自己的钱包发起的。',
-      ].join(''),
+        if (lag != null)
+          LoopL10n.current.market_tokenLoopProvenanceLine(
+            loopGroupedFigure(lag.toString()),
+          ),
+        LoopL10n.current.market_tokenLoopProvenanceLine2,
+      ].join(LoopL10n.current.market_tokenSentenceGap),
     );
   }
 
@@ -543,14 +574,22 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
   }) {
     final asset = detail.asset.settled;
     return <Widget>[
-      const LoopLabel('简介'),
+      LoopLabel(LoopL10n.current.market_tokenLoopLabel),
       MarketQuoteCells(
         key: const ValueKey<String>('token-about-cells'),
         cells: <MarketStatCell>[
-          marketRangeCell('24h 高', detail.range24h, high: true),
-          marketRangeCell('24h 低', detail.range24h, high: false),
+          marketRangeCell(
+            LoopL10n.current.market_tokenMarketRangeCell,
+            detail.range24h,
+            high: true,
+          ),
+          marketRangeCell(
+            LoopL10n.current.market_tokenMarketRangeCell2,
+            detail.range24h,
+            high: false,
+          ),
           MarketStatCell.fact(
-            '24h 成交额',
+            LoopL10n.current.market_tokenFact,
             detail.volume24h,
             formatter: loopFormatCompactFigure,
           ),
@@ -560,17 +599,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         key: const ValueKey<String>('token-about-cells-2'),
         cells: <MarketStatCell>[
           MarketStatCell.fact(
-            '流动性',
+            LoopL10n.current.common_liquidity,
             detail.liquidityUsd,
             formatter: loopFormatCompactFigure,
           ),
           MarketStatCell.fact(
-            '完全稀释估值',
+            LoopL10n.current.market_tokenFact2,
             detail.fdv,
             formatter: loopFormatCompactFigure,
           ),
           MarketStatCell.fact(
-            '市值',
+            LoopL10n.current.common_marketCap,
             detail.marketCap,
             formatter: loopFormatCompactFigure,
           ),
@@ -579,9 +618,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       if (asset != null)
         LoopKeyValue(
           key: const ValueKey<String>('token-about-contract'),
-          label: '合约',
+          label: LoopL10n.current.common_contract,
           value: asset.address == null
-              ? '链上原生资产'
+              ? LoopL10n.current.market_tokenTokenAboutContractValue
               : loopTruncatedAddress(asset.address!),
         ),
       _factsProvenance(
@@ -593,7 +632,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           detail.marketCap,
         ],
       ),
-      const LoopLabel('社区'),
+      LoopLabel(LoopL10n.current.common_community),
       _CommunityBlock(
         block: detail.community,
         onOpenCommunity: (communityId) => _open(
@@ -603,16 +642,16 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       if (miningWeight != null)
         LoopPowerHint(
           key: const ValueKey<String>('token-mining-weight'),
-          text: '挖矿权重',
+          text: LoopL10n.current.market_tokenTokenMiningWeightText,
           figure: miningWeight.label,
           onTap: () => _open('/mining'),
         ),
-      const LoopLabel('池与合约事实'),
+      LoopLabel(LoopL10n.current.market_tokenLoopLabel2),
       TokenPoolAndContractFacts(
         pair: detail.primaryPair,
         security: detail.security,
       ),
-      const LoopLabel('通知'),
+      LoopLabel(LoopL10n.current.common_notifications),
       _TokenNotificationFeed(assetId: assetId),
     ];
   }
@@ -638,10 +677,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       sources: sources,
       observedAt: oldest,
       // S278 · decision 0236: the line is behind (i); the marker is not.
-      marker: marked ? '含延迟或折算的数值' : null,
-      prefix: <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · ').isEmpty
+      marker: marked ? LoopL10n.current.market_tokenMarker : null,
+      prefix:
+          <String>[
+            ?prefix,
+            if (marked) LoopL10n.current.market_tokenMarker,
+          ].join(' · ').isEmpty
           ? null
-          : <String>[?prefix, if (marked) '含延迟或折算的数值'].join(' · '),
+          : <String>[
+              ?prefix,
+              if (marked) LoopL10n.current.market_tokenMarker,
+            ].join(' · '),
     );
   }
 }
@@ -699,9 +745,13 @@ class TokenIdentityLine extends StatelessWidget {
             LoopIconButton(
               key: const ValueKey<String>('token-copy-address'),
               icon: 'copy',
-              label: '复制合约地址',
+              label: context.l10n.market_tokenTokenCopyAddressLabel,
               onPressed: () async {
-                await LoopCopy.text(context, address, message: '已复制合约地址');
+                await LoopCopy.text(
+                  context,
+                  address,
+                  message: context.l10n.market_tokenMessage2,
+                );
               },
             ),
         ],
@@ -750,7 +800,9 @@ class TokenPriceHeader extends StatelessWidget {
         ? null
         : marketQuoteQualityMarker(price.quality);
     final moveText = changeValue == null
-        ? '24h 涨跌${loopReasonCodeSummaryText(change.reasonCode)}'
+        ? context.l10n.market_tokenBuild(
+            loopReasonCodeSummaryText(change.reasonCode),
+          )
         : <String>[
             if (absolute != null)
               '${move == LoopPriceMove.down
@@ -782,9 +834,11 @@ class TokenPriceHeader extends StatelessWidget {
                 if (priceValue == null)
                   LoopInlineUnavailable(
                     key: const ValueKey<String>('token-price-unavailable'),
-                    message:
-                        '价格${loopReasonCodeSummaryText(price.reasonCode)}'
-                        ' · ${loopReasonCodeText(price.reasonCode)}',
+                    message: context.l10n
+                        .market_tokenTokenPriceUnavailableMessage(
+                          loopReasonCodeSummaryText(price.reasonCode),
+                          loopReasonCodeText(price.reasonCode),
+                        ),
                     padding: EdgeInsets.zero,
                   )
                 else
@@ -831,7 +885,7 @@ class TokenPriceHeader extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '市值',
+                context.l10n.common_marketCap,
                 style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
             ],
@@ -857,13 +911,13 @@ class TokenTradeRow extends StatelessWidget {
     final reorged = trade.status == LoopConfirmationStatus.reorged;
     return Semantics(
       label: <String>[
-        if (trade.isOwn) '我',
-        buy ? '买入' : '卖出',
+        if (trade.isOwn) context.l10n.common_me,
+        buy ? context.l10n.common_buy : context.l10n.common_sell,
         '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} ${trade.quoteSymbol}',
         loopFormatDecimal(trade.amountAsset),
         loopConfirmationLabel(trade.status),
         loopRelativeTime(trade.blockTimestamp),
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: Container(
         height: 52,
@@ -876,7 +930,7 @@ class TokenTradeRow extends StatelessWidget {
             SizedBox(
               width: 44,
               child: Text(
-                buy ? '买入' : '卖出',
+                buy ? context.l10n.common_buy : context.l10n.common_sell,
                 style: LoopType.title.copyWith(color: move.color),
               ),
             ),
@@ -893,7 +947,7 @@ class TokenTradeRow extends StatelessWidget {
                   ),
                   Text(
                     <String>[
-                      if (trade.isOwn) '我',
+                      if (trade.isOwn) context.l10n.common_me,
                       loopRelativeTime(trade.blockTimestamp),
                       loopConfirmationLabel(trade.status),
                     ].join(' · '),
@@ -906,7 +960,7 @@ class TokenTradeRow extends StatelessWidget {
               ),
             ),
             if (reorged) ...<Widget>[
-              const LoopBadge('已回滚', kind: LoopBadgeKind.down),
+              LoopBadge(context.l10n.common_reverted, kind: LoopBadgeKind.down),
               const SizedBox(width: 6),
             ],
             Text(
@@ -995,7 +1049,7 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
               phase: state.phase,
               failureKind: state.failureKind,
               skeleton: LoopSkeletonType.chart,
-              emptyMessage: '这个区间没有成交',
+              emptyMessage: context.l10n.market_tokenEmptyMessage2,
               onRetry: () => unawaited(
                 ref
                     .read(marketCandlesControllerProvider(request).notifier)
@@ -1010,7 +1064,9 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
               child: Center(
                 child: LoopInlineUnavailable(
                   key: const ValueKey<String>('candles-unavailable'),
-                  message: '图表暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+                  message: context.l10n.market_tokenCandlesUnavailableMessage(
+                    loopReasonCodeText(reasonCode),
+                  ),
                   onRetry: _providerRateLimited(reasonCode)
                       ? null
                       : () => unawaited(
@@ -1027,13 +1083,13 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
             MarketCandlesAvailable(items: final items) when items.isEmpty =>
               SizedBox(
                 height: widget.height,
-                child: const Center(
+                child: Center(
                   child: LoopEmptyState(
                     showMessage: true,
                     key: ValueKey<String>('candles-empty'),
                     illustration: LoopIllustration.chartEmpty,
-                    title: '这个区间没有成交',
-                    message: '只画有成交的桶，空桶不会补 0。',
+                    title: context.l10n.market_tokenEmptyMessage2,
+                    message: context.l10n.market_tokenCandlesEmptyMessage,
                     compact: true,
                   ),
                 ),
@@ -1046,11 +1102,18 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
               showMovingAverages: _averages,
               showVolume: _volume,
               height: widget.height,
-              semanticLabel:
-                  '${block.items.length} 根${loopChartIntervalLabel(widget.interval)}'
-                  '${_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'}，'
-                  '单位 ${block.priceUnit}'
-                  '${block.items.last.isOpen ? '，最后一根尚未收盘' : ''}',
+              semanticLabel: context.l10n
+                  .market_tokenTokenCandleChartSemanticLabel(
+                    block.items.last.isOpen
+                        ? context.l10n.market_tokenCandleLastOpen
+                        : '',
+                    loopChartIntervalLabel(widget.interval),
+                    block.items.length,
+                    block.priceUnit,
+                    _style == LoopChartStyle.line
+                        ? context.l10n.market_tokenCandleStyleLine
+                        : context.l10n.market_tokenCandleStyleCandle,
+                  ),
             ),
           },
         LoopChartIntervalRow(
@@ -1087,23 +1150,29 @@ class _CandleProvenance extends StatelessWidget {
       key: const ValueKey<String>('candles-provenance'),
       // S278 · decision 0236: the line is behind (i); the quality marker and
       // the price unit (never USD by default) are not.
-      marker: <String>[?marker, '单位 ${block.priceUnit}'].join(' · '),
+      marker: <String>[
+        ?marker,
+        context.l10n.market_tokenLoopProvenanceLine3(block.priceUnit),
+      ].join(' · '),
       prefix: <String>{
         ?marker,
         if (block.hasSourceLabel) marketCandleLabelText(block.labelKey),
         // A provider top pool is not one LOOP indexes (decision 0064): the
         // line says so, so the chart never implies a trade feed.
-        if (block.pool.isProviderPool) '未登记池',
-        if (open) '最后一根进行中',
-        '单位 ${block.priceUnit}',
+        if (block.pool.isProviderPool)
+          context.l10n.market_tokenLoopProvenanceLine4,
+        if (open) context.l10n.market_tokenLoopProvenanceLine5,
+        context.l10n.market_tokenLoopProvenanceLine3(block.priceUnit),
       }.join(' · '),
       sources: <String>[loopFactSourceLabel(block.source)],
       observedAt: block.fetchedAt,
       detail: <String>[
-        '${marketCandleSourcePoolText(block.source, block.pool)}。',
-        if (open) '最后一根尚未收盘，收盘前还会变化。',
-        'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源。',
-      ].join(''),
+        context.l10n.market_tokenCandleSourceSentence(
+          marketCandleSourcePoolText(block.source, block.pool),
+        ),
+        if (open) context.l10n.market_tokenLoopProvenanceLine6,
+        context.l10n.market_tokenLoopProvenanceLine7,
+      ].join(context.l10n.market_tokenSentenceGap),
     );
   }
 }
@@ -1129,10 +1198,12 @@ class TokenPoolAndContractFacts extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Text(
           resolved == null
-              ? '主交易对：没有以该资产为 base 的交易对'
-              : '主交易对：${marketDexLabel(resolved.dexId)} · 报价币 '
-                    '${resolved.quoteTokenSymbol} · '
-                    '${loopTruncatedAddress(resolved.pairAddress)}',
+              ? context.l10n.market_tokenTokenFactsPair
+              : context.l10n.market_tokenTokenFactsPair2(
+                  marketDexLabel(resolved.dexId),
+                  resolved.quoteTokenSymbol,
+                  loopTruncatedAddress(resolved.pairAddress),
+                ),
           key: const ValueKey<String>('token-facts-pair'),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -1146,15 +1217,17 @@ class TokenPoolAndContractFacts extends StatelessWidget {
         children.add(
           LoopInlineUnavailable(
             key: const ValueKey<String>('token-security-unavailable'),
-            message: '合约事实暂时读不到 · ${loopReasonCodeText(reasonCode)}',
+            message: context.l10n.market_tokenTokenSecurityUnavailableMessage(
+              loopReasonCodeText(reasonCode),
+            ),
           ),
         );
       case MarketSecurityAvailable(facts: final facts) when facts.isEmpty:
         children.add(
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('token-security-empty'),
             icon: 'info',
-            message: '暂时读不到合约信息；少了某一项不代表安全或不安全',
+            message: context.l10n.market_tokenTokenSecurityEmptyMessage,
           ),
         );
       case MarketSecurityAvailable(facts: final facts):
@@ -1192,10 +1265,12 @@ class TokenPoolAndContractFacts extends StatelessWidget {
         children.add(
           LoopProvenanceLine(
             key: const ValueKey<String>('token-security-provenance'),
-            prefix: '合约事实 ${facts.length} 项',
+            prefix: context.l10n.market_tokenTokenSecurityProvenancePrefix(
+              facts.length,
+            ),
             sources: sources,
             observedAt: oldest,
-            detail: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
+            detail: context.l10n.market_tokenTokenSecurityProvenanceDetail,
           ),
         );
     }
@@ -1244,22 +1319,70 @@ String tokenSecurityFactShortText(MarketSecurityFact fact) {
   String? yesNo(String whenTrue, String whenFalse) =>
       isTrue ? whenTrue : (isFalse ? whenFalse : null);
   final short = switch (fact.fact) {
-    'openSource' => yesNo('已验证开源', '未验证开源'),
-    'proxy' => yesNo('代理合约', '非代理合约'),
-    'mintable' => yesNo('检测到 mint', '未检测到 mint'),
-    'ownershipTakeBack' => yesNo('所有权可收回', '未检测到收回所有权'),
-    'ownerChangeBalance' => yesNo('所有者可改余额', '所有者不可改余额'),
-    'hiddenOwner' => yesNo('检测到隐藏所有者', '未检测到隐藏所有者'),
-    'selfDestruct' => yesNo('检测到自毁', '未检测到自毁'),
-    'externalCall' => yesNo('检测到外部调用', '未检测到外部调用'),
-    'honeypot' => yesNo('检测到蜜罐特征', '未检测到蜜罐特征'),
-    'transferPausable' => yesNo('转账可暂停', '转账不可暂停'),
-    'blacklist' => yesNo('检测到黑名单', '未检测到黑名单'),
-    'whitelist' => yesNo('检测到白名单', '未检测到白名单'),
-    'antiWhale' => yesNo('检测到持仓上限', '未检测到持仓上限'),
-    'tradingCooldown' => yesNo('检测到交易冷却', '未检测到交易冷却'),
-    'cannotSellAll' => yesNo('不能全部卖出', '可以全部卖出'),
-    'listedOnDex' => yesNo('已在 DEX 上架', '未在 DEX 上架'),
+    'openSource' => yesNo(
+      LoopL10n.current.market_tokenYesNo,
+      LoopL10n.current.market_tokenYesNo2,
+    ),
+    'proxy' => yesNo(
+      LoopL10n.current.market_tokenYesNo3,
+      LoopL10n.current.market_tokenYesNo4,
+    ),
+    'mintable' => yesNo(
+      LoopL10n.current.market_tokenYesNo5,
+      LoopL10n.current.market_tokenYesNo6,
+    ),
+    'ownershipTakeBack' => yesNo(
+      LoopL10n.current.market_tokenYesNo7,
+      LoopL10n.current.market_tokenYesNo8,
+    ),
+    'ownerChangeBalance' => yesNo(
+      LoopL10n.current.market_tokenYesNo9,
+      LoopL10n.current.market_tokenYesNo10,
+    ),
+    'hiddenOwner' => yesNo(
+      LoopL10n.current.market_readModelsYesNo11,
+      LoopL10n.current.market_readModelsYesNo12,
+    ),
+    'selfDestruct' => yesNo(
+      LoopL10n.current.market_tokenYesNo11,
+      LoopL10n.current.market_tokenYesNo12,
+    ),
+    'externalCall' => yesNo(
+      LoopL10n.current.market_readModelsYesNo15,
+      LoopL10n.current.market_readModelsYesNo16,
+    ),
+    'honeypot' => yesNo(
+      LoopL10n.current.market_readModelsYesNo17,
+      LoopL10n.current.market_readModelsYesNo18,
+    ),
+    'transferPausable' => yesNo(
+      LoopL10n.current.market_tokenYesNo13,
+      LoopL10n.current.market_tokenYesNo14,
+    ),
+    'blacklist' => yesNo(
+      LoopL10n.current.market_tokenYesNo15,
+      LoopL10n.current.market_tokenYesNo16,
+    ),
+    'whitelist' => yesNo(
+      LoopL10n.current.market_tokenYesNo17,
+      LoopL10n.current.market_tokenYesNo18,
+    ),
+    'antiWhale' => yesNo(
+      LoopL10n.current.market_readModelsYesNo25,
+      LoopL10n.current.market_readModelsYesNo26,
+    ),
+    'tradingCooldown' => yesNo(
+      LoopL10n.current.market_readModelsYesNo27,
+      LoopL10n.current.market_readModelsYesNo28,
+    ),
+    'cannotSellAll' => yesNo(
+      LoopL10n.current.market_tokenYesNo19,
+      LoopL10n.current.market_tokenYesNo20,
+    ),
+    'listedOnDex' => yesNo(
+      LoopL10n.current.market_readModelsYesNo31,
+      LoopL10n.current.market_readModelsYesNo32,
+    ),
     _ => null,
   };
   return short ?? marketSecurityFactText(fact);
@@ -1334,7 +1457,9 @@ class _CommunityBlock extends StatelessWidget {
         return LoopInlineUnavailable(
           key: const ValueKey<String>('token-community-unavailable'),
           icon: 'info',
-          message: '还没有绑定的 LOOP 社区 · ${loopReasonCodeText(reasonCode)}',
+          message: context.l10n.market_tokenTokenCommunityUnavailableMessage(
+            loopReasonCodeText(reasonCode),
+          ),
         );
       case MarketCommunityBound(
         communityId: final communityId,
@@ -1346,8 +1471,11 @@ class _CommunityBlock extends StatelessWidget {
             LoopRecordRow(
               key: const ValueKey<String>('token-community-entry'),
               leading: const LoopRowIcon(icon: 'community'),
-              title: '进入 LOOP 社区',
-              subtitle: '$name · $memberCount 名成员',
+              title: context.l10n.market_tokenTokenCommunityEntryTitle,
+              subtitle: context.l10n.market_tokenTokenCommunityEntrySubtitle(
+                memberCount,
+                name,
+              ),
               onTap: () => onOpenCommunity(communityId),
             ),
           ],
@@ -1391,7 +1519,7 @@ class _TokenNotificationFeedState
         phase: state.phase,
         failureKind: state.failureKind,
         rows: 1,
-        emptyMessage: '还没有与这个资产相关的通知',
+        emptyMessage: context.l10n.market_tokenEmptyMessage3,
         onRetry: () => unawaited(
           ref.read(notificationFeedControllerProvider.notifier).reload(),
         ),
@@ -1401,11 +1529,11 @@ class _TokenNotificationFeedState
         .where((entry) => entry.contextParams['assetId'] == widget.assetId)
         .toList(growable: false);
     if (entries.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('token-feed-empty'),
         illustration: LoopIllustration.chartEmpty,
-        title: '还没有与这个资产相关的通知',
-        message: '价格提醒触发后会出现在这里。推送还没有开放。',
+        title: context.l10n.market_tokenEmptyMessage3,
+        message: context.l10n.market_tokenTokenFeedEmptyMessage,
         compact: true,
       );
     }
@@ -1418,7 +1546,9 @@ class _TokenNotificationFeedState
             subtitle: _notificationDetail(entry),
             // Source and observation time on one line came out as 「来源 D…」.
             subtitleMaxLines: 2,
-            trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
+            trailingBadge: entry.isUnread
+                ? LoopBadge(context.l10n.common_unread)
+                : null,
             onTap: entry.isUnread
                 ? () => unawaited(
                     ref
@@ -1437,9 +1567,9 @@ String _notificationTitle(LoopNotificationEntry entry) {
   final threshold = entry.payload['threshold'];
   final observed = entry.payload['observedValue'];
   if (symbol == null || threshold == null || observed == null) {
-    return '价格提醒已触发';
+    return LoopL10n.current.market_tokenIf;
   }
-  return '$symbol 触发 $threshold（观察值 $observed）';
+  return LoopL10n.current.market_tokenIf2(observed, symbol, threshold);
 }
 
 String _notificationDetail(LoopNotificationEntry entry) {
@@ -1447,6 +1577,7 @@ String _notificationDetail(LoopNotificationEntry entry) {
   final observedAt = entry.observedAt;
   return <String>[
     ?source,
-    if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
+    if (observedAt != null)
+      LoopL10n.current.community_aiBuild2(loopRelativeTime(observedAt)),
   ].join(' · ');
 }

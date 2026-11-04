@@ -4344,6 +4344,1387 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get common_watchlist => '自选';
 
   @override
+  String get community_aiBody => '正在回答…';
+
+  @override
+  String community_aiBuild(Object? communityAiTimestamp, Object? label) {
+    return '$label · 观察于 $communityAiTimestamp';
+  }
+
+  @override
+  String community_aiBuild2(Object? communityAiTimestamp) {
+    return '观察于 $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiBuild3 => '选择一个原因。举报只记录这条回答和你的选择，不会上传你问过的问题。';
+
+  @override
+  String get community_aiCommunityAiCapabilitiesEmptyTitle => '这个社区还没有开放的助理能力';
+
+  @override
+  String get community_aiCommunityAiComposerHintText => '问这个社区的 AI';
+
+  @override
+  String get community_aiCommunityAiComposerUnavailableHintText => '提问还没有开放';
+
+  @override
+  String get community_aiCommunityAiHeadline => 'Community AI 还没有开放';
+
+  @override
+  String get community_aiCommunityAiHeroKicker => '社区简报';
+
+  @override
+  String get community_aiCommunityAiReportSheetBarrierLabel => '关闭举报选项';
+
+  @override
+  String get community_aiCommunityAiSourceSheetBarrierLabel => '关闭来源说明';
+
+  @override
+  String get community_aiCommunityAiStateEmptyTitle => '这个社区还没有可以问的内容';
+
+  @override
+  String get community_aiCommunityAiStatePermissionTitle => '当前账号还不能用这个助理';
+
+  @override
+  String get community_aiCommunityAiStateUnavailableMessage => '这一页暂时不可用';
+
+  @override
+  String get community_aiLabel => '已举报';
+
+  @override
+  String get community_aiLabel2 => '举报这条回答';
+
+  @override
+  String community_aiLabel3(Object? sourceId) {
+    return '来源 $sourceId';
+  }
+
+  @override
+  String get community_aiLoopLabel => '我能做什么';
+
+  @override
+  String get community_aiLoopLabel2 => '试试这些';
+
+  @override
+  String get community_aiLoopLabel3 => '规划中的能力';
+
+  @override
+  String get community_aiLoopOfflineState => '提问';
+
+  @override
+  String get community_aiMessage => '已提交举报';
+
+  @override
+  String get community_aiModelsCaption => '正在根据今天的讨论生成，稍后下拉刷新。';
+
+  @override
+  String get community_aiModelsCaption2 => '明天再来。这一页的其余内容不受影响。';
+
+  @override
+  String get community_aiModelsCommunityAiBriefPendingHeading => '今日摘要生成中';
+
+  @override
+  String get community_aiModelsCommunityAiBriefQuotaHeading => '今日摘要配额已用完';
+
+  @override
+  String community_aiModelsCommunityAiGeneratedLabel(
+    Object? communityAiTimestamp,
+    Object? model,
+  ) {
+    return 'AI 生成 · $model · $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiModelsCommunityAiKnowledgeLine => '暂无可用来源';
+
+  @override
+  String community_aiModelsCommunityAiKnowledgeLine2(
+    Object? communityAiTimestamp,
+    Object? sourceCount,
+  ) {
+    return '知识源 $sourceCount 项 · 更新于 $communityAiTimestamp';
+  }
+
+  @override
+  String get community_aiModelsHarmful => '有害或危险';
+
+  @override
+  String get community_aiModelsHeading => '今日讨论读不到';
+
+  @override
+  String get community_aiModelsInaccurate => '内容不准确';
+
+  @override
+  String get community_aiModelsOffTopic => '答非所问';
+
+  @override
+  String get community_aiModelsOther => '其他问题';
+
+  @override
+  String get community_aiModelsPrivacy => '涉及个人隐私';
+
+  @override
+  String community_aiModelsS(Object? messageCount) {
+    return '今日 $messageCount 条讨论';
+  }
+
+  @override
+  String get community_aiModelsSwitch => '还没有收录项目文档，这一项暂时答不了。';
+
+  @override
+  String get community_aiModelsSwitch10 => '这次没能读到官方群的讨论。';
+
+  @override
+  String get community_aiModelsSwitch11 => 'AI 这次没有答上来，稍后可以再试。';
+
+  @override
+  String get community_aiModelsSwitch12 => 'AI 拒绝了这次请求，再试也不会有结果。';
+
+  @override
+  String get community_aiModelsSwitch13 => 'AI 返回的内容不完整，这次没有采用。';
+
+  @override
+  String get community_aiModelsSwitch14 => '这个社区现在没有任何可用来源，暂时问不了。';
+
+  @override
+  String get community_aiModelsSwitch15 => 'AI 助理暂未开放。';
+
+  @override
+  String community_aiModelsSwitch16(Object? messageCount) {
+    return '今日至少 $messageCount 条讨论';
+  }
+
+  @override
+  String get community_aiModelsSwitch17 => '这个社区今天的提问额度用完了，明天再来。';
+
+  @override
+  String get community_aiModelsSwitch18 => '提问太频繁了，等一分钟再问。';
+
+  @override
+  String get community_aiModelsSwitch2 => '还没有收录新手教程，这一项暂时答不了。';
+
+  @override
+  String get community_aiModelsSwitch3 => '公告和官方动态暂未开放，这一项暂时答不了。';
+
+  @override
+  String get community_aiModelsSwitch4 => 'AI 巡查还没有开放。';
+
+  @override
+  String get community_aiModelsSwitch5 => '社区分析还没有开放。';
+
+  @override
+  String get community_aiModelsSwitch6 => '今日摘要生成中，稍后下拉刷新。';
+
+  @override
+  String get community_aiModelsSwitch7 => '今日摘要配额已用完，明天再来。';
+
+  @override
+  String get community_aiModelsSwitch8 => '先加入这个社区，才能读到社区里的讨论。';
+
+  @override
+  String get community_aiModelsSwitch9 => '这个社区还没有开通官方群，没有可以总结的讨论。';
+
+  @override
+  String get community_aiOutlook => '开放后，回答会带上来源和观察时间，不替代项目方公告。';
+
+  @override
+  String get community_aiSentenceGap => '';
+
+  @override
+  String community_aiSummary(Object? sources) {
+    return '本次使用的来源（$sources）';
+  }
+
+  @override
+  String community_aiSummary2(Object? omitted) {
+    return '本次未使用的来源（$omitted）';
+  }
+
+  @override
+  String get community_aiText => '项目知识';
+
+  @override
+  String get community_aiText10 => '价格、市值、流动性、权重、社区算力';
+
+  @override
+  String get community_aiText11 => '社区引导';
+
+  @override
+  String get community_aiText12 => '提醒你还没参与挖矿、权重已生效';
+
+  @override
+  String get community_aiText13 => 'AI 巡查';
+
+  @override
+  String get community_aiText14 => '检测诈骗链接、假 CA、钓鱼、假管理员';
+
+  @override
+  String get community_aiText15 => '社区分析';
+
+  @override
+  String get community_aiText16 => '仅管理员可见：DAU、转化、情绪变化';
+
+  @override
+  String get community_aiText17 => 'Tokenomics 怎么分配';
+
+  @override
+  String get community_aiText18 => '怎么参与挖矿';
+
+  @override
+  String get community_aiText19 => '这周有什么动态';
+
+  @override
+  String get community_aiText2 => '白皮书、Tokenomics、Roadmap、FAQ';
+
+  @override
+  String get community_aiText3 => '社区客服';
+
+  @override
+  String get community_aiText4 => 'CA 是什么、怎么买、怎么参与挖矿';
+
+  @override
+  String get community_aiText5 => '新手教育';
+
+  @override
+  String get community_aiText6 => '3 分钟了解项目、新手指南、资产安全';
+
+  @override
+  String get community_aiText7 => '项目动态';
+
+  @override
+  String get community_aiText8 => '官方 X、公告、Blog 汇总成日报周报';
+
+  @override
+  String get community_aiText9 => '资产信息';
+
+  @override
+  String get community_contractActivationRequired =>
+      '需要先完成 LOOP ID 激活才能执行社区与社交操作。';
+
+  @override
+  String get community_contractActivationRequired2 =>
+      '需要先完成 LOOP ID 激活才能申请社区。激活后可以重新提交这份申请。';
+
+  @override
+  String get community_contractAliasBlocked => '该名称在运营屏蔽名单内，请换一个再试。';
+
+  @override
+  String get community_contractAliasBlocked2 => '社区名称在当前的运营屏蔽名单内，请换一个名称再提交。';
+
+  @override
+  String get community_contractAliasReserved => '该名称属于 LOOP 保留词，请换一个再试。';
+
+  @override
+  String get community_contractAliasReserved2 =>
+      '社区名称撞上了 LOOP 保留词（如官方、支持、管理），请换一个名称再提交。';
+
+  @override
+  String get community_contractBootstrapRequired => '账号尚未完成初始化，请稍后重试。';
+
+  @override
+  String get community_contractBoundAssetTaken => '这个代币已被其他社区绑定，请换一个代币。';
+
+  @override
+  String get community_contractBoundAssetTaken2 => '这个代币已被其他社区绑定，请换一个代币再提交。';
+
+  @override
+  String get community_contractCancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。';
+
+  @override
+  String get community_contractCommunityBoundAssetUniqueHint =>
+      '每个代币只能被一个社区绑定。';
+
+  @override
+  String get community_contractIdempotencyConflict =>
+      '同一操作已被提交过且内容不同，请检查最新状态后再试。';
+
+  @override
+  String get community_contractInvalidData => '返回的数据不完整，这一页没有采用任何内容。';
+
+  @override
+  String get community_contractNotFound => '目标不存在、已被移除，或对当前账号不可见。';
+
+  @override
+  String get community_contractOffline => '设备已离线，这一页没有读到数据，也没有提交任何操作。';
+
+  @override
+  String get community_contractOutcomeUnknown =>
+      '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。';
+
+  @override
+  String get community_contractPermissionDenied => '当前账号没有执行这个操作的权限。';
+
+  @override
+  String get community_contractRateLimited => '搜索过于频繁，请稍等片刻再试。';
+
+  @override
+  String get community_contractResourceConflict => '该短链接已被其他社区占用，请换一个。';
+
+  @override
+  String get community_contractResourceConflict2 => '这个短链接已经被另一个社区占用，请换一个再提交。';
+
+  @override
+  String get community_contractStale => '状态已经改变（可能已被他人处理）。请刷新后重新决定。';
+
+  @override
+  String get community_contractSwitch => '未读数暂时读不到。';
+
+  @override
+  String get community_contractSwitch10 => '通信服务暂时不可用，问不到在线人数。';
+
+  @override
+  String get community_contractSwitch11 => '挖矿规则还没有确定，暂时不显示算力。';
+
+  @override
+  String get community_contractSwitch12 => '还没有算出过算力，暂时不能按算力排序。';
+
+  @override
+  String get community_contractSwitch13 => '最近一次结算没有完成，暂时不能按算力排序。';
+
+  @override
+  String get community_contractSwitch14 => '最近一次结算用的是旧规则，暂时不能按算力排序。';
+
+  @override
+  String get community_contractSwitch15 => '挖矿暂时不可用，暂时不能按算力排序。';
+
+  @override
+  String get community_contractSwitch16 => '讨论量暂时读不到，这个排序现在用不了。';
+
+  @override
+  String get community_contractSwitch17 => '这个社区的讨论量暂时读不到。';
+
+  @override
+  String get community_contractSwitch18 => '这个社区还没有绑定资产，没有算力。';
+
+  @override
+  String get community_contractSwitch19 => '这个社区的算力权重还在审核中。';
+
+  @override
+  String get community_contractSwitch2 => '语音房状态暂时读不到。';
+
+  @override
+  String get community_contractSwitch20 => '社区公告还没有开放。';
+
+  @override
+  String get community_contractSwitch21 => '官方链接还没有开放。';
+
+  @override
+  String get community_contractSwitch22 => '消息预览还没有开放。';
+
+  @override
+  String get community_contractSwitch23 => '资产注册表这次没有组合出来，稍后再试。';
+
+  @override
+  String get community_contractSwitch24 => 'LOOP 还没有 Launch 项目目录，这里没有可搜的条目。';
+
+  @override
+  String get community_contractSwitch25 => 'DApp 目录暂未开放。';
+
+  @override
+  String get community_contractSwitch26 => '邀请数据还没有开放。';
+
+  @override
+  String get community_contractSwitch27 => '邀请码还没有开放，暂时不能分享。';
+
+  @override
+  String get community_contractSwitch28 => '社区暂时不可用，稍后再试。';
+
+  @override
+  String get community_contractSwitch29 => '搜索暂时不可用，稍后再试。';
+
+  @override
+  String get community_contractSwitch3 => '在线人数暂时读不到。';
+
+  @override
+  String get community_contractSwitch4 => '这个社区还没有官方频道，没有可以询问的在线人数。';
+
+  @override
+  String get community_contractSwitch5 => '这个社区的官方频道没有建成，暂时问不到在线人数。';
+
+  @override
+  String get community_contractSwitch6 => '这次没能问到在线人数，稍后重试。';
+
+  @override
+  String get community_contractSwitch7 => '这次查询在线人数超时了，没有结果。';
+
+  @override
+  String get community_contractSwitch8 => '这个社区的成员超过 500 人，这一版还数不了在线人数。';
+
+  @override
+  String get community_contractSwitch9 => '这一步没有观察在线人数，回到社区详情可以重新读。';
+
+  @override
+  String get community_contractTimedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。';
+
+  @override
+  String get community_contractUnavailable => '社区服务暂时不可用，请稍后再试。';
+
+  @override
+  String get community_contractUnexpected => '操作没有完成，请稍后再试。';
+
+  @override
+  String get community_contractValidationFailed => '输入内容不符合要求，请修改后重试。';
+
+  @override
+  String get community_contractValidationFailed2 =>
+      '名称或简介太长（名称 1–40 字，简介不超过 280 字），请修改后再提交。';
+
+  @override
+  String get community_discoverBody => '提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。';
+
+  @override
+  String get community_discoverCaption =>
+      '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。';
+
+  @override
+  String get community_discoverCommunityApplyActionLabel => '申请入驻';
+
+  @override
+  String get community_discoverCommunityDiscoverCapabilityUnavailableTitle =>
+      '社区模块当前不可用';
+
+  @override
+  String get community_discoverCommunityDiscoverOrderingBackLabel => '按成员最多排序';
+
+  @override
+  String get community_discoverCommunityDiscoverScreenTitle => '已加入的社区';
+
+  @override
+  String get community_discoverCommunityDiscoverScreenTitle2 => '发现社区';
+
+  @override
+  String get community_discoverDiscussion => '讨论最多';
+
+  @override
+  String get community_discoverEmptyMessage => '没有符合条件的社区';
+
+  @override
+  String get community_discoverEmptyReason => '这个排序下没有社区。';
+
+  @override
+  String community_discoverHeading(Object? items) {
+    return '$items 个社区';
+  }
+
+  @override
+  String community_discoverHeading2(Object? items) {
+    return '已载入 $items 个社区';
+  }
+
+  @override
+  String get community_discoverKicker => '社区发现';
+
+  @override
+  String get community_discoverMembers => '成员最多';
+
+  @override
+  String community_discoverMessage(Object? label) {
+    return '「$label」暂时不可用';
+  }
+
+  @override
+  String get community_discoverNewest => '新社区';
+
+  @override
+  String get community_discoverPower => '算力最高';
+
+  @override
+  String get community_discoverResource => '社区目录';
+
+  @override
+  String get community_discoverTitle => '提交社区申请？';
+
+  @override
+  String community_homeActivitySentence(Object? clauses) {
+    return '$clauses。';
+  }
+
+  @override
+  String get community_homeBody => '按活跃度、持有人与 Mining 权重找到值得加入的社区';
+
+  @override
+  String get community_homeBuild => '发现';
+
+  @override
+  String community_homeBuild2(Object? communityObservedAtLabel) {
+    return '数据观察于 $communityObservedAtLabel';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption(Object? mostDiscussed) {
+    return '$mostDiscussed 讨论最活跃';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption2(Object? liveVoiceRooms) {
+    return '$liveVoiceRooms 个语音房正在进行';
+  }
+
+  @override
+  String community_homeCommunityActivityCaption3(Object? unreadMessages) {
+    return '$unreadMessages 条未读';
+  }
+
+  @override
+  String community_homeCommunityMemberCountLabel(Object? groupedFigure) {
+    return '$groupedFigure 成员';
+  }
+
+  @override
+  String community_homeLabel(Object? label, Object? unreadBadgeLabel) {
+    return '$label，$unreadBadgeLabel 条未读';
+  }
+
+  @override
+  String community_homeS(Object? count) {
+    return '发现，$count 个已验证';
+  }
+
+  @override
+  String get community_homeTitle => '发现新社区';
+
+  @override
+  String community_logoSemanticLabel(Object? name) {
+    return '$name 社区图标';
+  }
+
+  @override
+  String community_manageAsyncData(Object? admin, Object? all, Object? owner) {
+    return 'Owner $owner · Admin $admin · 共 $all 人';
+  }
+
+  @override
+  String community_manageAsyncError(Object? memberCount) {
+    return '$memberCount 位成员';
+  }
+
+  @override
+  String community_manageBody(Object? communityBoundAssetUniqueHint) {
+    return '$communityBoundAssetUniqueHint绑定代币会立刻影响社区页的代币卡片与群友买入动态。短链接与验证状态不能在这里修改。';
+  }
+
+  @override
+  String get community_manageBody2 => '短链接与验证状态不能在这里修改。';
+
+  @override
+  String get community_manageBoundAssetLine => '未绑定';
+
+  @override
+  String get community_manageBoundAssetTaken => '这个代币已被其他社区绑定，请换一个代币；资料没有修改。';
+
+  @override
+  String get community_manageCommunityManageAnnouncementsSubtitle => '公告发布即将推出';
+
+  @override
+  String get community_manageCommunityManageAnnouncementsTitle => '公告';
+
+  @override
+  String get community_manageCommunityManageBoundAssetTitle => '绑定代币';
+
+  @override
+  String get community_manageCommunityManageEditProfileSubtitle => '还没有简介';
+
+  @override
+  String get community_manageCommunityManageEditProfileTitle => '名称与简介';
+
+  @override
+  String get community_manageCommunityManageLogoNote =>
+      '社区图标、短链接与验证状态不能在这里修改；不提供解散社区。';
+
+  @override
+  String get community_manageCommunityManageLogoNote2 =>
+      '社区图标、短链接与验证状态不能在这里修改。';
+
+  @override
+  String get community_manageCommunityManageMembersTitle => '成员与权限';
+
+  @override
+  String get community_manageCommunityManageMissingIdDetail =>
+      '请从社区主页右上角的「管理」进入，本页不会猜测要管理哪个社区。';
+
+  @override
+  String get community_manageCommunityManageMissingIdMessage => '缺少社区标识';
+
+  @override
+  String get community_manageCommunityManagePermissionDetail =>
+      '你在这个社区的身份不包含管理权限；社区主页仍然可以照常查看。';
+
+  @override
+  String get community_manageCommunityManagePermissionMessage =>
+      '只有社区所有者与管理员可以管理';
+
+  @override
+  String get community_manageCommunityManageScreenTitle => '社区管理';
+
+  @override
+  String get community_manageCommunityManageShareSubtitle => '分享海报或复制社区链接';
+
+  @override
+  String get community_manageCommunityManageShareTitle => '社区二维码名片';
+
+  @override
+  String get community_manageCommunityManageTransferSubtitle =>
+      '在成员页选择成员，转让后你会降为 Admin';
+
+  @override
+  String get community_manageCommunityManageTransferTitle => '转让所有者';
+
+  @override
+  String get community_manageCommunityManageVoiceEnterSubtitle => '社区正在开播';
+
+  @override
+  String get community_manageCommunityManageVoiceEnterTitle => '进入语音房';
+
+  @override
+  String get community_manageCommunityManageVoiceOpenSubtitle =>
+      '你是主持人，麦克风默认关闭';
+
+  @override
+  String get community_manageCommunityManageVoiceOpenTitle => '开启语音房';
+
+  @override
+  String get community_manageEmptyMessage => '找不到这个社区';
+
+  @override
+  String get community_manageEmptyReason => '它可能已被移除，或对当前账号不可见。';
+
+  @override
+  String get community_manageGroups => '尚无已注册池子，群友买入动态不会出现。';
+
+  @override
+  String community_manageIf(Object? truncatedAddress) {
+    return '$truncatedAddress · 代币信息暂时读不到';
+  }
+
+  @override
+  String get community_manageIf2 => '已有注册池子';
+
+  @override
+  String get community_manageLoopTag => '仅所有者';
+
+  @override
+  String get community_manageMessage => '没有修改任何内容';
+
+  @override
+  String get community_manageMessage2 => '社区资料已更新';
+
+  @override
+  String get community_manageS => '尚无注册池子';
+
+  @override
+  String get community_manageSwitch => '这个代币还没有在 LOOP 登记，不能绑定；资料没有修改。';
+
+  @override
+  String get community_manageSwitch2 => '只有所有者能改绑定代币；资料没有修改。';
+
+  @override
+  String get community_manageTitle => '提交社区资料修改？';
+
+  @override
+  String get community_membersAdmin => '这个角色下没有成员。';
+
+  @override
+  String get community_membersAll => '这个社区目前没有可显示的成员。';
+
+  @override
+  String get community_membersBan => '封禁';
+
+  @override
+  String get community_membersBan2 =>
+      '被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。';
+
+  @override
+  String get community_membersBanned => '已封禁的成员';
+
+  @override
+  String get community_membersBanned2 => '这个社区目前没有被封禁的成员。';
+
+  @override
+  String community_membersBody(
+    Object? confirmationDetail,
+    Object? displayName,
+    Object? loopId,
+  ) {
+    return '目标：$displayName（$loopId）。$confirmationDetail';
+  }
+
+  @override
+  String get community_membersCommunityMembersMissingIdDetail =>
+      '请从社区档案进入，本页不会猜测要打开哪个社区。';
+
+  @override
+  String get community_membersCommunityMembersSearchClearHintText => '输入别名开头即可';
+
+  @override
+  String get community_membersCommunityMembersSearchClearLabel => '清除';
+
+  @override
+  String get community_membersCommunityMembersSearchClearLabelText => '按别名搜索成员';
+
+  @override
+  String get community_membersCommunityMembersSearchLabel => '关闭搜索';
+
+  @override
+  String get community_membersCommunityMembersSearchLabel2 => '搜索成员';
+
+  @override
+  String community_membersCommunityMissingHeading(Object? all) {
+    return '$all 名成员';
+  }
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyMessage => '没有匹配的成员';
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyMessage2 => '这个筛选下没有成员';
+
+  @override
+  String get community_membersCommunityStateEmptyEmptyReason =>
+      '别名要从开头对上才算匹配，换个开头再试。';
+
+  @override
+  String get community_membersCommunityStateEmptyPermissionTitle =>
+      '没有权限查看成员目录';
+
+  @override
+  String community_membersConfirmTitle(Object? label) {
+    return '$label？';
+  }
+
+  @override
+  String get community_membersDemote => '撤销 Admin';
+
+  @override
+  String get community_membersFilterSeg => '已封禁';
+
+  @override
+  String get community_membersLabel => '管理';
+
+  @override
+  String get community_membersMemberDirectoryPresenceNote =>
+      '成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。';
+
+  @override
+  String get community_membersMembersSegOnlineLabel => '在线';
+
+  @override
+  String community_membersMessage(Object? label) {
+    return '$label已生效';
+  }
+
+  @override
+  String get community_membersMute => '禁言';
+
+  @override
+  String get community_membersMuted => '已禁言';
+
+  @override
+  String get community_membersPromote => '任命为 Admin';
+
+  @override
+  String get community_membersResource => '成员目录';
+
+  @override
+  String community_membersS(Object? all) {
+    return '全部 $all';
+  }
+
+  @override
+  String community_membersS2(Object? owner) {
+    return '$owner 名 Owner';
+  }
+
+  @override
+  String community_membersS3(Object? admin) {
+    return '$admin 名 Admin';
+  }
+
+  @override
+  String community_membersSubtitle(Object? communityObservedAtLabel) {
+    return '加入于 $communityObservedAtLabel';
+  }
+
+  @override
+  String get community_membersSwitch => '这次操作会记入社区日志。';
+
+  @override
+  String get community_membersSwitch2 => 'Owner 权限';
+
+  @override
+  String get community_membersSwitch3 => 'Admin 权限';
+
+  @override
+  String community_membersTitle(Object? displayName) {
+    return '我 · $displayName';
+  }
+
+  @override
+  String get community_membersTransfer =>
+      '转让后你会降为 Admin：编辑社区资料、任免 Admin 和再次转让都归新的所有者，你仍可禁言、封禁普通成员。这一步不可撤销，只有新的所有者能把权限交还给你。';
+
+  @override
+  String get community_membersUnban => '解除封禁';
+
+  @override
+  String get community_membersUnban2 =>
+      '解除封禁会把该成员恢复为活跃成员，加入时间不变，并重新加回官方频道。对方不需要重新申请加入。';
+
+  @override
+  String get community_membersUnmute => '解除禁言';
+
+  @override
+  String get community_profileBody => '资料会先保存，然后重新进入审核队列。短链接与验证状态不能在这里修改。';
+
+  @override
+  String get community_profileBody2 => '加入后你会出现在成员列表里。';
+
+  @override
+  String get community_profileBody3 => '退出后你将从成员目录中移除。';
+
+  @override
+  String get community_profileBoundAssetTaken =>
+      '这个代币已被其他社区绑定，请先在资料里换一个代币再重新提交。';
+
+  @override
+  String get community_profileCommunityJoinActionLabel => '加入社区';
+
+  @override
+  String get community_profileCommunityMembershipBannedBody => '社区聊天与治理不可用';
+
+  @override
+  String get community_profileCommunityMembershipBannedTitle => '你已被该社区封禁';
+
+  @override
+  String get community_profileCommunityOnlineCountExplainLabel => '在线人数是怎么数的';
+
+  @override
+  String get community_profileCommunityOwnerCannotLeaveSemanticLabel =>
+      '退出社区，所有者不可用';
+
+  @override
+  String get community_profileCommunityOwnerCannotLeaveTitle => '退出社区';
+
+  @override
+  String get community_profileCommunityProfileCreateVoiceRoomLabel => '开语音房';
+
+  @override
+  String get community_profileCommunityProfileOpenAiSubtitle => '问问这个社区的事';
+
+  @override
+  String get community_profileCommunityProfileOpenAiTitle => '社区 AI';
+
+  @override
+  String get community_profileCommunityProfileOpenChatLabel => '进群聊';
+
+  @override
+  String get community_profileCommunityProfileOpenVoiceLabel => '直播中';
+
+  @override
+  String get community_profileCommunityProfileOpenVoiceSemanticLabel =>
+      '进入语音房 · 进行中';
+
+  @override
+  String get community_profileCommunityProfileShareSemanticLabel => '分享社区';
+
+  @override
+  String get community_profileConfirmLabel => '加入';
+
+  @override
+  String get community_profileLoopLabel => '官方链接';
+
+  @override
+  String community_profileLoopLabel2(Object? communityCountLabel) {
+    return '成员 $communityCountLabel';
+  }
+
+  @override
+  String community_profileMessage(Object? label) {
+    return '已复制 $label 链接';
+  }
+
+  @override
+  String get community_profileMessage2 => '已重新提交，状态回到审核中';
+
+  @override
+  String get community_profileMessage3 => '已加入社区';
+
+  @override
+  String get community_profileMessage4 => '已退出社区';
+
+  @override
+  String get community_profileResource => '社区档案';
+
+  @override
+  String get community_profileStale => '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。';
+
+  @override
+  String community_profileText(Object? communityCountLabel) {
+    return '$communityCountLabel 在线';
+  }
+
+  @override
+  String get community_profileTitle => '重新提交社区申请？';
+
+  @override
+  String get community_profileTitle2 => '加入这个社区？';
+
+  @override
+  String get community_profileTitle3 => '退出这个社区？';
+
+  @override
+  String get community_profileVoiceRoomArrivalOutcome => '加入社区后才能进入语音房';
+
+  @override
+  String get community_profileVoiceRoomArrivalOutcome2 => '语音房已结束';
+
+  @override
+  String get community_screenCommunityCapabilityUnavailableDeferredMessage =>
+      '社区还没有开放。';
+
+  @override
+  String get community_screenCommunityCapabilityUnavailableUnknownMessage =>
+      '社区还没有准备好，请稍后再试。';
+
+  @override
+  String get community_screenCommunityFolioCaption => '已加入的社区数量读到之后显示在这里。';
+
+  @override
+  String get community_screenCommunityFolioCaption2 => '社区数据暂时读不到，这一页不显示任何数字。';
+
+  @override
+  String get community_screenCommunityFolioCaption3 => '讨论热度与语音房活动还没有开放。';
+
+  @override
+  String community_screenCommunityFolioHeading(Object? miningCount) {
+    return '$miningCount 个社区在挖矿';
+  }
+
+  @override
+  String get community_screenCommunityFolioKicker => '社区索引';
+
+  @override
+  String get community_screenCommunityJoinedEmptyMessage =>
+      '从\"发现社区\"开始，加入后这里会显示你的社区。';
+
+  @override
+  String get community_screenCommunityViewAllJoinedLabel => '查看全部已加入的社区';
+
+  @override
+  String get community_screenEmptyMessage => '还没有加入任何社区';
+
+  @override
+  String get community_screenEmptyReason => '加入社区后，这里会列出你的社区。';
+
+  @override
+  String get community_screenHeading => '正在读取';
+
+  @override
+  String get community_screenLoopLabel => '带币社区 · 可挖矿';
+
+  @override
+  String get community_screenLoopLabel2 => '其他社区';
+
+  @override
+  String get community_screenResource => '社区数据';
+
+  @override
+  String community_searchControllerSearchFieldLabel(Object? searchableDomains) {
+    return '搜索$searchableDomains';
+  }
+
+  @override
+  String get community_searchControllerSearchScopeHint =>
+      '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索';
+
+  @override
+  String get community_searchLabel => '进入';
+
+  @override
+  String get community_searchLabel2 => '关注中';
+
+  @override
+  String community_searchLabel3(Object? name) {
+    return '从最近搜索移除 $name';
+  }
+
+  @override
+  String get community_searchMessage => '没有关注成功';
+
+  @override
+  String community_searchMessage2(Object? label) {
+    return '$label 暂时搜不到';
+  }
+
+  @override
+  String community_searchMessage3(Object? label) {
+    return '$label暂时搜不到';
+  }
+
+  @override
+  String get community_searchMessage4 => '剪贴板里没有可以搜索的内容';
+
+  @override
+  String get community_searchResource => '搜索结果';
+
+  @override
+  String get community_searchSearchCapabilityUnavailableTitle => '搜索当前不可用';
+
+  @override
+  String get community_searchSearchEmptyEmptyMessage => '没有匹配的结果';
+
+  @override
+  String community_searchSearchEmptyEmptyMessage2(Object? searchMinimumRunes) {
+    return '输入至少 $searchMinimumRunes 个字符开始搜索';
+  }
+
+  @override
+  String get community_searchSearchEmptyEmptyReason => '这个分类下没有结果。';
+
+  @override
+  String get community_searchSearchEmptyEmptyReason2 =>
+      '搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。';
+
+  @override
+  String get community_searchSearchEmptyMessage => '换个关键词，或切换上面的分类试试';
+
+  @override
+  String get community_searchSearchEmptyTitle => '没有找到匹配的结果';
+
+  @override
+  String get community_searchSearchEmptyTitle2 => '搜索代币、社区与用户';
+
+  @override
+  String get community_searchSearchPasteLoopIdLabel => '粘贴';
+
+  @override
+  String get community_searchSearchPriceAbsentText => '搜索不含价格';
+
+  @override
+  String get community_searchSearchRecentLabelAction => '清除全部';
+
+  @override
+  String get community_searchSearchRecentLabelLabel => '最近搜索';
+
+  @override
+  String community_searchSemanticLabel(Object? title) {
+    return '$title，代币，最近搜索';
+  }
+
+  @override
+  String community_searchSemanticLabel2(Object? memberCount, Object? title) {
+    return '$title，$memberCount 位成员';
+  }
+
+  @override
+  String get community_voiceRoomOpenMessage => '语音房已开启';
+
+  @override
+  String get community_voiceRoomOpenMessage2 => '这个社区已经有进行中的语音房，没有重复创建。请刷新后进入。';
+
+  @override
+  String get community_widgetsBarrierLabel => '关闭社区资料编辑';
+
+  @override
+  String get community_widgetsBarrierLabel2 => '关闭社区申请';
+
+  @override
+  String community_widgetsBoundAssetKey(Object? chainId) {
+    return '需要 40 位十六进制合约地址，可带 $chainId: 前缀。';
+  }
+
+  @override
+  String get community_widgetsCaption => '7 天讨论';
+
+  @override
+  String get community_widgetsCommunityAnnouncementsEmptyText => '暂无公告';
+
+  @override
+  String community_widgetsCommunityAnnouncementsUnavailableText(
+    Object? communityUnavailableReason,
+  ) {
+    return '暂无公告 · $communityUnavailableReason';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationPendingBody =>
+      '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。';
+
+  @override
+  String community_widgetsCommunityApplicationPendingTitle(
+    Object? localTimestampLabel,
+  ) {
+    return '审核中 · 提交于 $localTimestampLabel';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationProgressHint =>
+      '可以在「我的 → 我的社区 → 我创建的」查看审核进度。';
+
+  @override
+  String get community_widgetsCommunityApplicationRejectedBody =>
+      '运维没有给出原因。修改社区资料后可以重新提交。';
+
+  @override
+  String community_widgetsCommunityApplicationRejectedBody2(Object? reason) {
+    return '原因：$reason';
+  }
+
+  @override
+  String get community_widgetsCommunityApplicationResubmitLabel => '修改资料后重新提交';
+
+  @override
+  String get community_widgetsCommunityApplySubmitLabel => '提交申请';
+
+  @override
+  String get community_widgetsCommunityApplySubmittedOpenLabel => '查看社区';
+
+  @override
+  String community_widgetsCommunityBoundAssetChainNote(Object? name) {
+    return '只填合约地址即可，将按 $name 补全。';
+  }
+
+  @override
+  String community_widgetsCommunityBoundAssetHint(Object? chainId) {
+    return '0x…（也可粘贴 $chainId:0x… 整串）';
+  }
+
+  @override
+  String get community_widgetsCommunityConfirmAcceptBarrierLabel => '关闭确认弹层';
+
+  @override
+  String get community_widgetsCommunityLinksEmptyText => '暂无官方链接';
+
+  @override
+  String community_widgetsCommunityLinksUnavailableText(
+    Object? communityUnavailableReason,
+  ) {
+    return '暂无官方链接 · $communityUnavailableReason';
+  }
+
+  @override
+  String get community_widgetsCommunityMiningPowerParticipantsTitle => '有算力的成员';
+
+  @override
+  String community_widgetsCommunityMiningPowerRowSubtitle(
+    Object? communitySettlementLabel,
+  ) {
+    return '最近一次算力快照 · $communitySettlementLabel';
+  }
+
+  @override
+  String get community_widgetsCommunityMiningPowerWeightTitle => '社区权重';
+
+  @override
+  String get community_widgetsCommunityMissingHeading => '暂无数值';
+
+  @override
+  String get community_widgetsCommunityMissingName => '暂无名称';
+
+  @override
+  String get community_widgetsCommunityOnlineMeaningSheetBarrierLabel =>
+      '关闭在线人数说明';
+
+  @override
+  String community_widgetsCommunityPreviewNoticeBody(Object? resource) {
+    return '$resource只存在于这次开发预览里，不会写入账号，也不会上传。';
+  }
+
+  @override
+  String get community_widgetsCommunityRejectedReasonPreview => '驳回：运维没有给出原因';
+
+  @override
+  String community_widgetsCommunityRejectedReasonPreview2(Object? text) {
+    return '驳回：$text';
+  }
+
+  @override
+  String community_widgetsCommunityRejectedReasonPreview3(Object? head) {
+    return '驳回：$head…';
+  }
+
+  @override
+  String get community_widgetsCommunityStateUnavailableMessage => '该功能当前不可用';
+
+  @override
+  String get community_widgetsDescription => '简介最多 280 个字符，且不能包含控制字符。';
+
+  @override
+  String get community_widgetsFor => '我的持仓';
+
+  @override
+  String get community_widgetsFor2 => '我的算力';
+
+  @override
+  String get community_widgetsFor3 => '预估/日';
+
+  @override
+  String get community_widgetsHint => '短链接，小写字母、数字与连字符';
+
+  @override
+  String get community_widgetsHint2 => '简介（选填）';
+
+  @override
+  String community_widgetsHint3(Object? communityBoundAssetHint) {
+    return '绑定代币（选填）$communityBoundAssetHint';
+  }
+
+  @override
+  String community_widgetsIf(Object? localTimestampLabel) {
+    return '创建于 $localTimestampLabel';
+  }
+
+  @override
+  String community_widgetsIf2(Object? localTimestampLabel) {
+    return '提交于 $localTimestampLabel';
+  }
+
+  @override
+  String get community_widgetsLabel => '权重';
+
+  @override
+  String get community_widgetsLabel2 => '社区总算力';
+
+  @override
+  String get community_widgetsLabel3 => '算力快照';
+
+  @override
+  String get community_widgetsLabel4 => '短链接（不可修改）';
+
+  @override
+  String get community_widgetsLabel5 => '不设置社区标识';
+
+  @override
+  String community_widgetsLabel6(Object? reference) {
+    return '社区标识 $reference';
+  }
+
+  @override
+  String get community_widgetsLabelText => '社区名称';
+
+  @override
+  String get community_widgetsLabelText2 => '简介（可留空）';
+
+  @override
+  String get community_widgetsLabelText3 => '绑定代币（仅所有者，可留空）';
+
+  @override
+  String get community_widgetsLoopOfflineState => '屏蔽';
+
+  @override
+  String get community_widgetsLoopOfflineState2 => '治理';
+
+  @override
+  String get community_widgetsLoopPageBlock => '请稍后再试。';
+
+  @override
+  String get community_widgetsLoopSheetHeading => '这里数的是连接，不是活跃';
+
+  @override
+  String get community_widgetsLoopSheetHeading2 => '申请已提交 · 审核中';
+
+  @override
+  String get community_widgetsLoopSheetHeading3 => '编辑社区资料';
+
+  @override
+  String get community_widgetsLoopSheetHeading4 => '创建社区';
+
+  @override
+  String get community_widgetsMiningCommunityWeightApproved =>
+      '已按审核结果授予，算在上面的数里';
+
+  @override
+  String get community_widgetsMiningCommunityWeightPending => '权重还在审核中，这里不显示数值';
+
+  @override
+  String get community_widgetsMiningCommunityWeightPending2 => '没有绑定代币，没有权重可审';
+
+  @override
+  String get community_widgetsMiningParticipantsCount => '最近一次算力快照里算出了算力的人';
+
+  @override
+  String get community_widgetsMiningParticipantsUnavailable => '这一项暂时读不到';
+
+  @override
+  String get community_widgetsName => '名称需要 1–40 个字符，且不能包含控制字符。';
+
+  @override
+  String community_widgetsRankedSemantic(Object? caption, Object? value) {
+    return '$caption$value';
+  }
+
+  @override
+  String get community_widgetsRejected => '已驳回';
+
+  @override
+  String community_widgetsS(Object? name) {
+    return '暂未取到链状态，只填地址时将按 $name 补全。';
+  }
+
+  @override
+  String community_widgetsSemantic(Object? power, Object? weight) {
+    return '社区挖矿面板，权重 $weight，社区算力 $power';
+  }
+
+  @override
+  String get community_widgetsSemanticValue => '暂时读不到';
+
+  @override
+  String community_widgetsSemanticValue2(Object? messageCount) {
+    return '至少 $messageCount 条';
+  }
+
+  @override
+  String community_widgetsSemanticValue3(Object? messageCount) {
+    return '$messageCount 条';
+  }
+
+  @override
+  String community_widgetsShowCommunityApplicationSubmittedSheet(
+    Object? communityApplicationProgressHint,
+    Object? communityName,
+  ) {
+    return '「$communityName」已进入审核队列，你是它的所有者。$communityApplicationProgressHint通过后才会显示验证标记，并开放挖矿权重与官方群。';
+  }
+
+  @override
+  String community_widgetsShowCommunityPresenceMeaningSheet(
+    Object? communityCountLabel,
+  ) {
+    return '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数（$communityCountLabel 人），不是「正在看这个频道」，不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。';
+  }
+
+  @override
+  String get community_widgetsSlug => '短链接只能是 3–32 位小写字母、数字或连字符。';
+
+  @override
+  String get community_widgetsSwitch => '社区挖矿';
+
+  @override
+  String community_widgetsSwitch2(Object? identifier) {
+    return '这次算力快照所用的公式版本 $identifier';
+  }
+
+  @override
+  String community_widgetsText(
+    Object? communityBoundAssetChainNote,
+    Object? communityBoundAssetUniqueHint,
+  ) {
+    return '$communityBoundAssetChainNote$communityBoundAssetUniqueHint提交后进入审核，你是所有者；验证标记由运维核验后设置。';
+  }
+
+  @override
+  String community_widgetsValue(Object? communityObservedAtLabel) {
+    return '$communityObservedAtLabel · 未更新';
+  }
+
+  @override
+  String get community_widgetsVerified => '已验证';
+
+  @override
+  String get community_widgetsVerified2 => '已通过';
+
+  @override
   String get coreAssets_loopLabel => 'Voyager_7 头像';
 
   @override
@@ -11177,6 +12558,2327 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get launch_widgetsUnscheduled => '已批准，待排期';
+
+  @override
+  String get marketAlerts_modelsAbove => '涨破';
+
+  @override
+  String get marketAlerts_modelsActive => '监听中';
+
+  @override
+  String get marketAlerts_modelsAtOrAbove => '涨到';
+
+  @override
+  String get marketAlerts_modelsAtOrBelow => '跌到';
+
+  @override
+  String get marketAlerts_modelsBelow => '跌破';
+
+  @override
+  String get marketAlerts_modelsTriggered => '已触发';
+
+  @override
+  String get marketAlerts_screenAbove => '突破：价格必须高于阈值（> 阈值）才触发，正好等于阈值不算。';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickLabel => '从自选里选择资产';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickerEmptyMessage =>
+      '先在行情页把资产加入自选，或者直接在代币页用提醒入口新建。';
+
+  @override
+  String get marketAlerts_screenAlertAssetPickerEmptyTitle => '自选里还没有资产';
+
+  @override
+  String get marketAlerts_screenAlertAssetRowSubtitle => '这个资产的名称暂时读不到';
+
+  @override
+  String get marketAlerts_screenAlertDeleteConfirmBodyBody =>
+      '已经触发过的记录留在触发历史里，不会被删掉。';
+
+  @override
+  String get marketAlerts_screenAlertDeleteConfirmBodyTitle => '删除之后不会再监听这个价格';
+
+  @override
+  String get marketAlerts_screenAlertsCapabilityBlockTitle => '价格提醒当前不可用';
+
+  @override
+  String get marketAlerts_screenAlertsCommandErrorTitle => '提醒没有更新';
+
+  @override
+  String get marketAlerts_screenAlertsCreateActionLabel => '新建';
+
+  @override
+  String marketAlerts_screenAlertsEmptyTitle(Object? focusLabel) {
+    return '$focusLabel 还没有提醒';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsEndText => '没有更多提醒';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyMessage =>
+      '提醒触发后会在这里留下一条记录，标注出处和时间。';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyPageMessage => '后面还有记录，继续往下滑。';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEmptyPageTitle => '这一页没有价格提醒的记录';
+
+  @override
+  String get marketAlerts_screenAlertsFeedEndText => '没有更多触发记录';
+
+  @override
+  String get marketAlerts_screenAlertsFeedMoreFailedMessage => '下一页触发记录没有读到';
+
+  @override
+  String marketAlerts_screenAlertsFeedUnreadText(Object? unreadCount) {
+    return '未读 $unreadCount 条';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsMoreFailedMessage => '下一页提醒没有读到';
+
+  @override
+  String get marketAlerts_screenAlertsNotificationSettingsSubtitle =>
+      '关闭价格提醒类别后仍会记录事件，但不会生成通知';
+
+  @override
+  String get marketAlerts_screenAlertsPushNoticeBody =>
+      '推送还没有开放，提醒只出现在应用内的通知列表里。只有最新价格会触发提醒。';
+
+  @override
+  String get marketAlerts_screenAlertsPushNoticeTitle => '推送尚不可用';
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle(
+    Object? armed,
+    Object? focusLabel,
+  ) {
+    return '$focusLabel · $armed 个提醒正在监听 · 触发一次即停';
+  }
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle2(Object? items) {
+    return '已载入 $items 条提醒 · 触发一次即停';
+  }
+
+  @override
+  String marketAlerts_screenAlertsScreenSubtitle3(Object? armed) {
+    return '$armed 个提醒正在监听 · 触发一次即停';
+  }
+
+  @override
+  String get marketAlerts_screenAlertsShowEveryAssetLabel => '查看全部资产的提醒';
+
+  @override
+  String get marketAlerts_screenAtOrAbove => '到达：价格达到或高于阈值（≥ 阈值）就触发。';
+
+  @override
+  String get marketAlerts_screenAtOrBelow => '到达：价格达到或低于阈值（≤ 阈值）就触发。';
+
+  @override
+  String get marketAlerts_screenBelow => '突破：价格必须低于阈值（< 阈值）才触发，正好等于阈值不算。';
+
+  @override
+  String get marketAlerts_screenEmptyMessage => '还没有价格提醒';
+
+  @override
+  String get marketAlerts_screenEmptyMessage2 => '自选列表还没有读到';
+
+  @override
+  String get marketAlerts_screenEmptyMessage3 => '还没有触发记录';
+
+  @override
+  String get marketAlerts_screenEmptyReason => '设一个目标价，价格到了会在通知里告诉你。';
+
+  @override
+  String get marketAlerts_screenError => '先选择要监听的资产。';
+
+  @override
+  String get marketAlerts_screenHintText => '例如 800.5';
+
+  @override
+  String get marketAlerts_screenLabel => '不删除';
+
+  @override
+  String get marketAlerts_screenLabelText => '阈值（USD）';
+
+  @override
+  String get marketAlerts_screenLoopBadge => '本次触发';
+
+  @override
+  String get marketAlerts_screenLoopBadge2 => '可更换';
+
+  @override
+  String get marketAlerts_screenLoopBadge3 => '不可更换';
+
+  @override
+  String get marketAlerts_screenLoopLabel => '已设提醒';
+
+  @override
+  String get marketAlerts_screenLoopLabel2 => '触发历史';
+
+  @override
+  String get marketAlerts_screenLoopLabel3 => '触发条件';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState => '新建提醒';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState2 => '修改提醒';
+
+  @override
+  String get marketAlerts_screenLoopOfflineState3 => '删除提醒';
+
+  @override
+  String get marketAlerts_screenLoopRecordRow => '通知已记录这次触发';
+
+  @override
+  String marketAlerts_screenLoopRecordRow2(Object? formatPercent) {
+    return '距目标 $formatPercent';
+  }
+
+  @override
+  String get marketAlerts_screenLoopRecordRow3 => '评估器还没有看过这条';
+
+  @override
+  String marketAlerts_screenLoopRecordRow4(Object? relativeTime) {
+    return '评估于 $relativeTime';
+  }
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading => '删除这个提醒？';
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading2 => '新建价格提醒';
+
+  @override
+  String get marketAlerts_screenLoopSheetHeading3 => '选择资产';
+
+  @override
+  String get marketAlerts_screenMessage => '提醒已删除';
+
+  @override
+  String get marketAlerts_screenMessage2 => '提醒已保存';
+
+  @override
+  String get marketAlerts_screenS => '编辑价格提醒';
+
+  @override
+  String get marketAlerts_screenSetState => '这个资产不能用于价格提醒，请换一个。';
+
+  @override
+  String get marketAlerts_screenSetState2 => '阈值必须是正的十进制数字，最多 18 位小数。';
+
+  @override
+  String get marketAlerts_screenSetState3 => '过期时间必须在未来。';
+
+  @override
+  String get marketAlerts_screenText => '删除这个提醒';
+
+  @override
+  String get marketAlerts_screenTitle => '当前账号无权修改价格提醒';
+
+  @override
+  String marketWatchlist_controllerAdd(Object? name) {
+    return '新增分组 $name';
+  }
+
+  @override
+  String marketWatchlist_controllerAdd2(Object? name) {
+    return '移除分组 $name';
+  }
+
+  @override
+  String marketWatchlist_controllerAddedItems(Object? added) {
+    return '新增 $added 项';
+  }
+
+  @override
+  String marketWatchlist_controllerGroupChange(Object? change, Object? name) {
+    return '$name：$change';
+  }
+
+  @override
+  String marketWatchlist_controllerRemovedItems(Object? removed) {
+    return '移除 $removed 项';
+  }
+
+  @override
+  String get marketWatchlist_controllerReordered => '重新排序';
+
+  @override
+  String marketWatchlist_controllerStringBuffer(Object? version) {
+    return 'LOOP 自选草稿（基于版本 $version）';
+  }
+
+  @override
+  String marketWatchlist_editorBuild(Object? watchlistMaxGroups) {
+    return '分组保存后才会生效，最多 $watchlistMaxGroups 个。';
+  }
+
+  @override
+  String get marketWatchlist_editorBuild2 => '重新加载会丢弃';
+
+  @override
+  String get marketWatchlist_editorEmptyMessage => '还没有自选资产';
+
+  @override
+  String get marketWatchlist_editorEmptyReason => '打开代币页，点右上角星标即可加入自选。';
+
+  @override
+  String marketWatchlist_editorHintText(Object? watchlistMaxNameCodePoints) {
+    return '1–$watchlistMaxNameCodePoints 个字符';
+  }
+
+  @override
+  String marketWatchlist_editorLabel(Object? displayName) {
+    return '移除 $displayName';
+  }
+
+  @override
+  String get marketWatchlist_editorLabelText => '分组名称';
+
+  @override
+  String get marketWatchlist_editorLoopBadge => '不可读';
+
+  @override
+  String get marketWatchlist_editorLoopLabel => '分组';
+
+  @override
+  String get marketWatchlist_editorLoopOfflineState => '保存自选';
+
+  @override
+  String get marketWatchlist_editorMessage => '草稿已复制';
+
+  @override
+  String get marketWatchlist_editorMessage2 => '自选已保存';
+
+  @override
+  String get marketWatchlist_editorResource => '自选列表';
+
+  @override
+  String get marketWatchlist_editorTitle => '当前账号无权保存自选';
+
+  @override
+  String get marketWatchlist_editorUnsavedSuffix => ' · 未保存';
+
+  @override
+  String get marketWatchlist_editorWatchlistCapabilityBlockTitle => '自选编辑当前不可用';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictBody =>
+      '自选已在其他设备上改动。重新加载会丢弃下面这些改动，先复制草稿再决定。';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictCopyDraftLabel => '复制当前草稿';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictNoDiff =>
+      '这份草稿与已提交的版本没有差异。';
+
+  @override
+  String get marketWatchlist_editorWatchlistConflictTitle => '版本冲突 —— 没有覆盖任何内容';
+
+  @override
+  String get marketWatchlist_editorWatchlistDiscardLabel => '放弃修改';
+
+  @override
+  String marketWatchlist_editorWatchlistEditorScreenSubtitle(
+    Object? distinctAssetCount,
+    Object? state,
+  ) {
+    return '$distinctAssetCount 个自选资产$state';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupEmptyAddLabel => '添加资产';
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupEmptyTitle => '这个分组还没有资产';
+
+  @override
+  String marketWatchlist_editorWatchlistGroupLabel(
+    Object? items,
+    Object? name,
+  ) {
+    return '$name $items · 拖动排序 · 左滑删除';
+  }
+
+  @override
+  String marketWatchlist_editorWatchlistGroupLimitBody(
+    Object? watchlistMaxGroups,
+  ) {
+    return '分组已达上限 $watchlistMaxGroups 个。要新建一个，先删掉一个现有分组。';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistGroupNameConfirmLabel => '添加分组';
+
+  @override
+  String get marketWatchlist_editorWatchlistNewGroupEmptyLabel => '新建分组';
+
+  @override
+  String marketWatchlist_editorWatchlistNoGroupsMessage(
+    Object? watchlistDefaultGroupName,
+  ) {
+    return '有两条路：在代币页点右上角星标，资产会进入默认分组「$watchlistDefaultGroupName」；或者在这里先建一个分组。';
+  }
+
+  @override
+  String get marketWatchlist_editorWatchlistNoGroupsTitle => '还没有分组';
+
+  @override
+  String get marketWatchlist_editorWatchlistNoticeText =>
+      '这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。资产必须已经在 LOOP 登记，否则整份自选表都不会保存。';
+
+  @override
+  String get marketWatchlist_editorWatchlistNoticeTitle => '自选不是行情';
+
+  @override
+  String get marketWatchlist_editorWatchlistSaveErrorTitle => '自选没有保存';
+
+  @override
+  String get marketWatchlist_editorWatchlistSaveLabel => '正在保存…';
+
+  @override
+  String get marketWatchlist_editorWatchlistUndoLabel => '撤销';
+
+  @override
+  String marketWatchlist_editorWatchlistUndoMessage(Object? displayName) {
+    return '已移除 $displayName，保存后生效';
+  }
+
+  @override
+  String get marketWatchlist_membershipControllerActionLabel => '移出自选';
+
+  @override
+  String get marketWatchlist_membershipControllerS => '加入自选';
+
+  @override
+  String get marketWatchlist_modelsDuplicate => '已经有同名分组了。';
+
+  @override
+  String get marketWatchlist_modelsEmpty => '分组名称不能为空。';
+
+  @override
+  String marketWatchlist_modelsGroupLimitReached(Object? watchlistMaxGroups) {
+    return '分组已达上限 $watchlistMaxGroups 个，先移除一个再新建。';
+  }
+
+  @override
+  String get marketWatchlist_modelsInvalidCharacters => '分组名称里有不能使用的隐藏字符。';
+
+  @override
+  String get marketWatchlist_modelsNotEditable => '自选还没有读取成功，暂时不能新建分组。';
+
+  @override
+  String marketWatchlist_modelsTooLong(Object? watchlistMaxNameCodePoints) {
+    return '分组名称最多 $watchlistMaxNameCodePoints 个字符。';
+  }
+
+  @override
+  String get market_chartFifteenMinutes => '15分';
+
+  @override
+  String get market_chartFourHours => '4时';
+
+  @override
+  String get market_chartOneDay => '1日';
+
+  @override
+  String get market_chartOneHour => '1时';
+
+  @override
+  String get market_chartOneWeek => '1周';
+
+  @override
+  String get market_chartToolbarLabel => 'K线';
+
+  @override
+  String get market_chartToolbarLabel2 => '折线';
+
+  @override
+  String market_chartToolbarS(Object? labels) {
+    return '$labels · 本机计算';
+  }
+
+  @override
+  String get market_chartToolbarSemantic => '切换到 K 线';
+
+  @override
+  String get market_chartToolbarSemantic2 => '切换到折线';
+
+  @override
+  String get market_chartToolbarSemantic3 => '均线';
+
+  @override
+  String get market_chartToolbarSemantic4 => '成交量';
+
+  @override
+  String get market_fomoBuild => '24 小时涨跌未报告';
+
+  @override
+  String get market_fomoDerived => '按成交价折算';
+
+  @override
+  String market_fomoDown(Object? figure) {
+    return '24 小时走势下跌 $figure';
+  }
+
+  @override
+  String get market_fomoMarker => '池子推算';
+
+  @override
+  String get market_fomoMarketTrendPercent => '未报告';
+
+  @override
+  String market_fomoMarketTrendSpoken(Object? signedPercent) {
+    return '24 小时涨跌 $signedPercent';
+  }
+
+  @override
+  String get market_fomoProxied => '以 WBNB 计价';
+
+  @override
+  String market_fomoS(Object? formatPercent) {
+    return '24 小时 $formatPercent';
+  }
+
+  @override
+  String get market_fomoStale => '延迟';
+
+  @override
+  String market_fomoSubtitle(Object? formatCompactFigure) {
+    return '市值 $formatCompactFigure';
+  }
+
+  @override
+  String get market_fomoSwitch => '暂无报价';
+
+  @override
+  String get market_fomoSwitch2 => '行情限流中';
+
+  @override
+  String get market_fomoSwitch3 => '行情暂时取不到';
+
+  @override
+  String get market_fomoSwitch4 => '行情源未开启';
+
+  @override
+  String get market_fomoSwitch5 => '没有交易对';
+
+  @override
+  String get market_fomoSwitch6 => '交易对无法报价';
+
+  @override
+  String get market_fomoSwitch7 => '行情源未报告';
+
+  @override
+  String get market_fomoSwitch8 => '行情缓存不可用';
+
+  @override
+  String market_fomoUnread(Object? figure) {
+    return '24 小时走势持平 $figure';
+  }
+
+  @override
+  String market_fomoUp(Object? figure) {
+    return '24 小时走势上涨 $figure';
+  }
+
+  @override
+  String get market_readModelsCommunity => '社区代币';
+
+  @override
+  String get market_readModelsMajor => '主流';
+
+  @override
+  String get market_readModelsMarketAssetUnavailableLead => '这个地址暂时读不到';
+
+  @override
+  String market_readModelsProvider(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  ) {
+    return '主池来自 $factSourceLabel · 未登记池 $truncatedAddress';
+  }
+
+  @override
+  String market_readModelsRegistry(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  ) {
+    return '来源 $factSourceLabel · 池 $truncatedAddress';
+  }
+
+  @override
+  String get market_readModelsSwitch => '按 DexScreener 24h 成交量排序';
+
+  @override
+  String market_readModelsSwitch2(Object? ordering) {
+    return '排序规则 $ordering';
+  }
+
+  @override
+  String market_readModelsSwitch3(Object? fact) {
+    return '买入税 $fact';
+  }
+
+  @override
+  String market_readModelsSwitch4(Object? fact) {
+    return '卖出税 $fact';
+  }
+
+  @override
+  String market_readModelsSwitch5(Object? labelKey) {
+    return '来源标注 $labelKey';
+  }
+
+  @override
+  String get market_readModelsSwitch6 => '按 DexScreener 市值从高到低';
+
+  @override
+  String get market_readModelsSwitch7 => '按 DexScreener 24h 涨跌从高到低';
+
+  @override
+  String get market_readModelsSwitch8 => '按 DexScreener 24h 成交额从高到低';
+
+  @override
+  String get market_readModelsYesNo => '合约已验证开源';
+
+  @override
+  String get market_readModelsYesNo10 => '所有者不可改动余额';
+
+  @override
+  String get market_readModelsYesNo11 => '检测到隐藏所有者';
+
+  @override
+  String get market_readModelsYesNo12 => '未检测到隐藏所有者';
+
+  @override
+  String get market_readModelsYesNo13 => '检测到自毁函数';
+
+  @override
+  String get market_readModelsYesNo14 => '未检测到自毁函数';
+
+  @override
+  String get market_readModelsYesNo15 => '检测到外部调用';
+
+  @override
+  String get market_readModelsYesNo16 => '未检测到外部调用';
+
+  @override
+  String get market_readModelsYesNo17 => '检测到蜜罐特征';
+
+  @override
+  String get market_readModelsYesNo18 => '未检测到蜜罐特征';
+
+  @override
+  String get market_readModelsYesNo19 => '转账可被暂停';
+
+  @override
+  String get market_readModelsYesNo2 => '合约未验证开源';
+
+  @override
+  String get market_readModelsYesNo20 => '转账不可被暂停';
+
+  @override
+  String get market_readModelsYesNo21 => '检测到黑名单函数';
+
+  @override
+  String get market_readModelsYesNo22 => '未检测到黑名单函数';
+
+  @override
+  String get market_readModelsYesNo23 => '检测到白名单函数';
+
+  @override
+  String get market_readModelsYesNo24 => '未检测到白名单函数';
+
+  @override
+  String get market_readModelsYesNo25 => '检测到持仓上限';
+
+  @override
+  String get market_readModelsYesNo26 => '未检测到持仓上限';
+
+  @override
+  String get market_readModelsYesNo27 => '检测到交易冷却';
+
+  @override
+  String get market_readModelsYesNo28 => '未检测到交易冷却';
+
+  @override
+  String get market_readModelsYesNo29 => '不能一次卖出全部';
+
+  @override
+  String get market_readModelsYesNo3 => '是代理合约';
+
+  @override
+  String get market_readModelsYesNo30 => '可以一次卖出全部';
+
+  @override
+  String get market_readModelsYesNo31 => '已在 DEX 上架';
+
+  @override
+  String get market_readModelsYesNo32 => '未在 DEX 上架';
+
+  @override
+  String get market_readModelsYesNo4 => '不是代理合约';
+
+  @override
+  String get market_readModelsYesNo5 => '检测到 mint 函数';
+
+  @override
+  String get market_readModelsYesNo6 => '未检测到 mint 函数';
+
+  @override
+  String get market_readModelsYesNo7 => '检测到所有权可收回';
+
+  @override
+  String get market_readModelsYesNo8 => '未检测到所有权可收回';
+
+  @override
+  String get market_readModelsYesNo9 => '所有者可改动余额';
+
+  @override
+  String get market_screenCommunity => '还没有已认证社区绑定代币。';
+
+  @override
+  String get market_screenEmptyMessage => '暂时没有可展示的行情';
+
+  @override
+  String get market_screenEmptyMessage2 => '这个分类还没有代币';
+
+  @override
+  String get market_screenMajor => '主流资产名单里暂时没有可展示的资产。';
+
+  @override
+  String get market_screenMarketCapabilityBlockTitle => '行情模块当前不可用';
+
+  @override
+  String get market_screenMarketSmartMoneyEntryTitle => '聪明钱追踪';
+
+  @override
+  String get market_screenMarketWatchlistBrowseMajorLabel => '去主流看看';
+
+  @override
+  String get market_screenMarketWatchlistEmptyMessage => '在代币页点右上角的星标，就能加进自选';
+
+  @override
+  String get market_screenMarketWatchlistEmptyTitle => '还没有自选';
+
+  @override
+  String get market_screenMarketWatchlistManageSubtitle => '排序、分组与移除';
+
+  @override
+  String get market_screenMarketWatchlistManageTitle => '管理自选';
+
+  @override
+  String market_screenMarketWatchlistUnavailableMessage(
+    Object? reasonCodeText,
+  ) {
+    return '自选行情暂时读不到 · $reasonCodeText';
+  }
+
+  @override
+  String get market_screenMeme => '还没有已登记的 Launch 项目代币。';
+
+  @override
+  String get market_screenNewPairs => '新币';
+
+  @override
+  String market_screenTitle(Object? label) {
+    return '「$label」里还没有代币';
+  }
+
+  @override
+  String get market_secondaryScreensChartFullBlockedTitle => '全屏图表';
+
+  @override
+  String get market_secondaryScreensChartFullIntervalNoticeText =>
+      '周期可选 15分 / 1时 / 4时 / 1日 / 1周；左右拖动看更早的数据，双指缩放，长按看某一根的价格和时间。MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源；除此之外没有其他指标，也没有画线工具。';
+
+  @override
+  String get market_secondaryScreensChartFullIntervalNoticeTitle => '这张图能做什么';
+
+  @override
+  String get market_secondaryScreensFact => '持有人总数';
+
+  @override
+  String get market_secondaryScreensInvalidAssetIdentityMessage =>
+      '本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。';
+
+  @override
+  String get market_secondaryScreensInvalidAssetIdentityTitle => '路由中没有可用的资产标识';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage => '无法打开这张图表';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage2 => '无法打开持有人分布';
+
+  @override
+  String get market_secondaryScreensInvalidAssetPage3 => '无法打开交易活动';
+
+  @override
+  String get market_secondaryScreensLabel => 'Top 10 集中度';
+
+  @override
+  String get market_secondaryScreensLabel2 => '自选当前不可用';
+
+  @override
+  String get market_secondaryScreensLoopLabel => '分布';
+
+  @override
+  String get market_secondaryScreensLoopLabel2 => '风险预筛';
+
+  @override
+  String get market_secondaryScreensLoopLabel3 => '关注地址';
+
+  @override
+  String get market_secondaryScreensLoopLabel4 => '最近动向';
+
+  @override
+  String market_secondaryScreensLoopProvenanceFooter(Object? groupedFigure) {
+    return '索引高度 $groupedFigure';
+  }
+
+  @override
+  String market_secondaryScreensLoopProvenanceFooter2(Object? groupedFigure) {
+    return '数据落后 $groupedFigure 块';
+  }
+
+  @override
+  String market_secondaryScreensLoopRecordRow(Object? groupedFigure) {
+    return '$groupedFigure 确认';
+  }
+
+  @override
+  String market_secondaryScreensLoopRecordRow2(Object? groupedFigure) {
+    return '区块 $groupedFigure';
+  }
+
+  @override
+  String get market_secondaryScreensMarketSegmentBar => '大单';
+
+  @override
+  String get market_secondaryScreensMarketSegmentBar2 => '聪明钱';
+
+  @override
+  String get market_secondaryScreensNewPairsEmptyMessage =>
+      '这是数据本身的结果，不是筛选后的结论。';
+
+  @override
+  String get market_secondaryScreensNewPairsEmptyTitle => '当前没有新的池';
+
+  @override
+  String get market_secondaryScreensNewPairsFolioCaption =>
+      '先看流动性、合约状态与数据出处，再看短期价格。';
+
+  @override
+  String market_secondaryScreensNewPairsFolioHeading(Object? items) {
+    return '$items 个新对 · 高风险';
+  }
+
+  @override
+  String get market_secondaryScreensNewPairsFolioHeading2 => '新的池暂时读不到';
+
+  @override
+  String get market_secondaryScreensNewPairsFolioHeading3 => '正在读取新的池';
+
+  @override
+  String get market_secondaryScreensNewPairsNoticeBody =>
+      '读不到风险预筛数据时，这里不会自行判断风险。新池流动性薄，价格容易被操纵。';
+
+  @override
+  String get market_secondaryScreensNewPairsNoticeTitle => '预筛不等于结论';
+
+  @override
+  String get market_secondaryScreensNewPairsOmittedBody =>
+      '这些行的池标识既不是合约地址也不是 pool id，本页不展示无法核对的行。';
+
+  @override
+  String market_secondaryScreensNewPairsOmittedTitle(Object? omittedCount) {
+    return '另有 $omittedCount 条数据无法解析';
+  }
+
+  @override
+  String get market_secondaryScreensNewPairsRiskScreeningLabel => '风险预筛不可用';
+
+  @override
+  String get market_secondaryScreensNewPairsScreenTitle => '新币发现';
+
+  @override
+  String get market_secondaryScreensNewPairsUnavailableLabel => '新币发现不可用';
+
+  @override
+  String get market_secondaryScreensSmartMoneyFolioCaption =>
+      '观察地址的动作是线索，不是跟单承诺或收益推荐。';
+
+  @override
+  String get market_secondaryScreensSmartMoneyFolioHeading => '还没有可观察的地址';
+
+  @override
+  String get market_secondaryScreensSmartMoneyMovesUnavailableMessage =>
+      '动向来自关注地址，而关注地址还没有开放。';
+
+  @override
+  String get market_secondaryScreensSmartMoneyMovesUnavailableTitle =>
+      '还没有可列的动向';
+
+  @override
+  String get market_secondaryScreensSmartMoneyNoticeText =>
+      '即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。';
+
+  @override
+  String get market_secondaryScreensSmartMoneyNoticeTitle => '胜率不是预测';
+
+  @override
+  String get market_secondaryScreensSmartMoneyUnavailableLabel => '关注地址不可用';
+
+  @override
+  String market_secondaryScreensText(
+    Object? factSourceLabel,
+    Object? relativeTime,
+  ) {
+    return '来源 $factSourceLabel · 观察于 $relativeTime';
+  }
+
+  @override
+  String get market_secondaryScreensTokenHoldersDistributionLabel =>
+      'Top 持有人、集中度与聚类标注不可用';
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioCaption => '持有人事实尚未读取成功。';
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioHeading => '持有人总数不可用';
+
+  @override
+  String market_secondaryScreensTokenHoldersFolioHeading2(
+    Object? formatDecimal,
+  ) {
+    return '$formatDecimal 持有人';
+  }
+
+  @override
+  String get market_secondaryScreensTokenHoldersFolioTitle => '持有人分布';
+
+  @override
+  String get market_secondaryScreensTokenHoldersPageBlockTitle => '持有人分布当前不可用';
+
+  @override
+  String market_secondaryScreensTokenHoldersProvenanceSemanticsLabel(
+    Object? factProvenance,
+  ) {
+    return '$factProvenance，查看数据来源说明';
+  }
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyMessage =>
+      '大单是按成交金额在本机筛出来的，不是官方标注。';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyMessage2 =>
+      '索引器已经读到这个区间，但其中没有成交。';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyTitle => '这一页没有大单';
+
+  @override
+  String get market_secondaryScreensTokenTradesEmptyTitle2 => '这一页没有成交';
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioCaption =>
+      '方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。';
+
+  @override
+  String market_secondaryScreensTokenTradesFolioHeading(Object? items) {
+    return '$items 笔链上成交';
+  }
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioHeading2 => '最新链上成交记录';
+
+  @override
+  String get market_secondaryScreensTokenTradesFolioTitle => '交易活动';
+
+  @override
+  String get market_secondaryScreensTokenTradesMoreFailedMessage => '下一页成交没有读到';
+
+  @override
+  String get market_secondaryScreensTokenTradesSmartMoneyLabel => '聪明钱筛选不可用';
+
+  @override
+  String get market_secondaryScreensTokenTradesUnavailableLabel => '成交记录不可用';
+
+  @override
+  String get market_secondaryScreensTrailingCaption => '流出池';
+
+  @override
+  String get market_secondaryScreensTrailingCaption2 => '流入池';
+
+  @override
+  String market_tokenBuild(Object? reasonCodeSummaryText) {
+    return '24h 涨跌$reasonCodeSummaryText';
+  }
+
+  @override
+  String get market_tokenCandleLastOpen => '，最后一根尚未收盘';
+
+  @override
+  String market_tokenCandleSourceSentence(Object? source) {
+    return '$source。';
+  }
+
+  @override
+  String get market_tokenCandleStyleCandle => 'K 线';
+
+  @override
+  String get market_tokenCandleStyleLine => '收盘价折线';
+
+  @override
+  String get market_tokenCandlesEmptyMessage => '只画有成交的桶，空桶不会补 0。';
+
+  @override
+  String market_tokenCandlesUnavailableMessage(Object? reasonCodeText) {
+    return '图表暂时读不到 · $reasonCodeText';
+  }
+
+  @override
+  String market_tokenCardChartSemanticLabel(
+    Object? closes,
+    Object? factSourceLabel,
+    Object? priceUnit,
+  ) {
+    return '$closes 个 1H 收盘价的走势线，单位 $priceUnit，来源 $factSourceLabel';
+  }
+
+  @override
+  String get market_tokenCardChartTokenCardSparklineAbsence =>
+      '1H K 线读取中，读到之前不画任何走势。';
+
+  @override
+  String get market_tokenCardChartTokenCardSparklineAbsence2 =>
+      '这个区间没有成交，只画有成交的桶，空桶不会补 0。';
+
+  @override
+  String get market_tokenEmptyMessage => '这个资产还没有可展示的事实';
+
+  @override
+  String get market_tokenEmptyMessage2 => '这个区间没有成交';
+
+  @override
+  String get market_tokenEmptyMessage3 => '还没有与这个资产相关的通知';
+
+  @override
+  String get market_tokenFact => '24h 成交额';
+
+  @override
+  String get market_tokenFact2 => '完全稀释估值';
+
+  @override
+  String get market_tokenHolderSections => '持有人数';
+
+  @override
+  String get market_tokenHolders => '持有者';
+
+  @override
+  String get market_tokenIf => '价格提醒已触发';
+
+  @override
+  String market_tokenIf2(Object? observed, Object? symbol, Object? threshold) {
+    return '$symbol 触发 $threshold（观察值 $observed）';
+  }
+
+  @override
+  String get market_tokenLoopLabel => '简介';
+
+  @override
+  String get market_tokenLoopLabel2 => '池与合约事实';
+
+  @override
+  String market_tokenLoopProvenanceLine(Object? groupedFigure) {
+    return '数据落后 $groupedFigure 块。';
+  }
+
+  @override
+  String get market_tokenLoopProvenanceLine2 =>
+      '成交来自已登记池的 Swap 事件。LOOP 不下发对手方地址，只标出哪一笔是你自己的钱包发起的。';
+
+  @override
+  String market_tokenLoopProvenanceLine3(Object? priceUnit) {
+    return '单位 $priceUnit';
+  }
+
+  @override
+  String get market_tokenLoopProvenanceLine4 => '未登记池';
+
+  @override
+  String get market_tokenLoopProvenanceLine5 => '最后一根进行中';
+
+  @override
+  String get market_tokenLoopProvenanceLine6 => '最后一根尚未收盘，收盘前还会变化。';
+
+  @override
+  String get market_tokenLoopProvenanceLine7 =>
+      'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源。';
+
+  @override
+  String get market_tokenMarker => '含延迟或折算的数值';
+
+  @override
+  String get market_tokenMarketRangeCell => '24h 高';
+
+  @override
+  String get market_tokenMarketRangeCell2 => '24h 低';
+
+  @override
+  String get market_tokenMessage => '系统分享暂时打不开';
+
+  @override
+  String get market_tokenMessage2 => '已复制合约地址';
+
+  @override
+  String get market_tokenSentenceGap => '';
+
+  @override
+  String market_tokenShare(Object? address) {
+    return '合约 $address';
+  }
+
+  @override
+  String get market_tokenShare2 => '在 LOOP 查看行情';
+
+  @override
+  String get market_tokenTokenAboutContractValue => '链上原生资产';
+
+  @override
+  String get market_tokenTokenAssetBlockedLabel => '该资产已被标记为不可展示';
+
+  @override
+  String market_tokenTokenCandleChartSemanticLabel(
+    Object? block,
+    Object? chartIntervalLabel,
+    Object? items,
+    Object? priceUnit,
+    Object? style,
+  ) {
+    return '$items 根$chartIntervalLabel$style，单位 $priceUnit$block';
+  }
+
+  @override
+  String get market_tokenTokenChartExpandLabel => '打开全屏图表';
+
+  @override
+  String market_tokenTokenCommunityEntrySubtitle(
+    Object? memberCount,
+    Object? name,
+  ) {
+    return '$name · $memberCount 名成员';
+  }
+
+  @override
+  String get market_tokenTokenCommunityEntryTitle => '进入 LOOP 社区';
+
+  @override
+  String market_tokenTokenCommunityUnavailableMessage(Object? reasonCodeText) {
+    return '还没有绑定的 LOOP 社区 · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenCopyAddressLabel => '复制合约地址';
+
+  @override
+  String get market_tokenTokenFactsPair => '主交易对：没有以该资产为 base 的交易对';
+
+  @override
+  String market_tokenTokenFactsPair2(
+    Object? marketDexLabel,
+    Object? quoteTokenSymbol,
+    Object? truncatedAddress,
+  ) {
+    return '主交易对：$marketDexLabel · 报价币 $quoteTokenSymbol · $truncatedAddress';
+  }
+
+  @override
+  String get market_tokenTokenFeedEmptyMessage => '价格提醒触发后会出现在这里。推送还没有开放。';
+
+  @override
+  String get market_tokenTokenHoldersDistributionUnavailableMessage =>
+      '持有人分布暂不可用';
+
+  @override
+  String get market_tokenTokenInvalidIdentityMessage =>
+      'Token 页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。';
+
+  @override
+  String get market_tokenTokenInvalidRouteTitle => '无法打开这个资产';
+
+  @override
+  String market_tokenTokenLiveSuppressedMessage(Object? reasonCodeText) {
+    return '链上读取暂时不可用 · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenMiningWeightText => '挖矿权重';
+
+  @override
+  String market_tokenTokenPriceUnavailableMessage(
+    Object? reasonCodeSummaryText,
+    Object? reasonCodeText,
+  ) {
+    return '价格$reasonCodeSummaryText · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenSecurityEmptyMessage =>
+      '暂时读不到合约信息；少了某一项不代表安全或不安全';
+
+  @override
+  String get market_tokenTokenSecurityProvenanceDetail =>
+      '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。';
+
+  @override
+  String market_tokenTokenSecurityProvenancePrefix(Object? facts) {
+    return '合约事实 $facts 项';
+  }
+
+  @override
+  String market_tokenTokenSecurityUnavailableMessage(Object? reasonCodeText) {
+    return '合约事实暂时读不到 · $reasonCodeText';
+  }
+
+  @override
+  String market_tokenTokenSwapUnavailableMessage(Object? reasonCodeText) {
+    return '买入、卖出与兑换当前不可用 · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenTokenTradesEmptyMessage => '这个池子最近还没有人交易';
+
+  @override
+  String market_tokenTokenTradesUnavailableMessage(Object? reasonCodeText) {
+    return '成交记录暂时读不到 · $reasonCodeText';
+  }
+
+  @override
+  String get market_tokenYesNo => '已验证开源';
+
+  @override
+  String get market_tokenYesNo10 => '所有者不可改余额';
+
+  @override
+  String get market_tokenYesNo11 => '检测到自毁';
+
+  @override
+  String get market_tokenYesNo12 => '未检测到自毁';
+
+  @override
+  String get market_tokenYesNo13 => '转账可暂停';
+
+  @override
+  String get market_tokenYesNo14 => '转账不可暂停';
+
+  @override
+  String get market_tokenYesNo15 => '检测到黑名单';
+
+  @override
+  String get market_tokenYesNo16 => '未检测到黑名单';
+
+  @override
+  String get market_tokenYesNo17 => '检测到白名单';
+
+  @override
+  String get market_tokenYesNo18 => '未检测到白名单';
+
+  @override
+  String get market_tokenYesNo19 => '不能全部卖出';
+
+  @override
+  String get market_tokenYesNo2 => '未验证开源';
+
+  @override
+  String get market_tokenYesNo20 => '可以全部卖出';
+
+  @override
+  String get market_tokenYesNo3 => '代理合约';
+
+  @override
+  String get market_tokenYesNo4 => '非代理合约';
+
+  @override
+  String get market_tokenYesNo5 => '检测到 mint';
+
+  @override
+  String get market_tokenYesNo6 => '未检测到 mint';
+
+  @override
+  String get market_tokenYesNo7 => '所有权可收回';
+
+  @override
+  String get market_tokenYesNo8 => '未检测到收回所有权';
+
+  @override
+  String get market_tokenYesNo9 => '所有者可改余额';
+
+  @override
+  String get market_widgetsLoopRecordRow => '计价 BNB';
+
+  @override
+  String market_widgetsLoopRecordRow2(Object? formatCompactFigure) {
+    return '储备 $formatCompactFigure';
+  }
+
+  @override
+  String get market_widgetsLoopRecordRow3 => '储备暂时读不到';
+
+  @override
+  String get market_widgetsLoopRecordRow4 => '24 小时成交额暂时读不到';
+
+  @override
+  String get market_widgetsMarketBrowseOnlyLabel => '仅浏览';
+
+  @override
+  String get market_widgetsMarketNewPairsPageSubtitle => '风险预筛、被折叠的行与完整说明都在这一页';
+
+  @override
+  String get market_widgetsMarketNewPairsStamp => '高风险';
+
+  @override
+  String market_widgetsMarketNewPairsUnavailableMessage(
+    Object? reasonCodeText,
+  ) {
+    return '新币发现不可用 · $reasonCodeText';
+  }
+
+  @override
+  String get market_widgetsMarketSearchFieldLabel => '搜索代币或合约地址';
+
+  @override
+  String get market_widgetsMarketSignalsKicker => '行情概览';
+
+  @override
+  String get market_widgetsMarketTradesKicker => '成交记录';
+
+  @override
+  String get market_widgetsMarketWatchlistKicker => '自选管理';
+
+  @override
+  String get market_widgetsMessage => '已加入自选';
+
+  @override
+  String get market_widgetsMessage2 => '已移出自选';
+
+  @override
+  String market_widgetsMessage3(Object? watchlistMaxItems) {
+    return '自选已达 $watchlistMaxItems 项，先在自选管理里移除一个再加入。';
+  }
+
+  @override
+  String market_widgetsMessage4(
+    Object? watchlistDefaultGroupName,
+    Object? watchlistMaxGroups,
+  ) {
+    return '分组已达 $watchlistMaxGroups 个，无法新建默认分组「$watchlistDefaultGroupName」。';
+  }
+
+  @override
+  String get market_widgetsMessage5 => '自选已在其他设备上改动，这次没有保存。请重试。';
+
+  @override
+  String get market_widgetsSwitch => '搜索代币 / 合约地址';
+
+  @override
+  String get market_widgetsTitle => '未命名池';
+
+  @override
+  String get meme_createBody => '已填写的内容不会保存。';
+
+  @override
+  String get meme_createCancelLabel => '继续编辑';
+
+  @override
+  String get meme_createConfirmLabel => '放弃';
+
+  @override
+  String get meme_createConfirmStep => '地址会在创建时确定';
+
+  @override
+  String get meme_createConfirmed => '已创建';
+
+  @override
+  String get meme_createEmptyMessage => '这个草稿已经不在了';
+
+  @override
+  String get meme_createErrorText => '请输入大于 0 的金额，最多 18 位小数';
+
+  @override
+  String get meme_createHintText => '1–32 个字';
+
+  @override
+  String get meme_createHintText2 => '2–10 位字母或数字';
+
+  @override
+  String get meme_createIf => '只支持 https:// 开头的链接';
+
+  @override
+  String get meme_createIf2 => '今天的创建次数用完了，明天再来';
+
+  @override
+  String meme_createIf3(Object? memeUsd1Label) {
+    return '最少买入 $memeUsd1Label';
+  }
+
+  @override
+  String meme_createIf4(Object? memeTokenFigure) {
+    return '超过单钱包上限 $memeTokenFigure 枚';
+  }
+
+  @override
+  String get meme_createLabel => '上传图片';
+
+  @override
+  String get meme_createLabel2 => '换一张';
+
+  @override
+  String get meme_createLabel3 => '可售';
+
+  @override
+  String get meme_createLabel4 => '交易费率';
+
+  @override
+  String get meme_createLabel5 => '单钱包上限';
+
+  @override
+  String get meme_createLabel6 => '毕业条件';
+
+  @override
+  String meme_createLabel7(Object? address) {
+    return '代币地址 $address';
+  }
+
+  @override
+  String get meme_createLabelText => '符号';
+
+  @override
+  String get meme_createLabelText2 => '简介（可不填）';
+
+  @override
+  String get meme_createLabelText3 => 'X（可不填）';
+
+  @override
+  String get meme_createLabelText4 => 'Telegram（可不填）';
+
+  @override
+  String get meme_createLabelText5 => '官网（可不填）';
+
+  @override
+  String get meme_createLabelText6 => '用 USD1 首买';
+
+  @override
+  String get meme_createLoopButton => '创建';
+
+  @override
+  String get meme_createLoopLabel => '代币地址';
+
+  @override
+  String get meme_createLoopLabel2 => '参数';
+
+  @override
+  String get meme_createLoopLabel3 => '首买（可不填）';
+
+  @override
+  String get meme_createMedia => '图片与链接';
+
+  @override
+  String get meme_createMediaStep => '方形图片，上传前可裁剪；不传就用符号首字母。';
+
+  @override
+  String get meme_createMemeCreateBlockedTitle => '现在不能创建代币';
+
+  @override
+  String get meme_createMemeCreateEvidencePendingBody => '合约核对中，创建可能暂时不可用。';
+
+  @override
+  String get meme_createMemeCreateNextLabel => '正在生成地址…';
+
+  @override
+  String get meme_createMemeCreateNoVanityBody => '本次无法分配 6666 尾号，代币仍可正常创建和交易。';
+
+  @override
+  String get meme_createMemeCreateNoWalletBody => '正在读取钱包…';
+
+  @override
+  String get meme_createMemeCreateNoWalletBody2 => '还没有可用的钱包，先在钱包里创建或激活一个。';
+
+  @override
+  String get meme_createMemeCreateResetLabel => '重新发起';
+
+  @override
+  String get meme_createMemeCreateResumeLabel => '再查一次';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Label => '去 v2 发射';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Message =>
+      '请使用 Loop Hook 发射（v2 发射）创建新代币。';
+
+  @override
+  String get meme_createMemeCreateRetiredOpenV2Title => '经典发射已停用';
+
+  @override
+  String get meme_createMemeCreateRetiredTitle => '创建代币';
+
+  @override
+  String get meme_createMemeCreateRetryReportLabel => '重新上报';
+
+  @override
+  String meme_createMemeCreateUploadFailedBody(Object? memeFailureText) {
+    return '图片没有上传成功：$memeFailureText';
+  }
+
+  @override
+  String get meme_createPreparing => '正在准备…';
+
+  @override
+  String get meme_createS => '这台设备暂时不能选图，不传就用符号首字母。';
+
+  @override
+  String get meme_createSwitch => '名称 1–32 个字';
+
+  @override
+  String get meme_createSwitch2 => '符号 2–10 位字母或数字';
+
+  @override
+  String get meme_createSwitch3 => '简介最多 500 字';
+
+  @override
+  String meme_createText(
+    Object? memeTokenFigure,
+    Object? memeTokenLabel,
+    Object? memeUsd1Label,
+  ) {
+    return '约得 $memeTokenLabel，手续费 $memeUsd1Label；上限 $memeTokenFigure 枚。签名前以服务端报价为准。';
+  }
+
+  @override
+  String get meme_createTitle => '放弃创建？';
+
+  @override
+  String meme_createValue(Object? memeTokenFigure) {
+    return '$memeTokenFigure 枚';
+  }
+
+  @override
+  String meme_createValue2(Object? memeBpsLabel, Object? memeTokenFigure) {
+    return '$memeTokenFigure 枚（$memeBpsLabel）';
+  }
+
+  @override
+  String get meme_createValue3 => '可售部分卖完后自动上 PancakeSwap';
+
+  @override
+  String meme_createValue4(Object? memeUsd1Label) {
+    return '募满约 $memeUsd1Label 后自动上 PancakeSwap';
+  }
+
+  @override
+  String get meme_createWaiting => '已广播，等待确认…';
+
+  @override
+  String get meme_designSemantics => '未读取';
+
+  @override
+  String meme_formatMemeAgeLabel(Object? inMinutes) {
+    return '$inMinutes 分钟';
+  }
+
+  @override
+  String meme_formatMemeAgeLabel2(Object? inHours) {
+    return '$inHours 小时';
+  }
+
+  @override
+  String meme_formatMemeAgeLabel3(Object? inDays) {
+    return '$inDays 天';
+  }
+
+  @override
+  String get meme_formatSwitch => '暂无外盘报价';
+
+  @override
+  String get meme_formatSwitch10 => '这笔交易已过期（约 30 秒内未签名），请重新发起';
+
+  @override
+  String get meme_formatSwitch11 => '这笔交易已失效，请重新发起';
+
+  @override
+  String get meme_formatSwitch12 => 'USD1 余额不足';
+
+  @override
+  String get meme_formatSwitch13 => '卖出数量超过持有';
+
+  @override
+  String meme_formatSwitch14(Object? loopLaunchNativeSymbolText) {
+    return '$loopLaunchNativeSymbolText 手续费不足';
+  }
+
+  @override
+  String get meme_formatSwitch15 => '超过单钱包 4,000 万枚上限';
+
+  @override
+  String get meme_formatSwitch16 => '最少买入 1 USD1';
+
+  @override
+  String get meme_formatSwitch17 => '资料不符合要求，请检查名称、符号、简介和链接';
+
+  @override
+  String get meme_formatSwitch18 => '这张图片不是当前账号上传的，请重新上传';
+
+  @override
+  String get meme_formatSwitch19 => '报价已变化，请重新报价';
+
+  @override
+  String get meme_formatSwitch2 => '外盘行情暂时取不到';
+
+  @override
+  String get meme_formatSwitch20 => '链上交易与确认内容不符';
+
+  @override
+  String get meme_formatSwitch21 => '交易在链上没有成功';
+
+  @override
+  String get meme_formatSwitch22 => '迟迟没有看到这笔交易上链';
+
+  @override
+  String get meme_formatSwitch23 => '试算没有通过，请重新报价';
+
+  @override
+  String get meme_formatSwitch24 => '暂时无法试算，请稍后再试';
+
+  @override
+  String get meme_formatSwitch25 => '需要先授权，授权前无法试算';
+
+  @override
+  String get meme_formatSwitch26 => '还没有激活钱包';
+
+  @override
+  String get meme_formatSwitch27 => '链上读数暂时取不到';
+
+  @override
+  String get meme_formatSwitch28 => '交易暂时关闭';
+
+  @override
+  String get meme_formatSwitch29 => '主网签名暂未开放';
+
+  @override
+  String get meme_formatSwitch3 => '还没有上链';
+
+  @override
+  String get meme_formatSwitch30 => '发射台暂未开放';
+
+  @override
+  String get meme_formatSwitch31 => '发射台服务暂时不可用';
+
+  @override
+  String get meme_formatSwitch32 => '发射台合约还没有配置';
+
+  @override
+  String get meme_formatSwitch33 => '超过单笔金额上限';
+
+  @override
+  String get meme_formatSwitch34 => '超过今日金额上限';
+
+  @override
+  String get meme_formatSwitch35 => '这笔交易暂不在允许范围内';
+
+  @override
+  String get meme_formatSwitch4 => '价格暂时读不到';
+
+  @override
+  String get meme_formatSwitch5 => '代币不存在';
+
+  @override
+  String get meme_formatSwitch6 => '当前不可交易';
+
+  @override
+  String get meme_formatSwitch7 => '已打满，等待毕业';
+
+  @override
+  String get meme_formatSwitch8 => '状态已变化，请刷新';
+
+  @override
+  String get meme_formatSwitch9 => '地址已被占用，请重试';
+
+  @override
+  String meme_homeTopClosedReason(Object? chainFailureReason) {
+    return '钱包没有读到 · $chainFailureReason';
+  }
+
+  @override
+  String get meme_homeTopIf => '暂时连不上 LOOP，余额读不到';
+
+  @override
+  String meme_homeTopIf2(Object? reasonCodeText) {
+    return '钱包余额暂时读不到 · $reasonCodeText';
+  }
+
+  @override
+  String meme_homeTopLabel(
+    Object? displayName,
+    Object? formatUsd,
+    Object? symbol,
+  ) {
+    return '$displayName 在 $symbol 上赚了 $formatUsd';
+  }
+
+  @override
+  String get meme_homeTopLoopLabel => '每周最佳交易';
+
+  @override
+  String get meme_homeTopMemeTopUpLabel => '充值';
+
+  @override
+  String get meme_homeTopReason => '钱包余额暂时读不到';
+
+  @override
+  String get meme_homeTopReason2 => '还没有钱包';
+
+  @override
+  String meme_homeTopReason3(Object? chainFailureReason) {
+    return '余额没有读到 · $chainFailureReason';
+  }
+
+  @override
+  String meme_homeTopReason4(Object? count) {
+    return '$count 项资产暂无价格，总资产暂不显示';
+  }
+
+  @override
+  String get meme_homeTopS => '钱包状态还没有读到';
+
+  @override
+  String meme_homeTopText(Object? view) {
+    return ' · 24 小时$view';
+  }
+
+  @override
+  String get meme_launchpadEmptyMessage => '还没有代币，来创建第一个';
+
+  @override
+  String get meme_launchpadEmptyMessage2 => '这里还没有代币';
+
+  @override
+  String get meme_launchpadEmptyMessage3 => '平台 MEME 资产上线后在这里显示';
+
+  @override
+  String get meme_launchpadIf => '暂时连不上 LOOP，发射台读不到';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateLabel => '创建第一个';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateMessage => '经典发射已停用，新代币请走 v2 发射';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateMessage2 =>
+      '来创建第一个，打满自动上 PancakeSwap';
+
+  @override
+  String get meme_launchpadMemeEmptyCreateTitle => '还没有代币';
+
+  @override
+  String meme_launchpadMemeLaunchpadUnavailableMessage(
+    Object? memeCapabilityText,
+  ) {
+    return '发射台暂时不可用 · $memeCapabilityText';
+  }
+
+  @override
+  String get meme_launchpadMemeListProvenanceDetail =>
+      '内盘代币的价格与市值读自 LOOP 曲线，已毕业代币读自 DexScreener；读不到价格的代币写明原因，不会显示 0。';
+
+  @override
+  String get meme_launchpadMemeMarketEmptyTitle => '还没有 MEME 资产';
+
+  @override
+  String meme_launchpadMemeMarketProvenanceDetail(Object? orderingLabel) {
+    return '$orderingLabel。内盘代币读自 LOOP 曲线，已毕业代币读自 DexScreener；读不到报价的代币写明原因。';
+  }
+
+  @override
+  String meme_launchpadMemeMarketUnavailableMessage(Object? reasonCodeText) {
+    return '行情暂时不可用 · $reasonCodeText';
+  }
+
+  @override
+  String get meme_launchpadMemeSearchEntryLabel => '搜索代币';
+
+  @override
+  String get meme_launchpadS => '发射台状态还没有读到';
+
+  @override
+  String get meme_modelsBroadcastReported => '已广播，等待确认';
+
+  @override
+  String get meme_modelsFailed => '未成功';
+
+  @override
+  String get meme_modelsFiveMinutes => '5分';
+
+  @override
+  String get meme_modelsFresh => '新发';
+
+  @override
+  String get meme_modelsGraduating => '快打满';
+
+  @override
+  String get meme_modelsHot => '热门';
+
+  @override
+  String get meme_modelsLoopCurve => 'LOOP 曲线';
+
+  @override
+  String get meme_modelsOneMinute => '1分';
+
+  @override
+  String meme_screenLaunch2ListAllUnavailableMessage(
+    Object? launch2CapabilityText,
+  ) {
+    return 'MEME v2 暂时不可用 · $launch2CapabilityText';
+  }
+
+  @override
+  String get meme_signingBuy => '确认买入';
+
+  @override
+  String meme_signingConfirmed(Object? noun) {
+    return '$noun已在链上确认。';
+  }
+
+  @override
+  String get meme_signingCreate => '确认创建';
+
+  @override
+  String meme_signingExpired(Object? memeReasonText, Object? noun) {
+    return '$noun已过期：$memeReasonText。';
+  }
+
+  @override
+  String meme_signingFailed(Object? memeReasonText, Object? noun) {
+    return '$noun没有成功：$memeReasonText。';
+  }
+
+  @override
+  String meme_signingIf(Object? memeShortAddress, Object? noun) {
+    return '授权已广播（$memeShortAddress），但$noun交易的钱包结果未知，已锁定。不要重复签名，稍后刷新查看。';
+  }
+
+  @override
+  String meme_signingIf2(Object? noun) {
+    return '钱包的结果未知，这笔$noun已锁定。不要重复签名，稍后刷新查看。';
+  }
+
+  @override
+  String meme_signingIf3(Object? short) {
+    return '已广播（$short），服务端已记录。广播不代表已成交，正在等待链上确认。';
+  }
+
+  @override
+  String meme_signingIf4(Object? memeReportReasonText, Object? short) {
+    return '已广播（$short）。$memeReportReasonText';
+  }
+
+  @override
+  String get meme_signingIntentField => '授权前无法试算';
+
+  @override
+  String get meme_signingLabel => '预计到手';
+
+  @override
+  String get meme_signingLabel2 => '最少到手';
+
+  @override
+  String get meme_signingLabel3 => '首买支付';
+
+  @override
+  String get meme_signingLabel4 => '打满退回';
+
+  @override
+  String get meme_signingLabel5 => '手续费';
+
+  @override
+  String get meme_signingLabel6 => '先授权';
+
+  @override
+  String meme_signingPollTimedOut(Object? noun) {
+    return '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复$noun。';
+  }
+
+  @override
+  String meme_signingPreparing(Object? noun) {
+    return '正在准备$noun，还没有打开钱包。';
+  }
+
+  @override
+  String meme_signingReason(Object? memeIntentNoun) {
+    return '会依次打开两次钱包：先授权，再$memeIntentNoun。授权金额只够这一笔。';
+  }
+
+  @override
+  String get meme_signingSell => '确认卖出';
+
+  @override
+  String meme_signingSetState(Object? memeIntentNoun, Object? memeIntentNoun2) {
+    return '授权已广播，$memeIntentNoun没有签名，没有提交$memeIntentNoun2交易。可以关闭后重新发起。';
+  }
+
+  @override
+  String get meme_signingSwitch => '已取消，没有发生任何变化。';
+
+  @override
+  String get meme_signingSwitch10 => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易，请重新报价。';
+
+  @override
+  String get meme_signingSwitch11 => '钱包没有完成签名，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch12 =>
+      '这笔交易已经上报过另一笔哈希，本次广播没有被记录。交易可能已经上链，不要重复签名。';
+
+  @override
+  String get meme_signingSwitch13 => '服务端已不再接受这笔交易的上报。钱包已经广播，交易可能已经上链，不要重复签名。';
+
+  @override
+  String get meme_signingSwitch14 =>
+      '这笔交易已过期，链上暂时还看不到它，上报没有被接受。交易可能仍在传播，不要重复签名。';
+
+  @override
+  String get meme_signingSwitch15 => '链上这笔交易与确认内容不一致，服务端没有记录它。不要重复签名，并联系支持。';
+
+  @override
+  String get meme_signingSwitch16 =>
+      '钱包已经广播，但这次上报没有被服务端接受或没有送达。交易可能已经上链，可以稍后重新上报；不要重复签名。';
+
+  @override
+  String meme_signingSwitch17(Object? noun) {
+    return '授权已广播，$noun没有签名。可以重新发起。';
+  }
+
+  @override
+  String meme_signingSwitch18(Object? noun) {
+    return '这笔$noun已锁定，不要重复签名。';
+  }
+
+  @override
+  String get meme_signingSwitch2 => '身份验证没有通过，没有发生任何变化。';
+
+  @override
+  String get meme_signingSwitch3 => '这笔交易已过期，没有提交任何交易。请重新发起。';
+
+  @override
+  String get meme_signingSwitch4 => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch5 => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch6 => '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch7 => '这条链不允许签名，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch8 => '钱包暂时不能在这条链上签名，没有提交任何交易。';
+
+  @override
+  String get meme_signingSwitch9 => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。';
+
+  @override
+  String get meme_signingTitle => '授权';
+
+  @override
+  String meme_signingValue(Object? memeTokenLabel) {
+    return '$memeTokenLabel 给曲线合约';
+  }
+
+  @override
+  String meme_signingWaiting(Object? attempts, Object? noun) {
+    return '已广播，正在等待链上确认（已读取 $attempts 次）。不要重复$noun。';
+  }
+
+  @override
+  String get meme_tokenBuild => '外盘价格';
+
+  @override
+  String meme_tokenBuild2(Object? memeTokenLabel) {
+    return '持有 $memeTokenLabel';
+  }
+
+  @override
+  String get meme_tokenBuild3 => '100% · 已毕业';
+
+  @override
+  String meme_tokenBuild4(Object? memeBpsLabel, Object? memeCapLabel) {
+    return '$memeBpsLabel · 还差 $memeCapLabel';
+  }
+
+  @override
+  String get meme_tokenBuild5 => '买';
+
+  @override
+  String get meme_tokenCopy => '已复制合约地址';
+
+  @override
+  String get meme_tokenCopy2 => '已复制池地址';
+
+  @override
+  String get meme_tokenCreatorBadge => '创建者';
+
+  @override
+  String get meme_tokenDetail => '持仓 = 曲线买入减卖出的净额，钱包之间的转账不计；占比以 10 亿总量为分母。';
+
+  @override
+  String get meme_tokenDetail2 => '买入金额是实付（含 1% 手续费、不含退回），卖出金额是实收（已扣费）。';
+
+  @override
+  String get meme_tokenEmptyMessage => '还没有持有者';
+
+  @override
+  String get meme_tokenFor => '官网';
+
+  @override
+  String get meme_tokenFull => '已打满';
+
+  @override
+  String get meme_tokenGraduatedChartHint => '毕业后的走势在外盘行情里看。';
+
+  @override
+  String meme_tokenIf(Object? holderCount) {
+    return '$holderCount 个持有者 · 按曲线买卖统计';
+  }
+
+  @override
+  String get meme_tokenLabel => '代币合约';
+
+  @override
+  String get meme_tokenLabel10 => '24h 交易量';
+
+  @override
+  String get meme_tokenLabel11 => '全部持有者';
+
+  @override
+  String get meme_tokenLabel12 => '全部动态';
+
+  @override
+  String get meme_tokenLabel2 => '曲线合约';
+
+  @override
+  String get meme_tokenLabel3 => '合约版本';
+
+  @override
+  String get meme_tokenLabel4 => 'PancakeSwap 池';
+
+  @override
+  String get meme_tokenLabel5 => '注入 USD1';
+
+  @override
+  String get meme_tokenLabel6 => '注入代币';
+
+  @override
+  String get meme_tokenLabel7 => 'LP 已烧毁';
+
+  @override
+  String get meme_tokenLabel8 => '毕业时间';
+
+  @override
+  String get meme_tokenLabel9 => '打满进度';
+
+  @override
+  String meme_tokenLoopInlineUnavailable(Object? text) {
+    return '运营已将此代币从发射台隐藏 · $text';
+  }
+
+  @override
+  String get meme_tokenLoopInlineUnavailable2 => '运营已将此代币从发射台隐藏';
+
+  @override
+  String get meme_tokenLoopLabel => '创建者';
+
+  @override
+  String get meme_tokenLoopSheetHeading => '分享代币';
+
+  @override
+  String get meme_tokenMemeAboutDexSubtitle => '毕业后的价格与 K 线';
+
+  @override
+  String get meme_tokenMemeAboutDexTitle => '外盘行情';
+
+  @override
+  String get meme_tokenMemeAboutExplorerTitle => '区块浏览器';
+
+  @override
+  String get meme_tokenMemeAboutProvenanceDetail =>
+      '曲线状态、持有者与成交读自 LOOP 对曲线合约事件的索引；只列出经 LOOP 创建的代币。';
+
+  @override
+  String get meme_tokenMemeAboutResidualMessage => '外盘池已存在，部分资金留在合约';
+
+  @override
+  String meme_tokenMemeCandlesProvenanceDetail(Object? series) {
+    return '每笔曲线成交后的价格按时段聚成 K 线；空时段不补。$series';
+  }
+
+  @override
+  String get meme_tokenMemeCandlesProvenancePrefix => '单位 USD1';
+
+  @override
+  String get meme_tokenMemeCandlesProvenancePrefix2 => '毕业后停在毕业时';
+
+  @override
+  String get meme_tokenMemeChartEmptyMessage => '多几笔成交，走势就会画出来';
+
+  @override
+  String get meme_tokenMemeProvenance => 'LOOP 链上索引';
+
+  @override
+  String get meme_tokenMemeTokenBlockedTitle => '发射台暂时不可用';
+
+  @override
+  String get meme_tokenMemeTokenCopyPoolLabel => '复制池地址';
+
+  @override
+  String get meme_tokenMemeTokenEvidencePendingMessage => '合约核对中，交易可能暂时不可用';
+
+  @override
+  String get meme_tokenMemeTokenFullLabel => '打满，毕业中…';
+
+  @override
+  String get meme_tokenMemeTokenGraduatedCloseBody =>
+      '曲线已打满，代币已上 PancakeSwap，LP 已烧毁。';
+
+  @override
+  String get meme_tokenMemeTokenInvalidIdentityMessage =>
+      '没有请求任何数据，也没有回退到其他代币。';
+
+  @override
+  String get meme_tokenMemeTokenInvalidIdentityTitle => '路由中没有可用的代币标识';
+
+  @override
+  String get meme_tokenMemeTokenInvalidRouteTitle => '无法打开这个代币';
+
+  @override
+  String meme_tokenMemeTokenLiquidityLowBody(Object? memeCapLabel) {
+    return '流动性低 · 内盘储备 $memeCapLabel，大额买入滑点高';
+  }
+
+  @override
+  String get meme_tokenMemeTokenPausedLabel => '已暂停交易';
+
+  @override
+  String get meme_tokenMemeTokenPendingLabel => '创建中…';
+
+  @override
+  String get meme_tokenMemeTokenPriceProvenanceDetail =>
+      '内盘价格 = 曲线虚拟储备之比，市值 = 价格 × 10 亿总量。';
+
+  @override
+  String get meme_tokenMemeTokenPriceProvenanceDetail2 =>
+      '毕业后的价格与市值读自 DexScreener。';
+
+  @override
+  String meme_tokenMemeTokenProgressBarSemanticLabel(Object? memeBpsLabel) {
+    return '内盘进度 $memeBpsLabel';
+  }
+
+  @override
+  String get meme_tokenMemeTokenQuickBuySurfaceLabel => '快买';
+
+  @override
+  String get meme_tokenMemeTokenResumeLabel => '继续创建';
+
+  @override
+  String get meme_tokenMemeTokenSwapLabel => '去兑换';
+
+  @override
+  String get meme_tokenMemeTokenSwapTestnetMessage => '暂不支持站内兑换';
+
+  @override
+  String meme_tokenMemeTokenViewerUnavailableMessage(Object? memeReasonText) {
+    return '我的持仓暂时读不到 · $memeReasonText';
+  }
+
+  @override
+  String get meme_tokenMessage => '还没有可用的钱包';
+
+  @override
+  String get meme_tokenMessage3 => '第一笔买入后，持有者会出现在这里';
+
+  @override
+  String get meme_tokenMessage4 => '买入或卖出后，成交会出现在这里';
+
+  @override
+  String get meme_tokenNoAddressYet => '还没有地址';
+
+  @override
+  String get meme_tokenPaused => '暂停';
+
+  @override
+  String get meme_tokenPendingChain => '创建中';
+
+  @override
+  String meme_tokenS(Object? holderCount) {
+    return '$holderCount 个持有者 · 按曲线买卖统计 · 分布冻结于毕业时';
+  }
+
+  @override
+  String get meme_tokenS2 => '卖';
+
+  @override
+  String meme_tokenSemanticLabel(
+    Object? candles,
+    Object? label,
+    Object? style,
+  ) {
+    return '$candles 根$label$style，单位 USD1';
+  }
+
+  @override
+  String get meme_tokenSemanticLabel2 => '代币合约地址二维码';
+
+  @override
+  String meme_tokenShare(Object? address) {
+    return '合约 $address';
+  }
+
+  @override
+  String get meme_tokenShare2 => '在 LOOP 发射台查看';
+
+  @override
+  String get meme_tokenSubtitle => '创建者没有公开资料';
+
+  @override
+  String get meme_tokenSubtitle2 => '查看公开资料';
+
+  @override
+  String meme_tokenSubtitle3(
+    Object? memeTokenCompact,
+    Object? rank,
+    Object? symbol,
+  ) {
+    return '第 $rank · $memeTokenCompact $symbol';
+  }
+
+  @override
+  String get meme_tokenText => '1天';
+
+  @override
+  String get meme_tokenTitle => '未公开资料';
+
+  @override
+  String get meme_tokenTrading => '内盘';
+
+  @override
+  String get meme_tokenValue => '毕业后不限';
+
+  @override
+  String meme_tradePanelIf(Object? memeTokenFigure) {
+    return '超过单钱包 $memeTokenFigure 枚上限';
+  }
+
+  @override
+  String get meme_tradePanelIf2 => '这个金额得不到代币，请调整';
+
+  @override
+  String get meme_tradePanelLabel => '得';
+
+  @override
+  String get meme_tradePanelLabel2 => '费';
+
+  @override
+  String get meme_tradePanelLabel3 => '影响';
+
+  @override
+  String get meme_tradePanelLoopProvenanceLine => '链上曲线';
+
+  @override
+  String meme_tradePanelLoopSheetHeading(Object? ticker) {
+    return '买入 $ticker';
+  }
+
+  @override
+  String meme_tradePanelMemeTradeBalance(Object? memeReasonText) {
+    return '钱包读数暂时取不到 · $memeReasonText';
+  }
+
+  @override
+  String meme_tradePanelMemeTradeBalance2(Object? memeUsd1Label) {
+    return '可用 $memeUsd1Label';
+  }
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteEmpty => '正在报价…';
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteEmpty2 => '输入金额后显示报价';
+
+  @override
+  String meme_tradePanelMemeTradeQuoteFailedMessage(Object? memeFailureText) {
+    return '没有取到报价 · $memeFailureText';
+  }
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail => '报价按链上当前曲线计算。';
+
+  @override
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail2 =>
+      '链上暂时读不到，报价按索引快照计算，可能落后几个区块。';
+
+  @override
+  String get meme_tradePanelMemeTradeSlippageCustomLabel => '自定义';
+
+  @override
+  String meme_tradePanelS(Object? memeTokenLabel) {
+    return '超过单钱包上限，最多还能买 $memeTokenLabel';
+  }
+
+  @override
+  String meme_tradePanelS2(Object? ticker) {
+    return '卖出 $ticker';
+  }
+
+  @override
+  String meme_widgetsBuild(Object? memeCapLabel) {
+    return '$memeCapLabel 交易量';
+  }
+
+  @override
+  String get meme_widgetsMemeChangeUnreported => '1h 涨跌未报告';
+
+  @override
+  String meme_widgetsMemeTokenSpokenLabel(Object? memeCapLabel) {
+    return '市值 $memeCapLabel';
+  }
+
+  @override
+  String meme_widgetsMemeTokenSpokenLabel2(Object? holderCount) {
+    return '$holderCount 持有';
+  }
+
+  @override
+  String meme_widgetsSemantics(Object? memeCapLabel) {
+    return '交易量 $memeCapLabel';
+  }
+
+  @override
+  String meme_widgetsSemantics2(Object? age) {
+    return '上线 $age';
+  }
 
   @override
   String get notifications_applicationNoReason => '运维没有给出原因。修改社区资料后可以重新提交。';

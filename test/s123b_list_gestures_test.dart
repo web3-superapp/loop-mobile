@@ -488,8 +488,11 @@ void main() {
         const WatchlistEditorScreen(),
         watchlist: watchlist,
       );
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
-      expect(find.text('Mining 3 · 拖动排序 · 左滑删除'), findsOneWidget);
+      expect(find.textContaining('3 watchlist assets'), findsOneWidget);
+      expect(
+        find.text('Mining 3 · Drag to sort · Swipe left to delete'),
+        findsOneWidget,
+      );
 
       final row = find.byKey(ValueKey<String>('watchlist-item-$s5WbnbAssetId'));
       await tester.ensureVisible(row);
@@ -497,7 +500,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(row, findsNothing);
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('watchlist-undo-toast')),
         findsOneWidget,
@@ -507,7 +510,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('watchlist-undo')));
       await tester.pumpAndSettle();
       expect(row, findsOneWidget);
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
+      expect(find.textContaining('3 watchlist assets'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('watchlist-undo-toast')),
         findsNothing,
@@ -533,7 +536,7 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-undo-toast')),
         findsNothing,
       );
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
     });
 
     testWidgets('the heading counts each asset once across groups', (
@@ -563,9 +566,12 @@ void main() {
       );
       // Four rows across two groups, three assets: the heading says three,
       // the list's own label says what the list shows.
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
-      expect(find.textContaining('4 个自选资产'), findsNothing);
-      expect(find.text('Mining 3 · 拖动排序 · 左滑删除'), findsOneWidget);
+      expect(find.textContaining('3 watchlist assets'), findsOneWidget);
+      expect(find.textContaining('4 watchlist assets'), findsNothing);
+      expect(
+        find.text('Mining 3 · Drag to sort · Swipe left to delete'),
+        findsOneWidget,
+      );
     });
   });
 

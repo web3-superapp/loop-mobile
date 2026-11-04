@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Editor state for `watchlist-edit`.
 ///
@@ -106,7 +107,7 @@ final class WatchlistEditorState {
     for (final group in current) {
       final before = committedByKey.remove(group.key);
       if (before == null) {
-        changes.add('新增分组 ${group.name}');
+        changes.add(LoopL10n.current.marketWatchlist_controllerAdd(group.name));
         continue;
       }
       final beforeIds = before.items
@@ -120,19 +121,36 @@ final class WatchlistEditorState {
       final added = afterIds.where((id) => !beforeIds.contains(id)).length;
       final reordered = removed == 0 && added == 0;
       changes.add(
-        '${group.name}：'
-        '${reordered ? '重新排序' : <String>[if (added > 0) '新增 $added 项', if (removed > 0) '移除 $removed 项'].join('，')}',
+        LoopL10n.current.marketWatchlist_controllerGroupChange(
+          reordered
+              ? LoopL10n.current.marketWatchlist_controllerReordered
+              : <String>[
+                  if (added > 0)
+                    LoopL10n.current.marketWatchlist_controllerAddedItems(
+                      added,
+                    ),
+                  if (removed > 0)
+                    LoopL10n.current.marketWatchlist_controllerRemovedItems(
+                      removed,
+                    ),
+                ].join(LoopL10n.current.common_listSeparator),
+          group.name,
+        ),
       );
     }
     for (final group in committedByKey.values) {
-      changes.add('移除分组 ${group.name}');
+      changes.add(LoopL10n.current.marketWatchlist_controllerAdd2(group.name));
     }
     return List<String>.unmodifiable(changes);
   }
 
   /// The draft as plain text, so it can survive a reload on the clipboard.
   String get draftAsText {
-    final buffer = StringBuffer('LOOP 自选草稿（基于版本 ${snapshot?.version ?? 0}）');
+    final buffer = StringBuffer(
+      LoopL10n.current.marketWatchlist_controllerStringBuffer(
+        snapshot?.version ?? 0,
+      ),
+    );
     for (final group in groups) {
       buffer.write('\n${group.name} [${group.key}]');
       for (final item in group.items) {

@@ -348,7 +348,10 @@ void main() {
         find.byKey(const ValueKey<String>('candles-empty')),
         findsOneWidget,
       );
-      expect(find.textContaining('空桶不会补 0'), findsOneWidget);
+      expect(
+        find.textContaining("Empty intervals aren't filled with 0"),
+        findsOneWidget,
+      );
       expect(find.text('O 0'), findsNothing);
     });
 
@@ -445,7 +448,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-holders-state-loading')),
         findsOneWidget,
       );
-      expect(find.textContaining('持有人'), findsWidgets);
+      expect(find.textContaining('holders'), findsWidgets);
       expect(find.textContaining('8,019,338'), findsNothing);
     });
 
@@ -486,7 +489,10 @@ void main() {
         find.byKey(const ValueKey<String>('token-holders-folio')),
         findsNothing,
       );
-      expect(find.text('持有人分布当前不可用'), findsOneWidget);
+      expect(
+        find.text("Holder distribution isn't available right now"),
+        findsOneWidget,
+      );
       expect(find.text('0 持有人'), findsNothing);
     });
 
@@ -507,7 +513,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-holders-state-error')),
         findsOneWidget,
       );
-      expect(find.textContaining('持有人总数不可用'), findsOneWidget);
+      expect(find.textContaining('Total holders unavailable'), findsOneWidget);
     });
 
     testWidgets('token-holders offline pauses without claiming zero holders', (
@@ -705,7 +711,12 @@ void main() {
 
       expect(chat.commands, contains('leave-group:$testResolvedGroupId'));
       expect(find.text('Left group chat'), findsNothing);
-      expect(find.textContaining('当前账号没有执行这个操作的权限'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "This account doesn't have permission for this action",
+        ),
+        findsOneWidget,
+      );
       // The page never asks the device for a permission of its own.
       expect(find.textContaining('去系统设置'), findsNothing);
     });

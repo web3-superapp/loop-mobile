@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -57,7 +58,7 @@ MemeBalanceView memeBalanceView({
   if (walletClosed) {
     return (
       figure: null,
-      reason: closedReason ?? '钱包余额暂时读不到',
+      reason: closedReason ?? LoopL10n.current.meme_homeTopReason,
       change: null,
       quality: null,
       loading: false,
@@ -66,7 +67,7 @@ MemeBalanceView memeBalanceView({
   if (noWallet) {
     return (
       figure: null,
-      reason: '还没有钱包',
+      reason: LoopL10n.current.meme_homeTopReason2,
       change: null,
       quality: null,
       loading: false,
@@ -82,7 +83,9 @@ MemeBalanceView memeBalanceView({
       figure: null,
       reason: loading
           ? null
-          : '余额没有读到 · ${loopChainFailureReason(balances.failureKind)}',
+          : LoopL10n.current.meme_homeTopReason3(
+              loopChainFailureReason(balances.failureKind),
+            ),
       change: null,
       quality: null,
       loading: loading,
@@ -91,7 +94,7 @@ MemeBalanceView memeBalanceView({
   return switch (value.netWorth) {
     LoopNetWorthValued(partial: true, unavailableCount: final count) => (
       figure: null,
-      reason: '$count 项资产暂无价格，总资产暂不显示',
+      reason: LoopL10n.current.meme_homeTopReason4(count),
       change: null,
       quality: null,
       loading: false,
@@ -157,7 +160,7 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
             !walletGate.isAvailable ||
             !bscGate.isAvailable);
     final closedReason = mode == LoopChainGatewayMode.unavailable
-        ? '钱包余额暂时读不到'
+        ? context.l10n.meme_homeTopReason
         : !walletGate.isAvailable
         ? memeGateText(walletGate)
         : memeGateText(bscGate);
@@ -202,7 +205,9 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
     final view = memeBalanceView(
       walletClosed: closed || directoryFailed,
       closedReason: directoryFailed
-          ? '钱包没有读到 · ${loopChainFailureReason(directory.failureKind)}'
+          ? context.l10n.meme_homeTopClosedReason(
+              loopChainFailureReason(directory.failureKind),
+            )
           : closedReason,
       directoryLoading:
           directory.phase == LoopChainViewPhase.loading &&
@@ -235,7 +240,7 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
             constraints: const BoxConstraints(minWidth: 120),
             child: LoopButton(
               key: const ValueKey<String>('meme-top-up'),
-              label: '充值',
+              label: context.l10n.meme_homeTopMemeTopUpLabel,
               primary: true,
               onPressed: () => faucetVisible
                   ? _openFaucet(walletId, directory.value?.active?.address)
@@ -327,8 +332,9 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
                 ),
               ),
               TextSpan(
-                text:
-                    ' · 24 小时${view.quality == null ? '' : ' · ${view.quality}'}',
+                text: LoopL10n.current.meme_homeTopText(
+                  view.quality == null ? '' : ' · ${view.quality}',
+                ),
               ),
             ],
           ),
@@ -354,9 +360,11 @@ class _MemeBalanceBlockState extends ConsumerState<MemeBalanceBlock> {
 /// The sentence a closed wallet gate is explained with.
 String memeGateText(LoopCapabilityProjection gate) {
   if (gate.isUnobserved) {
-    return gate.unreachable ? '暂时连不上 LOOP，余额读不到' : '钱包状态还没有读到';
+    return gate.unreachable
+        ? LoopL10n.current.meme_homeTopIf
+        : LoopL10n.current.meme_homeTopS;
   }
-  return '钱包余额暂时读不到 · ${loopReasonCodeText(gate.reasonCode)}';
+  return LoopL10n.current.meme_homeTopIf2(loopReasonCodeText(gate.reasonCode));
 }
 
 /// 每周最佳交易: up to ten `LoopRecordCard`s scrolled sideways. Nothing at
@@ -387,7 +395,7 @@ class MemeBestTradesStrip extends ConsumerWidget {
       key: const ValueKey<String>('meme-best-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('每周最佳交易', tight: true),
+        LoopLabel(context.l10n.meme_homeTopLoopLabel, tight: true),
         SingleChildScrollView(
           key: const ValueKey<String>('meme-best-trades-scroll'),
           scrollDirection: Axis.horizontal,
@@ -437,9 +445,11 @@ class MemeBestTradeCard extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: MemeBestTradesStrip.cardWidth,
     child: Semantics(
-      label:
-          '${trade.displayName} 在 ${trade.symbol} 上赚了 '
-          '${loopFormatUsd(trade.realizedUsd1)}',
+      label: context.l10n.meme_homeTopLabel(
+        trade.displayName,
+        loopFormatUsd(trade.realizedUsd1),
+        trade.symbol,
+      ),
       child: LoopRecordCard(
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -525,7 +535,11 @@ class MemeHomeTabs extends StatelessWidget {
     super.key,
   });
 
-  static const List<String> labels = <String>['自选', '代币', '已毕业'];
+  static List<String> get labels => <String>[
+    LoopL10n.current.common_watchlist,
+    LoopL10n.current.common_token,
+    LoopL10n.current.common_graduated,
+  ];
   static const int watchlist = 0;
   static const int tokens = 1;
   static const int graduated = 2;
@@ -539,6 +553,7 @@ class MemeHomeTabs extends StatelessWidget {
     child: MarketTabBar(
       key: const ValueKey<String>('meme-home-tabs'),
       keyPrefix: 'meme-home-tab',
+      ids: const <String>['watchlist', 'tokens', 'graduated'],
       labels: labels,
       selectedIndex: selectedIndex,
       onSelected: onSelected,

@@ -51,7 +51,10 @@ void main() {
           reason: code,
         );
       }
-      expect(memeSignReasonText(loopStepUpCancelledCode), '已取消，没有发生任何变化。');
+      expect(
+        memeSignReasonText(loopStepUpCancelledCode),
+        'Cancelled. Nothing changed.',
+      );
     });
   });
 }

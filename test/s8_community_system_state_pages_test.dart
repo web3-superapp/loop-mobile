@@ -96,7 +96,7 @@ void main() {
           find.byKey(const ValueKey<String>('search-empty')),
           findsOneWidget,
         );
-        expect(find.text('没有找到匹配的结果'), findsOneWidget);
+        expect(find.text('No matching results found'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('community-state-error')),
           findsNothing,
@@ -190,7 +190,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsOneWidget,
       );
-      expect(find.text('这个筛选下没有成员'), findsOneWidget);
+      expect(find.text('No members under this filter'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-state-error')),
         findsNothing,

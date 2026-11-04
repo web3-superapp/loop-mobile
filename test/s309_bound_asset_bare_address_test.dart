@@ -159,15 +159,22 @@ void main() {
 
       expect(
         _hintOf(tester, 'community-apply-asset-key'),
-        '绑定代币（选填）0x…（也可粘贴 eip155:56:0x… 整串）',
+        'Linked token (optional) 0x… (or paste the full eip155:56:0x…)',
       );
       expect(
-        find.textContaining('暂未取到链状态，只填地址时将按 BNB Smart Chain 补全。'),
+        find.textContaining(
+          'Chain status isn\'t loaded yet. If you enter only the address, BNB Smart Chain is filled in. ',
+        ),
         findsOneWidget,
       );
 
       await _fillAndSubmit(tester, 'not-an-address');
-      expect(find.text('需要 40 位十六进制合约地址，可带 eip155:56: 前缀。'), findsOneWidget);
+      expect(
+        find.text(
+          'Needs a 40-character hex contract address, optionally prefixed with eip155:56:.',
+        ),
+        findsOneWidget,
+      );
       expect(result, isNull);
 
       await _fillAndSubmit(tester, _mixed);
@@ -187,11 +194,13 @@ void main() {
 
       expect(
         _hintOf(tester, 'community-apply-asset-key'),
-        '绑定代币（选填）0x…（也可粘贴 eip155:97:0x… 整串）',
+        'Linked token (optional) 0x… (or paste the full eip155:97:0x…)',
       );
       // Decision 0204: switch off, the testnet is named BNB Smart Chain.
       expect(
-        find.textContaining('只填合约地址即可，将按 BNB Smart Chain 补全。'),
+        find.textContaining(
+          'Just enter the contract address. BNB Smart Chain is filled in for you. ',
+        ),
         findsOneWidget,
       );
 
@@ -210,10 +219,12 @@ void main() {
       );
       expect(
         _hintOf(tester, 'community-apply-asset-key'),
-        '绑定代币（选填）0x…（也可粘贴 eip155:56:0x… 整串）',
+        'Linked token (optional) 0x… (or paste the full eip155:56:0x…)',
       );
       expect(
-        find.textContaining('只填合约地址即可，将按 BNB Smart Chain 补全。'),
+        find.textContaining(
+          'Just enter the contract address. BNB Smart Chain is filled in for you. ',
+        ),
         findsOneWidget,
       );
       await _fillAndSubmit(tester, _mixed);
@@ -228,7 +239,7 @@ void main() {
         overrides: _publishing(launch: loopLaunchTestnetChainId),
       );
       expect(
-        find.textContaining('将按 $loopTestnetChainLabel 补全。'),
+        find.textContaining('$loopTestnetChainLabel is filled in'),
         findsOneWidget,
       );
     });
@@ -304,7 +315,7 @@ void main() {
             .widget<TextField>(_key('community-edit-bound-asset'))
             .decoration!
             .hintText,
-        '0x…（也可粘贴 eip155:97:0x… 整串）',
+        '0x… (or paste the full eip155:97:0x…)',
       );
       await submit(tester, _mixed);
       expect(result, isNotNull);
@@ -317,7 +328,12 @@ void main() {
       CommunityProfileEdit? result;
       await openEdit(tester, (value) => result = value);
       await submit(tester, '0x12');
-      expect(find.text('需要 40 位十六进制合约地址，可带 eip155:97: 前缀。'), findsOneWidget);
+      expect(
+        find.text(
+          'Needs a 40-character hex contract address, optionally prefixed with eip155:97:.',
+        ),
+        findsOneWidget,
+      );
       expect(result, isNull);
       await submit(tester, _lower);
       expect(result?.boundAssetKey, 'eip155:97:$_lower');

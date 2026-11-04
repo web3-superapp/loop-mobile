@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The threshold is always a positive decimal STRING on the wire: a JSON
 /// number is rejected by the server before type coercion. This pattern is the
@@ -11,15 +12,22 @@ final RegExp loopAlertThresholdPattern = RegExp(
 );
 
 enum LoopAlertCondition {
-  above('above', '涨破'),
-  atOrAbove('at_or_above', '涨到'),
-  below('below', '跌破'),
-  atOrBelow('at_or_below', '跌到');
+  above('above'),
+  atOrAbove('at_or_above'),
+  below('below'),
+  atOrBelow('at_or_below');
 
-  const LoopAlertCondition(this.wireName, this.label);
+  const LoopAlertCondition(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopAlertCondition.above => LoopL10n.current.marketAlerts_modelsAbove,
+    LoopAlertCondition.atOrAbove =>
+      LoopL10n.current.marketAlerts_modelsAtOrAbove,
+    LoopAlertCondition.below => LoopL10n.current.marketAlerts_modelsBelow,
+    LoopAlertCondition.atOrBelow =>
+      LoopL10n.current.marketAlerts_modelsAtOrBelow,
+  };
 
   bool get isUpward =>
       this == LoopAlertCondition.above || this == LoopAlertCondition.atOrAbove;
@@ -33,14 +41,18 @@ enum LoopAlertCondition {
 }
 
 enum LoopAlertState {
-  active('active', '监听中'),
-  triggered('triggered', '已触发'),
-  expired('expired', '已过期');
+  active('active'),
+  triggered('triggered'),
+  expired('expired');
 
-  const LoopAlertState(this.wireName, this.label);
+  const LoopAlertState(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopAlertState.active => LoopL10n.current.marketAlerts_modelsActive,
+    LoopAlertState.triggered => LoopL10n.current.marketAlerts_modelsTriggered,
+    LoopAlertState.expired => LoopL10n.current.common_expired,
+  };
 
   static LoopAlertState? tryParse(String value) {
     for (final state in values) {

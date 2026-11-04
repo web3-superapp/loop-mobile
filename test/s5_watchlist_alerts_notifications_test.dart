@@ -42,8 +42,8 @@ void main() {
         watchlist: FakeWatchlistGateway(),
       );
 
-      expect(find.textContaining('3 个自选资产'), findsOneWidget);
-      expect(find.text('不可读'), findsOneWidget);
+      expect(find.textContaining('3 watchlist assets'), findsOneWidget);
+      expect(find.text('No data'), findsOneWidget);
       expect(
         find.textContaining('This asset can no longer be loaded'),
         findsOneWidget,
@@ -67,7 +67,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       // Decision 0129: the undo is the confirmation; nothing is written yet.
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('watchlist-undo-toast')),
         findsOneWidget,
@@ -103,7 +103,7 @@ void main() {
         watchlist.written.single.single.items.map((item) => item.assetId),
         <String>[s5WbnbAssetId, s5NativeAssetId],
       );
-      expect(find.text('自选已保存'), findsOneWidget);
+      expect(find.text('Watchlist saved'), findsOneWidget);
     });
 
     testWidgets('a version conflict keeps the draft and blocks re-apply', (
@@ -133,10 +133,10 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-conflict')),
         findsOneWidget,
       );
-      expect(find.textContaining('没有覆盖任何内容'), findsOneWidget);
+      expect(find.textContaining('nothing was overwritten'), findsOneWidget);
       // The local draft survives the conflict.
-      expect(find.textContaining('2 个自选资产'), findsOneWidget);
-      expect(find.text('自选已保存'), findsNothing);
+      expect(find.textContaining('2 watchlist assets'), findsOneWidget);
+      expect(find.text('Watchlist saved'), findsNothing);
     });
 
     testWidgets('a conflict names what a reload would discard', (tester) async {
@@ -166,7 +166,7 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-conflict-diff')),
         findsOneWidget,
       );
-      expect(find.textContaining('Mining：移除 1 项'), findsOneWidget);
+      expect(find.textContaining('Mining: 1 removed'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('watchlist-conflict-reload')),
         findsOneWidget,
@@ -221,7 +221,7 @@ void main() {
       expect(copied, contains(s5NativeAssetId));
       // The removed row is not in the copy: the draft is what would be lost.
       expect(copied, isNot(contains(s5UsdtAssetId)));
-      expect(find.text('草稿已复制'), findsOneWidget);
+      expect(find.text('Draft copied'), findsOneWidget);
     });
 
     testWidgets('an unavailable capability stops the editor', (tester) async {
@@ -252,9 +252,9 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.textContaining('1 个提醒正在监听'), findsOneWidget);
-      expect(find.text('WBNB 涨到 800.5'), findsOneWidget);
-      expect(find.textContaining('评估于'), findsOneWidget);
+      expect(find.textContaining('1 alerts watching'), findsOneWidget);
+      expect(find.text('WBNB Rises to 800.5'), findsOneWidget);
+      expect(find.textContaining('Evaluated'), findsOneWidget);
     });
 
     testWidgets('a hero over a partial list counts what it loaded', (
@@ -276,7 +276,7 @@ void main() {
 
       // One page of an unknown number: the hero may not call its armed rows
       // the alerts that are listening, and it never prints 「N ACTIVE」.
-      expect(find.textContaining('已载入 1 条提醒'), findsOneWidget);
+      expect(find.textContaining('1 alerts loaded'), findsOneWidget);
       expect(find.textContaining('个提醒正在监听'), findsNothing);
       expect(find.textContaining('ACTIVE'), findsNothing);
     });
@@ -315,7 +315,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.textContaining('评估器还没有看过这条'), findsOneWidget);
+      expect(find.textContaining('Not evaluated yet'), findsOneWidget);
     });
 
     testWidgets('a malformed threshold never leaves the editor', (
@@ -373,7 +373,7 @@ void main() {
 
       expect(alerts.created.single.threshold, '800.500');
       expect(alerts.created.single.assetId, s5WbnbAssetId);
-      expect(find.text('提醒已保存'), findsOneWidget);
+      expect(find.text('Alert saved'), findsOneWidget);
     });
 
     testWidgets('editing sends the alert version as the CAS input', (
@@ -439,7 +439,7 @@ void main() {
 
       expect(alerts.deleted, <String>[s5AlertId]);
       expect(alerts.expectedVersions, <int>[2]);
-      expect(find.text('提醒已删除'), findsOneWidget);
+      expect(find.text('Alert deleted'), findsOneWidget);
     });
 
     testWidgets('the trigger history is the price-alert feed', (tester) async {
@@ -455,14 +455,17 @@ void main() {
         tester,
         find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
       );
-      expect(find.textContaining('WBNB 触发 700（观察值 747.39）'), findsOneWidget);
+      expect(
+        find.textContaining('WBNB triggered 700 (observed 747.39)'),
+        findsOneWidget,
+      );
       // A provider LOOP names elsewhere is named the same way here.
       expect(find.textContaining('Source: DexScreener'), findsOneWidget);
       expect(find.textContaining('Source: dexscreener'), findsNothing);
       // The alert id addresses the row this entry highlights; it is not copy.
       expect(find.textContaining('提醒 $s5AlertId'), findsNothing);
       expect(find.textContaining(s5AlertId), findsNothing);
-      expect(find.text('未读'), findsOneWidget);
+      expect(find.text('Unread'), findsOneWidget);
 
       await tester.tap(
         find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
@@ -499,7 +502,7 @@ void main() {
       // is not provenance; the observation time still is.
       expect(find.textContaining('mock_seed'), findsNothing);
       expect(find.textContaining('来源'), findsNothing);
-      expect(find.textContaining('观察于'), findsWidgets);
+      expect(find.textContaining('Observed'), findsWidgets);
     });
 
     testWidgets('the token page drops the same internal source identifier', (
@@ -526,7 +529,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       final row = find.byKey(ValueKey<String>('token-feed-$s5NotificationId'));
       await scrollToS5Section(tester, row);
@@ -536,7 +539,7 @@ void main() {
       final subtitle = tester.widget<LoopRecordRow>(row).subtitle;
       expect(subtitle, isNot(contains('mock_seed')));
       expect(subtitle, isNot(contains('来源')));
-      expect(subtitle, contains('观察于'));
+      expect(subtitle, contains('Observed'));
     });
 
     testWidgets('the trigger history pages to the end and says so', (
@@ -589,7 +592,7 @@ void main() {
       );
       // The end of the list states that it is the end instead of just stopping.
       expect(loadMore, findsNothing);
-      expect(find.text('没有更多触发记录'), findsOneWidget);
+      expect(find.text('No more trigger records'), findsOneWidget);
     });
 
     testWidgets('a feed entry highlights exactly the alert it references', (
@@ -633,18 +636,21 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(ValueKey<String>('alert-$s5AlertId')),
-          matching: find.text('本次触发'),
+          matching: find.text('This trigger'),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: find.byKey(ValueKey<String>('alert-$s5OtherWalletId')),
-          matching: find.text('本次触发'),
+          matching: find.text('This trigger'),
         ),
         findsNothing,
       );
-      expect(find.textContaining('通知已记录这次触发'), findsOneWidget);
+      expect(
+        find.textContaining('This trigger is recorded in notifications'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('no feed entry means no alert row is highlighted', (
@@ -667,7 +673,7 @@ void main() {
       );
 
       expect(find.byKey(ValueKey<String>('alert-$s5AlertId')), findsOneWidget);
-      expect(find.text('本次触发'), findsNothing);
+      expect(find.text('This trigger'), findsNothing);
     });
 
     testWidgets('push is stated as unavailable, never as pending permission', (
@@ -680,12 +686,14 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      // The price-alerts page (lib/features/market) is not migrated yet.
-      expect(find.text('推送尚不可用'), findsOneWidget);
+      expect(find.text("Push isn't available yet"), findsOneWidget);
       expect(find.textContaining('需要系统通知权限'), findsNothing);
       // Once per screen: the feed footer printed the same sentence two lines
       // above the notice that owns it.
-      expect(find.textContaining('推送还没有开放'), findsOneWidget);
+      expect(
+        find.textContaining("Push notifications aren't available yet"),
+        findsOneWidget,
+      );
     });
   });
 

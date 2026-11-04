@@ -38,6 +38,7 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -54,28 +55,37 @@ import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// The three tabs under the chart, in the reference's order.
 enum MemeTokenTab {
-  holders('持有者'),
-  activity('动态'),
-  about('关于');
+  holders(),
+  activity(),
+  about();
 
-  const MemeTokenTab(this.label);
+  const MemeTokenTab();
 
-  final String label;
+  String get label => switch (this) {
+    MemeTokenTab.holders => LoopL10n.current.market_tokenHolders,
+
+    MemeTokenTab.activity => LoopL10n.current.common_feed,
+
+    MemeTokenTab.about => LoopL10n.current.common_aboutSection,
+  };
 }
 
 /// The token page's chart when fewer than two candles exist (decision 0121).
-const String memeChartEmptyMessage = '还没有成交';
+String get memeChartEmptyMessage => LoopL10n.current.common_noTradesYet;
 
 /// The chart's periods under the plot (decision 0273): every bucket width
 /// the server serves, the MEME v2 project page's six.
-const List<(MemeCandleInterval, String)> memeChartRanges =
+List<(MemeCandleInterval, String)> get memeChartRanges =>
     <(MemeCandleInterval, String)>[
-      (MemeCandleInterval.oneMinute, '1分'),
-      (MemeCandleInterval.fiveMinutes, '5分'),
-      (MemeCandleInterval.fifteenMinutes, '15分'),
-      (MemeCandleInterval.oneHour, '1时'),
-      (MemeCandleInterval.fourHours, '4时'),
-      (MemeCandleInterval.oneDay, '1天'),
+      (MemeCandleInterval.oneMinute, LoopL10n.current.meme_modelsOneMinute),
+      (MemeCandleInterval.fiveMinutes, LoopL10n.current.meme_modelsFiveMinutes),
+      (
+        MemeCandleInterval.fifteenMinutes,
+        LoopL10n.current.market_chartFifteenMinutes,
+      ),
+      (MemeCandleInterval.oneHour, LoopL10n.current.market_chartOneHour),
+      (MemeCandleInterval.fourHours, LoopL10n.current.market_chartFourHours),
+      (MemeCandleInterval.oneDay, LoopL10n.current.meme_tokenText),
     ];
 
 /// The token page's full-bleed chart height for a screen [screenHeight] tall
@@ -86,12 +96,12 @@ double memeTokenChartHeight(double screenHeight) =>
 
 /// The badge beside the ticker in the bar.
 String memeTokenStatusLabel(MemeTokenStatus status) => switch (status) {
-  MemeTokenStatus.draft => '草稿',
-  MemeTokenStatus.pendingChain => '创建中',
-  MemeTokenStatus.trading => '内盘',
-  MemeTokenStatus.full => '已打满',
-  MemeTokenStatus.paused => '暂停',
-  MemeTokenStatus.graduated => '已毕业',
+  MemeTokenStatus.draft => LoopL10n.current.common_draft,
+  MemeTokenStatus.pendingChain => LoopL10n.current.meme_tokenPendingChain,
+  MemeTokenStatus.trading => LoopL10n.current.meme_tokenTrading,
+  MemeTokenStatus.full => LoopL10n.current.meme_tokenFull,
+  MemeTokenStatus.paused => LoopL10n.current.meme_tokenPaused,
+  MemeTokenStatus.graduated => LoopL10n.current.common_graduated,
 };
 
 /// The one-hour move as an amount: the price now less the price an hour
@@ -250,7 +260,11 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     final wallet = memeReadActiveWallet(ref);
     final walletId = wallet.walletId ?? detail.viewer?.walletId;
     if (walletId == null) {
-      LoopToast.show(context, message: '还没有可用的钱包', kind: LoopToastKind.warn);
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.meme_tokenMessage,
+        kind: LoopToastKind.warn,
+      );
       return;
     }
     final submission = ref.read(
@@ -289,21 +303,21 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     final address = detail.row.tokenAddress ?? detail.predictedAddress;
     final text = <String>[
       '${detail.row.name} ${loopTickerLabel(detail.row.symbol)}',
-      if (address != null) '合约 $address',
-      '在 LOOP 发射台查看',
+      if (address != null) LoopL10n.current.market_tokenShare(address),
+      LoopL10n.current.meme_tokenShare2,
     ].join('\n');
     await showLoopSheet<void>(
       context,
       builder: (context) => _MemeShareSheet(
         title: '${detail.row.name} ${loopTickerLabel(detail.row.symbol)}',
         address: address,
-        onCopy: () => unawaited(_copy(text, '已复制')),
+        onCopy: () => unawaited(_copy(text, context.l10n.common_copied)),
         onShare: () async {
           final shown = await ref.read(loopTextShareProvider)(text);
           if (!shown && context.mounted) {
             LoopToast.show(
               context,
-              message: '系统分享暂时打不开',
+              message: context.l10n.market_tokenMessage,
               kind: LoopToastKind.warn,
             );
           }
@@ -319,14 +333,14 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('meme-token-invalid-route'),
         archetype: LoopPageArchetype.record,
-        title: '无法打开这个代币',
+        title: context.l10n.meme_tokenMemeTokenInvalidRouteTitle,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('meme-token-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的代币标识',
-            message: '没有请求任何数据，也没有回退到其他代币。',
+            title: context.l10n.meme_tokenMemeTokenInvalidIdentityTitle,
+            message: context.l10n.meme_tokenMemeTokenInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -385,7 +399,9 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     return LoopDashboardPage(
       key: ValueKey<String>('meme-token-screen-$memeTokenId'),
       archetype: LoopPageArchetype.record,
-      title: detail == null ? '代币' : loopTickerLabel(detail.row.symbol),
+      title: detail == null
+          ? context.l10n.common_token
+          : loopTickerLabel(detail.row.symbol),
       titleField: detail == null
           ? null
           : _TokenTitle(
@@ -393,7 +409,9 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               address: address,
               onCopy: address == null
                   ? null
-                  : () => unawaited(_copy(address, '已复制合约地址')),
+                  : () => unawaited(
+                      _copy(address, context.l10n.market_tokenMessage2),
+                    ),
             ),
       onBack: widget.onBack,
       updating: state?.refreshing ?? false,
@@ -403,14 +421,14 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           LoopIconButton(
             key: const ValueKey<String>('meme-token-share'),
             icon: 'share',
-            label: '分享',
+            label: context.l10n.common_share,
             onPressed: () => unawaited(_share(detail)),
           ),
       ],
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('meme-token-blocked'),
-              title: '发射台暂时不可用',
+              title: context.l10n.meme_tokenMemeTokenBlockedTitle,
               message: memeCapabilityText(capability),
             )
           : null,
@@ -422,7 +440,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
             phase: state?.phase ?? LoopChainViewPhase.unavailable,
             failureKind: state?.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '代币不存在',
+            emptyMessage: context.l10n.meme_formatSwitch5,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else
@@ -456,19 +474,21 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         _BarShell(
           child: Row(
             children: <Widget>[
-              const Expanded(
+              Expanded(
                 child: LoopInlineUnavailable(
                   key: ValueKey<String>('meme-token-swap-testnet'),
-                  message: '暂不支持站内兑换',
+                  message:
+                      LoopL10n.current.meme_tokenMemeTokenSwapTestnetMessage,
                   padding: EdgeInsets.zero,
                 ),
               ),
               if (detail.graduation?.pool ?? detail.row.pool case final pool?)
                 LoopButton(
                   key: const ValueKey<String>('meme-token-copy-pool'),
-                  label: '复制池地址',
+                  label: LoopL10n.current.meme_tokenMemeTokenCopyPoolLabel,
                   icon: 'copy',
-                  onPressed: () => unawaited(_copy(pool, '已复制池地址')),
+                  onPressed: () =>
+                      unawaited(_copy(pool, LoopL10n.current.meme_tokenCopy2)),
                 ),
             ],
           ),
@@ -476,7 +496,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       MemeTokenStatus.graduated => _BarShell(
         child: LoopButton(
           key: const ValueKey<String>('meme-token-swap'),
-          label: '去兑换',
+          label: LoopL10n.current.meme_tokenMemeTokenSwapLabel,
           primary: true,
           block: true,
           onPressed: detail.row.tokenAddress == null
@@ -490,40 +510,40 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           when !ref
               .watch(loopFeatureSwitchesProvider)
               .classicMemeLaunchVisible =>
-        const _BarShell(
+        _BarShell(
           child: LoopButton(
             key: ValueKey<String>('meme-token-resume-retired'),
-            label: '经典发射已停用',
+            label: LoopL10n.current.meme_createMemeCreateRetiredOpenV2Title,
             block: true,
           ),
         ),
       MemeTokenStatus.draft => _BarShell(
         child: LoopButton(
           key: const ValueKey<String>('meme-token-resume'),
-          label: '继续创建',
+          label: LoopL10n.current.meme_tokenMemeTokenResumeLabel,
           primary: true,
           block: true,
           onPressed: () => _open(MemeRoute.resume(detail.memeTokenId)),
         ),
       ),
-      MemeTokenStatus.pendingChain => const _BarShell(
+      MemeTokenStatus.pendingChain => _BarShell(
         child: LoopButton(
           key: ValueKey<String>('meme-token-pending'),
-          label: '创建中…',
+          label: LoopL10n.current.meme_tokenMemeTokenPendingLabel,
           block: true,
         ),
       ),
-      MemeTokenStatus.full => const _BarShell(
+      MemeTokenStatus.full => _BarShell(
         child: LoopButton(
           key: ValueKey<String>('meme-token-full'),
-          label: '打满，毕业中…',
+          label: LoopL10n.current.meme_tokenMemeTokenFullLabel,
           block: true,
         ),
       ),
-      MemeTokenStatus.paused => const _BarShell(
+      MemeTokenStatus.paused => _BarShell(
         child: LoopButton(
           key: ValueKey<String>('meme-token-paused'),
-          label: '已暂停交易',
+          label: LoopL10n.current.meme_tokenMemeTokenPausedLabel,
           block: true,
         ),
       ),
@@ -564,8 +584,9 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           key: const ValueKey<String>('meme-token-hidden'),
           icon: 'warn',
           message: switch (detail.listingReason?.reasonText) {
-            final String text => '运营已将此代币从发射台隐藏 · $text',
-            _ => '运营已将此代币从发射台隐藏',
+            final String text =>
+              LoopL10n.current.meme_tokenLoopInlineUnavailable(text),
+            _ => LoopL10n.current.meme_tokenLoopInlineUnavailable2,
           },
         ),
       _PriceBlock(detail: detail),
@@ -584,9 +605,9 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           key: const ValueKey<String>('meme-token-liquidity-low'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          body:
-              '流动性低 · 内盘储备 '
-              '${memeCapLabel(memeUnits(detail.curve.realUsd1))}，大额买入滑点高',
+          body: LoopL10n.current.meme_tokenMemeTokenLiquidityLowBody(
+            memeCapLabel(memeUnits(detail.curve.realUsd1)),
+          ),
         ),
       if (detail.viewer case final viewer? when viewer.balance > BigInt.zero)
         _HoldingRow(detail: detail, balance: viewer.balance),
@@ -594,13 +615,15 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
         LoopInlineUnavailable(
           key: const ValueKey<String>('meme-token-viewer-unavailable'),
           icon: 'info',
-          message: '我的持仓暂时读不到 · ${memeReasonText(reason)}',
+          message: LoopL10n.current.meme_tokenMemeTokenViewerUnavailableMessage(
+            memeReasonText(reason),
+          ),
         ),
       if (capability.evidencePending)
-        const LoopInlineUnavailable(
+        LoopInlineUnavailable(
           key: ValueKey<String>('meme-token-evidence-pending'),
           icon: 'info',
-          message: '合约核对中，交易可能暂时不可用',
+          message: LoopL10n.current.meme_tokenMemeTokenEvidencePendingMessage,
         ),
       if (row.priceSource case final source?)
         MemeProvenance(
@@ -608,12 +631,13 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           sources: <String>[source.source.label],
           observedAt: source.observedAt,
           detail: source.source == MemePriceSource.loopCurve
-              ? '内盘价格 = 曲线虚拟储备之比，市值 = 价格 × 10 亿总量。'
-              : '毕业后的价格与市值读自 DexScreener。',
+              ? LoopL10n.current.meme_tokenMemeTokenPriceProvenanceDetail
+              : LoopL10n.current.meme_tokenMemeTokenPriceProvenanceDetail2,
         ),
       MarketTabBar(
         key: const ValueKey<String>('meme-token-tabs'),
         keyPrefix: 'meme-token-tab',
+        ids: <String>[for (final tab in MemeTokenTab.values) tab.name],
         // Decision 0174: the holder count rides in its tab's title.
         labels: <String>[
           for (final tab in MemeTokenTab.values)
@@ -657,7 +681,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
     return switch (submission.phase) {
       MemeSubmissionPhase.pollTimedOut => LoopButton(
         key: const ValueKey<String>('meme-token-resume-poll'),
-        label: '再查一次',
+        label: LoopL10n.current.meme_createMemeCreateResumeLabel,
         onPressed: controller.resumePolling,
       ),
       MemeSubmissionPhase.locked
@@ -665,7 +689,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               memeReportRetryable(submission.outcome!.reasonCode) =>
         LoopButton(
           key: const ValueKey<String>('meme-token-retry-report'),
-          label: '重新上报',
+          label: LoopL10n.current.meme_createMemeCreateRetryReportLabel,
           onPressed: () => unawaited(controller.retryReport()),
         ),
       MemeSubmissionPhase.confirmed ||
@@ -675,7 +699,7 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       MemeSubmissionPhase.prepareFailed => LoopIconButton(
         key: const ValueKey<String>('meme-token-status-close'),
         icon: 'close',
-        label: '关闭',
+        label: LoopL10n.current.common_close,
         onPressed: controller.reset,
       ),
       _ => null,
@@ -700,24 +724,31 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           rows: <LoopRecordRow>[
             // Decision 0123: every link row has its mark, from the icons
             // the set already has (no brand marks are drawn).
-            for (final (label, url, icon) in <(String, String?, String)>[
-              ('X', links.twitter, 'link'),
-              ('Telegram', links.telegram, 'link'),
-              ('官网', links.website, 'globe'),
-            ])
+            for (final (id, label, url, icon)
+                in <(String, String, String?, String)>[
+                  ('X', 'X', links.twitter, 'link'),
+                  ('Telegram', 'Telegram', links.telegram, 'link'),
+                  (
+                    'website',
+                    LoopL10n.current.meme_tokenFor,
+                    links.website,
+                    'globe',
+                  ),
+                ])
               if (url != null)
                 LoopRecordRow(
-                  key: ValueKey<String>('meme-about-link-$label'),
+                  key: ValueKey<String>('meme-about-link-$id'),
                   leading: LoopRowIcon(icon: icon),
                   title: label,
                   subtitle: url,
-                  trailingCaption: '复制',
+                  trailingCaption: LoopL10n.current.common_copy,
                   chevron: false,
-                  onTap: () => unawaited(_copy(url, '已复制链接')),
+                  onTap: () =>
+                      unawaited(_copy(url, LoopL10n.current.common_linkCopied)),
                 ),
           ],
         ),
-      const LoopLabel('创建者'),
+      LoopLabel(LoopL10n.current.meme_tokenLoopLabel),
       LoopRecordGroup(
         key: const ValueKey<String>('meme-about-creator'),
         rows: <LoopRecordRow>[
@@ -727,8 +758,10 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               alias: creator?.displayName,
               size: 36,
             ),
-            title: creator?.displayName ?? '未公开资料',
-            subtitle: creator == null ? '创建者没有公开资料' : '查看公开资料',
+            title: creator?.displayName ?? LoopL10n.current.meme_tokenTitle,
+            subtitle: creator == null
+                ? LoopL10n.current.meme_tokenSubtitle
+                : LoopL10n.current.meme_tokenSubtitle2,
             chevron: creator != null,
             onTap: creator == null
                 ? null
@@ -736,44 +769,72 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
           ),
         ],
       ),
-      const LoopLabel('合约'),
+      LoopLabel(LoopL10n.current.common_contract),
       if (row.tokenAddress case final address?)
-        LoopKeyValue(label: '代币合约', value: memeShortAddress(address)),
+        LoopKeyValue(
+          label: LoopL10n.current.meme_tokenLabel,
+          value: memeShortAddress(address),
+        ),
       LoopKeyValue(
-        label: '曲线合约',
+        label: LoopL10n.current.meme_tokenLabel2,
         value: memeShortAddress(detail.contract.address),
       ),
-      LoopKeyValue(label: '合约版本', value: detail.contract.version),
-      LoopKeyValue(label: '网络', value: loopChainName(detail.contract.chainId)),
       LoopKeyValue(
-        label: '总量',
-        value: '${memeTokenFigure(detail.curve.totalSupply)} 枚',
+        label: LoopL10n.current.meme_tokenLabel3,
+        value: detail.contract.version,
       ),
       LoopKeyValue(
-        label: '交易费率',
+        label: LoopL10n.current.common_network,
+        value: loopChainName(detail.contract.chainId),
+      ),
+      LoopKeyValue(
+        label: LoopL10n.current.common_totalSupply,
+        value: LoopL10n.current.meme_createValue(
+          memeTokenFigure(detail.curve.totalSupply),
+        ),
+      ),
+      LoopKeyValue(
+        label: LoopL10n.current.meme_createLabel4,
         value: memeBpsLabel(detail.curve.tradeFeeBps),
       ),
       LoopKeyValue(
-        label: '单钱包上限',
+        label: LoopL10n.current.meme_createLabel5,
         value: graduation == null
-            ? '${memeTokenFigure(detail.curve.walletCapTokens)} 枚'
-            : '毕业后不限',
+            ? LoopL10n.current.meme_createValue(
+                memeTokenFigure(detail.curve.walletCapTokens),
+              )
+            : LoopL10n.current.meme_tokenValue,
       ),
       if (graduation != null) ...<Widget>[
         if (graduation.pool case final pool?)
-          LoopKeyValue(label: 'PancakeSwap 池', value: memeShortAddress(pool)),
+          LoopKeyValue(
+            label: LoopL10n.current.meme_tokenLabel4,
+            value: memeShortAddress(pool),
+          ),
         if (graduation.usd1ToPool case final usd1?)
-          LoopKeyValue(label: '注入 USD1', value: memeUsd1Label(usd1)),
+          LoopKeyValue(
+            label: LoopL10n.current.meme_tokenLabel5,
+            value: memeUsd1Label(usd1),
+          ),
         if (graduation.tokensToPool case final tokens?)
-          LoopKeyValue(label: '注入代币', value: '${memeTokenFigure(tokens)} 枚'),
+          LoopKeyValue(
+            label: LoopL10n.current.meme_tokenLabel6,
+            value: LoopL10n.current.meme_createValue(memeTokenFigure(tokens)),
+          ),
         if (graduation.lpBurnTx case final tx?)
-          LoopKeyValue(label: 'LP 已烧毁', value: memeShortAddress(tx)),
-        LoopKeyValue(label: '毕业时间', value: loopDateTimeLabel(graduation.at)),
+          LoopKeyValue(
+            label: LoopL10n.current.meme_tokenLabel7,
+            value: memeShortAddress(tx),
+          ),
+        LoopKeyValue(
+          label: LoopL10n.current.meme_tokenLabel8,
+          value: loopDateTimeLabel(graduation.at),
+        ),
         if (graduation.hasResidual)
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('meme-about-residual'),
             icon: 'info',
-            message: '外盘池已存在，部分资金留在合约',
+            message: LoopL10n.current.meme_tokenMemeAboutResidualMessage,
           ),
         if (row.tokenAddress case final address?)
           LoopRecordGroup(
@@ -781,8 +842,8 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('meme-about-dex'),
                 leading: const LoopRowIcon(icon: 'chart'),
-                title: '外盘行情',
-                subtitle: '毕业后的价格与 K 线',
+                title: LoopL10n.current.meme_tokenMemeAboutDexTitle,
+                subtitle: LoopL10n.current.meme_tokenMemeAboutDexSubtitle,
                 onTap: () => _open(
                   MarketAssetRoute.token('${detail.contract.chainId}:$address'),
                 ),
@@ -796,21 +857,20 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('meme-about-explorer'),
               leading: const LoopRowIcon(icon: 'link'),
-              title: '区块浏览器',
+              title: LoopL10n.current.meme_tokenMemeAboutExplorerTitle,
               subtitle: url,
-              trailingCaption: '复制',
+              trailingCaption: LoopL10n.current.common_copy,
               chevron: false,
-              onTap: () => unawaited(_copy(url, '已复制链接')),
+              onTap: () =>
+                  unawaited(_copy(url, LoopL10n.current.common_linkCopied)),
             ),
           ],
         ),
       MemeProvenance(
         key: const ValueKey<String>('meme-about-provenance'),
-        sources: const <String>['LOOP 链上索引'],
+        sources: <String>[LoopL10n.current.meme_tokenMemeProvenance],
         observedAt: detail.observedAt,
-        detail:
-            '曲线状态、持有者与成交读自 LOOP 对曲线合约事件的索引；'
-            '只列出经 LOOP 创建的代币。',
+        detail: LoopL10n.current.meme_tokenMemeAboutProvenanceDetail,
       ),
     ];
   }
@@ -862,7 +922,7 @@ class _TradeBar extends StatelessWidget {
           Expanded(
             child: LoopButton(
               key: const ValueKey<String>('meme-token-sell'),
-              label: '卖出',
+              label: context.l10n.common_sell,
               block: true,
               onPressed: busy ? null : onSell,
             ),
@@ -874,7 +934,7 @@ class _TradeBar extends StatelessWidget {
           flex: holding ? 2 : 1,
           child: LoopButton(
             key: const ValueKey<String>('meme-token-buy'),
-            label: '买入',
+            label: context.l10n.common_buy,
             primary: true,
             block: true,
             onPressed: busy ? null : onBuy,
@@ -901,7 +961,7 @@ class _QuickBuyKey extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     button: true,
     enabled: onPressed != null,
-    label: '快买',
+    label: context.l10n.meme_tokenMemeTokenQuickBuySurfaceLabel,
     child: Opacity(
       opacity: onPressed == null ? 0.4 : 1,
       child: Material(
@@ -970,7 +1030,7 @@ class _TokenTitle extends StatelessWidget {
             Flexible(
               child: Text(
                 '${row.name} · '
-                '${address == null ? '还没有地址' : memeShortAddress(address!)}',
+                '${address == null ? context.l10n.meme_tokenNoAddressYet : memeShortAddress(address!)}',
                 key: const ValueKey<String>('meme-token-identity'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1000,7 +1060,7 @@ class _TokenTitle extends StatelessWidget {
               ? text
               : Semantics(
                   button: true,
-                  label: '复制合约地址',
+                  label: context.l10n.market_tokenTokenCopyAddressLabel,
                   child: InkWell(
                     key: const ValueKey<String>('meme-token-copy-address'),
                     onTap: onCopy,
@@ -1062,7 +1122,7 @@ class _PriceBlock extends StatelessWidget {
                 const SizedBox(height: 6),
                 if (row.isGraduated)
                   Text(
-                    '外盘价格',
+                    context.l10n.meme_tokenBuild,
                     style: LoopType.caption.copyWith(color: LoopColors.text3),
                   )
                 else
@@ -1082,7 +1142,7 @@ class _PriceBlock extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  '市值',
+                  context.l10n.common_marketCap,
                   style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
@@ -1152,7 +1212,9 @@ class _HoldingRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Text(
         <String>[
-          '持有 ${memeTokenLabel(balance, loopTickerLabel(detail.row.symbol))}',
+          context.l10n.meme_tokenBuild2(
+            memeTokenLabel(balance, loopTickerLabel(detail.row.symbol)),
+          ),
           if (value != null) '≈${loopFormatUsd(value)}',
         ].join(' · '),
         style: LoopType.body.copyWith(color: LoopColors.text2),
@@ -1177,9 +1239,12 @@ class _ProgressStats extends StatelessWidget {
     final target = curve.fillTargetUsd1;
     final left = target == null ? null : target - curve.realUsd1;
     final progress = graduated
-        ? '100% · 已毕业'
+        ? context.l10n.meme_tokenBuild3
         : left != null && left > BigInt.zero
-        ? '${memeBpsLabel(bps)} · 还差 ${memeCapLabel(memeUnits(left))}'
+        ? context.l10n.meme_tokenBuild4(
+            memeBpsLabel(bps),
+            memeCapLabel(memeUnits(left)),
+          )
         : memeBpsLabel(bps);
     return Column(
       key: const ValueKey<String>('meme-token-progress'),
@@ -1196,17 +1261,17 @@ class _ProgressStats extends StatelessWidget {
           ),
           stats: <LoopStat>[
             LoopStat(
-              label: '打满进度',
+              label: context.l10n.meme_tokenLabel9,
               value: progress,
               tone: LoopStatTone.up,
               statKey: const ValueKey<String>('meme-token-stat-progress'),
             ),
             LoopStat(
-              label: '24h 交易量',
+              label: context.l10n.meme_tokenLabel10,
               // Decision 0173: the listing field is optional; 暂无 when absent.
               value: switch (row.volume24hUsd1) {
                 final volume? => memeCapLabel(volume),
-                _ => '暂无',
+                _ => context.l10n.common_none,
               },
               statKey: const ValueKey<String>('meme-token-stat-volume'),
             ),
@@ -1218,7 +1283,8 @@ class _ProgressStats extends StatelessWidget {
           child: LoopProgressBar(
             key: const ValueKey<String>('meme-token-progress-bar'),
             value: memeProgressFraction(bps),
-            semanticLabel: '内盘进度 ${memeBpsLabel(bps)}',
+            semanticLabel: context.l10n
+                .meme_tokenMemeTokenProgressBarSemanticLabel(memeBpsLabel(bps)),
           ),
         ),
       ],
@@ -1252,12 +1318,12 @@ class _GraduationBanner extends StatelessWidget {
       ),
       child: LoopNotice(
         icon: 'check',
-        title: '已毕业',
-        body: '曲线已打满，代币已上 PancakeSwap，LP 已烧毁。',
+        title: context.l10n.common_graduated,
+        body: context.l10n.meme_tokenMemeTokenGraduatedCloseBody,
         trailing: LoopIconButton(
           key: const ValueKey<String>('meme-token-graduated-close'),
           icon: 'close',
-          label: '关闭',
+          label: context.l10n.common_close,
           onPressed: onClose,
         ),
       ),
@@ -1321,20 +1387,20 @@ class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
           phase: state.phase,
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.chart,
-          emptyMessage: '还没有成交',
+          emptyMessage: context.l10n.common_noTradesYet,
           onRetry: () => unawaited(ref.read(provider.notifier).reload()),
         ),
       );
     } else if (!drawn) {
       body = SizedBox(
         height: widget.height,
-        child: const SingleChildScrollView(
+        child: SingleChildScrollView(
           physics: NeverScrollableScrollPhysics(),
           child: LoopEmptyState(
             key: ValueKey<String>('meme-chart-empty'),
             illustration: LoopIllustration.chartEmpty,
             title: memeChartEmptyMessage,
-            message: '多几笔成交，走势就会画出来',
+            message: context.l10n.meme_tokenMemeChartEmptyMessage,
             compact: true,
           ),
         ),
@@ -1348,9 +1414,13 @@ class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
         showMovingAverages: _averages,
         showVolume: _volume,
         height: widget.height,
-        semanticLabel:
-            '${series.candles.length} 根${widget.interval.label}'
-            '${_style == LoopChartStyle.line ? '收盘价折线' : 'K 线'}，单位 USD1',
+        semanticLabel: context.l10n.meme_tokenSemanticLabel(
+          series.candles.length,
+          widget.interval.label,
+          _style == LoopChartStyle.line
+              ? context.l10n.market_tokenCandleStyleLine
+              : context.l10n.market_tokenCandleStyleCandle,
+        ),
       );
     }
     final onExpand = widget.onExpand;
@@ -1389,19 +1459,23 @@ class _MemeChartSectionState extends ConsumerState<MemeChartSection> {
               : LoopIconButton(
                   key: const ValueKey<String>('meme-chart-expand'),
                   icon: 'expand',
-                  label: '打开全屏图表',
+                  label: context.l10n.market_tokenTokenChartExpandLabel,
                   onPressed: onExpand,
                 ),
         ),
         if (series != null)
           MemeProvenance(
             key: const ValueKey<String>('meme-candles-provenance'),
-            sources: const <String>['LOOP 链上索引'],
+            sources: <String>[context.l10n.meme_tokenMemeProvenance],
             observedAt: series.observedAt,
-            prefix: series.frozenAt == null ? '单位 USD1' : '毕业后停在毕业时',
-            detail:
-                '每笔曲线成交后的价格按时段聚成 K 线；空时段不补。'
-                '${series.frozenAt == null ? '' : '毕业后的走势在外盘行情里看。'}',
+            prefix: series.frozenAt == null
+                ? context.l10n.meme_tokenMemeCandlesProvenancePrefix
+                : context.l10n.meme_tokenMemeCandlesProvenancePrefix2,
+            detail: context.l10n.meme_tokenMemeCandlesProvenanceDetail(
+              series.frozenAt == null
+                  ? ''
+                  : context.l10n.meme_tokenGraduatedChartHint,
+            ),
           ),
       ],
     );
@@ -1457,14 +1531,14 @@ class _MemeFullChartScreenState extends ConsumerState<MemeFullChartScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('meme-chart-full-invalid'),
         archetype: LoopPageArchetype.record,
-        title: '无法打开这张图表',
+        title: context.l10n.market_secondaryScreensInvalidAssetPage,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('meme-chart-full-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的代币标识',
-            message: '没有请求任何数据，也没有回退到其他代币。',
+            title: context.l10n.meme_tokenMemeTokenInvalidIdentityTitle,
+            message: context.l10n.meme_tokenMemeTokenInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -1478,11 +1552,11 @@ class _MemeFullChartScreenState extends ConsumerState<MemeFullChartScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('meme-chart-full-blocked'),
         archetype: LoopPageArchetype.record,
-        title: '全屏图表',
+        title: context.l10n.market_secondaryScreensChartFullBlockedTitle,
         onBack: widget.onBack,
         block: LoopPageBlock(
           key: const ValueKey<String>('meme-chart-full-capability-block'),
-          title: '发射台暂时不可用',
+          title: context.l10n.meme_tokenMemeTokenBlockedTitle,
           message: memeCapabilityText(capability),
         ),
         body: const <Widget>[],
@@ -1504,7 +1578,9 @@ class _MemeFullChartScreenState extends ConsumerState<MemeFullChartScreen> {
     return LoopFocusPage(
       key: ValueKey<String>('meme-chart-full-$memeTokenId'),
       archetype: LoopPageArchetype.record,
-      title: detail == null ? '全屏图表' : loopTickerLabel(detail.row.symbol),
+      title: detail == null
+          ? context.l10n.market_secondaryScreensChartFullBlockedTitle
+          : loopTickerLabel(detail.row.symbol),
       onBack: widget.onBack,
       body: <Widget>[
         if (detail == null)
@@ -1513,7 +1589,7 @@ class _MemeFullChartScreenState extends ConsumerState<MemeFullChartScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.chart,
-            emptyMessage: '代币不存在',
+            emptyMessage: context.l10n.meme_formatSwitch5,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else
@@ -1556,7 +1632,7 @@ List<Widget> memeHolderSections(
         phase: state.phase,
         failureKind: state.failureKind,
         rows: 4,
-        emptyMessage: '还没有持有者',
+        emptyMessage: LoopL10n.current.meme_tokenEmptyMessage,
         onRetry: () => unawaited(controller.reload()),
       ),
     ];
@@ -1571,8 +1647,8 @@ List<Widget> memeHolderSections(
           Expanded(
             child: Text(
               page.frozenAt == null
-                  ? '${page.holderCount} 个持有者 · 按曲线买卖统计'
-                  : '${page.holderCount} 个持有者 · 按曲线买卖统计 · 分布冻结于毕业时',
+                  ? LoopL10n.current.meme_tokenIf(page.holderCount)
+                  : LoopL10n.current.meme_tokenS(page.holderCount),
               style: LoopType.caption.copyWith(color: LoopColors.text2),
             ),
           ),
@@ -1580,7 +1656,7 @@ List<Widget> memeHolderSections(
             LoopIconButton(
               key: ValueKey<String>('$keyPrefix-open-all'),
               icon: 'expand',
-              label: '全部持有者',
+              label: LoopL10n.current.meme_tokenLabel11,
               onPressed: onOpenAll,
             ),
         ],
@@ -1590,8 +1666,8 @@ List<Widget> memeHolderSections(
       LoopEmptyState(
         key: ValueKey<String>('$keyPrefix-empty'),
         illustration: LoopIllustration.holders,
-        title: '还没有持有者',
-        message: '第一笔买入后，持有者会出现在这里',
+        title: LoopL10n.current.meme_tokenEmptyMessage,
+        message: LoopL10n.current.meme_tokenMessage3,
         compact: true,
       )
     else
@@ -1613,7 +1689,7 @@ List<Widget> memeHolderSections(
     if (controller.appendFailed && !state.busy)
       LoopInlineUnavailable(
         key: ValueKey<String>('$keyPrefix-more-failed'),
-        message: '下一页没有读到',
+        message: LoopL10n.current.common_nextPageFailed,
         onRetry: () => unawaited(controller.loadMore()),
       )
     else if (page.nextCursor case final cursor?) ...<Widget>[
@@ -1632,9 +1708,9 @@ List<Widget> memeHolderSections(
       MarketListEnd(key: ValueKey<String>('$keyPrefix-end')),
     MemeProvenance(
       key: ValueKey<String>('$keyPrefix-provenance'),
-      sources: const <String>['LOOP 链上索引'],
+      sources: <String>[LoopL10n.current.meme_tokenMemeProvenance],
       observedAt: page.observedAt,
-      detail: '持仓 = 曲线买入减卖出的净额，钱包之间的转账不计；占比以 10 亿总量为分母。',
+      detail: LoopL10n.current.meme_tokenDetail,
     ),
   ];
 }
@@ -1654,8 +1730,9 @@ LoopRecordRow memeHolderRow({
   final name = account?.displayName ?? memeShortAddress(holder.wallet);
   final value = price == null ? null : memeHoldingValue(holder.balance, price);
   final badges = <Widget>[
-    if (holder.isCreator) const LoopBadge('创建者'),
-    if (holder.isViewer) const LoopBadge('我', kind: LoopBadgeKind.up),
+    if (holder.isCreator) LoopBadge(LoopL10n.current.meme_tokenCreatorBadge),
+    if (holder.isViewer)
+      LoopBadge(LoopL10n.current.common_me, kind: LoopBadgeKind.up),
   ];
   return LoopRecordRow(
     key: key,
@@ -1665,7 +1742,11 @@ LoopRecordRow memeHolderRow({
       size: 36,
     ),
     title: name,
-    subtitle: '第 $rank · ${memeTokenCompact(holder.balance)} $symbol',
+    subtitle: LoopL10n.current.meme_tokenSubtitle3(
+      memeTokenCompact(holder.balance),
+      rank,
+      symbol,
+    ),
     trailingBadge: badges.isEmpty
         ? null
         : Row(
@@ -1710,7 +1791,7 @@ List<Widget> memeTradeSections(
         phase: state.phase,
         failureKind: state.failureKind,
         rows: 4,
-        emptyMessage: '还没有成交',
+        emptyMessage: LoopL10n.current.common_noTradesYet,
         onRetry: () => unawaited(controller.reload()),
       ),
     ];
@@ -1725,7 +1806,7 @@ List<Widget> memeTradeSections(
           child: LoopIconButton(
             key: ValueKey<String>('$keyPrefix-open-all'),
             icon: 'expand',
-            label: '全部动态',
+            label: LoopL10n.current.meme_tokenLabel12,
             onPressed: onOpenAll,
           ),
         ),
@@ -1734,8 +1815,8 @@ List<Widget> memeTradeSections(
       LoopEmptyState(
         key: ValueKey<String>('$keyPrefix-empty'),
         illustration: LoopIllustration.chartEmpty,
-        title: '还没有成交',
-        message: '买入或卖出后，成交会出现在这里',
+        title: LoopL10n.current.common_noTradesYet,
+        message: LoopL10n.current.meme_tokenMessage4,
         compact: true,
       )
     else
@@ -1749,7 +1830,7 @@ List<Widget> memeTradeSections(
     if (controller.appendFailed && !state.busy)
       LoopInlineUnavailable(
         key: ValueKey<String>('$keyPrefix-more-failed'),
-        message: '下一页没有读到',
+        message: LoopL10n.current.common_nextPageFailed,
         onRetry: () => unawaited(controller.loadMore()),
       )
     else if (page.nextCursor case final cursor?) ...<Widget>[
@@ -1768,9 +1849,9 @@ List<Widget> memeTradeSections(
       MarketListEnd(key: ValueKey<String>('$keyPrefix-end')),
     MemeProvenance(
       key: ValueKey<String>('$keyPrefix-provenance'),
-      sources: const <String>['LOOP 链上索引'],
+      sources: <String>[LoopL10n.current.meme_tokenMemeProvenance],
       observedAt: page.observedAt,
-      detail: '买入金额是实付（含 1% 手续费、不含退回），卖出金额是实收（已扣费）。',
+      detail: LoopL10n.current.meme_tokenDetail2,
     ),
   ];
 }
@@ -1804,7 +1885,9 @@ class _TradeRow extends StatelessWidget {
             SizedBox(
               width: 36,
               child: Text(
-                trade.isBuy ? '买' : '卖',
+                trade.isBuy
+                    ? context.l10n.meme_tokenBuild5
+                    : context.l10n.meme_tokenS2,
                 key: ValueKey<String>(
                   'meme-trade-side-${trade.isBuy ? 'buy' : 'sell'}',
                 ),
@@ -1870,7 +1953,7 @@ class _MemeShareSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('分享代币'),
+        LoopSheetHeading(context.l10n.meme_tokenLoopSheetHeading),
         Padding(
           key: const ValueKey<String>('meme-share-sheet'),
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -1887,7 +1970,10 @@ class _MemeShareSheet extends StatelessWidget {
                   height: 180,
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: LoopColors.chalk),
-                  child: LoopQrView(code: code, semanticLabel: '代币合约地址二维码'),
+                  child: LoopQrView(
+                    code: code,
+                    semanticLabel: context.l10n.meme_tokenSemanticLabel2,
+                  ),
                 ),
               if (address != null) ...<Widget>[
                 const SizedBox(height: 8),
@@ -1903,12 +1989,12 @@ class _MemeShareSheet extends StatelessWidget {
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('meme-share-copy'),
-                    label: '复制',
+                    label: context.l10n.common_copy,
                     onPressed: onCopy,
                   ),
                   LoopButton(
                     key: const ValueKey<String>('meme-share-system'),
-                    label: '分享',
+                    label: context.l10n.common_share,
                     primary: true,
                     onPressed: () => unawaited(onShare()),
                   ),
@@ -1942,17 +2028,19 @@ class MemeTokenListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = memeTokenId;
-    final title = holders ? '持有者' : '动态';
+    final title = holders
+        ? context.l10n.market_tokenHolders
+        : context.l10n.common_feed;
     if (!MemeRoute.isTokenId(id)) {
       return LoopFocusPage(
         key: ValueKey<String>('meme-token-list-invalid-$holders'),
         archetype: LoopPageArchetype.listing,
         title: title,
         onBack: onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopInlineUnavailable(
-            message: '路由中没有可用的代币标识',
-            detail: '没有请求任何数据，也没有回退到其他代币。',
+            message: context.l10n.meme_tokenMemeTokenInvalidIdentityTitle,
+            detail: context.l10n.meme_tokenMemeTokenInvalidIdentityMessage,
             detailMaxLines: 3,
             maxLines: 2,
           ),
@@ -2001,7 +2089,7 @@ class MemeTokenListScreen extends ConsumerWidget {
             },
       block: blocked
           ? LoopPageBlock(
-              title: '发射台暂时不可用',
+              title: context.l10n.meme_tokenMemeTokenBlockedTitle,
               message: memeCapabilityText(capability),
             )
           : null,
@@ -2011,7 +2099,7 @@ class MemeTokenListScreen extends ConsumerWidget {
             keyPrefix: keyPrefix,
             phase: state?.phase ?? LoopChainViewPhase.unavailable,
             failureKind: state?.failureKind,
-            emptyMessage: '代币不存在',
+            emptyMessage: context.l10n.meme_formatSwitch5,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else if (holders)

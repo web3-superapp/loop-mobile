@@ -176,7 +176,10 @@ void main() {
     });
 
     test('余额不足: BNB 手续费不足, never tBNB', () {
-      expect(memeReasonText('MEME_GAS_INSUFFICIENT'), 'BNB 手续费不足');
+      expect(
+        memeReasonText('MEME_GAS_INSUFFICIENT'),
+        'Not enough BNB for fees',
+      );
       expect(
         launch2ReasonText('LAUNCH2_GAS_INSUFFICIENT'),
         'Not enough BNB for fees. Top up and retry',
@@ -263,7 +266,10 @@ void main() {
       );
       expect(loopEnvironmentTag(_stagingUrl, release: false), 'STAGING');
       expect(loopDisplaySymbol('tBNB'), 'tBNB');
-      expect(memeReasonText('MEME_GAS_INSUFFICIENT'), 'tBNB 手续费不足');
+      expect(
+        memeReasonText('MEME_GAS_INSUFFICIENT'),
+        'Not enough tBNB for fees',
+      );
     });
 
     testWidgets('钱包首页: the badge, the note and the STAGING tag are back', (

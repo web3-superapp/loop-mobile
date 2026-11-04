@@ -316,7 +316,7 @@ void main() {
         find.byKey(const ValueKey<String>('public-profile-failure')),
         findsOneWidget,
       );
-      expect(find.textContaining('目标不存在'), findsOneWidget);
+      expect(find.textContaining("This doesn't exist"), findsOneWidget);
     });
 
     testWidgets('a member without a profile row cannot be followed', (
@@ -455,7 +455,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('3–32 位小写字母'), findsOneWidget);
+      expect(find.textContaining('3–32 lowercase letters'), findsOneWidget);
       expect(gateway.commands.where((c) => c.startsWith('create:')), isEmpty);
     });
 
@@ -502,8 +502,11 @@ void main() {
         find.byKey(const ValueKey<String>('community-apply-submitted-sheet')),
         findsOneWidget,
       );
-      expect(find.text('申请已提交 · 审核中'), findsOneWidget);
-      expect(find.textContaining('我的 → 我的社区 → 我创建的'), findsOneWidget);
+      expect(find.text('Application submitted · In review'), findsOneWidget);
+      expect(
+        find.textContaining('Me → My communities → Created'),
+        findsOneWidget,
+      );
       expect(opened, isEmpty);
 
       await tester.tap(
@@ -540,11 +543,14 @@ void main() {
 
     testWidgets('each refusal code gets its own copy', (tester) async {
       for (final (kind, fragment) in <(CommunityFailureKind, String)>[
-        (CommunityFailureKind.aliasReserved, 'LOOP 保留词'),
-        (CommunityFailureKind.aliasBlocked, '运营屏蔽名单'),
-        (CommunityFailureKind.resourceConflict, '短链接已经被另一个社区占用'),
-        (CommunityFailureKind.validationFailed, '名称或简介太长'),
-        (CommunityFailureKind.activationRequired, '先完成 LOOP ID 激活'),
+        (CommunityFailureKind.aliasReserved, 'LOOP reserved word'),
+        (CommunityFailureKind.aliasBlocked, 'on the block list'),
+        (
+          CommunityFailureKind.resourceConflict,
+          'short link is taken by another community',
+        ),
+        (CommunityFailureKind.validationFailed, 'name or bio is too long'),
+        (CommunityFailureKind.activationRequired, 'Activate your LOOP ID'),
       ]) {
         final opened = <String>[];
         final gateway = FakeCommunityGateway(

@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// What one star press did.
 ///
@@ -88,7 +89,9 @@ final class WatchlistMembershipState {
   /// The accessible name of the star. An unread list keeps the "add" name —
   /// pressing it reads the list first and then adds — and never claims the
   /// asset is already watched.
-  String get actionLabel => isWatched ? '移出自选' : '加入自选';
+  String get actionLabel => isWatched
+      ? LoopL10n.current.marketWatchlist_membershipControllerActionLabel
+      : LoopL10n.current.marketWatchlist_membershipControllerS;
 
   WatchlistMembershipState copyWith({
     LoopChainViewPhase? phase,

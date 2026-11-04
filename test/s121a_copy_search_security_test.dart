@@ -41,7 +41,12 @@ void main() {
       );
 
       final segs = tester.widgetList<LoopSeg>(_searchSegs).toList();
-      expect(segs.map((seg) => seg.label), <String>['全部', '代币', '社区', '用户']);
+      expect(segs.map((seg) => seg.label), <String>[
+        'All',
+        'Token',
+        'Community',
+        'User',
+      ]);
       // Decision 0178 (docs/35 「搜索」): the chosen segment is `.seg.on`, the
       // others the family's quiet words (decision 0170).
       expect(segs.where((seg) => seg.selected), hasLength(1));
@@ -77,7 +82,10 @@ void main() {
           matching: find.byType(Text),
         ),
       );
-      expect(hint.data, '按昵称只能搜到允许被发现的账号，LOOP ID 可以精确搜索');
+      expect(
+        hint.data,
+        'Nicknames find only discoverable accounts. LOOP IDs match exactly',
+      );
       // Decision 0277: the caption step, 12 (0229 had 14).
       expect(hint.style?.fontSize, LoopType.caption.fontSize);
       // Decision 0178: the field sits in the bottom bar, the hint right
@@ -114,7 +122,14 @@ void main() {
           .widgetList<LoopSeg>(_searchSegs)
           .map((seg) => seg.label)
           .toList();
-      expect(chips, <String>['全部', '代币', '社区', '用户', 'Launch', 'DApp']);
+      expect(chips, <String>[
+        'All',
+        'Token',
+        'Community',
+        'User',
+        'Launch',
+        'DApp',
+      ]);
     });
 
     test('the switch is off in this build', () {

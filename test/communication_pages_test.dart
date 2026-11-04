@@ -3753,7 +3753,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-ai-hero')),
         findsOneWidget,
       );
-      expect(find.text('Community AI 还没有开放'), findsOneWidget);
+      expect(find.text("Community AI isn't available yet"), findsOneWidget);
       // The server's own sentence reaches the reader, and no reason code
       // does.
       expect(find.textContaining('this page is unavailable.'), findsWidgets);
@@ -3809,14 +3809,8 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('community-ai-samples')),
       );
-      for (final sample in const <String>[
-        'Tokenomics 怎么分配',
-        '怎么参与挖矿',
-        '这周有什么动态',
-      ]) {
-        final chip = find.byKey(
-          ValueKey<String>('community-ai-sample-$sample'),
-        );
+      for (var index = 0; index < 3; index += 1) {
+        final chip = find.byKey(ValueKey<String>('community-ai-sample-$index'));
         expect(chip, findsOneWidget);
         expect(
           tester

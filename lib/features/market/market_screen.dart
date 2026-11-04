@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -29,15 +30,25 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// and ordered by the server. 新币 is drawn only while
 /// [LoopFeatureSwitchValues.outboundMarketListsVisible] is on.
 enum MarketTab {
-  watchlist('自选'),
-  major('主流'),
-  meme('MEME'),
-  community('社区代币'),
-  newPairs('新币');
+  watchlist(),
+  major(),
+  meme(),
+  community(),
+  newPairs();
 
-  const MarketTab(this.label);
+  const MarketTab();
 
-  final String label;
+  String get label => switch (this) {
+    MarketTab.watchlist => LoopL10n.current.common_watchlist,
+
+    MarketTab.major => LoopL10n.current.market_readModelsMajor,
+
+    MarketTab.meme => 'MEME',
+
+    MarketTab.community => LoopL10n.current.market_readModelsCommunity,
+
+    MarketTab.newPairs => LoopL10n.current.market_screenNewPairs,
+  };
 
   /// The chip's sprite glyph (decision 0122).
   String get icon => switch (this) {
@@ -161,7 +172,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('market-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '行情',
+      title: context.l10n.common_market,
       onBack: widget.onBack,
       tabPage: widget.onBack == null,
       embedded: widget.embedded,
@@ -184,7 +195,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('market-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
             )
@@ -194,7 +205,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         LoopIconButton(
           key: const ValueKey<String>('market-alerts-action'),
           icon: 'alarm',
-          label: '价格提醒',
+          label: context.l10n.common_priceAlerts,
           framed: true,
           onPressed: () => _open(MarketAssetRoute.alertsPath),
         ),
@@ -237,9 +248,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('market-smart-money-entry'),
-                title: '聪明钱追踪',
+                title: context.l10n.market_screenMarketSmartMoneyEntryTitle,
                 subtitle: loopReasonCodeText(overview.smartMoney.reasonCode),
-                trailingBadge: const LoopBadge('不可用'),
+                trailingBadge: LoopBadge(context.l10n.common_unavailable),
                 onTap: () => _open('/market/smart-money'),
               ),
             ],
@@ -272,7 +283,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           keyPrefix: 'market',
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: '暂时没有可展示的行情',
+          emptyMessage: LoopL10n.current.market_screenEmptyMessage,
           onRetry: () => unawaited(
             ref.read(marketOverviewControllerProvider.notifier).reload(),
           ),
@@ -284,7 +295,10 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       return <Widget>[
         LoopInlineUnavailable(
           key: const ValueKey<String>('market-watchlist-unavailable'),
-          message: '自选行情暂时读不到 · ${loopReasonCodeText(block.reasonCode)}',
+          message: LoopL10n.current
+              .market_screenMarketWatchlistUnavailableMessage(
+                loopReasonCodeText(block.reasonCode),
+              ),
           onRetry: () => unawaited(
             ref.read(marketOverviewControllerProvider.notifier).reload(),
           ),
@@ -297,11 +311,12 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         LoopEmptyState(
           key: const ValueKey<String>('market-watchlist-empty'),
           illustration: LoopIllustration.watchlist,
-          title: '还没有自选',
-          message: '在代币页点右上角的星标，就能加进自选',
+          title: LoopL10n.current.market_screenMarketWatchlistEmptyTitle,
+          message: LoopL10n.current.market_screenMarketWatchlistEmptyMessage,
           action: LoopButton(
             key: const ValueKey<String>('market-watchlist-browse-major'),
-            label: '去主流看看',
+            label:
+                LoopL10n.current.market_screenMarketWatchlistBrowseMajorLabel,
             icon: 'globe',
             primary: true,
             onPressed: () => _select(MarketTab.major),
@@ -324,8 +339,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('market-watchlist-manage'),
-            title: '管理自选',
-            subtitle: '排序、分组与移除',
+            title: LoopL10n.current.market_screenMarketWatchlistManageTitle,
+            subtitle:
+                LoopL10n.current.market_screenMarketWatchlistManageSubtitle,
             onTap: () => _open('/market/watchlist'),
           ),
         ],
@@ -363,7 +379,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           keyPrefix: keyBase,
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: '这个分类还没有代币',
+          emptyMessage: LoopL10n.current.market_screenEmptyMessage2,
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
@@ -373,11 +389,11 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         LoopEmptyState(
           key: ValueKey<String>('$keyBase-empty'),
           illustration: LoopIllustration.search,
-          title: '「${category.label}」里还没有代币',
+          title: LoopL10n.current.market_screenTitle(category.label),
           message: switch (category) {
-            MarketCategory.major => '主流资产名单里暂时没有可展示的资产。',
-            MarketCategory.meme => '还没有已登记的 Launch 项目代币。',
-            MarketCategory.community => '还没有已认证社区绑定代币。',
+            MarketCategory.major => LoopL10n.current.market_screenMajor,
+            MarketCategory.meme => LoopL10n.current.market_screenMeme,
+            MarketCategory.community => LoopL10n.current.market_screenCommunity,
           },
           compact: true,
         ),
@@ -395,7 +411,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       if (controller.appendFailed && !state.busy)
         LoopInlineUnavailable(
           key: ValueKey<String>('$keyBase-more-failed'),
-          message: '下一页没有读到',
+          message: LoopL10n.current.common_nextPageFailed,
           onRetry: () => unawaited(controller.loadMore()),
         )
       else if (cursor != null) ...<Widget>[

@@ -74,8 +74,8 @@ void main() {
         find.byKey(const ValueKey<String>('community-capability-unavailable')),
         findsOne,
       );
-      expect(find.text('社区模块当前不可用'), findsOne);
-      expect(find.textContaining('社区还没有准备好'), findsOne);
+      expect(find.text("Communities aren't available right now"), findsOne);
+      expect(find.textContaining("Communities aren't ready yet"), findsOne);
       // A closed gate takes the whole page, so there is no folio left to put a
       // figure in — not even the em dash that stands in for one.
       expect(
@@ -148,7 +148,7 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
 
-      final notice = find.textContaining('社区还没有准备好');
+      final notice = find.textContaining("Communities aren't ready yet");
       await tester.scrollUntilVisible(notice, 240);
       expect(notice, findsOne);
       expect(tester.takeException(), isNull);

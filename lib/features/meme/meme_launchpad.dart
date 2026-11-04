@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/meme/meme_models.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -41,7 +42,9 @@ bool memeReadsBlocked(WidgetRef ref) {
 /// The sentence a closed `meme` capability is explained with.
 String memeCapabilityText(LoopCapabilityProjection capability) {
   if (capability.isUnobserved) {
-    return capability.unreachable ? '暂时连不上 LOOP，发射台读不到' : '发射台状态还没有读到';
+    return capability.unreachable
+        ? LoopL10n.current.meme_launchpadIf
+        : LoopL10n.current.meme_launchpadS;
   }
   return memeReasonText(capability.reasonCode ?? 'MEME_RUNTIME_UNAVAILABLE');
 }
@@ -94,7 +97,7 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
     return LoopDashboardPage(
       key: const ValueKey<String>('meme-launchpad'),
       archetype: LoopPageArchetype.listing,
-      title: '发射台',
+      title: context.l10n.common_launchpad,
       embedded: true,
       tabPage: true,
       onRefresh: blocked ? null : _refresh,
@@ -137,7 +140,9 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
         if (blocked)
           LoopInlineUnavailable(
             key: const ValueKey<String>('meme-launchpad-unavailable'),
-            message: '发射台暂时不可用 · ${memeCapabilityText(capability)}',
+            message: context.l10n.meme_launchpadMemeLaunchpadUnavailableMessage(
+              memeCapabilityText(capability),
+            ),
           )
         else
           ..._rows(state!),
@@ -198,7 +203,10 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
         return <Widget>[
           LoopInlineUnavailable(
             key: ValueKey<String>('$keyBase-unavailable'),
-            message: '发射台暂时不可用 · ${loopChainFailureReason(state.failureKind)}',
+            message: LoopL10n.current
+                .meme_launchpadMemeLaunchpadUnavailableMessage(
+                  loopChainFailureReason(state.failureKind),
+                ),
             onRetry: () => unawaited(controller.reload()),
           ),
         ];
@@ -208,7 +216,9 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           keyPrefix: keyBase,
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: _classic ? '还没有代币，来创建第一个' : '这里还没有代币',
+          emptyMessage: _classic
+              ? LoopL10n.current.meme_launchpadEmptyMessage
+              : LoopL10n.current.meme_launchpadEmptyMessage2,
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
@@ -219,16 +229,18 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
           showMessage: true,
           key: ValueKey<String>('$keyBase-empty'),
           illustration: LoopIllustration.launchpad,
-          title: _tab == MemeListTab.fresh ? '还没有代币' : '「${_tab.label}」里还没有代币',
+          title: _tab == MemeListTab.fresh
+              ? LoopL10n.current.meme_launchpadMemeEmptyCreateTitle
+              : LoopL10n.current.market_screenTitle(_tab.label),
           message: !_classic
-              ? '经典发射已停用，新代币请走 v2 发射'
+              ? LoopL10n.current.meme_launchpadMemeEmptyCreateMessage
               : _tab == MemeListTab.fresh
-              ? '来创建第一个，打满自动上 PancakeSwap'
+              ? LoopL10n.current.meme_launchpadMemeEmptyCreateMessage2
               : null,
           action: _classic
               ? LoopButton(
                   key: const ValueKey<String>('meme-empty-create'),
-                  label: '创建第一个',
+                  label: LoopL10n.current.meme_launchpadMemeEmptyCreateLabel,
                   icon: 'plus',
                   onPressed: () => widget.onNavigate(MemeRoute.createPath),
                 )
@@ -251,7 +263,7 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
       if (controller.appendFailed && !state.busy)
         LoopInlineUnavailable(
           key: ValueKey<String>('$keyBase-more-failed'),
-          message: '下一页没有读到',
+          message: LoopL10n.current.common_nextPageFailed,
           onRetry: () => unawaited(controller.loadMore()),
         )
       else if (cursor != null) ...<Widget>[
@@ -280,9 +292,7 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
             if (row.priceSource case final source?) source.source.label,
         }.toList(),
         observedAt: page.observedAt,
-        detail:
-            '内盘代币的价格与市值读自 LOOP 曲线，已毕业代币读自 DexScreener；'
-            '读不到价格的代币写明原因，不会显示 0。',
+        detail: LoopL10n.current.meme_launchpadMemeListProvenanceDetail,
       ),
     ];
   }
@@ -337,7 +347,7 @@ class MemeGraduatingStrip extends ConsumerWidget {
                 ),
                 // R17 inline text action (decision 0190 L23).
                 child: Text(
-                  '全部',
+                  context.l10n.common_all,
                   style: LoopTypography.withWeight(
                     LoopType.label,
                     FontWeight.w600,
@@ -392,7 +402,7 @@ class _LaunchpadTools extends StatelessWidget {
         Expanded(
           child: Semantics(
             button: true,
-            label: '搜索代币',
+            label: context.l10n.meme_launchpadMemeSearchEntryLabel,
             excludeSemantics: true,
             child: Material(
               type: MaterialType.transparency,
@@ -411,9 +421,15 @@ class _LaunchpadTools extends StatelessWidget {
                     children: <Widget>[
                       const LoopIcon('search', size: 16),
                       const SizedBox(width: 8),
-                      Text(
-                        '搜索代币',
-                        style: LoopType.body.copyWith(color: LoopColors.text3),
+                      Flexible(
+                        child: Text(
+                          context.l10n.meme_launchpadMemeSearchEntryLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.body.copyWith(
+                            color: LoopColors.text3,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -427,7 +443,7 @@ class _LaunchpadTools extends StatelessWidget {
           // Decision 0176: 「充值」 is the screen's one full-Lime body.
           LoopButton(
             key: const ValueKey<String>('meme-create-entry'),
-            label: '创建代币',
+            label: context.l10n.meme_createMemeCreateRetiredTitle,
             icon: 'plus',
             onPressed: createEnabled ? create : null,
           ),
@@ -466,8 +482,9 @@ class MemeMarketSegment extends ConsumerWidget {
       rows = <Widget>[
         LoopInlineUnavailable(
           key: const ValueKey<String>('meme-market-unavailable'),
-          message:
-              '行情暂时不可用 · ${loopReasonCodeText(capability.reasonCode ?? _marketFallbackReason)}',
+          message: context.l10n.meme_launchpadMemeMarketUnavailableMessage(
+            loopReasonCodeText(capability.reasonCode ?? _marketFallbackReason),
+          ),
         ),
       ];
     } else if (page == null) {
@@ -485,17 +502,17 @@ class MemeMarketSegment extends ConsumerWidget {
             keyPrefix: 'meme-market',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '平台 MEME 资产上线后在这里显示',
+            emptyMessage: context.l10n.meme_launchpadEmptyMessage3,
             onRetry: () => unawaited(controller.reload()),
           ),
       ];
     } else if (page.items.isEmpty) {
-      rows = const <Widget>[
+      rows = <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('meme-market-empty'),
           illustration: LoopIllustration.chartEmpty,
-          title: '还没有 MEME 资产',
-          message: '平台 MEME 资产上线后在这里显示',
+          title: context.l10n.meme_launchpadMemeMarketEmptyTitle,
+          message: context.l10n.meme_launchpadEmptyMessage3,
           compact: true,
         ),
       ];
@@ -511,7 +528,7 @@ class MemeMarketSegment extends ConsumerWidget {
         if (controller.appendFailed && !state.busy)
           LoopInlineUnavailable(
             key: const ValueKey<String>('meme-market-more-failed'),
-            message: '下一页没有读到',
+            message: context.l10n.common_nextPageFailed,
             onRetry: () => unawaited(controller.loadMore()),
           )
         else if (cursor != null) ...<Widget>[
@@ -534,16 +551,16 @@ class MemeMarketSegment extends ConsumerWidget {
                 loopFactSourceLabel(quote.source),
           ],
           observedAt: page.observedAt,
-          detail:
-              '${page.rules.orderingLabel}。内盘代币读自 LOOP 曲线，'
-              '已毕业代币读自 DexScreener；读不到报价的代币写明原因。',
+          detail: context.l10n.meme_launchpadMemeMarketProvenanceDetail(
+            page.rules.orderingLabel,
+          ),
         ),
       ];
     }
     return LoopDashboardPage(
       key: const ValueKey<String>('meme-market'),
       archetype: LoopPageArchetype.listing,
-      title: '行情',
+      title: context.l10n.common_market,
       embedded: true,
       tabPage: true,
       onRefresh: blocked ? null : controller.reload,

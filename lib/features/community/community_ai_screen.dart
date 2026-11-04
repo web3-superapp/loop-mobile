@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -27,33 +28,66 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// They are used only by the unavailable shell: once the surface is open the
 /// server publishes its own eight rows, with its own words and its own
 /// per-row reasons, and the client prints those instead.
-const List<(String, String, String)> _communityAiScopes =
+List<(String, String, String)> get _communityAiScopes =>
     <(String, String, String)>[
-      ('book', '项目知识', '白皮书、Tokenomics、Roadmap、FAQ'),
-      ('chat', '社区客服', 'CA 是什么、怎么买、怎么参与挖矿'),
-      ('graduate', '新手教育', '3 分钟了解项目、新手指南、资产安全'),
-      ('news', '项目动态', '官方 X、公告、Blog 汇总成日报周报'),
-      ('chart', '资产信息', '价格、市值、流动性、权重、社区算力'),
-      ('compass', '社区引导', '提醒你还没参与挖矿、权重已生效'),
-      ('shield', 'AI 巡查', '检测诈骗链接、假 CA、钓鱼、假管理员'),
-      ('smart', '社区分析', '仅管理员可见：DAU、转化、情绪变化'),
+      (
+        'book',
+        LoopL10n.current.community_aiText,
+        LoopL10n.current.community_aiText2,
+      ),
+      (
+        'chat',
+        LoopL10n.current.community_aiText3,
+        LoopL10n.current.community_aiText4,
+      ),
+      (
+        'graduate',
+        LoopL10n.current.community_aiText5,
+        LoopL10n.current.community_aiText6,
+      ),
+      (
+        'news',
+        LoopL10n.current.community_aiText7,
+        LoopL10n.current.community_aiText8,
+      ),
+      (
+        'chart',
+        LoopL10n.current.community_aiText9,
+        LoopL10n.current.community_aiText10,
+      ),
+      (
+        'compass',
+        LoopL10n.current.community_aiText11,
+        LoopL10n.current.community_aiText12,
+      ),
+      (
+        'shield',
+        LoopL10n.current.community_aiText13,
+        LoopL10n.current.community_aiText14,
+      ),
+      (
+        'smart',
+        LoopL10n.current.community_aiText15,
+        LoopL10n.current.community_aiText16,
+      ),
     ];
 
 /// `#scr-community-ai .segs` — the three questions the prototype offers.
 ///
 /// The closed page prints these; the open page prints the server's own three,
 /// which are the same three and are still the server's to change.
-const List<String> _communityAiSamples = <String>[
-  'Tokenomics 怎么分配',
-  '怎么参与挖矿',
-  '这周有什么动态',
+List<String> get _communityAiSamples => <String>[
+  LoopL10n.current.community_aiText17,
+  LoopL10n.current.community_aiText18,
+  LoopL10n.current.community_aiText19,
 ];
 
 /// What the closed page says about itself in one line.
 ///
 /// It is also the heading, so the caption must not repeat it; see
 /// [communityAiHeroCaption].
-const communityAiHeadline = 'Community AI 还没有开放';
+String get communityAiHeadline =>
+    LoopL10n.current.community_aiCommunityAiHeadline;
 
 /// The hero's second line: what is left of the server's own sentence, plus
 /// what the page will hold once it opens.
@@ -63,8 +97,10 @@ String communityAiHeroCaption(String reason) {
     rest = rest.substring(communityAiHeadline.length);
     rest = rest.replaceFirst(RegExp('^[，,、。：:]'), '').trim();
   }
-  const outlook = '开放后，回答会带上来源和观察时间，不替代项目方公告。';
-  return rest.isEmpty ? outlook : '$rest$outlook';
+  final outlook = LoopL10n.current.community_aiOutlook;
+  return rest.isEmpty
+      ? outlook
+      : '$rest${LoopL10n.current.community_aiSentenceGap}$outlook';
 }
 
 /// `community-ai` · the prototype's chat page.
@@ -170,8 +206,8 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
           : LoopComposer(
               key: const ValueKey<String>('community-ai-composer'),
               controller: _composer,
-              hintText: '问这个社区的 AI',
-              sendLabel: '发送',
+              hintText: context.l10n.community_aiCommunityAiComposerHintText,
+              sendLabel: context.l10n.common_send,
               enabled: !state.asking,
               onSend: state.asking
                   ? null
@@ -201,13 +237,13 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
                     onReport: (answerId) =>
                         _report(controller, answerId: answerId),
                   ),
-                const LoopLabel('我能做什么'),
+                LoopLabel(context.l10n.community_aiLoopLabel),
                 _CommunityAiAbilities(
                   key: const ValueKey<String>('community-ai-capabilities'),
                   capabilities: overview.capabilities,
                 ),
                 if (overview.exampleQuestions.isNotEmpty) ...<Widget>[
-                  const LoopLabel('试试这些'),
+                  LoopLabel(context.l10n.community_aiLoopLabel2),
                   Padding(
                     key: const ValueKey<String>('community-ai-samples'),
                     padding: const EdgeInsets.fromLTRB(
@@ -262,7 +298,7 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
         archetype: LoopFolioArchetype.listing,
         ring: false,
         headingTone: LoopFolioHeadingTone.neutral,
-        kicker: '社区简报',
+        kicker: LoopL10n.current.community_aiCommunityAiHeroKicker,
         heading: communityAiBriefHeading(summary),
         caption: summary.summary,
       );
@@ -279,7 +315,7 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
       archetype: LoopFolioArchetype.listing,
       ring: false,
       headingTone: LoopFolioHeadingTone.neutral,
-      kicker: '社区简报',
+      kicker: LoopL10n.current.community_aiCommunityAiHeroKicker,
       heading: absence.heading,
       caption: absence.caption,
     );
@@ -296,7 +332,7 @@ class _CommunityAiScreenState extends ConsumerState<CommunityAiScreen> {
     LoopToast.show(
       context,
       message: failure == null
-          ? '已提交举报'
+          ? LoopL10n.current.community_aiMessage
           : communityAiFailureReason(
               kind: failure.kind,
               reasonCode: failure.reasonCode,
@@ -334,20 +370,23 @@ class _CommunityAiStateBlock extends StatelessWidget {
         type: LoopSkeletonType.list,
         rows: 3,
       ),
-      CommunityViewPhase.empty => const LoopEmptyState(
+      CommunityViewPhase.empty => LoopEmptyState(
         key: ValueKey<String>('community-ai-state-empty'),
         illustration: LoopIllustration.chat,
-        title: '这个社区还没有可以问的内容',
+        title: context.l10n.community_aiCommunityAiStateEmptyTitle,
         compact: true,
       ),
       CommunityViewPhase.offline => LoopOfflineState(
         key: const ValueKey<String>('community-ai-state-offline'),
         onRetry: onRetry,
-        pausedActions: const <String>['提问', '举报'],
+        pausedActions: <String>[
+          context.l10n.community_aiLoopOfflineState,
+          context.l10n.common_report,
+        ],
       ),
       CommunityViewPhase.unavailable => LoopInlineUnavailable(
         key: const ValueKey<String>('community-ai-state-unavailable'),
-        message: '这一页暂时不可用',
+        message: context.l10n.community_aiCommunityAiStateUnavailableMessage,
         detail: reason,
         maxLines: 2,
         detailMaxLines: 4,
@@ -355,7 +394,7 @@ class _CommunityAiStateBlock extends StatelessWidget {
       CommunityViewPhase.permission => LoopPermissionState(
         key: const ValueKey<String>('community-ai-state-permission'),
         icon: 'shield',
-        title: '当前账号还不能用这个助理',
+        title: context.l10n.community_aiCommunityAiStatePermissionTitle,
         purpose: reason,
       ),
       CommunityViewPhase.error || CommunityViewPhase.ready => LoopErrorState(
@@ -376,10 +415,10 @@ class _CommunityAiAbilities extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (capabilities.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('community-ai-capabilities-empty'),
         illustration: LoopIllustration.chat,
-        title: '这个社区还没有开放的助理能力',
+        title: context.l10n.community_aiCommunityAiCapabilitiesEmptyTitle,
         compact: true,
       );
     }
@@ -405,7 +444,7 @@ class _CommunityAiAbilities extends StatelessWidget {
             subtitleMaxLines: 2,
             trailingBadge: capabilities[index].available
                 ? null
-                : const LoopBadge('未开放'),
+                : LoopBadge(context.l10n.common_notOpenYet),
             chevron: false,
             position: communityRowPosition(index, capabilities.length),
           ),
@@ -448,7 +487,7 @@ class _CommunityAiTurnBlock extends StatelessWidget {
         else if (turn.isPending)
           _CommunityAiReply(
             key: ValueKey<String>('community-ai-turn-$index-pending'),
-            body: '正在回答…',
+            body: context.l10n.community_aiBody,
           )
         else
           _CommunityAiReply(
@@ -645,7 +684,9 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
                   key: ValueKey<String>(
                     'community-ai-sources-${answer.answerId}',
                   ),
-                  summary: '本次使用的来源（${answer.sources.length}）',
+                  summary: context.l10n.community_aiSummary(
+                    answer.sources.length,
+                  ),
                   sources: answer.sources,
                 ),
               if (answer.omittedSources.isNotEmpty)
@@ -659,7 +700,9 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
                 alignment: AlignmentDirectional.centerStart,
                 child: Semantics(
                   button: !reported,
-                  label: reported ? '已举报' : '举报这条回答',
+                  label: reported
+                      ? context.l10n.community_aiLabel
+                      : context.l10n.community_aiLabel2,
                   child: Material(
                     type: MaterialType.transparency,
                     child: InkWell(
@@ -678,7 +721,9 @@ class _CommunityAiAnswerBubble extends StatelessWidget {
                             LoopIcon('warn', size: 13, color: LoopColors.text3),
                             const SizedBox(width: 5),
                             Text(
-                              reported ? '已举报' : '举报',
+                              reported
+                                  ? context.l10n.community_aiLabel
+                                  : context.l10n.common_report,
                               style: LoopType.captionSm,
                             ),
                           ],
@@ -738,7 +783,7 @@ class _CommunityAiCitationChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '来源 ${source.sourceId}',
+      label: context.l10n.community_aiLabel3(source.sourceId),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -787,8 +832,10 @@ class _CommunityAiSourceList extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '${source.label} · 观察于 '
-                  '${communityAiTimestamp(source.observedAt)}',
+                  context.l10n.community_aiBuild(
+                    communityAiTimestamp(source.observedAt),
+                    source.label,
+                  ),
                   style: LoopType.captionSm,
                 ),
               ),
@@ -808,7 +855,7 @@ class _CommunityAiOmittedList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopDisclosure(
-      summary: '本次未使用的来源（${omitted.length}）',
+      summary: context.l10n.community_aiSummary2(omitted.length),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
         child: Column(
@@ -903,7 +950,7 @@ Future<void> showCommunityAiSourceSheet(
   required CommunityAiSource source,
 }) => showLoopSheet<void>(
   context,
-  barrierLabel: '关闭来源说明',
+  barrierLabel: context.l10n.community_aiCommunityAiSourceSheetBarrierLabel,
   builder: (sheetContext) => Column(
     key: const ValueKey<String>('community-ai-source-sheet'),
     mainAxisSize: MainAxisSize.min,
@@ -922,7 +969,9 @@ Future<void> showCommunityAiSourceSheet(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              '观察于 ${communityAiTimestamp(source.observedAt)}',
+              context.l10n.community_aiBuild2(
+                communityAiTimestamp(source.observedAt),
+              ),
               // L2 R21 provenance: captionSm 11 (decision 0191).
               style: LoopType.captionSm,
             ),
@@ -932,7 +981,7 @@ Future<void> showCommunityAiSourceSheet(
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('community-ai-source-close'),
-                  label: '知道了',
+                  label: context.l10n.common_gotIt,
                   onPressed: () => Navigator.of(sheetContext).pop(),
                 ),
               ],
@@ -950,13 +999,13 @@ Future<CommunityAiReportReason?> showCommunityAiReportSheet(
   BuildContext context,
 ) => showLoopSheet<CommunityAiReportReason>(
   context,
-  barrierLabel: '关闭举报选项',
+  barrierLabel: context.l10n.community_aiCommunityAiReportSheetBarrierLabel,
   builder: (sheetContext) => Column(
     key: const ValueKey<String>('community-ai-report-sheet'),
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const LoopSheetHeading('举报这条回答'),
+      LoopSheetHeading(context.l10n.community_aiLabel2),
       Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -969,7 +1018,7 @@ Future<CommunityAiReportReason?> showCommunityAiReportSheet(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              '选择一个原因。举报只记录这条回答和你的选择，不会上传你问过的问题。',
+              context.l10n.community_aiBuild3,
               // R19 sheet support copy in text2 (decision 0191 L1).
               style: LoopType.bodySm,
             ),
@@ -1003,7 +1052,7 @@ Future<CommunityAiReportReason?> showCommunityAiReportSheet(
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('community-ai-report-cancel'),
-                  label: '取消',
+                  label: context.l10n.common_cancel,
                   onPressed: () => Navigator.of(sheetContext).pop(),
                 ),
               ],
@@ -1045,14 +1094,15 @@ class _CommunityAiClosedPage extends ConsumerWidget {
         // Lime is this app's success colour; a closed capability is not good
         // news, so the heading stays Chalk.
         headingTone: LoopFolioHeadingTone.neutral,
-        kicker: '社区简报',
+        kicker: context.l10n.community_aiCommunityAiHeroKicker,
         heading: communityAiHeadline,
         caption: communityAiHeroCaption(reason),
       ),
-      composer: const LoopComposer(
+      composer: LoopComposer(
         key: ValueKey<String>('community-ai-composer-unavailable'),
-        hintText: '提问还没有开放',
-        sendLabel: '发送',
+        hintText:
+            context.l10n.community_aiCommunityAiComposerUnavailableHintText,
+        sendLabel: context.l10n.common_send,
         enabled: false,
       ),
       collection: ListView(
@@ -1066,13 +1116,13 @@ class _CommunityAiClosedPage extends ConsumerWidget {
             key: const ValueKey<String>('community-ai-unavailable'),
             body: reason,
           ),
-          const LoopLabel('规划中的能力'),
+          LoopLabel(context.l10n.community_aiLoopLabel3),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               for (var index = 0; index < _communityAiScopes.length; index += 1)
                 LoopRecordRow(
                   key: ValueKey<String>(
-                    'community-ai-scope-${_communityAiScopes[index].$2}',
+                    'community-ai-scope-${_communityAiScopes[index].$1}',
                   ),
                   leading: LoopIcon(
                     _communityAiScopes[index].$1,
@@ -1081,7 +1131,7 @@ class _CommunityAiClosedPage extends ConsumerWidget {
                   ),
                   title: _communityAiScopes[index].$2,
                   subtitle: _communityAiScopes[index].$3,
-                  trailingBadge: const LoopBadge('未开放'),
+                  trailingBadge: LoopBadge(context.l10n.common_notOpenYet),
                   position: communityRowPosition(
                     index,
                     _communityAiScopes.length,
@@ -1089,7 +1139,7 @@ class _CommunityAiClosedPage extends ConsumerWidget {
                 ),
             ],
           ),
-          const LoopLabel('试试这些'),
+          LoopLabel(context.l10n.community_aiLoopLabel2),
           Padding(
             key: const ValueKey<String>('community-ai-samples'),
             padding: const EdgeInsets.fromLTRB(
@@ -1102,10 +1152,10 @@ class _CommunityAiClosedPage extends ConsumerWidget {
               spacing: 7,
               runSpacing: 7,
               children: <Widget>[
-                for (final sample in _communityAiSamples)
+                for (final (index, sample) in _communityAiSamples.indexed)
                   IntrinsicWidth(
                     child: LoopSeg(
-                      key: ValueKey<String>('community-ai-sample-$sample'),
+                      key: ValueKey<String>('community-ai-sample-$index'),
                       label: sample,
                       selected: false,
                       // Not a control: there is nothing to ask, so the chip

@@ -158,7 +158,10 @@ void main() {
         tester.widget(_key('community-state-unavailable')),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('该功能当前不可用'), findsOneWidget);
+      expect(
+        find.text("This feature isn't available right now"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unavailable fact keeps its key, reason and next step', (

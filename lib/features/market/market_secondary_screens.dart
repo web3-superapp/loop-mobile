@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_membership_contr
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -55,17 +56,22 @@ Widget _marketPageBlock(
   fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
 );
 
-Widget _invalidAssetPage(String title, VoidCallback? onBack) => LoopFocusPage(
-  key: ValueKey<String>('invalid-asset-$title'),
+Widget _invalidAssetPage(
+  String id,
+  String title,
+  VoidCallback? onBack,
+) => LoopFocusPage(
+  key: ValueKey<String>('invalid-asset-$id'),
   archetype: LoopPageArchetype.record,
   title: title,
   onBack: onBack,
-  body: const <Widget>[
+  body: <Widget>[
     LoopEmptyState(
       key: ValueKey<String>('invalid-asset-identity'),
       illustration: LoopIllustration.search,
-      title: '路由中没有可用的资产标识',
-      message: '本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+      title: LoopL10n.current.market_secondaryScreensInvalidAssetIdentityTitle,
+      message:
+          LoopL10n.current.market_secondaryScreensInvalidAssetIdentityMessage,
       compact: true,
     ),
   ],
@@ -122,18 +128,22 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   Widget build(BuildContext context) {
     final assetId = widget.assetId;
     if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
-      return _invalidAssetPage('无法打开这张图表', widget.onBack);
+      return _invalidAssetPage(
+        'chart',
+        context.l10n.market_secondaryScreensInvalidAssetPage,
+        widget.onBack,
+      );
     }
     if (_marketBlocked(ref)) {
       return LoopFocusPage(
         key: const ValueKey<String>('chart-full-blocked'),
         archetype: LoopPageArchetype.record,
-        title: '全屏图表',
+        title: context.l10n.market_secondaryScreensChartFullBlockedTitle,
         onBack: widget.onBack,
         block: _marketPageBlock(
           ref,
           key: const ValueKey<String>('chart-full-capability-block'),
-          title: '行情模块当前不可用',
+          title: context.l10n.market_screenMarketCapabilityBlockTitle,
         ),
         body: const <Widget>[],
       );
@@ -181,14 +191,12 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           onIntervalChanged: (value) => setState(() => _interval = value),
         ),
         // S278 · decision 0236: an explanation, behind (i).
-        const LoopProvenanceFooter(
+        LoopProvenanceFooter(
           key: ValueKey<String>('chart-full-interval-notice'),
-          label: '说明',
-          title: '这张图能做什么',
-          text:
-              '周期可选 15分 / 1时 / 4时 / 1日 / 1周；左右拖动看更早的数据，双指缩放，长按看某一根的价格和时间。'
-              'MA 与 VOL 由本机按图上的收盘价与成交量计算，没有单独的数据来源；'
-              '除此之外没有其他指标，也没有画线工具。',
+          label: context.l10n.common_about,
+          title:
+              context.l10n.market_secondaryScreensChartFullIntervalNoticeTitle,
+          text: context.l10n.market_secondaryScreensChartFullIntervalNoticeText,
         ),
       ],
     );
@@ -221,7 +229,11 @@ class _HolderDistributionScreenState
   Widget build(BuildContext context) {
     final assetId = widget.assetId;
     if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
-      return _invalidAssetPage('无法打开持有人分布', widget.onBack);
+      return _invalidAssetPage(
+        'holders',
+        context.l10n.market_secondaryScreensInvalidAssetPage2,
+        widget.onBack,
+      );
     }
     final blocked = _marketBlocked(ref);
     final state = ref.watch(marketHoldersControllerProvider(assetId));
@@ -250,7 +262,7 @@ class _HolderDistributionScreenState
           .reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
-      title: '持有人分布',
+      title: context.l10n.market_secondaryScreensTokenHoldersFolioTitle,
       onBack: widget.onBack,
       // `.folio-primary.chalk-card`: the prototype's Chalk hero. LOOP drew
       // the same Lime hero it uses everywhere, so the whole module read as
@@ -262,12 +274,14 @@ class _HolderDistributionScreenState
         archetype: LoopFolioArchetype.listing,
         kicker: marketHoldersKicker,
         heading: count == null || count.value == null
-            ? '持有人总数不可用'
-            : '${loopFormatDecimal(count.value!, maxFractionDigits: 0)} 持有人',
+            ? context.l10n.market_secondaryScreensTokenHoldersFolioHeading
+            : context.l10n.market_secondaryScreensTokenHoldersFolioHeading2(
+                loopFormatDecimal(count.value!, maxFractionDigits: 0),
+              ),
         // S278 · decision 0236: the count's source and time sit behind the
         // kicker's (i); a count that could not be read keeps its reason.
         caption: count == null
-            ? '持有人事实尚未读取成功。'
+            ? context.l10n.market_secondaryScreensTokenHoldersFolioCaption
             : count.isAvailable
             ? null
             : loopReasonCodeText(count.reasonCode),
@@ -275,18 +289,21 @@ class _HolderDistributionScreenState
             // S325 · decision 0255 (UX-009): the page's one (i) in its bar.
             ? LoopProvenanceReport(
                 entry: LoopProvenanceEntry(
-                  heading: '持有人',
+                  heading: context.l10n.common_holders,
                   notes: <LoopInfoNote>[
                     LoopInfoNote(body: loopFactProvenance(count)),
                   ],
                 ),
                 fallback: LoopInfoTrigger(
                   key: const ValueKey<String>('token-holders-provenance'),
-                  semanticsLabel: '${loopFactProvenance(count)}，查看数据来源说明',
+                  semanticsLabel: context.l10n
+                      .market_secondaryScreensTokenHoldersProvenanceSemanticsLabel(
+                        loopFactProvenance(count),
+                      ),
                   onTap: () => unawaited(
                     showLoopInfoSheet(
                       context,
-                      title: '数据来源',
+                      title: context.l10n.common_dataSource,
                       sheetKey: 'token-holders-provenance-sheet',
                       notes: <LoopInfoNote>[
                         LoopInfoNote(body: loopFactProvenance(count)),
@@ -304,12 +321,14 @@ class _HolderDistributionScreenState
           ? _marketPageBlock(
               ref,
               key: const ValueKey<String>('token-holders-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
             )
           : nothingToShow
           ? LoopPageBlock(
               key: const ValueKey<String>('token-holders-page-block'),
-              title: '持有人分布当前不可用',
+              title: context
+                  .l10n
+                  .market_secondaryScreensTokenHoldersPageBlockTitle,
               message: loopReasonCodeText(holders.holderCount.reasonCode),
             )
           : null,
@@ -335,13 +354,13 @@ class _HolderDistributionScreenState
             key: const ValueKey<String>('token-holders-stats'),
             stats: <LoopStat>[
               MarketStatCell.fact(
-                '持有人总数',
+                context.l10n.market_secondaryScreensFact,
                 holders.holderCount,
                 formatter: (value) =>
                     loopFormatDecimal(value, maxFractionDigits: 0),
               ).toStat(),
               MarketStatCell(
-                label: 'Top 10 集中度',
+                label: context.l10n.market_secondaryScreensLabel,
                 value: loopReasonCodeSummaryText(
                   holders.distribution.reasonCode,
                 ),
@@ -349,20 +368,22 @@ class _HolderDistributionScreenState
               ).toStat(),
             ],
           ),
-          const LoopLabel('持有人总数'),
+          LoopLabel(context.l10n.market_secondaryScreensFact),
           LoopRecordCard(
             child: LoopFactLine(
-              label: '持有人总数',
+              label: context.l10n.market_secondaryScreensFact,
               fact: holders.holderCount,
               emphasize: true,
               formatter: (value) =>
                   loopFormatDecimal(value, maxFractionDigits: 0),
             ),
           ),
-          const LoopLabel('分布'),
+          LoopLabel(context.l10n.market_secondaryScreensLoopLabel),
           _MarketUnavailableLine(
             key: const ValueKey<String>('token-holders-distribution'),
-            label: 'Top 持有人、集中度与聚类标注不可用',
+            label: context
+                .l10n
+                .market_secondaryScreensTokenHoldersDistributionLabel,
             reasonCode: holders.distribution.reasonCode,
           ),
         ],
@@ -402,7 +423,11 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
   Widget build(BuildContext context) {
     final assetId = widget.assetId;
     if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
-      return _invalidAssetPage('无法打开交易活动', widget.onBack);
+      return _invalidAssetPage(
+        'trades',
+        context.l10n.market_secondaryScreensInvalidAssetPage3,
+        widget.onBack,
+      );
     }
     final blocked = _marketBlocked(ref);
     final state = ref.watch(marketTradesControllerProvider(assetId));
@@ -425,7 +450,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
           .reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
-      title: '交易活动',
+      title: context.l10n.market_secondaryScreensTokenTradesFolioTitle,
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('token-trades-folio'),
@@ -434,15 +459,17 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         archetype: LoopFolioArchetype.listing,
         kicker: marketTradesKicker,
         heading: block is MarketTradesAvailable
-            ? '${block.items.length} 笔链上成交'
-            : '最新链上成交记录',
-        caption: '方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。',
+            ? context.l10n.market_secondaryScreensTokenTradesFolioHeading(
+                block.items.length,
+              )
+            : context.l10n.market_secondaryScreensTokenTradesFolioHeading2,
+        caption: context.l10n.market_secondaryScreensTokenTradesFolioCaption,
       ),
       block: blocked
           ? _marketPageBlock(
               ref,
               key: const ValueKey<String>('token-trades-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
             )
           : null,
       sections: <Widget>[
@@ -462,7 +489,9 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
             MarketTradesUnavailable(reasonCode: final reasonCode) => <Widget>[
               _MarketUnavailableLine(
                 key: const ValueKey<String>('token-trades-unavailable'),
-                label: '成交记录不可用',
+                label: context
+                    .l10n
+                    .market_secondaryScreensTokenTradesUnavailableLabel,
                 reasonCode: reasonCode,
               ),
             ],
@@ -489,7 +518,9 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       return <Widget>[
         LoopInlineUnavailable(
           key: const ValueKey<String>('token-trades-more-failed'),
-          message: '下一页成交没有读到',
+          message: LoopL10n
+              .current
+              .market_secondaryScreensTokenTradesMoreFailedMessage,
           onRetry: () => unawaited(controller.loadMore()),
         ),
       ];
@@ -529,7 +560,12 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         : block.items;
     return <Widget>[
       MarketSegmentBar(
-        labels: const <String>['全部', '大单', '聪明钱'],
+        ids: const <String>['all', 'large', 'smartMoney'],
+        labels: <String>[
+          LoopL10n.current.common_all,
+          LoopL10n.current.market_secondaryScreensMarketSegmentBar,
+          LoopL10n.current.market_secondaryScreensMarketSegmentBar2,
+        ],
         selectedIndex: _segment,
         enabled: const <bool>[true, true, false],
         onSelected: (index) => setState(() => _segment = index),
@@ -540,9 +576,11 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         ],
       ),
       if (_segment == 2)
-        const _MarketUnavailableLine(
+        _MarketUnavailableLine(
           key: ValueKey<String>('token-trades-smart-money'),
-          label: '聪明钱筛选不可用',
+          label: LoopL10n
+              .current
+              .market_secondaryScreensTokenTradesSmartMoneyLabel,
           reasonCode: 'SMART_MONEY_RUNTIME_DEFERRED',
         )
       else if (visible.isEmpty)
@@ -550,10 +588,14 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
           key: const ValueKey<String>('token-trades-empty'),
           illustration: LoopIllustration.history,
           compact: true,
-          title: _segment == 1 ? '这一页没有大单' : '这一页没有成交',
+          title: _segment == 1
+              ? LoopL10n.current.market_secondaryScreensTokenTradesEmptyTitle
+              : LoopL10n.current.market_secondaryScreensTokenTradesEmptyTitle2,
           message: _segment == 1
-              ? '大单是按成交金额在本机筛出来的，不是官方标注。'
-              : '索引器已经读到这个区间，但其中没有成交。',
+              ? LoopL10n.current.market_secondaryScreensTokenTradesEmptyMessage
+              : LoopL10n
+                    .current
+                    .market_secondaryScreensTokenTradesEmptyMessage2,
         )
       else
         LoopRecordGroup(
@@ -574,25 +616,34 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       // its leading marks before it is read by its words.
       leading: MarketDirectionAvatar(inbound: isBuy),
       title:
-          '${isBuy ? '买入' : '卖出'} '
+          '${isBuy ? LoopL10n.current.common_buy : LoopL10n.current.common_sell} '
           '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} '
           '${trade.quoteSymbol}',
       subtitle: <String>[
-        if (trade.isOwn) '我',
+        if (trade.isOwn) LoopL10n.current.common_me,
         loopConfirmationLabel(trade.status),
         if (trade.confirmations != null)
-          '${loopGroupedFigure(trade.confirmations.toString())} 确认',
-        '区块 ${loopGroupedFigure(trade.blockNumber.toString())}',
+          LoopL10n.current.market_secondaryScreensLoopRecordRow(
+            loopGroupedFigure(trade.confirmations.toString()),
+          ),
+        LoopL10n.current.market_secondaryScreensLoopRecordRow2(
+          loopGroupedFigure(trade.blockNumber.toString()),
+        ),
         loopRelativeTime(trade.blockTimestamp),
       ].join(' · '),
       subtitleMaxLines: 2,
       trailing: loopFormatDecimal(trade.amountAsset),
       trailingCaptionUp: isBuy,
-      trailingCaption: isBuy ? '流出池' : '流入池',
+      trailingCaption: isBuy
+          ? LoopL10n.current.market_secondaryScreensTrailingCaption
+          : LoopL10n.current.market_secondaryScreensTrailingCaption2,
       trailingBadge: trade.status == LoopConfirmationStatus.reorged
-          ? const LoopBadge('已回滚', kind: LoopBadgeKind.down)
+          ? LoopBadge(
+              LoopL10n.current.common_reverted,
+              kind: LoopBadgeKind.down,
+            )
           : isLarge
-          ? const LoopBadge('大单')
+          ? LoopBadge(LoopL10n.current.market_secondaryScreensMarketSegmentBar)
           : null,
     );
   }
@@ -611,9 +662,14 @@ class _FreshnessFooter extends StatelessWidget {
       text: <String>[
         // The block number on the same line already groups; a figure that
         // does not reads as a different kind of number.
-        '索引高度 ${loopGroupedFigure(freshness.indexerBlockNumber.toString())}',
-        if (lag != null) '数据落后 ${loopGroupedFigure(lag.toString())} 块',
-        '观察于 ${loopRelativeTime(freshness.observedAt)}',
+        context.l10n.market_secondaryScreensLoopProvenanceFooter(
+          loopGroupedFigure(freshness.indexerBlockNumber.toString()),
+        ),
+        if (lag != null)
+          context.l10n.market_secondaryScreensLoopProvenanceFooter2(
+            loopGroupedFigure(lag.toString()),
+          ),
+        context.l10n.community_aiBuild2(loopRelativeTime(freshness.observedAt)),
       ].join(' · '),
     );
   }
@@ -664,7 +720,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
       onRefresh: ref.read(marketNewPairsControllerProvider.notifier).reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
-      title: '新币发现',
+      title: context.l10n.market_secondaryScreensNewPairsScreenTitle,
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('new-pairs-folio'),
@@ -676,11 +732,13 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         // than repeating the page's own name back at the reader (walkthrough
         // 2026-09-23, d05).
         heading: block is MarketNewPairsAvailable
-            ? '${block.items.length} 个新对 · 高风险'
+            ? context.l10n.market_secondaryScreensNewPairsFolioHeading(
+                block.items.length,
+              )
             : state.isReady
-            ? '新的池暂时读不到'
-            : '正在读取新的池',
-        caption: '先看流动性、合约状态与数据出处，再看短期价格。',
+            ? context.l10n.market_secondaryScreensNewPairsFolioHeading2
+            : context.l10n.market_secondaryScreensNewPairsFolioHeading3,
+        caption: context.l10n.market_secondaryScreensNewPairsFolioCaption,
         // `.folio-stamp`: this page's subject is the risk, and the stamp is
         // where the prototype states it.
         stamp: marketNewPairsStamp,
@@ -689,7 +747,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
           ? _marketPageBlock(
               ref,
               key: const ValueKey<String>('new-pairs-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
             )
           : null,
       sections: <Widget>[
@@ -709,18 +767,21 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
             MarketNewPairsUnavailable(reasonCode: final reasonCode) => <Widget>[
               _MarketUnavailableLine(
                 key: const ValueKey<String>('new-pairs-unavailable'),
-                label: '新币发现不可用',
+                label: context
+                    .l10n
+                    .market_secondaryScreensNewPairsUnavailableLabel,
                 reasonCode: reasonCode,
               ),
             ],
             MarketNewPairsAvailable() => <Widget>[
               if (block.items.isEmpty)
-                const LoopEmptyState(
+                LoopEmptyState(
                   key: ValueKey<String>('new-pairs-empty'),
                   illustration: LoopIllustration.search,
                   compact: true,
-                  title: '当前没有新的池',
-                  message: '这是数据本身的结果，不是筛选后的结论。',
+                  title: context.l10n.market_secondaryScreensNewPairsEmptyTitle,
+                  message:
+                      context.l10n.market_secondaryScreensNewPairsEmptyMessage,
                 )
               else
                 LoopRecordGroup(
@@ -750,28 +811,33 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
               if (block.omittedCount > 0)
                 LoopNotice(
                   key: const ValueKey<String>('new-pairs-omitted'),
-                  title: '另有 ${block.omittedCount} 条数据无法解析',
-                  body: '这些行的池标识既不是合约地址也不是 pool id，本页不展示无法核对的行。',
+                  title: context.l10n
+                      .market_secondaryScreensNewPairsOmittedTitle(
+                        block.omittedCount,
+                      ),
+                  body: context.l10n.market_secondaryScreensNewPairsOmittedBody,
                 ),
               LoopProvenanceFooter(
-                text:
-                    '来源 ${loopFactSourceLabel(block.source)} · '
-                    '观察于 ${loopRelativeTime(block.fetchedAt)}',
+                text: context.l10n.market_secondaryScreensText(
+                  loopFactSourceLabel(block.source),
+                  loopRelativeTime(block.fetchedAt),
+                ),
               ),
             ],
           },
         if (page != null) ...<Widget>[
-          const LoopLabel('风险预筛'),
+          LoopLabel(context.l10n.market_secondaryScreensLoopLabel2),
           _MarketUnavailableLine(
             key: const ValueKey<String>('new-pairs-risk-screening'),
-            label: '风险预筛不可用',
+            label:
+                context.l10n.market_secondaryScreensNewPairsRiskScreeningLabel,
             reasonCode: page.riskScreening.reasonCode,
           ),
         ],
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('new-pairs-notice'),
-          title: '预筛不等于结论',
-          body: '读不到风险预筛数据时，这里不会自行判断风险。新池流动性薄，价格容易被操纵。',
+          title: context.l10n.market_secondaryScreensNewPairsNoticeTitle,
+          body: context.l10n.market_secondaryScreensNewPairsNoticeBody,
           tone: LoopNoticeTone.warn,
         ),
       ],
@@ -823,7 +889,9 @@ class _NewPairWatchAction extends ConsumerWidget {
     return LoopIconButton(
       key: ValueKey<String>('new-pair-watchlist-$assetId'),
       icon: 'star',
-      label: blocked ? '自选当前不可用' : membership.actionLabel,
+      label: blocked
+          ? context.l10n.market_secondaryScreensLabel2
+          : membership.actionLabel,
       color: membership.isWatched ? LoopColors.yellow : null,
       // An unread list has no on/off state to report; claiming `false` would
       // say the asset is not watched.
@@ -868,22 +936,22 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('smart-money-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '聪明钱追踪',
+      title: context.l10n.market_screenMarketSmartMoneyEntryTitle,
       onBack: widget.onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
         key: ValueKey<String>('smart-money-folio'),
         variant: LoopFolioVariant.quiet,
         ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: marketSmartMoneyKicker,
-        heading: '还没有可观察的地址',
-        caption: '观察地址的动作是线索，不是跟单承诺或收益推荐。',
+        heading: context.l10n.market_secondaryScreensSmartMoneyFolioHeading,
+        caption: context.l10n.market_secondaryScreensSmartMoneyFolioCaption,
       ),
       block: blocked
           ? _marketPageBlock(
               ref,
               key: const ValueKey<String>('smart-money-capability-block'),
-              title: '行情模块当前不可用',
+              title: context.l10n.market_screenMarketCapabilityBlockTitle,
             )
           : null,
       body: <Widget>[
@@ -901,29 +969,34 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
           // The prototype's two groups, in its order. Neither is invented:
           // both state the server's own reason where its rows would be, so
           // the page keeps the shape it will have once the data exists.
-          const LoopLabel('关注地址'),
+          LoopLabel(context.l10n.market_secondaryScreensLoopLabel3),
           _MarketUnavailableLine(
             key: const ValueKey<String>('smart-money-unavailable'),
-            label: '关注地址不可用',
+            label:
+                context.l10n.market_secondaryScreensSmartMoneyUnavailableLabel,
             reasonCode: fact.reasonCode,
           ),
-          const LoopLabel('最近动向'),
+          LoopLabel(context.l10n.market_secondaryScreensLoopLabel4),
           // The server's own sentence is stated once, by the block above.
           // This one says what it depends on instead of repeating it.
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('smart-money-moves-unavailable'),
             illustration: LoopIllustration.rank,
             compact: true,
-            title: '还没有可列的动向',
-            message: '动向来自关注地址，而关注地址还没有开放。',
+            title: context
+                .l10n
+                .market_secondaryScreensSmartMoneyMovesUnavailableTitle,
+            message: context
+                .l10n
+                .market_secondaryScreensSmartMoneyMovesUnavailableMessage,
           ),
         ],
         // S278 · decision 0236: an explanation, behind (i).
-        const LoopProvenanceFooter(
+        LoopProvenanceFooter(
           key: ValueKey<String>('smart-money-notice'),
-          label: '说明',
-          title: '胜率不是预测',
-          text: '即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
+          label: context.l10n.common_about,
+          title: context.l10n.market_secondaryScreensSmartMoneyNoticeTitle,
+          text: context.l10n.market_secondaryScreensSmartMoneyNoticeText,
         ),
       ],
     );

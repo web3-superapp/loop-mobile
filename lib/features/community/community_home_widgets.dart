@@ -13,13 +13,16 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// `48,120 成员` — the server's own head count, grouped for reading.
 String communityMemberCountLabel(int memberCount) =>
-    '${loopGroupedFigure(memberCount.toString())} 成员';
+    LoopL10n.current.community_homeCommunityMemberCountLabel(
+      loopGroupedFigure(memberCount.toString()),
+    );
 
 /// `.community-tool`: the round topbar tool Community draws for its three
 /// header controls, with `.community-unread-badge` on the message one.
@@ -66,7 +69,10 @@ class CommunityToolButton extends StatelessWidget {
         icon: icon,
         label: loopUnreadBadgeLabel(count) == null
             ? label
-            : '$label，${loopUnreadBadgeLabel(count)} 条未读',
+            : context.l10n.community_homeLabel(
+                label,
+                loopUnreadBadgeLabel(count),
+              ),
         color: open ? LoopColors.onPurple : null,
         toggled: toggled,
         onPressed: onPressed,
@@ -110,13 +116,15 @@ class CommunityDiscoverHero extends StatelessWidget {
   final int? verifiedCount;
   final VoidCallback onTap;
 
-  static const String title = '发现新社区';
-  static const String body = '按活跃度、持有人与 Mining 权重找到值得加入的社区';
+  static String get title => LoopL10n.current.community_homeTitle;
+  static String get body => LoopL10n.current.community_homeBody;
 
   @override
   Widget build(BuildContext context) {
     final count = verifiedCount;
-    final kicker = count == null ? '发现' : '发现，$count 个已验证';
+    final kicker = count == null
+        ? context.l10n.community_homeBuild
+        : context.l10n.community_homeS(count);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -126,7 +134,7 @@ class CommunityDiscoverHero extends StatelessWidget {
       ),
       child: Semantics(
         button: true,
-        label: '$title，$body',
+        label: '$title${LoopL10n.current.common_listSeparator}$body',
         excludeSemantics: true,
         child: Material(
           type: MaterialType.transparency,
@@ -202,7 +210,7 @@ class CommunityObservedFootnote extends StatelessWidget {
         0,
       ),
       child: Text(
-        '数据观察于 ${communityObservedAtLabel(observedAt)}',
+        context.l10n.community_homeBuild2(communityObservedAtLabel(observedAt)),
         // L3 R21 provenance (decision 0191).
         style: LoopType.captionSm,
       ),
@@ -224,10 +232,13 @@ String? communityActivityCaption({
   int? unreadMessages,
 }) {
   final clauses = <String>[
-    if (mostDiscussed != null) '$mostDiscussed 讨论最活跃',
-    if (liveVoiceRooms != null) '$liveVoiceRooms 个语音房正在进行',
-    if (unreadMessages != null) '$unreadMessages 条未读',
+    if (mostDiscussed != null)
+      LoopL10n.current.community_homeCommunityActivityCaption(mostDiscussed),
+    if (liveVoiceRooms != null)
+      LoopL10n.current.community_homeCommunityActivityCaption2(liveVoiceRooms),
+    if (unreadMessages != null)
+      LoopL10n.current.community_homeCommunityActivityCaption3(unreadMessages),
   ];
   if (clauses.isEmpty) return null;
-  return '${clauses.join(' · ')}。';
+  return LoopL10n.current.community_homeActivitySentence(clauses.join(' · '));
 }

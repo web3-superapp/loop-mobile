@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -115,8 +116,8 @@ class MemeGraduatedTag extends StatelessWidget {
   const MemeGraduatedTag({super.key});
 
   @override
-  Widget build(BuildContext context) => const LoopBadge(
-    '已毕业',
+  Widget build(BuildContext context) => LoopBadge(
+    context.l10n.common_graduated,
     key: ValueKey<String>('meme-graduated-tag'),
     kind: LoopBadgeKind.up,
   );
@@ -141,7 +142,7 @@ class MemeChangeLabel extends StatelessWidget {
     final base = style ?? LoopType.figureSm;
     if (move == null) {
       return Text(
-        '1h 涨跌未报告',
+        context.l10n.meme_widgetsMemeChangeUnreported,
         key: const ValueKey<String>('meme-change-unreported'),
         style: LoopType.captionSm.copyWith(color: LoopColors.text3),
       );
@@ -214,7 +215,7 @@ class MemeProgressRing extends StatelessWidget {
         ),
       );
       return Semantics(
-        label: '已毕业',
+        label: context.l10n.common_graduated,
         child: ExcludeSemantics(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -223,7 +224,7 @@ class MemeProgressRing extends StatelessWidget {
               if (caption) ...<Widget>[
                 const SizedBox(height: 3),
                 Text(
-                  '已毕业',
+                  context.l10n.common_graduated,
                   maxLines: 1,
                   style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
@@ -237,7 +238,9 @@ class MemeProgressRing extends StatelessWidget {
     final duration = LoopMotion.of(context, LoopMotion.progressFill);
     final stroke = size >= 44 ? 4.0 : 3.5;
     return Semantics(
-      label: '内盘进度 ${memeBpsLabel(progressBps)}',
+      label: context.l10n.meme_tokenMemeTokenProgressBarSemanticLabel(
+        memeBpsLabel(progressBps),
+      ),
       child: ExcludeSemantics(
         child: SizedBox.square(
           dimension: size,
@@ -324,11 +327,19 @@ String memeTokenSpokenLabel(MemeTokenRow row) {
       memeQuoteUnavailableText(row.quoteUnavailableReason)
     else
       memePriceLabel(price),
-    if (change != null) '1h ${marketMoveLabel(change)}' else '1h 涨跌未报告',
-    if (cap != null) '市值 ${memeCapLabel(cap)}',
-    '${row.holderCount} 持有',
-    if (row.isGraduated) '已毕业' else '内盘进度 ${memeBpsLabel(row.progressBps)}',
-  ].join('，');
+    if (change != null)
+      '1h ${marketMoveLabel(change)}'
+    else
+      LoopL10n.current.meme_widgetsMemeChangeUnreported,
+    if (cap != null) LoopL10n.current.market_fomoSubtitle(memeCapLabel(cap)),
+    LoopL10n.current.meme_widgetsMemeTokenSpokenLabel2(row.holderCount),
+    if (row.isGraduated)
+      LoopL10n.current.common_graduated
+    else
+      LoopL10n.current.meme_tokenMemeTokenProgressBarSemanticLabel(
+        memeBpsLabel(row.progressBps),
+      ),
+  ].join(LoopL10n.current.common_listSeparator);
 }
 
 /// The logo on a launchpad row: the 44 `.tile-img` (decision 0173).
@@ -384,8 +395,8 @@ class MemeTokenCard extends StatelessWidget {
         ),
         if (row.isGraduated) ...<Widget>[
           const SizedBox(width: 6),
-          const LoopBadge(
-            '已毕业',
+          LoopBadge(
+            context.l10n.common_graduated,
             key: ValueKey<String>('meme-graduated-tag'),
             kind: LoopBadgeKind.launch,
           ),
@@ -407,7 +418,8 @@ class MemeTokenCard extends StatelessWidget {
     );
     final subtitle = Text(
       <String>[
-        if (volume != null) '${memeCapLabel(volume)} 交易量',
+        if (volume != null)
+          context.l10n.meme_widgetsBuild(memeCapLabel(volume)),
         row.name,
       ].join(' · '),
       key: const ValueKey<String>('meme-row-subtitle'),
@@ -429,7 +441,7 @@ class MemeTokenCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
             child: Text(
-              '市值 ${memeCapLabel(cap)}',
+              context.l10n.market_fomoSubtitle(memeCapLabel(cap)),
               key: const ValueKey<String>('meme-row-cap'),
               maxLines: 1,
               softWrap: false,
@@ -509,9 +521,11 @@ class MemeTokenCard extends StatelessWidget {
       button: tap != null,
       label: <String>[
         memeTokenSpokenLabel(row),
-        if (volume != null) '交易量 ${memeCapLabel(volume)}',
-        if (!row.isGraduated && age != null) '上线 $age',
-      ].join('，'),
+        if (volume != null)
+          context.l10n.meme_widgetsSemantics(memeCapLabel(volume)),
+        if (!row.isGraduated && age != null)
+          context.l10n.meme_widgetsSemantics2(age),
+      ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: tap == null
           ? content
@@ -552,7 +566,10 @@ class _MemeRowProgress extends StatelessWidget {
             builder: (context, value, _) => LoopProgressBar(
               // A curve that has started never reads as empty.
               value: value <= 0 ? 0 : value.clamp(0.04, 1),
-              semanticLabel: '内盘进度 ${memeBpsLabel(progressBps)}',
+              semanticLabel: context.l10n
+                  .meme_tokenMemeTokenProgressBarSemanticLabel(
+                    memeBpsLabel(progressBps),
+                  ),
             ),
           ),
         ),
@@ -639,7 +656,8 @@ class MemeHeroCard extends StatelessWidget {
                   Text(
                     <String>[
                       loopTickerLabel(row.symbol),
-                      if (cap != null) '市值 ${memeCapLabel(cap)}',
+                      if (cap != null)
+                        context.l10n.market_fomoSubtitle(memeCapLabel(cap)),
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

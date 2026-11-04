@@ -1,16 +1,24 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum SearchDomain {
-  users('users', '用户'),
-  communities('communities', '社区'),
-  assets('assets', '代币'),
-  launch('launch', 'Launch'),
-  dapps('dapps', 'DApp');
+  users('users'),
+  communities('communities'),
+  assets('assets'),
+  launch('launch'),
+  dapps('dapps');
 
-  const SearchDomain(this.wireName, this.label);
+  const SearchDomain(this.wireName);
 
   final String wireName;
-  final String label;
+
+  String get label => switch (this) {
+    SearchDomain.users => LoopL10n.current.common_user,
+    SearchDomain.communities => LoopL10n.current.common_community,
+    SearchDomain.assets => LoopL10n.current.common_token,
+    SearchDomain.launch => 'Launch',
+    SearchDomain.dapps => 'DApp',
+  };
 }
 
 /// The only way to navigate a result. Routes are never assembled from copy,

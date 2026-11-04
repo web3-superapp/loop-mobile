@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/loop_chart_gestures.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 // ---------------------------------------------------------------------------
@@ -206,11 +207,12 @@ String loopChartCrosshairTime(DateTime at) {
 /// The chip label of each interval on the token chart.
 String loopChartIntervalLabel(LoopCandleInterval interval) =>
     switch (interval) {
-      LoopCandleInterval.fifteenMinutes => '15分',
-      LoopCandleInterval.oneHour => '1时',
-      LoopCandleInterval.fourHours => '4时',
-      LoopCandleInterval.oneDay => '1日',
-      LoopCandleInterval.oneWeek => '1周',
+      LoopCandleInterval.fifteenMinutes =>
+        LoopL10n.current.market_chartFifteenMinutes,
+      LoopCandleInterval.oneHour => LoopL10n.current.market_chartOneHour,
+      LoopCandleInterval.fourHours => LoopL10n.current.market_chartFourHours,
+      LoopCandleInterval.oneDay => LoopL10n.current.market_chartOneDay,
+      LoopCandleInterval.oneWeek => LoopL10n.current.market_chartOneWeek,
     };
 
 /// The series normalised once against its own whole range.

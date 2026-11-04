@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 
@@ -31,7 +32,7 @@ enum CommunityRole {
   String get label => switch (this) {
     CommunityRole.owner => 'Owner',
     CommunityRole.admin => 'Admin',
-    CommunityRole.member => '成员',
+    CommunityRole.member => LoopL10n.current.common_members,
   };
 
   static CommunityRole? tryParse(String value) {

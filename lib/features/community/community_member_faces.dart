@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -80,7 +81,9 @@ class CommunityMemberStrip extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    member.isSelf ? '我' : member.profile.displayName,
+                    member.isSelf
+                        ? context.l10n.common_me
+                        : member.profile.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

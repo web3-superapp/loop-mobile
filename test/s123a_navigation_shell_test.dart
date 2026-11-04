@@ -402,16 +402,16 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(_key('meme-create-abandon-sheet'), findsOneWidget);
-      expect(find.text('放弃创建？'), findsOneWidget);
+      expect(find.text('Discard token creation?'), findsOneWidget);
 
-      await tester.tap(find.text('继续编辑'));
+      await tester.tap(find.text('Keep editing'));
       await tester.pumpAndSettle();
       expect(left, 0);
       expect(find.text('Frog'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('放弃'));
+      await tester.tap(find.text('Discard'));
       await tester.pumpAndSettle();
       expect(left, 1);
     });

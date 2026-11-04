@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -73,15 +74,15 @@ final class MemeSignOutcome {
 }
 
 String memeIntentTitle(MemeIntentKind kind) => switch (kind) {
-  MemeIntentKind.create => '确认创建',
-  MemeIntentKind.buy => '确认买入',
-  MemeIntentKind.sell => '确认卖出',
+  MemeIntentKind.create => LoopL10n.current.meme_signingCreate,
+  MemeIntentKind.buy => LoopL10n.current.meme_signingBuy,
+  MemeIntentKind.sell => LoopL10n.current.meme_signingSell,
 };
 
 String memeIntentNoun(MemeIntentKind kind) => switch (kind) {
-  MemeIntentKind.create => '创建',
-  MemeIntentKind.buy => '买入',
-  MemeIntentKind.sell => '卖出',
+  MemeIntentKind.create => LoopL10n.current.meme_createLoopButton,
+  MemeIntentKind.buy => LoopL10n.current.common_buy,
+  MemeIntentKind.sell => LoopL10n.current.common_sell,
 };
 
 /// The reviewed facts for one intent. The sheet renders exactly these, and
@@ -93,59 +94,92 @@ List<IntentField> memeIntentFields(
   final ticker = loopTickerLabel(symbol);
   final approval = intent.approval;
   return <IntentField>[
-    IntentField(label: '操作', value: '${memeIntentNoun(intent.kind)} $ticker'),
+    IntentField(
+      label: LoopL10n.current.common_actions,
+      value: '${memeIntentNoun(intent.kind)} $ticker',
+    ),
     if (intent.kind == MemeIntentKind.create && intent.predictedAddress != null)
       IntentField(
-        label: '代币地址',
+        label: LoopL10n.current.meme_createLoopLabel,
         value: memeShortAddress(intent.predictedAddress!),
       ),
     if (intent.kind == MemeIntentKind.sell) ...<IntentField>[
       IntentField(
-        label: '卖出',
+        label: LoopL10n.current.common_sell,
         value: memeTokenLabel(intent.tokenAmount, ticker),
       ),
-      IntentField(label: '预计到手', value: memeUsd1Label(intent.expectedOut)),
-      IntentField(label: '最少到手', value: memeUsd1Label(intent.minOut)),
+      IntentField(
+        label: LoopL10n.current.meme_signingLabel,
+        value: memeUsd1Label(intent.expectedOut),
+      ),
+      IntentField(
+        label: LoopL10n.current.meme_signingLabel2,
+        value: memeUsd1Label(intent.minOut),
+      ),
     ] else if (intent.usd1Amount > BigInt.zero) ...<IntentField>[
       IntentField(
-        label: intent.kind == MemeIntentKind.create ? '首买支付' : '支付',
+        label: intent.kind == MemeIntentKind.create
+            ? LoopL10n.current.meme_signingLabel3
+            : LoopL10n.current.common_pay,
         value: memeUsd1Label(intent.usd1Amount),
       ),
       IntentField(
-        label: '预计获得',
+        label: LoopL10n.current.common_estimatedReceive,
         value: memeTokenLabel(intent.expectedOut, ticker),
       ),
-      IntentField(label: '最少获得', value: memeTokenLabel(intent.minOut, ticker)),
+      IntentField(
+        label: LoopL10n.current.common_minimumReceive,
+        value: memeTokenLabel(intent.minOut, ticker),
+      ),
       if (intent.refund > BigInt.zero)
-        IntentField(label: '打满退回', value: memeUsd1Label(intent.refund)),
+        IntentField(
+          label: LoopL10n.current.meme_signingLabel4,
+          value: memeUsd1Label(intent.refund),
+        ),
     ],
     if (intent.fee > BigInt.zero)
       IntentField(
-        label: '手续费',
+        label: LoopL10n.current.meme_signingLabel5,
         value: memeUsd1Label(intent.fee, maxFractionDigits: 4),
       ),
     if (approval != null)
       IntentField(
-        label: '先授权',
+        label: LoopL10n.current.meme_signingLabel6,
         value: intent.kind == MemeIntentKind.sell
-            ? '${memeTokenLabel(approval.amount, ticker)} 给曲线合约'
-            : '${memeUsd1Label(approval.amount)} 给曲线合约',
+            ? LoopL10n.current.meme_signingValue(
+                memeTokenLabel(approval.amount, ticker),
+              )
+            : LoopL10n.current.meme_signingValue(
+                memeUsd1Label(approval.amount),
+              ),
       ),
     IntentField(
-      label: '模拟结果',
+      label: LoopL10n.current.common_simulationResult,
       value: switch (intent.simulationStatus) {
-        'passed' => '试算通过',
-        'reverted' => '试算被拒绝',
-        _ => approval != null ? '授权前无法试算' : '试算不可用',
+        'passed' => LoopL10n.current.common_simulationPassed,
+        'reverted' => LoopL10n.current.common_simulationRejected,
+        _ =>
+          approval != null
+              ? LoopL10n.current.meme_signingIntentField
+              : LoopL10n.current.common_simulationUnavailable,
       },
     ),
-    IntentField(label: '有效期至', value: loopDateTimeLabel(intent.expiresAt)),
     IntentField(
-      label: '快照区块',
+      label: LoopL10n.current.common_validUntil,
+      value: loopDateTimeLabel(intent.expiresAt),
+    ),
+    IntentField(
+      label: LoopL10n.current.common_snapshotBlock,
       value: loopGroupedFigure(intent.snapshotBlockNumber),
     ),
-    IntentField(label: '合约', value: memeShortAddress(intent.contractAddress)),
-    IntentField(label: '网络', value: loopChainName(intent.chainId)),
+    IntentField(
+      label: LoopL10n.current.common_contract,
+      value: memeShortAddress(intent.contractAddress),
+    ),
+    IntentField(
+      label: LoopL10n.current.common_network,
+      value: loopChainName(intent.chainId),
+    ),
   ];
 }
 
@@ -160,29 +194,29 @@ String memeSignReasonText(String reasonCode, {bool approvalSent = false}) =>
       // Decision 0152: the large-amount step-up stopped before the wallet.
       loopStepUpCancelledCode ||
       loopStepUpFailedCode when approvalSent => loopStepUpAfterApprovalText,
-      loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-      loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-      'INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-      'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
-      'MEME_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
-      'MEME_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
+      loopStepUpCancelledCode => LoopL10n.current.meme_signingSwitch,
+      loopStepUpFailedCode => LoopL10n.current.meme_signingSwitch2,
+      'INTENT_EXPIRED' => LoopL10n.current.meme_signingSwitch3,
+      'REVIEW_PAYLOAD_MISMATCH' => LoopL10n.current.meme_signingSwitch4,
+      'MEME_WALLET_ADDRESS_UNKNOWN' => LoopL10n.current.meme_signingSwitch5,
+      'MEME_WALLET_ADDRESS_MISMATCH' => LoopL10n.current.meme_signingSwitch6,
       'INTENT_CHAIN_NOT_PERMITTED' ||
-      'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-      'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-      'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
-      'MEME_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易，请重新报价。',
-      'MEME_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-      _ => '钱包没有完成签名，没有提交任何交易。',
+      'intent_chain_not_permitted' => LoopL10n.current.meme_signingSwitch7,
+      'privy_chain_switch_unsupported' => LoopL10n.current.meme_signingSwitch8,
+      'privy_wallet_mismatch' => LoopL10n.current.meme_signingSwitch9,
+      'MEME_SIMULATION_REVERTED' => LoopL10n.current.meme_signingSwitch10,
+      'MEME_INTENT_EXPIRED' => LoopL10n.current.meme_signingSwitch3,
+      _ => LoopL10n.current.meme_signingSwitch11,
     };
 
 /// zh-CN for a refused broadcast report. The wallet already broadcast, so
 /// none of these says nothing happened.
 String memeReportReasonText(String reasonCode) => switch (reasonCode) {
-  'MEME_INTENT_ALREADY_REPORTED' => '这笔交易已经上报过另一笔哈希，本次广播没有被记录。交易可能已经上链，不要重复签名。',
-  'MEME_INTENT_NOT_SIGNABLE' => '服务端已不再接受这笔交易的上报。钱包已经广播，交易可能已经上链，不要重复签名。',
-  'MEME_INTENT_EXPIRED' => '这笔交易已过期，链上暂时还看不到它，上报没有被接受。交易可能仍在传播，不要重复签名。',
-  'MEME_TX_PAYLOAD_MISMATCH' => '链上这笔交易与确认内容不一致，服务端没有记录它。不要重复签名，并联系支持。',
-  _ => '钱包已经广播，但这次上报没有被服务端接受或没有送达。交易可能已经上链，可以稍后重新上报；不要重复签名。',
+  'MEME_INTENT_ALREADY_REPORTED' => LoopL10n.current.meme_signingSwitch12,
+  'MEME_INTENT_NOT_SIGNABLE' => LoopL10n.current.meme_signingSwitch13,
+  'MEME_INTENT_EXPIRED' => LoopL10n.current.meme_signingSwitch14,
+  'MEME_TX_PAYLOAD_MISMATCH' => LoopL10n.current.meme_signingSwitch15,
+  _ => LoopL10n.current.meme_signingSwitch16,
 };
 
 /// Whether a refused report is worth sending again with the same hash.
@@ -199,16 +233,21 @@ String memeBroadcastText(MemeSignOutcome outcome, MemeIntentKind kind) {
   final noun = memeIntentNoun(kind);
   if (hash == null) {
     if (outcome.approvalTxHash != null) {
-      return '授权已广播（${memeShortAddress(outcome.approvalTxHash!)}），'
-          '但$noun交易的钱包结果未知，已锁定。不要重复签名，稍后刷新查看。';
+      return LoopL10n.current.meme_signingIf(
+        memeShortAddress(outcome.approvalTxHash!),
+        noun,
+      );
     }
-    return '钱包的结果未知，这笔$noun已锁定。不要重复签名，稍后刷新查看。';
+    return LoopL10n.current.meme_signingIf2(noun);
   }
   final short = memeShortAddress(hash);
   if (outcome.reported != null) {
-    return '已广播（$short），服务端已记录。广播不代表已成交，正在等待链上确认。';
+    return LoopL10n.current.meme_signingIf3(short);
   }
-  return '已广播（$short）。${memeReportReasonText(outcome.reasonCode)}';
+  return LoopL10n.current.meme_signingIf4(
+    memeReportReasonText(outcome.reasonCode),
+    short,
+  );
 }
 
 /// What one MEME intent is worth in USD1, for the large-amount step-up
@@ -266,7 +305,7 @@ final class MemeIntentSigner {
       intent,
       revision: '${intent.memeIntentId}:approval',
       kind: IntentKind.launchApproval,
-      title: '授权',
+      title: LoopL10n.current.meme_signingTitle,
       transaction: approval.unsignedTransaction,
       fromAddress: fromAddress,
       symbol: symbol,
@@ -499,8 +538,9 @@ class _MemeSignSheetState extends State<MemeSignSheet>
       _state = LoopSignSheetState.simulationFailed;
       _reason = memeSignReasonText(refusal);
     } else if (widget.intent.approval != null) {
-      _reason =
-          '会依次打开两次钱包：先授权，再${memeIntentNoun(widget.intent.kind)}。授权金额只够这一笔。';
+      _reason = LoopL10n.current.meme_signingReason(
+        memeIntentNoun(widget.intent.kind),
+      );
     }
     if (refusal == null) planStepUp();
   }
@@ -547,8 +587,10 @@ class _MemeSignSheetState extends State<MemeSignSheet>
           _reason = outcome.approvalTxHash != null
               ? (loopStepUpStopped(outcome.reasonCode)
                     ? memeSignReasonText(outcome.reasonCode, approvalSent: true)
-                    : '授权已广播，${memeIntentNoun(widget.intent.kind)}没有签名，'
-                          '没有提交${memeIntentNoun(widget.intent.kind)}交易。可以关闭后重新发起。')
+                    : LoopL10n.current.meme_signingSetState(
+                        memeIntentNoun(widget.intent.kind),
+                        memeIntentNoun(widget.intent.kind),
+                      ))
               : memeSignReasonText(outcome.reasonCode);
           // An approval that went out makes this intent's nonce plan stale:
           // the page prepares a new one instead of re-opening this sheet.
@@ -856,7 +898,9 @@ String? memeSubmissionText(MemeSubmissionState state, MemeIntentKind kind) {
   final noun = memeIntentNoun(kind);
   return switch (state.phase) {
     MemeSubmissionPhase.idle => null,
-    MemeSubmissionPhase.preparing => '正在准备$noun，还没有打开钱包。',
+    MemeSubmissionPhase.preparing => LoopL10n.current.meme_signingPreparing(
+      noun,
+    ),
     MemeSubmissionPhase.prepareFailed =>
       state.failure == null ? null : memeFailureText(state.failure!),
     MemeSubmissionPhase.signRefused =>
@@ -866,20 +910,28 @@ String? memeSubmissionText(MemeSubmissionState state, MemeIntentKind kind) {
                     state.outcome!.reasonCode,
                     approvalSent: true,
                   )
-                : '授权已广播，$noun没有签名。可以重新发起。')
+                : LoopL10n.current.meme_signingSwitch17(noun))
           : memeSignReasonText(state.outcome?.reasonCode ?? ''),
-    MemeSubmissionPhase.waiting =>
-      '已广播，正在等待链上确认（已读取 ${state.attempts} 次）。不要重复$noun。',
+    MemeSubmissionPhase.waiting => LoopL10n.current.meme_signingWaiting(
+      state.attempts,
+      noun,
+    ),
     MemeSubmissionPhase.locked =>
       state.outcome == null
-          ? '这笔$noun已锁定，不要重复签名。'
+          ? LoopL10n.current.meme_signingSwitch18(noun)
           : memeBroadcastText(state.outcome!, kind),
     MemeSubmissionPhase.pollTimedOut =>
-      '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复$noun。',
-    MemeSubmissionPhase.confirmed => '$noun已在链上确认。',
-    MemeSubmissionPhase.failed =>
-      '$noun没有成功：${memeReasonText(state.intent?.reasonCode)}。',
-    MemeSubmissionPhase.expired =>
-      '$noun已过期：${memeReasonText(state.intent?.reasonCode ?? 'MEME_INTENT_EXPIRED')}。',
+      LoopL10n.current.meme_signingPollTimedOut(noun),
+    MemeSubmissionPhase.confirmed => LoopL10n.current.meme_signingConfirmed(
+      noun,
+    ),
+    MemeSubmissionPhase.failed => LoopL10n.current.meme_signingFailed(
+      memeReasonText(state.intent?.reasonCode),
+      noun,
+    ),
+    MemeSubmissionPhase.expired => LoopL10n.current.meme_signingExpired(
+      memeReasonText(state.intent?.reasonCode ?? 'MEME_INTENT_EXPIRED'),
+      noun,
+    ),
   };
 }

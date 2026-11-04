@@ -371,7 +371,7 @@ void main() {
           mode: CommunityGatewayMode.preview,
         ),
       );
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('Demo data'), findsOneWidget);
     });
   });
 

@@ -492,7 +492,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('已关注'), findsNothing);
-      expect(find.textContaining('目标不存在'), findsWidgets);
+      expect(find.textContaining("This doesn't exist"), findsWidgets);
     });
   });
 
@@ -692,7 +692,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Accepted'), findsNothing);
-      expect(find.textContaining('状态已经改变'), findsWidgets);
+      expect(find.textContaining('The status has changed'), findsWidgets);
     });
 
     testWidgets('an empty inbox and a loading inbox stay distinct', (
@@ -808,6 +808,10 @@ void main() {
 
       // No query has been typed, yet the reason is read from the server
       // rather than guessed: the three deferred domains cost no quota.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('search-seg-launch')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-launch')));
       await tester.pumpAndSettle();
 
@@ -818,7 +822,10 @@ void main() {
       );
       // A domain LOOP has no catalogue for says so; it is not the same
       // sentence as a domain that has one and is not wired to it yet.
-      expect(find.textContaining('LOOP 还没有 Launch 项目目录'), findsOneWidget);
+      expect(
+        find.textContaining('LOOP has no Launch project directory yet'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the field promises only the domains that answer', (
@@ -826,7 +833,7 @@ void main() {
     ) async {
       // Device walkthrough 2026-09-23 · a55–a65: the label offered five
       // domains while three of them refused every query.
-      expect(searchFieldLabel, '搜索代币、社区、用户');
+      expect(searchFieldLabel, 'Search Token, Community, User');
       expect(searchableDomains, <SearchDomain>[
         SearchDomain.assets,
         SearchDomain.communities,
@@ -919,6 +926,10 @@ void main() {
         search: gateway,
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('search-seg-assets')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-assets')));
       await tester.pumpAndSettle();
 
@@ -953,6 +964,10 @@ void main() {
         'users:frog',
       ]);
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('search-seg-users')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
       await tester.pumpAndSettle();
 
@@ -991,6 +1006,10 @@ void main() {
 
       // A `publicProfile` result opens the shared sheet: LOOP has no route
       // for another account before D7, and none is invented.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('search-seg-users')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('frog_maxi'));
@@ -1026,6 +1045,10 @@ void main() {
         social: FakeSocialGateway(),
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('search-seg-users')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('frog_maxi'));
@@ -1086,7 +1109,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-error')),
         findsOneWidget,
       );
-      expect(find.textContaining('搜索过于频繁'), findsOneWidget);
+      expect(find.textContaining('Too many searches'), findsOneWidget);
     });
 
     testWidgets('an unavailable search capability issues no request', (
@@ -1112,7 +1135,7 @@ void main() {
       );
       expect(gateway.queries, isEmpty);
       expect(find.textContaining('SEARCH_RUNTIME_UNAVAILABLE'), findsNothing);
-      expect(find.textContaining('请稍后再试'), findsOneWidget);
+      expect(find.textContaining('Try again later'), findsOneWidget);
     });
   });
 }

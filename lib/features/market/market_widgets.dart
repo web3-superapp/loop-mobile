@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -88,7 +89,8 @@ String marketDexLabel(String dexId) {
 /// lines of height (walkthrough 2026-09-23, d06). One neutral pill says the
 /// same thing without saying it twice, and a row that *can* be opened or
 /// starred still carries the control rather than the pill.
-const String marketBrowseOnlyLabel = '仅浏览';
+String get marketBrowseOnlyLabel =>
+    LoopL10n.current.market_widgetsMarketBrowseOnlyLabel;
 
 // ---------------------------------------------------------------------------
 // Eyebrows
@@ -102,14 +104,19 @@ const String marketBrowseOnlyLabel = '仅浏览';
 /// untranslated strings on a Chinese page (2026-09-23, d01/d05, token-holders,
 /// token-trades). The eyebrow keeps its mono face and its tracking; only the
 /// words are the reader's.
-const String marketSignalsKicker = '行情概览';
-const String marketNewPairsKicker = '新币';
-const String marketNewPairsStamp = '高风险';
-const String marketHoldersKicker = '持有人';
-const String marketTradesKicker = '成交记录';
-const String marketSmartMoneyKicker = '聪明钱';
-const String marketAlertsKicker = '价格提醒';
-const String marketWatchlistKicker = '自选管理';
+String get marketSignalsKicker =>
+    LoopL10n.current.market_widgetsMarketSignalsKicker;
+String get marketNewPairsKicker => LoopL10n.current.market_screenNewPairs;
+String get marketNewPairsStamp =>
+    LoopL10n.current.market_widgetsMarketNewPairsStamp;
+String get marketHoldersKicker => LoopL10n.current.common_holders;
+String get marketTradesKicker =>
+    LoopL10n.current.market_widgetsMarketTradesKicker;
+String get marketSmartMoneyKicker =>
+    LoopL10n.current.market_secondaryScreensMarketSegmentBar2;
+String get marketAlertsKicker => LoopL10n.current.common_priceAlerts;
+String get marketWatchlistKicker =>
+    LoopL10n.current.market_widgetsMarketWatchlistKicker;
 
 // ---------------------------------------------------------------------------
 // The 行情 row
@@ -234,7 +241,7 @@ class MarketSearchField extends StatelessWidget {
     ),
     child: Semantics(
       button: true,
-      label: '搜索代币或合约地址',
+      label: context.l10n.market_widgetsMarketSearchFieldLabel,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -254,7 +261,7 @@ class MarketSearchField extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '搜索代币 / 合约地址',
+                    context.l10n.market_widgetsSwitch,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.body.copyWith(color: LoopColors.text3),
@@ -281,9 +288,14 @@ class MarketTabBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.keyPrefix = 'market-tab',
+    this.ids,
   });
 
   final List<String> labels;
+
+  /// Stable per-tab ids for the keys (decision 0281: a key never carries
+  /// copy). Without them the key falls back to the label.
+  final List<String>? ids;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
@@ -299,47 +311,55 @@ class MarketTabBar extends StatelessWidget {
       children: <Widget>[
         for (var index = 0; index < labels.length; index += 1) ...<Widget>[
           if (index > 0) const SizedBox(width: 4),
-          Semantics(
-            button: true,
-            selected: index == selectedIndex,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                key: ValueKey<String>('$keyPrefix-${labels[index]}'),
-                onTap: () => onSelected(index),
-                borderRadius: LoopRadius.pill,
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minHeight: LoopTouch.minimum,
+          Flexible(
+            child: Semantics(
+              button: true,
+              selected: index == selectedIndex,
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  key: ValueKey<String>(
+                    '$keyPrefix-${ids?[index] ?? labels[index]}',
                   ),
-                  alignment: Alignment.center,
-                  // Decision 0222: the chosen capsule wears the splat.
-                  child: _splatIf(
-                    index == selectedIndex,
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 7,
-                      ),
-                      // Decision 0212: the chosen tab is a solid Purple capsule
-                      // with a white word; the rest are grey words.
-                      decoration: BoxDecoration(
-                        color: index == selectedIndex
-                            ? LoopColors.purpleSelected
-                            : Colors.transparent,
-                        borderRadius: LoopRadius.pill,
-                      ),
-                      // R16 the quiet segment's word (decision 0190 M24): `action`
-                      // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
-                      // draws; the underline stays the strip's own.
-                      child: Text(
-                        labels[index],
-                        style: index == selectedIndex
-                            ? LoopTypography.withWeight(
-                                LoopType.action,
-                                FontWeight.w700,
-                              ).copyWith(color: LoopColors.onPurple)
-                            : LoopType.action.copyWith(color: LoopColors.text2),
+                  onTap: () => onSelected(index),
+                  borderRadius: LoopRadius.pill,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minHeight: LoopTouch.minimum,
+                    ),
+                    alignment: Alignment.center,
+                    // Decision 0222: the chosen capsule wears the splat.
+                    child: _splatIf(
+                      index == selectedIndex,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 7,
+                        ),
+                        // Decision 0212: the chosen tab is a solid Purple capsule
+                        // with a white word; the rest are grey words.
+                        decoration: BoxDecoration(
+                          color: index == selectedIndex
+                              ? LoopColors.purpleSelected
+                              : Colors.transparent,
+                          borderRadius: LoopRadius.pill,
+                        ),
+                        // R16 the quiet segment's word (decision 0190 M24): `action`
+                        // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
+                        // draws; the underline stays the strip's own.
+                        child: Text(
+                          labels[index],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: index == selectedIndex
+                              ? LoopTypography.withWeight(
+                                  LoopType.action,
+                                  FontWeight.w700,
+                                ).copyWith(color: LoopColors.onPurple)
+                              : LoopType.action.copyWith(
+                                  color: LoopColors.text2,
+                                ),
+                        ),
                       ),
                     ),
                   ),
@@ -383,13 +403,13 @@ LoopRecordRow marketNewPairRow(
     logoUrl: pair.logoUrl,
     fallbackMonogram: pair.name.isEmpty ? pair.dexId : pair.name,
   ),
-  title: pair.name.isEmpty ? '未命名池' : pair.name,
+  title: pair.name.isEmpty ? LoopL10n.current.market_widgetsTitle : pair.name,
   subtitle: <String>[
     // The provider's own DEX slug, under the name a reader knows the venue
     // by. An unrecognised slug is still printed — the set is open.
     marketDexLabel(pair.dexId),
     // A zero quote address is the coin itself, not a missing token.
-    if (pair.quotesNativeCoin) '计价 BNB',
+    if (pair.quotesNativeCoin) LoopL10n.current.market_widgetsLoopRecordRow,
     // A pool minutes old holds fractions of a dollar. Rounded to cents that
     // printed 「$0」, which on a page that promises to say why a figure is
     // missing rather than show a zero reads as "no liquidity at all" — a
@@ -397,21 +417,21 @@ LoopRecordRow marketNewPairRow(
     // quoted at 1e-6, so the bound is true of every row and tells the reader
     // nothing. This row has the width for three significant digits.
     if (pair.reserveUsd != null)
-      '储备 '
-          '${loopFormatCompactFigure(pair.reserveUsd!, preciseBelowOne: true)}'
+      LoopL10n.current.market_widgetsLoopRecordRow2(
+        loopFormatCompactFigure(pair.reserveUsd!, preciseBelowOne: true),
+      )
     else
-      '储备暂时读不到',
+      LoopL10n.current.market_widgetsLoopRecordRow3,
     // The trailing slot holds the 24-hour figure; when it is missing the row
     // says so rather than leaving an empty corner the reader has to explain.
-    if (pair.volumeH24Usd == null) '24 小时成交额暂时读不到',
+    if (pair.volumeH24Usd == null)
+      LoopL10n.current.market_widgetsLoopRecordRow4,
   ].join(' · '),
   // Two lines, not three.
   subtitleMaxLines: 2,
   trailingBadge:
       watchAction ??
-      (pair.registryAssetId == null
-          ? const LoopBadge(marketBrowseOnlyLabel)
-          : null),
+      (pair.registryAssetId == null ? LoopBadge(marketBrowseOnlyLabel) : null),
   trailing: pair.volumeH24Usd == null
       ? null
       : loopFormatCompactFigure(pair.volumeH24Usd!, preciseBelowOne: true),
@@ -475,18 +495,22 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
               // uses, never the block-sized strip.
               LoopInlineUnavailable(
                 key: const ValueKey<String>('market-new-pairs-unavailable'),
-                message: '新币发现不可用 · ${loopReasonCodeText(reasonCode)}',
+                message: context.l10n
+                    .market_widgetsMarketNewPairsUnavailableMessage(
+                      loopReasonCodeText(reasonCode),
+                    ),
                 maxLines: 3,
               ),
             ],
             MarketNewPairsAvailable(items: final items) => <Widget>[
               if (items.isEmpty)
-                const LoopEmptyState(
+                LoopEmptyState(
                   key: ValueKey<String>('market-new-pairs-empty'),
                   illustration: LoopIllustration.search,
                   compact: true,
-                  title: '当前没有新的池',
-                  message: '这是数据本身的结果，不是筛选后的结论。',
+                  title: context.l10n.market_secondaryScreensNewPairsEmptyTitle,
+                  message:
+                      context.l10n.market_secondaryScreensNewPairsEmptyMessage,
                 )
               else
                 LoopRecordGroup(
@@ -501,9 +525,10 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
                   ],
                 ),
               LoopProvenanceFooter(
-                text:
-                    '来源 ${loopFactSourceLabel(block.source)} · '
-                    '观察于 ${loopRelativeTime(block.fetchedAt)}',
+                text: context.l10n.market_secondaryScreensText(
+                  loopFactSourceLabel(block.source),
+                  loopRelativeTime(block.fetchedAt),
+                ),
               ),
             ],
           },
@@ -511,8 +536,8 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('market-new-pairs-page'),
-              title: '新币发现',
-              subtitle: '风险预筛、被折叠的行与完整说明都在这一页',
+              title: context.l10n.market_secondaryScreensNewPairsScreenTitle,
+              subtitle: context.l10n.market_widgetsMarketNewPairsPageSubtitle,
               onTap: widget.onOpenPage,
             ),
           ],
@@ -534,9 +559,14 @@ class MarketSegmentBar extends StatelessWidget {
     this.selectedIndex,
     this.selectedIndices,
     this.blockedMessages = const <String?>[],
+    this.ids,
   });
 
   final List<String> labels;
+
+  /// Stable per-chip ids for the keys (decision 0281: a key never carries
+  /// copy). Without them the key falls back to the label.
+  final List<String>? ids;
 
   /// The one chosen segment, for a bar that filters a list.
   final int? selectedIndex;
@@ -567,7 +597,9 @@ class MarketSegmentBar extends StatelessWidget {
               Opacity(
                 opacity: enabled[index] ? 1 : 0.45,
                 child: LoopSeg(
-                  key: ValueKey<String>('market-seg-${labels[index]}'),
+                  key: ValueKey<String>(
+                    'market-seg-${ids?[index] ?? labels[index]}',
+                  ),
                   quiet: true,
                   label: labels[index],
                   selected:
@@ -608,29 +640,39 @@ void showWatchlistToggleToast(
 ) {
   switch (result.outcome) {
     case WatchlistToggleOutcome.added:
-      LoopToast.show(context, message: '已加入自选', kind: LoopToastKind.ok);
+      LoopToast.show(
+        context,
+        message: context.l10n.market_widgetsMessage,
+        kind: LoopToastKind.ok,
+      );
     case WatchlistToggleOutcome.removed:
-      LoopToast.show(context, message: '已移出自选', kind: LoopToastKind.ok);
+      LoopToast.show(
+        context,
+        message: context.l10n.market_widgetsMessage2,
+        kind: LoopToastKind.ok,
+      );
     // Refused on device, so the sentence names the limit rather than the
     // server's `VALIDATION_FAILED`, which is about an unregistered asset.
     case WatchlistToggleOutcome.itemLimitReached:
       LoopToast.show(
         context,
-        message: '自选已达 $watchlistMaxItems 项，先在自选管理里移除一个再加入。',
+        message: context.l10n.market_widgetsMessage3(watchlistMaxItems),
         kind: LoopToastKind.warn,
       );
     case WatchlistToggleOutcome.groupLimitReached:
       LoopToast.show(
         context,
-        message:
-            '分组已达 $watchlistMaxGroups 个，无法新建默认分组「$watchlistDefaultGroupName」。',
+        message: context.l10n.market_widgetsMessage4(
+          watchlistDefaultGroupName,
+          watchlistMaxGroups,
+        ),
         kind: LoopToastKind.warn,
       );
     case WatchlistToggleOutcome.failed:
       LoopToast.show(
         context,
         message: result.failureKind == LoopChainFailureKind.versionConflict
-            ? '自选已在其他设备上改动，这次没有保存。请重试。'
+            ? context.l10n.market_widgetsMessage5
             : loopChainFailureReason(result.failureKind),
         kind: LoopToastKind.err,
       );
@@ -814,7 +856,7 @@ class MarketTradeBar extends StatelessWidget {
             Expanded(
               child: LoopButton(
                 key: const ValueKey<String>('token-buy-action'),
-                label: '买入',
+                label: context.l10n.common_buy,
                 primary: true,
                 block: true,
                 onPressed: tradable ? onTrade : null,
@@ -824,7 +866,7 @@ class MarketTradeBar extends StatelessWidget {
             Expanded(
               child: LoopButton(
                 key: const ValueKey<String>('token-sell-action'),
-                label: '卖出',
+                label: context.l10n.common_sell,
                 block: true,
                 onPressed: tradable ? onTrade : null,
               ),

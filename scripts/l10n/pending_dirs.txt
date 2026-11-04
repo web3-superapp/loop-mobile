@@ -5,10 +5,7 @@
 # batch deletes its line(s) when its directory lands.
 lib/app
 lib/app.dart
-lib/features/community
 lib/features/intel
-lib/features/market
-lib/features/meme
 lib/features/mining
 lib/features/mining_rewards
 lib/integrations

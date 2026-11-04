@@ -283,7 +283,7 @@ void main() {
       // 「已验证」 alone on the second line while 「312 / 成员」 stood in a
       // two-line value column spent a 70pt row on four words.
       // Decision 0239: no operator label, so the count stands alone.
-      expect(row.subtitle, '312 名成员');
+      expect(row.subtitle, '312 members');
       expect(row.trailing, isNull);
       expect(row.trailingCaption, isNull);
     });
@@ -508,7 +508,7 @@ void main() {
       );
       for (final tab in TokenSectionTab.values) {
         expect(
-          find.byKey(ValueKey<String>('token-tab-${tab.label}')),
+          find.byKey(ValueKey<String>('token-tab-${tab.name}')),
           findsOneWidget,
         );
       }
@@ -518,7 +518,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-holders-count')),
         findsOneWidget,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       await scrollToS5Section(
         tester,
@@ -532,7 +532,9 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-动态')));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('token-tab-activity')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('token-community-entry')),
@@ -551,11 +553,11 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       final cells = find.byKey(const ValueKey<String>('token-about-cells'));
       expect(
-        find.descendant(of: cells, matching: find.text('24h 高')),
+        find.descendant(of: cells, matching: find.text('24h high')),
         findsOneWidget,
       );
       expect(
@@ -587,7 +589,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-section-tabs')),
       );
-      await tester.tap(find.byKey(const ValueKey<String>('token-tab-关于')));
+      await tester.tap(find.byKey(const ValueKey<String>('token-tab-about')));
       await tester.pumpAndSettle();
       final cells = find.byKey(const ValueKey<String>('token-about-cells'));
       expect(

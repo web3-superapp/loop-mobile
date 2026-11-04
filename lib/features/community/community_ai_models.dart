@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The Community AI view models (loop-api decision 0066).
 ///
@@ -353,18 +354,28 @@ final class CommunityAiAnswer {
 
 /// Why a reader is reporting an answer.
 enum CommunityAiReportReason {
-  inaccurate('inaccurate', '内容不准确'),
-  harmful('harmful', '有害或危险'),
-  offTopic('offTopic', '答非所问'),
-  privacy('privacy', '涉及个人隐私'),
-  other('other', '其他问题');
+  inaccurate('inaccurate'),
+  harmful('harmful'),
+  offTopic('offTopic'),
+  privacy('privacy'),
+  other('other');
 
-  const CommunityAiReportReason(this.wireName, this.label);
+  const CommunityAiReportReason(this.wireName);
 
   final String wireName;
 
   /// What the reader chooses. It is product copy, not the wire value.
-  final String label;
+  String get label => switch (this) {
+    CommunityAiReportReason.inaccurate =>
+      LoopL10n.current.community_aiModelsInaccurate,
+    CommunityAiReportReason.harmful =>
+      LoopL10n.current.community_aiModelsHarmful,
+    CommunityAiReportReason.offTopic =>
+      LoopL10n.current.community_aiModelsOffTopic,
+    CommunityAiReportReason.privacy =>
+      LoopL10n.current.community_aiModelsPrivacy,
+    CommunityAiReportReason.other => LoopL10n.current.community_aiModelsOther,
+  };
 
   static CommunityAiReportReason? tryParse(String value) {
     for (final reason in values) {
@@ -488,34 +499,50 @@ List<CommunityAiAnswerRun> communityAiAnswerRuns(
 /// sentence instead of inventing a cause.
 String communityAiReason(String? reasonCode) => switch (reasonCode) {
   // The five abilities nothing backs yet.
-  'KNOWLEDGE_DOCUMENTS_NOT_INGESTED' => '还没有收录项目文档，这一项暂时答不了。',
-  'EDUCATION_CONTENT_NOT_INGESTED' => '还没有收录新手教程，这一项暂时答不了。',
-  'ANNOUNCEMENT_SOURCE_UNAVAILABLE' => '公告和官方动态暂未开放，这一项暂时答不了。',
-  'AI_WRITE_LANE_NOT_DELIVERED' => 'AI 巡查还没有开放。',
-  'COMMUNITY_ANALYTICS_NOT_DELIVERED' => '社区分析还没有开放。',
+  'KNOWLEDGE_DOCUMENTS_NOT_INGESTED' =>
+    LoopL10n.current.community_aiModelsSwitch,
+  'EDUCATION_CONTENT_NOT_INGESTED' =>
+    LoopL10n.current.community_aiModelsSwitch2,
+  'ANNOUNCEMENT_SOURCE_UNAVAILABLE' =>
+    LoopL10n.current.community_aiModelsSwitch3,
+  'AI_WRITE_LANE_NOT_DELIVERED' => LoopL10n.current.community_aiModelsSwitch4,
+  'COMMUNITY_ANALYTICS_NOT_DELIVERED' =>
+    LoopL10n.current.community_aiModelsSwitch5,
   // Why today's summary is missing. The eight codes are a closed set; an
   // unknown one still keeps a neutral sentence rather than a code.
-  communityAiBriefPendingReasonCode => '今日摘要生成中，稍后下拉刷新。',
-  communityAiBriefQuotaExhaustedReasonCode => '今日摘要配额已用完，明天再来。',
-  'COMMUNITY_AI_MEMBERSHIP_REQUIRED' => '先加入这个社区，才能读到社区里的讨论。',
-  'COMMUNITY_CHAT_NOT_CONNECTED' => '这个社区还没有开通官方群，没有可以总结的讨论。',
-  'COMMUNITY_CHAT_NOT_OBSERVED' => '这次没能读到官方群的讨论。',
+  communityAiBriefPendingReasonCode =>
+    LoopL10n.current.community_aiModelsSwitch6,
+  communityAiBriefQuotaExhaustedReasonCode =>
+    LoopL10n.current.community_aiModelsSwitch7,
+  'COMMUNITY_AI_MEMBERSHIP_REQUIRED' =>
+    LoopL10n.current.community_aiModelsSwitch8,
+  'COMMUNITY_CHAT_NOT_CONNECTED' => LoopL10n.current.community_aiModelsSwitch9,
+  'COMMUNITY_CHAT_NOT_OBSERVED' => LoopL10n.current.community_aiModelsSwitch10,
   // What the model did, or did not do.
-  'COMMUNITY_AI_PROVIDER_UNAVAILABLE' => 'AI 这次没有答上来，稍后可以再试。',
-  'COMMUNITY_AI_PROVIDER_REJECTED' => 'AI 拒绝了这次请求，再试也不会有结果。',
-  'COMMUNITY_AI_PROVIDER_MALFORMED' => 'AI 返回的内容不完整，这次没有采用。',
-  'COMMUNITY_AI_NO_KNOWLEDGE_SOURCE' => '这个社区现在没有任何可用来源，暂时问不了。',
-  'COMMUNITY_AI_RUNTIME_DEFERRED' => 'AI 助理暂未开放。',
-  _ => '这一项暂时读不到。',
+  'COMMUNITY_AI_PROVIDER_UNAVAILABLE' =>
+    LoopL10n.current.community_aiModelsSwitch11,
+  'COMMUNITY_AI_PROVIDER_REJECTED' =>
+    LoopL10n.current.community_aiModelsSwitch12,
+  'COMMUNITY_AI_PROVIDER_MALFORMED' =>
+    LoopL10n.current.community_aiModelsSwitch13,
+  'COMMUNITY_AI_NO_KNOWLEDGE_SOURCE' =>
+    LoopL10n.current.community_aiModelsSwitch14,
+  'COMMUNITY_AI_RUNTIME_DEFERRED' =>
+    LoopL10n.current.community_aiModelsSwitch15,
+  _ => LoopL10n.current.common_itemUnavailable,
 };
 
 /// The top bar's second line: how many live sources, and when the newest was
 /// observed. Never a document count.
 String communityAiKnowledgeLine(CommunityAiKnowledge knowledge) {
   final updatedAt = knowledge.updatedAt;
-  if (updatedAt == null || knowledge.sourceCount == 0) return '暂无可用来源';
-  return '知识源 ${knowledge.sourceCount} 项 · 更新于 '
-      '${communityAiTimestamp(updatedAt)}';
+  if (updatedAt == null || knowledge.sourceCount == 0) {
+    return LoopL10n.current.community_aiModelsCommunityAiKnowledgeLine;
+  }
+  return LoopL10n.current.community_aiModelsCommunityAiKnowledgeLine2(
+    communityAiTimestamp(updatedAt),
+    knowledge.sourceCount,
+  );
 }
 
 /// The hero's two lines when there is no summary: what the state is, and what
@@ -529,33 +556,41 @@ String communityAiKnowledgeLine(CommunityAiKnowledge knowledge) {
 ) => switch (brief.reasonCode) {
   communityAiBriefPendingReasonCode => (
     heading: communityAiBriefPendingHeading,
-    caption: '正在根据今天的讨论生成，稍后下拉刷新。',
+    caption: LoopL10n.current.community_aiModelsCaption,
   ),
   communityAiBriefQuotaExhaustedReasonCode => (
     heading: communityAiBriefQuotaHeading,
-    caption: '明天再来。这一页的其余内容不受影响。',
+    caption: LoopL10n.current.community_aiModelsCaption2,
   ),
-  _ => (heading: '今日讨论读不到', caption: communityAiReason(brief.reasonCode)),
+  _ => (
+    heading: LoopL10n.current.community_aiModelsHeading,
+    caption: communityAiReason(brief.reasonCode),
+  ),
 };
 
 /// The hero's heading while the summary is being written. It is a state, not
 /// a failure, so it neither says 「读不到」 nor offers a 重试.
-const communityAiBriefPendingHeading = '今日摘要生成中';
+String get communityAiBriefPendingHeading =>
+    LoopL10n.current.community_aiModelsCommunityAiBriefPendingHeading;
 
 /// The hero's heading once today's summary budget is spent.
-const communityAiBriefQuotaHeading = '今日摘要配额已用完';
+String get communityAiBriefQuotaHeading =>
+    LoopL10n.current.community_aiModelsCommunityAiBriefQuotaHeading;
 
 /// The hero's heading: how much was said in the window behind the summary.
 String communityAiBriefHeading(CommunityAiBriefAvailable brief) => brief.bounded
-    ? '今日至少 ${brief.messageCount} 条讨论'
-    : '今日 ${brief.messageCount} 条讨论';
+    ? LoopL10n.current.community_aiModelsSwitch16(brief.messageCount)
+    : LoopL10n.current.community_aiModelsS(brief.messageCount);
 
 /// The AI mark every model-written block carries: which model wrote it, and
 /// when.
 String communityAiGeneratedLabel({
   required String model,
   required DateTime generatedAt,
-}) => 'AI 生成 · $model · ${communityAiTimestamp(generatedAt)}';
+}) => LoopL10n.current.community_aiModelsCommunityAiGeneratedLabel(
+  communityAiTimestamp(generatedAt),
+  model,
+);
 
 /// A server timestamp in UTC. The client never restates it as a local wall
 /// clock or as a relative 「刚刚」.
@@ -571,8 +606,8 @@ String communityAiTimestamp(DateTime value) {
 /// The two scopes are two different waits: the per-account minute is over in a
 /// minute, the community's daily budget is not.
 String communityAiRateLimitReason(String? scope) => switch (scope) {
-  'community' => '这个社区今天的提问额度用完了，明天再来。',
-  _ => '提问太频繁了，等一分钟再问。',
+  'community' => LoopL10n.current.community_aiModelsSwitch17,
+  _ => LoopL10n.current.community_aiModelsSwitch18,
 };
 
 /// zh-CN sentence for a refused question.

@@ -44,6 +44,9 @@ void main() {
   });
 
   test('one token, one community', () {
-    expect(communityBoundAssetUniqueHint, '每个代币只能被一个社区绑定。');
+    expect(
+      communityBoundAssetUniqueHint,
+      'Each token can be linked to only one community.',
+    );
   });
 }

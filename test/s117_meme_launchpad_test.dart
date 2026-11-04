@@ -396,9 +396,9 @@ void main() {
       // Decision 0173 (design 35 列表 A): ticker + age over 交易量 · 名称,
       // 市值 over the 56 px bar on the right.
       expect(find.text('FROG'), findsOneWidget);
-      expect(find.text('3 小时'), findsOneWidget);
-      expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
-      expect(find.text('市值 \$9,891'), findsOneWidget);
+      expect(find.text('3h'), findsOneWidget);
+      expect(find.text('\$1,980 volume · Frog'), findsOneWidget);
+      expect(find.text('Market cap \$9,891'), findsOneWidget);
       expect(_key('meme-row-price'), findsNothing);
       // The 「快打满」 strip shows the server's graduating list above it.
       expect(_key('meme-graduating-strip'), findsOneWidget);
@@ -422,7 +422,7 @@ void main() {
       // graduated token says why.
       expect(_key('meme-graduated-tag'), findsOneWidget);
       expect(_key('meme-row-progress'), findsNothing);
-      expect(find.text('暂无外盘报价'), findsOneWidget);
+      expect(find.text('No DEX pool quote yet'), findsOneWidget);
 
       await tester.tap(_key('meme-row-$memeTokenIdA'));
       expect(opened.last, '/meme/token?id=$memeTokenIdA');
@@ -441,7 +441,7 @@ void main() {
       );
       final opened = <String>[];
       await _pump(tester, MemeScreen(onNavigate: opened.add), meme: meme);
-      expect(find.text('还没有代币'), findsOneWidget);
+      expect(find.text('No tokens yet'), findsOneWidget);
       expect(_key('loop-empty-illustration-launchpad'), findsOneWidget);
       await tester.tap(_key('meme-empty-create'));
       expect(opened.single, '/meme/create');
@@ -459,7 +459,10 @@ void main() {
         meta: _meta(meme: LoopV2CapabilityAvailability.unavailable),
       );
       expect(_key('meme-launchpad-unavailable'), findsOneWidget);
-      expect(find.textContaining('发射台合约还没有配置'), findsOneWidget);
+      expect(
+        find.textContaining('Launchpad contract isn\'t configured yet'),
+        findsOneWidget,
+      );
       expect(meme.listCalls, isEmpty);
       final create = tester.widget<LoopButton>(_key('meme-create-entry'));
       expect(create.onPressed, isNull);
@@ -548,6 +551,8 @@ void main() {
         list: (tab, cursor) => _Answer<MemeTokenPage>.value(memePage()),
       );
       await _pump(tester, const MemeScreen(), meme: meme);
+      await tester.ensureVisible(_key('meme-segment-1'));
+      await tester.pumpAndSettle();
       await tester.tap(_key('meme-segment-1'));
       await tester.pumpAndSettle();
       // Without a market transport the segment says so inline.
@@ -589,8 +594,8 @@ void main() {
       await tester.enterText(_key('meme-create-symbol'), 'X');
       await tester.tap(_key('meme-create-next'));
       await tester.pump();
-      expect(find.text('名称 1–32 个字'), findsOneWidget);
-      expect(find.text('符号 2–10 位字母或数字'), findsOneWidget);
+      expect(find.text('Name 1–32 characters'), findsOneWidget);
+      expect(find.text('Symbol 2–10 letters or digits'), findsOneWidget);
       expect(_key('meme-create-step-1'), findsOneWidget);
       expect(meme.createCalls, isEmpty);
       await _drain(tester);
@@ -625,7 +630,10 @@ void main() {
       await tester.enterText(_key('meme-create-twitter'), 'http://x.com/frog');
       await tester.tap(_key('meme-create-next'));
       await tester.pump();
-      expect(find.text('只支持 https:// 开头的链接'), findsOneWidget);
+      expect(
+        find.text('Only links starting with https:// are supported'),
+        findsOneWidget,
+      );
       expect(meme.createCalls, isEmpty);
 
       await tester.enterText(_key('meme-create-twitter'), 'https://x.com/frog');
@@ -639,12 +647,18 @@ void main() {
 
       expect(_key('meme-create-step-3'), findsOneWidget);
       expect(_key('meme-create-no-vanity'), findsOneWidget);
-      expect(find.textContaining('本次无法分配 6666 尾号'), findsOneWidget);
+      expect(
+        find.textContaining("A 6666 suffix can't be assigned this time"),
+        findsOneWidget,
+      );
       expect(_key('meme-create-predicted'), findsOneWidget);
-      expect(find.text('1,000,000,000 枚'), findsOneWidget);
-      expect(find.text('800,000,000 枚（80%）'), findsOneWidget);
+      expect(find.text('1,000,000,000'), findsOneWidget);
+      expect(find.text('800,000,000 (80%)'), findsOneWidget);
       expect(find.text('1%'), findsOneWidget);
-      expect(find.textContaining('募满约 17,582 USD1'), findsOneWidget);
+      expect(
+        find.textContaining('after raising about 17,582 USD1'),
+        findsOneWidget,
+      );
 
       // Back and forward again with the same content reuses the draft.
       await tester.tap(find.byTooltip('返回').first, warnIfMissed: false);
@@ -674,7 +688,10 @@ void main() {
       await tester.tap(_key('meme-create-next'));
       await tester.pumpAndSettle();
       expect(_key('meme-create-draft-failed'), findsOneWidget);
-      expect(find.text('今天的创建次数用完了，明天再来'), findsOneWidget);
+      expect(
+        find.text('You\'ve used up today\'s creations. Come back tomorrow'),
+        findsOneWidget,
+      );
       expect(_key('meme-create-step-2'), findsOneWidget);
       await _drain(tester);
     });
@@ -696,11 +713,14 @@ void main() {
       await tester.enterText(_key('meme-create-first-buy'), '10');
       await tester.pump();
       expect(_key('meme-create-first-buy-estimate'), findsOneWidget);
-      expect(find.textContaining('约得 1,767,533.'), findsOneWidget);
+      expect(find.textContaining('About 1,767,533.'), findsOneWidget);
 
       await tester.enterText(_key('meme-create-first-buy'), '1000');
       await tester.pump();
-      expect(find.textContaining('超过单钱包上限'), findsOneWidget);
+      expect(
+        find.textContaining('Exceeds the per-wallet limit'),
+        findsOneWidget,
+      );
       expect(
         tester.widget<LoopButton>(_key('meme-create-submit')).onPressed,
         isNull,
@@ -708,7 +728,7 @@ void main() {
 
       await tester.enterText(_key('meme-create-first-buy'), '0.5');
       await tester.pump();
-      expect(find.textContaining('最少买入'), findsOneWidget);
+      expect(find.textContaining('Minimum buy'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -761,8 +781,8 @@ void main() {
         // The shared signing exit, with the approval announced.
         expect(_key('meme-sign-sheet'), findsOneWidget);
         expect(find.byType(LoopSignSheet), findsOneWidget);
-        expect(find.text('确认创建'), findsOneWidget);
-        expect(find.text('先授权'), findsOneWidget);
+        expect(find.text('Confirm create'), findsOneWidget);
+        expect(find.text('Approve first'), findsOneWidget);
 
         await tester.tap(find.text('确认签名'));
         await tester.pumpAndSettle();
@@ -837,7 +857,7 @@ void main() {
       expect(find.text('FROG'), findsOneWidget);
       expect(
         tester.widget<LoopBadge>(_key('meme-token-status-badge')).text,
-        '内盘',
+        'Bonding pool',
       );
       expect(
         tester.widget<LoopBadge>(_key('meme-token-status-badge')).kind,
@@ -856,18 +876,18 @@ void main() {
       expect(change.data, endsWith(' (76.89%) · 1h'));
       expect(change.style?.color, LoopColors.rise);
       expect(find.text(r'$9,891'), findsOneWidget);
-      expect(find.text('市值'), findsOneWidget);
+      expect(find.text('Market cap'), findsOneWidget);
       expect(
         tester.getCenter(_key('meme-token-cap')).dx,
         greaterThan(tester.getCenter(_key('meme-token-price-figure')).dx),
       );
       expect(_key('meme-token-holding'), findsOneWidget);
-      expect(find.textContaining('持有 10 \$FROG'), findsOneWidget);
+      expect(find.textContaining('Holding 10 \$FROG'), findsOneWidget);
       // Two stats over the bar; the old paragraph is gone.
       expect(
         find.descendant(
           of: _key('meme-token-stat-progress'),
-          matching: find.textContaining('33.27% · 还差 \$'),
+          matching: find.textContaining('33.27% · \$'),
         ),
         findsOneWidget,
       );
@@ -891,11 +911,11 @@ void main() {
       expect(find.text('打满后自动上 PancakeSwap'), findsNothing);
       expect(_key('meme-token-liquidity-low'), findsNothing);
       expect(_key('meme-token-price-provenance'), findsOneWidget);
-      expect(findProvenanceContaining('来源 LOOP 曲线'), findsWidgets);
+      expect(findProvenanceContaining('来源 LOOP curve'), findsWidgets);
       expect(_key('meme-chart-1m'), findsOneWidget);
       // The holder count is in its tab's title.
-      expect(_key('meme-token-tab-持有者 12'), findsOneWidget);
-      expect(find.text('持有者 12'), findsOneWidget);
+      expect(_key('meme-token-tab-holders'), findsOneWidget);
+      expect(find.text('Holders 12'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -947,14 +967,14 @@ void main() {
       await tester.tap(_key('meme-interval-1h'));
       await tester.pumpAndSettle();
       expect(_key('meme-chart-1h'), findsOneWidget);
-      expect(find.text('K线'), findsOneWidget);
+      expect(find.text('Candles'), findsOneWidget);
       await tester.tap(_key('meme-chart-style'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopMarketChart>(find.byType(LoopMarketChart)).style,
         LoopChartStyle.candles,
       );
-      expect(find.text('折线'), findsOneWidget);
+      expect(find.text('Line'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -981,8 +1001,11 @@ void main() {
         _key('meme-token-liquidity-low'),
       );
       expect(notice.tone, LoopNoticeTone.warn);
-      expect(notice.body, startsWith('流动性低 · 内盘储备 \$0'));
-      expect(notice.body, endsWith('大额买入滑点高'));
+      expect(
+        notice.body,
+        startsWith('Low liquidity · Bonding pool reserve \$0'),
+      );
+      expect(notice.body, endsWith('Large buys have high slippage'));
       await _drain(tester);
     });
 
@@ -994,16 +1017,19 @@ void main() {
       );
       await _pump(tester, page(), meme: meme);
       expect(_key('meme-token-price-unavailable'), findsOneWidget);
-      expect(find.text('外盘行情暂时取不到'), findsOneWidget);
+      expect(
+        find.text('DEX pool market data can\'t be loaded'),
+        findsOneWidget,
+      );
       expect(find.text('▲ 76.89% · 1h'), findsOneWidget);
       expect(_key('meme-token-cap'), findsNothing);
       await _drain(tester);
     });
 
     for (final (status, key, label) in <(String, String, String)>[
-      ('full', 'meme-token-full', '打满，毕业中…'),
-      ('paused', 'meme-token-paused', '已暂停交易'),
-      ('pending_chain', 'meme-token-pending', '创建中…'),
+      ('full', 'meme-token-full', 'Filled, graduating…'),
+      ('paused', 'meme-token-paused', 'Trading paused'),
+      ('pending_chain', 'meme-token-pending', 'Creating…'),
     ]) {
       testWidgets('the bottom bar for $status is disabled: $label', (
         tester,
@@ -1082,7 +1108,7 @@ void main() {
         // The pre-filled amount waits the same debounce a typed one does.
         await tester.pump(const Duration(milliseconds: 400));
         await tester.pump();
-        expect(find.text(r'买入 $FROG'), findsOneWidget);
+        expect(find.text(r'Buy $FROG'), findsOneWidget);
         expect(
           tester.widget<TextField>(_key('meme-trade-amount')).controller!.text,
           '10',
@@ -1150,20 +1176,20 @@ void main() {
           ),
         );
         await _pump(tester, page(onNavigate: opened.add), meme: meme);
-        expect(find.text('100% · 已毕业'), findsOneWidget);
+        expect(find.text('100% · Graduated'), findsOneWidget);
         expect(
           tester.widget<LoopProgressBar>(_key('meme-token-progress-bar')).value,
           1,
         );
         expect(
           tester.widget<LoopBadge>(_key('meme-token-status-badge')).text,
-          '已毕业',
+          'Graduated',
         );
-        expect(find.text('暂无外盘报价'), findsOneWidget);
+        expect(find.text('No DEX pool quote yet'), findsOneWidget);
         // S118: the testnet has no in-app swap.
         expect(_key('meme-token-swap'), findsNothing);
         expect(_key('meme-token-swap-testnet'), findsOneWidget);
-        expect(find.text('暂不支持站内兑换'), findsOneWidget);
+        expect(find.text('In-app swap isn\'t supported yet'), findsOneWidget);
         expect(_key('meme-token-copy-pool'), findsOneWidget);
         expect(opened, isEmpty);
         await _drain(tester);
@@ -1184,7 +1210,7 @@ void main() {
         ),
       );
       await _pump(tester, page(onNavigate: opened.add), meme: meme);
-      expect(findProvenanceContaining('来源 池子推算'), findsWidgets);
+      expect(findProvenanceContaining('来源 Pool estimate'), findsWidgets);
       await tester.tap(_key('meme-token-swap'));
       expect(opened.single, '/wallet/swap?to=eip155%3A56%3A$memeTokenAddress');
       await _drain(tester);
@@ -1287,8 +1313,8 @@ void main() {
       final meme = gateway(memeDetail());
       await _pump(tester, page(), meme: meme);
       expect(meme.holderCalls, <String?>[null, 'holders.two']);
-      expect(find.text('创建者'), findsOneWidget);
-      expect(find.text('我'), findsOneWidget);
+      expect(find.text('Dev'), findsOneWidget);
+      expect(find.text('Me'), findsOneWidget);
       expect(find.text('10%'), findsWidgets);
       expect(_key('meme-holders-end'), findsOneWidget);
       await _drain(tester);
@@ -1298,7 +1324,7 @@ void main() {
           memeHolders(frozenAt: '2026-10-08T05:00:00.000Z'),
         );
       await _pump(tester, page(), meme: frozen);
-      expect(find.textContaining('分布冻结于毕业时'), findsOneWidget);
+      expect(find.textContaining('Frozen at graduation'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1307,7 +1333,7 @@ void main() {
     ) async {
       final meme = gateway(memeDetail());
       await _pump(tester, page(), meme: meme);
-      await tester.tap(_key('meme-token-tab-动态'));
+      await tester.tap(_key('meme-token-tab-activity'));
       await tester.pumpAndSettle();
       expect(meme.tradeCalls, <String?>[null, 'trades.two']);
       final buy = tester.widget<Text>(_key('meme-trade-side-buy').first);
@@ -1334,7 +1360,7 @@ void main() {
       await tester.pump();
       expect(meme.quoteCalls.single, (MemeTradeSide.buy, '10', memeWalletId));
       expect(_key('meme-trade-quote'), findsOneWidget);
-      expect(find.text('影响'), findsOneWidget);
+      expect(find.text('Impact'), findsOneWidget);
       expect(find.text('0.24%'), findsOneWidget);
       expect(_key('meme-trade-blocking'), findsOneWidget);
       // Decision 0169: a warn `.notice`, not warning-yellow words.
@@ -1342,7 +1368,10 @@ void main() {
         tester.widget<LoopNotice>(_key('meme-trade-blocking')).tone,
         LoopNoticeTone.warn,
       );
-      expect(find.textContaining('超过单钱包上限'), findsOneWidget);
+      expect(
+        find.textContaining('Exceeds the per-wallet limit'),
+        findsOneWidget,
+      );
       expect(
         tester.widget<LoopButton>(_key('meme-trade-confirm')).onPressed,
         isNull,
@@ -1363,7 +1392,7 @@ void main() {
       // Decision 0131: showLoopSheet draws the one surface; the panel adds
       // none of its own.
       expect(find.byType(LoopSheet), findsOneWidget);
-      expect(find.text(r'买入 $FROG'), findsOneWidget);
+      expect(find.text(r'Buy $FROG'), findsOneWidget);
       // A phone-sized screen with a 340pt keypad up, as on the device in
       // audit 2026-10-09 73b.
       final ratio = tester.view.devicePixelRatio;
@@ -1434,7 +1463,7 @@ void main() {
       expect(meme.prepareCalls.single['usd1Amount'], '250');
       expect(meme.prepareCalls.single['slippageBps'], 300);
       expect(_key('meme-sign-sheet'), findsOneWidget);
-      expect(find.text('确认买入'), findsOneWidget);
+      expect(find.text('Confirm buy'), findsOneWidget);
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
@@ -1450,7 +1479,7 @@ void main() {
         ..candles = _Answer<MemeCandleSeries>.value(memeCandles(count: 1));
       await _pump(tester, page(), meme: meme);
       expect(_key('meme-chart-empty'), findsOneWidget);
-      expect(find.text('还没有成交'), findsOneWidget);
+      expect(find.text('No trades yet'), findsOneWidget);
       expect(find.textContaining('画不出走势'), findsNothing);
       expect(find.textContaining('补 0'), findsNothing);
       await _drain(tester);
@@ -1521,7 +1550,7 @@ void main() {
       await tester.enterText(_key('meme-trade-amount'), '11');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
-      expect(find.text('卖出数量超过持有'), findsOneWidget);
+      expect(find.text('Sell amount exceeds your holdings'), findsOneWidget);
       expect(
         tester.widget<LoopButton>(_key('meme-trade-confirm')).onPressed,
         isNull,
@@ -1543,8 +1572,11 @@ void main() {
         const MemeTokenListScreen(memeTokenId: memeTokenIdA, holders: true),
         meme: meme,
       );
-      expect(find.text(r'$FROG · 持有者'), findsOneWidget);
-      expect(find.text('12 个持有者 · 按曲线买卖统计'), findsOneWidget);
+      expect(find.text(r'$FROG · Holders'), findsOneWidget);
+      expect(
+        find.text('12 holders · Counted from curve trades'),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1560,7 +1592,7 @@ void main() {
         const MemeTokenListScreen(memeTokenId: memeTokenIdA, holders: false),
         meme: meme,
       );
-      expect(find.text(r'$FROG · 动态'), findsOneWidget);
+      expect(find.text(r'$FROG · Feed'), findsOneWidget);
       expect(_key('meme-trade-side-buy'), findsOneWidget);
       await _drain(tester);
     });
@@ -1608,10 +1640,13 @@ void main() {
         ),
       );
       await _pump(tester, const MemeScreen(), meme: meme, classic: false);
-      expect(find.text('还没有代币'), findsOneWidget);
-      expect(find.text('经典发射已停用，新代币请走 v2 发射'), findsOneWidget);
+      expect(find.text('No tokens yet'), findsOneWidget);
+      expect(
+        find.text('Classic launch is retired. Use v2 launch for new tokens'),
+        findsOneWidget,
+      );
       expect(_key('meme-empty-create'), findsNothing);
-      expect(find.text('创建第一个'), findsNothing);
+      expect(find.text('Create the first one'), findsNothing);
       await _drain(tester);
     });
 
@@ -1632,7 +1667,7 @@ void main() {
       expect(_key('meme-create-retired'), findsOneWidget);
       expect(_key('meme-create-screen'), findsNothing);
       expect(_key('meme-create-name'), findsNothing);
-      expect(find.text('经典发射已停用'), findsOneWidget);
+      expect(find.text('Classic launch is retired'), findsOneWidget);
       expect(find.textContaining('Loop Hook'), findsOneWidget);
       // A deep link to a draft reads nothing and creates nothing.
       expect(meme.detailReads, 0);

@@ -310,7 +310,7 @@ void main() {
 
       final paste = find.byKey(const ValueKey<String>('search-paste-loop-id'));
       expect(tester.getSize(paste).height, greaterThanOrEqualTo(44));
-      expect(find.bySemanticsLabel('粘贴'), findsOneWidget);
+      expect(find.bySemanticsLabel('Paste'), findsOneWidget);
       await _tap(tester, paste);
 
       final field = tester.widget<TextField>(
@@ -395,7 +395,7 @@ void main() {
       );
       expect(field.controller?.text, isEmpty);
       expect(gateway.queries, isEmpty);
-      expect(find.text('剪贴板里没有可以搜索的内容'), findsOneWidget);
+      expect(find.text('Nothing to search on the clipboard'), findsOneWidget);
     });
 
     testWidgets('an empty clipboard says the same', (tester) async {
@@ -411,7 +411,7 @@ void main() {
         find.byKey(const ValueKey<String>('search-paste-loop-id')),
       );
       expect(gateway.queries, isEmpty);
-      expect(find.text('剪贴板里没有可以搜索的内容'), findsOneWidget);
+      expect(find.text('Nothing to search on the clipboard'), findsOneWidget);
     });
 
     testWidgets('an ID given to the page asks 用户 first', (tester) async {

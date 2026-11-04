@@ -269,7 +269,10 @@ void main() {
       expect(brief.reasonCode, 'COMMUNITY_AI_BRIEF_PENDING');
       expect(brief.isGenerating, isTrue);
       expect(brief.isNeutral, isTrue);
-      expect(communityAiReason(brief.reasonCode), '今日摘要生成中，稍后下拉刷新。');
+      expect(
+        communityAiReason(brief.reasonCode),
+        'Generating today\'s summary. Pull down to refresh later.',
+      );
 
       // The other seven of the closed set: one more state, five failures.
       const quota = CommunityAiBriefUnavailable(
@@ -277,7 +280,10 @@ void main() {
       );
       expect(quota.isGenerating, isFalse);
       expect(quota.isNeutral, isTrue);
-      expect(communityAiReason(quota.reasonCode), '今日摘要配额已用完，明天再来。');
+      expect(
+        communityAiReason(quota.reasonCode),
+        'Today\'s summary quota is used up. Come back tomorrow.',
+      );
       const chat = CommunityAiBriefUnavailable('COMMUNITY_CHAT_NOT_CONNECTED');
       expect(chat.isGenerating, isFalse);
       expect(chat.isNeutral, isFalse);
@@ -629,7 +635,7 @@ void main() {
         expect(failure.detailsSafe?.scope, 'community');
         expect(
           communityAiRateLimitReason(failure.detailsSafe?.scope),
-          '这个社区今天的提问额度用完了，明天再来。',
+          'This community\'s question quota for today is used up. Come back tomorrow.',
         );
       }
     });
@@ -750,14 +756,20 @@ void main() {
 
       // The bar counts live sources; the prototype's document figure has no
       // source and never appears.
-      expect(find.textContaining('知识源 2 项 · 更新于'), findsOneWidget);
+      expect(
+        find.textContaining('2 knowledge sources · Updated'),
+        findsOneWidget,
+      );
       expect(find.textContaining('知识库'), findsNothing);
-      expect(find.text('今日 42 条讨论'), findsOneWidget);
+      expect(find.text('42 messages today'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-ai-brief-mark')),
         findsOneWidget,
       );
-      expect(find.textContaining('AI 生成 · claude-sonnet-5'), findsOneWidget);
+      expect(
+        find.textContaining('AI generated · claude-sonnet-5'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('community-ai-disclaimer')),
         findsOneWidget,
@@ -769,7 +781,7 @@ void main() {
         ),
       );
       // A closed ability is visible, greyed and explained in words.
-      expect(find.textContaining('还没有收录项目文档'), findsOneWidget);
+      expect(find.textContaining('No project documents yet'), findsOneWidget);
       expect(find.textContaining('KNOWLEDGE_DOCUMENTS'), findsNothing);
     });
 
@@ -789,7 +801,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('今日至少 100 条讨论'), findsOneWidget);
+      expect(find.text('At least 100 messages today'), findsOneWidget);
 
       await _pumpOpenPage(
         tester,
@@ -799,8 +811,8 @@ void main() {
           ),
         ),
       );
-      expect(find.text('今日讨论读不到'), findsOneWidget);
-      expect(find.textContaining('还没有开通官方群'), findsOneWidget);
+      expect(find.text('Couldn\'t load today\'s discussions'), findsOneWidget);
+      expect(find.textContaining('has no official group yet'), findsOneWidget);
       expect(find.textContaining('0 条'), findsNothing);
     });
 
@@ -817,8 +829,8 @@ void main() {
       // Neutral: the hero neither says the discussion could not be read nor
       // offers the failure block's 重试.
       expect(find.text(communityAiBriefPendingHeading), findsOneWidget);
-      expect(find.textContaining('稍后下拉刷新'), findsOneWidget);
-      expect(find.text('今日讨论读不到'), findsNothing);
+      expect(find.textContaining('Pull down to refresh later'), findsOneWidget);
+      expect(find.text('Couldn\'t load today\'s discussions'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-ai-state-error')),
         findsNothing,
@@ -826,7 +838,10 @@ void main() {
       expect(find.textContaining('不要重复提交'), findsNothing);
       // The rest of the page is on screen: the brief is the only thing
       // waiting.
-      expect(find.textContaining('知识源 2 项 · 更新于'), findsOneWidget);
+      expect(
+        find.textContaining('2 knowledge sources · Updated'),
+        findsOneWidget,
+      );
 
       // The server finishes writing it behind the first read.
       gateway.brief = CommunityAiBriefAvailable(
@@ -841,7 +856,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.loads, 2);
-      expect(find.text('今日 42 条讨论'), findsOneWidget);
+      expect(find.text('42 messages today'), findsOneWidget);
       expect(find.text(communityAiBriefPendingHeading), findsNothing);
     });
 
@@ -856,8 +871,8 @@ void main() {
       await _pumpOpenPage(tester, gateway);
 
       expect(find.text(communityAiBriefQuotaHeading), findsOneWidget);
-      expect(find.textContaining('明天再来'), findsOneWidget);
-      expect(find.text('今日讨论读不到'), findsNothing);
+      expect(find.textContaining('Come back tomorrow'), findsOneWidget);
+      expect(find.text('Couldn\'t load today\'s discussions'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('community-ai-state-error')),
         findsNothing,
@@ -924,7 +939,12 @@ void main() {
         find.byKey(const ValueKey<String>('community-ai-state-error')),
         findsOneWidget,
       );
-      expect(find.text('返回的数据不完整，这一页没有采用任何内容。'), findsOneWidget);
+      expect(
+        find.text(
+          'The response was incomplete, so nothing on this page was used.',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('不要重复提交'), findsNothing);
       expect(find.textContaining('结果未确认'), findsNothing);
     });
@@ -1009,7 +1029,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('绑定资产行情：PEPE'), findsOneWidget);
-      expect(find.textContaining('观察于 2026-09-22'), findsOneWidget);
+      expect(find.textContaining('Observed 2026-09-22'), findsOneWidget);
     });
 
     testWidgets('a refused question keeps the reason, never an answer', (
@@ -1030,7 +1050,10 @@ void main() {
         find.byKey(const ValueKey<String>('community-ai-turn-0-failure')),
         findsOneWidget,
       );
-      expect(find.text('提问太频繁了，等一分钟再问。'), findsOneWidget);
+      expect(
+        find.text('Too many questions. Wait a minute and ask again.'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('community-ai-turn-0-answer')),
         findsNothing,
@@ -1059,10 +1082,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.reported, <String>['$_answerId:inaccurate']);
-      expect(find.text('已提交举报'), findsOneWidget);
+      expect(find.text('Report submitted'), findsOneWidget);
       // The server keeps one report per (answer, account), so the control
       // stops offering a second one.
-      expect(find.text('已举报'), findsWidgets);
+      expect(find.text('Reported'), findsWidgets);
       expect(
         tester
             .widget<InkWell>(

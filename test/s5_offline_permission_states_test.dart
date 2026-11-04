@@ -295,7 +295,7 @@ void main() {
       );
 
       await expectOffline(tester, 'watchlist');
-      expect(find.text('还没有自选资产'), findsNothing);
+      expect(find.text('No watchlist assets yet'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('watchlist-save')),
         findsNothing,
@@ -313,7 +313,7 @@ void main() {
       );
 
       await expectOffline(tester, 'alerts');
-      expect(find.text('还没有价格提醒'), findsNothing);
+      expect(find.text('No price alerts yet'), findsNothing);
       expect(find.textContaining('个提醒正在监听'), findsNothing);
     });
 
@@ -331,9 +331,9 @@ void main() {
 
       // The alert list still rendered: one block failing does not blank a
       // block that loaded.
-      expect(find.text('WBNB 涨到 800.5'), findsOneWidget);
+      expect(find.text('WBNB Rises to 800.5'), findsOneWidget);
       await expectOffline(tester, 'alerts-feed');
-      expect(find.text('还没有触发记录'), findsNothing);
+      expect(find.text('No trigger records yet'), findsNothing);
     });
 
     testWidgets('notif-settings pauses without showing a default', (

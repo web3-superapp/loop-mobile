@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 
 // ---------------------------------------------------------------------------
@@ -150,7 +151,7 @@ class _MemeStatCell extends StatelessWidget {
       container: true,
       label: <String>[
         stat.label,
-        stat.isUnread ? '未读取' : stat.value,
+        stat.isUnread ? context.l10n.meme_designSemantics : stat.value,
         ?note,
       ].join(' '),
       child: Container(

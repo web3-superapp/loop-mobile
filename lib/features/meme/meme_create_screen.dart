@@ -24,6 +24,7 @@ import 'package:loop_mobile/features/profile/presentation/avatar_editor.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
@@ -37,13 +38,19 @@ debugMemeCropOverride;
 
 /// The three steps of `meme-create`, in order.
 enum MemeCreateStep {
-  profile('资料'),
-  media('图片与链接'),
-  confirm('确认');
+  profile(),
+  media(),
+  confirm();
 
-  const MemeCreateStep(this.label);
+  const MemeCreateStep();
 
-  final String label;
+  String get label => switch (this) {
+    MemeCreateStep.profile => LoopL10n.current.common_profile,
+
+    MemeCreateStep.media => LoopL10n.current.meme_createMedia,
+
+    MemeCreateStep.confirm => LoopL10n.current.common_confirm,
+  };
 }
 
 /// The fields the form checks before the server does (contract §7).
@@ -56,20 +63,22 @@ String? memeCreateFieldError(MemeCreateField field, String raw) {
   final value = raw.trim();
   switch (field) {
     case MemeCreateField.name:
-      if (value.isEmpty || value.runes.length > 32) return '名称 1–32 个字';
+      if (value.isEmpty || value.runes.length > 32) {
+        return LoopL10n.current.meme_createSwitch;
+      }
     case MemeCreateField.symbol:
       if (!_symbolPattern.hasMatch(value.toUpperCase())) {
-        return '符号 2–10 位字母或数字';
+        return LoopL10n.current.meme_createSwitch2;
       }
     case MemeCreateField.description:
-      if (value.runes.length > 500) return '简介最多 500 字';
+      if (value.runes.length > 500) return LoopL10n.current.meme_createSwitch3;
     case MemeCreateField.twitter:
     case MemeCreateField.telegram:
     case MemeCreateField.website:
       if (value.isEmpty) return null;
       final uri = Uri.tryParse(value);
       if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
-        return '只支持 https:// 开头的链接';
+        return LoopL10n.current.meme_createIf;
       }
   }
   return null;
@@ -278,10 +287,10 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     if (_hasUnsavedInput) {
       final abandon = await confirmCommunityAction(
         context,
-        title: '放弃创建？',
-        body: '已填写的内容不会保存。',
-        confirmLabel: '放弃',
-        cancelLabel: '继续编辑',
+        title: LoopL10n.current.meme_createTitle,
+        body: LoopL10n.current.meme_createBody,
+        confirmLabel: LoopL10n.current.meme_createConfirmLabel,
+        cancelLabel: LoopL10n.current.meme_createCancelLabel,
         sheetKey: 'meme-create-abandon-sheet',
       );
       if (!abandon || !mounted) return;
@@ -431,19 +440,20 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('meme-create-retired'),
       archetype: LoopPageArchetype.action,
-      title: '创建代币',
+      title: LoopL10n.current.meme_createMemeCreateRetiredTitle,
       onBack: widget.onBack,
       body: <Widget>[
         LoopEmptyState(
           showMessage: true,
           illustration: LoopIllustration.launchpad,
-          title: '经典发射已停用',
-          message: '请使用 Loop Hook 发射（v2 发射）创建新代币。',
+          title: LoopL10n.current.meme_createMemeCreateRetiredOpenV2Title,
+          message: LoopL10n.current.meme_createMemeCreateRetiredOpenV2Message,
           action: openV2 == null
               ? null
               : LoopButton(
                   key: const ValueKey<String>('meme-create-retired-open-v2'),
-                  label: '去 v2 发射',
+                  label:
+                      LoopL10n.current.meme_createMemeCreateRetiredOpenV2Label,
                   primary: true,
                   onPressed: openV2,
                 ),
@@ -495,14 +505,14 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
         return LoopFocusPage(
           key: const ValueKey<String>('meme-create-screen'),
           archetype: LoopPageArchetype.action,
-          title: '创建代币',
+          title: context.l10n.meme_createMemeCreateRetiredTitle,
           onBack: widget.onBack,
           body: <Widget>[
             LoopChainStateBlock(
               keyPrefix: 'meme-create-draft',
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '这个草稿已经不在了',
+              emptyMessage: context.l10n.meme_createEmptyMessage,
               onRetry: () => unawaited(ref.read(provider.notifier).reload()),
             ),
           ],
@@ -517,13 +527,13 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     final page = LoopFocusPage(
       key: const ValueKey<String>('meme-create-screen'),
       archetype: LoopPageArchetype.action,
-      title: '创建代币',
+      title: context.l10n.meme_createMemeCreateRetiredTitle,
       onBack: () => unawaited(_back()),
       keyboardAccessory: true,
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('meme-create-blocked'),
-              title: '现在不能创建代币',
+              title: context.l10n.meme_createMemeCreateBlockedTitle,
               message: memeCapabilityText(capability),
             )
           : null,
@@ -569,7 +579,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
       case MemeCreateStep.profile:
         return LoopButton(
           key: const ValueKey<String>('meme-create-next'),
-          label: '下一步',
+          label: LoopL10n.current.common_next,
           primary: true,
           block: true,
           onPressed: () => unawaited(_next()),
@@ -577,7 +587,9 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
       case MemeCreateStep.media:
         return LoopButton(
           key: const ValueKey<String>('meme-create-next'),
-          label: _creatingDraft ? '正在生成地址…' : '下一步',
+          label: _creatingDraft
+              ? LoopL10n.current.meme_createMemeCreateNextLabel
+              : LoopL10n.current.common_next,
           primary: true,
           block: true,
           onPressed: _creatingDraft || _uploading
@@ -600,10 +612,12 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
         return LoopButton(
           key: const ValueKey<String>('meme-create-submit'),
           label: switch (submission.phase) {
-            MemeSubmissionPhase.preparing => '正在准备…',
-            MemeSubmissionPhase.waiting => '已广播，等待确认…',
-            MemeSubmissionPhase.confirmed => '已创建',
-            _ => '创建',
+            MemeSubmissionPhase.preparing =>
+              LoopL10n.current.meme_createPreparing,
+            MemeSubmissionPhase.waiting => LoopL10n.current.meme_createWaiting,
+            MemeSubmissionPhase.confirmed =>
+              LoopL10n.current.meme_createConfirmed,
+            _ => LoopL10n.current.meme_createLoopButton,
           },
           primary: true,
           block: true,
@@ -623,8 +637,8 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
             controller: _name,
             maxLength: 32,
             decoration: InputDecoration(
-              labelText: '名称',
-              hintText: '1–32 个字',
+              labelText: LoopL10n.current.common_name,
+              hintText: LoopL10n.current.meme_createHintText,
               errorText: _error(MemeCreateField.name),
             ),
           ),
@@ -635,8 +649,8 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
             maxLength: 10,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
-              labelText: '符号',
-              hintText: '2–10 位字母或数字',
+              labelText: LoopL10n.current.meme_createLabelText,
+              hintText: LoopL10n.current.meme_createHintText2,
               prefixText: r'$',
               errorText: _error(MemeCreateField.symbol),
             ),
@@ -649,7 +663,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
             maxLines: 4,
             minLines: 2,
             decoration: InputDecoration(
-              labelText: '简介（可不填）',
+              labelText: LoopL10n.current.meme_createLabelText2,
               errorText: _error(MemeCreateField.description),
             ),
           ),
@@ -687,8 +701,10 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
                   LoopButton(
                     key: const ValueKey<String>('meme-create-upload'),
                     label: _uploading
-                        ? '上传中…'
-                        : (_imageMediaId == null ? '上传图片' : '换一张'),
+                        ? LoopL10n.current.common_uploading
+                        : (_imageMediaId == null
+                              ? LoopL10n.current.meme_createLabel
+                              : LoopL10n.current.meme_createLabel2),
                     icon: 'camera',
                     onPressed: picker.available && !_uploading
                         ? () => unawaited(_upload())
@@ -697,8 +713,8 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
                   const SizedBox(height: 6),
                   Text(
                     picker.available
-                        ? '方形图片，上传前可裁剪；不传就用符号首字母。'
-                        : '这台设备暂时不能选图，不传就用符号首字母。',
+                        ? LoopL10n.current.meme_createMediaStep
+                        : LoopL10n.current.meme_createS,
                     style: LoopType.captionSm.copyWith(color: LoopColors.text3),
                   ),
                 ],
@@ -713,7 +729,9 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           icon: 'warn',
           tone: LoopNoticeTone.warn,
           body: uploadFailure != null
-              ? '图片没有上传成功：${memeFailureText(uploadFailure)}'
+              ? LoopL10n.current.meme_createMemeCreateUploadFailedBody(
+                  memeFailureText(uploadFailure),
+                )
               : avatarUploadFailureReason(_uploadFailure!),
         ),
       Padding(
@@ -726,7 +744,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
               controller: _twitter,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: 'X（可不填）',
+                labelText: LoopL10n.current.meme_createLabelText3,
                 hintText: 'https://',
                 errorText: _error(MemeCreateField.twitter),
               ),
@@ -737,7 +755,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
               controller: _telegram,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: 'Telegram（可不填）',
+                labelText: LoopL10n.current.meme_createLabelText4,
                 hintText: 'https://',
                 errorText: _error(MemeCreateField.telegram),
               ),
@@ -748,7 +766,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
               controller: _website,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: '官网（可不填）',
+                labelText: LoopL10n.current.meme_createLabelText5,
                 hintText: 'https://',
                 errorText: _error(MemeCreateField.website),
               ),
@@ -770,7 +788,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
   static String _draftFailureText(LoopChainException failure) {
     if (failure.reasonCode == 'MEME_CREATE_RATE_LIMITED' ||
         failure.kind == LoopChainFailureKind.rateLimited) {
-      return '今天的创建次数用完了，明天再来';
+      return LoopL10n.current.meme_createIf2;
     }
     return memeFailureText(failure);
   }
@@ -779,11 +797,13 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
   String? _firstBuyRefusal(MemeTokenDetail draft, BigInt usd1In) {
     final curve = draft.curve;
     if (usd1In < curve.minBuyUsd1) {
-      return '最少买入 ${memeUsd1Label(curve.minBuyUsd1)}';
+      return LoopL10n.current.meme_createIf3(memeUsd1Label(curve.minBuyUsd1));
     }
     final estimate = curve.estimateBuy(usd1In);
     if (estimate.out > curve.walletCapTokens) {
-      return '超过单钱包上限 ${memeTokenFigure(curve.walletCapTokens)} 枚';
+      return LoopL10n.current.meme_createIf4(
+        memeTokenFigure(curve.walletCapTokens),
+      );
     }
     return null;
   }
@@ -841,7 +861,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           ],
         ),
       ),
-      const LoopLabel('代币地址'),
+      LoopLabel(LoopL10n.current.meme_createLoopLabel),
       Padding(
         key: const ValueKey<String>('meme-create-predicted'),
         padding: const EdgeInsets.fromLTRB(
@@ -852,40 +872,54 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
         ),
         child: predicted == null
             ? Text(
-                '地址会在创建时确定',
+                LoopL10n.current.meme_createConfirmStep,
                 style: LoopType.body.copyWith(color: LoopColors.text2),
               )
             : MemeAddressTail(address: predicted),
       ),
       if (!draft.vanity)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('meme-create-no-vanity'),
           icon: 'info',
-          body: '本次无法分配 6666 尾号，代币仍可正常创建和交易。',
+          body: LoopL10n.current.meme_createMemeCreateNoVanityBody,
         ),
-      const LoopLabel('参数'),
+      LoopLabel(LoopL10n.current.meme_createLoopLabel2),
       LoopKeyValue(
-        label: '总量',
-        value: '${memeTokenFigure(curve.totalSupply)} 枚',
+        label: LoopL10n.current.common_totalSupply,
+        value: LoopL10n.current.meme_createValue(
+          memeTokenFigure(curve.totalSupply),
+        ),
       ),
       LoopKeyValue(
-        label: '可售',
+        label: LoopL10n.current.meme_createLabel3,
         value: saleShare == null
-            ? '${memeTokenFigure(curve.saleSupply)} 枚'
-            : '${memeTokenFigure(curve.saleSupply)} 枚（${memeBpsLabel(saleShare)}）',
+            ? LoopL10n.current.meme_createValue(
+                memeTokenFigure(curve.saleSupply),
+              )
+            : LoopL10n.current.meme_createValue2(
+                memeBpsLabel(saleShare),
+                memeTokenFigure(curve.saleSupply),
+              ),
       ),
-      LoopKeyValue(label: '交易费率', value: memeBpsLabel(curve.tradeFeeBps)),
       LoopKeyValue(
-        label: '单钱包上限',
-        value: '${memeTokenFigure(curve.walletCapTokens)} 枚',
+        label: LoopL10n.current.meme_createLabel4,
+        value: memeBpsLabel(curve.tradeFeeBps),
       ),
       LoopKeyValue(
-        label: '毕业条件',
+        label: LoopL10n.current.meme_createLabel5,
+        value: LoopL10n.current.meme_createValue(
+          memeTokenFigure(curve.walletCapTokens),
+        ),
+      ),
+      LoopKeyValue(
+        label: LoopL10n.current.meme_createLabel6,
         value: fillTarget == null
-            ? '可售部分卖完后自动上 PancakeSwap'
-            : '募满约 ${memeUsd1Label(fillTarget, maxFractionDigits: 0)} 后自动上 PancakeSwap',
+            ? LoopL10n.current.meme_createValue3
+            : LoopL10n.current.meme_createValue4(
+                memeUsd1Label(fillTarget, maxFractionDigits: 0),
+              ),
       ),
-      const LoopLabel('首买（可不填）'),
+      LoopLabel(LoopL10n.current.meme_createLoopLabel3),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: TextField(
@@ -898,12 +932,12 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           ],
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            labelText: '用 USD1 首买',
+            labelText: LoopL10n.current.meme_createLabelText6,
             suffixText: 'USD1',
             errorText: firstBuyText.isEmpty
                 ? null
                 : firstBuy == null
-                ? '请输入大于 0 的金额，最多 18 位小数'
+                ? LoopL10n.current.meme_createErrorText
                 : refusal,
           ),
         ),
@@ -918,9 +952,11 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
             0,
           ),
           child: Text(
-            '约得 ${memeTokenLabel(estimate.out, loopTickerLabel(symbol))}，'
-            '手续费 ${memeUsd1Label(estimate.fee, maxFractionDigits: 4)}；'
-            '上限 ${memeTokenFigure(curve.walletCapTokens)} 枚。签名前以服务端报价为准。',
+            LoopL10n.current.meme_createText(
+              memeTokenFigure(curve.walletCapTokens),
+              memeTokenLabel(estimate.out, loopTickerLabel(symbol)),
+              memeUsd1Label(estimate.fee, maxFractionDigits: 4),
+            ),
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
@@ -930,13 +966,15 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
           key: const ValueKey<String>('meme-create-no-wallet'),
           icon: 'wallet',
           tone: LoopNoticeTone.warn,
-          body: wallet.loading ? '正在读取钱包…' : '还没有可用的钱包，先在钱包里创建或激活一个。',
+          body: wallet.loading
+              ? LoopL10n.current.meme_createMemeCreateNoWalletBody
+              : LoopL10n.current.meme_createMemeCreateNoWalletBody2,
         ),
       if (capability.evidencePending)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('meme-create-evidence-pending'),
           icon: 'info',
-          body: '合约核对中，创建可能暂时不可用。',
+          body: LoopL10n.current.meme_createMemeCreateEvidencePendingBody,
         ),
       if (statusText != null)
         LoopNotice(
@@ -971,7 +1009,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
     return switch (submission.phase) {
       MemeSubmissionPhase.pollTimedOut => LoopButton(
         key: const ValueKey<String>('meme-create-resume'),
-        label: '再查一次',
+        label: LoopL10n.current.meme_createMemeCreateResumeLabel,
         onPressed: controller.resumePolling,
       ),
       MemeSubmissionPhase.locked
@@ -979,7 +1017,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
               memeReportRetryable(submission.outcome!.reasonCode) =>
         LoopButton(
           key: const ValueKey<String>('meme-create-retry-report'),
-          label: '重新上报',
+          label: LoopL10n.current.meme_createMemeCreateRetryReportLabel,
           onPressed: () => unawaited(controller.retryReport()),
         ),
       MemeSubmissionPhase.failed ||
@@ -987,7 +1025,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
       MemeSubmissionPhase.signRefused ||
       MemeSubmissionPhase.prepareFailed => LoopButton(
         key: const ValueKey<String>('meme-create-reset'),
-        label: '重新发起',
+        label: LoopL10n.current.meme_createMemeCreateResetLabel,
         onPressed: controller.reset,
       ),
       _ => null,
@@ -1007,7 +1045,7 @@ class MemeAddressTail extends StatelessWidget {
     final head = address.substring(0, address.length - 4);
     final tail = address.substring(address.length - 4);
     return Semantics(
-      label: '代币地址 $address',
+      label: context.l10n.meme_createLabel7(address),
       excludeSemantics: true,
       child: Text.rich(
         TextSpan(

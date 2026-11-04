@@ -136,14 +136,14 @@ void main() {
       await _pump(tester, MemeTokenCard(row: _row(), now: observed));
       expect(find.text('FROG'), findsOneWidget);
       // Created 00:00, observed 03:00:05.
-      expect(find.text('3 小时'), findsOneWidget);
+      expect(find.text('3h'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-row-age')).style!.color,
         // Decision 0212: a quiet Text3 figure, Purple is for selection.
         LoopColors.text3,
       );
-      expect(find.text('\$1,980 交易量 · Frog'), findsOneWidget);
-      expect(find.text('市值 \$9,891'), findsOneWidget);
+      expect(find.text('\$1,980 volume · Frog'), findsOneWidget);
+      expect(find.text('Market cap \$9,891'), findsOneWidget);
       final cap = tester.widget<Text>(_key('meme-row-cap'));
       // Decision 0190 H4: the quote-row value, figureMd 17/600.
       expect(cap.style!.fontSize, LoopType.figureMd.fontSize);
@@ -210,10 +210,10 @@ void main() {
       );
       final badge = tester.widget<LoopBadge>(_key('meme-graduated-tag'));
       expect(badge.kind, LoopBadgeKind.launch);
-      expect(find.text('已毕业'), findsOneWidget);
+      expect(find.text('Graduated'), findsOneWidget);
       expect(_key('meme-row-age'), findsNothing);
       expect(_key('meme-row-progress'), findsNothing);
-      expect(find.text('市值 \$9,891'), findsOneWidget);
+      expect(find.text('Market cap \$9,891'), findsOneWidget);
       expect(find.text('+8.20% 1h'), findsOneWidget);
       expect(
         tester.widget<Text>(_key('meme-change')).style!.color,
@@ -248,7 +248,7 @@ void main() {
       expect(_key('meme-row-age'), findsNothing);
       expect(find.textContaining('交易量'), findsNothing);
       expect(_key('meme-row-cap'), findsNothing);
-      expect(find.text('价格暂时读不到'), findsOneWidget);
+      expect(find.text('Price can\'t be loaded right now'), findsOneWidget);
       expect(_key('meme-row-progress'), findsOneWidget);
 
       // Sent as null, or malformed, reads the same: not a bad row.
@@ -267,12 +267,12 @@ void main() {
     test('ages read in minutes, hours, then days', () {
       final launched = DateTime.utc(2026, 10, 1);
       String at(Duration age) => memeAgeLabel(launched, now: launched.add(age));
-      expect(at(const Duration(seconds: 20)), '刚刚');
-      expect(at(const Duration(minutes: 11)), '11 分钟');
-      expect(at(const Duration(hours: 12, minutes: 5)), '12 小时');
-      expect(at(const Duration(days: 1, hours: 3)), '1 天');
-      expect(at(const Duration(days: 10)), '10 天');
-      expect(at(const Duration(minutes: -5)), '刚刚');
+      expect(at(const Duration(seconds: 20)), 'Just now');
+      expect(at(const Duration(minutes: 11)), '11m');
+      expect(at(const Duration(hours: 12, minutes: 5)), '12h');
+      expect(at(const Duration(days: 1, hours: 3)), '1d');
+      expect(at(const Duration(days: 10)), '10d');
+      expect(at(const Duration(minutes: -5)), 'Just now');
     });
 
     testWidgets('a long ticker gives way; cap and bar stay inside', (

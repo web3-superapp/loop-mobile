@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // MEME curve launchpad models (client decision 0120, loop-api decision 0101)
@@ -55,15 +56,20 @@ BigInt? memeRawFromInput(String? text) {
 
 /// The four chips of the launchpad list (contract §3).
 enum MemeListTab {
-  fresh('new', '新发'),
-  hot('hot', '热门'),
-  graduating('graduating', '快打满'),
-  graduated('graduated', '已毕业');
+  fresh('new'),
+  hot('hot'),
+  graduating('graduating'),
+  graduated('graduated');
 
-  const MemeListTab(this.wireName, this.label);
+  const MemeListTab(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    MemeListTab.fresh => LoopL10n.current.meme_modelsFresh,
+    MemeListTab.hot => LoopL10n.current.meme_modelsHot,
+    MemeListTab.graduating => LoopL10n.current.meme_modelsGraduating,
+    MemeListTab.graduated => LoopL10n.current.common_graduated,
+  };
 
   static MemeListTab? tryParse(String value) {
     for (final tab in values) {
@@ -96,17 +102,21 @@ enum MemeTokenStatus {
 
 /// Where a row's price came from.
 enum MemePriceSource {
-  loopCurve('loop_curve', 'LOOP 曲线'),
-  dexscreener('dexscreener', 'DexScreener'),
+  loopCurve('loop_curve'),
+  dexscreener('dexscreener'),
 
   /// A graduated token's PancakeSwap pool price, read from `slot0` when no
   /// market provider prices it (loop-api S116b).
-  poolSlot0('pool_slot0', '池子推算');
+  poolSlot0('pool_slot0');
 
-  const MemePriceSource(this.wireName, this.label);
+  const MemePriceSource(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    MemePriceSource.loopCurve => LoopL10n.current.meme_modelsLoopCurve,
+    MemePriceSource.dexscreener => 'DexScreener',
+    MemePriceSource.poolSlot0 => LoopL10n.current.market_fomoMarker,
+  };
 
   static MemePriceSource? tryParse(String value) {
     for (final source in values) {
@@ -564,17 +574,25 @@ final class MemeHolderPage {
 
 /// The six chart intervals of the curve (contract §5.2).
 enum MemeCandleInterval {
-  oneMinute('1m', '1分', LoopCandleInterval.fifteenMinutes),
-  fiveMinutes('5m', '5分', LoopCandleInterval.fifteenMinutes),
-  fifteenMinutes('15m', '15分', LoopCandleInterval.fifteenMinutes),
-  oneHour('1h', '1时', LoopCandleInterval.oneHour),
-  fourHours('4h', '4时', LoopCandleInterval.fourHours),
-  oneDay('1d', '1日', LoopCandleInterval.oneDay);
+  oneMinute('1m', LoopCandleInterval.fifteenMinutes),
+  fiveMinutes('5m', LoopCandleInterval.fifteenMinutes),
+  fifteenMinutes('15m', LoopCandleInterval.fifteenMinutes),
+  oneHour('1h', LoopCandleInterval.oneHour),
+  fourHours('4h', LoopCandleInterval.fourHours),
+  oneDay('1d', LoopCandleInterval.oneDay);
 
-  const MemeCandleInterval(this.wireName, this.label, this.axis);
+  const MemeCandleInterval(this.wireName, this.axis);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    MemeCandleInterval.oneMinute => LoopL10n.current.meme_modelsOneMinute,
+    MemeCandleInterval.fiveMinutes => LoopL10n.current.meme_modelsFiveMinutes,
+    MemeCandleInterval.fifteenMinutes =>
+      LoopL10n.current.market_chartFifteenMinutes,
+    MemeCandleInterval.oneHour => LoopL10n.current.market_chartOneHour,
+    MemeCandleInterval.fourHours => LoopL10n.current.market_chartFourHours,
+    MemeCandleInterval.oneDay => LoopL10n.current.market_chartOneDay,
+  };
 
   /// The shared chart's interval whose time labels fit this bucket: the
   /// three intraday widths all read as a clock.
@@ -686,16 +704,23 @@ enum MemeIntentKind {
 
 /// The intent's server state (contract §8.4).
 enum MemeIntentState {
-  prepared('prepared', '待签名'),
-  broadcastReported('broadcast_reported', '已广播，等待确认'),
-  confirmed('confirmed', '已确认'),
-  failed('failed', '未成功'),
-  expired('expired', '已过期');
+  prepared('prepared'),
+  broadcastReported('broadcast_reported'),
+  confirmed('confirmed'),
+  failed('failed'),
+  expired('expired');
 
-  const MemeIntentState(this.wireName, this.label);
+  const MemeIntentState(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    MemeIntentState.prepared => LoopL10n.current.common_awaitingSignature,
+    MemeIntentState.broadcastReported =>
+      LoopL10n.current.meme_modelsBroadcastReported,
+    MemeIntentState.confirmed => LoopL10n.current.common_confirmed,
+    MemeIntentState.failed => LoopL10n.current.meme_modelsFailed,
+    MemeIntentState.expired => LoopL10n.current.common_expired,
+  };
 
   bool get isTerminal =>
       this == MemeIntentState.confirmed ||

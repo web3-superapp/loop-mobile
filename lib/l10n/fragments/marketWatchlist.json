@@ -1,0 +1,400 @@
+{
+  "marketWatchlist_controllerAdd": {
+    "en": "Add group {name}",
+    "placeholders": {
+      "name": {
+        "example": "group.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:109",
+    "zh": "新增分组 {name}"
+  },
+  "marketWatchlist_controllerAdd2": {
+    "en": "Remove group {name}",
+    "placeholders": {
+      "name": {
+        "example": "group.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:128",
+    "zh": "移除分组 {name}"
+  },
+  "marketWatchlist_controllerAddedItems": {
+    "en": "{added} added",
+    "placeholders": {
+      "added": {
+        "example": "added",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:124",
+    "zh": "新增 {added} 项"
+  },
+  "marketWatchlist_controllerGroupChange": {
+    "en": "{name}: {change}",
+    "placeholders": {
+      "change": {
+        "example": "change",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:123",
+    "zh": "{name}：{change}"
+  },
+  "marketWatchlist_controllerRemovedItems": {
+    "en": "{removed} removed",
+    "placeholders": {
+      "removed": {
+        "example": "removed",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:124",
+    "zh": "移除 {removed} 项"
+  },
+  "marketWatchlist_controllerReordered": {
+    "en": "Reordered",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:124",
+    "zh": "重新排序"
+  },
+  "marketWatchlist_controllerStringBuffer": {
+    "en": "LOOP watchlist draft (based on version {version})",
+    "placeholders": {
+      "version": {
+        "example": "snapshot?.version ?? 0",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_controller.dart:135",
+    "zh": "LOOP 自选草稿（基于版本 {version}）"
+  },
+  "marketWatchlist_editorBuild": {
+    "en": "Groups take effect after saving. Up to {watchlistMaxGroups}.",
+    "placeholders": {
+      "watchlistMaxGroups": {
+        "example": "watchlistMaxGroups",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:505",
+    "zh": "分组保存后才会生效，最多 {watchlistMaxGroups} 个。"
+  },
+  "marketWatchlist_editorBuild2": {
+    "en": "Reloading discards",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:737",
+    "zh": "重新加载会丢弃"
+  },
+  "marketWatchlist_editorEmptyMessage": {
+    "en": "No watchlist assets yet",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:189",
+    "zh": "还没有自选资产"
+  },
+  "marketWatchlist_editorEmptyReason": {
+    "en": "Open a token page and tap the star at the top right to add it.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:190, lib/features/market/watchlist/watchlist_editor_screen.dart:255",
+    "zh": "打开代币页，点右上角星标即可加入自选。"
+  },
+  "marketWatchlist_editorHintText": {
+    "en": "1–{watchlistMaxNameCodePoints} characters",
+    "placeholders": {
+      "watchlistMaxNameCodePoints": {
+        "example": "watchlistMaxNameCodePoints",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:472",
+    "zh": "1–{watchlistMaxNameCodePoints} 个字符"
+  },
+  "marketWatchlist_editorLabel": {
+    "en": "Remove {displayName}",
+    "placeholders": {
+      "displayName": {
+        "example": "item.displayName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:633",
+    "zh": "移除 {displayName}"
+  },
+  "marketWatchlist_editorLabelText": {
+    "en": "Group name",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:471",
+    "zh": "分组名称"
+  },
+  "marketWatchlist_editorLoopBadge": {
+    "en": "No data",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:624",
+    "zh": "不可读"
+  },
+  "marketWatchlist_editorLoopLabel": {
+    "en": "Groups",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:274",
+    "zh": "分组"
+  },
+  "marketWatchlist_editorLoopOfflineState": {
+    "en": "Save watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:216",
+    "zh": "保存自选"
+  },
+  "marketWatchlist_editorMessage": {
+    "en": "Draft copied",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:412",
+    "zh": "草稿已复制"
+  },
+  "marketWatchlist_editorMessage2": {
+    "en": "Watchlist saved",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:419",
+    "zh": "自选已保存"
+  },
+  "marketWatchlist_editorResource": {
+    "en": "Watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:183",
+    "zh": "自选列表"
+  },
+  "marketWatchlist_editorTitle": {
+    "en": "This account can't save the watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:227",
+    "zh": "当前账号无权保存自选"
+  },
+  "marketWatchlist_editorUnsavedSuffix": {
+    "en": " · Unsaved",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:175",
+    "zh": " · 未保存"
+  },
+  "marketWatchlist_editorWatchlistCapabilityBlockTitle": {
+    "en": "Watchlist editing isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:177",
+    "zh": "自选编辑当前不可用"
+  },
+  "marketWatchlist_editorWatchlistConflictBody": {
+    "en": "Your watchlist changed on another device. Reloading discards the changes below. Copy the draft before deciding.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:200",
+    "zh": "自选已在其他设备上改动。重新加载会丢弃下面这些改动，先复制草稿再决定。"
+  },
+  "marketWatchlist_editorWatchlistConflictCopyDraftLabel": {
+    "en": "Copy current draft",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:757",
+    "zh": "复制当前草稿"
+  },
+  "marketWatchlist_editorWatchlistConflictNoDiff": {
+    "en": "This draft matches the submitted version.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:741",
+    "zh": "这份草稿与已提交的版本没有差异。"
+  },
+  "marketWatchlist_editorWatchlistConflictTitle": {
+    "en": "Version conflict — nothing was overwritten",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:199",
+    "zh": "版本冲突 —— 没有覆盖任何内容"
+  },
+  "marketWatchlist_editorWatchlistDiscardLabel": {
+    "en": "Discard",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:359",
+    "zh": "放弃修改"
+  },
+  "marketWatchlist_editorWatchlistEditorScreenSubtitle": {
+    "en": "{distinctAssetCount} watchlist assets{state}",
+    "placeholders": {
+      "distinctAssetCount": {
+        "example": "state.distinctAssetCount",
+        "type": "Object"
+      },
+      "state": {
+        "example": "state.isDirty ? ' · 未保存' : ''",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:170",
+    "zh": "{distinctAssetCount} 个自选资产{state}"
+  },
+  "marketWatchlist_editorWatchlistGroupEmptyAddLabel": {
+    "en": "Add asset",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:258, lib/features/market/watchlist/watchlist_editor_screen.dart:325",
+    "zh": "添加资产"
+  },
+  "marketWatchlist_editorWatchlistGroupEmptyTitle": {
+    "en": "No assets in this group yet",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:254",
+    "zh": "这个分组还没有资产"
+  },
+  "marketWatchlist_editorWatchlistGroupLabel": {
+    "en": "{name} {items} · Drag to sort · Swipe left to delete",
+    "placeholders": {
+      "items": {
+        "example": "group.items.length",
+        "type": "Object"
+      },
+      "name": {
+        "example": "group.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:247",
+    "zh": "{name} {items} · 拖动排序 · 左滑删除"
+  },
+  "marketWatchlist_editorWatchlistGroupLimitBody": {
+    "en": "You've reached the limit of {watchlistMaxGroups} groups. Delete one before creating another.",
+    "placeholders": {
+      "watchlistMaxGroups": {
+        "example": "watchlistMaxGroups",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:345",
+    "zh": "分组已达上限 {watchlistMaxGroups} 个。要新建一个，先删掉一个现有分组。"
+  },
+  "marketWatchlist_editorWatchlistGroupNameConfirmLabel": {
+    "en": "Add group",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:497",
+    "zh": "添加分组"
+  },
+  "marketWatchlist_editorWatchlistNewGroupEmptyLabel": {
+    "en": "New group",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:286, lib/features/market/watchlist/watchlist_editor_screen.dart:330, lib/features/market/watchlist/watchlist_editor_screen.dart:459",
+    "zh": "新建分组"
+  },
+  "marketWatchlist_editorWatchlistNoGroupsMessage": {
+    "en": "Two ways: tap the star at the top right of a token page and the asset goes into the default group \"{watchlistDefaultGroupName}\", or create a group here first.",
+    "placeholders": {
+      "watchlistDefaultGroupName": {
+        "example": "watchlistDefaultGroupName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:282",
+    "zh": "有两条路：在代币页点右上角星标，资产会进入默认分组「{watchlistDefaultGroupName}」；或者在这里先建一个分组。"
+  },
+  "marketWatchlist_editorWatchlistNoGroupsTitle": {
+    "en": "No groups yet",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:280",
+    "zh": "还没有分组"
+  },
+  "marketWatchlist_editorWatchlistNoticeText": {
+    "en": "Prices and changes aren't shown here. This page only sorts, removes and creates groups. Add assets with the star on a token page. Assets must be registered on LOOP, or the whole watchlist won't save.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:380",
+    "zh": "这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。资产必须已经在 LOOP 登记，否则整份自选表都不会保存。"
+  },
+  "marketWatchlist_editorWatchlistNoticeTitle": {
+    "en": "A watchlist isn't market data",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:378",
+    "zh": "自选不是行情"
+  },
+  "marketWatchlist_editorWatchlistSaveErrorTitle": {
+    "en": "Watchlist wasn't saved",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:233",
+    "zh": "自选没有保存"
+  },
+  "marketWatchlist_editorWatchlistSaveLabel": {
+    "en": "Saving…",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:366",
+    "zh": "正在保存…"
+  },
+  "marketWatchlist_editorWatchlistUndoLabel": {
+    "en": "Undo",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:81",
+    "zh": "撤销"
+  },
+  "marketWatchlist_editorWatchlistUndoMessage": {
+    "en": "Removed {displayName}. Takes effect after saving",
+    "placeholders": {
+      "displayName": {
+        "example": "item.displayName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:77",
+    "zh": "已移除 {displayName}，保存后生效"
+  },
+  "marketWatchlist_membershipControllerActionLabel": {
+    "en": "Remove from watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_membership_controller.dart:91",
+    "zh": "移出自选"
+  },
+  "marketWatchlist_membershipControllerS": {
+    "en": "Add to watchlist",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_membership_controller.dart:91",
+    "zh": "加入自选"
+  },
+  "marketWatchlist_modelsDuplicate": {
+    "en": "A group with this name already exists.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_models.dart:77",
+    "zh": "已经有同名分组了。"
+  },
+  "marketWatchlist_modelsEmpty": {
+    "en": "Group name can't be empty.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_models.dart:73",
+    "zh": "分组名称不能为空。"
+  },
+  "marketWatchlist_modelsGroupLimitReached": {
+    "en": "You've reached the limit of {watchlistMaxGroups} groups. Remove one before creating another.",
+    "placeholders": {
+      "watchlistMaxGroups": {
+        "example": "watchlistMaxGroups",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_models.dart:79",
+    "zh": "分组已达上限 {watchlistMaxGroups} 个，先移除一个再新建。"
+  },
+  "marketWatchlist_modelsInvalidCharacters": {
+    "en": "The group name has hidden characters that can't be used.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_models.dart:76",
+    "zh": "分组名称里有不能使用的隐藏字符。"
+  },
+  "marketWatchlist_modelsNotEditable": {
+    "en": "The watchlist hasn't loaded yet, so groups can't be created.",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_models.dart:80",
+    "zh": "自选还没有读取成功，暂时不能新建分组。"
+  },
+  "marketWatchlist_modelsTooLong": {
+    "en": "Group names can be up to {watchlistMaxNameCodePoints} characters.",
+    "placeholders": {
+      "watchlistMaxNameCodePoints": {
+        "example": "watchlistMaxNameCodePoints",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/market/watchlist/watchlist_models.dart:75",
+    "zh": "分组名称最多 {watchlistMaxNameCodePoints} 个字符。"
+  }
+}

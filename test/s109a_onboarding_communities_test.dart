@@ -695,7 +695,10 @@ void main() {
         hasLength(5),
       );
       expect(done, 0);
-      expect(find.text('当前账号没有执行这个操作的权限。'), findsNWidgets(5));
+      expect(
+        find.text("This account doesn't have permission for this action."),
+        findsNWidgets(5),
+      );
       expect(find.text('Continue to LOOP'), findsOneWidget);
       expect(find.byKey(_entering), findsNothing);
       expect(

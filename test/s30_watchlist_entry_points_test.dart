@@ -205,7 +205,7 @@ void main() {
       expect(star, findsOneWidget);
       // The Watchlist read succeeded, so the star still states membership and
       // still toggles it: a Market outage is not an answer about this list.
-      expect(tester.widget<LoopIconButton>(star).label, '加入自选');
+      expect(tester.widget<LoopIconButton>(star).label, 'Add to watchlist');
       expect(tester.widget<LoopIconButton>(star).onPressed, isNotNull);
     });
 

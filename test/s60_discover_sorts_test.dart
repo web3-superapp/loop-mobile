@@ -537,6 +537,13 @@ void main() {
         community: gateway,
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-discussion')),
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-discussion')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-discussion')),
       );
@@ -567,7 +574,7 @@ void main() {
       // The empty-collection sentence would claim there are no communities,
       // which is not what the server answered.
       expect(find.text('没有符合条件的社区'), findsNothing);
-      expect(find.text('这个排序下没有社区。'), findsNothing);
+      expect(find.text('No communities under this sort.'), findsNothing);
 
       // The page offers the order it can apply, and taking it asks for that
       // order by name.
@@ -639,15 +646,23 @@ void main() {
         community: gateway,
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-power')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-power')),
       );
       await tester.pumpAndSettle();
       expect(find.text('23,050'), findsOneWidget);
-      expect(find.text('算力'), findsNWidgets(2));
+      expect(find.text('Power'), findsNWidgets(2));
       // The row with no approved weight prints a dash, never a zero.
       expect(find.text('—'), findsOneWidget);
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('discover-seg-discussion')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('discover-seg-discussion')),
       );
@@ -655,7 +670,7 @@ void main() {
       // A full page of messages that still began inside the window is a
       // floor, and the row says so.
       expect(find.text('≥41'), findsOneWidget);
-      expect(find.text('7 天讨论'), findsOneWidget);
+      expect(find.text('7-day discussions'), findsOneWidget);
     });
   });
 

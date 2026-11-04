@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -31,7 +32,9 @@ String loopChartAveragesText(
           when series.isNotEmpty)
         'MA$period ${format(series.last)}',
   ];
-  return labels.isEmpty ? '' : '${labels.join(' · ')} · 本机计算';
+  return labels.isEmpty
+      ? ''
+      : LoopL10n.current.market_chartToolbarS(labels.join(' · '));
 }
 
 /// The row above the plot: the MA figures at the start, then K线 / MA / VOL.
@@ -76,8 +79,12 @@ class LoopChartToolbar extends StatelessWidget {
     final switches = <Widget>[
       LoopChartToggle(
         key: ValueKey<String>('$keyPrefix-chart-style'),
-        label: line ? 'K线' : '折线',
-        semantic: line ? '切换到 K 线' : '切换到折线',
+        label: line
+            ? context.l10n.market_chartToolbarLabel
+            : context.l10n.market_chartToolbarLabel2,
+        semantic: line
+            ? context.l10n.market_chartToolbarSemantic
+            : context.l10n.market_chartToolbarSemantic2,
         on: false,
         onTap: () =>
             onStyleChanged(line ? LoopChartStyle.candles : LoopChartStyle.line),
@@ -85,7 +92,7 @@ class LoopChartToolbar extends StatelessWidget {
       LoopChartToggle(
         key: ValueKey<String>('$keyPrefix-chart-ma'),
         label: 'MA',
-        semantic: '均线',
+        semantic: context.l10n.market_chartToolbarSemantic3,
         on: averages,
         onTap: () => onAveragesChanged(!averages),
       ),
@@ -93,7 +100,7 @@ class LoopChartToolbar extends StatelessWidget {
         LoopChartToggle(
           key: ValueKey<String>('$keyPrefix-chart-vol'),
           label: 'VOL',
-          semantic: '成交量',
+          semantic: context.l10n.market_chartToolbarSemantic4,
           on: volume,
           onTap: () => onVolumeChanged(!volume),
         ),

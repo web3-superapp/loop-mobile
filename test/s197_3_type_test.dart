@@ -335,8 +335,8 @@ void main() {
           ),
         ),
       );
-      _expectSheetHeading(tester, '这里数的是连接，不是活跃');
-      final observed = find.textContaining('观察于');
+      _expectSheetHeading(tester, 'This counts connections, not activity');
+      final observed = find.textContaining('Observed');
       _expectStep(
         _paintedAt(tester, observed),
         LoopType.captionSm,
@@ -354,7 +354,7 @@ void main() {
           ),
         ),
       );
-      _expectSheetHeading(tester, '申请已提交 · 审核中');
+      _expectSheetHeading(tester, 'Application submitted · In review');
     });
 
     testWidgets('M6 创建社区 is 20/600, not 20/700', (tester) async {
@@ -362,7 +362,7 @@ void main() {
         tester,
         (context) => unawaited(showCommunityApplySheet(context)),
       );
-      _expectSheetHeading(tester, '创建社区');
+      _expectSheetHeading(tester, 'Create community');
     });
 
     testWidgets('M4 community AI source and report sheets', (tester) async {
@@ -382,7 +382,7 @@ void main() {
       );
       _expectSheetHeading(tester, '社区档案：PEPE');
       _expectStep(
-        _paintedAt(tester, find.textContaining('观察于')),
+        _paintedAt(tester, find.textContaining('Observed')),
         LoopType.captionSm,
         reason: '观察于',
       );
@@ -393,9 +393,9 @@ void main() {
         tester,
         (context) => unawaited(showCommunityAiReportSheet(context)),
       );
-      _expectSheetHeading(tester, '举报这条回答');
+      _expectSheetHeading(tester, 'Report this answer');
       _expectStep(
-        _paintedAt(tester, find.textContaining('选择一个原因')),
+        _paintedAt(tester, find.textContaining('Choose a reason')),
         LoopType.bodySm,
         color: LoopColors.text2,
         reason: 'support copy',

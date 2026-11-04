@@ -166,7 +166,7 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('3 在线'), findsOneWidget);
+    expect(find.textContaining('3 online'), findsOneWidget);
     expect(client.connectCalls, 1);
   });
 }

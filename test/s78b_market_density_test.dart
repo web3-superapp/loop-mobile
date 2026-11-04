@@ -228,7 +228,7 @@ void main() {
 
       // 「新币发现」 under a bar that already says 新币发现 is the page's own
       // name twice (walkthrough 2026-09-23, d05).
-      expect(_folios(tester).first.heading, '正在读取新的池');
+      expect(_folios(tester).first.heading, 'Loading new pools');
     });
   });
   group('logo · the contract, and the three hosts it may name', () {

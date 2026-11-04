@@ -7772,6 +7772,2390 @@ abstract class LoopLocalizations {
   /// **'Watchlist'**
   String get common_watchlist;
 
+  /// lib/features/community/community_ai_screen.dart:451
+  ///
+  /// In en, this message translates to:
+  /// **'Answering…'**
+  String get community_aiBody;
+
+  /// lib/features/community/community_ai_screen.dart:790
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · Observed {communityAiTimestamp}'**
+  String community_aiBuild(Object? communityAiTimestamp, Object? label);
+
+  /// lib/features/community/community_ai_screen.dart:925
+  ///
+  /// In en, this message translates to:
+  /// **'Observed {communityAiTimestamp}'**
+  String community_aiBuild2(Object? communityAiTimestamp);
+
+  /// lib/features/community/community_ai_screen.dart:972
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a reason. The report records only this answer and your choice, not the question you asked.'**
+  String get community_aiBuild3;
+
+  /// lib/features/community/community_ai_screen.dart:382
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no assistant features yet'**
+  String get community_aiCommunityAiCapabilitiesEmptyTitle;
+
+  /// lib/features/community/community_ai_screen.dart:173
+  ///
+  /// In en, this message translates to:
+  /// **'Ask this community\'s AI'**
+  String get community_aiCommunityAiComposerHintText;
+
+  /// lib/features/community/community_ai_screen.dart:1054
+  ///
+  /// In en, this message translates to:
+  /// **'Questions aren\'t available yet'**
+  String get community_aiCommunityAiComposerUnavailableHintText;
+
+  /// lib/features/community/community_ai_screen.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'Community AI isn\'t available yet'**
+  String get community_aiCommunityAiHeadline;
+
+  /// lib/features/community/community_ai_screen.dart:265, lib/features/community/community_ai_screen.dart:282, lib/features/community/community_ai_screen.dart:1048
+  ///
+  /// In en, this message translates to:
+  /// **'Community brief'**
+  String get community_aiCommunityAiHeroKicker;
+
+  /// lib/features/community/community_ai_screen.dart:953
+  ///
+  /// In en, this message translates to:
+  /// **'Close report options'**
+  String get community_aiCommunityAiReportSheetBarrierLabel;
+
+  /// lib/features/community/community_ai_screen.dart:906
+  ///
+  /// In en, this message translates to:
+  /// **'Close source details'**
+  String get community_aiCommunityAiSourceSheetBarrierLabel;
+
+  /// lib/features/community/community_ai_screen.dart:340
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to ask about in this community yet'**
+  String get community_aiCommunityAiStateEmptyTitle;
+
+  /// lib/features/community/community_ai_screen.dart:358
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t use this assistant yet'**
+  String get community_aiCommunityAiStatePermissionTitle;
+
+  /// lib/features/community/community_ai_screen.dart:350
+  ///
+  /// In en, this message translates to:
+  /// **'This page isn\'t available right now'**
+  String get community_aiCommunityAiStateUnavailableMessage;
+
+  /// lib/features/community/community_ai_screen.dart:662, lib/features/community/community_ai_screen.dart:681
+  ///
+  /// In en, this message translates to:
+  /// **'Reported'**
+  String get community_aiLabel;
+
+  /// lib/features/community/community_ai_screen.dart:662, lib/features/community/community_ai_screen.dart:959
+  ///
+  /// In en, this message translates to:
+  /// **'Report this answer'**
+  String get community_aiLabel2;
+
+  /// lib/features/community/community_ai_screen.dart:741
+  ///
+  /// In en, this message translates to:
+  /// **'Source {sourceId}'**
+  String community_aiLabel3(Object? sourceId);
+
+  /// lib/features/community/community_ai_screen.dart:204
+  ///
+  /// In en, this message translates to:
+  /// **'What I can do'**
+  String get community_aiLoopLabel;
+
+  /// lib/features/community/community_ai_screen.dart:210, lib/features/community/community_ai_screen.dart:1092
+  ///
+  /// In en, this message translates to:
+  /// **'Try these'**
+  String get community_aiLoopLabel2;
+
+  /// lib/features/community/community_ai_screen.dart:1069
+  ///
+  /// In en, this message translates to:
+  /// **'Planned features'**
+  String get community_aiLoopLabel3;
+
+  /// lib/features/community/community_ai_screen.dart:346
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get community_aiLoopOfflineState;
+
+  /// lib/features/community/community_ai_screen.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted'**
+  String get community_aiMessage;
+
+  /// lib/features/community/community_ai_models.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Generating from today\'s discussions. Pull down to refresh later.'**
+  String get community_aiModelsCaption;
+
+  /// lib/features/community/community_ai_models.dart:536
+  ///
+  /// In en, this message translates to:
+  /// **'Come back tomorrow. The rest of this page isn\'t affected.'**
+  String get community_aiModelsCaption2;
+
+  /// lib/features/community/community_ai_models.dart:543
+  ///
+  /// In en, this message translates to:
+  /// **'Generating today\'s summary'**
+  String get community_aiModelsCommunityAiBriefPendingHeading;
+
+  /// lib/features/community/community_ai_models.dart:546
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s summary quota is used up'**
+  String get community_aiModelsCommunityAiBriefQuotaHeading;
+
+  /// lib/features/community/community_ai_models.dart:558
+  ///
+  /// In en, this message translates to:
+  /// **'AI generated · {model} · {communityAiTimestamp}'**
+  String community_aiModelsCommunityAiGeneratedLabel(
+    Object? communityAiTimestamp,
+    Object? model,
+  );
+
+  /// lib/features/community/community_ai_models.dart:516
+  ///
+  /// In en, this message translates to:
+  /// **'No sources available'**
+  String get community_aiModelsCommunityAiKnowledgeLine;
+
+  /// lib/features/community/community_ai_models.dart:517
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceCount} knowledge sources · Updated {communityAiTimestamp}'**
+  String community_aiModelsCommunityAiKnowledgeLine2(
+    Object? communityAiTimestamp,
+    Object? sourceCount,
+  );
+
+  /// lib/features/community/community_ai_models.dart:357
+  ///
+  /// In en, this message translates to:
+  /// **'Harmful or dangerous'**
+  String get community_aiModelsHarmful;
+
+  /// lib/features/community/community_ai_models.dart:538
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load today\'s discussions'**
+  String get community_aiModelsHeading;
+
+  /// lib/features/community/community_ai_models.dart:356
+  ///
+  /// In en, this message translates to:
+  /// **'Inaccurate'**
+  String get community_aiModelsInaccurate;
+
+  /// lib/features/community/community_ai_models.dart:358
+  ///
+  /// In en, this message translates to:
+  /// **'Off topic'**
+  String get community_aiModelsOffTopic;
+
+  /// lib/features/community/community_ai_models.dart:360
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get community_aiModelsOther;
+
+  /// lib/features/community/community_ai_models.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Involves personal privacy'**
+  String get community_aiModelsPrivacy;
+
+  /// lib/features/community/community_ai_models.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'{messageCount} messages today'**
+  String community_aiModelsS(Object? messageCount);
+
+  /// lib/features/community/community_ai_models.dart:491
+  ///
+  /// In en, this message translates to:
+  /// **'No project documents yet, so this can\'t be answered.'**
+  String get community_aiModelsSwitch;
+
+  /// lib/features/community/community_ai_models.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the official group\'s discussions this time.'**
+  String get community_aiModelsSwitch10;
+
+  /// lib/features/community/community_ai_models.dart:504
+  ///
+  /// In en, this message translates to:
+  /// **'The AI didn\'t answer this time. Try again later.'**
+  String get community_aiModelsSwitch11;
+
+  /// lib/features/community/community_ai_models.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'The AI declined this request. Trying again won\'t help.'**
+  String get community_aiModelsSwitch12;
+
+  /// lib/features/community/community_ai_models.dart:506
+  ///
+  /// In en, this message translates to:
+  /// **'The AI\'s answer was incomplete, so it wasn\'t used.'**
+  String get community_aiModelsSwitch13;
+
+  /// lib/features/community/community_ai_models.dart:507
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no sources available, so you can\'t ask right now.'**
+  String get community_aiModelsSwitch14;
+
+  /// lib/features/community/community_ai_models.dart:508
+  ///
+  /// In en, this message translates to:
+  /// **'The AI assistant isn\'t available yet.'**
+  String get community_aiModelsSwitch15;
+
+  /// lib/features/community/community_ai_models.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'At least {messageCount} messages today'**
+  String community_aiModelsSwitch16(Object? messageCount);
+
+  /// lib/features/community/community_ai_models.dart:574
+  ///
+  /// In en, this message translates to:
+  /// **'This community\'s question quota for today is used up. Come back tomorrow.'**
+  String get community_aiModelsSwitch17;
+
+  /// lib/features/community/community_ai_models.dart:575
+  ///
+  /// In en, this message translates to:
+  /// **'Too many questions. Wait a minute and ask again.'**
+  String get community_aiModelsSwitch18;
+
+  /// lib/features/community/community_ai_models.dart:492
+  ///
+  /// In en, this message translates to:
+  /// **'No beginner guides yet, so this can\'t be answered.'**
+  String get community_aiModelsSwitch2;
+
+  /// lib/features/community/community_ai_models.dart:493
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements and official updates aren\'t available yet, so this can\'t be answered.'**
+  String get community_aiModelsSwitch3;
+
+  /// lib/features/community/community_ai_models.dart:494, lib/features/community/community_contract.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'AI moderation isn\'t available yet.'**
+  String get community_aiModelsSwitch4;
+
+  /// lib/features/community/community_ai_models.dart:495
+  ///
+  /// In en, this message translates to:
+  /// **'Community analytics isn\'t available yet.'**
+  String get community_aiModelsSwitch5;
+
+  /// lib/features/community/community_ai_models.dart:498
+  ///
+  /// In en, this message translates to:
+  /// **'Generating today\'s summary. Pull down to refresh later.'**
+  String get community_aiModelsSwitch6;
+
+  /// lib/features/community/community_ai_models.dart:499
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s summary quota is used up. Come back tomorrow.'**
+  String get community_aiModelsSwitch7;
+
+  /// lib/features/community/community_ai_models.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'Join this community to read its discussions.'**
+  String get community_aiModelsSwitch8;
+
+  /// lib/features/community/community_ai_models.dart:501
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no official group yet, so there\'s nothing to summarize.'**
+  String get community_aiModelsSwitch9;
+
+  /// lib/features/community/community_ai_screen.dart:66
+  ///
+  /// In en, this message translates to:
+  /// **'Once available, answers will include sources and observation times. They don\'t replace project announcements.'**
+  String get community_aiOutlook;
+
+  /// lib/features/community/community_ai_screen.dart:101
+  ///
+  /// In en, this message translates to:
+  /// **' '**
+  String get community_aiSentenceGap;
+
+  /// lib/features/community/community_ai_screen.dart:648
+  ///
+  /// In en, this message translates to:
+  /// **'Sources used ({sources})'**
+  String community_aiSummary(Object? sources);
+
+  /// lib/features/community/community_ai_screen.dart:811
+  ///
+  /// In en, this message translates to:
+  /// **'Sources not used ({omitted})'**
+  String community_aiSummary2(Object? omitted);
+
+  /// lib/features/community/community_ai_screen.dart:32
+  ///
+  /// In en, this message translates to:
+  /// **'Project knowledge'**
+  String get community_aiText;
+
+  /// lib/features/community/community_ai_screen.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Price, market cap, liquidity, weight, community power'**
+  String get community_aiText10;
+
+  /// lib/features/community/community_ai_screen.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Community guidance'**
+  String get community_aiText11;
+
+  /// lib/features/community/community_ai_screen.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Reminds you to join mining and when weight takes effect'**
+  String get community_aiText12;
+
+  /// lib/features/community/community_ai_screen.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'AI moderation'**
+  String get community_aiText13;
+
+  /// lib/features/community/community_ai_screen.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'Detects scam links, fake CAs, phishing and fake admins'**
+  String get community_aiText14;
+
+  /// lib/features/community/community_ai_screen.dart:39
+  ///
+  /// In en, this message translates to:
+  /// **'Community analytics'**
+  String get community_aiText15;
+
+  /// lib/features/community/community_ai_screen.dart:39
+  ///
+  /// In en, this message translates to:
+  /// **'Admins only: DAU, conversion, sentiment'**
+  String get community_aiText16;
+
+  /// lib/features/community/community_ai_screen.dart:47
+  ///
+  /// In en, this message translates to:
+  /// **'How are tokenomics allocated'**
+  String get community_aiText17;
+
+  /// lib/features/community/community_ai_screen.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'How do I join mining'**
+  String get community_aiText18;
+
+  /// lib/features/community/community_ai_screen.dart:49
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new this week'**
+  String get community_aiText19;
+
+  /// lib/features/community/community_ai_screen.dart:32
+  ///
+  /// In en, this message translates to:
+  /// **'Whitepaper, tokenomics, roadmap, FAQ'**
+  String get community_aiText2;
+
+  /// lib/features/community/community_ai_screen.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Community support'**
+  String get community_aiText3;
+
+  /// lib/features/community/community_ai_screen.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'What a CA is, how to buy, how to join mining'**
+  String get community_aiText4;
+
+  /// lib/features/community/community_ai_screen.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner education'**
+  String get community_aiText5;
+
+  /// lib/features/community/community_ai_screen.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'Project in 3 minutes, beginner guide, asset safety'**
+  String get community_aiText6;
+
+  /// lib/features/community/community_ai_screen.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'Project updates'**
+  String get community_aiText7;
+
+  /// lib/features/community/community_ai_screen.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'Official X, announcements and blog in daily and weekly digests'**
+  String get community_aiText8;
+
+  /// lib/features/community/community_ai_screen.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Asset info'**
+  String get community_aiText9;
+
+  /// lib/features/community/community_contract.dart:368
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your LOOP ID before using community and social features.'**
+  String get community_contractActivationRequired;
+
+  /// lib/features/community/community_contract.dart:407
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your LOOP ID before applying for a community. You can resubmit this application after activation.'**
+  String get community_contractActivationRequired2;
+
+  /// lib/features/community/community_contract.dart:374
+  ///
+  /// In en, this message translates to:
+  /// **'This name is on the block list. Try another one.'**
+  String get community_contractAliasBlocked;
+
+  /// lib/features/community/community_contract.dart:401
+  ///
+  /// In en, this message translates to:
+  /// **'This community name is on the block list. Choose another name and submit again.'**
+  String get community_contractAliasBlocked2;
+
+  /// lib/features/community/community_contract.dart:373
+  ///
+  /// In en, this message translates to:
+  /// **'This name is reserved by LOOP. Try another one.'**
+  String get community_contractAliasReserved;
+
+  /// lib/features/community/community_contract.dart:400
+  ///
+  /// In en, this message translates to:
+  /// **'This community name uses a LOOP reserved word (such as official, support or admin). Choose another name and submit again.'**
+  String get community_contractAliasReserved2;
+
+  /// lib/features/community/community_contract.dart:369
+  ///
+  /// In en, this message translates to:
+  /// **'Your account isn\'t set up yet. Try again later.'**
+  String get community_contractBootstrapRequired;
+
+  /// lib/features/community/community_contract.dart:371
+  ///
+  /// In en, this message translates to:
+  /// **'This token is already linked to another community. Choose another token.'**
+  String get community_contractBoundAssetTaken;
+
+  /// lib/features/community/community_contract.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'This token is already linked to another community. Choose another token and submit again.'**
+  String get community_contractBoundAssetTaken2;
+
+  /// lib/features/community/community_contract.dart:362
+  ///
+  /// In en, this message translates to:
+  /// **'The request was cancelled and the result is unknown. Check the latest status before retrying.'**
+  String get community_contractCancelled;
+
+  /// lib/features/community/community_contract.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'Each token can be linked to only one community.'**
+  String get community_contractCommunityBoundAssetUniqueHint;
+
+  /// lib/features/community/community_contract.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'The same action was already submitted with different content. Check the latest status and try again.'**
+  String get community_contractIdempotencyConflict;
+
+  /// lib/features/community/community_contract.dart:377
+  ///
+  /// In en, this message translates to:
+  /// **'The response was incomplete, so nothing on this page was used.'**
+  String get community_contractInvalidData;
+
+  /// lib/features/community/community_contract.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'This doesn\'t exist, was removed, or isn\'t visible to this account.'**
+  String get community_contractNotFound;
+
+  /// lib/features/community/community_contract.dart:360
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Nothing was loaded and nothing was submitted.'**
+  String get community_contractOffline;
+
+  /// lib/features/community/community_contract.dart:363
+  ///
+  /// In en, this message translates to:
+  /// **'The response was incomplete and the result isn\'t confirmed. Refresh to check the latest status. Don\'t submit again.'**
+  String get community_contractOutcomeUnknown;
+
+  /// lib/features/community/community_contract.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'This account doesn\'t have permission for this action.'**
+  String get community_contractPermissionDenied;
+
+  /// lib/features/community/community_contract.dart:375
+  ///
+  /// In en, this message translates to:
+  /// **'Too many searches. Wait a moment and try again.'**
+  String get community_contractRateLimited;
+
+  /// lib/features/community/community_contract.dart:370
+  ///
+  /// In en, this message translates to:
+  /// **'This short link is taken by another community. Choose another one.'**
+  String get community_contractResourceConflict;
+
+  /// lib/features/community/community_contract.dart:402
+  ///
+  /// In en, this message translates to:
+  /// **'This short link is taken by another community. Choose another one and submit again.'**
+  String get community_contractResourceConflict2;
+
+  /// lib/features/community/community_contract.dart:367
+  ///
+  /// In en, this message translates to:
+  /// **'The status has changed (someone else may have handled it). Refresh and decide again.'**
+  String get community_contractStale;
+
+  /// lib/features/community/community_contract.dart:414
+  ///
+  /// In en, this message translates to:
+  /// **'Unread count can\'t be loaded right now.'**
+  String get community_contractSwitch;
+
+  /// lib/features/community/community_contract.dart:425
+  ///
+  /// In en, this message translates to:
+  /// **'The messaging service isn\'t available, so the online count can\'t be checked.'**
+  String get community_contractSwitch10;
+
+  /// lib/features/community/community_contract.dart:426
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules aren\'t set yet, so power isn\'t shown.'**
+  String get community_contractSwitch11;
+
+  /// lib/features/community/community_contract.dart:430
+  ///
+  /// In en, this message translates to:
+  /// **'Power hasn\'t been calculated yet, so you can\'t sort by power.'**
+  String get community_contractSwitch12;
+
+  /// lib/features/community/community_contract.dart:431
+  ///
+  /// In en, this message translates to:
+  /// **'The last settlement didn\'t finish, so you can\'t sort by power.'**
+  String get community_contractSwitch13;
+
+  /// lib/features/community/community_contract.dart:432
+  ///
+  /// In en, this message translates to:
+  /// **'The last settlement used old rules, so you can\'t sort by power.'**
+  String get community_contractSwitch14;
+
+  /// lib/features/community/community_contract.dart:433
+  ///
+  /// In en, this message translates to:
+  /// **'Mining isn\'t available, so you can\'t sort by power.'**
+  String get community_contractSwitch15;
+
+  /// lib/features/community/community_contract.dart:434
+  ///
+  /// In en, this message translates to:
+  /// **'Discussion counts can\'t be loaded, so this sort isn\'t available.'**
+  String get community_contractSwitch16;
+
+  /// lib/features/community/community_contract.dart:435
+  ///
+  /// In en, this message translates to:
+  /// **'This community\'s discussion count can\'t be loaded right now.'**
+  String get community_contractSwitch17;
+
+  /// lib/features/community/community_contract.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no linked asset, so it has no power.'**
+  String get community_contractSwitch18;
+
+  /// lib/features/community/community_contract.dart:437
+  ///
+  /// In en, this message translates to:
+  /// **'This community\'s power weight is still in review.'**
+  String get community_contractSwitch19;
+
+  /// lib/features/community/community_contract.dart:415
+  ///
+  /// In en, this message translates to:
+  /// **'Voice room status can\'t be loaded right now.'**
+  String get community_contractSwitch2;
+
+  /// lib/features/community/community_contract.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'Community announcements aren\'t available yet.'**
+  String get community_contractSwitch20;
+
+  /// lib/features/community/community_contract.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'Official links aren\'t available yet.'**
+  String get community_contractSwitch21;
+
+  /// lib/features/community/community_contract.dart:440
+  ///
+  /// In en, this message translates to:
+  /// **'Message previews aren\'t available yet.'**
+  String get community_contractSwitch22;
+
+  /// lib/features/community/community_contract.dart:447
+  ///
+  /// In en, this message translates to:
+  /// **'The asset registry couldn\'t be assembled this time. Try again later.'**
+  String get community_contractSwitch23;
+
+  /// lib/features/community/community_contract.dart:448
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP has no Launch project directory yet, so there\'s nothing to search.'**
+  String get community_contractSwitch24;
+
+  /// lib/features/community/community_contract.dart:449
+  ///
+  /// In en, this message translates to:
+  /// **'The DApp directory isn\'t available yet.'**
+  String get community_contractSwitch25;
+
+  /// lib/features/community/community_contract.dart:450
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation metrics aren\'t available yet.'**
+  String get community_contractSwitch26;
+
+  /// lib/features/community/community_contract.dart:451
+  ///
+  /// In en, this message translates to:
+  /// **'Invite codes aren\'t available yet, so you can\'t share.'**
+  String get community_contractSwitch27;
+
+  /// lib/features/community/community_contract.dart:452
+  ///
+  /// In en, this message translates to:
+  /// **'Communities aren\'t available right now. Try again later.'**
+  String get community_contractSwitch28;
+
+  /// lib/features/community/community_contract.dart:453
+  ///
+  /// In en, this message translates to:
+  /// **'Search isn\'t available right now. Try again later.'**
+  String get community_contractSwitch29;
+
+  /// lib/features/community/community_contract.dart:416
+  ///
+  /// In en, this message translates to:
+  /// **'Online count can\'t be loaded right now.'**
+  String get community_contractSwitch3;
+
+  /// lib/features/community/community_contract.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no official channel, so there\'s no online count to check.'**
+  String get community_contractSwitch4;
+
+  /// lib/features/community/community_contract.dart:420
+  ///
+  /// In en, this message translates to:
+  /// **'This community\'s official channel isn\'t set up, so the online count can\'t be checked.'**
+  String get community_contractSwitch5;
+
+  /// lib/features/community/community_contract.dart:421
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check the online count this time. Retry later.'**
+  String get community_contractSwitch6;
+
+  /// lib/features/community/community_contract.dart:422
+  ///
+  /// In en, this message translates to:
+  /// **'The online count check timed out with no result.'**
+  String get community_contractSwitch7;
+
+  /// lib/features/community/community_contract.dart:423
+  ///
+  /// In en, this message translates to:
+  /// **'This community has more than 500 members, so this version can\'t count who\'s online.'**
+  String get community_contractSwitch8;
+
+  /// lib/features/community/community_contract.dart:424
+  ///
+  /// In en, this message translates to:
+  /// **'Online count wasn\'t checked in this step. Go back to the community page to load it again.'**
+  String get community_contractSwitch9;
+
+  /// lib/features/community/community_contract.dart:361
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP timed out. Nothing was loaded and nothing was submitted.'**
+  String get community_contractTimedOut;
+
+  /// lib/features/community/community_contract.dart:364
+  ///
+  /// In en, this message translates to:
+  /// **'The community service isn\'t available right now. Try again later.'**
+  String get community_contractUnavailable;
+
+  /// lib/features/community/community_contract.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'The action didn\'t finish. Try again later.'**
+  String get community_contractUnexpected;
+
+  /// lib/features/community/community_contract.dart:372
+  ///
+  /// In en, this message translates to:
+  /// **'Some input isn\'t valid. Fix it and try again.'**
+  String get community_contractValidationFailed;
+
+  /// lib/features/community/community_contract.dart:405
+  ///
+  /// In en, this message translates to:
+  /// **'The name or bio is too long (name 1–40 characters, bio up to 280). Fix it and submit again.'**
+  String get community_contractValidationFailed2;
+
+  /// lib/features/community/community_discover_screen.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'After you submit, the community is \"In review\" and you\'re the owner. The short link can\'t be changed once accepted.'**
+  String get community_discoverBody;
+
+  /// lib/features/community/community_discover_screen.dart:175
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting uses only verifiable numbers: members, creation time, power and 7-day discussions. Popular doesn\'t mean recommended.'**
+  String get community_discoverCaption;
+
+  /// lib/features/community/community_discover_screen.dart:340
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to list'**
+  String get community_discoverCommunityApplyActionLabel;
+
+  /// lib/features/community/community_discover_screen.dart:215, lib/features/community/community_manage_screen.dart:123, lib/features/community/community_members_screen.dart:293, lib/features/community/community_profile_screen.dart:356, lib/features/community/community_screen.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'Communities aren\'t available right now'**
+  String get community_discoverCommunityDiscoverCapabilityUnavailableTitle;
+
+  /// lib/features/community/community_discover_screen.dart:262
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by most members'**
+  String get community_discoverCommunityDiscoverOrderingBackLabel;
+
+  /// lib/features/community/community_discover_screen.dart:157, lib/features/community/community_screen.dart:193
+  ///
+  /// In en, this message translates to:
+  /// **'Joined communities'**
+  String get community_discoverCommunityDiscoverScreenTitle;
+
+  /// lib/features/community/community_discover_screen.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Discover communities'**
+  String get community_discoverCommunityDiscoverScreenTitle2;
+
+  /// lib/features/community/community_discover_screen.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Most discussed'**
+  String get community_discoverDiscussion;
+
+  /// lib/features/community/community_discover_screen.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'No matching communities'**
+  String get community_discoverEmptyMessage;
+
+  /// lib/features/community/community_discover_screen.dart:275
+  ///
+  /// In en, this message translates to:
+  /// **'No communities under this sort.'**
+  String get community_discoverEmptyReason;
+
+  /// lib/features/community/community_discover_screen.dart:173
+  ///
+  /// In en, this message translates to:
+  /// **'{items} communities'**
+  String community_discoverHeading(Object? items);
+
+  /// lib/features/community/community_discover_screen.dart:174
+  ///
+  /// In en, this message translates to:
+  /// **'{items} communities loaded'**
+  String community_discoverHeading2(Object? items);
+
+  /// lib/features/community/community_discover_screen.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'Community discovery'**
+  String get community_discoverKicker;
+
+  /// lib/features/community/community_discover_screen.dart:31
+  ///
+  /// In en, this message translates to:
+  /// **'Most members'**
+  String get community_discoverMembers;
+
+  /// lib/features/community/community_discover_screen.dart:246
+  ///
+  /// In en, this message translates to:
+  /// **'\"{label}\" isn\'t available right now'**
+  String community_discoverMessage(Object? label);
+
+  /// lib/features/community/community_discover_screen.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get community_discoverNewest;
+
+  /// lib/features/community/community_discover_screen.dart:32
+  ///
+  /// In en, this message translates to:
+  /// **'Highest power'**
+  String get community_discoverPower;
+
+  /// lib/features/community/community_discover_screen.dart:226
+  ///
+  /// In en, this message translates to:
+  /// **'Community directory'**
+  String get community_discoverResource;
+
+  /// lib/features/community/community_discover_screen.dart:64
+  ///
+  /// In en, this message translates to:
+  /// **'Submit community application?'**
+  String get community_discoverTitle;
+
+  /// lib/features/community/community_home_widgets.dart:243
+  ///
+  /// In en, this message translates to:
+  /// **'{clauses}.'**
+  String community_homeActivitySentence(Object? clauses);
+
+  /// lib/features/community/community_home_widgets.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Find communities worth joining by activity, holders and mining weight'**
+  String get community_homeBody;
+
+  /// lib/features/community/community_home_widgets.dart:119
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get community_homeBuild;
+
+  /// lib/features/community/community_home_widgets.dart:205
+  ///
+  /// In en, this message translates to:
+  /// **'Data observed {communityObservedAtLabel}'**
+  String community_homeBuild2(Object? communityObservedAtLabel);
+
+  /// lib/features/community/community_home_widgets.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'{mostDiscussed} is the most active'**
+  String community_homeCommunityActivityCaption(Object? mostDiscussed);
+
+  /// lib/features/community/community_home_widgets.dart:228
+  ///
+  /// In en, this message translates to:
+  /// **'{liveVoiceRooms} voice rooms live'**
+  String community_homeCommunityActivityCaption2(Object? liveVoiceRooms);
+
+  /// lib/features/community/community_home_widgets.dart:229
+  ///
+  /// In en, this message translates to:
+  /// **'{unreadMessages} unread'**
+  String community_homeCommunityActivityCaption3(Object? unreadMessages);
+
+  /// lib/features/community/community_home_widgets.dart:22
+  ///
+  /// In en, this message translates to:
+  /// **'{groupedFigure} members'**
+  String community_homeCommunityMemberCountLabel(Object? groupedFigure);
+
+  /// lib/features/community/community_home_widgets.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {unreadBadgeLabel} unread'**
+  String community_homeLabel(Object? label, Object? unreadBadgeLabel);
+
+  /// lib/features/community/community_home_widgets.dart:119
+  ///
+  /// In en, this message translates to:
+  /// **'Discover, {count} verified'**
+  String community_homeS(Object? count);
+
+  /// lib/features/community/community_home_widgets.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'Discover new communities'**
+  String get community_homeTitle;
+
+  /// lib/features/community/community_logo.dart:235, lib/features/community/community_logo.dart:242, lib/features/community/community_logo.dart:258, lib/features/community/community_logo.dart:269
+  ///
+  /// In en, this message translates to:
+  /// **'{name} community icon'**
+  String community_logoSemanticLabel(Object? name);
+
+  /// lib/features/community/community_manage_screen.dart:256
+  ///
+  /// In en, this message translates to:
+  /// **'Owner {owner} · Admin {admin} · {all} total'**
+  String community_manageAsyncData(Object? admin, Object? all, Object? owner);
+
+  /// lib/features/community/community_manage_screen.dart:257, lib/features/community/community_manage_screen.dart:258, lib/features/community/search_screen.dart:747
+  ///
+  /// In en, this message translates to:
+  /// **'{memberCount} members'**
+  String community_manageAsyncError(Object? memberCount);
+
+  /// lib/features/community/community_manage_screen.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'{communityBoundAssetUniqueHint} Linking a token immediately affects the token card and member buy activity on the community page. The short link and verification status can\'t be changed here.'**
+  String community_manageBody(Object? communityBoundAssetUniqueHint);
+
+  /// lib/features/community/community_manage_screen.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'The short link and verification status can\'t be changed here.'**
+  String get community_manageBody2;
+
+  /// lib/features/community/community_manage_screen.dart:345
+  ///
+  /// In en, this message translates to:
+  /// **'Not linked'**
+  String get community_manageBoundAssetLine;
+
+  /// lib/features/community/community_manage_screen.dart:405
+  ///
+  /// In en, this message translates to:
+  /// **'This token is already linked to another community. Choose another token. Nothing was changed.'**
+  String get community_manageBoundAssetTaken;
+
+  /// lib/features/community/community_manage_screen.dart:240
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements coming soon'**
+  String get community_manageCommunityManageAnnouncementsSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:239, lib/features/community/community_profile_screen.dart:476
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get community_manageCommunityManageAnnouncementsTitle;
+
+  /// lib/features/community/community_manage_screen.dart:197, lib/features/community/community_profile_screen.dart:1112
+  ///
+  /// In en, this message translates to:
+  /// **'Linked token'**
+  String get community_manageCommunityManageBoundAssetTitle;
+
+  /// lib/features/community/community_manage_screen.dart:186
+  ///
+  /// In en, this message translates to:
+  /// **'No bio yet'**
+  String get community_manageCommunityManageEditProfileSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:185
+  ///
+  /// In en, this message translates to:
+  /// **'Name and bio'**
+  String get community_manageCommunityManageEditProfileTitle;
+
+  /// lib/features/community/community_manage_screen.dart:334
+  ///
+  /// In en, this message translates to:
+  /// **'The community icon, short link and verification status can\'t be changed here. Communities can\'t be dissolved.'**
+  String get community_manageCommunityManageLogoNote;
+
+  /// lib/features/community/community_manage_screen.dart:334
+  ///
+  /// In en, this message translates to:
+  /// **'The community icon, short link and verification status can\'t be changed here.'**
+  String get community_manageCommunityManageLogoNote2;
+
+  /// lib/features/community/community_manage_screen.dart:253
+  ///
+  /// In en, this message translates to:
+  /// **'Members and permissions'**
+  String get community_manageCommunityManageMembersTitle;
+
+  /// lib/features/community/community_manage_screen.dart:134
+  ///
+  /// In en, this message translates to:
+  /// **'Open this from \"Manage\" at the top right of the community page. This page doesn\'t guess which community to manage.'**
+  String get community_manageCommunityManageMissingIdDetail;
+
+  /// lib/features/community/community_manage_screen.dart:133, lib/features/community/community_members_screen.dart:325, lib/features/community/community_profile_screen.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'Missing community ID'**
+  String get community_manageCommunityManageMissingIdMessage;
+
+  /// lib/features/community/community_manage_screen.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Your role in this community doesn\'t include management. You can still view the community page.'**
+  String get community_manageCommunityManagePermissionDetail;
+
+  /// lib/features/community/community_manage_screen.dart:153
+  ///
+  /// In en, this message translates to:
+  /// **'Only the community owner and admins can manage it'**
+  String get community_manageCommunityManagePermissionMessage;
+
+  /// lib/features/community/community_manage_screen.dart:94, lib/features/community/community_manage_screen.dart:129
+  ///
+  /// In en, this message translates to:
+  /// **'Community management'**
+  String get community_manageCommunityManageScreenTitle;
+
+  /// lib/features/community/community_manage_screen.dart:219
+  ///
+  /// In en, this message translates to:
+  /// **'Share a poster or copy the community link'**
+  String get community_manageCommunityManageShareSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:218
+  ///
+  /// In en, this message translates to:
+  /// **'Community QR card'**
+  String get community_manageCommunityManageShareTitle;
+
+  /// lib/features/community/community_manage_screen.dart:272
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a member on the members page. You become an admin after transferring'**
+  String get community_manageCommunityManageTransferSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:271, lib/features/community/community_members_screen.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer ownership'**
+  String get community_manageCommunityManageTransferTitle;
+
+  /// lib/features/community/community_manage_screen.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'The community is live'**
+  String get community_manageCommunityManageVoiceEnterSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Enter voice room'**
+  String get community_manageCommunityManageVoiceEnterTitle;
+
+  /// lib/features/community/community_manage_screen.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re the host. Your mic is off by default'**
+  String get community_manageCommunityManageVoiceOpenSubtitle;
+
+  /// lib/features/community/community_manage_screen.dart:305, lib/features/community/community_profile_screen.dart:911
+  ///
+  /// In en, this message translates to:
+  /// **'Start voice room'**
+  String get community_manageCommunityManageVoiceOpenTitle;
+
+  /// lib/features/community/community_manage_screen.dart:145, lib/features/community/community_profile_screen.dart:384, lib/features/community/community_profile_screen.dart:389
+  ///
+  /// In en, this message translates to:
+  /// **'Community not found'**
+  String get community_manageEmptyMessage;
+
+  /// lib/features/community/community_manage_screen.dart:146, lib/features/community/community_profile_screen.dart:385
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been removed, or isn\'t visible to this account.'**
+  String get community_manageEmptyReason;
+
+  /// lib/features/community/community_manage_screen.dart:213
+  ///
+  /// In en, this message translates to:
+  /// **'No registered pools yet, so member buy activity won\'t appear.'**
+  String get community_manageGroups;
+
+  /// lib/features/community/community_manage_screen.dart:349
+  ///
+  /// In en, this message translates to:
+  /// **'{truncatedAddress} · Token info can\'t be loaded right now'**
+  String community_manageIf(Object? truncatedAddress);
+
+  /// lib/features/community/community_manage_screen.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Has registered pools'**
+  String get community_manageIf2;
+
+  /// lib/features/community/community_manage_screen.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'Owner only'**
+  String get community_manageLoopTag;
+
+  /// lib/features/community/community_manage_screen.dart:371
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was changed'**
+  String get community_manageMessage;
+
+  /// lib/features/community/community_manage_screen.dart:388
+  ///
+  /// In en, this message translates to:
+  /// **'Community profile updated'**
+  String get community_manageMessage2;
+
+  /// lib/features/community/community_manage_screen.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'No registered pools yet'**
+  String get community_manageS;
+
+  /// lib/features/community/community_manage_screen.dart:406
+  ///
+  /// In en, this message translates to:
+  /// **'This token isn\'t registered on LOOP, so it can\'t be linked. Nothing was changed.'**
+  String get community_manageSwitch;
+
+  /// lib/features/community/community_manage_screen.dart:407
+  ///
+  /// In en, this message translates to:
+  /// **'Only the owner can change the linked token. Nothing was changed.'**
+  String get community_manageSwitch2;
+
+  /// lib/features/community/community_manage_screen.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'Submit community profile changes?'**
+  String get community_manageTitle;
+
+  /// lib/features/community/community_members_screen.dart:623
+  ///
+  /// In en, this message translates to:
+  /// **'No members with this role.'**
+  String get community_membersAdmin;
+
+  /// lib/features/community/community_members_screen.dart:622
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no members to show.'**
+  String get community_membersAll;
+
+  /// lib/features/community/community_members_screen.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Ban'**
+  String get community_membersBan;
+
+  /// lib/features/community/community_members_screen.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'Banned members leave the official channel and are removed from the default member directory. You can unban them later under \"Banned\". Banning doesn\'t change personal follows.'**
+  String get community_membersBan2;
+
+  /// lib/features/community/community_members_screen.dart:615
+  ///
+  /// In en, this message translates to:
+  /// **'Banned members'**
+  String get community_membersBanned;
+
+  /// lib/features/community/community_members_screen.dart:624
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no banned members.'**
+  String get community_membersBanned2;
+
+  /// lib/features/community/community_members_screen.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {displayName} ({loopId}). {confirmationDetail}'**
+  String community_membersBody(
+    Object? confirmationDetail,
+    Object? displayName,
+    Object? loopId,
+  );
+
+  /// lib/features/community/community_members_screen.dart:326
+  ///
+  /// In en, this message translates to:
+  /// **'Open this from the community profile. This page doesn\'t guess which community to open.'**
+  String get community_membersCommunityMembersMissingIdDetail;
+
+  /// lib/features/community/community_members_screen.dart:203
+  ///
+  /// In en, this message translates to:
+  /// **'Type the start of an alias'**
+  String get community_membersCommunityMembersSearchClearHintText;
+
+  /// lib/features/community/community_members_screen.dart:212
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get community_membersCommunityMembersSearchClearLabel;
+
+  /// lib/features/community/community_members_screen.dart:202
+  ///
+  /// In en, this message translates to:
+  /// **'Search members by alias'**
+  String get community_membersCommunityMembersSearchClearLabelText;
+
+  /// lib/features/community/community_members_screen.dart:179
+  ///
+  /// In en, this message translates to:
+  /// **'Close search'**
+  String get community_membersCommunityMembersSearchLabel;
+
+  /// lib/features/community/community_members_screen.dart:179, lib/features/community/community_members_screen.dart:317
+  ///
+  /// In en, this message translates to:
+  /// **'Search members'**
+  String get community_membersCommunityMembersSearchLabel2;
+
+  /// lib/features/community/community_members_screen.dart:610
+  ///
+  /// In en, this message translates to:
+  /// **'{all} members'**
+  String community_membersCommunityMissingHeading(Object? all);
+
+  /// lib/features/community/community_members_screen.dart:334, lib/features/community/community_members_screen.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'No matching members'**
+  String get community_membersCommunityStateEmptyEmptyMessage;
+
+  /// lib/features/community/community_members_screen.dart:334, lib/features/community/community_members_screen.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'No members under this filter'**
+  String get community_membersCommunityStateEmptyEmptyMessage2;
+
+  /// lib/features/community/community_members_screen.dart:336, lib/features/community/community_members_screen.dart:344
+  ///
+  /// In en, this message translates to:
+  /// **'Aliases match from the start. Try a different beginning.'**
+  String get community_membersCommunityStateEmptyEmptyReason;
+
+  /// lib/features/community/community_members_screen.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to view the member directory'**
+  String get community_membersCommunityStateEmptyPermissionTitle;
+
+  /// lib/features/community/community_members_screen.dart:586
+  ///
+  /// In en, this message translates to:
+  /// **'{label}?'**
+  String community_membersConfirmTitle(Object? label);
+
+  /// lib/features/community/community_members_screen.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Remove admin'**
+  String get community_membersDemote;
+
+  /// lib/features/community/community_members_screen.dart:261, lib/features/community/community_members_screen.dart:452, lib/features/community/community_widgets.dart:824
+  ///
+  /// In en, this message translates to:
+  /// **'Banned'**
+  String get community_membersFilterSeg;
+
+  /// lib/features/community/community_members_screen.dart:509, lib/features/community/community_profile_screen.dart:949
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get community_membersLabel;
+
+  /// lib/features/community/community_members_screen.dart:628
+  ///
+  /// In en, this message translates to:
+  /// **'The member directory doesn\'t track presence, so this page doesn\'t show an online count. The community page checks it once.'**
+  String get community_membersMemberDirectoryPresenceNote;
+
+  /// lib/features/community/community_members_screen.dart:271
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get community_membersMembersSegOnlineLabel;
+
+  /// lib/features/community/community_members_screen.dart:586
+  ///
+  /// In en, this message translates to:
+  /// **'{label} applied'**
+  String community_membersMessage(Object? label);
+
+  /// lib/features/community/community_members_screen.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get community_membersMute;
+
+  /// lib/features/community/community_members_screen.dart:451, lib/features/community/community_widgets.dart:823
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get community_membersMuted;
+
+  /// lib/features/community/community_members_screen.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'Make admin'**
+  String get community_membersPromote;
+
+  /// lib/features/community/community_members_screen.dart:302
+  ///
+  /// In en, this message translates to:
+  /// **'Member directory'**
+  String get community_membersResource;
+
+  /// lib/features/community/community_members_screen.dart:235
+  ///
+  /// In en, this message translates to:
+  /// **'All {all}'**
+  String community_membersS(Object? all);
+
+  /// lib/features/community/community_members_screen.dart:612
+  ///
+  /// In en, this message translates to:
+  /// **'{owner} owner'**
+  String community_membersS2(Object? owner);
+
+  /// lib/features/community/community_members_screen.dart:614
+  ///
+  /// In en, this message translates to:
+  /// **'{admin} admins'**
+  String community_membersS3(Object? admin);
+
+  /// lib/features/community/community_members_screen.dart:494
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {communityObservedAtLabel}'**
+  String community_membersSubtitle(Object? communityObservedAtLabel);
+
+  /// lib/features/community/community_members_screen.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'This action is recorded in the community log.'**
+  String get community_membersSwitch;
+
+  /// lib/features/community/community_members_screen.dart:612
+  ///
+  /// In en, this message translates to:
+  /// **'Owner permissions'**
+  String get community_membersSwitch2;
+
+  /// lib/features/community/community_members_screen.dart:614
+  ///
+  /// In en, this message translates to:
+  /// **'Admin permissions'**
+  String get community_membersSwitch3;
+
+  /// lib/features/community/community_members_screen.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'Me · {displayName}'**
+  String community_membersTitle(Object? displayName);
+
+  /// lib/features/community/community_members_screen.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'After transferring you become an admin. Editing the community profile, appointing admins and transferring again belong to the new owner. You can still mute and ban regular members. This can\'t be undone. Only the new owner can give ownership back.'**
+  String get community_membersTransfer;
+
+  /// lib/features/community/community_members_screen.dart:41
+  ///
+  /// In en, this message translates to:
+  /// **'Unban'**
+  String get community_membersUnban;
+
+  /// lib/features/community/community_members_screen.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'Unbanning restores this member as active, keeps their join date and adds them back to the official channel. They don\'t need to apply again.'**
+  String get community_membersUnban2;
+
+  /// lib/features/community/community_members_screen.dart:39
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get community_membersUnmute;
+
+  /// lib/features/community/community_profile_screen.dart:602
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile is saved first, then goes back into the review queue. The short link and verification status can\'t be changed here.'**
+  String get community_profileBody;
+
+  /// lib/features/community/community_profile_screen.dart:652
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll appear in the member list after joining.'**
+  String get community_profileBody2;
+
+  /// lib/features/community/community_profile_screen.dart:652
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll be removed from the member directory after leaving.'**
+  String get community_profileBody3;
+
+  /// lib/features/community/community_profile_screen.dart:1236
+  ///
+  /// In en, this message translates to:
+  /// **'This token is already linked to another community. Change the token in the profile, then resubmit.'**
+  String get community_profileBoundAssetTaken;
+
+  /// lib/features/community/community_profile_screen.dart:978
+  ///
+  /// In en, this message translates to:
+  /// **'Join community'**
+  String get community_profileCommunityJoinActionLabel;
+
+  /// lib/features/community/community_profile_screen.dart:1172
+  ///
+  /// In en, this message translates to:
+  /// **'Community chat and governance aren\'t available'**
+  String get community_profileCommunityMembershipBannedBody;
+
+  /// lib/features/community/community_profile_screen.dart:1171
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been banned from this community'**
+  String get community_profileCommunityMembershipBannedTitle;
+
+  /// lib/features/community/community_profile_screen.dart:798
+  ///
+  /// In en, this message translates to:
+  /// **'How the online count works'**
+  String get community_profileCommunityOnlineCountExplainLabel;
+
+  /// lib/features/community/community_profile_screen.dart:1186
+  ///
+  /// In en, this message translates to:
+  /// **'Leave community, not available to the owner'**
+  String get community_profileCommunityOwnerCannotLeaveSemanticLabel;
+
+  /// lib/features/community/community_profile_screen.dart:1184, lib/features/community/community_profile_screen.dart:1195, lib/features/community/community_profile_screen.dart:1198
+  ///
+  /// In en, this message translates to:
+  /// **'Leave community'**
+  String get community_profileCommunityOwnerCannotLeaveTitle;
+
+  /// lib/features/community/community_profile_screen.dart:910
+  ///
+  /// In en, this message translates to:
+  /// **'Start room'**
+  String get community_profileCommunityProfileCreateVoiceRoomLabel;
+
+  /// lib/features/community/community_profile_screen.dart:1058
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about this community'**
+  String get community_profileCommunityProfileOpenAiSubtitle;
+
+  /// lib/features/community/community_profile_screen.dart:1056, lib/features/community/community_profile_screen.dart:1064
+  ///
+  /// In en, this message translates to:
+  /// **'Community AI'**
+  String get community_profileCommunityProfileOpenAiTitle;
+
+  /// lib/features/community/community_profile_screen.dart:930
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get community_profileCommunityProfileOpenChatLabel;
+
+  /// lib/features/community/community_profile_screen.dart:902
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get community_profileCommunityProfileOpenVoiceLabel;
+
+  /// lib/features/community/community_profile_screen.dart:903
+  ///
+  /// In en, this message translates to:
+  /// **'Enter voice room · Live'**
+  String get community_profileCommunityProfileOpenVoiceSemanticLabel;
+
+  /// lib/features/community/community_profile_screen.dart:940
+  ///
+  /// In en, this message translates to:
+  /// **'Share community'**
+  String get community_profileCommunityProfileShareSemanticLabel;
+
+  /// lib/features/community/community_profile_screen.dart:653, lib/features/community/community_widgets.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get community_profileConfirmLabel;
+
+  /// lib/features/community/community_profile_screen.dart:485
+  ///
+  /// In en, this message translates to:
+  /// **'Official links'**
+  String get community_profileLoopLabel;
+
+  /// lib/features/community/community_profile_screen.dart:1012
+  ///
+  /// In en, this message translates to:
+  /// **'Members {communityCountLabel}'**
+  String community_profileLoopLabel2(Object? communityCountLabel);
+
+  /// lib/features/community/community_profile_screen.dart:579
+  ///
+  /// In en, this message translates to:
+  /// **'{label} link copied'**
+  String community_profileMessage(Object? label);
+
+  /// lib/features/community/community_profile_screen.dart:622
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmitted. Status is back to In review'**
+  String get community_profileMessage2;
+
+  /// lib/features/community/community_profile_screen.dart:660
+  ///
+  /// In en, this message translates to:
+  /// **'Joined community'**
+  String get community_profileMessage3;
+
+  /// lib/features/community/community_profile_screen.dart:660
+  ///
+  /// In en, this message translates to:
+  /// **'Left community'**
+  String get community_profileMessage4;
+
+  /// lib/features/community/community_profile_screen.dart:372
+  ///
+  /// In en, this message translates to:
+  /// **'Community profile'**
+  String get community_profileResource;
+
+  /// lib/features/community/community_profile_screen.dart:1235
+  ///
+  /// In en, this message translates to:
+  /// **'This application is no longer \"Rejected\". The page has refreshed. Check the latest status.'**
+  String get community_profileStale;
+
+  /// lib/features/community/community_profile_screen.dart:701
+  ///
+  /// In en, this message translates to:
+  /// **'{communityCountLabel} online'**
+  String community_profileText(Object? communityCountLabel);
+
+  /// lib/features/community/community_profile_screen.dart:601
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit community application?'**
+  String get community_profileTitle;
+
+  /// lib/features/community/community_profile_screen.dart:651
+  ///
+  /// In en, this message translates to:
+  /// **'Join this community?'**
+  String get community_profileTitle2;
+
+  /// lib/features/community/community_profile_screen.dart:651
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this community?'**
+  String get community_profileTitle3;
+
+  /// lib/features/community/community_profile_screen.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'Join the community to enter the voice room'**
+  String get community_profileVoiceRoomArrivalOutcome;
+
+  /// lib/features/community/community_profile_screen.dart:1209
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room has ended'**
+  String get community_profileVoiceRoomArrivalOutcome2;
+
+  /// lib/features/community/community_screen.dart:161
+  ///
+  /// In en, this message translates to:
+  /// **'Communities aren\'t available yet.'**
+  String get community_screenCommunityCapabilityUnavailableDeferredMessage;
+
+  /// lib/features/community/community_screen.dart:162
+  ///
+  /// In en, this message translates to:
+  /// **'Communities aren\'t ready yet. Try again later.'**
+  String get community_screenCommunityCapabilityUnavailableUnknownMessage;
+
+  /// lib/features/community/community_screen.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'Your joined community count appears here once it loads.'**
+  String get community_screenCommunityFolioCaption;
+
+  /// lib/features/community/community_screen.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'Community data can\'t be loaded right now, so no figures are shown.'**
+  String get community_screenCommunityFolioCaption2;
+
+  /// lib/features/community/community_screen.dart:149
+  ///
+  /// In en, this message translates to:
+  /// **'Discussion activity and voice rooms aren\'t available yet.'**
+  String get community_screenCommunityFolioCaption3;
+
+  /// lib/features/community/community_screen.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'{miningCount} communities mining'**
+  String community_screenCommunityFolioHeading(Object? miningCount);
+
+  /// lib/features/community/community_screen.dart:134
+  ///
+  /// In en, this message translates to:
+  /// **'Community index'**
+  String get community_screenCommunityFolioKicker;
+
+  /// lib/features/community/community_screen.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'Start from \"Discover communities\". Communities you join appear here.'**
+  String get community_screenCommunityJoinedEmptyMessage;
+
+  /// lib/features/community/community_screen.dart:245
+  ///
+  /// In en, this message translates to:
+  /// **'View all joined communities'**
+  String get community_screenCommunityViewAllJoinedLabel;
+
+  /// lib/features/community/community_screen.dart:185, lib/features/community/community_screen.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'No communities joined yet'**
+  String get community_screenEmptyMessage;
+
+  /// lib/features/community/community_screen.dart:186
+  ///
+  /// In en, this message translates to:
+  /// **'Communities you join are listed here.'**
+  String get community_screenEmptyReason;
+
+  /// lib/features/community/community_screen.dart:140
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get community_screenHeading;
+
+  /// lib/features/community/community_screen.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'Token communities · Mining'**
+  String get community_screenLoopLabel;
+
+  /// lib/features/community/community_screen.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Other communities'**
+  String get community_screenLoopLabel2;
+
+  /// lib/features/community/community_screen.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Community data'**
+  String get community_screenResource;
+
+  /// lib/features/community/search_controller.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'Search {searchableDomains}'**
+  String community_searchControllerSearchFieldLabel(Object? searchableDomains);
+
+  /// lib/features/community/search_controller.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Nicknames find only discoverable accounts. LOOP IDs match exactly'**
+  String get community_searchControllerSearchScopeHint;
+
+  /// lib/features/community/search_screen.dart:393
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get community_searchLabel;
+
+  /// lib/features/community/search_screen.dart:407
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get community_searchLabel2;
+
+  /// lib/features/community/search_screen.dart:789
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from recent searches'**
+  String community_searchLabel3(Object? name);
+
+  /// lib/features/community/search_screen.dart:142
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t follow'**
+  String get community_searchMessage;
+
+  /// lib/features/community/search_screen.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'{label} can\'t be searched right now'**
+  String community_searchMessage2(Object? label);
+
+  /// lib/features/community/search_screen.dart:557
+  ///
+  /// In en, this message translates to:
+  /// **'{label} can\'t be searched right now'**
+  String community_searchMessage3(Object? label);
+
+  /// lib/features/community/search_screen.dart:673
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to search on the clipboard'**
+  String get community_searchMessage4;
+
+  /// lib/features/community/search_screen.dart:243
+  ///
+  /// In en, this message translates to:
+  /// **'Search results'**
+  String get community_searchResource;
+
+  /// lib/features/community/search_screen.dart:230
+  ///
+  /// In en, this message translates to:
+  /// **'Search isn\'t available right now'**
+  String get community_searchSearchCapabilityUnavailableTitle;
+
+  /// lib/features/community/search_screen.dart:261
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results'**
+  String get community_searchSearchEmptyEmptyMessage;
+
+  /// lib/features/community/search_screen.dart:262, lib/features/community/search_screen.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'Type at least {searchMinimumRunes} characters to search'**
+  String community_searchSearchEmptyEmptyMessage2(Object? searchMinimumRunes);
+
+  /// lib/features/community/search_screen.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'No results in this category.'**
+  String get community_searchSearchEmptyEmptyReason;
+
+  /// lib/features/community/search_screen.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'Search matches from the start and shows only discoverable accounts and verified communities.'**
+  String get community_searchSearchEmptyEmptyReason2;
+
+  /// lib/features/community/search_screen.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'Try another keyword or switch the category above'**
+  String get community_searchSearchEmptyMessage;
+
+  /// lib/features/community/search_screen.dart:271
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results found'**
+  String get community_searchSearchEmptyTitle;
+
+  /// lib/features/community/search_screen.dart:271
+  ///
+  /// In en, this message translates to:
+  /// **'Search tokens, communities and users'**
+  String get community_searchSearchEmptyTitle2;
+
+  /// lib/features/community/search_screen.dart:596
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get community_searchSearchPasteLoopIdLabel;
+
+  /// lib/features/community/search_screen.dart:773
+  ///
+  /// In en, this message translates to:
+  /// **'No price in search'**
+  String get community_searchSearchPriceAbsentText;
+
+  /// lib/features/community/search_screen.dart:333
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get community_searchSearchRecentLabelAction;
+
+  /// lib/features/community/search_screen.dart:332
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get community_searchSearchRecentLabelLabel;
+
+  /// lib/features/community/search_screen.dart:369
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, token, recent search'**
+  String community_searchSemanticLabel(Object? title);
+
+  /// lib/features/community/search_screen.dart:752
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {memberCount} members'**
+  String community_searchSemanticLabel2(Object? memberCount, Object? title);
+
+  /// lib/features/community/community_voice_room_open.dart:31
+  ///
+  /// In en, this message translates to:
+  /// **'Voice room started'**
+  String get community_voiceRoomOpenMessage;
+
+  /// lib/features/community/community_voice_room_open.dart:55
+  ///
+  /// In en, this message translates to:
+  /// **'This community already has a live voice room, so no new one was created. Refresh to enter.'**
+  String get community_voiceRoomOpenMessage2;
+
+  /// lib/features/community/community_widgets.dart:1369
+  ///
+  /// In en, this message translates to:
+  /// **'Close community profile editor'**
+  String get community_widgetsBarrierLabel;
+
+  /// lib/features/community/community_widgets.dart:1560
+  ///
+  /// In en, this message translates to:
+  /// **'Close community application'**
+  String get community_widgetsBarrierLabel2;
+
+  /// lib/features/community/community_widgets.dart:1940
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a 40-character hex contract address, optionally prefixed with {chainId}:.'**
+  String community_widgetsBoundAssetKey(Object? chainId);
+
+  /// lib/features/community/community_widgets.dart:1197, lib/features/community/community_widgets.dart:1202, lib/features/community/community_widgets.dart:1207
+  ///
+  /// In en, this message translates to:
+  /// **'7-day discussions'**
+  String get community_widgetsCaption;
+
+  /// lib/features/community/community_widgets.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements yet'**
+  String get community_widgetsCommunityAnnouncementsEmptyText;
+
+  /// lib/features/community/community_widgets.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements yet · {communityUnavailableReason}'**
+  String community_widgetsCommunityAnnouncementsUnavailableText(
+    Object? communityUnavailableReason,
+  );
+
+  /// lib/features/community/community_widgets.dart:1047
+  ///
+  /// In en, this message translates to:
+  /// **'Mining weight and the official group open after approval. Until it\'s verified, this community has no verified badge.'**
+  String get community_widgetsCommunityApplicationPendingBody;
+
+  /// lib/features/community/community_widgets.dart:1046
+  ///
+  /// In en, this message translates to:
+  /// **'In review · Submitted {localTimestampLabel}'**
+  String community_widgetsCommunityApplicationPendingTitle(
+    Object? localTimestampLabel,
+  );
+
+  /// lib/features/community/community_widgets.dart:1293
+  ///
+  /// In en, this message translates to:
+  /// **'Check review progress under Me → My communities → Created.'**
+  String get community_widgetsCommunityApplicationProgressHint;
+
+  /// lib/features/community/community_widgets.dart:1064
+  ///
+  /// In en, this message translates to:
+  /// **'No reason was given. Edit the community profile and resubmit.'**
+  String get community_widgetsCommunityApplicationRejectedBody;
+
+  /// lib/features/community/community_widgets.dart:1065
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String community_widgetsCommunityApplicationRejectedBody2(Object? reason);
+
+  /// lib/features/community/community_widgets.dart:1074
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit'**
+  String get community_widgetsCommunityApplicationResubmitLabel;
+
+  /// lib/features/community/community_widgets.dart:1796
+  ///
+  /// In en, this message translates to:
+  /// **'Submit application'**
+  String get community_widgetsCommunityApplySubmitLabel;
+
+  /// lib/features/community/community_widgets.dart:1341
+  ///
+  /// In en, this message translates to:
+  /// **'View community'**
+  String get community_widgetsCommunityApplySubmittedOpenLabel;
+
+  /// lib/features/community/community_widgets.dart:1882
+  ///
+  /// In en, this message translates to:
+  /// **'Just enter the contract address. {name} is filled in for you. '**
+  String community_widgetsCommunityBoundAssetChainNote(Object? name);
+
+  /// lib/features/community/community_widgets.dart:1874
+  ///
+  /// In en, this message translates to:
+  /// **'0x… (or paste the full {chainId}:0x…)'**
+  String community_widgetsCommunityBoundAssetHint(Object? chainId);
+
+  /// lib/features/community/community_widgets.dart:1244, lib/features/community/community_widgets.dart:1309
+  ///
+  /// In en, this message translates to:
+  /// **'Close confirmation'**
+  String get community_widgetsCommunityConfirmAcceptBarrierLabel;
+
+  /// lib/features/community/community_widgets.dart:604
+  ///
+  /// In en, this message translates to:
+  /// **'No official links yet'**
+  String get community_widgetsCommunityLinksEmptyText;
+
+  /// lib/features/community/community_widgets.dart:598
+  ///
+  /// In en, this message translates to:
+  /// **'No official links yet · {communityUnavailableReason}'**
+  String community_widgetsCommunityLinksUnavailableText(
+    Object? communityUnavailableReason,
+  );
+
+  /// lib/features/community/community_widgets.dart:779
+  ///
+  /// In en, this message translates to:
+  /// **'Members with power'**
+  String get community_widgetsCommunityMiningPowerParticipantsTitle;
+
+  /// lib/features/community/community_widgets.dart:709
+  ///
+  /// In en, this message translates to:
+  /// **'Latest power snapshot · {communitySettlementLabel}'**
+  String community_widgetsCommunityMiningPowerRowSubtitle(
+    Object? communitySettlementLabel,
+  );
+
+  /// lib/features/community/community_widgets.dart:756
+  ///
+  /// In en, this message translates to:
+  /// **'Community weight'**
+  String get community_widgetsCommunityMiningPowerWeightTitle;
+
+  /// lib/features/community/community_widgets.dart:807
+  ///
+  /// In en, this message translates to:
+  /// **'No value'**
+  String get community_widgetsCommunityMissingHeading;
+
+  /// lib/features/community/community_widgets.dart:812
+  ///
+  /// In en, this message translates to:
+  /// **'No name'**
+  String get community_widgetsCommunityMissingName;
+
+  /// lib/features/community/community_widgets.dart:287
+  ///
+  /// In en, this message translates to:
+  /// **'Close online count details'**
+  String get community_widgetsCommunityOnlineMeaningSheetBarrierLabel;
+
+  /// lib/features/community/community_widgets.dart:108
+  ///
+  /// In en, this message translates to:
+  /// **'{resource} exists only in this development preview. It isn\'t saved to your account or uploaded.'**
+  String community_widgetsCommunityPreviewNoticeBody(Object? resource);
+
+  /// lib/features/community/community_widgets.dart:928
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected: no reason given'**
+  String get community_widgetsCommunityRejectedReasonPreview;
+
+  /// lib/features/community/community_widgets.dart:930
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected: {text}'**
+  String community_widgetsCommunityRejectedReasonPreview2(Object? text);
+
+  /// lib/features/community/community_widgets.dart:934
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected: {head}…'**
+  String community_widgetsCommunityRejectedReasonPreview3(Object? head);
+
+  /// lib/features/community/community_widgets.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'This feature isn\'t available right now'**
+  String get community_widgetsCommunityStateUnavailableMessage;
+
+  /// lib/features/community/community_widgets.dart:1939
+  ///
+  /// In en, this message translates to:
+  /// **'The bio can be up to 280 characters with no control characters.'**
+  String get community_widgetsDescription;
+
+  /// lib/features/community/community_widgets.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'My holdings'**
+  String get community_widgetsFor;
+
+  /// lib/features/community/community_widgets.dart:478
+  ///
+  /// In en, this message translates to:
+  /// **'My power'**
+  String get community_widgetsFor2;
+
+  /// lib/features/community/community_widgets.dart:479
+  ///
+  /// In en, this message translates to:
+  /// **'Est./day'**
+  String get community_widgetsFor3;
+
+  /// lib/features/community/community_widgets.dart:1756
+  ///
+  /// In en, this message translates to:
+  /// **'Short link: lowercase letters, digits and hyphens'**
+  String get community_widgetsHint;
+
+  /// lib/features/community/community_widgets.dart:1767
+  ///
+  /// In en, this message translates to:
+  /// **'Bio (optional)'**
+  String get community_widgetsHint2;
+
+  /// lib/features/community/community_widgets.dart:1776
+  ///
+  /// In en, this message translates to:
+  /// **'Linked token (optional) {communityBoundAssetHint}'**
+  String community_widgetsHint3(Object? communityBoundAssetHint);
+
+  /// lib/features/community/community_widgets.dart:945
+  ///
+  /// In en, this message translates to:
+  /// **'Created {localTimestampLabel}'**
+  String community_widgetsIf(Object? localTimestampLabel);
+
+  /// lib/features/community/community_widgets.dart:950
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {localTimestampLabel}'**
+  String community_widgetsIf2(Object? localTimestampLabel);
+
+  /// lib/features/community/community_widgets.dart:454
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get community_widgetsLabel;
+
+  /// lib/features/community/community_widgets.dart:460
+  ///
+  /// In en, this message translates to:
+  /// **'Community power'**
+  String get community_widgetsLabel2;
+
+  /// lib/features/community/community_widgets.dart:469
+  ///
+  /// In en, this message translates to:
+  /// **'Power snapshot'**
+  String get community_widgetsLabel3;
+
+  /// lib/features/community/community_widgets.dart:1522
+  ///
+  /// In en, this message translates to:
+  /// **'Short link (can\'t be changed)'**
+  String get community_widgetsLabel4;
+
+  /// lib/features/community/community_widgets.dart:1694
+  ///
+  /// In en, this message translates to:
+  /// **'No community ID'**
+  String get community_widgetsLabel5;
+
+  /// lib/features/community/community_widgets.dart:1695
+  ///
+  /// In en, this message translates to:
+  /// **'Community ID {reference}'**
+  String community_widgetsLabel6(Object? reference);
+
+  /// lib/features/community/community_widgets.dart:1483, lib/features/community/community_widgets.dart:1747
+  ///
+  /// In en, this message translates to:
+  /// **'Community name'**
+  String get community_widgetsLabelText;
+
+  /// lib/features/community/community_widgets.dart:1490
+  ///
+  /// In en, this message translates to:
+  /// **'Bio (optional)'**
+  String get community_widgetsLabelText2;
+
+  /// lib/features/community/community_widgets.dart:1505
+  ///
+  /// In en, this message translates to:
+  /// **'Linked token (owner only, optional)'**
+  String get community_widgetsLabelText3;
+
+  /// lib/features/community/community_widgets.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get community_widgetsLoopOfflineState;
+
+  /// lib/features/community/community_widgets.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Governance'**
+  String get community_widgetsLoopOfflineState2;
+
+  /// lib/features/community/community_widgets.dart:80, lib/features/community/community_widgets.dart:81, lib/features/community/community_widgets.dart:82
+  ///
+  /// In en, this message translates to:
+  /// **'Try again later.'**
+  String get community_widgetsLoopPageBlock;
+
+  /// lib/features/community/community_widgets.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'This counts connections, not activity'**
+  String get community_widgetsLoopSheetHeading;
+
+  /// lib/features/community/community_widgets.dart:1315
+  ///
+  /// In en, this message translates to:
+  /// **'Application submitted · In review'**
+  String get community_widgetsLoopSheetHeading2;
+
+  /// lib/features/community/community_widgets.dart:1468
+  ///
+  /// In en, this message translates to:
+  /// **'Edit community profile'**
+  String get community_widgetsLoopSheetHeading3;
+
+  /// lib/features/community/community_widgets.dart:1663
+  ///
+  /// In en, this message translates to:
+  /// **'Create community'**
+  String get community_widgetsLoopSheetHeading4;
+
+  /// lib/features/community/community_widgets.dart:758
+  ///
+  /// In en, this message translates to:
+  /// **'Granted after review and included in the figure above'**
+  String get community_widgetsMiningCommunityWeightApproved;
+
+  /// lib/features/community/community_widgets.dart:764
+  ///
+  /// In en, this message translates to:
+  /// **'Weight is still in review, so no value is shown'**
+  String get community_widgetsMiningCommunityWeightPending;
+
+  /// lib/features/community/community_widgets.dart:765
+  ///
+  /// In en, this message translates to:
+  /// **'No linked token, so there\'s no weight to review'**
+  String get community_widgetsMiningCommunityWeightPending2;
+
+  /// lib/features/community/community_widgets.dart:781
+  ///
+  /// In en, this message translates to:
+  /// **'People with power in the latest power snapshot'**
+  String get community_widgetsMiningParticipantsCount;
+
+  /// lib/features/community/community_widgets.dart:782
+  ///
+  /// In en, this message translates to:
+  /// **'This item can\'t be loaded right now'**
+  String get community_widgetsMiningParticipantsUnavailable;
+
+  /// lib/features/community/community_widgets.dart:1937
+  ///
+  /// In en, this message translates to:
+  /// **'The name needs 1–40 characters with no control characters.'**
+  String get community_widgetsName;
+
+  /// lib/features/community/community_widgets.dart:1197
+  ///
+  /// In en, this message translates to:
+  /// **'{caption} {value}'**
+  String community_widgetsRankedSemantic(Object? caption, Object? value);
+
+  /// lib/features/community/community_widgets.dart:913, lib/features/community/community_widgets.dart:1062
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get community_widgetsRejected;
+
+  /// lib/features/community/community_widgets.dart:1883
+  ///
+  /// In en, this message translates to:
+  /// **'Chain status isn\'t loaded yet. If you enter only the address, {name} is filled in. '**
+  String community_widgetsS(Object? name);
+
+  /// lib/features/community/community_widgets.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'Community mining panel, weight {weight}, community power {power}'**
+  String community_widgetsSemantic(Object? power, Object? weight);
+
+  /// lib/features/community/community_widgets.dart:1186, lib/features/community/community_widgets.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be loaded right now'**
+  String get community_widgetsSemanticValue;
+
+  /// lib/features/community/community_widgets.dart:1198
+  ///
+  /// In en, this message translates to:
+  /// **'At least {messageCount}'**
+  String community_widgetsSemanticValue2(Object? messageCount);
+
+  /// lib/features/community/community_widgets.dart:1198
+  ///
+  /// In en, this message translates to:
+  /// **'{messageCount}'**
+  String community_widgetsSemanticValue3(Object? messageCount);
+
+  /// lib/features/community/community_widgets.dart:1328
+  ///
+  /// In en, this message translates to:
+  /// **'\"{communityName}\" is in the review queue and you\'re its owner. {communityApplicationProgressHint} The verified badge, mining weight and official group appear after approval.'**
+  String community_widgetsShowCommunityApplicationSubmittedSheet(
+    Object? communityApplicationProgressHint,
+    Object? communityName,
+  );
+
+  /// lib/features/community/community_widgets.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'This is how many members of the community\'s official channel are connected to Stream right now ({communityCountLabel}). It isn\'t \"watching this channel\", \"recently active\", or the total member count. It\'s a single observation, not a running count.'**
+  String community_widgetsShowCommunityPresenceMeaningSheet(
+    Object? communityCountLabel,
+  );
+
+  /// lib/features/community/community_widgets.dart:1938
+  ///
+  /// In en, this message translates to:
+  /// **'The short link must be 3–32 lowercase letters, digits or hyphens.'**
+  String get community_widgetsSlug;
+
+  /// lib/features/community/community_widgets.dart:443
+  ///
+  /// In en, this message translates to:
+  /// **'Community mining'**
+  String get community_widgetsSwitch;
+
+  /// lib/features/community/community_widgets.dart:739
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version {identifier} used by this power snapshot'**
+  String community_widgetsSwitch2(Object? identifier);
+
+  /// lib/features/community/community_widgets.dart:1785
+  ///
+  /// In en, this message translates to:
+  /// **'{communityBoundAssetChainNote}{communityBoundAssetUniqueHint} After you submit it goes into review and you\'re the owner. The verified badge is set after verification.'**
+  String community_widgetsText(
+    Object? communityBoundAssetChainNote,
+    Object? communityBoundAssetUniqueHint,
+  );
+
+  /// lib/features/community/community_widgets.dart:470
+  ///
+  /// In en, this message translates to:
+  /// **'{communityObservedAtLabel} · Not updated'**
+  String community_widgetsValue(Object? communityObservedAtLabel);
+
+  /// lib/features/community/community_widgets.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get community_widgetsVerified;
+
+  /// lib/features/community/community_widgets.dart:912
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get community_widgetsVerified2;
+
   /// lib/core/assets/loop_assets.dart:390
   ///
   /// In en, this message translates to:
@@ -19340,6 +21724,3956 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Approved, awaiting schedule'**
   String get launch_widgetsUnscheduled;
+
+  /// lib/features/market/alerts/alert_models.dart:14
+  ///
+  /// In en, this message translates to:
+  /// **'Breaks above'**
+  String get marketAlerts_modelsAbove;
+
+  /// lib/features/market/alerts/alert_models.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get marketAlerts_modelsActive;
+
+  /// lib/features/market/alerts/alert_models.dart:15
+  ///
+  /// In en, this message translates to:
+  /// **'Rises to'**
+  String get marketAlerts_modelsAtOrAbove;
+
+  /// lib/features/market/alerts/alert_models.dart:17
+  ///
+  /// In en, this message translates to:
+  /// **'Falls to'**
+  String get marketAlerts_modelsAtOrBelow;
+
+  /// lib/features/market/alerts/alert_models.dart:16
+  ///
+  /// In en, this message translates to:
+  /// **'Breaks below'**
+  String get marketAlerts_modelsBelow;
+
+  /// lib/features/market/alerts/alert_models.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Triggered'**
+  String get marketAlerts_modelsTriggered;
+
+  /// lib/features/market/alerts/alerts_screen.dart:481
+  ///
+  /// In en, this message translates to:
+  /// **'Break: price must be above the threshold (> threshold) to trigger. Exactly equal doesn\'t count.'**
+  String get marketAlerts_screenAbove;
+
+  /// lib/features/market/alerts/alerts_screen.dart:637
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an asset from your watchlist'**
+  String get marketAlerts_screenAlertAssetPickLabel;
+
+  /// lib/features/market/alerts/alerts_screen.dart:812
+  ///
+  /// In en, this message translates to:
+  /// **'Add assets to your watchlist on the market page first, or create an alert from a token page.'**
+  String get marketAlerts_screenAlertAssetPickerEmptyMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:811
+  ///
+  /// In en, this message translates to:
+  /// **'No assets in your watchlist yet'**
+  String get marketAlerts_screenAlertAssetPickerEmptyTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:654, lib/features/market/alerts/alerts_screen.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'This asset\'s name can\'t be loaded right now'**
+  String get marketAlerts_screenAlertAssetRowSubtitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:594
+  ///
+  /// In en, this message translates to:
+  /// **'Triggered records stay in the trigger history and aren\'t deleted.'**
+  String get marketAlerts_screenAlertDeleteConfirmBodyBody;
+
+  /// lib/features/market/alerts/alerts_screen.dart:593
+  ///
+  /// In en, this message translates to:
+  /// **'This price won\'t be watched after deleting'**
+  String get marketAlerts_screenAlertDeleteConfirmBodyTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Price alerts aren\'t available right now'**
+  String get marketAlerts_screenAlertsCapabilityBlockTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:189
+  ///
+  /// In en, this message translates to:
+  /// **'Alert wasn\'t updated'**
+  String get marketAlerts_screenAlertsCommandErrorTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get marketAlerts_screenAlertsCreateActionLabel;
+
+  /// lib/features/market/alerts/alerts_screen.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'No alerts for {focusLabel} yet'**
+  String marketAlerts_screenAlertsEmptyTitle(Object? focusLabel);
+
+  /// lib/features/market/alerts/alerts_screen.dart:242
+  ///
+  /// In en, this message translates to:
+  /// **'No more alerts'**
+  String get marketAlerts_screenAlertsEndText;
+
+  /// lib/features/market/alerts/alerts_screen.dart:904
+  ///
+  /// In en, this message translates to:
+  /// **'Each triggered alert leaves a record here with its source and time.'**
+  String get marketAlerts_screenAlertsFeedEmptyMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:916
+  ///
+  /// In en, this message translates to:
+  /// **'There are more records. Keep scrolling.'**
+  String get marketAlerts_screenAlertsFeedEmptyPageMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:915
+  ///
+  /// In en, this message translates to:
+  /// **'No price alert records on this page'**
+  String get marketAlerts_screenAlertsFeedEmptyPageTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:972
+  ///
+  /// In en, this message translates to:
+  /// **'No more trigger records'**
+  String get marketAlerts_screenAlertsFeedEndText;
+
+  /// lib/features/market/alerts/alerts_screen.dart:962
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the next page of trigger records'**
+  String get marketAlerts_screenAlertsFeedMoreFailedMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:978
+  ///
+  /// In en, this message translates to:
+  /// **'{unreadCount} unread'**
+  String marketAlerts_screenAlertsFeedUnreadText(Object? unreadCount);
+
+  /// lib/features/market/alerts/alerts_screen.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the next page of alerts'**
+  String get marketAlerts_screenAlertsMoreFailedMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'With the price alert category off, events are still recorded but no notification is created'**
+  String get marketAlerts_screenAlertsNotificationSettingsSubtitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications aren\'t available yet, so alerts appear only in the in-app notification list. Only the latest price triggers an alert.'**
+  String get marketAlerts_screenAlertsPushNoticeBody;
+
+  /// lib/features/market/alerts/alerts_screen.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'Push isn\'t available yet'**
+  String get marketAlerts_screenAlertsPushNoticeTitle;
+
+  /// lib/features/market/alerts/alerts_screen.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'{focusLabel} · {armed} alerts watching · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle(
+    Object? armed,
+    Object? focusLabel,
+  );
+
+  /// lib/features/market/alerts/alerts_screen.dart:149
+  ///
+  /// In en, this message translates to:
+  /// **'{items} alerts loaded · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle2(Object? items);
+
+  /// lib/features/market/alerts/alerts_screen.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'{armed} alerts watching · Stops after one trigger'**
+  String marketAlerts_screenAlertsScreenSubtitle3(Object? armed);
+
+  /// lib/features/market/alerts/alerts_screen.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'View alerts for all assets'**
+  String get marketAlerts_screenAlertsShowEveryAssetLabel;
+
+  /// lib/features/market/alerts/alerts_screen.dart:482
+  ///
+  /// In en, this message translates to:
+  /// **'Reach: triggers when price reaches or rises above the threshold (≥ threshold).'**
+  String get marketAlerts_screenAtOrAbove;
+
+  /// lib/features/market/alerts/alerts_screen.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'Reach: triggers when price reaches or falls below the threshold (≤ threshold).'**
+  String get marketAlerts_screenAtOrBelow;
+
+  /// lib/features/market/alerts/alerts_screen.dart:483
+  ///
+  /// In en, this message translates to:
+  /// **'Break: price must be below the threshold (< threshold) to trigger. Exactly equal doesn\'t count.'**
+  String get marketAlerts_screenBelow;
+
+  /// lib/features/market/alerts/alerts_screen.dart:165, lib/features/market/alerts/alerts_screen.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'No price alerts yet'**
+  String get marketAlerts_screenEmptyMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:802
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist hasn\'t loaded yet'**
+  String get marketAlerts_screenEmptyMessage2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:886, lib/features/market/alerts/alerts_screen.dart:903
+  ///
+  /// In en, this message translates to:
+  /// **'No trigger records yet'**
+  String get marketAlerts_screenEmptyMessage3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:166, lib/features/market/alerts/alerts_screen.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'Set a target price and you\'ll get a notification when it\'s reached.'**
+  String get marketAlerts_screenEmptyReason;
+
+  /// lib/features/market/alerts/alerts_screen.dart:535
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an asset to watch first.'**
+  String get marketAlerts_screenError;
+
+  /// lib/features/market/alerts/alerts_screen.dart:711
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 800.5'**
+  String get marketAlerts_screenHintText;
+
+  /// lib/features/market/alerts/alerts_screen.dart:600
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get marketAlerts_screenLabel;
+
+  /// lib/features/market/alerts/alerts_screen.dart:710
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold (USD)'**
+  String get marketAlerts_screenLabelText;
+
+  /// lib/features/market/alerts/alerts_screen.dart:332
+  ///
+  /// In en, this message translates to:
+  /// **'This trigger'**
+  String get marketAlerts_screenLoopBadge;
+
+  /// lib/features/market/alerts/alerts_screen.dart:661
+  ///
+  /// In en, this message translates to:
+  /// **'Changeable'**
+  String get marketAlerts_screenLoopBadge2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:662
+  ///
+  /// In en, this message translates to:
+  /// **'Not changeable'**
+  String get marketAlerts_screenLoopBadge3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:193
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts set'**
+  String get marketAlerts_screenLoopLabel;
+
+  /// lib/features/market/alerts/alerts_screen.dart:256
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger history'**
+  String get marketAlerts_screenLoopLabel2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:667
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger condition'**
+  String get marketAlerts_screenLoopLabel3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:176, lib/features/market/alerts/alerts_screen.dart:202
+  ///
+  /// In en, this message translates to:
+  /// **'New alert'**
+  String get marketAlerts_screenLoopOfflineState;
+
+  /// lib/features/market/alerts/alerts_screen.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Edit alert'**
+  String get marketAlerts_screenLoopOfflineState2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Delete alert'**
+  String get marketAlerts_screenLoopOfflineState3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:320
+  ///
+  /// In en, this message translates to:
+  /// **'This trigger is recorded in notifications'**
+  String get marketAlerts_screenLoopRecordRow;
+
+  /// lib/features/market/alerts/alerts_screen.dart:322
+  ///
+  /// In en, this message translates to:
+  /// **'{formatPercent} from target'**
+  String marketAlerts_screenLoopRecordRow2(Object? formatPercent);
+
+  /// lib/features/market/alerts/alerts_screen.dart:324
+  ///
+  /// In en, this message translates to:
+  /// **'Not evaluated yet'**
+  String get marketAlerts_screenLoopRecordRow3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:326
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluated {relativeTime}'**
+  String marketAlerts_screenLoopRecordRow4(Object? relativeTime);
+
+  /// lib/features/market/alerts/alerts_screen.dart:584
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this alert?'**
+  String get marketAlerts_screenLoopSheetHeading;
+
+  /// lib/features/market/alerts/alerts_screen.dart:628
+  ///
+  /// In en, this message translates to:
+  /// **'New price alert'**
+  String get marketAlerts_screenLoopSheetHeading2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:792
+  ///
+  /// In en, this message translates to:
+  /// **'Choose asset'**
+  String get marketAlerts_screenLoopSheetHeading3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:409
+  ///
+  /// In en, this message translates to:
+  /// **'Alert deleted'**
+  String get marketAlerts_screenMessage;
+
+  /// lib/features/market/alerts/alerts_screen.dart:409
+  ///
+  /// In en, this message translates to:
+  /// **'Alert saved'**
+  String get marketAlerts_screenMessage2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:628
+  ///
+  /// In en, this message translates to:
+  /// **'Edit price alert'**
+  String get marketAlerts_screenS;
+
+  /// lib/features/market/alerts/alerts_screen.dart:548
+  ///
+  /// In en, this message translates to:
+  /// **'This asset can\'t be used for price alerts. Choose another one.'**
+  String get marketAlerts_screenSetState;
+
+  /// lib/features/market/alerts/alerts_screen.dart:549
+  ///
+  /// In en, this message translates to:
+  /// **'The threshold must be a positive decimal number with up to 18 decimal places.'**
+  String get marketAlerts_screenSetState2;
+
+  /// lib/features/market/alerts/alerts_screen.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'The expiry must be in the future.'**
+  String get marketAlerts_screenSetState3;
+
+  /// lib/features/market/alerts/alerts_screen.dart:747
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this alert'**
+  String get marketAlerts_screenText;
+
+  /// lib/features/market/alerts/alerts_screen.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t change price alerts'**
+  String get marketAlerts_screenTitle;
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:109
+  ///
+  /// In en, this message translates to:
+  /// **'Add group {name}'**
+  String marketWatchlist_controllerAdd(Object? name);
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'Remove group {name}'**
+  String marketWatchlist_controllerAdd2(Object? name);
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'{added} added'**
+  String marketWatchlist_controllerAddedItems(Object? added);
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:123
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: {change}'**
+  String marketWatchlist_controllerGroupChange(Object? change, Object? name);
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'{removed} removed'**
+  String marketWatchlist_controllerRemovedItems(Object? removed);
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'Reordered'**
+  String get marketWatchlist_controllerReordered;
+
+  /// lib/features/market/watchlist/watchlist_controller.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP watchlist draft (based on version {version})'**
+  String marketWatchlist_controllerStringBuffer(Object? version);
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'Groups take effect after saving. Up to {watchlistMaxGroups}.'**
+  String marketWatchlist_editorBuild(Object? watchlistMaxGroups);
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:737
+  ///
+  /// In en, this message translates to:
+  /// **'Reloading discards'**
+  String get marketWatchlist_editorBuild2;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:189
+  ///
+  /// In en, this message translates to:
+  /// **'No watchlist assets yet'**
+  String get marketWatchlist_editorEmptyMessage;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:190, lib/features/market/watchlist/watchlist_editor_screen.dart:255
+  ///
+  /// In en, this message translates to:
+  /// **'Open a token page and tap the star at the top right to add it.'**
+  String get marketWatchlist_editorEmptyReason;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:472
+  ///
+  /// In en, this message translates to:
+  /// **'1–{watchlistMaxNameCodePoints} characters'**
+  String marketWatchlist_editorHintText(Object? watchlistMaxNameCodePoints);
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:633
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {displayName}'**
+  String marketWatchlist_editorLabel(Object? displayName);
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:471
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get marketWatchlist_editorLabelText;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:624
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get marketWatchlist_editorLoopBadge;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get marketWatchlist_editorLoopLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:216
+  ///
+  /// In en, this message translates to:
+  /// **'Save watchlist'**
+  String get marketWatchlist_editorLoopOfflineState;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:412
+  ///
+  /// In en, this message translates to:
+  /// **'Draft copied'**
+  String get marketWatchlist_editorMessage;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist saved'**
+  String get marketWatchlist_editorMessage2;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist'**
+  String get marketWatchlist_editorResource;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t save the watchlist'**
+  String get marketWatchlist_editorTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:175
+  ///
+  /// In en, this message translates to:
+  /// **' · Unsaved'**
+  String get marketWatchlist_editorUnsavedSuffix;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist editing isn\'t available right now'**
+  String get marketWatchlist_editorWatchlistCapabilityBlockTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Your watchlist changed on another device. Reloading discards the changes below. Copy the draft before deciding.'**
+  String get marketWatchlist_editorWatchlistConflictBody;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:757
+  ///
+  /// In en, this message translates to:
+  /// **'Copy current draft'**
+  String get marketWatchlist_editorWatchlistConflictCopyDraftLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:741
+  ///
+  /// In en, this message translates to:
+  /// **'This draft matches the submitted version.'**
+  String get marketWatchlist_editorWatchlistConflictNoDiff;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'Version conflict — nothing was overwritten'**
+  String get marketWatchlist_editorWatchlistConflictTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get marketWatchlist_editorWatchlistDiscardLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:170
+  ///
+  /// In en, this message translates to:
+  /// **'{distinctAssetCount} watchlist assets{state}'**
+  String marketWatchlist_editorWatchlistEditorScreenSubtitle(
+    Object? distinctAssetCount,
+    Object? state,
+  );
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:258, lib/features/market/watchlist/watchlist_editor_screen.dart:325
+  ///
+  /// In en, this message translates to:
+  /// **'Add asset'**
+  String get marketWatchlist_editorWatchlistGroupEmptyAddLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:254
+  ///
+  /// In en, this message translates to:
+  /// **'No assets in this group yet'**
+  String get marketWatchlist_editorWatchlistGroupEmptyTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'{name} {items} · Drag to sort · Swipe left to delete'**
+  String marketWatchlist_editorWatchlistGroupLabel(Object? items, Object? name);
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:345
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached the limit of {watchlistMaxGroups} groups. Delete one before creating another.'**
+  String marketWatchlist_editorWatchlistGroupLimitBody(
+    Object? watchlistMaxGroups,
+  );
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:497
+  ///
+  /// In en, this message translates to:
+  /// **'Add group'**
+  String get marketWatchlist_editorWatchlistGroupNameConfirmLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:286, lib/features/market/watchlist/watchlist_editor_screen.dart:330, lib/features/market/watchlist/watchlist_editor_screen.dart:459
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get marketWatchlist_editorWatchlistNewGroupEmptyLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:282
+  ///
+  /// In en, this message translates to:
+  /// **'Two ways: tap the star at the top right of a token page and the asset goes into the default group \"{watchlistDefaultGroupName}\", or create a group here first.'**
+  String marketWatchlist_editorWatchlistNoGroupsMessage(
+    Object? watchlistDefaultGroupName,
+  );
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:280
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get marketWatchlist_editorWatchlistNoGroupsTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'Prices and changes aren\'t shown here. This page only sorts, removes and creates groups. Add assets with the star on a token page. Assets must be registered on LOOP, or the whole watchlist won\'t save.'**
+  String get marketWatchlist_editorWatchlistNoticeText;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'A watchlist isn\'t market data'**
+  String get marketWatchlist_editorWatchlistNoticeTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:233
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist wasn\'t saved'**
+  String get marketWatchlist_editorWatchlistSaveErrorTitle;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get marketWatchlist_editorWatchlistSaveLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:81
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get marketWatchlist_editorWatchlistUndoLabel;
+
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {displayName}. Takes effect after saving'**
+  String marketWatchlist_editorWatchlistUndoMessage(Object? displayName);
+
+  /// lib/features/market/watchlist/watchlist_membership_controller.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from watchlist'**
+  String get marketWatchlist_membershipControllerActionLabel;
+
+  /// lib/features/market/watchlist/watchlist_membership_controller.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Add to watchlist'**
+  String get marketWatchlist_membershipControllerS;
+
+  /// lib/features/market/watchlist/watchlist_models.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'A group with this name already exists.'**
+  String get marketWatchlist_modelsDuplicate;
+
+  /// lib/features/market/watchlist/watchlist_models.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'Group name can\'t be empty.'**
+  String get marketWatchlist_modelsEmpty;
+
+  /// lib/features/market/watchlist/watchlist_models.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached the limit of {watchlistMaxGroups} groups. Remove one before creating another.'**
+  String marketWatchlist_modelsGroupLimitReached(Object? watchlistMaxGroups);
+
+  /// lib/features/market/watchlist/watchlist_models.dart:76
+  ///
+  /// In en, this message translates to:
+  /// **'The group name has hidden characters that can\'t be used.'**
+  String get marketWatchlist_modelsInvalidCharacters;
+
+  /// lib/features/market/watchlist/watchlist_models.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'The watchlist hasn\'t loaded yet, so groups can\'t be created.'**
+  String get marketWatchlist_modelsNotEditable;
+
+  /// lib/features/market/watchlist/watchlist_models.dart:75
+  ///
+  /// In en, this message translates to:
+  /// **'Group names can be up to {watchlistMaxNameCodePoints} characters.'**
+  String marketWatchlist_modelsTooLong(Object? watchlistMaxNameCodePoints);
+
+  /// lib/features/market/loop_market_chart.dart:209
+  ///
+  /// In en, this message translates to:
+  /// **'15m'**
+  String get market_chartFifteenMinutes;
+
+  /// lib/features/market/loop_market_chart.dart:211
+  ///
+  /// In en, this message translates to:
+  /// **'4h'**
+  String get market_chartFourHours;
+
+  /// lib/features/market/loop_market_chart.dart:212
+  ///
+  /// In en, this message translates to:
+  /// **'1D'**
+  String get market_chartOneDay;
+
+  /// lib/features/market/loop_market_chart.dart:210
+  ///
+  /// In en, this message translates to:
+  /// **'1h'**
+  String get market_chartOneHour;
+
+  /// lib/features/market/loop_market_chart.dart:213
+  ///
+  /// In en, this message translates to:
+  /// **'1W'**
+  String get market_chartOneWeek;
+
+  /// lib/features/market/loop_chart_toolbar.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'Candles'**
+  String get market_chartToolbarLabel;
+
+  /// lib/features/market/loop_chart_toolbar.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get market_chartToolbarLabel2;
+
+  /// lib/features/market/loop_chart_toolbar.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'{labels} · Calculated on device'**
+  String market_chartToolbarS(Object? labels);
+
+  /// lib/features/market/loop_chart_toolbar.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to candles'**
+  String get market_chartToolbarSemantic;
+
+  /// lib/features/market/loop_chart_toolbar.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to line'**
+  String get market_chartToolbarSemantic2;
+
+  /// lib/features/market/loop_chart_toolbar.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'Moving averages'**
+  String get market_chartToolbarSemantic3;
+
+  /// lib/features/market/loop_chart_toolbar.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get market_chartToolbarSemantic4;
+
+  /// lib/features/market/market_fomo_widgets.dart:191, lib/features/market/market_fomo_widgets.dart:270
+  ///
+  /// In en, this message translates to:
+  /// **'24h change not reported'**
+  String get market_fomoBuild;
+
+  /// lib/features/market/market_fomo_widgets.dart:71, lib/features/market/market_read_models.dart:678
+  ///
+  /// In en, this message translates to:
+  /// **'Derived from trade price'**
+  String get market_fomoDerived;
+
+  /// lib/features/market/market_fomo_widgets.dart:276
+  ///
+  /// In en, this message translates to:
+  /// **'24h trend down {figure}'**
+  String market_fomoDown(Object? figure);
+
+  /// lib/features/market/market_fomo_widgets.dart:118
+  ///
+  /// In en, this message translates to:
+  /// **'Pool estimate'**
+  String get market_fomoMarker;
+
+  /// lib/features/market/market_fomo_widgets.dart:334
+  ///
+  /// In en, this message translates to:
+  /// **'Not reported'**
+  String get market_fomoMarketTrendPercent;
+
+  /// lib/features/market/market_fomo_widgets.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'24h change {signedPercent}'**
+  String market_fomoMarketTrendSpoken(Object? signedPercent);
+
+  /// lib/features/market/market_fomo_widgets.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'Priced in WBNB'**
+  String get market_fomoProxied;
+
+  /// lib/features/market/market_fomo_widgets.dart:192
+  ///
+  /// In en, this message translates to:
+  /// **'24h {formatPercent}'**
+  String market_fomoS(Object? formatPercent);
+
+  /// lib/features/market/market_fomo_widgets.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Delayed'**
+  String get market_fomoStale;
+
+  /// lib/features/market/market_fomo_widgets.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Market cap {formatCompactFigure}'**
+  String market_fomoSubtitle(Object? formatCompactFigure);
+
+  /// lib/features/market/market_fomo_widgets.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'No quote yet'**
+  String get market_fomoSwitch;
+
+  /// lib/features/market/market_fomo_widgets.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'Market data rate-limited'**
+  String get market_fomoSwitch2;
+
+  /// lib/features/market/market_fomo_widgets.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'Market data can\'t be loaded'**
+  String get market_fomoSwitch3;
+
+  /// lib/features/market/market_fomo_widgets.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'Market source not enabled'**
+  String get market_fomoSwitch4;
+
+  /// lib/features/market/market_fomo_widgets.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'No trading pair'**
+  String get market_fomoSwitch5;
+
+  /// lib/features/market/market_fomo_widgets.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Pair can\'t be quoted'**
+  String get market_fomoSwitch6;
+
+  /// lib/features/market/market_fomo_widgets.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Not reported by market source'**
+  String get market_fomoSwitch7;
+
+  /// lib/features/market/market_fomo_widgets.dart:63
+  ///
+  /// In en, this message translates to:
+  /// **'Market cache unavailable'**
+  String get market_fomoSwitch8;
+
+  /// lib/features/market/market_fomo_widgets.dart:277
+  ///
+  /// In en, this message translates to:
+  /// **'24h trend flat {figure}'**
+  String market_fomoUnread(Object? figure);
+
+  /// lib/features/market/market_fomo_widgets.dart:275
+  ///
+  /// In en, this message translates to:
+  /// **'24h trend up {figure}'**
+  String market_fomoUp(Object? figure);
+
+  /// lib/features/market/market_read_models.dart:967, lib/features/market/market_screen.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'Community tokens'**
+  String get market_readModelsCommunity;
+
+  /// lib/features/market/market_read_models.dart:965, lib/features/market/market_screen.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Majors'**
+  String get market_readModelsMajor;
+
+  /// lib/features/market/market_read_models.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'This address can\'t be loaded right now'**
+  String get market_readModelsMarketAssetUnavailableLead;
+
+  /// lib/features/market/market_read_models.dart:694
+  ///
+  /// In en, this message translates to:
+  /// **'Main pool from {factSourceLabel} · Unregistered pool {truncatedAddress}'**
+  String market_readModelsProvider(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  );
+
+  /// lib/features/market/market_read_models.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Source {factSourceLabel} · Pool {truncatedAddress}'**
+  String market_readModelsRegistry(
+    Object? factSourceLabel,
+    Object? truncatedAddress,
+  );
+
+  /// lib/features/market/market_read_models.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Sorted by DexScreener 24h volume'**
+  String get market_readModelsSwitch;
+
+  /// lib/features/market/market_read_models.dart:151, lib/features/market/market_read_models.dart:1095
+  ///
+  /// In en, this message translates to:
+  /// **'Sort rule {ordering}'**
+  String market_readModelsSwitch2(Object? ordering);
+
+  /// lib/features/market/market_read_models.dart:312
+  ///
+  /// In en, this message translates to:
+  /// **'Buy tax {fact}'**
+  String market_readModelsSwitch3(Object? fact);
+
+  /// lib/features/market/market_read_models.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **'Sell tax {fact}'**
+  String market_readModelsSwitch4(Object? fact);
+
+  /// lib/features/market/market_read_models.dart:680
+  ///
+  /// In en, this message translates to:
+  /// **'Source label {labelKey}'**
+  String market_readModelsSwitch5(Object? labelKey);
+
+  /// lib/features/market/market_read_models.dart:1092
+  ///
+  /// In en, this message translates to:
+  /// **'DexScreener market cap, high to low'**
+  String get market_readModelsSwitch6;
+
+  /// lib/features/market/market_read_models.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'DexScreener 24h change, high to low'**
+  String get market_readModelsSwitch7;
+
+  /// lib/features/market/market_read_models.dart:1094
+  ///
+  /// In en, this message translates to:
+  /// **'DexScreener 24h volume, high to low'**
+  String get market_readModelsSwitch8;
+
+  /// lib/features/market/market_read_models.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'Contract source verified'**
+  String get market_readModelsYesNo;
+
+  /// lib/features/market/market_read_models.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'Owner can\'t change balances'**
+  String get market_readModelsYesNo10;
+
+  /// lib/features/market/market_read_models.dart:301, lib/features/market/token_screen.dart:1252
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden owner detected'**
+  String get market_readModelsYesNo11;
+
+  /// lib/features/market/market_read_models.dart:301, lib/features/market/token_screen.dart:1252
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden owner detected'**
+  String get market_readModelsYesNo12;
+
+  /// lib/features/market/market_read_models.dart:302
+  ///
+  /// In en, this message translates to:
+  /// **'Self-destruct function detected'**
+  String get market_readModelsYesNo13;
+
+  /// lib/features/market/market_read_models.dart:302
+  ///
+  /// In en, this message translates to:
+  /// **'No self-destruct function detected'**
+  String get market_readModelsYesNo14;
+
+  /// lib/features/market/market_read_models.dart:303, lib/features/market/token_screen.dart:1254
+  ///
+  /// In en, this message translates to:
+  /// **'External call detected'**
+  String get market_readModelsYesNo15;
+
+  /// lib/features/market/market_read_models.dart:303, lib/features/market/token_screen.dart:1254
+  ///
+  /// In en, this message translates to:
+  /// **'No external call detected'**
+  String get market_readModelsYesNo16;
+
+  /// lib/features/market/market_read_models.dart:304, lib/features/market/token_screen.dart:1255
+  ///
+  /// In en, this message translates to:
+  /// **'Honeypot traits detected'**
+  String get market_readModelsYesNo17;
+
+  /// lib/features/market/market_read_models.dart:304, lib/features/market/token_screen.dart:1255
+  ///
+  /// In en, this message translates to:
+  /// **'No honeypot traits detected'**
+  String get market_readModelsYesNo18;
+
+  /// lib/features/market/market_read_models.dart:305
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers can be paused'**
+  String get market_readModelsYesNo19;
+
+  /// lib/features/market/market_read_models.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'Contract source not verified'**
+  String get market_readModelsYesNo2;
+
+  /// lib/features/market/market_read_models.dart:305
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers can\'t be paused'**
+  String get market_readModelsYesNo20;
+
+  /// lib/features/market/market_read_models.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'Blacklist function detected'**
+  String get market_readModelsYesNo21;
+
+  /// lib/features/market/market_read_models.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'No blacklist function detected'**
+  String get market_readModelsYesNo22;
+
+  /// lib/features/market/market_read_models.dart:307
+  ///
+  /// In en, this message translates to:
+  /// **'Whitelist function detected'**
+  String get market_readModelsYesNo23;
+
+  /// lib/features/market/market_read_models.dart:307
+  ///
+  /// In en, this message translates to:
+  /// **'No whitelist function detected'**
+  String get market_readModelsYesNo24;
+
+  /// lib/features/market/market_read_models.dart:308, lib/features/market/token_screen.dart:1259
+  ///
+  /// In en, this message translates to:
+  /// **'Holding limit detected'**
+  String get market_readModelsYesNo25;
+
+  /// lib/features/market/market_read_models.dart:308, lib/features/market/token_screen.dart:1259
+  ///
+  /// In en, this message translates to:
+  /// **'No holding limit detected'**
+  String get market_readModelsYesNo26;
+
+  /// lib/features/market/market_read_models.dart:309, lib/features/market/token_screen.dart:1260
+  ///
+  /// In en, this message translates to:
+  /// **'Trading cooldown detected'**
+  String get market_readModelsYesNo27;
+
+  /// lib/features/market/market_read_models.dart:309, lib/features/market/token_screen.dart:1260
+  ///
+  /// In en, this message translates to:
+  /// **'No trading cooldown detected'**
+  String get market_readModelsYesNo28;
+
+  /// lib/features/market/market_read_models.dart:310
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t sell all at once'**
+  String get market_readModelsYesNo29;
+
+  /// lib/features/market/market_read_models.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy contract'**
+  String get market_readModelsYesNo3;
+
+  /// lib/features/market/market_read_models.dart:310
+  ///
+  /// In en, this message translates to:
+  /// **'Can sell all at once'**
+  String get market_readModelsYesNo30;
+
+  /// lib/features/market/market_read_models.dart:311, lib/features/market/token_screen.dart:1262
+  ///
+  /// In en, this message translates to:
+  /// **'Listed on a DEX'**
+  String get market_readModelsYesNo31;
+
+  /// lib/features/market/market_read_models.dart:311, lib/features/market/token_screen.dart:1262
+  ///
+  /// In en, this message translates to:
+  /// **'Not listed on a DEX'**
+  String get market_readModelsYesNo32;
+
+  /// lib/features/market/market_read_models.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'Not a proxy contract'**
+  String get market_readModelsYesNo4;
+
+  /// lib/features/market/market_read_models.dart:298
+  ///
+  /// In en, this message translates to:
+  /// **'Mint function detected'**
+  String get market_readModelsYesNo5;
+
+  /// lib/features/market/market_read_models.dart:298
+  ///
+  /// In en, this message translates to:
+  /// **'No mint function detected'**
+  String get market_readModelsYesNo6;
+
+  /// lib/features/market/market_read_models.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Reclaimable ownership detected'**
+  String get market_readModelsYesNo7;
+
+  /// lib/features/market/market_read_models.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'No reclaimable ownership detected'**
+  String get market_readModelsYesNo8;
+
+  /// lib/features/market/market_read_models.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'Owner can change balances'**
+  String get market_readModelsYesNo9;
+
+  /// lib/features/market/market_screen.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'No verified community has linked a token yet.'**
+  String get market_screenCommunity;
+
+  /// lib/features/market/market_screen.dart:275
+  ///
+  /// In en, this message translates to:
+  /// **'No market data to show yet'**
+  String get market_screenEmptyMessage;
+
+  /// lib/features/market/market_screen.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens in this category yet'**
+  String get market_screenEmptyMessage2;
+
+  /// lib/features/market/market_screen.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'No assets in the majors list to show yet.'**
+  String get market_screenMajor;
+
+  /// lib/features/market/market_screen.dart:187, lib/features/market/market_secondary_screens.dart:136, lib/features/market/market_secondary_screens.dart:307, lib/features/market/market_secondary_screens.dart:445, lib/features/market/market_secondary_screens.dart:692, lib/features/market/market_secondary_screens.dart:886, lib/features/market/token_screen.dart:291
+  ///
+  /// In en, this message translates to:
+  /// **'Market isn\'t available right now'**
+  String get market_screenMarketCapabilityBlockTitle;
+
+  /// lib/features/market/market_screen.dart:240, lib/features/market/market_secondary_screens.dart:871
+  ///
+  /// In en, this message translates to:
+  /// **'Smart money tracker'**
+  String get market_screenMarketSmartMoneyEntryTitle;
+
+  /// lib/features/market/market_screen.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'Browse majors'**
+  String get market_screenMarketWatchlistBrowseMajorLabel;
+
+  /// lib/features/market/market_screen.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the star at the top right of a token page to add it to your watchlist'**
+  String get market_screenMarketWatchlistEmptyMessage;
+
+  /// lib/features/market/market_screen.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'No watchlist yet'**
+  String get market_screenMarketWatchlistEmptyTitle;
+
+  /// lib/features/market/market_screen.dart:328
+  ///
+  /// In en, this message translates to:
+  /// **'Sort, group and remove'**
+  String get market_screenMarketWatchlistManageSubtitle;
+
+  /// lib/features/market/market_screen.dart:327
+  ///
+  /// In en, this message translates to:
+  /// **'Manage watchlist'**
+  String get market_screenMarketWatchlistManageTitle;
+
+  /// lib/features/market/market_screen.dart:287
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist prices can\'t be loaded · {reasonCodeText}'**
+  String market_screenMarketWatchlistUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/market_screen.dart:379
+  ///
+  /// In en, this message translates to:
+  /// **'No registered Launch project tokens yet.'**
+  String get market_screenMeme;
+
+  /// lib/features/market/market_screen.dart:36, lib/features/market/market_widgets.dart:106
+  ///
+  /// In en, this message translates to:
+  /// **'New pairs'**
+  String get market_screenNewPairs;
+
+  /// lib/features/market/market_screen.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens in \"{label}\" yet'**
+  String market_screenTitle(Object? label);
+
+  /// lib/features/market/market_secondary_screens.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'Full-screen chart'**
+  String get market_secondaryScreensChartFullBlockedTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:189
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals: 15m / 1h / 4h / 1D / 1W. Drag sideways for earlier data, pinch to zoom, long-press to see a candle\'s price and time. MA and VOL are calculated on device from the chart\'s closes and volume, with no separate data source. There are no other indicators and no drawing tools.'**
+  String get market_secondaryScreensChartFullIntervalNoticeText;
+
+  /// lib/features/market/market_secondary_screens.dart:187
+  ///
+  /// In en, this message translates to:
+  /// **'What this chart does'**
+  String get market_secondaryScreensChartFullIntervalNoticeTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:338, lib/features/market/market_secondary_screens.dart:352, lib/features/market/market_secondary_screens.dart:355
+  ///
+  /// In en, this message translates to:
+  /// **'Total holders'**
+  String get market_secondaryScreensFact;
+
+  /// lib/features/market/market_secondary_screens.dart:68
+  ///
+  /// In en, this message translates to:
+  /// **'This page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.'**
+  String get market_secondaryScreensInvalidAssetIdentityMessage;
+
+  /// lib/features/market/market_secondary_screens.dart:67, lib/features/market/token_screen.dart:132
+  ///
+  /// In en, this message translates to:
+  /// **'No usable asset ID in the route'**
+  String get market_secondaryScreensInvalidAssetIdentityTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:125
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open this chart'**
+  String get market_secondaryScreensInvalidAssetPage;
+
+  /// lib/features/market/market_secondary_screens.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open holder distribution'**
+  String get market_secondaryScreensInvalidAssetPage2;
+
+  /// lib/features/market/market_secondary_screens.dart:405
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open trade activity'**
+  String get market_secondaryScreensInvalidAssetPage3;
+
+  /// lib/features/market/market_secondary_screens.dart:344
+  ///
+  /// In en, this message translates to:
+  /// **'Top 10 concentration'**
+  String get market_secondaryScreensLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:826, lib/features/market/token_screen.dart:270
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist isn\'t available right now'**
+  String get market_secondaryScreensLabel2;
+
+  /// lib/features/market/market_secondary_screens.dart:362
+  ///
+  /// In en, this message translates to:
+  /// **'Distribution'**
+  String get market_secondaryScreensLoopLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:764
+  ///
+  /// In en, this message translates to:
+  /// **'Risk screening'**
+  String get market_secondaryScreensLoopLabel2;
+
+  /// lib/features/market/market_secondary_screens.dart:904
+  ///
+  /// In en, this message translates to:
+  /// **'Watched addresses'**
+  String get market_secondaryScreensLoopLabel3;
+
+  /// lib/features/market/market_secondary_screens.dart:910
+  ///
+  /// In en, this message translates to:
+  /// **'Recent moves'**
+  String get market_secondaryScreensLoopLabel4;
+
+  /// lib/features/market/market_secondary_screens.dart:614, lib/features/market/token_screen.dart:529
+  ///
+  /// In en, this message translates to:
+  /// **'Indexed height {groupedFigure}'**
+  String market_secondaryScreensLoopProvenanceFooter(Object? groupedFigure);
+
+  /// lib/features/market/market_secondary_screens.dart:615
+  ///
+  /// In en, this message translates to:
+  /// **'Data {groupedFigure} blocks behind'**
+  String market_secondaryScreensLoopProvenanceFooter2(Object? groupedFigure);
+
+  /// lib/features/market/market_secondary_screens.dart:584
+  ///
+  /// In en, this message translates to:
+  /// **'{groupedFigure} confirmations'**
+  String market_secondaryScreensLoopRecordRow(Object? groupedFigure);
+
+  /// lib/features/market/market_secondary_screens.dart:585
+  ///
+  /// In en, this message translates to:
+  /// **'Block {groupedFigure}'**
+  String market_secondaryScreensLoopRecordRow2(Object? groupedFigure);
+
+  /// lib/features/market/market_secondary_screens.dart:532, lib/features/market/market_secondary_screens.dart:595
+  ///
+  /// In en, this message translates to:
+  /// **'Large trades'**
+  String get market_secondaryScreensMarketSegmentBar;
+
+  /// lib/features/market/market_secondary_screens.dart:532, lib/features/market/market_widgets.dart:110
+  ///
+  /// In en, this message translates to:
+  /// **'Smart money'**
+  String get market_secondaryScreensMarketSegmentBar2;
+
+  /// lib/features/market/market_secondary_screens.dart:723, lib/features/market/market_widgets.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'This is what the data shows, not a filtered conclusion.'**
+  String get market_secondaryScreensNewPairsEmptyMessage;
+
+  /// lib/features/market/market_secondary_screens.dart:722, lib/features/market/market_widgets.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'No new pools right now'**
+  String get market_secondaryScreensNewPairsEmptyTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:683
+  ///
+  /// In en, this message translates to:
+  /// **'Check liquidity, contract status and data source before short-term price.'**
+  String get market_secondaryScreensNewPairsFolioCaption;
+
+  /// lib/features/market/market_secondary_screens.dart:679
+  ///
+  /// In en, this message translates to:
+  /// **'{items} new pairs · High risk'**
+  String market_secondaryScreensNewPairsFolioHeading(Object? items);
+
+  /// lib/features/market/market_secondary_screens.dart:681
+  ///
+  /// In en, this message translates to:
+  /// **'New pools can\'t be loaded right now'**
+  String get market_secondaryScreensNewPairsFolioHeading2;
+
+  /// lib/features/market/market_secondary_screens.dart:682
+  ///
+  /// In en, this message translates to:
+  /// **'Loading new pools'**
+  String get market_secondaryScreensNewPairsFolioHeading3;
+
+  /// lib/features/market/market_secondary_screens.dart:774
+  ///
+  /// In en, this message translates to:
+  /// **'Without risk screening data, this page won\'t judge risk on its own. New pools have thin liquidity and prices are easy to manipulate.'**
+  String get market_secondaryScreensNewPairsNoticeBody;
+
+  /// lib/features/market/market_secondary_screens.dart:773
+  ///
+  /// In en, this message translates to:
+  /// **'Screening isn\'t a verdict'**
+  String get market_secondaryScreensNewPairsNoticeTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:754
+  ///
+  /// In en, this message translates to:
+  /// **'These rows\' pool IDs are neither a contract address nor a pool id, so rows that can\'t be verified aren\'t shown.'**
+  String get market_secondaryScreensNewPairsOmittedBody;
+
+  /// lib/features/market/market_secondary_screens.dart:753
+  ///
+  /// In en, this message translates to:
+  /// **'{omittedCount} more rows couldn\'t be parsed'**
+  String market_secondaryScreensNewPairsOmittedTitle(Object? omittedCount);
+
+  /// lib/features/market/market_secondary_screens.dart:767
+  ///
+  /// In en, this message translates to:
+  /// **'Risk screening unavailable'**
+  String get market_secondaryScreensNewPairsRiskScreeningLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:667, lib/features/market/market_widgets.dart:514
+  ///
+  /// In en, this message translates to:
+  /// **'New pair discovery'**
+  String get market_secondaryScreensNewPairsScreenTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:712
+  ///
+  /// In en, this message translates to:
+  /// **'New pair discovery unavailable'**
+  String get market_secondaryScreensNewPairsUnavailableLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:880
+  ///
+  /// In en, this message translates to:
+  /// **'Moves by watched addresses are leads, not copy-trade promises or return advice.'**
+  String get market_secondaryScreensSmartMoneyFolioCaption;
+
+  /// lib/features/market/market_secondary_screens.dart:879
+  ///
+  /// In en, this message translates to:
+  /// **'No addresses to watch yet'**
+  String get market_secondaryScreensSmartMoneyFolioHeading;
+
+  /// lib/features/market/market_secondary_screens.dart:918
+  ///
+  /// In en, this message translates to:
+  /// **'Moves come from watched addresses, which aren\'t available yet.'**
+  String get market_secondaryScreensSmartMoneyMovesUnavailableMessage;
+
+  /// lib/features/market/market_secondary_screens.dart:917
+  ///
+  /// In en, this message translates to:
+  /// **'No moves to list yet'**
+  String get market_secondaryScreensSmartMoneyMovesUnavailableTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:926
+  ///
+  /// In en, this message translates to:
+  /// **'Even when available, address labels and win rates are only historical stats from public on-chain data, not advice to follow.'**
+  String get market_secondaryScreensSmartMoneyNoticeText;
+
+  /// lib/features/market/market_secondary_screens.dart:925
+  ///
+  /// In en, this message translates to:
+  /// **'Win rate isn\'t a prediction'**
+  String get market_secondaryScreensSmartMoneyNoticeTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:907
+  ///
+  /// In en, this message translates to:
+  /// **'Watched addresses unavailable'**
+  String get market_secondaryScreensSmartMoneyUnavailableLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:758, lib/features/market/market_widgets.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'Source {factSourceLabel} · Observed {relativeTime}'**
+  String market_secondaryScreensText(
+    Object? factSourceLabel,
+    Object? relativeTime,
+  );
+
+  /// lib/features/market/market_secondary_screens.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'Top holders, concentration and cluster labels unavailable'**
+  String get market_secondaryScreensTokenHoldersDistributionLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:270
+  ///
+  /// In en, this message translates to:
+  /// **'Holder facts haven\'t loaded yet.'**
+  String get market_secondaryScreensTokenHoldersFolioCaption;
+
+  /// lib/features/market/market_secondary_screens.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'Total holders unavailable'**
+  String get market_secondaryScreensTokenHoldersFolioHeading;
+
+  /// lib/features/market/market_secondary_screens.dart:266
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} holders'**
+  String market_secondaryScreensTokenHoldersFolioHeading2(
+    Object? formatDecimal,
+  );
+
+  /// lib/features/market/market_secondary_screens.dart:253
+  ///
+  /// In en, this message translates to:
+  /// **'Holder distribution'**
+  String get market_secondaryScreensTokenHoldersFolioTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:312
+  ///
+  /// In en, this message translates to:
+  /// **'Holder distribution isn\'t available right now'**
+  String get market_secondaryScreensTokenHoldersPageBlockTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:285
+  ///
+  /// In en, this message translates to:
+  /// **'{factProvenance}, view data source details'**
+  String market_secondaryScreensTokenHoldersProvenanceSemanticsLabel(
+    Object? factProvenance,
+  );
+
+  /// lib/features/market/market_secondary_screens.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Large trades are picked on device by trade value, not officially labeled.'**
+  String get market_secondaryScreensTokenTradesEmptyMessage;
+
+  /// lib/features/market/market_secondary_screens.dart:556
+  ///
+  /// In en, this message translates to:
+  /// **'The indexer has read this range, but it has no trades.'**
+  String get market_secondaryScreensTokenTradesEmptyMessage2;
+
+  /// lib/features/market/market_secondary_screens.dart:553
+  ///
+  /// In en, this message translates to:
+  /// **'No large trades on this page'**
+  String get market_secondaryScreensTokenTradesEmptyTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:553
+  ///
+  /// In en, this message translates to:
+  /// **'No trades on this page'**
+  String get market_secondaryScreensTokenTradesEmptyTitle2;
+
+  /// lib/features/market/market_secondary_screens.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'Direction, amount and time are scanned together from Swap events in registered PancakeSwap V3 pools.'**
+  String get market_secondaryScreensTokenTradesFolioCaption;
+
+  /// lib/features/market/market_secondary_screens.dart:437
+  ///
+  /// In en, this message translates to:
+  /// **'{items} on-chain trades'**
+  String market_secondaryScreensTokenTradesFolioHeading(Object? items);
+
+  /// lib/features/market/market_secondary_screens.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'Latest on-chain trades'**
+  String get market_secondaryScreensTokenTradesFolioHeading2;
+
+  /// lib/features/market/market_secondary_screens.dart:428
+  ///
+  /// In en, this message translates to:
+  /// **'Trade activity'**
+  String get market_secondaryScreensTokenTradesFolioTitle;
+
+  /// lib/features/market/market_secondary_screens.dart:492
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the next page of trades'**
+  String get market_secondaryScreensTokenTradesMoreFailedMessage;
+
+  /// lib/features/market/market_secondary_screens.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'Smart money filter unavailable'**
+  String get market_secondaryScreensTokenTradesSmartMoneyLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:465
+  ///
+  /// In en, this message translates to:
+  /// **'Trade history unavailable'**
+  String get market_secondaryScreensTokenTradesUnavailableLabel;
+
+  /// lib/features/market/market_secondary_screens.dart:591
+  ///
+  /// In en, this message translates to:
+  /// **'Out of pool'**
+  String get market_secondaryScreensTrailingCaption;
+
+  /// lib/features/market/market_secondary_screens.dart:591
+  ///
+  /// In en, this message translates to:
+  /// **'Into pool'**
+  String get market_secondaryScreensTrailingCaption2;
+
+  /// lib/features/market/token_screen.dart:753
+  ///
+  /// In en, this message translates to:
+  /// **'24h change{reasonCodeSummaryText}'**
+  String market_tokenBuild(Object? reasonCodeSummaryText);
+
+  /// lib/features/market/token_screen.dart:1103
+  ///
+  /// In en, this message translates to:
+  /// **', last candle still open'**
+  String get market_tokenCandleLastOpen;
+
+  /// lib/features/market/token_screen.dart:1170
+  ///
+  /// In en, this message translates to:
+  /// **'{source}.'**
+  String market_tokenCandleSourceSentence(Object? source);
+
+  /// lib/features/market/token_screen.dart:1107
+  ///
+  /// In en, this message translates to:
+  /// **'candles'**
+  String get market_tokenCandleStyleCandle;
+
+  /// lib/features/market/token_screen.dart:1107
+  ///
+  /// In en, this message translates to:
+  /// **'close line'**
+  String get market_tokenCandleStyleLine;
+
+  /// lib/features/market/token_screen.dart:1036
+  ///
+  /// In en, this message translates to:
+  /// **'Only intervals with trades are drawn. Empty intervals aren\'t filled with 0.'**
+  String get market_tokenCandlesEmptyMessage;
+
+  /// lib/features/market/token_screen.dart:1013
+  ///
+  /// In en, this message translates to:
+  /// **'Chart can\'t be loaded · {reasonCodeText}'**
+  String market_tokenCandlesUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_card_chart.dart:103
+  ///
+  /// In en, this message translates to:
+  /// **'Trend line of {closes} 1H closes, in {priceUnit}, source {factSourceLabel}'**
+  String market_tokenCardChartSemanticLabel(
+    Object? closes,
+    Object? factSourceLabel,
+    Object? priceUnit,
+  );
+
+  /// lib/features/market/token_card_chart.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Loading 1H candles. No trend is drawn until they load.'**
+  String get market_tokenCardChartTokenCardSparklineAbsence;
+
+  /// lib/features/market/token_card_chart.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'No trades in this range. Only intervals with trades are drawn. Empty intervals aren\'t filled with 0.'**
+  String get market_tokenCardChartTokenCardSparklineAbsence2;
+
+  /// lib/features/market/token_screen.dart:303
+  ///
+  /// In en, this message translates to:
+  /// **'No facts to show for this asset yet'**
+  String get market_tokenEmptyMessage;
+
+  /// lib/features/market/token_screen.dart:998, lib/features/market/token_screen.dart:1035
+  ///
+  /// In en, this message translates to:
+  /// **'No trades in this range'**
+  String get market_tokenEmptyMessage2;
+
+  /// lib/features/market/token_screen.dart:1394, lib/features/market/token_screen.dart:1407
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications about this asset yet'**
+  String get market_tokenEmptyMessage3;
+
+  /// lib/features/market/token_screen.dart:553
+  ///
+  /// In en, this message translates to:
+  /// **'24h volume'**
+  String get market_tokenFact;
+
+  /// lib/features/market/token_screen.dart:568
+  ///
+  /// In en, this message translates to:
+  /// **'Fully diluted valuation'**
+  String get market_tokenFact2;
+
+  /// lib/features/market/token_screen.dart:421, lib/features/market/token_screen.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'Holder count'**
+  String get market_tokenHolderSections;
+
+  /// lib/features/market/token_screen.dart:72
+  ///
+  /// In en, this message translates to:
+  /// **'Holders'**
+  String get market_tokenHolders;
+
+  /// lib/features/market/token_screen.dart:1440
+  ///
+  /// In en, this message translates to:
+  /// **'Price alert triggered'**
+  String get market_tokenIf;
+
+  /// lib/features/market/token_screen.dart:1442
+  ///
+  /// In en, this message translates to:
+  /// **'{symbol} triggered {threshold} (observed {observed})'**
+  String market_tokenIf2(Object? observed, Object? symbol, Object? threshold);
+
+  /// lib/features/market/token_screen.dart:546
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get market_tokenLoopLabel;
+
+  /// lib/features/market/token_screen.dart:610
+  ///
+  /// In en, this message translates to:
+  /// **'Pool and contract facts'**
+  String get market_tokenLoopLabel2;
+
+  /// lib/features/market/token_screen.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'Data {groupedFigure} blocks behind.'**
+  String market_tokenLoopProvenanceLine(Object? groupedFigure);
+
+  /// lib/features/market/token_screen.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Trades come from Swap events in registered pools. LOOP doesn\'t send counterparty addresses and only marks the trades your own wallet made.'**
+  String get market_tokenLoopProvenanceLine2;
+
+  /// lib/features/market/token_screen.dart:1090, lib/features/market/token_screen.dart:1098
+  ///
+  /// In en, this message translates to:
+  /// **'In {priceUnit}'**
+  String market_tokenLoopProvenanceLine3(Object? priceUnit);
+
+  /// lib/features/market/token_screen.dart:1096
+  ///
+  /// In en, this message translates to:
+  /// **'Unregistered pool'**
+  String get market_tokenLoopProvenanceLine4;
+
+  /// lib/features/market/token_screen.dart:1097
+  ///
+  /// In en, this message translates to:
+  /// **'Last candle in progress'**
+  String get market_tokenLoopProvenanceLine5;
+
+  /// lib/features/market/token_screen.dart:1104
+  ///
+  /// In en, this message translates to:
+  /// **'The last candle hasn\'t closed and may still change.'**
+  String get market_tokenLoopProvenanceLine6;
+
+  /// lib/features/market/token_screen.dart:1105
+  ///
+  /// In en, this message translates to:
+  /// **'MA and VOL are calculated on device from the chart\'s closes and volume, with no separate data source.'**
+  String get market_tokenLoopProvenanceLine7;
+
+  /// lib/features/market/token_screen.dart:641, lib/features/market/token_screen.dart:642, lib/features/market/token_screen.dart:644
+  ///
+  /// In en, this message translates to:
+  /// **'Includes delayed or derived values'**
+  String get market_tokenMarker;
+
+  /// lib/features/market/token_screen.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'24h high'**
+  String get market_tokenMarketRangeCell;
+
+  /// lib/features/market/token_screen.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'24h low'**
+  String get market_tokenMarketRangeCell2;
+
+  /// lib/features/market/token_screen.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'System share can\'t open right now'**
+  String get market_tokenMessage;
+
+  /// lib/features/market/token_screen.dart:704
+  ///
+  /// In en, this message translates to:
+  /// **'Contract address copied'**
+  String get market_tokenMessage2;
+
+  /// lib/features/market/token_screen.dart:564
+  ///
+  /// In en, this message translates to:
+  /// **' '**
+  String get market_tokenSentenceGap;
+
+  /// lib/features/market/token_screen.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Contract {address}'**
+  String market_tokenShare(Object? address);
+
+  /// lib/features/market/token_screen.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'View market on LOOP'**
+  String get market_tokenShare2;
+
+  /// lib/features/market/token_screen.dart:584
+  ///
+  /// In en, this message translates to:
+  /// **'Native chain asset'**
+  String get market_tokenTokenAboutContractValue;
+
+  /// lib/features/market/token_screen.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **'This asset is marked as hidden'**
+  String get market_tokenTokenAssetBlockedLabel;
+
+  /// lib/features/market/token_screen.dart:1050
+  ///
+  /// In en, this message translates to:
+  /// **'{items} {chartIntervalLabel} {style}, in {priceUnit}{block}'**
+  String market_tokenTokenCandleChartSemanticLabel(
+    Object? block,
+    Object? chartIntervalLabel,
+    Object? items,
+    Object? priceUnit,
+    Object? style,
+  );
+
+  /// lib/features/market/token_screen.dart:358
+  ///
+  /// In en, this message translates to:
+  /// **'Open full-screen chart'**
+  String get market_tokenTokenChartExpandLabel;
+
+  /// lib/features/market/token_screen.dart:1350
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {memberCount} members'**
+  String market_tokenTokenCommunityEntrySubtitle(
+    Object? memberCount,
+    Object? name,
+  );
+
+  /// lib/features/market/token_screen.dart:1349
+  ///
+  /// In en, this message translates to:
+  /// **'Open LOOP community'**
+  String get market_tokenTokenCommunityEntryTitle;
+
+  /// lib/features/market/token_screen.dart:1337
+  ///
+  /// In en, this message translates to:
+  /// **'No linked LOOP community yet · {reasonCodeText}'**
+  String market_tokenTokenCommunityUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_screen.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'Copy contract address'**
+  String get market_tokenTokenCopyAddressLabel;
+
+  /// lib/features/market/token_screen.dart:1132
+  ///
+  /// In en, this message translates to:
+  /// **'Main pair: no pair with this asset as base'**
+  String get market_tokenTokenFactsPair;
+
+  /// lib/features/market/token_screen.dart:1133
+  ///
+  /// In en, this message translates to:
+  /// **'Main pair: {marketDexLabel} · Quote {quoteTokenSymbol} · {truncatedAddress}'**
+  String market_tokenTokenFactsPair2(
+    Object? marketDexLabel,
+    Object? quoteTokenSymbol,
+    Object? truncatedAddress,
+  );
+
+  /// lib/features/market/token_screen.dart:1408
+  ///
+  /// In en, this message translates to:
+  /// **'Triggered price alerts appear here. Push notifications aren\'t available yet.'**
+  String get market_tokenTokenFeedEmptyMessage;
+
+  /// lib/features/market/token_screen.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'Holder distribution isn\'t available right now'**
+  String get market_tokenTokenHoldersDistributionUnavailableMessage;
+
+  /// lib/features/market/token_screen.dart:133
+  ///
+  /// In en, this message translates to:
+  /// **'The token page accepts only a canonical CAIP assetId. No market data was requested and no other asset was used instead.'**
+  String get market_tokenTokenInvalidIdentityMessage;
+
+  /// lib/features/market/token_screen.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open this asset'**
+  String get market_tokenTokenInvalidRouteTitle;
+
+  /// lib/features/market/token_screen.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain reads aren\'t available right now · {reasonCodeText}'**
+  String market_tokenTokenLiveSuppressedMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_screen.dart:606
+  ///
+  /// In en, this message translates to:
+  /// **'Mining weight'**
+  String get market_tokenTokenMiningWeightText;
+
+  /// lib/features/market/token_screen.dart:786
+  ///
+  /// In en, this message translates to:
+  /// **'Price{reasonCodeSummaryText} · {reasonCodeText}'**
+  String market_tokenTokenPriceUnavailableMessage(
+    Object? reasonCodeSummaryText,
+    Object? reasonCodeText,
+  );
+
+  /// lib/features/market/token_screen.dart:1157
+  ///
+  /// In en, this message translates to:
+  /// **'Contract info can\'t be loaded right now. A missing item doesn\'t mean safe or unsafe'**
+  String get market_tokenTokenSecurityEmptyMessage;
+
+  /// lib/features/market/token_screen.dart:1198
+  ///
+  /// In en, this message translates to:
+  /// **'No rating, score or verdict is given here. A missing item only means it couldn\'t be read, not that it\'s safe or unsafe.'**
+  String get market_tokenTokenSecurityProvenanceDetail;
+
+  /// lib/features/market/token_screen.dart:1195
+  ///
+  /// In en, this message translates to:
+  /// **'{facts} contract facts'**
+  String market_tokenTokenSecurityProvenancePrefix(Object? facts);
+
+  /// lib/features/market/token_screen.dart:1149
+  ///
+  /// In en, this message translates to:
+  /// **'Contract facts can\'t be loaded · {reasonCodeText}'**
+  String market_tokenTokenSecurityUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_screen.dart:397
+  ///
+  /// In en, this message translates to:
+  /// **'Buy, sell and swap aren\'t available right now · {reasonCodeText}'**
+  String market_tokenTokenSwapUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_screen.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'No one has traded in this pool recently'**
+  String get market_tokenTokenTradesEmptyMessage;
+
+  /// lib/features/market/token_screen.dart:479
+  ///
+  /// In en, this message translates to:
+  /// **'Trade history can\'t be loaded · {reasonCodeText}'**
+  String market_tokenTokenTradesUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/token_screen.dart:1247
+  ///
+  /// In en, this message translates to:
+  /// **'Source verified'**
+  String get market_tokenYesNo;
+
+  /// lib/features/market/token_screen.dart:1251
+  ///
+  /// In en, this message translates to:
+  /// **'Owner can\'t change balances'**
+  String get market_tokenYesNo10;
+
+  /// lib/features/market/token_screen.dart:1253
+  ///
+  /// In en, this message translates to:
+  /// **'Self-destruct detected'**
+  String get market_tokenYesNo11;
+
+  /// lib/features/market/token_screen.dart:1253
+  ///
+  /// In en, this message translates to:
+  /// **'No self-destruct detected'**
+  String get market_tokenYesNo12;
+
+  /// lib/features/market/token_screen.dart:1256
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers pausable'**
+  String get market_tokenYesNo13;
+
+  /// lib/features/market/token_screen.dart:1256
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers not pausable'**
+  String get market_tokenYesNo14;
+
+  /// lib/features/market/token_screen.dart:1257
+  ///
+  /// In en, this message translates to:
+  /// **'Blacklist detected'**
+  String get market_tokenYesNo15;
+
+  /// lib/features/market/token_screen.dart:1257
+  ///
+  /// In en, this message translates to:
+  /// **'No blacklist detected'**
+  String get market_tokenYesNo16;
+
+  /// lib/features/market/token_screen.dart:1258
+  ///
+  /// In en, this message translates to:
+  /// **'Whitelist detected'**
+  String get market_tokenYesNo17;
+
+  /// lib/features/market/token_screen.dart:1258
+  ///
+  /// In en, this message translates to:
+  /// **'No whitelist detected'**
+  String get market_tokenYesNo18;
+
+  /// lib/features/market/token_screen.dart:1261
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t sell all'**
+  String get market_tokenYesNo19;
+
+  /// lib/features/market/token_screen.dart:1247
+  ///
+  /// In en, this message translates to:
+  /// **'Source not verified'**
+  String get market_tokenYesNo2;
+
+  /// lib/features/market/token_screen.dart:1261
+  ///
+  /// In en, this message translates to:
+  /// **'Can sell all'**
+  String get market_tokenYesNo20;
+
+  /// lib/features/market/token_screen.dart:1248
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy contract'**
+  String get market_tokenYesNo3;
+
+  /// lib/features/market/token_screen.dart:1248
+  ///
+  /// In en, this message translates to:
+  /// **'Not a proxy'**
+  String get market_tokenYesNo4;
+
+  /// lib/features/market/token_screen.dart:1249
+  ///
+  /// In en, this message translates to:
+  /// **'Mint detected'**
+  String get market_tokenYesNo5;
+
+  /// lib/features/market/token_screen.dart:1249
+  ///
+  /// In en, this message translates to:
+  /// **'No mint detected'**
+  String get market_tokenYesNo6;
+
+  /// lib/features/market/token_screen.dart:1250
+  ///
+  /// In en, this message translates to:
+  /// **'Ownership reclaimable'**
+  String get market_tokenYesNo7;
+
+  /// lib/features/market/token_screen.dart:1250
+  ///
+  /// In en, this message translates to:
+  /// **'No ownership reclaim detected'**
+  String get market_tokenYesNo8;
+
+  /// lib/features/market/token_screen.dart:1251
+  ///
+  /// In en, this message translates to:
+  /// **'Owner can change balances'**
+  String get market_tokenYesNo9;
+
+  /// lib/features/market/market_widgets.dart:392
+  ///
+  /// In en, this message translates to:
+  /// **'Priced in BNB'**
+  String get market_widgetsLoopRecordRow;
+
+  /// lib/features/market/market_widgets.dart:400
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve {formatCompactFigure}'**
+  String market_widgetsLoopRecordRow2(Object? formatCompactFigure);
+
+  /// lib/features/market/market_widgets.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve can\'t be loaded'**
+  String get market_widgetsLoopRecordRow3;
+
+  /// lib/features/market/market_widgets.dart:406
+  ///
+  /// In en, this message translates to:
+  /// **'24h volume can\'t be loaded'**
+  String get market_widgetsLoopRecordRow4;
+
+  /// lib/features/market/market_widgets.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get market_widgetsMarketBrowseOnlyLabel;
+
+  /// lib/features/market/market_widgets.dart:515
+  ///
+  /// In en, this message translates to:
+  /// **'Risk screening, collapsed rows and full notes are on this page'**
+  String get market_widgetsMarketNewPairsPageSubtitle;
+
+  /// lib/features/market/market_widgets.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'High risk'**
+  String get market_widgetsMarketNewPairsStamp;
+
+  /// lib/features/market/market_widgets.dart:478
+  ///
+  /// In en, this message translates to:
+  /// **'New pair discovery unavailable · {reasonCodeText}'**
+  String market_widgetsMarketNewPairsUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/market/market_widgets.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'Search token or contract address'**
+  String get market_widgetsMarketSearchFieldLabel;
+
+  /// lib/features/market/market_widgets.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'Market overview'**
+  String get market_widgetsMarketSignalsKicker;
+
+  /// lib/features/market/market_widgets.dart:109
+  ///
+  /// In en, this message translates to:
+  /// **'Trade history'**
+  String get market_widgetsMarketTradesKicker;
+
+  /// lib/features/market/market_widgets.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'Edit watchlist'**
+  String get market_widgetsMarketWatchlistKicker;
+
+  /// lib/features/market/market_widgets.dart:611
+  ///
+  /// In en, this message translates to:
+  /// **'Added to watchlist'**
+  String get market_widgetsMessage;
+
+  /// lib/features/market/market_widgets.dart:613
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from watchlist'**
+  String get market_widgetsMessage2;
+
+  /// lib/features/market/market_widgets.dart:619
+  ///
+  /// In en, this message translates to:
+  /// **'Your watchlist has reached {watchlistMaxItems} items. Remove one in watchlist management first.'**
+  String market_widgetsMessage3(Object? watchlistMaxItems);
+
+  /// lib/features/market/market_widgets.dart:626
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached {watchlistMaxGroups} groups, so the default group \"{watchlistDefaultGroupName}\" can\'t be created.'**
+  String market_widgetsMessage4(
+    Object? watchlistDefaultGroupName,
+    Object? watchlistMaxGroups,
+  );
+
+  /// lib/features/market/market_widgets.dart:633
+  ///
+  /// In en, this message translates to:
+  /// **'Your watchlist changed on another device, so this wasn\'t saved. Retry.'**
+  String get market_widgetsMessage5;
+
+  /// lib/features/market/market_widgets.dart:257
+  ///
+  /// In en, this message translates to:
+  /// **'Search token / contract address'**
+  String get market_widgetsSwitch;
+
+  /// lib/features/market/market_widgets.dart:386
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed pool'**
+  String get market_widgetsTitle;
+
+  /// lib/features/meme/meme_create_screen.dart:282
+  ///
+  /// In en, this message translates to:
+  /// **'What you\'ve entered won\'t be saved.'**
+  String get meme_createBody;
+
+  /// lib/features/meme/meme_create_screen.dart:284
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get meme_createCancelLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:283
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get meme_createConfirmLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:855
+  ///
+  /// In en, this message translates to:
+  /// **'The address is set at creation'**
+  String get meme_createConfirmStep;
+
+  /// lib/features/meme/meme_create_screen.dart:605
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get meme_createConfirmed;
+
+  /// lib/features/meme/meme_create_screen.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'This draft no longer exists'**
+  String get meme_createEmptyMessage;
+
+  /// lib/features/meme/meme_create_screen.dart:906
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than 0, up to 18 decimal places'**
+  String get meme_createErrorText;
+
+  /// lib/features/meme/meme_create_screen.dart:627
+  ///
+  /// In en, this message translates to:
+  /// **'1–32 characters'**
+  String get meme_createHintText;
+
+  /// lib/features/meme/meme_create_screen.dart:639
+  ///
+  /// In en, this message translates to:
+  /// **'2–10 letters or digits'**
+  String get meme_createHintText2;
+
+  /// lib/features/meme/meme_create_screen.dart:72
+  ///
+  /// In en, this message translates to:
+  /// **'Only links starting with https:// are supported'**
+  String get meme_createIf;
+
+  /// lib/features/meme/meme_create_screen.dart:773, lib/features/meme/meme_format.dart:100
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used up today\'s creations. Come back tomorrow'**
+  String get meme_createIf2;
+
+  /// lib/features/meme/meme_create_screen.dart:782, lib/features/meme/meme_trade_panel.dart:288
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum buy {memeUsd1Label}'**
+  String meme_createIf3(Object? memeUsd1Label);
+
+  /// lib/features/meme/meme_create_screen.dart:786
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds the per-wallet limit of {memeTokenFigure}'**
+  String meme_createIf4(Object? memeTokenFigure);
+
+  /// lib/features/meme/meme_create_screen.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'Upload image'**
+  String get meme_createLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get meme_createLabel2;
+
+  /// lib/features/meme/meme_create_screen.dart:872
+  ///
+  /// In en, this message translates to:
+  /// **'For sale'**
+  String get meme_createLabel3;
+
+  /// lib/features/meme/meme_create_screen.dart:877, lib/features/meme/meme_token_screen.dart:753
+  ///
+  /// In en, this message translates to:
+  /// **'Trading fee'**
+  String get meme_createLabel4;
+
+  /// lib/features/meme/meme_create_screen.dart:879, lib/features/meme/meme_token_screen.dart:757
+  ///
+  /// In en, this message translates to:
+  /// **'Per-wallet limit'**
+  String get meme_createLabel5;
+
+  /// lib/features/meme/meme_create_screen.dart:883
+  ///
+  /// In en, this message translates to:
+  /// **'Graduation condition'**
+  String get meme_createLabel6;
+
+  /// lib/features/meme/meme_create_screen.dart:1010
+  ///
+  /// In en, this message translates to:
+  /// **'Token address {address}'**
+  String meme_createLabel7(Object? address);
+
+  /// lib/features/meme/meme_create_screen.dart:638
+  ///
+  /// In en, this message translates to:
+  /// **'Symbol'**
+  String get meme_createLabelText;
+
+  /// lib/features/meme/meme_create_screen.dart:652
+  ///
+  /// In en, this message translates to:
+  /// **'Bio (optional)'**
+  String get meme_createLabelText2;
+
+  /// lib/features/meme/meme_create_screen.dart:729
+  ///
+  /// In en, this message translates to:
+  /// **'X (optional)'**
+  String get meme_createLabelText3;
+
+  /// lib/features/meme/meme_create_screen.dart:740
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram (optional)'**
+  String get meme_createLabelText4;
+
+  /// lib/features/meme/meme_create_screen.dart:751
+  ///
+  /// In en, this message translates to:
+  /// **'Website (optional)'**
+  String get meme_createLabelText5;
+
+  /// lib/features/meme/meme_create_screen.dart:901
+  ///
+  /// In en, this message translates to:
+  /// **'First buy with USD1'**
+  String get meme_createLabelText6;
+
+  /// lib/features/meme/meme_create_screen.dart:606, lib/features/meme/meme_signing.dart:82
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get meme_createLoopButton;
+
+  /// lib/features/meme/meme_create_screen.dart:844, lib/features/meme/meme_signing.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'Token address'**
+  String get meme_createLoopLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:866
+  ///
+  /// In en, this message translates to:
+  /// **'Parameters'**
+  String get meme_createLoopLabel2;
+
+  /// lib/features/meme/meme_create_screen.dart:888
+  ///
+  /// In en, this message translates to:
+  /// **'First buy (optional)'**
+  String get meme_createLoopLabel3;
+
+  /// lib/features/meme/meme_create_screen.dart:41
+  ///
+  /// In en, this message translates to:
+  /// **'Image and links'**
+  String get meme_createMedia;
+
+  /// lib/features/meme/meme_create_screen.dart:700
+  ///
+  /// In en, this message translates to:
+  /// **'Square image, crop before uploading. Without one, the symbol\'s first letter is used.'**
+  String get meme_createMediaStep;
+
+  /// lib/features/meme/meme_create_screen.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens can\'t be created right now'**
+  String get meme_createMemeCreateBlockedTitle;
+
+  /// lib/features/meme/meme_create_screen.dart:939
+  ///
+  /// In en, this message translates to:
+  /// **'Contract check in progress. Creating may be unavailable for now.'**
+  String get meme_createMemeCreateEvidencePendingBody;
+
+  /// lib/features/meme/meme_create_screen.dart:580
+  ///
+  /// In en, this message translates to:
+  /// **'Generating address…'**
+  String get meme_createMemeCreateNextLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:864
+  ///
+  /// In en, this message translates to:
+  /// **'A 6666 suffix can\'t be assigned this time. The token can still be created and traded normally.'**
+  String get meme_createMemeCreateNoVanityBody;
+
+  /// lib/features/meme/meme_create_screen.dart:933
+  ///
+  /// In en, this message translates to:
+  /// **'Loading wallet…'**
+  String get meme_createMemeCreateNoWalletBody;
+
+  /// lib/features/meme/meme_create_screen.dart:933
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet available yet. Create or activate one in Wallet first.'**
+  String get meme_createMemeCreateNoWalletBody2;
+
+  /// lib/features/meme/meme_create_screen.dart:990
+  ///
+  /// In en, this message translates to:
+  /// **'Start over'**
+  String get meme_createMemeCreateResetLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:974, lib/features/meme/meme_token_screen.dart:660
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get meme_createMemeCreateResumeLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:446
+  ///
+  /// In en, this message translates to:
+  /// **'Go to v2 launch'**
+  String get meme_createMemeCreateRetiredOpenV2Label;
+
+  /// lib/features/meme/meme_create_screen.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'Use Loop Hook launch (v2 launch) to create new tokens.'**
+  String get meme_createMemeCreateRetiredOpenV2Message;
+
+  /// lib/features/meme/meme_create_screen.dart:440, lib/features/meme/meme_token_screen.dart:496
+  ///
+  /// In en, this message translates to:
+  /// **'Classic launch is retired'**
+  String get meme_createMemeCreateRetiredOpenV2Title;
+
+  /// lib/features/meme/meme_create_screen.dart:434, lib/features/meme/meme_create_screen.dart:498, lib/features/meme/meme_create_screen.dart:520, lib/features/meme/meme_launchpad.dart:430
+  ///
+  /// In en, this message translates to:
+  /// **'Create token'**
+  String get meme_createMemeCreateRetiredTitle;
+
+  /// lib/features/meme/meme_create_screen.dart:982, lib/features/meme/meme_token_screen.dart:668
+  ///
+  /// In en, this message translates to:
+  /// **'Report again'**
+  String get meme_createMemeCreateRetryReportLabel;
+
+  /// lib/features/meme/meme_create_screen.dart:716
+  ///
+  /// In en, this message translates to:
+  /// **'The image didn\'t upload: {memeFailureText}'**
+  String meme_createMemeCreateUploadFailedBody(Object? memeFailureText);
+
+  /// lib/features/meme/meme_create_screen.dart:603
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing…'**
+  String get meme_createPreparing;
+
+  /// lib/features/meme/meme_create_screen.dart:701
+  ///
+  /// In en, this message translates to:
+  /// **'This device can\'t pick images right now. Without one, the symbol\'s first letter is used.'**
+  String get meme_createS;
+
+  /// lib/features/meme/meme_create_screen.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'Name 1–32 characters'**
+  String get meme_createSwitch;
+
+  /// lib/features/meme/meme_create_screen.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Symbol 2–10 letters or digits'**
+  String get meme_createSwitch2;
+
+  /// lib/features/meme/meme_create_screen.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'Bio up to 500 characters'**
+  String get meme_createSwitch3;
+
+  /// lib/features/meme/meme_create_screen.dart:921
+  ///
+  /// In en, this message translates to:
+  /// **'About {memeTokenLabel}, fee {memeUsd1Label}, limit {memeTokenFigure}. The server quote applies before signing.'**
+  String meme_createText(
+    Object? memeTokenFigure,
+    Object? memeTokenLabel,
+    Object? memeUsd1Label,
+  );
+
+  /// lib/features/meme/meme_create_screen.dart:281
+  ///
+  /// In en, this message translates to:
+  /// **'Discard token creation?'**
+  String get meme_createTitle;
+
+  /// lib/features/meme/meme_create_screen.dart:869, lib/features/meme/meme_create_screen.dart:874, lib/features/meme/meme_create_screen.dart:880, lib/features/meme/meme_token_screen.dart:750, lib/features/meme/meme_token_screen.dart:759, lib/features/meme/meme_token_screen.dart:768
+  ///
+  /// In en, this message translates to:
+  /// **'{memeTokenFigure}'**
+  String meme_createValue(Object? memeTokenFigure);
+
+  /// lib/features/meme/meme_create_screen.dart:875
+  ///
+  /// In en, this message translates to:
+  /// **'{memeTokenFigure} ({memeBpsLabel})'**
+  String meme_createValue2(Object? memeBpsLabel, Object? memeTokenFigure);
+
+  /// lib/features/meme/meme_create_screen.dart:885
+  ///
+  /// In en, this message translates to:
+  /// **'Lists on PancakeSwap automatically once the sale portion sells out'**
+  String get meme_createValue3;
+
+  /// lib/features/meme/meme_create_screen.dart:886
+  ///
+  /// In en, this message translates to:
+  /// **'Lists on PancakeSwap automatically after raising about {memeUsd1Label}'**
+  String meme_createValue4(Object? memeUsd1Label);
+
+  /// lib/features/meme/meme_create_screen.dart:604
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast, waiting for confirmation…'**
+  String get meme_createWaiting;
+
+  /// lib/features/meme/meme_design.dart:153
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded'**
+  String get meme_designSemantics;
+
+  /// lib/features/meme/meme_format.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'{inMinutes}m'**
+  String meme_formatMemeAgeLabel(Object? inMinutes);
+
+  /// lib/features/meme/meme_format.dart:52
+  ///
+  /// In en, this message translates to:
+  /// **'{inHours}h'**
+  String meme_formatMemeAgeLabel2(Object? inHours);
+
+  /// lib/features/meme/meme_format.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'{inDays}d'**
+  String meme_formatMemeAgeLabel3(Object? inDays);
+
+  /// lib/features/meme/meme_format.dart:72
+  ///
+  /// In en, this message translates to:
+  /// **'No DEX pool quote yet'**
+  String get meme_formatSwitch;
+
+  /// lib/features/meme/meme_format.dart:86
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction expired (not signed within about 30 seconds). Start again'**
+  String get meme_formatSwitch10;
+
+  /// lib/features/meme/meme_format.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction is no longer valid. Start again'**
+  String get meme_formatSwitch11;
+
+  /// lib/features/meme/meme_format.dart:89, lib/features/meme/meme_trade_panel.dart:283
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough USD1'**
+  String get meme_formatSwitch12;
+
+  /// lib/features/meme/meme_format.dart:90, lib/features/meme/meme_trade_panel.dart:283
+  ///
+  /// In en, this message translates to:
+  /// **'Sell amount exceeds your holdings'**
+  String get meme_formatSwitch13;
+
+  /// lib/features/meme/meme_format.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough {loopLaunchNativeSymbolText} for fees'**
+  String meme_formatSwitch14(Object? loopLaunchNativeSymbolText);
+
+  /// lib/features/meme/meme_format.dart:92
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds the per-wallet limit of 40M'**
+  String get meme_formatSwitch15;
+
+  /// lib/features/meme/meme_format.dart:93
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum buy 1 USD1'**
+  String get meme_formatSwitch16;
+
+  /// lib/features/meme/meme_format.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'Some details aren\'t valid. Check the name, symbol, bio and links'**
+  String get meme_formatSwitch17;
+
+  /// lib/features/meme/meme_format.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'This image wasn\'t uploaded by this account. Upload it again'**
+  String get meme_formatSwitch18;
+
+  /// lib/features/meme/meme_format.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'The quote changed. Get a new quote'**
+  String get meme_formatSwitch19;
+
+  /// lib/features/meme/meme_format.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'DEX pool market data can\'t be loaded'**
+  String get meme_formatSwitch2;
+
+  /// lib/features/meme/meme_format.dart:97
+  ///
+  /// In en, this message translates to:
+  /// **'The on-chain transaction doesn\'t match what you confirmed'**
+  String get meme_formatSwitch20;
+
+  /// lib/features/meme/meme_format.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction didn\'t succeed on chain'**
+  String get meme_formatSwitch21;
+
+  /// lib/features/meme/meme_format.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction hasn\'t appeared on chain for a while'**
+  String get meme_formatSwitch22;
+
+  /// lib/features/meme/meme_format.dart:101
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation failed. Get a new quote'**
+  String get meme_formatSwitch23;
+
+  /// lib/features/meme/meme_format.dart:102
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t simulate right now. Try again later'**
+  String get meme_formatSwitch24;
+
+  /// lib/features/meme/meme_format.dart:103
+  ///
+  /// In en, this message translates to:
+  /// **'Approval needed first. Can\'t simulate before approval'**
+  String get meme_formatSwitch25;
+
+  /// lib/features/meme/meme_format.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet not activated yet'**
+  String get meme_formatSwitch26;
+
+  /// lib/features/meme/meme_format.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain data can\'t be loaded right now'**
+  String get meme_formatSwitch27;
+
+  /// lib/features/meme/meme_format.dart:106
+  ///
+  /// In en, this message translates to:
+  /// **'Trading is closed for now'**
+  String get meme_formatSwitch28;
+
+  /// lib/features/meme/meme_format.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Mainnet signing isn\'t available yet'**
+  String get meme_formatSwitch29;
+
+  /// lib/features/meme/meme_format.dart:74
+  ///
+  /// In en, this message translates to:
+  /// **'Not on chain yet'**
+  String get meme_formatSwitch3;
+
+  /// lib/features/meme/meme_format.dart:108
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad isn\'t available yet'**
+  String get meme_formatSwitch30;
+
+  /// lib/features/meme/meme_format.dart:109
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad service isn\'t available right now'**
+  String get meme_formatSwitch31;
+
+  /// lib/features/meme/meme_format.dart:110
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad contract isn\'t configured yet'**
+  String get meme_formatSwitch32;
+
+  /// lib/features/meme/meme_format.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds the per-transaction limit'**
+  String get meme_formatSwitch33;
+
+  /// lib/features/meme/meme_format.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds today\'s limit'**
+  String get meme_formatSwitch34;
+
+  /// lib/features/meme/meme_format.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction isn\'t allowed right now'**
+  String get meme_formatSwitch35;
+
+  /// lib/features/meme/meme_format.dart:75
+  ///
+  /// In en, this message translates to:
+  /// **'Price can\'t be loaded right now'**
+  String get meme_formatSwitch4;
+
+  /// lib/features/meme/meme_format.dart:81, lib/features/meme/meme_token_screen.dart:425, lib/features/meme/meme_token_screen.dart:1516, lib/features/meme/meme_token_screen.dart:2014
+  ///
+  /// In en, this message translates to:
+  /// **'Token doesn\'t exist'**
+  String get meme_formatSwitch5;
+
+  /// lib/features/meme/meme_format.dart:82
+  ///
+  /// In en, this message translates to:
+  /// **'Not tradable right now'**
+  String get meme_formatSwitch6;
+
+  /// lib/features/meme/meme_format.dart:83
+  ///
+  /// In en, this message translates to:
+  /// **'Filled, waiting to graduate'**
+  String get meme_formatSwitch7;
+
+  /// lib/features/meme/meme_format.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Status changed. Refresh'**
+  String get meme_formatSwitch8;
+
+  /// lib/features/meme/meme_format.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'Address already taken. Retry'**
+  String get meme_formatSwitch9;
+
+  /// lib/features/meme/meme_home_top.dart:205
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet didn\'t load · {chainFailureReason}'**
+  String meme_homeTopClosedReason(Object? chainFailureReason);
+
+  /// lib/features/meme/meme_home_top.dart:357
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach LOOP right now, so the balance can\'t be loaded'**
+  String get meme_homeTopIf;
+
+  /// lib/features/meme/meme_home_top.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet balance can\'t be loaded · {reasonCodeText}'**
+  String meme_homeTopIf2(Object? reasonCodeText);
+
+  /// lib/features/meme/meme_home_top.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'{displayName} made {formatUsd} on {symbol}'**
+  String meme_homeTopLabel(
+    Object? displayName,
+    Object? formatUsd,
+    Object? symbol,
+  );
+
+  /// lib/features/meme/meme_home_top.dart:390
+  ///
+  /// In en, this message translates to:
+  /// **'Best trades this week'**
+  String get meme_homeTopLoopLabel;
+
+  /// lib/features/meme/meme_home_top.dart:238
+  ///
+  /// In en, this message translates to:
+  /// **'Top up'**
+  String get meme_homeTopMemeTopUpLabel;
+
+  /// lib/features/meme/meme_home_top.dart:60, lib/features/meme/meme_home_top.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet balance can\'t be loaded right now'**
+  String get meme_homeTopReason;
+
+  /// lib/features/meme/meme_home_top.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet yet'**
+  String get meme_homeTopReason2;
+
+  /// lib/features/meme/meme_home_top.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'Balance didn\'t load · {chainFailureReason}'**
+  String meme_homeTopReason3(Object? chainFailureReason);
+
+  /// lib/features/meme/meme_home_top.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'{count} assets have no price yet, so total assets aren\'t shown'**
+  String meme_homeTopReason4(Object? count);
+
+  /// lib/features/meme/meme_home_top.dart:357
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet status hasn\'t loaded yet'**
+  String get meme_homeTopS;
+
+  /// lib/features/meme/meme_home_top.dart:331
+  ///
+  /// In en, this message translates to:
+  /// **' · 24h{view}'**
+  String meme_homeTopText(Object? view);
+
+  /// lib/features/meme/meme_launchpad.dart:211
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens yet. Create the first one'**
+  String get meme_launchpadEmptyMessage;
+
+  /// lib/features/meme/meme_launchpad.dart:211
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens here yet'**
+  String get meme_launchpadEmptyMessage2;
+
+  /// lib/features/meme/meme_launchpad.dart:488, lib/features/meme/meme_launchpad.dart:498
+  ///
+  /// In en, this message translates to:
+  /// **'Platform MEME assets appear here once they\'re live'**
+  String get meme_launchpadEmptyMessage3;
+
+  /// lib/features/meme/meme_launchpad.dart:44
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach LOOP right now, so the Launchpad can\'t be loaded'**
+  String get meme_launchpadIf;
+
+  /// lib/features/meme/meme_launchpad.dart:231
+  ///
+  /// In en, this message translates to:
+  /// **'Create the first one'**
+  String get meme_launchpadMemeEmptyCreateLabel;
+
+  /// lib/features/meme/meme_launchpad.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Classic launch is retired. Use v2 launch for new tokens'**
+  String get meme_launchpadMemeEmptyCreateMessage;
+
+  /// lib/features/meme/meme_launchpad.dart:226
+  ///
+  /// In en, this message translates to:
+  /// **'Create the first one. It lists on PancakeSwap automatically when filled'**
+  String get meme_launchpadMemeEmptyCreateMessage2;
+
+  /// lib/features/meme/meme_launchpad.dart:222
+  ///
+  /// In en, this message translates to:
+  /// **'No tokens yet'**
+  String get meme_launchpadMemeEmptyCreateTitle;
+
+  /// lib/features/meme/meme_launchpad.dart:140
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad isn\'t available right now · {memeCapabilityText}'**
+  String meme_launchpadMemeLaunchpadUnavailableMessage(
+    Object? memeCapabilityText,
+  );
+
+  /// lib/features/meme/meme_launchpad.dart:284
+  ///
+  /// In en, this message translates to:
+  /// **'Bonding pool token prices and market caps come from the LOOP curve. Graduated tokens come from DexScreener. Tokens without a price show the reason instead of 0.'**
+  String get meme_launchpadMemeListProvenanceDetail;
+
+  /// lib/features/meme/meme_launchpad.dart:497
+  ///
+  /// In en, this message translates to:
+  /// **'No MEME assets yet'**
+  String get meme_launchpadMemeMarketEmptyTitle;
+
+  /// lib/features/meme/meme_launchpad.dart:538
+  ///
+  /// In en, this message translates to:
+  /// **'{orderingLabel}. Bonding pool tokens come from the LOOP curve and graduated tokens from DexScreener. Tokens without a quote show the reason.'**
+  String meme_launchpadMemeMarketProvenanceDetail(Object? orderingLabel);
+
+  /// lib/features/meme/meme_launchpad.dart:470
+  ///
+  /// In en, this message translates to:
+  /// **'Market isn\'t available right now · {reasonCodeText}'**
+  String meme_launchpadMemeMarketUnavailableMessage(Object? reasonCodeText);
+
+  /// lib/features/meme/meme_launchpad.dart:395, lib/features/meme/meme_launchpad.dart:415
+  ///
+  /// In en, this message translates to:
+  /// **'Search tokens'**
+  String get meme_launchpadMemeSearchEntryLabel;
+
+  /// lib/features/meme/meme_launchpad.dart:44
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad status hasn\'t loaded yet'**
+  String get meme_launchpadS;
+
+  /// lib/features/meme/meme_models.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast, waiting for confirmation'**
+  String get meme_modelsBroadcastReported;
+
+  /// lib/features/meme/meme_models.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t succeed'**
+  String get meme_modelsFailed;
+
+  /// lib/features/meme/meme_models.dart:568, lib/features/meme/meme_token_screen.dart:74
+  ///
+  /// In en, this message translates to:
+  /// **'5m'**
+  String get meme_modelsFiveMinutes;
+
+  /// lib/features/meme/meme_models.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get meme_modelsFresh;
+
+  /// lib/features/meme/meme_models.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'Almost full'**
+  String get meme_modelsGraduating;
+
+  /// lib/features/meme/meme_models.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'Hot'**
+  String get meme_modelsHot;
+
+  /// lib/features/meme/meme_models.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP curve'**
+  String get meme_modelsLoopCurve;
+
+  /// lib/features/meme/meme_models.dart:567, lib/features/meme/meme_token_screen.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'1m'**
+  String get meme_modelsOneMinute;
+
+  /// lib/features/meme/meme_screen.dart:245
+  ///
+  /// In en, this message translates to:
+  /// **'MEME v2 isn\'t available right now · {launch2CapabilityText}'**
+  String meme_screenLaunch2ListAllUnavailableMessage(
+    Object? launch2CapabilityText,
+  );
+
+  /// lib/features/meme/meme_signing.dart:77, lib/features/meme/meme_trade_panel.dart:483
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm buy'**
+  String get meme_signingBuy;
+
+  /// lib/features/meme/meme_signing.dart:879
+  ///
+  /// In en, this message translates to:
+  /// **'{noun} confirmed on chain.'**
+  String meme_signingConfirmed(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:76
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm create'**
+  String get meme_signingCreate;
+
+  /// lib/features/meme/meme_signing.dart:883
+  ///
+  /// In en, this message translates to:
+  /// **'{noun} expired: {memeReasonText}.'**
+  String meme_signingExpired(Object? memeReasonText, Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:881
+  ///
+  /// In en, this message translates to:
+  /// **'{noun} didn\'t succeed: {memeReasonText}.'**
+  String meme_signingFailed(Object? memeReasonText, Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:202
+  ///
+  /// In en, this message translates to:
+  /// **'Approval broadcast ({memeShortAddress}), but the wallet result of the {noun} transaction is unknown, so it\'s locked. Don\'t sign again. Refresh later.'**
+  String meme_signingIf(Object? memeShortAddress, Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:205
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet result is unknown, so this {noun} is locked. Don\'t sign again. Refresh later.'**
+  String meme_signingIf2(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:209
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast ({short}) and recorded by the server. Broadcast doesn\'t mean filled. Waiting for on-chain confirmation.'**
+  String meme_signingIf3(Object? short);
+
+  /// lib/features/meme/meme_signing.dart:211
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast ({short}). {memeReportReasonText}'**
+  String meme_signingIf4(Object? memeReportReasonText, Object? short);
+
+  /// lib/features/meme/meme_signing.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t simulate before approval'**
+  String get meme_signingIntentField;
+
+  /// lib/features/meme/meme_signing.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated to receive'**
+  String get meme_signingLabel;
+
+  /// lib/features/meme/meme_signing.dart:108
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum received'**
+  String get meme_signingLabel2;
+
+  /// lib/features/meme/meme_signing.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'First buy payment'**
+  String get meme_signingLabel3;
+
+  /// lib/features/meme/meme_signing.dart:120, lib/features/meme/meme_trade_panel.dart:561
+  ///
+  /// In en, this message translates to:
+  /// **'Refund when full'**
+  String get meme_signingLabel4;
+
+  /// lib/features/meme/meme_signing.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get meme_signingLabel5;
+
+  /// lib/features/meme/meme_signing.dart:129
+  ///
+  /// In en, this message translates to:
+  /// **'Approve first'**
+  String get meme_signingLabel6;
+
+  /// lib/features/meme/meme_signing.dart:878
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast, but no confirmation yet. It may still be confirming, so check again later. Don\'t repeat the {noun}.'**
+  String meme_signingPollTimedOut(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:859
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing {noun}. The wallet isn\'t open yet.'**
+  String meme_signingPreparing(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:503
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet opens twice: approve first, then {memeIntentNoun}. The approval covers only this transaction.'**
+  String meme_signingReason(Object? memeIntentNoun);
+
+  /// lib/features/meme/meme_signing.dart:78, lib/features/meme/meme_trade_panel.dart:483
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm sell'**
+  String get meme_signingSell;
+
+  /// lib/features/meme/meme_signing.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'Approval broadcast, but {memeIntentNoun} wasn\'t signed, so no {memeIntentNoun2} transaction was submitted. Close and start again.'**
+  String meme_signingSetState(Object? memeIntentNoun, Object? memeIntentNoun2);
+
+  /// lib/features/meme/meme_signing.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled. Nothing changed.'**
+  String get meme_signingSwitch;
+
+  /// lib/features/meme/meme_signing.dart:173
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation failed, so this transaction would be rejected on chain. Nothing was submitted. Get a new quote.'**
+  String get meme_signingSwitch10;
+
+  /// lib/features/meme/meme_signing.dart:175
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet didn\'t finish signing. Nothing was submitted.'**
+  String get meme_signingSwitch11;
+
+  /// lib/features/meme/meme_signing.dart:181
+  ///
+  /// In en, this message translates to:
+  /// **'A different hash was already reported for this transaction, so this broadcast wasn\'t recorded. It may already be on chain. Don\'t sign again.'**
+  String get meme_signingSwitch12;
+
+  /// lib/features/meme/meme_signing.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'The server no longer accepts reports for this transaction. The wallet already broadcast it and it may be on chain. Don\'t sign again.'**
+  String get meme_signingSwitch13;
+
+  /// lib/features/meme/meme_signing.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction expired and isn\'t visible on chain yet, so the report wasn\'t accepted. It may still be propagating. Don\'t sign again.'**
+  String get meme_signingSwitch14;
+
+  /// lib/features/meme/meme_signing.dart:184
+  ///
+  /// In en, this message translates to:
+  /// **'The on-chain transaction doesn\'t match what you confirmed, so the server didn\'t record it. Don\'t sign again, and contact support.'**
+  String get meme_signingSwitch15;
+
+  /// lib/features/meme/meme_signing.dart:185
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet already broadcast, but this report wasn\'t accepted or didn\'t arrive. The transaction may be on chain. You can report again later. Don\'t sign again.'**
+  String get meme_signingSwitch16;
+
+  /// lib/features/meme/meme_signing.dart:869
+  ///
+  /// In en, this message translates to:
+  /// **'Approval broadcast, but {noun} wasn\'t signed. You can start again.'**
+  String meme_signingSwitch17(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:875
+  ///
+  /// In en, this message translates to:
+  /// **'This {noun} is locked. Don\'t sign again.'**
+  String meme_signingSwitch18(Object? noun);
+
+  /// lib/features/meme/meme_signing.dart:164
+  ///
+  /// In en, this message translates to:
+  /// **'Identity check failed. Nothing changed.'**
+  String get meme_signingSwitch2;
+
+  /// lib/features/meme/meme_signing.dart:165, lib/features/meme/meme_signing.dart:174
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction expired. Nothing was submitted. Start again.'**
+  String get meme_signingSwitch3;
+
+  /// lib/features/meme/meme_signing.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction doesn\'t match what you confirmed, so signing was refused. Nothing was submitted.'**
+  String get meme_signingSwitch4;
+
+  /// lib/features/meme/meme_signing.dart:167
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet for this transaction isn\'t in your wallet list. Nothing was submitted.'**
+  String get meme_signingSwitch5;
+
+  /// lib/features/meme/meme_signing.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'The server built this transaction for a different wallet, so signing was refused. Nothing was submitted.'**
+  String get meme_signingSwitch6;
+
+  /// lib/features/meme/meme_signing.dart:170
+  ///
+  /// In en, this message translates to:
+  /// **'Signing isn\'t allowed on this chain. Nothing was submitted.'**
+  String get meme_signingSwitch7;
+
+  /// lib/features/meme/meme_signing.dart:171
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet can\'t sign on this chain right now. Nothing was submitted.'**
+  String get meme_signingSwitch8;
+
+  /// lib/features/meme/meme_signing.dart:172
+  ///
+  /// In en, this message translates to:
+  /// **'The signed-in wallet isn\'t this transaction\'s wallet. Nothing was submitted.'**
+  String get meme_signingSwitch9;
+
+  /// lib/features/meme/meme_signing.dart:269
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get meme_signingTitle;
+
+  /// lib/features/meme/meme_signing.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'{memeTokenLabel} to the curve contract'**
+  String meme_signingValue(Object? memeTokenLabel);
+
+  /// lib/features/meme/meme_signing.dart:872
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast, waiting for on-chain confirmation (checked {attempts} times). Don\'t repeat the {noun}.'**
+  String meme_signingWaiting(Object? attempts, Object? noun);
+
+  /// lib/features/meme/meme_token_screen.dart:1065
+  ///
+  /// In en, this message translates to:
+  /// **'DEX pool price'**
+  String get meme_tokenBuild;
+
+  /// lib/features/meme/meme_token_screen.dart:1155, lib/features/meme/meme_trade_panel.dart:371
+  ///
+  /// In en, this message translates to:
+  /// **'Holding {memeTokenLabel}'**
+  String meme_tokenBuild2(Object? memeTokenLabel);
+
+  /// lib/features/meme/meme_token_screen.dart:1180
+  ///
+  /// In en, this message translates to:
+  /// **'100% · Graduated'**
+  String get meme_tokenBuild3;
+
+  /// lib/features/meme/meme_token_screen.dart:1182
+  ///
+  /// In en, this message translates to:
+  /// **'{memeBpsLabel} · {memeCapLabel} to go'**
+  String meme_tokenBuild4(Object? memeBpsLabel, Object? memeCapLabel);
+
+  /// lib/features/meme/meme_token_screen.dart:1807
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get meme_tokenBuild5;
+
+  /// lib/features/meme/meme_token_screen.dart:396
+  ///
+  /// In en, this message translates to:
+  /// **'Contract address copied'**
+  String get meme_tokenCopy;
+
+  /// lib/features/meme/meme_token_screen.dart:471
+  ///
+  /// In en, this message translates to:
+  /// **'Pool address copied'**
+  String get meme_tokenCopy2;
+
+  /// lib/features/meme/meme_token_screen.dart:1734
+  ///
+  /// In en, this message translates to:
+  /// **'Dev'**
+  String get meme_tokenCreatorBadge;
+
+  /// lib/features/meme/meme_token_screen.dart:1637
+  ///
+  /// In en, this message translates to:
+  /// **'Holding = net curve buys minus sells. Transfers between wallets don\'t count. Share is out of a 1B total supply.'**
+  String get meme_tokenDetail;
+
+  /// lib/features/meme/meme_token_screen.dart:1773
+  ///
+  /// In en, this message translates to:
+  /// **'Buy amounts are what was paid (including the 1% fee, excluding refunds). Sell amounts are what was received (after fees).'**
+  String get meme_tokenDetail2;
+
+  /// lib/features/meme/meme_token_screen.dart:1559, lib/features/meme/meme_token_screen.dart:1593
+  ///
+  /// In en, this message translates to:
+  /// **'No holders yet'**
+  String get meme_tokenEmptyMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:706
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get meme_tokenFor;
+
+  /// lib/features/meme/meme_token_screen.dart:92
+  ///
+  /// In en, this message translates to:
+  /// **'Filled'**
+  String get meme_tokenFull;
+
+  /// lib/features/meme/meme_token_screen.dart:1466
+  ///
+  /// In en, this message translates to:
+  /// **' See the DEX pool market for the trend after graduation.'**
+  String get meme_tokenGraduatedChartHint;
+
+  /// lib/features/meme/meme_token_screen.dart:1574
+  ///
+  /// In en, this message translates to:
+  /// **'{holderCount} holders · Counted from curve trades'**
+  String meme_tokenIf(Object? holderCount);
+
+  /// lib/features/meme/meme_token_screen.dart:741
+  ///
+  /// In en, this message translates to:
+  /// **'Token contract'**
+  String get meme_tokenLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:1205
+  ///
+  /// In en, this message translates to:
+  /// **'24h volume'**
+  String get meme_tokenLabel10;
+
+  /// lib/features/meme/meme_token_screen.dart:1583
+  ///
+  /// In en, this message translates to:
+  /// **'All holders'**
+  String get meme_tokenLabel11;
+
+  /// lib/features/meme/meme_token_screen.dart:1728
+  ///
+  /// In en, this message translates to:
+  /// **'All activity'**
+  String get meme_tokenLabel12;
+
+  /// lib/features/meme/meme_token_screen.dart:743
+  ///
+  /// In en, this message translates to:
+  /// **'Curve contract'**
+  String get meme_tokenLabel2;
+
+  /// lib/features/meme/meme_token_screen.dart:746
+  ///
+  /// In en, this message translates to:
+  /// **'Contract version'**
+  String get meme_tokenLabel3;
+
+  /// lib/features/meme/meme_token_screen.dart:764
+  ///
+  /// In en, this message translates to:
+  /// **'PancakeSwap pool'**
+  String get meme_tokenLabel4;
+
+  /// lib/features/meme/meme_token_screen.dart:766
+  ///
+  /// In en, this message translates to:
+  /// **'USD1 added'**
+  String get meme_tokenLabel5;
+
+  /// lib/features/meme/meme_token_screen.dart:768
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens added'**
+  String get meme_tokenLabel6;
+
+  /// lib/features/meme/meme_token_screen.dart:770
+  ///
+  /// In en, this message translates to:
+  /// **'LP burned'**
+  String get meme_tokenLabel7;
+
+  /// lib/features/meme/meme_token_screen.dart:771
+  ///
+  /// In en, this message translates to:
+  /// **'Graduated at'**
+  String get meme_tokenLabel8;
+
+  /// lib/features/meme/meme_token_screen.dart:1199
+  ///
+  /// In en, this message translates to:
+  /// **'Fill progress'**
+  String get meme_tokenLabel9;
+
+  /// lib/features/meme/meme_token_screen.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'This token was hidden from the Launchpad · {text}'**
+  String meme_tokenLoopInlineUnavailable(Object? text);
+
+  /// lib/features/meme/meme_token_screen.dart:568
+  ///
+  /// In en, this message translates to:
+  /// **'This token was hidden from the Launchpad'**
+  String get meme_tokenLoopInlineUnavailable2;
+
+  /// lib/features/meme/meme_token_screen.dart:720, lib/features/meme/meme_token_screen.dart:1657
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get meme_tokenLoopLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:1873
+  ///
+  /// In en, this message translates to:
+  /// **'Share token'**
+  String get meme_tokenLoopSheetHeading;
+
+  /// lib/features/meme/meme_token_screen.dart:785
+  ///
+  /// In en, this message translates to:
+  /// **'Price and candles after graduation'**
+  String get meme_tokenMemeAboutDexSubtitle;
+
+  /// lib/features/meme/meme_token_screen.dart:784
+  ///
+  /// In en, this message translates to:
+  /// **'DEX pool market'**
+  String get meme_tokenMemeAboutDexTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:799
+  ///
+  /// In en, this message translates to:
+  /// **'Block explorer'**
+  String get meme_tokenMemeAboutExplorerTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:812
+  ///
+  /// In en, this message translates to:
+  /// **'Curve status, holders and trades come from LOOP\'s index of curve contract events. Only tokens created through LOOP are listed.'**
+  String get meme_tokenMemeAboutProvenanceDetail;
+
+  /// lib/features/meme/meme_token_screen.dart:776
+  ///
+  /// In en, this message translates to:
+  /// **'The DEX pool exists. Some funds remain in the contract'**
+  String get meme_tokenMemeAboutResidualMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:1403
+  ///
+  /// In en, this message translates to:
+  /// **'Prices after each curve trade are grouped into candles by interval. Empty intervals aren\'t filled.{series}'**
+  String meme_tokenMemeCandlesProvenanceDetail(Object? series);
+
+  /// lib/features/meme/meme_token_screen.dart:1401
+  ///
+  /// In en, this message translates to:
+  /// **'In USD1'**
+  String get meme_tokenMemeCandlesProvenancePrefix;
+
+  /// lib/features/meme/meme_token_screen.dart:1401
+  ///
+  /// In en, this message translates to:
+  /// **'Stops at graduation'**
+  String get meme_tokenMemeCandlesProvenancePrefix2;
+
+  /// lib/features/meme/meme_token_screen.dart:1337
+  ///
+  /// In en, this message translates to:
+  /// **'A few more trades and the trend will appear'**
+  String get meme_tokenMemeChartEmptyMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:809, lib/features/meme/meme_token_screen.dart:1399, lib/features/meme/meme_token_screen.dart:1635, lib/features/meme/meme_token_screen.dart:1771, lib/features/meme/meme_trade_panel.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP on-chain index'**
+  String get meme_tokenMemeProvenance;
+
+  /// lib/features/meme/meme_token_screen.dart:413, lib/features/meme/meme_token_screen.dart:1485, lib/features/meme/meme_token_screen.dart:2004
+  ///
+  /// In en, this message translates to:
+  /// **'Launchpad isn\'t available right now'**
+  String get meme_tokenMemeTokenBlockedTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:469
+  ///
+  /// In en, this message translates to:
+  /// **'Copy pool'**
+  String get meme_tokenMemeTokenCopyPoolLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:603
+  ///
+  /// In en, this message translates to:
+  /// **'Contract check in progress. Trading may be unavailable for now'**
+  String get meme_tokenMemeTokenEvidencePendingMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:519
+  ///
+  /// In en, this message translates to:
+  /// **'Filled, graduating…'**
+  String get meme_tokenMemeTokenFullLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:1256
+  ///
+  /// In en, this message translates to:
+  /// **'The curve is filled, the token is on PancakeSwap and the LP is burned.'**
+  String get meme_tokenMemeTokenGraduatedCloseBody;
+
+  /// lib/features/meme/meme_token_screen.dart:329, lib/features/meme/meme_token_screen.dart:1467, lib/features/meme/meme_token_screen.dart:1955
+  ///
+  /// In en, this message translates to:
+  /// **'No data was requested and no other token was used instead.'**
+  String get meme_tokenMemeTokenInvalidIdentityMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:328, lib/features/meme/meme_token_screen.dart:1466, lib/features/meme/meme_token_screen.dart:1954
+  ///
+  /// In en, this message translates to:
+  /// **'No usable token ID in the route'**
+  String get meme_tokenMemeTokenInvalidIdentityTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:322
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open this token'**
+  String get meme_tokenMemeTokenInvalidRouteTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:588
+  ///
+  /// In en, this message translates to:
+  /// **'Low liquidity · Bonding pool reserve {memeCapLabel}. Large buys have high slippage'**
+  String meme_tokenMemeTokenLiquidityLowBody(Object? memeCapLabel);
+
+  /// lib/features/meme/meme_token_screen.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'Trading paused'**
+  String get meme_tokenMemeTokenPausedLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:512
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get meme_tokenMemeTokenPendingLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:611
+  ///
+  /// In en, this message translates to:
+  /// **'Bonding pool price = ratio of the curve\'s virtual reserves. Market cap = price × 1B total supply.'**
+  String get meme_tokenMemeTokenPriceProvenanceDetail;
+
+  /// lib/features/meme/meme_token_screen.dart:612
+  ///
+  /// In en, this message translates to:
+  /// **'Price and market cap after graduation come from DexScreener.'**
+  String get meme_tokenMemeTokenPriceProvenanceDetail2;
+
+  /// lib/features/meme/meme_token_screen.dart:1221, lib/features/meme/meme_widgets.dart:240, lib/features/meme/meme_widgets.dart:330, lib/features/meme/meme_widgets.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Bonding pool progress {memeBpsLabel}'**
+  String meme_tokenMemeTokenProgressBarSemanticLabel(Object? memeBpsLabel);
+
+  /// lib/features/meme/meme_token_screen.dart:904
+  ///
+  /// In en, this message translates to:
+  /// **'Quick buy'**
+  String get meme_tokenMemeTokenQuickBuySurfaceLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:503
+  ///
+  /// In en, this message translates to:
+  /// **'Continue creating'**
+  String get meme_tokenMemeTokenResumeLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:479
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Swap'**
+  String get meme_tokenMemeTokenSwapLabel;
+
+  /// lib/features/meme/meme_token_screen.dart:462
+  ///
+  /// In en, this message translates to:
+  /// **'In-app swap isn\'t supported yet'**
+  String get meme_tokenMemeTokenSwapTestnetMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:597
+  ///
+  /// In en, this message translates to:
+  /// **'My holdings can\'t be loaded · {memeReasonText}'**
+  String meme_tokenMemeTokenViewerUnavailableMessage(Object? memeReasonText);
+
+  /// lib/features/meme/meme_token_screen.dart:253
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet available yet'**
+  String get meme_tokenMessage;
+
+  /// lib/features/meme/meme_token_screen.dart:1594
+  ///
+  /// In en, this message translates to:
+  /// **'Holders appear here after the first buy'**
+  String get meme_tokenMessage3;
+
+  /// lib/features/meme/meme_token_screen.dart:1738
+  ///
+  /// In en, this message translates to:
+  /// **'Trades appear here after a buy or sell'**
+  String get meme_tokenMessage4;
+
+  /// lib/features/meme/meme_token_screen.dart:1025
+  ///
+  /// In en, this message translates to:
+  /// **'No address yet'**
+  String get meme_tokenNoAddressYet;
+
+  /// lib/features/meme/meme_token_screen.dart:93
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get meme_tokenPaused;
+
+  /// lib/features/meme/meme_token_screen.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'Creating'**
+  String get meme_tokenPendingChain;
+
+  /// lib/features/meme/meme_token_screen.dart:1575
+  ///
+  /// In en, this message translates to:
+  /// **'{holderCount} holders · Counted from curve trades · Frozen at graduation'**
+  String meme_tokenS(Object? holderCount);
+
+  /// lib/features/meme/meme_token_screen.dart:1807
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get meme_tokenS2;
+
+  /// lib/features/meme/meme_token_screen.dart:1352
+  ///
+  /// In en, this message translates to:
+  /// **'{candles} {label} {style}, in USD1'**
+  String meme_tokenSemanticLabel(Object? candles, Object? label, Object? style);
+
+  /// lib/features/meme/meme_token_screen.dart:1890
+  ///
+  /// In en, this message translates to:
+  /// **'Token contract address QR code'**
+  String get meme_tokenSemanticLabel2;
+
+  /// lib/features/meme/meme_token_screen.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Contract {address}'**
+  String meme_tokenShare(Object? address);
+
+  /// lib/features/meme/meme_token_screen.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'View on LOOP Launchpad'**
+  String get meme_tokenShare2;
+
+  /// lib/features/meme/meme_token_screen.dart:731
+  ///
+  /// In en, this message translates to:
+  /// **'The creator has no public profile'**
+  String get meme_tokenSubtitle;
+
+  /// lib/features/meme/meme_token_screen.dart:731
+  ///
+  /// In en, this message translates to:
+  /// **'View public profile'**
+  String get meme_tokenSubtitle2;
+
+  /// lib/features/meme/meme_token_screen.dart:1668
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank} · {memeTokenCompact} {symbol}'**
+  String meme_tokenSubtitle3(
+    Object? memeTokenCompact,
+    Object? rank,
+    Object? symbol,
+  );
+
+  /// lib/features/meme/meme_token_screen.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'1D'**
+  String get meme_tokenText;
+
+  /// lib/features/meme/meme_token_screen.dart:730
+  ///
+  /// In en, this message translates to:
+  /// **'No public profile'**
+  String get meme_tokenTitle;
+
+  /// lib/features/meme/meme_token_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Bonding pool'**
+  String get meme_tokenTrading;
+
+  /// lib/features/meme/meme_token_screen.dart:760
+  ///
+  /// In en, this message translates to:
+  /// **'No limit after graduation'**
+  String get meme_tokenValue;
+
+  /// lib/features/meme/meme_trade_panel.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds the per-wallet limit of {memeTokenFigure}'**
+  String meme_tradePanelIf(Object? memeTokenFigure);
+
+  /// lib/features/meme/meme_trade_panel.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'This amount gets no tokens. Adjust it'**
+  String get meme_tradePanelIf2;
+
+  /// lib/features/meme/meme_trade_panel.dart:543
+  ///
+  /// In en, this message translates to:
+  /// **'Get'**
+  String get meme_tradePanelLabel;
+
+  /// lib/features/meme/meme_trade_panel.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get meme_tradePanelLabel2;
+
+  /// lib/features/meme/meme_trade_panel.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Impact'**
+  String get meme_tradePanelLabel3;
+
+  /// lib/features/meme/meme_trade_panel.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain curve'**
+  String get meme_tradePanelLoopProvenanceLine;
+
+  /// lib/features/meme/meme_trade_panel.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {ticker}'**
+  String meme_tradePanelLoopSheetHeading(Object? ticker);
+
+  /// lib/features/meme/meme_trade_panel.dart:368
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet data can\'t be loaded · {memeReasonText}'**
+  String meme_tradePanelMemeTradeBalance(Object? memeReasonText);
+
+  /// lib/features/meme/meme_trade_panel.dart:370
+  ///
+  /// In en, this message translates to:
+  /// **'Available {memeUsd1Label}'**
+  String meme_tradePanelMemeTradeBalance2(Object? memeUsd1Label);
+
+  /// lib/features/meme/meme_trade_panel.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Getting quote…'**
+  String get meme_tradePanelMemeTradeQuoteEmpty;
+
+  /// lib/features/meme/meme_trade_panel.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount to see a quote'**
+  String get meme_tradePanelMemeTradeQuoteEmpty2;
+
+  /// lib/features/meme/meme_trade_panel.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get a quote · {memeFailureText}'**
+  String meme_tradePanelMemeTradeQuoteFailedMessage(Object? memeFailureText);
+
+  /// lib/features/meme/meme_trade_panel.dart:571
+  ///
+  /// In en, this message translates to:
+  /// **'The quote uses the current on-chain curve.'**
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail;
+
+  /// lib/features/meme/meme_trade_panel.dart:572
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain reads aren\'t available, so the quote uses the index snapshot and may lag a few blocks.'**
+  String get meme_tradePanelMemeTradeQuoteProvenanceDetail2;
+
+  /// lib/features/meme/meme_trade_panel.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get meme_tradePanelMemeTradeSlippageCustomLabel;
+
+  /// lib/features/meme/meme_trade_panel.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Exceeds the per-wallet limit. You can buy up to {memeTokenLabel} more'**
+  String meme_tradePanelS(Object? memeTokenLabel);
+
+  /// lib/features/meme/meme_trade_panel.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Sell {ticker}'**
+  String meme_tradePanelS2(Object? ticker);
+
+  /// lib/features/meme/meme_widgets.dart:410
+  ///
+  /// In en, this message translates to:
+  /// **'{memeCapLabel} volume'**
+  String meme_widgetsBuild(Object? memeCapLabel);
+
+  /// lib/features/meme/meme_widgets.dart:144, lib/features/meme/meme_widgets.dart:327
+  ///
+  /// In en, this message translates to:
+  /// **'1h change not reported'**
+  String get meme_widgetsMemeChangeUnreported;
+
+  /// lib/features/meme/meme_widgets.dart:328, lib/features/meme/meme_widgets.dart:432, lib/features/meme/meme_widgets.dart:642
+  ///
+  /// In en, this message translates to:
+  /// **'Market cap {memeCapLabel}'**
+  String meme_widgetsMemeTokenSpokenLabel(Object? memeCapLabel);
+
+  /// lib/features/meme/meme_widgets.dart:329
+  ///
+  /// In en, this message translates to:
+  /// **'{holderCount} holders'**
+  String meme_widgetsMemeTokenSpokenLabel2(Object? holderCount);
+
+  /// lib/features/meme/meme_widgets.dart:512
+  ///
+  /// In en, this message translates to:
+  /// **'Volume {memeCapLabel}'**
+  String meme_widgetsSemantics(Object? memeCapLabel);
+
+  /// lib/features/meme/meme_widgets.dart:513
+  ///
+  /// In en, this message translates to:
+  /// **'Live {age}'**
+  String meme_widgetsSemantics2(Object? age);
 
   /// lib/features/notifications/community_application_notifications.dart:93
   ///

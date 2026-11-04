@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
@@ -74,11 +75,13 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     LoopToast.show(
       context,
       toastKey: const ValueKey<String>('watchlist-undo-toast'),
-      message: '已移除 ${item.displayName}，保存后生效',
+      message: LoopL10n.current.marketWatchlist_editorWatchlistUndoMessage(
+        item.displayName,
+      ),
       duration: undoWindow,
       action: LoopToastAction(
         key: const ValueKey<String>('watchlist-undo'),
-        label: '撤销',
+        label: LoopL10n.current.marketWatchlist_editorWatchlistUndoLabel,
         onPressed: () {
           if (mounted) _undo(controller);
         },
@@ -146,7 +149,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
     final page = LoopDashboardPage(
       key: const ValueKey<String>('watchlist-editor-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '自选管理',
+      title: context.l10n.market_widgetsMarketWatchlistKicker,
       kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
@@ -158,7 +161,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         LoopIconButton(
           key: const ValueKey<String>('watchlist-save-action'),
           icon: 'check',
-          label: '完成',
+          label: context.l10n.common_done,
           framed: true,
           onPressed: state.canSave ? () => unawaited(_save(controller)) : null,
         ),
@@ -167,27 +170,37 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       // unsaved mark are the bar's one line.
       subtitle: state.isReady
           // Distinct assets, not the sum of every group's rows (S123 M3).
-          ? '${state.distinctAssetCount} 个自选资产${state.isDirty ? ' · 未保存' : ''}'
+          ? context.l10n.marketWatchlist_editorWatchlistEditorScreenSubtitle(
+              state.distinctAssetCount,
+              state.isDirty
+                  ? context.l10n.marketWatchlist_editorUnsavedSuffix
+                  : '',
+            )
           : null,
       // An edit surface takes no pull-to-refresh: a background re-read would
       // drop an ordering the user has not saved yet.
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('watchlist-capability-block'),
-              title: '自选编辑当前不可用',
+              title: context
+                  .l10n
+                  .marketWatchlist_editorWatchlistCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'WATCHLIST_RUNTIME_UNAVAILABLE',
             )
           : null,
       sections: <Widget>[
-        LoopChainPreviewNotice(mode: mode, resource: '自选列表'),
+        LoopChainPreviewNotice(
+          mode: mode,
+          resource: context.l10n.marketWatchlist_editorResource,
+        ),
         if (!state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'watchlist',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '还没有自选资产',
-            emptyReason: '打开代币页，点右上角星标即可加入自选。',
+            emptyMessage: context.l10n.marketWatchlist_editorEmptyMessage,
+            emptyReason: context.l10n.marketWatchlist_editorEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -196,8 +209,8 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               key: const ValueKey<String>('watchlist-conflict'),
               tone: LoopNoticeTone.warn,
               icon: 'warn',
-              title: '版本冲突 —— 没有覆盖任何内容',
-              body: '自选已在其他设备上改动。重新加载会丢弃下面这些改动，先复制草稿再决定。',
+              title: context.l10n.marketWatchlist_editorWatchlistConflictTitle,
+              body: context.l10n.marketWatchlist_editorWatchlistConflictBody,
             ),
             // A reload is destructive, so it is offered only next to a list of
             // exactly what it would discard and a way to keep that list.
@@ -213,7 +226,9 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             LoopOfflineState(
               cause: loopOfflineCauseFor(state.failureKind),
               key: const ValueKey<String>('watchlist-save-offline'),
-              pausedActions: const <String>['保存自选'],
+              pausedActions: <String>[
+                context.l10n.marketWatchlist_editorLoopOfflineState,
+              ],
               onRetry: state.canSave
                   ? () => unawaited(_save(controller))
                   : null,
@@ -224,13 +239,13 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             LoopChainCommandPermission(
               blockKey: 'watchlist-save-permission',
               failureKind: state.failureKind,
-              title: '当前账号无权保存自选',
+              title: context.l10n.marketWatchlist_editorTitle,
               onOpenSecurity: () => _open('/profile/security'),
             )
           else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('watchlist-save-error'),
-              title: '自选没有保存',
+              title: context.l10n.marketWatchlist_editorWatchlistSaveErrorTitle,
               reason: loopChainFailureReason(state.failureKind),
               onRetry: state.canSave
                   ? () => unawaited(_save(controller))
@@ -244,18 +259,24 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             // The list shows one group, so its label names that group and
             // its own count; the bar above counts the whole Watchlist.
             LoopLabel(
-              '${group.name} ${group.items.length} · 拖动排序 · 左滑删除',
+              context.l10n.marketWatchlist_editorWatchlistGroupLabel(
+                group.items.length,
+                group.name,
+              ),
               key: const ValueKey<String>('watchlist-group-label'),
             ),
             if (group.items.isEmpty)
               LoopEmptyState(
                 key: const ValueKey<String>('watchlist-group-empty'),
                 illustration: LoopIllustration.watchlist,
-                title: '这个分组还没有资产',
-                message: '打开代币页，点右上角星标即可加入自选。',
+                title:
+                    context.l10n.marketWatchlist_editorWatchlistGroupEmptyTitle,
+                message: context.l10n.marketWatchlist_editorEmptyReason,
                 action: LoopButton(
                   key: const ValueKey<String>('watchlist-group-empty-add'),
-                  label: '添加资产',
+                  label: context
+                      .l10n
+                      .marketWatchlist_editorWatchlistGroupEmptyAddLabel,
                   onPressed: _openAddAsset,
                 ),
                 compact: true,
@@ -271,19 +292,22 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                     : null,
               ),
           ],
-          const LoopLabel('分组'),
+          LoopLabel(context.l10n.marketWatchlist_editorLoopLabel),
           if (state.groups.isEmpty)
             LoopEmptyState(
               showMessage: true,
               key: const ValueKey<String>('watchlist-no-groups'),
               illustration: LoopIllustration.watchlist,
-              title: '还没有分组',
-              message:
-                  '有两条路：在代币页点右上角星标，资产会进入默认分组「$watchlistDefaultGroupName」；'
-                  '或者在这里先建一个分组。',
+              title: context.l10n.marketWatchlist_editorWatchlistNoGroupsTitle,
+              message: context.l10n
+                  .marketWatchlist_editorWatchlistNoGroupsMessage(
+                    watchlistDefaultGroupName,
+                  ),
               action: LoopButton(
                 key: const ValueKey<String>('watchlist-new-group-empty'),
-                label: '新建分组',
+                label: context
+                    .l10n
+                    .marketWatchlist_editorWatchlistNewGroupEmptyLabel,
                 onPressed: state.busy
                     ? null
                     : () => unawaited(_createGroup(controller, state)),
@@ -322,12 +346,16 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 // the notice below says where the asset lands.
                 LoopButton(
                   key: const ValueKey<String>('watchlist-add-asset'),
-                  label: '添加资产',
+                  label: context
+                      .l10n
+                      .marketWatchlist_editorWatchlistGroupEmptyAddLabel,
                   onPressed: _openAddAsset,
                 ),
                 LoopButton(
                   key: const ValueKey<String>('watchlist-new-group'),
-                  label: '新建分组',
+                  label: context
+                      .l10n
+                      .marketWatchlist_editorWatchlistNewGroupEmptyLabel,
                   onPressed:
                       state.busy || state.groups.length >= watchlistMaxGroups
                       ? null
@@ -341,9 +369,10 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               LoopNotice(
                 key: const ValueKey<String>('watchlist-group-limit'),
                 icon: 'info',
-                body:
-                    '分组已达上限 $watchlistMaxGroups 个。'
-                    '要新建一个，先删掉一个现有分组。',
+                body: context.l10n
+                    .marketWatchlist_editorWatchlistGroupLimitBody(
+                      watchlistMaxGroups,
+                    ),
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
                   0,
@@ -356,14 +385,16 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('watchlist-discard'),
-                label: '放弃修改',
+                label: context.l10n.marketWatchlist_editorWatchlistDiscardLabel,
                 onPressed: state.isDirty && !state.busy
                     ? controller.discard
                     : null,
               ),
               LoopButton(
                 key: const ValueKey<String>('watchlist-save'),
-                label: state.busy ? '正在保存…' : '保存',
+                label: state.busy
+                    ? context.l10n.marketWatchlist_editorWatchlistSaveLabel
+                    : context.l10n.common_save,
                 primary: true,
                 onPressed: state.canSave
                     ? () => unawaited(_save(controller))
@@ -372,13 +403,11 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             ],
           ),
           // S278 · decision 0236: an explanation, behind (i).
-          const LoopProvenanceFooter(
+          LoopProvenanceFooter(
             key: ValueKey<String>('watchlist-notice'),
-            label: '说明',
-            title: '自选不是行情',
-            text:
-                '这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。'
-                '资产必须已经在 LOOP 登记，否则整份自选表都不会保存。',
+            label: context.l10n.common_about,
+            title: context.l10n.marketWatchlist_editorWatchlistNoticeTitle,
+            text: context.l10n.marketWatchlist_editorWatchlistNoticeText,
           ),
         ],
       ],
@@ -409,14 +438,22 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
   }
 
   Future<void> _copyDraft(String draft) async {
-    await LoopCopy.text(context, draft, message: '草稿已复制');
+    await LoopCopy.text(
+      context,
+      draft,
+      message: LoopL10n.current.marketWatchlist_editorMessage,
+    );
   }
 
   Future<void> _save(WatchlistEditorController controller) async {
     final saved = await controller.save();
     if (!mounted) return;
     if (saved) {
-      LoopToast.show(context, message: '自选已保存', kind: LoopToastKind.ok);
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.marketWatchlist_editorMessage2,
+        kind: LoopToastKind.ok,
+      );
     }
   }
 }
@@ -456,7 +493,9 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('新建分组'),
+        LoopSheetHeading(
+          context.l10n.marketWatchlist_editorWatchlistNewGroupEmptyLabel,
+        ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -467,9 +506,11 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
               autofocus: true,
               maxLength: watchlistMaxNameCodePoints,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                labelText: '分组名称',
-                hintText: '1–$watchlistMaxNameCodePoints 个字符',
+              decoration: InputDecoration(
+                labelText: context.l10n.marketWatchlist_editorLabelText,
+                hintText: context.l10n.marketWatchlist_editorHintText(
+                  watchlistMaxNameCodePoints,
+                ),
               ),
               onChanged: (_) {
                 if (_issue != null) setState(() => _issue = null);
@@ -489,12 +530,14 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
               padded: false,
               children: <Widget>[
                 LoopButton(
-                  label: '取消',
+                  label: context.l10n.common_cancel,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 LoopButton(
                   key: const ValueKey<String>('watchlist-group-name-confirm'),
-                  label: '添加分组',
+                  label: context
+                      .l10n
+                      .marketWatchlist_editorWatchlistGroupNameConfirmLabel,
                   primary: true,
                   onPressed: _submit,
                 ),
@@ -502,7 +545,7 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
             ),
             const SizedBox(height: 10),
             Text(
-              '分组保存后才会生效，最多 $watchlistMaxGroups 个。',
+              context.l10n.marketWatchlist_editorBuild(watchlistMaxGroups),
               style: LoopType.caption,
             ),
           ],
@@ -621,7 +664,9 @@ class _ReorderableWatchlist extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         if (!item.isReadable) ...<Widget>[
-                          const LoopBadge('不可读'),
+                          LoopBadge(
+                            context.l10n.marketWatchlist_editorLoopBadge,
+                          ),
                           const SizedBox(width: 8),
                         ],
                         // `.badge.badge-down`: a word, not a bin glyph. This
@@ -630,7 +675,9 @@ class _ReorderableWatchlist extends StatelessWidget {
                         Semantics(
                           button: true,
                           enabled: !busy,
-                          label: '移除 ${item.displayName}',
+                          label: context.l10n.marketWatchlist_editorLabel(
+                            item.displayName,
+                          ),
                           child: Material(
                             type: MaterialType.transparency,
                             child: InkWell(
@@ -639,14 +686,14 @@ class _ReorderableWatchlist extends StatelessWidget {
                               ),
                               onTap: busy ? null : () => onRemove(index),
                               borderRadius: LoopRadius.inner,
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 4,
                                   vertical: 8,
                                 ),
                                 child: ExcludeSemantics(
                                   child: LoopBadge(
-                                    '删除',
+                                    context.l10n.common_delete,
                                     kind: LoopBadgeKind.down,
                                   ),
                                 ),
@@ -683,7 +730,7 @@ class _WatchlistSwipeBackground extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(right: 20),
         child: Text(
-          '删除',
+          context.l10n.common_delete,
           // R17 inline text action (decision 0190 L21).
           style: LoopTypography.withWeight(
             LoopType.label,
@@ -734,11 +781,14 @@ class _ConflictDiff extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('重新加载会丢弃', style: LoopType.eyebrow),
+          Text(
+            context.l10n.marketWatchlist_editorBuild2,
+            style: LoopType.eyebrow,
+          ),
           const SizedBox(height: 6),
           if (changes.isEmpty)
             Text(
-              '这份草稿与已提交的版本没有差异。',
+              context.l10n.marketWatchlist_editorWatchlistConflictNoDiff,
               key: const ValueKey<String>('watchlist-conflict-no-diff'),
               style: LoopType.bodySm,
             )
@@ -754,12 +804,14 @@ class _ConflictDiff extends StatelessWidget {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('watchlist-conflict-copy-draft'),
-                label: '复制当前草稿',
+                label: context
+                    .l10n
+                    .marketWatchlist_editorWatchlistConflictCopyDraftLabel,
                 onPressed: onCopyDraft,
               ),
               LoopButton(
                 key: const ValueKey<String>('watchlist-conflict-reload'),
-                label: '重新加载',
+                label: context.l10n.common_reload,
                 primary: true,
                 onPressed: onReload,
               ),
