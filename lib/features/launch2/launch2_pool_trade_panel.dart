@@ -667,14 +667,10 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                 kind: LoopBadgeKind.launch,
               ),
               const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  view.taxLabel,
-                  key: const ValueKey<String>('launch2-pool-tax-label'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
-                ),
+              Text(
+                view.taxLabel,
+                key: const ValueKey<String>('launch2-pool-tax-label'),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ],
           ),

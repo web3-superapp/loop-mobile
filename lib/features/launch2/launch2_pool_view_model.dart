@@ -526,9 +526,7 @@ Launch2PoolTradeView launch2PoolTradeView({
     fieldLabel: label,
     fieldSuffix: suffix,
     taxLabel: dynamicPool == null
-        ? LoopL10n.current.launch2_launch2InstanceLaunch2PoolTaxTitle(
-            launch2BpsLabel(taxBps),
-          )
+        ? LoopL10n.current.launch2_poolPanelTax(launch2BpsLabel(taxBps))
         : LoopL10n.current.launch2_launch2PoolViewModelTaxLabel(
             launch2BpsLabel(taxBps),
           ),

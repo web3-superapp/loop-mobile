@@ -757,7 +757,7 @@ void main() {
     test('a buy exactIn quote: expected, least, the 2% tax in MEME, the '
         'average price and the slippage; confirm opens', () {
       final v = view(quote: _buyQuote());
-      expect(v.taxLabel, 'DEX pool tax 2%');
+      expect(v.taxLabel, 'Tax 2%');
       expect(v.lines.map((l) => '${l.label}=${l.value}').toList(), <String>[
         r'Estimated to receive=147,000 $FROG',
         r'Minimum received=145,530 $FROG',
@@ -991,7 +991,7 @@ void main() {
       expect(opened.single, '/wallet/swap?to=eip155%3A97%3A$l2Meme');
       await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
-      expect(find.text('DEX pool tax 2%'), findsWidgets);
+      expect(find.text('Tax 2%'), findsWidgets);
       // The 44 pt rule (iOS guideline), around the panel.
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));

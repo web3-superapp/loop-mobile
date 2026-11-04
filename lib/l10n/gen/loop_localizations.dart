@@ -4107,7 +4107,7 @@ abstract class LoopLocalizations {
   /// lib/features/launch2/launch2_instance_screen.dart:1004
   ///
   /// In en, this message translates to:
-  /// **'24h volume {launch2Usd1Label}'**
+  /// **'24h vol {launch2Usd1Label}'**
   String launch2_launch2InstanceAside(Object? launch2Usd1Label);
 
   /// lib/features/launch2/launch2_instance_screen.dart:1231
@@ -4848,7 +4848,7 @@ abstract class LoopLocalizations {
   /// lib/features/launch2/launch2_widgets.dart:700
   ///
   /// In en, this message translates to:
-  /// **'Published at'**
+  /// **'Published'**
   String get launch2_launch2Launch2SnapshotPublishedAtLabel;
 
   /// lib/features/launch2/launch2_widgets.dart:714
@@ -5701,7 +5701,7 @@ abstract class LoopLocalizations {
   /// lib/features/launch2/launch2_pool_view_model.dart:407
   ///
   /// In en, this message translates to:
-  /// **'{launch2BpsLabel} + dynamic sell tax'**
+  /// **'{launch2BpsLabel} + dyn. tax'**
   String launch2_launch2PoolViewModelTaxLabel(Object? launch2BpsLabel);
 
   /// lib/features/launch2/launch2_pool_view_model.dart:398
@@ -6242,6 +6242,12 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **', {left} left'**
   String launch2_nftSaleLeft(Object? left);
+
+  /// lib/features/launch2/launch2_pool_view_model.dart:529
+  ///
+  /// In en, this message translates to:
+  /// **'Tax {bps}'**
+  String launch2_poolPanelTax(Object? bps);
 
   /// lib/features/launch2/launch2_instance_screen.dart:1659
   ///

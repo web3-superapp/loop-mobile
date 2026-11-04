@@ -1900,7 +1900,7 @@
     "zh": "距铸造"
   },
   "launch2_launch2InstanceAside": {
-    "en": "24h volume {launch2Usd1Label}",
+    "en": "24h vol {launch2Usd1Label}",
     "placeholders": {
       "launch2Usd1Label": {
         "example": "launch2Usd1Label(detail.pool!.volume24hUsd1)",
@@ -2798,7 +2798,7 @@
     "zh": "{members} 人"
   },
   "launch2_launch2Launch2SnapshotPublishedAtLabel": {
-    "en": "Published at",
+    "en": "Published",
     "placeholders": {},
     "where": "lib/features/launch2/launch2_widgets.dart:700",
     "zh": "发布时间"
@@ -3856,7 +3856,7 @@
     "zh": "卖出数量超过持有，没有发起任何交易"
   },
   "launch2_launch2PoolViewModelTaxLabel": {
-    "en": "{launch2BpsLabel} + dynamic sell tax",
+    "en": "{launch2BpsLabel} + dyn. tax",
     "placeholders": {
       "launch2BpsLabel": {
         "example": "launch2BpsLabel(taxBps)",
@@ -4603,6 +4603,17 @@
     },
     "where": "lib/features/launch2/launch2_widgets.dart:208",
     "zh": "，剩余 {left}"
+  },
+  "launch2_poolPanelTax": {
+    "en": "Tax {bps}",
+    "placeholders": {
+      "bps": {
+        "example": "bps",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/launch2_pool_view_model.dart:529",
+    "zh": "外盘税 {bps}"
   },
   "launch2_poolTradesRateLimited": {
     "en": "Too many requests. Try again later",

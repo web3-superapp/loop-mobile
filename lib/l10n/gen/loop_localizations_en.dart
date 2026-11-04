@@ -2462,7 +2462,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String launch2_launch2InstanceAside(Object? launch2Usd1Label) {
-    return '24h volume $launch2Usd1Label';
+    return '24h vol $launch2Usd1Label';
   }
 
   @override
@@ -2945,7 +2945,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
-  String get launch2_launch2Launch2SnapshotPublishedAtLabel => 'Published at';
+  String get launch2_launch2Launch2SnapshotPublishedAtLabel => 'Published';
 
   @override
   String get launch2_launch2Launch2SnapshotTxLabel => 'Publish transaction';
@@ -3516,7 +3516,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String launch2_launch2PoolViewModelTaxLabel(Object? launch2BpsLabel) {
-    return '$launch2BpsLabel + dynamic sell tax';
+    return '$launch2BpsLabel + dyn. tax';
   }
 
   @override
@@ -3897,6 +3897,11 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String launch2_nftSaleLeft(Object? left) {
     return ', $left left';
+  }
+
+  @override
+  String launch2_poolPanelTax(Object? bps) {
+    return 'Tax $bps';
   }
 
   @override

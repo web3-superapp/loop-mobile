@@ -580,16 +580,12 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
                 ),
                 const SizedBox(width: 8),
               ],
-              Flexible(
-                child: Text(
-                  context.l10n.launch2_launch2TradePanelLaunch2TradeTax(
-                    launch2BpsLabel(taxBps),
-                  ),
-                  key: const ValueKey<String>('launch2-trade-tax'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+              Text(
+                context.l10n.launch2_launch2TradePanelLaunch2TradeTax(
+                  launch2BpsLabel(taxBps),
                 ),
+                key: const ValueKey<String>('launch2-trade-tax'),
+                style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
             ],
           ),

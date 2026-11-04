@@ -989,6 +989,7 @@
   "launch2_launchpadSomeoneWho": "有人",
   "launch2_nftRiskBody": "{sentence}。",
   "launch2_nftSaleLeft": "，剩余 {left}",
+  "launch2_poolPanelTax": "外盘税 {bps}",
   "launch2_poolTradesRateLimited": "请求太频繁，稍后再试",
   "launch2_provenanceBuyFeeFromUsd1": "已从付出的 USD1 扣 {bps} 基础税",
   "launch2_provenancePoolTax": "已扣 {bps} 外盘税",

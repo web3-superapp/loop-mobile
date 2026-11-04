@@ -1116,7 +1116,7 @@ void main() {
         expect(_key(key), findsNothing, reason: key);
       }
       expect(_key('launch2-pool-mode-caption'), findsOneWidget);
-      expect(find.text('DEX pool tax 2%'), findsWidgets);
+      expect(find.text('Tax 2%'), findsWidgets);
       await _drain(tester);
     });
 
@@ -1262,7 +1262,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('2% + dynamic sell tax'), findsOneWidget);
+      expect(find.text('2% + dyn. tax'), findsOneWidget);
       await _drain(tester);
     });
 

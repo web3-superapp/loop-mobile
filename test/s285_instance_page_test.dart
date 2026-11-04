@@ -382,7 +382,7 @@ void main() {
         tester.widget<Text>(_key('launch2-pool-price')).data,
         launch2PriceLabel(Decimal.parse('0.00068')),
       );
-      expect(find.text('24h volume 1,500.5 USD1'), findsOneWidget);
+      expect(find.text('24h vol 1,500.5 USD1'), findsOneWidget);
 
       await l2OpenTab(tester, 'info');
       expect(_key('launch2-pool-trades'), findsNothing);

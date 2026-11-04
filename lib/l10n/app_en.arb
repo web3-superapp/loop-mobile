@@ -3213,7 +3213,7 @@
   "@launch2_launch2HeroUpcoming4": {
     "description": "lib/features/launch2/launch2_hero.dart:258"
   },
-  "launch2_launch2InstanceAside": "24h volume {launch2Usd1Label}",
+  "launch2_launch2InstanceAside": "24h vol {launch2Usd1Label}",
   "@launch2_launch2InstanceAside": {
     "description": "lib/features/launch2/launch2_instance_screen.dart:1004",
     "placeholders": {
@@ -3868,7 +3868,7 @@
       }
     }
   },
-  "launch2_launch2Launch2SnapshotPublishedAtLabel": "Published at",
+  "launch2_launch2Launch2SnapshotPublishedAtLabel": "Published",
   "@launch2_launch2Launch2SnapshotPublishedAtLabel": {
     "description": "lib/features/launch2/launch2_widgets.dart:700"
   },
@@ -4637,7 +4637,7 @@
   "@launch2_launch2PoolViewModelSwitch7": {
     "description": "lib/features/launch2/launch2_pool_view_model.dart:153"
   },
-  "launch2_launch2PoolViewModelTaxLabel": "{launch2BpsLabel} + dynamic sell tax",
+  "launch2_launch2PoolViewModelTaxLabel": "{launch2BpsLabel} + dyn. tax",
   "@launch2_launch2PoolViewModelTaxLabel": {
     "description": "lib/features/launch2/launch2_pool_view_model.dart:407",
     "placeholders": {
@@ -5198,6 +5198,15 @@
     "description": "lib/features/launch2/launch2_widgets.dart:208",
     "placeholders": {
       "left": {
+        "type": "Object?"
+      }
+    }
+  },
+  "launch2_poolPanelTax": "Tax {bps}",
+  "@launch2_poolPanelTax": {
+    "description": "lib/features/launch2/launch2_pool_view_model.dart:529",
+    "placeholders": {
+      "bps": {
         "type": "Object?"
       }
     }

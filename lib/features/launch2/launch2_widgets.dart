@@ -256,23 +256,8 @@ class Launch2SectionLabel extends StatelessWidget {
     final info = this.info;
     final trailing = this.trailing;
     if (info == null && trailing == null) return LoopLabel(title);
-    final trailingBox = trailing == null
-        ? null
-        : Padding(
-            padding: EdgeInsets.only(
-              right: info == null ? LoopSpacing.page : 0,
-              bottom: info == null ? LoopSpacing.sectionBottom + 2 : 15,
-            ),
-            child: trailing,
-          );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
-      // S355a: without an (i) the trailing may take up to two thirds of the
-      // line and gives way beyond it (longer English); the leftover keeps
-      // it at the end.
-      mainAxisAlignment: info == null
-          ? MainAxisAlignment.spaceBetween
-          : MainAxisAlignment.start,
       children: <Widget>[
         Expanded(
           child: info == null
@@ -282,8 +267,14 @@ class Launch2SectionLabel extends StatelessWidget {
                   child: LoopLabel(title),
                 ),
         ),
-        if (trailingBox != null)
-          info == null ? Flexible(flex: 2, child: trailingBox) : trailingBox,
+        if (trailing != null)
+          Padding(
+            padding: EdgeInsets.only(
+              right: info == null ? LoopSpacing.page : 0,
+              bottom: info == null ? LoopSpacing.sectionBottom + 2 : 15,
+            ),
+            child: trailing,
+          ),
         if (info != null)
           // The 44 dp control in a box of at least 48 dp that answers for
           // it, so the label's (i) meets the Android tap-target size.

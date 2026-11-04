@@ -3690,6 +3690,11 @@ class LoopLocalizationsZh extends LoopLocalizations {
   }
 
   @override
+  String launch2_poolPanelTax(Object? bps) {
+    return '外盘税 $bps';
+  }
+
+  @override
   String get launch2_poolTradesRateLimited => '请求太频繁，稍后再试';
 
   @override
