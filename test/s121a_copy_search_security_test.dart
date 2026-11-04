@@ -161,7 +161,7 @@ void main() {
         findsNothing,
       );
       final row = tester.widget<LoopRecordRow>(
-        find.byKey(const ValueKey<String>('security-大额交易二次验证')),
+        find.byKey(const ValueKey<String>('security-large-amount-step-up')),
       );
       // Decision 0152: a real rule now; this tree composed no device
       // authentication, so it says so instead of offering a switch.

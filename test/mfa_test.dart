@@ -269,7 +269,7 @@ void main() {
       );
 
       final row = tester.widget<LoopRecordRow>(
-        find.byKey(const ValueKey<String>('security-大额交易二次验证')),
+        find.byKey(const ValueKey<String>('security-large-amount-step-up')),
       );
       expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);

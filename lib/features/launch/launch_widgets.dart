@@ -124,7 +124,8 @@ class LaunchUnavailableCard extends StatelessWidget {
   final LaunchUnavailable fact;
 
   /// A stable id for the card's key; [label] is copy and changes with the
-  /// language (decision 0281). Callers that have not migrated pass none.
+  /// language (decision 0281), so it is never part of the key. A caller that
+  /// passes none is keyed by the fact's reason code.
   final String? id;
   final EdgeInsets margin;
 
@@ -135,7 +136,9 @@ class LaunchUnavailableCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopInlineUnavailable(
-      key: ValueKey<String>('launch-unavailable-${id ?? label}'),
+      key: ValueKey<String>(
+        'launch-unavailable-${id ?? 'reason-${fact.reasonCode}'}',
+      ),
       message: label,
       detail: reason ?? launchReasonCodeText(fact.reasonCode),
       maxLines: 2,

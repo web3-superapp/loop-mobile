@@ -40,12 +40,46 @@ def arb_tables(root: Path) -> tuple[dict[str, str], dict[str, str]]:
     return _ARB_CACHE[root]
 
 
+_KEY_READ = re.compile(r"(?:\bl10n|\bLoopL10n\s*\.\s*current)\s*\.\s*([a-z][A-Za-z0-9_]*)")
+
+
+def keys_read(text: str) -> list[str]:
+    """ARB keys [text] reads through `context.l10n.<key>` / `LoopL10n.current.<key>`."""
+
+    return list(dict.fromkeys(_KEY_READ.findall(text)))
+
+
+def copy_read(root: Path, text: str, locales: tuple[str, ...] = ("zh",)) -> list[str]:
+    """The ARB values (zh by default) of every key [text] reads.
+
+    Rules that look for (or forbid) a phrase in a page's visible strings run
+    over these as well, so a phrase that moved to ARB is still seen. The
+    default is zh because those rules were reviewed against the zh copy the
+    source held before decision 0281; their English word lists predate it
+    and would misread English that never was a save claim (`Success` as a
+    network probe result).
+    """
+
+    zh, en = arb_tables(root)
+    tables = {"zh": zh, "en": en}
+    out: list[str] = []
+    for key in keys_read(text):
+        for locale in locales:
+            value = tables[locale].get(key)
+            if value:
+                out.append(value)
+    return out
+
+
 def copy_present(root: Path, text: str, fragment: str) -> bool:
     """Whether [fragment] is in [text], directly or as ARB copy it reads.
 
     A required Chinese phrase that moved to ARB still counts when the source
     reads a key (`l10n.<key>` / `LoopL10n.current.<key>`) whose zh value
-    contains it, or when the fragment is a key reference itself.
+    contains it, or when the fragment is a key reference itself. A key whose
+    zh value is an interpolation template (`共 {count} 条`) counts when the
+    fragment, with the interpolated part taken out, matches the template's
+    fixed pieces in order.
     """
 
     if fragment in text:
@@ -53,9 +87,49 @@ def copy_present(root: Path, text: str, fragment: str) -> bool:
     if not L.CJK.search(fragment):
         return False
     zh, _ = arb_tables(root)
-    for key, value in zh.items():
-        if fragment in value and re.search(r"(?:l10n|LoopL10n\.current)\s*\.\s*" + re.escape(key) + r"\b", text):
+    read = set(keys_read(text))
+    for key in read:
+        value = zh.get(key, "")
+        if not value:
+            continue
+        if fragment in value:
             return True
+        if "{" in value and _template_matches(value, fragment):
+            return True
+    return False
+
+
+def copy_mentions(root: Path, text: str, fragment: str) -> bool:
+    """For a forbidden phrase: [fragment] is in [text] or in the zh value of
+    a key [text] reads, as plain text. No template matching: a placeholder
+    would let `社区 {name}` "say" `社区 Tab`."""
+
+    if fragment in text:
+        return True
+    if not L.CJK.search(fragment):
+        return False
+    zh, _ = arb_tables(root)
+    return any(fragment in zh.get(key, "") for key in keys_read(text))
+
+
+def _template_matches(template: str, fragment: str) -> bool:
+    """[fragment] is an instance of [template], or of a stretch of it that
+    carries CJK fixed text: each fixed piece appears in order, anything stands
+    in for the placeholders (`共 3 条` against `共 {n} 条 · {t}`)."""
+
+    parts = [p for p in re.split(r"(\{[^{}]*\})", template) if p]
+
+    def is_slot(piece: str) -> bool:
+        return re.fullmatch(r"\{[^{}]*\}", piece) is not None
+
+    for k in range(len(parts)):
+        for j in range(len(parts), k, -1):
+            sub = parts[k:j]
+            if not any(not is_slot(p) and L.CJK.search(p) for p in sub):
+                continue
+            regex = "".join(".+?" if is_slot(p) else re.escape(p) for p in sub)
+            if re.fullmatch(regex, fragment, flags=re.S):
+                return True
     return False
 
 

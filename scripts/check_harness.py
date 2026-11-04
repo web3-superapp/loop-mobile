@@ -1766,10 +1766,23 @@ def _decode_dart_string_escapes(content: str) -> str:
     return "".join(decoded)
 
 
-def contains_positive_profile_save_language(source: str) -> bool:
+def visible_copy_contents(source: str, root: Path | None = None) -> list[str]:
+    """The source's own string literals plus, when [root] is given, the zh ARB
+    value of every key it reads (decision 0281: copy moved to ARB is still the
+    page's copy, so a wording rule must still see it)."""
+
+    contents = list(dart_concatenated_string_contents(source))
+    if root is not None:
+        contents.extend(L10N_RULES.copy_read(root, strip_dart_comments(source)))
+    return contents
+
+
+def contains_positive_profile_save_language(
+    source: str, root: Path | None = None
+) -> bool:
     """Detect only positive, user-visible Profile save evidence strings."""
 
-    for content in dart_concatenated_string_contents(source):
+    for content in visible_copy_contents(source, root):
         normalized = " ".join(content.split())
         if normalized.casefold().rstrip(".!?…") == "saved":
             return True
@@ -1778,10 +1791,12 @@ def contains_positive_profile_save_language(source: str) -> bool:
     return False
 
 
-def contains_positive_privacy_commit_language(source: str) -> bool:
+def contains_positive_privacy_commit_language(
+    source: str, root: Path | None = None
+) -> bool:
     """Detect only positive, user-visible Privacy commit evidence strings."""
 
-    for content in dart_concatenated_string_contents(source):
+    for content in visible_copy_contents(source, root):
         normalized = " ".join(content.split())
         normalized_word = normalized.casefold().rstrip(".!?…")
         if normalized_word in {
@@ -1805,10 +1820,12 @@ def contains_positive_privacy_commit_language(source: str) -> bool:
 # strict transports in `lib/integrations/backend/v2/`, not in a feature module.
 
 
-def contains_positive_notification_delivery_language(source: str) -> bool:
+def contains_positive_notification_delivery_language(
+    source: str, root: Path | None = None
+) -> bool:
     """Reject any claim that a notification was, or will be, delivered."""
 
-    for content in dart_concatenated_string_contents(source):
+    for content in visible_copy_contents(source, root):
         normalized = " ".join(content.split())
         normalized_word = normalized.casefold().rstrip(".!?…")
         if normalized_word in {
@@ -1827,11 +1844,11 @@ def contains_positive_notification_delivery_language(source: str) -> bool:
 
 
 def contains_positive_notification_preferences_commit_language(
-    source: str,
+    source: str, root: Path | None = None
 ) -> bool:
     """Detect a positive, user-visible save claim for the preference resource."""
 
-    for content in dart_concatenated_string_contents(source):
+    for content in visible_copy_contents(source, root):
         normalized = " ".join(content.split())
         normalized_word = normalized.casefold().rstrip(".!?…")
         if normalized_word in {"saved", "committed", "applied", "保存成功"}:
@@ -1843,7 +1860,9 @@ def contains_positive_notification_preferences_commit_language(
     return False
 
 
-def notification_preferences_commit_evidence(source: str) -> bool:
+def notification_preferences_commit_evidence(
+    source: str, root: Path | None = None
+) -> bool:
     """Report whether a save claim is bound to a committed server resource.
 
     A toast that fires unconditionally would announce a stored intent. One
@@ -1860,6 +1879,8 @@ def notification_preferences_commit_evidence(source: str) -> bool:
         return False
     return all(
         marker in executable
+        if root is None
+        else L10N_RULES.copy_present(root, executable, marker)
         for marker in NOTIFICATION_PREFERENCES_DELIVERY_TRUTH_MARKERS
     )
 
@@ -4125,7 +4146,10 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                     "provider has answered"
                 )
             elsewhere = setup.replace(lock, "").replace(mfa, "")
-            if re.search(r"'(?:已开启|已启用|已设置)'", elsewhere):
+            if re.search(r"'(?:已开启|已启用|已设置)'", elsewhere) or any(
+                value in ("已开启", "已启用", "已设置")
+                for value in L10N_RULES.copy_read(root, elsewhere)
+            ):
                 errors.append(
                     "A11 must not present a capability as an enabled protection"
                 )
@@ -8858,7 +8882,7 @@ def check_community_ai_contract(root: Path) -> list[str]:
             continue
         source = strip_dart_comments(read_text(path))
         for forbidden in COMMUNITY_AI_FORBIDDEN_COPY:
-            if forbidden in source:
+            if L10N_RULES.copy_mentions(root, source, forbidden):
                 errors.append(
                     f"{relative} must not publish a document count for "
                     f"Community AI; found `{forbidden}`"
@@ -11097,7 +11121,13 @@ def check_no_paging_buttons(root: Path) -> list[str]:
         return errors
     for path in sorted(lib.rglob("*.dart")):
         relative = path.relative_to(root).as_posix()
-        for line, literal in _dart_string_literals(read_text(path)):
+        text = read_text(path)
+        literals = list(_dart_string_literals(text))
+        # Decision 0281: copy read through an ARB key is checked by its zh.
+        literals.extend(
+            (0, value) for value in L10N_RULES.copy_read(root, strip_dart_comments(text))
+        )
+        for line, literal in literals:
             if not PAGING_BUTTON_COPY.search(literal):
                 continue
             if PAGING_STATUS_COPY.search(literal):
@@ -11849,7 +11879,7 @@ def check_s7_truth_contract(root: Path) -> list[str]:
         for path in sorted(surface_root.rglob("*.dart")):
             source = strip_dart_comments(read_text(path))
             for retired in S7_RETIRED_PROTOTYPE_COPY:
-                if retired in source:
+                if L10N_RULES.copy_mentions(root, source, retired):
                     errors.append(
                         f"{path.relative_to(root)} states `{retired}`; the "
                         "Launch contract baseline is undelivered, so no supply, "
@@ -11862,7 +11892,9 @@ def check_s7_truth_contract(root: Path) -> list[str]:
         if not path.is_file():
             errors.append(f"missing Token Card source: {relative}")
             continue
-        if "生态税" in strip_dart_comments(read_text(path)):
+        if L10N_RULES.copy_mentions(
+            root, strip_dart_comments(read_text(path)), "生态税"
+        ):
             errors.append(
                 f"{relative} labels a 生态税 metric; LoopTokenCard.graduated "
                 "carries no ecosystem tax while the Launch contract baseline "
@@ -12090,7 +12122,7 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
             continue
         source = strip_dart_comments(read_text(path))
         for marker in ("package:dio/", "'/v2/", '"/v2/', "演示数据"):
-            if marker in source:
+            if L10N_RULES.copy_mentions(root, source, marker):
                 errors.append(
                     f"{relative} must stay a port consumer without transport "
                     f"or fixture detail: {marker}"
@@ -12590,7 +12622,7 @@ def check_profile_application_contract(root: Path) -> list[str]:
     if profile_feature_root.is_dir():
         for path in sorted(profile_feature_root.rglob("*.dart")):
             source = read_text(path)
-            if contains_positive_profile_save_language(source):
+            if contains_positive_profile_save_language(source, root):
                 errors.append(
                     f"{path.relative_to(root)} contains positive Profile save "
                     "language; committed-resource state is the only allowed "
@@ -12869,7 +12901,7 @@ def check_privacy_application_contract(root: Path) -> list[str]:
             if notification_preferences_root in path.parents:
                 continue
             source = read_text(path)
-            if contains_positive_privacy_commit_language(source):
+            if contains_positive_privacy_commit_language(source, root):
                 errors.append(
                     f"{path.relative_to(root)} contains positive Privacy commit "
                     "language; committed-resource state is the only allowed "
@@ -12920,7 +12952,7 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
             # A delivery claim has no evidence at all: `push` is permanently
             # `PUSH_RUNTIME_DEFERRED`, so nothing may say a notification is
             # enabled, connected, or on its way.
-            if contains_positive_notification_delivery_language(source):
+            if contains_positive_notification_delivery_language(source, root):
                 errors.append(
                     f"{relative} contains positive delivery language; "
                     "PUSH_RUNTIME_DEFERRED never becomes a delivery claim"
@@ -12929,8 +12961,8 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
             # server committed under the version CAS, on a page that also
             # states delivery is unavailable.
             if contains_positive_notification_preferences_commit_language(
-                source
-            ) and not notification_preferences_commit_evidence(source):
+                source, root
+            ) and not notification_preferences_commit_evidence(source, root):
                 errors.append(
                     f"{relative} announces a save without a committed "
                     "resource; a stored intent never proves a commit"
@@ -14669,7 +14701,7 @@ def check_ia_cleanup_contract(root: Path) -> list[str]:
         relative = path.relative_to(root).as_posix()
         source = strip_dart_comments(read_text(path))
         for phrase in IA_STALE_IA_COPY:
-            if phrase in source:
+            if L10N_RULES.copy_mentions(root, source, phrase):
                 errors.append(
                     f"{relative} names 「{phrase}」, which is not where anything "
                     "is any more (audit §五 rule 18)"
@@ -14820,7 +14852,7 @@ def check_first_frame_cache_contract(root: Path) -> list[str]:
                     "draws what this device holds (decision 0132)"
                 )
         for fragment in forbidden:
-            if fragment in source:
+            if L10N_RULES.copy_mentions(root, source, fragment):
                 errors.append(
                     f"{relative} must not draw `{fragment}`: a placeholder "
                     "where a local answer exists (decision 0132)"

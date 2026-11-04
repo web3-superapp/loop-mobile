@@ -42,6 +42,8 @@ Accepted · 2026-11-04（S354-mobile）。用户裁决：App 默认语言改成�
    apply 还会把 enum 的中文构造参数（`chat('chat', '聊天')` + `this.label`）改成 `String get label => switch (this) {...}`（只支持位置参数 `this.x`）。
 4. `python3 scripts/l10n/merge.py`（合 ARB + gen-l10n）→ `bin/dart fix --apply` → `bin/dart format lib test` → `flutter analyze` → 全量 `flutter test`；手工处理 TODO。
    测试仍失败时，读完原因再用 `apply.py <fragments> --force-tests test/a_test.dart …`：只改这些文件里断言调用（`find.text`、`expect`、`containsAllInOrder`、`matchesSemantics`…）中与 fragment zh 完全相等或按模板匹配的字面量。**不要**改：服务端 fixture 原样回显的文案（如「服务端 title / body 优先」用例）、未迁移页面自己印的中文（页面标题等）、`group(` / `testWidgets(` 的名字（harness 的行为证据按名字匹配）。
+   - **`dart fix --apply` 只能在 `flutter analyze` 干净之后跑**（S355g；决策 0283）：analyze 还有编译错误时它会误删需要的类型转换、乱加 `return null`。顺序是先手工修到 analyze 0 错，再 `dart fix --apply`，再 analyze 一次。
+   - **溢出 / 截图测试必须 `loopLoadShotFonts()`**（S355b/g；决策 0283）：测试默认字体每个字形一格等宽方块，英文比真字体宽 2–3 倍，会误报溢出。判断英文是否溢出的用例先加载真字体再断言；不做全仓 `flutter_test_config` 全局加载真字体（主代理裁决）。
 5. 从 `scripts/l10n/pending_dirs.txt` 删掉该目录（或加 `!子目录`），`python3 scripts/check_harness.py` 的 `check_no_hardcoded_cjk` 从此拦住该目录的新中文字面量。
 
 ### S354 试点学到的规则（S355 照做）
