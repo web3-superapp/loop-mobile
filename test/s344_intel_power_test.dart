@@ -501,7 +501,8 @@ void main() {
     testWidgets('代币 first; NFT and 邀请 switch the body', (tester) async {
       await _pumpPower(tester);
       final bar = tester.widget<LoopSegBar>(_key('mining-power-tabs'));
-      expect(bar.labels, <String>['NFT', '代币', '邀请']);
+      // S350b · decision 0275: 代币 / NFT / 邀请.
+      expect(bar.labels, <String>['代币', 'NFT', '邀请']);
       expect(_key('mining-power-tab-token'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsOneWidget);
       // S348: what the snapshot did not count is not drawn.

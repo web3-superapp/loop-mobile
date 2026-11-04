@@ -391,7 +391,6 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           key: ValueKey<String>('$_keyBase-empty'),
           illustration: LoopIllustration.launchpad,
           title: graduated ? '还没有毕业的 v2 项目' : '还没有 v2 项目',
-          message: graduated ? '内盘卖满后自动建官方池，会出现在这里' : 'NFT 预售开始后会出现在这里',
           action: widget.onEmptyAction == null
               ? null
               : LoopButton(
@@ -615,7 +614,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         else
           const LoopAtmoEmpty(
             key: ValueKey<String>('launch2-live-empty'),
-            message: '现在没有铸造或内盘中的项目，开售后会出现在这里',
+            message: '现在没有铸造或内盘中的项目',
             crownKey: ValueKey<String>('launch2-live-empty-crown'),
           ),
       ..._footer(state, controller, _keyBase),
@@ -660,7 +659,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       return const <Widget>[
         LoopAtmoEmpty(
           key: ValueKey<String>('launch2-graduated-empty'),
-          message: '还没有毕业的 v2 项目，内盘卖满后自动建官方池，会出现在这里',
+          message: '还没有毕业的 v2 项目',
           crownKey: ValueKey<String>('launch2-graduated-empty-crown'),
         ),
       ];

@@ -1187,7 +1187,9 @@ class _PodiumPlace extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: LoopTypography.withWeight(LoopType.body2, FontWeight.w600),
+          // S350b · decision 0275: a name on the podium is never smaller than
+          // the same name in the rows under it (body1 17 / 600).
+          style: LoopType.body1,
         ),
         const SizedBox(height: 4),
         FittedBox(
@@ -1275,9 +1277,11 @@ class IntelRankListHead extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       key: const ValueKey<String>('intel-rank-list-head'),
+      // S350b · decision 0275: 16 from the podium, so the head reads as the
+      // list's own and not the podium's foot.
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        LoopSpacing.tight,
+        LoopSpacing.segmentGap,
         LoopSpacing.page,
         LoopSpacing.tight,
       ),
@@ -1289,11 +1293,14 @@ class IntelRankListHead extends StatelessWidget {
                 leftOf(scope),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.caption,
+                style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
             ),
             const SizedBox(width: 12),
-            Text(rightOf(scope), style: LoopType.caption),
+            Text(
+              rightOf(scope),
+              style: LoopType.caption.copyWith(color: LoopColors.text3),
+            ),
           ],
         ),
       ),
@@ -1366,9 +1373,11 @@ class IntelRankRow extends StatelessWidget {
               textAlign: TextAlign.right,
               style: place == null
                   ? LoopType.caption
+                  // S350b: the place is a quiet column beside the face, a
+                  // step under the name and the figure.
                   : LoopTypography.withWeight(
-                      LoopType.figureBody,
-                      FontWeight.w700,
+                      LoopType.figureSm,
+                      FontWeight.w600,
                     ).copyWith(color: accent ?? LoopColors.text3),
             ),
           ),

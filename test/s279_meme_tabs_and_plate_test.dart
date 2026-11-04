@@ -294,7 +294,8 @@ void main() {
       pending.complete(l2Page(const <Map<String, Object?>>[]));
       await tester.pumpAndSettle();
       expect(_key('launch2-graduated-empty'), findsOneWidget);
-      expect(find.text('还没有毕业的 v2 项目，内盘卖满后自动建官方池，会出现在这里'), findsOneWidget);
+      // S350b · decision 0275: the fact alone.
+      expect(find.text('还没有毕业的 v2 项目'), findsOneWidget);
       await _drain(tester);
 
       answer = () => Future<Launch2InstancePage>.error(

@@ -130,7 +130,11 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       ],
       // A closed mining gate keeps the page's shape: the gate is said where
       // the cards would be, and 邀请 — its own capability — still opens.
-      primary: blocked ? null : _networkCard(summary, rewards),
+      // S350b · decision 0275: once 我的总算力 is read, 全网总算力 is the
+      // hero's supporting line; before that it stands as its own card.
+      primary: blocked || summary != null
+          ? null
+          : _networkCard(summary, rewards),
       sections: <Widget>[
         if (blocked)
           LoopCapabilityBlockCard(
@@ -182,6 +186,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             onClaim: widget.onOpenRewards,
             claimSemanticLabel: '领取奖励，打开奖励与领取',
             powerOnly: !live,
+            network: _networkCard(summary, rewards, inline: true),
+            onOpenRank: widget.onOpenRank,
           ),
           MiningSnapshotProvenanceLine(
             slug: 'summary',
@@ -240,7 +246,11 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
     ]);
   }
 
-  Widget _networkCard(MiningSummary? summary, MiningRewardsView? rewards) {
+  Widget _networkCard(
+    MiningSummary? summary,
+    MiningRewardsView? rewards, {
+    bool inline = false,
+  }) {
     final nft = rewards?.nft?.networkPower;
     final token = rewards?.asset?.networkPower;
     if (nft != null && token != null) {
@@ -252,6 +262,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         token: miningPowerFigure(token),
         lastHour: true,
         onOpenRank: widget.onOpenRank,
+        inline: inline,
       );
     }
     return switch (summary?.networkPower) {
@@ -259,16 +270,19 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         total: loopPowerFigure(value),
         spoken: loopPowerFigure(value),
         onOpenRank: widget.onOpenRank,
+        inline: inline,
       ),
       MiningFigureUnavailable(:final reasonCode) => MiningNetworkPowerCard(
         total: launchMissingFigure,
         spoken: launchReasonCodeText(reasonCode),
         onOpenRank: widget.onOpenRank,
+        inline: inline,
       ),
       null => MiningNetworkPowerCard(
         total: launchMissingFigure,
         spoken: '还没有读到',
         onOpenRank: widget.onOpenRank,
+        inline: inline,
       ),
     };
   }

@@ -929,10 +929,12 @@ class Launch2BoardRow extends ConsumerWidget {
     final id = row.instanceId;
     final next = row.nextChangeAt;
     final words = LoopType.caption.copyWith(color: LoopColors.text2);
+    // S350b · decision 0275: the share sold is the bar's own reading — grey
+    // and 600, a step under the name and the price.
     final pct = LoopTypography.withWeight(
       LoopType.figureSm,
-      FontWeight.w700,
-    ).copyWith(color: LoopColors.chalk);
+      FontWeight.w600,
+    ).copyWith(color: LoopColors.text2);
     Widget countdown(String prefix) => next == null
         ? Text('$prefix待定', style: words)
         : Launch2Countdown(
@@ -1009,32 +1011,11 @@ class Launch2BoardRow extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: <Widget>[
-                          Flexible(
-                            flex: 2,
-                            child: Text(
-                              row.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: LoopType.body1,
-                            ),
-                          ),
-                          if (showTicker) ...<Widget>[
-                            const SizedBox(width: 6),
-                            // A long ticker gives way before the name does.
-                            Flexible(
-                              child: Text(
-                                row.ticker,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: LoopType.caption,
-                              ),
-                            ),
-                          ],
-                        ],
+                      // S350b · decision 0275: the ticker gives way first,
+                      // whole — the name is never cut to make room for it.
+                      _BoardRowName(
+                        name: row.name,
+                        ticker: showTicker ? row.ticker : null,
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -1081,6 +1062,61 @@ class Launch2BoardRow extends ConsumerWidget {
   }
 }
 
+/// A board row's first line: the name (body1) and, when the line holds both,
+/// the ticker (caption) after it.
+class _BoardRowName extends StatelessWidget {
+  const _BoardRowName({required this.name, this.ticker});
+
+  final String name;
+  final String? ticker;
+
+  static const double _gap = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final nameText = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: LoopType.body1,
+    );
+    final mark = ticker;
+    if (mark == null) return nameText;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final scaler = MediaQuery.textScalerOf(context);
+        double width(String text, TextStyle style) {
+          final painter = TextPainter(
+            text: TextSpan(text: text, style: style),
+            textDirection: TextDirection.ltr,
+            textScaler: scaler,
+            maxLines: 1,
+          )..layout();
+          final value = painter.width;
+          painter.dispose();
+          return value;
+        }
+
+        final fits =
+            width(name, LoopType.body1) +
+                _gap +
+                width(mark, LoopType.caption) <=
+            box.maxWidth;
+        if (!fits) return nameText;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: <Widget>[
+            nameText,
+            const SizedBox(width: _gap),
+            Text(mark, maxLines: 1, style: LoopType.caption),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// 预告 with nothing queued: the grey crown, one sentence, and 「我要发射」
 /// into the create flow (when the create entry is open).
 class Launch2UpcomingEmpty extends StatelessWidget {
@@ -1094,7 +1130,8 @@ class Launch2UpcomingEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopAtmoEmpty(
-    message: '还没有排队中的项目，第一个发射的就是你',
+    // S350b · decision 0275: the fact alone; 我要发射 is the invitation.
+    message: '还没有排队中的项目',
     crownKey: const ValueKey<String>('launch2-upcoming-empty-crown'),
     actionLabel: '我要发射',
     actionKey: const ValueKey<String>('launch2-upcoming-empty-launch'),

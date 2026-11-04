@@ -146,7 +146,9 @@ class _ReferralCenterSectionsState
         Row(
           children: <Widget>[
             Expanded(
-              child: LoopSegBar(
+              // S350b · decision 0275: the filter step under 代币 / NFT / 邀请
+              // — 32 high framed chips, not a second row of 36 capsules.
+              child: ReferralSubTabs(
                 key: const ValueKey<String>('referral-tabs'),
                 labels: <String>[
                   for (final tab in ReferralCenterTab.values) tab.label,
@@ -157,10 +159,7 @@ class _ReferralCenterSectionsState
               ),
             ),
             if (info != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 4, bottom: 8),
-                child: info,
-              ),
+              Padding(padding: const EdgeInsets.only(right: 4), child: info),
           ],
         ),
         KeyedSubtree(
@@ -237,6 +236,49 @@ class _ReferralCenterSectionsState
       LoopToast.show(context, message: '邀请码已绑定', kind: LoopToastKind.ok);
     }
   }
+}
+
+/// The tabs inside 邀请 (S350b · decision 0275): 邀请列表 / 邀请加成 one level
+/// under the page's 代币 / NFT / 邀请 capsules — the App's filter step
+/// (S350c): 32 high framed chips with the 14 word, the chosen one solid
+/// Purple with its splat, 8 apart, 16 under the block above.
+class ReferralSubTabs extends StatelessWidget {
+  const ReferralSubTabs({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+    super.key,
+  });
+
+  /// The drawn height of a filter chip (S350c's `WalletAssetTabs`).
+  static const double filterHeight = 32;
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      LoopSpacing.segmentGap - (LoopSeg.segmentTarget - filterHeight) / 2,
+      0,
+      0,
+    ),
+    child: Row(
+      children: <Widget>[
+        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
+          if (index > 0) const SizedBox(width: LoopSpacing.tight),
+          LoopSeg(
+            label: labels[index],
+            selected: index == selectedIndex,
+            capsuleHeight: filterHeight,
+            onSelected: () => onSelected(index),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 /// The `referral` route (manifest slug `referral`). Decision 0272: it
@@ -446,27 +488,37 @@ class _InviteCardBody extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 12),
-        LoopButtonPair(
-          padded: false,
+        // S350b: the share button takes the larger part, so 「分享邀请链接」
+        // holds one line at 360 wide.
+        Row(
           children: <Widget>[
-            if (link != null)
-              LoopButton(
-                key: const ValueKey<String>('referral-share-link'),
-                label: '分享邀请链接',
-                icon: 'share',
-                primary: true,
-                onPressed: () => unawaited(_share(context, ref, code, link)),
+            if (link != null) ...<Widget>[
+              Expanded(
+                flex: 4,
+                child: LoopButton(
+                  key: const ValueKey<String>('referral-share-link'),
+                  label: '分享邀请链接',
+                  // S350b: no glyph, so the label holds one line in half the
+                  // card at 360 wide.
+                  primary: true,
+                  onPressed: () => unawaited(_share(context, ref, code, link)),
+                ),
               ),
-            LoopButton(
-              key: const ValueKey<String>('referral-poster'),
-              label: '生成海报',
-              onPressed: () => unawaited(
-                showLoopSheet<void>(
-                  context,
-                  barrierLabel: '关闭邀请海报',
-                  useRootNavigator: true,
-                  builder: (sheetContext) =>
-                      ReferralPosterSheet(code: code, link: link),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              flex: 3,
+              child: LoopButton(
+                key: const ValueKey<String>('referral-poster'),
+                label: '生成海报',
+                onPressed: () => unawaited(
+                  showLoopSheet<void>(
+                    context,
+                    barrierLabel: '关闭邀请海报',
+                    useRootNavigator: true,
+                    builder: (sheetContext) =>
+                        ReferralPosterSheet(code: code, link: link),
+                  ),
                 ),
               ),
             ),

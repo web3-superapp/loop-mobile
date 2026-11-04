@@ -115,9 +115,9 @@ void main() {
       // it with their subtotals.
       expect(_key('mining-summary-hero-split'), findsNothing);
       expect(_key('mining-summary-hero-token-power'), findsNothing);
-      for (final slug in <String>['last-hour-power', 'active-invites']) {
-        expect(_key('mining-summary-hero-$slug'), findsOneWidget);
-      }
+      expect(_key('mining-summary-hero-last-hour-power'), findsOneWidget);
+      // S350b · decision 0275: no invites read, so no 「—」 cell.
+      expect(_key('mining-summary-hero-active-invites'), findsNothing);
 
       expect(_text(tester, 'mining-composition-token-subtotal'), '1,234,577');
       // 代币 rows show power − nftPower, in the S321 row with its expression.
