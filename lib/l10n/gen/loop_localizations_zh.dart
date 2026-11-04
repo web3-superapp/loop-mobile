@@ -7359,9 +7359,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get launch2Creator_launch2Build => '内盘可售';
 
   @override
-  String get launch2Creator_launch2Build10 => '由平台模板固定，不能修改。';
-
-  @override
   String get launch2Creator_launch2Build11 => '平台还没有配置回购收币地址，暂时不能提交。';
 
   @override

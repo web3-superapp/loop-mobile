@@ -312,21 +312,19 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         label: LoopL10n.current.launch2Creator_launch2CreateLoopLabel,
         value: loopTruncatedAddress(request.buybackRecipient),
       ),
-      // Decision 0284: the project's own terms, when the request signs them.
-      if (request.nftPriceRaw case final BigInt price)
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-sign-nft-price'),
-          label: LoopL10n.current.launch2Creator_termsNftPriceLabel,
-          value: launch2Usd1Label(price),
+      // Decision 0284: the project's own terms the request signs.
+      LoopKeyValue(
+        key: const ValueKey<String>('launch2-sign-nft-price'),
+        label: LoopL10n.current.launch2Creator_termsNftPriceLabel,
+        value: launch2Usd1Label(request.nftPriceRaw),
+      ),
+      LoopKeyValue(
+        key: const ValueKey<String>('launch2-sign-wallet-cap'),
+        label: LoopL10n.current.launch2Creator_launch2Build6,
+        value: LoopL10n.current.launch2Creator_launch2CapFigure(
+          launch2CurveCapFigure(launch2Units(request.maxCumulativeBuyRaw)),
         ),
-      if (request.maxCumulativeBuyRaw case final BigInt cap)
-        LoopKeyValue(
-          key: const ValueKey<String>('launch2-sign-wallet-cap'),
-          label: LoopL10n.current.launch2Creator_launch2Build6,
-          value: LoopL10n.current.launch2Creator_launch2CapFigure(
-            launch2CurveCapFigure(launch2Units(cap)),
-          ),
-        ),
+      ),
       LoopKeyValue(label: 'nonce', value: request.nonce),
       _DeadlineRow(
         key: ValueKey<String>('launch2-sign-deadline-${request.deadline}'),

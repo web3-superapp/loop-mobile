@@ -17,7 +17,8 @@ Accepted · 2026-11-04（S359-mobile）。需求方 2026-11-04 提出、用户�
 - **读（全部可选、缺省回落，`LAUNCH2_PROJECT_TERMS_EMIT` off 时与今天一致）**：
   - 草稿 `config`：`nftPriceUsd1`、`walletCapPerMille`、`maxCumulativeBuyRaw`（null = 缺省；越界 / 小数 / 类型错 = invalid）。`Launch2HooksDraft.projectEconomics` 把它们叠到 `fixedEconomics` 上（cap 优先于工厂 `maxCumulativeBuy`，回购单笔跟价格走），项目页与创建页模板卡都读它。
   - 实例详情：`instance` 根上与 `template` 里都可带三键；`template.nftPriceUsd1` 除原十进制字符串外也接受整数。叠加后 `perAddressCap` / `perAddressCapBps` / `nftPriceUsd1` / `buybackOrderUsd1` 用实例值，规则区、交易面板、NFT 页照旧读模型。
-  - 签名请求：`request` 与 `LaunchRequest` 可多出 `nftPrice`（wei）/ `maxCumulativeBuy`（raw）两键，必须同时出现、在 typedData 类型与 message 里各一份且值一致，否则 invalid；有则签名页多两行（NFT 售价 / 单地址上限）。字段名按任务书 §1，合并前须与 contracts 批的 typehash 逐字对齐。
+  - 签名请求（按 contracts 0019 定稿逐字对齐）：domain 必须是 `("LOOP Launch Factory", "2", chainId, factory)`；`request` 必带 `nftPrice`（wei）/ `maxCumulativeBuy`（raw）且非 0；`types.LaunchRequest` 必须按序逐字等于 `LaunchRequest(bytes32 configHash,address projectOwner,uint32 configVersion,string name,string ticker,uint64 nftSaleStart,address buybackRecipient,uint64 deadline,bytes32 memeSalt,uint256 nonce,bytes32 templateHash,uint256 nftPrice,uint256 maxCumulativeBuy)`，message 与 request 同值。域版本 "1" / 旧 11 字段请求一律 invalid（服务端同步升级）。App 不自算 digest，只校验结构后原样交给钱包；签名页多两行（NFT 售价 / 单地址上限）。
+- 模板卡底部「Fixed by the platform template; can't be changed.」（zh 同）删除：0248 不要说明句，且条款已可按项目填写。
 - 文案进 `lib/l10n/fragments/launch2Creator.json`（创建页所在目录的 fragment），`merge.py` 重生成。
 
 ## Consequences

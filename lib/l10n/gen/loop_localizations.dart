@@ -13103,12 +13103,6 @@ abstract class LoopLocalizations {
   /// **'Bonding pool for sale'**
   String get launch2Creator_launch2Build;
 
-  /// lib/features/launch2/creator/launch2_creator_widgets.dart:241
-  ///
-  /// In en, this message translates to:
-  /// **'Fixed by the platform template; can\'t be changed.'**
-  String get launch2Creator_launch2Build10;
-
   /// lib/features/launch2/creator/launch2_creator_widgets.dart:340
   ///
   /// In en, this message translates to:

@@ -471,28 +471,42 @@ abstract final class LoopV2Launch2CreatorCodec {
     'deadline',
     'memeSalt',
     'nonce',
-  };
-
-  /// Decision 0284 (S359): the two terms a Factory that signs them adds to
-  /// `request` and to `LaunchRequest` — both or neither.
-  static const Set<String> requestTermKeys = <String>{
+    // Decision 0284 (S359, contracts 0019): the project's NFT price (wei)
+    // and per-address cap (raw MEME), both signed.
     'nftPrice',
     'maxCumulativeBuy',
   };
 
-  /// The eleven `LaunchRequest` fields the Factory verifies.
-  static const List<String> launchRequestFields = <String>[
-    'configHash',
-    'projectOwner',
-    'configVersion',
-    'name',
-    'ticker',
-    'nftSaleStart',
-    'buybackRecipient',
-    'deadline',
-    'memeSalt',
-    'nonce',
-    'templateHash',
+  /// The Factory's EIP-712 domain name and version (contracts 0019: version
+  /// "2" since the request signs the project terms; a "1" request is
+  /// refused).
+  static const String eip712DomainName = 'LOOP Launch Factory';
+  static const String eip712DomainVersion = '2';
+
+  /// The thirteen `LaunchRequest` fields the Factory verifies, in its type
+  /// string's order: `LaunchRequest(bytes32 configHash,address projectOwner,
+  /// uint32 configVersion,string name,string ticker,uint64 nftSaleStart,
+  /// address buybackRecipient,uint64 deadline,bytes32 memeSalt,uint256
+  /// nonce,bytes32 templateHash,uint256 nftPrice,uint256 maxCumulativeBuy)`.
+  static const List<(String, String)> launchRequestType = <(String, String)>[
+    ('configHash', 'bytes32'),
+    ('projectOwner', 'address'),
+    ('configVersion', 'uint32'),
+    ('name', 'string'),
+    ('ticker', 'string'),
+    ('nftSaleStart', 'uint64'),
+    ('buybackRecipient', 'address'),
+    ('deadline', 'uint64'),
+    ('memeSalt', 'bytes32'),
+    ('nonce', 'uint256'),
+    ('templateHash', 'bytes32'),
+    ('nftPrice', 'uint256'),
+    ('maxCumulativeBuy', 'uint256'),
+  ];
+
+  /// The field names of [launchRequestType], in order.
+  static List<String> get launchRequestFields => <String>[
+    for (final (name, _) in launchRequestType) name,
   ];
 
   /// `types.EIP712Domain`, field by field (loop-api decision 0120).
@@ -505,17 +519,9 @@ abstract final class LoopV2Launch2CreatorCodec {
 
   static Launch2SigningRequest signingRequest(Object? raw) {
     final root = LoopV2Contract.strictMap(raw, signingKeys);
-    final requestRaw = LoopV2Contract.strictMapWithOptional(
-      root['request'],
-      requestKeys,
-      requestTermKeys,
-    );
+    final requestRaw = LoopV2Contract.strictMap(root['request'], requestKeys);
     final request = Map<String, Object?>.unmodifiable(requestRaw);
-    final termCount = requestTermKeys.where(request.containsKey).length;
-    if (termCount == 1) invalid();
-    final withTerms = termCount == 2;
-    BigInt? termValue(String key) {
-      if (!withTerms) return null;
+    BigInt termValue(String key) {
       final value = BigInt.parse(
         LoopV2ChainCodec.requireString(request, key, pattern: _uint),
       );
@@ -525,10 +531,6 @@ abstract final class LoopV2Launch2CreatorCodec {
 
     final nftPriceRaw = termValue('nftPrice');
     final maxCumulativeBuyRaw = termValue('maxCumulativeBuy');
-    final signedFields = <String>[
-      ...launchRequestFields,
-      if (withTerms) ...requestTermKeys,
-    ];
     final projectOwner = LoopV2ChainCodec.requireString(
       request,
       'projectOwner',
@@ -609,8 +611,8 @@ abstract final class LoopV2Launch2CreatorCodec {
       'verifyingContract',
     });
     final domainChainId = domain['chainId'];
-    if (domain['name'] is! String ||
-        domain['version'] is! String ||
+    if (domain['name'] != eip712DomainName ||
+        domain['version'] != eip712DomainVersion ||
         domainChainId is! int ||
         domainChainId <= 0) {
       invalid();
@@ -645,28 +647,27 @@ abstract final class LoopV2Launch2CreatorCodec {
         invalid();
       }
     }
+    // Contracts 0019: the type string, field by field and in order; any
+    // other list hashes a different struct than the Factory's.
     final fields = types['LaunchRequest'];
-    if (fields is! List) invalid();
-    final names = <String>[
-      for (final field in fields)
-        if (field is Map && field['name'] is String)
-          field['name'] as String
-        else
-          '',
-    ];
-    if (names.length != signedFields.length ||
-        !signedFields.every(names.contains)) {
+    if (fields is! List || fields.length != launchRequestType.length) {
       invalid();
+    }
+    for (var i = 0; i < launchRequestType.length; i += 1) {
+      final field = fields[i];
+      if (field is! Map ||
+          field.length != 2 ||
+          field['name'] != launchRequestType[i].$1 ||
+          field['type'] != launchRequestType[i].$2) {
+        invalid();
+      }
     }
     final message = typedData['message'];
     if (message is! Map) invalid();
-    if (message.length != signedFields.length) invalid();
+    if (message.length != launchRequestType.length) invalid();
     // What the sheet shows is what the wallet signs: every request field the
     // message repeats must be the same value.
-    for (final key in <String>{
-      ...requestKeys,
-      if (withTerms) ...requestTermKeys,
-    }) {
+    for (final key in requestKeys) {
       if (!_sameValue(message[key], request[key])) invalid();
     }
     final templateHash = message['templateHash'];

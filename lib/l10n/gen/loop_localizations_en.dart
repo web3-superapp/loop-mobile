@@ -8114,10 +8114,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get launch2Creator_launch2Build => 'Bonding pool for sale';
 
   @override
-  String get launch2Creator_launch2Build10 =>
-      'Fixed by the platform template; can\'t be changed.';
-
-  @override
   String get launch2Creator_launch2Build11 =>
       'The platform hasn\'t set a buyback recipient address yet, so you can\'t submit right now.';
 

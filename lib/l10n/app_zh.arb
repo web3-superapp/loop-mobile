@@ -2146,7 +2146,6 @@
   "launch2Creator_launch2AwaitingExecutor": "排队中",
   "launch2Creator_launch2BootstrapRequired": "账号还在初始化，稍后再试。",
   "launch2Creator_launch2Build": "内盘可售",
-  "launch2Creator_launch2Build10": "由平台模板固定，不能修改。",
   "launch2Creator_launch2Build11": "平台还没有配置回购收币地址，暂时不能提交。",
   "launch2Creator_launch2Build2": "毕业储备",
   "launch2Creator_launch2Build3": "内盘买卖税",

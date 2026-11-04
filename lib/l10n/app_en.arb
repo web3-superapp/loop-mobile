@@ -9990,10 +9990,6 @@
   "@launch2Creator_launch2Build": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:191"
   },
-  "launch2Creator_launch2Build10": "Fixed by the platform template; can't be changed.",
-  "@launch2Creator_launch2Build10": {
-    "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:241"
-  },
   "launch2Creator_launch2Build11": "The platform hasn't set a buyback recipient address yet, so you can't submit right now.",
   "@launch2Creator_launch2Build11": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:340"

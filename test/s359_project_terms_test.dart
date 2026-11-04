@@ -618,72 +618,84 @@ void main() {
     });
   });
 
-  group('signing-request codec', () {
-    Map<String, Object?> withTerms({
-      bool requestPrice = true,
-      bool requestCap = true,
-      bool typed = true,
-      String messagePrice = '250000000000000000000',
-    }) {
-      final body = _body('hooks_signing_request');
-      final request = body['request']! as Map<String, Object?>;
-      if (requestPrice) request['nftPrice'] = '250000000000000000000';
-      if (requestCap) request['maxCumulativeBuy'] = '7000000000000000000000000';
-      final typedData = body['typedData']! as Map<String, Object?>;
-      if (typed) {
-        final types = typedData['types']! as Map<String, Object?>;
-        (types['LaunchRequest']! as List<Object?>).addAll(<Object?>[
-          <String, Object?>{'name': 'nftPrice', 'type': 'uint256'},
-          <String, Object?>{'name': 'maxCumulativeBuy', 'type': 'uint256'},
-        ]);
-        (typedData['message']! as Map<String, Object?>).addAll(
-          <String, Object?>{
-            'nftPrice': messagePrice,
-            'maxCumulativeBuy': '7000000000000000000000000',
-          },
+  group('signing-request codec (contracts 0019)', () {
+    Map<String, Object?> body() => _body('hooks_signing_request');
+    Map<String, Object?> typed(Map<String, Object?> b) =>
+        b['typedData']! as Map<String, Object?>;
+    List<Object?> fields(Map<String, Object?> b) =>
+        (typed(b)['types']! as Map<String, Object?>)['LaunchRequest']!
+            as List<Object?>;
+
+    test('the type list spells the Factory type string, in order', () {
+      final spelled = LoopV2Launch2CreatorCodec.launchRequestType
+          .map((field) => '${field.$2} ${field.$1}')
+          .join(',');
+      expect(
+        'LaunchRequest($spelled)',
+        'LaunchRequest(bytes32 configHash,address projectOwner,'
+            'uint32 configVersion,string name,string ticker,'
+            'uint64 nftSaleStart,address buybackRecipient,uint64 deadline,'
+            'bytes32 memeSalt,uint256 nonce,bytes32 templateHash,'
+            'uint256 nftPrice,uint256 maxCumulativeBuy)',
+      );
+      expect(LoopV2Launch2CreatorCodec.eip712DomainName, 'LOOP Launch Factory');
+      expect(LoopV2Launch2CreatorCodec.eip712DomainVersion, '2');
+    });
+
+    test('a version 2 request reads both terms', () {
+      final request = LoopV2Launch2CreatorCodec.signingRequest(body());
+      expect(request.nftPriceRaw, Launch2ProjectTerms.nftPriceRaw(100));
+      expect(request.maxCumulativeBuyRaw, Launch2ProjectTerms.walletCapRaw(5));
+      expect(request.request['nftPrice'], '100000000000000000000');
+    });
+
+    test('version 1, a missing term, reordered or retyped fields, or a '
+        'mismatch are refused', () {
+      final cases = <String, Map<String, Object?>>{};
+      final v1 = body();
+      ((typed(v1)['domain']!) as Map<String, Object?>)['version'] = '1';
+      cases['domain version 1'] = v1;
+
+      final eleven = body();
+      (eleven['request']! as Map<String, Object?>)
+        ..remove('nftPrice')
+        ..remove('maxCumulativeBuy');
+      fields(eleven).removeRange(11, 13);
+      (typed(eleven)['message']! as Map<String, Object?>)
+        ..remove('nftPrice')
+        ..remove('maxCumulativeBuy');
+      cases['old eleven-field request'] = eleven;
+
+      final oneTerm = body();
+      (oneTerm['request']! as Map<String, Object?>).remove('maxCumulativeBuy');
+      cases['one term missing'] = oneTerm;
+
+      final reordered = body();
+      final list = fields(reordered);
+      final last = list.removeLast();
+      list.insert(11, last);
+      cases['terms swapped'] = reordered;
+
+      final retyped = body();
+      (fields(retyped)[11]! as Map<String, Object?>)['type'] = 'uint128';
+      cases['nftPrice retyped'] = retyped;
+
+      final mismatch = body();
+      (typed(mismatch)['message']! as Map<String, Object?>)['nftPrice'] = '1';
+      cases['message differs'] = mismatch;
+
+      final zero = body();
+      (zero['request']! as Map<String, Object?>)['nftPrice'] = '0';
+      (typed(zero)['message']! as Map<String, Object?>)['nftPrice'] = '0';
+      cases['zero price'] = zero;
+
+      for (final entry in cases.entries) {
+        expect(
+          () => LoopV2Launch2CreatorCodec.signingRequest(entry.value),
+          _invalid,
+          reason: entry.key,
         );
       }
-      return body;
-    }
-
-    test('without the terms it reads as before', () {
-      final request = LoopV2Launch2CreatorCodec.signingRequest(
-        _body('hooks_signing_request'),
-      );
-      expect(request.nftPriceRaw, isNull);
-      expect(request.maxCumulativeBuyRaw, isNull);
-    });
-
-    test('both terms in request and typed data are read', () {
-      final request = LoopV2Launch2CreatorCodec.signingRequest(withTerms());
-      expect(request.nftPriceRaw, Launch2ProjectTerms.nftPriceRaw(250));
-      expect(request.maxCumulativeBuyRaw, Launch2ProjectTerms.walletCapRaw(7));
-      expect(request.request['nftPrice'], '250000000000000000000');
-    });
-
-    test('one term alone, unsigned terms or a mismatch are refused', () {
-      expect(
-        () => LoopV2Launch2CreatorCodec.signingRequest(
-          withTerms(requestCap: false, typed: false),
-        ),
-        _invalid,
-      );
-      expect(
-        () => LoopV2Launch2CreatorCodec.signingRequest(withTerms(typed: false)),
-        _invalid,
-      );
-      expect(
-        () => LoopV2Launch2CreatorCodec.signingRequest(
-          withTerms(messagePrice: '1'),
-        ),
-        _invalid,
-      );
-      expect(
-        () => LoopV2Launch2CreatorCodec.signingRequest(
-          withTerms(requestPrice: false, requestCap: false),
-        ),
-        _invalid,
-      );
     });
   });
 

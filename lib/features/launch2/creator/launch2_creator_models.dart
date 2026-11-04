@@ -545,8 +545,8 @@ final class Launch2SigningRequest {
     required this.hookSalt,
     required this.hookAddress,
     required this.memeAddress,
-    this.nftPriceRaw,
-    this.maxCumulativeBuyRaw,
+    required this.nftPriceRaw,
+    required this.maxCumulativeBuyRaw,
   });
 
   /// The `request` object exactly as the server sent it: it is posted back
@@ -577,10 +577,9 @@ final class Launch2SigningRequest {
   final String memeAddress;
 
   /// Decision 0284 (S359): the NFT price (wei) and the per-address cap
-  /// (raw MEME) the signed request carries once the Factory signs them;
-  /// null on a request without them.
-  final BigInt? nftPriceRaw;
-  final BigInt? maxCumulativeBuyRaw;
+  /// (raw MEME) the request signs (contracts 0019).
+  final BigInt nftPriceRaw;
+  final BigInt maxCumulativeBuyRaw;
 
   DateTime get deadlineAt =>
       DateTime.fromMillisecondsSinceEpoch(deadline.toInt() * 1000, isUtc: true);
