@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" width="124" height="86" viewBox="0 0 124 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Net Value Trend / Tap to Expand">
+<path id="Vector" d="M2 67.0819L14 53.3219L26 56.7619L38 43.0019L50 51.6019L62 48.1619L74 58.4819L86 37.8419L98 44.7219L110 29.2419L122 18.9219V82.5619H2V67.0819Z" fill="url(#paint0_linear_0_165)"/>
+<path id="Vector_2" d="M2 67.0819L14 53.3219L26 56.7619L38 43.0019L50 51.6019L62 48.1619L74 58.4819L86 37.8419L98 44.7219L110 29.2419L122 18.9219" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke="#FFD21C"/>
+<path id="Vector_3" d="M121 21C122.657 21 124 19.6569 124 18C124 16.3431 122.657 15 121 15C119.343 15 118 16.3431 118 18C118 19.6569 119.343 21 121 21Z" fill="#FFD21C"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_165" x1="2" y1="18.9219" x2="2" y2="82.5619" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFD21C" stop-opacity="0.28"/>
+<stop offset="1" stop-color="#FFD21C" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>

@@ -9771,11 +9771,16 @@ TYPOGRAPHY_FORBIDDEN_LITERALS = {
         "a weight belongs to a band; restate one with "
         "LoopTypography.withWeight"
     ),
-    "fontFamily:": (
-        "a family belongs to LoopFonts; a page never names the system face, "
-        "IBM Plex Mono, Noto Sans SC or 'monospace' itself"
-    ),
 }
+
+# Decision 0277: a family may be named only through `LoopFonts.*` — a page
+# never names Inter, the system face, IBM Plex Mono, Noto Sans SC or
+# 'monospace' itself.
+TYPOGRAPHY_FONT_FAMILY_PATTERN = re.compile(r"\bfontFamily\s*:(?!\s*LoopFonts\.)")
+TYPOGRAPHY_FONT_FAMILY_REASON = (
+    "a family belongs to LoopFonts; take `LoopFonts.*`, never a family name "
+    "(decision 0277)"
+)
 
 # Decision 0277: every Latin letter and figure is Inter (the requester's
 # Figma system), with the bundled Noto Sans SC behind it for Han. The faces
@@ -9826,6 +9831,11 @@ def check_typography_band_contract(root: Path) -> list[str]:
                     errors.append(
                         f"{relative} hand-writes `{literal}`: {reason}"
                     )
+            if TYPOGRAPHY_FONT_FAMILY_PATTERN.search(executable):
+                errors.append(
+                    f"{relative} hand-writes `fontFamily:`: "
+                    f"{TYPOGRAPHY_FONT_FAMILY_REASON}"
+                )
 
     # The bundled font files and their licences have to stay registered, or
     # every Han glyph silently falls back to whatever the device installs.
@@ -9935,9 +9945,10 @@ def check_price_move_colour_contract(root: Path) -> list[str]:
     if theme_path.is_file():
         theme = read_text(theme_path)
         for required in (
-            "static const Color rise = Color(0xFF22C55E);",
+            # Decision 0277: the Figma's rise and its solid 「买入」 ground.
+            "static const Color rise = Color(0xFF22C982);",
             "static const Color fall = Color(0xFFEF4444);",
-            "static const Color riseSoft = Color(0x2122C55E);",
+            "static const Color riseSoft = Color(0xFF123025);",
             "static const Color fallSoft = Color(0x21EF4444);",
             "黄紫是品牌强调色；行情涨跌用 rise/fall，不计入品牌色。",
         ):
@@ -16214,8 +16225,10 @@ def check_family_guard_contract(
 #    file's exact count `(numeric builder calls, retired alias calls)` and may
 #    only shrink: a file that grows fails, and a file that shrank must lower
 #    its entry (or drop it at zero), so a fixed call cannot quietly come back.
-# G2 · nothing below the 11px screen floor. A text size parsed from a builder
-#    call or a `fontSize:` anywhere under `lib/**` must be at least 11. The
+# G2 · nothing below the 10px screen floor (decision 0277: the Figma sets
+#    tags, counts and progress figures at 10; 0189 had 11). A text size
+#    parsed from a builder call or a `fontSize:` anywhere under `lib/**` must
+#    be at least 10. The
 #    chart canvases draw axis ticks at 7–9px, as the prototype's
 #    `.kline-axis-label` does, and are exempt from both guards; the nine
 #    sub-floor feature calls below are counted the same shrinking way.
@@ -16229,7 +16242,7 @@ TYPE_LADDER_ALIAS_PATTERN = re.compile(
     r"\bLoopMono\.\w+|\bLoopType\.mono\w*|\.dataStyle\b"
 )
 TYPE_LADDER_FONT_SIZE_PATTERN = re.compile(r"\bfontSize\s*:\s*(?P<size>[0-9][0-9.]*)")
-TYPE_LADDER_SCREEN_FLOOR = 11
+TYPE_LADDER_SCREEN_FLOOR = 10
 # Chart canvases: axis and price-tag text painted at the prototype's 7–9px.
 TYPE_LADDER_CANVAS_FILES: dict[str, str] = {
     "lib/features/market/loop_candle_chart.dart": "candle axis labels (`.kline-axis-label` 7px)",
@@ -16270,7 +16283,8 @@ def check_type_ladder_contract(
     floor_allowlist: dict[str, int] | None = None,
     canvas_files: dict[str, str] | None = None,
 ) -> list[str]:
-    """Decision 0189: G1 (no size outside the ladder) and G2 (11px floor)."""
+    """Decision 0189: G1 (no size outside the ladder) and G2 (the 10px floor,
+    decision 0277)."""
 
     ladder = TYPE_LADDER_FEATURE_ALLOWLIST if ladder_allowlist is None else ladder_allowlist
     floor = TYPE_FLOOR_FEATURE_ALLOWLIST if floor_allowlist is None else floor_allowlist
@@ -16394,7 +16408,7 @@ def main() -> int:
         "gated MEME v2 user pages, "  # S136
         "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
         "token-only feature corners, no v1 accent and no new v1 widget, "  # S186-7
-        "a final type ladder with no off-ladder size and an 11px floor, "  # S197-1
+        "a final type ladder with no off-ladder size and a 10px floor, "  # S197-1 / 0277
         "copy read from ARB with English as the default language, "  # S354
         "and secret rules are consistent."
     )

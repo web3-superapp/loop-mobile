@@ -20,7 +20,8 @@ import 'package:flutter/material.dart';
 /// which keep their brand and error meanings. They do not count towards the
 /// brand colours.
 ///
-/// 黄紫是品牌强调色；行情涨跌用 rise/fall，不计入品牌色；选中态是白字。
+/// 黄紫是品牌强调色；行情涨跌用 rise/fall，不计入品牌色。
+/// 选中态是白字（决策 0277）。
 abstract final class LoopColors {
   // ---- Figma ground and type (docs/58 §1.1 / §9.3) ------------------------
 

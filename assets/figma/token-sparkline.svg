@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" width="94" height="28" viewBox="0 0 94 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Sparkline">
+<path id="Vector" d="M2.47656 23.3302L13.6081 20.5302L22.266 21.4635L32.1608 15.8635L40.8187 16.7969L50.7134 10.2635L60.6081 13.0635L70.5029 7.46354L79.1608 9.33021L91.5292 2.79688V27.0635H2.47656V23.3302Z" fill="url(#paint0_linear_0_25)"/>
+<path id="Vector_2" d="M2.47656 23.3302L13.6081 20.5302L22.266 21.4635L32.1608 15.8635L40.8187 16.7969L50.7134 10.2635L60.6081 13.0635L70.5029 7.46354L79.1608 9.33021L91.5292 2.79688" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#A62DFF"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_25" x1="47.0029" y1="-0.00312499" x2="47.0029" y2="27.9969" gradientUnits="userSpaceOnUse">
+<stop stop-color="#A62DFF" stop-opacity="0.35"/>
+<stop offset="1" stop-color="#A62DFF" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>
