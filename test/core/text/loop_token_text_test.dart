@@ -65,8 +65,8 @@ void main() {
   });
 
   test('blank, edge spaces, odd spaces and edge joiners are refused', () {
-    expect(loopTokenTickerError('   '), '请填写代码');
-    expect(loopTokenNameError(''), '请填写名称');
+    expect(loopTokenTickerError('   '), 'Ticker is required');
+    expect(loopTokenNameError(''), 'Name is required');
     // The form trims before it checks and before it submits; a value that
     // still carries an edge space is not one the rule produces.
     expect(loopTokenTickerIsWellFormed(' DOGE'), isFalse);
@@ -86,7 +86,7 @@ void main() {
   });
 
   test('blank, control and invisible characters are refused', () {
-    expect(loopTokenNameError('   '), '请填写名称');
+    expect(loopTokenNameError('   '), 'Name is required');
     for (final name in <String>[
       'a\nb',
       'a\tb',
@@ -103,7 +103,10 @@ void main() {
     expect(loopTokenDescriptionError('第一行\r\n第二行\t🐸'), isNull);
     expect(loopTokenDescriptionError(''), isNull);
     expect(loopTokenDescriptionError('🐸' * 2000), isNull);
-    expect(loopTokenDescriptionError('中' * 2001), '简介最多 2000 个字');
+    expect(
+      loopTokenDescriptionError('中' * 2001),
+      'Description can be up to 2000 characters',
+    );
     expect(loopTokenDescriptionError('a\u0007b'), isNotNull);
     expect(loopTokenDescriptionError('a\u202eb'), isNotNull);
   });

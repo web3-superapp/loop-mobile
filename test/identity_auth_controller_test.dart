@@ -114,7 +114,7 @@ void main() {
 
       expect(
         container.read(emailAuthProvider).errorMessage,
-        contains('会话状态已变化'),
+        contains('The session changed'),
       );
       expect(
         container.read(loopSessionProvider).account?.privyUserId,
@@ -129,7 +129,10 @@ void main() {
     await controller.loginWithApple();
 
     expect(credentialGateway.oauthProviders, isEmpty);
-    expect(container.read(emailAuthProvider).errorMessage, 'Apple 登录仅支持 iOS。');
+    expect(
+      container.read(emailAuthProvider).errorMessage,
+      'Sign in with Apple is only available on iOS.',
+    );
   });
 
   testWidgets('signed-out wallet connection always selects SIWE login', (
@@ -184,7 +187,7 @@ void main() {
     );
     expect(
       container.read(emailAuthProvider).successMessage,
-      contains('Privy 登录凭据'),
+      contains('Privy sign-in method'),
     );
   });
 

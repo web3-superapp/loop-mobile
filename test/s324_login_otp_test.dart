@@ -42,11 +42,17 @@ void main() {
           reason: key,
         );
       }
-      expect(find.text('使用 Apple 登录'), findsOneWidget);
-      expect(find.text('使用 Google 登录'), findsOneWidget);
-      expect(find.text('使用邮箱登录'), findsOneWidget);
-      expect(find.text('选择一种方式登录或创建账户'), findsOneWidget);
-      expect(find.textContaining('外部钱包只是登录凭证'), findsNothing);
+      expect(find.text('Sign in with Apple'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Sign in with email'), findsOneWidget);
+      expect(
+        find.text('Choose a way to sign in or create an account'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('An external wallet is only a sign-in method'),
+        findsNothing,
+      );
       // The e-mail field is no longer on this page.
       expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
 
@@ -84,9 +90,12 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('auth-method-busy')), findsOneWidget);
-      expect(find.text('使用 Google 登录'), findsOneWidget);
-      expect(find.text('使用邮箱登录'), findsOneWidget);
-      expect(find.text('已有钱包？连接钱包', findRichText: true), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Sign in with email'), findsOneWidget);
+      expect(
+        find.text('Have a wallet? Connect wallet', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.textContaining('发送中'), findsNothing);
       // The others wait, without claiming anything.
       expect(_method(tester, 'privy-google-login-button').onPressed, isNull);
@@ -105,8 +114,8 @@ void main() {
       expect(_method(tester, 'privy-google-login-button').busy, isTrue);
       expect(_method(tester, 'privy-apple-login-button').busy, isFalse);
       expect(_method(tester, 'privy-email-login-button').busy, isFalse);
-      expect(find.text('使用 Google 登录…'), findsOneWidget);
-      expect(find.text('使用 Apple 登录'), findsOneWidget);
+      expect(find.text('Sign in with Google…'), findsOneWidget);
+      expect(find.text('Sign in with Apple'), findsOneWidget);
     });
 
     testWidgets('an OAuth attempt never makes 获取验证码 say 发送中', (tester) async {
@@ -119,7 +128,7 @@ void main() {
       final send = tester.widget<LoopButton>(
         find.byKey(const ValueKey('privy-auth-primary-button')),
       );
-      expect(send.label, '获取验证码');
+      expect(send.label, 'Get code');
       expect(send.onPressed, isNull);
     });
 
@@ -141,7 +150,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
       await tester.pump();
 
-      expect(find.text('发送中…'), findsOneWidget);
+      expect(find.text('Sending…'), findsOneWidget);
       expect(
         container.read(emailAuthProvider).activeOperation,
         IdentityAuthOperation.sendEmailCode,
@@ -162,7 +171,7 @@ void main() {
       final hint = find.byKey(const ValueKey('privy-otp-resend-hint'));
       expect(hint, findsOneWidget);
       expect(
-        find.text('${emailAuthResendCooldown.inSeconds} 秒后可重新发送'),
+        find.text('Resend in ${emailAuthResendCooldown.inSeconds}s'),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('privy-otp-resend')), findsNothing);
@@ -174,7 +183,7 @@ void main() {
       final resend = find.byKey(const ValueKey('privy-otp-resend'));
       expect(hint, findsNothing);
       expect(resend, findsOneWidget);
-      expect(find.text('重新发送'), findsOneWidget);
+      expect(find.text('Resend'), findsOneWidget);
       expect(
         tester.getCenter(resend).dy,
         moreOrLessEquals(countdownCentre.dy, epsilon: 14),
@@ -200,7 +209,7 @@ void main() {
       LoopButton next() => tester.widget<LoopButton>(
         find.byKey(const ValueKey('privy-auth-primary-button')),
       );
-      expect(next().label, '继续');
+      expect(next().label, 'Continue');
       expect(next().onPressed, isNull);
 
       await tester.enterText(
@@ -223,12 +232,12 @@ void main() {
     ) async {
       await _pumpOtp(tester, email: '1026276885@qq.com');
 
-      expect(find.text('验证码已发送至 1026••••85@qq.com'), findsOneWidget);
+      expect(find.text('Code sent to 1026••••85@qq.com'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('privy-otp-change-email')),
         findsOneWidget,
       );
-      expect(find.text('更换邮箱'), findsOneWidget);
+      expect(find.text('Change email'), findsOneWidget);
       expect(find.textContaining('还可尝试'), findsNothing);
       expect(find.textContaining('垃圾邮件'), findsNothing);
       expect(find.text('换个邮箱'), findsNothing);

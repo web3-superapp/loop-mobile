@@ -210,8 +210,11 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(gone)), findsNothing, reason: gone);
       }
-      expect(_labels(tester), containsAllInOrder(<String>['隐私与安全', 'General']));
-      expect(_labels(tester), isNot(contains('账号')));
+      expect(
+        _labels(tester),
+        containsAllInOrder(<String>['Privacy and security', 'General']),
+      );
+      expect(_labels(tester), isNot(contains('Account')));
       expect(_labels(tester), isNot(contains('资产与挖矿')));
       expect(
         find.byKey(const ValueKey<String>('profile-open-security')),
@@ -303,7 +306,7 @@ void main() {
           reason: key,
         );
       }
-      final label = tester.widget<Text>(find.text('用户名'));
+      final label = tester.widget<Text>(find.text('Username'));
       expect(label.style?.fontSize, 14);
       final save = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('profile-edit-save')),
@@ -325,7 +328,7 @@ void main() {
       await _pumpProfile(tester, 'privacy');
       expect(find.byType(LoopFolioPrimary), findsNothing);
       expect(find.text('PRIVACY STATUS'), findsNothing);
-      expect(_labels(tester), <String>['身份', '社交', '可见性']);
+      expect(_labels(tester), <String>['Identity', 'Social', 'Visibility']);
       expect(find.byType(Switch), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('privacy-visibility-note')),

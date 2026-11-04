@@ -228,9 +228,9 @@ void main() {
     expect(_key('me-joined-$meJoinedA'), findsOneWidget);
     expect(_key('me-joined-$meJoinedB'), findsOneWidget);
     expect(_key('profile-owned-$meOwnedId'), findsOneWidget);
-    expect(find.text('我加入的'), findsOneWidget);
-    expect(find.text('我创建的'), findsOneWidget);
-    expect(find.text('2,048 名成员'), findsOneWidget);
+    expect(find.text('Joined'), findsOneWidget);
+    expect(find.text('Created'), findsOneWidget);
+    expect(find.text('2,048 members'), findsOneWidget);
     expect(_key('wallet-asset-list'), findsNothing);
     double top(String key) => tester.getTopLeft(_key(key)).dy;
     expect(
@@ -247,7 +247,7 @@ void main() {
     await _section(tester, '社区');
     expect(_key('me-joined-$meJoinedA'), findsOneWidget);
     expect(_key('profile-owned-communities'), findsNothing);
-    expect(find.text('我加入的'), findsNothing);
+    expect(find.text('Joined'), findsNothing);
   });
 
   testWidgets('社区: none is one line', (tester) async {
@@ -260,7 +260,7 @@ void main() {
     );
     await _section(tester, '社区');
     expect(_key('me-communities-empty'), findsOneWidget);
-    expect(find.text('还没有加入社区'), findsOneWidget);
+    expect(find.text('No communities joined yet'), findsOneWidget);
   });
 
   testWidgets('wallet module closed: 社区 still reads', (tester) async {

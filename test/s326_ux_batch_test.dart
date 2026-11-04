@@ -434,7 +434,7 @@ void main() {
       );
       expect(find.text('Images'), findsOneWidget);
       expect(find.text('Basic info'), findsOneWidget);
-      expect(find.text('上传头像'), findsNothing);
+      expect(find.text('Upload avatar'), findsNothing);
       expect(find.text('上传 NFT 图'), findsNothing);
       expect(
         find.descendant(

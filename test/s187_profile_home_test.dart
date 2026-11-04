@@ -127,8 +127,11 @@ void main() {
       expect(find.text('Boo123133'), findsOneWidget);
       expect(find.text(_loopId), findsOneWidget);
       expect(_key('profile-add-bio'), findsOneWidget);
-      expect(find.text('＋ 添加个人简介'), findsOneWidget);
-      expect(tester.widget<Text>(_key('profile-joined')).data, '2026 年 10 月加入');
+      expect(find.text('+ Add a bio'), findsOneWidget);
+      expect(
+        tester.widget<Text>(_key('profile-joined')).data,
+        'Joined Oct 2026',
+      );
       // No source, so neither is drawn — not as zero, not as a dash.
       expect(find.textContaining('持有时长'), findsNothing);
       expect(find.textContaining('笔交易'), findsNothing);
@@ -166,11 +169,11 @@ void main() {
       );
       expect(
         tester.getSemantics(_key('profile-following-count')).label,
-        '3 已关注',
+        '3 Following',
       );
       expect(
         tester.getSemantics(_key('profile-followers-count')).label,
-        '12 粉丝',
+        '12 Followers',
       );
       await tester.tap(_key('profile-followers-count'));
       expect(opened, <String>[profileDestinationPath('connections')]);

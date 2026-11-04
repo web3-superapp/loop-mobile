@@ -135,15 +135,15 @@ Future<void> _start(WidgetTester tester) async {
 /// 成功 only where the expected content came back; any HTTP answer from a
 /// third party is 可达.
 const _expected = <String, String>{
-  'loop-ready': '成功',
-  'loop-capabilities': '成功',
-  'privy': '可达',
-  'stream-chat': '可达',
-  'stream-video': '可达',
-  'token-icons': '成功',
-  'firebase': '可达',
-  'bsc-rpc': '可达',
-  'baseline': '可达',
+  'loop-ready': 'Success',
+  'loop-capabilities': 'Success',
+  'privy': 'Reachable',
+  'stream-chat': 'Reachable',
+  'stream-video': 'Reachable',
+  'token-icons': 'Success',
+  'firebase': 'Reachable',
+  'bsc-rpc': 'Reachable',
+  'baseline': 'Reachable',
 };
 
 const _ids = <String>[
@@ -198,9 +198,14 @@ void main() {
       const NetworkDiagnosticsScreen(),
       overrides: _overrides(behaviour: (_) => _Behaviour.ok, log: log),
     );
-    expect(find.text('这个页面只测连通性和耗时，不发送账号信息。'), findsOneWidget);
+    expect(
+      find.text(
+        'This page only tests connectivity and timing. No account info is sent.',
+      ),
+      findsOneWidget,
+    );
     for (final id in _ids) {
-      expect(_badge(tester, id), '未开始');
+      expect(_badge(tester, id), 'Not started');
     }
     expect(log, isEmpty);
     final copy = tester.widget<LoopButton>(
@@ -222,14 +227,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
     // Every probe's first request is out before any has answered.
     expect(log, hasLength(9));
-    expect(_badge(tester, 'firebase'), '探测中');
+    expect(_badge(tester, 'firebase'), 'Checking');
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
     for (final id in _ids) {
       expect(_badge(tester, id), _expected[id], reason: id);
     }
     expect(find.textContaining('MS'), findsNothing);
-    expect(find.textContaining(RegExp(r'总耗时 \d+\.\d 秒')), findsOneWidget);
+    expect(find.textContaining(RegExp(r'Total \d+\.\ds')), findsOneWidget);
     // The capabilities probe asked twice; nothing carried a credential.
     expect(
       log.where((request) => request.uri.path.endsWith('/capabilities')),
@@ -248,25 +253,25 @@ void main() {
     expect(
       find.descendant(
         of: _row('token-icons'),
-        matching: find.textContaining('图片 11 B'),
+        matching: find.textContaining('Image 11 B'),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
         of: _row('bsc-rpc'),
-        matching: find.textContaining('区块 16'),
+        matching: find.textContaining('Block 16'),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
         of: _row('loop-capabilities'),
-        matching: find.textContaining('复用连接'),
+        matching: find.textContaining('connection reused'),
       ),
       findsOneWidget,
     );
-    expect(find.text('9 项中 9 项可达'), findsOneWidget);
+    expect(find.text('9 of 9 reachable'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('network-diagnostics-offline')),
       findsNothing,
@@ -289,19 +294,19 @@ void main() {
     );
     await _start(tester);
     await tester.pump(const Duration(milliseconds: 100));
-    expect(_badge(tester, 'firebase'), '探测中');
-    expect(_badge(tester, 'baseline'), '可达');
+    expect(_badge(tester, 'firebase'), 'Checking');
+    expect(_badge(tester, 'baseline'), 'Reachable');
     await tester.pump(NetworkDiagnosticsController.perProbeTimeout);
     await tester.pumpAndSettle();
-    expect(_badge(tester, 'firebase'), '超时');
+    expect(_badge(tester, 'firebase'), 'Timed out');
     expect(
       find.descendant(
         of: _row('firebase'),
-        matching: find.textContaining('超时'),
+        matching: find.textContaining('Timed out'),
       ),
       findsWidgets,
     );
-    expect(find.text('9 项中 8 项可达'), findsOneWidget);
+    expect(find.text('8 of 9 reachable'), findsOneWidget);
   });
 
   testWidgets('failure: 无法连接 with a short reason; LOOP non-2xx is 失败', (
@@ -324,23 +329,23 @@ void main() {
     await _start(tester);
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
-    expect(_badge(tester, 'privy'), '失败');
+    expect(_badge(tester, 'privy'), 'Failed');
     expect(
       find.descendant(
         of: _row('privy'),
-        matching: find.textContaining('域名解析失败'),
+        matching: find.textContaining('DNS lookup failed'),
       ),
       findsOneWidget,
     );
-    expect(_badge(tester, 'stream-chat'), '失败');
+    expect(_badge(tester, 'stream-chat'), 'Failed');
     expect(
       find.descendant(
         of: _row('stream-chat'),
-        matching: find.textContaining('无法连接'),
+        matching: find.textContaining('Can\'t connect'),
       ),
       findsOneWidget,
     );
-    expect(_badge(tester, 'loop-ready'), '失败');
+    expect(_badge(tester, 'loop-ready'), 'Failed');
     expect(
       find.descendant(
         of: _row('loop-ready'),
@@ -348,7 +353,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(_badge(tester, 'baseline'), '可达');
+    expect(_badge(tester, 'baseline'), 'Reachable');
   });
 
   testWidgets('offline: every probe fails, a notice says so', (tester) async {
@@ -365,7 +370,7 @@ void main() {
       find.byKey(const ValueKey<String>('network-diagnostics-offline')),
       findsOneWidget,
     );
-    expect(find.text('9 项中 0 项可达'), findsOneWidget);
+    expect(find.text('0 of 9 reachable'), findsOneWidget);
   });
 
   testWidgets('not configured: no backend, the LOOP rows are not sent', (
@@ -381,17 +386,17 @@ void main() {
         backend: '',
       ),
     );
-    expect(_badge(tester, 'loop-ready'), '未配置');
+    expect(_badge(tester, 'loop-ready'), 'Not configured');
     await _start(tester);
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
-    expect(_badge(tester, 'loop-ready'), '未配置');
-    expect(_badge(tester, 'loop-capabilities'), '未配置');
+    expect(_badge(tester, 'loop-ready'), 'Not configured');
+    expect(_badge(tester, 'loop-capabilities'), 'Not configured');
     expect(
       log.where((request) => request.uri.host.contains('example')),
       isEmpty,
     );
-    expect(find.text('7 项中 7 项可达'), findsOneWidget);
+    expect(find.text('7 of 7 reachable'), findsOneWidget);
   });
 
   testWidgets('copy and share hand over the same text with every probe', (
@@ -433,25 +438,25 @@ void main() {
       find.byKey(const ValueKey<String>('network-diagnostics-copy')),
     );
     await tester.pump();
-    expect(find.text('诊断结果已复制'), findsOneWidget);
+    expect(find.text('Diagnosis copied'), findsOneWidget);
     final text = copied!;
     for (final fragment in <String>[
-      'LOOP 网络诊断',
-      'App 版本：0.1.0+1',
-      '构建模式：声明 debug',
-      '服务端主机：api-dev.example.com（DEV）',
-      '平台：Android · test',
-      '时间：',
-      '总耗时：',
-      '[成功] LOOP 服务 · 就绪 (api-dev.example.com)',
-      '[成功] LOOP 服务 · 能力清单',
-      '[可达] 登录服务 Privy (auth.privy.io)',
-      '[失败] 聊天服务 Stream (chat.stream-io-api.com)',
-      '[可达] 语音服务 Stream (video.stream-io-api.com)',
-      '[成功] 代币图标 (raw.githubusercontent.com)',
-      '[可达] 推送服务 Firebase (firebaseinstallations.googleapis.com)',
-      '[可达] BSC 主网节点 (bsc-dataseed.bnbchain.org)',
-      '[可达] 网络基线 Apple (www.apple.com)',
+      'LOOP network diagnosis',
+      'App version: 0.1.0+1',
+      'Build mode: Declared debug',
+      'Server host: api-dev.example.com (DEV)',
+      'Platform: Android · test',
+      'Time: ',
+      'Total time: ',
+      '[Success] LOOP 服务 · 就绪 (api-dev.example.com)',
+      '[Success] LOOP 服务 · 能力清单',
+      '[Reachable] 登录服务 Privy (auth.privy.io)',
+      '[Failed] 聊天服务 Stream (chat.stream-io-api.com)',
+      '[Reachable] 语音服务 Stream (video.stream-io-api.com)',
+      '[Success] 代币图标 (raw.githubusercontent.com)',
+      '[Reachable] 推送服务 Firebase (firebaseinstallations.googleapis.com)',
+      '[Reachable] BSC 主网节点 (bsc-dataseed.bnbchain.org)',
+      '[Reachable] 网络基线 Apple (www.apple.com)',
     ]) {
       expect(text, contains(fragment));
     }
@@ -511,8 +516,11 @@ void main() {
       startedAt: DateTime.utc(2026, 9, 28, 6),
       total: const Duration(seconds: 8),
     );
-    expect(text, contains('9 项中 0 项可达'));
-    expect(text, contains('[超时] 代币图标 (raw.githubusercontent.com) 8000 ms'));
+    expect(text, contains('0 of 9 reachable'));
+    expect(
+      text,
+      contains('[Timed out] 代币图标 (raw.githubusercontent.com) 8000 ms'),
+    );
     expect(text, contains('2026-09-28 06:00:00 +00:00'));
     expect(text, isNot(contains('secretish-app')));
     expect(text, isNot(contains('被墙')));

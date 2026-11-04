@@ -48,7 +48,7 @@ void main() {
     expect(_saveButton(tester).onPressed, isNull);
     expect(find.text('QuietComet'), findsNothing);
     expect(find.text('Session identity'), findsNothing);
-    expect(find.text('资料已保存'), findsNothing);
+    expect(find.text('Profile saved'), findsNothing);
   });
 
   testWidgets(
@@ -150,7 +150,7 @@ void main() {
     expect(_saveButton(tester).onPressed, isNull);
     expect(_textField(tester).enabled, isFalse);
 
-    await _tap(tester, find.text('重新载入'));
+    await _tap(tester, find.text('Reload'));
 
     expect(find.byKey(_conflictKey), findsNothing);
     expect(_textField(tester).controller?.text, 'RemoteAlias');
@@ -170,8 +170,8 @@ void main() {
 
       expect(find.byKey(_conflictKey), findsOneWidget);
 
-      await tester.ensureVisible(find.text('重新载入'));
-      await tester.tap(find.text('重新载入'));
+      await tester.ensureVisible(find.text('Reload'));
+      await tester.tap(find.text('Reload'));
       await tester.pump();
 
       // Reload is in flight: the local draft is still the only thing shown.
@@ -184,7 +184,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(_conflictKey), findsOneWidget);
-      expect(find.textContaining('资料服务当前不可用'), findsOneWidget);
+      expect(
+        find.textContaining("The profile service isn't available right now"),
+        findsOneWidget,
+      );
       expect(_textField(tester).controller?.text, 'LocalDraft');
       expect(_saveButton(tester).onPressed, isNull);
     },
@@ -206,7 +209,7 @@ void main() {
     expect(find.textContaining('raw-provider-secret'), findsNothing);
     expect(find.textContaining('Exception'), findsNothing);
     // No success is claimed and the untouched draft can be retried.
-    expect(find.text('资料已保存'), findsNothing);
+    expect(find.text('Profile saved'), findsNothing);
     expect(_textField(tester).controller?.text, 'LocalDraft');
     expect(_saveButton(tester).onPressed, isNotNull);
 
@@ -245,7 +248,7 @@ void main() {
     );
     // The LOOP ID was never loaded, so nothing invents one.
     expect(
-      find.descendant(of: card, matching: find.text('LOOP ID 不可读')),
+      find.descendant(of: card, matching: find.text('LOOP ID unreadable')),
       findsOneWidget,
     );
     expect(find.text('SessionFallback'), findsNothing);

@@ -214,8 +214,8 @@ void main() {
         find.byKey(const ValueKey<String>('about-terms-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('用户协议'), findsNothing);
-      expect(find.text('隐私政策'), findsNothing);
+      expect(find.text('Terms of Service'), findsNothing);
+      expect(find.text('Privacy Policy'), findsNothing);
       expect(find.text('风险披露'), findsNothing);
     });
 
@@ -241,7 +241,7 @@ void main() {
       await scrollToS8Section(tester, entry);
       expect(entry, findsOneWidget);
       final row = tester.widget<LoopRecordRow>(entry);
-      expect(row.subtitle, '网络请求 · MIT');
+      expect(row.subtitle, 'Network requests · MIT');
       expect(row.trailing, isNull);
     });
 
@@ -253,9 +253,9 @@ void main() {
       // The Chinese names are the table in
       // loop-api/docs/frontend-v2-meta-api.md.
       for (final (module, name) in <(String, String)>[
-        ('productPolicy', '产品策略'),
-        ('support', '客服工单规则'),
-        ('bscWriteCanary', '链上写入规则'),
+        ('productPolicy', 'Product policy'),
+        ('support', 'Support ticket rules'),
+        ('bscWriteCanary', 'On-chain write rules'),
       ]) {
         final row = find.byKey(ValueKey<String>('about-config-$module'));
         await scrollToS8Section(tester, row);
@@ -268,10 +268,10 @@ void main() {
         const ValueKey<String>('about-config-futureRuleKey'),
       );
       await scrollToS8Section(tester, unknown);
-      expect(tester.widget<LoopRecordRow>(unknown).title, '其他规则');
+      expect(tester.widget<LoopRecordRow>(unknown).title, 'Other rules');
       expect(
         tester.widget<LoopRecordRow>(unknown).subtitle,
-        contains('版本 rulesV9'),
+        contains('Version rulesV9'),
       );
       // The identifier itself is never a title or a line of copy. (The
       // published版本 strings are the server's own and are shown verbatim.)
@@ -279,7 +279,7 @@ void main() {
       expect(find.text('productPolicy'), findsNothing);
       expect(find.text('bscWriteCanary'), findsNothing);
       expect(
-        find.textContaining('版本 productPolicyV2.2026-09-01'),
+        find.textContaining('Version productPolicyV2.2026-09-01'),
         findsOneWidget,
       );
     });
@@ -361,9 +361,7 @@ void main() {
         support: FakeSupportGateway(),
       );
 
-      final answer = find.byKey(
-        const ValueKey<String>('support-answer-算力是怎么算的'),
-      );
+      final answer = find.byKey(const ValueKey<String>('support-answer-power'));
       await scrollToS8Section(tester, answer);
       await tester.tap(answer);
       await tester.pumpAndSettle();
@@ -373,7 +371,10 @@ void main() {
       expect(find.textContaining('挖矿公式还没有'), findsNothing);
       expect(find.textContaining('暂时不显示算力'), findsNothing);
       expect(find.textContaining('公式批准后'), findsNothing);
-      expect(find.textContaining('算力来自最近一次算力快照'), findsOneWidget);
+      expect(
+        find.textContaining('Power comes from the latest power snapshot'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an empty body cannot be submitted', (tester) async {
@@ -411,7 +412,10 @@ void main() {
         find.byKey(const ValueKey<String>('support-body-problem')),
         findsOneWidget,
       );
-      expect(find.textContaining('控制字符或不可见字符'), findsOneWidget);
+      expect(
+        find.textContaining('control or invisible characters'),
+        findsOneWidget,
+      );
       final submit = find.byKey(const ValueKey<String>('support-submit'));
       await scrollToS8Section(tester, submit);
       expect(tester.widget<LoopButton>(submit).onPressed, isNull);
@@ -443,7 +447,7 @@ void main() {
       // The category bar scrolls horizontally; the Mining chip sits past the
       // right edge at 390pt once the labels take the label band (decision
       // 0069).
-      final miningChip = find.text('挖矿');
+      final miningChip = find.text('Mining');
       await tester.scrollUntilVisible(
         miningChip,
         60,
@@ -473,15 +477,13 @@ void main() {
         SupportScreen(onNavigate: (_) {}),
         support: FakeSupportGateway(),
       );
-      const answer = ValueKey<String>('support-answer-换手机怎么恢复账户');
+      const answer = ValueKey<String>('support-answer-recovery');
       await tester.ensureVisible(find.byKey(answer));
-      await tester.tap(find.text('换手机怎么恢复账户'));
+      await tester.tap(find.text('How do I recover my account on a new phone'));
       await tester.pumpAndSettle();
       expect(
         find.text(
-          '账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，'
-          '自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。'
-          '安全中心会显示每一项的当前状态。',
+          'Your account identity is held by Privy. Passkeys and multi-factor authentication can be turned on in Security Center, and automatic recovery is the default method; social recovery and private key export aren\'t open yet. Security Center shows the current status of each.',
         ),
         findsOneWidget,
       );
@@ -502,7 +504,10 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('support-escalation')),
       );
-      expect(findProvenanceContaining('工作日 24 小时内回复'), findsOneWidget);
+      expect(
+        findProvenanceContaining('Replies within 24 hours on business days'),
+        findsOneWidget,
+      );
       expect(find.textContaining('工作日24'), findsNothing);
     });
 
@@ -562,7 +567,7 @@ void main() {
       await scrollToS8Section(tester, ticket);
       expect(
         tester.widget<LoopRecordRow>(ticket).subtitle,
-        '客服回复：已核对，权重需要资产先完成登记。',
+        'Support reply: 已核对，权重需要资产先完成登记。',
       );
       // The prototype's member count and online state have no source.
       expect(find.textContaining('48,120'), findsNothing);

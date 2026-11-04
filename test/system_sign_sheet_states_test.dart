@@ -24,7 +24,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
-    expect(find.text('演示数据，开发预览'), findsNothing);
+    expect(find.text('Demo data, development preview'), findsNothing);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('sign-sheet-trigger-pending')),
@@ -38,8 +38,8 @@ void main() {
       await scrollPageTo(tester, find.byKey(key));
       expect(find.byKey(key), findsOneWidget, reason: state.name);
     }
-    await scrollPageTo(tester, find.text('策略拒绝不是错误'));
-    expect(find.text('策略拒绝不是错误'), findsOneWidget);
+    await scrollPageTo(tester, find.text('A policy rejection isn\'t an error'));
+    expect(find.text('A policy rejection isn\'t an error'), findsOneWidget);
   });
 
   testWidgets('preview showcase renders the four states and opens the sheet', (
@@ -62,7 +62,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('演示数据，开发预览'), findsOneWidget);
+    expect(find.text('Demo data, development preview'), findsOneWidget);
     expect(find.text(loopComponentSpecimenLabel), findsNothing);
     for (final state in <LoopSignSheetState>[
       LoopSignSheetState.simulationFailed,

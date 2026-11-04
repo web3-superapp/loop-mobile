@@ -24,9 +24,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
-    expect(find.text('当前加载'), findsNothing);
+    expect(find.text('Current loading'), findsNothing);
     expect(find.byType(LoopSkeletonView), findsNothing);
-    expect(find.text('列表骨架'.toUpperCase()), findsOneWidget);
+    expect(find.text('List skeleton'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('loop-skeleton-list')),
       findsOneWidget,
@@ -61,7 +61,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('当前加载'), findsNothing, reason: '$count');
+      expect(find.text('Current loading'), findsNothing, reason: '$count');
       expect(find.byType(LoopSkeletonView), findsNothing, reason: '$count');
       await pumpSystemSurface(
         tester,
@@ -110,11 +110,11 @@ void main() {
           onSecondaryAction: () => fail('generic secondary must stay isolated'),
         ),
       );
-      expect(find.text('当前加载'), findsOneWidget, reason: key);
+      expect(find.text('Current loading'), findsOneWidget, reason: key);
       expect(find.byType(LoopSkeletonView), findsOneWidget, reason: key);
       expect(find.bySemanticsLabel(label), findsWidgets, reason: key);
-      expect(find.text('重试'), findsNothing);
-      expect(find.text('返回 LOOP'), findsNothing);
+      expect(find.text('Retry'), findsNothing);
+      expect(find.text('Back to LOOP'), findsNothing);
       final live = find.descendant(
         of: find.byType(LoopSkeletonView),
         matching: find.byKey(ValueKey<String>(key)),
@@ -164,8 +164,8 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('重试'), findsNothing);
-      expect(find.text('返回 LOOP'), findsNothing);
+      expect(find.text('Retry'), findsNothing);
+      expect(find.text('Back to LOOP'), findsNothing);
     } finally {
       semantics.dispose();
     }

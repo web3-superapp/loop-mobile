@@ -640,7 +640,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-1'), findsOneWidget);
       expect(_key('launch2-create-logo-missing'), findsOneWidget);
-      expect(find.text('请填写代码'), findsOneWidget);
+      expect(find.text('Ticker is required'), findsOneWidget);
       expect(find.text(loopTokenTextRule), findsOneWidget);
 
       await fillProfile(tester);
@@ -1115,11 +1115,11 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('BNB Smart Chain'), findsOneWidget);
-      expect(find.textContaining('测试网'), findsNothing);
+      expect(find.textContaining('Testnet'), findsNothing);
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      expect(find.textContaining('测试网'), findsNothing);
+      expect(find.textContaining('Testnet'), findsNothing);
       expect(find.bySemanticsLabel(RegExp('测试网')), findsNothing);
       await _drain(tester);
     });
@@ -1151,7 +1151,7 @@ void main() {
       expect(_key('launch2-sign-meme-address'), findsOneWidget);
       expect(find.text('MoonCat'), findsOneWidget);
       expect(find.text('\$MCAT'), findsOneWidget);
-      expect(find.text('BSC 测试网'), findsOneWidget);
+      expect(find.text('BSC Testnet'), findsOneWidget);
       expect(find.textContaining('Expires in'), findsOneWidget);
 
       await tester.tap(_key('launch2-sign-submit'));
@@ -1736,7 +1736,12 @@ void main() {
           ],
         ),
       );
-      expect(find.text('Review rejected: Name or ticker conflicts with an existing project'), findsOneWidget);
+      expect(
+        find.text(
+          'Review rejected: Name or ticker conflicts with an existing project',
+        ),
+        findsOneWidget,
+      );
       expect(
         find.textContaining("Project details didn't pass review"),
         findsOneWidget,

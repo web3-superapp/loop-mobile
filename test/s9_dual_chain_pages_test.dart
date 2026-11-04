@@ -354,7 +354,7 @@ void main() {
         find.byKey(const ValueKey<String>('networks-launch-chain-row')),
       );
 
-      expect(find.text('BSC 测试网 (Launch)'), findsOneWidget);
+      expect(find.text('BSC Testnet (Launch)'), findsOneWidget);
       expect(find.textContaining('eip155:97'), findsOneWidget);
     });
 

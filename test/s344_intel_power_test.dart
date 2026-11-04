@@ -363,7 +363,7 @@ void main() {
       expect(_key('mining-power-tab-invite'), findsOneWidget);
 
       // Picked by hand, then the same link again: it applies again.
-      await _tab(tester, '代币');
+      await _tab(tester, 'Token');
       expect(_key('mining-power-tab-token'), findsOneWidget);
       await tester.tap(_key('intel-segment-1'));
       await tester.pumpAndSettle();
@@ -502,7 +502,7 @@ void main() {
       await _pumpPower(tester);
       final bar = tester.widget<LoopSegBar>(_key('mining-power-tabs'));
       // S350b · decision 0275: 代币 / NFT / 邀请.
-      expect(bar.labels, <String>['代币', 'NFT', '邀请']);
+      expect(bar.labels, <String>['Token', 'NFT', 'Invitation']);
       expect(_key('mining-power-tab-token'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsOneWidget);
       // S348: what the snapshot did not count is not drawn.
@@ -515,7 +515,7 @@ void main() {
       expect(_key('mining-composition-nft-$s7CakeAssetId'), findsOneWidget);
       expect(_key('mining-composition-excluded'), findsNothing);
 
-      await _tab(tester, '邀请');
+      await _tab(tester, 'Invitation');
       expect(_key('mining-power-tab-invite'), findsOneWidget);
       expect(_key('referral-invite-code'), findsOneWidget);
       expect(_key('referral-poster'), findsOneWidget);

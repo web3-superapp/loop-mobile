@@ -233,7 +233,7 @@ void main() {
           find.byKey(const ValueKey<String>('privy-restore-unavailable-retry')),
           findsOneWidget,
         );
-        expect(find.text('欢迎来到 LOOP'), findsNothing);
+        expect(find.text('Welcome to LOOP'), findsNothing);
         expect(
           find.textContaining(loopUndecidedSessionMessage),
           findsOneWidget,
@@ -489,7 +489,7 @@ void main() {
           container.read(loopSessionProvider).mode,
           LoopSessionMode.signedOut,
         );
-        expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+        expect(find.text('Welcome to LOOP'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('privy-email-login-button')),
           findsOneWidget,
@@ -821,7 +821,7 @@ void main() {
         find.byKey(const ValueKey<String>('privy-restore-unavailable-retry')),
         findsOneWidget,
       );
-      expect(find.text('欢迎来到 LOOP'), findsNothing);
+      expect(find.text('Welcome to LOOP'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('privy-email-login-button')),
         findsNothing,
@@ -856,7 +856,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+      expect(find.text('Welcome to LOOP'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('privy-email-login-button')),
         findsOneWidget,
@@ -1144,7 +1144,7 @@ void _expectNoCredentialForm(WidgetTester tester) {
     find.byKey(const ValueKey<String>('privy-restoring-screen')),
     findsOneWidget,
   );
-  expect(find.text('欢迎来到 LOOP'), findsNothing);
+  expect(find.text('Welcome to LOOP'), findsNothing);
   expect(
     find.byKey(const ValueKey<String>('privy-email-login-button')),
     findsNothing,

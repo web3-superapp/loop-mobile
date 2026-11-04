@@ -1526,6 +1526,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('关闭'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       expect(_key('launch2-bar-failure'), findsNothing);

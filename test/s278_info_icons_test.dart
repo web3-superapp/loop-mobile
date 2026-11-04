@@ -180,14 +180,17 @@ void main() {
         expect(find.textContaining(sentence), findsNothing, reason: sentence);
       }
       // Titles, figures and the 还没有开放 pills stay.
-      expect(find.text('有效授权'), findsOneWidget);
-      expect(find.text('无限额度授权'), findsOneWidget);
-      expect(find.text('还没有开放'), findsWidgets);
+      expect(find.text('Active approvals'), findsOneWidget);
+      expect(find.text('Unlimited approvals'), findsOneWidget);
+      expect(find.text('Not open yet'), findsWidgets);
 
       // S325 · decision 0255: the rows' (i) joined the page's one (i).
       await openPageInfo(tester);
       expect(_key('loop-provenance-sheet'), findsOneWidget);
-      expect(find.textContaining('额度没有上限的授权，风险最高'), findsOneWidget);
+      expect(
+        find.textContaining('Approvals with no limit carry the highest risk'),
+        findsOneWidget,
+      );
     });
   });
 

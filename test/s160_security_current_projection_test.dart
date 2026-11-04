@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
-import 'package:loop_mobile/features/account/account_screens.dart'
-    show walletAutomaticRecoveryEvidence;
 import 'package:loop_mobile/features/profile/security/security_models.dart';
 import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
@@ -178,27 +176,28 @@ void main() {
       expect(gateway.reads, 1);
 
       final mfa = rowOf(tester, 'mfa');
-      expect(mfa.badgeText, '已开启');
+      expect(mfa.badgeText, 'On');
       expect(mfa.subtitle, 'Authenticator app');
       expect(mfa.onTap, isNotNull);
 
       final passkey = rowOf(tester, 'passkey');
-      expect(passkey.badgeText, '未开启');
+      expect(passkey.badgeText, 'Off');
       expect(passkey.onTap, isNotNull);
 
       final recovery = rowOf(tester, 'autoRecovery');
       // Decision 0158: available is not enrollment, so 自动恢复 is the
       // neutral default way with its source, never 已启用.
-      expect(recovery.badgeText, '默认方式');
+      expect(recovery.badgeText, 'Default method');
       expect(recovery.subtitle, isNull);
-      expect(recovery.infoText, walletAutomaticRecoveryEvidence);
-      expect(find.text('已启用'), findsNothing);
+      // The fixture's server reference, with its tag stripped (server copy).
+      expect(recovery.infoText, 'Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）');
+      expect(find.text('Enabled'), findsNothing);
       expect(recovery.onTap, isNull);
 
       // The two methods that are still not open keep their badge.
-      expect(rowOf(tester, 'socialRecovery').badgeText, '还没有开放');
-      expect(rowOf(tester, 'keyExport').badgeText, '还没有开放');
-      expect(find.text('还没有开放'), findsNWidgets(2));
+      expect(rowOf(tester, 'socialRecovery').badgeText, 'Not open yet');
+      expect(rowOf(tester, 'keyExport').badgeText, 'Not open yet');
+      expect(find.text('Not open yet'), findsNWidgets(2));
 
       // The guide lists only what is still not open.
       final guide = find.byKey(
@@ -221,7 +220,10 @@ void main() {
           reason: id,
         );
       }
-      expect(scopeNote(tester), '这些保护由 Privy 提供。社交恢复、导出私钥开放后会在这里显示。');
+      expect(
+        scopeNote(tester),
+        'These protections are provided by Privy. Social recovery, Export private key will show here once open.',
+      );
     });
 
     testWidgets('available: MFA off opens the MFA sheet; passkey on', (
@@ -234,11 +236,11 @@ void main() {
       );
       await pumpCenter(tester, mfa: gateway);
       final passkey = rowOf(tester, 'passkey');
-      expect(passkey.badgeText, '已开启');
+      expect(passkey.badgeText, 'On');
       expect(passkey.subtitle, 'iPhone');
       final mfa = rowOf(tester, 'mfa');
-      expect(mfa.badgeText, '未开启');
-      expect(mfa.semanticLabel, contains('点按开启'));
+      expect(mfa.badgeText, 'Off');
+      expect(mfa.semanticLabel, contains('Tap to turn on'));
       await tester.tap(row('mfa'));
       await tester.pumpAndSettle();
       expect(
@@ -268,12 +270,12 @@ void main() {
           failure: const LoopMfaException(LoopMfaFailureKind.unavailable),
         ),
       );
-      expect(rowOf(tester, 'mfa').badgeText, '读不到');
-      expect(rowOf(tester, 'passkey').badgeText, '读不到');
-      expect(find.text('未开启'), findsNothing);
-      expect(find.text('已开启'), findsOneWidget); // 安全事件通知 only.
+      expect(rowOf(tester, 'mfa').badgeText, 'Unreadable');
+      expect(rowOf(tester, 'passkey').badgeText, 'Unreadable');
+      expect(find.text('Off'), findsNothing);
+      expect(find.text('On'), findsOneWidget); // 安全事件通知 only.
       // 自动恢复 does not depend on the provider's answer.
-      expect(rowOf(tester, 'autoRecovery').badgeText, '默认方式');
+      expect(rowOf(tester, 'autoRecovery').badgeText, 'Default method');
     });
 
     testWidgets('available, but this build has no passkey domain', (
@@ -281,7 +283,7 @@ void main() {
     ) async {
       await pumpCenter(tester, mfa: _MfaGateway(relyingParty: null));
       final passkey = rowOf(tester, 'passkey');
-      expect(passkey.badgeText, '不可用');
+      expect(passkey.badgeText, 'Unavailable');
       expect(passkey.onTap, isNull);
     });
 
@@ -309,10 +311,10 @@ void main() {
         'keyExport',
       ]) {
         await scrollToS8Section(tester, row(id));
-        expect(rowOf(tester, id).badgeText, '还没有开放', reason: id);
+        expect(rowOf(tester, id).badgeText, 'Not open yet', reason: id);
       }
-      expect(find.text('已开启'), findsOneWidget); // 安全事件通知 only.
-      expect(find.text('已启用'), findsNothing);
+      expect(find.text('On'), findsOneWidget); // 安全事件通知 only.
+      expect(find.text('Enabled'), findsNothing);
       final guide = find.byKey(
         const ValueKey<String>('security-methods-guide'),
       );
@@ -332,7 +334,10 @@ void main() {
           reason: id,
         );
       }
-      expect(scopeNote(tester), '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。');
+      expect(
+        scopeNote(tester),
+        'Multi-factor authentication, passkeys, recovery and export are provided by Privy and will show here once open.',
+      );
     });
   });
 }

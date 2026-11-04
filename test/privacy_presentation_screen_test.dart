@@ -266,9 +266,9 @@ void main() {
     // depends on 可被发现 — whoever knows the LOOP ID may ask.
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '知道你 LOOP ID 的人可以加你',
+      'Anyone with your LOOP ID can add you',
     );
-    expect(find.text('允许陌生人发好友申请'), findsOneWidget);
+    expect(find.text('Let strangers send friend requests'), findsOneWidget);
 
     await _tap(
       tester,
@@ -277,7 +277,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '知道你 LOOP ID 的人可以加你',
+      'Anyone with your LOOP ID can add you',
     );
 
     await _tap(
@@ -287,7 +287,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-social-friendRequests').subtitle,
-      '陌生人无法向你发好友申请',
+      'Strangers can\'t send you friend requests',
     );
 
     await _tap(
@@ -297,11 +297,11 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-social-groupInvites').subtitle,
-      '关闭后，好友无法把你拉进小群',
+      'When off, friends can\'t add you to small groups',
     );
     expect(
       _toggle(tester, 'privacy-social-directMessages').subtitle,
-      '已成为好友的人可以直接打开与你的私聊',
+      'Friends can open a direct message with you',
     );
   });
 
@@ -338,7 +338,7 @@ void main() {
     expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
+      'Others can\'t find you by nickname; your LOOP ID is always searchable exactly',
     );
 
     await _tap(
@@ -348,7 +348,7 @@ void main() {
 
     expect(
       _toggle(tester, 'privacy-discoverable').subtitle,
-      '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索',
+      'Others can find you by nickname; your LOOP ID is always searchable exactly',
     );
   });
 
@@ -389,7 +389,7 @@ void main() {
       expect(_toggle(tester, key).onChanged, isNull);
     }
 
-    await _tap(tester, find.text('重新载入'));
+    await _tap(tester, find.text('Reload'));
 
     expect(
       find.byKey(const ValueKey<String>('privacy-conflict')),

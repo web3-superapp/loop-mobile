@@ -51,7 +51,7 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('loop-id-value')), findsOneWidget);
     expect(find.text(loopId), findsOneWidget);
-    expect(find.textContaining('不可更改'), findsOneWidget);
+    expect(find.textContaining('permanent'), findsOneWidget);
     // S107 §4: the LOOP ID can be copied, never edited — the two fields are
     // the user name and the bio.
     expect(find.byKey(const ValueKey<String>('loop-id-copy')), findsOneWidget);
@@ -206,7 +206,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-id-failure')),
       findsOneWidget,
     );
-    expect(find.textContaining('保留词'), findsOneWidget);
+    expect(find.textContaining('reserved by LOOP'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('loop-id-activated')),
       findsNothing,
@@ -255,7 +255,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('可以和别人重复'), findsOneWidget);
+    expect(find.textContaining("doesn't have to be unique"), findsOneWidget);
     expect(_pressed(tester, 'loop-id-submit'), isNotNull);
   });
 
@@ -285,7 +285,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-id-activated')),
       findsOneWidget,
     );
-    expect(find.textContaining('简介没有保存成功'), findsNothing);
+    expect(find.textContaining("Your bio wasn't saved"), findsNothing);
   });
 
   testWidgets('a bio that fails to save leaves the activation standing', (
@@ -311,7 +311,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-id-activated')),
       findsOneWidget,
     );
-    expect(find.textContaining('简介没有保存成功'), findsOneWidget);
+    expect(find.textContaining("Your bio wasn't saved"), findsOneWidget);
   });
 }
 

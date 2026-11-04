@@ -15,9 +15,14 @@ void main() {
     await expectProductionSpecimen(
       tester,
       location: '/system/permission',
-      kicker: '权限控制',
+      kicker: 'Permissions',
       specimenKeys: <String>['permission-denied-specimen'],
-      specimenText: <String>['通知权限', '相机权限', '生物识别', '通知权限已被系统关闭'],
+      specimenText: <String>[
+        'Notification permission',
+        'Camera permission',
+        'Biometrics',
+        'Notifications are turned off in system settings',
+      ],
     );
   });
 
@@ -33,21 +38,25 @@ void main() {
         onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
-    expect(find.text('使用前再申请'), findsOneWidget);
-    expect(find.text('通知权限'), findsOneWidget);
-    expect(find.text('相机权限'), findsOneWidget);
-    expect(find.text('生物识别'), findsOneWidget);
-    expect(find.text('被拒后的引导（组件样例）'), findsOneWidget);
-    expect(find.text('通知权限已被系统关闭'), findsOneWidget);
+    expect(find.text('Asked only when needed'), findsOneWidget);
+    expect(find.text('Notification permission'), findsOneWidget);
+    expect(find.text('Camera permission'), findsOneWidget);
+    expect(find.text('Biometrics'), findsOneWidget);
+    expect(find.text('After denial (component specimen)'), findsOneWidget);
+    expect(
+      find.text('Notifications are turned off in system settings'),
+      findsOneWidget,
+    );
     expect(find.text('当前没有待处理的权限申请'), findsNothing);
-    expect(find.text('继续'), findsNothing);
-    expect(find.text('暂不'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Continue'), findsNothing);
+    expect(find.text('Not now'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
     // The specimen's own exit is the prototype's toast, not a system call.
+    // Decision 0281 transition: the shared permission card is lib/widgets.
     await scrollPageTo(tester, find.text('前往系统设置'));
     await tester.tap(find.text('前往系统设置'));
     await tester.pump();
-    expect(find.text('请在系统设置中打开 LOOP 权限'), findsOneWidget);
+    expect(find.text('Allow LOOP in system settings'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
   });
 
@@ -77,13 +86,13 @@ void main() {
       find.byKey(const ValueKey<String>('permission-prompt-camera-education')),
       findsOneWidget,
     );
-    expect(find.text('本次申请'), findsOneWidget);
-    expect(find.text('前往系统设置'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.ensureVisible(find.text('继续'));
-    await tester.tap(find.text('继续'));
-    await tester.ensureVisible(find.text('暂不'));
-    await tester.tap(find.text('暂不'));
+    expect(find.text('This request'), findsOneWidget);
+    expect(find.text('Open system settings'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.ensureVisible(find.text('Not now'));
+    await tester.tap(find.text('Not now'));
     expect((requests, settings, notNow), (1, 0, 1));
 
     await pumpSystemSurface(
@@ -99,12 +108,18 @@ void main() {
         onPermissionNotNow: () => notNow += 1,
       ),
     );
-    expect(find.text('被拒后的引导'), findsOneWidget);
-    expect(find.text('通知权限已被系统关闭'), findsOneWidget);
-    expect(find.textContaining('系统设置 → LOOP → 通知'), findsOneWidget);
-    expect(find.text('继续'), findsNothing);
-    await tester.ensureVisible(find.text('前往系统设置'));
-    await tester.tap(find.text('前往系统设置'));
+    expect(find.text('After denial'), findsOneWidget);
+    expect(
+      find.text('Notifications permission is turned off in system settings'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Settings → LOOP → Notifications'),
+      findsOneWidget,
+    );
+    expect(find.text('Continue'), findsNothing);
+    await tester.ensureVisible(find.text('Open system settings'));
+    await tester.tap(find.text('Open system settings'));
     expect((requests, settings), (1, 1));
   });
 
@@ -125,11 +140,11 @@ void main() {
       ),
     );
 
-    expect(find.text('本次申请'), findsOneWidget);
-    expect(find.text('继续'), findsNothing);
-    expect(find.text('前往系统设置'), findsNothing);
-    expect(find.text('暂不'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('This request'), findsOneWidget);
+    expect(find.text('Continue'), findsNothing);
+    expect(find.text('Open system settings'), findsNothing);
+    expect(find.text('Not now'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
   });
 
   testWidgets('permission states remain usable at 2x text', (tester) async {
@@ -147,7 +162,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await scrollPageTo(tester, find.text('暂不'));
-    await tester.tap(find.text('暂不'));
+    await scrollPageTo(tester, find.text('Not now'));
+    await tester.tap(find.text('Not now'));
   });
 }

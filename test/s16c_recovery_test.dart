@@ -349,7 +349,7 @@ void main() {
       expect(find.text(PrivySessionRestoreScreen.slowMessage), findsNothing);
       // Saying what it is doing is not saying that it finished: the credential
       // form still belongs to an answer nobody has given yet.
-      expect(find.text('欢迎来到 LOOP'), findsNothing);
+      expect(find.text('Welcome to LOOP'), findsNothing);
     });
 
     testWidgets('a silent wait admits it is slow long before it gives up', (
@@ -604,7 +604,7 @@ void main() {
       final retry = tester.widget<LoopIconButton>(_bannerRetry);
       expect(retry.icon, 'refresh');
       expect(LoopIconNames.contains(retry.icon), isTrue);
-      expect(retry.label, '重新读取资料状态');
+      expect(retry.label, 'Reload profile status');
       await tester.tap(_bannerRetry);
       await tester.pumpAndSettle();
 
@@ -666,7 +666,7 @@ void main() {
 
       await tester.tap(_bannerRetry);
       await tester.pump();
-      expect(find.text('正在重新读取资料状态。'), findsOneWidget);
+      expect(find.text('Reloading profile status.'), findsOneWidget);
       expect(tester.widget<LoopIconButton>(_bannerRetry).onPressed, isNull);
 
       unawaited(container.read(loopProfileLandingProvider.notifier).recheck());

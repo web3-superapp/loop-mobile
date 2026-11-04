@@ -369,8 +369,8 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-create-progress')),
         findsOneWidget,
       );
-      expect(find.text('已完成'), findsNothing);
-      expect(find.text('未完成'), findsNWidgets(4));
+      expect(find.text('Done'), findsNothing);
+      expect(find.text('Not done'), findsNWidgets(4));
       expect(find.text('02 / 05'), findsNothing);
       expect(_stepCounter(tester), '02 / 05');
       // Waiting never blocks the sequence.
@@ -395,10 +395,13 @@ void main() {
         findsOneWidget,
       );
       // Key pair and secure element, and nothing a later step owns.
-      expect(find.text('已完成'), findsNWidgets(2));
-      expect(find.text('未完成'), findsNWidgets(2));
-      expect(find.textContaining('第 3 步选择后才算完成'), findsOneWidget);
-      expect(find.textContaining('第 5 步完成后才算完成'), findsOneWidget);
+      expect(find.text('Done'), findsNWidgets(2));
+      expect(find.text('Not done'), findsNWidgets(2));
+      expect(
+        find.textContaining('Done after the choice in step 3'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Done after step 5'), findsOneWidget);
     });
 
     testWidgets('running out of time says so and still lets the owner on', (
@@ -418,8 +421,13 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-create-timeout')),
         findsOneWidget,
       );
-      expect(find.text('钱包还在创建中，可以先继续'), findsOneWidget);
-      expect(find.text('已完成'), findsNothing);
+      expect(
+        find.text(
+          'Your wallet is still being created. You can continue for now',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Done'), findsNothing);
       expect(_enabled(tester, 'wallet-create-continue'), isTrue);
     });
 
@@ -437,8 +445,8 @@ void main() {
         ),
       );
 
-      expect(find.text('已完成'), findsNWidgets(3));
-      expect(find.text('未完成'), findsOneWidget);
+      expect(find.text('Done'), findsNWidgets(3));
+      expect(find.text('Not done'), findsOneWidget);
     });
 
     testWidgets('a failed creation shows the provider sentence, not ours', (
@@ -575,7 +583,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(router.state.matchedLocation, '/splash');
-      expect(find.text('正在准备你的账号…'), findsOneWidget);
+      expect(find.text('Preparing your account…'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-splash-enter')),
         findsNothing,
@@ -701,12 +709,12 @@ void main() {
       // Passkey only (decision 0151 took 恢复密码 off the page). 自动恢复 is
       // not among them, and 社交恢复 / 导出私钥 are behind the disclosure the
       // prototype folds them into.
-      expect(find.text('不可用'), findsNWidgets(1));
+      expect(find.text('Unavailable'), findsNWidgets(1));
       expect(
         find.byKey(const ValueKey<String>('recovery-password')),
         findsNothing,
       );
-      expect(find.textContaining('恢复密码'), findsNothing);
+      expect(find.textContaining('Recovery password'), findsNothing);
       // F2: nothing to enrol is not a reason to trap the owner on the step.
       expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
       expect(_enabled(tester, 'wallet-recovery-later'), isTrue);
@@ -722,7 +730,7 @@ void main() {
 
       // The only 已启用 on the page, and it carries its evidence: whose
       // behaviour it is, and what the owner does with it on a new device.
-      expect(find.text('已启用'), findsOneWidget);
+      expect(find.text('Enabled'), findsOneWidget);
       expect(
         find.textContaining(walletAutomaticRecoveryEvidence),
         findsWidgets,
@@ -730,10 +738,10 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('recovery-cloud')),
       );
-      expect(row.trailing, '已启用');
+      expect(row.trailing, 'Enabled');
       // Nothing is enrolled by tapping it: it is a report, not a choice.
       expect(row.onTap, isNull);
-      expect(row.semanticLabel, contains('已启用'));
+      expect(row.semanticLabel, contains('enabled'));
       expect(row.semanticLabel, contains('Privy'));
     });
 
@@ -749,7 +757,7 @@ void main() {
         final row = tester.widget<LoopRecordRow>(
           find.byKey(ValueKey<String>('recovery-$method')),
         );
-        expect(row.trailing, '不可用');
+        expect(row.trailing, 'Unavailable');
       }
       // Passkey is not blocked by the login service — it is blocked by a
       // domain credential LOOP has not configured, and says so.
@@ -849,10 +857,10 @@ void main() {
       );
 
       for (final reason in <String>[
-        '还没有读到这台设备的锁屏能力',
+        'Screen lock not read yet',
         // S278 · decision 0236: the threshold sentence is behind (i).
         'No device verification available in this session',
-        '这次运行没有连上登录服务',
+        'Sign-in service unreachable this run',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);
       }

@@ -79,7 +79,7 @@ void main() {
       expect(launchChain.confirmations, 5);
       expect(launchChain.reorgDepthBlocks, 15);
       expect(launchChain.head!.blockNumber, BigInt.from(52000000));
-      expect(launchChain.name, 'BSC 测试网');
+      expect(launchChain.name, 'BSC Testnet');
       // The primary chain block is untouched by the second slot.
       expect(status.chain.chainId, loopPrimaryChainId);
       expect(status.rpc.endpoints, hasLength(1));
@@ -472,7 +472,7 @@ void main() {
   group('chain identities', () {
     test('an unknown chain is never named or numbered as the primary', () {
       expect(loopChainName(loopPrimaryChainId), 'BNB Smart Chain');
-      expect(loopChainName(loopLaunchTestnetChainId), 'BSC 测试网');
+      expect(loopChainName(loopLaunchTestnetChainId), 'BSC Testnet');
       expect(loopChainReference(loopPrimaryChainId), 56);
       expect(loopChainReference(loopLaunchTestnetChainId), 97);
       // Falling back to the primary chain would label an unpublished chain

@@ -167,7 +167,7 @@ void main() {
       expect(
         tester.getSemantics(share),
         matchesSemantics(
-          label: '分享名片',
+          label: 'Share card',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -223,7 +223,7 @@ void main() {
 
     testWidgets('an unread ID offers neither action', (tester) async {
       await _pumpProfile(tester, loopId: null);
-      expect(find.text('LOOP ID 不可读'), findsOneWidget);
+      expect(find.text('LOOP ID unreadable'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('profile-copy-loop-id')),
         findsNothing,
@@ -450,7 +450,7 @@ void main() {
         await _pushPlatformRoute(tester, '/u/LOOP-FE3EMCPE');
 
         // Still signed out: the credential page, with the link held.
-        expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+        expect(find.text('Welcome to LOOP'), findsOneWidget);
         final container = ProviderScope.containerOf(
           tester.element(find.byType(LoopApp)),
         );

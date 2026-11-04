@@ -3962,8 +3962,8 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 # F2: what a page says about a method it does not offer is
                 # said in the owner's words, and what it says about the one
                 # method that is in force carries its evidence.
-                "const walletAutomaticRecoveryEvidence",
-                "const walletRecoveryProviderPending",
+                "String get walletAutomaticRecoveryEvidence",
+                "String get walletRecoveryProviderPending",
             ),
             # S8 (decision 0060) rebuilt H5 on `GET /v2/security/capabilities`
             # and `GET /v2/security/summary`: six methods that are off, each
@@ -4203,12 +4203,12 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 )
 
     evidence = re.search(
-        r"const\s+walletAutomaticRecoveryEvidence\s*=\s*'([^']*)'",
+        r"String\s+get\s+walletAutomaticRecoveryEvidence\s*=>\s*LoopL10n\.current\.(\w+);",
         read_text(account_path) if account_path.is_file() else "",
     )
     if evidence is None:
         errors.append("the 自动恢复 evidence sentence must be one named constant")
-    elif "Privy" not in evidence.group(1):
+    elif "Privy" not in L10N_RULES.arb_tables(root)[0].get(evidence.group(1), ""):
         errors.append("the 自动恢复 evidence sentence must name whose behaviour it is")
 
     security_path = root / "lib/features/profile/security/security_screens.dart"
@@ -12660,7 +12660,7 @@ def check_privacy_application_contract(root: Path) -> list[str]:
         facet_wire_values = [
             wire_value
             for _, _, wire_value in re.findall(
-                r"\b(\w+)\((['\"])([^'\"]*)\2\s*,",
+                r"\b(\w+)\((['\"])([^'\"]*)\2\s*[,)]",
                 facet_match.group("body") if facet_match else "",
             )
         ]
@@ -12930,7 +12930,7 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
 
     # The reviewed page must keep both halves of that truth visible.
     for marker in NOTIFICATION_PREFERENCES_DELIVERY_TRUTH_MARKERS:
-        if marker not in surface:
+        if not L10N_RULES.copy_present(root, surface, marker):
             errors.append(
                 "Notification Preferences must state that delivery is "
                 f"unavailable; missing `{marker}`"
@@ -13363,7 +13363,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             # Step 3: the friend list retired; only the request inbox stays.
             # Decision 0133: it carries the name of the page it opens.
             "lib/features/profile/me_attention.dart": (
-                "title: '陌生人请求'",
+                "title: context.l10n.common_messageRequests",
                 "onOpen ?? () => unawaited(context.push<void>('/chat/requests'))",
             ),
             "lib/app.dart": (

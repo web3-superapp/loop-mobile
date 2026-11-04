@@ -957,9 +957,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('陌生人请求'));
+      await tester.ensureVisible(find.text('Message requests'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('陌生人请求'));
+      await tester.tap(find.text('Message requests'));
       expect(destination, 'friend-requests');
       expect(tester.takeException(), isNull);
 

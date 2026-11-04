@@ -645,7 +645,7 @@ void main() {
         find.descendant(
           of: row,
           matching: find.text(
-            'Includes consensus badges, launch review results and on-chain progress · 暂不生效',
+            'Includes consensus badges, launch review results and on-chain progress · Not in effect yet',
           ),
         ),
         findsOneWidget,

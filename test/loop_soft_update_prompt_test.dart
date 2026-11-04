@@ -55,7 +55,7 @@ void main() {
 
     expect(find.byKey(promptKey), findsOneWidget);
     expect(find.textContaining('1.2.0'), findsOneWidget);
-    expect(find.textContaining('仍然可以继续使用'), findsOneWidget);
+    expect(find.textContaining('This version still works'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('loop-soft-update-dismiss')),

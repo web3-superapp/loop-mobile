@@ -150,8 +150,8 @@ void main() {
 
       // S349: one group needs no label. An empty created group would teach
       // every account about a review queue none of them is in.
-      expect(find.text('我加入的'), findsNothing);
-      expect(find.text('我创建的'), findsNothing);
+      expect(find.text('Joined'), findsNothing);
+      expect(find.text('Created'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('profile-owned-communities')),
         findsNothing,
@@ -184,8 +184,8 @@ void main() {
 
       // S349: joined and created are two labelled groups; a created
       // community is never listed among the joined ones.
-      expect(find.text('我加入的'), findsOneWidget);
-      expect(find.text('我创建的'), findsOneWidget);
+      expect(find.text('Joined'), findsOneWidget);
+      expect(find.text('Created'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('me-joined-communities')),
@@ -401,7 +401,7 @@ void main() {
         find.byKey(const ValueKey<String>('profile-owned-communities')),
       );
 
-      expect(find.text('审核通知'), findsNothing);
+      expect(find.text('Review notifications'), findsNothing);
       // The group above already carries the authoritative state.
       expect(find.text('审核中'), findsOneWidget);
     });

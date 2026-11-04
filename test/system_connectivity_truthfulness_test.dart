@@ -23,7 +23,11 @@ void main() {
         'connectivity-specimen',
         'connectivity-specimen-retry',
       ],
-      specimenText: <String>['完全离线', 'BSC 网络暂时不可用', '为什么区分这两种'],
+      specimenText: <String>[
+        'Fully offline',
+        "BSC network isn't available right now",
+        'Why tell these two apart',
+      ],
     );
   });
 
@@ -42,22 +46,22 @@ void main() {
     );
     // The prototype page, drawn in full — under a bar that says it is one.
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
-    expect(find.text('当前设备离线'), findsOneWidget);
-    expect(find.text('上次同步 09:38'), findsOneWidget);
-    expect(find.text('离线'), findsOneWidget);
-    expect(find.text('无法连接到服务器'), findsOneWidget);
-    expect(find.text('部分故障（另一种态）'), findsOneWidget);
-    expect(find.text('BSC 网络暂时不可用'), findsOneWidget);
+    expect(find.text('This device is offline'), findsOneWidget);
+    expect(find.text('Last sync 09:38'), findsOneWidget);
+    expect(find.text('Offline'), findsOneWidget);
+    expect(find.text('Can\'t connect to the server'), findsOneWidget);
+    expect(find.text('Partial outage (another state)'), findsOneWidget);
+    expect(find.text('BSC network isn\'t available right now'), findsOneWidget);
     // No banner is raised over the rest of the app by a specimen, and the
     // page keeps no generic 返回 LOOP.
     expect(find.byType(LoopConnectivityBanner), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-dismissible')),
       findsOneWidget,
     );
-    await tester.ensureVisible(find.text('重试'));
-    await tester.tap(find.text('重试'));
+    await tester.ensureVisible(find.text('Retry'));
+    await tester.tap(find.text('Retry'));
     expect(retries, 1);
   });
 
@@ -65,12 +69,20 @@ void main() {
     tester,
   ) async {
     final cases = <(LoopConnectivityScope, String, String)>[
-      (LoopConnectivityScope.fullyOffline, '当前设备离线', '完全离线'),
-      (LoopConnectivityScope.marketDataUnavailable, '行情暂时不可用', '行情暂时不可用'),
+      (
+        LoopConnectivityScope.fullyOffline,
+        'This device is offline',
+        'Fully offline',
+      ),
+      (
+        LoopConnectivityScope.marketDataUnavailable,
+        'Market data unavailable',
+        'Market data unavailable',
+      ),
       (
         LoopConnectivityScope.tradingServiceUnavailable,
-        '交易服务暂时不可用',
-        '交易服务暂时不可用',
+        'Trading service unavailable',
+        'Trading service unavailable',
       ),
     ];
     for (final (scope, heading, notice) in cases) {
@@ -93,9 +105,13 @@ void main() {
         findsNothing,
         reason: scope.name,
       );
-      expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
+      expect(find.text('Back to LOOP'), findsNothing, reason: scope.name);
       // No lastSyncAt and no per-chain source: neither may be invented.
-      expect(find.textContaining('上次同步'), findsNothing, reason: scope.name);
+      expect(
+        find.textContaining('Last sync'),
+        findsNothing,
+        reason: scope.name,
+      );
       await scrollPageTo(
         tester,
         find.byKey(const ValueKey<String>('partial-outage-source-unavailable')),
@@ -107,15 +123,22 @@ void main() {
       );
       if (scope == LoopConnectivityScope.fullyOffline) {
         expect(find.byType(LoopInlineUnavailable), findsOneWidget);
-        expect(find.text('无法连接到服务器'), findsWidgets);
-        expect(find.text('离线'), findsOneWidget);
+        expect(find.text('Can\'t connect to the server'), findsWidgets);
+        expect(find.text('Offline'), findsOneWidget);
       }
-      await tester.ensureVisible(find.text('重试'));
-      await tester.tap(find.text('重试'));
+      // Decision 0281 transition: the fully-offline retry is the shared
+      // lib/widgets inline control, not migrated yet.
+      final retry = scope == LoopConnectivityScope.fullyOffline
+          ? '重试'
+          : 'Retry';
+      await tester.ensureVisible(find.text(retry));
+      await tester.tap(find.text(retry));
       expect(retries, 1, reason: scope.name);
       await tester.tap(
         find.text(
-          scope == LoopConnectivityScope.fullyOffline ? '查看缓存内容' : '继续使用可用功能',
+          scope == LoopConnectivityScope.fullyOffline
+              ? 'View cached content'
+              : 'Keep using available features',
         ),
       );
       expect(continues, 1, reason: scope.name);
@@ -137,14 +160,14 @@ void main() {
       ),
     );
 
-    expect(find.text('上次同步 09:38'), findsOneWidget);
-    expect(find.text('设备离线'), findsNothing);
+    expect(find.text('Last sync 09:38'), findsOneWidget);
+    expect(find.text('Device offline'), findsNothing);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('partial-outage-notice')),
     );
-    expect(find.text('部分故障（另一种态）'), findsOneWidget);
-    expect(find.text('BSC 网络暂时不可用'), findsOneWidget);
+    expect(find.text('Partial outage (another state)'), findsOneWidget);
+    expect(find.text('BSC network isn\'t available right now'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('partial-outage-source-unavailable')),
       findsNothing,
@@ -164,8 +187,8 @@ void main() {
       ),
     );
 
-    expect(find.text('设备离线'), findsOneWidget);
-    expect(find.textContaining('上次同步'), findsNothing);
+    expect(find.text('Device offline'), findsOneWidget);
+    expect(find.textContaining('Last sync'), findsNothing);
   });
 
   testWidgets('connectivity banner announces and retries', (tester) async {
@@ -181,9 +204,15 @@ void main() {
       ),
       textScale: 2,
     );
-    expect(find.text('行情不可用，价格可能已过期'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('行情暂时不可用')), findsOneWidget);
-    await tester.tap(find.text('重试'));
+    expect(
+      find.text('Market data unavailable, prices may be stale'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp('Market data unavailable')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Retry'));
     expect(retries, 1);
     semantics.dispose();
   });
@@ -206,7 +235,9 @@ void main() {
         textScale: 2,
       );
       expect(tester.takeException(), isNull);
-      final action = find.text(observation == null ? '重试' : '查看缓存内容');
+      final action = find.text(
+        observation == null ? 'Retry' : 'View cached content',
+      );
       await tester.ensureVisible(action);
       await tester.tap(action);
     }

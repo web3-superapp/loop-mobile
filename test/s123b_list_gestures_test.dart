@@ -732,7 +732,7 @@ void main() {
         find.byKey(const ValueKey<String>('chat-search-hit-m1')),
         findsOneWidget,
       );
-      expect(find.textContaining('社区 Tab'), findsNothing);
+      expect(find.textContaining('Community Tab'), findsNothing);
     });
   });
 }

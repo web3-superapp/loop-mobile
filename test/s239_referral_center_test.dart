@@ -375,7 +375,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byKey(const ValueKey<String>('mining-power-tabs')),
-          matching: find.text('邀请'),
+          matching: find.text('Invitation'),
         ),
       );
       await tester.pumpAndSettle();

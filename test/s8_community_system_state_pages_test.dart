@@ -441,7 +441,7 @@ void main() {
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(find.byType(LoopErrorState), findsNothing);
       expect(find.byType(LoopOfflineState), findsNothing);
-      expect(find.text('请更新 LOOP 后继续'), findsNothing);
+      expect(find.text('Update LOOP to continue'), findsNothing);
     });
 
     testWidgets('region-blocked has no read state either', (tester) async {

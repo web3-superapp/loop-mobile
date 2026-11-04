@@ -424,7 +424,10 @@ void main() {
     expect((observer.column, observer.row), (3, 2));
     // The four prototype illustrations keep row 0, in catalog order.
     final mcat = LoopIdentityAtlas.communities.slot('mcat')!;
-    expect((mcat.column, mcat.row, mcat.label), (3, 0, 'MOONCAT 社区图标'));
+    expect(
+      (mcat.column, mcat.row, mcat.label),
+      (3, 0, 'MOONCAT community icon'),
+    );
     final signal = LoopIdentityAtlas.communities.slot('community-12')!;
     expect((signal.column, signal.row), (3, 2));
     expect(LoopIdentitySlots.communityAliases['bonkcommunity'], 'bonk');
@@ -566,7 +569,7 @@ void main() {
       final avatarRect = tester.getRect(find.byType(LoopIdentityAvatar));
       expect(tester.getRect(monogram), avatarRect);
       expect(avatarRect.size, const Size(56, 56));
-      expect(find.bySemanticsLabel('whale_0x9f 头像'), findsOneWidget);
+      expect(find.bySemanticsLabel('whale_0x9f avatar'), findsOneWidget);
       semantics.dispose();
     },
   );
@@ -614,8 +617,11 @@ void main() {
       images.map((image) => (image.image as AssetImage).assetName),
       <String>[LoopAssetPaths.people, LoopAssetPaths.communities],
     );
-    expect(find.bySemanticsLabel('whale_0x9f 头像'), findsOneWidget);
-    expect(find.bySemanticsLabel('BONK Community 社区图标'), findsOneWidget);
+    expect(find.bySemanticsLabel('whale_0x9f avatar'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('BONK Community community icon'),
+      findsOneWidget,
+    );
     expect(find.text('NO'), findsOneWidget);
     expect(find.bySemanticsLabel('nobody 头像'), findsOneWidget);
     semantics.dispose();

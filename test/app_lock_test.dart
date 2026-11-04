@@ -426,7 +426,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
-      expect(row.trailing, '未开启');
+      expect(row.trailing, 'Off');
       expect(row.subtitle, contains('biometrics'));
       expect(row.subtitle, contains('device passcode'));
 
@@ -457,7 +457,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
-      expect(row.trailing, '已开启');
+      expect(row.trailing, 'On');
       expect(row.subtitle, contains('screen lock passcode'));
 
       await tester.tap(
@@ -485,7 +485,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
-      expect(row.trailing, '不可用');
+      expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);
       expect(row.subtitle, contains('Add one in system Settings first'));
     });
@@ -499,7 +499,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
-      expect(row.trailing, '不可用');
+      expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);
       // 已开启 belongs to the lock alone; nothing else on the page may wear it.
       expect(find.text('已开启'), findsNothing);
