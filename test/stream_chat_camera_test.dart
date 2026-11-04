@@ -12,12 +12,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_camera.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_composer.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 Attachment photo({
@@ -312,9 +313,11 @@ Widget _themed(Widget child) {
         loopStreamTheme(platform: theme.platform),
       ],
     ),
-    localizationsDelegates: const <LocalizationsDelegate<Object>>[
-      LoopStreamChatLocalizationsDelegate(),
-    ],
+    // Decision 0281: chat is not migrated yet (S355); this case reads
+    // LOOP's Chinese Stream copy.
+    locale: LoopL10n.simplifiedChinese,
+    supportedLocales: LoopL10n.supportedLocales,
+    localizationsDelegates: loopLocalizationsDelegates,
     home: Scaffold(
       backgroundColor: LoopColors.ink,
       body: Center(child: child),

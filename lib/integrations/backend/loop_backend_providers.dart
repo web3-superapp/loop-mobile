@@ -6,6 +6,7 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 final loopBackendEndpointProvider = Provider<LoopBackendEndpoint?>((ref) {
   final rawValue = ref.watch(
@@ -17,7 +18,11 @@ final loopBackendEndpointProvider = Provider<LoopBackendEndpoint?>((ref) {
 final loopBackendDioProvider = Provider<Dio?>((ref) {
   final endpoint = ref.watch(loopBackendEndpointProvider);
   if (endpoint == null) return null;
-  final dio = LoopDioFactory.createLoopBackend(origin: endpoint.uri);
+  // Decision 0281: the backend hears the app's language on every request.
+  final dio = LoopDioFactory.createLoopBackend(
+    origin: endpoint.uri,
+    acceptLanguage: () => LoopL10n.currentLocale.toLanguageTag(),
+  );
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });

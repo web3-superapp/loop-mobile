@@ -3,17 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_locale.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/profile/settings/language_sheet.dart';
 import 'package:loop_mobile/features/profile/settings/settings_controller.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
 import 'package:loop_mobile/features/profile/sign_out_button.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -61,6 +64,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
     }
     final settings = state.value;
     final preferences = ref.watch(loopDisplayPreferencesProvider);
+    final locale = ref.watch(loopLocaleProvider);
     final persistenceDetail = switch (preferences.persistence) {
       LoopDisplayPreferencesPersistence.available => '只保存在本机，不写入账号，也不调用后端',
       LoopDisplayPreferencesPersistence.saving => '已生效，正在保存到本机',
@@ -128,29 +132,29 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           // half of the page answered.
           LoopRecordGroup(
             rows: <LoopRecordRow>[
-              if (settings != null) ...<LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('settings-language'),
-                  title: '语言',
-                  trailing: settings.values.languageLabel,
-                  readOnly: true,
-                  position: LoopRowPosition.first,
-                ),
+              // Decision 0281: the application language is this
+              // installation's choice, read from the device, not the account
+              // value the server publishes; it stays whatever the account
+              // half of the page answered.
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-language'),
+                title: context.l10n.common_language,
+                trailing: LoopL10n.nativeName(locale),
+                onTap: () => unawaited(showLoopLanguageSheet(context)),
+                position: LoopRowPosition.first,
+              ),
+              if (settings != null)
                 LoopRecordRow(
                   key: const ValueKey<String>('settings-display-currency'),
                   title: '货币单位',
                   trailing: settings.values.displayCurrency,
                   readOnly: true,
                 ),
-              ],
               LoopRecordRow(
                 key: const ValueKey<String>('settings-theme'),
                 title: '主题',
                 trailing: '深色',
                 readOnly: true,
-                position: settings == null
-                    ? LoopRowPosition.first
-                    : LoopRowPosition.middle,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('settings-reduce-motion'),
@@ -218,7 +222,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             key: const ValueKey<String>('settings-fixed-values-note'),
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Text(
-              settings == null ? '主题在当前版本固定，不能更改。' : '语言、货币单位与主题在当前版本固定，不能更改。',
+              settings == null ? '主题在当前版本固定，不能更改。' : '货币单位与主题在当前版本固定，不能更改。',
               style: LoopType.caption,
             ),
           ),

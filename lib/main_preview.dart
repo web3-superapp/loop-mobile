@@ -10,6 +10,7 @@ import 'package:loop_mobile/integrations/communication/memory_live_voice_rooms.d
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_locale.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
@@ -27,6 +28,7 @@ import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_locale_store.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
@@ -51,7 +53,11 @@ import 'package:loop_mobile/integrations/sharing/system_wallet_activity_export_s
 /// still read public, identity-free Hyperliquid Testnet spot facts.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Decision 0281: the language an earlier run picked, read before the
+  // first frame so the app never opens in the wrong one.
+  final localeBootstrapping = bootstrapSharedPreferencesLocale();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  final localeBootstrap = await localeBootstrapping;
   final previewCommunities = MemoryCommunityGateway();
   runApp(
     ProviderScope(
@@ -62,6 +68,8 @@ Future<void> main() async {
         loopDisplayPreferencesInitialProvider.overrideWithValue(
           displayBootstrap.initial,
         ),
+        loopLocaleStoreProvider.overrideWithValue(localeBootstrap.store),
+        loopLocaleInitialProvider.overrideWithValue(localeBootstrap.initial),
         appConfigProvider.overrideWithValue(
           const AppConfig(
             privyAppId: '',

@@ -130,15 +130,14 @@ void main() {
       expect(_labels(tester), isNot(contains('资产与挖矿')));
       expect(_labels(tester).where((label) => label == '通用'), hasLength(1));
 
-      // §D+ #11: 语言 reads its value, not a sentence about why it is fixed;
-      // decision 0133 (m8) makes it a read-only value with one shared note.
+      // §D+ #11: 语言 reads its value, not a sentence. Decision 0281 made
+      // it the language picker: it opens a sheet instead of being fixed.
       final language = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('settings-language')),
       );
       expect(language.subtitle, isNull);
-      expect(language.trailing, isNotNull);
-      expect(language.readOnly, isTrue);
-      expect(language.onTap, isNull);
+      expect(language.trailing, 'English');
+      expect(language.onTap, isNotNull);
     });
   });
 

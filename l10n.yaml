@@ -1,0 +1,12 @@
+# Decision 0281: English is the template and the default; Simplified Chinese
+# is the one other locale. Sources are lib/l10n/app_<locale>.arb, assembled by
+# scripts/l10n/merge.py from lib/l10n/fragments/*.json — edit the fragments,
+# not the ARB files.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n/gen
+output-localization-file: loop_localizations.dart
+output-class: LoopLocalizations
+nullable-getter: false
+untranslated-messages-file: build/l10n_untranslated.json
+format: true

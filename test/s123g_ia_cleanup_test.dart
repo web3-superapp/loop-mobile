@@ -124,9 +124,9 @@ void main() {
   });
 
   group('设置 · stated values (m8)', () {
-    testWidgets('语言 / 货币单位 / 主题 are read-only, not dead buttons', (
-      tester,
-    ) async {
+    // Decision 0281: 语言 is the device-local language picker now
+    // (test/s354_locale_test.dart); 货币单位 and 主题 stay stated values.
+    testWidgets('货币单位 / 主题 are read-only, not dead buttons', (tester) async {
       final handle = tester.ensureSemantics();
       final opened = <String>[];
       await pumpS8Page(
@@ -136,7 +136,6 @@ void main() {
       );
 
       for (final key in <String>[
-        'settings-language',
         'settings-display-currency',
         'settings-theme',
       ]) {

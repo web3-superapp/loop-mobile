@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "common_close": "Close",
+  "@common_close": {"description": "common"},
+  "common_language": "Language",
+  "@common_language": {"description": "common"}
+}

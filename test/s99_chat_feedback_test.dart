@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -29,7 +30,6 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_screen.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_unread.dart';
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
@@ -171,9 +171,11 @@ final class _Room {
         theme: LoopTheme.dark.copyWith(
           extensions: [...LoopTheme.dark.extensions.values, loopStreamTheme()],
         ),
-        localizationsDelegates: const <LocalizationsDelegate<Object>>[
-          LoopStreamChatLocalizationsDelegate(),
-        ],
+        // Decision 0281: chat is not migrated yet (S355); this case reads
+        // LOOP's Chinese Stream copy.
+        locale: LoopL10n.simplifiedChinese,
+        supportedLocales: LoopL10n.supportedLocales,
+        localizationsDelegates: loopLocalizationsDelegates,
         // As in `lib/app.dart`: above the navigator, so the long-press sheet
         // (an overlay route) is under StreamChat too.
         builder: (context, child) => StreamChat(

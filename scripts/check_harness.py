@@ -30,6 +30,8 @@ PINNED_DEPENDENCIES = {
     "flutter_secure_storage": "10.3.1",
     "flutter_svg": "2.3.0",
     "go_router": "17.5.0",
+    # Decision 0281: gen-l10n output imports intl; the lockfile's version.
+    "intl": "0.20.3",
     "mobile_scanner": "7.4.2",
     "privy_flutter": "0.11.0",
     "reown_appkit": "1.8.4",
@@ -4507,6 +4509,12 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
             "lib/integrations/personalization/"
             "shared_preferences_dapp_browser_store.dart"
         ),
+        # Decision 0281: the application language, one `loop.locale` tag,
+        # pinned by `check_l10n_locale_contract`.
+        Path(
+            "lib/integrations/personalization/"
+            "shared_preferences_locale_store.dart"
+        ),
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -4627,8 +4635,9 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
                 errors.append(
                     "H12 must expose exactly one implemented display switch"
                 )
+            # Decision 0281: `settings-language` is the device-local
+            # language picker now, pinned by `check_l10n_locale_contract`.
             for key in (
-                "settings-language",
                 "settings-display-currency",
                 "settings-theme",
             ):
@@ -6297,7 +6306,9 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
                 "'x-api-key'",
             ),
             "lib/integrations/backend/loop_backend_providers.dart": (
-                "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
+                # Decision 0281 added the Accept-Language source.
+                "LoopDioFactory.createLoopBackend(\n    origin: endpoint.uri,",
+                "acceptLanguage: () => LoopL10n.currentLocale.toLanguageTag()",
             ),
             "lib/integrations/hyperliquid/hyperliquid_http_providers.dart": (
                 "final hyperliquidPublicDioProvider = Provider<Dio>",
@@ -14429,8 +14440,8 @@ IA_SIGN_OUT_PAGES = (
     "lib/features/profile/profile_v2_screens.dart",
     "lib/features/profile/settings/settings_screen.dart",
 )
+# Decision 0281: 语言 left this list — it opens the language picker.
 IA_SETTINGS_READ_ONLY_KEYS = (
-    "settings-language",
     "settings-display-currency",
     "settings-theme",
 )
@@ -15498,7 +15509,7 @@ PRESS_HAPTICS_TEST_MARKERS = {
         "choosing a segment plays a selection; re-choosing does not",
         "a pull plays one light touch when it is far enough to refresh",
         "a draggable sheet draws a handle and closes on a downward drag",
-        "system controls speak Chinese",
+        "system controls speak the app language",  # decision 0281
         "shared controls meet the tap target guidelines",
         "the wallet round key shows a pressed state",
     ),
@@ -15632,22 +15643,39 @@ def check_press_haptics_contract(root: Path) -> list[str]:
                 "(`splashFactory: NoSplash.splashFactory`, decision 0130)"
             )
 
-    # Rule 12: the system controls speak the application's one language.
+    # Rule 12: the system controls speak the application's language.
+    # Decision 0281 retired 0130's one fixed zh-CN: the locale is the
+    # reader's pick (English by default) and every delegate follows it.
     application = root / "lib/app.dart"
     if application.is_file():
         text = strip_dart_comments(read_text(application))
         for fragment in (
+            "LoopL10n.delegate",
             "GlobalMaterialLocalizations.delegate",
             "GlobalCupertinoLocalizations.delegate",
             "GlobalWidgetsLocalizations.delegate",
-            "Locale('zh', 'CN')",
-            "locale: loopAppLocale",
-            "supportedLocales: const <Locale>[loopAppLocale]",
+            "ref.watch(loopLocaleProvider)",
+            "locale: locale",
+            "supportedLocales: LoopL10n.supportedLocales",
         ):
             if fragment not in text:
                 errors.append(
-                    "lib/app.dart must install Chinese system localizations "
-                    f"(`{fragment}`, decision 0130)"
+                    "lib/app.dart must install the reader's system localizations "
+                    f"(`{fragment}`, decisions 0130 / 0281)"
+                )
+    l10n = root / "lib/l10n/loop_l10n.dart"
+    if l10n.is_file():
+        text = strip_dart_comments(read_text(l10n))
+        for fragment in (
+            "static const Locale fallbackLocale = english;",
+            "static const Locale english = Locale('en');",
+            "static const Locale simplifiedChinese = Locale('zh', 'CN');",
+        ):
+            if fragment not in text:
+                errors.append(
+                    "lib/l10n/loop_l10n.dart must keep English as the default "
+                    f"and Simplified Chinese as the other language (`{fragment}`, "
+                    "decision 0281)"
                 )
 
     for path in sorted(lib.rglob("*.dart")):
@@ -16303,7 +16331,7 @@ def main() -> int:
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "
-        "one haptics owner, pressed states, Chinese system controls, one toast, "
+        "one haptics owner, pressed states, system controls in the reader's language, one toast, "
         "native money forms with one sheet surface and no hero on tool pages, "
         "confirmed sign-out, one entry per destination, stated values, "
         "a full-screen scanner, explanations behind (i), portrait iOS, "

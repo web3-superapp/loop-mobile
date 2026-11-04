@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -273,9 +274,11 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
-          localizationsDelegates: const <LocalizationsDelegate<Object>>[
-            LoopStreamChatLocalizationsDelegate(),
-          ],
+          // Decision 0281: chat is not migrated yet (S355); this case reads
+          // LOOP's Chinese Stream copy.
+          locale: LoopL10n.simplifiedChinese,
+          supportedLocales: LoopL10n.supportedLocales,
+          localizationsDelegates: loopLocalizationsDelegates,
           home: Builder(
             builder: (context) {
               final theme = Theme.of(context);

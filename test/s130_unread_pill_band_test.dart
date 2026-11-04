@@ -7,6 +7,8 @@
 // same pill in its own strip above the list.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
@@ -221,9 +223,11 @@ final class _PillHarness {
       MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: MaterialApp(
-          localizationsDelegates: const <LocalizationsDelegate<Object>>[
-            LoopStreamChatLocalizationsDelegate(),
-          ],
+          // Decision 0281: chat is not migrated yet (S355); this case reads
+          // LOOP's Chinese Stream copy.
+          locale: LoopL10n.simplifiedChinese,
+          supportedLocales: LoopL10n.supportedLocales,
+          localizationsDelegates: loopLocalizationsDelegates,
           home: StreamChat(
             client: client,
             // LOOP's own list configuration (`lib/app.dart`): no floating day
