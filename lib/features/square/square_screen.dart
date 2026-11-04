@@ -185,11 +185,12 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
       title: context.l10n.common_voiceRooms,
       embedded: true,
       tabPage: true,
+      scrollsUnderTabBar: true,
       updating: state.refreshing,
       onRefresh: controller.refresh,
       collection: ListView(
         key: const ValueKey<String>('square-voice-room-list'),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: EdgeInsets.only(bottom: 24 + loopTabScrollBottom(context)),
         children: <Widget>[
           CommunityPreviewNotice(
             mode: state.mode,

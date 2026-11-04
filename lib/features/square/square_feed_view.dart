@@ -162,6 +162,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
       title: context.l10n.common_feed,
       embedded: true,
       tabPage: true,
+      scrollsUnderTabBar: true,
       updating: state.refreshing,
       onRefresh: controller.reload,
       filters: _FeedTabs(
@@ -172,7 +173,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
       ),
       collection: ListView(
         key: const ValueKey<String>('square-feed-list'),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: EdgeInsets.only(bottom: 24 + loopTabScrollBottom(context)),
         children: <Widget>[
           if (page == null)
             _FeedStateBlock(

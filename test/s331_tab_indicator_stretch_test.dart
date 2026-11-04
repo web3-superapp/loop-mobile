@@ -1,6 +1,8 @@
-// S331 · decision 0261: the tab bar's glass pill is visible, stretches across
-// from the old cell to the new one and settles there; a press swells the
-// whole bar by 2 %. Reduced motion jumps and does not swell.
+// S331 · decision 0261, reshaped by decision 0285: the selected tab's one
+// mark is the Figma's 38 radial halo; switching carries that single halo
+// from the old cell to the new one along the span's middle — the leading
+// edge runs ahead, the trailing edge springs — and it settles there; a press
+// swells the whole bar by 2 %. Reduced motion jumps and does not swell.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -48,36 +50,38 @@ Rect _cellRect(WidgetTester tester, String label) =>
     tester.getRect(_cell(label));
 
 void _expectRestingOn(WidgetTester tester, String label) {
-  final pill = tester.getRect(_indicator);
+  final halo = tester.getRect(_indicator);
   final cell = _cellRect(tester, label);
-  expect(pill.width, moreOrLessEquals(cell.width - 8, epsilon: 0.01));
-  expect(pill.left, moreOrLessEquals(cell.left + 4, epsilon: 0.01));
-  expect(pill.right, moreOrLessEquals(cell.right - 4, epsilon: 0.01));
+  expect(halo.width, moreOrLessEquals(LoopTabBar.haloSize, epsilon: 0.01));
+  expect(halo.height, moreOrLessEquals(LoopTabBar.haloSize, epsilon: 0.01));
+  expect(halo.center.dx, moreOrLessEquals(cell.center.dx, epsilon: 0.01));
   for (final other in _labels.where((l) => l != label)) {
     expect(
-      pill.contains(_cellRect(tester, other).center),
+      halo.contains(_cellRect(tester, other).center),
       isFalse,
-      reason: 'pill must not cover $other at rest',
+      reason: 'halo must not cover $other at rest',
     );
   }
 }
 
 void main() {
-  testWidgets('at rest the glass pill sits inside the selected cell', (
+  testWidgets('at rest the halo sits on the selected cell, 4 from the top', (
     tester,
   ) async {
     await _pumpBar(tester, initial: 3);
     expect(_indicator, findsOneWidget);
-    final box = tester.widget<DecoratedBox>(_indicator);
-    final shape = box.decoration as ShapeDecoration;
-    expect(shape.color, const Color(0x1AFFFFFF));
-    expect((shape.shape as StadiumBorder).side.color, const Color(0x14FFFFFF));
+    final box = tester.widget<DecoratedBox>(_key('loop-tab-halo-intel'));
+    final decoration = box.decoration as BoxDecoration;
+    expect(decoration.shape, BoxShape.circle);
+    expect(decoration.gradient, isA<RadialGradient>());
+    expect(decoration.color, isNull);
+    expect(decoration.border, isNull);
     _expectRestingOn(tester, 'Intel');
     final row = tester.getRect(_key('loop-tab-bar-float'));
-    final pill = tester.getRect(_indicator);
+    final halo = tester.getRect(_indicator);
     // Inside the bar, never spilling under it.
-    expect(pill.top, greaterThan(row.top));
-    expect(pill.bottom, lessThan(row.bottom));
+    expect(halo.top, moreOrLessEquals(row.top + LoopTabBar.haloTop));
+    expect(halo.bottom, lessThan(row.bottom));
   });
 
   testWidgets('switching to a neighbour stretches across both, then settles', (
@@ -91,8 +95,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
     final to = _cellRect(tester, 'MEME');
     final mid = tester.getRect(_indicator);
-    expect(mid.contains(from.center), isTrue);
-    expect(mid.contains(to.center), isTrue);
+    // One halo in flight between the two cells, still a 38 circle.
+    expect(mid.center.dx, greaterThan(from.center.dx + 1));
+    expect(mid.center.dx, lessThan(to.center.dx - 1));
+    expect(mid.width, moreOrLessEquals(LoopTabBar.haloSize));
     await tester.pumpAndSettle();
     _expectRestingOn(tester, 'MEME');
   });
@@ -108,22 +114,20 @@ void main() {
     final mid = tester.getRect(_indicator);
     final to = _cellRect(tester, 'Square');
     // The leading edge runs out over 0.62 of the slide, so across three
-    // cells it has passed the cells in between — the pill is one long bar
-    // from the old cell's centre more than two cells towards the new one —
-    // while the trailing edge has not left yet.
-    expect(mid.contains(from.center), isTrue);
-    expect(mid.contains(_cellRect(tester, 'Intel').center), isTrue);
-    expect(mid.contains(_cellRect(tester, 'MEME').center), isTrue);
-    expect(mid.width, greaterThan(2.5 * from.width));
-    expect(mid.left, lessThan(to.right));
-    // The trailing edge springs, but only a little past its rest.
-    var narrowest = double.infinity;
+    // cells it is far ahead while the trailing edge has not left yet: the
+    // halo, on the span's middle, has already passed Intel's centre.
+    expect(mid.center.dx, lessThan(_cellRect(tester, 'Intel').center.dx));
+    expect(mid.center.dx, greaterThan(_cellRect(tester, 'MEME').center.dx));
+    expect(mid.width, moreOrLessEquals(LoopTabBar.haloSize));
+    expect(mid.center.dx, lessThan(from.center.dx));
+    // The trailing edge springs, but the halo goes only a little past rest.
+    var furthest = double.infinity;
     for (var i = 0; i < 30; i += 1) {
       await tester.pump(const Duration(milliseconds: 10));
       final rect = tester.getRect(_indicator);
-      if (rect.width < narrowest) narrowest = rect.width;
+      if (rect.center.dx < furthest) furthest = rect.center.dx;
     }
-    expect(narrowest, greaterThan(to.width - 8 - to.width * 0.07));
+    expect(furthest, greaterThan(to.center.dx - to.width * 0.07));
     await tester.pumpAndSettle();
     _expectRestingOn(tester, 'Square');
   });

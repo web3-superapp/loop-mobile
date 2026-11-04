@@ -295,6 +295,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
       kicker: communityPreviewKicker(mode),
       embedded: true,
       tabPage: true,
+      scrollsUnderTabBar: true,
       block: blocked
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>(
@@ -343,7 +344,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.only(bottom: 24),
+            padding: EdgeInsets.only(bottom: 24 + loopTabScrollBottom(context)),
             sliver: SliverList(delegate: SliverChildListDelegate(body)),
           ),
         ],
