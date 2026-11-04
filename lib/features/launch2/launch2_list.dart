@@ -554,8 +554,9 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
               _selectTab(context, Launch2DeskTab.values[index]),
         ),
       ),
-      // v3 (decision 0229): 16 from the tabs to what they choose between.
-      const SizedBox(height: LoopSpacing.segmentGap),
+      // docs/58 §9.4 (S353b · decision 0279): MEME's tab strip stands 8
+      // above the list it chooses.
+      const SizedBox(height: LoopSpacing.tight),
       if (tab == Launch2DeskTab.graduated)
         ..._graduatedTab(onElapsed)
       else

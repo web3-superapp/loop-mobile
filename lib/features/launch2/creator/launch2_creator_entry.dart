@@ -271,25 +271,28 @@ class Launch2LaunchCapsule extends StatelessWidget {
           widthFactor: 1,
           child: Container(
             key: const ValueKey<String>('launch2-create-capsule'),
-            height: 36,
-            padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
+            // S353b · decision 0279 (docs/58 §5.20): the Figma's 「发射」 —
+            // 30 high, 8 / 4 inside, a 6 corner, the rocket 21 and 16 / 600
+            // words 4 apart, onYellow on Yellow.
+            height: LoopTouch.buttonCompact,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: const BoxDecoration(
               color: LoopColors.yellow,
-              borderRadius: LoopRadius.button,
+              borderRadius: LoopRadius.compactButton,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const Launch2BoldIcon(
                   'launch',
-                  size: 18,
-                  color: LoopColors.ink,
+                  size: 21,
+                  color: LoopColors.onYellow,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 Text(
                   label,
                   maxLines: 1,
-                  style: LoopType.button.copyWith(color: LoopColors.ink),
+                  style: LoopType.button.copyWith(color: LoopColors.onYellow),
                 ),
               ],
             ),

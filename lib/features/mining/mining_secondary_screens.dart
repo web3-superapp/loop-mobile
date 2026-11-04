@@ -635,6 +635,8 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               (null, _?) => context.l10n.mining_modelsPendingApproval,
               (null, null) => null,
             },
+            // S353b: 「Pending approval」 holds one line in English.
+            stampWidthFactor: 0.5,
             ring: false,
             margin: EdgeInsets.zero,
             squareBottom: true,

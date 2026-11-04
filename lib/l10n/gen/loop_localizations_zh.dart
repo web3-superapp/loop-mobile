@@ -17015,6 +17015,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get mining_secondaryScreensTrailingCaption3 => '当日产量';
 
   @override
+  String get mining_widgetsCurrentRank => '当前排名';
+
+  @override
   String mining_widgetsLoopRecordRow(Object? amountFigure) {
     return '持有 $amountFigure';
   }
@@ -17090,6 +17093,11 @@ class LoopLocalizationsZh extends LoopLocalizations {
   @override
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
       '挖矿奖励，打开挖矿奖励页';
+
+  @override
+  String mining_widgetsRankPlace(Object? position) {
+    return '第 $position 名';
+  }
 
   @override
   String get mining_widgetsText => '我的总算力';

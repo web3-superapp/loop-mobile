@@ -1747,6 +1747,12 @@
     "where": "lib/features/mining/mining_secondary_screens.dart:799",
     "zh": "当日产量"
   },
+  "mining_widgetsCurrentRank": {
+    "en": "Current rank",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "当前排名"
+  },
   "mining_widgetsLoopRecordRow": {
     "en": "Holding {amountFigure}",
     "placeholders": {
@@ -1900,6 +1906,17 @@
     "placeholders": {},
     "where": "lib/features/mining/mining_widgets.dart:540",
     "zh": "挖矿奖励，打开挖矿奖励页"
+  },
+  "mining_widgetsRankPlace": {
+    "en": "#{position}",
+    "placeholders": {
+      "position": {
+        "example": "position",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "第 {position} 名"
   },
   "mining_widgetsText": {
     "en": "My total power",

@@ -157,7 +157,8 @@ void main() {
       ),
       LoopType.figure.fontSize,
     );
-    expect(tester.getSize(row).height, 80);
+    // S353b · decision 0279 (docs/58 §5.4): 71 with the board's 1 px line.
+    expect(tester.getSize(row).height, 70);
     // The board stands on the 20 page margin.
     expect(tester.getRect(row).left, 20);
     expect(tester.getRect(row).right, 370);

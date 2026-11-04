@@ -6,7 +6,6 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart' show LoopProgressBar;
-import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s7_fixtures.dart';
@@ -327,17 +326,26 @@ void main() {
         IntelRankBoard(onNavigate: (_) {}),
         mining: _BoardMining(_boards),
       );
+      // S353b · decision 0279 (docs/58 §5.14): the power card — the
+      // #14151a → #1b1028 gradient at a 12 corner.
       final ledger = find.descendant(
         of: _key('intel-rank-me'),
-        matching: find.byType(LoopChromePlate),
+        matching: find.byType(IntelPowerCard),
       );
       expect(ledger, findsOneWidget);
-      // Decision 0224: a brushed dark face inside a chrome bevel.
-      final face = tester.widget<DecoratedBox>(_key('loop-chrome-plate-face'));
-      expect(
-        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
-        LoopChromePlate.faceColors,
-      );
+      final face =
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(
+                          of: ledger,
+                          matching: find.byType(Container),
+                        )
+                        .first,
+                  )
+                  .decoration!
+              as BoxDecoration;
+      expect(face.gradient, LoopColors.powerCardGradient);
       expect(find.text('My rank\nRank #12'), findsOneWidget);
       expect(find.text('Power 1,240'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);

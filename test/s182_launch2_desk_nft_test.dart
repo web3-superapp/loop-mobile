@@ -438,12 +438,13 @@ String _statusText(WidgetTester tester) {
   return <String>[?folio.caption, ?folio.stamp].join(' | ');
 }
 
-/// Whether the desk's tab [id] says it is on (S279).
+/// Whether the desk's tab [id] says it is on (S279; S353b: the tab is a
+/// [LoopTabStrip] cell, its Semantics inside the keyed cell).
 bool _tabSelected(WidgetTester tester, String id) =>
     tester
         .widget<Semantics>(
           find
-              .ancestor(
+              .descendant(
                 of: _key('launch2-desk-tab-$id'),
                 matching: find.byType(Semantics),
               )
@@ -893,8 +894,9 @@ void main() {
           reason: tab,
         );
       }
-      // The chosen tab is Purple with the Yellow splat on it.
-      expect(_key('launch2-desk-tab-splat-live'), findsOneWidget);
+      // S353b · decision 0279 (docs/58 §5.2): the chosen tab is white over
+      // the Yellow line — no Purple ground, no splat.
+      expect(_key('launch2-desk-tab-splat-live'), findsNothing);
       expect(_key('launch2-desk-tab-splat-upcoming'), findsNothing);
       expect(_tabSelected(tester, 'live'), isTrue);
       expect(_tabSelected(tester, 'graduated'), isFalse);
@@ -1143,10 +1145,11 @@ void main() {
       expect(find.text('Live'), findsOneWidget);
       // The three still lines are gone.
       expect(_key('launch2-tape'), findsNothing);
-      // S326 · decision 0256: the band is the quiet card ground, not Purple.
+      // S326 · decision 0256: the band is a quiet ground, not Purple;
+      // S353b · decision 0279 (docs/58 §5.5): white 3 % glass, 35 high.
       final band = tester.widget<DecoratedBox>(_key('launch2-ticker-band'));
-      expect((band.decoration as BoxDecoration).color, LoopColors.card);
-      expect(tester.getSize(_key('launch2-ticker-band')).height, 36);
+      expect((band.decoration as BoxDecoration).color, LoopColors.surfaceGlass);
+      expect(tester.getSize(_key('launch2-ticker-band')).height, 35);
       // 买入 sits on its own soft rise ground, in rise; 「实时」 is Purple.
       final verb = tester.widget<Text>(find.text('Buy').first);
       expect(verb.style?.color, LoopColors.rise);

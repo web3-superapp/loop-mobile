@@ -197,9 +197,10 @@ void main() {
           ],
         ),
       );
-      expect(tester.getSize(key('intel-rank-face-1')), const Size(72, 72));
-      expect(tester.getSize(key('intel-rank-face-2')), const Size(56, 56));
-      expect(tester.getSize(key('intel-rank-face-3')), const Size(56, 56));
+      // S353b · decision 0279 (docs/58 §5.15): 62 / 54 / 54.
+      expect(tester.getSize(key('intel-rank-face-1')), const Size(62, 62));
+      expect(tester.getSize(key('intel-rank-face-2')), const Size(54, 54));
+      expect(tester.getSize(key('intel-rank-face-3')), const Size(54, 54));
       final name = tester.renderObject<RenderParagraph>(
         key('intel-rank-name-2'),
       );

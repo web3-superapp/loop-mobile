@@ -47,9 +47,14 @@ void main() {
       );
       expect(_key('mining-network-card'), findsOneWidget);
       // The place and the crown are the way in.
+      // S353b · decision 0279 (docs/58 §5.14): 「Current rank #12」 with the
+      // number set apart; the place reads the same aloud.
       expect(
-        tester.widget<Text>(_key('mining-summary-hero-rank')).data,
-        'Rank #12',
+        tester
+            .widget<Text>(_key('mining-summary-hero-rank'))
+            .textSpan!
+            .toPlainText(),
+        '#12',
       );
       expect(
         find.descendant(
@@ -64,10 +69,11 @@ void main() {
       );
       await tester.tap(_key('mining-network-rank-action'));
       expect(rank, 1);
-      // My power leads in the plate's Anton Yellow; 全网 is a step down.
+      // My power leads at the power card's 30 / 700 white (S353b); 全网 is a
+      // step down.
       final power = tester.widget<Text>(_key('mining-summary-hero-power'));
-      expect(power.style!.fontSize, LoopType.plateFigure.fontSize);
-      expect(power.style!.color, LoopColors.yellow);
+      expect(power.style!.fontSize, LoopType.heroFigure.fontSize);
+      expect(power.style!.color, LoopColors.textPrimary);
       final network = tester.widget<Text>(_key('mining-network-total'));
       expect(network.style!.fontSize, LoopType.figure.fontSize);
       expect(network.style!.color, LoopColors.chalk);
@@ -113,7 +119,8 @@ void main() {
 
     testWidgets('代币 / NFT / 邀请, 代币 chosen', (tester) async {
       await s350bPumpPower(tester);
-      final bar = tester.widget<LoopSegBar>(_key('mining-power-tabs'));
+      // S353b · decision 0279 (docs/58 §5.3): the shared filter chips.
+      final bar = tester.widget<LoopFilterChips>(_key('mining-power-tabs'));
       expect(bar.labels, <String>['Token', 'NFT', 'Invitation']);
       expect(bar.selectedIndex, 0);
       expect(_key('mining-power-tab-token'), findsOneWidget);
@@ -183,7 +190,8 @@ void main() {
           matching: _key('intel-rank-row-figure'),
         ),
       );
-      expect(figure.fontSize, greaterThan(rowFigure.fontSize!));
+      // S353b · decision 0279 (docs/58 §5.15 / §5.16): both 13 / 600.
+      expect(figure.fontSize, greaterThanOrEqualTo(rowFigure.fontSize!));
       // The place column is a step under the name.
       final place = _style(
         tester,
@@ -223,7 +231,8 @@ void main() {
         // 「25%」 is the bar's grey reading, under the name and the price.
         final pct = find.text('25%');
         expect(_style(tester, pct).color, LoopColors.text2);
-        expect(_style(tester, pct).fontWeight, FontWeight.w600);
+        // S353b · decision 0279 (docs/58 §5.4): the bar's reading 10 / 300.
+        expect(_style(tester, pct).fontWeight, LoopType.progress.fontWeight);
         await drainS269(tester);
       });
     }

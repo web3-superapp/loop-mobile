@@ -822,6 +822,9 @@ class _NftFolio extends StatelessWidget {
       heading: launch2HeroTicker(row.ticker),
       caption: caption,
       stamp: stamp,
+      // S353b: the English countdown (「Ends in 2d 03:04:05」) holds one
+      // line; the caption wraps beside it.
+      stampWidthFactor: 0.6,
     );
     final target = view.countdownTo;
     return KeyedSubtree(
