@@ -186,8 +186,9 @@ abstract final class LoopV2Launch2CreatorCodec {
       map['config'],
       configKeys,
       // Decision 0233 (loop-api 0173): `nftImageAssetUrl` is absent on a
-      // draft saved before the NFT image existed.
-      const <String>{'poolHookKind', 'nftImageAssetUrl'},
+      // draft saved before the NFT image existed. Decision 0284 (S359): the
+      // project terms, absent while `LAUNCH2_PROJECT_TERMS_EMIT` is off.
+      const <String>{'poolHookKind', 'nftImageAssetUrl', ...projectTermsKeys},
     );
     if (config['templateVersion'] != templateVersion) invalid();
     final nftImageRaw = config['nftImageAssetUrl'];
@@ -237,7 +238,46 @@ abstract final class LoopV2Launch2CreatorCodec {
         pattern: _bytes32,
       ),
       updatedAt: LoopV2ChainCodec.requireTimestamp(map, 'updatedAt'),
+      nftPriceUsd1: nftPriceUsd1(config),
+      walletCapPerMille: walletCapPerMille(config),
+      maxCumulativeBuyRaw: maxCumulativeBuyRaw(config),
     );
+  }
+
+  /// Decision 0284 (S359): the project terms a read may carry. Each is
+  /// optional; absent or `null` reads as the default.
+  static const Set<String> projectTermsKeys = <String>{
+    'nftPriceUsd1',
+    'walletCapPerMille',
+    'maxCumulativeBuyRaw',
+  };
+
+  /// `nftPriceUsd1`: a whole USD1 in 1…1000, or null when absent.
+  static int? nftPriceUsd1(Map<String, Object?> map) =>
+      LoopV2ChainCodec.optionalInt(
+        map,
+        'nftPriceUsd1',
+        minimum: Launch2ProjectTerms.minNftPriceUsd1,
+        maximum: Launch2ProjectTerms.maxNftPriceUsd1,
+      );
+
+  /// `walletCapPerMille`: a whole per mille in 1…1000, or null when absent.
+  static int? walletCapPerMille(Map<String, Object?> map) =>
+      LoopV2ChainCodec.optionalInt(
+        map,
+        'walletCapPerMille',
+        minimum: Launch2ProjectTerms.minWalletCapPerMille,
+        maximum: Launch2ProjectTerms.maxWalletCapPerMille,
+      );
+
+  /// `maxCumulativeBuyRaw`: a positive raw MEME string, or null when absent.
+  static BigInt? maxCumulativeBuyRaw(Map<String, Object?> map) {
+    final value = map['maxCumulativeBuyRaw'];
+    if (value == null) return null;
+    if (value is! String || !_uint.hasMatch(value)) invalid();
+    final raw = BigInt.parse(value);
+    if (raw == BigInt.zero) invalid();
+    return raw;
   }
 
   static const Set<String> loopDynamicKeys = <String>{
@@ -382,8 +422,8 @@ abstract final class LoopV2Launch2CreatorCodec {
   }
 
   /// The `PUT` body. Only the seven owner fields, plus the NFT image when
-  /// one was uploaded (decision 0233): the server rejects any economic key
-  /// (§3).
+  /// one was uploaded (decision 0233) and the two project terms the owner
+  /// typed (decision 0284): the server rejects any other economic key (§3).
   static Map<String, Object?> configBody({
     required int expectedVersion,
     required Launch2ConfigInput input,
@@ -399,6 +439,10 @@ abstract final class LoopV2Launch2CreatorCodec {
       'links': input.links,
       'nftSaleStartAt': input.nftSaleStartAt,
       'buybackRecipient': input.buybackRecipient,
+      // Decision 0284: only what the owner typed; a blank field is left out
+      // and the server uses the default.
+      if (input.nftPriceUsd1 case final int price) 'nftPriceUsd1': price,
+      if (input.walletCapPerMille case final int cap) 'walletCapPerMille': cap,
     },
   };
 
@@ -427,21 +471,42 @@ abstract final class LoopV2Launch2CreatorCodec {
     'deadline',
     'memeSalt',
     'nonce',
+    // Decision 0284 (S359, contracts 0019): the project's NFT price (wei)
+    // and per-address cap (raw MEME), both signed.
+    'nftPrice',
+    'maxCumulativeBuy',
   };
 
-  /// The eleven `LaunchRequest` fields the Factory verifies.
-  static const List<String> launchRequestFields = <String>[
-    'configHash',
-    'projectOwner',
-    'configVersion',
-    'name',
-    'ticker',
-    'nftSaleStart',
-    'buybackRecipient',
-    'deadline',
-    'memeSalt',
-    'nonce',
-    'templateHash',
+  /// The Factory's EIP-712 domain name and version (contracts 0019: version
+  /// "2" since the request signs the project terms; a "1" request is
+  /// refused).
+  static const String eip712DomainName = 'LOOP Launch Factory';
+  static const String eip712DomainVersion = '2';
+
+  /// The thirteen `LaunchRequest` fields the Factory verifies, in its type
+  /// string's order: `LaunchRequest(bytes32 configHash,address projectOwner,
+  /// uint32 configVersion,string name,string ticker,uint64 nftSaleStart,
+  /// address buybackRecipient,uint64 deadline,bytes32 memeSalt,uint256
+  /// nonce,bytes32 templateHash,uint256 nftPrice,uint256 maxCumulativeBuy)`.
+  static const List<(String, String)> launchRequestType = <(String, String)>[
+    ('configHash', 'bytes32'),
+    ('projectOwner', 'address'),
+    ('configVersion', 'uint32'),
+    ('name', 'string'),
+    ('ticker', 'string'),
+    ('nftSaleStart', 'uint64'),
+    ('buybackRecipient', 'address'),
+    ('deadline', 'uint64'),
+    ('memeSalt', 'bytes32'),
+    ('nonce', 'uint256'),
+    ('templateHash', 'bytes32'),
+    ('nftPrice', 'uint256'),
+    ('maxCumulativeBuy', 'uint256'),
+  ];
+
+  /// The field names of [launchRequestType], in order.
+  static List<String> get launchRequestFields => <String>[
+    for (final (name, _) in launchRequestType) name,
   ];
 
   /// `types.EIP712Domain`, field by field (loop-api decision 0120).
@@ -456,6 +521,16 @@ abstract final class LoopV2Launch2CreatorCodec {
     final root = LoopV2Contract.strictMap(raw, signingKeys);
     final requestRaw = LoopV2Contract.strictMap(root['request'], requestKeys);
     final request = Map<String, Object?>.unmodifiable(requestRaw);
+    BigInt termValue(String key) {
+      final value = BigInt.parse(
+        LoopV2ChainCodec.requireString(request, key, pattern: _uint),
+      );
+      if (value == BigInt.zero) invalid();
+      return value;
+    }
+
+    final nftPriceRaw = termValue('nftPrice');
+    final maxCumulativeBuyRaw = termValue('maxCumulativeBuy');
     final projectOwner = LoopV2ChainCodec.requireString(
       request,
       'projectOwner',
@@ -536,8 +611,8 @@ abstract final class LoopV2Launch2CreatorCodec {
       'verifyingContract',
     });
     final domainChainId = domain['chainId'];
-    if (domain['name'] is! String ||
-        domain['version'] is! String ||
+    if (domain['name'] != eip712DomainName ||
+        domain['version'] != eip712DomainVersion ||
         domainChainId is! int ||
         domainChainId <= 0) {
       invalid();
@@ -572,22 +647,24 @@ abstract final class LoopV2Launch2CreatorCodec {
         invalid();
       }
     }
+    // Contracts 0019: the type string, field by field and in order; any
+    // other list hashes a different struct than the Factory's.
     final fields = types['LaunchRequest'];
-    if (fields is! List) invalid();
-    final names = <String>[
-      for (final field in fields)
-        if (field is Map && field['name'] is String)
-          field['name'] as String
-        else
-          '',
-    ];
-    if (names.length != launchRequestFields.length ||
-        !launchRequestFields.every(names.contains)) {
+    if (fields is! List || fields.length != launchRequestType.length) {
       invalid();
+    }
+    for (var i = 0; i < launchRequestType.length; i += 1) {
+      final field = fields[i];
+      if (field is! Map ||
+          field.length != 2 ||
+          field['name'] != launchRequestType[i].$1 ||
+          field['type'] != launchRequestType[i].$2) {
+        invalid();
+      }
     }
     final message = typedData['message'];
     if (message is! Map) invalid();
-    if (message.length != launchRequestFields.length) invalid();
+    if (message.length != launchRequestType.length) invalid();
     // What the sheet shows is what the wallet signs: every request field the
     // message repeats must be the same value.
     for (final key in requestKeys) {
@@ -615,6 +692,8 @@ abstract final class LoopV2Launch2CreatorCodec {
       hookSalt: root['hookSalt']! as String,
       hookAddress: root['hookAddress']! as String,
       memeAddress: memeAddress,
+      nftPriceRaw: nftPriceRaw,
+      maxCumulativeBuyRaw: maxCumulativeBuyRaw,
     );
   }
 

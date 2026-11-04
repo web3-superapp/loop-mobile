@@ -223,7 +223,10 @@ class Launch2ProjectScreen extends ConsumerWidget {
           value: 'v${draft.version}',
         ),
         const SizedBox(height: 8),
-        Launch2TemplateCard(economics: draft.economics, fromServer: true),
+        Launch2TemplateCard(
+          economics: draft.projectEconomics,
+          fromServer: true,
+        ),
       ],
     ];
   }

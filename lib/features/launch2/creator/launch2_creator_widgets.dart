@@ -308,11 +308,6 @@ class Launch2TemplateCard extends StatelessWidget {
               value: value,
               padding: const EdgeInsets.symmetric(vertical: 6),
             ),
-          const SizedBox(height: 6),
-          Text(
-            context.l10n.launch2Creator_launch2Build10,
-            style: LoopType.captionSm.copyWith(color: LoopColors.text3),
-          ),
         ],
       ),
     );

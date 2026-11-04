@@ -32,12 +32,6 @@
     "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:191",
     "zh": "内盘可售"
   },
-  "launch2Creator_launch2Build10": {
-    "en": "Fixed by the platform template; can't be changed.",
-    "placeholders": {},
-    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:241",
-    "zh": "由平台模板固定，不能修改。"
-  },
   "launch2Creator_launch2Build11": {
     "en": "The platform hasn't set a buyback recipient address yet, so you can't submit right now.",
     "placeholders": {},
@@ -1508,5 +1502,38 @@
     "placeholders": {},
     "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:373",
     "zh": "项目资料"
+  },
+  "launch2Creator_termsNftPriceLabel": {
+    "en": "NFT price (USD1)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "zh": "NFT 售价（USD1）"
+  },
+  "launch2Creator_termsRange": {
+    "en": "Enter a whole number from {from} to {to}",
+    "placeholders": {
+      "from": {
+        "example": "min",
+        "type": "Object"
+      },
+      "to": {
+        "example": "max",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "zh": "请填 {from}–{to} 之间的整数"
+  },
+  "launch2Creator_termsWalletCapLabel": {
+    "en": "Per-address cap (‰ of supply)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "zh": "单地址限额（占总量 ‰）"
+  },
+  "launch2Creator_termsWholeNumbers": {
+    "en": "Whole numbers only",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "zh": "只能填整数"
   }
 }

@@ -9990,10 +9990,6 @@
   "@launch2Creator_launch2Build": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:191"
   },
-  "launch2Creator_launch2Build10": "Fixed by the platform template; can't be changed.",
-  "@launch2Creator_launch2Build10": {
-    "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:241"
-  },
   "launch2Creator_launch2Build11": "The platform hasn't set a buyback recipient address yet, so you can't submit right now.",
   "@launch2Creator_launch2Build11": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:340"
@@ -11032,6 +11028,30 @@
   "launch2Creator_projectDetails": "Project details",
   "@launch2Creator_projectDetails": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:373"
+  },
+  "launch2Creator_termsNftPriceLabel": "NFT price (USD1)",
+  "@launch2Creator_termsNftPriceLabel": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
+  },
+  "launch2Creator_termsRange": "Enter a whole number from {from} to {to}",
+  "@launch2Creator_termsRange": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "placeholders": {
+      "from": {
+        "type": "Object?"
+      },
+      "to": {
+        "type": "Object?"
+      }
+    }
+  },
+  "launch2Creator_termsWalletCapLabel": "Per-address cap (‰ of supply)",
+  "@launch2Creator_termsWalletCapLabel": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
+  },
+  "launch2Creator_termsWholeNumbers": "Whole numbers only",
+  "@launch2Creator_termsWholeNumbers": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
   },
   "launch2_buybackExecuted": "Filled",
   "@launch2_buybackExecuted": {

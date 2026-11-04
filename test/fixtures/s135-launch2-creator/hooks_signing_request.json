@@ -18,12 +18,14 @@
       "buybackRecipient": "0x28816c4c4792467390c90e5b426f198570e29307",
       "deadline": "1791000900",
       "memeSalt": "0x5555555555555555555555555555555555555555555555555555555555555555",
-      "nonce": "9"
+      "nonce": "9",
+      "nftPrice": "100000000000000000000",
+      "maxCumulativeBuy": "5000000000000000000000000"
     },
     "typedData": {
       "domain": {
         "name": "LOOP Launch Factory",
-        "version": "1",
+        "version": "2",
         "chainId": 97,
         "verifyingContract": "0xffffffffffffffffffffffffffffffffffffffff"
       },
@@ -90,6 +92,14 @@
           {
             "name": "templateHash",
             "type": "bytes32"
+          },
+          {
+            "name": "nftPrice",
+            "type": "uint256"
+          },
+          {
+            "name": "maxCumulativeBuy",
+            "type": "uint256"
           }
         ]
       },
@@ -105,7 +115,9 @@
         "deadline": "1791000900",
         "memeSalt": "0x5555555555555555555555555555555555555555555555555555555555555555",
         "nonce": "9",
-        "templateHash": "0x4444444444444444444444444444444444444444444444444444444444444444"
+        "templateHash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+        "nftPrice": "100000000000000000000",
+        "maxCumulativeBuy": "5000000000000000000000000"
       }
     },
     "hookDeployer": "0xcccccccccccccccccccccccccccccccccccccccc",

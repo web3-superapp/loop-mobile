@@ -692,9 +692,10 @@ void main() {
       // Decision 0198: the cap in tokens, the 0197 way.
       expect(find.text('5,000,000 tokens (0.5%)'), findsOneWidget);
       expect(find.text('100 USD1'), findsOneWidget);
+      // S359 · decision 0284: the card has no footnote any more.
       expect(
         find.text('Fixed by the platform template; can\'t be changed.'),
-        findsOneWidget,
+        findsNothing,
       );
 
       // No sale start yet: the page asks for one, nothing is written.

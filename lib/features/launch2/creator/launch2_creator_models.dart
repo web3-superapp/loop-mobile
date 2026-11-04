@@ -108,6 +108,7 @@ final class Launch2FixedEconomics {
     required this.buybackMinIntervalSeconds,
     this.officialPoolHookKind,
     this.loopDynamic,
+    this.projectCapRaw,
   });
 
   /// The template's own `chainId` (always `56`, part of the config hash). It
@@ -137,10 +138,18 @@ final class Launch2FixedEconomics {
   /// Immutable LoopDynamic parameters; null for an OfficialTax template.
   final Launch2LoopDynamicEconomics? loopDynamic;
 
-  /// The per-address curve cap this template's Factory enforces: the
-  /// LoopDynamic Factory's own `maxCumulativeBuy` (decision 0198, loop-api
-  /// 0152) when it states a positive one, otherwise the template constant.
+  /// Decision 0284 (S359): the project's own per-address cap, written into
+  /// its curve at deployment; null when the project names none (or the
+  /// server predates the field).
+  final BigInt? projectCapRaw;
+
+  /// The per-address curve cap this project's curve enforces: the project's
+  /// own cap (decision 0284) when it names one, else the LoopDynamic
+  /// Factory's own `maxCumulativeBuy` (decision 0198, loop-api 0152) when it
+  /// states a positive one, otherwise the template constant.
   BigInt get curveCapRaw {
+    final projectCap = projectCapRaw;
+    if (projectCap != null && projectCap > BigInt.zero) return projectCap;
     final factoryCap = loopDynamic?.maxCumulativeBuyRaw;
     return factoryCap != null && factoryCap > BigInt.zero
         ? factoryCap
@@ -151,6 +160,60 @@ final class Launch2FixedEconomics {
   int? get perAddressCapBps => memeTotalSupplyRaw == BigInt.zero
       ? null
       : (curveCapRaw * BigInt.from(10000) ~/ memeTotalSupplyRaw).toInt();
+
+  /// The same economics with the project's own NFT price and per-address
+  /// cap (decision 0284). A null term keeps this template's figure. The
+  /// buyback's order follows the NFT price (one order = one NFT's money).
+  Launch2FixedEconomics withProjectTerms({int? nftPriceUsd1, BigInt? capRaw}) {
+    if (nftPriceUsd1 == null && capRaw == null) return this;
+    final priceRaw = nftPriceUsd1 == null
+        ? null
+        : Launch2ProjectTerms.nftPriceRaw(nftPriceUsd1);
+    return Launch2FixedEconomics(
+      templateChainId: templateChainId,
+      memeTotalSupplyRaw: memeTotalSupplyRaw,
+      curveSaleSupplyRaw: curveSaleSupplyRaw,
+      initialLiquiditySupplyRaw: initialLiquiditySupplyRaw,
+      graduationReserveUsd1Raw: graduationReserveUsd1Raw,
+      nftPriceUsd1Raw: priceRaw ?? nftPriceUsd1Raw,
+      nftSaleDurationSeconds: nftSaleDurationSeconds,
+      earlyRoundDurationSeconds: earlyRoundDurationSeconds,
+      perAddressLifetimeBuyCapRaw: perAddressLifetimeBuyCapRaw,
+      curveBuyTaxBps: curveBuyTaxBps,
+      curveSellTaxBps: curveSellTaxBps,
+      officialPoolBuyTaxBps: officialPoolBuyTaxBps,
+      officialPoolSellTaxBps: officialPoolSellTaxBps,
+      lpFee: lpFee,
+      tickSpacing: tickSpacing,
+      buybackOrderUsd1Raw: priceRaw ?? buybackOrderUsd1Raw,
+      buybackMinIntervalSeconds: buybackMinIntervalSeconds,
+      officialPoolHookKind: officialPoolHookKind,
+      loopDynamic: loopDynamic,
+      projectCapRaw: capRaw ?? projectCapRaw,
+    );
+  }
+}
+
+/// Decision 0284 (S359): the two terms a project names when it applies —
+/// the NFT price in whole USD1 and the per-address curve cap in per mille
+/// of the 1,000,000,000 MEME supply. Both are optional on the wire; a
+/// missing one is the default. Both are fixed once the project deploys.
+abstract final class Launch2ProjectTerms {
+  static const int defaultNftPriceUsd1 = 100;
+  static const int minNftPriceUsd1 = 1;
+  static const int maxNftPriceUsd1 = 1000;
+  static const int defaultWalletCapPerMille = 5;
+  static const int minWalletCapPerMille = 1;
+  static const int maxWalletCapPerMille = 1000;
+
+  static final BigInt _wad = BigInt.from(10).pow(18);
+
+  /// `n × 1e18`: the NFT price the contract stores.
+  static BigInt nftPriceRaw(int usd1) => BigInt.from(usd1) * _wad;
+
+  /// `n × 1e24`: the curve's `maxCumulativeBuy` (raw MEME) for [perMille].
+  static BigInt walletCapRaw(int perMille) =>
+      BigInt.from(perMille) * BigInt.from(1000000) * _wad;
 }
 
 /// The template the create page shows before a draft exists.
@@ -251,6 +314,9 @@ final class Launch2HooksDraft {
     required this.economics,
     required this.configHash,
     required this.updatedAt,
+    this.nftPriceUsd1,
+    this.walletCapPerMille,
+    this.maxCumulativeBuyRaw,
   });
 
   final String projectId;
@@ -276,6 +342,24 @@ final class Launch2HooksDraft {
   final Launch2FixedEconomics economics;
   final String configHash;
   final DateTime updatedAt;
+
+  /// Decision 0284 (S359): the project's NFT price in whole USD1, its
+  /// per-address cap in per mille and the cap in raw MEME. Null when the
+  /// server does not send them (`LAUNCH2_PROJECT_TERMS_EMIT` off, or a
+  /// server before S359): the template's own figures stand.
+  final int? nftPriceUsd1;
+  final int? walletCapPerMille;
+  final BigInt? maxCumulativeBuyRaw;
+
+  /// [economics] with this project's own terms (decision 0284).
+  Launch2FixedEconomics get projectEconomics => economics.withProjectTerms(
+    nftPriceUsd1: nftPriceUsd1,
+    capRaw:
+        maxCumulativeBuyRaw ??
+        (walletCapPerMille == null
+            ? null
+            : Launch2ProjectTerms.walletCapRaw(walletCapPerMille!)),
+  );
 
   DateTime get nftSaleStart => DateTime.fromMillisecondsSinceEpoch(
     nftSaleStartAt.toInt() * 1000,
@@ -399,11 +483,19 @@ final class Launch2ConfigInput {
     required this.links,
     required this.nftSaleStart,
     required this.buybackRecipient,
+    this.nftPriceUsd1,
+    this.walletCapPerMille,
   });
 
   final String name;
   final String ticker;
   final String logoAssetUrl;
+
+  /// Decision 0284 (S359): the owner's NFT price (whole USD1) and
+  /// per-address cap (per mille); `null` leaves the key out and the server
+  /// uses the default (100 / 5).
+  final int? nftPriceUsd1;
+  final int? walletCapPerMille;
 
   /// Decision 0233: the project NFT's image. The App requires it for a new
   /// project; `null` leaves the key out of the `PUT` body.
@@ -424,6 +516,8 @@ final class Launch2ConfigInput {
         links: links,
         nftSaleStart: nftSaleStart,
         buybackRecipient: recipient,
+        nftPriceUsd1: nftPriceUsd1,
+        walletCapPerMille: walletCapPerMille,
       );
 
   /// Unix seconds as the decimal string the contract wants.
@@ -451,6 +545,8 @@ final class Launch2SigningRequest {
     required this.hookSalt,
     required this.hookAddress,
     required this.memeAddress,
+    required this.nftPriceRaw,
+    required this.maxCumulativeBuyRaw,
   });
 
   /// The `request` object exactly as the server sent it: it is posted back
@@ -479,6 +575,11 @@ final class Launch2SigningRequest {
   final String hookSalt;
   final String hookAddress;
   final String memeAddress;
+
+  /// Decision 0284 (S359): the NFT price (wei) and the per-address cap
+  /// (raw MEME) the request signs (contracts 0019).
+  final BigInt nftPriceRaw;
+  final BigInt maxCumulativeBuyRaw;
 
   DateTime get deadlineAt =>
       DateTime.fromMillisecondsSinceEpoch(deadline.toInt() * 1000, isUtc: true);

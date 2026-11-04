@@ -52,7 +52,41 @@ String get launch2CreateLinksCommunityHint => LoopL10n
     .launch2Creator_launch2CreateLaunch2CreateLinksCommunityHint;
 
 /// The fields the form checks before the server does.
-enum Launch2Field { name, ticker, description, x, telegram, website, discord }
+///
+/// Decision 0284 (S359): [nftPrice] (whole USD1) and [walletCap] (per mille
+/// of the supply) are the project's own terms; blank means the default.
+enum Launch2Field {
+  name,
+  ticker,
+  description,
+  x,
+  telegram,
+  website,
+  discord,
+  nftPrice,
+  walletCap,
+}
+
+/// Why a project-term field is refused (decision 0284), or `null`. Blank is
+/// allowed: the server then uses the default.
+String? launch2TermError(String raw, {required int min, required int max}) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+    return LoopL10n.current.launch2Creator_termsWholeNumbers;
+  }
+  final parsed = int.tryParse(value);
+  if (parsed == null || parsed < min || parsed > max) {
+    return LoopL10n.current.launch2Creator_termsRange(min, max);
+  }
+  return null;
+}
+
+/// The whole number a valid, non-blank term field holds; otherwise `null`.
+int? launch2TermValue(String raw) {
+  final value = raw.trim();
+  return RegExp(r'^[0-9]+$').hasMatch(value) ? int.tryParse(value) : null;
+}
 
 /// S257 (with loop-api S256): a name or ticker made only of marks,
 /// variation selectors or stray tag characters passes the hazard rule but
@@ -115,6 +149,18 @@ String? launch2FieldError(Launch2Field field, String raw) {
           value.length > 512) {
         return LoopL10n.current.launch2Creator_launch2CreateIf;
       }
+    case Launch2Field.nftPrice:
+      return launch2TermError(
+        raw,
+        min: Launch2ProjectTerms.minNftPriceUsd1,
+        max: Launch2ProjectTerms.maxNftPriceUsd1,
+      );
+    case Launch2Field.walletCap:
+      return launch2TermError(
+        raw,
+        min: Launch2ProjectTerms.minWalletCapPerMille,
+        max: Launch2ProjectTerms.maxWalletCapPerMille,
+      );
   }
   return null;
 }
@@ -160,6 +206,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   final _telegram = TextEditingController();
   final _website = TextEditingController();
   final _discord = TextEditingController();
+  final _nftPrice = TextEditingController();
+  final _walletCap = TextEditingController();
 
   int _step = 0;
   bool _showErrors = false;
@@ -208,6 +256,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     _telegram,
     _website,
     _discord,
+    _nftPrice,
+    _walletCap,
   ];
 
   DateTime get _now => (widget.clock ?? DateTime.now)();
@@ -250,6 +300,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     Launch2Field.telegram => _telegram,
     Launch2Field.website => _website,
     Launch2Field.discord => _discord,
+    Launch2Field.nftPrice => _nftPrice,
+    Launch2Field.walletCap => _walletCap,
   };
 
   /// Decision 0206: the name and the ticker count UTF-16 units once
@@ -282,7 +334,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       Launch2Field.website,
       Launch2Field.discord,
     ],
-    <Launch2Field>[],
+    <Launch2Field>[Launch2Field.nftPrice, Launch2Field.walletCap],
   ];
 
   bool _stepValid(int step) {
@@ -309,6 +361,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         _telegram,
         _website,
         _discord,
+        _nftPrice,
+        _walletCap,
       ].any((controller) => controller.text.trim().isNotEmpty);
 
   bool get _saving => ref.read(launch2SaveControllerProvider(_scope)).busy;
@@ -398,6 +452,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             // Shown read only; the controller sends the address the server
             // names just before the save (decision 0144).
             buybackRecipient: _shownRecipient ?? '',
+            nftPriceUsd1: launch2TermValue(_nftPrice.text),
+            walletCapPerMille: launch2TermValue(_walletCap.text),
           ),
           existing: _existing,
         );
@@ -582,6 +638,12 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       _logoUrl = draft.logoAssetUrl;
       _nftImageUrl = draft.nftImageAssetUrl;
       _saleStart = draft.nftSaleStart;
+      if (draft.nftPriceUsd1 case final int price) {
+        _nftPrice.text = '$price';
+      }
+      if (draft.walletCapPerMille case final int cap) {
+        _walletCap.text = '$cap';
+      }
     }
     _silenced = false;
   }
@@ -743,6 +805,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     int? maxLength,
     int maxLines = 1,
     TextInputType? keyboard,
+    List<TextInputFormatter>? formatters,
     String? prefix,
     String? counter,
   }) => Column(
@@ -774,6 +837,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         maxLines: maxLines,
         minLines: 1,
         keyboardType: keyboard,
+        inputFormatters: formatters,
         textCapitalization: TextCapitalization.none,
         decoration: InputDecoration(
           hintText: hint,
@@ -1064,6 +1128,48 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     return Launch2Template.defaultBuybackRecipient;
   }
 
+  /// A project-term field (decision 0284): whole numbers only, the default
+  /// as its placeholder; blank sends nothing.
+  Widget _termField(
+    Launch2Field field, {
+    required String label,
+    required int placeholder,
+  }) => _field(
+    field,
+    label: label,
+    hint: '$placeholder',
+    keyboard: TextInputType.number,
+    formatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+  );
+
+  /// The template card's figures with the terms as they stand in the form
+  /// (decision 0284): a typed term over the saved draft's; a blank one is
+  /// the default once the server speaks of terms, else the template's own.
+  Launch2FixedEconomics _shownEconomics(Launch2HooksDraft? draft) {
+    final base = draft?.projectEconomics ?? Launch2Template.v1;
+    final serverTerms =
+        draft != null &&
+        (draft.nftPriceUsd1 != null || draft.walletCapPerMille != null);
+    int? term(TextEditingController controller, Launch2Field field, int dflt) {
+      if (launch2FieldError(field, controller.text) != null) return null;
+      return launch2TermValue(controller.text) ?? (serverTerms ? dflt : null);
+    }
+
+    final cap = term(
+      _walletCap,
+      Launch2Field.walletCap,
+      Launch2ProjectTerms.defaultWalletCapPerMille,
+    );
+    return base.withProjectTerms(
+      nftPriceUsd1: term(
+        _nftPrice,
+        Launch2Field.nftPrice,
+        Launch2ProjectTerms.defaultNftPriceUsd1,
+      ),
+      capRaw: cap == null ? null : Launch2ProjectTerms.walletCapRaw(cap),
+    );
+  }
+
   List<Widget> _saleStep(Launch2SaveState save) {
     final start = _saleStart;
     final failure = save.failure;
@@ -1098,12 +1204,36 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
               .current
               .launch2Creator_launch2CreateLaunch2CreateSaleStartMissingBody,
         ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _termField(
+              Launch2Field.nftPrice,
+              label: LoopL10n.current.launch2Creator_termsNftPriceLabel,
+              placeholder: Launch2ProjectTerms.defaultNftPriceUsd1,
+            ),
+            const SizedBox(height: 12),
+            _termField(
+              Launch2Field.walletCap,
+              label: LoopL10n.current.launch2Creator_termsWalletCapLabel,
+              placeholder: Launch2ProjectTerms.defaultWalletCapPerMille,
+            ),
+          ],
+        ),
+      ),
       LoopLabel(LoopL10n.current.launch2Creator_launch2CreateLoopLabel),
       Launch2FixedRecipient(address: _shownRecipient),
       const SizedBox(height: 16),
       LoopLabel(LoopL10n.current.launch2Creator_launch2CreateLoopLabel2),
       Launch2TemplateCard(
-        economics: draft?.economics ?? Launch2Template.v1,
+        economics: _shownEconomics(draft),
         fromServer: draft != null,
       ),
       if (save.earliestSaleStart case final DateTime earliest)

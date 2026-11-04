@@ -7359,9 +7359,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get launch2Creator_launch2Build => '内盘可售';
 
   @override
-  String get launch2Creator_launch2Build10 => '由平台模板固定，不能修改。';
-
-  @override
   String get launch2Creator_launch2Build11 => '平台还没有配置回购收币地址，暂时不能提交。';
 
   @override
@@ -8138,6 +8135,20 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get launch2Creator_projectDetails => '项目资料';
+
+  @override
+  String get launch2Creator_termsNftPriceLabel => 'NFT 售价（USD1）';
+
+  @override
+  String launch2Creator_termsRange(Object? from, Object? to) {
+    return '请填 $from–$to 之间的整数';
+  }
+
+  @override
+  String get launch2Creator_termsWalletCapLabel => '单地址限额（占总量 ‰）';
+
+  @override
+  String get launch2Creator_termsWholeNumbers => '只能填整数';
 
   @override
   String get launch2_buybackExecuted => '成交';

@@ -8114,10 +8114,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get launch2Creator_launch2Build => 'Bonding pool for sale';
 
   @override
-  String get launch2Creator_launch2Build10 =>
-      'Fixed by the platform template; can\'t be changed.';
-
-  @override
   String get launch2Creator_launch2Build11 =>
       'The platform hasn\'t set a buyback recipient address yet, so you can\'t submit right now.';
 
@@ -8946,6 +8942,21 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get launch2Creator_projectDetails => 'Project details';
+
+  @override
+  String get launch2Creator_termsNftPriceLabel => 'NFT price (USD1)';
+
+  @override
+  String launch2Creator_termsRange(Object? from, Object? to) {
+    return 'Enter a whole number from $from to $to';
+  }
+
+  @override
+  String get launch2Creator_termsWalletCapLabel =>
+      'Per-address cap (‰ of supply)';
+
+  @override
+  String get launch2Creator_termsWholeNumbers => 'Whole numbers only';
 
   @override
   String get launch2_buybackExecuted => 'Filled';

@@ -11,6 +11,8 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart'
+    show launch2CurveCapFigure;
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -309,6 +311,19 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       LoopKeyValue(
         label: LoopL10n.current.launch2Creator_launch2CreateLoopLabel,
         value: loopTruncatedAddress(request.buybackRecipient),
+      ),
+      // Decision 0284: the project's own terms the request signs.
+      LoopKeyValue(
+        key: const ValueKey<String>('launch2-sign-nft-price'),
+        label: LoopL10n.current.launch2Creator_termsNftPriceLabel,
+        value: launch2Usd1Label(request.nftPriceRaw),
+      ),
+      LoopKeyValue(
+        key: const ValueKey<String>('launch2-sign-wallet-cap'),
+        label: LoopL10n.current.launch2Creator_launch2Build6,
+        value: LoopL10n.current.launch2Creator_launch2CapFigure(
+          launch2CurveCapFigure(launch2Units(request.maxCumulativeBuyRaw)),
+        ),
       ),
       LoopKeyValue(label: 'nonce', value: request.nonce),
       _DeadlineRow(
