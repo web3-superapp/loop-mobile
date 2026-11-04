@@ -322,12 +322,13 @@ const Color loopTabBarEdge = LoopColors.navEdge;
 /// that is exactly the reserve the body receives as bottom padding. Inside,
 /// the 70px bar sits `max(8, safe-area)` from the edges with a 23px radius.
 ///
-/// S331 · decision 0261 (overturns decision 0212's "no colour block"): the
-/// selected cell stands on one visible glass pill. Switching tabs stretches
-/// that single pill from the tab that had it across to the tab that takes it
-/// — the leading edge runs ahead, the trailing edge follows and settles with
-/// a slight spring — so nothing appears and nothing disappears (decision
-/// 0071). A press anywhere on the bar swells the whole bar by 2 %. Material's
+/// S331 · decision 0261, reshaped by decision 0285: the selected cell's one
+/// mark is the Figma's 38 Yellow radial halo (24 % → 0) — no pill, no
+/// ground, no edge. Switching tabs carries that single halo from the tab
+/// that had it across to the tab that takes it — the span's leading edge
+/// runs ahead, the trailing edge follows and settles with a slight spring,
+/// and the halo rides the span's middle — so nothing appears and nothing
+/// disappears (decision 0071). A press anywhere on the bar swells the whole bar by 2 %. Material's
 /// ripple and highlight are removed — a grey wash under the finger reads as a
 /// second, contradicting selection.
 class LoopTabBar extends StatefulWidget {
@@ -359,11 +360,16 @@ class LoopTabBar extends StatefulWidget {
   /// The trailing edge's overshoot past its rest, in cells.
   static const double trailOvershoot = 0.06;
 
-  /// Glass pill (decision 0261): white 10 % over the bar's ground, a 1 px
-  /// white 8 % edge inside, inset 4 from its cell on every side.
-  static const Color indicatorFill = Color(0x1AFFFFFF);
-  static const Color indicatorEdge = Color(0x14FFFFFF);
-  static const double indicatorInset = 4;
+  /// The halo (decision 0285, docs/58 §5.18): a 38 circle, Yellow 24 % at
+  /// its centre to 0 at its rim, 4 from the bar's top — 2 under the glyph's
+  /// centre. A [RadialGradient] painted here, not an SVG.
+  static const double haloSize = 38;
+  static const double haloTop = 4;
+  static const Color haloCore = Color(0x3DFFD21C);
+  static const Color haloRim = Color(0x00FFD21C);
+  static const RadialGradient haloGradient = RadialGradient(
+    colors: <Color>[haloCore, haloRim],
+  );
 
   /// Press feedback on the whole bar (decision 0261).
   static const double pressScale = 1.02;
@@ -465,7 +471,6 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cell = constraints.maxWidth / LoopShell._destinations.length;
-        const inset = LoopTabBar.indicatorInset;
         return AnimatedBuilder(
           animation: _slide,
           builder: (context, _) {
@@ -473,27 +478,26 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
             final (leftCells, rightCells) = reduceMotion
                 ? (widget.selectedIndex.toDouble(), widget.selectedIndex + 1.0)
                 : _edges();
-            final left = leftCells * cell + inset + shift;
-            final width = math.max(
-              0.0,
-              (rightCells - leftCells) * cell - 2 * inset,
-            );
+            final centre = (leftCells + rightCells) / 2 * cell + shift;
+            const size = LoopTabBar.haloSize;
+            final slug = LoopShell._destinations[widget.selectedIndex].slug;
             return Stack(
               clipBehavior: Clip.none,
               children: <Widget>[
                 Positioned(
-                  left: left,
-                  top: inset,
-                  bottom: inset,
-                  width: width,
-                  // Decision 0261 overturns decision 0212: the bar carries a
-                  // visible glass pill under the selected cell again.
-                  child: const DecoratedBox(
-                    key: ValueKey<String>('loop-tab-indicator'),
-                    decoration: ShapeDecoration(
-                      color: LoopTabBar.indicatorFill,
-                      shape: StadiumBorder(
-                        side: BorderSide(color: LoopTabBar.indicatorEdge),
+                  key: const ValueKey<String>('loop-tab-indicator'),
+                  left: centre - size / 2,
+                  top: LoopTabBar.haloTop,
+                  width: size,
+                  height: size,
+                  // Decision 0285: the halo is the whole mark — no ground,
+                  // no pill, no edge under the chosen cell.
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      key: ValueKey<String>('loop-tab-halo-$slug'),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LoopTabBar.haloGradient,
                       ),
                     ),
                   ),
@@ -577,7 +581,7 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
                             count: count,
                             selectedIndex: selectedIndex,
                             onSelect: widget.onSelect,
-                            // The pill follows its cell's glyph sideways while
+                            // The halo follows its cell's glyph sideways while
                             // the row makes room under a sliding finger; at
                             // rest the shift is 0.
                             backgroundBuilder: (context, cells) =>
@@ -646,15 +650,15 @@ class LoopBoundedBackCurve extends Curve {
 
 /// One tab cell (decision 0277, docs/58 §5.18): the Figma's glyph — 22,
 /// MEME's 24 — over its word, 12 / 500 (MEME 11 / 600). Chosen, the glyph is
-/// the Figma's Yellow solid version on a 38 Yellow halo and the word is
-/// Yellow; otherwise both are textSecondary. It replaced S264's Ink glyph on
-/// a Yellow spray.
+/// the Figma's Yellow solid version and the word is Yellow; otherwise both
+/// are textSecondary. It replaced S264's Ink glyph on a Yellow spray.
 ///
-/// The cell draws no ground of its own — [LoopTabBar]'s single glass pill
-/// is the ground, and it stretches across (decision 0261). The cell only
-/// crossfades its own ink over the same 280 ms, so on the first frame both
-/// the old and the new cell are lit and the old one greys as the pill
-/// leaves. The glyph's selected-moment move ([LoopTabGlyphMotion]) stays.
+/// The cell draws no ground of its own — [LoopTabBar]'s single halo sits
+/// under the chosen glyph and travels across (decisions 0261, 0285). The
+/// cell fills the bar's 68 and stands its glyph 10 from the top, so the word
+/// tops out at 39 (decision 0285). It only crossfades its own ink over the
+/// same 280 ms, so on the first frame both the old and the new cell are lit
+/// and the old one greys as the halo leaves. The glyph's selected-moment move ([LoopTabGlyphMotion]) stays.
 class LoopTabItem extends StatelessWidget {
   const LoopTabItem({
     required this.label,
@@ -696,8 +700,8 @@ class LoopTabItem extends StatelessWidget {
   /// The glyph box: 22, MEME's 24.
   double get glyphSize => slug == 'meme' ? 24 : 22;
 
-  /// The halo under a chosen glyph.
-  static const double haloSize = 38;
+  /// The glyph's top inside the bar: the Figma's y = 10.
+  static const double glyphTop = 10;
 
   /// The Figma sets the MEME tab's word one size down at 600 (11 / 600),
   /// whatever language the other words are in.
@@ -757,73 +761,62 @@ class LoopTabItem extends StatelessWidget {
                   minHeight: LoopTouch.tabCellMinHeight,
                   minWidth: LoopTouch.minimum,
                 ),
-                child: _dockTransform(
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      LoopTabGlyphMotion(
-                        icon: icon,
-                        slug: slug,
-                        selected: selected,
-                        child: SizedBox(
-                          width: box,
-                          height: box,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              if (t > 0)
-                                Positioned(
-                                  left: box / 2 - haloSize / 2,
-                                  top: box / 2 - haloSize / 2 + 2,
-                                  width: haloSize,
-                                  height: haloSize,
-                                  child: IgnorePointer(
-                                    child: Opacity(
-                                      opacity: t,
-                                      child: SvgPicture.asset(
-                                        LoopFigmaAssets.navHalo,
-                                        key: ValueKey<String>(
-                                          'loop-tab-halo-$slug',
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: glyphTop),
+                    child: _dockTransform(
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          LoopTabGlyphMotion(
+                            icon: icon,
+                            slug: slug,
+                            selected: selected,
+                            child: SizedBox(
+                              width: box,
+                              height: box,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.center,
+                                children: <Widget>[
+                                  if (t < 1)
+                                    Opacity(
+                                      opacity: 1 - t,
+                                      child: _glyph(false),
+                                    ),
+                                  if (t > 0)
+                                    Opacity(opacity: t, child: _glyph(true)),
+                                  if (dot)
+                                    Positioned(
+                                      top: -1,
+                                      right: -3,
+                                      child: IgnorePointer(
+                                        child: LoopUnreadBadge(
+                                          key: ValueKey<String>(
+                                            'loop-tab-dot-$slug',
+                                          ),
+                                          count: 1,
+                                          dot: true,
                                         ),
-                                        excludeFromSemantics: true,
                                       ),
                                     ),
-                                  ),
-                                ),
-                              if (t < 1)
-                                Opacity(opacity: 1 - t, child: _glyph(false)),
-                              if (t > 0)
-                                Opacity(opacity: t, child: _glyph(true)),
-                              if (dot)
-                                Positioned(
-                                  top: -1,
-                                  right: -3,
-                                  child: IgnorePointer(
-                                    child: LoopUnreadBadge(
-                                      key: ValueKey<String>(
-                                        'loop-tab-dot-$slug',
-                                      ),
-                                      count: 1,
-                                      dot: true,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                          SizedBox(height: slug == 'meme' ? 5 : 7),
+                          ExcludeSemantics(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: word.copyWith(color: color),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: slug == 'meme' ? 5 : 7),
-                      ExcludeSemantics(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: word.copyWith(color: color),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               );

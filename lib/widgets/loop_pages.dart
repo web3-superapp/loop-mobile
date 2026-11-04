@@ -40,6 +40,13 @@ double loopChildPageBottomInset(BuildContext context) => math.max(
   MediaQuery.paddingOf(context).bottom,
 );
 
+/// The room a tab page's own scroll leaves after its last row so it can be
+/// read above the floating tab bar (decision 0285): the shell's reserve, as
+/// the ambient bottom padding. A [LoopStreamPage] with
+/// [LoopStreamPage.scrollsUnderTabBar] adds it inside its scroll view.
+double loopTabScrollBottom(BuildContext context) =>
+    MediaQuery.paddingOf(context).bottom;
+
 /// Wraps a page's scrolling region in the standard pull-to-refresh gesture.
 ///
 /// A refresh re-reads what the page already shows: the values stay on screen
@@ -859,7 +866,14 @@ class LoopStreamPage extends StatelessWidget {
     this.embedded = false,
     this.leading,
     this.backdrop,
+    this.scrollsUnderTabBar = false,
   });
+
+  /// A tab page whose [collection] runs on under the floating tab bar
+  /// (decision 0285): the region is not cut at the bar's reserve, so rows
+  /// pass behind the bar's blur, and the collection itself ends with
+  /// [loopTabScrollBottom] of room. Only for a [tabPage].
+  final bool scrollsUnderTabBar;
 
   /// A still layer under the whole page that never scrolls (decision 0221:
   /// 聊天's wall), as [LoopDashboardPage.backdrop]. The topbar does not
@@ -943,7 +957,7 @@ class LoopStreamPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = composer != null
+    final bottom = composer != null || (tabPage && scrollsUnderTabBar)
         ? 0.0
         : tabPage
         ? MediaQuery.paddingOf(context).bottom

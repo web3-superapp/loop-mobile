@@ -114,7 +114,7 @@ void main() {
     expect(wordOf('chat'), LoopColors.textSecondary);
   });
 
-  testWidgets('one Lime indicator marks the selection; the cells stay bare', (
+  testWidgets('one halo marks the selection; the cells stay bare', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -161,9 +161,16 @@ void main() {
     // draw no background of their own, so nothing can appear or disappear.
     final indicator = find.byKey(const ValueKey<String>('loop-tab-indicator'));
     expect(indicator, findsOneWidget);
-    // Decision 0261 (overturning 0212): the indicator is a visible glass
-    // pill again.
-    expect(tester.widget(indicator), isA<DecoratedBox>());
+    // Decision 0285 (reshaping 0261): the indicator is the Figma's 38 radial
+    // halo and nothing else — no ground, no pill, no edge.
+    final halo = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey<String>('loop-tab-halo-intel')),
+    );
+    final haloDecoration = halo.decoration as BoxDecoration;
+    expect(haloDecoration.gradient, isA<RadialGradient>());
+    expect(haloDecoration.color, isNull);
+    expect(haloDecoration.border, isNull);
+    expect(tester.getSize(indicator), const Size.square(38));
     expect(
       find.descendant(of: find.byType(LoopTabItem), matching: indicator),
       findsNothing,

@@ -214,6 +214,7 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
       archetype: LoopPageArchetype.listing,
       title: context.l10n.common_chat,
       tabPage: true,
+      scrollsUnderTabBar: true,
       // Decision 0221: the wall under 聊天 — Purple fog top right, Yellow
       // bottom left — and the faded crown behind the bar's field.
       backdrop: const LoopWallBackdrop(

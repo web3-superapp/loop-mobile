@@ -688,9 +688,10 @@ abstract final class LoopTouch {
   /// A search field (decision 0277): 44 on 聊天 and 广场 alike.
   static const double searchField = 44;
 
-  /// Floating tab bar height (the Figma's 68) and its minimum cell height.
+  /// Floating tab bar height (the Figma's 68); a cell fills it (decision
+  /// 0285).
   static const double tabBarHeight = 68;
-  static const double tabCellMinHeight = 55;
+  static const double tabCellMinHeight = 68;
 }
 
 /// Page layout reserves (chapter 5.3 / 5.4).
