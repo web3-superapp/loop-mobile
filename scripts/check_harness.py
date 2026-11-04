@@ -15,6 +15,11 @@ import zlib
 from pathlib import Path
 from typing import Any
 
+# Decision 0281: the l10n tools and the harness share one reading of what is
+# hard-coded copy (scripts/l10n/harness_rules.py).
+sys.path.insert(0, str(Path(__file__).resolve().parent / "l10n"))
+import harness_rules as L10N_RULES  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIMARY_DESTINATIONS = ["Chat", "Square", "Meme", "Intel", "Wallet"]
@@ -4511,10 +4516,7 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
         ),
         # Decision 0281: the application language, one `loop.locale` tag,
         # pinned by `check_l10n_locale_contract`.
-        Path(
-            "lib/integrations/personalization/"
-            "shared_preferences_locale_store.dart"
-        ),
+        L10N_RULES.LOCALE_STORE_OWNER,
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -7347,7 +7349,8 @@ def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list
             continue
         text = read_text(path)
         for fragment in fragments:
-            if fragment not in text:
+            # Decision 0281: a locked Chinese phrase may live in ARB.
+            if not L10N_RULES.copy_present(root, text, fragment):
                 errors.append(f"{relative} is missing locked value `{fragment}`")
     return errors
 
@@ -15820,6 +15823,13 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_flat_family_contract(root))  # S186-5
     errors.extend(check_family_guard_contract(root))  # S186-7
     errors.extend(check_type_ladder_contract(root))  # S197-1
+    # Decision 0281: copy reads from ARB; English default, zh on request.
+    errors.extend(
+        L10N_RULES.check_no_hardcoded_cjk(
+            root, COPY_INTERNAL_VOCABULARY, COPY_STEP_ID
+        )
+    )
+    errors.extend(L10N_RULES.check_l10n_locale_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -16343,6 +16353,7 @@ def main() -> int:
         "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
         "token-only feature corners, no v1 accent and no new v1 widget, "  # S186-7
         "a final type ladder with no off-ladder size and an 11px floor, "  # S197-1
+        "copy read from ARB with English as the default language, "  # S354
         "and secret rules are consistent."
     )
     return 0

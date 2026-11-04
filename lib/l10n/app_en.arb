@@ -1,7 +1,575 @@
 {
   "@@locale": "en",
+  "common_about": "Notes",
+  "@common_about": {
+    "description": "common"
+  },
+  "common_aboutSection": "About",
+  "@common_aboutSection": {
+    "description": "common"
+  },
+  "common_actionIncomplete": "The action didn't finish.",
+  "@common_actionIncomplete": {
+    "description": "common"
+  },
+  "common_actions": "Actions",
+  "@common_actions": {
+    "description": "common"
+  },
+  "common_all": "All",
+  "@common_all": {
+    "description": "common"
+  },
+  "common_amount": "Amount",
+  "@common_amount": {
+    "description": "common"
+  },
+  "common_assets": "Assets",
+  "@common_assets": {
+    "description": "common"
+  },
+  "common_awaitingSignature": "Awaiting signature",
+  "@common_awaitingSignature": {
+    "description": "common"
+  },
+  "common_back": "Back",
+  "@common_back": {
+    "description": "common"
+  },
+  "common_blockList": "Block list",
+  "@common_blockList": {
+    "description": "common"
+  },
+  "common_bridge": "Bridge",
+  "@common_bridge": {
+    "description": "common"
+  },
+  "common_broadcast": "Broadcast",
+  "@common_broadcast": {
+    "description": "common"
+  },
+  "common_buy": "Buy",
+  "@common_buy": {
+    "description": "common"
+  },
+  "common_cancel": "Cancel",
+  "@common_cancel": {
+    "description": "common"
+  },
+  "common_cancelled": "Cancelled",
+  "@common_cancelled": {
+    "description": "common"
+  },
+  "common_chart": "Chart",
+  "@common_chart": {
+    "description": "common"
+  },
+  "common_chat": "Chat",
+  "@common_chat": {
+    "description": "common"
+  },
+  "common_claim": "Claim",
+  "@common_claim": {
+    "description": "common"
+  },
   "common_close": "Close",
-  "@common_close": {"description": "common"},
+  "@common_close": {
+    "description": "common"
+  },
+  "common_community": "Community",
+  "@common_community": {
+    "description": "common"
+  },
+  "common_confirm": "Confirm",
+  "@common_confirm": {
+    "description": "common"
+  },
+  "common_confirmed": "Confirmed",
+  "@common_confirmed": {
+    "description": "common"
+  },
+  "common_continueAction": "Continue",
+  "@common_continueAction": {
+    "description": "common"
+  },
+  "common_contract": "Contract",
+  "@common_contract": {
+    "description": "common"
+  },
+  "common_copied": "Copied",
+  "@common_copied": {
+    "description": "common"
+  },
+  "common_copy": "Copy",
+  "@common_copy": {
+    "description": "common"
+  },
+  "common_dataSource": "Data source",
+  "@common_dataSource": {
+    "description": "common"
+  },
+  "common_dataUnavailable": "Data unavailable",
+  "@common_dataUnavailable": {
+    "description": "common"
+  },
+  "common_delete": "Delete",
+  "@common_delete": {
+    "description": "common"
+  },
+  "common_demoData": "Demo data",
+  "@common_demoData": {
+    "description": "common"
+  },
+  "common_details": "Details",
+  "@common_details": {
+    "description": "common"
+  },
+  "common_devPreview": "Development preview",
+  "@common_devPreview": {
+    "description": "common"
+  },
+  "common_directMessage": "Direct message",
+  "@common_directMessage": {
+    "description": "common"
+  },
+  "common_disconnected": "Disconnected",
+  "@common_disconnected": {
+    "description": "common"
+  },
+  "common_done": "Done",
+  "@common_done": {
+    "description": "common"
+  },
+  "common_draft": "Draft",
+  "@common_draft": {
+    "description": "common"
+  },
+  "common_edit": "Edit",
+  "@common_edit": {
+    "description": "common"
+  },
+  "common_ended": "Ended",
+  "@common_ended": {
+    "description": "common"
+  },
+  "common_estimatedReceive": "Estimated to receive",
+  "@common_estimatedReceive": {
+    "description": "common"
+  },
+  "common_exit": "Exit",
+  "@common_exit": {
+    "description": "common"
+  },
+  "common_expired": "Expired",
+  "@common_expired": {
+    "description": "common"
+  },
+  "common_failed": "Failed",
+  "@common_failed": {
+    "description": "common"
+  },
+  "common_feed": "Feed",
+  "@common_feed": {
+    "description": "common"
+  },
+  "common_follow": "Follow",
+  "@common_follow": {
+    "description": "common"
+  },
+  "common_followers": "Followers",
+  "@common_followers": {
+    "description": "common"
+  },
+  "common_following": "Following",
+  "@common_following": {
+    "description": "common"
+  },
+  "common_gotIt": "Got it",
+  "@common_gotIt": {
+    "description": "common"
+  },
+  "common_graduate": "Graduate",
+  "@common_graduate": {
+    "description": "common"
+  },
+  "common_graduated": "Graduated",
+  "@common_graduated": {
+    "description": "common"
+  },
+  "common_groupChat": "Group chat",
+  "@common_groupChat": {
+    "description": "common"
+  },
+  "common_holders": "Holders",
+  "@common_holders": {
+    "description": "common"
+  },
+  "common_holdings": "Holdings",
+  "@common_holdings": {
+    "description": "common"
+  },
+  "common_inProgress": "In progress",
+  "@common_inProgress": {
+    "description": "common"
+  },
+  "common_inReview": "In review",
+  "@common_inReview": {
+    "description": "common"
+  },
+  "common_itemUnavailable": "This item can't be loaded right now.",
+  "@common_itemUnavailable": {
+    "description": "common"
+  },
+  "common_joining": "Joining…",
+  "@common_joining": {
+    "description": "common"
+  },
+  "common_justNow": "Just now",
+  "@common_justNow": {
+    "description": "common"
+  },
   "common_language": "Language",
-  "@common_language": {"description": "common"}
+  "@common_language": {
+    "description": "common"
+  },
+  "common_lastActionIncomplete": "The last action didn't finish",
+  "@common_lastActionIncomplete": {
+    "description": "common"
+  },
+  "common_launchpad": "Launchpad",
+  "@common_launchpad": {
+    "description": "common"
+  },
+  "common_learnMore": "Learn more",
+  "@common_learnMore": {
+    "description": "common"
+  },
+  "common_link": "Link",
+  "@common_link": {
+    "description": "common"
+  },
+  "common_linkCopied": "Link copied",
+  "@common_linkCopied": {
+    "description": "common"
+  },
+  "common_liquidity": "Liquidity",
+  "@common_liquidity": {
+    "description": "common"
+  },
+  "common_loading": "Loading",
+  "@common_loading": {
+    "description": "common"
+  },
+  "common_loadingEllipsis": "Loading…",
+  "@common_loadingEllipsis": {
+    "description": "common"
+  },
+  "common_market": "Market",
+  "@common_market": {
+    "description": "common"
+  },
+  "common_marketCap": "Market cap",
+  "@common_marketCap": {
+    "description": "common"
+  },
+  "common_me": "Me",
+  "@common_me": {
+    "description": "common"
+  },
+  "common_members": "Members",
+  "@common_members": {
+    "description": "common"
+  },
+  "common_messageRequests": "Message requests",
+  "@common_messageRequests": {
+    "description": "common"
+  },
+  "common_minimumReceive": "Minimum received",
+  "@common_minimumReceive": {
+    "description": "common"
+  },
+  "common_mining": "Mining",
+  "@common_mining": {
+    "description": "common"
+  },
+  "common_more": "More",
+  "@common_more": {
+    "description": "common"
+  },
+  "common_mute": "Mute",
+  "@common_mute": {
+    "description": "common"
+  },
+  "common_muted": "Muted",
+  "@common_muted": {
+    "description": "common"
+  },
+  "common_name": "Name",
+  "@common_name": {
+    "description": "common"
+  },
+  "common_network": "Network",
+  "@common_network": {
+    "description": "common"
+  },
+  "common_next": "Next",
+  "@common_next": {
+    "description": "common"
+  },
+  "common_nextPageFailed": "Couldn't load the next page",
+  "@common_nextPageFailed": {
+    "description": "common"
+  },
+  "common_noPermission": "This account doesn't have permission",
+  "@common_noPermission": {
+    "description": "common"
+  },
+  "common_noTradesYet": "No trades yet",
+  "@common_noTradesYet": {
+    "description": "common"
+  },
+  "common_none": "None",
+  "@common_none": {
+    "description": "common"
+  },
+  "common_normal": "Normal",
+  "@common_normal": {
+    "description": "common"
+  },
+  "common_notConfigured": "Not configured",
+  "@common_notConfigured": {
+    "description": "common"
+  },
+  "common_notOpenYet": "Not available yet",
+  "@common_notOpenYet": {
+    "description": "common"
+  },
+  "common_nothingHereYet": "Nothing here yet",
+  "@common_nothingHereYet": {
+    "description": "common"
+  },
+  "common_notificationSettings": "Notification settings",
+  "@common_notificationSettings": {
+    "description": "common"
+  },
+  "common_notifications": "Notifications",
+  "@common_notifications": {
+    "description": "common"
+  },
+  "common_ok": "OK",
+  "@common_ok": {
+    "description": "common"
+  },
+  "common_on": "On",
+  "@common_on": {
+    "description": "common"
+  },
+  "common_openSecurityCenter": "Go to Security Center",
+  "@common_openSecurityCenter": {
+    "description": "common"
+  },
+  "common_openSettings": "Open Settings",
+  "@common_openSettings": {
+    "description": "common"
+  },
+  "common_paused": "Paused",
+  "@common_paused": {
+    "description": "common"
+  },
+  "common_pay": "Pay",
+  "@common_pay": {
+    "description": "common"
+  },
+  "common_pendingConfirmation": "Pending confirmation",
+  "@common_pendingConfirmation": {
+    "description": "common"
+  },
+  "common_power": "Power",
+  "@common_power": {
+    "description": "common"
+  },
+  "common_priceAlerts": "Price alerts",
+  "@common_priceAlerts": {
+    "description": "common"
+  },
+  "common_profile": "Profile",
+  "@common_profile": {
+    "description": "common"
+  },
+  "common_receive": "Receive",
+  "@common_receive": {
+    "description": "common"
+  },
+  "common_refresh": "Refresh",
+  "@common_refresh": {
+    "description": "common"
+  },
+  "common_rejected": "Rejected",
+  "@common_rejected": {
+    "description": "common"
+  },
+  "common_reload": "Reload",
+  "@common_reload": {
+    "description": "common"
+  },
+  "common_report": "Report",
+  "@common_report": {
+    "description": "common"
+  },
+  "common_retry": "Retry",
+  "@common_retry": {
+    "description": "common"
+  },
+  "common_reverted": "Reverted",
+  "@common_reverted": {
+    "description": "common"
+  },
+  "common_save": "Save",
+  "@common_save": {
+    "description": "common"
+  },
+  "common_scan": "Scan",
+  "@common_scan": {
+    "description": "common"
+  },
+  "common_search": "Search",
+  "@common_search": {
+    "description": "common"
+  },
+  "common_security": "Security",
+  "@common_security": {
+    "description": "common"
+  },
+  "common_securityCenter": "Security Center",
+  "@common_securityCenter": {
+    "description": "common"
+  },
+  "common_sell": "Sell",
+  "@common_sell": {
+    "description": "common"
+  },
+  "common_send": "Send",
+  "@common_send": {
+    "description": "common"
+  },
+  "common_settings": "Settings",
+  "@common_settings": {
+    "description": "common"
+  },
+  "common_share": "Share",
+  "@common_share": {
+    "description": "common"
+  },
+  "common_sign": "Sign",
+  "@common_sign": {
+    "description": "common"
+  },
+  "common_simulationPassed": "Simulation passed",
+  "@common_simulationPassed": {
+    "description": "common"
+  },
+  "common_simulationRejected": "Simulation rejected",
+  "@common_simulationRejected": {
+    "description": "common"
+  },
+  "common_simulationResult": "Simulation result",
+  "@common_simulationResult": {
+    "description": "common"
+  },
+  "common_simulationUnavailable": "Simulation unavailable",
+  "@common_simulationUnavailable": {
+    "description": "common"
+  },
+  "common_slippageLimit": "Slippage limit",
+  "@common_slippageLimit": {
+    "description": "common"
+  },
+  "common_snapshotBlock": "Snapshot block",
+  "@common_snapshotBlock": {
+    "description": "common"
+  },
+  "common_submit": "Submit",
+  "@common_submit": {
+    "description": "common"
+  },
+  "common_submitted": "Submitted",
+  "@common_submitted": {
+    "description": "common"
+  },
+  "common_submitting": "Submitting",
+  "@common_submitting": {
+    "description": "common"
+  },
+  "common_success": "Success",
+  "@common_success": {
+    "description": "common"
+  },
+  "common_swap": "Swap",
+  "@common_swap": {
+    "description": "common"
+  },
+  "common_today": "Today",
+  "@common_today": {
+    "description": "common"
+  },
+  "common_token": "Token",
+  "@common_token": {
+    "description": "common"
+  },
+  "common_tokenApprovals": "Token approvals",
+  "@common_tokenApprovals": {
+    "description": "common"
+  },
+  "common_totalSupply": "Total supply",
+  "@common_totalSupply": {
+    "description": "common"
+  },
+  "common_trade": "Trade",
+  "@common_trade": {
+    "description": "common"
+  },
+  "common_unavailable": "Unavailable",
+  "@common_unavailable": {
+    "description": "common"
+  },
+  "common_unknown": "Unknown",
+  "@common_unknown": {
+    "description": "common"
+  },
+  "common_unmute": "Unmute",
+  "@common_unmute": {
+    "description": "common"
+  },
+  "common_unread": "Unread",
+  "@common_unread": {
+    "description": "common"
+  },
+  "common_uploading": "Uploading…",
+  "@common_uploading": {
+    "description": "common"
+  },
+  "common_user": "User",
+  "@common_user": {
+    "description": "common"
+  },
+  "common_validUntil": "Valid until",
+  "@common_validUntil": {
+    "description": "common"
+  },
+  "common_verifying": "Verifying…",
+  "@common_verifying": {
+    "description": "common"
+  },
+  "common_voiceRooms": "Voice rooms",
+  "@common_voiceRooms": {
+    "description": "common"
+  },
+  "common_waitingForData": "Waiting for data",
+  "@common_waitingForData": {
+    "description": "common"
+  },
+  "common_watchlist": "Watchlist",
+  "@common_watchlist": {
+    "description": "common"
+  }
 }
