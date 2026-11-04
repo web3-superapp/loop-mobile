@@ -19,6 +19,7 @@ import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_campaigns.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -48,11 +49,7 @@ const String _mediaUrl = 'https://api.example.test/v2/media/$_mediaId.webp';
 String? _resolve(String mediaId) => mediaId == _mediaId ? _mediaUrl : null;
 
 /// 「10-15」 on the test machine's own calendar, as the card prints it.
-String _md(DateTime at) {
-  final local = at.toLocal();
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(local.month)}-${two(local.day)}';
-}
+String _md(DateTime at) => launch2MonthDay(at.toLocal());
 
 Map<String, Object?> _campaignJson(
   String id, {
@@ -384,7 +381,7 @@ void main() {
       final second = read.items[1];
       expect(second.subtitle, isNull);
       expect(second.coverUrl, isNull);
-      expect(second.ctaLabel, '查看');
+      expect(second.ctaLabel, 'View');
       expect(second.state, Launch2CampaignState.upcoming);
     });
 
@@ -571,7 +568,7 @@ void main() {
       ]);
       expect(
         find.text(
-          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · 剩 6 天',
+          '${_md(campaign.startsAt)} – ${_md(campaign.endsAt)} · 6d left',
         ),
         findsOneWidget,
       );
@@ -612,7 +609,7 @@ void main() {
       // No cover: the Purple-to-Ink ground fills the card.
       expect(_key('launch2-campaign-ground'), findsOneWidget);
       expect(_key('launch2-campaign-scrim'), findsOneWidget);
-      expect(find.text('查看'), findsOneWidget);
+      expect(find.text('View'), findsOneWidget);
       // One page: no dots.
       expect(_key('launch2-desk-dots'), findsNothing);
     });
@@ -623,11 +620,11 @@ void main() {
         startIn: const Duration(days: -3),
         length: const Duration(days: 3, hours: 5),
       );
-      expect(launch2CampaignStamp(ending, l2Now), '今天结束');
+      expect(launch2CampaignStamp(ending, l2Now), 'Ends today');
       final soon = _campaign('c2', startIn: const Duration(days: 2));
-      expect(launch2CampaignStamp(soon, l2Now), '${_md(soon.startsAt)} 开始');
+      expect(launch2CampaignStamp(soon, l2Now), 'Starts ${_md(soon.startsAt)}');
       final long = _campaign('c3', length: const Duration(days: 2));
-      expect(launch2CampaignStamp(long, l2Now), '剩 1 天');
+      expect(launch2CampaignStamp(long, l2Now), '1d left');
     });
 
     testWidgets('upcoming and without a subtitle: no caption, stamp says '
@@ -643,8 +640,8 @@ void main() {
       expect(find.text('一句副标题'), findsNothing);
       expect(
         find.text(
-          '${_md(campaign.startsAt)} 至 ${_md(campaign.endsAt)} · '
-          '${_md(campaign.startsAt)} 开始',
+          '${_md(campaign.startsAt)} – ${_md(campaign.endsAt)} · '
+          'Starts ${_md(campaign.startsAt)}',
         ),
         findsOneWidget,
       );
@@ -925,7 +922,10 @@ void main() {
       await tester.pump();
       expect(browsed, <Uri>[Uri.parse('https://loop.example/rules')]);
       expect(copied, isEmpty);
-      expect(find.text('没能打开浏览器，链接已复制'), findsNothing);
+      expect(
+        find.text('Couldn\'t open the browser. Link copied'),
+        findsNothing,
+      );
       await tester.pump(const Duration(seconds: 5));
     });
 
@@ -946,7 +946,10 @@ void main() {
           await tester.tap(_key('launch2-desk-page-campaign-c1'));
           await tester.pump();
           expect(copied, <String>['https://loop.example/rules']);
-          expect(find.text('没能打开浏览器，链接已复制'), findsOneWidget);
+          expect(
+            find.text('Couldn\'t open the browser. Link copied'),
+            findsOneWidget,
+          );
           await tester.pump(const Duration(seconds: 5));
         },
       );

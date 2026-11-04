@@ -139,7 +139,7 @@ void main() {
         tester,
         find.descendant(
           of: _key('launch2-desk-tab-live'),
-          matching: find.text('内盘'),
+          matching: find.text('Bonding pool'),
         ),
       ),
       16,

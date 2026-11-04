@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/wallet/nft_send.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -71,7 +72,7 @@ final class Launch2NftView {
     required this.litRing,
     required this.medalLabel,
     this.countdownTo,
-    this.stampPrefix = '剩 ',
+    this.stampPrefix,
     this.statusDetail,
   });
 
@@ -82,7 +83,8 @@ final class Launch2NftView {
   final DateTime? countdownTo;
 
   /// The words before the stamp's countdown.
-  final String stampPrefix;
+  /// `null` reads 「剩」.
+  final String? stampPrefix;
 
   /// Lime heading: the stage takes orders or mints now. Chalk otherwise.
   final bool statusLit;
@@ -109,36 +111,45 @@ Launch2NftView launch2NftView(
   final viewer = detail.viewer;
   final held = (viewer?.nftHeld ?? 0) > 0;
   final tokenId = viewer?.mintedTokenId;
-  final medal = held && tokenId != null ? '#$tokenId' : '共识勋章';
-  final minted = '已铸 ${row.nftSale.soldCount} 枚';
+  final medal = held && tokenId != null
+      ? '#$tokenId'
+      : LoopL10n.current.launch2_launch2NftS;
+  final minted = LoopL10n.current.launch2_launch2HeroSwitch4(
+    row.nftSale.soldCount,
+  );
   final next = row.nextChangeAt;
-  const toProject = '去项目页交易';
+  final toProject = LoopL10n.current.launch2_launch2NftToProject;
   switch (row.stage) {
     case Launch2Stage.upcoming:
       return Launch2NftView(
-        status: next == null ? '铸造时间待定' : '铸造倒计时',
+        status: next == null
+            ? LoopL10n.current.launch2_launch2HeroSwitch2
+            : LoopL10n.current.launch2_launch2FormatUpcoming2,
         countdownTo: next,
-        stampPrefix: '距铸造 ',
+        stampPrefix: LoopL10n.current.launch2_launch2AtmosphereCountdown,
         statusLit: false,
-        statusDetail:
-            '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
-            '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
-        buttonLabel: '开始后可铸造',
+        statusDetail: LoopL10n.current.launch2_launch2InstanceUpcoming(
+          launch2SaleDurationLabel(row.nftSale),
+          launch2Usd1Label(row.nftSale.priceUsd1),
+        ),
+        buttonLabel: LoopL10n.current.launch2_launch2NftButtonLabel,
         action: Launch2NftAction.none,
         litRing: false,
         medalLabel: medal,
       );
     case Launch2Stage.nftSale:
       return Launch2NftView(
-        status: '铸造中',
+        status: LoopL10n.current.launch2_launch2FormatNftSale,
         countdownTo: next,
         statusLit: true,
         statusDetail: minted,
         buttonLabel: held
-            ? '已持有 · 每地址 1 枚'
+            ? LoopL10n.current.launch2_launch2NftButtonLabel2
             : walletActive
-            ? '铸造 1 枚 · ${launch2Usd1Label(row.nftSale.priceUsd1)}'
-            : '激活钱包后可铸造',
+            ? LoopL10n.current.launch2_launch2NftButtonLabel3(
+                launch2Usd1Label(row.nftSale.priceUsd1),
+              )
+            : LoopL10n.current.launch2_launch2NftButtonLabel4,
         action: held || !walletActive
             ? Launch2NftAction.none
             : Launch2NftAction.mint,
@@ -149,17 +160,21 @@ Launch2NftView launch2NftView(
       // Decision 0202: the publication attempt's own words, as on the
       // project page (名单生成中 → 名单发布中 → …).
       return Launch2NftView(
-        status: '铸造已结束 · ${launch2SnapshotPendingTitle(detail.snapshot)}',
+        status: LoopL10n.current.launch2_launch2NftStatus(
+          launch2SnapshotPendingTitle(detail.snapshot),
+        ),
         statusLit: false,
         statusDetail: minted,
-        buttonLabel: held ? '等待名单发布' : '铸造已结束',
+        buttonLabel: held
+            ? LoopL10n.current.launch2_launch2NftButtonLabel5
+            : LoopL10n.current.launch2_launch2NftButtonLabel6,
         action: Launch2NftAction.none,
         litRing: true,
         medalLabel: medal,
       );
     case Launch2Stage.priority:
       return Launch2NftView(
-        status: '提前购进行中',
+        status: LoopL10n.current.launch2_launch2HeroPriority,
         countdownTo: next,
         statusLit: true,
         statusDetail: minted,
@@ -171,8 +186,8 @@ Launch2NftView launch2NftView(
     case Launch2Stage.public:
       return Launch2NftView(
         status: detail.snapshot.openedWithoutHolders != null
-            ? '铸造期内无人铸造，已直接进入公开轮'
-            : '内盘已开放',
+            ? LoopL10n.current.launch2_launch2NftStatus2
+            : LoopL10n.current.launch2_launch2NftStatus3,
         statusLit: true,
         statusDetail: minted,
         buttonLabel: toProject,
@@ -182,7 +197,7 @@ Launch2NftView launch2NftView(
       );
     case Launch2Stage.graduated:
       return Launch2NftView(
-        status: '已毕业',
+        status: LoopL10n.current.common_graduated,
         statusLit: false,
         statusDetail: minted,
         buttonLabel: toProject,
@@ -194,19 +209,19 @@ Launch2NftView launch2NftView(
       // Decision 0120 / 0142: a legacy sale with no holder is closed for
       // good — neither round opens, so the page does not say it did.
       return Launch2NftView(
-        status: '铸造期内无人铸造，项目已关闭',
+        status: LoopL10n.current.launch2_launch2NftStatus4,
         statusLit: false,
-        buttonLabel: '去项目页',
+        buttonLabel: LoopL10n.current.launch2_launch2NftButtonLabel7,
         action: Launch2NftAction.openProject,
         litRing: false,
         medalLabel: medal,
       );
     case Launch2Stage.paused:
       return Launch2NftView(
-        status: '项目已暂停',
+        status: LoopL10n.current.launch2_launch2FormatSwitch29,
         statusLit: false,
         statusDetail: launch2HoldReasonText(row.holdReason),
-        buttonLabel: '去项目页',
+        buttonLabel: LoopL10n.current.launch2_launch2NftButtonLabel7,
         action: Launch2NftAction.openProject,
         litRing: false,
         medalLabel: medal,
@@ -217,18 +232,21 @@ Launch2NftView launch2NftView(
 /// 「我的持有」 (docs/32 §4.1).
 String launch2NftHoldingText(Launch2InstanceDetail detail) {
   final viewer = detail.viewer;
-  if (viewer == null) return '未激活钱包';
+  if (viewer == null) return LoopL10n.current.launch2_launch2InstanceRows7;
   if (viewer.nftHeld <= 0) return '0 / 1';
   final tokenId = viewer.mintedTokenId;
   if (tokenId == null) return '${viewer.nftHeld} / 1';
   if (detail.snapshot.published) {
-    return viewer.snapshotMember ? '#$tokenId · 已在快照名单' : '#$tokenId';
+    return viewer.snapshotMember
+        ? LoopL10n.current.launch2_launch2NftIf(tokenId)
+        : '#$tokenId';
   }
-  return '#$tokenId · 已在候选名单';
+  return LoopL10n.current.launch2_launch2NftIf2(tokenId);
 }
 
 /// The toast once a mint shows up in the read model (docs/32 §4.3).
-const String launch2NftMintedToast = '已铸造 · 等待铸造结束进入名单';
+String get launch2NftMintedToast =>
+    LoopL10n.current.launch2_launch2NftLaunch2NftMintedToast;
 
 /// The NFTs this wallet can send from [detail] (S339 · decision 0267), one
 /// per token id, ascending; empty when there is nothing to offer: no viewer,
@@ -356,7 +374,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     }
     final picked = await showLoopSheet<SendNftTarget>(
       context,
-      barrierLabel: '关闭选择 NFT',
+      barrierLabel: LoopL10n.current.launch2_launch2NftBarrierLabel,
       builder: (sheetContext) => Launch2NftSendPicker(
         targets: targets,
         onPick: (target) => Navigator.of(sheetContext).pop(target),
@@ -418,10 +436,8 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     _settleReads += 1;
     if (_settleReads >= _settleLimit) {
       setState(() {
-        _pending = const _Pending(
-          text:
-              '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；'
-              '不要重复铸造。',
+        _pending = _Pending(
+          text: LoopL10n.current.launch2_launch2NftText,
           locked: false,
         );
       });
@@ -487,14 +503,18 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-nft-invalid-route'),
         archetype: LoopPageArchetype.record,
-        title: '共识勋章',
+        title: context.l10n.launch2_launch2NftS,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('launch2-nft-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的项目标识',
-            message: '没有请求任何数据，也没有回退到其他项目。',
+            title: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityTitle,
+            message: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -531,14 +551,16 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('launch2-nft-screen'),
       archetype: LoopPageArchetype.record,
-      title: '共识勋章',
+      title: context.l10n.launch2_launch2NftS,
       onBack: widget.onBack,
       updating: state?.refreshing ?? false,
       onRefresh: blocked ? null : () => ref.read(provider.notifier).reload(),
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('launch2-nft-blocked'),
-              title: 'MEME v2 暂时不可用',
+              title: context
+                  .l10n
+                  .launch2_launch2DynamicRewardsLaunch2DynRewardsBlockedTitle,
               message: launch2CapabilityText(capability),
             )
           : null,
@@ -552,7 +574,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
             phase: state?.phase ?? LoopChainViewPhase.unavailable,
             failureKind: state?.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '项目不存在',
+            emptyMessage: context.l10n.launch2_launch2FormatSwitch24,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else
@@ -574,7 +596,9 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
     final sendTargets = launch2NftSendTargets(detail);
     final main = LoopButton(
       key: const ValueKey<String>('launch2-nft-mint'),
-      label: mint && _preparing ? '正在准备…' : view.buttonLabel,
+      label: mint && _preparing
+          ? LoopL10n.current.launch2_launch2DynamicRewardsLabel
+          : view.buttonLabel,
       primary: true,
       block: true,
       onPressed: !enabled
@@ -616,7 +640,7 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('launch2-nft-send'),
-                  label: '发送',
+                  label: LoopL10n.current.common_send,
                   block: true,
                   onPressed: () => unawaited(_sendOne(sendTargets)),
                 ),
@@ -685,57 +709,77 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
-      const LoopLabel('这枚勋章能做什么'),
+      LoopLabel(LoopL10n.current.launch2_launch2NftLoopLabel),
       LoopRecordGroup(
         key: const ValueKey<String>('launch2-nft-benefits'),
         rows: <LoopRecordRow>[
-          _entry('ticket', '进快照名单', '铸造结束时持有，进入快照名单；名单发布后有 1 小时提前购内盘'),
+          _entry(
+            'ticket',
+            LoopL10n.current.launch2_launch2NftEntry,
+            LoopL10n.current.launch2_launch2NftEntry2,
+          ),
           _entry(
             'droplet',
-            '托管与回购',
-            '铸造款进入本项目的托管合约，毕业后由平台按每笔 '
-                '${launch2Usd1Label(detail.template.buybackOrderUsd1)} 回购 MEME',
+            LoopL10n.current.launch2_launch2NftEntry3,
+            LoopL10n.current.launch2_launch2NftEntry4(
+              launch2Usd1Label(detail.template.buybackOrderUsd1),
+            ),
           ),
         ],
       ),
-      const LoopLabel('规则'),
+      LoopLabel(LoopL10n.current.launch2_launch2InstanceTitle5),
       LoopRecordGroup(
         key: const ValueKey<String>('launch2-nft-rules'),
         rows: <LoopRecordRow>[
           _entry(
             'user',
-            '每地址 1 枚',
-            '每个地址终身只能铸 1 枚 · '
-                '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚',
+            LoopL10n.current.launch2_launch2NftEntry5,
+            LoopL10n.current.launch2_launch2NftEntry6(
+              launch2Usd1Label(row.nftSale.priceUsd1),
+            ),
           ),
           _entry(
             'clock',
-            '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
-            '截止 ${loopDateTimeLabel(row.nftSale.endAt)}',
+            LoopL10n.current.launch2_launch2NftEntry7(
+              launch2SaleDurationLabel(row.nftSale),
+            ),
+            LoopL10n.current.launch2_launch2InstanceLaunch2NftEnd(
+              loopDateTimeLabel(row.nftSale.endAt),
+            ),
           ),
-          _entry('warn', '风险', '$launch2NftRiskSentence。'),
+          _entry(
+            'warn',
+            LoopL10n.current.launch2_launch2InstanceLaunch2TemplateRiskTitle,
+            LoopL10n.current.launch2_nftRiskBody(
+              launch2SentenceCase(launch2NftRiskSentence),
+            ),
+          ),
         ],
       ),
-      const LoopLabel('我的勋章'),
+      LoopLabel(LoopL10n.current.launch2_launch2NftLoopLabel2),
       LoopKeyValue(
         key: const ValueKey<String>('launch2-nft-held'),
-        label: '我的持有',
+        label: LoopL10n.current.launch2_launch2InstanceLaunch2NftHeldLabel,
         value: launch2NftHoldingText(detail),
       ),
       LoopKeyValue(
         key: const ValueKey<String>('launch2-nft-sold'),
-        label: '已铸',
-        value: '${row.nftSale.soldCount} 枚',
+        label: LoopL10n.current.launch2_launch2InstanceRows4,
+        value: LoopL10n.current.launch2_launch2InstanceRows5(
+          row.nftSale.soldCount,
+        ),
       ),
       // Decision 0202: the published list, as on the project page.
       if (launch2SnapshotPublishedShown(detail))
         Launch2SnapshotPublishedBlock(detail: detail),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-nft-provenance'),
-        sources: const <String>['LOOP 链上索引'],
+        sources: <String>[
+          LoopL10n.current.launch2_launch2InstanceLoopProvenanceLine,
+        ],
         observedAt: detail.projectedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
-        detail: '阶段与倒计时由服务端按链上时间给出，到点后重新读取。',
+        detail: LoopL10n.current.launch2_launch2NftLaunch2NftProvenanceDetail,
       ),
     ];
   }
@@ -774,7 +818,7 @@ class _NftFolio extends StatelessWidget {
       headingTone: view.statusLit
           ? LoopFolioHeadingTone.accent
           : LoopFolioHeadingTone.neutral,
-      kicker: '共识勋章',
+      kicker: context.l10n.launch2_launch2NftS,
       heading: launch2HeroTicker(row.ticker),
       caption: caption,
       stamp: stamp,
@@ -787,7 +831,9 @@ class _NftFolio extends StatelessWidget {
           : Launch2CountdownBuilder(
               target: target,
               onElapsed: onElapsed,
-              builder: (context, text) => folio('${view.stampPrefix}$text'),
+              builder: (context, text) => folio(
+                '${view.stampPrefix ?? context.l10n.launch2_launch2AtmosphereCountdown2}$text',
+              ),
             ),
     );
   }
@@ -847,7 +893,10 @@ class Launch2NftMedal extends StatelessWidget {
     final ink = inkColour;
     return Semantics(
       image: true,
-      label: '$ticker 共识勋章，$bottomLabel',
+      label: context.l10n.launch2_launch2NftLaunch2NftMedalPictureLabel(
+        bottomLabel,
+        ticker,
+      ),
       excludeSemantics: true,
       child: SizedBox(
         width: size,
@@ -995,7 +1044,7 @@ class Launch2NftSendPicker extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('选择要发送的 NFT'),
+        LoopLabel(context.l10n.launch2_launch2NftLoopLabel3),
         Flexible(
           child: SingleChildScrollView(
             child: LoopRecordGroup(

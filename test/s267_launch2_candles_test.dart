@@ -486,7 +486,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: _key('launch2-candles-intervals'),
-          matching: find.text('1时'),
+          matching: find.text('1h'),
         ),
       );
       await tester.pumpAndSettle();
@@ -529,7 +529,10 @@ void main() {
       await _pump(tester, gateway);
       expect(_key('launch2-candles-empty'), findsOneWidget);
       expect(find.text(launch2CandlesEmptyText), findsOneWidget);
-      expect(find.text('还没有成交，第一笔成交后出现 K 线'), findsOneWidget);
+      expect(
+        find.text('No trades yet. Candles appear after the first trade'),
+        findsOneWidget,
+      );
       expect(find.byType(LoopMarketChart), findsNothing);
       await _drain(tester);
     });
@@ -545,7 +548,7 @@ void main() {
         return _ok(call, _candles(12, start: l2Now, interval: call.interval));
       });
       await _pump(tester, gateway);
-      expect(find.text('K 线暂时读不到，点按重试'), findsOneWidget);
+      expect(find.text('Couldn\'t load candles. Tap to retry'), findsOneWidget);
       expect(find.byType(LoopMarketChart), findsNothing);
 
       fail = false;
@@ -602,7 +605,7 @@ void main() {
       await _pump(tester, gateway);
       expect(gateway.calls.first.interval, Launch2CandleInterval.oneHour);
       expect(_key('launch2-candles-graduation'), findsOneWidget);
-      expect(find.text('毕业'), findsOneWidget);
+      expect(find.text('Graduate'), findsOneWidget);
       // Decision 0240: the K line under the price, above the tabs.
       expect(
         tester.getTopLeft(_key('launch2-candles')).dy,
@@ -618,7 +621,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: _key('launch2-candles-intervals'),
-          matching: find.text('4时'),
+          matching: find.text('4h'),
         ),
       );
       await tester.pumpAndSettle();

@@ -36,6 +36,7 @@ import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_sheet.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -233,10 +234,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           kind: pending.kind,
           venue: pending.venue,
           text: pending.venue != Launch2Venue.officialPool
-              ? '$noun已在链上确认。'
+              ? LoopL10n.current.launch2_launch2InstanceText(noun)
               : _ownPoolSignal(detail)
-              ? '你的外盘$noun已在链上确认。'
-              : '官方池已记录新成交，你的外盘$noun应已确认；数量以钱包余额为准。',
+              ? LoopL10n.current.launch2_launch2InstanceText2(noun)
+              : LoopL10n.current.launch2_launch2InstanceText3(noun),
           locked: false,
           baseline: _viewerSignature(detail),
         );
@@ -250,9 +251,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         _pending = _Pending(
           kind: pending.kind,
           venue: pending.venue,
-          text:
-              '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；'
-              '不要重复${launch2IntentNoun(pending.kind)}。',
+          text: LoopL10n.current.launch2_launch2InstanceText4(
+            launch2IntentNoun(pending.kind),
+          ),
           locked: false,
           baseline: pending.baseline,
         );
@@ -457,14 +458,18 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-invalid-route'),
         archetype: LoopPageArchetype.record,
-        title: '无法打开这个项目',
+        title: context.l10n.launch2_launch2InstanceLaunch2InvalidRouteTitle,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('launch2-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的项目标识',
-            message: '没有请求任何数据，也没有回退到其他项目。',
+            title: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityTitle,
+            message: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -521,7 +526,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('launch2-instance-blocked'),
-              title: 'MEME v2 暂时不可用',
+              title: context
+                  .l10n
+                  .launch2_launch2DynamicRewardsLaunch2DynRewardsBlockedTitle,
               message: launch2CapabilityText(capability),
             )
           : null,
@@ -533,7 +540,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
             phase: state?.phase ?? LoopChainViewPhase.unavailable,
             failureKind: state?.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '项目不存在',
+            emptyMessage: context.l10n.launch2_launch2FormatSwitch24,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else
@@ -554,7 +561,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       blocked: switch (kind) {
         Launch2LoopDynamicUnavailable(:final reasonCode) =>
           launch2PoolReasonText(reasonCode),
-        Launch2LoopDynamicNotGraduated() => '外盘池子正在同步，请稍后再试',
+        Launch2LoopDynamicNotGraduated() =>
+          LoopL10n.current.launch2_launch2DynamicRewardsReason,
         _ => null,
       },
     );
@@ -592,10 +600,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
           child: LoopButton(
             key: const ValueKey<String>('launch2-buy-nft'),
             label: held
-                ? '已持有勋章'
+                ? LoopL10n.current.launch2_launch2InstanceLaunch2BuyNftLabel
                 : _preparingNft
-                ? '正在准备…'
-                : '铸造勋章',
+                ? LoopL10n.current.launch2_launch2DynamicRewardsLabel
+                : LoopL10n.current.launch2_launch2InstanceLaunch2BuyNftLabel2,
             primary: true,
             block: true,
             onPressed: held || busy ? null : () => unawaited(_buyNft(detail)),
@@ -606,10 +614,10 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       case Launch2Stage.graduated:
         final hold = detail.tradingHold;
         final reason = (_pending?.locked ?? false)
-            ? '上一笔还在链上确认，确认后再交易'
+            ? LoopL10n.current.launch2_launch2InstanceSwitch
             : pool.blocked;
         final sellReason = detail.stage == Launch2Stage.priority
-            ? '提前购阶段只能买入，公开内盘开始后可卖出'
+            ? LoopL10n.current.launch2_launch2FormatSwitch26
             : null;
         final open = hold == null && reason == null;
         return Launch2BarShell(
@@ -659,7 +667,8 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     final stage = opened.stage;
     return showLoopSheet<void>(
       context,
-      barrierLabel: '关闭交易面板',
+      barrierLabel:
+          LoopL10n.current.launch2_launch2InstanceLaunch2TradeSheetBarrierLabel,
       builder: (sheet) => Consumer(
         builder: (context, r, _) {
           final live =
@@ -726,7 +735,11 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       Launch2InstanceHead(
         detail: detail,
         onCopy: () => unawaited(
-          LoopCopy.text(context, detail.row.memeAddress, message: '已复制代币地址'),
+          LoopCopy.text(
+            context,
+            detail.row.memeAddress,
+            message: LoopL10n.current.launch2_launch2InstanceMessage,
+          ),
         ),
         onElapsed: () => unawaited(
           ref
@@ -742,10 +755,12 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       if (detail.tradingHold case final Launch2TradingHold hold)
         Launch2TradingHoldBanner(hold: hold),
       if (launch2EvidenceNoticeShown(capability) && !paused)
-        const LoopInlineUnavailable(
+        LoopInlineUnavailable(
           key: ValueKey<String>('launch2-evidence-pending'),
           icon: 'info',
-          message: '合约核对中，交易可能暂时不可用',
+          message: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2EvidencePendingMessage,
         ),
       if (pending != null)
         LoopNotice(
@@ -761,12 +776,15 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         ),
       if (detail.stage == Launch2Stage.public &&
           detail.snapshot.openedWithoutHolders != null)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-opened-without-holders'),
           icon: 'info',
           // Decision 0149: one line at 360–412 dp (「卖。」 was left alone on a
           // second line); 「人人可买」 is already the stage bar's line.
-          body: '$launch2OpenedWithoutHoldersText，跳过提前购。',
+          body: LoopL10n.current
+              .launch2_launch2InstanceLaunch2OpenedWithoutHoldersBody(
+                launch2OpenedWithoutHoldersText,
+              ),
         ),
       AnimatedSwitcher(
         duration: LoopMotion.of(context, LoopMotion.stageSwitch),
@@ -795,7 +813,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         key: const ValueKey<String>('launch2-paused-reason'),
         icon: 'warn',
         tone: LoopNoticeTone.warn,
-        title: '项目已暂停',
+        title: LoopL10n.current.launch2_launch2FormatSwitch29,
         body: launch2HoldReasonText(detail.row.holdReason),
       ),
       Launch2Greyed(
@@ -929,13 +947,24 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     _PoolKind pool,
   ) => switch (detail.stage) {
     Launch2Stage.upcoming => <Widget>[
-      const LoopLabel('勋章铸造'),
+      LoopLabel(LoopL10n.current.launch2_launch2InstanceLoopLabel),
       _Figures(
         keyName: 'launch2-upcoming',
         rows: <(String, String)>[
-          ('铸造开始', loopDateTimeLabel(detail.row.nftSale.startAt)),
-          ('铸造价格', launch2Usd1Label(detail.row.nftSale.priceUsd1)),
-          ('铸造时长', launch2SaleDurationLabel(detail.row.nftSale)),
+          (
+            LoopL10n
+                .current
+                .launch2Creator_launch2ProjectLaunch2ProjectSaleStartLabel,
+            loopDateTimeLabel(detail.row.nftSale.startAt),
+          ),
+          (
+            LoopL10n.current.launch2Creator_launch2Build7,
+            launch2Usd1Label(detail.row.nftSale.priceUsd1),
+          ),
+          (
+            LoopL10n.current.launch2_launch2InstanceRows3,
+            launch2SaleDurationLabel(detail.row.nftSale),
+          ),
         ],
       ),
       _TemplateCard(detail: detail),
@@ -962,10 +991,17 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       _Figures(
         keyName: 'launch2-snapshot-figures',
         rows: <(String, String)>[
-          ('已铸', '${detail.row.nftSale.soldCount} 枚'),
           (
-            '我的 NFT',
-            detail.viewer == null ? '未激活钱包' : '${detail.viewer!.nftHeld} / 1',
+            LoopL10n.current.launch2_launch2InstanceRows4,
+            LoopL10n.current.launch2_launch2InstanceRows5(
+              detail.row.nftSale.soldCount,
+            ),
+          ),
+          (
+            LoopL10n.current.launch2_launch2InstanceRows6,
+            detail.viewer == null
+                ? LoopL10n.current.launch2_launch2InstanceRows7
+                : '${detail.viewer!.nftHeld} / 1',
           ),
         ],
       ),
@@ -975,7 +1011,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
       Launch2PriceHeader(
         price: detail.row.curve.priceUsd1,
         priceKey: 'launch2-curve-price',
-        aside: '内盘已售 ${launch2BpsLabel(detail.row.curve.soldBps)}',
+        aside: LoopL10n.current.launch2_launch2HeroSwitch5(
+          launch2BpsLabel(detail.row.curve.soldBps),
+        ),
       ),
       // Decision 0227: the K line between the price and the figures.
       Launch2CandleCard(
@@ -1001,7 +1039,9 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
         priceKey: 'launch2-pool-price',
         aside: detail.pool == null
             ? null
-            : '24h 成交 ${launch2Usd1Label(detail.pool!.volume24hUsd1)}',
+            : LoopL10n.current.launch2_launch2InstanceAside(
+                launch2Usd1Label(detail.pool!.volume24hUsd1),
+              ),
       ),
       // Decision 0227: the same card, curve and pool on one series.
       Launch2CandleCard(
@@ -1099,11 +1139,14 @@ class _OwnerStrip extends StatelessWidget {
     ),
     child: Row(
       children: <Widget>[
-        const LoopBadge('你是项目方', kind: LoopBadgeKind.launch),
+        LoopBadge(
+          context.l10n.launch2_launch2InstanceLoopBadge,
+          kind: LoopBadgeKind.launch,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            '你看到的是用户看到的项目页',
+            context.l10n.launch2_launch2InstanceText5,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: LoopType.caption.copyWith(color: LoopColors.text2),
@@ -1119,11 +1162,14 @@ class _OwnerStrip extends StatelessWidget {
 String launch2InstanceFolioCaption(Launch2InstanceDetail detail) {
   final row = detail.row;
   final line = switch (row.stage) {
-    Launch2Stage.upcoming =>
-      '${launch2Usd1Label(row.nftSale.priceUsd1)} / 枚 · '
-          '铸造期 ${launch2SaleDurationLabel(row.nftSale)}',
-    Launch2Stage.nftSale => '每地址 1 枚 · 已铸 ${row.nftSale.soldCount} 枚',
-    Launch2Stage.priority => '持有人优先',
+    Launch2Stage.upcoming => LoopL10n.current.launch2_launch2InstanceUpcoming(
+      launch2SaleDurationLabel(row.nftSale),
+      launch2Usd1Label(row.nftSale.priceUsd1),
+    ),
+    Launch2Stage.nftSale => LoopL10n.current.launch2_launch2InstanceNftSale(
+      row.nftSale.soldCount,
+    ),
+    Launch2Stage.priority => LoopL10n.current.launch2_launch2InstancePriority,
     Launch2Stage.snapshotPending ||
     Launch2Stage.closedNoHolders ||
     Launch2Stage.public ||
@@ -1150,25 +1196,31 @@ class _ClosedBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopEmptyState(
+          LoopEmptyState(
             showMessage: true,
             illustration: LoopIllustration.holders,
             title: launch2ClosedNoHoldersText,
-            message:
-                '铸造期内没有人铸造。这个项目使用旧版合约，'
-                '名单无法生成，提前购和公开内盘不会开始。',
+            message: context.l10n.launch2_launch2InstanceMessage2,
             compact: true,
           ),
           _Figures(
             keyName: 'launch2-closed-figures',
             rows: <(String, String)>[
-              ('已铸', '${detail.row.nftSale.soldCount} 枚'),
+              (
+                context.l10n.launch2_launch2InstanceRows4,
+                context.l10n.launch2_launch2InstanceRows5(
+                  detail.row.nftSale.soldCount,
+                ),
+              ),
               if (closure != null) ...<(String, String)>[
                 (
-                  '截止块',
+                  context.l10n.launch2_launch2InstanceRows8,
                   '#${loopGroupedFigure(closure.cutoffBlock.toString())}',
                 ),
-                ('关闭时间', loopDateTimeLabel(closure.closedAt)),
+                (
+                  context.l10n.launch2_launch2InstanceRows9,
+                  loopDateTimeLabel(closure.closedAt),
+                ),
               ],
             ],
           ),
@@ -1214,58 +1266,74 @@ class _TemplateCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          '发射规则',
+          context.l10n.launch2_launch2InstanceLaunch2TemplateInfo,
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-template-info'),
             icon: 'info',
-            label: '关于发射规则',
+            label: context.l10n.launch2_launch2InstanceLaunch2TemplateInfoLabel,
             color: LoopColors.text2,
             onPressed: () => unawaited(
               showLoopInfoSheet(
                 context,
-                title: '发射规则',
+                title: context.l10n.launch2_launch2InstanceLaunch2TemplateInfo,
                 sheetKey: 'launch2-template-sheet',
                 notes: <LoopInfoNote>[
-                  const LoopInfoNote(
-                    title: '由平台模板固定',
-                    body: '每个 v2 项目用同一套参数，项目方不能修改。',
+                  LoopInfoNote(
+                    title: context.l10n.launch2_launch2InstanceTitle,
+                    body: context.l10n.launch2_launch2InstanceBody,
                   ),
                   LoopInfoNote(
-                    title: '三段发射',
-                    body:
-                        '勋章铸造（${launch2Usd1Label(t.nftPriceUsd1)} 一枚，每个地址终身 1 枚）→ '
-                        '快照名单与 1 小时提前购 → 公开内盘。任何一轮卖满 '
-                        '${launch2MemeCompact(t.curveSaleSupply)} 枚即自动建官方池毕业。',
+                    title: context.l10n.launch2_launch2InstanceTitle2,
+                    body: context.l10n.launch2_launch2InstanceBody2(
+                      launch2MemeCompact(t.curveSaleSupply),
+                      launch2Usd1Label(t.nftPriceUsd1),
+                    ),
                   ),
-                  const LoopInfoNote(
+                  LoopInfoNote(
                     key: ValueKey<String>('launch2-template-risk'),
-                    title: '风险',
-                    body: '$launch2NftRiskSentence。',
+                    title: context
+                        .l10n
+                        .launch2_launch2InstanceLaunch2TemplateRiskTitle,
+                    body: LoopL10n.current.launch2_nftRiskBody(
+                      launch2SentenceCase(launch2NftRiskSentence),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ),
-        LoopKeyValue(label: '总量', value: launch2MemeCompact(t.memeTotalSupply)),
-        LoopKeyValue(label: '内盘', value: launch2MemeCompact(t.curveSaleSupply)),
         LoopKeyValue(
-          label: '毕业储备',
+          label: context.l10n.common_totalSupply,
+          value: launch2MemeCompact(t.memeTotalSupply),
+        ),
+        LoopKeyValue(
+          label: context.l10n.launch2_launch2InstanceLabel,
+          value: launch2MemeCompact(t.curveSaleSupply),
+        ),
+        LoopKeyValue(
+          label: context.l10n.launch2Creator_launch2Build2,
           value: launch2Usd1Label(
             t.graduationReserveUsd1,
             maxFractionDigits: 3,
           ),
         ),
-        LoopKeyValue(label: '内盘买卖税', value: launch2BpsLabel(t.curveBuyTaxBps)),
         LoopKeyValue(
-          label: '外盘税',
+          label: context.l10n.launch2Creator_launch2Build3,
+          value: launch2BpsLabel(t.curveBuyTaxBps),
+        ),
+        LoopKeyValue(
+          label: context.l10n.launch2_launch2InstanceLabel4,
           value: launch2BpsLabel(t.officialPoolTaxBps),
         ),
         LoopKeyValue(
-          label: '单地址上限',
+          label: context.l10n.launch2Creator_launch2Build6,
           value:
               // Decision 0197: the instance's own cap, whole tokens.
-              '${launch2CurveCapFigure(t.perAddressCap)} 枚（${launch2BpsLabel(t.perAddressCapBps)}）',
+              context.l10n.launch2_launch2InstanceValue(
+                launch2BpsLabel(t.perAddressCapBps),
+                launch2CurveCapFigure(t.perAddressCap),
+              ),
         ),
       ],
     );
@@ -1292,34 +1360,34 @@ class _NftSaleBlock extends ConsumerWidget {
       ref.read(launch2ClockProvider)(),
     );
     final elapsedText = elapsed == null
-        ? '读取中'
-        : '已过 ${(elapsed * 100).floor()}%';
+        ? context.l10n.common_loading
+        : context.l10n.launch2_launch2InstanceS((elapsed * 100).floor());
     return Column(
       key: const ValueKey<String>('launch2-nft-sale'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          '项目 NFT',
+          context.l10n.launch2_launch2InstanceLaunch2NftInfo,
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-nft-info'),
             icon: 'info',
-            label: '关于项目 NFT',
+            label: context.l10n.launch2_launch2InstanceLaunch2NftInfoLabel,
             color: LoopColors.text2,
             onPressed: () => unawaited(
               showLoopInfoSheet(
                 context,
-                title: '项目 NFT',
+                title: context.l10n.launch2_launch2InstanceLaunch2NftInfo,
                 sheetKey: 'launch2-nft-sheet',
-                notes: const <LoopInfoNote>[
-                  LoopInfoNote(
-                    body:
-                        '每个地址终身只能铸 1 枚。铸造结束时持有勋章的地址进入快照名单，'
-                        '名单发布后有 1 小时提前购。',
-                  ),
+                notes: <LoopInfoNote>[
+                  LoopInfoNote(body: context.l10n.launch2_launch2InstanceBody3),
                   LoopInfoNote(
                     key: ValueKey<String>('launch2-nft-risk-note'),
-                    title: '风险',
-                    body: '$launch2NftRiskSentence。',
+                    title: context
+                        .l10n
+                        .launch2_launch2InstanceLaunch2TemplateRiskTitle,
+                    body: LoopL10n.current.launch2_nftRiskBody(
+                      launch2SentenceCase(launch2NftRiskSentence),
+                    ),
                   ),
                 ],
               ),
@@ -1330,13 +1398,13 @@ class _NftSaleBlock extends ConsumerWidget {
           hero: true,
           stats: <LoopStat>[
             LoopStat(
-              label: '价格 / 枚',
+              label: context.l10n.launch2_launch2InstanceLabel6,
               value: launch2Usd1Label(sale.priceUsd1),
               statKey: const ValueKey<String>('launch2-nft-price'),
             ),
             LoopStat(
-              label: '已铸',
-              value: '${sale.soldCount} 枚',
+              label: context.l10n.launch2_launch2InstanceRows4,
+              value: context.l10n.launch2_launch2InstanceRows5(sale.soldCount),
               statKey: const ValueKey<String>('launch2-nft-sold'),
             ),
           ],
@@ -1349,9 +1417,13 @@ class _NftSaleBlock extends ConsumerWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Text(
-                    '铸造进度',
-                    style: LoopType.body2.copyWith(color: LoopColors.text2),
+                  Flexible(
+                    child: Text(
+                      context.l10n.launch2_launch2InstanceBuild,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopType.body2.copyWith(color: LoopColors.text2),
+                    ),
                   ),
                   const Spacer(),
                   Text(elapsedText, style: LoopType.figure),
@@ -1360,14 +1432,17 @@ class _NftSaleBlock extends ConsumerWidget {
               const SizedBox(height: 12),
               LoopProgressBar(
                 value: elapsed,
-                semanticLabel: '铸造时间$elapsedText',
+                semanticLabel: context.l10n
+                    .launch2_launch2InstanceSemanticLabel(elapsedText),
               ),
               const SizedBox(height: 3),
               Row(
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      '截止 ${loopDateTimeLabel(sale.endAt)}',
+                      context.l10n.launch2_launch2InstanceLaunch2NftEnd(
+                        loopDateTimeLabel(sale.endAt),
+                      ),
                       key: const ValueKey<String>('launch2-nft-end'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1383,8 +1458,10 @@ class _NftSaleBlock extends ConsumerWidget {
         ),
         LoopKeyValue(
           key: const ValueKey<String>('launch2-nft-held'),
-          label: '我的持有',
-          value: viewer == null ? '未激活钱包' : '${viewer.nftHeld} / 1',
+          label: context.l10n.launch2_launch2InstanceLaunch2NftHeldLabel,
+          value: viewer == null
+              ? context.l10n.launch2_launch2InstanceRows7
+              : '${viewer.nftHeld} / 1',
         ),
       ],
     );
@@ -1401,7 +1478,7 @@ class _MintPageLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '铸造页',
+    label: context.l10n.launch2_launch2InstanceLaunch2NftOpenLabel,
     excludeSemantics: true,
     child: LoopPressable(
       key: const ValueKey<String>('launch2-nft-open'),
@@ -1418,7 +1495,7 @@ class _MintPageLink extends StatelessWidget {
             children: <Widget>[
               // R17 inline text action (decision 0190 L23).
               Text(
-                '铸造页',
+                context.l10n.launch2_launch2InstanceLaunch2NftOpenLabel,
                 style: LoopTypography.withWeight(
                   LoopType.label,
                   FontWeight.w600,
@@ -1455,7 +1532,7 @@ class _CurveProgress extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '内盘进度',
+                  context.l10n.launch2_launch2HeroSwitch6,
                   style: LoopType.body2.copyWith(color: LoopColors.text2),
                 ),
               ),
@@ -1471,12 +1548,16 @@ class _CurveProgress extends StatelessWidget {
           const SizedBox(height: 12),
           LoopProgressBar(
             value: launch2Fraction(curve.soldBps),
-            semanticLabel: '内盘进度 ${launch2BpsLabel(curve.soldBps)}',
+            semanticLabel: context.l10n.launch2_launch2InstanceSemanticLabel2(
+              launch2BpsLabel(curve.soldBps),
+            ),
           ),
           const SizedBox(height: 10),
           Text(
-            '已售 ${launch2MemeCompact(curve.soldSupply)} / '
-            '${launch2MemeCompact(curve.saleSupply)}，卖满自动建官方池毕业',
+            context.l10n.launch2_launch2InstanceLaunch2CurveSupply(
+              launch2MemeCompact(curve.soldSupply),
+              launch2MemeCompact(curve.saleSupply),
+            ),
             key: const ValueKey<String>('launch2-curve-supply'),
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
@@ -1502,7 +1583,9 @@ Widget _tradeRow(Launch2Trade trade, String ticker) {
     TextSpan(
       children: <InlineSpan>[
         TextSpan(
-          text: buy ? '买入' : '卖出',
+          text: buy
+              ? LoopL10n.current.common_buy
+              : LoopL10n.current.common_sell,
           style: LoopTypography.withWeight(
             LoopType.body2,
             FontWeight.w600,
@@ -1573,19 +1656,21 @@ class _RecentTrades extends StatelessWidget {
       key: const ValueKey<String>('launch2-trades'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('最新成交'),
+        LoopLabel(context.l10n.launch2_launch2InstanceLoopLabel2),
         if (trades.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('launch2-trades-empty'),
             illustration: LoopIllustration.chartEmpty,
-            title: '还没有成交',
+            title: context.l10n.common_noTradesYet,
             compact: true,
           )
         else
           for (final trade in trades) _tradeRow(trade, detail.row.ticker),
         LoopProvenanceLine(
           key: const ValueKey<String>('launch2-trades-provenance'),
-          sources: const <String>['LOOP 链上索引'],
+          sources: <String>[
+            context.l10n.launch2_launch2InstanceLoopProvenanceLine,
+          ],
           observedAt: detail.projectedAt,
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -1593,7 +1678,8 @@ class _RecentTrades extends StatelessWidget {
             LoopSpacing.page,
             4,
           ),
-          detail: '最近 20 笔内盘成交，金额含 10% 税。',
+          detail:
+              context.l10n.launch2_launch2InstanceLaunch2TradesProvenanceDetail,
         ),
       ],
     );
@@ -1632,11 +1718,13 @@ class _PoolTradesTab extends ConsumerWidget {
         value: mineOnly,
         onChanged: onMineOnly,
         title: !mineOnly
-            ? '全部外盘成交'
+            ? context.l10n.launch2_launch2InstanceTitle3
             : switch (detail.viewer?.holding?.poolTradeCount) {
                 final BigInt count when count > BigInt.zero =>
-                  '我的外盘成交 · 共 ${loopGroupedFigure(count.toString())} 笔',
-                _ => '我的外盘成交',
+                  context.l10n.launch2_launch2InstanceZero(
+                    loopGroupedFigure(count.toString()),
+                  ),
+                _ => context.l10n.launch2_launch2InstanceLaunch2MineOnlyToggle,
               },
       ),
       if (mineOnly) ..._mine(ref) else ..._everyone(ref),
@@ -1661,9 +1749,12 @@ class _PoolTradesTab extends ConsumerWidget {
         else
           LoopInlineUnavailable(
             key: const ValueKey<String>('launch2-pool-trades-failed'),
-            message:
-                '外盘成交暂时读不到 · '
-                '${state.failureKind == LoopChainFailureKind.rateLimited ? '请求太频繁，稍后再试' : loopChainFailureReason(state.failureKind)}',
+            message: LoopL10n.current
+                .launch2_launch2InstanceLaunch2PoolTradesFailedMessage(
+                  state.failureKind == LoopChainFailureKind.rateLimited
+                      ? LoopL10n.current.launch2_poolTradesRateLimited
+                      : loopChainFailureReason(state.failureKind),
+                ),
             onRetry: state.mode == LoopChainGatewayMode.unavailable
                 ? null
                 : () => unawaited(ref.read(provider.notifier).reload()),
@@ -1672,10 +1763,12 @@ class _PoolTradesTab extends ConsumerWidget {
     }
     return <Widget>[
       if (page.items.isEmpty)
-        const LoopEmptyState(
+        LoopEmptyState(
           key: ValueKey<String>('launch2-pool-trades-empty'),
           illustration: LoopIllustration.chartEmpty,
-          title: '还没有外盘成交',
+          title: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2PoolTradesEmptyTitle,
           compact: true,
         )
       else
@@ -1689,12 +1782,15 @@ class _PoolTradesTab extends ConsumerWidget {
           ),
       LoopProvenanceLine(
         key: const ValueKey<String>('launch2-pool-trades-provenance'),
-        sources: const <String>['LOOP 链上索引'],
+        sources: <String>[
+          LoopL10n.current.launch2_launch2InstanceLoopProvenanceLine,
+        ],
         observedAt: page.observedAt,
         padding: _provenancePadding,
-        detail:
-            '最近 $launch2RecentPoolTradesLimit 笔官方池成交，不含回购；'
-            '卖出金额为扣税后实收。',
+        detail: LoopL10n.current
+            .launch2_launch2InstanceLaunch2PoolTradesProvenanceDetail(
+              launch2RecentPoolTradesLimit,
+            ),
       ),
     ];
   }
@@ -1703,29 +1799,35 @@ class _PoolTradesTab extends ConsumerWidget {
     final count = detail.viewer?.holding?.poolTradeCount;
     final wallet = walletId;
     if (wallet == null || detail.viewer == null) {
-      return const <Widget>[
+      return <Widget>[
         LoopInlineUnavailable(
           key: ValueKey<String>('launch2-my-pool-trades-no-wallet'),
           icon: 'info',
-          message: '激活钱包后可以只看自己的成交',
+          message: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2MyPoolTradesNoWalletMessage,
         ),
       ];
     }
     if (count == null) {
-      return const <Widget>[
+      return <Widget>[
         LoopInlineUnavailable(
           key: ValueKey<String>('launch2-my-pool-trades-unsupported'),
           icon: 'info',
-          message: '我的外盘成交暂时读不到',
+          message: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2MyPoolTradesUnsupportedMessage,
         ),
       ];
     }
     if (count == BigInt.zero) {
-      return const <Widget>[
+      return <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('launch2-my-pool-trades-none'),
           illustration: LoopIllustration.chartEmpty,
-          title: '你还没有外盘成交',
+          title: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2MyPoolTradesNoneTitle,
           compact: true,
         ),
       ];
@@ -1749,23 +1851,26 @@ class _PoolTradesTab extends ConsumerWidget {
               )
             : LoopInlineUnavailable(
                 key: const ValueKey<String>('launch2-my-pool-trades-failed'),
-                message:
-                    '我的外盘成交暂时读不到 · '
-                    '${loopChainFailureReason(state.failureKind)}',
+                message: LoopL10n.current
+                    .launch2_launch2InstanceLaunch2MyPoolTradesFailedMessage(
+                      loopChainFailureReason(state.failureKind),
+                    ),
                 onRetry: () => unawaited(ref.read(provider.notifier).reload()),
               )
       else if (page.trades.isEmpty)
-        const LoopInlineUnavailable(
+        LoopInlineUnavailable(
           key: ValueKey<String>('launch2-my-pool-trades-empty'),
           icon: 'info',
-          message: '成交还在同步，稍后刷新',
+          message: LoopL10n
+              .current
+              .launch2_launch2InstanceLaunch2MyPoolTradesEmptyMessage,
         )
       else
         for (final trade in page.trades)
           LoopKeyValue(
             key: ValueKey<String>('launch2-my-pool-trade-${trade.poolTradeId}'),
             label:
-                '${trade.side == Launch2Side.buy ? '买入' : '卖出'} · '
+                '${trade.side == Launch2Side.buy ? LoopL10n.current.common_buy : LoopL10n.current.common_sell} · '
                 '${loopDateTimeLabel(trade.tradedAt)}',
             value: launch2PoolTradeFigure(trade, ticker),
             valueUp: trade.side == Launch2Side.buy,
@@ -1773,12 +1878,15 @@ class _PoolTradesTab extends ConsumerWidget {
       if (page != null)
         LoopProvenanceLine(
           key: const ValueKey<String>('launch2-my-pool-trades-provenance'),
-          sources: const <String>['LOOP 链上索引'],
+          sources: <String>[
+            LoopL10n.current.launch2_launch2InstanceLoopProvenanceLine,
+          ],
           observedAt: ref.read(provider.notifier).valueObservedAt,
           padding: _provenancePadding,
-          detail:
-              '只含经官方池路由成交的记录，最近 $launch2MyPoolTradesShown 笔；'
-              '数量已扣 2% 外盘税。',
+          detail: LoopL10n.current
+              .launch2_launch2InstanceLaunch2MyPoolTradesProvenanceDetail(
+                launch2MyPoolTradesShown,
+              ),
         ),
     ];
   }
@@ -1800,37 +1908,46 @@ class _GraduatedInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          '官方池',
+          context.l10n.launch2_launch2InstanceLaunch2PoolInfo,
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-pool-info'),
             icon: 'info',
-            label: '关于官方池',
+            label: context.l10n.launch2_launch2InstanceLaunch2PoolInfoLabel,
             color: LoopColors.text2,
             onPressed: () => unawaited(
               showLoopInfoSheet(
                 context,
-                title: '官方池',
+                title: context.l10n.launch2_launch2InstanceLaunch2PoolInfo,
                 sheetKey: 'launch2-pool-sheet',
                 notes: <LoopInfoNote>[
                   if (graduation != null) ...<LoopInfoNote>[
                     LoopInfoNote(
                       key: const ValueKey<String>('launch2-pool-id'),
-                      title: '池 ID（Uniswap v4，没有池地址）',
+                      title: context
+                          .l10n
+                          .launch2_launch2InstanceLaunch2PoolIdTitle,
                       body: graduation.officialPoolId,
                     ),
                     LoopInfoNote(title: 'Hook', body: graduation.hookAddress),
                     LoopInfoNote(
-                      title: '费率',
-                      body:
-                          'LP 费 ${launch2BpsLabel(graduation.lpFee ~/ 100)}，'
-                          'tickSpacing ${graduation.tickSpacing}',
+                      title: context.l10n.launch2_launch2InstanceTitle4,
+                      body: context.l10n.launch2_launch2InstanceBody4(
+                        launch2BpsLabel(graduation.lpFee ~/ 100),
+                        graduation.tickSpacing,
+                      ),
                     ),
                   ],
                   LoopInfoNote(
                     key: const ValueKey<String>('launch2-pool-tax'),
-                    title:
-                        '外盘税 ${launch2BpsLabel(graduation?.officialPoolTaxBps ?? detail.template.officialPoolTaxBps)}',
-                    body: '在官方池买卖都收取，由 Hook 计入回购托管，用来按规则回购。',
+                    title: context.l10n
+                        .launch2_launch2InstanceLaunch2PoolTaxTitle(
+                          launch2BpsLabel(
+                            graduation?.officialPoolTaxBps ??
+                                detail.template.officialPoolTaxBps,
+                          ),
+                        ),
+                    body:
+                        context.l10n.launch2_launch2InstanceLaunch2PoolTaxBody,
                   ),
                 ],
               ),
@@ -1838,17 +1955,17 @@ class _GraduatedInfo extends StatelessWidget {
           ),
         ),
         LoopKeyValue(
-          label: '毕业时间',
+          label: context.l10n.launch2_launch2InstanceLabel7,
           value: graduation == null
-              ? '读取中'
+              ? context.l10n.common_loading
               : loopDateTimeLabel(graduation.graduatedAt),
         ),
         LoopKeyValue(
-          label: '毕业价',
+          label: context.l10n.launch2_launch2InstanceLabel8,
           value: launch2PriceLabel(detail.row.curve.priceUsd1),
         ),
         LoopKeyValue(
-          label: '外盘税',
+          label: context.l10n.launch2_launch2InstanceLabel4,
           value: launch2BpsLabel(
             graduation?.officialPoolTaxBps ??
                 detail.template.officialPoolTaxBps,
@@ -1873,11 +1990,9 @@ String launch2BuybackLatestText({
   required Decimal usd1Spent,
   required String outcome,
 }) {
-  final local = executedAt.toLocal();
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(local.month)}-${two(local.day)} '
-      '${two(local.hour)}:${two(local.minute)}，'
-      '${launch2Usd1Label(usd1Spent)}，$outcome';
+  return '${launch2ShortDateTime(executedAt)}'
+      '${LoopL10n.current.common_listSeparator}${launch2Usd1Label(usd1Spent)}'
+      '${LoopL10n.current.common_listSeparator}$outcome';
 }
 
 /// 「最近一笔」 as a stacked row (S257): the label on its own line and the
@@ -1896,13 +2011,15 @@ class _BuybackLatestRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            '最近一笔',
+            context.l10n.launch2_launch2InstanceBuild2,
             style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             key: const ValueKey<String>('launch2-buyback-latest-value'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: LoopTypography.withWeight(
               LoopType.figureXs,
               FontWeight.w500,
@@ -1926,7 +2043,7 @@ class _BuybackHeldRow extends StatelessWidget {
     final detail = line.detail;
     return Semantics(
       container: true,
-      label: line.text.replaceAll('\n', '，'),
+      label: line.text.replaceAll('\n', LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2001,32 +2118,38 @@ class _BuybackPanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          '回购',
+          context.l10n.launch2_launch2InstancePartsBuyback,
           info: LoopIconButton(
             key: const ValueKey<String>('launch2-buyback-info'),
             icon: 'info',
-            label: '关于回购',
+            label: context.l10n.launch2_launch2InstanceLaunch2BuybackInfoLabel,
             color: LoopColors.text2,
             onPressed: () => unawaited(
               showLoopInfoSheet(
                 context,
-                title: '回购',
+                title: context.l10n.launch2_launch2InstancePartsBuyback,
                 sheetKey: 'launch2-buyback-sheet',
                 notes: <LoopInfoNote>[
-                  const LoopInfoNote(
+                  LoopInfoNote(
                     key: ValueKey<String>('launch2-buyback-not-burn'),
-                    title: '回购不等于销毁',
-                    body: '回购买到的代币转给项目登记的收币地址，不会销毁。',
+                    title: context
+                        .l10n
+                        .launch2_launch2InstanceLaunch2BuybackNotBurnTitle,
+                    body: context
+                        .l10n
+                        .launch2_launch2InstanceLaunch2BuybackNotBurnBody,
                   ),
                   LoopInfoNote(
-                    title: '规则',
-                    body:
-                        '每笔 ${launch2Usd1Label(detail.template.buybackOrderUsd1)}，'
-                        '两笔间隔至少 ${detail.template.buybackMinIntervalSeconds} 秒；'
-                        '官方池 USD1 本金不足 10,000 或单笔超过本金 1% 时不执行，'
-                        '被拒的尝试不留记录。',
+                    title: context.l10n.launch2_launch2InstanceTitle5,
+                    body: context.l10n.launch2_launch2InstanceBody5(
+                      detail.template.buybackMinIntervalSeconds,
+                      launch2Usd1Label(detail.template.buybackOrderUsd1),
+                    ),
                   ),
-                  LoopInfoNote(title: '收币地址', body: summary.recipient),
+                  LoopInfoNote(
+                    title: context.l10n.launch2_launch2InstanceTitle6,
+                    body: summary.recipient,
+                  ),
                 ],
               ),
             ),
@@ -2034,26 +2157,28 @@ class _BuybackPanel extends ConsumerWidget {
         ),
         LoopKeyValue(
           key: const ValueKey<String>('launch2-buyback-escrow'),
-          label: '托管余额',
+          label: context.l10n.launch2_launch2InstanceLaunch2BuybackEscrowLabel,
           value: launch2Usd1Label(
             live?.escrowAvailableUsd1 ?? summary.escrowAvailableUsd1,
           ),
         ),
         LoopKeyValue(
           key: const ValueKey<String>('launch2-buyback-total'),
-          label: '累计回购',
-          value:
-              '${launch2Usd1Label(summary.totalUsd1)} · ${summary.executedCount} 笔',
+          label: context.l10n.launch2_launch2InstanceLaunch2BuybackTotalLabel,
+          value: context.l10n.launch2_launch2InstanceLaunch2BuybackTotalValue(
+            summary.executedCount,
+            launch2Usd1Label(summary.totalUsd1),
+          ),
         ),
         _BuybackLatestRow(
           key: const ValueKey<String>('launch2-buyback-latest'),
           value: latest == null
-              ? '还没有'
+              ? context.l10n.launch2_launch2InstanceLaunch2BuybackLatestValue
               : launch2BuybackLatestText(
                   executedAt: latest.executedAt,
                   usd1Spent: latest.usd1Spent,
                   outcome: latest.executed
-                      ? '成交'
+                      ? context.l10n.launch2_buybackExecuted
                       : launch2BuybackBlockedText(latest.reasonCode),
                 ),
         ),
@@ -2065,20 +2190,26 @@ class _BuybackPanel extends ConsumerWidget {
         else if (page != null && live != null)
           LoopKeyValue(
             key: const ValueKey<String>('launch2-buyback-next'),
-            label: '下一笔',
+            label: context.l10n.launch2_launch2InstanceLaunch2BuybackNextLabel,
             value: launch2BuybackBlockedText(live.nextOrderBlockedReason),
           )
         else if (page?.liveUnavailableReason case final String reason)
           LoopInlineUnavailable(
             key: const ValueKey<String>('launch2-buyback-live-unavailable'),
-            message: '链上实时读数暂时取不到 · ${launch2ReasonText(reason)}',
+            message: context.l10n
+                .launch2_launch2InstanceLaunch2BuybackLiveUnavailableMessage(
+                  launch2ReasonText(reason),
+                ),
           )
         else if (page == null &&
             state.phase != LoopChainViewPhase.loading &&
             state.failureKind != null)
           LoopInlineUnavailable(
             key: const ValueKey<String>('launch2-buyback-unavailable'),
-            message: '回购明细暂时读不到 · ${loopChainFailureReason(state.failureKind)}',
+            message: context.l10n
+                .launch2_launch2InstanceLaunch2BuybackUnavailableMessage(
+                  loopChainFailureReason(state.failureKind),
+                ),
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           ),
         // Decision 0146: the keeper's state, one line.
@@ -2089,10 +2220,10 @@ class _BuybackPanel extends ConsumerWidget {
             message: keeper.text,
           ),
         if (summary.paused)
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('launch2-buyback-paused'),
             icon: 'info',
-            message: '回购已暂停',
+            message: context.l10n.launch2_launch2FormatSwitch4,
           ),
       ],
     );

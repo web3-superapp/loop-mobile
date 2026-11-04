@@ -470,7 +470,7 @@ Future<void> _openRound(WidgetTester tester) async {
 
 /// The panel's own 卖出 (the bar has one too).
 Finder _panelSell() =>
-    find.descendant(of: _key('launch2-pool-side'), matching: find.text('卖出'));
+    find.descendant(of: _key('launch2-pool-side'), matching: find.text('Sell'));
 
 Future<void> _type(WidgetTester tester, String text) async {
   await _scrollTo(tester, _key('launch2-pool-amount'));
@@ -957,23 +957,37 @@ void main() {
     test('every §3.12.6 reason reads exactly the server copy; the S168 '
         'guesses are gone', () {
       const table = <String, String>{
-        'LAUNCH2_DYNAMIC_ROUTER_NOT_CONFIGURED': '外盘路由未配置，暂不可交易',
-        'LAUNCH2_DYNAMIC_ROUTER_CODE_MISMATCH': '外盘路由校验未通过，暂不可交易',
-        'LAUNCH2_DYNAMIC_ROUTER_MANAGER_MISMATCH': '外盘路由与池子不匹配，暂不可交易',
-        'LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED': '外盘池子正在同步，请稍后再试',
-        'LAUNCH2_DYNAMIC_HOOK_MISMATCH': '外盘池子校验未通过，暂不可交易',
-        'LAUNCH2_DYNAMIC_HOOK_NOT_INITIALIZED': '外盘池子尚未初始化',
-        'LAUNCH2_EXACT_OUT_UNSUPPORTED': '该池子只支持按支付金额交易',
-        'LAUNCH2_DYNAMIC_POOL_NOT_APPLICABLE': '该项目的外盘没有奖励轮次',
-        'LAUNCH2_DYNAMIC_ROUND_INVALID': '轮次编号无效',
-        'LAUNCH2_DYNAMIC_ROUTER_UNAUTHORIZED': '池子拒绝了这个交易入口',
-        'LAUNCH2_DYNAMIC_SWAP_UNSUPPORTED': '池子不支持这种交易方式',
-        'LAUNCH2_DYNAMIC_HOOK_BUSY': '池子正忙，请稍后重试',
-        'LAUNCH2_DYNAMIC_ROUND_NOT_CLOSED': '本轮还没有结束，结束后才能领取',
-        'LAUNCH2_DYNAMIC_ALREADY_CLAIMED': '本轮奖励已经领取过',
-        'LAUNCH2_DYNAMIC_CLAIM_TRANSACTION_CONFLICT': '这次领取已经记录了另一笔交易',
-        'LAUNCH2_DYNAMIC_NOTHING_TO_CLAIM': '本轮没有可领取的奖励',
-        'LAUNCH2_DYNAMIC_CLAIM_INTENT_NOT_FOUND': '找不到这次领取请求',
+        'LAUNCH2_DYNAMIC_ROUTER_NOT_CONFIGURED':
+            'DEX pool router not configured; trading unavailable',
+        'LAUNCH2_DYNAMIC_ROUTER_CODE_MISMATCH':
+            'DEX pool router check failed; trading unavailable',
+        'LAUNCH2_DYNAMIC_ROUTER_MANAGER_MISMATCH':
+            'DEX pool router doesn\'t match the pool; trading unavailable',
+        'LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED':
+            'The DEX pool is syncing. Try again later',
+        'LAUNCH2_DYNAMIC_HOOK_MISMATCH':
+            'DEX pool check failed; trading unavailable',
+        'LAUNCH2_DYNAMIC_HOOK_NOT_INITIALIZED':
+            'The DEX pool isn\'t initialized yet',
+        'LAUNCH2_EXACT_OUT_UNSUPPORTED':
+            'This pool only supports trading by payment amount',
+        'LAUNCH2_DYNAMIC_POOL_NOT_APPLICABLE':
+            'This project\'s DEX pool has no reward rounds',
+        'LAUNCH2_DYNAMIC_ROUND_INVALID': 'Invalid round number',
+        'LAUNCH2_DYNAMIC_ROUTER_UNAUTHORIZED':
+            'The pool rejected this trade entry',
+        'LAUNCH2_DYNAMIC_SWAP_UNSUPPORTED':
+            'The pool doesn\'t support this trade type',
+        'LAUNCH2_DYNAMIC_HOOK_BUSY': 'The pool is busy. Try again later',
+        'LAUNCH2_DYNAMIC_ROUND_NOT_CLOSED':
+            'This round hasn\'t ended; claim after it ends',
+        'LAUNCH2_DYNAMIC_ALREADY_CLAIMED':
+            'This round\'s rewards were already claimed',
+        'LAUNCH2_DYNAMIC_CLAIM_TRANSACTION_CONFLICT':
+            'This claim already recorded another transaction',
+        'LAUNCH2_DYNAMIC_NOTHING_TO_CLAIM': 'No rewards to claim this round',
+        'LAUNCH2_DYNAMIC_CLAIM_INTENT_NOT_FOUND':
+            'Couldn\'t find this claim request',
       };
       expect(launch2DynamicReasonMessagesZh, table);
       table.forEach((code, text) {
@@ -989,7 +1003,7 @@ void main() {
       }
       expect(
         launch2PoolReasonText('POOL_QUOTE_UNAVAILABLE'),
-        '官方池试算没有通过，换个金额再试',
+        'The official pool simulation failed. Try another amount',
       );
     });
 
@@ -1009,7 +1023,7 @@ void main() {
         'price',
         'slippage',
       ]);
-      expect(lines[2].label, '外盘税 2%');
+      expect(lines[2].label, 'DEX pool tax 2%');
     });
 
     test('a LoopDynamic buy says the MEME tax and the weight; a sell the '
@@ -1017,14 +1031,14 @@ void main() {
       final buy = launch2PoolQuoteLines(_quote(Launch2Side.buy), 'FROG');
       expect(
         buy.firstWhere((l) => l.key == 'tax').label,
-        '基础税 2%（从到手的 MEME 扣）',
+        'Base tax 2% (taken from the MEME you receive)',
       );
       final weight = buy.firstWhere((l) => l.key == 'reward-weight');
-      expect(weight.label, '本笔计入奖励权重');
+      expect(weight.label, 'This trade earns reward weight');
       expect(weight.value, '100 USD1');
       final sell = launch2PoolQuoteLines(_quote(Launch2Side.sell), 'FROG');
       final tax = sell.firstWhere((l) => l.key == 'tax');
-      expect(tax.label, '基础税 2% + 当前动态税 30%（扣 USD1）');
+      expect(tax.label, 'Base tax 2% + current dynamic tax 30% (from USD1)');
       expect(tax.value, '31.4 USD1');
       expect(sell.firstWhere((l) => l.key == 'tax-split').value, '29.4 USD1');
       expect(sell.firstWhere((l) => l.key == 'expected').value, '68.6 USD1');
@@ -1039,7 +1053,7 @@ void main() {
         _quote(Launch2Side.buy, body),
         'FROG',
       ).firstWhere((l) => l.key == 'reward-weight');
-      expect(idle.value, '当前未激活，不计奖励');
+      expect(idle.value, 'Not active now, no rewards');
     });
 
     test('the project page says a step-up stop after the approval the way '
@@ -1049,14 +1063,14 @@ void main() {
         loopStepUpFailedCode,
       ]) {
         expect(
-          launch2ApprovalOnlyText(code, '买入'),
+          launch2ApprovalOnlyText(code, 'buy'),
           loopStepUpAfterApprovalText,
           reason: code,
         );
       }
       expect(
-        launch2ApprovalOnlyText('wallet_rejected', '买入'),
-        '授权已广播，买入没有签名。可以重新发起。',
+        launch2ApprovalOnlyText('wallet_rejected', 'buy'),
+        "Approval broadcast, but the buy wasn't signed. You can start again.",
       );
     });
 
@@ -1072,7 +1086,7 @@ void main() {
         intent,
         ticker: 'FROG',
       ).map((field) => field.label).toList();
-      expect(labels, contains('基础税 2% + 动态税 30%'));
+      expect(labels, contains('Base tax 2% + dynamic tax 30%'));
       final plain = LoopV2Launch2Codec.intentBody(
         raw,
         venue: Launch2Venue.officialPool,
@@ -1080,7 +1094,7 @@ void main() {
       );
       expect(
         launch2IntentFields(plain, ticker: 'FROG').map((f) => f.label),
-        contains('外盘税 2%'),
+        contains('DEX pool tax 2%'),
       );
     });
   });
@@ -1102,7 +1116,7 @@ void main() {
         expect(_key(key), findsNothing, reason: key);
       }
       expect(_key('launch2-pool-mode-caption'), findsOneWidget);
-      expect(find.text('外盘税 2%'), findsWidgets);
+      expect(find.text('Tax 2%'), findsWidgets);
       await _drain(tester);
     });
 
@@ -1142,9 +1156,12 @@ void main() {
         dynamicPool: dynamicPool,
       );
       expect(_key('launch2-dyn-unavailable'), findsOneWidget);
-      expect(find.text('外盘暂不可用'), findsOneWidget);
+      expect(find.text('DEX pool unavailable'), findsOneWidget);
       // The block and the bar's line under its disabled keys (0240).
-      expect(find.textContaining('外盘池子正在同步，请稍后再试'), findsWidgets);
+      expect(
+        find.textContaining('The DEX pool is syncing. Try again later'),
+        findsWidgets,
+      );
       expect(_key('launch2-bar-reason'), findsOneWidget);
       expect(
         tester.widget<LoopButton>(_key('launch2-bar-buy')).onPressed,
@@ -1198,8 +1215,13 @@ void main() {
       await _openRound(tester);
       expect(_key('launch2-dyn-round'), findsOneWidget);
       expect(_key('launch2-dyn-idle'), findsOneWidget);
-      expect(find.text('未激活'), findsWidgets);
-      expect(find.text('价格 5 分钟内跌超 10% 将开启动态税与买入奖励'), findsOneWidget);
+      expect(find.text('Inactive'), findsWidgets);
+      expect(
+        find.text(
+          'A drop of more than 10% within 5 minutes turns on dynamic tax and buy rewards',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-dyn-drop'), findsNothing);
       // Decision 0169: the round's facts sit in one `.record-card`.
       expect(
@@ -1234,8 +1256,13 @@ void main() {
       await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-mode-caption'), findsNothing);
       expect(_key('launch2-pool-mode-exactOut'), findsNothing);
-      expect(find.text('用任何软件买入都计入奖励，记给收到 MEME 的地址'), findsOneWidget);
-      expect(find.text('外盘税 2% + 卖出动态税'), findsOneWidget);
+      expect(
+        find.text(
+          'Buys from any app count toward rewards, credited to the address receiving the MEME',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('2% + dyn. tax'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1251,13 +1278,13 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-dyn-strip'),
-          matching: find.text('跌幅 30% · 奖金池 45 USD1'),
+          matching: find.text('Drop 30% · Reward pool 45 USD1'),
         ),
         findsOneWidget,
       );
       await _openRound(tester);
       expect(_key('launch2-dyn-armed'), findsOneWidget);
-      expect(find.text('已激活'), findsWidgets);
+      expect(find.text('Activated'), findsWidgets);
       expect(_key('launch2-dyn-idle-line'), findsNothing);
       Finder inRow(String row, String text) => find.descendant(
         of: _key('launch2-dyn-$row'),
@@ -1265,10 +1292,12 @@ void main() {
       );
       expect(inRow('drop', '30%'), findsOneWidget);
       expect(inRow('pot', '45 USD1'), findsOneWidget);
-      expect(inRow('my-weight', '25 USD1 · 占 25%'), findsOneWidget);
+      expect(inRow('my-weight', '25 USD1 · 25% share'), findsOneWidget);
       expect(_key('launch2-dyn-candle-end'), findsOneWidget);
       expect(
-        find.text('出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）'),
+        find.text(
+          'Ends on the first 5-minute candle that closes at or above its open (up, flat or no trades all count)',
+        ),
         findsOneWidget,
       );
       await _drain(tester);
@@ -1296,14 +1325,14 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-dyn-drop'),
-          matching: find.text('K 线已结束，待结算'),
+          matching: find.text('Candle closed, awaiting settlement'),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: _key('launch2-dyn-my-weight'),
-          matching: find.text('暂无'),
+          matching: find.text('None'),
         ),
         findsOneWidget,
       );
@@ -1323,7 +1352,10 @@ void main() {
       await l2OpenTradeSheet(tester);
       await _type(tester, '100');
       expect(launch2.quoteModes.last, Launch2PoolMode.exactIn);
-      expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsOneWidget);
+      expect(
+        find.text('Base tax 2% (taken from the MEME you receive)'),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: _key('launch2-pool-line-reward-weight'),
@@ -1335,7 +1367,10 @@ void main() {
       await tester.tap(_panelSell());
       await tester.pumpAndSettle();
       await _type(tester, '160000');
-      expect(find.text('基础税 2% + 当前动态税 30%（扣 USD1）'), findsOneWidget);
+      expect(
+        find.text('Base tax 2% + current dynamic tax 30% (from USD1)'),
+        findsOneWidget,
+      );
       expect(find.text('31.4 USD1'), findsOneWidget);
       expect(find.text('29.4 USD1'), findsOneWidget);
       expect(
@@ -1362,7 +1397,12 @@ void main() {
       );
       await l2OpenTradeSheet(tester);
       await _type(tester, '100');
-      expect(find.text('没有取到报价 · 该池子只支持按支付金额交易'), findsOneWidget);
+      expect(
+        find.text(
+          "Couldn't get a quote · This pool only supports trading by payment amount",
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
   });
@@ -1414,7 +1454,12 @@ void main() {
       );
       await openRewards(tester, dynamicPool);
       expect(_key('launch2-dyn-unavailable'), findsOneWidget);
-      expect(find.textContaining('外盘路由未配置，暂不可交易'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'DEX pool router not configured; trading unavailable',
+        ),
+        findsOneWidget,
+      );
       expect(dynamicPool.rewardReads, 0);
       await _drain(tester);
     });
@@ -1453,7 +1498,7 @@ void main() {
         ),
       );
       expect(_key('launch2-dyn-rewards-empty'), findsOneWidget);
-      expect(find.text('还没有外盘奖励'), findsOneWidget);
+      expect(find.text('No DEX pool rewards yet'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1478,11 +1523,14 @@ void main() {
       );
       await openRewards(tester, dynamicPool);
       expect(dynamicPool.rewardWallets.toSet(), <String>{l2WalletId});
-      expect(find.text('第 3 轮'), findsOneWidget);
+      expect(find.text('Round 3'), findsOneWidget);
       // Decision 0169: each round is a `.label` over one `.record-card`
       // that holds its key/value lines.
       expect(
-        find.ancestor(of: find.text('第 3 轮'), matching: find.byType(LoopLabel)),
+        find.ancestor(
+          of: find.text('Round 3'),
+          matching: find.byType(LoopLabel),
+        ),
         findsOneWidget,
       );
       for (final id in <String>['3', '2', '1']) {
@@ -1498,10 +1546,10 @@ void main() {
         );
       }
       expect(_key('launch2-dyn-round-3-card'), findsOneWidget);
-      expect(find.text('K 线 #5999990 起 · 进行中'), findsOneWidget);
-      expect(find.text('K 线 #100 – #104'), findsOneWidget);
-      expect(find.text('K 线 #40 – #43'), findsOneWidget);
-      expect(find.text('进行中'), findsOneWidget);
+      expect(find.text('From Candle #5999990 · in progress'), findsOneWidget);
+      expect(find.text('Candle #100 – #104'), findsOneWidget);
+      expect(find.text('Candle #40 – #43'), findsOneWidget);
+      expect(find.text('In progress'), findsOneWidget);
       expect(find.text('100 / 300 USD1'), findsOneWidget);
       expect(
         find.descendant(
@@ -1520,7 +1568,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-dyn-round-3-allocation'),
-          matching: find.text('本轮结束后结算'),
+          matching: find.text('Settled after the round ends'),
         ),
         findsOneWidget,
       );
@@ -1530,10 +1578,10 @@ void main() {
               ) as dynamic).onPressed
               as VoidCallback?;
       expect(onPressed('3'), isNull);
-      expect(find.text('本轮结束后可领'), findsOneWidget);
+      expect(find.text('Claimable after the round ends'), findsOneWidget);
       expect(onPressed('2'), isNotNull);
       expect(onPressed('1'), isNull);
-      expect(find.text('已领取'), findsOneWidget);
+      expect(find.text('Claimed'), findsOneWidget);
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await _drain(tester);
     });
@@ -1552,7 +1600,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(dynamicPool.claimRounds.single, BigInt.two);
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      expect(find.text('确认领取外盘奖励'), findsOneWidget);
+      expect(find.text('Confirm DEX pool reward claim'), findsOneWidget);
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
@@ -1560,13 +1608,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(dynamicPool.reports.single, '2:$l2IntentId:$_txHash');
       expect(_key('launch2-dyn-claim-pending'), findsOneWidget);
-      expect(find.text('外盘奖励已领取，已在链上确认。'), findsOneWidget);
-      expect(find.text('已领取'), findsNWidgets(2));
+      expect(
+        find.text('DEX pool rewards claimed and confirmed on-chain.'),
+        findsOneWidget,
+      );
+      expect(find.text('Claimed'), findsNWidgets(2));
       await _drain(tester);
     });
 
     testWidgets('领取: a submitted report with no claimed round yet keeps '
-        '领取确认中…', (tester) async {
+        'Confirming claim…', (tester) async {
       final dynamicPool = _FakeDynamic(
         kind: Launch2LoopDynamicPool(_state()),
         rewards: _rewards(),
@@ -1579,11 +1630,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('领取已提交'), findsOneWidget);
+      expect(find.textContaining('Claim submitted'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-dyn-claim-2'),
-          matching: find.text('领取确认中…'),
+          matching: find.text('Confirming claim…'),
         ),
         findsOneWidget,
       );
@@ -1604,11 +1655,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
-      expect(find.text('外盘奖励已领取，已在链上确认。'), findsOneWidget);
+      expect(
+        find.text('DEX pool rewards claimed and confirmed on-chain.'),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: _key('launch2-dyn-claim-2'),
-          matching: find.text('已领取'),
+          matching: find.text('Claimed'),
         ),
         findsOneWidget,
       );
@@ -1645,12 +1699,18 @@ void main() {
       await tester.tap(_key('launch2-dyn-claim-2'));
       await tester.pumpAndSettle();
       expect(_key('launch2-dyn-claim-failed-2'), findsOneWidget);
-      expect(find.text('本轮奖励已经领取过'), findsOneWidget);
+      expect(
+        find.text('This round\'s rewards were already claimed'),
+        findsOneWidget,
+      );
       await tester.tap(_key('launch2-dyn-claim-2'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsNothing);
       expect(wallet.handed, isEmpty);
-      expect(find.textContaining('交易内容与确认内容不一致'), findsOneWidget);
+      expect(
+        find.textContaining("The transaction doesn't match what you confirmed"),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
   });
@@ -1755,7 +1815,7 @@ void main() {
         'FROG',
       );
       final tax = s209.firstWhere((l) => l.key == 'tax');
-      expect(tax.label, '基础税 2%（从付出的 USD1 扣）');
+      expect(tax.label, 'Base tax 2% (taken from the USD1 you pay)');
       expect(tax.value, '2 USD1');
       expect(
         s209.firstWhere((l) => l.key == 'expected').value,
@@ -1763,7 +1823,7 @@ void main() {
       );
       final legacy = launch2PoolQuoteLines(_quote(Launch2Side.buy), 'FROG');
       final old = legacy.firstWhere((l) => l.key == 'tax');
-      expect(old.label, '基础税 2%（从到手的 MEME 扣）');
+      expect(old.label, 'Base tax 2% (taken from the MEME you receive)');
       expect(old.value, '3,200 \$FROG');
       expect(
         legacy.firstWhere((l) => l.key == 'expected').value,
@@ -1870,7 +1930,7 @@ void main() {
       ]);
       expect(
         launch2DynamicBuyFeeRows(both).map((row) => row.$2).toSet(),
-        <String>{'买入基础税累计'},
+        <String>{'Buy base tax total'},
       );
       expect(
         launch2DynamicFeeRows(_state(armed: true)).map((row) => row.$1),
@@ -1913,8 +1973,14 @@ void main() {
       expect(_key('launch2-dyn-buy-fees-meme'), findsNothing);
       await l2OpenTradeSheet(tester);
       await _type(tester, '100');
-      expect(find.text('基础税 2%（从付出的 USD1 扣）'), findsOneWidget);
-      expect(find.text('基础税 2%（从到手的 MEME 扣）'), findsNothing);
+      expect(
+        find.text('Base tax 2% (taken from the USD1 you pay)'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Base tax 2% (taken from the MEME you receive)'),
+        findsNothing,
+      );
       expect(
         find.descendant(
           of: _key('launch2-pool-line-tax'),
@@ -2058,13 +2124,13 @@ void main() {
         ),
       );
       expect(_key('launch2-dyn-rewards-empty'), findsNothing);
-      expect(find.text('还没有外盘奖励'), findsNothing);
-      expect(find.text('第 1 轮'), findsOneWidget);
-      expect(find.text('已结束'), findsOneWidget);
+      expect(find.text('No DEX pool rewards yet'), findsNothing);
+      expect(find.text('Round 1'), findsOneWidget);
+      expect(find.text('Ended'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-dyn-round-1-none'),
-          matching: find.text('本轮没有可领取的奖励'),
+          matching: find.text('No rewards to claim this round'),
         ),
         findsOneWidget,
       );
@@ -2084,10 +2150,10 @@ void main() {
       );
       expect(_key('launch2-dyn-round-2-none'), findsOneWidget);
       expect(_key('launch2-dyn-round-1-card'), findsOneWidget);
-      expect(find.text('已领取'), findsOneWidget);
+      expect(find.text('Claimed'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('第 2 轮')).dy,
-        lessThan(tester.getTopLeft(find.text('第 1 轮')).dy),
+        tester.getTopLeft(find.text('Round 2')).dy,
+        lessThan(tester.getTopLeft(find.text('Round 1')).dy),
       );
       await _drain(tester);
     });
@@ -2109,7 +2175,7 @@ void main() {
         ),
       );
       expect(_key('launch2-dyn-rewards-empty'), findsOneWidget);
-      expect(find.text('还没有外盘奖励'), findsOneWidget);
+      expect(find.text('No DEX pool rewards yet'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -2154,7 +2220,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-dyn-my-weight'),
-          matching: find.text('暂无'),
+          matching: find.text('None'),
         ),
         findsOneWidget,
       );

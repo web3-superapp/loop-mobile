@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_gateway.dar
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -27,11 +28,13 @@ String launch2ChainLabel(int reference) {
 
 /// What a wallet refusal means to the owner.
 String launch2WalletRefusalText(String code) => switch (code) {
-  'privy_signature_rejected' => '你在钱包里取消了签名，没有提交任何内容。',
-  'privy_wallet_mismatch' => '签名请求属于另一个钱包，请切换到项目方钱包。',
-  'privy_chain_mismatch' => '签名请求的网络不对，没有签名。',
-  'privy_session_required' || 'privy_wallet_unavailable' => '内嵌钱包不可用，请重新登录后再试。',
-  _ => '钱包没有完成签名，没有提交任何内容。',
+  'privy_signature_rejected' =>
+    LoopL10n.current.launch2Creator_launch2SignSwitch,
+  'privy_wallet_mismatch' => LoopL10n.current.launch2Creator_launch2SignSwitch2,
+  'privy_chain_mismatch' => LoopL10n.current.launch2Creator_launch2SignSwitch3,
+  'privy_session_required' || 'privy_wallet_unavailable' =>
+    LoopL10n.current.launch2Creator_launch2SignSwitch4,
+  _ => LoopL10n.current.launch2Creator_launch2SignSwitch5,
 };
 
 /// `launch2-project-sign` · 签名部署 (archetype `action`, layout `focus`).
@@ -117,12 +120,14 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-sign-screen'),
         archetype: LoopPageArchetype.action,
-        title: '签名部署',
+        title: context.l10n.launch2Creator_launch2SignLaunch2SignScreenTitle,
         onBack: widget.onBack,
-        block: const LoopPageBlock(
+        block: LoopPageBlock(
           key: ValueKey<String>('launch2-sign-missing'),
-          title: '找不到这个项目',
-          message: '链接里没有有效的项目编号。',
+          title: context.l10n.launch2Creator_launch2CreateEmptyMessage,
+          message: context
+              .l10n
+              .launch2Creator_launch2ProjectLaunch2ProjectMissingMessage,
         ),
         body: const <Widget>[],
       );
@@ -140,7 +145,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
     } else if (expired) {
       primary = LoopButton(
         key: const ValueKey<String>('launch2-sign-renew'),
-        label: '续期签名请求',
+        label: context.l10n.launch2Creator_launch2SignLaunch2SignRenewLabel,
         primary: true,
         block: true,
         onPressed: state.busy
@@ -151,9 +156,11 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       primary = LoopButton(
         key: const ValueKey<String>('launch2-sign-submit'),
         label: switch (state.phase) {
-          Launch2SignPhase.signing => '等待钱包签名…',
-          Launch2SignPhase.submitting => '正在提交…',
-          _ => '签名并提交',
+          Launch2SignPhase.signing =>
+            context.l10n.launch2Creator_launch2SignSigning,
+          Launch2SignPhase.submitting =>
+            context.l10n.launch2Creator_launch2SignSubmitting,
+          _ => context.l10n.launch2Creator_launch2SignLoopButton,
         },
         primary: true,
         block: true,
@@ -166,7 +173,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('launch2-sign-screen'),
       archetype: LoopPageArchetype.action,
-      title: '签名部署',
+      title: context.l10n.launch2Creator_launch2SignLaunch2SignScreenTitle,
       onBack: widget.onBack,
       primaryAction: primary,
       body: <Widget>[
@@ -175,7 +182,11 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
             key: const ValueKey<String>('launch2-sign-no-wallet'),
             icon: 'wallet',
             tone: LoopNoticeTone.warn,
-            body: wallet.loading ? '正在读取钱包…' : '还没有可用的钱包，先在钱包里创建或激活一个。',
+            body: wallet.loading
+                ? context.l10n.launch2Creator_launch2SignLaunch2SignNoWalletBody
+                : context
+                      .l10n
+                      .launch2Creator_launch2SignLaunch2SignNoWalletBody2,
           )
         else if (request == null)
           ..._unready(projectId, walletId, state)
@@ -201,7 +212,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         Padding(
           padding: const EdgeInsets.all(LoopSpacing.page),
           child: Text(
-            '正在准备签名请求，服务端计算地址可能要几秒。',
+            LoopL10n.current.launch2Creator_launch2SignIf,
             style: LoopType.caption.copyWith(color: LoopColors.text3),
           ),
         ),
@@ -224,7 +235,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
             ? null
             : LoopButton(
                 key: const ValueKey<String>('launch2-sign-retry'),
-                label: '重试',
+                label: LoopL10n.current.common_retry,
                 onPressed: () => unawaited(_renew(projectId, walletId)),
               ),
       ),
@@ -236,7 +247,8 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
     if (onEdit == null) return null;
     return LoopButton(
       key: const ValueKey<String>('launch2-sign-edit'),
-      label: '修改资料',
+      label:
+          LoopL10n.current.launch2Creator_launch2CreateLaunch2CreateScreenTitle,
       onPressed: () => onEdit(projectId),
     );
   }
@@ -259,7 +271,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
           4,
         ),
         child: Text(
-          '代币地址',
+          LoopL10n.current.launch2Creator_launch2SignReady,
           style: LoopType.caption.copyWith(color: LoopColors.text3),
         ),
       ),
@@ -278,19 +290,24 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
         value: loopTruncatedAddress(request.hookAddress),
       ),
       LoopKeyValue(
-        label: '网络',
+        label: LoopL10n.current.common_network,
         value: launch2ChainLabel(request.domainChainId),
       ),
       const SizedBox(height: 8),
-      const LoopLabel('签名内容'),
-      LoopKeyValue(label: '名称', value: request.name),
-      LoopKeyValue(label: '代码', value: loopTickerLabel(request.ticker)),
+      LoopLabel(LoopL10n.current.launch2Creator_launch2SignLoopLabel),
+      LoopKeyValue(label: LoopL10n.current.common_name, value: request.name),
       LoopKeyValue(
-        label: '铸造开始',
+        label: LoopL10n.current.launch2Creator_launch2CreateLabel3,
+        value: loopTickerLabel(request.ticker),
+      ),
+      LoopKeyValue(
+        label: LoopL10n
+            .current
+            .launch2Creator_launch2ProjectLaunch2ProjectSaleStartLabel,
         value: loopLocalTimestampLabel(request.nftSaleStartAt),
       ),
       LoopKeyValue(
-        label: '回购收币地址',
+        label: LoopL10n.current.launch2Creator_launch2CreateLoopLabel,
         value: loopTruncatedAddress(request.buybackRecipient),
       ),
       LoopKeyValue(label: 'nonce', value: request.nonce),
@@ -304,17 +321,20 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
       ),
       const SizedBox(height: 12),
       if (expired)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-sign-expired'),
           icon: 'clock',
           tone: LoopNoticeTone.warn,
-          body: '签名请求已过期。续期后会拿到新的请求，需要重新签名。',
+          body:
+              LoopL10n.current.launch2Creator_launch2SignLaunch2SignExpiredBody,
         ),
       if (state.refreshedAfterConflict)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-sign-refreshed'),
           icon: 'refresh',
-          body: '配置或 nonce 已变化，已刷新签名请求，请重新签名。',
+          body: LoopL10n
+              .current
+              .launch2Creator_launch2SignLaunch2SignRefreshedBody,
         ),
       if (refusal != null)
         LoopNotice(
@@ -343,7 +363,7 @@ class _Launch2SignScreenState extends ConsumerState<Launch2SignScreen> {
           12,
         ),
         child: Text(
-          '这是一次授权签名，不花费资产；平台收到后部署并激活，进度在下一页。',
+          LoopL10n.current.launch2Creator_launch2SignText,
           style: LoopType.captionSm.copyWith(color: LoopColors.text3),
         ),
       ),
@@ -363,7 +383,7 @@ class Launch2AddressTail extends StatelessWidget {
     final head = address.substring(0, address.length - 4);
     final tail = address.substring(address.length - 4);
     return Semantics(
-      label: '代币地址 $address',
+      label: context.l10n.launch2Creator_launch2SignLabel(address),
       excludeSemantics: true,
       child: Text.rich(
         TextSpan(
@@ -434,11 +454,13 @@ class _DeadlineRowState extends State<_DeadlineRow> {
     final minutes = left.inMinutes.clamp(0, 999);
     final seconds = (left.inSeconds % 60).clamp(0, 59);
     return LoopKeyValue(
-      label: '签名有效期',
+      label: context.l10n.launch2Creator_launch2SignLabel2,
       value: left <= Duration.zero
-          ? '已过期'
-          : '${minutes.toString().padLeft(2, '0')}:'
-                '${seconds.toString().padLeft(2, '0')} 后过期',
+          ? context.l10n.common_expired
+          : context.l10n.launch2Creator_launch2SignValue(
+              minutes.toString().padLeft(2, '0'),
+              seconds.toString().padLeft(2, '0'),
+            ),
       valueUp: left <= Duration.zero ? false : null,
     );
   }
@@ -506,19 +528,36 @@ class _Launch2SignSheetState extends ConsumerState<_Launch2SignSheet> {
       child: LoopSignSheet(
         key: const ValueKey<String>('launch2-sign-sheet'),
         state: _state,
-        title: '授权部署',
+        title: context.l10n.launch2Creator_launch2SignLaunch2SignSheetTitle,
         networkBadge:
             request.domainChainId ==
                 loopChainReference(loopLaunchTestnetChainId)
             ? loopTestnetBadgeFor(loopLaunchTestnetChainId)
             : null,
-        confirmLabel: '签名',
+        confirmLabel: context.l10n.common_sign,
         facts: <LoopSignFact>[
-          LoopSignFact('操作', '授权部署 ${loopTickerLabel(request.ticker)}'),
-          LoopSignFact('代币地址', loopTruncatedAddress(request.memeAddress)),
-          LoopSignFact('签名钱包', loopTruncatedAddress(request.projectOwner)),
-          LoopSignFact('有效期至', loopLocalTimestampLabel(request.deadlineAt)),
-          const LoopSignFact('花费', '无（只签名，不发交易）'),
+          LoopSignFact(
+            context.l10n.common_actions,
+            context.l10n.launch2Creator_launch2SignLoopSignFact(
+              loopTickerLabel(request.ticker),
+            ),
+          ),
+          LoopSignFact(
+            context.l10n.launch2Creator_launch2SignReady,
+            loopTruncatedAddress(request.memeAddress),
+          ),
+          LoopSignFact(
+            context.l10n.launch2Creator_launch2SignLoopSignFact2,
+            loopTruncatedAddress(request.projectOwner),
+          ),
+          LoopSignFact(
+            context.l10n.common_validUntil,
+            loopLocalTimestampLabel(request.deadlineAt),
+          ),
+          LoopSignFact(
+            context.l10n.launch2Creator_launch2SignLoopSignFact3,
+            context.l10n.launch2Creator_launch2SignLoopSignFact4,
+          ),
         ],
         reason: _reason,
         onConfirm: _submitted ? null : _confirm,

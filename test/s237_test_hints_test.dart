@@ -177,8 +177,11 @@ void main() {
 
     test('余额不足: BNB 手续费不足, never tBNB', () {
       expect(memeReasonText('MEME_GAS_INSUFFICIENT'), 'BNB 手续费不足');
-      expect(launch2ReasonText('LAUNCH2_GAS_INSUFFICIENT'), 'BNB 手续费不足，充值后再试');
-      expect(launch2GasShortText, startsWith('BNB 手续费不足'));
+      expect(
+        launch2ReasonText('LAUNCH2_GAS_INSUFFICIENT'),
+        'Not enough BNB for fees. Top up and retry',
+      );
+      expect(launch2GasShortText, startsWith('Not enough BNB for fees'));
       expect(launch2GasShortText, isNot(contains('tBNB')));
       expect(loopDisplaySymbol('tBNB'), 'BNB');
       expect(loopDisplaySymbol('tUSD1'), 'USD1');
@@ -186,8 +189,8 @@ void main() {
     });
 
     test('launch2 kicker: no TESTNET', () {
-      expect(launch2DeskKicker(loopLaunchTestnetChainId), '发射台 · BSC');
-      expect(launch2DeskKicker(loopPrimaryChainId), '发射台 · BSC');
+      expect(launch2DeskKicker(loopLaunchTestnetChainId), 'Launchpad · BSC');
+      expect(launch2DeskKicker(loopPrimaryChainId), 'Launchpad · BSC');
     });
 
     test('环境标签: no DEV / STAGING tag', () {
@@ -254,7 +257,10 @@ void main() {
     test('the chain, the kicker and the environment tag say testnet', () {
       expect(loopChainName(loopLaunchTestnetChainId), 'BSC 测试网');
       expect(loopTestnetBadgeFor(loopLaunchTestnetChainId), 'BSC 测试网');
-      expect(launch2DeskKicker(loopLaunchTestnetChainId), '发射台 · BSC TESTNET');
+      expect(
+        launch2DeskKicker(loopLaunchTestnetChainId),
+        'Launchpad · BSC TESTNET',
+      );
       expect(loopEnvironmentTag(_stagingUrl, release: false), 'STAGING');
       expect(loopDisplaySymbol('tBNB'), 'tBNB');
       expect(memeReasonText('MEME_GAS_INSUFFICIENT'), 'tBNB 手续费不足');

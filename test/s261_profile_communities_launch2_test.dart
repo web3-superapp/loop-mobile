@@ -701,8 +701,8 @@ void main() {
       final opened = await _pump(tester, profiles);
       expect(find.text('BNB'), findsWidgets);
       expect(find.text('STAR'), findsNWidgets(2));
-      expect(find.text('Launch 链，公开内盘'), findsOneWidget);
-      expect(find.text('Launch 链，已毕业'), findsOneWidget);
+      expect(find.text('Launch 链，Public pool'), findsOneWidget);
+      expect(find.text('Launch 链，Graduated'), findsOneWidget);
       expect(find.text('× 2'), findsOneWidget);
       expect(find.textContaining('≈ 12.5'), findsOneWidget);
       expect(find.textContaining('·'), findsNothing);

@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -75,12 +76,20 @@ final class Launch2SignOutcome {
       status == MoneySignStatus.submitted || status == MoneySignStatus.locked;
 }
 
+/// The action's name as it sits inside a sentence (en lower case: 「mint」,
+/// 「buy」); [launch2SentenceCase] lifts it where it stands alone.
 String launch2IntentNoun(Launch2IntentKind kind) => switch (kind) {
-  Launch2IntentKind.nftMint => '铸造',
-  Launch2IntentKind.buy => '买入',
-  Launch2IntentKind.sell => '卖出',
-  Launch2IntentKind.rewardClaim => '领取奖励',
+  Launch2IntentKind.nftMint => LoopL10n.current.launch2_launch2NftMintNoun,
+  Launch2IntentKind.buy => LoopL10n.current.launch2_intentNounBuy,
+  Launch2IntentKind.sell => LoopL10n.current.launch2_intentNounSell,
+  Launch2IntentKind.rewardClaim =>
+    LoopL10n.current.launch2_launch2SigningRewardClaim,
 };
+
+/// [text] with its first letter upper-cased: an action's name when it opens
+/// a label (「Mint」 on a button). Chinese is returned as it is.
+String launch2SentenceCase(String text) =>
+    text.isEmpty ? text : text[0].toUpperCase() + text.substring(1);
 
 /// [noun] replaces the action's name (decision 0163: 「铸造」 when the NFT
 /// mint starts from 共识勋章).
@@ -89,30 +98,38 @@ String launch2IntentTitle(
   Launch2Venue venue = Launch2Venue.curve,
   String? noun,
 }) => switch (venue) {
-  Launch2Venue.officialPool => '确认外盘${noun ?? launch2IntentNoun(kind)}',
-  Launch2Venue.loopDynamicRewards => '确认领取外盘奖励',
-  Launch2Venue.curve => '确认${noun ?? launch2IntentNoun(kind)}',
+  Launch2Venue.officialPool =>
+    LoopL10n.current.launch2_launch2SigningOfficialPool(
+      noun ?? launch2IntentNoun(kind),
+    ),
+  Launch2Venue.loopDynamicRewards =>
+    LoopL10n.current.launch2_launch2SigningLoopDynamicRewards,
+  Launch2Venue.curve => LoopL10n.current.launch2_launch2SigningCurve(
+    noun ?? launch2IntentNoun(kind),
+  ),
 };
 
 /// Whom an approval lets spend: the curve, the NFT or the pool's router.
 String _spenderNoun(Launch2Intent intent) =>
     intent.venue == Launch2Venue.loopDynamicRewards
-    ? '奖励合约'
+    ? LoopL10n.current.launch2_launch2SigningSwitch
     : intent.venue == Launch2Venue.officialPool
-    ? '官方池路由'
+    ? LoopL10n.current.launch2_launch2PoolTradePanelLoopProvenanceLine
     : intent.kind == Launch2IntentKind.nftMint
-    ? 'NFT 合约'
-    : '曲线合约';
+    ? LoopL10n.current.launch2_launch2SigningSwitch2
+    : LoopL10n.current.launch2_launch2SigningS;
 
 /// The address row: the router or the contract, and when the intent carries
 /// an approval, that it is also the spender.
 String _addressLabel(Launch2Intent intent) => intent.approval == null
     ? switch (intent.venue) {
-        Launch2Venue.officialPool => '路由',
-        Launch2Venue.loopDynamicRewards => '奖励合约',
-        Launch2Venue.curve => '合约',
+        Launch2Venue.officialPool =>
+          LoopL10n.current.launch2_launch2SigningOfficialPool2,
+        Launch2Venue.loopDynamicRewards =>
+          LoopL10n.current.launch2_launch2SigningSwitch,
+        Launch2Venue.curve => LoopL10n.current.common_contract,
       }
-    : '授权给${_spenderNoun(intent)}';
+    : LoopL10n.current.launch2_launch2SigningSwitch3(_spenderNoun(intent));
 
 /// The tax line's label: the intent's own rate, else the curve's 10%. A
 /// LoopDynamic sell names both halves of what it pays (decision 0159).
@@ -120,19 +137,26 @@ String _taxLabel(Launch2Intent intent) {
   final bps = intent.taxBps ?? 1000;
   final dynamicBps = intent.dynamicTaxBps;
   if (intent.venue == Launch2Venue.officialPool && dynamicBps != null) {
-    return '基础税 ${launch2BpsLabel(bps)} + 动态税 ${launch2BpsLabel(dynamicBps)}';
+    return LoopL10n.current.launch2_launch2SigningIf(
+      launch2BpsLabel(bps),
+      launch2BpsLabel(dynamicBps),
+    );
   }
   // Decision 0208 (S237b-C): a LoopDynamic buy reads as the trade panel's
   // line ([launch2DynamicBuyTaxLine]).
   final buyTaxToken = intent.dynamicBuyTaxToken;
   if (intent.venue == Launch2Venue.officialPool && buyTaxToken != null) {
     final fromUsd1 = buyTaxToken == Launch2PoolTaxToken.usd1;
-    return '基础税 ${launch2BpsLabel(bps)}'
-        '（${launch2BuyFeeSideText(fromUsd1: fromUsd1)}）';
+    return LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine4(
+      launch2BuyFeeSideText(fromUsd1: fromUsd1),
+      launch2BpsLabel(bps),
+    );
   }
   return intent.venue == Launch2Venue.officialPool
-      ? '外盘税 ${launch2BpsLabel(bps)}'
-      : '税 ${launch2BpsLabel(bps)}';
+      ? LoopL10n.current.launch2_launch2InstanceLaunch2PoolTaxTitle(
+          launch2BpsLabel(bps),
+        )
+      : LoopL10n.current.launch2_launch2SigningS2(launch2BpsLabel(bps));
 }
 
 /// The reviewed facts. The sheet renders exactly these, read from the same
@@ -148,57 +172,64 @@ List<IntentField> launch2IntentFields(
   final meme = loopTickerLabel(ticker);
   return <IntentField>[
     IntentField(
-      label: '操作',
+      label: LoopL10n.current.launch2_intentAction,
       value: switch (intent.kind) {
-        Launch2IntentKind.nftMint =>
-          '${noun ?? launch2IntentNoun(intent.kind)} $ticker 共识勋章（每个地址 1 枚）',
+        Launch2IntentKind.nftMint => launch2SentenceCase(
+          LoopL10n.current.launch2_launch2SigningNftMint(
+            noun ?? launch2IntentNoun(intent.kind),
+            ticker,
+          ),
+        ),
         Launch2IntentKind.buy =>
           intent.venue == Launch2Venue.officialPool
-              ? '在官方池买入 $meme'
-              : '买入 $meme',
+              ? LoopL10n.current.launch2_launch2SigningIntentField(meme)
+              : LoopL10n.current.launch2_launch2SigningS3(meme),
         Launch2IntentKind.sell =>
           intent.venue == Launch2Venue.officialPool
-              ? '在官方池卖出 $meme'
-              : '卖出 $meme',
-        Launch2IntentKind.rewardClaim => '领取 $meme 外盘奖励',
+              ? LoopL10n.current.launch2_launch2SigningIntentField2(meme)
+              : LoopL10n.current.launch2_launch2SigningS4(meme),
+        Launch2IntentKind.rewardClaim =>
+          LoopL10n.current.launch2_launch2SigningRewardClaim2(meme),
       },
     ),
     switch (intent.kind) {
       Launch2IntentKind.nftMint => IntentField(
-        label: '支付',
+        label: LoopL10n.current.common_pay,
         value: launch2Usd1Label(intent.amountIn),
       ),
       Launch2IntentKind.buy => IntentField(
-        label: intent.venue == Launch2Venue.officialPool ? '最多支付' : '最多支付（含税）',
+        label: intent.venue == Launch2Venue.officialPool
+            ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine2
+            : LoopL10n.current.launch2_launch2SigningLabel,
         value: launch2Usd1Label(intent.amountIn, maxFractionDigits: 4),
       ),
       Launch2IntentKind.sell => IntentField(
-        label: '卖出',
+        label: LoopL10n.current.common_sell,
         value: launch2MemeLabel(intent.amountIn, ticker),
       ),
       // Decision 0157: what the claim pays out, the intent's own figure.
       Launch2IntentKind.rewardClaim => IntentField(
-        label: '领取',
+        label: LoopL10n.current.common_claim,
         value: launch2Usd1Label(intent.expectedOut, maxFractionDigits: 4),
       ),
     },
     if (intent.kind == Launch2IntentKind.buy) ...<IntentField>[
       IntentField(
-        label: '预计获得',
+        label: LoopL10n.current.common_estimatedReceive,
         value: launch2MemeLabel(intent.expectedOut, ticker),
       ),
       IntentField(
-        label: '最少获得',
+        label: LoopL10n.current.common_minimumReceive,
         value: launch2MemeLabel(intent.minOut, ticker),
       ),
     ],
     if (intent.kind == Launch2IntentKind.sell) ...<IntentField>[
       IntentField(
-        label: '预计到手',
+        label: LoopL10n.current.launch2_launch2PoolViewModelS16,
         value: launch2Usd1Label(intent.expectedOut, maxFractionDigits: 4),
       ),
       IntentField(
-        label: '最少到手',
+        label: LoopL10n.current.launch2_launch2PoolViewModelS17,
         value: launch2Usd1Label(intent.minOut, maxFractionDigits: 4),
       ),
     ],
@@ -214,7 +245,7 @@ List<IntentField> launch2IntentFields(
     // row's own label (路由 / 合约), so the line never wraps right-aligned.
     if (approval != null)
       IntentField(
-        label: '先授权',
+        label: LoopL10n.current.launch2_launch2SigningLabel2,
         value: intent.kind == Launch2IntentKind.sell
             ? launch2MemeLabel(approval.amount, ticker)
             : intent.kind == Launch2IntentKind.nftMint
@@ -222,23 +253,32 @@ List<IntentField> launch2IntentFields(
             : launch2Usd1Label(approval.amount, maxFractionDigits: 4),
       ),
     IntentField(
-      label: '模拟结果',
+      label: LoopL10n.current.common_simulationResult,
       value: switch (intent.simulationStatus) {
-        'passed' => '试算通过',
-        'reverted' => '试算被拒绝',
-        _ => approval != null ? '授权前无法试算' : '试算不可用',
+        'passed' => LoopL10n.current.common_simulationPassed,
+        'reverted' => LoopL10n.current.common_simulationRejected,
+        _ =>
+          approval != null
+              ? LoopL10n.current.launch2_launch2SigningIntentField3
+              : LoopL10n.current.common_simulationUnavailable,
       },
     ),
-    IntentField(label: '有效期至', value: loopDateTimeLabel(intent.expiresAt)),
     IntentField(
-      label: '快照区块',
+      label: LoopL10n.current.common_validUntil,
+      value: loopDateTimeLabel(intent.expiresAt),
+    ),
+    IntentField(
+      label: LoopL10n.current.common_snapshotBlock,
       value: loopGroupedFigure(intent.snapshotBlockNumber.toString()),
     ),
     IntentField(
       label: _addressLabel(intent),
       value: launch2ShortAddress(intent.contractAddress),
     ),
-    IntentField(label: '网络', value: loopChainName(intent.chainId)),
+    IntentField(
+      label: LoopL10n.current.common_network,
+      value: loopChainName(intent.chainId),
+    ),
   ];
 }
 
@@ -248,25 +288,31 @@ List<IntentField> launch2IntentFields(
 /// [approvalSent]: an approval of the same operation was already broadcast,
 /// so a step-up cancel or failure says the approval went out and the trade
 /// did not (decision 0158) instead of "nothing changed".
-String launch2SignReasonText(String reasonCode, {bool approvalSent = false}) =>
-    switch (reasonCode) {
-      // Decision 0152: the large-amount step-up stopped before the wallet.
-      loopStepUpCancelledCode ||
-      loopStepUpFailedCode when approvalSent => loopStepUpAfterApprovalText,
-      loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-      loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-      'INTENT_EXPIRED' || 'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易。请重新发起。',
-      'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝。没有提交任何交易。',
-      'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
-      'LAUNCH2_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔交易的钱包，没有提交任何交易。',
-      'LAUNCH2_WALLET_ADDRESS_MISMATCH' =>
-        '服务端构造交易用的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
-      'INTENT_CHAIN_NOT_PERMITTED' ||
-      'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-      'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-      'privy_wallet_mismatch' => '当前登录的钱包不是这笔交易的钱包，没有提交任何交易。',
-      _ => '钱包没有完成签名，没有提交任何交易。',
-    };
+String launch2SignReasonText(
+  String reasonCode, {
+  bool approvalSent = false,
+}) => switch (reasonCode) {
+  // Decision 0152: the large-amount step-up stopped before the wallet.
+  loopStepUpCancelledCode ||
+  loopStepUpFailedCode when approvalSent => loopStepUpAfterApprovalText,
+  loopStepUpCancelledCode => LoopL10n.current.launch2_launch2SigningSwitch4,
+  loopStepUpFailedCode => LoopL10n.current.launch2_launch2SigningSwitch5,
+  'INTENT_EXPIRED' ||
+  'LAUNCH2_INTENT_EXPIRED' => LoopL10n.current.launch2_launch2SigningSwitch6,
+  'LAUNCH2_SIMULATION_REVERTED' =>
+    LoopL10n.current.launch2_launch2SigningSwitch7,
+  'REVIEW_PAYLOAD_MISMATCH' => LoopL10n.current.launch2_launch2SigningSwitch8,
+  'LAUNCH2_WALLET_ADDRESS_UNKNOWN' =>
+    LoopL10n.current.launch2_launch2SigningSwitch9,
+  'LAUNCH2_WALLET_ADDRESS_MISMATCH' =>
+    LoopL10n.current.launch2_launch2SigningSwitch10,
+  'INTENT_CHAIN_NOT_PERMITTED' || 'intent_chain_not_permitted' =>
+    LoopL10n.current.launch2_launch2SigningSwitch11,
+  'privy_chain_switch_unsupported' =>
+    LoopL10n.current.launch2_launch2SigningSwitch12,
+  'privy_wallet_mismatch' => LoopL10n.current.launch2_launch2SigningSwitch13,
+  _ => LoopL10n.current.launch2_launch2SigningSwitch14,
+};
 
 /// Why the trade after a broadcast approval was not signed when the exit
 /// tried to refresh an expiring quote (decision 0148). The approval stands;
@@ -274,16 +320,19 @@ String launch2SignReasonText(String reasonCode, {bool approvalSent = false}) =>
 String launch2RefreshReasonText(Launch2SignOutcome outcome, String noun) {
   final failure = outcome.refreshFailure;
   final why = switch (outcome.reasonCode) {
-    launch2RefreshApprovalPendingCode => '授权还在链上确认',
-    launch2RefreshOutOfRangeCode => '最新报价超出了你确认的范围',
+    launch2RefreshApprovalPendingCode =>
+      LoopL10n.current.launch2_launch2SigningSwitch15,
+    launch2RefreshOutOfRangeCode =>
+      LoopL10n.current.launch2_launch2SigningSwitch16,
     launch2RefreshFailedCode =>
       failure == null
-          ? '没有取到新报价'
-          : '没有取到新报价（${launch2PoolFailureText(failure)}）',
-    _ => '新的交易内容没有通过核对',
+          ? LoopL10n.current.launch2_launch2SigningSwitch17
+          : LoopL10n.current.launch2_launch2SigningS5(
+              launch2PoolFailureText(failure),
+            ),
+    _ => LoopL10n.current.launch2_launch2SigningSwitch18,
   };
-  return '授权已广播。原报价即将到期，刷新时$why，$noun没有签名，'
-      '没有提交$noun交易。稍后重新发起，授权足够时只需签一次。';
+  return LoopL10n.current.launch2_launch2SigningSwitch19(noun, noun, why);
 }
 
 /// Whether [outcome] stopped at the refresh between the two signatures.
@@ -324,7 +373,7 @@ typedef Launch2IntentRefresher = Future<Launch2Intent> Function();
 String launch2ApprovalOnlyText(String reasonCode, String noun) =>
     loopStepUpStopped(reasonCode)
     ? launch2SignReasonText(reasonCode, approvalSent: true)
-    : '授权已广播，$noun没有签名。可以重新发起。';
+    : LoopL10n.current.launch2_launch2SigningSwitch20(noun);
 
 /// The one sentence after a broadcast. A broadcast is never a result.
 String launch2BroadcastText(
@@ -336,13 +385,14 @@ String launch2BroadcastText(
   final hash = outcome.txHash;
   if (hash == null) {
     if (outcome.approvalTxHash != null) {
-      return '授权已广播（${launch2ShortAddress(outcome.approvalTxHash!)}），'
-          '但$noun交易的钱包结果未知，已锁定。不要重复签名，稍后刷新查看。';
+      return LoopL10n.current.launch2_launch2SigningIf3(
+        launch2ShortAddress(outcome.approvalTxHash!),
+        noun,
+      );
     }
-    return '钱包的结果未知，这笔$noun已锁定。不要重复签名，稍后刷新查看。';
+    return LoopL10n.current.launch2_launch2SigningIf4(noun);
   }
-  return '已广播（${launch2ShortAddress(hash)}）。广播不代表已成交，'
-      '链上确认后这里会更新。';
+  return LoopL10n.current.launch2_launch2SigningIf5(launch2ShortAddress(hash));
 }
 
 /// The one figure of the viewer's own position that [intent] moves, or
@@ -410,7 +460,8 @@ const Duration launch2SignConfirmedCloseDelay = Duration(seconds: 2);
 
 /// The sheet's line once the read model shows the broadcast (the same
 /// sentence the project page uses).
-String launch2ConfirmedText(String noun) => '$noun已在链上确认。';
+String launch2ConfirmedText(String noun) =>
+    LoopL10n.current.launch2_launch2InstanceText(noun);
 
 /// Where a two-transaction trip through the exit is (approval, then the
 /// trade): the sheet draws it as a two-step strip.
@@ -476,7 +527,7 @@ final class Launch2IntentSigner {
       intent,
       revision: '${intent.intentId}:approval',
       kind: IntentKind.launchApproval,
-      title: '授权',
+      title: LoopL10n.current.launch2_launch2SigningTitle,
       transaction: approval.unsignedTransaction,
       fromAddress: fromAddress,
       ticker: ticker,
@@ -858,9 +909,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       _state = LoopSignSheetState.simulationFailed;
       _reason = launch2SignReasonText(refusal);
     } else if (widget.intent.approval != null) {
-      _reason =
-          '会依次打开两次钱包：先授权，再$_noun。'
-          '授权金额只够这一笔。';
+      _reason = LoopL10n.current.launch2_launch2SigningReason(_noun);
     }
     if (refusal == null) planStepUp();
   }
@@ -927,7 +976,7 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
                       outcome.reasonCode,
                       approvalSent: true,
                     )
-                  : '授权已广播，$noun没有签名，没有提交$noun交易。可以关闭后重新发起。')
+                  : LoopL10n.current.launch2_launch2SigningSetState(noun, noun))
             : launch2SignReasonText(outcome.reasonCode);
         // A broadcast approval makes this intent's nonce plan stale: the
         // page prepares a new one instead of re-opening this sheet.
@@ -991,7 +1040,9 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
           LoopSignFact(field.label, field.value),
       ],
       reason: _reason,
-      completeLabel: _confirmed ? '已确认' : '已广播',
+      completeLabel: _confirmed
+          ? context.l10n.common_confirmed
+          : context.l10n.common_broadcast,
       onConfirm: _submitted ? null : _confirm,
       onCancel: () => Navigator.of(context).pop(_outcome),
     );
@@ -1000,12 +1051,12 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
       child: widget.intent.approval == null
           ? withStepUpStrip(
               sheet,
-              signLabel: _noun,
+              signLabel: launch2SentenceCase(_noun),
               signStatus: stepUpSignStatus(
                 _state,
                 locked: _outcome?.status == MoneySignStatus.locked,
               ),
-              signCaption: _confirmed ? '已确认' : null,
+              signCaption: _confirmed ? context.l10n.common_confirmed : null,
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -1072,7 +1123,8 @@ typedef Launch2StepStatus = LoopSignStepStatus;
 
 /// The one line the sheet shows once the trade is signed from a fresh
 /// intent (decision 0148).
-const String launch2RefreshedText = '已刷新报价：原报价即将到期，已按最新区块重新报价，金额在你确认的范围内';
+String get launch2RefreshedText =>
+    LoopL10n.current.launch2_launch2SigningLaunch2RefreshedText;
 
 /// 「1 授权 → 2 买入」 above the signing sheet when an intent carries an
 /// approval: which wallet prompt is open and which already broadcast.
@@ -1101,12 +1153,13 @@ class Launch2SignStepStrip extends StatelessWidget {
   final LoopStepUpStep? verify;
 
   static String _status(Launch2StepStatus status) => switch (status) {
-    Launch2StepStatus.waiting => '待签名',
-    Launch2StepStatus.active => '请在钱包确认',
-    Launch2StepStatus.refreshing => '正在刷新报价',
-    Launch2StepStatus.done => '已广播',
-    Launch2StepStatus.failed => '未完成',
-    Launch2StepStatus.unknown => '结果未知',
+    Launch2StepStatus.waiting => LoopL10n.current.common_awaitingSignature,
+    Launch2StepStatus.active => LoopL10n.current.launch2_launch2SigningActive,
+    Launch2StepStatus.refreshing =>
+      LoopL10n.current.launch2_launch2SigningRefreshing,
+    Launch2StepStatus.done => LoopL10n.current.common_broadcast,
+    Launch2StepStatus.failed => LoopL10n.current.launch2_launch2SigningFailed,
+    Launch2StepStatus.unknown => LoopL10n.current.launch2_launch2SigningUnknown,
   };
 
   @override
@@ -1116,16 +1169,16 @@ class Launch2SignStepStrip extends StatelessWidget {
       if (verify != null) verify!.step,
       LoopSignStep(
         id: 'approval',
-        label: '授权',
+        label: context.l10n.launch2_launch2SigningTitle,
         status: approval,
         caption: _status(approval),
       ),
       LoopSignStep(
         id: 'main',
-        label: noun,
+        label: launch2SentenceCase(noun),
         status: main,
         caption: mainConfirmed && main == Launch2StepStatus.done
-            ? '已确认'
+            ? context.l10n.common_confirmed
             : _status(main),
       ),
     ],
@@ -1133,7 +1186,8 @@ class Launch2SignStepStrip extends StatelessWidget {
 }
 
 /// The sentence the NFT purchase must state in full (规格 §3, contract §3.4).
-const String launch2NftRiskSentence = '不保证成交、不保证配售，公开内盘可能不发生';
+String get launch2NftRiskSentence =>
+    LoopL10n.current.launch2_launch2SigningLaunch2NftRiskSentence;
 
 /// The NFT purchase confirmation: the price, the one-per-address rule and the
 /// risk sentence in full, which the buyer ticks before the server is asked
@@ -1145,7 +1199,7 @@ Future<bool> showLaunch2NftConfirmSheet(
   required String ticker,
   required String priceLabel,
   String? heading,
-  String confirmLabel = '继续铸造',
+  String? confirmLabel,
   String? logoUrl,
   String? nftImageUrl,
 }) async {
@@ -1156,8 +1210,9 @@ Future<bool> showLaunch2NftConfirmSheet(
       logoUrl: logoUrl,
       nftImageUrl: nftImageUrl,
       priceLabel: priceLabel,
-      heading: heading ?? '铸造 $ticker 共识勋章',
-      confirmLabel: confirmLabel,
+      heading: heading ?? context.l10n.launch2_launch2SigningHeading(ticker),
+      confirmLabel:
+          confirmLabel ?? context.l10n.launch2_launch2SigningConfirmLabel,
     ),
   );
   return confirmed ?? false;
@@ -1222,18 +1277,18 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
               ),
             ),
             LoopKeyValue(
-              label: '价格',
+              label: context.l10n.launch2_launch2SigningLabel3,
               value: widget.priceLabel,
               padding: const EdgeInsets.symmetric(vertical: 6),
             ),
-            const LoopKeyValue(
-              label: '数量',
-              value: '每个地址终身 1 枚',
+            LoopKeyValue(
+              label: context.l10n.common_amount,
+              value: context.l10n.launch2_launch2SigningValue,
               padding: EdgeInsets.symmetric(vertical: 6),
             ),
             const SizedBox(height: 10),
             Text(
-              '持有 NFT 的地址进入快照名单，可参加 1 小时提前购。',
+              context.l10n.launch2_launch2SigningShowLaunch2NftConfirmSheet,
               // M18 R19 sheet support copy: bodySm 13 (decision 0191).
               style: LoopType.bodySm,
             ),
@@ -1241,7 +1296,9 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
             Semantics(
               checked: _ticked,
               button: true,
-              label: '我已知晓：$launch2NftRiskSentence',
+              label: context.l10n.launch2_launch2SigningLaunch2NftRiskTickLabel(
+                launch2NftRiskSentence,
+              ),
               excludeSemantics: true,
               child: LoopPressable(
                 key: const ValueKey<String>('launch2-nft-risk-tick'),
@@ -1266,7 +1323,9 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '我已知晓：$launch2NftRiskSentence。',
+                          context.l10n.launch2_launch2SigningLaunch2NftRisk(
+                            launch2NftRiskSentence,
+                          ),
                           key: const ValueKey<String>('launch2-nft-risk'),
                           style: LoopType.title,
                         ),

@@ -182,9 +182,9 @@ void main() {
       _row(3, 'graduated', soldBps: 10000),
     ]);
     for (final (index, tab, title) in <(String, String, String)>[
-      ('01', 'live', '内盘'),
-      ('02', 'upcoming', '预告'),
-      ('03', 'graduated', '已毕业'),
+      ('01', 'live', 'Bonding pool'),
+      ('02', 'upcoming', 'Upcoming'),
+      ('03', 'graduated', 'Graduated'),
     ]) {
       final key = _key('launch2-desk-tab-$tab');
       expect(key, findsOneWidget, reason: tab);
@@ -247,7 +247,7 @@ void main() {
     expect(_key('launch2-upcoming-empty'), findsOneWidget);
     expect(_key('launch2-upcoming-empty-crown'), findsOneWidget);
     // S350b · decision 0275: the fact alone; 我要发射 is the invitation.
-    expect(find.text('还没有排队中的项目'), findsOneWidget);
+    expect(find.text('No projects in the queue yet'), findsOneWidget);
     await tester.ensureVisible(_key('launch2-upcoming-empty-launch'));
     await tester.pumpAndSettle();
     expect(

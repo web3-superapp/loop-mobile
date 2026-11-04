@@ -319,7 +319,7 @@ LoopTokenCardModel _cardModel() => const LoopTokenCardModel(
     LoopTokenMetric('持有人', '1.1M'),
   ],
   riskFacts: <LoopTokenRiskFact>[
-    LoopTokenRiskFact(fact: '是代理合约', source: 'GoPlus', observedLabel: '1 分钟前'),
+    LoopTokenRiskFact(fact: '是代理合约', source: 'GoPlus', observedLabel: '1m ago'),
   ],
   footnotes: <String>['买入与卖出现在不可用 · 兑换还没有开放'],
   chartRangeLabel: '1H · 最近 24 根收盘价',
@@ -358,7 +358,7 @@ void main() {
       expect(find.byType(Launch2LaunchCapsule), findsNothing);
       expect(_key('launch2-projects-create'), findsNothing);
       expect(_key('launch2-projects-empty-create'), findsNothing);
-      expect(find.text('发起 v2 发射'), findsNothing);
+      expect(find.text('Start a v2 launch'), findsNothing);
       await _drain(tester);
     });
 
@@ -432,8 +432,8 @@ void main() {
         meme: meme,
         nft: nft,
       );
-      expect(find.text('图片资料'), findsOneWidget);
-      expect(find.text('基础信息'), findsOneWidget);
+      expect(find.text('Images'), findsOneWidget);
+      expect(find.text('Basic info'), findsOneWidget);
       expect(find.text('上传头像'), findsNothing);
       expect(find.text('上传 NFT 图'), findsNothing);
       expect(
@@ -444,8 +444,8 @@ void main() {
         findsOneWidget, // 下一步 only
       );
       expect(find.byType(Launch2UploadSlot), findsNWidgets(2));
-      expect(find.text('上传'), findsNWidgets(2));
-      expect(find.text('方形图片，上传前可裁剪'), findsOneWidget);
+      expect(find.text('Upload'), findsNWidgets(2));
+      expect(find.text('Square image; crop before upload'), findsOneWidget);
       expect(find.text(launch2NftImageHelp), findsOneWidget);
 
       // The bar sits above the title bar; no step dots under it.
@@ -456,14 +456,14 @@ void main() {
       expect(bar.labels, launch2CreateSteps);
       expect(
         tester.getTopLeft(_key('launch2-create-step-1')).dy,
-        lessThan(tester.getTopLeft(find.text('发起 v2 发射')).dy),
+        lessThan(tester.getTopLeft(find.text('Start a v2 launch')).dy),
       );
       final first = tester.getRect(_key('launch2-create-step-segment-0'));
       final last = tester.getRect(_key('launch2-create-step-segment-2'));
       expect(first.width, moreOrLessEquals(last.width));
 
       // The title is above the box, the count on the title's line.
-      expect(find.text('名称'), findsOneWidget);
+      expect(find.text('Name'), findsOneWidget);
       expect(
         tester.getTopLeft(_key('launch2-create-name-label')).dy,
         lessThan(tester.getTopLeft(_key('launch2-create-name')).dy),
@@ -481,7 +481,7 @@ void main() {
       expect(meme.uploads, 1);
       await _tap(tester, 'launch2-create-nft-upload');
       expect(nft.uploads, 1);
-      expect(find.text('换一张'), findsNWidgets(2));
+      expect(find.text('Replace'), findsNWidgets(2));
       await _drain(tester);
     });
   });
@@ -504,8 +504,8 @@ void main() {
         (band.decoration as BoxDecoration).color,
         isNot(LoopColors.purple),
       );
-      final live = tester.widget<Text>(find.text('实时')).style!.color;
-      final buy = tester.widget<Text>(find.text('买入').first).style!.color;
+      final live = tester.widget<Text>(find.text('Live')).style!.color;
+      final buy = tester.widget<Text>(find.text('Buy').first).style!.color;
       expect(live, isNot(buy));
       expect(find.text('全部'), findsNothing);
       expect(_key('launch2-ticker-all'), findsOneWidget);
@@ -525,7 +525,7 @@ void main() {
         Launch2DeskTabs(
           tabs: const <Launch2DeskTabSpec>[
             (id: 'live', title: '内盘', count: 4, selected: true),
-            (id: 'upcoming', title: '预告', count: 0, selected: false),
+            (id: 'upcoming', title: 'Upcoming', count: 0, selected: false),
             (id: 'graduated', title: '已毕业', count: 3, selected: false),
           ],
           onSelected: (_) {},
@@ -608,7 +608,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('是代理合约 —— 来源 GoPlus，观察于 1 分钟前'),
+        find.textContaining('是代理合约 —— 来源 GoPlus，观察于 1m ago'),
         findsOneWidget,
       );
       final figure = tester.widget<Text>(find.text(r'$204.3M'));

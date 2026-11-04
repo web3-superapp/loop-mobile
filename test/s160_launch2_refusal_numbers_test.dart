@@ -72,7 +72,7 @@ void main() {
       expect(
         launch2ActionFailure(failure, usd1Balance: Decimal.fromInt(7)),
         const Launch2ActionFailure(
-          'USD1 余额不足：需要 100 USD1，当前 99.5 USD1',
+          'Not enough USD1: need 100 USD1, have 99.5 USD1',
           topUp: true,
         ),
       );
@@ -84,7 +84,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(pool, maxIsBalance: true).text,
-        'USD1 余额不足：需要 100.5 USD1，当前 20.25 USD1',
+        'Not enough USD1: need 100.5 USD1, have 20.25 USD1',
       );
       // Curve buy: the balance replaces 「最多可付」.
       final curve = mapped(<String, Object?>{
@@ -94,7 +94,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(curve, requested: Decimal.fromInt(5)).text,
-        'USD1 余额不足：需要 5 USD1，当前 3.1 USD1',
+        'Not enough USD1: need 5 USD1, have 3.1 USD1',
       );
     });
 
@@ -105,7 +105,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(failure, usd1Balance: Decimal.zero).text,
-        'USD1 余额不足：需要 100 USD1，当前 0 USD1',
+        'Not enough USD1: need 100 USD1, have 0 USD1',
       );
       final curve = mapped(<String, Object?>{
         'reasonCode': 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
@@ -113,7 +113,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(curve, requested: Decimal.fromInt(5)).text,
-        'USD1 余额不足：需要 5 USD1，最多可付 3 USD1',
+        'Not enough USD1: need 5 USD1, can pay up to 3 USD1',
       );
     });
 
@@ -129,7 +129,9 @@ void main() {
           requested: Decimal.fromInt(12),
           ticker: 'PEPE',
         ),
-        const Launch2ActionFailure(r'卖出数量超过持有：需要 12 $PEPE，当前持有 4.5 $PEPE'),
+        const Launch2ActionFailure(
+          r'Sell amount exceeds holdings: need 12 $PEPE, holding 4.5 $PEPE',
+        ),
       );
       final noBalance = mapped(<String, Object?>{
         'reasonCode': 'LAUNCH2_MEME_BALANCE_INSUFFICIENT',
@@ -141,12 +143,12 @@ void main() {
           requested: Decimal.fromInt(12),
           ticker: 'PEPE',
         ).text,
-        r'卖出数量超过持有：需要 12 $PEPE，最多可卖 4 $PEPE',
+        r'Sell amount exceeds holdings: need 12 $PEPE, can sell up to 4 $PEPE',
       );
       final bare = mapped(<String, Object?>{
         'reasonCode': 'LAUNCH2_MEME_BALANCE_INSUFFICIENT',
       });
-      expect(launch2ActionFailure(bare).text, '卖出数量超过持有');
+      expect(launch2ActionFailure(bare).text, 'Sell amount exceeds holdings');
     });
 
     test('tBNB: the fee ceiling and the wallet, else the old sentence', () {
@@ -158,7 +160,7 @@ void main() {
       expect(
         launch2ActionFailure(both),
         const Launch2ActionFailure(
-          'tBNB 手续费不足：这笔约需 0.000412 tBNB，钱包有 0.0001 tBNB，充值后再试',
+          'Not enough tBNB for fees: this needs about 0.000412 tBNB, wallet has 0.0001 tBNB. Top up and retry',
           topUp: true,
         ),
       );
@@ -175,7 +177,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(requiredOnly).text,
-        'tBNB 手续费不足：这笔约需 0.000412 tBNB，充值后再试',
+        'Not enough tBNB for fees: this needs about 0.000412 tBNB. Top up and retry',
       );
       final balanceOnly = mapped(<String, Object?>{
         'reasonCode': 'LAUNCH2_GAS_INSUFFICIENT',
@@ -183,7 +185,7 @@ void main() {
       });
       expect(
         launch2ActionFailure(balanceOnly).text,
-        'tBNB 手续费不足：钱包有 0 tBNB，充值后再试',
+        'Not enough tBNB for fees: wallet has 0 tBNB. Top up and retry',
       );
     });
   });

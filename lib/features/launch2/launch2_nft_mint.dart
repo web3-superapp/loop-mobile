@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // One NFT mint, shared by the project page and 共识勋章 (decision 0163)
@@ -29,7 +30,7 @@ enum Launch2NftMintEntry {
   mintPage;
 
   /// The action's name on the signing exit.
-  String get noun => '铸造';
+  String get noun => LoopL10n.current.launch2_launch2NftMintNoun;
 }
 
 /// How one trip through [launch2MintNft] ended.
@@ -85,15 +86,19 @@ Future<Launch2NftMintResult> launch2MintNft(
     logoUrl: detail.row.logoUrl,
     nftImageUrl: detail.row.nftImageUrl,
     priceLabel: launch2Usd1Label(detail.row.nftSale.priceUsd1),
-    heading: '${entry.noun} ${detail.row.ticker} 共识勋章',
-    confirmLabel: '继续${entry.noun}',
+    heading: launch2SentenceCase(
+      context.l10n.launch2_launch2NftMintHeading(entry.noun, detail.row.ticker),
+    ),
+    confirmLabel: context.l10n.launch2_launch2NftMintConfirmLabel(entry.noun),
   );
   if (!confirmed || !context.mounted) return const Launch2NftMintCancelled();
   final wallet = memeReadActiveWallet(ref);
   final walletId = wallet.walletId ?? detail.viewer?.walletId;
   if (walletId == null) {
-    return const Launch2NftMintRefused(
-      Launch2ActionFailure('还没有可用的钱包，激活钱包后再铸造'),
+    return Launch2NftMintRefused(
+      Launch2ActionFailure(
+        context.l10n.launch2_launch2NftMintLaunch2ActionFailure,
+      ),
     );
   }
   onPreparing?.call();

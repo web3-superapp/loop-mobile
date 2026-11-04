@@ -242,7 +242,7 @@ void main() {
           size: Size(width + 40, 400),
         );
         final title = _key('launch2-desk-event-title');
-        expect(tester.widget<Text>(title).data, '暂无进行中的发射');
+        expect(tester.widget<Text>(title).data, 'No launches in progress');
         expect(_cut(tester, title), isFalse);
         expect(_key('launch2-desk-event-caption'), findsNothing);
         expect(find.textContaining('会出现在这里'), findsNothing);

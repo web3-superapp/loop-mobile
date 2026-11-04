@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -60,8 +61,12 @@ class Launch2ProjectsScreen extends ConsumerWidget {
           LoopEmptyState(
             key: const ValueKey<String>('launch2-projects-empty'),
             illustration: LoopIllustration.launchpad,
-            title: '还没有发起项目',
-            message: 'NFT 预售 + 官方外盘，一次发起。',
+            title: context
+                .l10n
+                .launch2Creator_launch2ProjectsLaunch2ProjectsEmptyTitle,
+            message: context
+                .l10n
+                .launch2Creator_launch2ProjectsLaunch2ProjectsEmptyMessage,
           ),
         ],
       );
@@ -119,7 +124,8 @@ class Launch2ProjectsScreen extends ConsumerWidget {
       child: LoopStreamPage(
         key: const ValueKey<String>('launch2-projects-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '我的项目',
+        title:
+            context.l10n.launch2Creator_launch2EntryLaunch2MyProjectsEntryLabel,
         onBack: onBack,
         updating: state.refreshing,
         onRefresh: controller.reload,
@@ -137,13 +143,20 @@ String _projectSubtitle(Launch2CreatorRow row) {
     // the project page and the edit form.
     Launch2CreatorStatus.rejected => switch (row.rejection) {
       final LaunchRejection rejection => launch2RejectedRowText(rejection),
-      null => row.project.reviewReasonText ?? '已拒绝',
+      null =>
+        row.project.reviewReasonText ??
+            LoopL10n.current.launch2Creator_launch2ProjectsSwitch,
     },
     Launch2CreatorStatus.approved when row.config.recipientOutdated =>
-      '回购收币地址需要更新',
-    Launch2CreatorStatus.draft when draft == null => '还没有发射配置',
+      LoopL10n
+          .current
+          .launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedTitle,
+    Launch2CreatorStatus.draft when draft == null =>
+      LoopL10n.current.launch2Creator_launch2ProjectsSwitch2,
     _ when draft != null =>
-      '${loopLocalTimestampLabel(draft.nftSaleStart)} 开始铸造',
+      LoopL10n.current.launch2Creator_launch2ProjectsSwitch3(
+        loopLocalTimestampLabel(draft.nftSaleStart),
+      ),
     _ => loopTickerLabel(row.project.ticker),
   };
 }
@@ -163,7 +176,8 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
     title: project.name,
     subtitle: _projectSubtitle(row),
     trailingBadge: Launch2StatusPill(status: status),
-    semanticLabel: '${project.name}，${status.label}',
+    semanticLabel:
+        '${project.name}${LoopL10n.current.common_listSeparator}${status.label}',
     onTap: () {
       LoopHaptics.selection();
       onTap();
@@ -178,8 +192,10 @@ LoopRecordRow _unreadableRow(LaunchProject project, VoidCallback onTap) {
     key: ValueKey<String>('launch2-project-unreadable-${project.projectId}'),
     leading: MemeLogo(symbol: project.ticker, size: 36, radius: 18),
     title: project.name,
-    subtitle: '发射配置暂时读不到，下拉刷新或点开重试',
-    semanticLabel: '${project.name}，发射配置暂时读不到',
+    subtitle: LoopL10n.current.launch2Creator_launch2ProjectsSubtitle,
+    semanticLabel: LoopL10n.current.launch2Creator_launch2ProjectsSemanticLabel(
+      project.name,
+    ),
     onTap: () {
       LoopHaptics.selection();
       onTap();

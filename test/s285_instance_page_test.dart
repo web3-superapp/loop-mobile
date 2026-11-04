@@ -368,11 +368,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('0x1234…abcd'), findsOneWidget);
-      expect(find.textContaining('匿名'), findsOneWidget);
+      expect(find.textContaining('Anonymous'), findsOneWidget);
       expect(find.text('49 USD1'), findsOneWidget);
       expect(
         find.textContaining(
-          '价格 ${launch2PriceLabel(Decimal.parse('0.000625'))}',
+          'price ${launch2PriceLabel(Decimal.parse('0.000625'))}',
         ),
         findsOneWidget,
       );
@@ -382,7 +382,7 @@ void main() {
         tester.widget<Text>(_key('launch2-pool-price')).data,
         launch2PriceLabel(Decimal.parse('0.00068')),
       );
-      expect(find.text('24h 成交 1,500.5 USD1'), findsOneWidget);
+      expect(find.text('24h vol 1,500.5 USD1'), findsOneWidget);
 
       await l2OpenTab(tester, 'info');
       expect(_key('launch2-pool-trades'), findsNothing);
@@ -416,18 +416,18 @@ void main() {
       );
       await pumpS285Project(tester, launch2: launch2, recent: recent);
       expect(launch2.poolTradeReads, 0);
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
       expect(launch2.poolTradeReads, 1);
-      expect(find.text('我的外盘成交 · 共 1 笔'), findsOneWidget);
-      expect(find.text(r'2,000 $FROG · 得 1.3032 USD1'), findsOneWidget);
+      expect(find.text('My DEX pool trades · 1 total'), findsOneWidget);
+      expect(find.text(r'2,000 $FROG · get 1.3032 USD1'), findsOneWidget);
       expect(
         _key('launch2-pool-trade-0x${'a' * 64}-136098447-0'),
         findsNothing,
       );
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
-      expect(find.text('全部外盘成交'), findsOneWidget);
+      expect(find.text('All DEX pool trades'), findsOneWidget);
       expect(
         _key('launch2-pool-trade-0x${'a' * 64}-136098447-0'),
         findsOneWidget,
@@ -443,7 +443,7 @@ void main() {
         launch2: S285Launch2(detail: _graduated()),
         recent: S285RecentTrades(s285Value(s285SampleTrades())),
       );
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
       expect(_key('launch2-my-pool-trades-none'), findsOneWidget);
       await drainS285(tester);
@@ -453,7 +453,7 @@ void main() {
         launch2: S285Launch2(detail: _graduated(noViewer: true)),
         recent: S285RecentTrades(s285Value(s285SampleTrades())),
       );
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
       expect(_key('launch2-my-pool-trades-no-wallet'), findsOneWidget);
       await drainS285(tester);
@@ -486,7 +486,7 @@ void main() {
       pending.release.complete(s285Trades(const <Map<String, Object?>>[]));
       await tester.pumpAndSettle();
       expect(_key('launch2-pool-trades-empty'), findsOneWidget);
-      expect(find.text('还没有外盘成交'), findsOneWidget);
+      expect(find.text('No DEX pool trades yet'), findsOneWidget);
       await drainS285(tester);
 
       final limited = S285RecentTrades(
@@ -497,7 +497,10 @@ void main() {
         launch2: S285Launch2(detail: _graduated()),
         recent: limited,
       );
-      expect(find.textContaining('请求太频繁，稍后再试'), findsOneWidget);
+      expect(
+        find.textContaining('Too many requests. Try again later'),
+        findsOneWidget,
+      );
       await drainS285(tester);
 
       final offline = S285RecentTrades(s285Fail(LoopChainFailureKind.offline));
@@ -556,7 +559,7 @@ void main() {
         tester.widget<LoopSegBar>(_key('launch2-pool-side')).selectedIndex,
         1,
       );
-      expect(find.text('按卖出数量'), findsOneWidget);
+      expect(find.text('Sell amount'), findsOneWidget);
       await drainS285(tester);
     });
   });
@@ -581,7 +584,7 @@ void main() {
       expect(_key('launch2-tab-buyback'), findsNothing);
       expect(_key('launch2-trade-t-1'), findsOneWidget);
       expect(_key('launch2-curve-price'), findsOneWidget);
-      expect(find.text('内盘已售 0%'), findsOneWidget);
+      expect(find.text('Bonding pool 0% sold'), findsOneWidget);
       await l2OpenTab(tester, 'info');
       expect(_key('launch2-template'), findsOneWidget);
       expect(_key('launch2-trade-t-1'), findsNothing);
@@ -709,7 +712,12 @@ void main() {
       expect(_key('launch2-holding-value'), findsNothing);
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('部分持仓为链上转入，无成本记录'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Some holdings were transferred in on-chain without a cost record',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('-0.5 USD1'), findsOneWidget);
       await drainS285(tester);
     });

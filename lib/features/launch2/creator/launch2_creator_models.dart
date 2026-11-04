@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // MEME v2 · project side (S135, client decision 0138)
@@ -21,22 +22,39 @@ import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 
 /// The ten project states the design names (S134–S137 §1).
 enum Launch2CreatorStatus {
-  draft('draft', '草稿'),
-  awaitingApproval('awaiting_approval', '审核中'),
-  approved('approved', '待签名'),
-  signing('signing', '签名中'),
-  deploying('deploying', '部署中'),
-  deployed('deployed', '已上链'),
-  verified('verified', '激活中'),
-  active('active', '已激活'),
-  rejected('rejected', '未通过'),
-  deployFailed('deploy_failed', '部署失败');
+  draft('draft'),
+  awaitingApproval('awaiting_approval'),
+  approved('approved'),
+  signing('signing'),
+  deploying('deploying'),
+  deployed('deployed'),
+  verified('verified'),
+  active('active'),
+  rejected('rejected'),
+  deployFailed('deploy_failed');
 
-  const Launch2CreatorStatus(this.wireName, this.label);
+  const Launch2CreatorStatus(this.wireName);
 
   /// The design document's own name for the state.
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    Launch2CreatorStatus.draft => LoopL10n.current.common_draft,
+    Launch2CreatorStatus.awaitingApproval => LoopL10n.current.common_inReview,
+    Launch2CreatorStatus.approved => LoopL10n.current.common_awaitingSignature,
+    Launch2CreatorStatus.signing =>
+      LoopL10n.current.launch2Creator_launch2ModelsSigning,
+    Launch2CreatorStatus.deploying =>
+      LoopL10n.current.launch2Creator_launch2ModelsDeploying,
+    Launch2CreatorStatus.deployed =>
+      LoopL10n.current.launch2Creator_launch2ModelsDeployed,
+    Launch2CreatorStatus.verified =>
+      LoopL10n.current.launch2Creator_launch2ModelsVerified,
+    Launch2CreatorStatus.active =>
+      LoopL10n.current.launch2Creator_launch2ModelsActive,
+    Launch2CreatorStatus.rejected => LoopL10n.current.common_rejected,
+    Launch2CreatorStatus.deployFailed =>
+      LoopL10n.current.launch2Creator_launch2ModelsDeployFailed,
+  };
 
   /// The five milestones the status page draws, and where this state sits.
   int get milestone => switch (this) {
@@ -56,12 +74,12 @@ enum Launch2CreatorStatus {
 }
 
 /// The milestone names, in order.
-const List<String> launch2CreatorMilestones = <String>[
-  '资料',
-  '审核',
-  '签名',
-  '部署',
-  '激活',
+List<String> get launch2CreatorMilestones => <String>[
+  LoopL10n.current.common_profile,
+  LoopL10n.current.launch2Creator_launch2ModelsIsFailure,
+  LoopL10n.current.common_sign,
+  LoopL10n.current.launch2Creator_launch2ModelsIsFailure2,
+  LoopL10n.current.launch2Creator_launch2ModelsIsFailure3,
 ];
 
 /// The fixed economics of one Hooks draft (`config.fixedEconomics`).

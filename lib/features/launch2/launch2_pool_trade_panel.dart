@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -428,7 +429,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
       children: <Widget>[
         LoopSegBar(
           key: const ValueKey<String>('launch2-pool-side'),
-          labels: const <String>['买入', '卖出'],
+          labels: <String>[context.l10n.common_buy, context.l10n.common_sell],
           selectedIndex: _side == Launch2Side.buy ? 0 : 1,
           padding: EdgeInsets.zero,
           onSelected: (index) =>
@@ -441,7 +442,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           // named like 滑点上限 below — not a second bar of the same pills.
           const SizedBox(height: 12),
           Text(
-            '输入方式',
+            context.l10n.launch2_launch2PoolTradePanelLaunch2PoolModeCaption,
             key: const ValueKey<String>('launch2-pool-mode-caption'),
             style: LoopType.captionSm.copyWith(color: LoopColors.text3),
           ),
@@ -537,7 +538,11 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
               if (_quote case final Launch2PoolQuote quote)
                 LoopProvenanceLine(
                   key: const ValueKey<String>('launch2-pool-provenance'),
-                  sources: const <String>['官方池路由'],
+                  sources: <String>[
+                    context
+                        .l10n
+                        .launch2_launch2PoolTradePanelLoopProvenanceLine,
+                  ],
                   observedAt: quote.quotedAt,
                   padding: EdgeInsets.zero,
                   detail: view.provenance,
@@ -564,7 +569,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
           _poolFailureLine(failure),
         const SizedBox(height: 12),
         Text(
-          '滑点上限',
+          context.l10n.common_slippageLimit,
           style: LoopType.captionSm.copyWith(color: LoopColors.text3),
         ),
         const SizedBox(height: 6),
@@ -588,7 +593,9 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
             LoopSeg(
               key: const ValueKey<String>('launch2-pool-slippage-custom'),
               quiet: true,
-              label: '自定义',
+              label: context
+                  .l10n
+                  .launch2_launch2PoolTradePanelLaunch2PoolSlippageCustomLabel,
               selected: _customSelected,
               onSelected: () {
                 _customSelected = true;
@@ -651,11 +658,14 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          '外盘交易',
+          context.l10n.launch2_launch2PoolTradePanelLaunch2PoolTaxLabel,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const LoopBadge('官方池', kind: LoopBadgeKind.launch),
+              LoopBadge(
+                context.l10n.launch2_launch2InstanceLaunch2PoolInfo,
+                kind: LoopBadgeKind.launch,
+              ),
               const SizedBox(width: 8),
               Text(
                 view.taxLabel,
@@ -681,7 +691,9 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    '用任何软件买入都计入奖励，记给收到 MEME 的地址',
+                    context
+                        .l10n
+                        .launch2_launch2PoolTradePanelLaunch2DynPanelNote,
                     key: const ValueKey<String>('launch2-dyn-panel-note'),
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
@@ -719,7 +731,7 @@ class _PoolMaxKey extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     button: true,
     enabled: onTap != null,
-    label: '填入全部可卖',
+    label: context.l10n.launch2_launch2PoolTradePanelLaunch2PoolMaxLabel,
     excludeSemantics: true,
     child: LoopPressable(
       key: const ValueKey<String>('launch2-pool-max'),
@@ -756,7 +768,7 @@ class Launch2PoolSwapLink extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     child: Semantics(
       button: true,
-      label: '也可以在钱包兑换里交易',
+      label: context.l10n.launch2_launch2PoolTradePanelLaunch2GoSwapLabel,
       excludeSemantics: true,
       child: LoopPressable(
         key: const ValueKey<String>('launch2-go-swap'),
@@ -765,13 +777,17 @@ class Launch2PoolSwapLink extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
           child: Row(
             children: <Widget>[
-              Text(
-                '也可以在钱包兑换里交易',
-                // R17 (decision 0190 L23).
-                style: LoopTypography.withWeight(
-                  LoopType.label,
-                  FontWeight.w600,
-                ).copyWith(color: LoopColors.text2),
+              Flexible(
+                child: Text(
+                  context.l10n.launch2_launch2PoolTradePanelLaunch2GoSwapLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  // R17 (decision 0190 L23).
+                  style: LoopTypography.withWeight(
+                    LoopType.label,
+                    FontWeight.w600,
+                  ).copyWith(color: LoopColors.text2),
+                ),
               ),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text3),

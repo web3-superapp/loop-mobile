@@ -37,7 +37,7 @@ void main() {
         facts: <LoopSignFact>[
           LoopSignFact('卖出', '2,000 \$S13776DF'),
           LoopSignFact('先授权', approval),
-          LoopSignFact('路由', '0xcb02…8f5d'),
+          LoopSignFact('Router', '0xcb02…8f5d'),
         ],
       ),
     );
@@ -57,7 +57,10 @@ void main() {
 
   testWidgets('LoopKeyValue keeps its old halves and right alignment by '
       'default', (tester) async {
-    await _pump(tester, const LoopKeyValue(label: '毕业价', value: '\$0.0006667'));
+    await _pump(
+      tester,
+      const LoopKeyValue(label: 'Graduation price', value: '\$0.0006667'),
+    );
     expect(
       tester.widget<Text>(find.text('\$0.0006667')).textAlign,
       TextAlign.right,
@@ -189,10 +192,10 @@ void main() {
         main: Launch2StepStatus.waiting,
       ),
     );
-    expect(colourOf('授权'), LoopColors.chalk);
+    expect(colourOf('Approve'), LoopColors.chalk);
     expect(colourOf('卖出'), LoopColors.text2);
     expect(find.text('下一步，待签名'), findsOneWidget);
-    expect(find.text('待签名'), findsOneWidget);
+    expect(find.text('Awaiting signature'), findsOneWidget);
     await _pump(
       tester,
       const Launch2SignStepStrip(

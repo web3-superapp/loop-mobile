@@ -305,7 +305,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: _key('launch2-trade-side'),
-          matching: find.text('卖出'),
+          matching: find.text('Sell'),
         ),
       );
       await tester.pumpAndSettle();

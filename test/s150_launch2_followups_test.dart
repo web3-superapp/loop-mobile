@@ -237,11 +237,11 @@ void main() {
       expect(sell.taxToken, Launch2PoolTaxToken.usd1);
       expect(
         launch2PoolTradeFigure(sell, 'FROG'),
-        r'2,000 $FROG · 得 1.3032 USD1',
+        r'2,000 $FROG · get 1.3032 USD1',
       );
       expect(
         launch2PoolTradeFigure(trades.trades.last, 'FROG'),
-        r'7,333.18 $FROG · 付 5 USD1',
+        r'7,333.18 $FROG · pay 5 USD1',
       );
     });
 
@@ -455,11 +455,14 @@ void main() {
             holding: launch2PoolHoldingOf(server: d.viewer?.holding),
           );
       final read = view(detail(l2HoldingJson()));
-      expect(read.holdingLine, r'持有 7,333.18 $FROG · 可卖 7,333.18 $FROG');
+      expect(
+        read.holdingLine,
+        r'Holding 7,333.18 $FROG · sellable 7,333.18 $FROG',
+      );
       expect(read.showMax, isTrue);
       expect(
         view(detail(l2HoldingJson(status: 'unavailable'))).holdingLine,
-        '钱包余额暂时读不到 · 报价后显示',
+        'Couldn\'t load wallet balance · shown after quote',
       );
     });
   });
@@ -621,8 +624,10 @@ void main() {
         expect(stuck.reasonCode, launch2RefreshApprovalPendingCode);
         expect(launch2StoppedAtRefresh(stuck), isTrue);
         expect(
-          launch2RefreshReasonText(stuck, '买入'),
-          contains('授权还在链上确认，买入没有签名'),
+          launch2RefreshReasonText(stuck, 'buy'),
+          contains(
+            "approval is still confirming on-chain, so the buy wasn't signed",
+          ),
         );
       },
     );
@@ -649,8 +654,10 @@ void main() {
           );
       expect(outcome.reasonCode, launch2RefreshFailedCode);
       expect(
-        launch2RefreshReasonText(outcome, '买入'),
-        contains('没有取到新报价（官方池流动性不足'),
+        launch2RefreshReasonText(outcome, 'buy'),
+        contains(
+          "couldn't get a new quote (Not enough liquidity in the official pool",
+        ),
       );
     });
 
@@ -675,14 +682,14 @@ void main() {
         for (final f in launch2IntentFields(_reviewed(), ticker: 'FROG'))
           f.label: f.value,
       };
-      expect(fields['先授权'], '100 USD1');
-      expect(fields['授权给官方池路由'], isNotNull);
+      expect(fields['Approve first'], '100 USD1');
+      expect(fields['Approved for: Official pool router'], isNotNull);
       final ready = <String, String>{
         for (final f in launch2IntentFields(_fresh(), ticker: 'FROG'))
           f.label: f.value,
       };
-      expect(ready.containsKey('先授权'), isFalse);
-      expect(ready['路由'], isNotNull);
+      expect(ready.containsKey('Approve first'), isFalse);
+      expect(ready['Router'], isNotNull);
     });
   });
 
@@ -702,15 +709,15 @@ void main() {
         liveBlockedReason: 'BUYBACK_LEGACY_PRICE_PROTECTION',
         keeper: keeper('LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION'),
       )!;
-      expect(legacy.reason, '下一笔暂缓：旧版合约价格保护生效');
-      expect(legacy.detail, startsWith('来源：链上读数 · 自动回购 · '));
-      expect(legacy.detail, endsWith(' 后再试'));
+      expect(legacy.reason, 'Next one on hold: Legacy price protection active');
+      expect(legacy.detail, startsWith('Source: chain read · auto buyback · '));
+      expect(legacy.detail, contains('Retry at '));
       final budget = launch2BuybackHeldLine(
         liveBlockedReason: 'BUYBACK_NO_BUDGET',
         keeper: keeper('LAUNCH2_BUYBACK_NO_BUDGET', next: null),
       )!;
-      expect(budget.reason, '下一笔暂缓：托管余额不足一笔');
-      expect(budget.detail, '来源：链上读数 · 自动回购');
+      expect(budget.reason, 'Next one on hold: Escrow balance below one order');
+      expect(budget.detail, 'Source: chain read · auto buyback');
     });
 
     test('different reasons are both named; a ready read or a running '
@@ -721,8 +728,9 @@ void main() {
       )!;
       expect(
         both.reason,
-        '下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%（链上读数）；'
-        '链上手续费过高（自动回购）',
+        'Next one on hold: Official pool principal protection: principal '
+        'under 10,000 USD1 or one order over 1% (on-chain read); '
+        'On-chain fees too high (auto buyback)',
       );
       expect(both.detail, isNull);
       expect(
@@ -730,7 +738,7 @@ void main() {
           liveBlockedReason: 'BUYBACK_PRINCIPAL_INSUFFICIENT',
           keeper: keeper('LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP'),
         )!.detail,
-        endsWith(' 后再试'),
+        contains('Retry at '),
       );
       expect(
         launch2BuybackHeldLine(
@@ -768,7 +776,7 @@ void main() {
       'MINING_ASSET_GRADUATED_UNREADABLE',
       'MINING_SOMETHING_NEW',
     ]) {
-      expect(miningExcludedReasonText(code), isNot(contains('价格')));
+      expect(miningExcludedReasonText(code), isNot(contains('Price')));
     }
   });
 }

@@ -13,7 +13,10 @@ import 'package:loop_mobile/features/launch2/launch2_trade_panel.dart';
 
 void main() {
   test('defect 5 · the curve explains 「最少获得」 with the server tolerance', () {
-    expect(launch2CurveMinOutNote(100), '按当前曲线价计算，已含 1% 滑点保护，成交以链上为准');
+    expect(
+      launch2CurveMinOutNote(100),
+      'Based on the current curve price with 1% slippage protection; the on-chain fill is final',
+    );
     expect(launch2CurveMinOutNote(50), contains('0.5%'));
   });
 
@@ -27,14 +30,14 @@ void main() {
           expect(text, isNot(matches(RegExp('发售|开售|认购'))), reason: stage.name);
         }
       }
-      expect(launch2StageLabel(Launch2Stage.upcoming), '即将铸造');
-      expect(launch2StageLabel(Launch2Stage.nftSale), '铸造中');
-      expect(launch2ClosedNoHoldersText, '无人铸造，已关闭');
+      expect(launch2StageLabel(Launch2Stage.upcoming), 'Minting soon');
+      expect(launch2StageLabel(Launch2Stage.nftSale), 'Minting');
+      expect(launch2ClosedNoHoldersText, 'No one minted, closed');
     });
 
     test('both mint entries name the action 铸造', () {
       for (final entry in Launch2NftMintEntry.values) {
-        expect(entry.noun, '铸造');
+        expect(entry.noun, 'mint');
       }
     });
   });

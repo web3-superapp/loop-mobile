@@ -737,37 +737,37 @@ void main() {
 
     test('the field says what the mode fixes, per side', () {
       expect(launch2PoolField(Launch2Side.buy, Launch2PoolMode.exactIn, 'F'), (
-        '支付（含税）',
+        'Pay (incl. tax)',
         'USD1',
       ));
       expect(launch2PoolField(Launch2Side.buy, Launch2PoolMode.exactOut, 'F'), (
-        '想买入',
+        'Want to buy',
         r'$F',
       ));
       expect(launch2PoolField(Launch2Side.sell, Launch2PoolMode.exactIn, 'F'), (
-        '卖出',
+        'Sell',
         r'$F',
       ));
       expect(
         launch2PoolField(Launch2Side.sell, Launch2PoolMode.exactOut, 'F'),
-        ('想到手', 'USD1'),
+        ('Want to receive', 'USD1'),
       );
     });
 
     test('a buy exactIn quote: expected, least, the 2% tax in MEME, the '
         'average price and the slippage; confirm opens', () {
       final v = view(quote: _buyQuote());
-      expect(v.taxLabel, '外盘税 2%');
+      expect(v.taxLabel, 'Tax 2%');
       expect(v.lines.map((l) => '${l.label}=${l.value}').toList(), <String>[
-        r'预计获得=147,000 $FROG',
-        r'最少获得=145,530 $FROG',
-        r'外盘税 2%=3,000 $FROG',
-        '成交均价=${v.lines[3].value}',
-        '滑点上限=1%',
+        r'Estimated to receive=147,000 $FROG',
+        r'Minimum received=145,530 $FROG',
+        r'DEX pool tax 2%=3,000 $FROG',
+        'Average price=${v.lines[3].value}',
+        'Slippage limit=1%',
       ]);
       expect(v.canConfirm, isTrue);
-      expect(v.confirmLabel, '确认买入');
-      expect(v.provenance, contains('区块 1500'));
+      expect(v.confirmLabel, 'Confirm buy');
+      expect(v.provenance, contains('block 1500'));
     });
 
     test('a sell exactOut quote: what is sold at most and the USD1 tax', () {
@@ -778,25 +778,32 @@ void main() {
         quote: _sellQuote(),
       );
       final labels = v.lines.map((l) => l.label).toList();
-      expect(labels.take(3), <String>['预计卖出', '最多卖出', '外盘税 2%']);
+      expect(labels.take(3), <String>[
+        'Estimated sell',
+        'Maximum sell',
+        'DEX pool tax 2%',
+      ]);
       expect(v.lines[1].value, r'76,760 $FROG');
       expect(v.lines[2].value, endsWith('USD1'));
-      expect(v.confirmLabel, '确认卖出');
+      expect(v.confirmLabel, 'Confirm sell');
       expect(v.canConfirm, isTrue);
     });
 
     test('blocked: not graduated, no router, no wallet', () {
       expect(
         view(detail: l2Detail(stage: 'public')).blockedLine,
-        '项目还没有毕业，官方池尚未开放',
+        'The project hasn\'t graduated; the official pool isn\'t open yet',
       );
       expect(
         view(detail: _graduated(pool: l2PoolSummaryJson(router: null)))
             .blockedLine,
-        contains('路由未配置'),
+        contains('router not configured'),
       );
       final noWallet = view(walletId: null, quote: _buyQuote());
-      expect(noWallet.blockedLine, '还没有可用的钱包，激活钱包后可交易');
+      expect(
+        noWallet.blockedLine,
+        'No wallet available. Activate a wallet to trade',
+      );
       expect(noWallet.canConfirm, isFalse);
     });
 
@@ -805,10 +812,10 @@ void main() {
       final holding = Launch2PoolHolding(balance: Decimal.ten);
       final v = view(side: Launch2Side.sell, amount: '11', holding: holding);
       expect(v.overHolding, isTrue);
-      expect(v.quotePlaceholder, contains('卖出数量超过可卖'));
+      expect(v.quotePlaceholder, contains('Sell amount exceeds sellable'));
       expect(v.canConfirm, isFalse);
       expect(v.showMax, isTrue);
-      expect(v.holdingLine, r'持有 10 $FROG · 可卖 10 $FROG');
+      expect(v.holdingLine, r'Holding 10 $FROG · sellable 10 $FROG');
       expect(view(holding: holding).showMax, isFalse);
       expect(
         view(
@@ -830,7 +837,7 @@ void main() {
       );
       expect(
         view(detail: detail).holdingLine,
-        r'内盘净买入 1,000 $FROG · 钱包余额报价后显示',
+        r'Bonding pool net buys 1,000 $FROG · wallet balance shown after quote',
       );
       expect(view().holdingLine, isNull);
       expect(
@@ -838,34 +845,43 @@ void main() {
           detail: detail,
           holding: launch2PoolHoldingOf(quote: _buyQuote()),
         ).holdingLine,
-        r'持有 250,000 $FROG',
+        r'Holding 250,000 $FROG',
       );
     });
 
     test('exceedsBalance says how much is missing and keeps confirm shut', () {
       final v = view(quote: _buyQuote(exceeds: true));
-      expect(v.balanceLine, startsWith('USD1 余额不足'));
+      expect(v.balanceLine, startsWith('Not enough USD1'));
       expect(v.canConfirm, isFalse);
     });
 
     test('loading, empty, error and locked each say their own line', () {
-      expect(view(amount: null).quotePlaceholder, '输入金额后显示报价');
-      expect(view(quoting: true).quotePlaceholder, '正在向官方池报价…');
+      expect(
+        view(amount: null).quotePlaceholder,
+        'Enter an amount to see a quote',
+      );
+      expect(
+        view(quoting: true).quotePlaceholder,
+        'Getting a quote from the official pool…',
+      );
       final failed = view(
         failure: const LoopChainException(
           LoopChainFailureKind.validationFailed,
           reasonCode: 'POOL_QUOTE_UNAVAILABLE',
         ),
       );
-      expect(failed.quoteFailureLine, '没有取到报价 · 官方池试算没有通过，换个金额再试');
+      expect(
+        failed.quoteFailureLine,
+        "Couldn't get a quote · The official pool simulation failed. Try another amount",
+      );
       expect(failed.quotePlaceholder, isNull);
       final offline = view(
         failure: const LoopChainException(LoopChainFailureKind.offline),
       );
-      expect(offline.quoteFailureLine, startsWith('没有取到报价 · '));
+      expect(offline.quoteFailureLine, startsWith("Couldn't get a quote · "));
       final locked = view(quote: _buyQuote(), locked: true);
       expect(locked.canConfirm, isFalse);
-      expect(locked.confirmLabel, '上一笔确认中…');
+      expect(locked.confirmLabel, 'Confirming last one…');
       expect(view(quote: _buyQuote(), slippage: null).canConfirm, isFalse);
       expect(
         view(quote: _buyQuote(), mode: Launch2PoolMode.exactOut).canConfirm,
@@ -874,24 +890,30 @@ void main() {
     });
 
     test('the pool refusals read in zh-CN', () {
-      expect(launch2PoolReasonText('POOL_NOT_GRADUATED'), '项目还没有毕业，官方池尚未开放');
+      expect(
+        launch2PoolReasonText('POOL_NOT_GRADUATED'),
+        'The project hasn\'t graduated; the official pool isn\'t open yet',
+      );
       expect(
         launch2PoolReasonText('POOL_INSUFFICIENT_LIQUIDITY'),
-        contains('流动性不足'),
+        contains('Not enough liquidity'),
       );
-      expect(launch2PoolReasonText('POOL_QUOTE_ZERO'), contains('为 0'));
+      expect(
+        launch2PoolReasonText('POOL_QUOTE_ZERO'),
+        contains('converts to 0'),
+      );
       expect(
         launch2PoolReasonText('POOL_ROUTER_NOT_CONFIGURED'),
-        '外盘交易暂时关闭，平台正在核对官方池',
+        'DEX pool trading is closed while the platform checks the official pool',
       );
       expect(
         launch2PoolReasonText('LAUNCH2_USD1_BALANCE_INSUFFICIENT'),
-        contains('USD1 余额不足'),
+        contains('Not enough USD1'),
       );
       // Anything else falls through to the curve catalogue.
       expect(
         launch2PoolReasonText('LAUNCH2_GAS_INSUFFICIENT'),
-        contains('手续费'),
+        contains('for fees'),
       );
     });
 
@@ -911,16 +933,19 @@ void main() {
       final byLabel = <String, String>{
         for (final f in fields) f.label: f.value,
       };
-      expect(byLabel['操作'], r'在官方池买入 $FROG');
+      expect(byLabel['Action'], r'Buy $FROG in the official pool');
       // A pool buy is taxed in MEME, taken from what it receives.
-      expect(byLabel['外盘税 2%'], r'3,000 $FROG');
-      expect(byLabel['最多支付'], '100 USD1');
+      expect(byLabel['DEX pool tax 2%'], r'3,000 $FROG');
+      expect(byLabel['Maximum payment'], '100 USD1');
       // Decision 0148: the amount alone; the spender is the address row.
-      expect(byLabel['先授权'], '100 USD1');
-      expect(byLabel['授权给官方池路由'], isNotNull);
-      expect(byLabel.containsKey('路由'), isFalse);
-      expect(byLabel.containsKey('税 10%'), isFalse);
-      expect(launch2IntentTitle(intent.kind, venue: intent.venue), '确认外盘买入');
+      expect(byLabel['Approve first'], '100 USD1');
+      expect(byLabel['Approved for: Official pool router'], isNotNull);
+      expect(byLabel.containsKey('Router'), isFalse);
+      expect(byLabel.containsKey('Tax 10%'), isFalse);
+      expect(
+        launch2IntentTitle(intent.kind, venue: intent.venue),
+        'Confirm DEX pool buy',
+      );
     });
   });
 
@@ -966,7 +991,7 @@ void main() {
       expect(opened.single, '/wallet/swap?to=eip155%3A97%3A$l2Meme');
       await l2OpenTradeSheet(tester);
       expect(_key('launch2-pool-panel'), findsOneWidget);
-      expect(find.text('外盘税 2%'), findsWidgets);
+      expect(find.text('Tax 2%'), findsWidgets);
       // The 44 pt rule (iOS guideline), around the panel.
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
@@ -1020,11 +1045,14 @@ void main() {
         ],
       );
       await _open(tester, gateway, wallet: wallet);
-      expect(find.text('输入金额后显示报价'), findsOneWidget);
+      expect(find.text('Enter an amount to see a quote'), findsOneWidget);
       await _scrollTo(tester, _key('launch2-pool-amount'));
       await tester.enterText(_key('launch2-pool-amount'), '100');
       await tester.pump();
-      expect(find.text('正在向官方池报价…'), findsOneWidget);
+      expect(
+        find.text('Getting a quote from the official pool…'),
+        findsOneWidget,
+      );
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       expect(gateway.quoteCalls.single, <String, Object?>{
@@ -1035,14 +1063,14 @@ void main() {
       });
       expect(_key('launch2-pool-quote'), findsOneWidget);
       expect(find.text(r'145,530 $FROG'), findsOneWidget);
-      expect(find.text(r'持有 250,000 $FROG'), findsOneWidget);
+      expect(find.text(r'Holding 250,000 $FROG'), findsOneWidget);
       await _scrollTo(tester, _key('launch2-pool-confirm'));
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
       expect(gateway.prepareCalls.single['amount'], Decimal.fromInt(100));
       expect(gateway.prepareCalls.single['slippageBps'], 100);
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      expect(find.text('确认外盘买入'), findsOneWidget);
+      expect(find.text('Confirm DEX pool buy'), findsOneWidget);
       expect(_key('launch2-sign-steps'), findsOneWidget);
       expect(_key('launch2-sign-step-approval-waiting'), findsOneWidget);
       expect(_key('launch2-sign-step-main-waiting'), findsOneWidget);
@@ -1057,7 +1085,10 @@ void main() {
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       expect(_key('launch2-pending'), findsOneWidget);
-      expect(find.textContaining('广播不代表已成交'), findsOneWidget);
+      expect(
+        find.textContaining("Broadcast doesn't mean filled"),
+        findsOneWidget,
+      );
       // Our broadcast is settling: the sheet closed and the bar offers no
       // second signature (decision 0240).
       expect(_key('launch2-trade-sheet'), findsNothing);
@@ -1090,7 +1121,10 @@ void main() {
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
-      expect(find.textContaining('官方池已记录新成交'), findsOneWidget);
+      expect(
+        find.textContaining('The official pool recorded a new trade'),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1112,10 +1146,20 @@ void main() {
       await _open(tester, gateway);
       await _type(tester, '100');
       expect(_key('launch2-pool-quote-failed'), findsOneWidget);
-      expect(find.text('没有取到报价 · 官方池试算没有通过，换个金额再试'), findsOneWidget);
+      expect(
+        find.text(
+          "Couldn't get a quote · The official pool simulation failed. Try another amount",
+        ),
+        findsOneWidget,
+      );
       expect(_confirmCallback(tester), isNull);
       await _type(tester, '101');
-      expect(find.text('没有取到报价 · 项目还没有毕业，官方池尚未开放'), findsOneWidget);
+      expect(
+        find.text(
+          "Couldn't get a quote · The project hasn't graduated; the official pool isn't open yet",
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-instance-error'), findsNothing);
       await _drain(tester);
     });
@@ -1166,7 +1210,10 @@ void main() {
       await tester.tap(_key('launch2-pool-confirm'));
       await tester.pumpAndSettle();
       expect(_key('launch2-pool-prepare-failed'), findsOneWidget);
-      expect(find.text('USD1 余额不足，没有发起任何交易'), findsOneWidget);
+      expect(
+        find.text('Not enough USD1; no transaction was made'),
+        findsOneWidget,
+      );
       expect(_key('launch2-sign-sheet'), findsNothing);
       await _type(tester, '99');
       expect(_key('launch2-pool-quote-failed'), findsOneWidget);
@@ -1212,7 +1259,7 @@ void main() {
       expect(
         find.descendant(
           of: line,
-          matching: find.text('USD1 余额不足：需要 100.5 USD1，当前 20 USD1'),
+          matching: find.text('Not enough USD1: need 100.5 USD1, have 20 USD1'),
         ),
         findsOneWidget,
       );
@@ -1245,7 +1292,7 @@ void main() {
         find.descendant(
           of: line,
           matching: find.text(
-            'tBNB 手续费不足：这笔约需 0.000412 tBNB，钱包有 0.0001 tBNB，充值后再试',
+            'Not enough tBNB for fees: this needs about 0.000412 tBNB, wallet has 0.0001 tBNB. Top up and retry',
           ),
         ),
         findsOneWidget,
@@ -1269,7 +1316,7 @@ void main() {
       await l2OpenTradeSheet(tester, sell: true);
       await tester.tap(_key('launch2-pool-mode-exactOut'));
       await tester.pumpAndSettle();
-      expect(find.text('想到手'), findsOneWidget);
+      expect(find.text('Want to receive'), findsOneWidget);
       await _scrollTo(tester, _key('launch2-pool-slippage-custom'));
       await tester.tap(_key('launch2-pool-slippage-custom'));
       await tester.pumpAndSettle();
@@ -1284,7 +1331,7 @@ void main() {
         'amount': Decimal.fromInt(50),
         'slippageBps': 75,
       });
-      expect(find.text('最多卖出'), findsOneWidget);
+      expect(find.text('Maximum sell'), findsOneWidget);
       await _drain(tester);
     });
   });
@@ -1369,13 +1416,13 @@ void main() {
       await openAt(tester, gateway);
       await _scrollTo(tester, _key('launch2-pool-holding'));
       // Decision 0149: the buy side says what is held, once.
-      expect(find.text(r'持有 7,333.18 $FROG'), findsOneWidget);
+      expect(find.text(r'Holding 7,333.18 $FROG'), findsOneWidget);
       expect(gateway.quoteCalls, isEmpty);
       // MAX on a sell fills the server's balance, still before any quote.
       await tester.tap(
         find.descendant(
           of: _key('launch2-pool-side'),
-          matching: find.text('卖出'),
+          matching: find.text('Sell'),
         ),
       );
       await tester.pumpAndSettle();
@@ -1399,7 +1446,10 @@ void main() {
         ),
       );
       await _scrollTo(tester, _key('launch2-pool-holding'));
-      expect(find.text('钱包余额暂时读不到 · 报价后显示'), findsOneWidget);
+      expect(
+        find.text('Couldn\'t load wallet balance · shown after quote'),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1449,11 +1499,14 @@ void main() {
         '5b0e8c2a-7f3d-4e1b-9a6c-2d8f4e0b1a48',
       );
       expect(_key('launch2-sign-refreshed'), findsOneWidget);
-      expect(find.textContaining('已刷新报价'), findsOneWidget);
+      expect(find.textContaining('Quote refreshed'), findsOneWidget);
       expect(_key('launch2-sign-step-main-done'), findsOneWidget);
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('广播不代表已成交'), findsOneWidget);
+      expect(
+        find.textContaining("Broadcast doesn't mean filled"),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1490,13 +1543,26 @@ void main() {
       ]);
       expect(_key('launch2-sign-step-approval-done'), findsOneWidget);
       expect(_key('launch2-sign-step-main-failed'), findsOneWidget);
-      expect(find.textContaining('最新报价超出了你确认的范围'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'the latest quote was outside the range you confirmed',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
       // The page says the same; nothing was broadcast, so nothing is locked.
       expect(_key('launch2-pending'), findsOneWidget);
-      expect(find.textContaining('最新报价超出了你确认的范围'), findsOneWidget);
-      expect(find.textContaining('广播不代表已成交'), findsNothing);
+      expect(
+        find.textContaining(
+          'the latest quote was outside the range you confirmed',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining("Broadcast doesn't mean filled"),
+        findsNothing,
+      );
       await _drain(tester);
     });
 
@@ -1528,7 +1594,10 @@ void main() {
       // The first prepare, then four refreshes that still carry approvals.
       expect(gateway.prepareCalls, hasLength(5));
       expect(wallet.handed, hasLength(1));
-      expect(find.textContaining('授权还在链上确认'), findsOneWidget);
+      expect(
+        find.textContaining('approval is still confirming on-chain'),
+        findsOneWidget,
+      );
       expect(_key('launch2-sign-step-main-failed'), findsOneWidget);
       await _drain(tester);
     });
@@ -1577,22 +1646,31 @@ void main() {
       await tester.pumpAndSettle();
       // The re-read after the broadcast: only the pool moved.
       expect(gateway.detailReads, 2);
-      expect(find.textContaining('广播不代表已成交'), findsOneWidget);
-      expect(find.textContaining('官方池已记录新成交'), findsNothing);
+      expect(
+        find.textContaining("Broadcast doesn't mean filled"),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('The official pool recorded a new trade'),
+        findsNothing,
+      );
       // The next poll: our own count moved.
       await tester.pump(const Duration(hours: 1));
       await tester.pumpAndSettle();
       expect(gateway.detailReads, 3);
-      expect(find.text('你的外盘买入已在链上确认。'), findsOneWidget);
+      expect(
+        find.text('Your DEX pool buy is confirmed on-chain.'),
+        findsOneWidget,
+      );
       // 我的外盘成交: the 成交 tab's 「只看我的」 (decision 0240).
       await _scrollTo(tester, _key('launch2-trades-mine-only'));
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch2-my-pool-trades-provenance'));
       expect(gateway.poolTradeReads, 1);
-      expect(find.textContaining('共 1 笔'), findsOneWidget);
-      expect(find.text(r'2,000 $FROG · 得 1.3032 USD1'), findsOneWidget);
-      expect(find.text(r'7,333.18 $FROG · 付 5 USD1'), findsOneWidget);
+      expect(find.textContaining('1 total'), findsOneWidget);
+      expect(find.text(r'2,000 $FROG · get 1.3032 USD1'), findsOneWidget);
+      expect(find.text(r'7,333.18 $FROG · pay 5 USD1'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1605,10 +1683,13 @@ void main() {
       );
       await openAt(tester, gateway, sheet: false);
       await _scrollTo(tester, _key('launch2-trades-mine-only'));
-      await tester.tap(find.text('只看我的'));
+      await tester.tap(find.text('Mine only'));
       await tester.pumpAndSettle();
       await _scrollTo(tester, _key('launch2-my-pool-trades-failed'));
-      expect(find.textContaining('我的外盘成交暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining('Couldn\'t load my DEX pool trades'),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
   });

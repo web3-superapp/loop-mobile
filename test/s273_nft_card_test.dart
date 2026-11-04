@@ -325,9 +325,9 @@ void main() {
       );
       // The two lines under each card.
       expect(find.text('FROG NFT'), findsOneWidget);
-      expect(find.text('×1 · 公开内盘'), findsNWidgets(2));
-      expect(find.text('×2 · 公开内盘'), findsOneWidget);
-      expect(find.text('×1 · 提前购'), findsOneWidget);
+      expect(find.text('×1 · Public pool'), findsNWidgets(2));
+      expect(find.text('×2 · Public pool'), findsOneWidget);
+      expect(find.text('×1 · Priority buy'), findsOneWidget);
       expect(find.text('#9'), findsOneWidget);
       final name = tester.widget<Text>(find.text('PEPE NFT'));
       expect(name.style?.fontSize, LoopType.body1.fontSize);
@@ -428,7 +428,7 @@ void main() {
       // Above the price.
       expect(
         tester.getTopLeft(_key('launch2-nft-confirm-card')).dy,
-        lessThan(tester.getTopLeft(find.text('价格')).dy),
+        lessThan(tester.getTopLeft(find.text('Price')).dy),
       );
       _noInitials(tester, 'FROG');
     });

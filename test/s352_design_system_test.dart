@@ -70,7 +70,7 @@ void main() {
         tester,
         StatefulBuilder(
           builder: (context, setState) => LoopTabStrip(
-            labels: const <String>['内盘', '预告', '已毕业'],
+            labels: const <String>['内盘', 'Upcoming', '已毕业'],
             counts: const <int?>[4, 0, 3],
             keys: const <Key>[
               ValueKey<String>('tab-a'),
@@ -92,7 +92,7 @@ void main() {
       expect(on.style?.fontSize, 16);
       expect(on.style?.fontWeight, FontWeight.w600);
       expect(on.style?.color, LoopColors.textOnSelected);
-      final off = tester.widget<Text>(find.text('预告'));
+      final off = tester.widget<Text>(find.text('Upcoming'));
       expect(off.style?.fontWeight, FontWeight.w500);
       expect(off.style?.color, LoopColors.textSecondary);
       // The line under the chosen cell spans it, 2 high.
@@ -471,7 +471,7 @@ void main() {
               tone: LoopTagTone.green,
             ),
             LoopStatusTag(
-              '公开内盘',
+              'Public pool',
               key: ValueKey<String>('t-stage'),
               shape: LoopTagShape.stage,
             ),
@@ -507,7 +507,7 @@ void main() {
       );
       expect(tester.getSize(_key('t-stage')).height, 19);
       expect(ground('t-stage').borderRadius, LoopRadius.stage);
-      final stage = tester.widget<Text>(find.text('公开内盘'));
+      final stage = tester.widget<Text>(find.text('Public pool'));
       expect(stage.style?.fontSize, 11);
       expect(stage.style?.fontWeight, FontWeight.w400);
       expect(stage.style?.color, LoopColors.yellow);

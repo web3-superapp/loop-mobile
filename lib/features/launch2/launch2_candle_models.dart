@@ -1,24 +1,38 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The bucket widths the project page's K line offers (decision 0227). The
 /// server answers exactly these six (`LAUNCH2_CANDLE_INTERVAL_INVALID`
 /// otherwise).
 enum Launch2CandleInterval {
-  oneMinute('1m', '1分', LoopCandleInterval.fifteenMinutes),
-  fiveMinutes('5m', '5分', LoopCandleInterval.fifteenMinutes),
-  fifteenMinutes('15m', '15分', LoopCandleInterval.fifteenMinutes),
-  oneHour('1h', '1时', LoopCandleInterval.oneHour),
-  fourHours('4h', '4时', LoopCandleInterval.fourHours),
-  oneDay('1d', '1天', LoopCandleInterval.oneDay);
+  oneMinute('1m', LoopCandleInterval.fifteenMinutes),
+  fiveMinutes('5m', LoopCandleInterval.fifteenMinutes),
+  fifteenMinutes('15m', LoopCandleInterval.fifteenMinutes),
+  oneHour('1h', LoopCandleInterval.oneHour),
+  fourHours('4h', LoopCandleInterval.fourHours),
+  oneDay('1d', LoopCandleInterval.oneDay);
 
-  const Launch2CandleInterval(this.wireName, this.label, this.axis);
+  const Launch2CandleInterval(this.wireName, this.axis);
 
   final String wireName;
 
   /// The capsule's text.
-  final String label;
+  String get label => switch (this) {
+    Launch2CandleInterval.oneMinute =>
+      LoopL10n.current.launch2_launch2CandleModelsOneMinute,
+    Launch2CandleInterval.fiveMinutes =>
+      LoopL10n.current.launch2_launch2CandleModelsFiveMinutes,
+    Launch2CandleInterval.fifteenMinutes =>
+      LoopL10n.current.launch2_launch2CandleModelsFifteenMinutes,
+    Launch2CandleInterval.oneHour =>
+      LoopL10n.current.launch2_launch2CandleModelsOneHour,
+    Launch2CandleInterval.fourHours =>
+      LoopL10n.current.launch2_launch2CandleModelsFourHours,
+    Launch2CandleInterval.oneDay =>
+      LoopL10n.current.launch2_launch2CandleModelsOneDay,
+  };
 
   /// The shared chart's interval whose time labels fit this width: every
   /// intraday width reads as a clock.

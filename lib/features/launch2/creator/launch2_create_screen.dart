@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_editor.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -35,14 +36,20 @@ debugLaunch2CropOverride;
 /// The three steps of `launch2-create`.
 /// Decision 0202: step 2 holds only the outside links, so it is named for
 /// them; binding a community is done on the community side.
-const List<String> launch2CreateSteps = <String>['资料', '链接', '发射'];
+List<String> get launch2CreateSteps => <String>[
+  LoopL10n.current.common_profile,
+  LoopL10n.current.common_link,
+  LoopL10n.current.launch2Creator_launch2CreateText,
+];
 
 /// Step 2's heading, its line, and the line on where a community is bound.
-const String launch2CreateLinksHeading = '外部链接';
-const String launch2CreateLinksLine =
-    '项目的 X / Telegram / 官网 / Discord，都可不填；审核与用户都会看到。';
-const String launch2CreateLinksCommunityHint =
-    '要绑定社区，请由社区群主在社区侧「社区管理 → 绑定代币」里操作。';
+String get launch2CreateLinksHeading =>
+    LoopL10n.current.launch2Creator_launch2CreateLaunch2CreateLinksHeading;
+String get launch2CreateLinksLine =>
+    LoopL10n.current.launch2Creator_launch2CreateLaunch2CreateLinksLine;
+String get launch2CreateLinksCommunityHint => LoopL10n
+    .current
+    .launch2Creator_launch2CreateLaunch2CreateLinksCommunityHint;
 
 /// The fields the form checks before the server does.
 enum Launch2Field { name, ticker, description, x, telegram, website, discord }
@@ -54,8 +61,10 @@ enum Launch2Field { name, ticker, description, x, telegram, website, discord }
 /// (`\p{L}\p{N}\p{S}\p{P}`); ② tag characters U+E0020–E007F only inside a
 /// flag sequence that opens with U+1F3F4 and closes with U+E007F; ③ no
 /// leading combining mark (`\p{M}`).
-const String launch2NameInvisibleMessage = '名称需包含可见字符';
-const String launch2TickerInvisibleMessage = '代码需包含可见字符';
+String get launch2NameInvisibleMessage =>
+    LoopL10n.current.launch2Creator_launch2CreateLaunch2NameInvisibleMessage;
+String get launch2TickerInvisibleMessage =>
+    LoopL10n.current.launch2Creator_launch2CreateLaunch2TickerInvisibleMessage;
 
 final RegExp _launch2Visible = RegExp(r'[\p{L}\p{N}\p{S}\p{P}]', unicode: true);
 final RegExp _launch2TagFlag = RegExp(
@@ -104,7 +113,7 @@ String? launch2FieldError(Launch2Field field, String raw) {
           uri.host.isEmpty ||
           value.length < 9 ||
           value.length > 512) {
-        return '只支持 https:// 开头的链接';
+        return LoopL10n.current.launch2Creator_launch2CreateIf;
       }
   }
   return null;
@@ -316,10 +325,10 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     if (_hasInput && widget.projectId == null) {
       final abandon = await confirmCommunityAction(
         context,
-        title: '放弃发起？',
-        body: '已填写的内容不会保存。',
-        confirmLabel: '放弃',
-        cancelLabel: '继续编辑',
+        title: LoopL10n.current.launch2Creator_launch2CreateTitle,
+        body: LoopL10n.current.launch2Creator_launch2CreateBody,
+        confirmLabel: LoopL10n.current.launch2Creator_launch2CreateConfirmLabel,
+        cancelLabel: LoopL10n.current.launch2Creator_launch2CreateCancelLabel,
         sheetKey: 'launch2-create-abandon-sheet',
       );
       if (!abandon || !mounted) return;
@@ -432,7 +441,13 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       ref.read(launch2SaveControllerProvider(_scope).notifier).contentChanged();
     } on LoopChainException catch (failure) {
       if (mounted) {
-        setState(() => failed('图片没有上传成功：${memeFailureText(failure)}'));
+        setState(
+          () => failed(
+            LoopL10n.current.launch2Creator_launch2CreateFailed(
+              memeFailureText(failure),
+            ),
+          ),
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -460,8 +475,12 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
 
   static String _leadLabel(Duration lead) {
     final minutes = (lead.inSeconds + 59) ~/ 60;
-    if (minutes % 60 == 0) return '${minutes ~/ 60} 小时';
-    return '$minutes 分钟';
+    if (minutes % 60 == 0) {
+      return LoopL10n.current.launch2Creator_launch2CreateLeadLabel(
+        minutes ~/ 60,
+      );
+    }
+    return LoopL10n.current.launch2Creator_launch2CreateLeadLabel2(minutes);
   }
 
   Future<void> _pickSaleStart() async {
@@ -480,7 +499,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('铸造开始时间'),
+          LoopSheetHeading(
+            context.l10n.launch2Creator_launch2CreateLoopSheetHeading,
+          ),
           SizedBox(
             height: 200,
             child: CupertinoTheme(
@@ -499,9 +520,14 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
               lead == null
-                  ? '最早可选时间由平台决定，太早会被退回。'
-                  : '平台要求至少提前 ${_leadLabel(lead)}开始铸造，最早 '
-                        '${loopLocalTimestampLabel(earliest)}。',
+                  ? context
+                        .l10n
+                        .launch2Creator_launch2CreateLaunch2SaleStartHint
+                  : context.l10n
+                        .launch2Creator_launch2CreateLaunch2SaleStartHint2(
+                          _leadLabel(lead),
+                          loopLocalTimestampLabel(earliest),
+                        ),
               key: const ValueKey<String>('launch2-sale-start-hint'),
               style: LoopType.captionSm.copyWith(color: LoopColors.text3),
             ),
@@ -510,7 +536,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             padding: const EdgeInsets.all(16),
             child: LoopButton(
               key: const ValueKey<String>('launch2-sale-start-confirm'),
-              label: '确定',
+              label: context.l10n.common_ok,
               primary: true,
               block: true,
               onPressed: () => Navigator.of(context).pop(chosen),
@@ -579,14 +605,16 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         return LoopFocusPage(
           key: const ValueKey<String>('launch2-create-screen'),
           archetype: LoopPageArchetype.action,
-          title: '修改资料',
+          title:
+              context.l10n.launch2Creator_launch2CreateLaunch2CreateScreenTitle,
           onBack: widget.onBack,
           body: <Widget>[
             LoopChainStateBlock(
               keyPrefix: 'launch2-create-load',
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '找不到这个项目',
+              emptyMessage:
+                  context.l10n.launch2Creator_launch2CreateEmptyMessage,
               onRetry: () => unawaited(ref.read(provider.notifier).reload()),
             ),
           ],
@@ -597,7 +625,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     final page = LoopFocusPage(
       key: const ValueKey<String>('launch2-create-screen'),
       archetype: LoopPageArchetype.action,
-      title: projectId == null ? '发起 v2 发射' : '修改资料',
+      title: projectId == null
+          ? context.l10n.launch2Creator_launch2CreateLaunch2CreateScreenTitle2
+          : context.l10n.launch2Creator_launch2CreateLaunch2CreateScreenTitle,
       onBack: () => unawaited(_back()),
       actions: <Widget>[
         if (projectId == null && widget.onOpenMyProjects != null)
@@ -607,14 +637,18 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       primaryAction: LoopButton(
         key: const ValueKey<String>('launch2-create-next'),
         label: _step < 2
-            ? '下一步'
+            ? context.l10n.common_next
             : save.busy
             ? switch (save.stage) {
-                Launch2SaveStage.project => '正在保存资料…',
-                Launch2SaveStage.config => '正在保存配置…',
-                _ => '正在提交审核…',
+                Launch2SaveStage.project =>
+                  context.l10n.launch2Creator_launch2CreateProject,
+                Launch2SaveStage.config =>
+                  context.l10n.launch2Creator_launch2CreateConfig,
+                _ => context.l10n.launch2Creator_launch2CreateLoopButton,
               }
-            : (save.phase == Launch2SavePhase.failed ? '重试提交' : '提交审核'),
+            : (save.phase == Launch2SavePhase.failed
+                  ? context.l10n.launch2Creator_launch2CreateLabel
+                  : context.l10n.launch2Creator_launch2CreateLabel2),
         primary: true,
         block: true,
         onPressed: save.busy || _uploading ? null : _next,
@@ -692,7 +726,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         key: const ValueKey<String>('launch2-create-rejection'),
         icon: 'warn',
         tone: LoopNoticeTone.warn,
-        title: '审核意见',
+        title: LoopL10n
+            .current
+            .launch2Creator_launch2CreateLaunch2CreateRejectionTitle,
         body: reason,
       ),
     ];
@@ -800,29 +836,38 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       ),
     );
     return <Widget>[
-      _groupTitle('图片资料', top: 12),
+      _groupTitle(
+        LoopL10n.current.launch2Creator_launch2CreateGroupTitle,
+        top: 12,
+      ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _pictureHeading(
-              '头像',
+              LoopL10n
+                  .current
+                  .launch2Creator_launch2CreateLaunch2CreateLogoMissing,
               logoMissing
                   ? note(
-                      '发射需要一张方形头像',
+                      LoopL10n
+                          .current
+                          .launch2Creator_launch2CreateLaunch2CreateLogoMissing2,
                       key: const ValueKey<String>(
                         'launch2-create-logo-missing',
                       ),
                       alert: true,
                     )
-                  : note('方形图片，上传前可裁剪'),
+                  : note(LoopL10n.current.launch2Creator_launch2CreateNote),
             ),
             Launch2UploadSlot(
               key: const ValueKey<String>('launch2-create-upload'),
               previewKey: const ValueKey<String>('launch2-create-logo-preview'),
               size: 96,
-              semanticLabel: '头像',
+              semanticLabel: LoopL10n
+                  .current
+                  .launch2Creator_launch2CreateLaunch2CreateLogoMissing,
               imageUrl: logoUrl,
               preview: logoUrl == null
                   ? null
@@ -855,10 +900,18 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _pictureHeading(
-              _nftImageRequired ? 'NFT 图' : 'NFT 图（可不传）',
+              _nftImageRequired
+                  ? LoopL10n
+                        .current
+                        .launch2Creator_launch2CreateLaunch2CreateNftMissing
+                  : LoopL10n
+                        .current
+                        .launch2Creator_launch2CreateLaunch2CreateNftMissing2,
               nftMissing
                   ? note(
-                      '发射需要一张 NFT 图',
+                      LoopL10n
+                          .current
+                          .launch2Creator_launch2CreateLaunch2CreateNftMissing3,
                       key: const ValueKey<String>('launch2-create-nft-missing'),
                       alert: true,
                     )
@@ -872,7 +925,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
               previewKey: const ValueKey<String>('launch2-create-nft-preview'),
               emptyKey: const ValueKey<String>('launch2-nft-image-empty'),
               size: 128,
-              semanticLabel: 'NFT 图',
+              semanticLabel: LoopL10n
+                  .current
+                  .launch2Creator_launch2CreateLaunch2CreateNftMissing,
               imageUrl: _nftImageUrl,
               missing: nftMissing,
               uploading: _nftUploading,
@@ -890,7 +945,10 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           tone: LoopNoticeTone.warn,
           body: _nftUploadFailure!,
         ),
-      _groupTitle('基础信息', top: 24),
+      _groupTitle(
+        LoopL10n.current.launch2Creator_launch2CreateGroupTitle2,
+        top: 24,
+      ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: Column(
@@ -898,15 +956,15 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           children: <Widget>[
             _field(
               Launch2Field.name,
-              label: '名称',
-              hint: '输入项目名称',
+              label: LoopL10n.current.common_name,
+              hint: LoopL10n.current.launch2Creator_launch2CreateHint,
               counter: _unitsCounter(_name),
             ),
             const SizedBox(height: 12),
             _field(
               Launch2Field.ticker,
-              label: '代码',
-              hint: '输入代币代码',
+              label: LoopL10n.current.launch2Creator_launch2CreateLabel3,
+              hint: LoopL10n.current.launch2Creator_launch2CreateHint2,
               counter: _unitsCounter(_ticker),
               prefix: _tickerPrefix,
             ),
@@ -921,8 +979,8 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             const SizedBox(height: 12),
             _field(
               Launch2Field.description,
-              label: '简介（可不填）',
-              hint: '介绍一下你的项目',
+              label: LoopL10n.current.launch2Creator_launch2CreateLabel4,
+              hint: LoopL10n.current.launch2Creator_launch2CreateHint3,
               maxLength: _descriptionMax,
               maxLines: 4,
               counter:
@@ -936,7 +994,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
   }
 
   List<Widget> _linksStep() => <Widget>[
-    const LoopLabel(
+    LoopLabel(
       launch2CreateLinksHeading,
       key: ValueKey<String>('launch2-create-links-heading'),
     ),
@@ -969,11 +1027,20 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          for (final (field, label) in const <(Launch2Field, String)>[
-            (Launch2Field.x, 'X（可不填）'),
-            (Launch2Field.telegram, 'Telegram（可不填）'),
-            (Launch2Field.website, '官网（可不填）'),
-            (Launch2Field.discord, 'Discord（可不填）'),
+          for (final (field, label) in <(Launch2Field, String)>[
+            (Launch2Field.x, LoopL10n.current.launch2Creator_launch2CreateFor),
+            (
+              Launch2Field.telegram,
+              LoopL10n.current.launch2Creator_launch2CreateFor2,
+            ),
+            (
+              Launch2Field.website,
+              LoopL10n.current.launch2Creator_launch2CreateFor3,
+            ),
+            (
+              Launch2Field.discord,
+              LoopL10n.current.launch2Creator_launch2CreateFor4,
+            ),
           ]) ...<Widget>[
             _field(
               field,
@@ -1002,7 +1069,7 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
     final failure = save.failure;
     final draft = _existingDraft;
     return <Widget>[
-      const LoopLabel('铸造开始时间'),
+      LoopLabel(LoopL10n.current.launch2Creator_launch2CreateLoopSheetHeading),
       Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -1013,7 +1080,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         child: LoopButton(
           key: const ValueKey<String>('launch2-create-sale-start'),
           label: start == null
-              ? '选择铸造开始时间'
+              ? LoopL10n
+                    .current
+                    .launch2Creator_launch2CreateLaunch2CreateSaleStartLabel
               : launch2SaleStartLabel(start, _now),
           icon: 'clock',
           block: true,
@@ -1021,16 +1090,18 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
         ),
       ),
       if (_saleStartMissing)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-create-sale-start-missing'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          body: '请先选择铸造开始时间。',
+          body: LoopL10n
+              .current
+              .launch2Creator_launch2CreateLaunch2CreateSaleStartMissingBody,
         ),
-      const LoopLabel('回购收币地址'),
+      LoopLabel(LoopL10n.current.launch2Creator_launch2CreateLoopLabel),
       Launch2FixedRecipient(address: _shownRecipient),
       const SizedBox(height: 16),
-      const LoopLabel('发射模板'),
+      LoopLabel(LoopL10n.current.launch2Creator_launch2CreateLoopLabel2),
       Launch2TemplateCard(
         economics: draft?.economics ?? Launch2Template.v1,
         fromServer: draft != null,
@@ -1040,10 +1111,11 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
           key: const ValueKey<String>('launch2-create-sale-too-early'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          body:
-              '铸造开始时间太早：平台要求至少提前 '
-              '${_leadLabel(save.minSaleLead ?? Duration.zero)}，'
-              '最早 ${loopLocalTimestampLabel(earliest)}，请重新选择。',
+          body: LoopL10n.current
+              .launch2Creator_launch2CreateLaunch2CreateSaleTooEarlyBody(
+                _leadLabel(save.minSaleLead ?? Duration.zero),
+                loopLocalTimestampLabel(earliest),
+              ),
         ),
       if (failure != null)
         LoopNotice(

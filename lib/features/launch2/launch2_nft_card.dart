@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 
@@ -95,8 +96,8 @@ class Launch2NftCard extends StatelessWidget {
       label: <String>[
         '$ticker NFT',
         ?_idLabel,
-        if (pictureUrls.isEmpty) '默认图',
-      ].join('，'),
+        if (pictureUrls.isEmpty) context.l10n.launch2_launch2NftCardSemantics,
+      ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: side == null
           ? AspectRatio(aspectRatio: 1, child: face)

@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_nft_card.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -91,7 +92,9 @@ Launch2WalletEntries launch2WalletEntries(
     return Launch2WalletEntries(
       failure: LoopInlineUnavailable(
         key: const ValueKey<String>('launch2-wallet-unavailable'),
-        message: 'MEME v2 持仓暂时读不到',
+        message: LoopL10n
+            .current
+            .launch2_launch2WalletRowsLaunch2WalletUnavailableMessage,
         onRetry: () => unawaited(
           ref.read(launch2PositionsControllerProvider.notifier).reload(),
         ),
@@ -125,7 +128,9 @@ Launch2WalletEntries launch2WalletEntries(
           key: 'launch2-wallet-meme-${position.instanceId}',
           position: position,
           title: position.ticker,
-          subtitle: '$launch2WalletChainLabel · 内盘持仓',
+          subtitle: LoopL10n.current.launch2_launch2WalletRowsSubtitle(
+            launch2WalletChainLabel,
+          ),
           // Decision 0219 (需求方 10-21): no 买入 / 卖出 chips; the whole
           // row opens the instance page, where the trade happens.
           value: hidden ? '****' : launch2MemeFigure(position.curve.net),
@@ -152,7 +157,8 @@ Launch2WalletEntries launch2WalletEntries(
 /// The grey line a Launch chain row of the wallet carries (S259 · decision
 /// 0217). On the testnet the Launch chain is not the main chain; on mainnet
 /// both are one chain and the rows read the same.
-const String launch2WalletChainLabel = 'Launch 链';
+String get launch2WalletChainLabel =>
+    LoopL10n.current.launch2_launch2WalletRowsLaunch2WalletChainLabel;
 
 /// The MEME v2 token rows and NFT rows in one column (decision 0139), as
 /// [launch2WalletEntries] reads them. The wallet page draws the two kinds
@@ -226,7 +232,8 @@ class Launch2WalletRows extends ConsumerWidget {
       // The quote row owns the secondary value's step (decision 0190 M21).
       valueCaption: Text(caption, key: ValueKey<String>('$key-caption')),
       onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
-      semanticLabel: '$title，$line，$value，$caption',
+      semanticLabel:
+          '$title${LoopL10n.current.common_listSeparator}$line${LoopL10n.current.common_listSeparator}$value${LoopL10n.current.common_listSeparator}$caption',
     );
   }
 }
@@ -300,7 +307,8 @@ class Launch2WalletNftTile extends StatelessWidget {
     final id = position.mintedTokenId;
     return Semantics(
       button: true,
-      label: '$title${id == null ? '' : ' #$id'}，$line',
+      label:
+          '$title${id == null ? '' : ' #$id'}${LoopL10n.current.common_listSeparator}$line',
       excludeSemantics: true,
       child: LoopPressable(
         onTap: onTap,
