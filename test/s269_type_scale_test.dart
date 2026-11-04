@@ -230,18 +230,16 @@ void main() {
     _expectNothingUnder12(tester, '钱包');
   });
 
-  test(
-    '聊天: the head is the search field; an inbox row is body1 over body2',
-    () {
-      // The chat Tab carries no title word (decision 0122's OKX social head);
-      // its rows take the v3 steps through the Stream theme.
-      final row = loopStreamChatThemeData().channelListItemTheme;
-      expect(row.titleStyle?.fontSize, LoopType.body1.fontSize);
-      expect(row.titleStyle?.fontWeight, LoopType.body1.fontWeight);
-      expect(row.subtitleStyle?.fontSize, LoopType.bodySm.fontSize);
-      expect(row.timestampStyle?.fontSize, LoopType.caption.fontSize);
-    },
-  );
+  test('聊天: an inbox row is rowTitleLg over captionMd (S353a)', () {
+    // S353a · decision 0278 (docs/58 §5.6): the name 16 / 500 over the
+    // preview 14 / 300, the time 12 / 300, through the Stream theme.
+    final row = loopStreamChatThemeData().channelListItemTheme;
+    expect(row.titleStyle?.fontSize, LoopType.rowTitleLg.fontSize);
+    expect(row.titleStyle?.fontWeight, LoopType.rowTitleLg.fontWeight);
+    expect(row.subtitleStyle?.fontSize, LoopType.captionMd.fontSize);
+    expect(row.subtitleStyle?.fontWeight, LoopType.captionMd.fontWeight);
+    expect(row.timestampStyle?.fontSize, LoopType.caption.fontSize);
+  });
 
   testWidgets('项目页 and 代币页: nothing under 12', (tester) async {
     await pumpS269Project(tester);

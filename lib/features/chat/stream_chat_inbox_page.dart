@@ -43,6 +43,15 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// floats over the list.
 const double chatInboxListBottomPadding = LoopLayout.tabPageBottomReserve;
 
+/// The search field under the title (docs/58 §3.1: 8 from the title block)
+/// and the room between it and the first row.
+const double chatInboxSearchTop = 8;
+const double chatInboxSearchBottom = 10;
+
+/// One conversation row (docs/58 §3.2 / §5.6): 67 high, a 48 face, the name
+/// 2 over the preview, the content inside the page gutter.
+const double chatInboxRowHeight = 67;
+
 /// Creates LOOP's official, bounded Stream channel-list controller.
 ///
 /// Stream owns channel ordering, pagination, unread state, presence, and local
@@ -213,20 +222,37 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
         keyPrefix: 'chat-atmo',
       ),
       // S343 · decision 0271: 「＋」 at the top right; the bell and the
-      // owner's face moved to 我的.
+      // owner's face moved to 我的 (docs/56 §四, so the Figma's bell is not
+      // drawn here).
       actions: const <Widget>[ChatCreateMenuButton()],
-      // OKX social head (decision 0122): one search field across the bar.
-      titleField: const LoopTitleCrown(
-        crownKey: ValueKey<String>('chat-atmo-title-crown'),
-        left: 40,
-        top: -22,
-        width: 80,
-        child: _ChatSearchEntry(),
+      // S353a · decision 0278 (docs/58 §5.1): the bar carries the page title
+      // over the Purple doodle, and the 44 search field stands under it, 8
+      // below, across the page gutter.
+      filters: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              chatInboxSearchTop,
+              LoopSpacing.page,
+              chatInboxSearchBottom,
+            ),
+            child: LoopTitleCrown(
+              crownKey: ValueKey<String>('chat-atmo-title-crown'),
+              left: 40,
+              top: -22,
+              width: 80,
+              child: _ChatSearchEntry(),
+            ),
+          ),
+          // The room this account is in, as this client knows it (decision
+          // 0111): the way back that the retired community message panel
+          // used to carry. Only while there is a room to go back to.
+          _VoiceRoomReturnEntry(onOpenVoiceRoom: widget.onOpenVoiceRoom),
+        ],
       ),
-      // The room this account is in, as this client knows it (decision
-      // 0111): the way back that the retired community message panel used
-      // to carry. Only while there is a room to go back to.
-      filters: _VoiceRoomReturnEntry(onOpenVoiceRoom: widget.onOpenVoiceRoom),
       collection: content,
     );
     return LoopAtmoPrecache(child: page);
@@ -287,10 +313,9 @@ extension on _StreamChatInboxPageState {
 }
 
 /// The inbox before anything is known about its conversations (decision
-/// 0132): conversation rows in the shape the list draws them — the tile's
-/// 4 + 12 insets, a 48 face (decision 0260), the name with the time at its end over the
-/// preview line — under the list's own padding, so nothing moves when the
-/// rows land. The list view loads in the same shape.
+/// 0132): conversation rows in the shape the list draws them — 67 high, a
+/// 48 face (decision 0260) on the page gutter, the name with the time at its
+/// end over the preview line (S353a) — so nothing moves when the rows land. The list view loads in the same shape.
 class ChatInboxRowsSkeleton extends StatelessWidget {
   const ChatInboxRowsSkeleton({super.key, this.rows = 7});
 
@@ -308,17 +333,17 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
       child: ExcludeSemantics(
         child: SingleChildScrollView(
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            0,
-            8,
-            0,
-            chatInboxListBottomPadding,
-          ),
+          padding: const EdgeInsets.only(bottom: chatInboxListBottomPadding),
           child: Column(
             children: <Widget>[
               for (var index = 0; index < rows; index++)
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  // The row's measures (docs/58 §5.6): 67 high, the face on
+                  // the page gutter.
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: LoopSpacing.page,
+                    vertical: (chatInboxRowHeight - chatListAvatarSize) / 2,
+                  ),
                   child: Row(
                     children: <Widget>[
                       const LoopSkeletonBlock(
@@ -326,7 +351,7 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                         height: chatListAvatarSize,
                         radius: chatListAvatarRadius,
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: ChatInboxRowMetrics.gap),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +361,7 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                               children: <Widget>[
                                 Expanded(
                                   child: LoopSkeletonLine(
-                                    style: LoopType.titleLg,
+                                    style: LoopType.rowTitleLg,
                                     widthFactor: _titles[index % 4],
                                   ),
                                 ),
@@ -344,9 +369,9 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
                                 const LoopSkeletonBlock(width: 40, height: 10),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: ChatInboxRowMetrics.outer),
                             LoopSkeletonLine(
-                              style: LoopType.body,
+                              style: LoopType.captionMd,
                               widthFactor: _previews[index % 4],
                             ),
                           ],
@@ -900,11 +925,8 @@ class _StreamChannelListBodyState
             child: ChatInboxSwipeScope(
               child: StreamChannelListView(
                 controller: controller,
-                padding: const EdgeInsets.fromLTRB(
-                  0,
-                  8,
-                  0,
-                  chatInboxListBottomPadding,
+                padding: const EdgeInsets.only(
+                  bottom: chatInboxListBottomPadding,
                 ),
                 // S348: one list, community rooms and friends side by
                 // side in Stream's order.
@@ -916,7 +938,8 @@ class _StreamChannelListBodyState
                     channels,
                     index,
                     // S350a · decision 0274: a pinned row is told apart by
-                    // its lifted ground, live as the pin changes.
+                    // its lifted ground, live as the pin changes (S353a:
+                    // the Figma's Card step).
                     StreamBuilder<bool>(
                       initialData: channel.isPinned,
                       stream: channel.isPinnedStream,
@@ -931,14 +954,15 @@ class _StreamChannelListBodyState
                               ),
                         onAction: (action) =>
                             unawaited(_runAction(channel, action, controller)),
-                        child: loopStreamChannelListIdentityItem(defaultItem),
+                        child: ChatInboxRowMetrics(
+                          child: loopStreamChannelListIdentityItem(defaultItem),
+                        ),
                       ),
                     ),
                   );
                 },
-                // OKX's conversation list has no hairlines (decision 0123).
-                // Rows are told apart by the tile's own vertical padding — about
-                // 38 between two avatars; an extra 12 made the list loose.
+                // S353a · decision 0278: the hairline between two rows is
+                // drawn by the row itself ([_boardRow]), so nothing more.
                 separatorBuilder: (context, channels, index) =>
                     const SizedBox.shrink(),
                 // Decision 0132: the same rows-shaped placeholder the
@@ -1076,41 +1100,87 @@ class _StreamChannelListBodyState
 String? inboxCommunityRowTitle(Channel channel, CommunityFace? face) =>
     face?.name;
 
-/// One inbox row on the wall's board (decisions 0221, 0224): the rows sit
-/// inside the page gutter on the translucent board ([loopChatBoardFill], the
-/// wall shows through), the first with the board's top corners and the last
-/// with the bottom ones, a Chalk 8 %
-/// hairline between two rows. Off the wall the row is returned as it is.
-Widget _boardRow(List<Channel> ordered, int index, Widget row) => Builder(
-  builder: (context) {
-    if (!LoopBackdropScope.on(context)) return row;
-    final first = index == 0;
-    final last = index == ordered.length - 1;
-    const corner = Radius.circular(LoopRadius.cardValue);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      child: ClipRRect(
-        key: const ValueKey<String>('chat-inbox-board-row'),
-        borderRadius: BorderRadius.vertical(
-          top: first ? corner : Radius.zero,
-          bottom: last ? corner : Radius.zero,
+/// One inbox row (S353a · decision 0278, docs/58 §5.6): the rows sit on the
+/// page itself, full width — the ground is the row's own (see
+/// [ChatInboxSwipeRow]) — and a 1px white 5 % hairline inside the page
+/// gutter closes every row but the last.
+Widget _boardRow(List<Channel> ordered, int index, Widget row) {
+  if (index == ordered.length - 1) return row;
+  return DecoratedBox(
+    key: const ValueKey<String>('chat-inbox-board-hairline'),
+    position: DecorationPosition.foreground,
+    decoration: const _ChatRowHairline(),
+    child: row,
+  );
+}
+
+/// The row's bottom hairline, inset by the page gutter at both ends.
+final class _ChatRowHairline extends Decoration {
+  const _ChatRowHairline();
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _ChatRowHairlinePainter();
+}
+
+final class _ChatRowHairlinePainter extends BoxPainter {
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null) return;
+    final bottom = offset.dy + size.height - 0.5;
+    canvas.drawLine(
+      Offset(offset.dx + LoopSpacing.page, bottom),
+      Offset(offset.dx + size.width - LoopSpacing.page, bottom),
+      Paint()
+        ..color = LoopColors.divider
+        ..strokeWidth = 1,
+    );
+  }
+}
+
+/// Stream's channel tile re-cut to the Figma's conversation row (docs/58
+/// §5.6): 67 high with a 48 face, 12 between the face and the words, 2
+/// between the name and the preview, and the face on the page gutter.
+///
+/// The official tile spaces itself from the [StreamTheme]'s spacing scale
+/// (`xxs` around it, `sm` inside, `md` between the face and the words), so
+/// the row is drawn under a copy of that theme with those three steps set.
+class ChatInboxRowMetrics extends StatelessWidget {
+  const ChatInboxRowMetrics({required this.child, super.key});
+
+  final Widget child;
+
+  /// Around the tile (Stream's `xxs`); also the name-to-preview gap.
+  static const double outer = 2;
+
+  /// Inside the tile, top and bottom (Stream's `sm`): what is left of the
+  /// 67 row around the 48 face.
+  static const double inner =
+      (chatInboxRowHeight - chatListAvatarSize) / 2 - outer;
+
+  /// Between the face and the words (Stream's `md`).
+  static const double gap = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stream = StreamTheme.of(context);
+    final spacing = stream.spacing.copyWith(xxs: outer, sm: inner, md: gap);
+    final extensions =
+        theme.extensions.values.where((entry) => entry is! StreamTheme).toList()
+          ..add(stream.copyWith(spacing: spacing));
+    return Theme(
+      data: theme.copyWith(extensions: extensions),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: LoopSpacing.page - outer - inner,
         ),
-        child: last
-            ? row
-            : DecoratedBox(
-                key: const ValueKey<String>('chat-inbox-board-hairline'),
-                position: DecorationPosition.foreground,
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: loopChatBoardHairline),
-                  ),
-                ),
-                child: row,
-              ),
+        child: child,
       ),
     );
-  },
-);
+  }
+}
 
 /// Where one inbox row goes, and what it may carry there.
 ///

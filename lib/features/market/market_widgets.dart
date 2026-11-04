@@ -11,7 +11,6 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
-import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -328,38 +327,35 @@ class MarketTabBar extends StatelessWidget {
                       minHeight: LoopTouch.minimum,
                     ),
                     alignment: Alignment.center,
-                    // Decision 0222: the chosen capsule wears the splat.
-                    child: _splatIf(
-                      index == selectedIndex,
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 7,
-                        ),
-                        // Decision 0212: the chosen tab is a solid Purple capsule
-                        // with a white word; the rest are grey words.
-                        decoration: BoxDecoration(
-                          color: index == selectedIndex
-                              ? LoopColors.purpleSelected
-                              : Colors.transparent,
-                          borderRadius: LoopRadius.pill,
-                        ),
-                        // R16 the quiet segment's word (decision 0190 M24): `action`
-                        // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
-                        // draws; the underline stays the strip's own.
-                        child: Text(
-                          labels[index],
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: index == selectedIndex
-                              ? LoopTypography.withWeight(
-                                  LoopType.action,
-                                  FontWeight.w700,
-                                ).copyWith(color: LoopColors.onPurple)
-                              : LoopType.action.copyWith(
-                                  color: LoopColors.text2,
-                                ),
-                        ),
+                    // S353a · decision 0278: no splat on the chosen capsule
+                    // (docs/58 §9.3: a chosen state is the white word).
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 7,
+                      ),
+                      // Decision 0277: the chosen tab is the Figma's chosen
+                      // chip — white 10 % with a white word; the rest are
+                      // grey words.
+                      decoration: BoxDecoration(
+                        color: index == selectedIndex
+                            ? LoopColors.chipActive
+                            : Colors.transparent,
+                        borderRadius: LoopRadius.pill,
+                      ),
+                      // R16 the quiet segment's word (decision 0190 M24): `action`
+                      // 14 at 600, 700 when chosen — the step `LoopSeg(quiet:)`
+                      // draws; the underline stays the strip's own.
+                      child: Text(
+                        labels[index],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: index == selectedIndex
+                            ? LoopTypography.withWeight(
+                                LoopType.action,
+                                FontWeight.w700,
+                              ).copyWith(color: LoopColors.onPurple)
+                            : LoopType.action.copyWith(color: LoopColors.text2),
                       ),
                     ),
                   ),
@@ -371,9 +367,6 @@ class MarketTabBar extends StatelessWidget {
       ],
     ),
   );
-
-  static Widget _splatIf(bool chosen, Widget capsule) =>
-      chosen ? loopSplatted(capsule) : capsule;
 }
 
 // ---------------------------------------------------------------------------

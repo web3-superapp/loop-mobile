@@ -703,6 +703,9 @@ String resolveLoopGroupConversationLabel(Map<String, Object?> extraData) {
 /// The right end of an inbox row: the last message's time and, when the
 /// conversation has unread messages, LOOP's unread badge after it
 /// (decision 0105 · 6).
+/// The inbox's unread count (docs/58 §5.6: a 20 Yellow round).
+const double loopChannelUnreadBadgeHeight = 20;
+
 Widget loopStreamChannelListTrailing(Widget time, int unreadCount) {
   if (loopUnreadBadgeLabel(unreadCount) == null) return time;
   return Row(
@@ -710,11 +713,13 @@ Widget loopStreamChannelListTrailing(Widget time, int unreadCount) {
     children: <Widget>[
       time,
       const SizedBox(width: 6),
-      // Decision 0122: Lime, LOOP's own mark, rather than the warning red.
+      // Decision 0122: LOOP's own Yellow mark, rather than the warning red;
+      // S353a · docs/58 §5.6: the Figma's 20 round count, 10 / 700.
       LoopUnreadBadge(
         key: const ValueKey<String>('loop-channel-unread-badge'),
         count: unreadCount,
-        color: LoopColors.lime,
+        color: LoopColors.yellow,
+        height: loopChannelUnreadBadgeHeight,
       ),
     ],
   );
@@ -946,7 +951,10 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
               radius: chatListAvatarRadius,
               listRow: true,
             ),
-            title: Text(label),
+            title: loopGroupChannelListTitle(
+              label,
+              channelState.channel?.memberCount ?? channel.memberCount,
+            ),
             subtitle: displayMessage == null
                 ? Text(
                     face?.firstSentence ?? loopChannelQuietLabel,
@@ -973,6 +981,43 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A group row's name with its head count after it (S353a · decision 0278,
+/// docs/58 §5.6): an 18 high tag at a 4 corner, the number
+/// at 10 / 600 in textSecondary, 6 after the name. The name gives way first;
+/// no count (or none read) draws the name alone. The Figma's `#131417` ground
+/// would vanish on a pinned row's card step, so the tag takes white 8 %,
+/// which reads on both.
+Widget loopGroupChannelListTitle(String label, int? memberCount) {
+  if (memberCount == null || memberCount <= 0) return Text(label);
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Flexible(child: Text(label)),
+      const SizedBox(width: 6),
+      Container(
+        key: const ValueKey<String>('loop-channel-member-count'),
+        height: 18,
+        constraints: const BoxConstraints(minWidth: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: LoopColors.buttonGhost,
+          borderRadius: LoopRadius.stage,
+        ),
+        child: Text(
+          '$memberCount',
+          maxLines: 1,
+          softWrap: false,
+          style: LoopTypography.withWeight(
+            LoopType.metaSm,
+            FontWeight.w600,
+          ).copyWith(color: LoopColors.textSecondary),
+        ),
+      ),
+    ],
+  );
 }
 
 /// A group conversation's face (decision 0258): the community's own logo

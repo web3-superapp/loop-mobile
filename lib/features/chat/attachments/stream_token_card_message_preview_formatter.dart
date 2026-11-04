@@ -235,9 +235,7 @@ TextSpan loopQuietSenderPrefix(TextSpan span) {
     children: <InlineSpan>[
       TextSpan(
         text: text,
-        style: (first.style ?? const TextStyle()).copyWith(
-          fontWeight: FontWeight.w400,
-        ),
+        style: _withoutWeight(first.style),
         children: first.children,
       ),
       ...children.skip(1),
@@ -246,3 +244,13 @@ TextSpan loopQuietSenderPrefix(TextSpan span) {
 }
 
 final RegExp _senderPrefix = RegExp(r'[:：]\s*$');
+
+/// [style] with its weight dropped, so the prefix takes the preview line's
+/// own weight (S353a · docs/58 §5.6: 14 / 300) instead of a fixed one.
+TextStyle _withoutWeight(TextStyle? style) => TextStyle(
+  inherit: style?.inherit ?? true,
+  color: style?.color,
+  fontStyle: style?.fontStyle,
+  letterSpacing: style?.letterSpacing,
+  decoration: style?.decoration,
+);

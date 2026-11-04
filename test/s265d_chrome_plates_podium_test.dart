@@ -265,8 +265,8 @@ void main() {
   });
 
   group('聊天 · 磨砂板', () {
-    testWidgets('on the wall a row is the block ground at 92 %, the wall '
-        'only just showing through; off the wall it keeps the page ground', (
+    testWidgets('on the wall a row at rest is the page, the board is the '
+        'block ground at 92 %; off the wall it keeps the page ground', (
       tester,
     ) async {
       Widget row() => ChatInboxSwipeRow(
@@ -296,19 +296,21 @@ void main() {
           ),
         ),
       );
-      Color ground(String key) => tester
-          .widget<Material>(
-            find
-                .descendant(of: _key(key), matching: find.byType(Material))
-                .first,
-          )
-          .color!;
-      expect(ground('on-wall'), loopChatBoardFill);
-      expect(ground('on-wall').a, lessThan(1));
+      Finder ground(String key) => find.descendant(
+        of: _key(key),
+        matching: find.byKey(const ValueKey<String>('chat-inbox-row-ground')),
+      );
+      // S353a · decision 0278: on the wall a row at rest is the page itself
+      // (the Figma draws the list on the page ground); a pinned or sliding
+      // row takes the board below.
+      expect(ground('on-wall'), findsNothing);
       // S279 · decision 0237: the board is the block ground at 92 %.
       expect(loopChatBoardFill.a, closeTo(0.92, 0.01));
       expect(loopChatBoardFill.withValues(alpha: 1), LoopColors.plate);
-      expect(ground('off-wall'), LoopTheme.dark.scaffoldBackgroundColor);
+      expect(
+        tester.widget<ColoredBox>(ground('off-wall')).color,
+        LoopTheme.dark.scaffoldBackgroundColor,
+      );
       expect(loopChatBoardHairline, const Color(0x14F4F5F7));
 
       // Contrast over the darkened wall: its 99th-percentile pixel lands at

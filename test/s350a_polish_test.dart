@@ -94,7 +94,8 @@ void main() {
       final quiet = loopQuietSenderPrefix(span);
       final prefix = quiet.children!.first as TextSpan;
       expect(prefix.text, '成员: ');
-      expect(prefix.style?.fontWeight, FontWeight.w400);
+      // S353a: the prefix takes the preview line's own weight.
+      expect(prefix.style?.fontWeight, isNull);
       final mention =
           (quiet.children![1] as TextSpan).children!.single as TextSpan;
       expect(mention.style?.fontWeight, FontWeight.bold);
@@ -123,46 +124,40 @@ void main() {
           child: const SizedBox(height: 80, width: 300),
         ),
       );
-      Color? ground(WidgetTester tester) => tester
-          .widget<Material>(
-            find
-                .descendant(
-                  of: find.byType(ChatInboxSwipeRow),
-                  matching: find.byType(Material),
-                )
-                .first,
-          )
-          .color;
+      final ground = find.byKey(
+        const ValueKey<String>('chat-inbox-row-ground'),
+      );
 
+      // S353a · decision 0278: a row at rest sits on the page itself.
       await tester.pumpWidget(
         MaterialApp(home: Scaffold(body: row(pinned: false))),
       );
-      expect(ground(tester), loopChatBoardFill);
+      expect(ground, findsNothing);
       await tester.pumpWidget(
         MaterialApp(home: Scaffold(body: row(pinned: true))),
       );
-      expect(ground(tester), loopChatBoardPinnedFill);
-      expect(loopChatBoardPinnedFill, isNot(loopChatBoardFill));
+      expect(tester.widget<ColoredBox>(ground).color, loopChatBoardPinnedFill);
+      expect(loopChatBoardPinnedFill.withValues(alpha: 1), LoopColors.card);
     });
   });
 
   group('广场 · 动态', () {
-    testWidgets('a post is its own card, 16 in and 12 apart, no hairline', (
+    testWidgets('a post sits on the page with a hairline under it (S353a)', (
       tester,
     ) async {
       await _pumpPost(tester, _post());
       final card = _key('square-post-card');
       final box = tester.widget<Container>(card);
       final decoration = box.decoration! as BoxDecoration;
-      expect(decoration.color, LoopColors.card);
-      expect(decoration.border, isNull);
+      expect(decoration.color, isNull);
       expect(
-        box.margin,
-        const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+        decoration.border,
+        const Border(bottom: BorderSide(color: LoopColors.divider)),
       );
-      // The text starts on the avatar's left edge, 16 inside the card.
+      expect(box.margin, const EdgeInsets.symmetric(horizontal: 20));
+      // The text starts on the avatar's left edge, on the page gutter.
       final text = tester.getRect(_key('square-post-text'));
-      expect(text.left, squareFeedCardInset + squareFeedCardPadding);
+      expect(text.left, 20);
     });
 
     testWidgets('the market cap is whole or not drawn', (tester) async {
@@ -181,8 +176,8 @@ void main() {
       final cap = tester.widget<Text>(_key('square-post-cap'));
       expect(cap.overflow, isNot(TextOverflow.ellipsis));
 
-      await _pumpPost(tester, _post(token: token), width: 300);
-      // Too narrow for 「市值 $1.3M」 whole: the cap is left off, the
+      await _pumpPost(tester, _post(token: token), width: 240);
+      // Too narrow for 「Mcap $1.3M」 whole: the cap is left off, the
       // ticker and the price stay.
       expect(_key('square-post-cap'), findsNothing);
       expect(_key('square-post-symbol'), findsOneWidget);

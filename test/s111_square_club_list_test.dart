@@ -359,7 +359,8 @@ void main() {
       );
       // S335 (decision 0264): members and the token are two pieces, the
       // token a chip with its logo; nothing joins them into one sentence.
-      expect(find.text('128 members'), findsNWidgets(2));
+      // S353a · decision 0278: the count is the people mark and the number.
+      expect(find.text('128'), findsNWidgets(2));
       final chip = find.byKey(
         const ValueKey<String>('square-community-token-$testCommunityId'),
       );
@@ -396,7 +397,7 @@ void main() {
         onOpenCommunity: opened.add,
       );
       await _chooseSort(tester, 'square-sort-power');
-      expect(find.text('128 members'), findsOneWidget);
+      expect(find.text('128'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('square-community-ranked-$testCommunityId'),
@@ -464,7 +465,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('129 members'), findsOneWidget);
+      expect(find.text('129'), findsOneWidget);
       expect(find.text('Joined'), findsWidgets);
       await _drain(tester);
     });

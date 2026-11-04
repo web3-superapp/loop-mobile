@@ -11,7 +11,6 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
-import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_format.dart';
 import 'package:loop_mobile/features/meme/meme_routes.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
@@ -25,6 +24,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -252,7 +252,9 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
   }
 }
 
-/// 全球 / 已关注 and 「发帖」. The design's filter glyph is not drawn: the
+/// 全球 / 已关注 and 「发帖」 (S353a · decision 0278, docs/58 §5.3): the two
+/// scopes are the Figma's 54 × 32 filter chips, 「＋ 发帖」 the Yellow text
+/// control at the row's end. The design's filter glyph is not drawn: the
 /// timeline has no filter to offer yet.
 class _FeedTabs extends StatelessWidget {
   const _FeedTabs({
@@ -266,42 +268,74 @@ class _FeedTabs extends StatelessWidget {
   final VoidCallback onCompose;
 
   @override
-  // S350a · decision 0274: no hairline under the row — the cards below
-  // start a segment gap (16) under it — and 「发帖」 is the compact control
-  // beside the two words, not a page-size button.
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: LoopSpacing.segmentGap),
-    child: IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            child: MarketTabBar(
-              key: const ValueKey<String>('square-feed-tabs'),
-              keyPrefix: 'square-feed-tab',
-              labels: <String>[
-                for (final value in SquareFeedScope.values) value.label,
-              ],
-              selectedIndex: scope.index,
-              onSelected: (index) => onSelected(SquareFeedScope.values[index]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, LoopSpacing.page, 4),
-            child: Center(
-              child: LoopButton(
-                key: const ValueKey<String>('square-feed-compose'),
-                label: context.l10n.square_feedViewSquareFeedComposeLabel,
-                icon: 'plus',
-                size: LoopButtonSize.compact,
-                onPressed: onCompose,
-              ),
-            ),
-          ),
-        ],
-      ),
+    // docs/58 §9.4: 12 from the title block, 12 down to the first post.
+    padding: const EdgeInsets.only(
+      top: squareFeedChipsTop,
+      bottom: LoopSpacing.chipGap,
+    ),
+    child: LoopFilterChips(
+      key: const ValueKey<String>('square-feed-tabs'),
+      labels: <String>[for (final value in SquareFeedScope.values) value.label],
+      keys: <Key>[
+        for (final value in SquareFeedScope.values)
+          ValueKey<String>('square-feed-tab-${value.name}'),
+      ],
+      selectedIndex: scope.index,
+      onSelected: (index) => onSelected(SquareFeedScope.values[index]),
+      trailing: _ComposeLink(onTap: onCompose),
     ),
   );
+}
+
+/// The room between the segment titles and the scope chips (docs/58 §3.1).
+const double squareFeedChipsTop = 4;
+
+/// 「＋ 发帖」: an 18 Yellow plus and the word at 16 / 600 Yellow, 8 apart,
+/// in a 44 target (docs/58 §5.20).
+class _ComposeLink extends StatelessWidget {
+  const _ComposeLink({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = context.l10n.square_feedViewSquareFeedComposeLabel;
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        key: const ValueKey<String>('square-feed-compose'),
+        onTap: onTap,
+        borderRadius: LoopRadius.button,
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: LoopColors.pressHighlight,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: LoopTouch.minimum,
+            minWidth: LoopTouch.minimum,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const LoopIcon('plus', size: 18, color: LoopColors.yellow),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: LoopType.button.copyWith(color: LoopColors.yellow),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FeedStateBlock extends StatelessWidget {
@@ -332,16 +366,15 @@ class _FeedStateBlock extends StatelessWidget {
   }
 }
 
-/// A post card's measures (S350a · decision 0274): the 社区 segment's card
-/// grid, so the two segments of 广场 line up.
-const double squareFeedCardInset = 16;
-const double squareFeedCardGap = 12;
-const double squareFeedCardPadding = 16;
+/// A post's measures (S353a · decision 0278, docs/58 §5.7 / §9.4): posts sit
+/// on the page in the page gutter, a 1px white 5 % hairline under each, 12
+/// above and below it.
+const double squareFeedPostGap = 12;
 
-/// `.feed-post` (decision 0187, docs/35 body4 「动态 A」): a 32 avatar, the
-/// name, the kind badge and the age on one line; the text (or, for an event,
-/// the sentence [squareFeedPostSentence] writes); the token's quote capsule;
-/// ♡. Everything under the head is indented past the avatar.
+/// `.feed-post` in the Figma's form (docs/58 §5.7): a 48 face with the name
+/// at 18 / 600 and the kind tag beside it, the age at 12 / 300 under the
+/// name; the text across the full width; the token's quote card; ♡ at the
+/// right end. A hairline closes the post.
 class SquareFeedPostRow extends StatelessWidget {
   const SquareFeedPostRow({
     required this.post,
@@ -360,16 +393,18 @@ class SquareFeedPostRow extends StatelessWidget {
   /// Offered on the viewer's own posts only: asks to delete.
   final VoidCallback? onLongPress;
 
-  /// The avatar beside the name.
-  static const double avatarSize = 32;
+  /// The author's face (docs/58 §3.3: 48).
+  static const double avatarSize = 48;
 
-  /// S350a · decision 0274: on its own card the text, the quote and ♡ use
-  /// the card's whole width, flush with the avatar's left edge, instead of
-  /// hanging past the avatar column.
+  /// Between the face and the name column.
+  static const double avatarGap = 12;
+
+  /// The text, the quote and ♡ use the whole width under the head, flush
+  /// with the face's left edge (S350a · decision 0274).
   static const double indent = 0;
 
-  /// `.feed-token`: the quote capsule's fixed height.
-  static const double capsuleHeight = 40;
+  /// The quote card's fixed height (docs/58 §5.7: 353 × 64).
+  static const double capsuleHeight = 64;
 
   @override
   Widget build(BuildContext context) {
@@ -378,113 +413,96 @@ class SquareFeedPostRow extends StatelessWidget {
     final token = post.token;
     final badge = squareFeedBadge(post);
     final sentence = squareFeedPostSentence(post);
-    // S350a · decision 0274: one post, one card — the 社区 segment's card
-    // (16 from the screen edge, 12 apart, 16 inside, 20 corner) in place of
-    // the full-bleed hairline, so a post reads as one block on the wall.
     final content = Container(
       key: const ValueKey<String>('square-post-card'),
-      margin: const EdgeInsets.fromLTRB(
-        squareFeedCardInset,
-        0,
-        squareFeedCardInset,
-        squareFeedCardGap,
-      ),
-      padding: const EdgeInsets.fromLTRB(
-        squareFeedCardPadding,
-        squareFeedCardPadding,
-        squareFeedCardPadding,
-        8,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      padding: const EdgeInsets.only(top: squareFeedPostGap, bottom: 4),
       decoration: const BoxDecoration(
-        color: LoopColors.card,
-        borderRadius: LoopRadius.shell,
+        border: Border(bottom: BorderSide(color: LoopColors.divider)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          SizedBox(
-            height: avatarSize,
-            child: Row(
-              children: <Widget>[
-                // S268 (decision 0228): the name and the badge share
-                // whatever the age leaves; the name ellipsizes first so
-                // the badge stays, and the age is pinned to the row's
-                // trailing edge on every post.
-                Expanded(
+          Row(
+            children: <Widget>[
+              Flexible(
+                child: InkWell(
+                  key: const ValueKey<String>('square-post-author'),
+                  borderRadius: LoopRadius.inner,
+                  onTap: author == null
+                      ? null
+                      : () =>
+                            onOpen(userProfileLocation(author.publicProfileId)),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      if (author == null)
+                        const _OfficialAvatar()
+                      else
+                        LoopProfileAvatar(
+                          avatarRef: author.avatarRef,
+                          alias: author.displayName,
+                          size: avatarSize,
+                        ),
+                      const SizedBox(width: avatarGap),
                       Flexible(
-                        child: InkWell(
-                          key: const ValueKey<String>('square-post-author'),
-                          borderRadius: LoopRadius.inner,
-                          onTap: author == null
-                              ? null
-                              : () => onOpen(
-                                  userProfileLocation(author.publicProfileId),
-                                ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              if (author == null)
-                                const _OfficialAvatar()
-                              else
-                                LoopProfileAvatar(
-                                  avatarRef: author.avatarRef,
-                                  alias: author.displayName,
-                                  size: avatarSize,
-                                ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  name,
-                                  key: const ValueKey<String>(
-                                    'square-post-name',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            // S268 (decision 0228): the name ellipsizes
+                            // first, so the kind tag stays.
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    key: const ValueKey<String>(
+                                      'square-post-name',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LoopType.postAuthor,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  // L14 R4: author at title 15 (decision 0191).
-                                  style: LoopType.title,
                                 ),
-                              ),
-                            ],
-                          ),
+                                if (badge != null) ...<Widget>[
+                                  const SizedBox(width: 8),
+                                  badge,
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              squareFeedAgeLabel(post.createdAt, now: now),
+                              key: const ValueKey<String>('square-post-age'),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: LoopType.caption,
+                            ),
+                          ],
                         ),
                       ),
-                      if (badge != null) ...<Widget>[
-                        const SizedBox(width: 8),
-                        badge,
-                      ],
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    squareFeedAgeLabel(post.createdAt, now: now),
-                    key: const ValueKey<String>('square-post-age'),
-                    maxLines: 1,
-                    textAlign: TextAlign.right,
-                    style: LoopType.figureXs.copyWith(color: LoopColors.text3),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           if (sentence != null)
             Padding(
-              padding: const EdgeInsets.only(left: indent, top: 10),
+              padding: const EdgeInsets.only(left: indent, top: 12),
               child: post.kind == SquareFeedPostKind.system
                   ? _OfficialRecap(text: sentence)
                   : SquareFeedText(
                       key: const ValueKey<String>('square-post-text'),
                       text: sentence,
-                      style: LoopType.bodySm.copyWith(color: LoopColors.chalk),
+                      style: LoopType.body2,
                     ),
             ),
           if (token != null)
             Padding(
-              padding: const EdgeInsets.only(left: indent, top: 10),
+              padding: const EdgeInsets.only(left: indent, top: 12),
               child: SquareFeedQuoteCapsule(
                 token: token,
                 onTap: () {
@@ -494,13 +512,13 @@ class SquareFeedPostRow extends StatelessWidget {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: 4),
             child: Align(
-              alignment: Alignment.centerLeft,
-              // ♡ lines up with the text; its 8 of tap padding sits in the
-              // card's own 16.
+              alignment: Alignment.centerRight,
+              // ♡ stands at the post's right end (docs/58 §5.7); its tap
+              // padding sits in the page gutter.
               child: Transform.translate(
-                offset: const Offset(-8, 0),
+                offset: const Offset(8, 0),
                 child: _LikeButton(post: post, onTap: onLike),
               ),
             ),
@@ -508,175 +526,88 @@ class SquareFeedPostRow extends StatelessWidget {
         ],
       ),
     );
-    if (onLongPress == null) return content;
+    // The next post starts 12 under this one's hairline (its own top room).
+    final spaced = content;
+    if (onLongPress == null) return spaced;
     return Semantics(
       onLongPressHint: context.l10n.square_feedViewSquarePostOwnOnLongPressHint,
       child: GestureDetector(
         key: const ValueKey<String>('square-post-own'),
         behavior: HitTestBehavior.opaque,
         onLongPress: onLongPress,
-        child: content,
+        child: spaced,
       ),
     );
   }
 }
 
-/// `.feed-token`: one Card-ground capsule, 40 high — a 24 logo, the ticker,
-/// the market cap in text2, then the price (zeros folded, one line) and the
-/// 1 h move in its rise / fall colour. A figure the server did not read is
-/// not drawn at all.
+/// The quoted token (S353a · decision 0278, docs/58 §5.7): a 64 card at an
+/// 11 corner on the inset ground with the card edge, a 44 logo, the ticker
+/// at 14 / 600 over the price, and at the right the 1 h move over the market
+/// cap at 12 / 500. The Figma draws a mini trend line where the move stands;
+/// the post carries no series, so no line is drawn. A figure the server did
+/// not read is not drawn at all; the market cap is drawn whole or not at
+/// all (S350a · decision 0274).
 class SquareFeedQuoteCapsule extends StatelessWidget {
   const SquareFeedQuoteCapsule({required this.token, super.key, this.onTap});
 
   final SquareFeedToken token;
   final VoidCallback? onTap;
 
+  /// The logo (docs/58 §5.7: 44).
+  static const double logoSize = 44;
+
+  /// Inside the card's edge.
+  static const double inset = 11;
+
   @override
   Widget build(BuildContext context) {
     final cap = token.marketCapUsd1;
     final price = token.priceUsd1;
     final move = squareFeedQuoteMove(token);
+    final capText = cap == null
+        ? null
+        : context.l10n.square_feedViewMarketCapCompact(memeCapLabel(cap));
+    // S355b: the compact row says 「Mcap」 in English; titles and details
+    // keep 「Market cap」.
+    final capStyle = LoopType.meta;
+    final moveStyle = LoopTypography.withWeight(LoopType.meta, FontWeight.w600);
     return Material(
-      color: LoopColors.card2,
-      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
+      color: LoopColors.cardInset,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(squareFeedQuoteRadius)),
+        side: BorderSide(color: LoopColors.cardEdge),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         key: const ValueKey<String>('square-post-token'),
-        highlightColor: LoopColors.purpleSoft,
-        splashColor: LoopColors.purpleSoft,
+        highlightColor: LoopColors.pressHighlight,
+        splashFactory: NoSplash.splashFactory,
         onTap: onTap,
         child: SizedBox(
           key: const ValueKey<String>('square-post-quote'),
           height: SquareFeedPostRow.capsuleHeight,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: inset),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Logo, its gap and a few letters of the ticker stay.
-                final figuresMax = (constraints.maxWidth - 24 - 8 - 40).clamp(
-                  0.0,
-                  double.infinity,
-                );
-                return Row(
-                  children: <Widget>[
-                    MemeLogo(
-                      symbol: token.symbol,
-                      imageUrl: token.logoUrl,
-                      identity: token.id,
-                      size: 24,
-                      radius: 12,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, words) {
-                          // L14 capsule words at caption 12, figures at
-                          // figure 13 / figureXs 11 (decision 0191).
-                          final symbolStyle = LoopTypography.withWeight(
-                            LoopType.caption,
-                            FontWeight.w600,
-                          ).copyWith(color: LoopColors.chalk);
-                          final capStyle = LoopType.caption.copyWith(
-                            color: LoopColors.text3,
-                          );
-                          final capText = cap == null
-                              ? null
-                              : context.l10n.square_feedViewMarketCapCompact(
-                                  memeCapLabel(cap),
-                                );
-                          // S355b: the compact row says 「Mcap」 in English;
-                          // titles and details keep 「Market cap」.
-                          // S350a · decision 0274: the market cap is drawn
-                          // whole or not at all — never 「市值 …」.
-                          final showCap =
-                              capText != null &&
-                              _squareQuoteWidth(
-                                        context,
-                                        token.symbol,
-                                        symbolStyle,
-                                      ) +
-                                      8 +
-                                      _squareQuoteWidth(
-                                        context,
-                                        capText,
-                                        capStyle,
-                                      ) <=
-                                  words.maxWidth;
-                          return Row(
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  token.symbol,
-                                  key: const ValueKey<String>(
-                                    'square-post-symbol',
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: symbolStyle,
-                                ),
-                              ),
-                              if (showCap) ...<Widget>[
-                                const SizedBox(width: 8),
-                                Text(
-                                  capText,
-                                  key: const ValueKey<String>(
-                                    'square-post-cap',
-                                  ),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: capStyle,
-                                ),
-                              ],
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    if (price != null || move != null)
-                      ConstrainedBox(
-                        // The figures come first and never wrap; on a phone too
-                        // narrow for them they shrink, the ticker gives way first.
-                        constraints: BoxConstraints(maxWidth: figuresMax),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              const SizedBox(width: 8),
-                              if (price != null)
-                                Text(
-                                  squareFeedQuotePrice(price),
-                                  key: const ValueKey<String>(
-                                    'square-post-price',
-                                  ),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: LoopType.figure,
-                                ),
-                              if (price != null && move != null)
-                                const SizedBox(width: 6),
-                              if (move != null)
-                                Text(
-                                  loopSignedPercent(move),
-                                  key: const ValueKey<String>(
-                                    'square-post-change',
-                                  ),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style:
-                                      LoopTypography.withWeight(
-                                        LoopType.figureXs,
-                                        FontWeight.w600,
-                                      ).copyWith(
-                                        color: LoopPriceMove.of(move).color,
-                                      ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
+                // S350a · decision 0274: the market cap is drawn whole or not
+                // at all — on a card too narrow to keep the ticker and the
+                // price beside it, it is left off.
+                final showCap =
+                    capText != null &&
+                    constraints.maxWidth -
+                            logoSize -
+                            12 -
+                            8 -
+                            _squareQuoteWidth(context, capText, capStyle) >=
+                        squareFeedQuoteWordsFloor;
+                return _quoteRow(
+                  price: price,
+                  move: move,
+                  capText: showCap ? capText : null,
+                  capStyle: capStyle,
+                  moveStyle: moveStyle,
                 );
               },
             ),
@@ -685,7 +616,94 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
       ),
     );
   }
+
+  Widget _quoteRow({
+    required Decimal? price,
+    required Decimal? move,
+    required String? capText,
+    required TextStyle capStyle,
+    required TextStyle moveStyle,
+  }) {
+    return Row(
+      children: <Widget>[
+        MemeLogo(
+          symbol: token.symbol,
+          imageUrl: token.logoUrl,
+          identity: token.id,
+          size: logoSize,
+          radius: logoSize / 2,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                token.symbol,
+                key: const ValueKey<String>('square-post-symbol'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.figureSm.copyWith(
+                  color: LoopColors.textPrimary,
+                ),
+              ),
+              if (price != null) ...<Widget>[
+                const SizedBox(height: 2),
+                // The price never wraps; on a phone too narrow for
+                // it, it shrinks.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    squareFeedQuotePrice(price),
+                    key: const ValueKey<String>('square-post-price'),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: LoopType.figure,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (move != null || capText != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                if (move != null)
+                  Text(
+                    loopSignedPercent(move),
+                    key: const ValueKey<String>('square-post-change'),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: moveStyle.copyWith(
+                      color: LoopPriceMove.of(move).color,
+                    ),
+                  ),
+                if (capText != null) ...<Widget>[
+                  if (move != null) const SizedBox(height: 4),
+                  Text(
+                    capText,
+                    key: const ValueKey<String>('square-post-cap'),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: capStyle,
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }
+
+/// The narrowest the ticker and the price may be beside the market cap.
+const double squareFeedQuoteWordsFloor = 96;
 
 /// The laid-out width of one line of [text] in [style].
 double _squareQuoteWidth(BuildContext context, String text, TextStyle style) {
@@ -699,6 +717,9 @@ double _squareQuoteWidth(BuildContext context, String text, TextStyle style) {
   painter.dispose();
   return width;
 }
+
+/// The quote card's corner (docs/58 §4: 11).
+const double squareFeedQuoteRadius = 11;
 
 /// The capsule's price: the list row's figure with a long zero run folded
 /// (`$0.0₅4173`), so it fits one line.
@@ -778,34 +799,37 @@ String? squareFeedPostSentence(SquareFeedPost post) {
   }
 }
 
-/// The kind badge (decisions 0177 §2, 0187). `system` carries one only when
-/// pinned. The claim's amount moved into the sentence, so its badge is the
-/// word alone.
+/// The kind badge (decisions 0177 §2, 0187), in the Figma's post tag
+/// (S353a · docs/58 §5.7: 22 high at a 5 corner, 12 / 600): 置顶 Yellow,
+/// 毕业 Green, 观点 Purple; 买入 takes the ticker's rise tone and 领取 the
+/// Green. `system` carries one only when pinned. The claim's amount moved
+/// into the sentence, so its badge is the word alone.
 Widget? squareFeedBadge(SquareFeedPost post) => switch (post.kind) {
-  SquareFeedPostKind.opinion => LoopBadge(
+  SquareFeedPostKind.opinion => LoopStatusTag(
     LoopL10n.current.square_feedViewSquarePostBadgeOpinion,
-    key: ValueKey<String>('square-post-badge-opinion'),
+    key: const ValueKey<String>('square-post-badge-opinion'),
+    tone: LoopTagTone.purple,
   ),
-  SquareFeedPostKind.buy => LoopBadge(
+  SquareFeedPostKind.buy => LoopStatusTag(
     LoopL10n.current.common_buy,
-    key: ValueKey<String>('square-post-badge-buy'),
-    kind: LoopBadgeKind.launch,
+    key: const ValueKey<String>('square-post-badge-buy'),
+    tone: LoopTagTone.rise,
   ),
-  SquareFeedPostKind.claim => LoopBadge(
+  SquareFeedPostKind.claim => LoopStatusTag(
     LoopL10n.current.square_feedViewSquarePostBadgeClaim,
-    key: ValueKey<String>('square-post-badge-claim'),
-    kind: LoopBadgeKind.up,
+    key: const ValueKey<String>('square-post-badge-claim'),
+    tone: LoopTagTone.green,
   ),
-  SquareFeedPostKind.graduation => LoopBadge(
+  SquareFeedPostKind.graduation => LoopStatusTag(
     LoopL10n.current.common_graduate,
-    key: ValueKey<String>('square-post-badge-graduation'),
-    kind: LoopBadgeKind.launch,
+    key: const ValueKey<String>('square-post-badge-graduation'),
+    tone: LoopTagTone.green,
   ),
   SquareFeedPostKind.system =>
     post.pinned
-        ? LoopBadge(
+        ? LoopStatusTag(
             LoopL10n.current.square_feedViewSquarePostBadgePinned,
-            key: ValueKey<String>('square-post-badge-pinned'),
+            key: const ValueKey<String>('square-post-badge-pinned'),
           )
         : null,
 };
@@ -868,7 +892,7 @@ class _OfficialAvatar extends StatelessWidget {
     ),
     child: LoopBrandMark(
       kind: LoopBrandMarkKind.appIcon,
-      height: 18,
+      height: 26,
       vector: true,
       semanticLabel: context.l10n.square_feedViewBuild,
     ),
@@ -896,16 +920,11 @@ class _OfficialRecapState extends State<_OfficialRecap> {
     final lines = widget.text.split('\n');
     final title = lines.length > 1 ? lines.first.trim() : null;
     final body = title == null ? widget.text : lines.skip(1).join('\n').trim();
-    final style = LoopType.caption.copyWith(color: LoopColors.text2);
-    // S350a · decision 0274: the post is already a card, so the recap is
-    // the quote capsule's raised Card2 block inside it.
-    return Container(
+    // S353a · decision 0278 (docs/58 §5.7): an announcement is plain text
+    // on the page at 14 / 400, folding behind 「展开」 in textSecondary.
+    final style = LoopType.body2Sm;
+    return KeyedSubtree(
       key: const ValueKey<String>('square-post-recap'),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: const BoxDecoration(
-        color: LoopColors.card2,
-        borderRadius: LoopRadius.control,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -915,7 +934,7 @@ class _OfficialRecapState extends State<_OfficialRecap> {
               child: Text(
                 title,
                 style: LoopTypography.withWeight(
-                  LoopType.titleSm,
+                  LoopType.body2Sm,
                   FontWeight.w600,
                 ),
               ),
@@ -953,10 +972,9 @@ class _OfficialRecapState extends State<_OfficialRecap> {
                               widthFactor: 1,
                               child: Text(
                                 context.l10n.square_feedViewBuild2,
-                                style: LoopTypography.withWeight(
-                                  LoopType.label,
-                                  FontWeight.w600,
-                                ).copyWith(color: LoopColors.lime),
+                                style: LoopType.body1.copyWith(
+                                  color: LoopColors.textSecondary,
+                                ),
                               ),
                             ),
                           ),
@@ -1050,20 +1068,26 @@ class _SquareFeedTextState extends State<SquareFeedText> {
   }
 }
 
-/// ♡ and the count; Lime while the viewer likes the post.
+/// ♡ and the count (docs/58 §5.7): a 22 heart and the count at 14 / 500 in
+/// textSecondary; Yellow while the viewer likes the post.
 class _LikeButton extends StatelessWidget {
   const _LikeButton({required this.post, required this.onTap});
 
-  /// The foot line (`.feed-foot`): 32 high, so a post stays near the design's
-  /// 90 dp; the full row width beside it is free for the long-press.
+  /// The foot line: 32 high, so a post stays compact; the full row width
+  /// beside it is free for the long-press (decision 0187).
   static const double likeHeight = 32;
+
+  /// The heart (docs/58 §3.3: 22).
+  static const double heartSize = 22;
 
   final SquareFeedPost post;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = post.likedByViewer ? LoopColors.purple : LoopColors.text3;
+    final color = post.likedByViewer
+        ? LoopColors.yellow
+        : LoopColors.textSecondary;
     return Semantics(
       button: true,
       toggled: post.likedByViewer,
@@ -1086,15 +1110,12 @@ class _LikeButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                LoopIcon('react-heart', size: 15, color: color),
-                const SizedBox(width: 4),
+                LoopIcon('react-heart', size: heartSize, color: color),
+                const SizedBox(width: 8),
                 Text(
                   '${post.likeCount}',
                   key: const ValueKey<String>('square-post-like-count'),
-                  style: LoopTypography.withWeight(
-                    LoopType.figureSm,
-                    FontWeight.w500,
-                  ).copyWith(color: color),
+                  style: LoopType.body1.copyWith(color: color),
                 ),
               ],
             ),

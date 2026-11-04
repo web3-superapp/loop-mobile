@@ -143,54 +143,16 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                     child: Row(
                       children: <Widget>[
                         Expanded(
-                          child: Semantics(
-                            header: true,
-                            label: title,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              clipBehavior: backdrop == null
-                                  ? Clip.hardEdge
-                                  : Clip.none,
-                              child: _crowned(
-                                Row(
-                                  // The words share a baseline, so the 24
-                                  // idle segments sit on the 28 title's line.
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: <Widget>[
-                                    for (
-                                      var index = 0;
-                                      index < segments.length;
-                                      index += 1
-                                    ) ...<Widget>[
-                                      if (index > 0)
-                                        const SizedBox(width: _SegmentTab.gap),
-                                      _SegmentTab(
-                                        key: ValueKey<String>(
-                                          '$tabKey-segment-$index',
-                                        ),
-                                        label: segments[index],
-                                        selected: index == selected,
-                                        onTap: () {
-                                          // Decision 0130: a segment change is
-                                          // a selection.
-                                          if (index != selected) {
-                                            LoopHaptics.selection();
-                                          }
-                                          ref
-                                              .read(
-                                                loopTabSegmentMemoryProvider
-                                                    .notifier,
-                                              )
-                                              .select(tabKey, index);
-                                        },
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final fit = loopSegmentFitScale(
+                                context,
+                                segments,
+                                selected,
+                                constraints.maxWidth,
+                              );
+                              return _segmentRow(context, ref, selected, fit);
+                            },
                           ),
                         ),
                         if (isUpdating) ...<Widget>[
@@ -236,6 +198,51 @@ class LoopSegmentedTabPage extends ConsumerWidget {
     );
   }
 
+  /// The segment words, scaled together by [fit] when the row would run past
+  /// the line (see [loopSegmentFitScale]); the sideways scroll stays for a
+  /// row that still does not fit at the smallest scale.
+  Widget _segmentRow(
+    BuildContext context,
+    WidgetRef ref,
+    int selected,
+    double fit,
+  ) {
+    return Semantics(
+      header: true,
+      label: title,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: backdrop == null ? Clip.hardEdge : Clip.none,
+        child: _crowned(
+          Row(
+            // The words share a baseline, so the 24 idle segments sit on
+            // the 28 title's line.
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: <Widget>[
+              for (var index = 0; index < segments.length; index += 1) ...[
+                if (index > 0) SizedBox(width: _SegmentTab.gap * fit),
+                _SegmentTab(
+                  key: ValueKey<String>('$tabKey-segment-$index'),
+                  label: segments[index],
+                  selected: index == selected,
+                  fit: fit,
+                  onTap: () {
+                    // Decision 0130: a segment change is a selection.
+                    if (index != selected) LoopHaptics.selection();
+                    ref
+                        .read(loopTabSegmentMemoryProvider.notifier)
+                        .select(tabKey, index);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _staged(Widget page) {
     final layer = backdrop;
     if (layer == null) return page;
@@ -255,13 +262,75 @@ class LoopSegmentedTabPage extends ConsumerWidget {
   }
 }
 
+/// How much the segment words of a [LoopSegmentedTabPage] are scaled so the
+/// row fits [maxWidth] (S353a · decision 0278): 1 when it fits at the
+/// Figma's sizes — the chosen word 28, the others 24, 14 apart — otherwise
+/// the share that does, never under [loopSegmentFitFloor]. The English words
+/// run longer than the Chinese ones the Figma was drawn with: 「Feed
+/// Community Voice rooms」 ran off a 360 screen.
+double loopSegmentFitScale(
+  BuildContext context,
+  List<String> segments,
+  int selected,
+  double maxWidth,
+) {
+  if (!maxWidth.isFinite || maxWidth <= 0) return 1;
+  final scaler = MediaQuery.textScalerOf(context);
+  var natural = _SegmentTab.gap * (segments.length - 1);
+  for (var index = 0; index < segments.length; index += 1) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: segments[index],
+        style: index == selected ? LoopType.title1 : LoopType.segmentTitleIdle,
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    natural += painter.width;
+    painter.dispose();
+  }
+  if (natural <= maxWidth) return 1;
+  return (maxWidth / natural).clamp(loopSegmentFitFloor, 1.0);
+}
+
+/// The smallest the segment words are scaled to fit (a 28 title at about 20).
+const double loopSegmentFitFloor = 0.72;
+
+/// The reader's text scaler, times the row's fit scale.
+@immutable
+final class _FitTextScaler extends TextScaler {
+  const _FitTextScaler(this.parent, this.fit);
+
+  final TextScaler parent;
+  final double fit;
+
+  @override
+  double scale(double fontSize) => parent.scale(fontSize) * fit;
+
+  @override
+  // ignore: deprecated_member_use
+  double get textScaleFactor => parent.textScaleFactor * fit;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _FitTextScaler && other.parent == parent && other.fit == fit;
+
+  @override
+  int get hashCode => Object.hash(parent, fit);
+}
+
 class _SegmentTab extends StatelessWidget {
   const _SegmentTab({
     required this.label,
     required this.selected,
     required this.onTap,
     super.key,
+    this.fit = 1,
   });
+
+  /// The row's fit scale ([loopSegmentFitScale]); 1 draws the Figma sizes.
+  final double fit;
 
   /// Between two segment words (the Figma's 动态 → 社区 reads about 14).
   static const double gap = 14;
@@ -280,6 +349,11 @@ class _SegmentTab extends StatelessWidget {
         : LoopType.segmentTitleIdle.copyWith(
             color: LoopGround.auxiliaryOf(context),
           );
+    // The fit scale rides on the reader's own text scaler, so the steps stay
+    // the ladder's and a larger reading size still counts.
+    final scaler = fit == 1
+        ? MediaQuery.textScalerOf(context)
+        : _FitTextScaler(MediaQuery.textScalerOf(context), fit);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       button: true,
@@ -308,7 +382,7 @@ class _SegmentTab extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: <Widget>[
-                  Text(label, style: style),
+                  Text(label, style: style, textScaler: scaler),
                   // The doodle is painted under the chosen word, in the row's
                   // own room (see `LoopTitleDoodle.under`).
                   Positioned(

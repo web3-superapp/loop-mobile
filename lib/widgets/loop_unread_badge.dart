@@ -21,7 +21,12 @@ class LoopUnreadBadge extends StatelessWidget {
     super.key,
     this.dot = false,
     this.color = LoopColors.danger,
+    this.height = pillHeight,
   });
+
+  /// The pill's height (and its narrowest width). The inbox rows draw the
+  /// Figma's 20 round count (S353a · docs/58 §5.6); elsewhere 16.
+  final double height;
 
   final int? count;
 
@@ -54,13 +59,13 @@ class LoopUnreadBadge extends StatelessWidget {
     return ExcludeSemantics(
       child: Container(
         key: const ValueKey<String>('loop-unread-pill'),
-        height: pillHeight,
-        constraints: const BoxConstraints(minWidth: pillHeight),
+        height: height,
+        constraints: BoxConstraints(minWidth: height),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: const BorderRadius.all(Radius.circular(pillHeight / 2)),
+          borderRadius: BorderRadius.all(Radius.circular(height / 2)),
         ),
         child: Text(
           label,

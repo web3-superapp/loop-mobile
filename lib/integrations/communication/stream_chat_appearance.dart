@@ -290,11 +290,12 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     titleTextStyle: LoopType.label.copyWith(color: LoopColors.text2),
     subtitleTextStyle: LoopType.caption,
   ),
-  // v3 (decision 0229): an inbox row is the conversation's name at body1
-  // (17 / 600) over its last message at body2 in Text2, the time a caption.
+  // S353a · decision 0278 (docs/58 §5.6): an inbox row is the
+  // conversation's name at 16 / 500 over its last message at 14 / 300 in
+  // textSecondary, the time 12 / 300 in textTertiary.
   channelListItemTheme: StreamChannelListItemThemeData(
-    titleStyle: LoopType.body1,
-    subtitleStyle: LoopType.bodySm,
+    titleStyle: LoopType.rowTitleLg,
+    subtitleStyle: LoopType.captionMd,
     timestampStyle: LoopType.caption,
     // S350a · decision 0274: the pin and mute marks sit at the end of the
     // preview line, so the name line carries only the name, the time and

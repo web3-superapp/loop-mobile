@@ -3122,9 +3122,11 @@ class LoopButton extends StatelessWidget {
     );
   }
 
-  /// A chosen choice wears the Yellow splat (decision 0222).
-  static Widget _chosenSplat(bool chosen, Widget face) =>
-      chosen ? loopSplatted(face) : face;
+  /// A chosen choice wore the Yellow splat (decision 0222). S353a · decision
+  /// 0278 (docs/58 §9.3: a chosen state is the white word on white 10 %):
+  /// no splat any more; the hook stays so the face keeps its place in the
+  /// tree.
+  static Widget _chosenSplat(bool chosen, Widget face) => face;
 
   /// A compact face stays a 44 target: the space around the 32 face answers
   /// the finger too.

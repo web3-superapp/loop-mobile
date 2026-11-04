@@ -114,50 +114,56 @@ void main() {
       expect(sort, findsOneWidget);
       expect(find.text('Most members'), findsOneWidget);
       final sortWord = tester.widget<Text>(find.text('Most members'));
-      expect(sortWord.style?.color, LoopColors.text3);
+      // S353a · decision 0278: 「成员最多」 in textSecondary.
+      expect(sortWord.style?.color, LoopColors.textSecondary);
       // Decision 0277: meta is 12 / 500.
       expect(sortWord.style?.fontSize, LoopType.meta.fontSize);
 
       final first = tester.getRect(_key('square-community-card-${_id(0)}'));
       final second = tester.getRect(_key('square-community-card-${_id(1)}'));
-      expect(first.left, 16);
-      expect(first.right, 390 - 16);
-      expect(second.top - first.bottom, 12);
-      expect(tester.getRect(sort).right, lessThanOrEqualTo(390 - 16 + 8));
+      // S353a · decision 0278 (docs/58 §5.8): rows on the page in the 20
+      // gutter, 86 high, back to back, a hairline under each.
+      expect(first.left, 20);
+      expect(first.right, 390 - 20);
+      expect(first.height, 86);
+      expect(second.top - first.bottom, 0);
+      expect(tester.getRect(sort).right, lessThanOrEqualTo(390 - 20 + 8));
       expect(tester.getRect(sort).bottom, lessThanOrEqualTo(first.top));
       final card = tester.widget<Material>(
         _key('square-community-card-${_id(0)}'),
       );
-      expect(card.color, LoopColors.card);
-      expect(card.borderRadius, LoopRadius.shell);
-      expect(LoopRadius.shellValue, 20);
+      expect(card.type, MaterialType.transparency);
+      expect(
+        card.shape,
+        const Border(bottom: BorderSide(color: LoopColors.divider)),
+      );
 
-      // The 60 logo, 16 inside the card, at a 14 corner.
+      // The 56 logo on the gutter at a 12 corner.
       final logo = _key('square-community-logo-${_id(0)}');
-      expect(tester.getSize(logo), const Size(60, 60));
-      expect(tester.getRect(logo).left - first.left, 16);
-      expect(tester.widget<CommunityLogo>(logo).radius, 14);
+      expect(tester.getSize(logo), const Size(56, 56));
+      expect(tester.getRect(logo).left - first.left, 0);
+      expect(tester.widget<CommunityLogo>(logo).radius, 12);
 
       // Three lines: a body1 Chalk name (decision 0277: 14 / 500), a Text2
       // description, Text3 facts.
       final name = tester.widget<Text>(_key('square-community-name-${_id(0)}'));
       expect(name.style?.fontSize, LoopType.body1.fontSize);
       expect(name.style?.fontWeight, LoopType.body1.fontWeight);
-      expect(name.style?.color, LoopColors.chalk);
+      expect(name.style?.color, LoopColors.textPrimary);
       expect(name.maxLines, 1);
       final description = tester.widget<Text>(
         _key('square-community-description-${_id(0)}'),
       );
       expect(description.style?.fontSize, LoopType.caption.fontSize);
-      expect(description.style?.color, LoopColors.text2);
+      expect(description.style?.color, LoopColors.textSecondary);
       expect(description.maxLines, 1);
       final members = tester.widget<Text>(
         _key('square-community-members-${_id(0)}'),
       );
-      expect(members.data, '28 members');
-      expect(members.style?.fontSize, LoopType.meta.fontSize);
-      // S350a · decision 0274: one grey step under the description.
-      expect(members.style?.color, LoopColors.muted);
+      // S353a: the people mark and the number, 10 / 400 textSecondary.
+      expect(members.data, '28');
+      expect(members.style?.fontSize, LoopType.metaSm.fontSize);
+      expect(members.style?.color, LoopColors.textSecondary);
 
       // The label left the name's side for the end of the facts line.
       final meta = _key('square-community-meta-${_id(0)}');
@@ -167,7 +173,7 @@ void main() {
         find.descendant(of: label, matching: find.text('算力社区')),
         findsOneWidget,
       );
-      expect(tester.getSize(label).height, 20);
+      expect(tester.getSize(label).height, 16);
       final labelWord = tester.widget<Text>(
         find.descendant(of: label, matching: find.text('算力社区')),
       );
@@ -182,21 +188,21 @@ void main() {
         findsNothing,
       );
 
-      // The token chip: 20 high, a 16 logo and 「$DOGE」 12/600 Chalk.
+      // The token chip (S353a): 16 high, a 10 logo and 「$DOGE」 10 / 400.
       final token = _key('square-community-token-${_id(1)}');
-      expect(tester.getSize(token).height, 20);
+      expect(tester.getSize(token).height, 16);
       expect(
         tester.getSize(
           find.descendant(of: token, matching: find.byType(LoopTokenLogo)),
         ),
-        const Size(16, 16),
+        const Size(10, 10),
       );
       final symbol = tester.widget<Text>(
         find.descendant(of: token, matching: find.text('\$DOGE')),
       );
-      expect(symbol.style?.fontSize, 12);
-      expect(symbol.style?.fontWeight, FontWeight.w600);
-      expect(symbol.style?.color, LoopColors.chalk);
+      expect(symbol.style?.fontSize, 10);
+      expect(symbol.style?.fontWeight, FontWeight.w400);
+      expect(symbol.style?.color, LoopColors.textSecondary);
       expect(
         tester.getRect(token).left -
             tester.getRect(_key('square-community-members-${_id(1)}')).right,
@@ -215,7 +221,7 @@ void main() {
       final bolted = _key('square-community-token-${_id(3)}');
       final bolt = _key('square-community-bolt-${_id(3)}');
       expect(find.descendant(of: bolted, matching: bolt), findsOneWidget);
-      expect(tester.getSize(bolt), const Size(12, 12));
+      expect(tester.getSize(bolt), const Size(10, 10));
       expect(tester.widget<LoopIcon>(bolt).name, 'bolt');
       expect(tester.widget<LoopIcon>(bolt).color, LoopColors.yellow);
       final boltSymbol = find.descendant(
@@ -223,8 +229,8 @@ void main() {
         matching: find.text('\$DOGE'),
       );
       expect(tester.getRect(bolt).left - tester.getRect(boltSymbol).right, 4);
-      // 6 of padding inside the 1px edge.
-      expect(tester.getRect(bolted).right - tester.getRect(bolt).right, 7);
+      // 5 of padding inside the 1px edge.
+      expect(tester.getRect(bolted).right - tester.getRect(bolt).right, 6);
       expect(_key('square-community-label-${_id(3)}'), findsNothing);
       expect(
         find.descendant(
@@ -253,22 +259,22 @@ void main() {
       expect(find.textContaining('，\$'), findsNothing);
       expect(find.textContaining('|'), findsNothing);
 
-      // The right edge: 已加入 grey, 加入 Yellow, both 32 high and ≥ 52 wide,
-      // centred on the card.
+      // The right edge (S353a · docs/58 §5.20): the 54 × 28 key on white
+      // 8 %, 加入 Yellow, 已加入 textSecondary, centred on the row.
       for (final (kind, index) in <(String, int)>[('joined', 0), ('join', 1)]) {
         final pill = _key('square-community-pill-${_id(index)}');
         final size = tester.getSize(pill);
-        expect(size.height, 32);
-        expect(size.width, greaterThanOrEqualTo(52));
+        expect(size.height, 28);
+        expect(size.width, greaterThanOrEqualTo(54));
         final cardRect = tester.getRect(
           _key('square-community-card-${_id(index)}'),
         );
         expect(tester.getCenter(pill).dy, closeTo(cardRect.center.dy, 0.5));
-        expect(tester.getRect(pill).right, cardRect.right - 16);
+        expect(tester.getRect(pill).right, cardRect.right);
         expect(_key('square-community-$kind-${_id(index)}'), findsOneWidget);
         final fill =
             (tester.widget<Container>(pill).decoration! as BoxDecoration).color;
-        expect(fill, kind == 'join' ? LoopColors.yellow : LoopColors.card2);
+        expect(fill, LoopColors.buttonGhost);
       }
       expect(
         tester
@@ -280,7 +286,7 @@ void main() {
             )
             .style
             ?.color,
-        LoopColors.ink,
+        LoopColors.yellow,
       );
       expect(
         tester
@@ -292,8 +298,8 @@ void main() {
             )
             .style
             ?.fontWeight,
-        // Decision 0277: the label step is 14 / 500.
-        LoopType.label.fontWeight,
+        // docs/58 §5.8: 12 / 600.
+        LoopType.buttonXs.fontWeight,
       );
       expect(
         tester
@@ -305,7 +311,7 @@ void main() {
             )
             .style
             ?.color,
-        LoopColors.text2,
+        LoopColors.textSecondary,
       );
       expect(tester.takeException(), isNull);
       await _drain(tester);
@@ -330,7 +336,7 @@ void main() {
         find.descendant(of: label, matching: find.byType(LoopTokenLogo)),
         findsNothing,
       );
-      expect(tester.getSize(label).height, 20);
+      expect(tester.getSize(label).height, 16);
       await _drain(tester);
     });
 
@@ -370,7 +376,7 @@ void main() {
       expect(_key('square-community-card-${_id(0)}'), findsNothing);
       expect(
         tester.getSize(_key('square-community-logo-${_id(1)}')),
-        const Size(60, 60),
+        const Size(56, 56),
       );
       expect(_key('square-community-token-${_id(1)}'), findsOneWidget);
       expect(_key('square-community-joined-${_id(1)}'), findsOneWidget);
