@@ -5521,7 +5521,7 @@
   "@common_devPreview": {
     "description": "common"
   },
-  "common_directMessage": "Direct message",
+  "common_directMessage": "Message",
   "@common_directMessage": {
     "description": "common"
   },

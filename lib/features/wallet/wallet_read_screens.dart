@@ -723,7 +723,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
       onRetry: retry,
       onBlocked: _blocked,
-      actions: _rowActions(row, sendGate, swapGate),
+      // S353c · decision 0280: no 发送 / 兑换 under a row (the Figma's
+      // holdings row); the asset page the row opens carries both.
+      actions: const <WalletRowAction>[],
     );
     final launch2Rows = <Widget>[
       for (final entry in walletHoldings(
@@ -916,43 +918,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       ),
     ];
   }
-
-  /// 发送 / 兑换 under a balance row (decision 0188). Each promises what the
-  /// four keys above promise: the same gate, the same server sentence when
-  /// it is shut. 兑换 starts from this row's asset.
-  List<WalletRowAction> _rowActions(
-    LoopAssetBalanceRow row,
-    LoopCapabilityProjection sendGate,
-    LoopCapabilityProjection swapGate,
-  ) => <WalletRowAction>[
-    WalletRowAction(
-      label: LoopL10n.current.common_send,
-      actionKey: ValueKey<String>('wallet-balance-send-${row.assetId}'),
-      onPressed: sendGate.isAvailable ? () => _open('/wallet/send') : null,
-      blockedReason: sendGate.isAvailable
-          ? null
-          : loopReasonCodeText(
-              sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-            ),
-    ),
-    WalletRowAction(
-      label: LoopL10n.current.common_swap,
-      actionKey: ValueKey<String>('wallet-balance-swap-${row.assetId}'),
-      onPressed: swapGate.isAvailable
-          ? () => _open(
-              Uri(
-                path: '/wallet/swap',
-                queryParameters: <String, String>{'from': row.assetId},
-              ).toString(),
-            )
-          : null,
-      blockedReason: swapGate.isAvailable
-          ? null
-          : loopReasonCodeText(
-              swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-            ),
-    ),
-  ];
 
   /// One short line per failure, so the asset list keeps its place.
   String _balancesFailureLine(

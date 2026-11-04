@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
@@ -851,7 +852,9 @@ void main() {
   });
 
   group('余额 rows', () {
-    testWidgets('发送 / 兑换 open their routes, 兑换 from the row\'s asset', (
+    // S353c · decision 0280: the Figma's holdings row has no 发送 / 兑换
+    // under it; the row opens its asset page, which carries both.
+    testWidgets('a row carries no 发送 / 兑换 and opens its asset page', (
       tester,
     ) async {
       final opened = <String>[];
@@ -864,35 +867,11 @@ void main() {
           swapEvidencePending: false,
         ),
       );
-      final send = key('wallet-balance-send-$s5NativeAssetId');
-      final swap = key('wallet-balance-swap-$s5NativeAssetId');
-      expect(tester.widget<LoopSeg>(send).quiet, isTrue);
-      expect(tester.widget<LoopSeg>(swap).quiet, isTrue);
-      await tester.tap(send);
+      expect(key('wallet-balance-send-$s5NativeAssetId'), findsNothing);
+      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsNothing);
+      await tester.tap(key('wallet-balance-open-$s5NativeAssetId'));
       await tester.pumpAndSettle();
-      await tester.tap(swap);
-      await tester.pumpAndSettle();
-      expect(opened, <String>[
-        '/wallet/send',
-        Uri(
-          path: '/wallet/swap',
-          queryParameters: <String, String>{'from': s5NativeAssetId},
-        ).toString(),
-      ]);
-      expect(Uri.parse(opened.last).queryParameters['from'], s5NativeAssetId);
-    });
-
-    testWidgets('a closed gate keeps the chip and opens nothing', (
-      tester,
-    ) async {
-      final opened = <String>[];
-      await pumpWallet(tester, onNavigate: opened.add);
-      await tester.tap(key('wallet-balance-send-$s5NativeAssetId'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
-      expect(opened, isEmpty);
-      expect(find.textContaining('On-chain actions'), findsWidgets);
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      expect(opened, <String>[MarketAssetRoute.walletAsset(s5NativeAssetId)]);
     });
 
     testWidgets('a row without a 24h figure draws no 24 小时 line', (

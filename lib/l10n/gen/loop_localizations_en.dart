@@ -4542,7 +4542,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get common_devPreview => 'Development preview';
 
   @override
-  String get common_directMessage => 'Direct message';
+  String get common_directMessage => 'Message';
 
   @override
   String get common_disconnected => 'Disconnected';

@@ -30,7 +30,7 @@ void main() {
 
   group('1 · wallet asset rows (钱包 C, decision 0188 supersedes 0123)', () {
     testWidgets('logo 40, symbol 15, amount 13, value 11 grey, '
-        'the 24h line and two quiet actions', (tester) async {
+        'the 24h line and no row actions', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -80,8 +80,9 @@ void main() {
       // Decision 0277: the caption step, 12.
       expect(mark.style!.fontSize, LoopType.captionSm.fontSize);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
-      expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);
-      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsOneWidget);
+      // S353c · decision 0280: no 发送 / 兑换 under the row any more.
+      expect(key('wallet-balance-send-$s5NativeAssetId'), findsNothing);
+      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

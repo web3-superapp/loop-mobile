@@ -7199,7 +7199,7 @@ abstract class LoopLocalizations {
   /// common
   ///
   /// In en, this message translates to:
-  /// **'Direct message'**
+  /// **'Message'**
   String get common_directMessage;
 
   /// common
