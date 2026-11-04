@@ -711,29 +711,64 @@ class WalletQuickActions extends StatelessWidget {
   final List<WalletQuickAction> actions;
   final void Function(String reason) onBlocked;
 
+  /// The disc's side where the line has room for it (OKX's 56).
+  static const double discMax = 56;
+
+  /// The least room between two discs (S350c: five keys at 360 wide).
+  static const double gapMin = 12;
+
   @override
   Widget build(BuildContext context) {
+    // S350c · decision 0276: the outer discs stand on the page line, as the
+    // plate above them does, and the keys share the rest evenly; on a narrow
+    // phone the discs give up a little size before the gaps close in.
     return Padding(
       key: const ValueKey<String>('wallet-quick-actions'),
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          for (final action in actions)
-            Expanded(
-              child: _QuickActionTile(action: action, onBlocked: onBlocked),
-            ),
-        ],
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        10,
+        LoopSpacing.page,
+        6,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final count = actions.length;
+          final disc = count < 2
+              ? discMax
+              : math.min(
+                  discMax,
+                  (constraints.maxWidth - gapMin * (count - 1)) / count,
+                );
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              for (final action in actions)
+                _QuickActionTile(
+                  action: action,
+                  onBlocked: onBlocked,
+                  disc: disc,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _QuickActionTile extends StatelessWidget {
-  const _QuickActionTile({required this.action, required this.onBlocked});
+  const _QuickActionTile({
+    required this.action,
+    required this.onBlocked,
+    required this.disc,
+  });
 
   final WalletQuickAction action;
   final void Function(String reason) onBlocked;
+
+  /// The disc's side; the tile is as wide as its disc.
+  final double disc;
 
   @override
   Widget build(BuildContext context) {
@@ -745,7 +780,7 @@ class _QuickActionTile extends StatelessWidget {
     // closed key keeps its place on the quiet ground. [primary] is kept on
     // the model but no longer changes the paint.
     final ink = enabled ? LoopColors.chalk : LoopGround.auxiliaryOf(context);
-    final disc = enabled ? LoopColors.card2 : LoopColors.bg2;
+    final ground = enabled ? LoopColors.card2 : LoopColors.bg2;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -759,16 +794,20 @@ class _QuickActionTile extends StatelessWidget {
         key: action.actionKey,
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 74),
+          constraints: BoxConstraints(
+            minHeight: 74,
+            minWidth: disc,
+            maxWidth: disc,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
                 key: ValueKey<String>('wallet-quick-disc-${action.label}'),
-                width: 56,
-                height: 56,
+                width: disc,
+                height: disc,
                 decoration: BoxDecoration(
-                  color: disc,
+                  color: ground,
                   borderRadius: LoopRadius.control,
                 ),
                 alignment: Alignment.center,
@@ -1102,6 +1141,10 @@ List<WalletTokenEntry> walletSortTokenEntries(List<WalletTokenEntry> entries) {
 /// 「代币 / NFT」 over the wallet's asset area (S259 · decision 0217): two
 /// segment capsules — the chosen one solid Purple (docs/42 附C §4) — with
 /// [trailing] (产生算力) at the end of the line.
+///
+/// S350c · decision 0276: a filter under 持仓, one step below the page's
+/// own 持仓 / 交易 / 社区 tabs — the framed chip at [filterHeight] with the
+/// label-sized word, 16 under the tabs.
 class WalletAssetTabs extends StatelessWidget {
   const WalletAssetTabs({
     required this.selectedIndex,
@@ -1115,6 +1158,9 @@ class WalletAssetTabs extends StatelessWidget {
   static const int nft = 1;
   static const List<String> _keys = <String>['tokens', 'nft'];
 
+  /// The drawn height of a filter capsule under the profile tabs (S350c).
+  static const double filterHeight = 32;
+
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Widget? trailing;
@@ -1122,24 +1168,23 @@ class WalletAssetTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     key: const ValueKey<String>('wallet-asset-tabs'),
-    // v3 (decision 0229): the tabs stand as a section head — 36 above
-    // them, and the rows keep their own 14 under.
-    padding: const EdgeInsets.fromLTRB(
+    // S350c: 16 under the profile tabs — the chip's own room above its
+    // capsule makes up the rest — and the rows keep their own 14 under.
+    padding: EdgeInsets.fromLTRB(
       LoopSpacing.page,
-      LoopSpacing.sectionTop - 12,
+      LoopSpacing.segmentGap - (LoopSeg.segmentTarget - filterHeight) / 2,
       LoopSpacing.page,
       4,
     ),
     child: Row(
       children: <Widget>[
         for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: 4),
+          if (index > 0) const SizedBox(width: LoopSpacing.tight),
           LoopSeg(
             key: ValueKey<String>('wallet-asset-tab-${_keys[index]}'),
             label: labels[index],
-            quiet: true,
             selected: index == selectedIndex,
-            capsuleHeight: LoopSegBar.capsuleHeight,
+            capsuleHeight: filterHeight,
             onSelected: () => onSelected(index),
           ),
         ],
@@ -1628,7 +1673,12 @@ class WalletManagePill extends StatelessWidget {
                   Text(
                     '管理',
                     maxLines: 1,
-                    style: LoopType.meta.copyWith(color: ink),
+                    // S350c: the address line's own size, one step brighter
+                    // than the address, so the two read as one line.
+                    style: LoopTypography.withWeight(
+                      LoopType.caption,
+                      FontWeight.w600,
+                    ).copyWith(color: ink),
                   ),
                 ],
               ),

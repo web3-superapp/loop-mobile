@@ -673,8 +673,11 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        // S350c: one group starts 8 under the tabs' dash, as on another
+        // account's page; two groups start on their label.
+        if (!labelled) const SizedBox(height: LoopSpacing.tight),
         if (joined.isNotEmpty) ...<Widget>[
-          if (labelled) const LoopLabel('我加入的', tight: true),
+          if (labelled) const _MeGroupLabel('我加入的'),
           Column(
             key: const ValueKey<String>('me-joined-communities'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -692,7 +695,7 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
             ),
         ],
         if (owned.isNotEmpty) ...<Widget>[
-          if (labelled) const LoopLabel('我创建的', tight: true),
+          if (labelled) const _MeGroupLabel('我创建的'),
           Column(
             key: const ValueKey<String>('profile-owned-communities'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -753,6 +756,29 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
       ),
     );
   }
+}
+
+/// 我加入的 / 我创建的 inside 社区 (S350c · decision 0276): a small grey
+/// label, so the section's two groups read under the 持仓 / 交易 / 社区
+/// tabs rather than as headings of the same weight.
+class _MeGroupLabel extends StatelessWidget {
+  const _MeGroupLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      LoopSpacing.segmentGap,
+      LoopSpacing.page,
+      LoopSpacing.x1,
+    ),
+    child: Semantics(
+      header: true,
+      child: LoopKicker(text, color: LoopGround.auxiliaryOf(context)),
+    ),
+  );
 }
 
 /// The review results the feed holds for the reader's own communities.
@@ -1021,11 +1047,14 @@ class ProfileIdentityCard extends StatelessWidget {
                           key: const ValueKey<String>('profile-add-bio'),
                           onTap: onEdit,
                           scale: false,
+                          // S350c: the words sit 6 under the LOOP ID, as a
+                          // bio does; the target keeps its 44 below them.
                           child: Container(
                             constraints: const BoxConstraints(
                               minHeight: LoopTouch.minimum,
                             ),
-                            alignment: AlignmentDirectional.centerStart,
+                            padding: const EdgeInsets.only(top: 6),
+                            alignment: AlignmentDirectional.topStart,
                             child: Text(
                               '＋ 添加个人简介',
                               style: LoopTypography.withWeight(
@@ -1042,11 +1071,16 @@ class ProfileIdentityCard extends StatelessWidget {
             ],
           ),
         ),
+        // S350c · decision 0276: the first count's figure stands on the
+        // page line (each count keeps 8 of its own), and no rule closes the
+        // card — the plate under it is its own edge.
         Container(
           key: const ValueKey<String>('profile-meta'),
-          padding: const EdgeInsets.fromLTRB(8, 6, LoopSpacing.page, 6),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: LoopColors.line)),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page - 8,
+            4,
+            LoopSpacing.page,
+            0,
           ),
           child: Row(
             children: <Widget>[

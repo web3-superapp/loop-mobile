@@ -626,6 +626,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       walletId: walletId,
       state: watchActivity(walletId),
       keyPrefix: 'me-trades',
+      underTabs: true,
     );
   }
 
@@ -641,10 +642,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     key: const ValueKey<String>('wallet-total-plate'),
     mark: LoopChromePlateMark.tag,
     // v3 (decision 0229): 28 from the plate to the keys (they keep 10
-    // of their own above them).
+    // of their own above them). S350c: 16 above it, where the person's
+    // card used to end on a rule.
     margin: const EdgeInsets.fromLTRB(
       LoopSpacing.page,
-      4,
+      LoopSpacing.segmentGap,
       LoopSpacing.page,
       LoopSpacing.bannerGap - 10,
     ),
@@ -2868,15 +2870,21 @@ mixin _WalletActivityTape<T extends ConsumerStatefulWidget>
   };
 
   /// The tape of [walletId] in each of its states, keyed under [keyPrefix].
+  ///
+  /// [underTabs] (S350c · decision 0276): the tape is a section under 我的's
+  /// 持仓 / 交易 / 社区, so its chips are drawn as filters one step below
+  /// those tabs, and an empty tape says only that it is empty.
   List<Widget> activityTapeSections({
     required String walletId,
     required LoopChainResourceState<LoopWalletActivityPage> state,
     required String keyPrefix,
+    bool underTabs = false,
   }) {
     final page = state.value;
     final segments = _ActivitySegments(
       keyPrefix: keyPrefix,
       selected: tapeSegment,
+      filter: underTabs,
       onSelected: (index) => setState(() => tapeSegment = index),
     );
     void reload() => unawaited(
@@ -2904,7 +2912,7 @@ mixin _WalletActivityTape<T extends ConsumerStatefulWidget>
           phase: state.phase,
           failureKind: state.failureKind,
           emptyMessage: '还没有链上活动',
-          emptyReason: '索引器已经读到这个区间，但其中没有属于这个钱包的转账。',
+          emptyReason: underTabs ? null : '索引器已经读到这个区间，但其中没有属于这个钱包的转账。',
           onRetry: reload,
         ),
       ];
@@ -3343,30 +3351,50 @@ class _ActivitySegments extends StatelessWidget {
     required this.keyPrefix,
     required this.selected,
     required this.onSelected,
+    this.filter = false,
   });
 
   final String keyPrefix;
   final int selected;
   final ValueChanged<int> onSelected;
 
+  /// S350c: the framed filter chips 我的 draws under its tabs, as
+  /// [WalletAssetTabs] does under 持仓, from the page line.
+  final bool filter;
+
   @override
   Widget build(BuildContext context) {
     const labels = <String>['全部', '收到', '发出', '原生转账', '跨链 / 挖矿'];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: filter
+          ? EdgeInsets.fromLTRB(
+              0,
+              LoopSpacing.segmentGap -
+                  (LoopSeg.segmentTarget - WalletAssetTabs.filterHeight) / 2,
+              0,
+              4,
+            )
+          : const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        padding: filter
+            ? const EdgeInsets.symmetric(horizontal: LoopSpacing.page)
+            : null,
+        // The chosen chip's splat reaches above its capsule.
+        clipBehavior: filter ? Clip.none : Clip.hardEdge,
         child: Row(
           children: <Widget>[
             for (final (index, label) in labels.indexed) ...<Widget>[
+              if (filter && index > 0) const SizedBox(width: LoopSpacing.tight),
               LoopSeg(
                 key: ValueKey<String>('$keyPrefix-seg-$index'),
-                quiet: true,
+                quiet: !filter,
                 label: label,
                 selected: index == selected,
+                capsuleHeight: filter ? WalletAssetTabs.filterHeight : null,
                 onSelected: () => onSelected(index),
               ),
-              const SizedBox(width: 8),
+              if (!filter) const SizedBox(width: 8),
             ],
           ],
         ),
