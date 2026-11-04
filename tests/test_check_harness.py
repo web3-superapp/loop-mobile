@@ -10748,3 +10748,62 @@ class TypeLadderContractTests(unittest.TestCase):
         )
         # Decision 0190 cleared the last sub-11 size (meme_widgets.dart's age).
         self.assertEqual(0, sum(check_harness.TYPE_FLOOR_FEATURE_ALLOWLIST.values()))
+
+
+class L10nArbAwareWordingRuleTests(unittest.TestCase):
+    """Decision 0283: wording rules read the zh ARB value of the keys a page
+    reads, so copy that moved to ARB is still checked."""
+
+    def make_root(self, zh: dict[str, str]) -> Path:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        (root / "lib/l10n").mkdir(parents=True)
+        (root / "lib/l10n/app_zh.arb").write_text(
+            json.dumps({"@@locale": "zh", **zh}, ensure_ascii=False), encoding="utf-8"
+        )
+        (root / "lib/l10n/app_en.arb").write_text(
+            json.dumps({"@@locale": "en", **{k: "x" for k in zh}}), encoding="utf-8"
+        )
+        return root
+
+    def test_notification_save_and_delivery_claims_are_seen_through_keys(self):
+        root = self.make_root(
+            {
+                "n_saved": "通知设置已保存",
+                "n_delivery": "推送已开启",
+                "n_push": "推送尚不可用",
+            }
+        )
+        saved = "Text(context.l10n.n_saved);"
+        self.assertFalse(
+            check_harness.contains_positive_notification_preferences_commit_language(saved)
+        )
+        self.assertTrue(
+            check_harness.contains_positive_notification_preferences_commit_language(
+                saved, root
+            )
+        )
+        self.assertTrue(
+            check_harness.contains_positive_notification_delivery_language(
+                "Text(LoopL10n.current.n_delivery);", root
+            )
+        )
+        # A comment naming the key is not a read.
+        self.assertFalse(
+            check_harness.contains_positive_notification_delivery_language(
+                "// context.l10n.n_delivery\n", root
+            )
+        )
+
+    def test_commit_evidence_finds_the_delivery_truth_through_its_key(self):
+        root = self.make_root({"n_push": "推送尚不可用"})
+        source = (
+            "final ok = await controller.save(x);\n"
+            "if (ok) { show(); }\n"
+            "Text(context.l10n.n_push); resource.push;\n"
+        )
+        self.assertFalse(check_harness.notification_preferences_commit_evidence(source))
+        self.assertTrue(
+            check_harness.notification_preferences_commit_evidence(source, root)
+        )

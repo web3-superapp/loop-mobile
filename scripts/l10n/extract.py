@@ -173,6 +173,8 @@ def extract(paths: list[Path], feature: str | None) -> tuple[dict, list[str]]:
             continue
         source = path.read_text(encoding="utf-8")
         sites, _, mask = L.literal_sites(rel, source)
+        if not any(not site.skip for site in sites):
+            continue
         feat = feature or L.feature_of(rel)
         frag = fragments[feat]
         for site in sites:
@@ -267,6 +269,10 @@ def main() -> int:
     for feat, fresh in fragments.items():
         merged = merge_into_existing(feat, fresh)
         path = L.FRAGMENTS_DIR / f"{feat}.json"
+        if not merged:
+            # A directory with no copy left gets no fragment file: an empty
+            # `{}` is noise that merge.py would only skip.
+            continue
         if args.dry_run:
             print(f"--- {path} ({len(merged)} keys)")
         else:
