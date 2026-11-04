@@ -1967,6 +1967,7 @@ class _ViewerActions extends StatelessWidget {
       // room left to connect to. The room itself says so, and the only thing
       // left to do here is to go back.
       return LoopEmptyState(
+        showMessage: true,
         key: const ValueKey<String>('voiceroom-ended'),
         illustration: LoopIllustration.voiceRoom,
         title: '房间已结束',

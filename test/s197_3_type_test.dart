@@ -451,10 +451,11 @@ void main() {
       SquareCommunityList(onOpenCommunity: (_) {}, onOpenSearch: () {}),
       community: FakeCommunityGateway(),
     );
+    // Decision 0277: 广场's search placeholder, body2Sm 14 textSecondary.
     _expectStep(
       _painted(tester, '搜索社区'),
-      LoopType.body,
-      color: LoopColors.text3,
+      LoopType.body2Sm,
+      color: LoopColors.textSecondary,
       reason: 'search placeholder',
     );
     final rules = find.byKey(const ValueKey<String>('square-community-rules'));

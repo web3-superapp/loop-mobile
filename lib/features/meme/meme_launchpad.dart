@@ -216,6 +216,7 @@ class _MemeLaunchpadSegmentState extends ConsumerState<MemeLaunchpadSegment> {
     if (page.items.isEmpty) {
       return <Widget>[
         LoopEmptyState(
+          showMessage: true,
           key: ValueKey<String>('$keyBase-empty'),
           illustration: LoopIllustration.launchpad,
           title: _tab == MemeListTab.fresh ? '还没有代币' : '「${_tab.label}」里还没有代币',

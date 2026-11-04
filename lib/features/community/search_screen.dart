@@ -265,6 +265,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                           : '搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。',
                       // Decision 0122: the centred search illustration.
                       empty: LoopEmptyState(
+                        showMessage: true,
                         key: const ValueKey<String>('search-empty'),
                         illustration: LoopIllustration.search,
                         title: submittable ? '没有找到匹配的结果' : '搜索代币、社区与用户',

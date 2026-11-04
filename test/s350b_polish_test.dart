@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/referral_screen.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -131,19 +132,14 @@ void main() {
           find.descendant(of: tabs, matching: find.byType(LoopSegBar)),
           findsNothing,
         );
-        // The filter step: 32 high chips, lower than the page's 36 capsules.
-        final chips = tester.widgetList<LoopSeg>(
-          find.descendant(of: tabs, matching: find.byType(LoopSeg)),
+        // The filter step (decision 0277): the shared Figma filter chips,
+        // 54 × 32 — the same chip every filter row draws now.
+        final chips = tester.widgetList<LoopFilterChip>(
+          find.descendant(of: tabs, matching: find.byType(LoopFilterChip)),
         );
         expect(chips.map((chip) => chip.label), <String>['邀请列表', '邀请加成']);
-        for (final chip in chips) {
-          expect(chip.capsuleHeight, ReferralSubTabs.filterHeight);
-          expect(chip.quiet, isFalse);
-        }
-        expect(
-          ReferralSubTabs.filterHeight,
-          lessThan(LoopSegBar.capsuleHeight),
-        );
+        expect(ReferralSubTabs.filterHeight, LoopTouch.chipHeight);
+        expect(LoopSegBar.capsuleHeight, LoopTouch.chipHeight);
         expect(chips.first.selected, isTrue);
         // 分享邀请链接 on one line.
         final share = find.descendant(

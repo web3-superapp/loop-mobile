@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 // ---------------------------------------------------------------------------
 // 氛围层 · shared pieces (S264 → S265, decisions 0220 / 0221)
@@ -670,10 +671,10 @@ class LoopAtmoTitle extends StatelessWidget {
     alignment: Alignment.centerLeft,
     child: LoopTitleCrown(
       crownKey: crownKey,
-      child: Text(
+      // Decision 0277 (docs/58 §5.1): the title stands over the Purple
+      // doodle.
+      child: LoopDoodleTitle(
         title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.headlineLarge,
       ),
     ),
@@ -917,51 +918,43 @@ const List<double> loopGreyMatrix = <double>[
 /// the drips end the way paint does. The box keeps the drawing's own aspect,
 /// so nothing around it can crop it either.
 class LoopEmptyArt extends StatelessWidget {
-  const LoopEmptyArt({super.key, this.width = 64, this.crownKey});
+  const LoopEmptyArt({super.key, this.width = 106, this.crownKey});
 
   final double width;
 
   /// The key of the crown image itself (tests pin it).
   final Key? crownKey;
 
-  /// The crown PNG's own aspect (115 × 109).
-  static const double aspect = 115 / 109;
+  /// The Figma crown bitmap's own aspect (1024 × 683).
+  static const double aspect = 1024 / 683;
 
+  /// Decision 0277 (docs/58 §5.19): the Figma's colour crown, not 0255's
+  /// grey spray crown.
   @override
   Widget build(BuildContext context) => SizedBox(
     key: const ValueKey<String>('loop-empty-art'),
     width: width,
     height: width / aspect,
-    child: Opacity(
-      opacity: 0.45,
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color(0xFFFFFFFF), Color(0x00FFFFFF)],
-          stops: <double>[0.78, 1],
-        ).createShader(bounds),
-        child: ColorFiltered(
-          colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-          child: loopAtmoArt(
-            LoopAtmoAssets.crownFlat,
-            key: crownKey,
-            width: width,
-            height: width / aspect,
-          ),
-        ),
-      ),
+    child: Image.asset(
+      LoopFigmaAssets.crownEmpty,
+      key: crownKey,
+      width: width,
+      height: width / aspect,
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
     ),
   );
 }
 
-/// An empty state on the wall (decision 0220 §9): a board with the grey
-/// crown, a title, one sentence and, when there is one, a Yellow action.
+/// An empty state on the wall (decision 0220 §9): a board with the crown, a
+/// title and, when there is one, a Yellow action.
 ///
-/// S325 · decision 0255 (UX-003): the same 「主标题 + 一句描述」 as
-/// [LoopEmptyState]. A caller that gives only [message] has a title and no
-/// sentence: the one line is drawn as the title.
+/// Decision 0277 with 0248: the same crown and [LoopType.emptyTitle] as
+/// [LoopEmptyState], and no sentence under it — [message] is read to
+/// assistive technology after the title. A caller that gives only [message]
+/// has it drawn as the title.
 class LoopAtmoEmpty extends StatelessWidget {
   const LoopAtmoEmpty({
     required this.message,
@@ -986,7 +979,6 @@ class LoopAtmoEmpty extends StatelessWidget {
     final action = onAction;
     final label = actionLabel;
     final heading = title ?? message;
-    final description = title == null ? null : message;
     return LoopAtmoBoard(
       children: <Widget>[
         Padding(
@@ -996,21 +988,18 @@ class LoopAtmoEmpty extends StatelessWidget {
             children: <Widget>[
               LoopEmptyArt(crownKey: crownKey),
               const SizedBox(height: 12),
-              Text(
-                heading,
-                key: const ValueKey<String>('loop-empty-title'),
-                textAlign: TextAlign.center,
-                style: LoopType.title,
-              ),
-              if (description case final String line) ...<Widget>[
-                const SizedBox(height: 6),
-                Text(
-                  line,
-                  key: const ValueKey<String>('loop-empty-message'),
+              Semantics(
+                label: title == null ? heading : '$heading，$message',
+                excludeSemantics: true,
+                child: Text(
+                  heading,
+                  key: const ValueKey<String>('loop-empty-title'),
                   textAlign: TextAlign.center,
-                  style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+                  style: LoopType.emptyTitle,
                 ),
-              ],
+              ),
+              // Decision 0277 with 0248: the Figma's crown and title, and no
+              // explanatory sentence under them.
               if (action != null && label != null) ...<Widget>[
                 const SizedBox(height: 14),
                 LoopYellowButton(

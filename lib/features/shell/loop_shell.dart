@@ -4,8 +4,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -14,6 +14,7 @@ import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Five-destination shell (chapter 5.4).
@@ -134,17 +135,11 @@ class _LoopShellState extends State<LoopShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // S264: the chosen tab's Yellow spray is decoded before the bar's first
-    // frame.
+    // Decision 0277: the bar's glyphs and halo are vector assets; the
+    // first frame draws them as soon as they are parsed, so nothing is
+    // decoded ahead of it any more.
     if (_precached) return;
     _precached = true;
-    unawaited(
-      precacheImage(
-        const AssetImage(LoopAtmoAssets.sprayYellow),
-        context,
-        onError: (error, stackTrace) {},
-      ),
-    );
   }
 
   /// S332 · decision 0262: the floating 意见反馈 entry, over the tabs and
@@ -311,17 +306,15 @@ const SystemUiOverlayStyle loopTabSystemOverlay = SystemUiOverlayStyle(
   statusBarBrightness: Brightness.dark,
 );
 
-/// The tab bar's ground (decision 0226): the card surface, see-through.
-/// S326 · decision 0256 (UX-004 ⑦): 72 % over a background blur
-/// ([loopTabBarBlur]) — the page under the bar is frosted, not hidden.
-const Color loopTabBarGround = Color(0xB8111214);
+/// The tab bar's ground (decision 0277, docs/58 §5.18): white 3 % over a
+/// background blur ([loopTabBarBlur]) — the page under the bar is frosted.
+const Color loopTabBarGround = LoopColors.surfaceGlass;
 
-/// The blur under the tab bar (decision 0256).
-const double loopTabBarBlur = 20;
+/// The blur under the tab bar: the Figma's 15.
+const double loopTabBarBlur = 15;
 
-/// The tab bar's light edge on all four sides (decision 0256): it reads as
-/// a floating object, not a strip that slipped off the screen's foot.
-const Color loopTabBarEdge = Color(0x24FFFFFF);
+/// The tab bar's 1 px edge on all four sides: the Figma's `#34353b`.
+const Color loopTabBarEdge = LoopColors.navEdge;
 
 /// The floating Chalk tab bar.
 ///
@@ -547,17 +540,10 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
                     : _pressScale,
                 child: DecoratedBox(
                   key: const ValueKey<String>('loop-tab-bar-float'),
-                  // S326 · decision 0256: a soft shadow under the bar lifts it
-                  // off the page.
+                  // Decision 0277: the Figma's `0 8 20 rgba(0,0,0,.38)`.
                   decoration: const BoxDecoration(
                     borderRadius: LoopRadius.tabBar,
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Color(0x66000000),
-                        blurRadius: 24,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
+                    boxShadow: LoopDepth.tabBar,
                   ),
                   child: ClipRRect(
                     borderRadius: LoopRadius.tabBar,
@@ -581,10 +567,6 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
                           padding: const EdgeInsets.all(
                             LoopLayout.tabBarPadding,
                           ),
-                          // S264 (decision 0220): a 1 px chrome line runs
-                          // along the bar's top edge — S326 · decision 0256:
-                          // dimmed, over a light edge all round.
-                          foregroundDecoration: const _ChromeEdge(),
                           decoration: BoxDecoration(
                             // Decision 0226: the safe area under the bar is
                             // clear.
@@ -662,49 +644,17 @@ class LoopBoundedBackCurve extends Curve {
   }
 }
 
-/// The tab bar's 1 px chrome top edge (S264): dark steel at both ends, light
-/// steel in the middle, 18 in from the bar's sides.
-class _ChromeEdge extends Decoration {
-  const _ChromeEdge();
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      const _ChromeEdgePainter();
-}
-
-class _ChromeEdgePainter extends BoxPainter {
-  const _ChromeEdgePainter();
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final size = configuration.size;
-    if (size == null) return;
-    final line = Rect.fromLTWH(offset.dx + 18, offset.dy, size.width - 36, 1);
-    final paint = Paint()
-      ..shader = const LinearGradient(
-        // S326 · decision 0256 (UX-004 ⑦): the highlight at about a third of
-        // its old strength, so the top edge no longer outshines the rest.
-        colors: <Color>[
-          Color(0x003A3A42),
-          Color(0x339A9AA3),
-          Color(0x59F0F0F3),
-          Color(0x339A9AA3),
-          Color(0x003A3A42),
-        ],
-        stops: <double>[0, 0.2, 0.5, 0.8, 1],
-      ).createShader(line);
-    canvas.drawRect(line, paint);
-  }
-}
-
-/// One tab cell (S264, decision 0220): selected, an Ink glyph on a Yellow
-/// spray with a Yellow label; otherwise a Text3 glyph and label.
+/// One tab cell (decision 0277, docs/58 §5.18): the Figma's glyph — 22,
+/// MEME's 24 — over its word, 12 / 500 (MEME 11 / 600). Chosen, the glyph is
+/// the Figma's Yellow solid version on a 38 Yellow halo and the word is
+/// Yellow; otherwise both are textSecondary. It replaced S264's Ink glyph on
+/// a Yellow spray.
 ///
 /// The cell draws no ground of its own — [LoopTabBar]'s single glass pill
 /// is the ground, and it stretches across (decision 0261). The cell only
 /// crossfades its own ink over the same 280 ms, so on the first frame both
 /// the old and the new cell are lit and the old one greys as the pill
-/// leaves.
+/// leaves. The glyph's selected-moment move ([LoopTabGlyphMotion]) stays.
 class LoopTabItem extends StatelessWidget {
   const LoopTabItem({
     required this.label,
@@ -733,9 +683,48 @@ class LoopTabItem extends StatelessWidget {
   /// cell: the tap target keeps its size.
   final LoopDockCell dock;
 
+  /// The Figma's glyph for each tab slug (docs/58 §8). 我的 (`wallet`) keeps
+  /// the Figma's wallet glyph.
+  static const Map<String, String> figmaGlyphs = <String, String>{
+    'chat': 'chat',
+    'square': 'square',
+    'meme': 'meme',
+    'intel': 'intel',
+    'wallet': 'wallet',
+  };
+
+  /// The glyph box: 22, MEME's 24.
+  double get glyphSize => slug == 'meme' ? 24 : 22;
+
+  /// The halo under a chosen glyph.
+  static const double haloSize = 38;
+
+  /// The Figma sets the MEME tab's word one size down at 600 (11 / 600),
+  /// whatever language the other words are in.
+  bool get _latin => slug == 'meme';
+
+  Widget _glyph(bool active) {
+    final name = figmaGlyphs[slug];
+    if (name == null) {
+      return LoopIcon(
+        icon,
+        size: glyphSize,
+        color: active ? LoopColors.yellow : LoopColors.textSecondary,
+      );
+    }
+    return SvgPicture.asset(
+      LoopFigmaAssets.nav(name, active: active),
+      key: ValueKey<String>('loop-tab-glyph-$slug-${active ? 'on' : 'off'}'),
+      width: glyphSize,
+      height: glyphSize,
+      excludeFromSemantics: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final word = _latin ? LoopType.navLabelLatin : LoopType.navLabel;
     return Semantics(
       button: true,
       selected: selected,
@@ -758,14 +747,11 @@ class LoopTabItem extends StatelessWidget {
             curve: LoopTabBar.slideCurve,
             builder: (context, t, _) {
               final color = t <= 0
-                  ? LoopColors.text3
+                  ? LoopColors.textSecondary
                   : t >= 1
                   ? LoopColors.yellow
-                  : Color.lerp(LoopColors.text3, LoopColors.yellow, t)!;
-              // The Ink glyph stands on a solid Yellow core from the first
-              // frame of the selection to the last; only the spray around
-              // the core fades, so the glyph never sits on a half ground.
-              final glyph = t <= 0 ? LoopColors.text3 : LoopColors.ink;
+                  : Color.lerp(LoopColors.textSecondary, LoopColors.yellow, t)!;
+              final box = glyphSize;
               return ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: LoopTouch.tabCellMinHeight,
@@ -781,71 +767,35 @@ class LoopTabItem extends StatelessWidget {
                         slug: slug,
                         selected: selected,
                         child: SizedBox(
-                          width: 24,
-                          height: 24,
+                          width: box,
+                          height: box,
                           child: Stack(
                             clipBehavior: Clip.none,
                             alignment: Alignment.center,
                             children: <Widget>[
                               if (t > 0)
                                 Positioned(
-                                  left: 12 - 29,
-                                  top: 12 - 29,
-                                  width: 58,
-                                  height: 58,
+                                  left: box / 2 - haloSize / 2,
+                                  top: box / 2 - haloSize / 2 + 2,
+                                  width: haloSize,
+                                  height: haloSize,
                                   child: IgnorePointer(
                                     child: Opacity(
-                                      opacity: 0.8 * t,
-                                      child: Transform.rotate(
-                                        angle: -10 * math.pi / 180,
-                                        child: Image.asset(
-                                          LoopAtmoAssets.sprayYellow,
-                                          key: ValueKey<String>(
-                                            'loop-tab-spray-$slug',
-                                          ),
-                                          fit: BoxFit.contain,
-                                          excludeFromSemantics: true,
-                                          gaplessPlayback: true,
-                                          errorBuilder: (
-                                            context,
-                                            error,
-                                            stack,
-                                          ) => const SizedBox.shrink(),
+                                      opacity: t,
+                                      child: SvgPicture.asset(
+                                        LoopFigmaAssets.navHalo,
+                                        key: ValueKey<String>(
+                                          'loop-tab-halo-$slug',
                                         ),
+                                        excludeFromSemantics: true,
                                       ),
                                     ),
                                   ),
                                 ),
+                              if (t < 1)
+                                Opacity(opacity: 1 - t, child: _glyph(false)),
                               if (t > 0)
-                                SizedBox(
-                                  width: 32,
-                                  height: 32,
-                                  child: DecoratedBox(
-                                    key: ValueKey<String>(
-                                      'loop-tab-core-$slug',
-                                    ),
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: RadialGradient(
-                                        colors: <Color>[
-                                          LoopColors.yellow,
-                                          LoopColors.yellow,
-                                          Color(0x00FFD21C),
-                                        ],
-                                        stops: <double>[0, 0.6, 1],
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: LoopIcon(
-                                        icon,
-                                        size: 21,
-                                        color: glyph,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                LoopIcon(icon, size: 21, color: glyph),
+                                Opacity(opacity: t, child: _glyph(true)),
                               if (dot)
                                 Positioned(
                                   top: -1,
@@ -864,16 +814,13 @@ class LoopTabItem extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      SizedBox(height: slug == 'meme' ? 5 : 7),
                       ExcludeSemantics(
                         child: Text(
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.withWeight(
-                            LoopType.label,
-                            FontWeight.w700,
-                          ).copyWith(color: color),
+                          style: word.copyWith(color: color),
                         ),
                       ),
                     ],

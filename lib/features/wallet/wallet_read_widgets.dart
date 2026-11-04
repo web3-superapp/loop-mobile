@@ -808,6 +808,7 @@ class WalletCreationBlock extends ConsumerWidget {
 
     if (!canCreate) {
       return LoopEmptyState(
+        showMessage: true,
         key: ValueKey<String>('$keyPrefix-no-wallet'),
         illustration: LoopIllustration.profile,
         title: '这个账号还没有钱包',
@@ -827,6 +828,7 @@ class WalletCreationBlock extends ConsumerWidget {
     };
 
     return LoopEmptyState(
+      showMessage: true,
       key: ValueKey<String>('$keyPrefix-no-wallet'),
       illustration: LoopIllustration.profile,
       title: '这个账号还没有钱包',

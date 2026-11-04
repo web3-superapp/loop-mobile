@@ -68,6 +68,9 @@ flutter:
     - assets/icons/
     # Empty-state line illustrations (decision 0122), drawn for LOOP.
     - assets/illustrations/
+    # The requester's Figma assets (decision 0277): the title doodle, the
+    # crowns, the tab bar's glyphs and halo, the wallet glyphs.
+    - assets/figma/
   # Decision 0277 (supersedes 0210's Anton / Arimo): the requester's Figma
   # system. Inter (SIL OFL 1.1, rsms/inter v4.1 static instances 300 / 400 /
   # 500 / 600 / 700 and Black Italic 900 for the 「第 N 名」 place) carries

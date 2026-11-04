@@ -748,6 +748,7 @@ class _TrackBlock extends StatelessWidget {
     }
     if (rounds.isEmpty) {
       return const LoopEmptyState(
+        showMessage: true,
         key: ValueKey<String>('launch-track-empty'),
         illustration: LoopIllustration.launchpad,
         title: '还没有配置任何轮次',
@@ -1171,6 +1172,7 @@ class _AccessTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rounds.isEmpty) {
       return const LoopEmptyState(
+        showMessage: true,
         key: ValueKey<String>('launch-rounds-empty'),
         illustration: LoopIllustration.launchpad,
         title: '还没有配置任何轮次',

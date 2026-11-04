@@ -67,10 +67,8 @@ class LoopUnreadBadge extends StatelessWidget {
           maxLines: 1,
           // The 11px screen floor (decision 0189 G2), set solid so the count
           // sits centred in the 16 pill.
-          style: LoopTypography.withWeight(
-            LoopType.figureXs,
-            FontWeight.w600,
-          ).copyWith(color: LoopColors.ink, height: 1),
+          // Decision 0277: the Figma's unread count, 10 / 700.
+          style: LoopType.unreadCount.copyWith(color: LoopColors.ink),
         ),
       ),
     );

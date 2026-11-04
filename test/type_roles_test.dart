@@ -254,12 +254,15 @@ void main() {
     );
     _expectStep(tester, '1,024', LoopType.figure);
     _expectStep(tester, '持有人', LoopType.kicker);
-    _expectStep(tester, '已验证', LoopType.label, weight: FontWeight.w600);
+    // Decision 0277: a badge is the Figma's post tag, 12 / 600.
+    _expectStep(tester, '已验证', LoopType.tag);
     _expectStep(tester, '确认', LoopType.action);
     _expectStep(tester, '保存', LoopType.titleLg);
-    _expectStep(tester, '全部', LoopType.label, weight: FontWeight.w700);
-    _expectStep(tester, '收到', LoopType.label, weight: FontWeight.w600);
-    _expectStep(tester, '静默', LoopType.action, weight: FontWeight.w600);
+    // Decision 0277: every seg is the Figma's filter chip, 13 / 600 chosen and
+    // 13 / 500 not, quiet or framed alike.
+    _expectStep(tester, '全部', LoopType.chip);
+    _expectStep(tester, '收到', LoopType.chipIdle);
+    _expectStep(tester, '静默', LoopType.chipIdle);
   });
 
   testWidgets('R3 · R20 · R31 · label, notice, unavailable and empty states', (
@@ -278,6 +281,7 @@ void main() {
             illustration: LoopIllustration.holders,
             title: '还没有持有者',
             message: '有人买入后会出现在这里',
+            showMessage: true,
           ),
           const LoopEmptyState(
             illustration: LoopIllustration.holders,
@@ -295,9 +299,11 @@ void main() {
     _expectStep(tester, '平铺说明', LoopType.caption);
     _expectStep(tester, '余额读不到', LoopType.captionSm);
     _expectStep(tester, '重试', LoopType.label, weight: FontWeight.w600);
-    _expectStep(tester, '还没有持有者', LoopType.titleLg);
-    _expectStep(tester, '有人买入后会出现在这里', LoopType.bodySm);
-    _expectStep(tester, '紧凑空态', LoopType.title);
+    // Decision 0277: an empty state's title is emptyTitle 17 / 700; the one
+    // fact under it (only on request) is emptyMessage 12 / 400.
+    _expectStep(tester, '还没有持有者', LoopType.emptyTitle);
+    _expectStep(tester, '有人买入后会出现在这里', LoopType.emptyMessage);
+    _expectStep(tester, '紧凑空态', LoopType.emptyTitle);
   });
 
   testWidgets('R1b · R1c · flat titles and the step heading', (tester) async {

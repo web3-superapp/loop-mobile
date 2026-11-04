@@ -161,6 +161,7 @@ class CommunityStateBlock extends StatelessWidget {
       case CommunityViewPhase.empty:
         return empty ??
             LoopEmptyState(
+              showMessage: true,
               key: const ValueKey<String>('community-state-empty'),
               illustration: LoopIllustration.members,
               title: emptyMessage,

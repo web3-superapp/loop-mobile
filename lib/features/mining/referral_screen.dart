@@ -22,6 +22,7 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart'
     show LoopQrView, loopPosterExportMessage;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -251,7 +252,7 @@ class ReferralSubTabs extends StatelessWidget {
   });
 
   /// The drawn height of a filter chip (S350c's `WalletAssetTabs`).
-  static const double filterHeight = 32;
+  static const double filterHeight = LoopTouch.chipHeight;
 
   final List<String> labels;
   final int selectedIndex;
@@ -259,24 +260,15 @@ class ReferralSubTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.segmentGap - (LoopSeg.segmentTarget - filterHeight) / 2,
-      0,
-      0,
+    padding: EdgeInsets.only(
+      top: LoopSpacing.segmentGap - (LoopTouch.minimum - filterHeight) / 2,
     ),
-    child: Row(
-      children: <Widget>[
-        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: LoopSpacing.tight),
-          LoopSeg(
-            label: labels[index],
-            selected: index == selectedIndex,
-            capsuleHeight: filterHeight,
-            onSelected: () => onSelected(index),
-          ),
-        ],
-      ],
+    // Decision 0277: the one shared filter chip row (S350 left two copies of
+    // the same capsule here and in `WalletAssetTabs`).
+    child: LoopFilterChips(
+      labels: labels,
+      selectedIndex: selectedIndex,
+      onSelected: onSelected,
     ),
   );
 }

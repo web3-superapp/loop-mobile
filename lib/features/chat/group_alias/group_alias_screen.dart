@@ -63,6 +63,7 @@ class GroupAliasRoutePage extends StatelessWidget {
     } on InvalidGroupAliasContractException {
       return const _GroupAliasBlockedPage(
         state: LoopEmptyState(
+          showMessage: true,
           key: ValueKey<String>('group-alias-route-invalid'),
           illustration: LoopIllustration.members,
           title: '群组引用无效',
@@ -112,6 +113,7 @@ class GroupAliasChannelRoutePage extends StatelessWidget {
     } on InvalidGroupAliasContractException {
       return const _GroupAliasBlockedPage(
         state: LoopEmptyState(
+          showMessage: true,
           key: ValueKey<String>('group-alias-channel-invalid'),
           illustration: LoopIllustration.members,
           title: '群聊引用无效',

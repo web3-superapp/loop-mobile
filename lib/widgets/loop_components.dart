@@ -12,6 +12,7 @@ import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 import 'package:loop_mobile/widgets/loop_keyboard.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 /// Global components of the Lime Ledger system (01 handover chapter 6.1),
 /// each mapped from its `style-v2.css` class. Colours, radii and spacing come
@@ -143,6 +144,8 @@ class LoopTopbar extends StatelessWidget {
     double gap,
     List<Widget> actions,
   ) {
+    final doodle =
+        !flat && !dense && onBack == null && kicker == null && subtitle == null;
     return Padding(
       padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 0),
       child: ConstrainedBox(
@@ -175,40 +178,43 @@ class LoopTopbar extends StatelessWidget {
                     if (kicker != null) LoopKicker(kicker!),
                     Semantics(
                       header: true,
-                      child: Text(
-                        // Decision 0210: Inter Bold, in the title's own spelling —
-                        // a page title often carries a name (a person, a
-                        // room, a token), which is not ours to recase.
-                        title,
-                        // The bar's height is fixed. A title that may wrap,
-                        // a kicker above it and a subtitle below it do not
-                        // all fit, and the subtitle is the line that carries
-                        // the room's own state, so the title gives up its
-                        // second line rather than the bar overflowing.
-                        maxLines: flat
-                            ? 1
-                            : subtitle == null && kicker == null
-                            ? titleMaxLines
-                            : 1,
-                        overflow: TextOverflow.ellipsis,
-                        // v3 (decision 0229): a page without a back control
-                        // states its title at title1 (28); beside a back
-                        // control, or with a line above or under it in the
-                        // 74 bar, the title is title2 (22).
-                        style: flat
-                            ? (LoopFlat.stepOf(context)
-                                  ? LoopType.stepTitle
-                                  : loopFlatTitleStyle())
-                            // Decision 0277: headline is the Figma's 19 now,
-                            // so the dense bar takes the 16 small heading to
-                            // keep the four-tool column's room for a name.
-                            : dense
-                            ? LoopType.headlineSm
-                            : onBack != null ||
-                                  kicker != null ||
-                                  subtitle != null
-                            ? LoopType.title2
-                            : theme.textTheme.headlineLarge,
+                      child: _doodled(
+                        doodle: doodle,
+                        child: Text(
+                          // Decision 0210: Inter Bold, in the title's own spelling —
+                          // a page title often carries a name (a person, a
+                          // room, a token), which is not ours to recase.
+                          title,
+                          // The bar's height is fixed. A title that may wrap,
+                          // a kicker above it and a subtitle below it do not
+                          // all fit, and the subtitle is the line that carries
+                          // the room's own state, so the title gives up its
+                          // second line rather than the bar overflowing.
+                          maxLines: flat
+                              ? 1
+                              : subtitle == null && kicker == null
+                              ? titleMaxLines
+                              : 1,
+                          overflow: TextOverflow.ellipsis,
+                          // v3 (decision 0229): a page without a back control
+                          // states its title at title1 (28); beside a back
+                          // control, or with a line above or under it in the
+                          // 74 bar, the title is title2 (22).
+                          style: flat
+                              ? (LoopFlat.stepOf(context)
+                                    ? LoopType.stepTitle
+                                    : loopFlatTitleStyle())
+                              // Decision 0277: headline is the Figma's 19 now,
+                              // so the dense bar takes the 16 small heading to
+                              // keep the four-tool column's room for a name.
+                              : dense
+                              ? LoopType.headlineSm
+                              : onBack != null ||
+                                    kicker != null ||
+                                    subtitle != null
+                              ? LoopType.title2
+                              : theme.textTheme.headlineLarge,
+                        ),
                       ),
                     ),
                     if (subtitle != null)
@@ -240,6 +246,11 @@ class LoopTopbar extends StatelessWidget {
     );
   }
 }
+
+/// Decision 0277 (docs/58 §5.1): a page title without a back control
+/// stands over the Purple doodle.
+Widget _doodled({required bool doodle, required Widget child}) =>
+    doodle ? LoopTitleDoodle.under(child) : child;
 
 /// Marks a title bar's row of tools (S325 · decision 0255, UX-007): a
 /// [LoopIconButton] inside it is drawn framed — the glyph on the dark square
@@ -1544,10 +1555,39 @@ class LoopRecordRow extends StatelessWidget {
     this.trailingColor,
     this.trailingStrong = false,
     this.readOnly = false,
+    this.divider = false,
   });
 
   final Widget? leading;
   final String title;
+
+  /// Draws the Figma's 1 px white 5 % line under the row, across the content
+  /// width (decision 0277, docs/58 §9.4: token, chat, community, post and
+  /// function rows; holdings and board rows stay without). Off by default —
+  /// which lists turn it on is each page's decision.
+  final bool divider;
+
+  /// The [divider] line itself.
+  static const Key dividerKey = ValueKey<String>('loop-record-row-divider');
+
+  Widget _withDivider(Widget row, double inset) {
+    if (!divider) return row;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        row,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: inset),
+          child: const SizedBox(
+            key: dividerKey,
+            height: 1,
+            child: ColoredBox(color: LoopColors.divider),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// The row states a value the reader cannot change here (audit 2026-10-09
   /// m8): no chevron, no pressed state, the value in the weakest ink, and a
@@ -1819,7 +1859,7 @@ class LoopRecordRow extends StatelessWidget {
       padding: EdgeInsets.symmetric(
         horizontal: grouped ? LoopSpacing.card : LoopSpacing.page,
       ),
-      child: row,
+      child: _withDivider(row, 0),
     );
     if (onTap == null) {
       if (!readOnly) return padded;
@@ -1855,7 +1895,7 @@ extension on LoopRecordRow {
     // S279 · decision 0237: a grouped row takes the block's inset.
     final grouped = LoopRecordGroup.inside(context);
     final inset = grouped ? LoopSpacing.card : LoopSpacing.page;
-    final content = Container(
+    final bare = Container(
       constraints: const BoxConstraints(minHeight: LoopFlat.rowHeight),
       padding: EdgeInsets.fromLTRB(inset, 8, inset, 8),
       child: Row(
@@ -1948,6 +1988,7 @@ extension on LoopRecordRow {
         ],
       ),
     );
+    final content = _withDivider(bare, inset);
     if (onTap == null) {
       if (!readOnly) return content;
       return Semantics(
@@ -2339,26 +2380,90 @@ class LoopBadge extends StatelessWidget {
               LoopGround.secondaryOf(context),
             ),
           };
+    // Decision 0277 (docs/58 §5.7): the Figma's post tag — 12 / 600 at a 5
+    // corner, 8 at each side.
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      padding: const EdgeInsets.fromLTRB(8, 3, 8, 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: LoopRadius.pill,
+        borderRadius: LoopRadius.tag,
       ),
-      child: Text(
-        text,
-        style: LoopTypography.withWeight(
-          LoopType.label,
-          FontWeight.w600,
-        ).copyWith(color: foreground),
-      ),
+      child: Text(text, style: LoopType.tag.copyWith(color: foreground)),
     );
   }
 }
 
-/// `.seg`: peer filter chip, 44px minimum. The chosen chip wears the quiet
-/// selected state in both variants (S241c, decision 0210): Purple 9 % ground,
-/// a 2px Purple underline and a Yellow word.
+/// The colour pairs of a [LoopStatusTag] (docs/58 §1.1 / §5.7).
+enum LoopTagTone {
+  /// 置顶 / 算力社区 / 公开内盘: Yellow on `#30280c`.
+  yellow,
+
+  /// 毕业: `#1ad68c` on `#053324`.
+  green,
+
+  /// 观点: `#c957ff` on `#290a3b`.
+  purple,
+
+  /// 买入: rise on `#123025`.
+  rise,
+}
+
+/// The three tag shapes of the Figma (docs/58 §4 / §5.4 / §5.5 / §5.7).
+enum LoopTagShape {
+  /// A post tag: 22 high, 8 at each side, 12 / 600 at a 5 corner.
+  post,
+
+  /// A stage capsule (公开内盘): 19 high, 6 at each side, 11 / 400 at a 4
+  /// corner.
+  stage,
+
+  /// The ticker's 「买入」: 17 high, 6 at each side, 10 / 600 at a 4 corner.
+  buy,
+}
+
+/// A status tag in the Figma's colours (decision 0277). Status only, never
+/// an action.
+class LoopStatusTag extends StatelessWidget {
+  const LoopStatusTag(
+    this.text, {
+    super.key,
+    this.tone = LoopTagTone.yellow,
+    this.shape = LoopTagShape.post,
+  });
+
+  final String text;
+  final LoopTagTone tone;
+  final LoopTagShape shape;
+
+  @override
+  Widget build(BuildContext context) {
+    final (ground, ink) = switch (tone) {
+      LoopTagTone.yellow => (LoopColors.yellowSoft, LoopColors.yellow),
+      LoopTagTone.green => (LoopColors.tagGreenBg, LoopColors.tagGreen),
+      LoopTagTone.purple => (LoopColors.tagPurpleBg, LoopColors.tagPurple),
+      LoopTagTone.rise => (LoopColors.riseSoft, LoopColors.rise),
+    };
+    final (height, side, radius, style) = switch (shape) {
+      LoopTagShape.post => (22.0, 8.0, LoopRadius.tag, LoopType.tag),
+      LoopTagShape.stage => (19.0, 6.0, LoopRadius.stage, LoopType.stageTag),
+      LoopTagShape.buy => (17.0, 6.0, LoopRadius.stage, LoopType.buyTag),
+    };
+    return Container(
+      height: height,
+      padding: EdgeInsets.symmetric(horizontal: side),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: ground, borderRadius: radius),
+      child: Text(text, maxLines: 1, style: style.copyWith(color: ink)),
+    );
+  }
+}
+
+/// `.seg`: peer filter chip, 44px minimum. Decision 0277 (docs/58 §5.3):
+/// every chip is the Figma's filter chip — white 10 % with a white 13 / 600
+/// word when chosen, white 4 % with a textSecondary 13 / 500 word otherwise,
+/// at an 8 corner; no splat, no Purple ground. A row of plain filters is
+/// `LoopFilterChips`; this stays for the chips a form or a panel places one
+/// by one.
 class LoopSeg extends StatelessWidget {
   const LoopSeg({
     required this.label,
@@ -2371,7 +2476,7 @@ class LoopSeg extends StatelessWidget {
     this.quiet = false,
     this.dimmed = false,
     this.capsuleHeight,
-    this.splat = true,
+    this.splat = false,
   });
 
   /// The chosen capsule wears the small Yellow splat sticker on its top-left
@@ -2445,9 +2550,7 @@ class LoopSeg extends StatelessWidget {
         enabled: onSelected != null,
         child: _LoopSegCapsule(
           height: capsule,
-          ground: selected
-              ? LoopColors.purpleSelected
-              : (quiet ? Colors.transparent : LoopColors.card2),
+          ground: selected ? LoopColors.chipActive : LoopColors.chipIdle,
           block: block,
           onTap: onTap,
           sticker: splat && selected
@@ -2469,9 +2572,7 @@ class LoopSeg extends StatelessWidget {
       // Decision 0212 (docs/42 附C §4): every chip is a capsule; a chosen
       // chip is solid Purple with a white word. An unchosen quiet chip is
       // transparent; an unchosen framed chip is the raised grey ground.
-      color: selected
-          ? LoopColors.purpleSelected
-          : (quiet ? Colors.transparent : LoopColors.card2),
+      color: selected ? LoopColors.chipActive : LoopColors.chipIdle,
       shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -2512,16 +2613,14 @@ class LoopSeg extends StatelessWidget {
 
   Widget _segLabel() {
     final idle = dimmed ? LoopColors.text3 : LoopColors.text2;
-    final colour = selected ? LoopColors.onPurple : idle;
+    final colour = selected ? LoopColors.textOnSelected : idle;
     final text = Text(
       label,
       maxLines: 1,
-      // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}`
-      // — the selected chip is the only one that goes bold.
-      style: LoopTypography.withWeight(
-        quiet ? LoopType.action : LoopType.label,
-        selected ? FontWeight.w700 : FontWeight.w600,
-      ).copyWith(color: colour),
+      // Decision 0277: the chip step, 13 / 600 chosen and 13 / 500 not.
+      style: (selected ? LoopType.chip : LoopType.chipIdle).copyWith(
+        color: colour,
+      ),
     );
     final glyph = icon;
     if (glyph == null) return text;
@@ -2646,7 +2745,7 @@ class LoopSegBar extends StatelessWidget {
     this.icons,
     this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 8),
     this.dimmed,
-    this.splat = true,
+    this.splat = false,
   }) : assert(icons == null || icons.length == labels.length),
        assert(dimmed == null || dimmed.length == labels.length);
 
@@ -2665,11 +2764,12 @@ class LoopSegBar extends StatelessWidget {
   /// default, as on MEME's stage chips).
   final bool splat;
 
-  /// The drawn height of every capsule in the bar (docs/42 附C §4: 36).
+  /// The drawn height of every chip in the bar (decision 0277: the Figma's
+  /// 32; docs/42 附C §4 had 36).
   /// Each chip still answers a finger [LoopSeg.segmentTarget] tall; the
   /// default bottom inset of 8 plus the 6 of room under the capsule keeps
   /// the 14 the bar has always left below its pills.
-  static const double capsuleHeight = 36;
+  static const double capsuleHeight = LoopTouch.chipHeight;
 
   /// The bar's own inset. The default is the page gutter; a bar inside a
   /// block that already sits on the gutter (a trade panel) passes no
@@ -2687,7 +2787,7 @@ class LoopSegBar extends StatelessWidget {
       child: Row(
         children: <Widget>[
           for (var index = 0; index < labels.length; index++) ...<Widget>[
-            if (index > 0) const SizedBox(width: 4),
+            if (index > 0) const SizedBox(width: LoopSpacing.chipSpacing),
             LoopSeg(
               label: labels[index],
               icon: icons?[index],
@@ -2735,14 +2835,24 @@ enum LoopButtonTone {
   danger,
 }
 
-/// How much room a [LoopButton] takes (S325 · decision 0255, UX-007).
+/// How much room a [LoopButton] takes (S325 · decision 0255, UX-007;
+/// decision 0277 sets the Figma's page buttons, docs/58 §5.20). Every size
+/// below [regular] is drawn inside a 44 target.
 enum LoopButtonSize {
-  /// The page's own actions: 48 tall, 23 at each side.
+  /// The page's own full-width action: 48 tall at an 8 corner, 16 / 600.
   regular,
 
-  /// A control inside a row, a notice or beside a field (开启 / 粘贴 /
-  /// 生成海报): a 32 tall face with 12 at each side, still a 44 target.
+  /// 发射 and every control inside a row, a notice or beside a field: a 30
+  /// tall face at a 6 corner, 8 at each side, 16 / 600.
   compact,
+
+  /// 分享邀请链接 / 生成海报: a 36 tall face at an 8 corner, 14 at each
+  /// side, 13 / 600; a secondary one is white 8 % with a Yellow word.
+  medium,
+
+  /// 加入: a 54 × 28 face at a 6 corner, white 8 % with a Yellow 12 / 600
+  /// word, whatever the rank.
+  join,
 }
 
 /// Makes every [LoopButton] below it compact (S325 · decision 0255,
@@ -2826,17 +2936,29 @@ class LoopButton extends StatelessWidget {
     final enabled = onPressed != null;
     final choice = selected;
     final chosen = choice ?? false;
-    final compact =
+    final small =
         size == LoopButtonSize.compact ||
+        size == LoopButtonSize.medium ||
+        size == LoopButtonSize.join ||
         (!block && LoopCompactButtons.of(context));
+    final compact = small;
+    final sizing = size == LoopButtonSize.regular && small
+        ? LoopButtonSize.compact
+        : size;
+    final join = sizing == LoopButtonSize.join;
+    final medium = sizing == LoopButtonSize.medium;
     final assistRank = rank == LoopButtonRank.assist && choice == null;
     // A disabled primary keeps the shape but not the fill (自选管理's 保存 was
     // read as "disabled-looking" while it was disabled).
     final paintPrimary = primary && enabled && choice == null;
     final wide = block && LoopFlat.of(context);
     final inkFill = tone == LoopButtonTone.ink;
+    final quietYellow =
+        join || (medium && !primary && choice == null && enabled);
     final foreground = chosen
         ? LoopColors.onPurple
+        : quietYellow
+        ? LoopColors.yellow
         : assistRank
         ? LoopColors.text2
         : paintPrimary && tone == LoopButtonTone.danger
@@ -2851,6 +2973,8 @@ class LoopButton extends StatelessWidget {
     final danger = paintPrimary && tone == LoopButtonTone.danger;
     final Color? fill = chosen
         ? LoopColors.purpleSelected
+        : quietYellow
+        ? LoopColors.buttonGhost
         : assistRank
         ? LoopColors.assistFill
         : paintPrimary
@@ -2870,9 +2994,13 @@ class LoopButton extends StatelessWidget {
     };
     final edge = danger
         ? LoopColors.danger
-        : paintPrimary || chosen || onDarkGround || assistRank
+        : paintPrimary || chosen || onDarkGround || assistRank || quietYellow
         ? null
         : LoopGround.edgeOf(context);
+    final radius = switch (sizing) {
+      LoopButtonSize.compact || LoopButtonSize.join => LoopRadius.compactButton,
+      LoopButtonSize.regular || LoopButtonSize.medium => LoopRadius.button,
+    };
     return MergeSemantics(
       child: Semantics(
         button: true,
@@ -2892,22 +3020,36 @@ class LoopButton extends StatelessWidget {
                 fill: fill,
                 pressedFill: pressedFill,
                 edge: edge,
+                radius: radius,
                 child: Container(
                   // Every regular button keeps 48: docs/42 附C §4 asks 44 for
                   // a secondary one, but the Android 48 dp tap-target
                   // guideline the accessibility suite holds wins (decision
-                  // 0212). A compact face is 32 inside a 44 target.
+                  // 0212). Decision 0277: the Figma's small faces — 30, 36
+                  // and the 54 × 28 加入 — inside a 44 target.
                   constraints: BoxConstraints(
-                    minHeight: compact
-                        ? LoopTouch.compactButton
-                        : LoopTouch.primaryButton,
+                    minHeight: switch (sizing) {
+                      LoopButtonSize.regular => LoopTouch.primaryButton,
+                      LoopButtonSize.compact => LoopTouch.buttonCompact,
+                      LoopButtonSize.medium => LoopTouch.buttonMedium,
+                      LoopButtonSize.join => LoopTouch.buttonJoin,
+                    },
                     minWidth: block
                         ? double.infinity
+                        : join
+                        ? LoopTouch.buttonJoinWidth
                         : compact
                         ? 0
                         : LoopTouch.minimum,
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 23),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: switch (sizing) {
+                      LoopButtonSize.regular => 23,
+                      LoopButtonSize.compact => 8,
+                      LoopButtonSize.medium => 14,
+                      LoopButtonSize.join => 6,
+                    },
+                  ),
                   child: Row(
                     mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -2915,10 +3057,23 @@ class LoopButton extends StatelessWidget {
                       if (icon != null) ...<Widget>[
                         LoopIcon(
                           icon!,
-                          size: compact ? 15 : 17,
+                          size: switch (sizing) {
+                            LoopButtonSize.regular => 17,
+                            LoopButtonSize.compact => 21,
+                            LoopButtonSize.medium => 18,
+                            LoopButtonSize.join => 14,
+                          },
                           color: foreground,
                         ),
-                        if (label.isNotEmpty) SizedBox(width: compact ? 6 : 10),
+                        if (label.isNotEmpty)
+                          SizedBox(
+                            width: switch (sizing) {
+                              LoopButtonSize.regular => 10,
+                              LoopButtonSize.medium => 8,
+                              LoopButtonSize.compact ||
+                              LoopButtonSize.join => 4,
+                            },
+                          ),
                       ],
                       // An empty label is the glyph-only button, which takes
                       // its whole meaning from `semanticLabel`.
@@ -2928,16 +3083,13 @@ class LoopButton extends StatelessWidget {
                             label,
                             textAlign: TextAlign.center,
                             maxLines: compact ? 1 : null,
-                            style:
-                                (compact
-                                        ? LoopTypography.withWeight(
-                                            LoopType.label,
-                                            FontWeight.w600,
-                                          )
-                                        : wide
-                                        ? LoopType.titleLg
-                                        : LoopType.action)
-                                    .copyWith(color: foreground),
+                            style: switch (sizing) {
+                              LoopButtonSize.regular =>
+                                wide ? LoopType.titleLg : LoopType.action,
+                              LoopButtonSize.compact => LoopType.button,
+                              LoopButtonSize.medium => LoopType.buttonSm,
+                              LoopButtonSize.join => LoopType.buttonXs,
+                            }.copyWith(color: foreground),
                           ),
                         ),
                     ],
@@ -2988,12 +3140,14 @@ class _LoopButtonFace extends StatefulWidget {
     required this.edge,
     required this.child,
     super.key,
+    this.radius = LoopRadius.button,
   });
 
   final VoidCallback? onPressed;
   final Color? fill;
   final Color? pressedFill;
   final Color? edge;
+  final BorderRadius radius;
   final Widget child;
 
   @override
@@ -3018,14 +3172,14 @@ class _LoopButtonFaceState extends State<_LoopButtonFace> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: pressed ? widget.pressedFill ?? widget.fill : widget.fill,
-        borderRadius: LoopRadius.button,
+        borderRadius: widget.radius,
       ),
       // The edge is painted over the face rather than laid out around it, so
       // an outlined button is exactly as tall as a filled one.
       foregroundDecoration: edge == null
           ? null
           : BoxDecoration(
-              borderRadius: LoopRadius.button,
+              borderRadius: widget.radius,
               border: Border.fromBorderSide(BorderSide(color: edge)),
             ),
       child: Material(
@@ -3033,7 +3187,7 @@ class _LoopButtonFaceState extends State<_LoopButtonFace> {
         child: InkWell(
           onTap: widget.onPressed,
           onHighlightChanged: _setPressed,
-          borderRadius: LoopRadius.button,
+          borderRadius: widget.radius,
           highlightColor: widget.pressedFill == null
               ? null
               : const Color(0x00000000),

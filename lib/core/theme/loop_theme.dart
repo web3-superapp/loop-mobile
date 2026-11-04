@@ -919,6 +919,7 @@ abstract final class LoopTypography {
 /// | `headline` | 19 / 700 | textPrimary | 排行榜类区块标题 |
 /// | `postAuthor` | 18 / 600 | textPrimary | 帖子作者 |
 /// | `emptyTitle` | 17 / 700 / 24 | textPrimary | 空态标题 |
+/// | `emptyMessage` | 12 / 400 / 18 | textSecondary | 空态的状态事实句（只在 showMessage 时画） |
 /// | `headlineSm` | 16 / 700 | textPrimary | 小区块标题（热门社区） |
 /// | `rowTitleLg` | 16 / 500 / 23 | textPrimary | 会话名 |
 /// | `figure` | 16 / 600 / 23 tnum | textPrimary | 行右主数字（价格） |
@@ -929,6 +930,7 @@ abstract final class LoopTypography {
 /// | `figureSm` | 14 / 600 tnum | textSecondary | 持仓数量、引用卡名（主字在调用处给） |
 /// | `label` | 14 / 500 / 20 | textTertiary | 快捷键字、功能行标题（主字在调用处给） |
 /// | `body2Sm` | 14 / 400 / 22 | textPrimary | 公告帖、总资产标签行 |
+/// | `searchHint` | 15 / 500 | textTertiary | 聊天搜索占位 |
 /// | `captionMd` | 14 / 300 / 22 | textSecondary | 会话预览 |
 /// | `code` | 14 / 400 tnum | textPrimary | 地址 |
 /// | `figureXs` | 13 / 600 tnum | textSecondary | 榜单名次与数值 |
@@ -1031,6 +1033,15 @@ abstract final class LoopType {
     height: 24 / 17,
   );
 
+  /// emptyMessage · 12 / 400 on 18 textSecondary — the one fact an empty
+  /// state may state under its title (docs/58 §5.19).
+  static final TextStyle emptyMessage = _step(
+    12,
+    FontWeight.w400,
+    height: 18 / 12,
+    color: LoopColors.textSecondary,
+  );
+
   /// rowTitleLg · 16 / 500 on 23 — a conversation's name.
   static final TextStyle rowTitleLg = _step(
     16,
@@ -1064,6 +1075,13 @@ abstract final class LoopType {
     FontWeight.w300,
     height: 22 / 14,
     color: LoopColors.textSecondary,
+  );
+
+  /// searchHint · 15 / 500 textTertiary — 聊天's search placeholder.
+  static final TextStyle searchHint = _step(
+    15,
+    FontWeight.w500,
+    color: LoopColors.textTertiary,
   );
 
   /// label · 14 / 500 on 20 — a wallet key's word, a function row's title

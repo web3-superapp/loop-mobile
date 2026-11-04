@@ -274,6 +274,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           const LoopLabel('分组'),
           if (state.groups.isEmpty)
             LoopEmptyState(
+              showMessage: true,
               key: const ValueKey<String>('watchlist-no-groups'),
               illustration: LoopIllustration.watchlist,
               title: '还没有分组',
