@@ -16,7 +16,15 @@ L10N_DIR = ROOT / "lib" / "l10n"
 FRAGMENTS_DIR = L10N_DIR / "fragments"
 PENDING_DIRS_FILE = Path(__file__).resolve().parent / "pending_dirs.txt"
 
-CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+# CJK ideographs plus CJK punctuation (U+3000-303F: 、。「」) and the
+# full-width forms (U+FF00-FFEF: ，：（）！？): a literal made only of
+# full-width punctuation is still Chinese copy. Full-width digits and Latin
+# letters (U+FF10-FF19, FF21-FF3A, FF41-FF5A) are not: they appear as data,
+# e.g. the URL reviewer's confusable table.
+CJK = re.compile(
+    r"[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff"
+    r"\uff00-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uffef]"
+)
 
 # Calls whose string arguments are never shown to a reader.
 SKIP_CALLEES = {

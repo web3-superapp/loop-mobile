@@ -302,6 +302,18 @@ class ExtractEmptyFragmentTest(unittest.TestCase):
             self.assertEqual(dict(fragments), {})
 
 
+class CjkRangeTest(unittest.TestCase):
+    def test_full_width_punctuation_counts_but_full_width_latin_does_not(self):
+        for ch in "，。：；？！（）「」、　":
+            self.assertTrue(L.CJK.search(ch), ch)
+        for ch in "ａｅｚＡ０9a·…—":
+            self.assertFalse(L.CJK.search(ch), ch)
+
+    def test_punctuation_only_literal_is_reported(self):
+        src = "final s = items.join('；');\n"
+        self.assertEqual([s.group.text for s in sites(src) if not s.skip], ["；"])
+
+
 class CopyPresentTest(unittest.TestCase):
     def setUp(self):
         self.root = Path("/nonexistent-s358")
