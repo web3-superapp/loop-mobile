@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_controller.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_models.dart';
 import 'package:loop_mobile/integrations/diagnostics/loop_network_probe.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -60,28 +61,38 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
         .where((result) => result.target.isConfigured)
         .length;
     final heading = switch (state.phase) {
-      NetworkDiagnosticsPhase.idle => '未开始',
-      NetworkDiagnosticsPhase.running => '诊断中',
-      NetworkDiagnosticsPhase.done => '$sent 项中 ${state.okCount} 项可达',
+      NetworkDiagnosticsPhase.idle =>
+        context.l10n.profileAbout_networkDiagnosticsModelsIdle,
+      NetworkDiagnosticsPhase.running =>
+        context.l10n.profileAbout_networkDiagnosticsRunning,
+      NetworkDiagnosticsPhase.done =>
+        context.l10n.profileAbout_networkDiagnosticsDone(state.okCount, sent),
     };
 
     return LoopDashboardPage(
       key: const ValueKey<String>('network-diagnostics-screen'),
       archetype: LoopPageArchetype.action,
-      title: '网络诊断',
+      title: context.l10n.profileAbout_screenAboutNetworkDiagnosticsTitle,
       onBack: onBack,
       primary: LoopFolioPrimary(
         ring: false,
         key: const ValueKey<String>('network-diagnostics-folio'),
         archetype: LoopFolioArchetype.action,
-        kicker: '网络检查',
+        kicker: context
+            .l10n
+            .profileAbout_networkDiagnosticsNetworkDiagnosticsFolioKicker,
         heading: heading,
-        caption: '这个页面只测连通性和耗时，不发送账号信息。',
+        caption: context
+            .l10n
+            .profileAbout_networkDiagnosticsNetworkDiagnosticsFolioCaption,
         // Seconds, one decimal: the stamp upper-cases its text, and a
         // unit in Latin letters would read as 「MS」.
         stamp: state.total == null
             ? null
-            : '总耗时 ${(state.total!.inMilliseconds / 1000).toStringAsFixed(1)} 秒',
+            : context.l10n
+                  .profileAbout_networkDiagnosticsNetworkDiagnosticsFolioStamp(
+                    (state.total!.inMilliseconds / 1000).toStringAsFixed(1),
+                  ),
       ),
       sections: <Widget>[
         LoopButtonPair(
@@ -89,9 +100,12 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
             LoopButton(
               key: const ValueKey<String>('network-diagnostics-start'),
               label: switch (state.phase) {
-                NetworkDiagnosticsPhase.idle => '开始诊断',
-                NetworkDiagnosticsPhase.running => '正在诊断',
-                NetworkDiagnosticsPhase.done => '重新诊断',
+                NetworkDiagnosticsPhase.idle =>
+                  context.l10n.profileAbout_networkDiagnosticsIdle,
+                NetworkDiagnosticsPhase.running =>
+                  context.l10n.profileAbout_networkDiagnosticsRunning2,
+                NetworkDiagnosticsPhase.done =>
+                  context.l10n.profileAbout_networkDiagnosticsDone2,
               },
               primary: true,
               onPressed: running ? null : () => unawaited(controller.start()),
@@ -100,49 +114,59 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         if (state.allSentFailed)
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('network-diagnostics-offline'),
             icon: 'offline',
             tone: LoopNoticeTone.warn,
-            title: '所有探测都没有连上',
-            body: '请先确认这台设备已经联网，再重新诊断。',
+            title: context
+                .l10n
+                .profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineTitle,
+            body: context
+                .l10n
+                .profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineBody,
           ),
         // S237 · decision 0204: the build's backend (with its DEV / STAGING
         // tier and host name) and build mode, moved here from 关于 and
         // drawn only while the test-hints switch is on.
         if (loopTestHintsVisible) ..._buildRows(ref),
-        const LoopLabel('探测项'),
+        LoopLabel(context.l10n.profileAbout_networkDiagnosticsLoopLabel),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             for (var index = 0; index < state.results.length; index++)
               _row(state.results[index], index, state.results.length),
           ],
         ),
-        const LoopProvenanceFooter(
-          label: '说明',
-          title: '探测说明',
-          text: '每项单独限时 8 秒，全部探测同时发出，最长 15 秒。',
+        LoopProvenanceFooter(
+          label: context.l10n.common_about,
+          title: context.l10n.profileAbout_networkDiagnosticsTitle,
+          text: context.l10n.profileAbout_networkDiagnosticsText,
         ),
-        const LoopLabel('结果'),
+        LoopLabel(context.l10n.profileAbout_networkDiagnosticsLoopLabel2),
         LoopButtonPair(
           children: <Widget>[
             LoopButton(
               key: const ValueKey<String>('network-diagnostics-copy'),
-              label: '复制诊断结果',
+              label: context
+                  .l10n
+                  .profileAbout_networkDiagnosticsNetworkDiagnosticsCopyLabel,
               onPressed: done ? () => unawaited(_copy(context, ref)) : null,
             ),
             LoopButton(
               key: const ValueKey<String>('network-diagnostics-share'),
-              label: '分享',
+              label: context.l10n.common_share,
               onPressed: done ? () => unawaited(_share(context, ref)) : null,
             ),
           ],
         ),
-        const LoopProvenanceFooter(
+        LoopProvenanceFooter(
           key: ValueKey<String>('network-diagnostics-privacy'),
-          label: '说明',
-          title: '结果去向',
-          text: '结果只留在这台设备上，不会上传；复制或分享由你决定。',
+          label: context.l10n.common_about,
+          title: context
+              .l10n
+              .profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyTitle,
+          text: context
+              .l10n
+              .profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyText,
         ),
         const SizedBox(height: 20),
       ],
@@ -153,30 +177,50 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
     final config = ref.watch(appConfigProvider);
     final backendHost = loopBackendHost(config.backendBaseUrl);
     final declaredMode = config.declaredBuildModeName.isEmpty
-        ? '未声明'
+        ? LoopL10n.current.profileAbout_networkDiagnosticsBuildRows
         : config.declaredBuildModeName;
     return <Widget>[
-      const LoopLabel('本机构建'),
+      LoopLabel(LoopL10n.current.profileAbout_screenLoopLabel3),
       LoopRecordGroup(
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('about-backend-host'),
-            title: '服务端',
+            title: LoopL10n
+                .current
+                .profileAbout_networkDiagnosticsAboutBackendHostTitle,
             // Decision 0100: which backend this build was pointed at, read
             // from the build configuration; no request is made for it.
             subtitle: backendHost == null
-                ? '构建配置里没有服务端地址'
-                : '${loopBackendTier(backendHost)} · 来自这次构建的配置',
+                ? LoopL10n
+                      .current
+                      .profileAbout_networkDiagnosticsAboutBackendHostSubtitle
+                : LoopL10n.current
+                      .profileAbout_networkDiagnosticsAboutBackendHostSubtitle2(
+                        loopBackendTier(backendHost),
+                      ),
             trailing: backendHost,
-            trailingBadge: backendHost == null ? const LoopBadge('未配置') : null,
+            trailingBadge: backendHost == null
+                ? LoopBadge(LoopL10n.current.common_notConfigured)
+                : null,
             position: LoopRowPosition.first,
           ),
           LoopRecordRow(
             key: const ValueKey<String>('about-build-mode'),
-            title: '构建模式',
-            subtitle:
-                '声明 $declaredMode · 运行时 ${loopRuntimeBuildMode()} · '
-                '${config.declaredModeMatchesRuntime ? '一致' : '不一致'}',
+            title: LoopL10n
+                .current
+                .profileAbout_networkDiagnosticsAboutBuildModeTitle,
+            subtitle: LoopL10n.current
+                .profileAbout_networkDiagnosticsAboutBuildModeSubtitle(
+                  config.declaredModeMatchesRuntime
+                      ? LoopL10n
+                            .current
+                            .profileAbout_networkDiagnosticsModeMatch
+                      : LoopL10n
+                            .current
+                            .profileAbout_networkDiagnosticsModeMismatch,
+                  declaredMode,
+                  loopRuntimeBuildMode(),
+                ),
             trailing: declaredMode,
             position: LoopRowPosition.last,
           ),
@@ -224,17 +268,25 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
     final config = ref.read(appConfigProvider);
     final version = config.loopClientVersionForCurrentBuild;
     final declared = config.declaredBuildModeName.isEmpty
-        ? '未声明'
+        ? LoopL10n.current.profileAbout_networkDiagnosticsBuildRows
         : config.declaredBuildModeName;
     final host = loopBackendHost(config.backendBaseUrl);
     return networkDiagnosticsReport(
       context: NetworkDiagnosticsContext(
-        appVersion: version.isEmpty ? '未配置' : version,
-        buildMode: '声明 $declared · 运行时 ${loopRuntimeBuildMode()}',
+        appVersion: version.isEmpty
+            ? LoopL10n.current.common_notConfigured
+            : version,
+        buildMode: LoopL10n.current.profileAbout_networkDiagnosticsBuildMode(
+          declared,
+          loopRuntimeBuildMode(),
+        ),
         serverHost: host == null
-            ? '未配置'
+            ? LoopL10n.current.common_notConfigured
             : loopTestHintsVisible
-            ? '$host（${loopBackendTier(host)}）'
+            ? LoopL10n.current.profileAbout_networkDiagnosticsHostTier(
+                host,
+                loopBackendTier(host),
+              )
             : host,
         platform: ref.read(networkDiagnosticsPlatformProvider),
       ),
@@ -246,13 +298,21 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
 
   Future<void> _copy(BuildContext context, WidgetRef ref) async {
     final text = reportText(ref);
-    await LoopCopy.text(context, text, message: '诊断结果已复制');
+    await LoopCopy.text(
+      context,
+      text,
+      message: context.l10n.profileAbout_networkDiagnosticsMessage,
+    );
   }
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {
     final text = reportText(ref);
     final shared = await ref.read(networkDiagnosticsShareProvider)(text);
     if (shared || !context.mounted) return;
-    LoopToast.show(context, message: '无法打开分享，可以改用复制', kind: LoopToastKind.warn);
+    LoopToast.show(
+      context,
+      message: context.l10n.profileAbout_networkDiagnosticsMessage2,
+      kind: LoopToastKind.warn,
+    );
   }
 }

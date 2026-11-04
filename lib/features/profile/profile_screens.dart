@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/features/profile/settings/settings_screen.dart';
 import 'package:loop_mobile/features/profile/support/support_screen.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -141,14 +142,14 @@ class _UnknownProfileScreen extends StatelessWidget {
     return LoopFocusPage(
       key: const ValueKey<String>('unknown-profile-surface'),
       archetype: LoopPageArchetype.state,
-      title: '设置不可用',
+      title: context.l10n.profile_screensUnknownProfileSurfaceTitle,
       onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
       body: const <Widget>[],
-      block: const SingleChildScrollView(
+      block: SingleChildScrollView(
         child: LoopEmptyState(
           illustration: LoopIllustration.profile,
-          title: '没有做任何更改',
-          message: '回到「我」，选择其它设置。',
+          title: context.l10n.profile_screensTitle,
+          message: context.l10n.profile_screensMessage,
         ),
       ),
     );

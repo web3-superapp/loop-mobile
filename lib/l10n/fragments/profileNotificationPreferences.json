@@ -1,0 +1,221 @@
+{
+  "profileNotificationPreferences_screenBody": {
+    "en": "That doesn't mean delivery works yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:114",
+    "zh": "这不代表已经能送达。"
+  },
+  "profileNotificationPreferences_screenBody2": {
+    "en": "You'll be asked once your account is ready.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:120",
+    "zh": "账号准备好之后会请求一次。"
+  },
+  "profileNotificationPreferences_screenBody3": {
+    "en": "You can turn it on here once your account is in LOOP.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:128",
+    "zh": "账号进入 LOOP 之后，可以在这里开启。"
+  },
+  "profileNotificationPreferences_screenBody4": {
+    "en": "Notifications stay in the in-app notification list.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:152",
+    "zh": "通知只会留在应用内的通知列表里。"
+  },
+  "profileNotificationPreferences_screenBody5": {
+    "en": "Turn notifications back on for LOOP in system settings.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:160",
+    "zh": "可以在系统设置里为 LOOP 重新打开通知。"
+  },
+  "profileNotificationPreferences_screenBody6": {
+    "en": "This device registers automatically once it has one.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:166",
+    "zh": "拿到之后这台设备会自动登记。"
+  },
+  "profileNotificationPreferences_screenBody7": {
+    "en": "It'll try again next time you open LOOP.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:175",
+    "zh": "下次回到 LOOP 时会再试一次。"
+  },
+  "profileNotificationPreferences_screenCategoryRow": {
+    "en": "Not in effect yet",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:390",
+    "zh": "暂不生效"
+  },
+  "profileNotificationPreferences_screenEmptyMessage": {
+    "en": "No notification settings yet",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:253",
+    "zh": "还没有通知设置"
+  },
+  "profileNotificationPreferences_screenLaunchRound": {
+    "en": "Once off, you won't get consensus badge, launch review or on-chain progress notifications.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:460",
+    "zh": "关闭后不会再收到共识勋章、发射审核结果与上链进度通知。"
+  },
+  "profileNotificationPreferences_screenLoopOfflineState": {
+    "en": "Save notification settings",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:283",
+    "zh": "保存通知设置"
+  },
+  "profileNotificationPreferences_screenMessage": {
+    "en": "Notification settings saved",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:445",
+    "zh": "通知设置已保存"
+  },
+  "profileNotificationPreferences_screenNotificationCapabilityBlockTitle": {
+    "en": "Notification settings aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:215",
+    "zh": "通知设置当前不可用"
+  },
+  "profileNotificationPreferences_screenNotificationDisableTitle": {
+    "en": "Turn off \"{label}\" notifications?",
+    "placeholders": {
+      "label": {
+        "example": "category.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:452",
+    "zh": "关闭『{label}』通知？"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesConflictBody": {
+    "en": "Notification settings changed on another device. Reload before editing.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:265",
+    "zh": "通知设置已在其他设备上改动。请重新加载后再修改。"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesConflictTitle": {
+    "en": "Version conflict. Nothing was overwritten",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:264",
+    "zh": "版本冲突 —— 没有覆盖任何内容"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesErrorTitle": {
+    "en": "Settings not saved",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:296",
+    "zh": "设置没有保存"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesPushChannelBody": {
+    "en": "Push hasn't been confirmed on a real device yet. Switches still save and still affect the in-app notification list.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:67",
+    "zh": "推送还没有在真机上确认过。开关照常保存，也照常影响站内的通知列表。"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesPushOptInBody": {
+    "en": "New messages, price alerts and security events are pushed to this device. Tap Turn on and the system asks once.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:136",
+    "zh": "新消息、价格提醒和安全事件会推送到这台设备。点开启后，系统会询问一次。"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesPushOptInButtonLabel": {
+    "en": "Turn on",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:141",
+    "zh": "开启"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesPushOptInTitle": {
+    "en": "Turn on push notifications",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:135",
+    "zh": "开启推送通知"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesSummaryBody": {
+    "en": "{deliveringEnabledCount} on and in effect. Only price alerts create in-app notifications for now; security events are always on.",
+    "placeholders": {
+      "deliveringEnabledCount": {
+        "example": "resource.deliveringEnabledCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:239",
+    "zh": "{deliveringEnabledCount} 项开启并生效。目前只有价格提醒会生成应用内通知；安全事件始终开启。"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesVersionText": {
+    "en": "Using default settings",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:320",
+    "zh": "当前使用默认设置"
+  },
+  "profileNotificationPreferences_screenNotificationPreferencesVersionText2": {
+    "en": "Updated {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(resource.updatedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:321",
+    "zh": "更新于 {relativeTime}"
+  },
+  "profileNotificationPreferences_screenNotificationPushUnavailableLabel": {
+    "en": "Push isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:308",
+    "zh": "推送尚不可用"
+  },
+  "profileNotificationPreferences_screenS": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:392",
+    "zh": "已关闭"
+  },
+  "profileNotificationPreferences_screenSwitch": {
+    "en": "Once off, you won't get this type of notification.",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:461",
+    "zh": "关闭后不会再收到这一类通知。"
+  },
+  "profileNotificationPreferences_screenTitle": {
+    "en": "This device is registered for push",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:113",
+    "zh": "这台设备已登记接收推送"
+  },
+  "profileNotificationPreferences_screenTitle2": {
+    "en": "Notification permission hasn't been requested on this device",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:119, lib/features/profile/notification_preferences/notification_preferences_screen.dart:127",
+    "zh": "还没有向这台设备请求通知权限"
+  },
+  "profileNotificationPreferences_screenTitle3": {
+    "en": "No push channel on this device",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:151",
+    "zh": "这台设备上没有推送通道"
+  },
+  "profileNotificationPreferences_screenTitle4": {
+    "en": "Notification permission denied; this device can't get push",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:159",
+    "zh": "通知权限已拒绝，这台设备收不到推送"
+  },
+  "profileNotificationPreferences_screenTitle5": {
+    "en": "Waiting for the system to assign a push channel",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:165",
+    "zh": "正在等待系统分配推送通道"
+  },
+  "profileNotificationPreferences_screenTitle6": {
+    "en": "This device isn't registered yet",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:174",
+    "zh": "这台设备还没有登记成功"
+  },
+  "profileNotificationPreferences_screenTitle7": {
+    "en": "This account can't change notification settings",
+    "placeholders": {},
+    "where": "lib/features/profile/notification_preferences/notification_preferences_screen.dart:290",
+    "zh": "当前账号无权修改通知设置"
+  }
+}

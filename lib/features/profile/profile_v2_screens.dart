@@ -34,6 +34,7 @@ import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -109,7 +110,7 @@ class LoopProfileAvatar extends StatelessWidget {
         key: ValueKey<String>('loop-profile-avatar-$reference'),
         url: mediaUrl,
         size: size,
-        semanticLabel: '头像',
+        semanticLabel: context.l10n.profile_screensSemanticLabel,
         fallback: _monogram(context),
       );
     }
@@ -123,7 +124,7 @@ class LoopProfileAvatar extends StatelessWidget {
           atlas: LoopIdentityAtlas.people,
           slot: key,
           size: size,
-          semanticLabel: '头像',
+          semanticLabel: context.l10n.profile_screensSemanticLabel,
           fallbackMonogram: monogram,
         );
       }
@@ -167,7 +168,8 @@ class LoopProfileAvatar extends StatelessWidget {
 
 /// `开发预览` eyebrow for a Preview-backed page. Production and unavailable
 /// modes carry no kicker, so the label can never appear outside Preview.
-String? loopPreviewKicker(bool isPreview) => isPreview ? '开发预览' : null;
+String? loopPreviewKicker(bool isPreview) =>
+    isPreview ? LoopL10n.current.common_devPreview : null;
 
 /// Visible Preview truth label (constraint 10). Edits made here persist only
 /// for the running Preview and never reach an account or a provider.
@@ -190,8 +192,8 @@ class LoopPreviewModeNotice extends StatelessWidget {
       key: const ValueKey<String>('loop-preview-mode-notice'),
       icon: 'info',
       tone: LoopNoticeTone.warn,
-      title: '开发预览',
-      body: '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。',
+      title: context.l10n.common_devPreview,
+      body: context.l10n.profile_screensLoopPreviewModeNoticeBody(resource),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         14,
@@ -257,46 +259,55 @@ LoopResourcePhase privacyResourcePhase(PrivacyState state) {
 }
 
 String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
-  ProfileGatewayFailureKind.unavailable => '资料服务当前不可用，没有任何修改被保存。',
-  ProfileGatewayFailureKind.offline => '设备当前离线，资料未能读取，也没有提交任何修改。',
+  ProfileGatewayFailureKind.unavailable =>
+    LoopL10n.current.profile_screensUnavailable,
+  ProfileGatewayFailureKind.offline => LoopL10n.current.profile_screensOffline,
   ProfileGatewayFailureKind.permissionDenied =>
-    '当前策略不允许读取或修改账号资料，没有发生任何变化。'
-        '这项权限不能在应用里自行调整。',
+    LoopL10n.current.profile_screensPermissionDenied,
   ProfileGatewayFailureKind.regionBlocked =>
-    '你所在的地区暂时不能读取或修改账号资料，没有发生任何变化。'
-        '这与账号无关，换一个账号也不会改变结果。',
+    LoopL10n.current.profile_screensRegionBlocked,
   ProfileGatewayFailureKind.stepUpRequired =>
-    '这一步需要二次验证，二次验证还没有开放，没有发生任何变化。'
-        '请到安全中心查看当前可用的验证方式。',
-  ProfileGatewayFailureKind.versionConflict => '资料在别处已被修改。请重新载入后再保存。',
-  ProfileGatewayFailureKind.idempotencyConflict => '提交冲突，已重置，请再试一次。',
-  ProfileGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
-  ProfileGatewayFailureKind.validationFailed => '别名或简介超出长度限制，请修改后重试。',
-  ProfileGatewayFailureKind.aliasReserved => '该名称属于 LOOP 保留词，请换一个再试。',
-  ProfileGatewayFailureKind.aliasBlocked => '该名称包含不允许的词，请换一个再试。',
-  ProfileGatewayFailureKind.invalidData => '服务返回的资料不符合约定，没有采纳任何内容。',
-  ProfileGatewayFailureKind.unexpected => '资料操作没有完成，请稍后再试。',
-  null => '资料操作没有完成。',
+    LoopL10n.current.profile_screensStepUpRequired,
+  ProfileGatewayFailureKind.versionConflict =>
+    LoopL10n.current.profile_screensVersionConflict,
+  ProfileGatewayFailureKind.idempotencyConflict =>
+    LoopL10n.current.profile_screensIdempotencyConflict,
+  ProfileGatewayFailureKind.bootstrapRequired =>
+    LoopL10n.current.profile_screensBootstrapRequired,
+  ProfileGatewayFailureKind.validationFailed =>
+    LoopL10n.current.profile_screensValidationFailed,
+  ProfileGatewayFailureKind.aliasReserved =>
+    LoopL10n.current.profile_screensAliasReserved,
+  ProfileGatewayFailureKind.aliasBlocked =>
+    LoopL10n.current.profile_screensAliasBlocked,
+  ProfileGatewayFailureKind.invalidData =>
+    LoopL10n.current.profile_screensInvalidData,
+  ProfileGatewayFailureKind.unexpected =>
+    LoopL10n.current.profile_screensUnexpected,
+  null => LoopL10n.current.profile_screensSwitch,
 };
 
 String privacyFailureReason(PrivacyGatewayFailureKind? kind) => switch (kind) {
-  PrivacyGatewayFailureKind.unavailable => '隐私服务当前不可用，没有任何修改被保存。',
-  PrivacyGatewayFailureKind.offline => '设备当前离线，隐私设置未能读取，也没有提交任何修改。',
+  PrivacyGatewayFailureKind.unavailable =>
+    LoopL10n.current.profile_screensUnavailable2,
+  PrivacyGatewayFailureKind.offline => LoopL10n.current.profile_screensOffline2,
   PrivacyGatewayFailureKind.permissionDenied =>
-    '当前策略不允许读取或修改隐私设置，没有发生任何变化。'
-        '这项权限不能在应用里自行调整；开关的当前状态以 LOOP 记录为准。',
+    LoopL10n.current.profile_screensPermissionDenied2,
   PrivacyGatewayFailureKind.regionBlocked =>
-    '你所在的地区暂时不能读取或修改隐私设置，没有发生任何变化。'
-        '这与账号无关，换一个账号也不会改变结果。',
+    LoopL10n.current.profile_screensRegionBlocked2,
   PrivacyGatewayFailureKind.stepUpRequired =>
-    '修改隐私设置需要二次验证，二次验证还没有开放，没有发生任何变化。'
-        '请到安全中心查看当前可用的验证方式。',
-  PrivacyGatewayFailureKind.versionConflict => '隐私设置在别处已被修改。请重新载入后再保存。',
-  PrivacyGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
-  PrivacyGatewayFailureKind.validationFailed => '提交的隐私设置不被接受，请检查后重试。',
-  PrivacyGatewayFailureKind.invalidData => '服务返回的隐私设置不符合约定，没有采纳任何内容。',
-  PrivacyGatewayFailureKind.unexpected => '隐私操作没有完成，请稍后再试。',
-  null => '隐私操作没有完成。',
+    LoopL10n.current.profile_screensStepUpRequired2,
+  PrivacyGatewayFailureKind.versionConflict =>
+    LoopL10n.current.profile_screensVersionConflict2,
+  PrivacyGatewayFailureKind.bootstrapRequired =>
+    LoopL10n.current.profile_screensBootstrapRequired,
+  PrivacyGatewayFailureKind.validationFailed =>
+    LoopL10n.current.profile_screensValidationFailed2,
+  PrivacyGatewayFailureKind.invalidData =>
+    LoopL10n.current.profile_screensInvalidData2,
+  PrivacyGatewayFailureKind.unexpected =>
+    LoopL10n.current.profile_screensUnexpected2,
+  null => LoopL10n.current.profile_screensSwitch2,
 };
 
 /// `.row` with a state badge on the right. It is a control, not a claim: the
@@ -308,8 +319,8 @@ class LoopTogglePreferenceRow extends StatelessWidget {
     required this.onChanged,
     super.key,
     this.subtitle,
-    this.onLabel = '已开启',
-    this.offLabel = '已关闭',
+    this.onLabel,
+    this.offLabel,
     this.position = LoopRowPosition.single,
   });
 
@@ -317,12 +328,14 @@ class LoopTogglePreferenceRow extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final VoidCallback? onChanged;
-  final String onLabel;
-  final String offLabel;
+  final String? onLabel;
+  final String? offLabel;
   final LoopRowPosition position;
 
   @override
   Widget build(BuildContext context) {
+    final onLabel = this.onLabel ?? context.l10n.common_on;
+    final offLabel = this.offLabel ?? context.l10n.profile_screensOffLabel;
     return Semantics(
       toggled: value,
       enabled: onChanged != null,
@@ -346,7 +359,7 @@ class LoopTogglePreferenceRow extends StatelessWidget {
         onTap: onChanged,
         position: position,
         chevron: false,
-        semanticLabel: '$title，${value ? onLabel : offLabel}',
+        semanticLabel: '$title, ${value ? onLabel : offLabel}',
       ),
     );
   }
@@ -404,7 +417,10 @@ class _ProfileIdentitySectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
+        LoopPreviewModeNotice(
+          isPreview: isPreview,
+          resource: context.l10n.common_profile,
+        ),
         _body(state, phase, counts, face),
       ],
     );
@@ -477,7 +493,7 @@ class _ProfileIdentitySectionState
         key: ValueKey<String>('profile-${phase.name}'),
         icon: phase == LoopResourcePhase.offline ? 'offline' : 'warn',
         message: phase == LoopResourcePhase.empty
-            ? '资料还没有读到'
+            ? LoopL10n.current.profile_screensMessage2
             : profileFailureReason(state.failureKind),
         maxLines: 2,
         onRetry: !retry
@@ -527,20 +543,20 @@ class _ProfileSettingsEntriesState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const LoopLabel('隐私与安全'),
+        LoopLabel(context.l10n.profile_screensLoopLabel),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               leading: const LoopRowIcon(icon: 'lock'),
-              title: '隐私中心',
+              title: context.l10n.profile_screensProfileOpenPrivacyTitle,
               trailing: _privacySubtitle(),
               onTap: () => widget.onNavigate('privacy'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-security'),
               leading: const LoopRowIcon(icon: 'shield'),
-              title: '安全中心',
+              title: context.l10n.common_securityCenter,
               // The security projection reports every method as unavailable
               // while the device holds Privy MFA of its own (walkthrough ·
               // h17). Until the two agree this row states no posture.
@@ -549,7 +565,7 @@ class _ProfileSettingsEntriesState
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-notifications'),
               leading: const LoopRowIcon(icon: 'bell'),
-              title: '通知设置',
+              title: context.l10n.common_notificationSettings,
               onTap: () => widget.onNavigate('notif-settings'),
             ),
           ],
@@ -564,8 +580,8 @@ class _ProfileSettingsEntriesState
     final resource = ref.watch(privacyControllerProvider).resource;
     if (resource == null) return null;
     return privacyHoldingsPublic(resource.values.visibility)
-        ? '持仓与交易已公开'
-        : '持仓与交易仅自己可见';
+        ? LoopL10n.current.profile_screensPrivacySubtitle
+        : LoopL10n.current.profile_screensS;
   }
 }
 
@@ -623,10 +639,10 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
     final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(communityHomeControllerProvider);
     if (communityCapabilityBlocks(mode, capability)) {
-      return const LoopInlineUnavailable(
+      return LoopInlineUnavailable(
         key: ValueKey<String>('me-communities-unavailable'),
         icon: 'community',
-        message: '社区暂不可用',
+        message: context.l10n.profile_screensMeCommunitiesUnavailableMessage,
       );
     }
     if (state.phase == CommunityViewPhase.loading) {
@@ -639,10 +655,10 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
     final home = state.value;
     if (state.phase != CommunityViewPhase.ready || home == null) {
       if (state.phase == CommunityViewPhase.unavailable) {
-        return const LoopInlineUnavailable(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('me-communities-unavailable'),
           icon: 'community',
-          message: '社区暂不可用',
+          message: context.l10n.profile_screensMeCommunitiesUnavailableMessage,
         );
       }
       return CommunityStateBlock(
@@ -659,10 +675,10 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
     final joined = home.joined;
     final owned = home.owned;
     if (joined.isEmpty && owned.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('me-communities-empty'),
         illustration: LoopIllustration.watchlist,
-        title: '还没有加入社区',
+        title: context.l10n.profile_screensMeCommunitiesEmptyTitle,
         compact: true,
       );
     }
@@ -677,7 +693,7 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
         // account's page; two groups start on their label.
         if (!labelled) const SizedBox(height: LoopSpacing.tight),
         if (joined.isNotEmpty) ...<Widget>[
-          if (labelled) const _MeGroupLabel('我加入的'),
+          if (labelled) _MeGroupLabel(context.l10n.profile_screensMeGroupLabel),
           Column(
             key: const ValueKey<String>('me-joined-communities'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -688,14 +704,15 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
             LoopFlat(
               child: LoopRecordRow(
                 key: const ValueKey<String>('me-joined-all'),
-                title: '全部已加入的社区',
+                title: context.l10n.profile_screensMeJoinedAllTitle,
                 onTap: () =>
                     widget.onNavigate(MeCommunitiesSection.joinedDestination),
               ),
             ),
         ],
         if (owned.isNotEmpty) ...<Widget>[
-          if (labelled) const _MeGroupLabel('我创建的'),
+          if (labelled)
+            _MeGroupLabel(context.l10n.profile_screensMeGroupLabel2),
           Column(
             key: const ValueKey<String>('profile-owned-communities'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -713,8 +730,9 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
   Widget _joinedRow(JoinedCommunity entry) {
     final community = entry.community;
     final label = community.label;
-    final members =
-        '${loopGroupedFigure(community.memberCount.toString())} 名成员';
+    final members = LoopL10n.current.profile_screensMembers(
+      loopGroupedFigure(community.memberCount.toString()),
+    );
     return CommunityRecordRow(
       rowKey: ValueKey<String>('me-joined-${community.communityId}'),
       communityId: community.communityId,
@@ -728,7 +746,7 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
         community.name,
         if (label != null) communityLabelDisplay(label),
         members,
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
       onTap: () => widget.onNavigate(
         MeCommunitiesSection.recordDestination(community.communityId),
       ),
@@ -750,7 +768,8 @@ class _MeCommunitiesSectionState extends ConsumerState<MeCommunitiesSection> {
       subtitleMaxLines: 2,
       trailingBadge: CommunityApplicationBadge(entry.status),
       chevron: false,
-      semanticLabel: '${community.name}，$status，$line',
+      semanticLabel:
+          '${community.name}${LoopL10n.current.common_listSeparator}$status${LoopL10n.current.common_listSeparator}$line',
       onTap: () => widget.onNavigate(
         MeCommunitiesSection.recordDestination(community.communityId),
       ),
@@ -831,7 +850,7 @@ class _ProfileApplicationNotificationsState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('审核通知', followsLabel: true),
+        LoopLabel(context.l10n.profile_screensLoopLabel2, followsLabel: true),
         LoopRecordGroup(
           key: const ValueKey<String>('profile-application-notifications'),
           rows: <LoopRecordRow>[
@@ -845,10 +864,11 @@ class _ProfileApplicationNotificationsState
                 subtitle: result.body,
                 subtitleMaxLines: 3,
                 trailingBadge: result.entry.isUnread
-                    ? const LoopBadge('未读')
+                    ? LoopBadge(context.l10n.common_unread)
                     : null,
                 chevron: false,
-                semanticLabel: '${result.title}，${result.body}',
+                semanticLabel:
+                    '${result.title}${LoopL10n.current.common_listSeparator}${result.body}',
                 onTap: () {
                   // Reading it is the tap that opens it; the read is the
                   // server's to confirm and is never waited on here.
@@ -898,11 +918,29 @@ class ProfileIdentityCard extends StatelessWidget {
   /// there is no LOOP ID to put on it.
   final VoidCallback? onShare;
 
-  /// `2026 年 10 月加入`, in the device's local calendar.
+  /// `Joined Oct 2026` / `2026 年 10 月加入`, in the device's local calendar.
   static String joinedLine(DateTime activatedAt) {
     final local = activatedAt.toLocal();
-    return '${local.year} 年 ${local.month} 月加入';
+    final month = LoopL10n.currentLocale.languageCode == 'zh'
+        ? '${local.month}'
+        : _monthAbbreviations[local.month - 1];
+    return LoopL10n.current.profile_screensJoinedLine(month, local.year);
   }
+
+  static const List<String> _monthAbbreviations = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -937,7 +975,7 @@ class ProfileIdentityCard extends StatelessWidget {
               Semantics(
                 key: const ValueKey<String>('profile-open-edit'),
                 button: true,
-                label: '编辑头像与资料',
+                label: context.l10n.profile_screensProfileOpenEditLabel,
                 excludeSemantics: true,
                 child: LoopPressable(
                   onTap: onEdit,
@@ -987,7 +1025,7 @@ class ProfileIdentityCard extends StatelessWidget {
                       children: <Widget>[
                         Expanded(
                           child: Text(
-                            alias ?? '尚未设置别名',
+                            alias ?? context.l10n.profile_screensProfileAlias,
                             key: const ValueKey<String>('profile-alias'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1002,7 +1040,9 @@ class ProfileIdentityCard extends StatelessWidget {
                               'profile-share-loop-id',
                             ),
                             icon: 'share',
-                            label: '分享名片',
+                            label: context
+                                .l10n
+                                .profile_screensProfileShareLoopIdLabel,
                             onPressed: share,
                           ),
                       ],
@@ -1020,7 +1060,7 @@ class ProfileIdentityCard extends StatelessWidget {
                       )
                     else
                       Text(
-                        'LOOP ID 不可读',
+                        context.l10n.profile_screensProfileLoopId,
                         key: const ValueKey<String>('profile-loop-id'),
                         style: idStyle,
                       ),
@@ -1041,7 +1081,7 @@ class ProfileIdentityCard extends StatelessWidget {
                     else
                       Semantics(
                         button: true,
-                        label: '添加个人简介',
+                        label: context.l10n.profile_screensProfileAddBioLabel,
                         excludeSemantics: true,
                         child: LoopPressable(
                           key: const ValueKey<String>('profile-add-bio'),
@@ -1056,7 +1096,7 @@ class ProfileIdentityCard extends StatelessWidget {
                             padding: const EdgeInsets.only(top: 6),
                             alignment: AlignmentDirectional.topStart,
                             child: Text(
-                              '＋ 添加个人简介',
+                              context.l10n.profile_screensText,
                               style: LoopTypography.withWeight(
                                 LoopType.label,
                                 FontWeight.w600,
@@ -1085,18 +1125,22 @@ class ProfileIdentityCard extends StatelessWidget {
           child: Row(
             children: <Widget>[
               if (counts != null) ...<Widget>[
-                _ProfileCountLink(
-                  key: const ValueKey<String>('profile-following-count'),
-                  figure: counts.following,
-                  label: '已关注',
-                  onTap: onOpenConnections,
+                Flexible(
+                  child: _ProfileCountLink(
+                    key: const ValueKey<String>('profile-following-count'),
+                    figure: counts.following,
+                    label: context.l10n.common_following,
+                    onTap: onOpenConnections,
+                  ),
                 ),
                 Container(width: 1, height: 14, color: LoopColors.line2),
-                _ProfileCountLink(
-                  key: const ValueKey<String>('profile-followers-count'),
-                  figure: counts.followers,
-                  label: '粉丝',
-                  onTap: onOpenConnections,
+                Flexible(
+                  child: _ProfileCountLink(
+                    key: const ValueKey<String>('profile-followers-count'),
+                    figure: counts.followers,
+                    label: context.l10n.common_followers,
+                    onTap: onOpenConnections,
+                  ),
                 ),
               ],
               const SizedBox(width: 8),
@@ -1171,7 +1215,14 @@ class _ProfileCountLink extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(label, style: LoopType.bodySm),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopType.bodySm,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1209,21 +1260,24 @@ class _ProfileStateBlock extends StatelessWidget {
       ),
       LoopResourcePhase.offline => LoopOfflineState(
         key: const ValueKey<String>('profile-offline'),
-        pausedActions: const <String>['保存资料', '激活 LOOP ID'],
+        pausedActions: <String>[
+          context.l10n.profile_screensLoopOfflineState,
+          context.l10n.profile_screensLoopOfflineState2,
+        ],
         onRetry: onRetry,
       ),
       LoopResourcePhase.unavailable => LoopNotice(
         key: const ValueKey<String>('profile-unavailable'),
         icon: 'warn',
         tone: LoopNoticeTone.warn,
-        title: '资料暂不可用',
+        title: context.l10n.profile_screensProfileUnavailableTitle,
         body: profileFailureReason(state.failureKind),
       ),
-      LoopResourcePhase.empty => const LoopEmptyState(
+      LoopResourcePhase.empty => LoopEmptyState(
         key: ValueKey<String>('profile-empty'),
         illustration: LoopIllustration.profile,
-        title: '还没有可展示的资料',
-        message: '账号资料尚未读取。',
+        title: context.l10n.profile_screensProfileEmptyTitle,
+        message: context.l10n.profile_screensProfileEmptyMessage,
         compact: true,
       ),
       // A refusal is not an error: the request arrived and the server answered
@@ -1234,18 +1288,18 @@ class _ProfileStateBlock extends StatelessWidget {
         icon: 'shield',
         denied: true,
         title: state.failureKind == ProfileGatewayFailureKind.stepUpRequired
-            ? '这一步需要二次验证'
+            ? context.l10n.profile_screensProfilePermissionTitle
             : state.failureKind == ProfileGatewayFailureKind.regionBlocked
-            ? '当前地区不能读取或修改资料'
-            : '当前账号无权读取或修改资料',
+            ? context.l10n.profile_screensProfilePermissionTitle2
+            : context.l10n.profile_screensProfilePermissionTitle3,
         purpose: profileFailureReason(state.failureKind),
-        settingsLabel: '前往安全中心',
+        settingsLabel: context.l10n.common_openSecurityCenter,
         onOpenSettings: onOpenSecurity,
       ),
       LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('profile-error'),
         reason: profileFailureReason(state.failureKind),
-        source: '资料服务',
+        source: context.l10n.profile_screensProfileErrorSource,
         onRetry: onRetry,
       ),
       // The owner renders the resource itself; a ready state must never reach
@@ -1308,12 +1362,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return LoopFlat(
       child: LoopFocusPage(
         archetype: LoopPageArchetype.action,
-        title: '编辑资料',
+        title: context.l10n.profile_screensProfileEditSaveTitle,
         kicker: loopPreviewKicker(state.mode == ProfileMode.preview),
         onBack: widget.onBack,
         primaryAction: LoopButton(
           key: const ValueKey<String>('profile-edit-save'),
-          label: state.phase == ProfilePhase.saving ? '保存中…' : '保存',
+          label: state.phase == ProfilePhase.saving
+              ? context.l10n.profile_screensProfileEditSaveLabel
+              : context.l10n.common_save,
           primary: true,
           block: true,
           onPressed: state.canSave && state.phase != ProfilePhase.saving
@@ -1323,7 +1379,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         body: <Widget>[
           LoopPreviewModeNotice(
             isPreview: state.mode == ProfileMode.preview,
-            resource: '资料',
+            resource: context.l10n.common_profile,
           ),
           if (phase != LoopResourcePhase.ready)
             _ProfileStateBlock(
@@ -1338,10 +1394,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 key: const ValueKey<String>('profile-edit-conflict'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '资料已在别处修改',
+                title: context.l10n.profile_screensProfileEditConflictTitle,
                 body: profileFailureReason(state.failureKind),
                 trailing: LoopButton(
-                  label: '重新载入',
+                  label: context.l10n.profile_screensLabel,
                   onPressed: controller.reload,
                 ),
               ),
@@ -1350,7 +1406,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 key: const ValueKey<String>('profile-edit-validation'),
                 icon: 'warn',
                 tone: LoopNoticeTone.danger,
-                title: '无法保存',
+                title: context.l10n.profile_screensProfileEditValidationTitle,
                 body: _validationMessage!,
               ),
             // A failed save must never look like a success. The draft is kept
@@ -1359,7 +1415,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               switch (state.failureKind) {
                 ProfileGatewayFailureKind.offline => LoopOfflineState(
                   key: const ValueKey<String>('profile-edit-offline'),
-                  pausedActions: const <String>['保存资料'],
+                  pausedActions: <String>[
+                    context.l10n.profile_screensLoopOfflineState,
+                  ],
                   onRetry: () => unawaited(_save(controller)),
                 ),
                 ProfileGatewayFailureKind.permissionDenied ||
@@ -1371,20 +1429,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   title:
                       state.failureKind ==
                           ProfileGatewayFailureKind.stepUpRequired
-                      ? '这一步需要二次验证'
+                      ? context.l10n.profile_screensProfilePermissionTitle
                       : state.failureKind ==
                             ProfileGatewayFailureKind.regionBlocked
-                      ? '当前地区不能修改资料'
-                      : '当前账号无权修改资料',
+                      ? context.l10n.profile_screensProfileEditPermissionTitle
+                      : context.l10n.profile_screensProfileEditPermissionTitle2,
                   purpose: profileFailureReason(state.failureKind),
-                  settingsLabel: '前往安全中心',
+                  settingsLabel: context.l10n.common_openSecurityCenter,
                   onOpenSettings: () => widget.onNavigate('security'),
                 ),
                 _ => LoopNotice(
                   key: const ValueKey<String>('profile-edit-failure'),
                   icon: 'close',
                   tone: LoopNoticeTone.danger,
-                  title: '保存未完成',
+                  title: context.l10n.profile_screensProfileEditFailureTitle,
                   body: profileFailureReason(state.failureKind),
                 ),
               },
@@ -1402,10 +1460,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             // field), no section label over each one.
             LoopFlatField(
               key: const ValueKey<String>('profile-edit-alias'),
-              label: '用户名',
+              label: context.l10n.profile_screensProfileEditAliasLabel,
               trailing: LoopSeg(
                 key: const ValueKey<String>('profile-edit-alias-suggest'),
-                label: '换一个',
+                label: context.l10n.profile_screensProfileEditAliasSuggestLabel,
                 selected: false,
                 onSelected: state.canEdit
                     ? () => _suggestAlias(controller)
@@ -1423,13 +1481,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   required maxLength,
                 }) => null,
                 style: LoopType.bodyLg,
-                decoration: loopFormFieldDecoration(hint: '1–40 个字符，可以和别人重复'),
+                decoration: loopFormFieldDecoration(
+                  hint: context.l10n.profile_screensHint,
+                ),
                 onChanged: (value) => _applyAlias(controller, value),
               ),
             ),
             LoopFlatField(
               key: const ValueKey<String>('profile-edit-bio'),
-              label: '简介',
+              label: context.l10n.profile_screensProfileEditBioLabel,
               child: TextField(
                 key: const ValueKey<String>('profile-edit-bio-field'),
                 controller: _bioController,
@@ -1444,7 +1504,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   required maxLength,
                 }) => null,
                 style: LoopType.bodyLg,
-                decoration: loopFormFieldDecoration(hint: '一句话介绍自己（可以不填）'),
+                decoration: loopFormFieldDecoration(
+                  hint: context.l10n.profile_screensHint2,
+                ),
                 onChanged: (value) => _applyBio(controller, value),
               ),
             ),
@@ -1475,8 +1537,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 LoopRecordRow(
                   key: const ValueKey<String>('profile-edit-open-privacy'),
                   leading: const LoopRowIcon(icon: 'lock'),
-                  title: '隐私中心',
-                  subtitle: '持仓与交易是否公开、谁能加你',
+                  title: context.l10n.profile_screensProfileOpenPrivacyTitle,
+                  subtitle: context
+                      .l10n
+                      .profile_screensProfileEditOpenPrivacySubtitle,
                   onTap: () => widget.onNavigate('privacy'),
                 ),
               ],
@@ -1522,7 +1586,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       controller.editAlias(value.trim().isEmpty ? null : value);
       setState(() => _validationMessage = null);
     } on InvalidProfileContractException {
-      setState(() => _validationMessage = '别名需要 1–40 个字符，且不能包含不可见字符。');
+      setState(
+        () => _validationMessage =
+            LoopL10n.current.profile_screensValidationMessage,
+      );
     } on StateError {
       // The draft is locked by a pending reload; the notice already says so.
     }
@@ -1533,7 +1600,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       controller.editBio(value);
       setState(() => _validationMessage = null);
     } on InvalidProfileContractException {
-      setState(() => _validationMessage = '简介最多 160 个字符。');
+      setState(
+        () => _validationMessage =
+            LoopL10n.current.profile_screensValidationMessage2,
+      );
     } on StateError {
       // The draft is locked by a pending reload.
     }
@@ -1558,7 +1628,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         version != null &&
         expectedVersion != null &&
         version > expectedVersion) {
-      LoopToast.show(context, message: '已提交到版本 $version');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.profile_screensMessage3(version),
+      );
     }
   }
 }
@@ -1617,7 +1690,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
     return LoopFlat(
       child: LoopFocusPage(
         archetype: LoopPageArchetype.action,
-        title: '隐私中心',
+        title: context.l10n.profile_screensProfileOpenPrivacyTitle,
         kicker: loopPreviewKicker(state.mode == PrivacyMode.preview),
         onBack: widget.onBack,
         // `.folio-body` order, and a save that flows under the last row instead
@@ -1628,7 +1701,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         actionsFollowBody: true,
         primaryAction: LoopButton(
           key: const ValueKey<String>('privacy-save'),
-          label: state.phase == PrivacyPhase.saving ? '保存中…' : '保存',
+          label: state.phase == PrivacyPhase.saving
+              ? context.l10n.profile_screensProfileEditSaveLabel
+              : context.l10n.common_save,
           primary: true,
           block: true,
           onPressed: state.canSave && state.phase != PrivacyPhase.saving
@@ -1638,7 +1713,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         body: <Widget>[
           LoopPreviewModeNotice(
             isPreview: state.mode == PrivacyMode.preview,
-            resource: '隐私设置',
+            resource: context.l10n.profile_screensResource,
           ),
           if (phase != LoopResourcePhase.ready)
             _PrivacyStateBlock(
@@ -1653,10 +1728,10 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                 key: const ValueKey<String>('privacy-conflict'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '隐私设置已在别处修改',
+                title: context.l10n.profile_screensPrivacyConflictTitle,
                 body: privacyFailureReason(state.failureKind),
                 trailing: LoopButton(
-                  label: '重新载入',
+                  label: context.l10n.profile_screensLabel,
                   onPressed: controller.reload,
                 ),
               ),
@@ -1667,7 +1742,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               switch (state.failureKind) {
                 PrivacyGatewayFailureKind.offline => LoopOfflineState(
                   key: const ValueKey<String>('privacy-save-offline'),
-                  pausedActions: const <String>['保存隐私设置'],
+                  pausedActions: <String>[
+                    context.l10n.profile_screensLoopOfflineState3,
+                  ],
                   onRetry: () => unawaited(_save(controller)),
                 ),
                 // The server answered: it refused. Offering a retry would claim
@@ -1682,24 +1759,24 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                   title:
                       state.failureKind ==
                           PrivacyGatewayFailureKind.stepUpRequired
-                      ? '这一步需要二次验证'
+                      ? context.l10n.profile_screensProfilePermissionTitle
                       : state.failureKind ==
                             PrivacyGatewayFailureKind.regionBlocked
-                      ? '当前地区不能修改隐私设置'
-                      : '当前账号无权修改隐私设置',
+                      ? context.l10n.profile_screensPrivacySavePermissionTitle
+                      : context.l10n.profile_screensPrivacySavePermissionTitle2,
                   purpose: privacyFailureReason(state.failureKind),
-                  settingsLabel: '前往安全中心',
+                  settingsLabel: context.l10n.common_openSecurityCenter,
                   onOpenSettings: () => widget.onNavigate('security'),
                 ),
                 _ => LoopNotice(
                   key: const ValueKey<String>('privacy-save-failure'),
                   icon: 'close',
                   tone: LoopNoticeTone.danger,
-                  title: '保存未完成',
+                  title: context.l10n.profile_screensProfileEditFailureTitle,
                   body: privacyFailureReason(state.failureKind),
                 ),
               },
-            const LoopLabel('身份'),
+            LoopLabel(context.l10n.profile_screensLoopLabel3),
             // S107 §2: a person is drawn with their own avatar and name
             // everywhere, so the 匿名模式 switch is hidden (not removed); the
             // field stays in the resource and is resubmitted unchanged.
@@ -1712,8 +1789,11 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                 if (ref.watch(loopFeatureSwitchesProvider).anonymousModeVisible)
                   LoopTogglePreferenceRow(
                     key: const ValueKey<String>('privacy-anonymous-mode'),
-                    title: '匿名模式',
-                    subtitle: '只显示别名，不显示钱包地址',
+                    title:
+                        context.l10n.profile_screensPrivacyAnonymousModeTitle,
+                    subtitle: context
+                        .l10n
+                        .profile_screensPrivacyAnonymousModeSubtitle,
                     value: draft.anonymousMode,
                     position: LoopRowPosition.first,
                     onChanged: state.canEdit
@@ -1726,15 +1806,17 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                   // Decision 0105 (backend decision 0090): the switch governs being
                   // found by nickname and being followed. A LOOP ID is always found
                   // by an exact search, whichever way this switch is set.
-                  title: '可被发现',
+                  title: context.l10n.profile_screensPrivacyDiscoverableTitle,
                   // The subtitle described the switch turned on while the row read
                   // 已关闭 beside it, so the state and the sentence disagreed.
                   // Decision 0096 (S107b): the switch governs search listings only;
                   // follows and friend requests from a reached profile are not
                   // gated by it.
                   subtitle: draft.discoverable
-                      ? '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索'
-                      : '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索',
+                      ? context.l10n.profile_screensPrivacyDiscoverableSubtitle
+                      : context
+                            .l10n
+                            .profile_screensPrivacyDiscoverableSubtitle2,
                   value: draft.discoverable,
                   position:
                       ref
@@ -1753,7 +1835,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             // reads them before it lets a request, a direct channel or a group
             // invite reach this account. The prototype's 持仓广播 card is not
             // implemented, so this group takes the middle slot of the page.
-            const LoopLabel('社交'),
+            LoopLabel(context.l10n.profile_screensLoopLabel4),
             LoopRecordGroup.children(
               key: const ValueKey<String>('privacy-social-group'),
               children: <Widget>[
@@ -1780,7 +1862,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                   ),
               ],
             ),
-            const LoopLabel('可见性'),
+            LoopLabel(context.l10n.profile_screensLoopLabel5),
             // S107 §4: one switch for what the profile page shows others —
             // holdings and trades together. It writes `totalAssets` and
             // `tradeHistory` to the same audience.
@@ -1789,13 +1871,19 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               children: <Widget>[
                 LoopTogglePreferenceRow(
                   key: const ValueKey<String>('privacy-public-holdings'),
-                  title: '公开持仓与交易',
+                  title: context.l10n.profile_screensPrivacyPublicHoldingsTitle,
                   subtitle: privacyHoldingsPublic(draft.visibility)
-                      ? '别人在你的主页能看到持仓和交易记录，不显示钱包地址'
-                      : '只有你自己能看到持仓和交易记录',
+                      ? context
+                            .l10n
+                            .profile_screensPrivacyPublicHoldingsSubtitle
+                      : context
+                            .l10n
+                            .profile_screensPrivacyPublicHoldingsSubtitle2,
                   value: privacyHoldingsPublic(draft.visibility),
-                  onLabel: '所有人',
-                  offLabel: '仅自己',
+                  onLabel:
+                      context.l10n.profile_screensPrivacyPublicHoldingsOnLabel,
+                  offLabel:
+                      context.l10n.profile_screensPrivacyPublicHoldingsOffLabel,
                   position: LoopRowPosition.first,
                   onChanged: state.canEdit
                       ? () {
@@ -1825,8 +1913,12 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                     ),
                     title: facet.label,
                     value: draft.visibility[facet] == PrivacyAudience.everyone,
-                    onLabel: '所有人',
-                    offLabel: '仅自己',
+                    onLabel: context
+                        .l10n
+                        .profile_screensPrivacyPublicHoldingsOnLabel,
+                    offLabel: context
+                        .l10n
+                        .profile_screensPrivacyPublicHoldingsOffLabel,
                     position: LoopRowPosition.middle,
                     onChanged: state.canEdit
                         ? () => controller.editVisibility(
@@ -1841,21 +1933,19 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                 // floating it alone under the card.
                 LoopRecordRow(
                   key: const ValueKey<String>('privacy-open-blocklist'),
-                  title: '屏蔽名单',
+                  title: context.l10n.common_blockList,
                   position: LoopRowPosition.last,
                   onTap: () => widget.onNavigate('blocklist'),
                 ),
               ],
             ),
             // S278 · decision 0236: an explanation, behind (i).
-            const LoopProvenanceFooter(
+            LoopProvenanceFooter(
               key: ValueKey<String>('privacy-visibility-note'),
-              label: '说明',
-              title: '可见性说明',
+              label: context.l10n.common_about,
+              title: context.l10n.profile_screensPrivacyVisibilityNoteTitle,
               margin: EdgeInsets.fromLTRB(16, 4, 12, 14),
-              text:
-                  '可见性只影响展示，不会让别人复制你的交易或访问你的钱包；'
-                  '头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。',
+              text: context.l10n.profile_screensPrivacyVisibilityNoteText,
             ),
           ],
         ],
@@ -1870,11 +1960,17 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
   String _socialGateSubtitle(PrivacySocialGate gate, {required bool open}) =>
       switch (gate) {
         PrivacySocialGate.friendRequests =>
-          open ? '知道你 LOOP ID 的人可以加你' : '陌生人无法向你发好友申请',
+          open
+              ? LoopL10n.current.profile_screensSwitch3
+              : LoopL10n.current.profile_screensS2,
         PrivacySocialGate.directMessages =>
-          open ? '已成为好友的人可以直接打开与你的私聊' : '关闭后，好友也无法打开与你的私聊',
+          open
+              ? LoopL10n.current.profile_screensSwitch4
+              : LoopL10n.current.profile_screensS3,
         PrivacySocialGate.groupInvites =>
-          open ? '好友可以把你拉进小群' : '关闭后，好友无法把你拉进小群',
+          open
+              ? LoopL10n.current.profile_screensSwitch5
+              : LoopL10n.current.profile_screensS4,
       };
 
   Future<void> _save(PrivacyController controller) async {
@@ -1890,7 +1986,10 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         version != null &&
         expectedVersion != null &&
         version > expectedVersion) {
-      LoopToast.show(context, message: '已提交到版本 $version');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.profile_screensMessage3(version),
+      );
     }
   }
 }
@@ -1920,21 +2019,21 @@ class _PrivacyStateBlock extends StatelessWidget {
       ),
       LoopResourcePhase.offline => LoopOfflineState(
         key: const ValueKey<String>('privacy-offline'),
-        pausedActions: const <String>['保存隐私设置'],
+        pausedActions: <String>[context.l10n.profile_screensLoopOfflineState3],
         onRetry: onRetry,
       ),
       LoopResourcePhase.unavailable => LoopNotice(
         key: const ValueKey<String>('privacy-unavailable'),
         icon: 'warn',
         tone: LoopNoticeTone.warn,
-        title: '隐私设置暂不可用',
+        title: context.l10n.profile_screensPrivacyUnavailableTitle,
         body: privacyFailureReason(state.failureKind),
       ),
-      LoopResourcePhase.empty => const LoopEmptyState(
+      LoopResourcePhase.empty => LoopEmptyState(
         key: ValueKey<String>('privacy-empty'),
         illustration: LoopIllustration.profile,
-        title: '还没有可展示的隐私设置',
-        message: '隐私偏好尚未读取。',
+        title: context.l10n.profile_screensPrivacyEmptyTitle,
+        message: context.l10n.profile_screensPrivacyEmptyMessage,
         compact: true,
       ),
       LoopResourcePhase.permission => LoopPermissionState(
@@ -1942,18 +2041,18 @@ class _PrivacyStateBlock extends StatelessWidget {
         icon: 'shield',
         denied: true,
         title: state.failureKind == PrivacyGatewayFailureKind.stepUpRequired
-            ? '这一步需要二次验证'
+            ? context.l10n.profile_screensProfilePermissionTitle
             : state.failureKind == PrivacyGatewayFailureKind.regionBlocked
-            ? '当前地区不能读取或修改隐私设置'
-            : '当前账号无权读取或修改隐私设置',
+            ? context.l10n.profile_screensPrivacyPermissionTitle
+            : context.l10n.profile_screensPrivacyPermissionTitle2,
         purpose: privacyFailureReason(state.failureKind),
-        settingsLabel: '前往安全中心',
+        settingsLabel: context.l10n.common_openSecurityCenter,
         onOpenSettings: onOpenSecurity,
       ),
       LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('privacy-error'),
         reason: privacyFailureReason(state.failureKind),
-        source: '隐私服务',
+        source: context.l10n.profile_screensPrivacyErrorSource,
         onRetry: onRetry,
       ),
       LoopResourcePhase.ready => throw StateError(
@@ -2006,11 +2105,11 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
       key: const ValueKey<String>('profile-availability-banner'),
       icon: 'warn',
       tone: LoopNoticeTone.warn,
-      title: '资料状态暂不可读',
+      title: context.l10n.profile_screensProfileAvailabilityBannerTitle,
       body: rechecking
-          ? '正在重新读取资料状态。'
+          ? context.l10n.profile_screensProfileAvailabilityBannerBody
           : '${profileFailureReason(landing.failureKind)}'
-                '${retryable ? ' 你可以继续浏览，也可以现在重试。' : ' 你可以继续浏览。'}',
+                '${retryable ? context.l10n.profile_screensProfileAvailabilityRetryableSuffix : context.l10n.profile_screensProfileAvailabilityBrowseSuffix}',
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         8,
@@ -2024,7 +2123,9 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
             LoopIconButton(
               key: const ValueKey<String>('profile-availability-retry'),
               icon: 'refresh',
-              label: rechecking ? '正在重试…' : '重新读取资料状态',
+              label: rechecking
+                  ? context.l10n.profile_screensProfileAvailabilityRetryLabel
+                  : context.l10n.profile_screensProfileAvailabilityRetryLabel2,
               onPressed: rechecking
                   ? null
                   : () => unawaited(controller.recheck()),
@@ -2032,7 +2133,7 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
           LoopIconButton(
             key: const ValueKey<String>('profile-availability-dismiss'),
             icon: 'close',
-            label: '收起资料状态提示',
+            label: context.l10n.profile_screensProfileAvailabilityDismissLabel,
             onPressed: controller.dismiss,
           ),
         ],
@@ -2073,10 +2174,10 @@ class _LoopSoftUpdatePromptState extends ConsumerState<LoopSoftUpdatePrompt> {
     return LoopNotice(
       key: const ValueKey<String>('loop-soft-update-prompt'),
       icon: 'info',
-      title: '有新版本可用',
+      title: context.l10n.profile_screensLoopSoftUpdatePromptTitle,
       body: minimum == null
-          ? '建议更新到最新版本；当前版本仍然可以继续使用。'
-          : '建议更新到 $minimum 或更高版本；当前版本仍然可以继续使用。',
+          ? context.l10n.profile_screensLoopSoftUpdatePromptBody
+          : context.l10n.profile_screensLoopSoftUpdatePromptBody2(minimum),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         8,
@@ -2086,7 +2187,7 @@ class _LoopSoftUpdatePromptState extends ConsumerState<LoopSoftUpdatePrompt> {
       trailing: LoopIconButton(
         key: const ValueKey<String>('loop-soft-update-dismiss'),
         icon: 'close',
-        label: '忽略更新提示',
+        label: context.l10n.profile_screensLoopSoftUpdateDismissLabel,
         onPressed: () =>
             setState(() => _dismissedConfigVersion = version.configVersion),
       ),

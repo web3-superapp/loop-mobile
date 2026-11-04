@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/notifications/notification_controllers.dart
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -61,10 +62,12 @@ class _NotificationPreferencesScreenState
     }
     // Decision 0126: nothing here asks the reader to act, so it is an ⓘ
     // line, not a banner.
-    return const LoopNotice(
+    return LoopNotice(
       key: ValueKey<String>('notification-preferences-push-channel'),
       icon: 'info',
-      body: '推送还没有在真机上确认过。开关照常保存，也照常影响站内的通知列表。',
+      body: LoopL10n
+          .current
+          .profileNotificationPreferences_screenNotificationPreferencesPushChannelBody,
     );
   }
 
@@ -108,37 +111,43 @@ class _NotificationPreferencesScreenState
       case LoopPushRegistrationGate.runtimeDeferred:
         return const SizedBox.shrink();
       case LoopPushRegistrationGate.registered:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
-          title: '这台设备已登记接收推送',
-          body: '这不代表已经能送达。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody,
         );
       case LoopPushRegistrationGate.noPrincipal:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
-          title: '还没有向这台设备请求通知权限',
-          body: '账号准备好之后会请求一次。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle2,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody2,
         );
       // Decision 0076: the prompt waits for Community, which is
       // where this page's reader will be as soon as they leave 通知设置.
       case LoopPushRegistrationGate.awaitingCommunity:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
-          title: '还没有向这台设备请求通知权限',
-          body: '账号进入 LOOP 之后，可以在这里开启。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle2,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody3,
         );
       // Decision 0130 (audit 2026-10-09 M15): LOOP explains first and the
       // owner asks; the system dialog only follows the press.
       case LoopPushRegistrationGate.awaitingOptIn:
         return LoopNotice(
           key: const ValueKey<String>('notification-preferences-push-opt-in'),
-          title: '开启推送通知',
-          body: '新消息、价格提醒和安全事件会推送到这台设备。点开启后，系统会询问一次。',
+          title: LoopL10n
+              .current
+              .profileNotificationPreferences_screenNotificationPreferencesPushOptInTitle,
+          body: LoopL10n
+              .current
+              .profileNotificationPreferences_screenNotificationPreferencesPushOptInBody,
           trailing: LoopButton(
             key: const ValueKey<String>(
               'notification-preferences-push-opt-in-button',
             ),
-            label: '开启',
+            label: LoopL10n
+                .current
+                .profileNotificationPreferences_screenNotificationPreferencesPushOptInButtonLabel,
             primary: true,
             size: LoopButtonSize.compact,
             onPressed: onOptIn,
@@ -146,33 +155,33 @@ class _NotificationPreferencesScreenState
         );
       case LoopPushRegistrationGate.noPlatform:
       case LoopPushRegistrationGate.tokenSourceDisabled:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
-          title: '这台设备上没有推送通道',
-          body: '通知只会留在应用内的通知列表里。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle3,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody4,
         );
       case LoopPushRegistrationGate.permissionDenied:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
           tone: LoopNoticeTone.warn,
           icon: 'warn',
-          title: '通知权限已拒绝，这台设备收不到推送',
-          body: '可以在系统设置里为 LOOP 重新打开通知。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle4,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody5,
         );
       case LoopPushRegistrationGate.noTokenYet:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
-          title: '正在等待系统分配推送通道',
-          body: '拿到之后这台设备会自动登记。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle5,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody6,
         );
       case LoopPushRegistrationGate.gatewayNotProduction:
       case LoopPushRegistrationGate.registerFailed:
-        return const LoopNotice(
+        return LoopNotice(
           key: key,
           tone: LoopNoticeTone.warn,
           icon: 'warn',
-          title: '这台设备还没有登记成功',
-          body: '下次回到 LOOP 时会再试一次。',
+          title: LoopL10n.current.profileNotificationPreferences_screenTitle6,
+          body: LoopL10n.current.profileNotificationPreferences_screenBody7,
         );
     }
   }
@@ -203,7 +212,7 @@ class _NotificationPreferencesScreenState
       child: LoopDashboardPage(
         key: const ValueKey<String>('notification-preferences-screen'),
         archetype: LoopPageArchetype.action,
-        title: '通知设置',
+        title: context.l10n.common_notificationSettings,
         kicker: loopChainPreviewKicker(mode),
         onBack: widget.onBack,
         // The prototype has no `[data-page-primary]` here: it opens on a Chalk
@@ -212,13 +221,18 @@ class _NotificationPreferencesScreenState
         block: blocked
             ? LoopCapabilityPageBlock.of(
                 key: const ValueKey<String>('notification-capability-block'),
-                title: '通知设置当前不可用',
+                title: context
+                    .l10n
+                    .profileNotificationPreferences_screenNotificationCapabilityBlockTitle,
                 capability: capability,
                 fallbackReasonCode: 'NOTIFICATIONS_RUNTIME_UNAVAILABLE',
               )
             : null,
         sections: <Widget>[
-          LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
+          LoopChainPreviewNotice(
+            mode: mode,
+            resource: context.l10n.common_notificationSettings,
+          ),
           // 0067 §7.6: the push channel is a separate fact from the ten
           // switches. Saving a preference has always worked; whether anything
           // can be delivered is the server's answer, and the page says which of
@@ -235,9 +249,10 @@ class _NotificationPreferencesScreenState
               icon: 'info',
               // 「9 项开启」 counted stored intents and read as nine kinds of
               // notification; only price alerts are emitted.
-              body:
-                  '${resource.deliveringEnabledCount} 项开启并生效。'
-                  '目前只有价格提醒会生成应用内通知；安全事件始终开启。',
+              body: context.l10n
+                  .profileNotificationPreferences_screenNotificationPreferencesSummaryBody(
+                    resource.deliveringEnabledCount,
+                  ),
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
                 4,
@@ -250,7 +265,9 @@ class _NotificationPreferencesScreenState
               keyPrefix: 'notification-preferences',
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '还没有通知设置',
+              emptyMessage: context
+                  .l10n
+                  .profileNotificationPreferences_screenEmptyMessage,
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -261,13 +278,17 @@ class _NotificationPreferencesScreenState
                 ),
                 tone: LoopNoticeTone.warn,
                 icon: 'warn',
-                title: '版本冲突 —— 没有覆盖任何内容',
-                body: '通知设置已在其他设备上改动。请重新加载后再修改。',
+                title: context
+                    .l10n
+                    .profileNotificationPreferences_screenNotificationPreferencesConflictTitle,
+                body: context
+                    .l10n
+                    .profileNotificationPreferences_screenNotificationPreferencesConflictBody,
                 trailing: LoopButton(
                   key: const ValueKey<String>(
                     'notification-preferences-conflict-reload',
                   ),
-                  label: '重新加载',
+                  label: context.l10n.common_reload,
                   onPressed: () => unawaited(controller.reload()),
                 ),
               )
@@ -280,20 +301,26 @@ class _NotificationPreferencesScreenState
                 key: const ValueKey<String>(
                   'notification-preferences-save-offline',
                 ),
-                pausedActions: const <String>['保存通知设置'],
+                pausedActions: <String>[
+                  context
+                      .l10n
+                      .profileNotificationPreferences_screenLoopOfflineState,
+                ],
                 onRetry: () => unawaited(controller.reload()),
               )
             else if (LoopChainCommandPermission.covers(state.failureKind))
               LoopChainCommandPermission(
                 blockKey: 'notification-preferences-permission',
                 failureKind: state.failureKind,
-                title: '当前账号无权修改通知设置',
+                title: context.l10n.profileNotificationPreferences_screenTitle7,
                 onOpenSecurity: widget.onOpenSecurity,
               )
             else if (state.failureKind != null)
               LoopErrorState(
                 key: const ValueKey<String>('notification-preferences-error'),
-                title: '设置没有保存',
+                title: context
+                    .l10n
+                    .profileNotificationPreferences_screenNotificationPreferencesErrorTitle,
                 reason: loopChainFailureReason(state.failureKind),
                 onRetry: () => unawaited(controller.reload()),
               ),
@@ -305,7 +332,9 @@ class _NotificationPreferencesScreenState
             if (resource.push != null)
               LoopUnavailableLine.fact(
                 key: const ValueKey<String>('notification-push-unavailable'),
-                label: '推送尚不可用',
+                label: context
+                    .l10n
+                    .profileNotificationPreferences_screenNotificationPushUnavailableLabel,
                 fact: resource.push!,
               ),
             // LOOP's own answer first, then this device's. They are two
@@ -317,8 +346,13 @@ class _NotificationPreferencesScreenState
               key: const ValueKey<String>('notification-preferences-version'),
               // The CAS version belongs to the write path, not to the page.
               text: resource.updatedAt == null
-                  ? '当前使用默认设置'
-                  : '更新于 ${loopRelativeTime(resource.updatedAt!)}',
+                  ? context
+                        .l10n
+                        .profileNotificationPreferences_screenNotificationPreferencesVersionText
+                  : context.l10n
+                        .profileNotificationPreferences_screenNotificationPreferencesVersionText2(
+                          loopRelativeTime(resource.updatedAt!),
+                        ),
             ),
           ],
         ],
@@ -387,9 +421,12 @@ class _NotificationPreferencesScreenState
     final detail = <String>[
       // `securityEvent.detail` already says 无法关闭; nothing repeats it.
       ?category.detail,
-      if (!category.deliversToday) '暂不生效',
+      if (!category.deliversToday)
+        LoopL10n.current.profileNotificationPreferences_screenCategoryRow,
     ].join(' · ');
-    final state = enabled ? '已开启' : '已关闭';
+    final state = enabled
+        ? LoopL10n.current.common_on
+        : LoopL10n.current.profileNotificationPreferences_screenS;
     return LoopRecordRow(
       key: ValueKey<String>('notification-category-${category.wireName}'),
       title: category.label,
@@ -406,7 +443,7 @@ class _NotificationPreferencesScreenState
       position: position,
       chevron: false,
       semanticLabel:
-          '${category.label}，$state${detail.isEmpty ? '' : '，$detail'}',
+          '${category.label}${LoopL10n.current.common_listSeparator}$state${detail.isEmpty ? '' : '${LoopL10n.current.common_listSeparator}$detail'}',
       onTap: locked || busy
           ? null
           : () => unawaited(_request(controller, category, !enabled)),
@@ -426,7 +463,7 @@ class _NotificationPreferencesScreenState
         context,
         title: notificationDisableTitle(category),
         body: notificationDisableBody(category),
-        confirmLabel: '关闭',
+        confirmLabel: LoopL10n.current.common_close,
         sheetKey: 'notification-disable-sheet',
       );
       if (!confirmed || !mounted) return;
@@ -442,14 +479,21 @@ class _NotificationPreferencesScreenState
     final applied = await controller.toggle(category, enabled);
     if (!mounted) return;
     if (applied) {
-      LoopToast.show(context, message: '通知设置已保存', kind: LoopToastKind.ok);
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.profileNotificationPreferences_screenMessage,
+        kind: LoopToastKind.ok,
+      );
     }
   }
 }
 
 /// The title of the sheet that confirms turning [category] off.
-String notificationDisableTitle(LoopNotificationCategory category) =>
-    '关闭『${category.label}』通知？';
+String notificationDisableTitle(LoopNotificationCategory category) => LoopL10n
+    .current
+    .profileNotificationPreferences_screenNotificationDisableTitle(
+      category.label,
+    );
 
 /// The sheet's explanation: the category's own second line, or a plain
 /// statement for a category that has none.
@@ -457,6 +501,9 @@ String notificationDisableBody(LoopNotificationCategory category) =>
     switch (category) {
       // Decision 0242: this row's detail lists what it covers, which reads as
       // a description rather than a consequence; the dialog says what goes.
-      LoopNotificationCategory.launchRound => '关闭后不会再收到共识勋章、发射审核结果与上链进度通知。',
-      _ => category.detail ?? '关闭后不会再收到这一类通知。',
+      LoopNotificationCategory.launchRound =>
+        LoopL10n.current.profileNotificationPreferences_screenLaunchRound,
+      _ =>
+        category.detail ??
+            LoopL10n.current.profileNotificationPreferences_screenSwitch,
     };

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:loop_mobile/l10n/loop_l10n.dart';
+
 /// Network diagnostics (decision 0102): what each probe asks, what came back,
 /// and how the reader is told. Nothing here performs a request; the transport
 /// port below is implemented under `lib/integrations/diagnostics/`.
@@ -151,22 +153,32 @@ final class NetworkProbeResult {
 }
 
 String networkProbeStatusLabel(NetworkProbeStatus status) => switch (status) {
-  NetworkProbeStatus.idle => '未开始',
-  NetworkProbeStatus.running => '探测中',
-  NetworkProbeStatus.ok => '成功',
-  NetworkProbeStatus.reachable => '可达',
-  NetworkProbeStatus.timeout => '超时',
-  NetworkProbeStatus.failed => '失败',
-  NetworkProbeStatus.notConfigured => '未配置',
+  NetworkProbeStatus.idle =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsIdle,
+  NetworkProbeStatus.running =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsRunning,
+  NetworkProbeStatus.ok => LoopL10n.current.common_success,
+  NetworkProbeStatus.reachable =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsReachable,
+  NetworkProbeStatus.timeout =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsTimeout,
+  NetworkProbeStatus.failed => LoopL10n.current.common_failed,
+  NetworkProbeStatus.notConfigured => LoopL10n.current.common_notConfigured,
 };
 
 String networkProbeFaultText(NetworkProbeFaultKind kind) => switch (kind) {
-  NetworkProbeFaultKind.timeout => '超时，规定时间内没有响应',
-  NetworkProbeFaultKind.dns => '无法连接：域名解析失败',
-  NetworkProbeFaultKind.connect => '无法连接：连接被拒绝或中断',
-  NetworkProbeFaultKind.tls => '无法连接：安全连接握手失败',
-  NetworkProbeFaultKind.blocked => '未发出：地址不符合本机网络规则',
-  NetworkProbeFaultKind.other => '无法连接',
+  NetworkProbeFaultKind.timeout =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsTimeout2,
+  NetworkProbeFaultKind.dns =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsDns,
+  NetworkProbeFaultKind.connect =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsConnect,
+  NetworkProbeFaultKind.tls =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsTls,
+  NetworkProbeFaultKind.blocked =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsBlocked,
+  NetworkProbeFaultKind.other =>
+    LoopL10n.current.profileAbout_networkDiagnosticsModelsOther,
 };
 
 /// Judges a finished probe. [first] is the first step's outcome when the
@@ -179,7 +191,9 @@ NetworkProbeResult judgeNetworkProbe({
 }) {
   final reused = firstElapsed == null
       ? ''
-      : ' · 首次 ${firstElapsed.inMilliseconds} ms，复用连接';
+      : LoopL10n.current.profileAbout_networkDiagnosticsModelsS(
+          firstElapsed.inMilliseconds,
+        );
   switch (outcome) {
     case NetworkProbeFault(:final kind):
       return NetworkProbeResult(
@@ -207,7 +221,10 @@ NetworkProbeResult judgeNetworkProbe({
             elapsed: elapsed,
             reason: is2xx
                 ? 'HTTP $statusCode$reused'
-                : '已连上，但服务返回 HTTP $statusCode$reused',
+                : LoopL10n.current.profileAbout_networkDiagnosticsModelsReason(
+                    reused,
+                    statusCode,
+                  ),
           );
         case NetworkProbeJudge.image:
           final image = is2xx && _looksLikeImage(body);
@@ -216,8 +233,13 @@ NetworkProbeResult judgeNetworkProbe({
             status: image ? NetworkProbeStatus.ok : NetworkProbeStatus.failed,
             elapsed: elapsed,
             reason: image
-                ? 'HTTP $statusCode · 图片 ${_bytesText(body.length)}'
-                : '已连上，但没有拿到图片 · HTTP $statusCode',
+                ? LoopL10n.current.profileAbout_networkDiagnosticsModelsReason2(
+                    _bytesText(body.length),
+                    statusCode,
+                  )
+                : LoopL10n.current.profileAbout_networkDiagnosticsModelsReason3(
+                    statusCode,
+                  ),
           );
         case NetworkProbeJudge.jsonRpcBlock:
           final block = _jsonRpcBlockNumber(body);
@@ -227,7 +249,10 @@ NetworkProbeResult judgeNetworkProbe({
             elapsed: elapsed,
             reason: block == null
                 ? 'HTTP $statusCode'
-                : 'HTTP $statusCode · 区块 $block',
+                : LoopL10n.current.profileAbout_networkDiagnosticsModelsReason4(
+                    block,
+                    statusCode,
+                  ),
           );
       }
   }
@@ -298,14 +323,39 @@ String networkDiagnosticsReport({
 }) {
   final okCount = results.where((result) => result.status.isReached).length;
   final lines = <String>[
-    'LOOP 网络诊断',
-    '时间：${networkDiagnosticsTimestamp(startedAt)}',
-    'App 版本：${context.appVersion}',
-    '构建模式：${context.buildMode}',
-    '服务端主机：${context.serverHost}',
-    '平台：${context.platform}',
-    if (total != null) '总耗时：${total.inMilliseconds} ms',
-    '结果：${results.length} 项中 $okCount 项可达',
+    LoopL10n
+        .current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport,
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport2(
+          networkDiagnosticsTimestamp(startedAt),
+        ),
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport3(
+          context.appVersion,
+        ),
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport4(
+          context.buildMode,
+        ),
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport5(
+          context.serverHost,
+        ),
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport6(
+          context.platform,
+        ),
+    if (total != null)
+      LoopL10n.current
+          .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport7(
+            total.inMilliseconds,
+          ),
+    LoopL10n.current
+        .profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport8(
+          okCount,
+          results.length,
+        ),
     '',
     for (final result in results)
       <String>[

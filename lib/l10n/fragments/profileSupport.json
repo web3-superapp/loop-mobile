@@ -1,0 +1,344 @@
+{
+  "profileSupport_modelsAccount": {
+    "en": "Account",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:10",
+    "zh": "账号"
+  },
+  "profileSupport_modelsAnswered": {
+    "en": "Answered",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:34",
+    "zh": "已回复"
+  },
+  "profileSupport_modelsAnswered2": {
+    "en": "Support reply",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:52",
+    "zh": "客服回复"
+  },
+  "profileSupport_modelsClosed": {
+    "en": "Closed",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:35, lib/features/profile/support/support_models.dart:53",
+    "zh": "已关闭"
+  },
+  "profileSupport_modelsEmpty": {
+    "en": "Describe the problem first.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:197",
+    "zh": "请先描述你遇到的问题。"
+  },
+  "profileSupport_modelsOpen": {
+    "en": "Open",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:33",
+    "zh": "待处理"
+  },
+  "profileSupport_modelsOperator": {
+    "en": "LOOP Support",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:70",
+    "zh": "LOOP 客服"
+  },
+  "profileSupport_modelsOther": {
+    "en": "Other",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:17",
+    "zh": "其他"
+  },
+  "profileSupport_modelsTooLong": {
+    "en": "The message is over 2,000 code points. Shorten it and submit again.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:198",
+    "zh": "正文超过 2000 码点，请精简后再提交。"
+  },
+  "profileSupport_modelsUnsafeCharacters": {
+    "en": "The message has control or invisible characters (such as line breaks or direction marks). Remove them and submit again.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:199",
+    "zh": "正文含有控制字符或不可见字符（例如换行、方向控制符），请删除后再提交。"
+  },
+  "profileSupport_modelsUser": {
+    "en": "You",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:69",
+    "zh": "你"
+  },
+  "profileSupport_modelsWallet": {
+    "en": "Wallet",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_models.dart:12",
+    "zh": "钱包"
+  },
+  "profileSupport_screenBarrierLabel": {
+    "en": "Close ticket details",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:347",
+    "zh": "关闭工单详情"
+  },
+  "profileSupport_screenEmptyMessage": {
+    "en": "No tickets yet",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:255, lib/features/profile/support/support_screen.dart:264",
+    "zh": "还没有提交过工单"
+  },
+  "profileSupport_screenHint": {
+    "en": "Describe the problem. Never enter a private key, recovery phrase or code",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:207",
+    "zh": "描述你遇到的问题；不要填写私钥、助记词或验证码"
+  },
+  "profileSupport_screenLoopLabel": {
+    "en": "Contact us",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:135",
+    "zh": "联系我们"
+  },
+  "profileSupport_screenLoopLabel2": {
+    "en": "FAQ",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:149",
+    "zh": "常见问题"
+  },
+  "profileSupport_screenLoopLabel3": {
+    "en": "Submit a ticket",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:166, lib/features/profile/support/support_screen.dart:231",
+    "zh": "提交工单"
+  },
+  "profileSupport_screenLoopLabel4": {
+    "en": "My tickets",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:249",
+    "zh": "我的工单"
+  },
+  "profileSupport_screenLoopLabel5": {
+    "en": "Conversation",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:397",
+    "zh": "往来记录"
+  },
+  "profileSupport_screenMessage": {
+    "en": "Ticket submitted",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:96",
+    "zh": "工单已提交"
+  },
+  "profileSupport_screenMessage2": {
+    "en": "Ticket not submitted",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:96, lib/features/profile/support/support_screen.dart:218",
+    "zh": "工单没有提交"
+  },
+  "profileSupport_screenSemanticLabel": {
+    "en": "{label} ticket, {label2}. Open full conversation",
+    "placeholders": {
+      "label": {
+        "example": "ticket.category.label",
+        "type": "Object"
+      },
+      "label2": {
+        "example": "ticket.status.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:340",
+    "zh": "{label} 工单，{label2}，打开完整往来"
+  },
+  "profileSupport_screenSubtitle": {
+    "en": "Submitted {relativeTime} · No reply yet",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(ticket.createdAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:324",
+    "zh": "提交于 {relativeTime} · 还没有回复"
+  },
+  "profileSupport_screenSubtitle2": {
+    "en": "Support reply: {note}",
+    "placeholders": {
+      "note": {
+        "example": "note",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:325",
+    "zh": "客服回复：{note}"
+  },
+  "profileSupport_screenSupportAttachmentsUnavailableLabel": {
+    "en": "Attachments aren't supported yet",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:240",
+    "zh": "暂不支持附件"
+  },
+  "profileSupport_screenSupportBodyFootnote": {
+    "en": "{length} / {maximumBodyLength} code points{problem}",
+    "placeholders": {
+      "length": {
+        "example": "length",
+        "type": "Object"
+      },
+      "maximumBodyLength": {
+        "example": "LoopSupportPolicy.maximumBodyLength",
+        "type": "Object"
+      },
+      "problem": {
+        "example": "problem != null && length > 0 ? ' · ${problem.explanation}' : ''",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:190",
+    "zh": "{length} / {maximumBodyLength} 码点{problem}"
+  },
+  "profileSupport_screenSupportBodyLabel": {
+    "en": "Description",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:188",
+    "zh": "问题描述"
+  },
+  "profileSupport_screenSupportCapabilityBlockLabel": {
+    "en": "Support tickets aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:170",
+    "zh": "客服工单当前不可用"
+  },
+  "profileSupport_screenSupportEscalationText": {
+    "en": "Replies within {responseWindowHours} hours. For urgent issues, say so in the ticket.",
+    "placeholders": {
+      "responseWindowHours": {
+        "example": "responseWindowHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:294",
+    "zh": "{responseWindowHours} 小时内回复；紧急问题请在工单正文里写明。"
+  },
+  "profileSupport_screenSupportEscalationTextBusinessDays": {
+    "en": "Replies within {responseWindowHours} hours on business days. For urgent issues, say so in the ticket.",
+    "placeholders": {
+      "responseWindowHours": {
+        "example": "responseWindowHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/support/support_screen.dart:294",
+    "zh": "工作日 {responseWindowHours} 小时内回复；紧急问题请在工单正文里写明。"
+  },
+  "profileSupport_screenSupportEscalationTitle": {
+    "en": "Response time",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:292",
+    "zh": "回复时间"
+  },
+  "profileSupport_screenSupportMoreTicketsBody": {
+    "en": "Only the latest page is shown; older tickets can't be viewed yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:279",
+    "zh": "目前只显示最新的一页，更早的工单暂时看不到。"
+  },
+  "profileSupport_screenSupportMoreTicketsTitle": {
+    "en": "There are older tickets",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:278",
+    "zh": "还有更早的工单"
+  },
+  "profileSupport_screenSupportOpenCommunityTitle": {
+    "en": "LOOP official community",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:141",
+    "zh": "LOOP 官方社区"
+  },
+  "profileSupport_screenSupportScamNoticeBody": {
+    "en": "Anyone who asks for your private key, recovery phrase or code in a DM is a scammer. Report them.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:304",
+    "zh": "任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。"
+  },
+  "profileSupport_screenSupportScamNoticeTitle": {
+    "en": "We never DM you first",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:303",
+    "zh": "官方不会主动私聊你"
+  },
+  "profileSupport_screenSupportScreenTitle": {
+    "en": "Help and support",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:128",
+    "zh": "帮助与客服"
+  },
+  "profileSupport_screenSupportTicketDetailOpenText": {
+    "en": "Support hasn't replied to this ticket yet; replies will show above.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:434",
+    "zh": "客服还没有回复这张工单；有回复时会出现在上面。"
+  },
+  "profileSupport_screenSupportTicketsEmptyMessage": {
+    "en": "After you submit, status and replies show here.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:265",
+    "zh": "提交后，这里会显示状态与客服回复。"
+  },
+  "profileSupport_screenText": {
+    "en": "How is power calculated",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:34",
+    "zh": "算力是怎么算的"
+  },
+  "profileSupport_screenText10": {
+    "en": "A Launch asset that hasn't graduated can only be bought, and only through its own channel. A rejection comes with a specific error code, shown as-is on the trade page.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:58",
+    "zh": "未毕业的 Launch 资产只能买入，且只能走它自己的通道；被拒绝时会给出具体的错误码，交易页会原样显示。"
+  },
+  "profileSupport_screenText2": {
+    "en": "Power comes from the latest power snapshot: each registered asset's holding times its weight, not its price, listed line by line in the power breakdown. It counts holdings in wallets linked to your LOOP account; a community token counts only when it's bound to an approved community. The Mining page shows that snapshot's block and time.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:35",
+    "zh": "算力来自最近一次算力快照：每个已登记资产的持有数量乘以权重，不乘价格，在算力明细里逐行列出。按绑定到 LOOP 账号的钱包持仓计算；社区币须加入已通过审核的绑定社区才计入。挖矿页会显示那次快照的区块与时间。"
+  },
+  "profileSupport_screenText3": {
+    "en": "Why does my token have no weight",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:40",
+    "zh": "为什么我的币没有权重"
+  },
+  "profileSupport_screenText4": {
+    "en": "Only registered assets count toward mining. Registration follows LOOP's registry, not whether a token has appeared in your wallet. Tokens bound to communities under review have no weight.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:41",
+    "zh": "只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，不以钱包里是否出现过为准。绑定待审核社区的币没有权重。"
+  },
+  "profileSupport_screenText5": {
+    "en": "How do I join a Launch",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:45",
+    "zh": "怎么参与 Launch"
+  },
+  "profileSupport_screenText6": {
+    "en": "Launch rounds, snapshots and limits are set by contract parameters. Until they're confirmed, the Launch page only shows existing round status and promises no allocation.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:46",
+    "zh": "Launch 轮次、快照与限额由合约参数决定。参数确认前，Launch 页只展示已有的轮次状态，不承诺任何额度。"
+  },
+  "profileSupport_screenText7": {
+    "en": "How do I recover my account on a new phone",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:50",
+    "zh": "换手机怎么恢复账户"
+  },
+  "profileSupport_screenText8": {
+    "en": "Your account identity is held by Privy. Passkeys and multi-factor authentication can be turned on in Security Center, and automatic recovery is the default method; social recovery and private key export aren't open yet. Security Center shows the current status of each.",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:52",
+    "zh": "账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。安全中心会显示每一项的当前状态。"
+  },
+  "profileSupport_screenText9": {
+    "en": "Why was my bonding pool buy rejected",
+    "placeholders": {},
+    "where": "lib/features/profile/support/support_screen.dart:57",
+    "zh": "内盘买入为什么被拒绝"
+  }
+}

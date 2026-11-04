@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Uploaded pictures (S107 §1, decision 0112).
 ///
@@ -162,13 +163,18 @@ const int avatarUploadMinimumEdge = 64;
 
 String avatarUploadFailureReason(AvatarUploadFailureKind kind) =>
     switch (kind) {
-      AvatarUploadFailureKind.unavailable => '头像上传暂不可用，先用默认头像。',
-      AvatarUploadFailureKind.offline => '网络未连接，头像没有上传。',
-      AvatarUploadFailureKind.rateLimited => '上传太频繁，请一分钟后再试。',
+      AvatarUploadFailureKind.unavailable =>
+        LoopL10n.current.profilePresentation_avatarMediaUnavailable,
+      AvatarUploadFailureKind.offline =>
+        LoopL10n.current.profilePresentation_avatarMediaOffline,
+      AvatarUploadFailureKind.rateLimited =>
+        LoopL10n.current.profilePresentation_avatarMediaRateLimited,
       AvatarUploadFailureKind.rejected =>
-        '这张图片不能用：需要 JPG、PNG、WebP 或 HEIC，不超过 5 MB，边长至少 64 像素。',
-      AvatarUploadFailureKind.invalidData => '上传结果无法确认，头像没有更换。',
-      AvatarUploadFailureKind.unexpected => '头像没有上传成功，请重试。',
+        LoopL10n.current.profilePresentation_avatarMediaRejected,
+      AvatarUploadFailureKind.invalidData =>
+        LoopL10n.current.profilePresentation_avatarMediaInvalidData,
+      AvatarUploadFailureKind.unexpected =>
+        LoopL10n.current.profilePresentation_avatarMediaUnexpected,
     };
 
 // ---------------------------------------------------------------------------

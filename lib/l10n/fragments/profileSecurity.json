@@ -1,0 +1,935 @@
+{
+  "profileSecurity_modelsAutoRecovery": {
+    "en": "Automatic recovery",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:225",
+    "zh": "自动恢复"
+  },
+  "profileSecurity_modelsAutoRecovery2": {
+    "en": "Recovery shares held by the provider.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:225",
+    "zh": "由 Provider 托管的恢复分片。"
+  },
+  "profileSecurity_modelsKeyExport": {
+    "en": "Export private key",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:227, lib/features/profile/security/security_screens.dart:1135",
+    "zh": "导出私钥"
+  },
+  "profileSecurity_modelsKeyExport2": {
+    "en": "Take your private key with you, free of LOOP or Privy.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:227",
+    "zh": "把私钥带走，不受 LOOP 或 Privy 限制。"
+  },
+  "profileSecurity_modelsMfa": {
+    "en": "Multi-factor authentication",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:222",
+    "zh": "多因素验证"
+  },
+  "profileSecurity_modelsMfa2": {
+    "en": "Sign-in and sensitive actions need a second factor.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:222",
+    "zh": "登录与敏感操作需要第二个因素。"
+  },
+  "profileSecurity_modelsPasskey": {
+    "en": "Use device biometrics instead of a password.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:223",
+    "zh": "用设备生物识别代替密码。"
+  },
+  "profileSecurity_modelsProviderAuthenticated": {
+    "en": "Verified by Privy",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:49",
+    "zh": "Privy 已验证"
+  },
+  "profileSecurity_modelsRecoveryPassword": {
+    "en": "Recovery password",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:224",
+    "zh": "恢复密码"
+  },
+  "profileSecurity_modelsRecoveryPassword2": {
+    "en": "A passphrase you keep, used to recover your wallet on a new device.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:224",
+    "zh": "由你保管的一段口令，用来在新设备恢复钱包。"
+  },
+  "profileSecurity_modelsSocialRecovery": {
+    "en": "Social recovery",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:226, lib/features/profile/security/security_screens.dart:1269, lib/features/profile/security/security_screens.dart:1277",
+    "zh": "社交恢复"
+  },
+  "profileSecurity_modelsSocialRecovery2": {
+    "en": "Recovery needs 2 of 3 guardians to confirm.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_models.dart:226",
+    "zh": "2-of-3 守护人共同确认才能恢复。"
+  },
+  "profileSecurity_screensBody": {
+    "en": "ERC-20 approvals still active on this wallet.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:709",
+    "zh": "当前钱包上仍然生效的 ERC-20 授权。"
+  },
+  "profileSecurity_screensBody2": {
+    "en": "Approvals with no limit carry the highest risk.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:723",
+    "zh": "额度没有上限的授权，风险最高。"
+  },
+  "profileSecurity_screensDeviceRevokeConfirmLabel": {
+    "en": "Revoke session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1082",
+    "zh": "撤销会话"
+  },
+  "profileSecurity_screensDeviceRevokeSheetEffectBody": {
+    "en": "LOOP marks this session as revoked, rejects later requests that carry it, and records a security event. The Privy sign-in on that device isn't ended.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1064",
+    "zh": "LOOP 会把这个会话记为已撤销，并拒绝之后携带它的请求，同时写入一条安全事件。对方设备上的 Privy 登录不会被终止。"
+  },
+  "profileSecurity_screensDeviceRevokeSheetEffectTitle": {
+    "en": "What happens after revoking",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1062",
+    "zh": "撤销后会发生什么"
+  },
+  "profileSecurity_screensDeviceRow": {
+    "en": "Revoked {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(device.revokedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:995",
+    "zh": "已于 {relativeTime}撤销"
+  },
+  "profileSecurity_screensDeviceRow2": {
+    "en": "In use",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:997",
+    "zh": "正在使用"
+  },
+  "profileSecurity_screensDevicesCapabilityBlockTitle": {
+    "en": "Device management isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:858",
+    "zh": "设备管理当前不可用"
+  },
+  "profileSecurity_screensDevicesCurrentUnknownBody": {
+    "en": "This device has no usable session ID, so no row in the list is marked as this session or this device.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:909",
+    "zh": "本机没有可用的会话标识，因此列表里没有任何一行被标为本次会话或本设备。"
+  },
+  "profileSecurity_screensDevicesCurrentUnknownTitle": {
+    "en": "Can't mark this session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:908",
+    "zh": "无法标记本次会话"
+  },
+  "profileSecurity_screensDevicesEffectNoticeBody": {
+    "en": "Revoking marks the session as revoked and makes LOOP reject later requests that carry it. It doesn't end the Privy sign-in on that device, so don't read it as that device being signed out. To sign out here, use Sign out in Settings.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:966",
+    "zh": "撤销会把该会话记为已撤销，并让 LOOP 拒绝之后携带它的请求。它不会终止对方设备上的 Privy 登录，所以不能理解为对方已经退出。退出本机请使用设置页的退出登录。"
+  },
+  "profileSecurity_screensDevicesEffectNoticeTitle": {
+    "en": "What revoking does",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:964",
+    "zh": "撤销能做到什么"
+  },
+  "profileSecurity_screensDevicesFolioCaption": {
+    "en": "Device names and locations aren't shown here, only platform, version, session ID and sign-in time.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:852",
+    "zh": "这里不显示设备名称和位置，只显示平台、版本、会话标识与登录时间。"
+  },
+  "profileSecurity_screensDevicesFolioHeading": {
+    "en": "{deviceCount} devices · {activeCount} sessions",
+    "placeholders": {
+      "activeCount": {
+        "example": "directory.activeCount",
+        "type": "Object"
+      },
+      "deviceCount": {
+        "example": "directory.deviceCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:851",
+    "zh": "{deviceCount} 台设备 · {activeCount} 个会话"
+  },
+  "profileSecurity_screensDevicesFolioKicker": {
+    "en": "Device sessions",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:848",
+    "zh": "设备会话"
+  },
+  "profileSecurity_screensDevicesHighRiskNoticeBody": {
+    "en": "{newSessions24h} sessions were created in the last {windowHours} hours, reaching the alert threshold of {newSessionThreshold}. This is only an alert; it doesn't require two-step verification.",
+    "placeholders": {
+      "newSessionThreshold": {
+        "example": "directory.riskSignals.policy.newSessionThreshold",
+        "type": "Object"
+      },
+      "newSessions24h": {
+        "example": "directory.riskSignals.newSessions24h",
+        "type": "Object"
+      },
+      "windowHours": {
+        "example": "directory.riskSignals.policy.windowHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:899",
+    "zh": "最近 {windowHours} 小时内新建了 {newSessions24h} 个会话，达到提示阈值 {newSessionThreshold}。这只是提示，不会因此要求二次验证。"
+  },
+  "profileSecurity_screensDevicesRevokeAllLabel": {
+    "en": "Sign out all other devices",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:939",
+    "zh": "下线所有其他设备"
+  },
+  "profileSecurity_screensDevicesRevokeAllUnavailableLabel": {
+    "en": "Needs two-step verification, not available now",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:947",
+    "zh": "需要二次验证，当前不可执行"
+  },
+  "profileSecurity_screensDevicesRevokeOutcomeBody": {
+    "en": "LOOP marked the session as revoked and rejects later requests that carry it. The Privy access token on that device isn't affected (providerAccessTerminated: {providerAccessTerminated}).",
+    "placeholders": {
+      "providerAccessTerminated": {
+        "example": "state.outcome!.providerAccessTerminated",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:878",
+    "zh": "LOOP 已把该会话标记为已撤销，并拒绝之后携带它的请求。对方设备的 Privy 访问令牌不受影响（providerAccessTerminated: {providerAccessTerminated}）。"
+  },
+  "profileSecurity_screensDevicesScreenTitle": {
+    "en": "Devices",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:838, lib/features/profile/security/security_screens.dart:850",
+    "zh": "设备管理"
+  },
+  "profileSecurity_screensDevicesStateEmptyMessage": {
+    "en": "This account hasn't set up a device yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:917",
+    "zh": "这个账号还没有完成过一次设备初始化。"
+  },
+  "profileSecurity_screensDevicesStateEmptyTitle": {
+    "en": "No device sessions yet",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:916",
+    "zh": "还没有设备会话"
+  },
+  "profileSecurity_screensDevicesTruncatedBody": {
+    "en": "Up to 100 sessions are shown; paging isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:932",
+    "zh": "最多显示 100 条会话，暂时不能翻页。"
+  },
+  "profileSecurity_screensDevicesTruncatedTitle": {
+    "en": "List truncated",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:931",
+    "zh": "列表已被截断"
+  },
+  "profileSecurity_screensEmptyMessage": {
+    "en": "No security features to show",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:236",
+    "zh": "没有可展示的安全能力"
+  },
+  "profileSecurity_screensEmptyMessage2": {
+    "en": "No security summary yet",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:277",
+    "zh": "还没有安全汇总"
+  },
+  "profileSecurity_screensEmptyMessage3": {
+    "en": "No device sessions to show",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:888",
+    "zh": "没有可显示的设备会话"
+  },
+  "profileSecurity_screensEmptyMessage4": {
+    "en": "Can't read export status",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1164",
+    "zh": "读不到导出能力的状态"
+  },
+  "profileSecurity_screensEmptyMessage5": {
+    "en": "Can't read social recovery status",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1303",
+    "zh": "读不到社交恢复的状态"
+  },
+  "profileSecurity_screensEventSourceSuffix": {
+    "en": " · Source {source}",
+    "placeholders": {
+      "source": {
+        "example": "source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:774",
+    "zh": " · 来源 {source}"
+  },
+  "profileSecurity_screensIdentity": {
+    "en": "Session {sessionShortId} · First sign-in {sessionCreatedAtLabel}",
+    "placeholders": {
+      "sessionCreatedAtLabel": {
+        "example": "loopSessionCreatedAtLabel(device.createdAt)",
+        "type": "Object"
+      },
+      "sessionShortId": {
+        "example": "device.sessionShortId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:1000",
+    "zh": "会话 {sessionShortId} · 首次登录 {sessionCreatedAtLabel}"
+  },
+  "profileSecurity_screensIf": {
+    "en": "The sign-in service says this account already has a passkey",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:437",
+    "zh": "登录服务说这个账号已经有 Passkey"
+  },
+  "profileSecurity_screensKeyExportActionLabel": {
+    "en": "Verify and export",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1206",
+    "zh": "验证并导出"
+  },
+  "profileSecurity_screensKeyExportCapabilityBlockTitle": {
+    "en": "Private key export isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1129, lib/features/profile/security/security_screens.dart:1175",
+    "zh": "导出私钥当前不可用"
+  },
+  "profileSecurity_screensKeyExportControlDisclosureSummary": {
+    "en": "Control notes",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1213",
+    "zh": "控制说明"
+  },
+  "profileSecurity_screensKeyExportFolioCaption": {
+    "en": "Before export: read the risks, verify your identity and confirm local display.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1145",
+    "zh": "导出前完成风险阅读、身份验证与本地显示确认。"
+  },
+  "profileSecurity_screensKeyExportFolioHeading": {
+    "en": "You control your private key",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1144",
+    "zh": "私钥由你控制"
+  },
+  "profileSecurity_screensKeyExportFolioKicker": {
+    "en": "Wallet key",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1143",
+    "zh": "钱包密钥"
+  },
+  "profileSecurity_screensKeyExportFolioStamp": {
+    "en": "Sensitive",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1146",
+    "zh": "敏感"
+  },
+  "profileSecurity_screensKeyExportNoKeySubtitle": {
+    "en": "This page never renders a masked key sample; that would make it look like a key was already exported.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1194",
+    "zh": "这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。"
+  },
+  "profileSecurity_screensKeyExportNoKeyTitle": {
+    "en": "No private key is shown",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1193",
+    "zh": "不会显示任何私钥"
+  },
+  "profileSecurity_screensKeyExportNoVerificationSubtitle": {
+    "en": "No Face ID, no code: verification only matters when export is actually possible.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1187",
+    "zh": "没有 Face ID、没有验证码：验证只在真的能导出时才有意义。"
+  },
+  "profileSecurity_screensKeyExportNoVerificationTitle": {
+    "en": "You won't be asked to verify",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1186",
+    "zh": "不会要求你验证"
+  },
+  "profileSecurity_screensKeyExportRiskBody": {
+    "en": "A leaked private key means losing all your assets. Don't screenshot it, send it to anyone or keep it in online notes. No one can recover stolen assets for you.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1156",
+    "zh": "私钥泄露等于资产全部丢失。不要截图、不要发给任何人、不要存在联网笔记里。没有任何人能帮你找回被盗的资产。"
+  },
+  "profileSecurity_screensKeyExportRiskTitle": {
+    "en": "Exporting moves all responsibility to you",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1154",
+    "zh": "导出即全部责任转移"
+  },
+  "profileSecurity_screensLabel": {
+    "en": "Platform",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1046",
+    "zh": "平台"
+  },
+  "profileSecurity_screensLabel2": {
+    "en": "Client version",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1047",
+    "zh": "客户端版本"
+  },
+  "profileSecurity_screensLabel3": {
+    "en": "First sign-in",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1052",
+    "zh": "首次登录"
+  },
+  "profileSecurity_screensLabel4": {
+    "en": "Belongs to",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1056",
+    "zh": "归属"
+  },
+  "profileSecurity_screensLabel5": {
+    "en": "Last active",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1057",
+    "zh": "最后活跃"
+  },
+  "profileSecurity_screensListSeparator": {
+    "en": ", ",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:251",
+    "zh": "、"
+  },
+  "profileSecurity_screensLoopBadge": {
+    "en": "Unreadable",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:419",
+    "zh": "读不到"
+  },
+  "profileSecurity_screensLoopBadge2": {
+    "en": "This session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:986, lib/features/profile/security/security_screens.dart:1020",
+    "zh": "本次会话"
+  },
+  "profileSecurity_screensLoopBadge3": {
+    "en": "Revoked",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:988, lib/features/profile/security/security_screens.dart:1023",
+    "zh": "已撤销"
+  },
+  "profileSecurity_screensLoopBadge4": {
+    "en": "Old session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:990",
+    "zh": "本设备 · 旧会话"
+  },
+  "profileSecurity_screensLoopBadge5": {
+    "en": "Other device",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:991",
+    "zh": "其他设备"
+  },
+  "profileSecurity_screensLoopLabel": {
+    "en": "Verification",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:231, lib/features/profile/security/security_screens.dart:573",
+    "zh": "验证"
+  },
+  "profileSecurity_screensLoopLabel2": {
+    "en": "Transaction verification",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:263",
+    "zh": "交易验证"
+  },
+  "profileSecurity_screensLoopLabel3": {
+    "en": "Devices",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:271",
+    "zh": "设备"
+  },
+  "profileSecurity_screensLoopLabel4": {
+    "en": "Recent security events",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:304",
+    "zh": "最近安全事件"
+  },
+  "profileSecurity_screensLoopLabel5": {
+    "en": "Session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:911, lib/features/profile/security/security_screens.dart:1050",
+    "zh": "会话"
+  },
+  "profileSecurity_screensLoopLabel6": {
+    "en": "All devices",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:934",
+    "zh": "全部设备"
+  },
+  "profileSecurity_screensLoopLabel7": {
+    "en": "What won't happen at this step",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1179",
+    "zh": "这一步现在不会发生什么"
+  },
+  "profileSecurity_screensLoopLabel8": {
+    "en": "Guardians",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1322",
+    "zh": "守护人"
+  },
+  "profileSecurity_screensLoopRecordRow": {
+    "en": "Session {sessionShortId}",
+    "placeholders": {
+      "sessionShortId": {
+        "example": "device.sessionShortId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:1018",
+    "zh": "会话 {sessionShortId}"
+  },
+  "profileSecurity_screensLoopRecordRow2": {
+    "en": "Old session on this device",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1022, lib/features/profile/security/security_screens.dart:1056",
+    "zh": "本设备的旧会话"
+  },
+  "profileSecurity_screensLoopSheetHeading": {
+    "en": "Revoke this session?",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1045",
+    "zh": "撤销这个会话？"
+  },
+  "profileSecurity_screensMessage": {
+    "en": "Revocation recorded; access on that device isn't ended",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:812, lib/features/profile/security/security_screens.dart:876",
+    "zh": "已记录撤销，对方访问未终止"
+  },
+  "profileSecurity_screensMessage2": {
+    "en": "Revocation didn't finish",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:812, lib/features/profile/security/security_screens.dart:867",
+    "zh": "撤销没有完成"
+  },
+  "profileSecurity_screensPlatformUnlabeled": {
+    "en": "Platform not labeled",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:772",
+    "zh": "未标注平台"
+  },
+  "profileSecurity_screensS": {
+    "en": "Last active {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(device.lastSeenAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:998",
+    "zh": "最后活跃 {relativeTime}"
+  },
+  "profileSecurity_screensS2": {
+    "en": "Active",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1023",
+    "zh": "活跃"
+  },
+  "profileSecurity_screensScopeNote": {
+    "en": "Multi-factor authentication, passkeys, recovery and export are provided by Privy and will show here once open.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:248",
+    "zh": "多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。"
+  },
+  "profileSecurity_screensScopeNote2": {
+    "en": "These protections are provided by Privy.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:250",
+    "zh": "这些保护由 Privy 提供。"
+  },
+  "profileSecurity_screensScopeNote3": {
+    "en": "These protections are provided by Privy. {notOpen} will show here once open.",
+    "placeholders": {
+      "notOpen": {
+        "example": "notOpen.join('、')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:251",
+    "zh": "这些保护由 Privy 提供。{notOpen}开放后会在这里显示。"
+  },
+  "profileSecurity_screensSecurityApprovalsActiveTitle": {
+    "en": "Active approvals",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:703, lib/features/profile/security/security_screens.dart:706",
+    "zh": "有效授权"
+  },
+  "profileSecurity_screensSecurityApprovalsFreshnessText": {
+    "en": "Approvals from block {groupedFigure} · Indexed {groupedFigure2} / Head {groupedFigure3} · Seen {relativeTime}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(coverageFrom.toString())",
+        "type": "Object"
+      },
+      "groupedFigure2": {
+        "example": "loopGroupedFigure(indexed.toString())",
+        "type": "Object"
+      },
+      "groupedFigure3": {
+        "example": "loopGroupedFigure(head.toString())",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(observedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:734",
+    "zh": "授权记录自区块 {groupedFigure} 起 · 索引高度 {groupedFigure2} / 链头 {groupedFigure3} · 观察于 {relativeTime}"
+  },
+  "profileSecurity_screensSecurityApprovalsUnavailableLabel": {
+    "en": "Can't read token approvals",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:686",
+    "zh": "授权盘点读不到"
+  },
+  "profileSecurity_screensSecurityApprovalsUnlimitedTitle": {
+    "en": "Unlimited approvals",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:717, lib/features/profile/security/security_screens.dart:720",
+    "zh": "无限额度授权"
+  },
+  "profileSecurity_screensSecurityCapabilityBlockTitle": {
+    "en": "Security Center isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:221",
+    "zh": "安全中心当前不可用"
+  },
+  "profileSecurity_screensSecurityDevicesEntrySubtitle": {
+    "en": "{sessions} active sessions · {recent} new in the last {windowHours} hours",
+    "placeholders": {
+      "recent": {
+        "example": "recent",
+        "type": "Object"
+      },
+      "sessions": {
+        "example": "sessions",
+        "type": "Object"
+      },
+      "windowHours": {
+        "example": "policy.windowHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:646",
+    "zh": "{sessions} 个活跃会话 · 最近 {windowHours} 小时新增 {recent} 个"
+  },
+  "profileSecurity_screensSecurityDevicesEntryTitle": {
+    "en": "Signed-in devices",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:644",
+    "zh": "已登录设备"
+  },
+  "profileSecurity_screensSecurityDevicesUnavailableLabel": {
+    "en": "Can't read devices and sessions",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:628",
+    "zh": "设备与会话读不到"
+  },
+  "profileSecurity_screensSecurityEventsEmptyMessage": {
+    "en": "For now, only \"Sign out other devices\" records a security event.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:764",
+    "zh": "目前只有\"撤销其他设备\"会记录一条安全事件。"
+  },
+  "profileSecurity_screensSecurityEventsEmptyTitle": {
+    "en": "No security events yet",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:763",
+    "zh": "还没有安全事件"
+  },
+  "profileSecurity_screensSecurityEventsUnavailableLabel": {
+    "en": "Can't read recent security events",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:756",
+    "zh": "最近安全事件读不到"
+  },
+  "profileSecurity_screensSecurityHighRiskNoticeBody": {
+    "en": "{recent} sessions were created in the last {windowHours} hours, reaching the alert threshold of {newSessionThreshold}. This is only an alert; it doesn't require two-step verification or a cooldown.",
+    "placeholders": {
+      "newSessionThreshold": {
+        "example": "policy.newSessionThreshold",
+        "type": "Object"
+      },
+      "recent": {
+        "example": "recent",
+        "type": "Object"
+      },
+      "windowHours": {
+        "example": "policy.windowHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:659",
+    "zh": "最近 {windowHours} 小时内新建了 {recent} 个会话，达到提示阈值 {newSessionThreshold}。这只是提示，不会因此要求二次验证或冷却。"
+  },
+  "profileSecurity_screensSecurityHighRiskNoticeTitle": {
+    "en": "Several new sessions recently",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:657, lib/features/profile/security/security_screens.dart:897",
+    "zh": "最近新增了多个会话"
+  },
+  "profileSecurity_screensSecurityMethodDefaultLabel": {
+    "en": "Default method",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:336",
+    "zh": "默认方式"
+  },
+  "profileSecurity_screensSecurityMethodDeferredLabel": {
+    "en": "Not open yet",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:47",
+    "zh": "还没有开放"
+  },
+  "profileSecurity_screensSecurityMethodOffLabel": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:40",
+    "zh": "未开启"
+  },
+  "profileSecurity_screensSecurityMethodsGuideSummary": {
+    "en": "How to turn these on",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:583",
+    "zh": "这些保护怎么开启"
+  },
+  "profileSecurity_screensSecurityNotificationLockSubtitle": {
+    "en": "Always on, can't be turned off",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:295",
+    "zh": "始终开启，无法关闭"
+  },
+  "profileSecurity_screensSecurityNotificationLockTitle": {
+    "en": "Security event notifications",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:294",
+    "zh": "安全事件通知"
+  },
+  "profileSecurity_screensSecurityObservedAtText": {
+    "en": "Seen {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(resource.observedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:308, lib/features/profile/security/security_screens.dart:958",
+    "zh": "观察于 {relativeTime}"
+  },
+  "profileSecurity_screensSecurityScopeInfoTitle": {
+    "en": "Who provides these protections",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:560",
+    "zh": "这些保护由谁提供"
+  },
+  "profileSecurity_screensSemanticLabel": {
+    "en": "{label}, unavailable, {reason}",
+    "placeholders": {
+      "label": {
+        "example": "id.label",
+        "type": "Object"
+      },
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:392",
+    "zh": "{label}，不可用，{reason}"
+  },
+  "profileSecurity_screensSemanticLabel2": {
+    "en": "{label}, reading the sign-in service's answer",
+    "placeholders": {
+      "label": {
+        "example": "id.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:408",
+    "zh": "{label}，正在读取登录服务的回答"
+  },
+  "profileSecurity_screensSemanticLabel3": {
+    "en": "{label}, unreadable, {reason} Tap to retry",
+    "placeholders": {
+      "label": {
+        "example": "id.label",
+        "type": "Object"
+      },
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:422",
+    "zh": "{label}，读不到，{reason}点按重试"
+  },
+  "profileSecurity_screensSemanticLabel4": {
+    "en": "{label}, {label2}. Tap to turn on",
+    "placeholders": {
+      "label": {
+        "example": "id.label",
+        "type": "Object"
+      },
+      "label2": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:465",
+    "zh": "{label}，{label2}，点按开启"
+  },
+  "profileSecurity_screensSemanticLabelDetail": {
+    "en": "{label}, {state}: {detail}",
+    "placeholders": {
+      "detail": {
+        "example": "detail",
+        "type": "Object"
+      },
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "state": {
+        "example": "state",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:465",
+    "zh": "{label}，{state}：{detail}"
+  },
+  "profileSecurity_screensSocialRecoveryActionLabel": {
+    "en": "Add guardian",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1337",
+    "zh": "添加守护人"
+  },
+  "profileSecurity_screensSocialRecoveryCapabilityBlockTitle": {
+    "en": "Social recovery isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1263, lib/features/profile/security/security_screens.dart:1314",
+    "zh": "社交恢复当前不可用"
+  },
+  "profileSecurity_screensSocialRecoveryDisclosureSummary": {
+    "en": "Social recovery status notes",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1344",
+    "zh": "社交恢复状态说明"
+  },
+  "profileSecurity_screensSocialRecoveryExplainerBody": {
+    "en": "Pick 3 people you trust. If you lose your device, any 2 of them can help you recover your account. Guardians must confirm in their own app; unconfirmed ones don't count toward 2-of-3.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1289",
+    "zh": "指定 3 个你信任的人。丢失设备时，其中 2 人同意即可帮你恢复账户。守护人需要在自己的 App 里主动确认，未确认的不计入 2-of-3。"
+  },
+  "profileSecurity_screensSocialRecoveryExplainerTitle": {
+    "en": "What 2-of-3 means",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1287",
+    "zh": "2-of-3 是什么意思"
+  },
+  "profileSecurity_screensSocialRecoveryFolioCaption": {
+    "en": "Guardians only confirm recovery. They can't see your assets or start transactions.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1279",
+    "zh": "守护人只参与恢复确认，不能查看资产或发起交易。"
+  },
+  "profileSecurity_screensSocialRecoveryFolioHeading": {
+    "en": "2-of-3 guardians",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1278",
+    "zh": "2-of-3 守护人"
+  },
+  "profileSecurity_screensSocialRecoveryFolioStamp": {
+    "en": "2 of 3",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1280",
+    "zh": "3 选 2"
+  },
+  "profileSecurity_screensSocialRecoveryNoGuardiansDetail": {
+    "en": "Guardians aren't open yet, so no one is listed here.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1327",
+    "zh": "守护人还没有开放，这里不会列出任何人。"
+  },
+  "profileSecurity_screensSocialRecoveryNoGuardiansMessage": {
+    "en": "No guardians yet",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1326",
+    "zh": "还没有添加守护人"
+  },
+  "profileSecurity_screensSubtitle": {
+    "en": "{reason} Tap to retry.",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/security/security_screens.dart:417",
+    "zh": "{reason}点按重试。"
+  },
+  "profileSecurity_screensText": {
+    "en": "Export asks for Face ID, MFA and a risk confirmation, and blocks screenshots and screen recording during export. This page never pre-renders a private key sample: a masked string would read as \"already exported\".",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1217",
+    "zh": "导出会要求 Face ID、MFA 与一次风险确认，并在导出期间禁止截图与录屏。这一页不会预先渲染任何私钥样例：一段被遮罩的字符会被读成「已经导出过」。"
+  },
+  "profileSecurity_screensText2": {
+    "en": "You invite guardians, and they must confirm in their own app; unconfirmed ones don't count toward 2-of-3. Guardians can't see your assets or start transactions.",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:1348",
+    "zh": "守护人由你邀请，对方要在自己的 App 里主动确认；未确认的不计入 2-of-3。守护人看不到你的资产，也不能发起交易。"
+  },
+  "profileSecurity_screensTitle": {
+    "en": "Recovery",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:577",
+    "zh": "恢复"
+  },
+  "profileSecurity_screensTitle2": {
+    "en": "Revoked a device session",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:773",
+    "zh": "撤销了一个设备会话"
+  },
+  "profileSecurity_screensTitle3": {
+    "en": "Security event",
+    "placeholders": {},
+    "where": "lib/features/profile/security/security_screens.dart:774",
+    "zh": "安全事件"
+  }
+}

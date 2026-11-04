@@ -1,0 +1,785 @@
+{
+  "profile_meAttentionStreamChatMessageRequestsEntrySemanticLabel": {
+    "en": "Message requests, {label} pending",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/me_attention.dart:116",
+    "zh": "陌生人请求，{label} 条待处理"
+  },
+  "profile_meAttentionStreamChatMessageRequestsEntryTrailing": {
+    "en": "{label} pending",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/me_attention.dart:115",
+    "zh": "{label} 条待处理"
+  },
+  "profile_screensAliasBlocked": {
+    "en": "That name has a word that isn't allowed. Try another.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:276",
+    "zh": "该名称包含不允许的词，请换一个再试。"
+  },
+  "profile_screensAliasReserved": {
+    "en": "That name is reserved by LOOP. Try another.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:275",
+    "zh": "该名称属于 LOOP 保留词，请换一个再试。"
+  },
+  "profile_screensBootstrapRequired": {
+    "en": "Your account isn't set up yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:273, lib/features/profile/profile_v2_screens.dart:295",
+    "zh": "账号尚未完成初始化，请稍后重试。"
+  },
+  "profile_screensHint": {
+    "en": "1–40 characters, doesn't have to be unique",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1426",
+    "zh": "1–40 个字符，可以和别人重复"
+  },
+  "profile_screensHint2": {
+    "en": "A line about yourself (optional)",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1447",
+    "zh": "一句话介绍自己（可以不填）"
+  },
+  "profile_screensIdempotencyConflict": {
+    "en": "Submission conflict. Reset; try again.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:272",
+    "zh": "提交冲突，已重置，请再试一次。"
+  },
+  "profile_screensInvalidData": {
+    "en": "The service returned a profile that doesn't match the contract. Nothing was applied.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:277",
+    "zh": "服务返回的资料不符合约定，没有采纳任何内容。"
+  },
+  "profile_screensInvalidData2": {
+    "en": "The service returned privacy settings that don't match the contract. Nothing was applied.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:297",
+    "zh": "服务返回的隐私设置不符合约定，没有采纳任何内容。"
+  },
+  "profile_screensJoinedLine": {
+    "en": "Joined {month} {year}",
+    "placeholders": {
+      "month": {
+        "example": "local.month",
+        "type": "Object"
+      },
+      "year": {
+        "example": "local.year",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/profile_v2_screens.dart:904",
+    "zh": "{year} 年 {month} 月加入"
+  },
+  "profile_screensLabel": {
+    "en": "Reload",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1344, lib/features/profile/profile_v2_screens.dart:1659",
+    "zh": "重新载入"
+  },
+  "profile_screensLoopLabel": {
+    "en": "Privacy and security",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:530",
+    "zh": "隐私与安全"
+  },
+  "profile_screensLoopLabel2": {
+    "en": "Review notifications",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:834",
+    "zh": "审核通知"
+  },
+  "profile_screensLoopLabel3": {
+    "en": "Identity",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1702",
+    "zh": "身份"
+  },
+  "profile_screensLoopLabel4": {
+    "en": "Social",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1756",
+    "zh": "社交"
+  },
+  "profile_screensLoopLabel5": {
+    "en": "Visibility",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1783",
+    "zh": "可见性"
+  },
+  "profile_screensLoopOfflineState": {
+    "en": "Save profile",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1212, lib/features/profile/profile_v2_screens.dart:1362",
+    "zh": "保存资料"
+  },
+  "profile_screensLoopOfflineState2": {
+    "en": "Activate LOOP ID",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1212",
+    "zh": "激活 LOOP ID"
+  },
+  "profile_screensLoopOfflineState3": {
+    "en": "Save privacy settings",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1670, lib/features/profile/profile_v2_screens.dart:1923",
+    "zh": "保存隐私设置"
+  },
+  "profile_screensLoopPreviewModeNoticeBody": {
+    "en": "{resource} is kept only in memory for this run. It isn't written to your account and calls no provider.",
+    "placeholders": {
+      "resource": {
+        "example": "resource",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/profile_v2_screens.dart:194",
+    "zh": "{resource}只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。"
+  },
+  "profile_screensLoopSoftUpdateDismissLabel": {
+    "en": "Dismiss update prompt",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2089",
+    "zh": "忽略更新提示"
+  },
+  "profile_screensLoopSoftUpdatePromptBody": {
+    "en": "Update to the latest version. This version still works.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2078",
+    "zh": "建议更新到最新版本；当前版本仍然可以继续使用。"
+  },
+  "profile_screensLoopSoftUpdatePromptBody2": {
+    "en": "Update to {minimum} or later. This version still works.",
+    "placeholders": {
+      "minimum": {
+        "example": "minimum",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/profile_v2_screens.dart:2079",
+    "zh": "建议更新到 {minimum} 或更高版本；当前版本仍然可以继续使用。"
+  },
+  "profile_screensLoopSoftUpdatePromptTitle": {
+    "en": "New version available",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2076",
+    "zh": "有新版本可用"
+  },
+  "profile_screensMeCommunitiesEmptyTitle": {
+    "en": "No communities joined yet",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:665",
+    "zh": "还没有加入社区"
+  },
+  "profile_screensMeCommunitiesUnavailableMessage": {
+    "en": "Communities aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:629, lib/features/profile/profile_v2_screens.dart:645",
+    "zh": "社区暂不可用"
+  },
+  "profile_screensMeGroupLabel": {
+    "en": "Joined",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:680",
+    "zh": "我加入的"
+  },
+  "profile_screensMeGroupLabel2": {
+    "en": "Created",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:698",
+    "zh": "我创建的"
+  },
+  "profile_screensMeJoinedAllTitle": {
+    "en": "All joined communities",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:691",
+    "zh": "全部已加入的社区"
+  },
+  "profile_screensMembers": {
+    "en": "{groupedFigure} members",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(community.memberCount.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/profile_v2_screens.dart:717",
+    "zh": "{groupedFigure} 名成员"
+  },
+  "profile_screensMessage": {
+    "en": "Go back to Me and pick another setting.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_screens.dart:151",
+    "zh": "回到「我」，选择其它设置。"
+  },
+  "profile_screensMessage2": {
+    "en": "Profile hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:480",
+    "zh": "资料还没有读到"
+  },
+  "profile_screensMessage3": {
+    "en": "Submitted as version {version}",
+    "placeholders": {
+      "version": {
+        "example": "version",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/profile_v2_screens.dart:1561, lib/features/profile/profile_v2_screens.dart:1893",
+    "zh": "已提交到版本 {version}"
+  },
+  "profile_screensOffLabel": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:312",
+    "zh": "已关闭"
+  },
+  "profile_screensOffline": {
+    "en": "This device is offline. Your profile couldn't load, and no changes were submitted.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:261",
+    "zh": "设备当前离线，资料未能读取，也没有提交任何修改。"
+  },
+  "profile_screensOffline2": {
+    "en": "This device is offline. Privacy settings couldn't load, and no changes were submitted.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:284",
+    "zh": "设备当前离线，隐私设置未能读取，也没有提交任何修改。"
+  },
+  "profile_screensPermissionDenied": {
+    "en": "Current policy doesn't allow reading or changing your profile. Nothing changed. This permission can't be changed in the app.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:263",
+    "zh": "当前策略不允许读取或修改账号资料，没有发生任何变化。这项权限不能在应用里自行调整。"
+  },
+  "profile_screensPermissionDenied2": {
+    "en": "Current policy doesn't allow reading or changing privacy settings. Nothing changed. This permission can't be changed in the app; the switches follow LOOP's records.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:286",
+    "zh": "当前策略不允许读取或修改隐私设置，没有发生任何变化。这项权限不能在应用里自行调整；开关的当前状态以 LOOP 记录为准。"
+  },
+  "profile_screensPrivacyAnonymousModeSubtitle": {
+    "en": "Show only your alias, never your wallet address",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1716",
+    "zh": "只显示别名，不显示钱包地址"
+  },
+  "profile_screensPrivacyAnonymousModeTitle": {
+    "en": "Anonymous mode",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1715",
+    "zh": "匿名模式"
+  },
+  "profile_screensPrivacyConflictTitle": {
+    "en": "Privacy settings changed elsewhere",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1656",
+    "zh": "隐私设置已在别处修改"
+  },
+  "profile_screensPrivacyDiscoverableSubtitle": {
+    "en": "Others can find you by nickname; your LOOP ID is always searchable exactly",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1736",
+    "zh": "允许别人按昵称搜到你；LOOP ID 始终可被精确搜索"
+  },
+  "profile_screensPrivacyDiscoverableSubtitle2": {
+    "en": "Others can't find you by nickname; your LOOP ID is always searchable exactly",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1737",
+    "zh": "别人无法按昵称搜到你；LOOP ID 始终可被精确搜索"
+  },
+  "profile_screensPrivacyDiscoverableTitle": {
+    "en": "Discoverable",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1729",
+    "zh": "可被发现"
+  },
+  "profile_screensPrivacyEmptyMessage": {
+    "en": "Privacy preferences haven't loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1937",
+    "zh": "隐私偏好尚未读取。"
+  },
+  "profile_screensPrivacyEmptyTitle": {
+    "en": "No privacy settings to show",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1936",
+    "zh": "还没有可展示的隐私设置"
+  },
+  "profile_screensPrivacyErrorSource": {
+    "en": "Privacy service",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1956",
+    "zh": "隐私服务"
+  },
+  "profile_screensPrivacyPermissionTitle": {
+    "en": "Privacy settings can't be read or changed in your region",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1947",
+    "zh": "当前地区不能读取或修改隐私设置"
+  },
+  "profile_screensPrivacyPermissionTitle2": {
+    "en": "This account can't read or change privacy settings",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1948",
+    "zh": "当前账号无权读取或修改隐私设置"
+  },
+  "profile_screensPrivacyPublicHoldingsOffLabel": {
+    "en": "Only me",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1798, lib/features/profile/profile_v2_screens.dart:1829",
+    "zh": "仅自己"
+  },
+  "profile_screensPrivacyPublicHoldingsOnLabel": {
+    "en": "Everyone",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1797, lib/features/profile/profile_v2_screens.dart:1828",
+    "zh": "所有人"
+  },
+  "profile_screensPrivacyPublicHoldingsSubtitle": {
+    "en": "Others see your holdings and trades on your profile, never your wallet address",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1794",
+    "zh": "别人在你的主页能看到持仓和交易记录，不显示钱包地址"
+  },
+  "profile_screensPrivacyPublicHoldingsSubtitle2": {
+    "en": "Only you can see your holdings and trades",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1795",
+    "zh": "只有你自己能看到持仓和交易记录"
+  },
+  "profile_screensPrivacyPublicHoldingsTitle": {
+    "en": "Public holdings and trades",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1792",
+    "zh": "公开持仓与交易"
+  },
+  "profile_screensPrivacySavePermissionTitle": {
+    "en": "Privacy settings can't be changed in your region",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1688",
+    "zh": "当前地区不能修改隐私设置"
+  },
+  "profile_screensPrivacySavePermissionTitle2": {
+    "en": "This account can't change privacy settings",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1689",
+    "zh": "当前账号无权修改隐私设置"
+  },
+  "profile_screensPrivacySubtitle": {
+    "en": "Holdings and trades are public",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:567",
+    "zh": "持仓与交易已公开"
+  },
+  "profile_screensPrivacyUnavailableTitle": {
+    "en": "Privacy settings aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1930",
+    "zh": "隐私设置暂不可用"
+  },
+  "profile_screensPrivacyVisibilityNoteText": {
+    "en": "Visibility only affects what's shown. It doesn't let anyone copy your trades or access your wallet. Your avatar and username always show in chats and on your profile; your wallet address never appears on your profile.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1857",
+    "zh": "可见性只影响展示，不会让别人复制你的交易或访问你的钱包；头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。"
+  },
+  "profile_screensPrivacyVisibilityNoteTitle": {
+    "en": "About visibility",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1854",
+    "zh": "可见性说明"
+  },
+  "profile_screensProfileAddBioLabel": {
+    "en": "Add a bio",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1044",
+    "zh": "添加个人简介"
+  },
+  "profile_screensProfileAlias": {
+    "en": "No alias yet",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:990",
+    "zh": "尚未设置别名"
+  },
+  "profile_screensProfileAvailabilityBannerBody": {
+    "en": "Reloading profile status.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2011",
+    "zh": "正在重新读取资料状态。"
+  },
+  "profile_screensProfileAvailabilityBannerTitle": {
+    "en": "Can't read profile status right now",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2009",
+    "zh": "资料状态暂不可读"
+  },
+  "profile_screensProfileAvailabilityBrowseSuffix": {
+    "en": " You can keep browsing.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2006",
+    "zh": " 你可以继续浏览。"
+  },
+  "profile_screensProfileAvailabilityDismissLabel": {
+    "en": "Hide profile status notice",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2035",
+    "zh": "收起资料状态提示"
+  },
+  "profile_screensProfileAvailabilityRetryLabel": {
+    "en": "Retrying…",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2027",
+    "zh": "正在重试…"
+  },
+  "profile_screensProfileAvailabilityRetryLabel2": {
+    "en": "Reload profile status",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2027",
+    "zh": "重新读取资料状态"
+  },
+  "profile_screensProfileAvailabilityRetryableSuffix": {
+    "en": " You can keep browsing or retry now.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:2006",
+    "zh": " 你可以继续浏览，也可以现在重试。"
+  },
+  "profile_screensProfileEditAliasLabel": {
+    "en": "Username",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1405",
+    "zh": "用户名"
+  },
+  "profile_screensProfileEditAliasSuggestLabel": {
+    "en": "Try another",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1408",
+    "zh": "换一个"
+  },
+  "profile_screensProfileEditBioLabel": {
+    "en": "Bio",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1432",
+    "zh": "简介"
+  },
+  "profile_screensProfileEditConflictTitle": {
+    "en": "Profile changed elsewhere",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1341",
+    "zh": "资料已在别处修改"
+  },
+  "profile_screensProfileEditFailureTitle": {
+    "en": "Save didn't finish",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1387, lib/features/profile/profile_v2_screens.dart:1698",
+    "zh": "保存未完成"
+  },
+  "profile_screensProfileEditOpenPrivacySubtitle": {
+    "en": "Whether holdings and trades are public, who can add you",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1479",
+    "zh": "持仓与交易是否公开、谁能加你"
+  },
+  "profile_screensProfileEditPermissionTitle": {
+    "en": "Your profile can't be changed in your region",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1377",
+    "zh": "当前地区不能修改资料"
+  },
+  "profile_screensProfileEditPermissionTitle2": {
+    "en": "This account can't change its profile",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1378",
+    "zh": "当前账号无权修改资料"
+  },
+  "profile_screensProfileEditSaveLabel": {
+    "en": "Saving…",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1316, lib/features/profile/profile_v2_screens.dart:1631",
+    "zh": "保存中…"
+  },
+  "profile_screensProfileEditSaveTitle": {
+    "en": "Edit profile",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1311",
+    "zh": "编辑资料"
+  },
+  "profile_screensProfileEditValidationTitle": {
+    "en": "Can't save",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1353",
+    "zh": "无法保存"
+  },
+  "profile_screensProfileEmptyMessage": {
+    "en": "Account profile hasn't loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1226",
+    "zh": "账号资料尚未读取。"
+  },
+  "profile_screensProfileEmptyTitle": {
+    "en": "No profile to show",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1225",
+    "zh": "还没有可展示的资料"
+  },
+  "profile_screensProfileErrorSource": {
+    "en": "Profile service",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1248",
+    "zh": "资料服务"
+  },
+  "profile_screensProfileLoopId": {
+    "en": "LOOP ID unreadable",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1023",
+    "zh": "LOOP ID 不可读"
+  },
+  "profile_screensProfileOpenEditLabel": {
+    "en": "Edit avatar and profile",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:940",
+    "zh": "编辑头像与资料"
+  },
+  "profile_screensProfileOpenPrivacyTitle": {
+    "en": "Privacy Center",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:536, lib/features/profile/profile_v2_screens.dart:1478, lib/features/profile/profile_v2_screens.dart:1620",
+    "zh": "隐私中心"
+  },
+  "profile_screensProfilePermissionTitle": {
+    "en": "This step needs two-step verification",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1237, lib/features/profile/profile_v2_screens.dart:1374, lib/features/profile/profile_v2_screens.dart:1685, lib/features/profile/profile_v2_screens.dart:1945",
+    "zh": "这一步需要二次验证"
+  },
+  "profile_screensProfilePermissionTitle2": {
+    "en": "Your profile can't be read or changed in your region",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1239",
+    "zh": "当前地区不能读取或修改资料"
+  },
+  "profile_screensProfilePermissionTitle3": {
+    "en": "This account can't read or change its profile",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1240",
+    "zh": "当前账号无权读取或修改资料"
+  },
+  "profile_screensProfileShareLoopIdLabel": {
+    "en": "Share card",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1005",
+    "zh": "分享名片"
+  },
+  "profile_screensProfileUnavailableTitle": {
+    "en": "Profile isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1219",
+    "zh": "资料暂不可用"
+  },
+  "profile_screensRegionBlocked": {
+    "en": "Your profile can't be read or changed in your region right now. Nothing changed. This isn't about your account; switching accounts won't change it.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:266",
+    "zh": "你所在的地区暂时不能读取或修改账号资料，没有发生任何变化。这与账号无关，换一个账号也不会改变结果。"
+  },
+  "profile_screensRegionBlocked2": {
+    "en": "Privacy settings can't be read or changed in your region right now. Nothing changed. This isn't about your account; switching accounts won't change it.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:289",
+    "zh": "你所在的地区暂时不能读取或修改隐私设置，没有发生任何变化。这与账号无关，换一个账号也不会改变结果。"
+  },
+  "profile_screensResource": {
+    "en": "Privacy settings",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1641",
+    "zh": "隐私设置"
+  },
+  "profile_screensS": {
+    "en": "Holdings and trades visible only to you",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:568",
+    "zh": "持仓与交易仅自己可见"
+  },
+  "profile_screensS2": {
+    "en": "Strangers can't send you friend requests",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1873",
+    "zh": "陌生人无法向你发好友申请"
+  },
+  "profile_screensS3": {
+    "en": "When off, friends can't open a direct message with you either",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1875",
+    "zh": "关闭后，好友也无法打开与你的私聊"
+  },
+  "profile_screensS4": {
+    "en": "When off, friends can't add you to small groups",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1877",
+    "zh": "关闭后，好友无法把你拉进小群"
+  },
+  "profile_screensSemanticLabel": {
+    "en": "Avatar",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:112, lib/features/profile/profile_v2_screens.dart:126",
+    "zh": "头像"
+  },
+  "profile_screensStepUpRequired": {
+    "en": "This step needs two-step verification, which isn't open yet. Nothing changed. Check Security Center for the verification methods available now.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:269",
+    "zh": "这一步需要二次验证，二次验证还没有开放，没有发生任何变化。请到安全中心查看当前可用的验证方式。"
+  },
+  "profile_screensStepUpRequired2": {
+    "en": "Changing privacy settings needs two-step verification, which isn't open yet. Nothing changed. Check Security Center for the verification methods available now.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:292",
+    "zh": "修改隐私设置需要二次验证，二次验证还没有开放，没有发生任何变化。请到安全中心查看当前可用的验证方式。"
+  },
+  "profile_screensSwitch": {
+    "en": "The profile action didn't finish.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:279",
+    "zh": "资料操作没有完成。"
+  },
+  "profile_screensSwitch2": {
+    "en": "The privacy action didn't finish.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:299",
+    "zh": "隐私操作没有完成。"
+  },
+  "profile_screensSwitch3": {
+    "en": "Anyone with your LOOP ID can add you",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1873",
+    "zh": "知道你 LOOP ID 的人可以加你"
+  },
+  "profile_screensSwitch4": {
+    "en": "Friends can open a direct message with you",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1875",
+    "zh": "已成为好友的人可以直接打开与你的私聊"
+  },
+  "profile_screensSwitch5": {
+    "en": "Friends can add you to small groups",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1877",
+    "zh": "好友可以把你拉进小群"
+  },
+  "profile_screensText": {
+    "en": "+ Add a bio",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1059",
+    "zh": "＋ 添加个人简介"
+  },
+  "profile_screensTitle": {
+    "en": "Nothing was changed",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_screens.dart:150",
+    "zh": "没有做任何更改"
+  },
+  "profile_screensUnavailable": {
+    "en": "The profile service isn't available right now. No changes were saved.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:260",
+    "zh": "资料服务当前不可用，没有任何修改被保存。"
+  },
+  "profile_screensUnavailable2": {
+    "en": "The privacy service isn't available right now. No changes were saved.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:283",
+    "zh": "隐私服务当前不可用，没有任何修改被保存。"
+  },
+  "profile_screensUnexpected": {
+    "en": "The profile action didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:278",
+    "zh": "资料操作没有完成，请稍后再试。"
+  },
+  "profile_screensUnexpected2": {
+    "en": "The privacy action didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:298",
+    "zh": "隐私操作没有完成，请稍后再试。"
+  },
+  "profile_screensUnknownProfileSurfaceTitle": {
+    "en": "Setting unavailable",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_screens.dart:144",
+    "zh": "设置不可用"
+  },
+  "profile_screensValidationFailed": {
+    "en": "Alias or bio is too long. Edit it and try again.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:274",
+    "zh": "别名或简介超出长度限制，请修改后重试。"
+  },
+  "profile_screensValidationFailed2": {
+    "en": "The submitted privacy settings weren't accepted. Check them and try again.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:296",
+    "zh": "提交的隐私设置不被接受，请检查后重试。"
+  },
+  "profile_screensValidationMessage": {
+    "en": "Alias must be 1–40 characters with no invisible characters.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1525",
+    "zh": "别名需要 1–40 个字符，且不能包含不可见字符。"
+  },
+  "profile_screensValidationMessage2": {
+    "en": "Bio can be up to 160 characters.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:1536",
+    "zh": "简介最多 160 个字符。"
+  },
+  "profile_screensVersionConflict": {
+    "en": "Your profile was changed elsewhere. Reload before saving.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:271",
+    "zh": "资料在别处已被修改。请重新载入后再保存。"
+  },
+  "profile_screensVersionConflict2": {
+    "en": "Privacy settings were changed elsewhere. Reload before saving.",
+    "placeholders": {},
+    "where": "lib/features/profile/profile_v2_screens.dart:294",
+    "zh": "隐私设置在别处已被修改。请重新载入后再保存。"
+  },
+  "profile_signOutButtonConfirmLabel": {
+    "en": "Sign out",
+    "placeholders": {},
+    "where": "lib/features/profile/sign_out_button.dart:26, lib/features/profile/sign_out_button.dart:69",
+    "zh": "退出登录"
+  },
+  "profile_signOutButtonLabel": {
+    "en": "Signing out…",
+    "placeholders": {},
+    "where": "lib/features/profile/sign_out_button.dart:69",
+    "zh": "正在退出…"
+  },
+  "profile_signOutButtonLoopSignOutConfirmBody": {
+    "en": "This device will stop getting notifications for this account, and the home screen data saved here will be cleared. Assets, friends and conversations in your account aren't affected; sign in again to get them back.",
+    "placeholders": {},
+    "where": "lib/features/profile/sign_out_button.dart:15",
+    "zh": "这台设备将不再收到这个账号的通知，本机保存的首屏数据会被清除。账号里的资产、好友与会话不受影响，重新登录即可恢复。"
+  },
+  "profile_signOutButtonLoopSignOutConfirmTitle": {
+    "en": "Sign out?",
+    "placeholders": {},
+    "where": "lib/features/profile/sign_out_button.dart:13",
+    "zh": "退出登录？"
+  }
+}

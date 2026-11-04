@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// What the confirmation says before this device leaves the account.
@@ -10,10 +11,10 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 /// device stops being addressed for this account's notifications and the
 /// first-screen answers stored for it are cleared. Nothing on the server is
 /// deleted, so signing in again brings everything back.
-const String loopSignOutConfirmTitle = '退出登录？';
-const String loopSignOutConfirmBody =
-    '这台设备将不再收到这个账号的通知，本机保存的首屏数据会被清除。'
-    '账号里的资产、好友与会话不受影响，重新登录即可恢复。';
+String get loopSignOutConfirmTitle =>
+    LoopL10n.current.profile_signOutButtonLoopSignOutConfirmTitle;
+String get loopSignOutConfirmBody =>
+    LoopL10n.current.profile_signOutButtonLoopSignOutConfirmBody;
 
 /// Asks before signing out (audit 2026-10-09 M14).
 ///
@@ -23,7 +24,7 @@ Future<bool> confirmLoopSignOut(BuildContext context) => confirmCommunityAction(
   context,
   title: loopSignOutConfirmTitle,
   body: loopSignOutConfirmBody,
-  confirmLabel: '退出登录',
+  confirmLabel: context.l10n.profile_signOutButtonConfirmLabel,
   sheetKey: 'sign-out-confirm-sheet',
 );
 
@@ -66,7 +67,9 @@ class _LoopSignOutButtonState extends State<LoopSignOutButton> {
   Widget build(BuildContext context) => Padding(
     padding: widget.padding,
     child: LoopButton(
-      label: _running ? '正在退出…' : '退出登录',
+      label: _running
+          ? context.l10n.profile_signOutButtonLabel
+          : context.l10n.profile_signOutButtonConfirmLabel,
       block: true,
       onPressed: _running ? null : () => unawaited(_press()),
     ),

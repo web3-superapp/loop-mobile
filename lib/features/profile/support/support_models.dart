@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// `support` models (decision 0037).
 ///
@@ -7,19 +8,29 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 /// operator script, attachments are permanently unavailable, and the urgent
 /// escalation entry is copy rather than a second transport.
 enum LoopSupportCategory {
-  account('account', '账号'),
-  security('security', '安全'),
-  wallet('wallet', '钱包'),
-  trade('trade', '交易'),
-  launch('launch', 'Launch'),
-  mining('mining', '挖矿'),
-  community('community', '社区'),
-  other('other', '其他');
+  account('account'),
+  security('security'),
+  wallet('wallet'),
+  trade('trade'),
+  launch('launch'),
+  mining('mining'),
+  community('community'),
+  other('other');
 
-  const LoopSupportCategory(this.wireName, this.label);
+  const LoopSupportCategory(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopSupportCategory.account =>
+      LoopL10n.current.profileSupport_modelsAccount,
+    LoopSupportCategory.security => LoopL10n.current.common_security,
+    LoopSupportCategory.wallet => LoopL10n.current.profileSupport_modelsWallet,
+    LoopSupportCategory.trade => LoopL10n.current.common_trade,
+    LoopSupportCategory.launch => 'Launch',
+    LoopSupportCategory.mining => LoopL10n.current.common_mining,
+    LoopSupportCategory.community => LoopL10n.current.common_community,
+    LoopSupportCategory.other => LoopL10n.current.profileSupport_modelsOther,
+  };
 
   static LoopSupportCategory? tryParse(String value) {
     for (final category in values) {
@@ -30,14 +41,20 @@ enum LoopSupportCategory {
 }
 
 enum LoopSupportTicketStatus {
-  open('open', '待处理'),
-  answered('answered', '已回复'),
-  closed('closed', '已关闭');
+  open('open'),
+  answered('answered'),
+  closed('closed');
 
-  const LoopSupportTicketStatus(this.wireName, this.label);
+  const LoopSupportTicketStatus(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopSupportTicketStatus.open => LoopL10n.current.profileSupport_modelsOpen,
+    LoopSupportTicketStatus.answered =>
+      LoopL10n.current.profileSupport_modelsAnswered,
+    LoopSupportTicketStatus.closed =>
+      LoopL10n.current.profileSupport_modelsClosed,
+  };
 
   static LoopSupportTicketStatus? tryParse(String value) {
     for (final status in values) {
@@ -48,14 +65,19 @@ enum LoopSupportTicketStatus {
 }
 
 enum LoopSupportEventType {
-  created('created', '已提交'),
-  answered('answered', '客服回复'),
-  closed('closed', '已关闭');
+  created('created'),
+  answered('answered'),
+  closed('closed');
 
-  const LoopSupportEventType(this.wireName, this.label);
+  const LoopSupportEventType(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopSupportEventType.created => LoopL10n.current.common_submitted,
+    LoopSupportEventType.answered =>
+      LoopL10n.current.profileSupport_modelsAnswered2,
+    LoopSupportEventType.closed => LoopL10n.current.profileSupport_modelsClosed,
+  };
 
   static LoopSupportEventType? tryParse(String value) {
     for (final type in values) {
@@ -66,13 +88,16 @@ enum LoopSupportEventType {
 }
 
 enum LoopSupportActor {
-  user('user', '你'),
-  operator('operator', 'LOOP 客服');
+  user('user'),
+  operator('operator');
 
-  const LoopSupportActor(this.wireName, this.label);
+  const LoopSupportActor(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopSupportActor.user => LoopL10n.current.profileSupport_modelsUser,
+    LoopSupportActor.operator => LoopL10n.current.profileSupport_modelsOperator,
+  };
 
   static LoopSupportActor? tryParse(String value) {
     for (final actor in values) {
@@ -194,13 +219,22 @@ final class LoopSupportTicketResult {
 /// Why a typed body is not yet sendable. Every value names the server rule it
 /// would break, so the page never shows a disabled button without a reason.
 enum LoopSupportDraftProblem {
-  empty('请先描述你遇到的问题。'),
-  tooLong('正文超过 2000 码点，请精简后再提交。'),
-  unsafeCharacters('正文含有控制字符或不可见字符（例如换行、方向控制符），请删除后再提交。');
+  empty(),
+  tooLong(),
+  unsafeCharacters();
 
-  const LoopSupportDraftProblem(this.explanation);
+  const LoopSupportDraftProblem();
 
-  final String explanation;
+  String get explanation => switch (this) {
+    LoopSupportDraftProblem.empty =>
+      LoopL10n.current.profileSupport_modelsEmpty,
+
+    LoopSupportDraftProblem.tooLong =>
+      LoopL10n.current.profileSupport_modelsTooLong,
+
+    LoopSupportDraftProblem.unsafeCharacters =>
+      LoopL10n.current.profileSupport_modelsUnsafeCharacters,
+  };
 }
 
 /// A validated draft. Length is counted in code points, exactly as the server

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// D20 security models (decision 0037).
 ///
@@ -46,12 +47,15 @@ enum LoopDeviceSessionStatus {
 
 /// The only authentication strength the contract can report today.
 enum LoopDeviceAuthStrength {
-  providerAuthenticated('providerAuthenticated', 'Privy 已验证');
+  providerAuthenticated('providerAuthenticated');
 
-  const LoopDeviceAuthStrength(this.wireName, this.label);
+  const LoopDeviceAuthStrength(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopDeviceAuthStrength.providerAuthenticated =>
+      LoopL10n.current.profileSecurity_modelsProviderAuthenticated,
+  };
 
   static LoopDeviceAuthStrength? tryParse(String value) {
     for (final strength in values) {
@@ -219,18 +223,41 @@ final class LoopDeviceRevocation {
 
 /// The six Privy security methods, in contract order.
 enum LoopSecurityCapabilityId {
-  mfa('mfa', '多因素验证', '登录与敏感操作需要第二个因素。'),
-  passkey('passkey', 'Passkey', '用设备生物识别代替密码。'),
-  recoveryPassword('recoveryPassword', '恢复密码', '由你保管的一段口令，用来在新设备恢复钱包。'),
-  autoRecovery('autoRecovery', '自动恢复', '由 Provider 托管的恢复分片。'),
-  socialRecovery('socialRecovery', '社交恢复', '2-of-3 守护人共同确认才能恢复。'),
-  keyExport('keyExport', '导出私钥', '把私钥带走，不受 LOOP 或 Privy 限制。');
+  mfa('mfa'),
+  passkey('passkey'),
+  recoveryPassword('recoveryPassword'),
+  autoRecovery('autoRecovery'),
+  socialRecovery('socialRecovery'),
+  keyExport('keyExport');
 
-  const LoopSecurityCapabilityId(this.wireName, this.label, this.description);
+  const LoopSecurityCapabilityId(this.wireName);
 
   final String wireName;
-  final String label;
-  final String description;
+  String get label => switch (this) {
+    LoopSecurityCapabilityId.mfa => LoopL10n.current.profileSecurity_modelsMfa,
+    LoopSecurityCapabilityId.passkey => 'Passkey',
+    LoopSecurityCapabilityId.recoveryPassword =>
+      LoopL10n.current.profileSecurity_modelsRecoveryPassword,
+    LoopSecurityCapabilityId.autoRecovery =>
+      LoopL10n.current.profileSecurity_modelsAutoRecovery,
+    LoopSecurityCapabilityId.socialRecovery =>
+      LoopL10n.current.profileSecurity_modelsSocialRecovery,
+    LoopSecurityCapabilityId.keyExport =>
+      LoopL10n.current.profileSecurity_modelsKeyExport,
+  };
+  String get description => switch (this) {
+    LoopSecurityCapabilityId.mfa => LoopL10n.current.profileSecurity_modelsMfa2,
+    LoopSecurityCapabilityId.passkey =>
+      LoopL10n.current.profileSecurity_modelsPasskey,
+    LoopSecurityCapabilityId.recoveryPassword =>
+      LoopL10n.current.profileSecurity_modelsRecoveryPassword2,
+    LoopSecurityCapabilityId.autoRecovery =>
+      LoopL10n.current.profileSecurity_modelsAutoRecovery2,
+    LoopSecurityCapabilityId.socialRecovery =>
+      LoopL10n.current.profileSecurity_modelsSocialRecovery2,
+    LoopSecurityCapabilityId.keyExport =>
+      LoopL10n.current.profileSecurity_modelsKeyExport2,
+  };
 
   static LoopSecurityCapabilityId? tryParse(String value) {
     for (final id in values) {

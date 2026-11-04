@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -154,14 +155,16 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             // R2 the one sheet-title step (decision 0191 M15).
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 12),
-              child: LoopSheetHeading('裁剪头像'),
+              child: LoopSheetHeading(
+                context.l10n.profilePresentation_avatarEditorLoopSheetHeading,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
-                '拖动、双指缩放，方框里的部分就是头像。',
+                context.l10n.profilePresentation_avatarEditorBuild,
                 // R19 sheet support copy (decision 0191 M17).
                 style: LoopType.bodySm,
               ),
@@ -218,7 +221,7 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
                   Expanded(
                     child: LoopButton(
                       key: const ValueKey<String>('avatar-crop-cancel'),
-                      label: '取消',
+                      label: context.l10n.common_cancel,
                       block: true,
                       onPressed: _busy
                           ? null
@@ -229,7 +232,13 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
                   Expanded(
                     child: LoopButton(
                       key: const ValueKey<String>('avatar-crop-confirm'),
-                      label: _busy ? '处理中…' : '使用这张',
+                      label: _busy
+                          ? context
+                                .l10n
+                                .profilePresentation_avatarEditorAvatarCropConfirmLabel
+                          : context
+                                .l10n
+                                .profilePresentation_avatarEditorAvatarCropConfirmLabel2,
                       primary: true,
                       block: true,
                       onPressed: _busy ? null : () => unawaited(_confirm()),
@@ -370,7 +379,11 @@ class _LoopAvatarEditorState extends ConsumerState<LoopAvatarEditor> {
           children: <Widget>[
             LoopButton(
               key: const ValueKey<String>('loop-avatar-upload'),
-              label: _uploading ? '上传中…' : '上传头像',
+              label: _uploading
+                  ? context.l10n.common_uploading
+                  : context
+                        .l10n
+                        .profilePresentation_avatarEditorLoopAvatarUploadLabel,
               icon: 'camera',
               onPressed: widget.enabled && usable && !_uploading
                   ? () => unawaited(_upload())
@@ -379,7 +392,9 @@ class _LoopAvatarEditorState extends ConsumerState<LoopAvatarEditor> {
             if (custom)
               LoopButton(
                 key: const ValueKey<String>('loop-avatar-reset'),
-                label: '用默认头像',
+                label: context
+                    .l10n
+                    .profilePresentation_avatarEditorLoopAvatarResetLabel,
                 onPressed: widget.enabled && !_uploading
                     ? () => widget.onChanged(null)
                     : null,
@@ -390,7 +405,9 @@ class _LoopAvatarEditorState extends ConsumerState<LoopAvatarEditor> {
           const SizedBox(height: 8),
           Text(
             key: const ValueKey<String>('loop-avatar-upload-unavailable'),
-            '头像上传暂未开放，先用默认头像。',
+            context
+                .l10n
+                .profilePresentation_avatarEditorLoopAvatarUploadUnavailable,
             textAlign: TextAlign.center,
             style: LoopType.caption.copyWith(
               color: LoopGround.auxiliaryOf(context),

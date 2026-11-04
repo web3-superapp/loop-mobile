@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -37,14 +38,16 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// have no backend source and are deliberately absent.
 
 /// What a method that the account could turn on, but has not, is called.
-const _securityMethodOffLabel = '未开启';
+String get _securityMethodOffLabel =>
+    LoopL10n.current.profileSecurity_screensSecurityMethodOffLabel;
 
 /// What a method LOOP has not shipped is called.
 ///
 /// 「未开启」 on a row whose own sentence says 「还没有开放」 reads as the
 /// account's own omission, and the two badges sat side by side on one page.
 /// A method nobody can turn on is not switched off; it does not exist yet.
-const _securityMethodDeferredLabel = '还没有开放';
+String get _securityMethodDeferredLabel =>
+    LoopL10n.current.profileSecurity_screensSecurityMethodDeferredLabel;
 
 /// Whether this reason means LOOP has not delivered the method, as opposed to
 /// the account not having enabled one that exists.
@@ -120,13 +123,13 @@ class _SecurityMethodRow extends LoopRecordRow {
                  keyName: 'security-method-${capability.id.wireName}',
                  title: capability.id.label,
                  body: capability.id.description,
-                 trailing: const LoopBadge(_securityMethodDeferredLabel),
+                 trailing: LoopBadge(_securityMethodDeferredLabel),
                )
-             : const LoopBadge(_securityMethodOffLabel),
+             : LoopBadge(_securityMethodOffLabel),
          semanticLabel: deferred
-             ? '${capability.id.label}，$_securityMethodDeferredLabel，'
+             ? '${capability.id.label}${LoopL10n.current.common_listSeparator}$_securityMethodDeferredLabel${LoopL10n.current.common_listSeparator}'
                    '${capability.id.description}'
-             : '${capability.id.label}，$_securityMethodOffLabel，'
+             : '${capability.id.label}${LoopL10n.current.common_listSeparator}$_securityMethodOffLabel${LoopL10n.current.common_listSeparator}'
                    '${loopReasonCodeText(capability.reasonCode)}',
        );
 }
@@ -213,12 +216,14 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('security-screen'),
         archetype: LoopPageArchetype.action,
-        title: '安全中心',
+        title: context.l10n.common_securityCenter,
         onBack: widget.onBack,
         block: blocked
             ? LoopCapabilityPageBlock.of(
                 key: const ValueKey<String>('security-capability-block'),
-                title: '安全中心当前不可用',
+                title: context
+                    .l10n
+                    .profileSecurity_screensSecurityCapabilityBlockTitle,
                 capability: capability,
                 fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
               )
@@ -228,12 +233,12 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
           // of six put 「导出私钥」 next to 「多因素验证」 and lost the reading
           // order the page is arranged by (audit 2026-09-21 §J.5).
           if (!methods.isReady) ...<Widget>[
-            const LoopLabel('验证'),
+            LoopLabel(context.l10n.profileSecurity_screensLoopLabel),
             LoopChainStateBlock(
               keyPrefix: 'security-methods',
               phase: methods.phase,
               failureKind: methods.failureKind,
-              emptyMessage: '没有可展示的安全能力',
+              emptyMessage: context.l10n.profileSecurity_screensEmptyMessage,
               onRetry: () => unawaited(
                 ref
                     .read(securityCapabilitiesControllerProvider.notifier)
@@ -245,10 +250,14 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
               // S278 · decision 0236: the 「由 Privy 提供」 card that closed
               // the page is the (i) beside the first group's title.
               scopeNote: !anyAvailable
-                  ? '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。'
+                  ? context.l10n.profileSecurity_screensScopeNote
                   : notOpen!.isEmpty
-                  ? '这些保护由 Privy 提供。'
-                  : '这些保护由 Privy 提供。${notOpen.join('、')}开放后会在这里显示。',
+                  ? context.l10n.profileSecurity_screensScopeNote2
+                  : context.l10n.profileSecurity_screensScopeNote3(
+                      notOpen.join(
+                        LoopL10n.current.profileSecurity_screensListSeparator,
+                      ),
+                    ),
               capabilities: methods.value!,
               onNavigate: widget.onNavigate,
               mfa: mfa,
@@ -260,7 +269,7 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
           // Decision 0152: the large-amount step-up is this device's and this
           // account's own rule. It reads no security resource, so it stays
           // whatever the two reads above answered.
-          const LoopLabel('交易验证'),
+          LoopLabel(context.l10n.profileSecurity_screensLoopLabel2),
           // S288: the one row stands on the group's block like every other
           // group on this page; it reads its own state, so it goes in as a
           // child rather than a plain row.
@@ -268,13 +277,13 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
             key: ValueKey<String>('security-step-up-group'),
             children: <Widget>[LoopStepUpSettingRow()],
           ),
-          const LoopLabel('设备'),
+          LoopLabel(context.l10n.profileSecurity_screensLoopLabel3),
           if (!summary.isReady)
             LoopChainStateBlock(
               keyPrefix: 'security-summary',
               phase: summary.phase,
               failureKind: summary.failureKind,
-              emptyMessage: '还没有安全汇总',
+              emptyMessage: context.l10n.profileSecurity_screensEmptyMessage2,
               onRetry: () => unawaited(
                 ref.read(securitySummaryControllerProvider.notifier).reload(),
               ),
@@ -284,28 +293,37 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
               block: resource!.devices,
               onOpenDevices: () => widget.onNavigate('devices'),
             ),
-            const LoopLabel('授权盘点'),
+            LoopLabel(context.l10n.common_tokenApprovals),
             _SecurityApprovalsBlock(block: resource.approvals),
-            const LoopLabel('通知'),
+            LoopLabel(context.l10n.common_notifications),
             LoopRecordGroup(
               rows: <LoopRecordRow>[
                 LoopRecordRow(
                   key: const ValueKey<String>('security-notification-lock'),
-                  title: '安全事件通知',
-                  subtitle: '始终开启，无法关闭',
+                  title: context
+                      .l10n
+                      .profileSecurity_screensSecurityNotificationLockTitle,
+                  subtitle: context
+                      .l10n
+                      .profileSecurity_screensSecurityNotificationLockSubtitle,
                   // 「保存的是意图，不代…」 stopped before the qualification that
                   // is the whole point of the sentence.
                   subtitleMaxLines: 2,
-                  trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
+                  trailingBadge: LoopBadge(
+                    context.l10n.common_on,
+                    kind: LoopBadgeKind.up,
+                  ),
                   onTap: () => widget.onNavigate('notif-settings'),
                 ),
               ],
             ),
-            const LoopLabel('最近安全事件'),
+            LoopLabel(context.l10n.profileSecurity_screensLoopLabel4),
             _SecurityEventsBlock(block: resource.recentSecurityEvents),
             LoopProvenanceFooter(
               key: const ValueKey<String>('security-observed-at'),
-              text: '观察于 ${loopRelativeTime(resource.observedAt)}',
+              text: context.l10n.profileSecurity_screensSecurityObservedAtText(
+                loopRelativeTime(resource.observedAt),
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -324,7 +342,7 @@ const Set<LoopSecurityCapabilityId> loopHiddenSecurityCapabilities =
     <LoopSecurityCapabilityId>{LoopSecurityCapabilityId.recoveryPassword};
 
 /// What an available method that the account has turned on is called.
-const _securityMethodOnLabel = '已开启';
+String get _securityMethodOnLabel => LoopL10n.current.common_on;
 
 /// What 自动恢复 is called when the server says its flow is available.
 ///
@@ -333,7 +351,8 @@ const _securityMethodOnLabel = '已开启';
 /// answer on this device. Nothing on the device reads 自动恢复 back, so the
 /// row states that it is the default way, with its source, and never that it
 /// is switched on.
-const _securityMethodDefaultLabel = '默认方式';
+String get _securityMethodDefaultLabel =>
+    LoopL10n.current.profileSecurity_screensSecurityMethodDefaultLabel;
 
 /// The 自动恢复 row's source line (decision 0156): the server's reference
 /// without its engineering tag (「S60a: 」), else the S60a sentence itself.
@@ -369,10 +388,11 @@ LoopRecordRow _availableMethodRow({
         keyName: key.value,
         title: id.label,
         body: source,
-        trailing: const LoopBadge(_securityMethodDefaultLabel),
+        trailing: LoopBadge(_securityMethodDefaultLabel),
       ),
       position: position,
-      semanticLabel: '${id.label}，$_securityMethodDefaultLabel，$source',
+      semanticLabel:
+          '${id.label}${LoopL10n.current.common_listSeparator}$_securityMethodDefaultLabel${LoopL10n.current.common_listSeparator}$source',
     );
   }
   final passkey = id == LoopSecurityCapabilityId.passkey;
@@ -387,9 +407,12 @@ LoopRecordRow _availableMethodRow({
       title: id.label,
       subtitle: reason,
       subtitleMaxLines: 2,
-      trailingBadge: const LoopBadge('不可用'),
+      trailingBadge: LoopBadge(LoopL10n.current.common_unavailable),
       position: position,
-      semanticLabel: '${id.label}，不可用，$reason',
+      semanticLabel: LoopL10n.current.profileSecurity_screensSemanticLabel(
+        id.label,
+        reason,
+      ),
     );
   }
   switch (mfa.phase) {
@@ -402,10 +425,12 @@ LoopRecordRow _availableMethodRow({
           keyName: key.value,
           title: id.label,
           body: id.description,
-          trailing: const LoopBadge('读取中'),
+          trailing: LoopBadge(LoopL10n.current.common_loading),
         ),
         position: position,
-        semanticLabel: '${id.label}，正在读取登录服务的回答',
+        semanticLabel: LoopL10n.current.profileSecurity_screensSemanticLabel2(
+          id.label,
+        ),
       );
     case LoopMfaPhase.unavailable:
       final reason = loopMfaFailureText(
@@ -414,12 +439,17 @@ LoopRecordRow _availableMethodRow({
       return LoopRecordRow(
         key: key,
         title: id.label,
-        subtitle: '$reason点按重试。',
+        subtitle: LoopL10n.current.profileSecurity_screensSubtitle(reason),
         subtitleMaxLines: 2,
-        trailingBadge: const LoopBadge('读不到'),
+        trailingBadge: LoopBadge(
+          LoopL10n.current.profileSecurity_screensLoopBadge,
+        ),
         onTap: onRetry,
         position: position,
-        semanticLabel: '${id.label}，读不到，$reason点按重试',
+        semanticLabel: LoopL10n.current.profileSecurity_screensSemanticLabel3(
+          id.label,
+          reason,
+        ),
       );
     case LoopMfaPhase.known:
       break;
@@ -434,7 +464,9 @@ LoopRecordRow _availableMethodRow({
         .whereType<String>()
         .where((label) => label.trim().isNotEmpty)
         .toList(growable: false);
-    detail = named.isEmpty ? '登录服务说这个账号已经有 Passkey' : named.join(' · ');
+    detail = named.isEmpty
+        ? LoopL10n.current.profileSecurity_screensIf
+        : named.join(' · ');
   } else {
     detail = mfa.enrollments.map((one) => one.kind.label).join(' · ');
   }
@@ -461,8 +493,15 @@ LoopRecordRow _availableMethodRow({
     onTap: mfa.isBusy ? null : (passkey ? onOpenPasskey : onOpenMfa),
     position: position,
     semanticLabel: on
-        ? '${id.label}，$label：$detail'
-        : '${id.label}，$label，点按开启',
+        ? LoopL10n.current.profileSecurity_screensSemanticLabelDetail(
+            detail,
+            id.label,
+            label,
+          )
+        : LoopL10n.current.profileSecurity_screensSemanticLabel4(
+            id.label,
+            label,
+          ),
   );
 }
 
@@ -552,12 +591,12 @@ class _SecurityMethodGroup extends StatelessWidget {
     final deferred = items
         .where((item) => !item.isAvailable)
         .toList(growable: false);
-    Widget title(String text) => LoopInfoLabel(
+    Widget title(String text, String id) => LoopInfoLabel(
       text,
-      key: ValueKey<String>('security-label-$text'),
+      key: ValueKey<String>('security-label-$id'),
       info: LoopInfoButton(
         key: const ValueKey<String>('security-scope-info'),
-        title: '这些保护由谁提供',
+        title: context.l10n.profileSecurity_screensSecurityScopeInfoTitle,
         sheetKey: 'security-scope-info-sheet',
         notes: <LoopInfoNote>[
           LoopInfoNote(
@@ -570,17 +609,21 @@ class _SecurityMethodGroup extends StatelessWidget {
     return Column(
       children: <Widget>[
         if (verification.isNotEmpty) ...<Widget>[
-          title('验证'),
+          title(context.l10n.profileSecurity_screensLoopLabel, 'verification'),
           LoopRecordGroup(rows: _rows(verification)),
         ],
         if (recovery.isNotEmpty) ...<Widget>[
-          if (verification.isEmpty) title('恢复') else const LoopLabel('恢复'),
+          if (verification.isEmpty)
+            title(context.l10n.profileSecurity_screensTitle, 'recovery')
+          else
+            LoopLabel(context.l10n.profileSecurity_screensTitle),
           LoopRecordGroup(rows: _rows(recovery)),
         ],
         if (deferred.isNotEmpty)
           LoopDisclosure(
             key: const ValueKey<String>('security-methods-guide'),
-            summary: '这些保护怎么开启',
+            summary:
+                context.l10n.profileSecurity_screensSecurityMethodsGuideSummary,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Column(
@@ -625,7 +668,9 @@ class _SecurityDevicesBlock extends StatelessWidget {
       LoopSecurityDevicesUnavailable(fact: final fact) =>
         LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-devices-unavailable'),
-          label: '设备与会话读不到',
+          label: context
+              .l10n
+              .profileSecurity_screensSecurityDevicesUnavailableLabel,
           fact: fact,
         ),
       LoopSecurityDevicesAvailable(
@@ -641,9 +686,15 @@ class _SecurityDevicesBlock extends StatelessWidget {
               rows: <LoopRecordRow>[
                 LoopRecordRow(
                   key: const ValueKey<String>('security-devices-entry'),
-                  title: '已登录设备',
-                  subtitle:
-                      '$sessions 个活跃会话 · 最近 ${policy.windowHours} 小时新增 $recent 个',
+                  title: context
+                      .l10n
+                      .profileSecurity_screensSecurityDevicesEntryTitle,
+                  subtitle: context.l10n
+                      .profileSecurity_screensSecurityDevicesEntrySubtitle(
+                        recent,
+                        sessions,
+                        policy.windowHours,
+                      ),
                   trailing: '$count',
                   onTap: onOpenDevices,
                 ),
@@ -654,11 +705,15 @@ class _SecurityDevicesBlock extends StatelessWidget {
                 key: const ValueKey<String>('security-high-risk-notice'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '最近新增了多个会话',
-                body:
-                    '最近 ${policy.windowHours} 小时内新建了 $recent 个会话，达到提示阈值 '
-                    '${policy.newSessionThreshold}。'
-                    '这只是提示，不会因此要求二次验证或冷却。',
+                title: context
+                    .l10n
+                    .profileSecurity_screensSecurityHighRiskNoticeTitle,
+                body: context.l10n
+                    .profileSecurity_screensSecurityHighRiskNoticeBody(
+                      policy.newSessionThreshold,
+                      recent,
+                      policy.windowHours,
+                    ),
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
                   12,
@@ -683,7 +738,9 @@ class _SecurityApprovalsBlock extends StatelessWidget {
       LoopSecurityApprovalsUnavailable(fact: final fact) =>
         LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-approvals-unavailable'),
-          label: '授权盘点读不到',
+          label: context
+              .l10n
+              .profileSecurity_screensSecurityApprovalsUnavailableLabel,
           fact: fact,
         ),
       LoopSecurityApprovalsAvailable(
@@ -700,13 +757,19 @@ class _SecurityApprovalsBlock extends StatelessWidget {
               rows: <LoopRecordRow>[
                 LoopRecordRow(
                   key: const ValueKey<String>('security-approvals-active'),
-                  title: '有效授权',
-                  trailingBadge: const LoopInfoButton(
+                  title: context
+                      .l10n
+                      .profileSecurity_screensSecurityApprovalsActiveTitle,
+                  trailingBadge: LoopInfoButton(
                     key: ValueKey<String>('security-approvals-active-info'),
-                    title: '有效授权',
+                    title: context
+                        .l10n
+                        .profileSecurity_screensSecurityApprovalsActiveTitle,
                     sheetKey: 'security-approvals-active-info-sheet',
                     notes: <LoopInfoNote>[
-                      LoopInfoNote(body: '当前钱包上仍然生效的 ERC-20 授权。'),
+                      LoopInfoNote(
+                        body: context.l10n.profileSecurity_screensBody,
+                      ),
                     ],
                   ),
                   trailing: '$active',
@@ -714,13 +777,19 @@ class _SecurityApprovalsBlock extends StatelessWidget {
                 ),
                 LoopRecordRow(
                   key: const ValueKey<String>('security-approvals-unlimited'),
-                  title: '无限额度授权',
-                  trailingBadge: const LoopInfoButton(
+                  title: context
+                      .l10n
+                      .profileSecurity_screensSecurityApprovalsUnlimitedTitle,
+                  trailingBadge: LoopInfoButton(
                     key: ValueKey<String>('security-approvals-unlimited-info'),
-                    title: '无限额度授权',
+                    title: context
+                        .l10n
+                        .profileSecurity_screensSecurityApprovalsUnlimitedTitle,
                     sheetKey: 'security-approvals-unlimited-info-sheet',
                     notes: <LoopInfoNote>[
-                      LoopInfoNote(body: '额度没有上限的授权，风险最高。'),
+                      LoopInfoNote(
+                        body: context.l10n.profileSecurity_screensBody2,
+                      ),
                     ],
                   ),
                   trailing: '$unlimited',
@@ -730,11 +799,13 @@ class _SecurityApprovalsBlock extends StatelessWidget {
             ),
             LoopProvenanceFooter(
               key: const ValueKey<String>('security-approvals-freshness'),
-              text:
-                  '授权记录自区块 ${loopGroupedFigure(coverageFrom.toString())} 起 · '
-                  '索引高度 ${loopGroupedFigure(indexed.toString())} / '
-                  '链头 ${loopGroupedFigure(head.toString())} · '
-                  '观察于 ${loopRelativeTime(observedAt)}',
+              text: context.l10n
+                  .profileSecurity_screensSecurityApprovalsFreshnessText(
+                    loopGroupedFigure(coverageFrom.toString()),
+                    loopGroupedFigure(indexed.toString()),
+                    loopGroupedFigure(head.toString()),
+                    loopRelativeTime(observedAt),
+                  ),
             ),
           ],
         ),
@@ -753,15 +824,18 @@ class _SecurityEventsBlock extends StatelessWidget {
       LoopSecurityEventsUnavailable(fact: final fact) =>
         LoopUnavailableLine.fact(
           key: const ValueKey<String>('security-events-unavailable'),
-          label: '最近安全事件读不到',
+          label: context
+              .l10n
+              .profileSecurity_screensSecurityEventsUnavailableLabel,
           fact: fact,
         ),
       LoopSecurityEventsAvailable(items: final items) when items.isEmpty =>
-        const LoopEmptyState(
+        LoopEmptyState(
           key: ValueKey<String>('security-events-empty'),
           illustration: LoopIllustration.history,
-          title: '还没有安全事件',
-          message: '目前只有"撤销其他设备"会记录一条安全事件。',
+          title: context.l10n.profileSecurity_screensSecurityEventsEmptyTitle,
+          message:
+              context.l10n.profileSecurity_screensSecurityEventsEmptyMessage,
           compact: true,
         ),
       LoopSecurityEventsAvailable(items: final items) => LoopRecordGroup(
@@ -770,12 +844,12 @@ class _SecurityEventsBlock extends StatelessWidget {
             LoopRecordRow(
               key: ValueKey<String>('security-event-${item.notificationId}'),
               title: item.payload['event'] == 'session_revoked'
-                  ? '撤销了一个设备会话'
-                  : '安全事件',
+                  ? context.l10n.profileSecurity_screensTitle2
+                  : context.l10n.profileSecurity_screensTitle3,
               subtitle:
-                  '${item.payload['platform'] ?? '未标注平台'} · '
+                  '${item.payload['platform'] ?? LoopL10n.current.profileSecurity_screensPlatformUnlabeled} · '
                   '${loopRelativeTime(item.createdAt)}'
-                  '${item.source == null ? '' : ' · 来源 ${item.source}'}',
+                  '${item.source == null ? '' : LoopL10n.current.profileSecurity_screensEventSourceSuffix(item.source)}',
               position: LoopRowPosition.middle,
             ),
         ],
@@ -809,7 +883,9 @@ class _DeviceManagementScreenState
     if (!mounted) return;
     LoopToast.show(
       context,
-      message: ok ? '已记录撤销，对方访问未终止' : '撤销没有完成',
+      message: ok
+          ? LoopL10n.current.profileSecurity_screensMessage
+          : LoopL10n.current.profileSecurity_screensMessage2,
       kind: ok ? LoopToastKind.warn : LoopToastKind.err,
     );
   }
@@ -835,7 +911,7 @@ class _DeviceManagementScreenState
     return LoopDashboardPage(
       key: const ValueKey<String>('devices-screen'),
       archetype: LoopPageArchetype.action,
-      title: '设备管理',
+      title: context.l10n.profileSecurity_screensDevicesScreenTitle,
       onBack: widget.onBack,
       // `.folio-primary.chalk-card`, as on the prototype's TRUSTED DEVICES
       // card. No stamp: LOOP has no trust signal to put in one.
@@ -845,17 +921,22 @@ class _DeviceManagementScreenState
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: '设备会话',
+        kicker: context.l10n.profileSecurity_screensDevicesFolioKicker,
         heading: directory == null
-            ? '设备管理'
-            : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
-        caption: '这里不显示设备名称和位置，只显示平台、版本、会话标识与登录时间。',
+            ? context.l10n.profileSecurity_screensDevicesScreenTitle
+            : context.l10n.profileSecurity_screensDevicesFolioHeading(
+                directory.activeCount,
+                directory.deviceCount,
+              ),
+        caption: context.l10n.profileSecurity_screensDevicesFolioCaption,
         ring: false,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('devices-capability-block'),
-              title: '设备管理当前不可用',
+              title: context
+                  .l10n
+                  .profileSecurity_screensDevicesCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
             )
@@ -864,7 +945,7 @@ class _DeviceManagementScreenState
         if (state.commandFailureKind != null)
           LoopErrorState(
             key: const ValueKey<String>('devices-command-error'),
-            title: '撤销没有完成',
+            title: context.l10n.profileSecurity_screensMessage2,
             reason: loopChainFailureReason(state.commandFailureKind),
             onRetry: () => unawaited(controller.reload()),
           ),
@@ -873,19 +954,17 @@ class _DeviceManagementScreenState
             key: const ValueKey<String>('devices-revoke-outcome'),
             icon: 'info',
             tone: LoopNoticeTone.warn,
-            title: '已记录撤销，对方访问未终止',
-            body:
-                'LOOP 已把该会话标记为已撤销，并拒绝之后携带它的请求。'
-                '对方设备的 Privy 访问令牌不受影响'
-                '（providerAccessTerminated: '
-                '${state.outcome!.providerAccessTerminated}）。',
+            title: context.l10n.profileSecurity_screensMessage,
+            body: context.l10n.profileSecurity_screensDevicesRevokeOutcomeBody(
+              state.outcome!.providerAccessTerminated,
+            ),
           ),
         if (!state.resource.isReady)
           LoopChainStateBlock(
             keyPrefix: 'devices',
             phase: state.resource.phase,
             failureKind: state.resource.failureKind,
-            emptyMessage: '没有可显示的设备会话',
+            emptyMessage: context.l10n.profileSecurity_screensEmptyMessage3,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -894,27 +973,34 @@ class _DeviceManagementScreenState
               key: const ValueKey<String>('devices-high-risk-notice'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '最近新增了多个会话',
-              body:
-                  '最近 ${directory.riskSignals.policy.windowHours} 小时内新建了 '
-                  '${directory.riskSignals.newSessions24h} 个会话，达到提示阈值 '
-                  '${directory.riskSignals.policy.newSessionThreshold}。'
-                  '这只是提示，不会因此要求二次验证。',
+              title: context
+                  .l10n
+                  .profileSecurity_screensSecurityHighRiskNoticeTitle,
+              body: context.l10n
+                  .profileSecurity_screensDevicesHighRiskNoticeBody(
+                    directory.riskSignals.policy.newSessionThreshold,
+                    directory.riskSignals.newSessions24h,
+                    directory.riskSignals.policy.windowHours,
+                  ),
             ),
           if (directory.currentSessionId == null)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('devices-current-unknown'),
               icon: 'info',
-              title: '无法标记本次会话',
-              body: '本机没有可用的会话标识，因此列表里没有任何一行被标为本次会话或本设备。',
+              title: context
+                  .l10n
+                  .profileSecurity_screensDevicesCurrentUnknownTitle,
+              body:
+                  context.l10n.profileSecurity_screensDevicesCurrentUnknownBody,
             ),
-          const LoopLabel('会话'),
+          LoopLabel(context.l10n.profileSecurity_screensLoopLabel5),
           if (directory.devices.isEmpty)
-            const LoopEmptyState(
+            LoopEmptyState(
               key: ValueKey<String>('devices-state-empty'),
               illustration: LoopIllustration.profile,
-              title: '还没有设备会话',
-              message: '这个账号还没有完成过一次设备初始化。',
+              title: context.l10n.profileSecurity_screensDevicesStateEmptyTitle,
+              message:
+                  context.l10n.profileSecurity_screensDevicesStateEmptyMessage,
               compact: true,
             )
           else
@@ -925,18 +1011,18 @@ class _DeviceManagementScreenState
               ],
             ),
           if (directory.truncated)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('devices-truncated'),
               icon: 'info',
-              title: '列表已被截断',
-              body: '最多显示 100 条会话，暂时不能翻页。',
+              title: context.l10n.profileSecurity_screensDevicesTruncatedTitle,
+              body: context.l10n.profileSecurity_screensDevicesTruncatedBody,
             ),
-          const LoopLabel('全部设备'),
+          LoopLabel(context.l10n.profileSecurity_screensLoopLabel6),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('devices-revoke-all'),
-              label: '下线所有其他设备',
+              label: context.l10n.profileSecurity_screensDevicesRevokeAllLabel,
               block: true,
               // Always refused: it needs a second factor that does not exist.
               onPressed: null,
@@ -944,7 +1030,9 @@ class _DeviceManagementScreenState
           ),
           LoopUnavailableLine.fact(
             key: const ValueKey<String>('devices-revoke-all-unavailable'),
-            label: '需要二次验证，当前不可执行',
+            label: context
+                .l10n
+                .profileSecurity_screensDevicesRevokeAllUnavailableLabel,
             fact: directory.revokeAll,
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -955,17 +1043,16 @@ class _DeviceManagementScreenState
           ),
           LoopProvenanceFooter(
             key: const ValueKey<String>('devices-observed-at'),
-            text: '观察于 ${loopRelativeTime(directory.observedAt)}',
+            text: context.l10n.profileSecurity_screensSecurityObservedAtText(
+              loopRelativeTime(directory.observedAt),
+            ),
           ),
         ],
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('devices-effect-notice'),
           icon: 'shield',
-          title: '撤销能做到什么',
-          body:
-              '撤销会把该会话记为已撤销，并让 LOOP 拒绝之后携带它的请求。'
-              '它不会终止对方设备上的 Privy 登录，所以不能理解为对方已经退出。'
-              '退出本机请使用设置页的退出登录。',
+          title: context.l10n.profileSecurity_screensDevicesEffectNoticeTitle,
+          body: context.l10n.profileSecurity_screensDevicesEffectNoticeBody,
         ),
         const SizedBox(height: 12),
       ],
@@ -983,22 +1070,35 @@ class _DeviceManagementScreenState
   LoopRecordRow _deviceRow(LoopDeviceSession device, {required bool busy}) {
     final revoked = !device.isActive;
     final badge = device.isCurrent
-        ? const LoopBadge('本次会话', kind: LoopBadgeKind.up)
+        ? LoopBadge(
+            LoopL10n.current.profileSecurity_screensLoopBadge2,
+            kind: LoopBadgeKind.up,
+          )
         : (revoked
-              ? const LoopBadge('已撤销')
+              ? LoopBadge(LoopL10n.current.profileSecurity_screensLoopBadge3)
               : (device.isCurrentDevice
-                    ? const LoopBadge('本设备 · 旧会话')
-                    : const LoopBadge('其他设备', kind: LoopBadgeKind.mute)));
+                    ? LoopBadge(
+                        LoopL10n.current.profileSecurity_screensLoopBadge4,
+                      )
+                    : LoopBadge(
+                        LoopL10n.current.profileSecurity_screensLoopBadge5,
+                        kind: LoopBadgeKind.mute,
+                      )));
     // The session in hand is being used right now, so its bootstrap
     // observation time is not a fact worth printing beside it.
     final state = revoked
-        ? '已于 ${loopRelativeTime(device.revokedAt!)}撤销'
+        ? LoopL10n.current.profileSecurity_screensDeviceRow(
+            loopRelativeTime(device.revokedAt!),
+          )
         : device.isCurrent
-        ? '正在使用'
-        : '最后活跃 ${loopRelativeTime(device.lastSeenAt)}';
-    final identity =
-        '会话 ${device.sessionShortId} · '
-        '首次登录 ${loopSessionCreatedAtLabel(device.createdAt)}';
+        ? LoopL10n.current.profileSecurity_screensDeviceRow2
+        : LoopL10n.current.profileSecurity_screensS(
+            loopRelativeTime(device.lastSeenAt),
+          );
+    final identity = LoopL10n.current.profileSecurity_screensIdentity(
+      loopSessionCreatedAtLabel(device.createdAt),
+      device.sessionShortId,
+    );
     return LoopRecordRow(
       key: ValueKey<String>('device-${device.sessionId}'),
       leading: LoopIcon(
@@ -1015,13 +1115,17 @@ class _DeviceManagementScreenState
           : () => unawaited(_confirmRevoke(device)),
       semanticLabel: <String>[
         device.displayName,
-        '会话 ${device.sessionShortId}',
+        LoopL10n.current.profileSecurity_screensLoopRecordRow(
+          device.sessionShortId,
+        ),
         if (device.isCurrent)
-          '本次会话'
+          LoopL10n.current.profileSecurity_screensLoopBadge2
         else if (device.isOlderSessionOfThisDevice)
-          '本设备的旧会话',
-        revoked ? '已撤销' : '活跃',
-      ].join('，'),
+          LoopL10n.current.profileSecurity_screensLoopRecordRow2,
+        revoked
+            ? LoopL10n.current.profileSecurity_screensLoopBadge3
+            : LoopL10n.current.profileSecurity_screensS2,
+      ].join(LoopL10n.current.common_listSeparator),
     );
   }
 }
@@ -1042,27 +1146,41 @@ class _RevokeConfirmSheet extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         // R2 the one sheet-title step (decision 0191 M12).
-        const LoopSheetHeading('撤销这个会话？'),
-        LoopKeyValue(label: '平台', value: device.platform.label),
-        LoopKeyValue(label: '客户端版本', value: device.clientVersion),
+        LoopSheetHeading(context.l10n.profileSecurity_screensLoopSheetHeading),
+        LoopKeyValue(
+          label: context.l10n.profileSecurity_screensLabel,
+          value: device.platform.label,
+        ),
+        LoopKeyValue(
+          label: context.l10n.profileSecurity_screensLabel2,
+          value: device.clientVersion,
+        ),
         // Which session this is: the sheet is the last screen before the
         // command, and two sessions of one device differ only here.
-        LoopKeyValue(label: '会话', value: device.sessionShortId),
         LoopKeyValue(
-          label: '首次登录',
+          label: context.l10n.profileSecurity_screensLoopLabel5,
+          value: device.sessionShortId,
+        ),
+        LoopKeyValue(
+          label: context.l10n.profileSecurity_screensLabel3,
           value: loopSessionCreatedAtLabel(device.createdAt),
         ),
         if (device.isOlderSessionOfThisDevice)
-          const LoopKeyValue(label: '归属', value: '本设备的旧会话'),
-        LoopKeyValue(label: '最后活跃', value: loopRelativeTime(device.lastSeenAt)),
-        const LoopNotice(
+          LoopKeyValue(
+            label: context.l10n.profileSecurity_screensLabel4,
+            value: context.l10n.profileSecurity_screensLoopRecordRow2,
+          ),
+        LoopKeyValue(
+          label: context.l10n.profileSecurity_screensLabel5,
+          value: loopRelativeTime(device.lastSeenAt),
+        ),
+        LoopNotice(
           key: ValueKey<String>('device-revoke-sheet-effect'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '撤销后会发生什么',
-          body:
-              'LOOP 会把这个会话记为已撤销，并拒绝之后携带它的请求，同时写入一条安全事件。'
-              '对方设备上的 Privy 登录不会被终止。',
+          title:
+              context.l10n.profileSecurity_screensDeviceRevokeSheetEffectTitle,
+          body: context.l10n.profileSecurity_screensDeviceRevokeSheetEffectBody,
           margin: EdgeInsets.fromLTRB(
             LoopSpacing.page,
             14,
@@ -1074,12 +1192,13 @@ class _RevokeConfirmSheet extends StatelessWidget {
           children: <Widget>[
             LoopButton(
               key: const ValueKey<String>('device-revoke-cancel'),
-              label: '取消',
+              label: context.l10n.common_cancel,
               onPressed: () => Navigator.of(context).pop(false),
             ),
             LoopButton(
               key: const ValueKey<String>('device-revoke-confirm'),
-              label: '撤销会话',
+              label:
+                  context.l10n.profileSecurity_screensDeviceRevokeConfirmLabel,
               primary: true,
               onPressed: () => Navigator.of(context).pop(true),
             ),
@@ -1126,42 +1245,42 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('key-export-capability-block'),
-              title: '导出私钥当前不可用',
+              title: context
+                  .l10n
+                  .profileSecurity_screensKeyExportCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
             )
           : null,
       archetype: LoopPageArchetype.action,
-      title: '导出私钥',
+      title: context.l10n.profileSecurity_modelsKeyExport,
       onBack: widget.onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
         key: ValueKey<String>('key-export-folio'),
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: '钱包密钥',
-        heading: '私钥由你控制',
-        caption: '导出前完成风险阅读、身份验证与本地显示确认。',
-        stamp: '敏感',
+        kicker: context.l10n.profileSecurity_screensKeyExportFolioKicker,
+        heading: context.l10n.profileSecurity_screensKeyExportFolioHeading,
+        caption: context.l10n.profileSecurity_screensKeyExportFolioCaption,
+        stamp: context.l10n.profileSecurity_screensKeyExportFolioStamp,
         ring: false,
       ),
       body: <Widget>[
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('key-export-risk'),
           icon: 'warn',
           tone: LoopNoticeTone.danger,
-          title: '导出即全部责任转移',
-          body:
-              '私钥泄露等于资产全部丢失。不要截图、不要发给任何人、不要存在联网笔记里。'
-              '没有任何人能帮你找回被盗的资产。',
+          title: context.l10n.profileSecurity_screensKeyExportRiskTitle,
+          body: context.l10n.profileSecurity_screensKeyExportRiskBody,
         ),
         if (method == null)
           LoopChainStateBlock(
             keyPrefix: 'key-export',
             phase: methods.phase,
             failureKind: methods.failureKind,
-            emptyMessage: '读不到导出能力的状态',
+            emptyMessage: context.l10n.profileSecurity_screensEmptyMessage4,
             skeleton: LoopSkeletonType.detail,
             onRetry: () => unawaited(
               ref
@@ -1172,26 +1291,33 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
         else
           LoopUnavailableLine(
             key: const ValueKey<String>('key-export-unavailable'),
-            label: '导出私钥当前不可用',
+            label: context
+                .l10n
+                .profileSecurity_screensKeyExportCapabilityBlockTitle,
             // The codec admits no available form for this method.
             reasonCode: method.reasonCode ?? method.evidenceReasonCode,
           ),
-        const LoopLabel('这一步现在不会发生什么'),
-        const LoopRecordGroup(
+        LoopLabel(context.l10n.profileSecurity_screensLoopLabel7),
+        LoopRecordGroup(
           rows: <LoopRecordRow>[
             // Both lines used to stop at an ellipsis one word before the
             // qualification that is their point (audit §J.7, §D #9).
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-verification'),
-              title: '不会要求你验证',
-              subtitle: '没有 Face ID、没有验证码：验证只在真的能导出时才有意义。',
+              title: context
+                  .l10n
+                  .profileSecurity_screensKeyExportNoVerificationTitle,
+              subtitle: context
+                  .l10n
+                  .profileSecurity_screensKeyExportNoVerificationSubtitle,
               subtitleMaxLines: 2,
               position: LoopRowPosition.first,
             ),
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-key'),
-              title: '不会显示任何私钥',
-              subtitle: '这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。',
+              title: context.l10n.profileSecurity_screensKeyExportNoKeyTitle,
+              subtitle:
+                  context.l10n.profileSecurity_screensKeyExportNoKeySubtitle,
               subtitleMaxLines: 2,
               position: LoopRowPosition.last,
             ),
@@ -1201,21 +1327,22 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
       // The prototype lays this button out under the last row it belongs to,
       // not pinned above the bottom inset (§D #9).
       actionsFollowBody: true,
-      primaryAction: const LoopButton(
+      primaryAction: LoopButton(
         key: ValueKey<String>('key-export-action'),
-        label: '验证并导出',
+        label: context.l10n.profileSecurity_screensKeyExportActionLabel,
         block: true,
         primary: true,
         onPressed: null,
       ),
       disclosure: LoopDisclosure(
         key: const ValueKey<String>('key-export-control-disclosure'),
-        summary: '控制说明',
+        summary: context
+            .l10n
+            .profileSecurity_screensKeyExportControlDisclosureSummary,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Text(
-            '导出会要求 Face ID、MFA 与一次风险确认，并在导出期间禁止截图与录屏。'
-            '这一页不会预先渲染任何私钥样例：一段被遮罩的字符会被读成「已经导出过」。',
+            context.l10n.profileSecurity_screensText,
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
@@ -1260,34 +1387,35 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('social-recovery-capability-block'),
-              title: '社交恢复当前不可用',
+              title: context
+                  .l10n
+                  .profileSecurity_screensSocialRecoveryCapabilityBlockTitle,
               capability: capability,
               fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
             )
           : null,
       archetype: LoopPageArchetype.action,
-      title: '社交恢复',
+      title: context.l10n.profileSecurity_modelsSocialRecovery,
       onBack: widget.onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
         key: ValueKey<String>('social-recovery-folio'),
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.action,
-        kicker: '社交恢复',
-        heading: '2-of-3 守护人',
-        caption: '守护人只参与恢复确认，不能查看资产或发起交易。',
-        stamp: '3 选 2',
+        kicker: context.l10n.profileSecurity_modelsSocialRecovery,
+        heading: context.l10n.profileSecurity_screensSocialRecoveryFolioHeading,
+        caption: context.l10n.profileSecurity_screensSocialRecoveryFolioCaption,
+        stamp: context.l10n.profileSecurity_screensSocialRecoveryFolioStamp,
         ring: false,
       ),
       body: <Widget>[
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('social-recovery-explainer'),
           icon: 'users',
-          title: '2-of-3 是什么意思',
-          body:
-              '指定 3 个你信任的人。丢失设备时，其中 2 人同意即可帮你恢复账户。'
-              '守护人需要在自己的 App 里主动确认，未确认的不计入 2-of-3。',
+          title:
+              context.l10n.profileSecurity_screensSocialRecoveryExplainerTitle,
+          body: context.l10n.profileSecurity_screensSocialRecoveryExplainerBody,
           margin: EdgeInsets.fromLTRB(
             LoopSpacing.page,
             14,
@@ -1300,7 +1428,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
             keyPrefix: 'social-recovery',
             phase: methods.phase,
             failureKind: methods.failureKind,
-            emptyMessage: '读不到社交恢复的状态',
+            emptyMessage: context.l10n.profileSecurity_screensEmptyMessage5,
             skeleton: LoopSkeletonType.detail,
             onRetry: () => unawaited(
               ref
@@ -1311,7 +1439,9 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         else
           LoopUnavailableLine(
             key: const ValueKey<String>('social-recovery-unavailable'),
-            label: '社交恢复当前不可用',
+            label: context
+                .l10n
+                .profileSecurity_screensSocialRecoveryCapabilityBlockTitle,
             // The codec admits no available form for this method.
             reasonCode: method.reasonCode ?? method.evidenceReasonCode,
           ),
@@ -1319,12 +1449,16 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         // empty frame, not a paragraph about why the list is missing
         // (audit 2026-09-21 §J.8). No count: there is no guardian resource to
         // count, so 「0 / 3」 would be a figure with no source.
-        const LoopLabel('守护人'),
-        const LoopInlineUnavailable(
+        LoopLabel(context.l10n.profileSecurity_screensLoopLabel8),
+        LoopInlineUnavailable(
           key: ValueKey<String>('social-recovery-no-guardians'),
           icon: 'user',
-          message: '还没有添加守护人',
-          detail: '守护人还没有开放，这里不会列出任何人。',
+          message: context
+              .l10n
+              .profileSecurity_screensSocialRecoveryNoGuardiansMessage,
+          detail: context
+              .l10n
+              .profileSecurity_screensSocialRecoveryNoGuardiansDetail,
           maxLines: 2,
           detailMaxLines: 4,
         ),
@@ -1332,21 +1466,21 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
       // The prototype puts 添加守护人 straight under the empty frame; pinned,
       // it sat about 280px below it (§D #9).
       actionsFollowBody: true,
-      primaryAction: const LoopButton(
+      primaryAction: LoopButton(
         key: ValueKey<String>('social-recovery-action'),
-        label: '添加守护人',
+        label: context.l10n.profileSecurity_screensSocialRecoveryActionLabel,
         block: true,
         primary: true,
         onPressed: null,
       ),
       disclosure: LoopDisclosure(
         key: const ValueKey<String>('social-recovery-disclosure'),
-        summary: '社交恢复状态说明',
+        summary:
+            context.l10n.profileSecurity_screensSocialRecoveryDisclosureSummary,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Text(
-            '守护人由你邀请，对方要在自己的 App 里主动确认；未确认的不计入 2-of-3。'
-            '守护人看不到你的资产，也不能发起交易。',
+            context.l10n.profileSecurity_screensText2,
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
         ),
