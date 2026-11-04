@@ -10513,6 +10513,551 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get shell_tabSquare => '广场';
 
   @override
+  String get socialPublicProfile_controllerAlreadyFriends => '你们已经是好友了。';
+
+  @override
+  String get socialPublicProfile_controllerCommand => '好友申请已发送';
+
+  @override
+  String get socialPublicProfile_controllerCommand2 => '已删除好友';
+
+  @override
+  String get socialPublicProfile_controllerCommand3 => '已拉黑';
+
+  @override
+  String get socialPublicProfile_controllerCooldown => '刚被拒绝过，过一段时间再试。';
+
+  @override
+  String get socialPublicProfile_controllerIncomingRequestPending =>
+      '对方已向你发出申请，去「好友申请」里处理。';
+
+  @override
+  String get socialPublicProfile_controllerNotFound => '找不到这个用户。';
+
+  @override
+  String get socialPublicProfile_controllerOutcomeUnknown =>
+      '结果未确认，请刷新后再看，不要重复提交。';
+
+  @override
+  String get socialPublicProfile_controllerOutgoingRequestPending =>
+      '已经发过申请，等对方处理。';
+
+  @override
+  String get socialPublicProfile_controllerPermissionDenied => '对方没有开放好友申请。';
+
+  @override
+  String get socialPublicProfile_controllerProfileRequired =>
+      '需要先完成 LOOP ID 激活。';
+
+  @override
+  String get socialPublicProfile_controllerRateLimited => '操作太频繁，请稍后再试。';
+
+  @override
+  String get socialPublicProfile_controllerS => '已取消关注';
+
+  @override
+  String get socialPublicProfile_controllerS2 => '已解除拉黑';
+
+  @override
+  String get socialPublicProfile_controllerSwitch => '好友申请没有发出，请稍后再试。';
+
+  @override
+  String get socialPublicProfile_controllerUnavailable => '好友服务暂不可用，没有发出申请。';
+
+  @override
+  String get socialPublicProfile_modelsTransferIn => '转入';
+
+  @override
+  String get socialPublicProfile_modelsTransferOut => '转出';
+
+  @override
+  String get socialPublicProfile_userBody => '删除后你们不再是好友，私聊记录保留。之后可以重新申请。';
+
+  @override
+  String get socialPublicProfile_userBody2 =>
+      '拉黑后对方看不到你的资料，也不能给你发消息或好友申请。可以在「屏蔽名单」里解除。';
+
+  @override
+  String get socialPublicProfile_userCountCommunities => '社区';
+
+  @override
+  String get socialPublicProfile_userCountFollowing => '关注';
+
+  @override
+  String get socialPublicProfile_userDetail => '链上数据暂不可用，这里不会显示 0 代替。';
+
+  @override
+  String get socialPublicProfile_userFriends => '已是好友';
+
+  @override
+  String get socialPublicProfile_userHoldingsHidden => '对方未公开持仓';
+
+  @override
+  String get socialPublicProfile_userHoldingsUnavailable => '持仓暂时读不到';
+
+  @override
+  String get socialPublicProfile_userLaunch2Row => 'Launch 链';
+
+  @override
+  String socialPublicProfile_userLoopRecordRow(Object? block) {
+    return '区块 #$block';
+  }
+
+  @override
+  String socialPublicProfile_userMembers(Object? formatDecimal) {
+    return '$formatDecimal 名成员';
+  }
+
+  @override
+  String get socialPublicProfile_userNone => '加好友';
+
+  @override
+  String get socialPublicProfile_userOneMember => '1 名成员';
+
+  @override
+  String get socialPublicProfile_userPendingIn => '处理申请';
+
+  @override
+  String get socialPublicProfile_userPendingOut => '已申请';
+
+  @override
+  String socialPublicProfile_userS(Object? launch2StageLabel) {
+    return 'Launch 链，$launch2StageLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userSwitch => '持仓总额';
+
+  @override
+  String socialPublicProfile_userSwitch2(Object? localTimestampLabel) {
+    return '读取于 $localTimestampLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle => '删除好友？';
+
+  @override
+  String socialPublicProfile_userTitle2(Object? displayName) {
+    return '拉黑 $displayName？';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle4 => '对方暂无钱包';
+
+  @override
+  String get socialPublicProfile_userTradesHidden => '对方未公开交易';
+
+  @override
+  String get socialPublicProfile_userTradesUnavailable => '交易暂时读不到';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel => '解除拉黑';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel2 => '拉黑';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedBody =>
+      '对方不能给你发消息或好友申请，你也看不到对方的持仓与交易。';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedTitle => '你已拉黑对方';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesEmptyTitle =>
+      '还没有加入社区';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesHiddenTitle =>
+      '对方未公开社区列表';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableDetail =>
+      '社区服务暂不可用，这里不会显示空列表代替。';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableMessage =>
+      '社区列表暂时读不到';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsEmptyTitle => '还没有持仓';
+
+  @override
+  String
+  get socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel =>
+      'MEME 持仓暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsTotal => '暂无报价';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetMessage =>
+      '请从聊天、搜索或成员列表进入。';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetTitle =>
+      '链接里没有可打开的用户';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSemanticLabel => '更多操作';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSheetBarrierLabel =>
+      '关闭更多操作';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundMessage =>
+      '账号不存在，或对方的资料对你不可见。';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundTitle => '找不到这个用户';
+
+  @override
+  String get socialPublicProfile_userUserProfileRemoveFriendLabel => '删除好友';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportLabel => '举报并屏蔽';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportUnavailable =>
+      '举报通道暂未开放；需要时可以先拉黑。';
+
+  @override
+  String get socialPublicProfile_userUserProfileScreenTitle => '用户资料';
+
+  @override
+  String get socialPublicProfile_userUserProfileShareCardSemanticLabel =>
+      '分享名片';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesEmptyTitle => '还没有交易';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel =>
+      'MEME 记录暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableDetail =>
+      '资料服务还没有开放，这一页没有读取任何内容。';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableMessage =>
+      '用户资料暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnblockLabel => '解除';
+
+  @override
+  String get socialQr_cardBarrierLabel => '关闭二维码名片';
+
+  @override
+  String get socialQr_cardCopy => '已复制邀请文字';
+
+  @override
+  String get socialQr_cardDismissed => '海报已生成，但没有选择分享去处';
+
+  @override
+  String get socialQr_cardFailed => '海报没有生成成功，没有任何内容离开这台设备';
+
+  @override
+  String get socialQr_cardLoopCommunityQrCard => '社区二维码名片';
+
+  @override
+  String get socialQr_cardLoopUserQrCard => '我的二维码名片';
+
+  @override
+  String socialQr_cardQrCardCodeSemanticLabel(Object? name) {
+    return '$name 的二维码';
+  }
+
+  @override
+  String get socialQr_cardQrCardCopyInviteLabel => '复制邀请文字';
+
+  @override
+  String get socialQr_cardQrCardCopyLinkLabel => '复制链接';
+
+  @override
+  String socialQr_cardQrCardPosterLabel(Object? name) {
+    return '$name 的二维码名片';
+  }
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel => '正在生成…';
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel2 => '分享海报';
+
+  @override
+  String get socialQr_cardQrCardUnavailableLabel => '二维码不可用';
+
+  @override
+  String socialQr_cardS(Object? link, Object? name) {
+    return '来 LOOP 加入『$name』\n$link';
+  }
+
+  @override
+  String get socialQr_cardShared => '海报已生成，请在分享面板中选择去处';
+
+  @override
+  String socialQr_cardSwitch(Object? name) {
+    return '来 LOOP 加入『$name』';
+  }
+
+  @override
+  String get socialQr_cardSwitch2 => '扫码加我';
+
+  @override
+  String socialQr_cardSwitch3(num memberCount) {
+    return '$memberCount 位成员';
+  }
+
+  @override
+  String get socialQr_cardSwitch4 => '扫码加入';
+
+  @override
+  String get socialQr_cardUnavailable => '本次运行没有装配系统分享，海报未生成';
+
+  @override
+  String get social_blocklistBlocklistCapabilityUnavailableTitle => '屏蔽名单当前不可用';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsDetail =>
+      '这两类屏蔽还没有开放，这里不会列出任何条目。';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsMessage => '合约与域名屏蔽暂不可用';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeBody =>
+      '屏蔽会立即断开双向关注，并让对方从搜索、关注列表和陌生人请求中消失。解除屏蔽不会自动恢复关注，需要重新关注。';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeTitle => '屏蔽的效果';
+
+  @override
+  String get social_blocklistBody => '解除后对方可以重新出现在搜索与陌生人请求里。已经断开的关注关系不会自动恢复。';
+
+  @override
+  String get social_blocklistCaption => '屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。';
+
+  @override
+  String get social_blocklistConfirmLabel => '解除屏蔽';
+
+  @override
+  String get social_blocklistDetail => '合约与域名屏蔽还没有开放，这里不会列出任何条目。';
+
+  @override
+  String get social_blocklistDomain => '域名';
+
+  @override
+  String get social_blocklistEmptyMessage => '没有屏蔽任何账号';
+
+  @override
+  String get social_blocklistEmptyReason => '在陌生人请求里选择\"举报\"会自动屏蔽发起人。';
+
+  @override
+  String social_blocklistHeading(num userCount) {
+    return '$userCount 个已屏蔽账号';
+  }
+
+  @override
+  String social_blocklistLabel(Object? userCount) {
+    return '用户 $userCount';
+  }
+
+  @override
+  String get social_blocklistLoopBadge => '解除';
+
+  @override
+  String social_blocklistMessage(Object? segmentLabels) {
+    return '\"$segmentLabels\" 屏蔽暂不可用';
+  }
+
+  @override
+  String get social_blocklistMessage2 => '已解除屏蔽';
+
+  @override
+  String social_blocklistSemanticLabel(Object? blockReasonText, Object? title) {
+    return '$title，$blockReasonText，可解除屏蔽';
+  }
+
+  @override
+  String get social_blocklistStamp => '私密';
+
+  @override
+  String social_blocklistTitle(Object? title) {
+    return '解除对 $title 的屏蔽？';
+  }
+
+  @override
+  String get social_connectionsBody => '取消关注后，你不会再看到对方的公开动态。';
+
+  @override
+  String get social_connectionsBody2 => '关注是单向的，不需要对方同意。对方需要开启\"可被发现\"才能被关注。';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage => '还没有关注任何人';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage2 => '还没有粉丝';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyReason =>
+      '被你屏蔽的账号不会出现在这里。';
+
+  @override
+  String get social_connectionsConnectionActionDmLabel => '打开私聊';
+
+  @override
+  String get social_connectionsConnectionActionFollowLabel => '取消关注';
+
+  @override
+  String get social_connectionsConnectionActionsSheetBarrierLabel => '关闭联系人操作';
+
+  @override
+  String get social_connectionsConnectionsCapabilityUnavailableTitle =>
+      '关注关系当前不可用';
+
+  @override
+  String get social_connectionsConnectionsDiscoverableNotice =>
+      '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。';
+
+  @override
+  String get social_connectionsConnectionsScreenTitle => '关注与粉丝';
+
+  @override
+  String social_connectionsConnectionsSegFollowersLabel(Object? followers) {
+    return '粉丝 $followers';
+  }
+
+  @override
+  String social_connectionsConnectionsSegFollowingLabel(Object? following) {
+    return '关注 $following';
+  }
+
+  @override
+  String get social_connectionsMessage => '已取消关注';
+
+  @override
+  String get social_connectionsResource => '关注关系';
+
+  @override
+  String get social_connectionsTitle => '取消关注？';
+
+  @override
+  String get social_connectionsTitle2 => '关注这个账号？';
+
+  @override
+  String get social_dmRequestsAccept => '接受';
+
+  @override
+  String get social_dmRequestsAccept2 => '接受后会建立联系。如果任一方屏蔽了对方，则无法建立。';
+
+  @override
+  String get social_dmRequestsAcceptTitle => '接受这个请求？';
+
+  @override
+  String get social_dmRequestsAccepted => '已接受';
+
+  @override
+  String get social_dmRequestsBarrierLabel => '关闭请求操作';
+
+  @override
+  String get social_dmRequestsCommunityStateEmptyEmptyMessage => '没有待处理的请求';
+
+  @override
+  String get social_dmRequestsDmRequestsActionFailureTitle => '上一次决定没有完成';
+
+  @override
+  String get social_dmRequestsDmRequestsCapabilityUnavailableTitle =>
+      '陌生人请求当前不可用';
+
+  @override
+  String get social_dmRequestsEmpty => '0 个待处理';
+
+  @override
+  String get social_dmRequestsIgnore => '忽略';
+
+  @override
+  String get social_dmRequestsIgnore2 => '忽略后对方在 24 小时内不能再次发起请求。';
+
+  @override
+  String get social_dmRequestsIgnoreTitle => '忽略这个请求？';
+
+  @override
+  String get social_dmRequestsIgnored => '已忽略';
+
+  @override
+  String get social_dmRequestsMessage => '已举报并屏蔽';
+
+  @override
+  String social_dmRequestsReady(Object? items) {
+    return '$items 个待处理';
+  }
+
+  @override
+  String get social_dmRequestsReport => '举报并屏蔽';
+
+  @override
+  String get social_dmRequestsReport2 => '举报会拒绝请求、屏蔽发起人并写入审计，同时断开双向关注。';
+
+  @override
+  String get social_dmRequestsReportTitle => '举报并屏蔽这个请求？';
+
+  @override
+  String get social_idCopyLabel => '复制 LOOP ID';
+
+  @override
+  String get social_idCopyMessage => '已复制 LOOP ID';
+
+  @override
+  String social_idShareLine(Object? loopId) {
+    return '在 LOOP 上加我为好友：$loopId';
+  }
+
+  @override
+  String get social_modelsSwitch => '由你手动屏蔽';
+
+  @override
+  String get social_modelsSwitch2 => '举报陌生人请求时自动屏蔽';
+
+  @override
+  String get social_modelsSwitch3 => '屏蔽原因';
+
+  @override
+  String get social_profileFaceLinkLabel => '查看我的主页';
+
+  @override
+  String social_profileFaceLinkLabel2(Object? name) {
+    return '查看 $name 的主页';
+  }
+
+  @override
+  String get social_publicProfileSheetBarrierLabel => '关闭公开资料';
+
+  @override
+  String get social_publicProfileSheetPublicProfileDmHint =>
+      '还没有建立联系时，会先请你发送一条消息请求。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowState => '未关注';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowUnknownBody =>
+      '这里读不到当前的关注状态，以操作后的结果为准。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableDetail =>
+      '这个账号没有公开资料，不能关注，也不能进行其他操作。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableMessage =>
+      '这个成员没有可用的公开资料';
+
+  @override
+  String get social_publicProfileSheetPublicProfileOpenPageLabel => '查看资料';
+
+  @override
   String get square_communityListBarrierLabel => '关闭排序规则';
 
   @override

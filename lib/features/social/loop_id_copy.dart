@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -59,7 +60,7 @@ class LoopIdCopyLine extends StatelessWidget {
         Semantics(
           key: copyKey,
           button: true,
-          label: '复制 LOOP ID',
+          label: context.l10n.social_idCopyLabel,
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
@@ -82,5 +83,9 @@ class LoopIdCopyLine extends StatelessWidget {
 
 /// Puts [loopId] alone on the clipboard and says so.
 Future<void> copyLoopId(BuildContext context, String loopId) async {
-  await LoopCopy.text(context, loopId, message: '已复制 LOOP ID');
+  await LoopCopy.text(
+    context,
+    loopId,
+    message: context.l10n.social_idCopyMessage,
+  );
 }

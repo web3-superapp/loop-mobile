@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
 /// 我的, the reader's own page (S343 · decision 0271: the `/wallet` tab).
@@ -64,7 +65,9 @@ class LoopProfileFaceLink extends StatelessWidget {
     if (location == null) return child;
     return Semantics(
       button: true,
-      label: isSelf ? '查看我的主页' : '查看 $name 的主页',
+      label: isSelf
+          ? context.l10n.social_profileFaceLinkLabel
+          : context.l10n.social_profileFaceLinkLabel2(name),
       child: LoopPressable(
         onTap: () {
           final open = onOpen;

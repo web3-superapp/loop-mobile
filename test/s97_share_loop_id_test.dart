@@ -65,7 +65,7 @@ void main() {
     test('share text is the ID line and one readable link', () {
       expect(
         loopIdShareTextFor(_ownId, backendBaseUrl: _stagingBase),
-        '在 LOOP 上加我为好友：LOOP-FE3EMCPE\n'
+        'Add me as a friend on LOOP: LOOP-FE3EMCPE\n'
         'https://api-staging.quant-dinger.cc/u/LOOP-FE3EMCPE',
       );
       expect(
@@ -75,7 +75,7 @@ void main() {
       // A build with no backend shares the ID alone, never a link to nowhere.
       expect(
         loopIdShareTextFor(_ownId, backendBaseUrl: ''),
-        '在 LOOP 上加我为好友：LOOP-FE3EMCPE',
+        'Add me as a friend on LOOP: LOOP-FE3EMCPE',
       );
     });
 
@@ -106,7 +106,7 @@ void main() {
       expect(
         tester.getSemantics(copy),
         matchesSemantics(
-          label: '复制 LOOP ID',
+          label: 'Copy LOOP ID',
           isButton: true,
           hasTapAction: true,
           isFocusable: true,
@@ -132,7 +132,7 @@ void main() {
       await _tap(tester, copy);
 
       expect(clipboard.text, _ownId);
-      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+      expect(find.text('LOOP ID copied'), findsOneWidget);
     });
 
     testWidgets('a long press on the ID copies it too', (tester) async {
@@ -145,7 +145,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(clipboard.text, _ownId);
-      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+      expect(find.text('LOOP ID copied'), findsOneWidget);
     });
 
     // S343 · decision 0271: 分享名片 is a 44 glyph on 我的's person, beside
@@ -215,10 +215,10 @@ void main() {
       );
       expect(
         clipboard.text,
-        '在 LOOP 上加我为好友：LOOP-FE3EMCPE\n'
+        'Add me as a friend on LOOP: LOOP-FE3EMCPE\n'
         'https://api-staging.quant-dinger.cc/u/LOOP-FE3EMCPE',
       );
-      expect(find.text('已复制邀请文字'), findsOneWidget);
+      expect(find.text('Invite text copied'), findsOneWidget);
     });
 
     testWidgets('an unread ID offers neither action', (tester) async {
@@ -254,7 +254,7 @@ void main() {
       expect(copy, findsOneWidget);
       // S97b: the same glyph behind the ID as on 我的, not a block button.
       expect(tester.getSize(copy), const Size(44, 44));
-      expect(find.text('复制 LOOP ID'), findsNothing);
+      expect(find.text('Copy LOOP ID'), findsNothing);
       expect(
         tester.getTopLeft(copy).dx,
         moreOrLessEquals(
@@ -270,7 +270,7 @@ void main() {
       await _tap(tester, copy);
 
       expect(clipboard.text, _peerId);
-      expect(find.text('已复制 LOOP ID'), findsOneWidget);
+      expect(find.text('LOOP ID copied'), findsOneWidget);
       // Copying is not a command on the account: the card stays open.
       expect(
         find.byKey(const ValueKey<String>('public-profile-sheet')),

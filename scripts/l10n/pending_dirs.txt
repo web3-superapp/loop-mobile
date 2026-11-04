@@ -15,7 +15,6 @@ lib/features/meme
 lib/features/mining
 lib/features/mining_rewards
 lib/features/profile
-lib/features/social
 lib/features/system
 lib/integrations
 lib/widgets

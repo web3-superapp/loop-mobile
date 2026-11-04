@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum ConnectionDirection {
   following('following'),
@@ -159,7 +160,7 @@ final class MessageRequestOutcome {
 }
 
 String blockReasonText(String reasonCode) => switch (reasonCode) {
-  'user_request' => '由你手动屏蔽',
-  'message_request_report' => '举报陌生人请求时自动屏蔽',
-  _ => '屏蔽原因',
+  'user_request' => LoopL10n.current.social_modelsSwitch,
+  'message_request_report' => LoopL10n.current.social_modelsSwitch2,
+  _ => LoopL10n.current.social_modelsSwitch3,
 };

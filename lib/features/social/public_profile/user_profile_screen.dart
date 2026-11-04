@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/social/public_profile/public_profile_contro
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -134,14 +135,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       return LoopStreamPage(
         key: const ValueKey<String>('user-profile-screen'),
         archetype: LoopPageArchetype.record,
-        title: '用户资料',
+        title: context.l10n.socialPublicProfile_userUserProfileScreenTitle,
         onBack: widget.onBack,
         collection: const SizedBox.shrink(),
-        block: const LoopEmptyState(
+        block: LoopEmptyState(
           key: ValueKey<String>('user-profile-invalid-target'),
           illustration: LoopIllustration.profile,
-          title: '链接里没有可打开的用户',
-          message: '请从聊天、搜索或成员列表进入。',
+          title: context
+              .l10n
+              .socialPublicProfile_userUserProfileInvalidTargetTitle,
+          message: context
+              .l10n
+              .socialPublicProfile_userUserProfileInvalidTargetMessage,
           compact: true,
         ),
       );
@@ -167,7 +172,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     return LoopStreamPage(
       key: const ValueKey<String>('user-profile-screen'),
       archetype: LoopPageArchetype.record,
-      title: record?.displayName ?? '用户资料',
+      title:
+          record?.displayName ??
+          context.l10n.socialPublicProfile_userUserProfileScreenTitle,
       kicker: communityPreviewKicker(state.mode),
       onBack: widget.onBack,
       onRefresh: record == null ? null : controller.reload,
@@ -175,7 +182,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         key: const ValueKey<String>('user-profile-list'),
         padding: const EdgeInsets.only(bottom: 32),
         children: <Widget>[
-          CommunityPreviewNotice(mode: state.mode, resource: '用户资料'),
+          CommunityPreviewNotice(
+            mode: state.mode,
+            resource:
+                context.l10n.socialPublicProfile_userUserProfileScreenTitle,
+          ),
           if (record == null)
             _RecordStateBlock(
               phase: state.phase,
@@ -298,7 +309,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   ) async {
     final choice = await showLoopSheet<String>(
       context,
-      barrierLabel: '关闭更多操作',
+      barrierLabel: LoopL10n
+          .current
+          .socialPublicProfile_userUserProfileMoreSheetBarrierLabel,
       builder: (sheetContext) => Padding(
         key: const ValueKey<String>('user-profile-more-sheet'),
         padding: const EdgeInsets.fromLTRB(
@@ -315,7 +328,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ProfileFriendship.friends) ...<Widget>[
               LoopButton(
                 key: const ValueKey<String>('user-profile-remove-friend'),
-                label: '删除好友',
+                label: LoopL10n
+                    .current
+                    .socialPublicProfile_userUserProfileRemoveFriendLabel,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop('unfriend'),
               ),
@@ -323,7 +338,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ],
             LoopButton(
               key: const ValueKey<String>('user-profile-block'),
-              label: record.relationship.blocked ? '解除拉黑' : '拉黑',
+              label: record.relationship.blocked
+                  ? LoopL10n
+                        .current
+                        .socialPublicProfile_userUserProfileBlockLabel
+                  : LoopL10n
+                        .current
+                        .socialPublicProfile_userUserProfileBlockLabel2,
               block: true,
               onPressed: () =>
                   Navigator.of(sheetContext)
@@ -333,21 +354,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             // There is no report endpoint for an account outside a message
             // request yet, so the entry is shown and says so rather than
             // pretending a report was filed.
-            const LoopButton(
+            LoopButton(
               key: ValueKey<String>('user-profile-report'),
-              label: '举报并屏蔽',
+              label: LoopL10n.current.social_dmRequestsReport,
               block: true,
             ),
             const SizedBox(height: 6),
             Text(
-              '举报通道暂未开放；需要时可以先拉黑。',
+              LoopL10n
+                  .current
+                  .socialPublicProfile_userUserProfileReportUnavailable,
               key: const ValueKey<String>('user-profile-report-unavailable'),
               textAlign: TextAlign.center,
               style: LoopType.caption,
             ),
             const SizedBox(height: 10),
             LoopButton(
-              label: '取消',
+              label: LoopL10n.current.common_cancel,
               block: true,
               onPressed: () => Navigator.of(sheetContext).pop(),
             ),
@@ -360,18 +383,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       case 'unfriend':
         final confirmed = await confirmCommunityAction(
           context,
-          title: '删除好友？',
-          body: '删除后你们不再是好友，私聊记录保留。之后可以重新申请。',
-          confirmLabel: '删除',
+          title: LoopL10n.current.socialPublicProfile_userTitle,
+          body: LoopL10n.current.socialPublicProfile_userBody,
+          confirmLabel: LoopL10n.current.common_delete,
           sheetKey: 'user-profile-unfriend-confirm',
         );
         if (confirmed) await _run(controller.removeFriend());
       case 'block':
         final confirmed = await confirmCommunityAction(
           context,
-          title: '拉黑 ${record.displayName}？',
-          body: '拉黑后对方看不到你的资料，也不能给你发消息或好友申请。可以在「屏蔽名单」里解除。',
-          confirmLabel: '拉黑',
+          title: LoopL10n.current.socialPublicProfile_userTitle2(
+            record.displayName,
+          ),
+          body: LoopL10n.current.socialPublicProfile_userBody2,
+          confirmLabel:
+              LoopL10n.current.socialPublicProfile_userUserProfileBlockLabel2,
           sheetKey: 'user-profile-block-confirm',
         );
         if (confirmed) await _run(controller.setBlocked(true));
@@ -397,19 +423,22 @@ class _RecordStateBlock extends StatelessWidget {
     if (phase == CommunityViewPhase.empty) {
       // `404 PROFILE_NOT_FOUND`: no such account, or one that blocked the
       // viewer. The server does not say which and neither does the page.
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('user-profile-not-found'),
         illustration: LoopIllustration.profile,
-        title: '找不到这个用户',
-        message: '账号不存在，或对方的资料对你不可见。',
+        title: context.l10n.socialPublicProfile_userUserProfileNotFoundTitle,
+        message:
+            context.l10n.socialPublicProfile_userUserProfileNotFoundMessage,
         compact: true,
       );
     }
     if (phase == CommunityViewPhase.unavailable) {
-      return const LoopInlineUnavailable(
+      return LoopInlineUnavailable(
         key: ValueKey<String>('user-profile-unavailable'),
-        message: '用户资料暂不可用',
-        detail: '资料服务还没有开放，这一页没有读取任何内容。',
+        message:
+            context.l10n.socialPublicProfile_userUserProfileUnavailableMessage,
+        detail:
+            context.l10n.socialPublicProfile_userUserProfileUnavailableDetail,
         maxLines: 2,
         detailMaxLines: 4,
       );
@@ -497,7 +526,9 @@ class _ProfileHeader extends StatelessWidget {
                   key: ValueKey<String>(
                     following ? 'user-profile-unfollow' : 'user-profile-follow',
                   ),
-                  label: following ? '已关注' : '关注',
+                  label: following
+                      ? context.l10n.common_following
+                      : context.l10n.common_follow,
                   primary: false,
                   onPressed: busy ? null : follow,
                 ),
@@ -517,11 +548,26 @@ class _ProfileHeader extends StatelessWidget {
           Row(
             key: const ValueKey<String>('user-profile-counts'),
             children: <Widget>[
-              _Count(label: '关注', value: record.counts.following),
+              Flexible(
+                child: _Count(
+                  label: context.l10n.socialPublicProfile_userCountFollowing,
+                  value: record.counts.following,
+                ),
+              ),
               const SizedBox(width: 22),
-              _Count(label: '粉丝', value: record.counts.followers),
+              Flexible(
+                child: _Count(
+                  label: context.l10n.common_followers,
+                  value: record.counts.followers,
+                ),
+              ),
               const SizedBox(width: 22),
-              _Count(label: '社区', value: record.counts.communities),
+              Flexible(
+                child: _Count(
+                  label: context.l10n.socialPublicProfile_userCountCommunities,
+                  value: record.counts.communities,
+                ),
+              ),
             ],
           ),
         ],
@@ -548,7 +594,14 @@ class _Count extends StatelessWidget {
         style: LoopTypography.withWeight(LoopType.figureBody, FontWeight.w700),
       ),
       const SizedBox(width: 4),
-      Text(label, style: LoopType.bodySm),
+      Flexible(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LoopType.bodySm,
+        ),
+      ),
     ],
   );
 }
@@ -593,31 +646,40 @@ class _ActionRow extends StatelessWidget {
               _ => 'check',
             },
             label: switch (friendship) {
-              ProfileFriendship.none => '加好友',
-              ProfileFriendship.pendingOut => '已申请',
-              ProfileFriendship.pendingIn => '处理申请',
-              ProfileFriendship.friends => '已是好友',
+              ProfileFriendship.none =>
+                context.l10n.socialPublicProfile_userNone,
+              ProfileFriendship.pendingOut =>
+                context.l10n.socialPublicProfile_userPendingOut,
+              ProfileFriendship.pendingIn =>
+                context.l10n.socialPublicProfile_userPendingIn,
+              ProfileFriendship.friends =>
+                context.l10n.socialPublicProfile_userFriends,
             },
             onPressed: friendEnabled ? onFriend : null,
           ),
         LoopRoundKey(
           key: const ValueKey<String>('user-profile-message'),
           icon: 'chat',
-          label: friendship == ProfileFriendship.friends ? '聊天' : '私聊',
+          label: friendship == ProfileFriendship.friends
+              ? context.l10n.common_chat
+              : context.l10n.common_directMessage,
           onPressed: busy || message == null ? null : message,
         ),
         LoopRoundKey(
           key: const ValueKey<String>('user-profile-share-card'),
           icon: 'share',
-          label: '分享',
-          semanticLabel: '分享名片',
+          label: context.l10n.common_share,
+          semanticLabel: context
+              .l10n
+              .socialPublicProfile_userUserProfileShareCardSemanticLabel,
           onPressed: onShare,
         ),
         LoopRoundKey(
           key: const ValueKey<String>('user-profile-more'),
           icon: 'keypad',
-          label: '更多',
-          semanticLabel: '更多操作',
+          label: context.l10n.common_more,
+          semanticLabel:
+              context.l10n.socialPublicProfile_userUserProfileMoreSemanticLabel,
           onPressed: busy ? null : onMore,
         ),
       ],
@@ -636,8 +698,8 @@ class _BlockedNotice extends StatelessWidget {
     key: const ValueKey<String>('user-profile-blocked'),
     icon: 'blocked',
     tone: LoopNoticeTone.warn,
-    title: '你已拉黑对方',
-    body: '对方不能给你发消息或好友申请，你也看不到对方的持仓与交易。',
+    title: context.l10n.socialPublicProfile_userUserProfileBlockedTitle,
+    body: context.l10n.socialPublicProfile_userUserProfileBlockedBody,
     margin: const EdgeInsets.fromLTRB(
       LoopSpacing.page,
       16,
@@ -646,7 +708,7 @@ class _BlockedNotice extends StatelessWidget {
     ),
     trailing: LoopButton(
       key: const ValueKey<String>('user-profile-unblock'),
-      label: '解除',
+      label: context.l10n.social_blocklistLoopBadge,
       onPressed: busy ? null : onUnblock,
     ),
   );
@@ -654,29 +716,25 @@ class _BlockedNotice extends StatelessWidget {
 
 /// The hidden branch, shared by both sections: the account keeps it private.
 class _HiddenSection extends StatelessWidget {
-  const _HiddenSection({required this.sectionKey, required this.what});
+  const _HiddenSection({required this.sectionKey});
 
   final String sectionKey;
-  final String what;
 
   @override
   Widget build(BuildContext context) => LoopEmptyState(
     key: ValueKey<String>('user-profile-$sectionKey-hidden'),
     illustration: LoopIllustration.watchlist,
-    title: '对方未公开$what',
+    title: sectionKey == 'holdings'
+        ? context.l10n.socialPublicProfile_userHoldingsHidden
+        : context.l10n.socialPublicProfile_userTradesHidden,
     compact: true,
   );
 }
 
 class _UnavailableSection extends StatelessWidget {
-  const _UnavailableSection({
-    required this.sectionKey,
-    required this.what,
-    this.reasonCode,
-  });
+  const _UnavailableSection({required this.sectionKey, this.reasonCode});
 
   final String sectionKey;
-  final String what;
 
   /// The server's reason (backend decision 0095). `WALLET_NOT_BOUND` is a
   /// fact about the account, not an outage, and reads as one.
@@ -687,13 +745,15 @@ class _UnavailableSection extends StatelessWidget {
       ? LoopEmptyState(
           key: ValueKey<String>('user-profile-$sectionKey-no-wallet'),
           illustration: LoopIllustration.watchlist,
-          title: '对方暂无钱包',
+          title: context.l10n.socialPublicProfile_userTitle4,
           compact: true,
         )
       : LoopInlineUnavailable(
           key: ValueKey<String>('user-profile-$sectionKey-unavailable'),
-          message: '$what暂时读不到',
-          detail: '链上数据暂不可用，这里不会显示 0 代替。',
+          message: sectionKey == 'holdings'
+              ? context.l10n.socialPublicProfile_userHoldingsUnavailable
+              : context.l10n.socialPublicProfile_userTradesUnavailable,
+          detail: context.l10n.socialPublicProfile_userDetail,
           maxLines: 2,
           detailMaxLines: 4,
         );
@@ -719,7 +779,7 @@ class _HoldingsSection extends StatelessWidget {
     // The record already says the account keeps it private; no request is
     // made for a section the server would only answer `hidden` for.
     if (!record.visibility.holdings) {
-      return const _HiddenSection(sectionKey: 'holdings', what: '持仓');
+      return const _HiddenSection(sectionKey: 'holdings');
     }
     final phase = state.phase;
     if (phase == null) {
@@ -727,7 +787,7 @@ class _HoldingsSection extends StatelessWidget {
     }
     if (phase == null || phase != CommunityViewPhase.ready) {
       if (phase == CommunityViewPhase.unavailable) {
-        return const _UnavailableSection(sectionKey: 'holdings', what: '持仓');
+        return const _UnavailableSection(sectionKey: 'holdings');
       }
       return CommunityStateBlock(
         key: const ValueKey<String>('user-profile-holdings-state'),
@@ -741,11 +801,10 @@ class _HoldingsSection extends StatelessWidget {
     final value = state.value!;
     switch (value.status) {
       case ProfileSectionStatus.hidden:
-        return const _HiddenSection(sectionKey: 'holdings', what: '持仓');
+        return const _HiddenSection(sectionKey: 'holdings');
       case ProfileSectionStatus.unavailable:
         return _UnavailableSection(
           sectionKey: 'holdings',
-          what: '持仓',
           reasonCode: value.reasonCode,
         );
       case ProfileSectionStatus.available:
@@ -766,10 +825,17 @@ class _HoldingsSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('持仓总额', style: LoopType.caption),
+              Text(
+                context.l10n.socialPublicProfile_userSwitch,
+                style: LoopType.caption,
+              ),
               const SizedBox(height: 4),
               Text(
-                total == null ? '暂无报价' : loopFormatUsd(total),
+                total == null
+                    ? context
+                          .l10n
+                          .socialPublicProfile_userUserProfileHoldingsTotal
+                    : loopFormatUsd(total),
                 key: const ValueKey<String>('user-profile-holdings-total'),
                 // L5 a second-level page's total: figureLg 20.
                 style: LoopType.figureLg,
@@ -778,7 +844,9 @@ class _HoldingsSection extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    '读取于 ${loopLocalTimestampLabel(observedAt)}',
+                    context.l10n.socialPublicProfile_userSwitch2(
+                      loopLocalTimestampLabel(observedAt),
+                    ),
                     style: LoopType.captionSm,
                   ),
                 ),
@@ -794,15 +862,19 @@ class _HoldingsSection extends StatelessWidget {
               key: const ValueKey<String>(
                 'user-profile-holdings-launch2-unavailable',
               ),
-              label: 'MEME 持仓暂不可用',
+              label: context
+                  .l10n
+                  .socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel,
               fact: missing,
             ),
           ),
         if (value.rows.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('user-profile-holdings-empty'),
             illustration: LoopIllustration.watchlist,
-            title: '还没有持仓',
+            title: context
+                .l10n
+                .socialPublicProfile_userUserProfileHoldingsEmptyTitle,
             compact: true,
           )
         else
@@ -823,8 +895,8 @@ class _HoldingsSection extends StatelessWidget {
     final ticker = loopDisplaySymbol(item.ticker);
     final stage = item.stage;
     final where = stage == null
-        ? 'Launch 链'
-        : 'Launch 链，${launch2StageLabel(stage)}';
+        ? LoopL10n.current.socialPublicProfile_userLaunch2Row
+        : LoopL10n.current.socialPublicProfile_userS(launch2StageLabel(stage));
     final amount = switch (item.kind) {
       ProfileLaunch2HoldingKind.meme => launch2MemeFigure(item.amountMeme!),
       ProfileLaunch2HoldingKind.nft => '× ${item.nftCount}',
@@ -854,7 +926,7 @@ class _HoldingsSection extends StatelessWidget {
         where,
         amount,
         ?usd1,
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
     );
   }
 
@@ -875,10 +947,14 @@ class _HoldingsSection extends StatelessWidget {
       title: item.symbol,
       subtitle: item.name,
       value: usd == null ? balance : loopFormatUsd(usd),
-      valueCaption: Text(usd == null ? '暂无报价' : balance),
+      valueCaption: Text(
+        usd == null
+            ? LoopL10n.current.socialPublicProfile_userUserProfileHoldingsTotal
+            : balance,
+      ),
       onTap: open == null ? null : () => open(item.assetId),
       semanticLabel:
-          '${item.symbol}，${usd == null ? balance : loopFormatUsd(usd)}',
+          '${item.symbol}${LoopL10n.current.common_listSeparator}${usd == null ? balance : loopFormatUsd(usd)}',
     );
   }
 }
@@ -901,7 +977,7 @@ class _TradesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!record.visibility.trades) {
-      return const _HiddenSection(sectionKey: 'trades', what: '交易');
+      return const _HiddenSection(sectionKey: 'trades');
     }
     final phase = state.phase;
     if (phase == null) {
@@ -909,7 +985,7 @@ class _TradesSection extends StatelessWidget {
     }
     if (phase == null || phase != CommunityViewPhase.ready) {
       if (phase == CommunityViewPhase.unavailable) {
-        return const _UnavailableSection(sectionKey: 'trades', what: '交易');
+        return const _UnavailableSection(sectionKey: 'trades');
       }
       return CommunityStateBlock(
         key: const ValueKey<String>('user-profile-trades-state'),
@@ -922,11 +998,10 @@ class _TradesSection extends StatelessWidget {
     }
     switch (state.status) {
       case ProfileSectionStatus.hidden:
-        return const _HiddenSection(sectionKey: 'trades', what: '交易');
+        return const _HiddenSection(sectionKey: 'trades');
       case ProfileSectionStatus.unavailable:
         return _UnavailableSection(
           sectionKey: 'trades',
-          what: '交易',
           reasonCode: state.reasonCode,
         );
       case ProfileSectionStatus.available:
@@ -940,7 +1015,9 @@ class _TradesSection extends StatelessWidget {
           key: const ValueKey<String>(
             'user-profile-trades-launch2-unavailable',
           ),
-          label: 'MEME 记录暂不可用',
+          label: context
+              .l10n
+              .socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel,
           fact: missing,
         ),
       ),
@@ -951,10 +1028,12 @@ class _TradesSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           ?launch2Missing,
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('user-profile-trades-empty'),
             illustration: LoopIllustration.chartEmpty,
-            title: '还没有交易',
+            title: context
+                .l10n
+                .socialPublicProfile_userUserProfileTradesEmptyTitle,
             compact: true,
           ),
         ],
@@ -987,7 +1066,7 @@ class _TradesSection extends StatelessWidget {
             ),
             child: LoopButton(
               key: const ValueKey<String>('user-profile-trades-retry-more'),
-              label: '重试',
+              label: context.l10n.common_retry,
               block: true,
               onPressed: () => unawaited(onLoadMore()),
             ),
@@ -1033,7 +1112,8 @@ class _TradesSection extends StatelessWidget {
         title: '${trade.kind.label} ${trade.symbol}',
         subtitle: switch ((trade.blockTimestamp, trade.blockNumber)) {
           (final DateTime at, _) => loopLocalTimestampLabel(at),
-          (null, final String block) => '区块 #$block',
+          (null, final String block) =>
+            LoopL10n.current.socialPublicProfile_userLoopRecordRow(block),
           (null, null) => null,
         },
         trailing: amount,
@@ -1070,11 +1150,15 @@ class _CommunitiesSection extends StatelessWidget {
     }
     if (phase == null || phase != CommunityViewPhase.ready) {
       if (phase == CommunityViewPhase.unavailable) {
-        return const LoopInlineUnavailable(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('user-profile-communities-unavailable'),
           icon: 'community',
-          message: '社区列表暂时读不到',
-          detail: '社区服务暂不可用，这里不会显示空列表代替。',
+          message: context
+              .l10n
+              .socialPublicProfile_userUserProfileCommunitiesUnavailableMessage,
+          detail: context
+              .l10n
+              .socialPublicProfile_userUserProfileCommunitiesUnavailableDetail,
           maxLines: 2,
           detailMaxLines: 4,
         );
@@ -1089,18 +1173,22 @@ class _CommunitiesSection extends StatelessWidget {
       );
     }
     if (state.hidden) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('user-profile-communities-hidden'),
         illustration: LoopIllustration.watchlist,
-        title: '对方未公开社区列表',
+        title: context
+            .l10n
+            .socialPublicProfile_userUserProfileCommunitiesHiddenTitle,
         compact: true,
       );
     }
     if (state.items.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('user-profile-communities-empty'),
         illustration: LoopIllustration.watchlist,
-        title: '还没有加入社区',
+        title: context
+            .l10n
+            .socialPublicProfile_userUserProfileCommunitiesEmptyTitle,
         compact: true,
       );
     }
@@ -1124,8 +1212,14 @@ class _CommunitiesSection extends StatelessWidget {
   Widget _row(ProfileCommunity item) {
     // Decision 0239: the operator's label replaces 「已验证」; no label, no mark.
     final label = item.label;
-    final members =
-        '${loopFormatDecimal(Decimal.fromInt(item.memberCount), maxFractionDigits: 0)} 名成员';
+    final members = item.memberCount == 1
+        ? LoopL10n.current.socialPublicProfile_userOneMember
+        : LoopL10n.current.socialPublicProfile_userMembers(
+            loopFormatDecimal(
+              Decimal.fromInt(item.memberCount),
+              maxFractionDigits: 0,
+            ),
+          );
     return CommunityRecordRow(
       rowKey: ValueKey<String>('user-profile-community-${item.communityId}'),
       communityId: item.communityId,
@@ -1147,7 +1241,7 @@ class _CommunitiesSection extends StatelessWidget {
         item.name,
         if (label != null) communityLabelDisplay(label),
         members,
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
       onTap: () => onOpen(communityProfileLocation(item.communityId)),
     );
   }

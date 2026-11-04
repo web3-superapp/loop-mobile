@@ -414,7 +414,7 @@ void main() {
       final row = _key('connection-row-$testMemberId');
       expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
       final follow = _key('connection-follow-$testMemberId');
-      expect(tester.widget<LoopPillAction>(follow).label, '关注');
+      expect(tester.widget<LoopPillAction>(follow).label, 'Follow');
       expect(tester.widget<LoopPillAction>(follow).primary, isTrue);
       await tester.tap(follow);
       await tester.pumpAndSettle();
@@ -462,7 +462,7 @@ void main() {
       );
 
       final accept = _key('dm-request-accept-$testRequestId');
-      expect(tester.widget<LoopPillAction>(accept).label, '接受');
+      expect(tester.widget<LoopPillAction>(accept).label, 'Accept');
       await tester.tap(accept);
       await tester.pumpAndSettle();
       await tester.tap(_key('community-confirm-accept'));

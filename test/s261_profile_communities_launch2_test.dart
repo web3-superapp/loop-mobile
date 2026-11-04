@@ -580,7 +580,7 @@ void main() {
       expect(find.text('社区列表暂未开放查看。'), findsNothing);
       expect(find.text('星夜社区'), findsOneWidget);
       expect(find.text('Night Owls'), findsOneWidget);
-      expect(find.text('1,284 名成员'), findsNWidgets(2));
+      expect(find.text('1,284 members'), findsNWidgets(2));
       // Decision 0239: the operator's label replaces 「已验证」; the row
       // without one wears nothing.
       expect(find.text('已验证'), findsNothing);
@@ -632,7 +632,7 @@ void main() {
       );
       await _pump(tester, profiles);
       await _section(tester, '社区');
-      expect(find.text('对方未公开社区列表'), findsOneWidget);
+      expect(find.text('Community list not public'), findsOneWidget);
     });
 
     testWidgets('empty', (tester) async {
@@ -701,8 +701,8 @@ void main() {
       final opened = await _pump(tester, profiles);
       expect(find.text('BNB'), findsWidgets);
       expect(find.text('STAR'), findsNWidgets(2));
-      expect(find.text('Launch 链，Public pool'), findsOneWidget);
-      expect(find.text('Launch 链，Graduated'), findsOneWidget);
+      expect(find.text('Launch chain, Public pool'), findsOneWidget);
+      expect(find.text('Launch chain, Graduated'), findsOneWidget);
       expect(find.text('× 2'), findsOneWidget);
       expect(find.textContaining('≈ 12.5'), findsOneWidget);
       expect(find.textContaining('·'), findsNothing);
@@ -728,7 +728,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('MEME 持仓暂不可用'), findsOneWidget);
+      expect(find.text('MEME holdings unavailable'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('user-profile-holding-eip155:56:native'),
@@ -753,7 +753,7 @@ void main() {
       final opened = await _pump(tester, profiles);
       await _section(tester, '交易');
       expect(find.text('Buy STAR'), findsOneWidget);
-      expect(find.text('买入 BNB'), findsOneWidget);
+      expect(find.text('Buy BNB'), findsOneWidget);
       expect(
         find.byKey(ValueKey<String>('tx-entry-${entry.entryId}')),
         findsOneWidget,
@@ -772,8 +772,8 @@ void main() {
       );
       await _pump(tester, profiles);
       await _section(tester, '交易');
-      expect(find.text('MEME 记录暂不可用'), findsOneWidget);
-      expect(find.text('买入 BNB'), findsOneWidget);
+      expect(find.text('MEME records unavailable'), findsOneWidget);
+      expect(find.text('Buy BNB'), findsOneWidget);
     });
   });
 }

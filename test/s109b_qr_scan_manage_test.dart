@@ -68,7 +68,7 @@ void main() {
         find.byKey(const ValueKey<String>('qr-card-sheet')),
         findsOneWidget,
       );
-      expect(find.text('我的二维码名片'), findsOneWidget);
+      expect(find.text('My QR card'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('qr-card-code')),
         findsOneWidget,
@@ -82,7 +82,7 @@ void main() {
             .data,
         _loopId,
       );
-      expect(find.text('LOOP · 扫码加我'), findsOneWidget);
+      expect(find.text('LOOP · Scan to add me'), findsOneWidget);
       const link = '$_stagingBase/u/$_loopId';
       expect(find.text(link), findsOneWidget);
 
@@ -91,7 +91,7 @@ void main() {
         find.byKey(const ValueKey<String>('qr-card-copy-link')),
       );
       expect(clipboard.text, link);
-      expect(find.text('已复制链接'), findsOneWidget);
+      expect(find.text('Link copied'), findsOneWidget);
     });
 
     testWidgets('a community: logo, name, member count and the /c/ link', (
@@ -106,13 +106,13 @@ void main() {
         ),
       );
 
-      expect(find.text('社区二维码名片'), findsOneWidget);
+      expect(find.text('Community QR card'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('qr-card-code')),
         findsOneWidget,
       );
-      expect(find.text('128 位成员'), findsOneWidget);
-      expect(find.text('LOOP · 扫码加入'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
+      expect(find.text('LOOP · Scan to join'), findsOneWidget);
       expect(find.text('$_stagingBase/c/$testCommunityId'), findsOneWidget);
     });
 
@@ -174,7 +174,10 @@ void main() {
       expect(sink.shared, hasLength(1));
       expect(sink.fileNames, <String>['loop-card.png']);
       expect(sink.shared.single.take(4), <int>[0x89, 0x50, 0x4e, 0x47]);
-      expect(find.text('海报已生成，请在分享面板中选择去处'), findsOneWidget);
+      expect(
+        find.text('Poster created. Choose where to share it'),
+        findsOneWidget,
+      );
     });
   });
 

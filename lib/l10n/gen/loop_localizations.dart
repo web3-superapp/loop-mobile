@@ -18085,6 +18085,954 @@ abstract class LoopLocalizations {
   /// **'Square'**
   String get shell_tabSquare;
 
+  /// lib/features/social/public_profile/public_profile_controller.dart:549
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already friends.'**
+  String get socialPublicProfile_controllerAlreadyFriends;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:517
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent'**
+  String get socialPublicProfile_controllerCommand;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:525
+  ///
+  /// In en, this message translates to:
+  /// **'Friend removed'**
+  String get socialPublicProfile_controllerCommand2;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:537
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get socialPublicProfile_controllerCommand3;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:552
+  ///
+  /// In en, this message translates to:
+  /// **'Recently declined. Try again later.'**
+  String get socialPublicProfile_controllerCooldown;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ve sent you a request. Handle it in Friend requests.'**
+  String get socialPublicProfile_controllerIncomingRequestPending;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:556
+  ///
+  /// In en, this message translates to:
+  /// **'User not found.'**
+  String get socialPublicProfile_controllerNotFound;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:558
+  ///
+  /// In en, this message translates to:
+  /// **'Result not confirmed. Refresh to check; don\'t resubmit.'**
+  String get socialPublicProfile_controllerOutcomeUnknown;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'Request already sent, waiting for them.'**
+  String get socialPublicProfile_controllerOutgoingRequestPending;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:553
+  ///
+  /// In en, this message translates to:
+  /// **'They don\'t accept friend requests.'**
+  String get socialPublicProfile_controllerPermissionDenied;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your LOOP ID first.'**
+  String get socialPublicProfile_controllerProfileRequired;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:554
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later.'**
+  String get socialPublicProfile_controllerRateLimited;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:493
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollowed'**
+  String get socialPublicProfile_controllerS;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:537
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked'**
+  String get socialPublicProfile_controllerS2;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:559
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request not sent. Try again later.'**
+  String get socialPublicProfile_controllerSwitch;
+
+  /// lib/features/social/public_profile/public_profile_controller.dart:557
+  ///
+  /// In en, this message translates to:
+  /// **'The friend service isn\'t available right now; no request was sent.'**
+  String get socialPublicProfile_controllerUnavailable;
+
+  /// lib/features/social/public_profile/public_profile_models.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer in'**
+  String get socialPublicProfile_modelsTransferIn;
+
+  /// lib/features/social/public_profile/public_profile_models.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer out'**
+  String get socialPublicProfile_modelsTransferOut;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:364
+  ///
+  /// In en, this message translates to:
+  /// **'After removing, you\'re no longer friends; direct message history is kept. You can send a request again later.'**
+  String get socialPublicProfile_userBody;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:373
+  ///
+  /// In en, this message translates to:
+  /// **'After blocking, they can\'t see your profile or send you messages or friend requests. You can unblock in Block list.'**
+  String get socialPublicProfile_userBody2;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'Communities'**
+  String get socialPublicProfile_userCountCommunities;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get socialPublicProfile_userCountFollowing;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:696
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain data isn\'t available right now; 0 isn\'t shown in its place.'**
+  String get socialPublicProfile_userDetail;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:599
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get socialPublicProfile_userFriends;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:666
+  ///
+  /// In en, this message translates to:
+  /// **'Holdings not public'**
+  String get socialPublicProfile_userHoldingsHidden;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:666
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load holdings right now'**
+  String get socialPublicProfile_userHoldingsUnavailable;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:826
+  ///
+  /// In en, this message translates to:
+  /// **'Launch chain'**
+  String get socialPublicProfile_userLaunch2Row;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1036
+  ///
+  /// In en, this message translates to:
+  /// **'Block #{block}'**
+  String socialPublicProfile_userLoopRecordRow(Object? block);
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1128
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} members'**
+  String socialPublicProfile_userMembers(Object? formatDecimal);
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:596
+  ///
+  /// In en, this message translates to:
+  /// **'Add friend'**
+  String get socialPublicProfile_userNone;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1127
+  ///
+  /// In en, this message translates to:
+  /// **'1 member'**
+  String get socialPublicProfile_userOneMember;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:598
+  ///
+  /// In en, this message translates to:
+  /// **'Respond'**
+  String get socialPublicProfile_userPendingIn;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:597
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get socialPublicProfile_userPendingOut;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:827
+  ///
+  /// In en, this message translates to:
+  /// **'Launch chain, {launch2StageLabel}'**
+  String socialPublicProfile_userS(Object? launch2StageLabel);
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:769
+  ///
+  /// In en, this message translates to:
+  /// **'Total holdings'**
+  String get socialPublicProfile_userSwitch;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:781
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded {localTimestampLabel}'**
+  String socialPublicProfile_userSwitch2(Object? localTimestampLabel);
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:363
+  ///
+  /// In en, this message translates to:
+  /// **'Remove friend?'**
+  String get socialPublicProfile_userTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:372
+  ///
+  /// In en, this message translates to:
+  /// **'Block {displayName}?'**
+  String socialPublicProfile_userTitle2(Object? displayName);
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet yet'**
+  String get socialPublicProfile_userTitle4;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:666
+  ///
+  /// In en, this message translates to:
+  /// **'Trades not public'**
+  String get socialPublicProfile_userTradesHidden;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:666
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load trades right now'**
+  String get socialPublicProfile_userTradesUnavailable;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:326
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get socialPublicProfile_userUserProfileBlockLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:326, lib/features/social/public_profile/user_profile_screen.dart:374
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get socialPublicProfile_userUserProfileBlockLabel2;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:640
+  ///
+  /// In en, this message translates to:
+  /// **'They can\'t send you messages or friend requests, and you can\'t see their holdings or trades.'**
+  String get socialPublicProfile_userUserProfileBlockedBody;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:639
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked them'**
+  String get socialPublicProfile_userUserProfileBlockedTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1103
+  ///
+  /// In en, this message translates to:
+  /// **'No communities joined yet'**
+  String get socialPublicProfile_userUserProfileCommunitiesEmptyTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1095
+  ///
+  /// In en, this message translates to:
+  /// **'Community list not public'**
+  String get socialPublicProfile_userUserProfileCommunitiesHiddenTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1077
+  ///
+  /// In en, this message translates to:
+  /// **'The community service isn\'t available right now; an empty list isn\'t shown in its place.'**
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableDetail;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:1076
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load communities right now'**
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableMessage;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:805
+  ///
+  /// In en, this message translates to:
+  /// **'No holdings yet'**
+  String get socialPublicProfile_userUserProfileHoldingsEmptyTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:797
+  ///
+  /// In en, this message translates to:
+  /// **'MEME holdings unavailable'**
+  String get socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:772, lib/features/social/public_profile/user_profile_screen.dart:878
+  ///
+  /// In en, this message translates to:
+  /// **'No quote'**
+  String get socialPublicProfile_userUserProfileHoldingsTotal;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:144
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from a chat, search or member list.'**
+  String get socialPublicProfile_userUserProfileInvalidTargetMessage;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:143
+  ///
+  /// In en, this message translates to:
+  /// **'No user to open from this link'**
+  String get socialPublicProfile_userUserProfileInvalidTargetTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:620
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get socialPublicProfile_userUserProfileMoreSemanticLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Close more actions'**
+  String get socialPublicProfile_userUserProfileMoreSheetBarrierLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:404
+  ///
+  /// In en, this message translates to:
+  /// **'The account doesn\'t exist, or their profile isn\'t visible to you.'**
+  String get socialPublicProfile_userUserProfileNotFoundMessage;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'User not found'**
+  String get socialPublicProfile_userUserProfileNotFoundTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:318
+  ///
+  /// In en, this message translates to:
+  /// **'Remove friend'**
+  String get socialPublicProfile_userUserProfileRemoveFriendLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block'**
+  String get socialPublicProfile_userUserProfileReportLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:343
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting isn\'t available yet; you can block for now.'**
+  String get socialPublicProfile_userUserProfileReportUnavailable;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:137, lib/features/social/public_profile/user_profile_screen.dart:170, lib/features/social/public_profile/user_profile_screen.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'User profile'**
+  String get socialPublicProfile_userUserProfileScreenTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:613
+  ///
+  /// In en, this message translates to:
+  /// **'Share card'**
+  String get socialPublicProfile_userUserProfileShareCardSemanticLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:957
+  ///
+  /// In en, this message translates to:
+  /// **'No trades yet'**
+  String get socialPublicProfile_userUserProfileTradesEmptyTitle;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:943
+  ///
+  /// In en, this message translates to:
+  /// **'MEME records unavailable'**
+  String get socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:412
+  ///
+  /// In en, this message translates to:
+  /// **'The profile service isn\'t available yet; this page didn\'t load anything.'**
+  String get socialPublicProfile_userUserProfileUnavailableDetail;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:411
+  ///
+  /// In en, this message translates to:
+  /// **'User profile unavailable'**
+  String get socialPublicProfile_userUserProfileUnavailableMessage;
+
+  /// lib/features/social/public_profile/user_profile_screen.dart:649
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get socialPublicProfile_userUserProfileUnblockLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:119
+  ///
+  /// In en, this message translates to:
+  /// **'Close QR card'**
+  String get socialQr_cardBarrierLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:230
+  ///
+  /// In en, this message translates to:
+  /// **'Invite text copied'**
+  String get socialQr_cardCopy;
+
+  /// lib/features/social/qr/loop_qr_card.dart:103
+  ///
+  /// In en, this message translates to:
+  /// **'Poster created, but no share destination was chosen'**
+  String get socialQr_cardDismissed;
+
+  /// lib/features/social/qr/loop_qr_card.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the poster; nothing left this device'**
+  String get socialQr_cardFailed;
+
+  /// lib/features/social/qr/loop_qr_card.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Community QR card'**
+  String get socialQr_cardLoopCommunityQrCard;
+
+  /// lib/features/social/qr/loop_qr_card.dart:156
+  ///
+  /// In en, this message translates to:
+  /// **'My QR card'**
+  String get socialQr_cardLoopUserQrCard;
+
+  /// lib/features/social/qr/loop_qr_card.dart:424
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s QR code'**
+  String socialQr_cardQrCardCodeSemanticLabel(Object? name);
+
+  /// lib/features/social/qr/loop_qr_card.dart:228
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite text'**
+  String get socialQr_cardQrCardCopyInviteLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get socialQr_cardQrCardCopyLinkLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:350
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s QR card'**
+  String socialQr_cardQrCardPosterLabel(Object? name);
+
+  /// lib/features/social/qr/loop_qr_card.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get socialQr_cardQrCardSharePosterLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'Share poster'**
+  String get socialQr_cardQrCardSharePosterLabel2;
+
+  /// lib/features/social/qr/loop_qr_card.dart:173
+  ///
+  /// In en, this message translates to:
+  /// **'QR code unavailable'**
+  String get socialQr_cardQrCardUnavailableLabel;
+
+  /// lib/features/social/qr/loop_qr_card.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'Join \"{name}\" on LOOP\n{link}'**
+  String socialQr_cardS(Object? link, Object? name);
+
+  /// lib/features/social/qr/loop_qr_card.dart:102
+  ///
+  /// In en, this message translates to:
+  /// **'Poster created. Choose where to share it'**
+  String get socialQr_cardShared;
+
+  /// lib/features/social/qr/loop_qr_card.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'Join \"{name}\" on LOOP'**
+  String socialQr_cardSwitch(Object? name);
+
+  /// lib/features/social/qr/loop_qr_card.dart:318
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to add me'**
+  String get socialQr_cardSwitch2;
+
+  /// lib/features/social/qr/loop_qr_card.dart:328
+  ///
+  /// In en, this message translates to:
+  /// **'{memberCount, plural, =1{1 member} other{{memberCount} members}}'**
+  String socialQr_cardSwitch3(num memberCount);
+
+  /// lib/features/social/qr/loop_qr_card.dart:330
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to join'**
+  String get socialQr_cardSwitch4;
+
+  /// lib/features/social/qr/loop_qr_card.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'System sharing isn\'t available in this run; no poster was created'**
+  String get socialQr_cardUnavailable;
+
+  /// lib/features/social/blocklist_screen.dart:110
+  ///
+  /// In en, this message translates to:
+  /// **'Block list unavailable'**
+  String get social_blocklistBlocklistCapabilityUnavailableTitle;
+
+  /// lib/features/social/blocklist_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'These two block types aren\'t available yet, so nothing is listed here.'**
+  String get social_blocklistBlocklistDeferredKindsDetail;
+
+  /// lib/features/social/blocklist_screen.dart:181
+  ///
+  /// In en, this message translates to:
+  /// **'Contract and domain blocks aren\'t available yet'**
+  String get social_blocklistBlocklistDeferredKindsMessage;
+
+  /// lib/features/social/blocklist_screen.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking immediately removes follows both ways and hides them from search, follow lists and message requests. Unblocking doesn\'t restore follows; you\'ll need to follow again.'**
+  String get social_blocklistBlocklistPrecedenceNoticeBody;
+
+  /// lib/features/social/blocklist_screen.dart:195
+  ///
+  /// In en, this message translates to:
+  /// **'What blocking does'**
+  String get social_blocklistBlocklistPrecedenceNoticeTitle;
+
+  /// lib/features/social/blocklist_screen.dart:243
+  ///
+  /// In en, this message translates to:
+  /// **'After unblocking, they can show up in search and message requests again. Removed follows aren\'t restored automatically.'**
+  String get social_blocklistBody;
+
+  /// lib/features/social/blocklist_screen.dart:74
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking overrides follows and direct messages. Unblocking doesn\'t restore follows.'**
+  String get social_blocklistCaption;
+
+  /// lib/features/social/blocklist_screen.dart:244
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get social_blocklistConfirmLabel;
+
+  /// lib/features/social/blocklist_screen.dart:129
+  ///
+  /// In en, this message translates to:
+  /// **'Contract and domain blocks aren\'t available yet, so nothing is listed here.'**
+  String get social_blocklistDetail;
+
+  /// lib/features/social/blocklist_screen.dart:39
+  ///
+  /// In en, this message translates to:
+  /// **'Domain'**
+  String get social_blocklistDomain;
+
+  /// lib/features/social/blocklist_screen.dart:137
+  ///
+  /// In en, this message translates to:
+  /// **'No blocked accounts'**
+  String get social_blocklistEmptyMessage;
+
+  /// lib/features/social/blocklist_screen.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Choosing Report on a message request blocks the sender automatically.'**
+  String get social_blocklistEmptyReason;
+
+  /// lib/features/social/blocklist_screen.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'{userCount, plural, =1{1 blocked account} other{{userCount} blocked accounts}}'**
+  String social_blocklistHeading(num userCount);
+
+  /// lib/features/social/blocklist_screen.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'Users {userCount}'**
+  String social_blocklistLabel(Object? userCount);
+
+  /// lib/features/social/blocklist_screen.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get social_blocklistLoopBadge;
+
+  /// lib/features/social/blocklist_screen.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'\"{segmentLabels}\" blocks aren\'t available yet'**
+  String social_blocklistMessage(Object? segmentLabels);
+
+  /// lib/features/social/blocklist_screen.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked'**
+  String get social_blocklistMessage2;
+
+  /// lib/features/social/blocklist_screen.dart:231
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {blockReasonText}, can unblock'**
+  String social_blocklistSemanticLabel(Object? blockReasonText, Object? title);
+
+  /// lib/features/social/blocklist_screen.dart:75
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get social_blocklistStamp;
+
+  /// lib/features/social/blocklist_screen.dart:242
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {title}?'**
+  String social_blocklistTitle(Object? title);
+
+  /// lib/features/social/connections_screen.dart:307
+  ///
+  /// In en, this message translates to:
+  /// **'After unfollowing, you won\'t see their public posts.'**
+  String get social_connectionsBody;
+
+  /// lib/features/social/connections_screen.dart:308
+  ///
+  /// In en, this message translates to:
+  /// **'Following is one-way and doesn\'t need their approval. They need Discoverable on to be followed.'**
+  String get social_connectionsBody2;
+
+  /// lib/features/social/connections_screen.dart:130, lib/features/social/connections_screen.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Not following anyone yet'**
+  String get social_connectionsCommunityStateEmptyEmptyMessage;
+
+  /// lib/features/social/connections_screen.dart:131, lib/features/social/connections_screen.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'No followers yet'**
+  String get social_connectionsCommunityStateEmptyEmptyMessage2;
+
+  /// lib/features/social/connections_screen.dart:132, lib/features/social/connections_screen.dart:140, lib/features/social/dm_requests_screen.dart:95, lib/features/social/dm_requests_screen.dart:100
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts you\'ve blocked don\'t appear here.'**
+  String get social_connectionsCommunityStateEmptyEmptyReason;
+
+  /// lib/features/social/connections_screen.dart:265, lib/features/social/public_profile_sheet.dart:354
+  ///
+  /// In en, this message translates to:
+  /// **'Open direct message'**
+  String get social_connectionsConnectionActionDmLabel;
+
+  /// lib/features/social/connections_screen.dart:274, lib/features/social/connections_screen.dart:309, lib/features/social/public_profile_sheet.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get social_connectionsConnectionActionFollowLabel;
+
+  /// lib/features/social/connections_screen.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'Close contact actions'**
+  String get social_connectionsConnectionActionsSheetBarrierLabel;
+
+  /// lib/features/social/connections_screen.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'Follows unavailable'**
+  String get social_connectionsConnectionsCapabilityUnavailableTitle;
+
+  /// lib/features/social/connections_screen.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Others can find you by nickname once Privacy Center · Discoverable is on; your LOOP ID can always be searched exactly.'**
+  String get social_connectionsConnectionsDiscoverableNotice;
+
+  /// lib/features/social/connections_screen.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Following and followers'**
+  String get social_connectionsConnectionsScreenTitle;
+
+  /// lib/features/social/connections_screen.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'Followers {followers}'**
+  String social_connectionsConnectionsSegFollowersLabel(Object? followers);
+
+  /// lib/features/social/connections_screen.dart:86
+  ///
+  /// In en, this message translates to:
+  /// **'Following {following}'**
+  String social_connectionsConnectionsSegFollowingLabel(Object? following);
+
+  /// lib/features/social/connections_screen.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollowed'**
+  String get social_connectionsMessage;
+
+  /// lib/features/social/connections_screen.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'Follows'**
+  String get social_connectionsResource;
+
+  /// lib/features/social/connections_screen.dart:305
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow?'**
+  String get social_connectionsTitle;
+
+  /// lib/features/social/connections_screen.dart:305
+  ///
+  /// In en, this message translates to:
+  /// **'Follow this account?'**
+  String get social_connectionsTitle2;
+
+  /// lib/features/social/dm_requests_screen.dart:148, lib/features/social/dm_requests_screen.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get social_dmRequestsAccept;
+
+  /// lib/features/social/dm_requests_screen.dart:156
+  ///
+  /// In en, this message translates to:
+  /// **'Accepting connects you. It can\'t connect if either of you has blocked the other.'**
+  String get social_dmRequestsAccept2;
+
+  /// lib/features/social/dm_requests_screen.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Accept this request?'**
+  String get social_dmRequestsAcceptTitle;
+
+  /// lib/features/social/dm_requests_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get social_dmRequestsAccepted;
+
+  /// lib/features/social/dm_requests_screen.dart:234
+  ///
+  /// In en, this message translates to:
+  /// **'Close request actions'**
+  String get social_dmRequestsBarrierLabel;
+
+  /// lib/features/social/dm_requests_screen.dart:94, lib/features/social/dm_requests_screen.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get social_dmRequestsCommunityStateEmptyEmptyMessage;
+
+  /// lib/features/social/dm_requests_screen.dart:110
+  ///
+  /// In en, this message translates to:
+  /// **'The last decision didn\'t finish'**
+  String get social_dmRequestsDmRequestsActionFailureTitle;
+
+  /// lib/features/social/dm_requests_screen.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Message requests unavailable'**
+  String get social_dmRequestsDmRequestsCapabilityUnavailableTitle;
+
+  /// lib/features/social/dm_requests_screen.dart:68
+  ///
+  /// In en, this message translates to:
+  /// **'0 pending'**
+  String get social_dmRequestsEmpty;
+
+  /// lib/features/social/dm_requests_screen.dart:149, lib/features/social/dm_requests_screen.dart:254
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore'**
+  String get social_dmRequestsIgnore;
+
+  /// lib/features/social/dm_requests_screen.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'After ignoring, they can\'t send another request for 24 hours.'**
+  String get social_dmRequestsIgnore2;
+
+  /// lib/features/social/dm_requests_screen.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Ignore this request?'**
+  String get social_dmRequestsIgnoreTitle;
+
+  /// lib/features/social/dm_requests_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored'**
+  String get social_dmRequestsIgnored;
+
+  /// lib/features/social/dm_requests_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'Reported and blocked'**
+  String get social_dmRequestsMessage;
+
+  /// lib/features/social/dm_requests_screen.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'{items} pending'**
+  String social_dmRequestsReady(Object? items);
+
+  /// lib/features/social/dm_requests_screen.dart:150, lib/features/social/dm_requests_screen.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block'**
+  String get social_dmRequestsReport;
+
+  /// lib/features/social/dm_requests_screen.dart:158
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting declines the request, blocks the sender, writes an audit record and removes follows both ways.'**
+  String get social_dmRequestsReport2;
+
+  /// lib/features/social/dm_requests_screen.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block this request?'**
+  String get social_dmRequestsReportTitle;
+
+  /// lib/features/social/loop_id_copy.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Copy LOOP ID'**
+  String get social_idCopyLabel;
+
+  /// lib/features/social/loop_id_copy.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP ID copied'**
+  String get social_idCopyMessage;
+
+  /// lib/features/social/loop_id_share.dart:76
+  ///
+  /// In en, this message translates to:
+  /// **'Add me as a friend on LOOP: {loopId}'**
+  String social_idShareLine(Object? loopId);
+
+  /// lib/features/social/social_models.dart:162
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by you'**
+  String get social_modelsSwitch;
+
+  /// lib/features/social/social_models.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked automatically when reporting a message request'**
+  String get social_modelsSwitch2;
+
+  /// lib/features/social/social_models.dart:164
+  ///
+  /// In en, this message translates to:
+  /// **'Block reason'**
+  String get social_modelsSwitch3;
+
+  /// lib/features/social/profile_face_link.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'View my profile'**
+  String get social_profileFaceLinkLabel;
+
+  /// lib/features/social/profile_face_link.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'View {name}\'s profile'**
+  String social_profileFaceLinkLabel2(Object? name);
+
+  /// lib/features/social/public_profile_sheet.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'Close public profile'**
+  String get social_publicProfileSheetBarrierLabel;
+
+  /// lib/features/social/public_profile_sheet.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'If you\'re not connected yet, you\'ll send a message request first.'**
+  String get social_publicProfileSheetPublicProfileDmHint;
+
+  /// lib/features/social/public_profile_sheet.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **'Not following'**
+  String get social_publicProfileSheetPublicProfileFollowState;
+
+  /// lib/features/social/public_profile_sheet.dart:333
+  ///
+  /// In en, this message translates to:
+  /// **'The current follow status can\'t be read here; the result after the action applies.'**
+  String get social_publicProfileSheetPublicProfileFollowUnknownBody;
+
+  /// lib/features/social/public_profile_sheet.dart:323
+  ///
+  /// In en, this message translates to:
+  /// **'This account has no public profile; it can\'t be followed or acted on.'**
+  String get social_publicProfileSheetPublicProfileNotTargetableDetail;
+
+  /// lib/features/social/public_profile_sheet.dart:322
+  ///
+  /// In en, this message translates to:
+  /// **'This member has no public profile'**
+  String get social_publicProfileSheetPublicProfileNotTargetableMessage;
+
+  /// lib/features/social/public_profile_sheet.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'View profile'**
+  String get social_publicProfileSheetPublicProfileOpenPageLabel;
+
   /// lib/features/square/square_community_list.dart:99
   ///
   /// In en, this message translates to:

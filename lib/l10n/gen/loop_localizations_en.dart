@@ -11519,6 +11519,604 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get shell_tabSquare => 'Square';
 
   @override
+  String get socialPublicProfile_controllerAlreadyFriends =>
+      'You\'re already friends.';
+
+  @override
+  String get socialPublicProfile_controllerCommand => 'Friend request sent';
+
+  @override
+  String get socialPublicProfile_controllerCommand2 => 'Friend removed';
+
+  @override
+  String get socialPublicProfile_controllerCommand3 => 'Blocked';
+
+  @override
+  String get socialPublicProfile_controllerCooldown =>
+      'Recently declined. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerIncomingRequestPending =>
+      'They\'ve sent you a request. Handle it in Friend requests.';
+
+  @override
+  String get socialPublicProfile_controllerNotFound => 'User not found.';
+
+  @override
+  String get socialPublicProfile_controllerOutcomeUnknown =>
+      'Result not confirmed. Refresh to check; don\'t resubmit.';
+
+  @override
+  String get socialPublicProfile_controllerOutgoingRequestPending =>
+      'Request already sent, waiting for them.';
+
+  @override
+  String get socialPublicProfile_controllerPermissionDenied =>
+      'They don\'t accept friend requests.';
+
+  @override
+  String get socialPublicProfile_controllerProfileRequired =>
+      'Activate your LOOP ID first.';
+
+  @override
+  String get socialPublicProfile_controllerRateLimited =>
+      'Too many attempts. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerS => 'Unfollowed';
+
+  @override
+  String get socialPublicProfile_controllerS2 => 'Unblocked';
+
+  @override
+  String get socialPublicProfile_controllerSwitch =>
+      'Friend request not sent. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerUnavailable =>
+      'The friend service isn\'t available right now; no request was sent.';
+
+  @override
+  String get socialPublicProfile_modelsTransferIn => 'Transfer in';
+
+  @override
+  String get socialPublicProfile_modelsTransferOut => 'Transfer out';
+
+  @override
+  String get socialPublicProfile_userBody =>
+      'After removing, you\'re no longer friends; direct message history is kept. You can send a request again later.';
+
+  @override
+  String get socialPublicProfile_userBody2 =>
+      'After blocking, they can\'t see your profile or send you messages or friend requests. You can unblock in Block list.';
+
+  @override
+  String get socialPublicProfile_userCountCommunities => 'Communities';
+
+  @override
+  String get socialPublicProfile_userCountFollowing => 'Following';
+
+  @override
+  String get socialPublicProfile_userDetail =>
+      'On-chain data isn\'t available right now; 0 isn\'t shown in its place.';
+
+  @override
+  String get socialPublicProfile_userFriends => 'Friends';
+
+  @override
+  String get socialPublicProfile_userHoldingsHidden => 'Holdings not public';
+
+  @override
+  String get socialPublicProfile_userHoldingsUnavailable =>
+      'Couldn\'t load holdings right now';
+
+  @override
+  String get socialPublicProfile_userLaunch2Row => 'Launch chain';
+
+  @override
+  String socialPublicProfile_userLoopRecordRow(Object? block) {
+    return 'Block #$block';
+  }
+
+  @override
+  String socialPublicProfile_userMembers(Object? formatDecimal) {
+    return '$formatDecimal members';
+  }
+
+  @override
+  String get socialPublicProfile_userNone => 'Add friend';
+
+  @override
+  String get socialPublicProfile_userOneMember => '1 member';
+
+  @override
+  String get socialPublicProfile_userPendingIn => 'Respond';
+
+  @override
+  String get socialPublicProfile_userPendingOut => 'Requested';
+
+  @override
+  String socialPublicProfile_userS(Object? launch2StageLabel) {
+    return 'Launch chain, $launch2StageLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userSwitch => 'Total holdings';
+
+  @override
+  String socialPublicProfile_userSwitch2(Object? localTimestampLabel) {
+    return 'Loaded $localTimestampLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle => 'Remove friend?';
+
+  @override
+  String socialPublicProfile_userTitle2(Object? displayName) {
+    return 'Block $displayName?';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle4 => 'No wallet yet';
+
+  @override
+  String get socialPublicProfile_userTradesHidden => 'Trades not public';
+
+  @override
+  String get socialPublicProfile_userTradesUnavailable =>
+      'Couldn\'t load trades right now';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel => 'Unblock';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel2 => 'Block';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedBody =>
+      'They can\'t send you messages or friend requests, and you can\'t see their holdings or trades.';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedTitle =>
+      'You blocked them';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesEmptyTitle =>
+      'No communities joined yet';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesHiddenTitle =>
+      'Community list not public';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableDetail =>
+      'The community service isn\'t available right now; an empty list isn\'t shown in its place.';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableMessage =>
+      'Couldn\'t load communities right now';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsEmptyTitle =>
+      'No holdings yet';
+
+  @override
+  String
+  get socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel =>
+      'MEME holdings unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsTotal => 'No quote';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetMessage =>
+      'Enter from a chat, search or member list.';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetTitle =>
+      'No user to open from this link';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSemanticLabel =>
+      'More actions';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSheetBarrierLabel =>
+      'Close more actions';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundMessage =>
+      'The account doesn\'t exist, or their profile isn\'t visible to you.';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundTitle =>
+      'User not found';
+
+  @override
+  String get socialPublicProfile_userUserProfileRemoveFriendLabel =>
+      'Remove friend';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportLabel =>
+      'Report and block';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportUnavailable =>
+      'Reporting isn\'t available yet; you can block for now.';
+
+  @override
+  String get socialPublicProfile_userUserProfileScreenTitle => 'User profile';
+
+  @override
+  String get socialPublicProfile_userUserProfileShareCardSemanticLabel =>
+      'Share card';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesEmptyTitle =>
+      'No trades yet';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel =>
+      'MEME records unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableDetail =>
+      'The profile service isn\'t available yet; this page didn\'t load anything.';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableMessage =>
+      'User profile unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnblockLabel => 'Unblock';
+
+  @override
+  String get socialQr_cardBarrierLabel => 'Close QR card';
+
+  @override
+  String get socialQr_cardCopy => 'Invite text copied';
+
+  @override
+  String get socialQr_cardDismissed =>
+      'Poster created, but no share destination was chosen';
+
+  @override
+  String get socialQr_cardFailed =>
+      'Couldn\'t create the poster; nothing left this device';
+
+  @override
+  String get socialQr_cardLoopCommunityQrCard => 'Community QR card';
+
+  @override
+  String get socialQr_cardLoopUserQrCard => 'My QR card';
+
+  @override
+  String socialQr_cardQrCardCodeSemanticLabel(Object? name) {
+    return '$name\'s QR code';
+  }
+
+  @override
+  String get socialQr_cardQrCardCopyInviteLabel => 'Copy invite text';
+
+  @override
+  String get socialQr_cardQrCardCopyLinkLabel => 'Copy link';
+
+  @override
+  String socialQr_cardQrCardPosterLabel(Object? name) {
+    return '$name\'s QR card';
+  }
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel => 'Creating…';
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel2 => 'Share poster';
+
+  @override
+  String get socialQr_cardQrCardUnavailableLabel => 'QR code unavailable';
+
+  @override
+  String socialQr_cardS(Object? link, Object? name) {
+    return 'Join \"$name\" on LOOP\n$link';
+  }
+
+  @override
+  String get socialQr_cardShared => 'Poster created. Choose where to share it';
+
+  @override
+  String socialQr_cardSwitch(Object? name) {
+    return 'Join \"$name\" on LOOP';
+  }
+
+  @override
+  String get socialQr_cardSwitch2 => 'Scan to add me';
+
+  @override
+  String socialQr_cardSwitch3(num memberCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      memberCount,
+      locale: localeName,
+      other: '$memberCount members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get socialQr_cardSwitch4 => 'Scan to join';
+
+  @override
+  String get socialQr_cardUnavailable =>
+      'System sharing isn\'t available in this run; no poster was created';
+
+  @override
+  String get social_blocklistBlocklistCapabilityUnavailableTitle =>
+      'Block list unavailable';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsDetail =>
+      'These two block types aren\'t available yet, so nothing is listed here.';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsMessage =>
+      'Contract and domain blocks aren\'t available yet';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeBody =>
+      'Blocking immediately removes follows both ways and hides them from search, follow lists and message requests. Unblocking doesn\'t restore follows; you\'ll need to follow again.';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeTitle =>
+      'What blocking does';
+
+  @override
+  String get social_blocklistBody =>
+      'After unblocking, they can show up in search and message requests again. Removed follows aren\'t restored automatically.';
+
+  @override
+  String get social_blocklistCaption =>
+      'Blocking overrides follows and direct messages. Unblocking doesn\'t restore follows.';
+
+  @override
+  String get social_blocklistConfirmLabel => 'Unblock';
+
+  @override
+  String get social_blocklistDetail =>
+      'Contract and domain blocks aren\'t available yet, so nothing is listed here.';
+
+  @override
+  String get social_blocklistDomain => 'Domain';
+
+  @override
+  String get social_blocklistEmptyMessage => 'No blocked accounts';
+
+  @override
+  String get social_blocklistEmptyReason =>
+      'Choosing Report on a message request blocks the sender automatically.';
+
+  @override
+  String social_blocklistHeading(num userCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      userCount,
+      locale: localeName,
+      other: '$userCount blocked accounts',
+      one: '1 blocked account',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String social_blocklistLabel(Object? userCount) {
+    return 'Users $userCount';
+  }
+
+  @override
+  String get social_blocklistLoopBadge => 'Unblock';
+
+  @override
+  String social_blocklistMessage(Object? segmentLabels) {
+    return '\"$segmentLabels\" blocks aren\'t available yet';
+  }
+
+  @override
+  String get social_blocklistMessage2 => 'Unblocked';
+
+  @override
+  String social_blocklistSemanticLabel(Object? blockReasonText, Object? title) {
+    return '$title, $blockReasonText, can unblock';
+  }
+
+  @override
+  String get social_blocklistStamp => 'Private';
+
+  @override
+  String social_blocklistTitle(Object? title) {
+    return 'Unblock $title?';
+  }
+
+  @override
+  String get social_connectionsBody =>
+      'After unfollowing, you won\'t see their public posts.';
+
+  @override
+  String get social_connectionsBody2 =>
+      'Following is one-way and doesn\'t need their approval. They need Discoverable on to be followed.';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage =>
+      'Not following anyone yet';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage2 =>
+      'No followers yet';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyReason =>
+      'Accounts you\'ve blocked don\'t appear here.';
+
+  @override
+  String get social_connectionsConnectionActionDmLabel => 'Open direct message';
+
+  @override
+  String get social_connectionsConnectionActionFollowLabel => 'Unfollow';
+
+  @override
+  String get social_connectionsConnectionActionsSheetBarrierLabel =>
+      'Close contact actions';
+
+  @override
+  String get social_connectionsConnectionsCapabilityUnavailableTitle =>
+      'Follows unavailable';
+
+  @override
+  String get social_connectionsConnectionsDiscoverableNotice =>
+      'Others can find you by nickname once Privacy Center · Discoverable is on; your LOOP ID can always be searched exactly.';
+
+  @override
+  String get social_connectionsConnectionsScreenTitle =>
+      'Following and followers';
+
+  @override
+  String social_connectionsConnectionsSegFollowersLabel(Object? followers) {
+    return 'Followers $followers';
+  }
+
+  @override
+  String social_connectionsConnectionsSegFollowingLabel(Object? following) {
+    return 'Following $following';
+  }
+
+  @override
+  String get social_connectionsMessage => 'Unfollowed';
+
+  @override
+  String get social_connectionsResource => 'Follows';
+
+  @override
+  String get social_connectionsTitle => 'Unfollow?';
+
+  @override
+  String get social_connectionsTitle2 => 'Follow this account?';
+
+  @override
+  String get social_dmRequestsAccept => 'Accept';
+
+  @override
+  String get social_dmRequestsAccept2 =>
+      'Accepting connects you. It can\'t connect if either of you has blocked the other.';
+
+  @override
+  String get social_dmRequestsAcceptTitle => 'Accept this request?';
+
+  @override
+  String get social_dmRequestsAccepted => 'Accepted';
+
+  @override
+  String get social_dmRequestsBarrierLabel => 'Close request actions';
+
+  @override
+  String get social_dmRequestsCommunityStateEmptyEmptyMessage =>
+      'No pending requests';
+
+  @override
+  String get social_dmRequestsDmRequestsActionFailureTitle =>
+      'The last decision didn\'t finish';
+
+  @override
+  String get social_dmRequestsDmRequestsCapabilityUnavailableTitle =>
+      'Message requests unavailable';
+
+  @override
+  String get social_dmRequestsEmpty => '0 pending';
+
+  @override
+  String get social_dmRequestsIgnore => 'Ignore';
+
+  @override
+  String get social_dmRequestsIgnore2 =>
+      'After ignoring, they can\'t send another request for 24 hours.';
+
+  @override
+  String get social_dmRequestsIgnoreTitle => 'Ignore this request?';
+
+  @override
+  String get social_dmRequestsIgnored => 'Ignored';
+
+  @override
+  String get social_dmRequestsMessage => 'Reported and blocked';
+
+  @override
+  String social_dmRequestsReady(Object? items) {
+    return '$items pending';
+  }
+
+  @override
+  String get social_dmRequestsReport => 'Report and block';
+
+  @override
+  String get social_dmRequestsReport2 =>
+      'Reporting declines the request, blocks the sender, writes an audit record and removes follows both ways.';
+
+  @override
+  String get social_dmRequestsReportTitle => 'Report and block this request?';
+
+  @override
+  String get social_idCopyLabel => 'Copy LOOP ID';
+
+  @override
+  String get social_idCopyMessage => 'LOOP ID copied';
+
+  @override
+  String social_idShareLine(Object? loopId) {
+    return 'Add me as a friend on LOOP: $loopId';
+  }
+
+  @override
+  String get social_modelsSwitch => 'Blocked by you';
+
+  @override
+  String get social_modelsSwitch2 =>
+      'Blocked automatically when reporting a message request';
+
+  @override
+  String get social_modelsSwitch3 => 'Block reason';
+
+  @override
+  String get social_profileFaceLinkLabel => 'View my profile';
+
+  @override
+  String social_profileFaceLinkLabel2(Object? name) {
+    return 'View $name\'s profile';
+  }
+
+  @override
+  String get social_publicProfileSheetBarrierLabel => 'Close public profile';
+
+  @override
+  String get social_publicProfileSheetPublicProfileDmHint =>
+      'If you\'re not connected yet, you\'ll send a message request first.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowState =>
+      'Not following';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowUnknownBody =>
+      'The current follow status can\'t be read here; the result after the action applies.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableDetail =>
+      'This account has no public profile; it can\'t be followed or acted on.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableMessage =>
+      'This member has no public profile';
+
+  @override
+  String get social_publicProfileSheetPublicProfileOpenPageLabel =>
+      'View profile';
+
+  @override
   String get square_communityListBarrierLabel => 'Close sorting rules';
 
   @override

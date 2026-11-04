@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:uuid/uuid.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The three page segments of `user-profile` (S107 §3).
 enum PublicProfileSection { holdings, trades, communities }
@@ -490,7 +491,9 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
               publicProfileId: record.publicProfileId,
               following: following,
             );
-        return outcome.viewerFollows ? '已关注' : '已取消关注';
+        return outcome.viewerFollows
+            ? LoopL10n.current.common_following
+            : LoopL10n.current.social_connectionsMessage;
       });
 
   Future<PublicProfileActionOutcome?> requestFriend() => _command((
@@ -514,7 +517,7 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
         profileRef: target,
       );
     }
-    return '好友申请已发送';
+    return LoopL10n.current.socialPublicProfile_controllerCommand;
   });
 
   Future<PublicProfileActionOutcome?> removeFriend() =>
@@ -522,7 +525,7 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
         await ref
             .read(publicProfileGatewayProvider)
             .removeFriend(record.publicProfileId);
-        return '已删除好友';
+        return LoopL10n.current.socialPublicProfile_controllerCommand2;
       });
 
   Future<PublicProfileActionOutcome?> setBlocked(bool blocked) =>
@@ -534,7 +537,9 @@ final class PublicProfileController extends Notifier<PublicProfileState> {
               stableId: record.publicProfileId,
               blocked: blocked,
             );
-        return blocked ? '已拉黑' : '已解除拉黑';
+        return blocked
+            ? LoopL10n.current.socialPublicProfile_controllerCommand3
+            : LoopL10n.current.socialPublicProfile_controllerS2;
       });
 }
 
@@ -546,15 +551,25 @@ final publicProfileControllerProvider = NotifierProvider.autoDispose
 
 /// zh-CN copy for a friend command the server refused.
 String friendCommandReason(FriendGatewayFailureKind kind) => switch (kind) {
-  FriendGatewayFailureKind.alreadyFriends => '你们已经是好友了。',
-  FriendGatewayFailureKind.outgoingRequestPending => '已经发过申请，等对方处理。',
-  FriendGatewayFailureKind.incomingRequestPending => '对方已向你发出申请，去「好友申请」里处理。',
-  FriendGatewayFailureKind.cooldown => '刚被拒绝过，过一段时间再试。',
-  FriendGatewayFailureKind.permissionDenied => '对方没有开放好友申请。',
-  FriendGatewayFailureKind.rateLimited => '操作太频繁，请稍后再试。',
-  FriendGatewayFailureKind.profileRequired => '需要先完成 LOOP ID 激活。',
-  FriendGatewayFailureKind.notFound => '找不到这个用户。',
-  FriendGatewayFailureKind.unavailable => '好友服务暂不可用，没有发出申请。',
-  FriendGatewayFailureKind.outcomeUnknown => '结果未确认，请刷新后再看，不要重复提交。',
-  _ => '好友申请没有发出，请稍后再试。',
+  FriendGatewayFailureKind.alreadyFriends =>
+    LoopL10n.current.socialPublicProfile_controllerAlreadyFriends,
+  FriendGatewayFailureKind.outgoingRequestPending =>
+    LoopL10n.current.socialPublicProfile_controllerOutgoingRequestPending,
+  FriendGatewayFailureKind.incomingRequestPending =>
+    LoopL10n.current.socialPublicProfile_controllerIncomingRequestPending,
+  FriendGatewayFailureKind.cooldown =>
+    LoopL10n.current.socialPublicProfile_controllerCooldown,
+  FriendGatewayFailureKind.permissionDenied =>
+    LoopL10n.current.socialPublicProfile_controllerPermissionDenied,
+  FriendGatewayFailureKind.rateLimited =>
+    LoopL10n.current.socialPublicProfile_controllerRateLimited,
+  FriendGatewayFailureKind.profileRequired =>
+    LoopL10n.current.socialPublicProfile_controllerProfileRequired,
+  FriendGatewayFailureKind.notFound =>
+    LoopL10n.current.socialPublicProfile_controllerNotFound,
+  FriendGatewayFailureKind.unavailable =>
+    LoopL10n.current.socialPublicProfile_controllerUnavailable,
+  FriendGatewayFailureKind.outcomeUnknown =>
+    LoopL10n.current.socialPublicProfile_controllerOutcomeUnknown,
+  _ => LoopL10n.current.socialPublicProfile_controllerSwitch,
 };

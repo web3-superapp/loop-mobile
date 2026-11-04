@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Copying, sharing and recognising a LOOP ID (decision 0104).
 ///
@@ -73,7 +74,7 @@ String? loopIdProfileLink(String backendBaseUrl, String loopId) {
 /// The text handed to the system share sheet for the viewer's own ID.
 @visibleForTesting
 String loopIdShareText(String loopId, {String? link}) {
-  final line = '在 LOOP 上加我为好友：$loopId';
+  final line = LoopL10n.current.social_idShareLine(loopId);
   return link == null ? line : '$line\n$link';
 }
 

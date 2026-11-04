@@ -14718,6 +14718,744 @@
   "@shell_tabSquare": {
     "description": "lib/features/shell/loop_shell.dart:56"
   },
+  "socialPublicProfile_controllerAlreadyFriends": "You're already friends.",
+  "@socialPublicProfile_controllerAlreadyFriends": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:549"
+  },
+  "socialPublicProfile_controllerCommand": "Friend request sent",
+  "@socialPublicProfile_controllerCommand": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:517"
+  },
+  "socialPublicProfile_controllerCommand2": "Friend removed",
+  "@socialPublicProfile_controllerCommand2": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:525"
+  },
+  "socialPublicProfile_controllerCommand3": "Blocked",
+  "@socialPublicProfile_controllerCommand3": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:537"
+  },
+  "socialPublicProfile_controllerCooldown": "Recently declined. Try again later.",
+  "@socialPublicProfile_controllerCooldown": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:552"
+  },
+  "socialPublicProfile_controllerIncomingRequestPending": "They've sent you a request. Handle it in Friend requests.",
+  "@socialPublicProfile_controllerIncomingRequestPending": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:551"
+  },
+  "socialPublicProfile_controllerNotFound": "User not found.",
+  "@socialPublicProfile_controllerNotFound": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:556"
+  },
+  "socialPublicProfile_controllerOutcomeUnknown": "Result not confirmed. Refresh to check; don't resubmit.",
+  "@socialPublicProfile_controllerOutcomeUnknown": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:558"
+  },
+  "socialPublicProfile_controllerOutgoingRequestPending": "Request already sent, waiting for them.",
+  "@socialPublicProfile_controllerOutgoingRequestPending": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:550"
+  },
+  "socialPublicProfile_controllerPermissionDenied": "They don't accept friend requests.",
+  "@socialPublicProfile_controllerPermissionDenied": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:553"
+  },
+  "socialPublicProfile_controllerProfileRequired": "Activate your LOOP ID first.",
+  "@socialPublicProfile_controllerProfileRequired": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:555"
+  },
+  "socialPublicProfile_controllerRateLimited": "Too many attempts. Try again later.",
+  "@socialPublicProfile_controllerRateLimited": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:554"
+  },
+  "socialPublicProfile_controllerS": "Unfollowed",
+  "@socialPublicProfile_controllerS": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:493"
+  },
+  "socialPublicProfile_controllerS2": "Unblocked",
+  "@socialPublicProfile_controllerS2": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:537"
+  },
+  "socialPublicProfile_controllerSwitch": "Friend request not sent. Try again later.",
+  "@socialPublicProfile_controllerSwitch": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:559"
+  },
+  "socialPublicProfile_controllerUnavailable": "The friend service isn't available right now; no request was sent.",
+  "@socialPublicProfile_controllerUnavailable": {
+    "description": "lib/features/social/public_profile/public_profile_controller.dart:557"
+  },
+  "socialPublicProfile_modelsTransferIn": "Transfer in",
+  "@socialPublicProfile_modelsTransferIn": {
+    "description": "lib/features/social/public_profile/public_profile_models.dart:299"
+  },
+  "socialPublicProfile_modelsTransferOut": "Transfer out",
+  "@socialPublicProfile_modelsTransferOut": {
+    "description": "lib/features/social/public_profile/public_profile_models.dart:300"
+  },
+  "socialPublicProfile_userBody": "After removing, you're no longer friends; direct message history is kept. You can send a request again later.",
+  "@socialPublicProfile_userBody": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:364"
+  },
+  "socialPublicProfile_userBody2": "After blocking, they can't see your profile or send you messages or friend requests. You can unblock in Block list.",
+  "@socialPublicProfile_userBody2": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:373"
+  },
+  "socialPublicProfile_userCountCommunities": "Communities",
+  "@socialPublicProfile_userCountCommunities": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:551"
+  },
+  "socialPublicProfile_userCountFollowing": "Following",
+  "@socialPublicProfile_userCountFollowing": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:551"
+  },
+  "socialPublicProfile_userDetail": "On-chain data isn't available right now; 0 isn't shown in its place.",
+  "@socialPublicProfile_userDetail": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:696"
+  },
+  "socialPublicProfile_userFriends": "Friends",
+  "@socialPublicProfile_userFriends": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:599"
+  },
+  "socialPublicProfile_userHoldingsHidden": "Holdings not public",
+  "@socialPublicProfile_userHoldingsHidden": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:666"
+  },
+  "socialPublicProfile_userHoldingsUnavailable": "Couldn't load holdings right now",
+  "@socialPublicProfile_userHoldingsUnavailable": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:666"
+  },
+  "socialPublicProfile_userLaunch2Row": "Launch chain",
+  "@socialPublicProfile_userLaunch2Row": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:826"
+  },
+  "socialPublicProfile_userLoopRecordRow": "Block #{block}",
+  "@socialPublicProfile_userLoopRecordRow": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1036",
+    "placeholders": {
+      "block": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialPublicProfile_userMembers": "{formatDecimal} members",
+  "@socialPublicProfile_userMembers": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1128",
+    "placeholders": {
+      "formatDecimal": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialPublicProfile_userNone": "Add friend",
+  "@socialPublicProfile_userNone": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:596"
+  },
+  "socialPublicProfile_userOneMember": "1 member",
+  "@socialPublicProfile_userOneMember": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1127"
+  },
+  "socialPublicProfile_userPendingIn": "Respond",
+  "@socialPublicProfile_userPendingIn": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:598"
+  },
+  "socialPublicProfile_userPendingOut": "Requested",
+  "@socialPublicProfile_userPendingOut": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:597"
+  },
+  "socialPublicProfile_userS": "Launch chain, {launch2StageLabel}",
+  "@socialPublicProfile_userS": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:827",
+    "placeholders": {
+      "launch2StageLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialPublicProfile_userSwitch": "Total holdings",
+  "@socialPublicProfile_userSwitch": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:769"
+  },
+  "socialPublicProfile_userSwitch2": "Loaded {localTimestampLabel}",
+  "@socialPublicProfile_userSwitch2": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:781",
+    "placeholders": {
+      "localTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialPublicProfile_userTitle": "Remove friend?",
+  "@socialPublicProfile_userTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:363"
+  },
+  "socialPublicProfile_userTitle2": "Block {displayName}?",
+  "@socialPublicProfile_userTitle2": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:372",
+    "placeholders": {
+      "displayName": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialPublicProfile_userTitle4": "No wallet yet",
+  "@socialPublicProfile_userTitle4": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:690"
+  },
+  "socialPublicProfile_userTradesHidden": "Trades not public",
+  "@socialPublicProfile_userTradesHidden": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:666"
+  },
+  "socialPublicProfile_userTradesUnavailable": "Couldn't load trades right now",
+  "@socialPublicProfile_userTradesUnavailable": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:666"
+  },
+  "socialPublicProfile_userUserProfileBlockLabel": "Unblock",
+  "@socialPublicProfile_userUserProfileBlockLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:326"
+  },
+  "socialPublicProfile_userUserProfileBlockLabel2": "Block",
+  "@socialPublicProfile_userUserProfileBlockLabel2": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:326, lib/features/social/public_profile/user_profile_screen.dart:374"
+  },
+  "socialPublicProfile_userUserProfileBlockedBody": "They can't send you messages or friend requests, and you can't see their holdings or trades.",
+  "@socialPublicProfile_userUserProfileBlockedBody": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:640"
+  },
+  "socialPublicProfile_userUserProfileBlockedTitle": "You blocked them",
+  "@socialPublicProfile_userUserProfileBlockedTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:639"
+  },
+  "socialPublicProfile_userUserProfileCommunitiesEmptyTitle": "No communities joined yet",
+  "@socialPublicProfile_userUserProfileCommunitiesEmptyTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1103"
+  },
+  "socialPublicProfile_userUserProfileCommunitiesHiddenTitle": "Community list not public",
+  "@socialPublicProfile_userUserProfileCommunitiesHiddenTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1095"
+  },
+  "socialPublicProfile_userUserProfileCommunitiesUnavailableDetail": "The community service isn't available right now; an empty list isn't shown in its place.",
+  "@socialPublicProfile_userUserProfileCommunitiesUnavailableDetail": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1077"
+  },
+  "socialPublicProfile_userUserProfileCommunitiesUnavailableMessage": "Couldn't load communities right now",
+  "@socialPublicProfile_userUserProfileCommunitiesUnavailableMessage": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:1076"
+  },
+  "socialPublicProfile_userUserProfileHoldingsEmptyTitle": "No holdings yet",
+  "@socialPublicProfile_userUserProfileHoldingsEmptyTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:805"
+  },
+  "socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel": "MEME holdings unavailable",
+  "@socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:797"
+  },
+  "socialPublicProfile_userUserProfileHoldingsTotal": "No quote",
+  "@socialPublicProfile_userUserProfileHoldingsTotal": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:772, lib/features/social/public_profile/user_profile_screen.dart:878"
+  },
+  "socialPublicProfile_userUserProfileInvalidTargetMessage": "Enter from a chat, search or member list.",
+  "@socialPublicProfile_userUserProfileInvalidTargetMessage": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:144"
+  },
+  "socialPublicProfile_userUserProfileInvalidTargetTitle": "No user to open from this link",
+  "@socialPublicProfile_userUserProfileInvalidTargetTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:143"
+  },
+  "socialPublicProfile_userUserProfileMoreSemanticLabel": "More actions",
+  "@socialPublicProfile_userUserProfileMoreSemanticLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:620"
+  },
+  "socialPublicProfile_userUserProfileMoreSheetBarrierLabel": "Close more actions",
+  "@socialPublicProfile_userUserProfileMoreSheetBarrierLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:301"
+  },
+  "socialPublicProfile_userUserProfileNotFoundMessage": "The account doesn't exist, or their profile isn't visible to you.",
+  "@socialPublicProfile_userUserProfileNotFoundMessage": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:404"
+  },
+  "socialPublicProfile_userUserProfileNotFoundTitle": "User not found",
+  "@socialPublicProfile_userUserProfileNotFoundTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:403"
+  },
+  "socialPublicProfile_userUserProfileRemoveFriendLabel": "Remove friend",
+  "@socialPublicProfile_userUserProfileRemoveFriendLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:318"
+  },
+  "socialPublicProfile_userUserProfileReportLabel": "Report and block",
+  "@socialPublicProfile_userUserProfileReportLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:338"
+  },
+  "socialPublicProfile_userUserProfileReportUnavailable": "Reporting isn't available yet; you can block for now.",
+  "@socialPublicProfile_userUserProfileReportUnavailable": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:343"
+  },
+  "socialPublicProfile_userUserProfileScreenTitle": "User profile",
+  "@socialPublicProfile_userUserProfileScreenTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:137, lib/features/social/public_profile/user_profile_screen.dart:170, lib/features/social/public_profile/user_profile_screen.dart:178"
+  },
+  "socialPublicProfile_userUserProfileShareCardSemanticLabel": "Share card",
+  "@socialPublicProfile_userUserProfileShareCardSemanticLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:613"
+  },
+  "socialPublicProfile_userUserProfileTradesEmptyTitle": "No trades yet",
+  "@socialPublicProfile_userUserProfileTradesEmptyTitle": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:957"
+  },
+  "socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel": "MEME records unavailable",
+  "@socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:943"
+  },
+  "socialPublicProfile_userUserProfileUnavailableDetail": "The profile service isn't available yet; this page didn't load anything.",
+  "@socialPublicProfile_userUserProfileUnavailableDetail": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:412"
+  },
+  "socialPublicProfile_userUserProfileUnavailableMessage": "User profile unavailable",
+  "@socialPublicProfile_userUserProfileUnavailableMessage": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:411"
+  },
+  "socialPublicProfile_userUserProfileUnblockLabel": "Unblock",
+  "@socialPublicProfile_userUserProfileUnblockLabel": {
+    "description": "lib/features/social/public_profile/user_profile_screen.dart:649"
+  },
+  "socialQr_cardBarrierLabel": "Close QR card",
+  "@socialQr_cardBarrierLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:119"
+  },
+  "socialQr_cardCopy": "Invite text copied",
+  "@socialQr_cardCopy": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:230"
+  },
+  "socialQr_cardDismissed": "Poster created, but no share destination was chosen",
+  "@socialQr_cardDismissed": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:103"
+  },
+  "socialQr_cardFailed": "Couldn't create the poster; nothing left this device",
+  "@socialQr_cardFailed": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:104"
+  },
+  "socialQr_cardLoopCommunityQrCard": "Community QR card",
+  "@socialQr_cardLoopCommunityQrCard": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:157"
+  },
+  "socialQr_cardLoopUserQrCard": "My QR card",
+  "@socialQr_cardLoopUserQrCard": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:156"
+  },
+  "socialQr_cardQrCardCodeSemanticLabel": "{name}'s QR code",
+  "@socialQr_cardQrCardCodeSemanticLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:424",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialQr_cardQrCardCopyInviteLabel": "Copy invite text",
+  "@socialQr_cardQrCardCopyInviteLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:228"
+  },
+  "socialQr_cardQrCardCopyLinkLabel": "Copy link",
+  "@socialQr_cardQrCardCopyLinkLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:208"
+  },
+  "socialQr_cardQrCardPosterLabel": "{name}'s QR card",
+  "@socialQr_cardQrCardPosterLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:350",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialQr_cardQrCardSharePosterLabel": "Creating…",
+  "@socialQr_cardQrCardSharePosterLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:220"
+  },
+  "socialQr_cardQrCardSharePosterLabel2": "Share poster",
+  "@socialQr_cardQrCardSharePosterLabel2": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:220"
+  },
+  "socialQr_cardQrCardUnavailableLabel": "QR code unavailable",
+  "@socialQr_cardQrCardUnavailableLabel": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:173"
+  },
+  "socialQr_cardS": "Join \"{name}\" on LOOP\n{link}",
+  "@socialQr_cardS": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:95",
+    "placeholders": {
+      "link": {
+        "type": "Object?"
+      },
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialQr_cardShared": "Poster created. Choose where to share it",
+  "@socialQr_cardShared": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:102"
+  },
+  "socialQr_cardSwitch": "Join \"{name}\" on LOOP",
+  "@socialQr_cardSwitch": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:95",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "socialQr_cardSwitch2": "Scan to add me",
+  "@socialQr_cardSwitch2": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:318"
+  },
+  "socialQr_cardSwitch3": "{memberCount, plural, =1{1 member} other{{memberCount} members}}",
+  "@socialQr_cardSwitch3": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:328",
+    "placeholders": {
+      "memberCount": {
+        "type": "num"
+      }
+    }
+  },
+  "socialQr_cardSwitch4": "Scan to join",
+  "@socialQr_cardSwitch4": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:330"
+  },
+  "socialQr_cardUnavailable": "System sharing isn't available in this run; no poster was created",
+  "@socialQr_cardUnavailable": {
+    "description": "lib/features/social/qr/loop_qr_card.dart:105"
+  },
+  "social_blocklistBlocklistCapabilityUnavailableTitle": "Block list unavailable",
+  "@social_blocklistBlocklistCapabilityUnavailableTitle": {
+    "description": "lib/features/social/blocklist_screen.dart:110"
+  },
+  "social_blocklistBlocklistDeferredKindsDetail": "These two block types aren't available yet, so nothing is listed here.",
+  "@social_blocklistBlocklistDeferredKindsDetail": {
+    "description": "lib/features/social/blocklist_screen.dart:182"
+  },
+  "social_blocklistBlocklistDeferredKindsMessage": "Contract and domain blocks aren't available yet",
+  "@social_blocklistBlocklistDeferredKindsMessage": {
+    "description": "lib/features/social/blocklist_screen.dart:181"
+  },
+  "social_blocklistBlocklistPrecedenceNoticeBody": "Blocking immediately removes follows both ways and hides them from search, follow lists and message requests. Unblocking doesn't restore follows; you'll need to follow again.",
+  "@social_blocklistBlocklistPrecedenceNoticeBody": {
+    "description": "lib/features/social/blocklist_screen.dart:197"
+  },
+  "social_blocklistBlocklistPrecedenceNoticeTitle": "What blocking does",
+  "@social_blocklistBlocklistPrecedenceNoticeTitle": {
+    "description": "lib/features/social/blocklist_screen.dart:195"
+  },
+  "social_blocklistBody": "After unblocking, they can show up in search and message requests again. Removed follows aren't restored automatically.",
+  "@social_blocklistBody": {
+    "description": "lib/features/social/blocklist_screen.dart:243"
+  },
+  "social_blocklistCaption": "Blocking overrides follows and direct messages. Unblocking doesn't restore follows.",
+  "@social_blocklistCaption": {
+    "description": "lib/features/social/blocklist_screen.dart:74"
+  },
+  "social_blocklistConfirmLabel": "Unblock",
+  "@social_blocklistConfirmLabel": {
+    "description": "lib/features/social/blocklist_screen.dart:244"
+  },
+  "social_blocklistDetail": "Contract and domain blocks aren't available yet, so nothing is listed here.",
+  "@social_blocklistDetail": {
+    "description": "lib/features/social/blocklist_screen.dart:129"
+  },
+  "social_blocklistDomain": "Domain",
+  "@social_blocklistDomain": {
+    "description": "lib/features/social/blocklist_screen.dart:39"
+  },
+  "social_blocklistEmptyMessage": "No blocked accounts",
+  "@social_blocklistEmptyMessage": {
+    "description": "lib/features/social/blocklist_screen.dart:137"
+  },
+  "social_blocklistEmptyReason": "Choosing Report on a message request blocks the sender automatically.",
+  "@social_blocklistEmptyReason": {
+    "description": "lib/features/social/blocklist_screen.dart:138"
+  },
+  "social_blocklistHeading": "{userCount, plural, =1{1 blocked account} other{{userCount} blocked accounts}}",
+  "@social_blocklistHeading": {
+    "description": "lib/features/social/blocklist_screen.dart:73",
+    "placeholders": {
+      "userCount": {
+        "type": "num"
+      }
+    }
+  },
+  "social_blocklistLabel": "Users {userCount}",
+  "@social_blocklistLabel": {
+    "description": "lib/features/social/blocklist_screen.dart:94",
+    "placeholders": {
+      "userCount": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_blocklistLoopBadge": "Unblock",
+  "@social_blocklistLoopBadge": {
+    "description": "lib/features/social/blocklist_screen.dart:227"
+  },
+  "social_blocklistMessage": "\"{segmentLabels}\" blocks aren't available yet",
+  "@social_blocklistMessage": {
+    "description": "lib/features/social/blocklist_screen.dart:128",
+    "placeholders": {
+      "segmentLabels": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_blocklistMessage2": "Unblocked",
+  "@social_blocklistMessage2": {
+    "description": "lib/features/social/blocklist_screen.dart:251"
+  },
+  "social_blocklistSemanticLabel": "{title}, {blockReasonText}, can unblock",
+  "@social_blocklistSemanticLabel": {
+    "description": "lib/features/social/blocklist_screen.dart:231",
+    "placeholders": {
+      "blockReasonText": {
+        "type": "Object?"
+      },
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_blocklistStamp": "Private",
+  "@social_blocklistStamp": {
+    "description": "lib/features/social/blocklist_screen.dart:75"
+  },
+  "social_blocklistTitle": "Unblock {title}?",
+  "@social_blocklistTitle": {
+    "description": "lib/features/social/blocklist_screen.dart:242",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_connectionsBody": "After unfollowing, you won't see their public posts.",
+  "@social_connectionsBody": {
+    "description": "lib/features/social/connections_screen.dart:307"
+  },
+  "social_connectionsBody2": "Following is one-way and doesn't need their approval. They need Discoverable on to be followed.",
+  "@social_connectionsBody2": {
+    "description": "lib/features/social/connections_screen.dart:308"
+  },
+  "social_connectionsCommunityStateEmptyEmptyMessage": "Not following anyone yet",
+  "@social_connectionsCommunityStateEmptyEmptyMessage": {
+    "description": "lib/features/social/connections_screen.dart:130, lib/features/social/connections_screen.dart:138"
+  },
+  "social_connectionsCommunityStateEmptyEmptyMessage2": "No followers yet",
+  "@social_connectionsCommunityStateEmptyEmptyMessage2": {
+    "description": "lib/features/social/connections_screen.dart:131, lib/features/social/connections_screen.dart:139"
+  },
+  "social_connectionsCommunityStateEmptyEmptyReason": "Accounts you've blocked don't appear here.",
+  "@social_connectionsCommunityStateEmptyEmptyReason": {
+    "description": "lib/features/social/connections_screen.dart:132, lib/features/social/connections_screen.dart:140, lib/features/social/dm_requests_screen.dart:95, lib/features/social/dm_requests_screen.dart:100"
+  },
+  "social_connectionsConnectionActionDmLabel": "Open direct message",
+  "@social_connectionsConnectionActionDmLabel": {
+    "description": "lib/features/social/connections_screen.dart:265, lib/features/social/public_profile_sheet.dart:354"
+  },
+  "social_connectionsConnectionActionFollowLabel": "Unfollow",
+  "@social_connectionsConnectionActionFollowLabel": {
+    "description": "lib/features/social/connections_screen.dart:274, lib/features/social/connections_screen.dart:309, lib/features/social/public_profile_sheet.dart:338"
+  },
+  "social_connectionsConnectionActionsSheetBarrierLabel": "Close contact actions",
+  "@social_connectionsConnectionActionsSheetBarrierLabel": {
+    "description": "lib/features/social/connections_screen.dart:247"
+  },
+  "social_connectionsConnectionsCapabilityUnavailableTitle": "Follows unavailable",
+  "@social_connectionsConnectionsCapabilityUnavailableTitle": {
+    "description": "lib/features/social/connections_screen.dart:112"
+  },
+  "social_connectionsConnectionsDiscoverableNotice": "Others can find you by nickname once Privacy Center · Discoverable is on; your LOOP ID can always be searched exactly.",
+  "@social_connectionsConnectionsDiscoverableNotice": {
+    "description": "lib/features/social/connections_screen.dart:178"
+  },
+  "social_connectionsConnectionsScreenTitle": "Following and followers",
+  "@social_connectionsConnectionsScreenTitle": {
+    "description": "lib/features/social/connections_screen.dart:69"
+  },
+  "social_connectionsConnectionsSegFollowersLabel": "Followers {followers}",
+  "@social_connectionsConnectionsSegFollowersLabel": {
+    "description": "lib/features/social/connections_screen.dart:96",
+    "placeholders": {
+      "followers": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_connectionsConnectionsSegFollowingLabel": "Following {following}",
+  "@social_connectionsConnectionsSegFollowingLabel": {
+    "description": "lib/features/social/connections_screen.dart:86",
+    "placeholders": {
+      "following": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_connectionsMessage": "Unfollowed",
+  "@social_connectionsMessage": {
+    "description": "lib/features/social/connections_screen.dart:319"
+  },
+  "social_connectionsResource": "Follows",
+  "@social_connectionsResource": {
+    "description": "lib/features/social/connections_screen.dart:124"
+  },
+  "social_connectionsTitle": "Unfollow?",
+  "@social_connectionsTitle": {
+    "description": "lib/features/social/connections_screen.dart:305"
+  },
+  "social_connectionsTitle2": "Follow this account?",
+  "@social_connectionsTitle2": {
+    "description": "lib/features/social/connections_screen.dart:305"
+  },
+  "social_dmRequestsAccept": "Accept",
+  "@social_dmRequestsAccept": {
+    "description": "lib/features/social/dm_requests_screen.dart:148, lib/features/social/dm_requests_screen.dart:224"
+  },
+  "social_dmRequestsAccept2": "Accepting connects you. It can't connect if either of you has blocked the other.",
+  "@social_dmRequestsAccept2": {
+    "description": "lib/features/social/dm_requests_screen.dart:156"
+  },
+  "social_dmRequestsAcceptTitle": "Accept this request?",
+  "@social_dmRequestsAcceptTitle": {
+    "description": "lib/features/social/dm_requests_screen.dart:154"
+  },
+  "social_dmRequestsAccepted": "Accepted",
+  "@social_dmRequestsAccepted": {
+    "description": "lib/features/social/dm_requests_screen.dart:182"
+  },
+  "social_dmRequestsBarrierLabel": "Close request actions",
+  "@social_dmRequestsBarrierLabel": {
+    "description": "lib/features/social/dm_requests_screen.dart:234"
+  },
+  "social_dmRequestsCommunityStateEmptyEmptyMessage": "No pending requests",
+  "@social_dmRequestsCommunityStateEmptyEmptyMessage": {
+    "description": "lib/features/social/dm_requests_screen.dart:94, lib/features/social/dm_requests_screen.dart:99"
+  },
+  "social_dmRequestsDmRequestsActionFailureTitle": "The last decision didn't finish",
+  "@social_dmRequestsDmRequestsActionFailureTitle": {
+    "description": "lib/features/social/dm_requests_screen.dart:110"
+  },
+  "social_dmRequestsDmRequestsCapabilityUnavailableTitle": "Message requests unavailable",
+  "@social_dmRequestsDmRequestsCapabilityUnavailableTitle": {
+    "description": "lib/features/social/dm_requests_screen.dart:77"
+  },
+  "social_dmRequestsEmpty": "0 pending",
+  "@social_dmRequestsEmpty": {
+    "description": "lib/features/social/dm_requests_screen.dart:68"
+  },
+  "social_dmRequestsIgnore": "Ignore",
+  "@social_dmRequestsIgnore": {
+    "description": "lib/features/social/dm_requests_screen.dart:149, lib/features/social/dm_requests_screen.dart:254"
+  },
+  "social_dmRequestsIgnore2": "After ignoring, they can't send another request for 24 hours.",
+  "@social_dmRequestsIgnore2": {
+    "description": "lib/features/social/dm_requests_screen.dart:157"
+  },
+  "social_dmRequestsIgnoreTitle": "Ignore this request?",
+  "@social_dmRequestsIgnoreTitle": {
+    "description": "lib/features/social/dm_requests_screen.dart:154"
+  },
+  "social_dmRequestsIgnored": "Ignored",
+  "@social_dmRequestsIgnored": {
+    "description": "lib/features/social/dm_requests_screen.dart:182"
+  },
+  "social_dmRequestsMessage": "Reported and blocked",
+  "@social_dmRequestsMessage": {
+    "description": "lib/features/social/dm_requests_screen.dart:182"
+  },
+  "social_dmRequestsReady": "{items} pending",
+  "@social_dmRequestsReady": {
+    "description": "lib/features/social/dm_requests_screen.dart:67",
+    "placeholders": {
+      "items": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_dmRequestsReport": "Report and block",
+  "@social_dmRequestsReport": {
+    "description": "lib/features/social/dm_requests_screen.dart:150, lib/features/social/dm_requests_screen.dart:264"
+  },
+  "social_dmRequestsReport2": "Reporting declines the request, blocks the sender, writes an audit record and removes follows both ways.",
+  "@social_dmRequestsReport2": {
+    "description": "lib/features/social/dm_requests_screen.dart:158"
+  },
+  "social_dmRequestsReportTitle": "Report and block this request?",
+  "@social_dmRequestsReportTitle": {
+    "description": "lib/features/social/dm_requests_screen.dart:154"
+  },
+  "social_idCopyLabel": "Copy LOOP ID",
+  "@social_idCopyLabel": {
+    "description": "lib/features/social/loop_id_copy.dart:62"
+  },
+  "social_idCopyMessage": "LOOP ID copied",
+  "@social_idCopyMessage": {
+    "description": "lib/features/social/loop_id_copy.dart:85"
+  },
+  "social_idShareLine": "Add me as a friend on LOOP: {loopId}",
+  "@social_idShareLine": {
+    "description": "lib/features/social/loop_id_share.dart:76",
+    "placeholders": {
+      "loopId": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_modelsSwitch": "Blocked by you",
+  "@social_modelsSwitch": {
+    "description": "lib/features/social/social_models.dart:162"
+  },
+  "social_modelsSwitch2": "Blocked automatically when reporting a message request",
+  "@social_modelsSwitch2": {
+    "description": "lib/features/social/social_models.dart:163"
+  },
+  "social_modelsSwitch3": "Block reason",
+  "@social_modelsSwitch3": {
+    "description": "lib/features/social/social_models.dart:164"
+  },
+  "social_profileFaceLinkLabel": "View my profile",
+  "@social_profileFaceLinkLabel": {
+    "description": "lib/features/social/profile_face_link.dart:67"
+  },
+  "social_profileFaceLinkLabel2": "View {name}'s profile",
+  "@social_profileFaceLinkLabel2": {
+    "description": "lib/features/social/profile_face_link.dart:67",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "social_publicProfileSheetBarrierLabel": "Close public profile",
+  "@social_publicProfileSheetBarrierLabel": {
+    "description": "lib/features/social/public_profile_sheet.dart:165"
+  },
+  "social_publicProfileSheetPublicProfileDmHint": "If you're not connected yet, you'll send a message request first.",
+  "@social_publicProfileSheetPublicProfileDmHint": {
+    "description": "lib/features/social/public_profile_sheet.dart:365"
+  },
+  "social_publicProfileSheetPublicProfileFollowState": "Not following",
+  "@social_publicProfileSheetPublicProfileFollowState": {
+    "description": "lib/features/social/public_profile_sheet.dart:313"
+  },
+  "social_publicProfileSheetPublicProfileFollowUnknownBody": "The current follow status can't be read here; the result after the action applies.",
+  "@social_publicProfileSheetPublicProfileFollowUnknownBody": {
+    "description": "lib/features/social/public_profile_sheet.dart:333"
+  },
+  "social_publicProfileSheetPublicProfileNotTargetableDetail": "This account has no public profile; it can't be followed or acted on.",
+  "@social_publicProfileSheetPublicProfileNotTargetableDetail": {
+    "description": "lib/features/social/public_profile_sheet.dart:323"
+  },
+  "social_publicProfileSheetPublicProfileNotTargetableMessage": "This member has no public profile",
+  "@social_publicProfileSheetPublicProfileNotTargetableMessage": {
+    "description": "lib/features/social/public_profile_sheet.dart:322"
+  },
+  "social_publicProfileSheetPublicProfileOpenPageLabel": "View profile",
+  "@social_publicProfileSheetPublicProfileOpenPageLabel": {
+    "description": "lib/features/social/public_profile_sheet.dart:376"
+  },
   "square_communityListBarrierLabel": "Close sorting rules",
   "@square_communityListBarrierLabel": {
     "description": "lib/features/square/square_community_list.dart:99"

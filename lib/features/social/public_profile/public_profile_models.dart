@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Another account, as `GET /v2/profiles/{id}` states it (S107 §3,
 /// decision 0112).
@@ -294,15 +295,22 @@ final class ProfileHoldings {
 }
 
 enum ProfileTradeKind {
-  buy('buy', '买入'),
-  sell('sell', '卖出'),
-  transferIn('transfer_in', '转入'),
-  transferOut('transfer_out', '转出');
+  buy('buy'),
+  sell('sell'),
+  transferIn('transfer_in'),
+  transferOut('transfer_out');
 
-  const ProfileTradeKind(this.wireName, this.label);
+  const ProfileTradeKind(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    ProfileTradeKind.buy => LoopL10n.current.common_buy,
+    ProfileTradeKind.sell => LoopL10n.current.common_sell,
+    ProfileTradeKind.transferIn =>
+      LoopL10n.current.socialPublicProfile_modelsTransferIn,
+    ProfileTradeKind.transferOut =>
+      LoopL10n.current.socialPublicProfile_modelsTransferOut,
+  };
 
   static ProfileTradeKind? tryParse(Object? value) {
     for (final item in values) {

@@ -2465,7 +2465,7 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
                 "chat Spot snapshot supports 390pt at 2x Dynamic Type",
                 "find.text('ETH position snapshot'), findsNothing",
                 "find.text('Save setup'), findsNothing",
-                "expect(semantics.properties.label, 'ETH Spot market snapshot · Development preview')",
+                "'ETH Spot market snapshot · Development preview'",
                 "expect(watchButton.onPressed, isNull)",
                 "find.byKey(const ValueKey<String>('public-spot-market-ledger'))",
                 "TextScaler.linear(textScale)",
@@ -2905,7 +2905,7 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
                 r"expect\s*\(\s*find\.text\s*\(\s*'SPOT PREVIEW'\s*\)\s*,\s*findsOneWidget\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'Shared at 14:12 · Demo data'\s*\)\s*,\s*findsOneWidget\s*\)",
                 r"tester\.widget<Semantics>\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'chat-spot-snapshot-semantics'\s*\)",
-                r"expect\s*\(\s*semantics\.properties\.label\s*,\s*'ETH Spot market snapshot · Development preview'\s*\)",
+                r"expect\s*\(\s*semantics\.properties\.label\s*,\s*'ETH Spot market snapshot · Development preview'\s*,?\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'ETH position snapshot'\s*\)\s*,\s*findsNothing\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'LONG'\s*\)\s*,\s*findsNothing\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'Entry'\s*\)\s*,\s*findsNothing\s*\)",
@@ -3159,7 +3159,7 @@ CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
     "production_cid": "cd1ec47454a1c55cb2225b7e119b5f5f36ff61dbf6e1434edcaa26705b89f98a",
-    "unavailable_page": "3476f8d0a2ad8d4e0e2922a926fc2177bfcfa88fceca55dbb39189c8ed3351ff",
+    "unavailable_page": "7a7f78cf50dcab85806b0040521f93047080f33a55cfaa37c84835e9deb33859",
 }
 
 

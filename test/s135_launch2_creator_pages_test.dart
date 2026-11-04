@@ -1736,7 +1736,12 @@ void main() {
           ],
         ),
       );
-      expect(find.text('Review rejected: Name or ticker conflicts with an existing project'), findsOneWidget);
+      expect(
+        find.text(
+          'Review rejected: Name or ticker conflicts with an existing project',
+        ),
+        findsOneWidget,
+      );
       expect(
         find.textContaining("Project details didn't pass review"),
         findsOneWidget,
