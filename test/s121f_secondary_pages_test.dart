@@ -371,7 +371,7 @@ void main() {
           openedAt: opened,
           now: opened.add(const Duration(minutes: 23)),
         ),
-        '12 在听 · 开播 23 分钟',
+        '12 在听 · Live 23m',
       );
       expect(
         voiceRoomLiveLine(
@@ -379,7 +379,7 @@ void main() {
           openedAt: opened,
           now: opened.subtract(const Duration(minutes: 1)),
         ),
-        '3 在听 · 刚开播',
+        '3 在听 · Just started',
       );
     });
   });

@@ -12,9 +12,13 @@ import 'support/loop_ground_probe.dart';
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 import 'support/s83c_fixtures.dart';
+import 'support/loop_shots.dart';
 
 /// Decision 0096 · `launch-detail`'s 发射轨道 as a horizontal accordion.
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; these pages are measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   loopWatchGround();
   final now = DateTime.utc(2026, 9, 22, 12);
 
@@ -111,7 +115,7 @@ void main() {
     // Decision 0100: two small cards (window; price and round cap, the unit
     // in the label), raised over the bar, and the wallet cap as the footer.
     for (final text in <String>[
-      'Round 2，公开轮',
+      'Round 2, Public round',
       '09-22 00:00',
       '09-23 00:00',
       '0.01',
@@ -127,7 +131,7 @@ void main() {
     expect(
       find.descendant(
         of: key('launch-track-strip-2'),
-        matching: find.text('钱包上限 500 USD1'),
+        matching: find.text('Wallet cap 500 USD1'),
       ),
       findsOneWidget,
     );
@@ -162,7 +166,7 @@ void main() {
     expect(
       find.descendant(
         of: key('launch-track-detail-1'),
-        matching: find.text('Round 1，名单轮'),
+        matching: find.text('Round 1, Allowlist round'),
       ),
       findsOneWidget,
     );
@@ -227,7 +231,7 @@ void main() {
       '0.01',
       '40,000',
       '10,000 USD1',
-      '钱包上限 500 USD1',
+      'Wallet cap 500 USD1',
     ]) {
       final figure = tester.getRect(
         find.descendant(
@@ -278,7 +282,9 @@ void main() {
     expect(
       find.descendant(
         of: key('launch-track-detail-3'),
-        matching: find.text('LOOP 没有这一轮的记录，不能在这里认购'),
+        matching: find.text(
+          'LOOP has no record of this round. You can\'t buy here.',
+        ),
       ),
       findsOneWidget,
     );
@@ -294,7 +300,10 @@ void main() {
     await runMotion(tester);
     final detail = key('launch-track-detail-end');
     expect(
-      find.descendant(of: detail, matching: find.text('毕业与迁移')),
+      find.descendant(
+        of: detail,
+        matching: find.text('Graduation and migration'),
+      ),
       findsOneWidget,
     );
     // Decision 0100: the projection is the open strip's badge, on its title

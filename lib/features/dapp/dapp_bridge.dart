@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/dapp/dapp_gateway.dart';
 import 'package:loop_mobile/features/dapp/dapp_models.dart';
 import 'package:loop_mobile/features/dapp/dapp_provider_script.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// What the bridge asks of the page that owns it (S342 · decision 0270).
 ///
@@ -52,10 +53,11 @@ abstract interface class DappBridgeHost {
 }
 
 /// The toast a signing request on BSC Mainnet shows (docs/55 §一).
-const String dappMainnetSigningText = '暂不支持在这个网络签名';
+String get dappMainnetSigningText =>
+    LoopL10n.current.dapp_bridgeDappMainnetSigningText;
 
 /// The toast for `409 INTENT_BUSY`: another wallet action is open (S346).
-const String dappIntentBusyText = '钱包有待处理的操作';
+String get dappIntentBusyText => LoopL10n.current.dapp_bridgeDappIntentBusyText;
 
 /// 128 random bits, hex.
 String dappRandomSecret() {
@@ -643,7 +645,9 @@ final class DappBridge {
     // switch to.
     if (failure.reasonCode == 'TYPED_DATA_INVALID' ||
         failure.reasonCode == 'TYPED_DATA_CHAIN_MISMATCH') {
-      host.toast(dappPrepareFailureText(failure) ?? '这笔请求没有通过检查');
+      host.toast(
+        dappPrepareFailureText(failure) ?? LoopL10n.current.dapp_bridgeToast,
+      );
       return const DappRpcError(
         DappRpcErrorCode.invalidParams,
         'Invalid typed data',
@@ -782,8 +786,10 @@ final class DappBridge {
 String? dappPrepareFailureText(LoopChainException failure) =>
     switch (failure.kind) {
       LoopChainFailureKind.offline ||
-      LoopChainFailureKind.timedOut => '网络不可用，请稍后再试',
-      LoopChainFailureKind.unavailable => '暂不支持在这个页面签名',
-      LoopChainFailureKind.insufficientBalance => '余额不足以支付这笔交易',
-      _ => '这笔请求没有通过检查',
+      LoopChainFailureKind.timedOut => LoopL10n.current.dapp_bridgeTimedOut,
+      LoopChainFailureKind.unavailable =>
+        LoopL10n.current.dapp_bridgeUnavailable,
+      LoopChainFailureKind.insufficientBalance =>
+        LoopL10n.current.dapp_bridgeInsufficientBalance,
+      _ => LoopL10n.current.dapp_bridgeToast,
     };

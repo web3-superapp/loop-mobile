@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the three S7 ports
 /// (`launch`, `mining` and `referral`).
@@ -109,41 +110,54 @@ const String launchMissingFigure = '—';
 /// stray green rule rather than as a placeholder. The heading therefore says
 /// it: never `0`, never blank, and still the plain statement that this page
 /// has no number to show yet.
-const String launchMissingHeading = '暂无数值';
+String get launchMissingHeading =>
+    LoopL10n.current.launch_contractLaunchMissingHeading;
 
 /// The same placeholder for a heading that was never a number. A missing
 /// project name is not a missing figure, and neither is a missing eligibility
 /// result; saying 暂无数值 there would describe the wrong kind of gap.
-const String launchMissingName = '暂无名称';
-const String launchMissingResult = '暂无结果';
+String get launchMissingName =>
+    LoopL10n.current.launch_contractLaunchMissingName;
+String get launchMissingResult =>
+    LoopL10n.current.launch_contractLaunchMissingResult;
 
 /// What a configuration slot says while no version of it is confirmed.
 ///
 /// The version that will confirm it is a backend identifier. It says nothing a
 /// reader can act on, so the slot states the status alone.
-const String launchPendingConfirmationLabel = '待确认';
+String get launchPendingConfirmationLabel =>
+    LoopL10n.current.common_pendingConfirmation;
 
 /// zh-CN copy for a failed S7 operation. It states what did not happen; it
 /// never claims a result the server did not confirm.
 String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
-  LaunchFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
-  LaunchFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
-  LaunchFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
-  LaunchFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
-  LaunchFailureKind.unavailable => '这项功能暂时不可用，请稍后再试。',
-  LaunchFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
-  LaunchFailureKind.policyBlocked => '这次操作没有通过服务端的规则检查，没有提交任何内容。',
-  LaunchFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
-  LaunchFailureKind.stale => '当前状态不允许这个操作，请刷新后按最新状态重新决定。',
-  LaunchFailureKind.versionConflict => '资料已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
-  LaunchFailureKind.activationRequired => '需要先完成 LOOP ID 激活才能执行此操作。',
-  LaunchFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
-  LaunchFailureKind.validationFailed => '输入内容不符合要求，请修改后重试。',
-  LaunchFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
-  LaunchFailureKind.insufficientBalance => '支付钱包的余额、授权额度或网络费不足，没有提交任何交易。',
-  LaunchFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
-  LaunchFailureKind.unexpected => '操作没有完成，请稍后再试。',
-  null => '操作没有完成。',
+  LaunchFailureKind.offline => LoopL10n.current.launch_contractOffline,
+  LaunchFailureKind.timedOut => LoopL10n.current.launch_contractTimedOut,
+  LaunchFailureKind.cancelled => LoopL10n.current.launch_contractCancelled,
+  LaunchFailureKind.outcomeUnknown =>
+    LoopL10n.current.launch_contractOutcomeUnknown,
+  LaunchFailureKind.unavailable => LoopL10n.current.launch_contractUnavailable,
+  LaunchFailureKind.permissionDenied =>
+    LoopL10n.current.launch_contractPermissionDenied,
+  LaunchFailureKind.policyBlocked =>
+    LoopL10n.current.launch_contractPolicyBlocked,
+  LaunchFailureKind.notFound => LoopL10n.current.launch_contractNotFound,
+  LaunchFailureKind.stale => LoopL10n.current.launch_contractStale,
+  LaunchFailureKind.versionConflict =>
+    LoopL10n.current.launch_contractVersionConflict,
+  LaunchFailureKind.activationRequired =>
+    LoopL10n.current.launch_contractActivationRequired,
+  LaunchFailureKind.bootstrapRequired =>
+    LoopL10n.current.launch_contractBootstrapRequired,
+  LaunchFailureKind.validationFailed =>
+    LoopL10n.current.launch_contractValidationFailed,
+  LaunchFailureKind.idempotencyConflict =>
+    LoopL10n.current.launch_contractIdempotencyConflict,
+  LaunchFailureKind.insufficientBalance =>
+    LoopL10n.current.launch_contractInsufficientBalance,
+  LaunchFailureKind.invalidData => LoopL10n.current.launch_contractInvalidData,
+  LaunchFailureKind.unexpected => LoopL10n.current.launch_contractUnexpected,
+  null => LoopL10n.current.common_actionIncomplete,
 };
 
 /// Whether a write's outcome is unknown, so its idempotency key must be
@@ -161,76 +175,82 @@ bool launchOutcomeIsUnresolved(LaunchFailureKind kind) =>
 /// until the contract and formula baselines are delivered.
 String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // launch · contract baseline
-  'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，链上状态、购买、退款与领取都暂时不可用。',
+  'LAUNCH_CONTRACT_BASELINE_PENDING' => LoopL10n.current.launch_contractSwitch,
   // launch · contract adapter (loop-api decision 0076)
-  'LAUNCH_CONTRACT_VERIFICATION_PENDING' => 'Launch 合约正在完成链上校验，请稍后刷新。',
-  'LAUNCH_CONTRACT_CODE_MISSING' => '配置的 Launch 合约地址上没有代码，链上状态暂时不可用。',
-  'LAUNCH_CONTRACT_VERSION_UNSUPPORTED' => '当前 Launch 合约版本不受支持，链上状态暂时不可用。',
-  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 链还没有可用的节点，链上状态暂时不可用。',
-  'LAUNCH_CHAIN_ID_MISMATCH' => 'Launch 节点返回的不是配置的链，链上状态暂时不可用。',
-  'LAUNCH_CHAIN_RPC_UNREACHABLE' => 'Launch 链节点暂时连不上，请稍后刷新。',
-  'LAUNCH_SALE_NOT_REGISTERED' => '这次发射还没有登记到链上，等待上链。',
-  'LAUNCH_SALE_CONTRACT_MISMATCH' => '这次发射登记的合约与当前配置不一致，链上状态暂时不可用。',
-  'LAUNCH_SALE_NOT_FOUND' => '合约上找不到这次发射，链上状态暂时不可用。',
-  'LAUNCH_CONFIG_VERSION_MISMATCH' => '链上配置版本与记录不一致，链上状态暂时不可用。',
-  'LAUNCH_USD1_ADDRESS_MISMATCH' => '这次发射的结算币不是配置的 USD1，链上状态暂时不可用。',
-  'LAUNCH_CONTRACT_READ_FAILED' => '读取 Launch 合约失败，请稍后刷新。',
+  'LAUNCH_CONTRACT_VERIFICATION_PENDING' =>
+    LoopL10n.current.launch_contractSwitch2,
+  'LAUNCH_CONTRACT_CODE_MISSING' => LoopL10n.current.launch_contractSwitch3,
+  'LAUNCH_CONTRACT_VERSION_UNSUPPORTED' =>
+    LoopL10n.current.launch_contractSwitch4,
+  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => LoopL10n.current.launch_contractSwitch5,
+  'LAUNCH_CHAIN_ID_MISMATCH' => LoopL10n.current.launch_contractSwitch6,
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => LoopL10n.current.launch_contractSwitch7,
+  'LAUNCH_SALE_NOT_REGISTERED' => LoopL10n.current.launch_contractSwitch8,
+  'LAUNCH_SALE_CONTRACT_MISMATCH' => LoopL10n.current.launch_contractSwitch9,
+  'LAUNCH_SALE_NOT_FOUND' => LoopL10n.current.launch_contractSwitch10,
+  'LAUNCH_CONFIG_VERSION_MISMATCH' => LoopL10n.current.launch_contractSwitch11,
+  'LAUNCH_USD1_ADDRESS_MISMATCH' => LoopL10n.current.launch_contractSwitch12,
+  'LAUNCH_CONTRACT_READ_FAILED' => LoopL10n.current.launch_contractSwitch13,
   // launch · purchase preflight (loop-api decision 0077, client 0089). Each
   // one leads back to its own guidance on the trade page.
   'LAUNCH_USD1_ALLOWANCE_INSUFFICIENT' =>
-    'USD1 授权额度不足以支付这次认购，没有提交任何交易。请先授权本次金额，授权到账后再购买。',
+    LoopL10n.current.launch_contractSwitch14,
   'LAUNCH_USD1_BALANCE_INSUFFICIENT' =>
-    '支付钱包在 Launch 链上的 USD1 余额不足，没有提交任何交易。请先向这个钱包转入足够的 USD1，或降低本次金额。',
-  'LAUNCH_GAS_INSUFFICIENT' =>
-    '支付钱包在 Launch 链上的原生币不足以支付网络费，没有提交任何交易。请先向这个钱包转入少量网络费用币后再试。',
-  'LAUNCH_CONTRACT_READ_INVALID' => 'Launch 合约返回了无法解读的值，链上状态暂时不可用。',
-  'LAUNCH_SNAPSHOT_REORGED' => '读取期间区块被重组，请稍后刷新。',
-  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => '列表不逐个读链，进入详情查看链上状态。',
-  'LAUNCH_CONFIG_PENDING_CONFIRMATION' => '这一项还没有确认的配置，数值待定。',
-  'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' => '还读不到流动性池信息，毕业步骤保持待触发。',
-  'LAUNCH_ECONOMY_CONTRACT_PENDING' => '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。',
-  'LAUNCH_RUNTIME_UNAVAILABLE' => 'Launch 暂时不可用，稍后再试。',
+    LoopL10n.current.launch_contractSwitch15,
+  'LAUNCH_GAS_INSUFFICIENT' => LoopL10n.current.launch_contractSwitch16,
+  'LAUNCH_CONTRACT_READ_INVALID' => LoopL10n.current.launch_contractSwitch17,
+  'LAUNCH_SNAPSHOT_REORGED' => LoopL10n.current.launch_contractSwitch18,
+  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' =>
+    LoopL10n.current.launch_contractSwitch19,
+  'LAUNCH_CONFIG_PENDING_CONFIRMATION' =>
+    LoopL10n.current.launch_contractSwitch20,
+  'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' =>
+    LoopL10n.current.launch_contractSwitch21,
+  'LAUNCH_ECONOMY_CONTRACT_PENDING' => LoopL10n.current.launch_contractSwitch22,
+  'LAUNCH_RUNTIME_UNAVAILABLE' => LoopL10n.current.launch_contractSwitch23,
   // launch · project ↔ community binding (loop-api decision 0125, client 0147)
-  'LAUNCH_COMMUNITY_NOT_OWNED' => '只能关联你担任群主的社区；这个社区不存在、已被驳回，或你已不是群主。资料没有保存。',
-  'TIER_MODE_PENDING' => '这次发射的资格规则还没有配置。资格不依赖质押。',
-  'STAKING_CONTRACT_PENDING' => '质押还没有开放，这一页暂时不能操作。',
-  'KYB_PROVIDER_NOT_SELECTED' => '开放后会在这里显示审核状态。',
-  'ATTACHMENT_STORAGE_NOT_SELECTED' => '暂时不能上传附件。',
+  'LAUNCH_COMMUNITY_NOT_OWNED' => LoopL10n.current.launch_contractSwitch24,
+  'TIER_MODE_PENDING' => LoopL10n.current.launch_contractSwitch25,
+  'STAKING_CONTRACT_PENDING' => LoopL10n.current.launch_contractSwitch26,
+  'KYB_PROVIDER_NOT_SELECTED' => LoopL10n.current.launch_contractSwitch27,
+  'ATTACHMENT_STORAGE_NOT_SELECTED' => LoopL10n.current.launch_contractSwitch28,
   // mining · formula baseline
-  'MINING_FORMULA_BASELINE_PENDING' => '挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。',
+  'MINING_FORMULA_BASELINE_PENDING' => LoopL10n.current.launch_contractSwitch29,
   // The boost has a code of its own (Decision 0046): it says that the
   // effective version has not approved the boost, and nothing about the
   // figures beside it. Restating the whole formula here would contradict a
   // page that is printing settled power at the same time.
-  'MINING_REFERRAL_BOOST_PENDING' => '生效的公式版本还没有批准邀请加成，这一项暂时没有数值。',
-  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力快照。',
-  'MINING_SNAPSHOT_STALE' => '最近一次算力快照用的是旧的公式版本，等下一次快照后再看。',
+  'MINING_REFERRAL_BOOST_PENDING' => LoopL10n.current.launch_contractSwitch30,
+  'MINING_SNAPSHOT_NOT_AVAILABLE' => LoopL10n.current.launch_contractSwitch31,
+  'MINING_SNAPSHOT_STALE' => LoopL10n.current.launch_contractSwitch32,
   // Decision 0057: a run that cannot value a held asset is not published, so
   // reading nothing is never published as a zero. These three say which of
   // 「还没算完」/「还没轮到这个钱包」/「这个资产没有报价」 it is.
-  'MINING_SNAPSHOT_INCOMPLETE' => '最近一次计算里有资产读不到参考价，这次没有发布；也还没有可以回退的完整快照。',
-  'MINING_SNAPSHOT_PENDING' => '这个钱包还没有进入任何一次完整的算力快照，下一次算力快照之后显示。',
-  'MINING_PRICE_PAIR_NOT_FOUND' => '这个资产暂时没有可用报价，这次没有计入。',
-  'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE' => '那一次算力快照的数据不完整，已经作废。',
-  'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => '最近一次算力快照里没有这个账号的钱包余额。',
-  'MINING_NETWORK_POWER_ZERO' => '全网算力为 0，还算不出份额。',
-  'MINING_DAILY_OUTPUT_NOT_CONFIGURED' => '当前公式版本还没有配置每日产量。',
-  'MINING_RANK_NOT_RANKED' => '算力为 0，暂时没有名次。',
-  'MINING_RANK_NOT_APPLICABLE' => '社区榜不显示个人名次。',
-  'MINING_POWER_PRIVATE' => '对方把挖矿算力设为仅自己可见。',
-  'MINING_PRICE_NOT_FRESH' => '参考价不够新，这个资产这次没有计入。',
-  'MINING_PRICE_PROXY_NOT_DECLARED' => '这个资产的参考价来自未登记的代币，这次没有计入。',
-  'MINING_ASSET_WEIGHT_NOT_CONFIGURED' => '当前公式版本没有给这个资产权重。',
-  'COMMUNITY_ASSET_NOT_BOUND' => '这个社区还没有绑定代币。',
-  'COMMUNITY_WEIGHT_AMBIGUOUS' => '有两个社区都绑定了这个资产，这次没有计入。',
-  'MINING_RUNTIME_UNAVAILABLE' => '挖矿暂时不可用，稍后再试。',
-  'REWARD_AUTHORITY_PENDING' => '奖励发放还没有开启，暂时不能领取。',
-  'COMMUNITY_WEIGHT_PENDING_REVIEW' => '这个社区的挖矿权重还在审核中。',
+  'MINING_SNAPSHOT_INCOMPLETE' => LoopL10n.current.launch_contractText,
+  'MINING_SNAPSHOT_PENDING' => LoopL10n.current.launch_contractText2,
+  'MINING_PRICE_PAIR_NOT_FOUND' => LoopL10n.current.launch_contractText3,
+  'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE' =>
+    LoopL10n.current.launch_contractText4,
+  'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => LoopL10n.current.launch_contractText5,
+  'MINING_NETWORK_POWER_ZERO' => LoopL10n.current.launch_contractText6,
+  'MINING_DAILY_OUTPUT_NOT_CONFIGURED' => LoopL10n.current.launch_contractText7,
+  'MINING_RANK_NOT_RANKED' => LoopL10n.current.launch_contractText8,
+  'MINING_RANK_NOT_APPLICABLE' => LoopL10n.current.launch_contractText9,
+  'MINING_POWER_PRIVATE' => LoopL10n.current.launch_contractText10,
+  'MINING_PRICE_NOT_FRESH' => LoopL10n.current.launch_contractText11,
+  'MINING_PRICE_PROXY_NOT_DECLARED' => LoopL10n.current.launch_contractText12,
+  'MINING_ASSET_WEIGHT_NOT_CONFIGURED' =>
+    LoopL10n.current.launch_contractText13,
+  'COMMUNITY_ASSET_NOT_BOUND' => LoopL10n.current.launch_contractText14,
+  'COMMUNITY_WEIGHT_AMBIGUOUS' => LoopL10n.current.launch_contractText15,
+  'MINING_RUNTIME_UNAVAILABLE' => LoopL10n.current.launch_contractText16,
+  'REWARD_AUTHORITY_PENDING' => LoopL10n.current.launch_contractText17,
+  'COMMUNITY_WEIGHT_PENDING_REVIEW' => LoopL10n.current.launch_contractText18,
   // referral
-  'REFERRAL_RUNTIME_UNAVAILABLE' => '邀请暂时不可用，稍后再试。',
-  'PROFILE_ACTIVATION_REQUIRED' => '需要先完成 LOOP ID 激活，才能绑定邀请码。',
-  null => '这一项暂时读不到。',
-  _ => '这一项暂时读不到。',
+  'REFERRAL_RUNTIME_UNAVAILABLE' => LoopL10n.current.launch_contractText19,
+  'PROFILE_ACTIVATION_REQUIRED' => LoopL10n.current.launch_contractText20,
+  null => LoopL10n.current.common_itemUnavailable,
+  _ => LoopL10n.current.common_itemUnavailable,
 };
 
 /// Decision 0097: `LAUNCH_CONTRACT_BASELINE_PENDING` on a resource the
@@ -260,12 +280,14 @@ String launchGraduatedReasonText(
   String reasonCode, {
   required bool contractLive,
 }) => switch (reasonCode) {
-  'LAUNCH_ONCHAIN_STATE_READ_FAILED' => '已毕业名单暂时读不到',
-  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => '链上索引还没有进度，已毕业名单暂时读不到。',
+  'LAUNCH_ONCHAIN_STATE_READ_FAILED' =>
+    LoopL10n.current.launch_contractSwitch33,
+  'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' =>
+    LoopL10n.current.launch_contractSwitch34,
   _ => launchBaselineReasonText(
     reasonCode,
     contractLive: contractLive,
-    whenLive: '已毕业名单还没有开放读取',
+    whenLive: LoopL10n.current.launch_contractWhenLive,
   ),
 };
 
@@ -277,7 +299,7 @@ String launchEconomyReasonText(
   String? reasonCode, {
   required bool contractLive,
 }) => contractLive && reasonCode == 'LAUNCH_ECONOMY_CONTRACT_PENDING'
-    ? '总量、发行与生态税还没有开放读取，这里只显示 LOOP 能核对的数量。'
+    ? LoopL10n.current.launch_contractSwitch35
     : launchReasonCodeText(reasonCode);
 
 /// Copy for a refused purchase intent (decision 0088).
@@ -292,8 +314,7 @@ String launchPurchaseRefusalText(LaunchFailureKind? kind, String? reasonCode) {
     if (launchUnexplainedReasonCode(reasonCode) == null) {
       return launchReasonCodeText(reasonCode);
     }
-    return '这次认购没有通过，这个原因还没有对应的说明，没有提交任何交易。'
-        '服务端给出的代码在下方「错误代码」里。';
+    return LoopL10n.current.launch_contractIf;
   }
   return launchFailureReason(kind);
 }

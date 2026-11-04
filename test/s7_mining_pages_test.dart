@@ -289,7 +289,10 @@ void main() {
         findsNothing,
       );
       expect(find.text('待领取：奖励发放还没有开启，暂时不能领取。'), findsNothing);
-      expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
+      expect(
+        find.textContaining("The mining formula isn't approved yet"),
+        findsNothing,
+      );
       // S350b · decision 0275: a dash cell is not drawn at all.
       expect(find.bySemanticsLabel(RegExp('^待领取，')), findsNothing);
     });
@@ -595,7 +598,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('权重还在审核中'), findsOneWidget);
+      expect(
+        find.textContaining('mining weight is still in review'),
+        findsOneWidget,
+      );
       expect(_figures(tester), isEmpty);
     });
 
@@ -635,8 +641,11 @@ void main() {
         findsNothing,
       );
       expect(find.text('没有可审的权重'), findsOneWidget);
-      expect(find.textContaining('权重还在审核中'), findsNothing);
-      expect(find.textContaining('还没有绑定代币'), findsWidgets);
+      expect(
+        find.textContaining('mining weight is still in review'),
+        findsNothing,
+      );
+      expect(find.textContaining("hasn't linked a token yet"), findsWidgets);
     });
 
     testWidgets('an approved weight renders the server value verbatim', (
@@ -939,7 +948,10 @@ void main() {
         find.byKey(const ValueKey<String>('launch-unavailable-已批准的公式版本')),
         findsOneWidget,
       );
-      expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
+      expect(
+        find.textContaining("The mining formula isn't approved yet"),
+        findsWidgets,
+      );
     });
 
     testWidgets('a weighted asset is headed by its symbol when one is read', (

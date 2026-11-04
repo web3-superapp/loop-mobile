@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
@@ -241,9 +242,11 @@ final launchPurchaseSignerProvider = Provider<LaunchPurchaseSigner>(
   ),
 );
 
-const String launchPurchaseTitle = '确认认购';
-const String launchClaimTitle = '确认领取';
-const String launchRefundTitle = '确认退款';
+String get launchPurchaseTitle =>
+    LoopL10n.current.launch_signingLaunchPurchaseTitle;
+String get launchClaimTitle => LoopL10n.current.launch_signingLaunchClaimTitle;
+String get launchRefundTitle =>
+    LoopL10n.current.launch_signingLaunchRefundTitle;
 
 /// The sheet's title for one intent kind (decision 0103).
 String launchIntentTitle(LaunchIntentKind kind) => switch (kind) {
@@ -254,25 +257,35 @@ String launchIntentTitle(LaunchIntentKind kind) => switch (kind) {
 
 /// The noun the copy uses for one intent kind.
 String launchIntentNoun(LaunchIntentKind kind) => switch (kind) {
-  LaunchIntentKind.buy => '认购',
-  LaunchIntentKind.claim => '领取',
-  LaunchIntentKind.claimRefund => '退款',
+  LaunchIntentKind.buy => LoopL10n.current.launch_intentNounBuy,
+  LaunchIntentKind.claim => LoopL10n.current.launch_intentNounClaim,
+  LaunchIntentKind.claimRefund => LoopL10n.current.launch_intentNounRefund,
+};
+
+/// The sign button's verb for one intent kind.
+String launchIntentActionLabel(LaunchIntentKind kind) => switch (kind) {
+  LaunchIntentKind.buy => LoopL10n.current.launch_intentActionBuy,
+  LaunchIntentKind.claim => LoopL10n.current.common_claim,
+  LaunchIntentKind.claimRefund => LoopL10n.current.launch_intentActionRefund,
 };
 
 /// Said on every claim and refund review: the contract moves the funds.
-const String launchSettlementCustodyNote = '合约执行，LOOP 不经手资金';
+String get launchSettlementCustodyNote =>
+    LoopL10n.current.launch_signingLaunchSettlementCustodyNote;
 
 /// The one sentence a claim or a refund review leads with (decision 0103),
 /// read from the server's own position figure at the snapshot block.
-String launchSettlementStatement(
-  LaunchPurchaseIntent intent,
-) => switch (intent.kind) {
-  LaunchIntentKind.claim =>
-    '领取 ${launchUnitsFigure(intent.claimableTokens ?? intent.expectedTokenAmount)} 代币到当前钱包',
-  LaunchIntentKind.claimRefund =>
-    '退回 ${launchUnitsFigure(intent.refundableUsd1 ?? '0')} USD1 到当前钱包',
-  LaunchIntentKind.buy => launchPurchaseTitle,
-};
+String launchSettlementStatement(LaunchPurchaseIntent intent) =>
+    switch (intent.kind) {
+      LaunchIntentKind.claim => LoopL10n.current.launch_signingClaim(
+        launchUnitsFigure(intent.claimableTokens ?? intent.expectedTokenAmount),
+      ),
+      LaunchIntentKind.claimRefund =>
+        LoopL10n.current.launch_signingClaimRefund(
+          launchUnitsFigure(intent.refundableUsd1 ?? '0'),
+        ),
+      LaunchIntentKind.buy => launchPurchaseTitle,
+    };
 
 /// The reviewed facts for any Launch intent: the page and the sheet call
 /// this, so what the owner reads is what travels with the payload.
@@ -289,34 +302,55 @@ List<IntentField> launchSettlementFields(
   LaunchPurchaseIntent intent, {
   required String ticker,
 }) => <IntentField>[
-  IntentField(label: '操作', value: launchSettlementStatement(intent)),
-  const IntentField(label: '资金', value: launchSettlementCustodyNote),
+  IntentField(
+    label: LoopL10n.current.common_actions,
+    value: launchSettlementStatement(intent),
+  ),
+  IntentField(
+    label: LoopL10n.current.launch_signingLabel,
+    value: launchSettlementCustodyNote,
+  ),
   if (intent.kind == LaunchIntentKind.claim) ...<IntentField>[
-    IntentField(label: '代币', value: ticker),
+    IntentField(label: LoopL10n.current.common_token, value: ticker),
     IntentField(
-      label: '本次可领取',
+      label: LoopL10n.current.launch_signingLabel2,
       value:
           '${launchUnitsFigure(intent.claimableTokens ?? intent.expectedTokenAmount)} $ticker',
     ),
   ] else
     IntentField(
-      label: '本次退回',
+      label: LoopL10n.current.launch_signingLabel3,
       value: launchUsd1Label(intent.refundableUsd1 ?? '0'),
     ),
   IntentField(
-    label: '钱包已累计认购',
+    label: LoopL10n.current.launch_signingLabel4,
     value: launchUsd1Label(intent.walletCumulativeUsd1),
   ),
   if (intent.simulation != null)
-    IntentField(label: '模拟结果', value: intent.simulation!.status.label),
-  IntentField(label: '签名有效至', value: launchTimestampLabel(intent.expiresAt)),
-  IntentField(label: '状态摘要', value: launchShortHex(intent.stateTupleDigest)),
+    IntentField(
+      label: LoopL10n.current.common_simulationResult,
+      value: intent.simulation!.status.label,
+    ),
   IntentField(
-    label: '快照区块',
+    label: LoopL10n.current.launch_signingLabel5,
+    value: launchTimestampLabel(intent.expiresAt),
+  ),
+  IntentField(
+    label: LoopL10n.current.launch_signingLabel6,
+    value: launchShortHex(intent.stateTupleDigest),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_snapshotBlock,
     value: loopGroupedFigure(intent.snapshotBlockNumber),
   ),
-  IntentField(label: '合约', value: launchShortHex(intent.contractAddress)),
-  IntentField(label: '网络', value: loopChainName(intent.chainId)),
+  IntentField(
+    label: LoopL10n.current.common_contract,
+    value: launchShortHex(intent.contractAddress),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_network,
+    value: loopChainName(intent.chainId),
+  ),
 ];
 
 /// The exact facts shown before signing, read from the server's intent.
@@ -327,64 +361,89 @@ List<IntentField> launchPurchaseFields(
   LaunchPurchaseIntent intent, {
   required String ticker,
 }) => <IntentField>[
-  const IntentField(label: '操作', value: launchPurchaseTitle),
-  IntentField(label: '支付', value: launchUsd1Label(intent.usd1Amount)),
   IntentField(
-    label: '预计获得',
+    label: LoopL10n.current.common_actions,
+    value: launchPurchaseTitle,
+  ),
+  IntentField(
+    label: LoopL10n.current.common_pay,
+    value: launchUsd1Label(intent.usd1Amount),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_estimatedReceive,
     value: '${launchUnitsFigure(intent.expectedTokenAmount)} $ticker',
   ),
   IntentField(
-    label: '最少获得',
+    label: LoopL10n.current.common_minimumReceive,
     value: '${launchUnitsFigure(intent.minTokenAmount)} $ticker',
   ),
-  IntentField(label: '轮次', value: 'Round ${intent.roundIndex ?? '—'}'),
   IntentField(
-    label: '钱包已累计',
+    label: LoopL10n.current.launch_signingLabel7,
+    value: 'Round ${intent.roundIndex ?? '—'}',
+  ),
+  IntentField(
+    label: LoopL10n.current.launch_signingLabel8,
     value: launchUsd1Label(intent.walletCumulativeUsd1),
   ),
   // Decision 0089: the round cap is the server's own reading at the
   // snapshot block, shown beside what the wallet has already paid.
   IntentField(
-    label: '本轮钱包上限',
+    label: LoopL10n.current.launch_signingLabel9,
     value: intent.walletRoundCapUsd1 == null
-        ? '未提供'
+        ? LoopL10n.current.launch_signingValue
         : launchUsd1Label(intent.walletRoundCapUsd1!),
   ),
   if (intent.walletProjectCapUsd1 != null)
     IntentField(
-      label: '项目钱包上限',
+      label: LoopL10n.current.launch_signingLabel10,
       value: launchUsd1Label(intent.walletProjectCapUsd1!),
     ),
   if (intent.simulation != null)
-    IntentField(label: '模拟结果', value: intent.simulation!.status.label),
-  IntentField(label: '有效期至', value: launchTimestampLabel(intent.expiresAt)),
-  IntentField(label: '状态摘要', value: launchShortHex(intent.stateTupleDigest)),
+    IntentField(
+      label: LoopL10n.current.common_simulationResult,
+      value: intent.simulation!.status.label,
+    ),
   IntentField(
-    label: '快照区块',
+    label: LoopL10n.current.common_validUntil,
+    value: launchTimestampLabel(intent.expiresAt),
+  ),
+  IntentField(
+    label: LoopL10n.current.launch_signingLabel6,
+    value: launchShortHex(intent.stateTupleDigest),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_snapshotBlock,
     value: loopGroupedFigure(intent.snapshotBlockNumber),
   ),
-  IntentField(label: '合约', value: launchShortHex(intent.contractAddress)),
-  IntentField(label: '网络', value: loopChainName(intent.chainId)),
+  IntentField(
+    label: LoopL10n.current.common_contract,
+    value: launchShortHex(intent.contractAddress),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_network,
+    value: loopChainName(intent.chainId),
+  ),
 ];
 
 /// zh-CN for a wallet or exit refusal code. Every line states what did not
 /// happen; none of them claims a result.
 String launchSignReasonText(String reasonCode) => switch (reasonCode) {
   // Decision 0152: the large-amount step-up stopped before the wallet.
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-  'INTENT_EXPIRED' => '这份认购已过期，没有提交任何交易。请重新获取报价。',
-  'REVIEW_PAYLOAD_MISMATCH' => '交易内容与复核内容不一致，已拒绝签名，没有提交任何交易。',
-  'LAUNCH_WALLET_ADDRESS_UNKNOWN' => '钱包目录里找不到这笔认购的支付钱包，没有提交任何交易。',
+  loopStepUpCancelledCode => LoopL10n.current.launch_signingSwitch,
+  loopStepUpFailedCode => LoopL10n.current.launch_signingSwitch2,
+  'INTENT_EXPIRED' => LoopL10n.current.launch_signingSwitch3,
+  'REVIEW_PAYLOAD_MISMATCH' => LoopL10n.current.launch_signingSwitch4,
+  'LAUNCH_WALLET_ADDRESS_UNKNOWN' => LoopL10n.current.launch_signingSwitch5,
   'INTENT_CHAIN_NOT_PERMITTED' ||
-  'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-  'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-  'privy_wallet_mismatch' => '当前登录的钱包不是这笔认购的支付钱包，没有提交任何交易。',
-  'LAUNCH_WALLET_ADDRESS_MISMATCH' => '服务端构造交易用的钱包与当前支付钱包不一致，已拒绝签名，没有提交任何交易。',
-  'LAUNCH_SIMULATION_REVERTED' => '试算没有通过，这笔认购在链上会被拒绝。没有提交任何交易，请调整金额或稍后重新报价。',
-  'LAUNCH_SIMULATION_UNAVAILABLE' => '暂时无法试算这笔认购，服务端不允许签名，没有提交任何交易。请稍后重新报价。',
-  'INTENT_SUBMITTED' || 'INTENT_CONFIRMED' => '这笔认购已经提交过，不能再次签名。请在「我的参与记录」查看。',
-  _ => '钱包没有完成签名，没有提交任何交易。',
+  'intent_chain_not_permitted' => LoopL10n.current.launch_signingSwitch6,
+  'privy_chain_switch_unsupported' => LoopL10n.current.launch_signingSwitch7,
+  'privy_wallet_mismatch' => LoopL10n.current.launch_signingSwitch8,
+  'LAUNCH_WALLET_ADDRESS_MISMATCH' => LoopL10n.current.launch_signingSwitch9,
+  'LAUNCH_SIMULATION_REVERTED' => LoopL10n.current.launch_signingSwitch10,
+  'LAUNCH_SIMULATION_UNAVAILABLE' => LoopL10n.current.launch_signingSwitch11,
+  'INTENT_SUBMITTED' ||
+  'INTENT_CONFIRMED' => LoopL10n.current.launch_signingSwitch12,
+  _ => LoopL10n.current.launch_signingSwitch13,
 };
 
 /// [launchSignReasonText] for a claim or a refund (decision 0103). The codes
@@ -394,41 +453,38 @@ String launchSignReasonTextFor(LaunchIntentKind kind, String reasonCode) {
   if (!kind.isSettlement) return launchSignReasonText(reasonCode);
   final noun = launchIntentNoun(kind);
   return switch (reasonCode) {
-    'INTENT_EXPIRED' => '这份$noun的签名窗口已过，没有提交任何交易。请重新发起。',
-    'LAUNCH_SIMULATION_REVERTED' => '试算没有通过，这笔$noun在链上会被拒绝。没有提交任何交易，请刷新后再试。',
-    'LAUNCH_SIMULATION_UNAVAILABLE' =>
-      '暂时无法试算这笔$noun，服务端不允许签名，没有提交任何交易。请稍后重新发起。',
+    'INTENT_EXPIRED' => LoopL10n.current.launch_signingSwitch14(noun),
+    'LAUNCH_SIMULATION_REVERTED' => LoopL10n.current.launch_signingSwitch15(
+      noun,
+    ),
+    'LAUNCH_SIMULATION_UNAVAILABLE' => LoopL10n.current.launch_signingSwitch16(
+      noun,
+    ),
     'INTENT_SUBMITTED' ||
-    'INTENT_CONFIRMED' => '这笔$noun已经提交过，不能再次签名。请在「我的参与记录」查看。',
-    _ => launchSignReasonText(reasonCode).replaceAll('认购', noun),
+    'INTENT_CONFIRMED' => LoopL10n.current.launch_signingSwitch17(noun),
+    _ => launchSignReasonText(
+      reasonCode,
+    ).replaceAll(launchIntentNoun(LaunchIntentKind.buy), noun),
   };
 }
 
 /// [launchReportReasonText] with the kind's noun (decision 0103).
 String launchReportReasonTextFor(LaunchIntentKind kind, String reasonCode) =>
     kind.isSettlement
-    ? launchReportReasonText(reasonCode)
-          .replaceAll('认购', launchIntentNoun(kind))
+    ? launchReportReasonText(reasonCode).replaceAll(
+        launchIntentNoun(LaunchIntentKind.buy),
+        launchIntentNoun(kind),
+      )
     : launchReportReasonText(reasonCode);
 
 /// zh-CN for a refused broadcast report (loop-api decision 0077). The wallet
 /// has already broadcast, so none of these says that nothing happened.
 String launchReportReasonText(String reasonCode) => switch (reasonCode) {
-  'LAUNCH_INTENT_ALREADY_REPORTED' =>
-    '这笔认购已经上报过另一笔交易，本次广播没有被记录。'
-        '交易可能已经上链，请在「我的参与记录」核对，不要重复签名。',
-  'LAUNCH_INTENT_NOT_SIGNABLE' =>
-    '服务端已不再接受这笔认购的上报，它的状态已经变化。'
-        '钱包已经广播，交易可能已经上链，请在「我的参与记录」核对，不要重复签名。',
-  'LAUNCH_INTENT_EXPIRED' =>
-    '这笔认购已过期，而链上暂时还看不到这笔交易，上报没有被接受。'
-        '交易可能仍在传播，请稍后在「我的参与记录」核对，不要重复签名。',
-  'LAUNCH_TX_PAYLOAD_MISMATCH' =>
-    '链上这笔交易与签名时复核的认购内容不一致，服务端没有记录它。'
-        '请在「我的参与记录」核对，不要重复签名，并联系支持。',
-  _ =>
-    '钱包已经广播，但这次上报没有被服务端接受或没有送达。'
-        '交易可能已经上链，可以稍后重新上报；不要重复签名。',
+  'LAUNCH_INTENT_ALREADY_REPORTED' => LoopL10n.current.launch_signingSwitch18,
+  'LAUNCH_INTENT_NOT_SIGNABLE' => LoopL10n.current.launch_signingSwitch19,
+  'LAUNCH_INTENT_EXPIRED' => LoopL10n.current.launch_signingSwitch20,
+  'LAUNCH_TX_PAYLOAD_MISMATCH' => LoopL10n.current.launch_signingSwitch21,
+  _ => LoopL10n.current.launch_signingSwitch22,
 };
 
 /// Whether a refused report is worth sending again with the same hash. The
@@ -448,17 +504,27 @@ String launchBroadcastText(
   final noun = launchIntentNoun(kind);
   final hash = outcome.txHash;
   if (hash == null) {
-    return '钱包的结果未知，这笔$noun已锁定。请在「我的参与记录」查看，不要重复签名。';
+    return LoopL10n.current.launch_signingIf(noun);
   }
   final short = launchShortHex(hash);
   final reported = outcome.reported;
   if (reported != null) {
-    return '钱包已广播（$short），服务端已记录，当前状态：${reported.state.label}。'
-        '广播不代表${kind.isSettlement ? '已到账' : '已成交'}，结果以链上索引为准，'
-        '会出现在「我的参与记录」。不要重复$noun。';
+    return LoopL10n.current.launch_signingIf2(
+      kind.isSettlement
+          ? LoopL10n.current.launch_broadcastKindLanded
+          : LoopL10n.current.launch_broadcastKindFilled,
+      reported.state.label,
+      noun,
+      short,
+    );
   }
-  return '钱包已广播（$short）。广播不代表${kind.isSettlement ? '已到账' : '已成交'}。'
-      '${launchReportReasonTextFor(kind, outcome.reasonCode)}';
+  return LoopL10n.current.launch_signingIf3(
+    kind.isSettlement
+        ? LoopL10n.current.launch_broadcastKindLanded
+        : LoopL10n.current.launch_broadcastKindFilled,
+    launchReportReasonTextFor(kind, outcome.reasonCode),
+    short,
+  );
 }
 
 /// Opens the signing exit for one prepared Launch intent.
@@ -603,7 +669,7 @@ class _LaunchSignSheetState extends State<LaunchSignSheet>
     return PopScope(
       canPop: _state != LoopSignSheetState.signing,
       child: withStepUpStrip(
-        signLabel: launchIntentNoun(_intent.kind),
+        signLabel: launchIntentActionLabel(_intent.kind),
         signStatus: stepUpSignStatus(
           _state,
           locked:

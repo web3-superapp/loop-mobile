@@ -45,7 +45,7 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      expect(find.textContaining('个已登记项目'), findsNothing);
+      expect(find.textContaining('registered project'), findsNothing);
     });
 
     testWidgets('the catalogue names the record it was read from', (
@@ -59,7 +59,7 @@ void main() {
 
       final footer = find.byKey(const ValueKey<String>('launch-source-footer'));
       await scrollToS7Section(tester, footer);
-      expect(find.textContaining('来源 LOOP 目录'), findsOneWidget);
+      expect(find.textContaining('Source LOOP directory'), findsOneWidget);
       expect(find.textContaining('loop_db'), findsNothing);
     });
 
@@ -72,8 +72,8 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.textContaining('待排期 1'), findsOneWidget);
-      expect(find.textContaining('即将开始 0'), findsOneWidget);
+      expect(find.textContaining('Awaiting schedule 1'), findsOneWidget);
+      expect(find.textContaining('Upcoming 0'), findsOneWidget);
       // The default segment is 发射中, which is empty, so its empty block shows.
       expect(
         find.byKey(const ValueKey<String>('launch-segment-empty-live')),
@@ -82,7 +82,9 @@ void main() {
       // S88d: the segments follow the chain since loop-api S83b7; the card
       // no longer says they only reflect the schedule.
       expect(
-        find.text('这个分段目前没有项目。分段按链上销售状态划分；没有链上读数的项目按排期状态归类。'),
+        find.text(
+          'No projects in this segment yet. Segments follow on-chain sale status; projects without on-chain readings are grouped by schedule status.',
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('分段只反映排期状态'), findsNothing);
@@ -104,9 +106,12 @@ void main() {
       );
 
       expect(find.text('MoonCat'), findsOneWidget);
-      expect(find.text('链上待确认'), findsWidgets);
+      expect(find.text('On-chain pending'), findsWidgets);
       // The row carries the schedule and the configuration version only.
-      expect(find.textContaining('MCAT，发射中，待确认'), findsOneWidget);
+      expect(
+        find.textContaining('MCAT, Live, Pending confirmation'),
+        findsOneWidget,
+      );
       // No percentage, currency figure or countdown reaches the page.
       expect(_figures(tester), isEmpty);
     });
@@ -121,11 +126,14 @@ void main() {
       );
 
       final graduated = find.byKey(
-        const ValueKey<String>('launch-unavailable-已毕业项目'),
+        const ValueKey<String>('launch-unavailable-graduated-projects'),
       );
       await scrollToS7Section(tester, graduated);
       expect(graduated, findsOneWidget);
-      expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
+      expect(
+        find.textContaining("The Launch contract isn't live yet"),
+        findsWidgets,
+      );
     });
 
     testWidgets('the capability gate stops the read', (tester) async {
@@ -193,7 +201,12 @@ void main() {
         tester,
         const ValueKey<String>('launch-detail-facts'),
       );
-      for (final axis in <String>['销售状态', '权益状态', '流动性状态', '运营状态']) {
+      for (final axis in <String>[
+        'sale',
+        'entitlement',
+        'liquidity',
+        'operational',
+      ]) {
         final row = find.byKey(ValueKey<String>('launch-axis-$axis'));
         await scrollToS7Section(tester, row);
         expect(row, findsOneWidget, reason: axis);
@@ -217,7 +230,7 @@ void main() {
       final slots = find.byKey(const ValueKey<String>('launch-detail-slots'));
       await scrollToS7Section(tester, slots);
       expect(slots, findsOneWidget);
-      expect(find.textContaining('待确认'), findsWidgets);
+      expect(find.textContaining('Pending confirmation'), findsWidgets);
       // The version that will confirm the slot is a backend identifier.
       expect(find.textContaining('launchMoonCatV1'), findsNothing);
       // None of the prototype's contract numbers appear.
@@ -262,7 +275,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('4 个轮次'), findsOneWidget);
+      expect(find.textContaining('4 rounds'), findsOneWidget);
       for (var index = 1; index <= 4; index += 1) {
         final row = find.byKey(ValueKey<String>('launch-round-$index'));
         await scrollToS7Section(tester, row);
@@ -271,7 +284,7 @@ void main() {
       // No fee ladder and no round-length story is written into the client.
       expect(find.text('10%'), findsNothing);
       expect(find.text('5%'), findsNothing);
-      expect(find.textContaining('0–60 秒'), findsNothing);
+      expect(find.textContaining('0–60 seconds'), findsNothing);
     });
 
     testWidgets('an empty round list is stated, not invented', (tester) async {
@@ -297,7 +310,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('轮次数量由每次发射自己决定'), findsOneWidget);
+      expect(
+        find.textContaining('Each launch sets its own number of rounds'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -366,7 +382,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      expect(find.text('否'), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
       expect(find.textContaining('需质押'), findsNothing);
     });
   });
@@ -381,20 +397,20 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.text('不可执行'), findsOneWidget);
+      expect(find.text('Not available'), findsOneWidget);
       // The amount box keeps the prototype's shape and accepts nothing: there
       // is no field to type an amount into (03 §10.1).
       expect(find.byType(TextField), findsNothing);
-      expect(find.textContaining('质押还没有开放'), findsWidgets);
+      expect(find.textContaining('Staking isn\'t open yet'), findsWidgets);
       // The hero states the fact rather than reporting a missing figure, and
       // the wire value of the executability flag never reaches the screen.
-      expect(find.text('暂无数值'), findsNothing);
+      expect(find.text('No value'), findsNothing);
       expect(find.textContaining('NOT EXECUTABLE'), findsNothing);
       // Every staking action on the page is disabled, and none of them can
       // reach a signing sheet.
       final actions = tester
           .widgetList<LoopButton>(find.byType(LoopButton))
-          .where((button) => button.label.contains('质押'));
+          .where((button) => button.label.toLowerCase().contains('stake'));
       expect(actions, isNotEmpty);
       for (final button in actions) {
         expect(button.onPressed, isNull, reason: button.label);
@@ -429,7 +445,10 @@ void main() {
         find.byKey(const ValueKey<String>('launch-trade-refusal')),
         findsOneWidget,
       );
-      expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
+      expect(
+        find.textContaining("The Launch contract isn't live yet"),
+        findsWidgets,
+      );
     });
 
     testWidgets(
@@ -454,11 +473,14 @@ void main() {
               .onPressed,
           isNull,
         );
-        expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
+        expect(
+          find.textContaining("The Launch contract isn't live yet"),
+          findsWidgets,
+        );
         // LOOP's own round slots are listed but cannot be selected.
         await tester.tap(find.byKey(const ValueKey<String>('launch-round-1')));
         await tester.pumpAndSettle();
-        expect(find.text('已选择'), findsNothing);
+        expect(find.text('Selected'), findsNothing);
         expect(gateway.intents, isEmpty);
       },
     );
@@ -494,7 +516,10 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(find.textContaining('请输入一个有效的支付数量'), findsOneWidget);
+      expect(
+        find.textContaining('Enter a valid amount to pay'),
+        findsOneWidget,
+      );
       expect(gateway.intents, isEmpty);
     });
 
@@ -509,7 +534,7 @@ void main() {
         meta: s7MetaSnapshot(launchEvidencePending: false),
       );
 
-      expect(find.textContaining('还没有可用的支付钱包'), findsOneWidget);
+      expect(find.textContaining('No payment wallet yet'), findsOneWidget);
     });
 
     testWidgets('there is no sell side before graduation', (tester) async {
@@ -519,8 +544,8 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.text('卖出'), findsNothing);
-      expect(find.textContaining('未毕业只买不卖'), findsOneWidget);
+      expect(find.text('Sell'), findsNothing);
+      expect(find.textContaining('Buy only until graduation'), findsOneWidget);
     });
   });
 
@@ -538,17 +563,20 @@ void main() {
         // reader's own position keeps its row in the list; the distribution
         // carries the reason. The same sentence used to be printed three times
         // under three one-row groups (visual audit 2026-09-21 §H.7).
-        expect(find.textContaining('单地址持仓上限'), findsOneWidget);
-        expect(find.textContaining('Top 10 合计'), findsOneWidget);
+        expect(find.textContaining('Per-address holding cap'), findsOneWidget);
+        expect(find.textContaining('Top 10 total'), findsOneWidget);
         final me = find.byKey(const ValueKey<String>('launch-holders-me'));
         await scrollToS7Section(tester, me);
         expect(me, findsOneWidget);
         final distribution = find.byKey(
-          const ValueKey<String>('launch-unavailable-持有人分布'),
+          const ValueKey<String>('launch-unavailable-holder-distribution'),
         );
         await scrollToS7Section(tester, distribution);
         expect(distribution, findsOneWidget);
-        expect(find.textContaining('Launch 合约还没有上线'), findsOneWidget);
+        expect(
+          find.textContaining("The Launch contract isn't live yet"),
+          findsOneWidget,
+        );
         expect(find.textContaining('0.50%'), findsNothing);
         expect(_figures(tester), isEmpty);
       },
@@ -563,14 +591,25 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.text('待触发'), findsNWidgets(4));
+      expect(find.text('Pending'), findsNWidgets(4));
       // Each step says what it does; the rail's own property is stated once,
       // in the notice (visual audit 2026-09-21 §H.8).
-      expect(find.text('达到毕业条件的瞬间冻结内盘撮合'), findsOneWidget);
-      expect(find.text('内盘持仓上限随外盘开放同步解除'), findsOneWidget);
+      expect(
+        find.text(
+          'Bonding pool matching freezes the moment graduation conditions are met',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('The bonding pool holding cap lifts as the DEX pool opens'),
+        findsOneWidget,
+      );
       expect(find.textContaining('61%'), findsNothing);
-      expect(find.textContaining('生态税'), findsNothing);
-      expect(find.textContaining('「已结束」只表示排期结束'), findsOneWidget);
+      expect(find.textContaining('ecosystem tax'), findsNothing);
+      expect(
+        find.textContaining('"Ended" only means the schedule ended'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an empty history says "cannot prove", not "no records"', (
@@ -584,7 +623,9 @@ void main() {
 
       expect(find.textContaining('空列表不代表没有参与'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('launch-unavailable-购买、权益与退款记录')),
+        find.byKey(
+          const ValueKey<String>('launch-unavailable-history-records'),
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('累计盈亏'), findsNothing);
@@ -599,7 +640,7 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
-      expect(find.textContaining('0 个已确认轮次'), findsOneWidget);
+      expect(find.textContaining('0 confirmed rounds'), findsOneWidget);
       final projects = find.byKey(
         const ValueKey<String>('loop-economy-projects'),
       );
@@ -609,12 +650,21 @@ void main() {
       // The three figures the ledger cannot prove sit in the grids as em
       // dashes, and the sentence that explains all three is stated once —
       // not three times under three one-row strips (visual audit §H.11).
-      for (final label in <String>['总量', '累计分发', '累计生态税']) {
+      for (final label in <String>[
+        'Total supply',
+        'Total distributed',
+        'Total ecosystem tax',
+      ]) {
         final cell = find.text(label);
         await scrollToS7Section(tester, cell);
         expect(cell, findsOneWidget, reason: label);
       }
-      expect(find.textContaining('总量、累计分发与累计生态税暂时没有数值'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Total supply, total distributed and total ecosystem tax have no values yet',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('980,000'), findsNothing);
     });
 
@@ -629,7 +679,7 @@ void main() {
 
       final footer = find.byKey(const ValueKey<String>('launch-source-footer'));
       await scrollToS7Section(tester, footer);
-      expect(find.textContaining('来源 LOOP 账本'), findsOneWidget);
+      expect(find.textContaining('Source LOOP ledger'), findsOneWidget);
       expect(find.textContaining('loop_db'), findsNothing);
       expect(find.textContaining('数据库'), findsNothing);
     });
@@ -680,7 +730,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.created, isEmpty);
-      expect(find.textContaining('代码需 1–20 个字'), findsOneWidget);
+      expect(
+        find.textContaining('Ticker must be 1–20 characters'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a valid draft is created and then submitted', (tester) async {
@@ -719,7 +772,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.submitted, hasLength(1));
-      expect(find.text('审核中'), findsWidgets);
+      expect(find.text('In review'), findsWidgets);
     });
 
     testWidgets('an edit carries the exact server version', (tester) async {
@@ -796,7 +849,7 @@ void main() {
       final submit = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('launch-apply-submit')),
       );
-      expect(submit.label, '重新提交');
+      expect(submit.label, 'Resubmit');
       expect(submit.onPressed, isNotNull);
     });
 
@@ -832,7 +885,12 @@ void main() {
         find.byKey(const ValueKey<String>('launch-apply-save')),
       );
       expect(save.onPressed, isNull);
-      expect(find.textContaining('只有草稿与被退回的申请可以修改'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Only drafts and returned applications can be edited',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a rejected write is reported without blanking the list', (
@@ -900,11 +958,14 @@ void main() {
       await scrollToS7Section(tester, kyb);
       expect(kyb, findsOneWidget);
       expect(tester.widget(kyb), isA<LoopInlineUnavailable>());
-      expect(find.textContaining('主体审核还没有开放'), findsOneWidget);
+      expect(
+        find.textContaining('Entity review isn\'t open yet'),
+        findsOneWidget,
+      );
       for (final button in tester.widgetList<LoopButton>(
         find.byType(LoopButton),
       )) {
-        expect(button.label, isNot(contains('上传')));
+        expect(button.label, isNot(contains('Upload')));
       }
     });
 
@@ -942,10 +1003,10 @@ void main() {
         expect(row, findsOneWidget, reason: track);
       }
       // A track with no stored record says so; it never reads as "started".
-      expect(find.textContaining('尚无记录'), findsWidgets);
+      expect(find.textContaining('No records yet'), findsWidgets);
       // Alpha and spot are separate tracks and neither implies the other.
-      expect(find.textContaining('Binance，Alpha'), findsOneWidget);
-      expect(find.textContaining('Binance，现货'), findsOneWidget);
+      expect(find.textContaining('Binance, Alpha'), findsOneWidget);
+      expect(find.textContaining('Binance, Spot'), findsOneWidget);
     });
 
     testWidgets('LISTED and FEATURED keep their two evidence times apart', (
@@ -990,12 +1051,12 @@ void main() {
         expect(row, findsOneWidget, reason: state.name);
         // Two different facts, rendered separately and never derived.
         expect(
-          find.textContaining('复核记录于 2026-09-05 03:00 UTC'),
+          find.textContaining('Review recorded 2026-09-05 03:00 UTC'),
           findsOneWidget,
           reason: state.name,
         );
         expect(
-          find.textContaining('平台可核验于 2026-09-01 00:00 UTC'),
+          find.textContaining('Platform-verified 2026-09-01 00:00 UTC'),
           findsOneWidget,
           reason: state.name,
         );
@@ -1051,10 +1112,12 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(
-        find.textContaining('平台可核验时间 $launchMissingFigure（操作员未提供）'),
+        find.textContaining(
+          'Platform-verifiable time $launchMissingFigure (not provided by the operator)',
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('平台可核验于'), findsNothing);
+      expect(find.textContaining('Platform-verified'), findsNothing);
     });
 
     testWidgets('a rejected write offers a reload that keeps the edits', (
@@ -1168,7 +1231,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('审核轨迹与版本只属于申请人'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Review history and versions belong to the applicant only',
+        ),
+        findsOneWidget,
+      );
       final save = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('launch-apply-save')),
       );

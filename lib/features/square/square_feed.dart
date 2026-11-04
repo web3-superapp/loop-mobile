@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// 广场「动态」 (decision 0177, loop-api decision 0143): one timeline of user
 /// opinions, system events (a member's buy, a reward claim, a graduation) and
@@ -15,13 +16,16 @@ import 'package:uuid/uuid.dart';
 
 /// `scope`: every visible post, or the accounts the viewer follows.
 enum SquareFeedScope {
-  global('global', '全球'),
-  following('following', '已关注');
+  global('global'),
+  following('following');
 
-  const SquareFeedScope(this.wireName, this.label);
+  const SquareFeedScope(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    SquareFeedScope.global => LoopL10n.current.square_feedGlobal,
+    SquareFeedScope.following => LoopL10n.current.common_following,
+  };
 }
 
 /// `kind`. `opinion` is a person's post; `buy` / `claim` / `graduation` are
@@ -627,20 +631,22 @@ String squareFeedIdempotencyKey() => const Uuid().v4();
 /// What a refused post says, by the server's rule.
 String squareFeedPostFailureText(LoopChainException failure) =>
     switch (failure.reasonCode) {
-      'SQUARE_POST_RATE_LIMITED' => '发得太快了，稍等一分钟再发',
-      'SQUARE_POST_TEXT_EMPTY' => '写点内容再发布',
-      'SQUARE_POST_TEXT_TOO_LONG' => '最多 500 字，删减一些再发布',
-      'SQUARE_POST_TEXT_INVALID' => '内容里有不支持的字符，删掉后再发布',
-      'SQUARE_TOKEN_REF_INVALID' => '引用的代币读不到了，换一个或不带代币',
-      'PROFILE_ACTIVATION_REQUIRED' => '先完成开户设置再发帖',
+      'SQUARE_POST_RATE_LIMITED' => LoopL10n.current.square_feedSwitch,
+      'SQUARE_POST_TEXT_EMPTY' => LoopL10n.current.square_feedSwitch2,
+      'SQUARE_POST_TEXT_TOO_LONG' => LoopL10n.current.square_feedSwitch3,
+      'SQUARE_POST_TEXT_INVALID' => LoopL10n.current.square_feedSwitch4,
+      'SQUARE_TOKEN_REF_INVALID' => LoopL10n.current.square_feedSwitch5,
+      'PROFILE_ACTIVATION_REQUIRED' => LoopL10n.current.square_feedSwitch6,
       _ => switch (failure.kind) {
-        LoopChainFailureKind.rateLimited => '发得太快了，稍等一分钟再发',
+        LoopChainFailureKind.rateLimited => LoopL10n.current.square_feedSwitch,
         LoopChainFailureKind.offline ||
-        LoopChainFailureKind.timedOut => '网络不通，没有发出去',
+        LoopChainFailureKind.timedOut => LoopL10n.current.square_feedTimedOut,
         LoopChainFailureKind.outcomeUnknown ||
-        LoopChainFailureKind.cancelled => '结果未确认，下拉刷新看看是否已发出',
-        LoopChainFailureKind.idempotencyConflict => '这条已经提交过，下拉刷新看看',
-        LoopChainFailureKind.unavailable => '动态暂时不可用，稍后再试',
-        _ => '没有发出去，稍后再试',
+        LoopChainFailureKind.cancelled => LoopL10n.current.square_feedCancelled,
+        LoopChainFailureKind.idempotencyConflict =>
+          LoopL10n.current.square_feedIdempotencyConflict,
+        LoopChainFailureKind.unavailable =>
+          LoopL10n.current.square_feedUnavailable,
+        _ => LoopL10n.current.square_feedSwitch7,
       },
     };

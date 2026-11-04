@@ -1696,7 +1696,7 @@ void main() {
       expect(_key('launch2-status-rejected'), findsOneWidget);
       expect(_key('launch2-milestones-rejected'), findsOneWidget);
       expect(_key('launch2-rejection-other'), findsOneWidget);
-      expect(find.text('Review rejected: 其他原因'), findsOneWidget);
+      expect(find.text('Review rejected: Other'), findsOneWidget);
       expect(
         find.textContaining('Review notes: Logo 与官网不一致，请替换后重提'),
         findsOneWidget,
@@ -1736,7 +1736,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('Review rejected: 名称或代码与已有项目冲突'), findsOneWidget);
+      expect(find.text('Review rejected: Name or ticker conflicts with an existing project'), findsOneWidget);
       expect(
         find.textContaining("Project details didn't pass review"),
         findsOneWidget,
@@ -2033,7 +2033,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('Rejected · 其他原因'), findsOneWidget);
+      expect(find.text('Rejected · Other'), findsOneWidget);
       expect(
         find.text('Buyback recipient address needs updating'),
         findsOneWidget,
@@ -2293,7 +2293,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(creator.configReads, 2);
-      expect(find.text('Rejected · 其他原因'), findsOneWidget);
+      expect(find.text('Rejected · Other'), findsOneWidget);
       expect(_key('launch2-status-rejected'), findsOneWidget);
       await _drain(tester);
     });
@@ -2317,7 +2317,7 @@ void main() {
         ),
       );
       expect(_key('launch2-create-rejection'), findsOneWidget);
-      expect(find.text('Review rejected: 其他原因'), findsOneWidget);
+      expect(find.text('Review rejected: Other'), findsOneWidget);
       expect(
         find.textContaining('Review notes: Logo 与官网不一致，请替换后重提'),
         findsOneWidget,

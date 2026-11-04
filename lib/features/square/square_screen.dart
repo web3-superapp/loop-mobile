@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/square/square_feed_view.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -54,8 +55,15 @@ class SquareScreen extends ConsumerWidget {
   /// Opens a location from the 动态 segment. Null pushes it.
   final ValueChanged<String>? onNavigate;
 
-  static const segments = <String>['社区', '语音房'];
-  static const feedSegments = <String>['动态', '社区', '语音房'];
+  static List<String> get segments => <String>[
+    LoopL10n.current.common_community,
+    LoopL10n.current.common_voiceRooms,
+  ];
+  static List<String> get feedSegments => <String>[
+    LoopL10n.current.common_feed,
+    LoopL10n.current.common_community,
+    LoopL10n.current.common_voiceRooms,
+  ];
 
   /// The 社区 segment's index on the page as it is drawn now.
   static int communityIndex({required bool feed}) => feed ? 1 : 0;
@@ -82,7 +90,7 @@ class SquareScreen extends ConsumerWidget {
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('square-screen'),
       tabKey: 'square',
-      title: '广场',
+      title: context.l10n.square_screenSquareScreenTitle,
       // Decision 0221: the wall under 广场, its own fog placing.
       backdrop: const LoopWallBackdrop(
         key: ValueKey<String>('square-atmo-backdrop'),
@@ -154,7 +162,7 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
     widget.onOpenCommunity(room.communityId);
     LoopToast.show(
       context,
-      message: '加入「${room.communityName}」后才能进入语音房',
+      message: LoopL10n.current.square_screenMessage(room.communityName),
       kind: LoopToastKind.warn,
     );
   }
@@ -174,7 +182,7 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
     return LoopStreamPage(
       key: const ValueKey<String>('square-voice-rooms'),
       archetype: LoopPageArchetype.listing,
-      title: '语音房',
+      title: context.l10n.common_voiceRooms,
       embedded: true,
       tabPage: true,
       updating: state.refreshing,
@@ -183,7 +191,10 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
         key: const ValueKey<String>('square-voice-room-list'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
-          CommunityPreviewNotice(mode: state.mode, resource: '语音房列表'),
+          CommunityPreviewNotice(
+            mode: state.mode,
+            resource: context.l10n.square_screenResource,
+          ),
           // A refresh that failed over rows already shown keeps them and
           // says so here; its retry is the refresh, not a next page.
           LoopFreshnessStrip(
@@ -200,16 +211,18 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
               failureKind: state.failureKind,
               skeleton: LoopSkeletonType.record,
               rows: 4,
-              emptyMessage: '现在没有正在直播的语音房',
-              emptyReason: '有社区开播时会出现在这里。',
+              emptyMessage:
+                  context.l10n.square_screenSquareVoiceRoomStateEmptyMessage,
+              emptyReason:
+                  context.l10n.square_screenSquareVoiceRoomStateEmptyReason,
               empty: LoopEmptyState(
                 key: const ValueKey<String>('square-voice-room-empty'),
                 illustration: LoopIllustration.voiceRoom,
-                title: '还没有人开播',
-                message: '社区开播时会出现在这里',
+                title: context.l10n.square_screenSquareVoiceRoomEmptyTitle,
+                message: context.l10n.square_screenSquareVoiceRoomEmptyMessage,
                 action: LoopButton(
                   key: const ValueKey<String>('square-voice-room-browse'),
-                  label: '去社区看看',
+                  label: context.l10n.square_screenSquareVoiceRoomBrowseLabel,
                   icon: 'community',
                   primary: true,
                   // Back to the 社区 segment of the same page.
@@ -252,7 +265,7 @@ class _LiveVoiceRoomListState extends ConsumerState<LiveVoiceRoomList> {
                 ),
                 child: LoopButton(
                   key: const ValueKey<String>('square-voice-room-retry-more'),
-                  label: '重试',
+                  label: context.l10n.common_retry,
                   block: true,
                   onPressed: () => unawaited(controller.loadMore()),
                 ),
@@ -342,18 +355,20 @@ class LiveVoiceRoomCard extends StatelessWidget {
     // LOOP's role-intent figures exclude the host; the card counts the room
     // the way the room page does — host, speakers and listeners — and it is
     // who joined, not a reading of who is connected right now.
-    final listening = '${room.listenerCount + room.speakerCount + 1} 在听';
+    final listening = LoopL10n.current.square_screenListening(
+      room.listenerCount + room.speakerCount + 1,
+    );
     final elapsed = liveVoiceRoomElapsedLabel(room.startedAt, now);
     final faces = liveVoiceRoomFaces(room);
     final badge = inRoom
-        ? const LoopBadge(
-            '已在房间',
+        ? LoopBadge(
+            context.l10n.square_screenSquareVoiceRoomInRoom,
             key: ValueKey<String>('square-voice-room-in-room'),
             kind: LoopBadgeKind.up,
           )
         : room.joinable
-        ? const LoopBadge('直播中', kind: LoopBadgeKind.up)
-        : const LoopBadge('需加入');
+        ? LoopBadge(context.l10n.square_screenLoopBadge, kind: LoopBadgeKind.up)
+        : LoopBadge(context.l10n.square_screenLoopBadge2);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -363,10 +378,17 @@ class LiveVoiceRoomCard extends StatelessWidget {
       ),
       child: Semantics(
         button: true,
-        label:
-            '$title，${room.communityName}，主持 $host，$listening，$elapsed'
-            '${inRoom ? '，你已在房间里' : ''}'
-            '${room.joinable ? '' : '，加入社区后可进入'}',
+        label: context.l10n.square_screenSquareVoiceRoomTitleLabel(
+          room.communityName,
+          elapsed,
+          host,
+          inRoom ? context.l10n.square_screenVoiceRoomInRoomSuffix : '',
+          listening,
+          room.joinable
+              ? ''
+              : context.l10n.square_screenVoiceRoomJoinFirstSuffix,
+          title,
+        ),
         excludeSemantics: true,
         // Decision 0211: the `#111114` card, 16 radius, no edge; a press
         // shows purple.
@@ -428,7 +450,7 @@ class LiveVoiceRoomCard extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '主持 $host',
+                          context.l10n.square_screenText(host),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: LoopType.caption.copyWith(

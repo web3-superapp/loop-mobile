@@ -373,7 +373,12 @@ void main() {
             find.byKey(ValueKey<String>('${testCase.slug}-state-permission')),
             findsOneWidget,
           );
-          expect(find.textContaining('当前账号没有执行这个操作的权限'), findsWidgets);
+          expect(
+            find.textContaining(
+              "This account doesn't have permission for this action",
+            ),
+            findsWidgets,
+          );
         },
       );
     }

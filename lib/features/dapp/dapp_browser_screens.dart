@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -175,7 +176,7 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('dapp-browser-home'),
       archetype: LoopPageArchetype.listing,
-      title: 'DApp 浏览器',
+      title: context.l10n.dapp_browserScreensDappBrowserHomeTitle,
       onBack: widget.onBack,
       primary: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,7 +186,8 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
             key: const ValueKey<String>('dapp-browser-omnibox'),
             fieldKey: const ValueKey<String>('dapp-browser-address-field'),
             controller: _address,
-            hintText: '输入网址',
+            hintText:
+                context.l10n.dapp_browserScreensDappBrowserOmniboxHintText,
             onChanged: (_) {
               if (_blocked != null) setState(() => _blocked = null);
             },
@@ -204,7 +206,7 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Text(
-                    '这个网址不能打开',
+                    context.l10n.dapp_browserScreensBuild,
                     style: LoopType.title.copyWith(color: LoopColors.fall),
                   ),
                   for (final finding in blocked.findings)
@@ -226,7 +228,7 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: LoopButton(
               key: const ValueKey<String>('dapp-browser-go'),
-              label: '打开',
+              label: context.l10n.dapp_browserScreensDappBrowserGoLabel,
               primary: true,
               block: true,
               onPressed: () => unawaited(_submit(_address.text)),
@@ -254,18 +256,18 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
 
   List<Widget> _lists(DappBrowserLocalState state) {
     if (state.bookmarks.isEmpty && state.recents.isEmpty) {
-      return const <Widget>[
+      return <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('dapp-browser-empty'),
           illustration: LoopIllustration.search,
-          title: '还没有访问记录',
+          title: LoopL10n.current.dapp_browserScreensDappBrowserEmptyTitle,
           compact: true,
         ),
       ];
     }
     return <Widget>[
       if (state.bookmarks.isNotEmpty) ...<Widget>[
-        const LoopLabel('收藏'),
+        LoopLabel(LoopL10n.current.dapp_browserScreensLoopLabel),
         LoopRecordGroup(
           key: const ValueKey<String>('dapp-browser-bookmarks'),
           rows: <LoopRecordRow>[
@@ -278,10 +280,14 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
-            const Expanded(child: LoopLabel('最近访问')),
+            Expanded(
+              child: LoopLabel(LoopL10n.current.dapp_browserScreensLoopLabel2),
+            ),
             Semantics(
               button: true,
-              label: '清除最近访问',
+              label: LoopL10n
+                  .current
+                  .dapp_browserScreensDappBrowserClearRecentsLabel,
               child: LoopPressable(
                 key: const ValueKey<String>('dapp-browser-clear-recents'),
                 onTap: () => unawaited(
@@ -296,7 +302,7 @@ class _DappBrowserHomeScreenState extends ConsumerState<DappBrowserHomeScreen> {
                     padding: const EdgeInsets.only(right: LoopSpacing.page),
                     child: Center(
                       child: Text(
-                        '清除',
+                        LoopL10n.current.dapp_browserScreensIf,
                         style: LoopType.label.copyWith(color: LoopColors.text2),
                       ),
                     ),
@@ -371,12 +377,12 @@ Future<bool> showDappFindingsSheet(
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('dapp-findings-cancel'),
-                label: '取消',
+                label: context.l10n.common_cancel,
                 onPressed: () => Navigator.of(context).pop(false),
               ),
               LoopButton(
                 key: const ValueKey<String>('dapp-findings-open'),
-                label: '仍要打开',
+                label: context.l10n.dapp_browserScreensDappFindingsOpenLabel,
                 primary: true,
                 onPressed: () => Navigator.of(context).pop(true),
               ),
@@ -549,7 +555,9 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     if (outcome.status == DappSignStatus.produced && mounted) {
       LoopToast.show(
         context,
-        message: intent.kind == DappIntentKind.transaction ? '已广播' : '已签名',
+        message: intent.kind == DappIntentKind.transaction
+            ? LoopL10n.current.common_broadcast
+            : LoopL10n.current.dapp_browserScreensMessage,
       );
     }
     return outcome;
@@ -610,13 +618,13 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     final scheme = url.scheme.toLowerCase();
     if (scheme == 'about') return true;
     if (scheme == 'http') {
-      toast('只能打开 HTTPS 网址');
+      toast(LoopL10n.current.dapp_browserScreensToast);
       return false;
     }
     if (scheme != 'https') return false;
     final review = LoopUrlReview.review(url.toString());
     if (review.isBlocked) {
-      toast('这个网址不能打开');
+      toast(LoopL10n.current.dapp_browserScreensBuild);
       return false;
     }
     return true;
@@ -630,7 +638,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
     _bridge.documentStarting(url);
     if (url.scheme.toLowerCase() != 'about' && !_navigable(url)) {
       unawaited(_controller?.stop().catchError((Object _) {}));
-      toast('这个网址不能打开');
+      toast(LoopL10n.current.dapp_browserScreensBuild);
     }
     if (mounted) setState(() => _failure = null);
   }
@@ -738,9 +746,12 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
               children: <Widget>[
                 LoopBadge(
                   switch (review.verdict) {
-                    LoopUrlVerdict.normalized => '来源一致',
-                    LoopUrlVerdict.flagged => '需注意',
-                    LoopUrlVerdict.blocked => '已阻止',
+                    LoopUrlVerdict.normalized =>
+                      context.l10n.dapp_browserScreensNormalized,
+                    LoopUrlVerdict.flagged =>
+                      context.l10n.dapp_browserScreensFlagged,
+                    LoopUrlVerdict.blocked =>
+                      context.l10n.dapp_browserScreensBlocked,
                   },
                   key: const ValueKey<String>('dapp-url-verdict'),
                   kind: switch (review.verdict) {
@@ -807,21 +818,23 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
             LoopRecordRow(
               key: const ValueKey<String>('dapp-menu-bookmark'),
               leading: const LoopRowIcon(icon: 'star'),
-              title: bookmarked ? '取消收藏' : '收藏',
+              title: bookmarked
+                  ? context.l10n.dapp_browserScreensDappMenuBookmarkTitle
+                  : context.l10n.dapp_browserScreensDappMenuBookmarkAdd,
               chevron: false,
               onTap: () => Navigator.of(context).pop('bookmark'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('dapp-menu-copy'),
               leading: const LoopRowIcon(icon: 'copy'),
-              title: '复制链接',
+              title: context.l10n.dapp_browserScreensDappMenuCopyTitle,
               chevron: false,
               onTap: () => Navigator.of(context).pop('copy'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('dapp-menu-external'),
               leading: const LoopRowIcon(icon: 'share'),
-              title: '在外部浏览器打开',
+              title: context.l10n.dapp_browserScreensDappMenuExternalTitle,
               chevron: false,
               onTap: () => Navigator.of(context).pop('external'),
             ),
@@ -829,7 +842,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
               LoopRecordRow(
                 key: const ValueKey<String>('dapp-menu-disconnect'),
                 leading: const LoopRowIcon(icon: 'link'),
-                title: '断开此站点',
+                title: context.l10n.dapp_browserScreensDappMenuDisconnectTitle,
                 chevron: false,
                 onTap: () => Navigator.of(context).pop('disconnect'),
               ),
@@ -849,18 +862,34 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
               ),
             );
         if (mounted) {
-          LoopToast.show(context, message: bookmarked ? '已取消收藏' : '已收藏');
+          LoopToast.show(
+            context,
+            message: bookmarked
+                ? LoopL10n.current.dapp_browserScreensMessage2
+                : LoopL10n.current.dapp_browserScreensMessage3,
+          );
         }
       case 'copy':
         if (mounted) {
-          await LoopCopy.text(context, url.toString(), message: '已复制链接');
+          await LoopCopy.text(
+            context,
+            url.toString(),
+            message: LoopL10n.current.common_linkCopied,
+          );
         }
       case 'external':
         final opened = await ref.read(loopExternalBrowserProvider)(url);
-        if (!opened && mounted) toast('无法打开外部浏览器');
+        if (!opened && mounted) {
+          toast(LoopL10n.current.dapp_browserScreensToast2);
+        }
       case 'disconnect':
         if (origin != null) await _bridge.disconnect(origin);
-        if (mounted) LoopToast.show(context, message: '已断开');
+        if (mounted) {
+          LoopToast.show(
+            context,
+            message: LoopL10n.current.common_disconnected,
+          );
+        }
     }
   }
 
@@ -917,11 +946,11 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
 
   Widget _body(bool available) {
     if (!available) {
-      return const Center(
+      return Center(
         child: LoopEmptyState(
           key: ValueKey<String>('dapp-web-unavailable'),
           illustration: LoopIllustration.search,
-          title: 'DApp 浏览器暂不可用',
+          title: LoopL10n.current.dapp_browserScreensDappWebUnavailableTitle,
           compact: true,
         ),
       );
@@ -932,7 +961,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
           child: LoopEmptyState(
             key: const ValueKey<String>('dapp-web-blocked'),
             illustration: LoopIllustration.search,
-            title: '这个网址不能打开',
+            title: LoopL10n.current.dapp_browserScreensBuild,
             message: _review.findings
                 .where((finding) => finding.isBlocking)
                 .map((finding) => finding.explanation)
@@ -957,10 +986,14 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
             LoopButtonPair(
               padded: false,
               children: <Widget>[
-                LoopButton(label: '返回', onPressed: widget.onClose),
+                LoopButton(
+                  label: LoopL10n.current.common_back,
+                  onPressed: widget.onClose,
+                ),
                 LoopButton(
                   key: const ValueKey<String>('dapp-web-findings-open'),
-                  label: '仍要打开',
+                  label:
+                      LoopL10n.current.dapp_browserScreensDappFindingsOpenLabel,
                   primary: true,
                   onPressed: () => setState(() => _gate = _PageGate.open),
                 ),
@@ -1006,7 +1039,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
           Center(
             child: LoopOfflineState(
               key: const ValueKey<String>('dapp-web-offline'),
-              pausedActions: const <String>['签名'],
+              pausedActions: <String>[LoopL10n.current.common_sign],
               onRetry: () => unawaited(_retry()),
             ),
           ),
@@ -1014,7 +1047,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
           Center(
             child: LoopErrorState(
               key: const ValueKey<String>('dapp-web-error'),
-              title: '页面没有打开',
+              title: LoopL10n.current.dapp_browserScreensDappWebErrorTitle,
               reason: (_url ?? widget.request.url).host,
               onRetry: () => unawaited(_retry()),
             ),
@@ -1054,13 +1087,13 @@ class _TopBar extends StatelessWidget {
           LoopIconButton(
             key: const ValueKey<String>('dapp-web-close'),
             icon: 'close',
-            label: '关闭',
+            label: context.l10n.common_close,
             onPressed: onClose,
           ),
           Expanded(
             child: Semantics(
               button: true,
-              label: '查看网址 $host',
+              label: context.l10n.dapp_browserScreensDappWebAddressLabel(host),
               child: LoopPressable(
                 key: const ValueKey<String>('dapp-web-address'),
                 onTap: onUrl,
@@ -1100,7 +1133,9 @@ class _TopBar extends StatelessWidget {
           const SizedBox(width: 6),
           Semantics(
             button: true,
-            label: '切换网络 $chainLabel',
+            label: context.l10n.dapp_browserScreensDappWebChainLabel(
+              chainLabel,
+            ),
             child: LoopPressable(
               key: const ValueKey<String>('dapp-web-chain'),
               onTap: onChain,
@@ -1120,7 +1155,7 @@ class _TopBar extends StatelessWidget {
                       maxLines: 1,
                     ),
                     Text(
-                      address ?? '未连接钱包',
+                      address ?? context.l10n.dapp_browserScreensDappWebWallet,
                       key: const ValueKey<String>('dapp-web-wallet'),
                       style: LoopType.meta,
                       maxLines: 1,
@@ -1134,7 +1169,7 @@ class _TopBar extends StatelessWidget {
           LoopIconButton(
             key: const ValueKey<String>('dapp-web-menu'),
             icon: 'settings',
-            label: '更多',
+            label: context.l10n.common_more,
             onPressed: onMenu,
           ),
         ],
@@ -1197,7 +1232,7 @@ class _BottomBar extends StatelessWidget {
             LoopIconButton(
               key: const ValueKey<String>('dapp-web-back'),
               icon: 'back',
-              label: '后退',
+              label: context.l10n.dapp_browserScreensDappWebBackLabel,
               onPressed: canGoBack ? onBack : null,
             ),
             Transform.flip(
@@ -1205,14 +1240,14 @@ class _BottomBar extends StatelessWidget {
               child: LoopIconButton(
                 key: const ValueKey<String>('dapp-web-forward'),
                 icon: 'back',
-                label: '前进',
+                label: context.l10n.dapp_browserScreensDappWebForwardLabel,
                 onPressed: canGoForward ? onForward : null,
               ),
             ),
             LoopIconButton(
               key: const ValueKey<String>('dapp-web-reload'),
               icon: 'refresh',
-              label: '刷新',
+              label: context.l10n.common_refresh,
               onPressed: onReload,
             ),
           ],

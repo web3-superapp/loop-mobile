@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// `launch-detail` · 我的份额: claim and refund (decision 0103).
@@ -165,7 +166,9 @@ class _LaunchSettlementSectionState
         refusalStands &&
         settlement.refusalReasonCode == 'LAUNCH_NOT_PARTICIPANT';
 
-    final children = <Widget>[const LoopLabel('我的份额')];
+    final children = <Widget>[
+      LoopLabel(context.l10n.launch_settlementSectionLoopLabel),
+    ];
     if (view != null) {
       children.add(_stageBlock(view, hideAction: hideForRefusal));
       if (kind != null && !hideForRefusal) {
@@ -190,23 +193,27 @@ class _LaunchSettlementSectionState
               label: _checkingCapability
                   ? moneyCapabilityCheckingLabel
                   : settlement.busy
-                  ? '正在准备'
+                  ? context.l10n.launch_settlementSectionLabel
                   : label,
               primary: true,
               block: true,
               onPressed: enabled ? () => unawaited(_act(view)) : null,
-              semanticLabel: enabled ? label : '$label，当前不可执行',
+              semanticLabel: enabled
+                  ? label
+                  : context.l10n.launch_settlementSectionSemanticLabel(label),
             ),
           ),
         );
         if (view.paused) {
           children.add(
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('launch-settlement-paused'),
               icon: 'shield',
               tone: LoopNoticeTone.warn,
-              title: '合约已暂停',
-              body: '暂停期间领取与退款都会被合约拒绝，按钮已停用。恢复后这里会重新开放。',
+              title: context.l10n.launch_settlementSwitch3,
+              body: context
+                  .l10n
+                  .launch_settlementSectionLaunchSettlementPausedBody,
             ),
           );
         } else if (evidenceClosed) {
@@ -215,10 +222,15 @@ class _LaunchSettlementSectionState
               key: const ValueKey<String>('launch-settlement-evidence'),
               icon: 'shield',
               tone: LoopNoticeTone.warn,
-              title: '暂不可执行',
-              body:
-                  '${launchReasonCodeText(capability.evidenceReasonCode ?? capability.reasonCode)}'
-                  '本页因此不构造任何交易，也不打开签名。',
+              title: context
+                  .l10n
+                  .launch_settlementSectionLaunchSettlementEvidenceTitle,
+              body: context.l10n
+                  .launch_settlementSectionLaunchSettlementEvidenceBody(
+                    launchReasonCodeText(
+                      capability.evidenceReasonCode ?? capability.reasonCode,
+                    ),
+                  ),
             ),
           );
         }
@@ -238,7 +250,9 @@ class _LaunchSettlementSectionState
     final position = view.position;
     final block = position == null
         ? null
-        : '读自区块 ${loopGroupedFigure(position.snapshotBlockNumber)}';
+        : LoopL10n.current.launch_detailScreensTrackFooter(
+            loopGroupedFigure(position.snapshotBlockNumber),
+          );
     Widget row({
       required String key,
       required String title,
@@ -272,91 +286,113 @@ class _LaunchSettlementSectionState
       case LaunchSettlementStage.awaitingFinalize:
         return notice(
           'launch-settlement-awaiting-finalize',
-          '等待最终化',
-          '销售已结束，等待最终化。最终化后，募集达到软顶则按释放计划开放领取，'
-              '未达到则开放退款；参与过的钱包会在这里看到对应的按钮。',
+          LoopL10n.current.launch_settlementSectionNotice,
+          LoopL10n.current.launch_settlementSectionNotice2,
         );
       case LaunchSettlementStage.awaitingTge:
         return notice(
           'launch-settlement-awaiting-tge',
-          '等待 TGE',
-          '销售成功，份额已冻结'
-              '${position == null || !_positive(position.entitledTokens) ? '' : '（${launchUnitsFigure(position.entitledTokens)} 代币）'}。'
-              'TGE 到达且流动性池上线后开放领取。',
+          LoopL10n.current.launch_settlementSectionNotice3,
+          LoopL10n.current.launch_settlementSectionNotice4(
+            position == null || !_positive(position.entitledTokens)
+                ? ''
+                : LoopL10n.current.launch_settlementSectionPositionTokens(
+                    launchUnitsFigure(position.entitledTokens),
+                  ),
+          ),
         );
       case LaunchSettlementStage.refundPending:
         return notice(
           'launch-settlement-refund-pending',
-          '退款准备中',
-          '销售没有成功。退款负债冻结后开放退款，参与过的钱包会在这里看到按钮。',
+          LoopL10n.current.launch_settlementSectionNotice5,
+          LoopL10n.current.launch_settlementSectionNotice6,
         );
       case LaunchSettlementStage.positionReading:
         return row(
           key: 'launch-settlement-reading',
-          title: '正在读取我的份额',
-          subtitle: '读到持仓之前不显示领取或退款按钮。',
+          title: LoopL10n.current.launch_settlementSectionTitle,
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle,
         );
       case LaunchSettlementStage.positionUnread:
         return LoopNotice(
           key: const ValueKey<String>('launch-settlement-unread'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '我的份额暂时读不到',
-          body:
-              '${view.reasonCode == null ? '这次没有读到当前钱包的持仓。' : launchReasonCodeText(view.reasonCode)}'
-              '读到之前不显示领取或退款按钮，下拉可重新读取。',
+          title: LoopL10n
+              .current
+              .launch_settlementSectionLaunchSettlementUnreadTitle,
+          body: LoopL10n.current
+              .launch_settlementSectionLaunchSettlementUnreadBody(
+                view.reasonCode == null
+                    ? LoopL10n.current.launch_settlementSectionUnreadPosition
+                    : launchReasonCodeText(view.reasonCode),
+              ),
         );
       case LaunchSettlementStage.claim:
         return row(
           key: 'launch-settlement-claimable',
-          title: '可领取 ${launchUnitsFigure(position!.claimableTokens)} 代币',
-          subtitle:
-              '已领取 ${launchUnitsFigure(position.claimedTokens)} 代币，$block\n'
-              '领取由合约执行，代币直接到当前钱包。',
-          badge: '可领取',
+          title: LoopL10n.current.launch_settlementSectionTitle2(
+            launchUnitsFigure(position!.claimableTokens),
+          ),
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle2(
+            block,
+            launchUnitsFigure(position.claimedTokens),
+          ),
+          badge: LoopL10n.current.launch_settlementSectionBadge,
           done: true,
         );
       case LaunchSettlementStage.claimNothingYet:
         return row(
           key: 'launch-settlement-nothing-yet',
-          title: '暂无可领取',
-          subtitle:
-              '份额 ${launchUnitsFigure(position!.entitledTokens)} 代币，'
-              '按释放计划成熟后可领取，$block',
+          title: LoopL10n.current.launch_settlementSwitch5,
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle3(
+            block,
+            launchUnitsFigure(position!.entitledTokens),
+          ),
         );
       case LaunchSettlementStage.claimedSoFar:
         return row(
           key: 'launch-settlement-claimed-so-far',
-          title: '已领取 ${launchUnitsFigure(position!.claimedTokens)} 代币',
-          subtitle: '当前没有可领取的部分，下一次释放后再来，$block',
-          badge: '已领取',
+          title: LoopL10n.current.launch_settlementSectionTitle3(
+            launchUnitsFigure(position!.claimedTokens),
+          ),
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle4(block),
+          badge: LoopL10n.current.launch_chainModelsClaimed2,
           done: true,
         );
       case LaunchSettlementStage.claimedAll:
         return row(
           key: 'launch-settlement-claimed-all',
-          title: '已全部领取',
-          subtitle:
-              '累计领取 ${launchUnitsFigure(position!.claimedTokens)} 代币，$block',
-          badge: '已完成',
+          title: LoopL10n.current.launch_chainModelsClaimed,
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle5(
+            block,
+            launchUnitsFigure(position!.claimedTokens),
+          ),
+          badge: LoopL10n.current.launch_chainModelsDone,
           done: true,
         );
       case LaunchSettlementStage.refund:
         return row(
           key: 'launch-settlement-refundable',
-          title: '可退款 ${launchUsd1Label(position!.refundableUsd1)}',
-          subtitle:
-              '已退款 ${launchUsd1Label(position.refundedUsd1)}，$block\n'
-              '退款由合约执行，一次退回全部，USD1 直接到当前钱包。',
-          badge: '可退款',
+          title: LoopL10n.current.launch_detailScreensLaunchHistoryRefundTitle(
+            launchUsd1Label(position!.refundableUsd1),
+          ),
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle6(
+            block,
+            launchUsd1Label(position.refundedUsd1),
+          ),
+          badge: LoopL10n.current.launch_settlementSectionBadge2,
           done: true,
         );
       case LaunchSettlementStage.refundedAll:
         return row(
           key: 'launch-settlement-refunded-all',
-          title: '已全部退款',
-          subtitle: '累计退回 ${launchUsd1Label(position!.refundedUsd1)}，$block',
-          badge: '已完成',
+          title: LoopL10n.current.launch_chainModelsRefunded4,
+          subtitle: LoopL10n.current.launch_settlementSectionSubtitle7(
+            block,
+            launchUsd1Label(position!.refundedUsd1),
+          ),
+          badge: LoopL10n.current.launch_chainModelsDone,
           done: true,
         );
       case LaunchSettlementStage.refundClosed:
@@ -364,10 +400,13 @@ class _LaunchSettlementSectionState
           key: const ValueKey<String>('launch-settlement-refund-closed'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '退款窗口已关闭',
-          body:
-              '合约记录仍有 ${launchUsd1Label(position!.refundableUsd1)} 未退回，'
-              '但退款窗口已经关闭，合约不再接受退款。',
+          title: LoopL10n
+              .current
+              .launch_settlementSectionLaunchSettlementRefundClosedTitle,
+          body: LoopL10n.current
+              .launch_settlementSectionLaunchSettlementRefundClosedBody(
+                launchUsd1Label(position!.refundableUsd1),
+              ),
         );
     }
   }
@@ -379,11 +418,13 @@ class _LaunchSettlementSectionState
     if (kind == null) return null;
     final controller = ref.read(launchSettlementControllerProvider.notifier);
     if (settlement.busy) {
-      return const LoopNotice(
+      return LoopNotice(
         key: ValueKey<String>('launch-settlement-preparing'),
         icon: 'clock',
-        title: '正在准备',
-        body: '正在向服务端读取本次可操作的份额，读到后打开签名确认。',
+        title: LoopL10n.current.launch_settlementSectionLabel,
+        body: LoopL10n
+            .current
+            .launch_settlementSectionLaunchSettlementPreparingBody,
       );
     }
     final refusal = settlement.refusalReasonCode;
@@ -409,7 +450,9 @@ class _LaunchSettlementSectionState
         key: const ValueKey<String>('launch-settlement-sign-refused'),
         icon: 'shield',
         tone: LoopNoticeTone.warn,
-        title: '没有签名',
+        title: LoopL10n
+            .current
+            .launch_settlementSectionLaunchSettlementSignRefusedTitle,
         body: launchSignReasonTextFor(kind, signReason),
       );
     }
@@ -426,7 +469,9 @@ class _LaunchSettlementSectionState
           LoopNotice(
             icon: 'clock',
             tone: LoopNoticeTone.warn,
-            title: settlement.txHash == null ? '已提交给钱包，结果未确认' : '已广播，服务端未记录',
+            title: settlement.txHash == null
+                ? LoopL10n.current.launch_settlementSectionTitle4
+                : LoopL10n.current.launch_settlementSectionTitle5,
             body: launchBroadcastText(
               LaunchSignOutcome(
                 status: MoneySignStatus.values.byName(
@@ -443,7 +488,13 @@ class _LaunchSettlementSectionState
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: LoopButton(
                 key: const ValueKey<String>('launch-settlement-report-retry'),
-                label: settlement.reporting ? '正在重新上报' : '重新上报',
+                label: settlement.reporting
+                    ? LoopL10n
+                          .current
+                          .launch_settlementSectionLaunchSettlementReportRetryLabel
+                    : LoopL10n
+                          .current
+                          .launch_settlementSectionLaunchSettlementReportRetryLabel2,
                 block: true,
                 onPressed: settlement.reporting
                     ? null
@@ -467,7 +518,7 @@ class _LaunchSettlementSectionState
               : LoopNoticeTone.warn,
           title: text.title,
           body: settlement.pollTimedOut
-              ? '${text.body}还没有读到链上结果，可以稍后重新查询。'
+              ? LoopL10n.current.launch_settlementSectionBody(text.body)
               : text.body,
         ),
         if (settlement.pollTimedOut)
@@ -475,7 +526,9 @@ class _LaunchSettlementSectionState
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: LoopButton(
               key: const ValueKey<String>('launch-settlement-poll-resume'),
-              label: '重新查询',
+              label: LoopL10n
+                  .current
+                  .launch_settlementSectionLaunchSettlementPollResumeLabel,
               block: true,
               onPressed: controller.resumePolling,
             ),

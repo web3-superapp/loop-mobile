@@ -393,7 +393,7 @@ void main() {
       final list = _key('launch-graduated-list');
       await scrollToS7Section(tester, list);
       expect(list, findsOneWidget);
-      expect(_key('launch-unavailable-已毕业项目'), findsNothing);
+      expect(_key('launch-unavailable-graduated-projects'), findsNothing);
       expect(_key('launch-graduated-empty'), findsNothing);
       final first = _key('launch-graduated-row-${_uuid(1)}');
       expect(first, findsOneWidget);
@@ -401,7 +401,7 @@ void main() {
       // Same row as the catalogue: the chain's own sale-state sentence.
       expect(
         tester.widget<LoopRecordRow>(first).subtitle,
-        contains('MCAT，销售成功'),
+        contains('MCAT, Sale succeeded'),
       );
       await tester.tap(first);
       await tester.pumpAndSettle();
@@ -423,12 +423,18 @@ void main() {
       // Decision 0183: the illustrated empty state.
       expect(tester.widget(empty), isA<LoopEmptyState>());
       expect(
-        find.descendant(of: empty, matching: find.text('还没有已毕业的项目')),
+        find.descendant(
+          of: empty,
+          matching: find.text('No graduated projects yet'),
+        ),
         findsOneWidget,
       );
-      expect(_key('launch-unavailable-已毕业项目'), findsNothing);
+      expect(_key('launch-unavailable-graduated-projects'), findsNothing);
       expect(
-        find.descendant(of: empty, matching: find.textContaining('读不到')),
+        find.descendant(
+          of: empty,
+          matching: find.textContaining("can't be loaded"),
+        ),
         findsNothing,
       );
     });
@@ -443,10 +449,13 @@ void main() {
         ),
         evidenceConfirmed: true,
       );
-      final card = _key('launch-unavailable-已毕业项目');
+      final card = _key('launch-unavailable-graduated-projects');
       await scrollToS7Section(tester, card);
       expect(
-        find.descendant(of: card, matching: find.text('已毕业名单暂时读不到')),
+        find.descendant(
+          of: card,
+          matching: find.text('The graduated list can\'t be loaded right now'),
+        ),
         findsOneWidget,
       );
       expect(_key('launch-graduated-list'), findsNothing);
@@ -462,10 +471,13 @@ void main() {
         ),
         evidenceConfirmed: true,
       );
-      final card = _key('launch-unavailable-已毕业项目');
+      final card = _key('launch-unavailable-graduated-projects');
       await scrollToS7Section(tester, card);
       expect(
-        find.descendant(of: card, matching: find.text('已毕业名单还没有开放读取')),
+        find.descendant(
+          of: card,
+          matching: find.text('The graduated list isn\'t open yet'),
+        ),
         findsOneWidget,
       );
     });
@@ -476,7 +488,7 @@ void main() {
           'LAUNCH_ONCHAIN_STATE_READ_FAILED',
           contractLive: false,
         ),
-        '已毕业名单暂时读不到',
+        'The graduated list can\'t be loaded right now',
       );
       expect(
         launchGraduatedReasonText(
@@ -490,7 +502,7 @@ void main() {
           'LAUNCH_ONCHAIN_STATE_NOT_INDEXED',
           contractLive: true,
         ),
-        contains('已毕业名单暂时读不到'),
+        contains('The graduated list can\'t be loaded right now'),
       );
       expect(
         launchGraduatedReasonText(
@@ -517,7 +529,7 @@ void main() {
       final idsBefore = gateway.requestedLaunchIds.length;
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).title,
-        '已广播，已提交，等待链上索引',
+        'Broadcast, Submitted, awaiting on-chain index',
       );
 
       await _tick(tester);
@@ -528,7 +540,7 @@ void main() {
 
       final state = _key('launch-trade-state-confirmed');
       await scrollToS7Section(tester, state);
-      expect(tester.widget<LoopNotice>(state).title, '认购已确认');
+      expect(tester.widget<LoopNotice>(state).title, 'Purchase confirmed');
       expect(_key('launch-trade-locked'), findsNothing);
       // Settled: detail, position and records are re-read.
       expect(gateway.holdersReadCount, greaterThan(holdersBefore));
@@ -560,9 +572,9 @@ void main() {
       final state = _key('launch-trade-state-expired');
       await scrollToS7Section(tester, state);
       final notice = tester.widget<LoopNotice>(state);
-      expect(notice.title, '未上链，可重新发起');
-      expect(notice.body, contains('晚到的交易仍可能成功'));
-      expect(find.textContaining('认购已确认'), findsNothing);
+      expect(notice.title, 'Not on chain, you can start again');
+      expect(notice.body, contains('a late transaction may still succeed'));
+      expect(find.textContaining('Purchase confirmed'), findsNothing);
       // An expired intent may have landed late (S92a.6).
       expect(gateway.holdersReadCount, greaterThan(holdersBefore));
       await _tick(tester);
@@ -587,7 +599,7 @@ void main() {
       await scrollToS7Section(tester, resume);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).body,
-        contains('可以稍后重新查询'),
+        contains('You can check again later'),
       );
       await tester.tap(resume);
       await tester.pumpAndSettle();

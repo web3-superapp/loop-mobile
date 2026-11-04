@@ -129,7 +129,7 @@ void main() {
       await _chooseAndSubmit(tester);
 
       expect(_key('launch-trade-review'), findsOneWidget);
-      expect(find.text('本次认购：Round 1'), findsOneWidget);
+      expect(find.text('This purchase: Round 1'), findsOneWidget);
       expect(
         tester.widget<LoopRecordRow>(_key('launch-round-2')).onTap,
         isNull,
@@ -139,7 +139,7 @@ void main() {
       await _tapRound(tester, 'launch-round-2');
       expect(_selected(tester, 'launch-round-1'), isTrue);
       expect(_selected(tester, 'launch-round-2'), isFalse);
-      expect(find.text('本次认购：Round 1'), findsOneWidget);
+      expect(find.text('This purchase: Round 1'), findsOneWidget);
 
       // 「重新报价」 drops the intent and the selector opens again.
       await scrollToS7Section(tester, _key('launch-trade-discard'));
@@ -160,7 +160,7 @@ void main() {
         await tester.pump();
 
         expect(gateway.intents, <String>['$s7LaunchId:$s7RoundId:500']);
-        expect(find.text('本次认购：Round 1'), findsOneWidget);
+        expect(find.text('This purchase: Round 1'), findsOneWidget);
         await _tapRound(tester, 'launch-round-2');
         expect(_selected(tester, 'launch-round-2'), isFalse);
 
@@ -181,7 +181,7 @@ void main() {
       expect(gateway.intents, <String>['$s7LaunchId:$_roundTwoId:500']);
       expect(_selected(tester, 'launch-round-1'), isTrue);
       expect(_selected(tester, 'launch-round-2'), isFalse);
-      expect(find.text('本次认购：Round 1'), findsOneWidget);
+      expect(find.text('This purchase: Round 1'), findsOneWidget);
     });
 
     testWidgets('a broadcast shows an in-flight line until the state moves', (
@@ -208,10 +208,10 @@ void main() {
       await tester.pumpAndSettle();
 
       final banner = tester.widget<LoopNotice>(_key('launch-trade-in-flight'));
-      expect(banner.title, '已广播，等待链上索引');
+      expect(banner.title, 'Broadcast, awaiting on-chain index');
       expect(banner.body, contains('Round 1'));
-      expect(banner.body, contains('广播不代表已成交'));
-      expect(find.text('本次认购：Round 1'), findsOneWidget);
+      expect(banner.body, contains("Broadcast doesn't mean it was filled"));
+      expect(find.text('This purchase: Round 1'), findsOneWidget);
       await _tapRound(tester, 'launch-round-2');
       expect(_selected(tester, 'launch-round-2'), isFalse);
       // A broadcast attempt is never discarded.
@@ -234,7 +234,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-in-flight')).title,
-        '已广播，已确认',
+        'Broadcast, Confirmed',
       );
     });
   });
@@ -247,7 +247,10 @@ void main() {
         tester,
         eligibility: S7Answer<LaunchEligibility>(value: _openEligibility()),
       );
-      expect(_subtitle(tester, 'launch-detail-open-tier'), '公开轮，无需资格');
+      expect(
+        _subtitle(tester, 'launch-detail-open-tier'),
+        'Public round, no eligibility required',
+      );
     });
 
     testWidgets('launch-detail keeps 待确认 while no evaluator answered', (
@@ -256,7 +259,7 @@ void main() {
       await _pumpDetail(tester);
       expect(
         _subtitle(tester, 'launch-detail-open-tier'),
-        '资格结果 $launchPendingConfirmationLabel，由这次发射的资格模式决定',
+        "Eligibility $launchPendingConfirmationLabel, set by this launch's eligibility mode",
       );
     });
 
@@ -267,7 +270,7 @@ void main() {
         tester,
         eligibility: S7Answer<LaunchEligibility>(value: s83cEligibility()),
       );
-      expect(_subtitle(tester, 'launch-detail-open-tier'), 'Round 1，Priority');
+      expect(_subtitle(tester, 'launch-detail-open-tier'), 'Round 1, Priority');
     });
 
     testWidgets('launch-tier says the round is open, never 待确认', (
@@ -280,8 +283,11 @@ void main() {
           eligibility: S7Answer<LaunchEligibility>(value: _openEligibility()),
         ),
       );
-      expect(find.text('公开轮'), findsOneWidget);
-      expect(find.text('本轮公开，任何钱包都可参与。'), findsOneWidget);
+      expect(find.text('Public round'), findsOneWidget);
+      expect(
+        find.text('This round is public. Any wallet can take part.'),
+        findsOneWidget,
+      );
       expect(find.textContaining(launchPendingConfirmationLabel), findsNothing);
       expect(find.text('Public'), findsNothing);
     });
@@ -295,7 +301,7 @@ void main() {
       );
       expect(
         _subtitle(tester, 'launch-detail-open-history'),
-        '1 笔认购，最近 ${launchTimestampLabel(DateTime.utc(2026, 9, 22, 14, 2))}',
+        '1 purchase, latest ${launchTimestampLabel(DateTime.utc(2026, 9, 22, 14, 2))}',
       );
     });
 
@@ -306,13 +312,16 @@ void main() {
       );
       expect(
         _subtitle(tester, 'launch-detail-open-history'),
-        '暂无记录（已索引到区块 45,000,100）',
+        'No records (indexed to block 45,000,100)',
       );
     });
 
     testWidgets('unavailable source keeps the reminder', (tester) async {
       await _pumpDetail(tester);
-      expect(_subtitle(tester, 'launch-detail-open-history'), '空列表不代表你没有参与');
+      expect(
+        _subtitle(tester, 'launch-detail-open-history'),
+        'An empty list doesn\'t mean you didn\'t take part',
+      );
     });
 
     testWidgets('a failed history read keeps the reminder', (tester) async {
@@ -320,7 +329,10 @@ void main() {
         tester,
         history: S7Answer<LaunchHistory>(failure: LaunchFailureKind.offline),
       );
-      expect(_subtitle(tester, 'launch-detail-open-history'), '空列表不代表你没有参与');
+      expect(
+        _subtitle(tester, 'launch-detail-open-history'),
+        'An empty list doesn\'t mean you didn\'t take part',
+      );
       // The sibling rows still render.
       expect(_key('launch-detail-open-tier'), findsOneWidget);
     });

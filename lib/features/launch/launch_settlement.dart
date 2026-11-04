@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_signing.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Claim and refund on `launch-detail` (client decision 0103, loop-api
 /// decision 0087).
@@ -223,9 +224,13 @@ LaunchSettlementView? launchSettlementView({
 /// The primary action's label, from the position figure the page read.
 String launchSettlementActionLabel(LaunchSettlementView view) =>
     switch (view.kind) {
-      LaunchIntentKind.claim => '领取 ${launchUnitsFigure(view.amount!)} 代币',
+      LaunchIntentKind.claim => LoopL10n.current.launch_settlementClaim(
+        launchUnitsFigure(view.amount!),
+      ),
       LaunchIntentKind.claimRefund =>
-        '申请退款 ${launchUnitsFigure(view.amount!)} USD1',
+        LoopL10n.current.launch_settlementClaimRefund(
+          launchUnitsFigure(view.amount!),
+        ),
       _ => '',
     };
 
@@ -249,13 +254,13 @@ const Set<String> launchSettlementRereadCodes = <String>{
 };
 
 String launchSettlementRefusalTitle(String? reasonCode) => switch (reasonCode) {
-  'LAUNCH_CLAIM_NOT_OPEN' => '尚未开放领取',
-  'LAUNCH_REFUND_NOT_OPEN' => '当前不可退款',
-  'LAUNCH_SALE_PAUSED' => '合约已暂停',
-  'LAUNCH_NOT_PARTICIPANT' => '这个钱包没有参与',
-  'LAUNCH_NOTHING_TO_CLAIM' => '暂无可领取',
-  'LAUNCH_NOTHING_TO_REFUND' => '已退款',
-  _ => '这次没有通过',
+  'LAUNCH_CLAIM_NOT_OPEN' => LoopL10n.current.launch_settlementSwitch,
+  'LAUNCH_REFUND_NOT_OPEN' => LoopL10n.current.launch_settlementSwitch2,
+  'LAUNCH_SALE_PAUSED' => LoopL10n.current.launch_settlementSwitch3,
+  'LAUNCH_NOT_PARTICIPANT' => LoopL10n.current.launch_settlementSwitch4,
+  'LAUNCH_NOTHING_TO_CLAIM' => LoopL10n.current.launch_settlementSwitch5,
+  'LAUNCH_NOTHING_TO_REFUND' => LoopL10n.current.launch_chainModelsRefunded5,
+  _ => LoopL10n.current.launch_settlementSwitch6,
 };
 
 String launchSettlementRefusalText(
@@ -265,20 +270,19 @@ String launchSettlementRefusalText(
 ) {
   final noun = launchIntentNoun(kind);
   return switch (reasonCode) {
-    'LAUNCH_CLAIM_NOT_OPEN' =>
-      '合约还没有开放领取（未到 TGE，或流动性池还没有上线），没有提交任何交易。'
-          '已重新读取详情，开放后这里会出现领取按钮。',
-    'LAUNCH_REFUND_NOT_OPEN' => '只有销售失败或被取消、且退款窗口开放时才能退款，没有提交任何交易。已重新读取详情。',
-    'LAUNCH_SALE_PAUSED' => '合约暂停期间领取与退款都会被拒绝，没有提交任何交易。请稍后再试。',
-    'LAUNCH_NOT_PARTICIPANT' =>
-      '当前钱包没有参与这次发射，没有可领取或可退款的份额，没有提交任何交易。'
-          '如果用其他钱包参与过，请在钱包中切换后再来。',
-    'LAUNCH_NOTHING_TO_CLAIM' => '当前可领取为 0：还没到下一次释放，或已经全部领取。没有提交任何交易，下一次释放后再来。',
-    'LAUNCH_NOTHING_TO_REFUND' => '这个钱包的 USD1 已经全部退回，没有提交任何交易。',
-    _ => launchPurchaseRefusalText(
-      failure,
-      reasonCode,
-    ).replaceAll('认购', noun).replaceAll('支付钱包', '当前钱包'),
+    'LAUNCH_CLAIM_NOT_OPEN' => LoopL10n.current.launch_settlementSwitch7,
+    'LAUNCH_REFUND_NOT_OPEN' => LoopL10n.current.launch_settlementSwitch8,
+    'LAUNCH_SALE_PAUSED' => LoopL10n.current.launch_settlementSwitch9,
+    'LAUNCH_NOT_PARTICIPANT' => LoopL10n.current.launch_settlementSwitch10,
+    'LAUNCH_NOTHING_TO_CLAIM' => LoopL10n.current.launch_settlementSwitch11,
+    'LAUNCH_NOTHING_TO_REFUND' => LoopL10n.current.launch_settlementSwitch12,
+    _ =>
+      launchPurchaseRefusalText(failure, reasonCode)
+          .replaceAll(launchIntentNoun(LaunchIntentKind.buy), noun)
+          .replaceAll(
+            LoopL10n.current.launch_settlementReplaceAll,
+            LoopL10n.current.launch_settlementReplaceAll2,
+          ),
   };
 }
 
@@ -291,31 +295,39 @@ String launchSettlementRefusalText(
 ) {
   final noun = launchIntentNoun(kind);
   final done = switch (kind) {
-    LaunchIntentKind.buy => '认购已确认',
-    LaunchIntentKind.claim => '已领取',
-    LaunchIntentKind.claimRefund => '已退款',
+    LaunchIntentKind.buy => LoopL10n.current.launch_settlementBuy,
+    LaunchIntentKind.claim => LoopL10n.current.launch_chainModelsClaimed2,
+    LaunchIntentKind.claimRefund =>
+      LoopL10n.current.launch_chainModelsRefunded5,
   };
-  final landed = kind == LaunchIntentKind.buy ? '份额以「我的参与记录」为准' : '到账以钱包余额为准';
+  final landed = kind == LaunchIntentKind.buy
+      ? LoopL10n.current.launch_settlementSwitch13
+      : LoopL10n.current.launch_settlementS;
   final hash = intent.transactionHash;
-  final tx = hash == null ? '' : '交易 ${launchShortHex(hash)}。';
+  final tx = hash == null
+      ? ''
+      : LoopL10n.current.launch_settlementS2(launchShortHex(hash));
   return switch (intent.state) {
     LaunchIntentState.confirmed => (
       title: done,
-      body: '$tx链上已确认这笔$noun，$landed。',
+      body: LoopL10n.current.launch_settlementBody(landed, noun, tx),
     ),
     LaunchIntentState.reverted => (
-      title: '交易失败（仅消耗 gas）',
-      body: '$tx链上执行被拒绝，资金没有移动。可以重新发起。',
+      title: LoopL10n.current.launch_settlementTitle,
+      body: LoopL10n.current.launch_settlementBody2(tx),
     ),
     LaunchIntentState.expired => (
-      title: '未上链，可重新发起',
-      body: '$tx签名窗口结束后仍没有看到这笔交易。已重新读取持仓；晚到的交易仍可能成功，请先核对再重新发起。',
+      title: LoopL10n.current.launch_settlementTitle2,
+      body: LoopL10n.current.launch_settlementBody3(tx),
     ),
     LaunchIntentState.failed => (
-      title: '回报的交易不匹配',
-      body: '$tx链上的交易与签名时复核的内容不一致，服务端没有记录它。请核对后重新发起，并联系支持。',
+      title: LoopL10n.current.launch_settlementTitle3,
+      body: LoopL10n.current.launch_settlementBody4(tx),
     ),
-    _ => (title: '已广播，等待链上确认', body: '$tx广播不代表已到账，结果以链上索引为准。不要重复$noun。'),
+    _ => (
+      title: LoopL10n.current.launch_settlementTitle4,
+      body: LoopL10n.current.launch_settlementBody5(noun, tx),
+    ),
   };
 }
 

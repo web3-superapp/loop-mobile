@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart' show loopTabBarEdge;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -32,7 +33,8 @@ import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The one line that replaced the DISCOVERY DESK card (decision 0116).
-const String squareCommunityRuleLine = '按成员数 / 算力 / 讨论量 / 新建排序，热门不等于推荐';
+String get squareCommunityRuleLine =>
+    LoopL10n.current.square_communityListSquareCommunityRuleLine;
 
 /// The 社区 segment of 广场, laid out like a DeBox club list (S111 §2,
 /// decision 0116).
@@ -82,7 +84,10 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     if (!mounted) return;
     setState(() => _joining.remove(id));
     if (failure == null) {
-      LoopToast.show(context, message: '已加入');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.square_communityListMessage,
+      );
       return;
     }
     LoopToast.show(
@@ -96,7 +101,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
       showLoopSheet<void>(
         context,
         useRootNavigator: true,
-        barrierLabel: '关闭排序规则',
+        barrierLabel: LoopL10n.current.square_communityListBarrierLabel,
         builder: (sheetContext) => _SquareRulesSheet(
           recommendation: recommendation,
           onApply: () {
@@ -116,7 +121,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     final chosen = await showLoopSheet<CommunityDiscoverSegment>(
       context,
       useRootNavigator: true,
-      barrierLabel: '关闭排序',
+      barrierLabel: LoopL10n.current.square_communityListBarrierLabel2,
       builder: (sheetContext) => _SquareSortSheet(
         current: current,
         onSelected: (segment) => Navigator.of(sheetContext).pop(segment),
@@ -149,7 +154,10 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     final joinedOnly = state.membership == CommunityMembershipFilter.joined;
 
     final body = <Widget>[
-      CommunityPreviewNotice(mode: mode, resource: '社区目录'),
+      CommunityPreviewNotice(
+        mode: mode,
+        resource: context.l10n.square_communityListResource,
+      ),
       // S335 (decision 0264): no 热门社区 banner and no 「全部社区」 heading;
       // the order is one quiet word, right-aligned over the cards.
       _SquareSortButton(
@@ -169,7 +177,9 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             LoopInlineUnavailable(
-              message: '「${selectedSegment.label}」暂时不可用',
+              message: context.l10n.square_communityListMessage2(
+                selectedSegment.label,
+              ),
               detail: communityUnavailableReason(orderingReason),
               maxLines: 2,
               detailMaxLines: 4,
@@ -183,7 +193,9 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
               ),
               child: LoopButton(
                 key: const ValueKey<String>('square-community-ordering-back'),
-                label: '按成员最多排序',
+                label: context
+                    .l10n
+                    .square_communityListSquareCommunityOrderingBackLabel,
                 onPressed: () => unawaited(
                   controller.selectSort(CommunityDirectorySort.members),
                 ),
@@ -195,10 +207,13 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         LoopEmptyState(
           key: const ValueKey<String>('square-community-joined-empty'),
           illustration: LoopIllustration.holders,
-          title: '还没有加入社区',
+          title:
+              context.l10n.square_communityListSquareCommunityJoinedEmptyTitle,
           action: LoopButton(
             key: const ValueKey<String>('square-community-joined-empty-all'),
-            label: '去看看全部',
+            label: context
+                .l10n
+                .square_communityListSquareCommunityJoinedEmptyAllLabel,
             icon: 'compass',
             primary: true,
             onPressed: () => unawaited(
@@ -214,7 +229,8 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           skeleton: LoopSkeletonType.record,
           rows: 5,
           // Decision 0248: one fact, no reason line.
-          emptyMessage: '没有符合条件的社区',
+          emptyMessage:
+              context.l10n.square_communityListSquareCommunityStateEmptyMessage,
           onRetry: () => unawaited(controller.reload()),
         )
       else ...<Widget>[
@@ -239,7 +255,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
             ),
             child: LoopButton(
               key: const ValueKey<String>('square-community-retry-more'),
-              label: '重试',
+              label: context.l10n.common_retry,
               block: true,
               onPressed: () => unawaited(controller.loadMore()),
             ),
@@ -274,7 +290,7 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
     return LoopStreamPage(
       key: const ValueKey<String>('square-community-list'),
       archetype: LoopPageArchetype.listing,
-      title: '社区',
+      title: context.l10n.common_community,
       kicker: communityPreviewKicker(mode),
       embedded: true,
       tabPage: true,
@@ -284,7 +300,9 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
                 'square-community-capability-unavailable',
               ),
               capability: capability,
-              title: '社区模块当前不可用',
+              title: context
+                  .l10n
+                  .square_communityListSquareCommunityCapabilityUnavailableTitle,
             )
           : null,
       onRefresh: controller.refresh,
@@ -351,7 +369,7 @@ class _SquareHeaderLine extends StatelessWidget {
             child: Semantics(
               header: true,
               child: Text(
-                '发现社区',
+                context.l10n.square_communityListBuild,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: LoopType.title.copyWith(color: LoopColors.chalk),
@@ -360,7 +378,7 @@ class _SquareHeaderLine extends StatelessWidget {
           ),
           _SquareTextLink(
             key: const ValueKey<String>('square-community-rules'),
-            label: '规则与入驻',
+            label: context.l10n.square_communityListSquareCommunityRulesLabel,
             onTap: onRules,
           ),
         ],
@@ -428,7 +446,7 @@ class _SquareSortButton extends StatelessWidget {
       alignment: Alignment.centerRight,
       child: Semantics(
         button: true,
-        label: '排序，$label',
+        label: context.l10n.square_communityListSquareCommunitySortLabel(label),
         excludeSemantics: true,
         child: InkWell(
           key: const ValueKey<String>('square-community-sort'),
@@ -478,7 +496,7 @@ class _SquareSortSheet extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const LoopSheetHeading('排序'),
+      LoopSheetHeading(context.l10n.square_communityListLoopSheetHeading),
       for (final segment in CommunityDiscoverSegment.values)
         Semantics(
           button: true,
@@ -532,7 +550,7 @@ class _SquareSearchEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LoopSearchEntry(
     // Decision 0277: the Figma's 44 search field, the 广场 placeholder.
-    placeholder: '搜索社区',
+    placeholder: context.l10n.square_communityListPlaceholder,
     tone: LoopSearchTone.square,
     inkKey: const ValueKey<String>('square-community-search'),
     onTap: onTap,
@@ -579,10 +597,12 @@ class _SquareMainTabs extends StatelessWidget {
   final CommunityMembershipFilter membership;
   final ValueChanged<CommunityMembershipFilter> onMembership;
 
-  static const _membershipLabels = <CommunityMembershipFilter, String>{
-    CommunityMembershipFilter.all: '全部',
-    CommunityMembershipFilter.joined: '我加入的',
-  };
+  static Map<CommunityMembershipFilter, String> get _membershipLabels =>
+      <CommunityMembershipFilter, String>{
+        CommunityMembershipFilter.all: LoopL10n.current.common_all,
+        CommunityMembershipFilter.joined:
+            LoopL10n.current.square_communityListJoined,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -648,10 +668,12 @@ String squareCommunitySubline(
   final ranked = squareCommunityRankedFact(community, sort);
   final symbol = community.assetSymbol;
   return <String>[
-    '${community.memberCount} 成员',
+    LoopL10n.current.square_communityListSquareCommunitySubline(
+      community.memberCount,
+    ),
     ?ranked,
     if (symbol != null) '\$$symbol',
-  ].join('，');
+  ].join(LoopL10n.current.common_listSeparator);
 }
 
 /// The fact an order ranks by (算力 / 7 天讨论 …), or null under an order
@@ -716,10 +738,11 @@ class SquareCommunityRow extends StatelessWidget {
     final described = description != null && description.isNotEmpty;
     final state = switch (action) {
       SquareMembershipAction.none => '',
-      SquareMembershipAction.join => '，未加入',
-      SquareMembershipAction.joined => '，已加入',
-      SquareMembershipAction.mine => '，我的社区',
-      SquareMembershipAction.pending => '，审核中',
+      SquareMembershipAction.join => context.l10n.square_communityListJoin,
+      SquareMembershipAction.joined => context.l10n.square_communityListJoined2,
+      SquareMembershipAction.mine => context.l10n.square_communityListMine,
+      SquareMembershipAction.pending =>
+        context.l10n.square_communityListPending,
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -739,7 +762,7 @@ class SquareCommunityRow extends StatelessWidget {
               child: Semantics(
                 button: true,
                 label:
-                    '${<String>[community.name, if (described) description, subline, if (label != null) communityLabelDisplay(label)].join('，')}'
+                    '${<String>[community.name, if (described) description, subline, if (label != null) communityLabelDisplay(label)].join(LoopL10n.current.common_listSeparator)}'
                     '$state',
                 excludeSemantics: true,
                 child: InkWell(
@@ -797,7 +820,10 @@ class SquareCommunityRow extends StatelessWidget {
                               const SizedBox(height: 6),
                               _SquareCommunityMeta(
                                 communityId: id,
-                                members: '${community.memberCount} 成员',
+                                members: context.l10n
+                                    .square_communityListSquareCommunitySubline(
+                                      community.memberCount,
+                                    ),
                                 ranked: ranked,
                                 symbol: community.assetSymbol,
                                 logoUrl:
@@ -914,7 +940,7 @@ class _SquareCommunityMeta extends StatelessWidget {
                   text: '\$$asset',
                   color: LoopColors.chalk,
                   semanticsLabel: bolted
-                      ? '\$$asset，${communityLabelDisplay(mark)}'
+                      ? '\$$asset${LoopL10n.current.common_listSeparator}${communityLabelDisplay(mark)}'
                       : '\$$asset',
                   trailing: bolted
                       ? LoopIcon(
@@ -988,7 +1014,11 @@ double squareMetaChipFloor(BuildContext context, String text) {
 const double squareCommunityBoltSize = 12;
 
 /// The operator's label that marks a 算力社区 (decision 0264 supplement).
-const String squareMiningLabel = '算力社区';
+/// Operators write it in Chinese, so it is matched as data against the zh
+/// value whatever the reader's language (decision 0281: not copy).
+String get squareMiningLabel =>
+    lookupLoopLocalizations(LoopL10n.simplifiedChinese)
+        .square_communityListSquareMiningLabel;
 
 /// Whether [label] is the 算力社区 mark.
 bool squareIsMiningLabel(String label) => label.trim() == squareMiningLabel;
@@ -1082,16 +1112,31 @@ class _MembershipCapsule extends StatelessWidget {
     ) = switch (action) {
       SquareMembershipAction.join => (
         'join',
-        '加入',
+        context.l10n.square_communityListSwitch,
         true,
         joining ? null : onJoin,
       ),
-      SquareMembershipAction.joined => ('joined', '已加入', false, onOpen),
-      SquareMembershipAction.mine => ('mine', '我的', false, onOpen),
-      SquareMembershipAction.pending => ('pending', '审核中', false, onOpen),
+      SquareMembershipAction.joined => (
+        'joined',
+        context.l10n.square_communityListMessage,
+        false,
+        onOpen,
+      ),
+      SquareMembershipAction.mine => (
+        'mine',
+        context.l10n.square_communityListSwitch2,
+        false,
+        onOpen,
+      ),
+      SquareMembershipAction.pending => (
+        'pending',
+        context.l10n.common_inReview,
+        false,
+        onOpen,
+      ),
       SquareMembershipAction.none => ('none', '', false, null),
     };
-    final word = joining ? '加入中' : label;
+    final word = joining ? context.l10n.square_communityListSwitch3 : label;
     // Decision 0212 (docs/42 附C §6): 「加入」 is the Yellow primary step —
     // the one thing on the card that asks to be tapped; 「已加入」 and the
     // others are the quiet grey capsule (S335 · decision 0264: 52 × 32).
@@ -1156,7 +1201,7 @@ class _SquareRulesSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('排序规则'),
+        LoopSheetHeading(context.l10n.square_communityListLoopSheetHeading2),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
@@ -1169,7 +1214,7 @@ class _SquareRulesSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
+                context.l10n.square_communityListBuild2,
                 style: LoopType.bodySm,
               ),
               if (rule != null) ...<Widget>[
@@ -1181,11 +1226,13 @@ class _SquareRulesSheet extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 18),
-              Text('社区怎么入驻', style: LoopType.title),
+              Text(
+                context.l10n.square_communityListBuild3,
+                style: LoopType.title,
+              ),
               const SizedBox(height: 6),
               Text(
-                '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
-                '本页不代表任何 Mining 权重结论。',
+                context.l10n.square_communityListBuild4,
                 style: LoopType.bodySm,
               ),
               const SizedBox(height: 14),
@@ -1194,7 +1241,9 @@ class _SquareRulesSheet extends StatelessWidget {
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('square-community-apply'),
-                    label: '申请入驻',
+                    label: context
+                        .l10n
+                        .square_communityListSquareCommunityApplyLabel,
                     onPressed: onApply,
                   ),
                 ],

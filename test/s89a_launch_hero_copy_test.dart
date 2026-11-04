@@ -37,9 +37,9 @@ void main() {
 
       final primary = folio(tester);
       expect(primary.headingLoading, isTrue);
-      expect(primary.caption, '正在读取项目资料与链上状态');
+      expect(primary.caption, 'Loading project details and on-chain status');
       expect(find.text(launchMissingName), findsNothing);
-      expect(find.textContaining('暂时读不到'), findsNothing);
+      expect(find.textContaining("can't be loaded right now"), findsNothing);
     });
 
     testWidgets('read with a name: the name, and the chain sentence', (
@@ -55,7 +55,7 @@ void main() {
       final primary = folio(tester);
       expect(primary.headingLoading, isFalse);
       expect(primary.heading, isNot(launchMissingName));
-      expect(primary.caption, contains('读自区块'));
+      expect(primary.caption, contains('read at block'));
     });
 
     testWidgets('read without a chain block: the cannot-read sentence', (
@@ -70,7 +70,12 @@ void main() {
       );
       final primary = folio(tester);
       expect(primary.headingLoading, isFalse);
-      expect(primary.caption, contains('链上状态、价格与毕业进度暂时读不到'));
+      expect(
+        primary.caption,
+        contains(
+          "On-chain status, price and graduation progress can't be loaded right now",
+        ),
+      );
     });
 
     testWidgets('a failed read never says 暂无名称', (tester) async {
@@ -87,11 +92,23 @@ void main() {
     });
 
     test('the heading rule', () {
-      expect(launchDetailHeading(null, loading: true), '项目资料读取中');
-      expect(launchDetailHeading(null, loading: false), '没有读到项目资料');
+      expect(
+        launchDetailHeading(null, loading: true),
+        'Loading project details',
+      );
+      expect(
+        launchDetailHeading(null, loading: false),
+        'Couldn\'t load project details',
+      );
       expect(launchDetailHeading(s7Detail(), loading: false), 'MoonCat');
-      expect(launchDetailCaption(null, loading: true), '正在读取项目资料与链上状态');
-      expect(launchDetailCaption(null, loading: false), contains('暂时读不到'));
+      expect(
+        launchDetailCaption(null, loading: true),
+        'Loading project details and on-chain status',
+      );
+      expect(
+        launchDetailCaption(null, loading: false),
+        contains("can't be loaded right now"),
+      );
     });
   });
 
@@ -103,8 +120,13 @@ void main() {
         launch: FakeLaunchGateway(),
       );
       final primary = folio(tester);
-      expect(primary.stamp, '链下');
-      expect(primary.caption, contains('链上状态、价格与毕业进度暂时读不到'));
+      expect(primary.stamp, 'Off-chain');
+      expect(
+        primary.caption,
+        contains(
+          "On-chain status, price and graduation progress can't be loaded right now",
+        ),
+      );
     });
 
     testWidgets('a chain row: 链上, and the testnet named', (tester) async {
@@ -130,8 +152,11 @@ void main() {
         ),
       );
       final primary = folio(tester);
-      expect(primary.stamp, '链上');
-      expect(primary.caption, '目录、申请与轮次配置由 LOOP 提供；链上状态读自 BSC 测试网。');
+      expect(primary.stamp, 'On-chain');
+      expect(
+        primary.caption,
+        'Directory, applications and round config come from LOOP. On-chain status is read from BSC 测试网.',
+      );
     });
 
     test('the caption names the main chain off the testnet', () {
@@ -142,9 +167,12 @@ void main() {
       expect(launchOverviewReadsChain(s7Overview()), isFalse);
       expect(
         launchOverviewCaption(overview, testnet: false),
-        contains('链上状态读自 BSC 主网'),
+        contains('On-chain status is read from BSC Mainnet'),
       );
-      expect(launchOverviewCaption(null, testnet: true), contains('暂时读不到'));
+      expect(
+        launchOverviewCaption(null, testnet: true),
+        contains("can't be loaded right now"),
+      );
     });
   });
 
@@ -158,13 +186,16 @@ void main() {
         meta: s7MetaSnapshot(launchEvidenceConfirmed: true),
         launch: FakeLaunchGateway(),
       );
-      final card = key('launch-unavailable-已毕业项目');
+      final card = key('launch-unavailable-graduated-projects');
       await scrollToS7Section(tester, card);
       expect(
-        find.descendant(of: card, matching: find.text('已毕业名单还没有开放读取')),
+        find.descendant(
+          of: card,
+          matching: find.text('The graduated list isn\'t open yet'),
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('合约还没有上线'), findsNothing);
+      expect(find.textContaining("contract isn't live yet"), findsNothing);
     });
 
     testWidgets('pending: the original sentence stays', (tester) async {
@@ -173,12 +204,12 @@ void main() {
         const LaunchScreen(),
         launch: FakeLaunchGateway(),
       );
-      final card = key('launch-unavailable-已毕业项目');
+      final card = key('launch-unavailable-graduated-projects');
       await scrollToS7Section(tester, card);
       expect(
         find.descendant(
           of: card,
-          matching: find.textContaining('Launch 合约还没有上线'),
+          matching: find.textContaining("The Launch contract isn't live yet"),
         ),
         findsOneWidget,
       );
@@ -197,7 +228,10 @@ void main() {
       final row = key('launch-detail-open-holders');
       await scrollToS7Section(tester, row);
       expect(
-        find.descendant(of: row, matching: find.text('参与人数还没有开放读取')),
+        find.descendant(
+          of: row,
+          matching: find.text('Participant count isn\'t open yet'),
+        ),
         findsOneWidget,
       );
     });
@@ -208,8 +242,14 @@ void main() {
         phase: LaunchViewPhase.ready,
         value: s7Holders(),
       );
-      expect(launchHoldersRowText(holders), 'Launch 合约还没有上线，参与人数暂时不可用。');
-      expect(launchHoldersRowText(holders, contractLive: true), '参与人数还没有开放读取');
+      expect(
+        launchHoldersRowText(holders),
+        'The Launch contract isn\'t live yet. Participant count isn\'t available.',
+      );
+      expect(
+        launchHoldersRowText(holders, contractLive: true),
+        'Participant count isn\'t open yet',
+      );
       expect(
         launchBaselineReasonText(
           'LAUNCH_CHAIN_RPC_UNREACHABLE',
@@ -251,22 +291,28 @@ void main() {
       // 发射中 is the default segment: no chain reading → the segment's name.
       final liveRow = key('launch-row-live-1');
       expect(
-        find.descendant(of: liveRow, matching: find.text('MCAT，发射中，待确认')),
+        find.descendant(
+          of: liveRow,
+          matching: find.text('MCAT, Live, Pending confirmation'),
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('待排期，'), findsNothing);
+      expect(find.textContaining('Awaiting schedule,'), findsNothing);
 
       // The chips scroll sideways; bring this one into view first.
-      await tester.ensureVisible(find.text('已结束 1'));
+      await tester.ensureVisible(find.text('Ended 1'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('已结束 1'));
+      await tester.tap(find.text('Ended 1'));
       await tester.pumpAndSettle();
       final endedRow = key('launch-row-$s7LaunchId');
       expect(
-        find.descendant(of: endedRow, matching: find.text('MCAT，销售已结束，待确认')),
+        find.descendant(
+          of: endedRow,
+          matching: find.text('MCAT, Sale ended, Pending confirmation'),
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('已批准，待排期'), findsNothing);
+      expect(find.textContaining('Approved, awaiting schedule'), findsNothing);
     });
 
     testWidgets('待排期 keeps the schedule wording', (tester) async {
@@ -275,9 +321,15 @@ void main() {
         const LaunchScreen(),
         launch: FakeLaunchGateway(),
       );
-      await tester.tap(find.text('待排期 1'));
+      // The chips scroll sideways; the English chips run past the screen.
+      await tester.ensureVisible(find.text('Awaiting schedule 1'));
       await tester.pumpAndSettle();
-      expect(find.text('MCAT，已批准，待排期，待确认'), findsOneWidget);
+      await tester.tap(find.text('Awaiting schedule 1'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('MCAT, Approved, awaiting schedule, Pending confirmation'),
+        findsOneWidget,
+      );
     });
   });
 }

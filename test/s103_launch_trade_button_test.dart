@@ -26,7 +26,7 @@ void main() {
     test('a live, active sale opens the internal market', () {
       final spec = launchTradeButtonSpec(_chain());
       expect(spec.enabled, isTrue);
-      expect(spec.label, '进入内盘交易');
+      expect(spec.label, 'Go to bonding pool trading');
     });
 
     test('an unavailable chain read keeps the prototype label and opens', () {
@@ -34,7 +34,7 @@ void main() {
         const LaunchOnChainUnavailable('LAUNCH_CHAIN_UNAVAILABLE'),
       );
       expect(spec.enabled, isTrue);
-      expect(spec.label, '进入内盘交易');
+      expect(spec.label, 'Go to bonding pool trading');
     });
 
     test('paused wins over every sale state', () {
@@ -43,25 +43,25 @@ void main() {
           _chain(sale: sale, operational: LaunchOperationalState.paused),
         );
         expect(spec.enabled, isFalse, reason: sale.wireName);
-        expect(spec.label, '内盘已暂停', reason: sale.wireName);
+        expect(spec.label, 'Bonding pool paused', reason: sale.wireName);
       }
     });
 
     test('every non-live sale state is off and names the reason', () {
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.scheduled)), (
-        label: '内盘未开始',
+        label: 'Bonding pool not started',
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.ended)), (
-        label: '内盘已结束，等待最终化',
+        label: 'Bonding pool ended, awaiting finalization',
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.failed)), (
-        label: '内盘已结束，未达软顶',
+        label: 'Bonding pool ended, soft cap not reached',
         enabled: false,
       ));
       expect(launchTradeButtonSpec(_chain(sale: LaunchSaleState.cancelled)), (
-        label: '内盘已取消',
+        label: 'Bonding pool cancelled',
         enabled: false,
       ));
     });
@@ -75,7 +75,7 @@ void main() {
             liquidity: LaunchLiquidityState.preparing,
           ),
         ),
-        (label: '内盘已结束，募集成功', enabled: false),
+        (label: 'Bonding pool ended, raise succeeded', enabled: false),
       );
       for (final liquidity in <LaunchLiquidityState>[
         LaunchLiquidityState.lpLocked,
@@ -89,7 +89,7 @@ void main() {
               liquidity: liquidity,
             ),
           ),
-          (label: '已毕业，内盘已关闭', enabled: false),
+          (label: 'Graduated, bonding pool closed', enabled: false),
           reason: liquidity.wireName,
         );
       }

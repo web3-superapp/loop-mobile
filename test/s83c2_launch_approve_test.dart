@@ -873,7 +873,7 @@ void main() {
       await _choose(tester);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '正在读取授权状态',
+        'Loading approval status',
       );
       expect(_pressed(tester, 'launch-trade-submit'), isNull);
       expect(_key('launch-trade-approve'), findsNothing);
@@ -892,11 +892,16 @@ void main() {
       await _choose(tester);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权状态未读取',
+        'Approval status not loaded',
       );
       expect(_pressed(tester, 'launch-trade-submit'), isNull);
-      expect(find.textContaining('授权额度 未读取'), findsOneWidget);
-      expect(find.textContaining('授权状态未读取，本页不猜测'), findsOneWidget);
+      expect(find.textContaining('allowance Not loaded'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "Approval status not loaded. This page doesn't guess",
+        ),
+        findsOneWidget,
+      );
 
       // Re-reading is the only way forward; nothing is guessed meanwhile.
       await scrollToS7Section(tester, _key('launch-trade-allowance-reread'));
@@ -913,7 +918,7 @@ void main() {
       await _choose(tester);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权状态未读取',
+        'Approval status not loaded',
       );
       expect(_pressed(tester, 'launch-trade-submit'), isNull);
     });
@@ -933,9 +938,9 @@ void main() {
         await _choose(tester);
         final body = _noticeBody(tester, 'launch-trade-allowance-notice');
         expect(body, contains(phrase));
-        expect(body, contains('授权额度读到之前不能购买'));
+        expect(body, contains("You can't buy until the allowance loads."));
         expect(_pressed(tester, 'launch-trade-submit'), isNull);
-        expect(find.textContaining('授权额度 0'), findsNothing);
+        expect(find.textContaining('allowance 0'), findsNothing);
       });
     }
 
@@ -950,12 +955,12 @@ void main() {
       expect(_key('launch-trade-submit'), findsNothing);
       expect(
         tester.widget<LoopButton>(_key('launch-trade-approve')).label,
-        '先授权 USD1',
+        'Approve USD1 first',
       );
       final body = _noticeBody(tester, 'launch-trade-allowance-notice');
-      expect(body, contains('当前授权 100 USD1'));
-      expect(body, contains('本次需要 500 USD1'));
-      expect(body, contains('不是无限额度'));
+      expect(body, contains('Current allowance 100 USD1'));
+      expect(body, contains('This purchase needs 500 USD1'));
+      expect(body, contains('not unlimited'));
       // A smaller amount the allowance covers is a purchase again.
       await tester.enterText(_key('launch-trade-amount'), '100');
       await tester.pumpAndSettle();
@@ -1018,7 +1023,7 @@ void main() {
           tester
               .widget<LoopNotice>(_key('launch-trade-allowance-notice'))
               .title,
-          '等待授权到账',
+          'Waiting for the approval to land',
         );
         expect(_pressed(tester, 'launch-trade-approve'), isNull);
         expect(
@@ -1032,7 +1037,7 @@ void main() {
         expect(directory.balanceReads, 3);
         expect(_key('launch-trade-approve'), findsNothing);
         expect(_pressed(tester, 'launch-trade-submit'), isNotNull);
-        expect(find.textContaining('授权额度 500 USD1'), findsOneWidget);
+        expect(find.textContaining('allowance 500 USD1'), findsOneWidget);
       },
     );
 
@@ -1073,7 +1078,7 @@ void main() {
 
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权额度还没有更新',
+        'Allowance hasn\'t updated',
       );
       // No second approval is offered while the first may still land.
       expect(_pressed(tester, 'launch-trade-approve'), isNull);
@@ -1106,7 +1111,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权没有生效',
+        'Approval didn\'t take effect',
       );
       expect(_pressed(tester, 'launch-trade-approve'), isNotNull);
       expect(_key('launch-trade-submit'), findsNothing);
@@ -1135,7 +1140,7 @@ void main() {
       expect(_key('money-sign-sheet'), findsNothing);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权没有准备成功',
+        'The approval wasn\'t prepared',
       );
       expect(
         _noticeBody(tester, 'launch-trade-allowance-notice'),
@@ -1168,7 +1173,7 @@ void main() {
       expect(intents.reports, isEmpty);
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-allowance-notice')).title,
-        '授权没有签名',
+        'Approval not signed',
       );
       expect(_pressed(tester, 'launch-trade-approve'), isNotNull);
     });
@@ -1197,7 +1202,7 @@ void main() {
       final directory = await refuse(tester, launchAllowanceInsufficientCode);
       expect(
         _noticeBody(tester, 'launch-trade-refusal'),
-        contains('USD1 授权额度不足以支付这次认购'),
+        contains("The USD1 allowance isn't enough for this purchase"),
       );
       // The balances were re-read, and even a reading that says "enough" is
       // older than the server's answer: approval comes first.
@@ -1216,7 +1221,7 @@ void main() {
       final directory = await refuse(tester, launchBalanceInsufficientCode);
       expect(
         _noticeBody(tester, 'launch-trade-refusal'),
-        contains('USD1 余额不足'),
+        contains("doesn't have enough USD1"),
       );
       final guidance = _key(
         'launch-trade-funding-$launchBalanceInsufficientCode',
@@ -1225,7 +1230,7 @@ void main() {
       expect(
         find.descendant(
           of: guidance,
-          matching: find.textContaining('USD1 余额 900 USD1'),
+          matching: find.textContaining('USD1 balance 900 USD1'),
         ),
         findsOneWidget,
       );
@@ -1240,12 +1245,15 @@ void main() {
       tester,
     ) async {
       await refuse(tester, launchGasInsufficientCode);
-      expect(_noticeBody(tester, 'launch-trade-refusal'), contains('不足以支付网络费'));
+      expect(
+        _noticeBody(tester, 'launch-trade-refusal'),
+        contains('for the network fee'),
+      );
       final guidance = _key('launch-trade-funding-$launchGasInsufficientCode');
       expect(
         find.descendant(
           of: guidance,
-          matching: find.textContaining('网络费余额 2.5 tBNB'),
+          matching: find.textContaining('Network fee balance 2.5 tBNB'),
         ),
         findsOneWidget,
       );
@@ -1293,11 +1301,11 @@ void main() {
       // Both the paid-so-far and the server's round cap are shown before
       // signing.
       expect(
-        tester.widget<LoopRecordRow>(_key('launch-review-钱包已累计')).trailing,
+        tester.widget<LoopRecordRow>(_key('launch-review-5')).trailing,
         '0 USD1',
       );
       expect(
-        tester.widget<LoopRecordRow>(_key('launch-review-本轮钱包上限')).trailing,
+        tester.widget<LoopRecordRow>(_key('launch-review-6')).trailing,
         '500 USD1',
       );
       await scrollToS7Section(tester, _key('launch-trade-sign'));
@@ -1321,24 +1329,36 @@ void main() {
       );
       expect(gateway.reports, <String>['$s83cIntentId:$s83cTxHash']);
       expect(find.text('已广播'), findsOneWidget);
-      expect(find.text('已完成'), findsNothing);
-      expect(find.textContaining('广播不代表已成交'), findsWidgets);
+      expect(find.text('Done'), findsNothing);
+      expect(
+        find.textContaining("Broadcast doesn't mean it was filled"),
+        findsWidgets,
+      );
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<LoopNotice>(_key('launch-trade-locked')).title,
-        '已广播，已提交，等待链上索引',
+        'Broadcast, Submitted, awaiting on-chain index',
       );
       expect(_key('launch-trade-report-retry'), findsNothing);
       expect(_key('launch-trade-sign'), findsNothing);
-      expect(find.textContaining('成功'), findsNothing);
+      expect(find.textContaining('succeeded'), findsNothing);
     });
 
     for (final (code, phrase) in <(String, String)>[
-      ('LAUNCH_INTENT_ALREADY_REPORTED', '已经上报过另一笔交易'),
-      ('LAUNCH_INTENT_NOT_SIGNABLE', '不再接受这笔认购的上报'),
-      ('LAUNCH_INTENT_EXPIRED', '链上暂时还看不到这笔交易'),
-      ('LAUNCH_TX_PAYLOAD_MISMATCH', '与签名时复核的认购内容不一致'),
+      (
+        'LAUNCH_INTENT_ALREADY_REPORTED',
+        'Another transaction was already reported',
+      ),
+      (
+        'LAUNCH_INTENT_NOT_SIGNABLE',
+        'no longer accepts reports for this purchase',
+      ),
+      ('LAUNCH_INTENT_EXPIRED', "isn't visible on chain yet"),
+      (
+        'LAUNCH_TX_PAYLOAD_MISMATCH',
+        "doesn't match the purchase reviewed at signing",
+      ),
     ]) {
       testWidgets('$code · a refused report stays locked with its sentence', (
         tester,
@@ -1348,7 +1368,7 @@ void main() {
         await tester.pumpAndSettle();
         final body = _noticeBody(tester, 'launch-trade-locked');
         expect(body, contains(phrase));
-        expect(body, contains('不要重复签名'));
+        expect(body, contains("don't sign again"));
         expect(body, isNot(contains(code)));
         // The server's answer is final for this intent: no re-report, and
         // never a second signature.
@@ -1366,7 +1386,10 @@ void main() {
       );
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
-      expect(_noticeBody(tester, 'launch-trade-locked'), contains('可以稍后重新上报'));
+      expect(
+        _noticeBody(tester, 'launch-trade-locked'),
+        contains('you can report again later'),
+      );
       await scrollToS7Section(tester, _key('launch-trade-report-retry'));
       await tester.tap(_key('launch-trade-report-retry'));
       await tester.pumpAndSettle();
@@ -1378,10 +1401,13 @@ void main() {
     });
 
     test('history-side states read as the server states them', () {
-      expect(LaunchIntentState.submitted.label, '已提交，等待链上索引');
-      expect(LaunchIntentState.confirmed.label, '已确认');
-      expect(LaunchIntentState.reverted.label, '链上已回滚');
-      expect(LaunchIntentState.expired.label, '已过期');
+      expect(
+        LaunchIntentState.submitted.label,
+        'Submitted, awaiting on-chain index',
+      );
+      expect(LaunchIntentState.confirmed.label, 'Confirmed');
+      expect(LaunchIntentState.reverted.label, 'Reverted on chain');
+      expect(LaunchIntentState.expired.label, 'Expired');
     });
   });
 
@@ -1396,9 +1422,9 @@ void main() {
           holders: S7Answer<LaunchHolders>(value: s83cHolders()),
         ),
       );
-      expect(find.text('1,842 位参与者'), findsOneWidget);
-      expect(find.textContaining('位持有人'), findsNothing);
-      expect(find.textContaining('不是当前持币人数'), findsOneWidget);
+      expect(find.text('1,842 participants'), findsOneWidget);
+      expect(find.textContaining('1,842 holders'), findsNothing);
+      expect(find.textContaining('not current holders'), findsOneWidget);
     });
 
     testWidgets('the shared sign sheet says 已广播 after a broadcast', (
@@ -1417,7 +1443,7 @@ void main() {
         ),
       );
       expect(find.text('已广播'), findsOneWidget);
-      expect(find.text('已完成'), findsNothing);
+      expect(find.text('Done'), findsNothing);
       expect(find.text('广播不代表已成交。'), findsOneWidget);
     });
   });

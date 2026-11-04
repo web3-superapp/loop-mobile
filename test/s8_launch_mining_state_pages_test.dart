@@ -120,7 +120,7 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'launch-segments',
     // The segment bar prints four counts; none of them may be guessed, and
     // neither may the total in the folio heading.
-    unreadText: '个已登记项目',
+    unreadText: 'registered project',
     emptyContract:
         'launch 的空态是分段级的（launch-segment-empty-<segment>），不是整页的：'
         '目录读成功时一定有一个 LaunchOverview 对象。',
@@ -162,7 +162,7 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    readyKey: 'launch-unavailable-购买、权益与退款记录',
+    readyKey: 'launch-unavailable-history-records',
     emptyContract:
         'LaunchHistory 是 `{launchId, source}` 两个必填字段'
         '（launch_models.dart:719-724），读成功时永远有一条 source 说明；'
@@ -184,7 +184,7 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'launch-rounds-notice',
     // Same rule as launch-trade: "还没有配置任何轮次" is a read conclusion.
     alsoUnreadKeys: <String>['launch-rounds-empty', 'launch-rounds-list'],
-    unreadText: '个轮次',
+    unreadText: ' rounds',
     emptyContract:
         '轮次页的空态是「配置里没有轮次」，由 LaunchDetail.rounds 决定，'
         '写在 launch-rounds-empty 上，不经过 LaunchStateBlock。',
@@ -445,7 +445,7 @@ void main() {
           find.byKey(const ValueKey<String>('launch-segment-empty-live')),
           findsOneWidget,
         );
-        expect(find.text('发射中：暂无项目'), findsOneWidget);
+        expect(find.text('Live: no projects'), findsOneWidget);
         // The read landed, so the page-wide block is out of the question: the
         // segment bar and the rest of the catalogue are still on screen.
         expect(
@@ -482,7 +482,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-rounds-state-empty')),
         findsNothing,
       );
-      expect(find.text('0 个轮次'), findsOneWidget);
+      expect(find.text('0 rounds'), findsOneWidget);
     });
 
     testWidgets('launch-trade says there is no round only after it read one', (

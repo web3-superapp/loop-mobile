@@ -1,0 +1,449 @@
+{
+  "dapp_bridgeDappIntentBusyText": {
+    "en": "The wallet has a pending action",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:58",
+    "zh": "钱包有待处理的操作"
+  },
+  "dapp_bridgeDappMainnetSigningText": {
+    "en": "Signing isn't supported on this network yet",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:55, lib/features/dapp/dapp_signing.dart:52",
+    "zh": "暂不支持在这个网络签名"
+  },
+  "dapp_bridgeInsufficientBalance": {
+    "en": "Not enough balance to pay for this transaction",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:787",
+    "zh": "余额不足以支付这笔交易"
+  },
+  "dapp_bridgeTimedOut": {
+    "en": "Network unavailable. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:785",
+    "zh": "网络不可用，请稍后再试"
+  },
+  "dapp_bridgeToast": {
+    "en": "This request didn't pass the checks",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:646, lib/features/dapp/dapp_bridge.dart:788",
+    "zh": "这笔请求没有通过检查"
+  },
+  "dapp_bridgeUnavailable": {
+    "en": "Signing isn't supported on this page yet",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_bridge.dart:786",
+    "zh": "暂不支持在这个页面签名"
+  },
+  "dapp_browserScreensBlocked": {
+    "en": "Blocked",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:743",
+    "zh": "已阻止"
+  },
+  "dapp_browserScreensBuild": {
+    "en": "This address can't be opened",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:207, lib/features/dapp/dapp_browser_screens.dart:619, lib/features/dapp/dapp_browser_screens.dart:633, lib/features/dapp/dapp_browser_screens.dart:935",
+    "zh": "这个网址不能打开"
+  },
+  "dapp_browserScreensDappBrowserClearRecentsLabel": {
+    "en": "Clear recents",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:284",
+    "zh": "清除最近访问"
+  },
+  "dapp_browserScreensDappBrowserEmptyTitle": {
+    "en": "No history yet",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:261",
+    "zh": "还没有访问记录"
+  },
+  "dapp_browserScreensDappBrowserGoLabel": {
+    "en": "Open",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:229",
+    "zh": "打开"
+  },
+  "dapp_browserScreensDappBrowserHomeTitle": {
+    "en": "DApp browser",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:178",
+    "zh": "DApp 浏览器"
+  },
+  "dapp_browserScreensDappBrowserOmniboxHintText": {
+    "en": "Enter a URL",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:188",
+    "zh": "输入网址"
+  },
+  "dapp_browserScreensDappFindingsOpenLabel": {
+    "en": "Open anyway",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:379, lib/features/dapp/dapp_browser_screens.dart:963",
+    "zh": "仍要打开"
+  },
+  "dapp_browserScreensDappMenuBookmarkAdd": {
+    "en": "Bookmark",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:810",
+    "zh": "收藏"
+  },
+  "dapp_browserScreensDappMenuBookmarkTitle": {
+    "en": "Remove bookmark",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:810",
+    "zh": "取消收藏"
+  },
+  "dapp_browserScreensDappMenuCopyTitle": {
+    "en": "Copy link",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:817",
+    "zh": "复制链接"
+  },
+  "dapp_browserScreensDappMenuDisconnectTitle": {
+    "en": "Disconnect this site",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:832",
+    "zh": "断开此站点"
+  },
+  "dapp_browserScreensDappMenuExternalTitle": {
+    "en": "Open in external browser",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:824",
+    "zh": "在外部浏览器打开"
+  },
+  "dapp_browserScreensDappWebAddressLabel": {
+    "en": "View address {host}",
+    "placeholders": {
+      "host": {
+        "example": "host",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1063",
+    "zh": "查看网址 {host}"
+  },
+  "dapp_browserScreensDappWebBackLabel": {
+    "en": "Back",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1200",
+    "zh": "后退"
+  },
+  "dapp_browserScreensDappWebChainLabel": {
+    "en": "Switch network {chainLabel}",
+    "placeholders": {
+      "chainLabel": {
+        "example": "chainLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1103",
+    "zh": "切换网络 {chainLabel}"
+  },
+  "dapp_browserScreensDappWebErrorTitle": {
+    "en": "The page didn't open",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1017",
+    "zh": "页面没有打开"
+  },
+  "dapp_browserScreensDappWebForwardLabel": {
+    "en": "Forward",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1208",
+    "zh": "前进"
+  },
+  "dapp_browserScreensDappWebUnavailableTitle": {
+    "en": "DApp browser isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:924",
+    "zh": "DApp 浏览器暂不可用"
+  },
+  "dapp_browserScreensDappWebWallet": {
+    "en": "Wallet not connected",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:1123",
+    "zh": "未连接钱包"
+  },
+  "dapp_browserScreensFlagged": {
+    "en": "Caution",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:742",
+    "zh": "需注意"
+  },
+  "dapp_browserScreensIf": {
+    "en": "Clear",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:299",
+    "zh": "清除"
+  },
+  "dapp_browserScreensLoopLabel": {
+    "en": "Bookmarks",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:268, lib/features/dapp/dapp_browser_screens.dart:810",
+    "zh": "收藏"
+  },
+  "dapp_browserScreensLoopLabel2": {
+    "en": "Recent",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:281",
+    "zh": "最近访问"
+  },
+  "dapp_browserScreensMessage": {
+    "en": "Signed",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:552",
+    "zh": "已签名"
+  },
+  "dapp_browserScreensMessage2": {
+    "en": "Bookmark removed",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:852",
+    "zh": "已取消收藏"
+  },
+  "dapp_browserScreensMessage3": {
+    "en": "Bookmarked",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:852",
+    "zh": "已收藏"
+  },
+  "dapp_browserScreensNormalized": {
+    "en": "Same origin",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:741",
+    "zh": "来源一致"
+  },
+  "dapp_browserScreensToast": {
+    "en": "Only HTTPS addresses can be opened",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:613",
+    "zh": "只能打开 HTTPS 网址"
+  },
+  "dapp_browserScreensToast2": {
+    "en": "Couldn't open the external browser",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_browser_screens.dart:860",
+    "zh": "无法打开外部浏览器"
+  },
+  "dapp_modelsApprovalForAll": {
+    "en": "Approval for all NFTs",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:91",
+    "zh": "授权全部 NFT"
+  },
+  "dapp_modelsEoaSpender": {
+    "en": "Approval to a personal address",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:93",
+    "zh": "授权给个人地址"
+  },
+  "dapp_modelsFor": {
+    "en": "BSC Mainnet",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:80",
+    "zh": "BSC 主网"
+  },
+  "dapp_modelsPermitSignature": {
+    "en": "Permit signature",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:94",
+    "zh": "签名授权（Permit）"
+  },
+  "dapp_modelsRawHashSignature": {
+    "en": "Raw hash signature",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:96",
+    "zh": "原始哈希签名"
+  },
+  "dapp_modelsSimulationFailed": {
+    "en": "Simulation failed",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:104",
+    "zh": "预执行失败"
+  },
+  "dapp_modelsUnlimitedApproval": {
+    "en": "Unlimited approval",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:90",
+    "zh": "无限授权"
+  },
+  "dapp_modelsUnrecognizedTypedData": {
+    "en": "Unrecognized signature structure",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:100",
+    "zh": "不可识别的签名结构"
+  },
+  "dapp_modelsUnverifiedContract": {
+    "en": "Unverified contract",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_models.dart:103",
+    "zh": "未验证合约"
+  },
+  "dapp_signingDappConnectConfirmLabel": {
+    "en": "Connect",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:508",
+    "zh": "连接"
+  },
+  "dapp_signingDappSignSheetCancelLabel": {
+    "en": "Reject",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:723",
+    "zh": "拒绝"
+  },
+  "dapp_signingDappSignSheetSigningTitle": {
+    "en": "Signing and broadcasting",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:725",
+    "zh": "正在签名并广播"
+  },
+  "dapp_signingDappSignSheetSigningTitle2": {
+    "en": "Signing",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:726",
+    "zh": "正在签名"
+  },
+  "dapp_signingLabel": {
+    "en": "Wallet address",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:493",
+    "zh": "钱包地址"
+  },
+  "dapp_signingLoopSignFact": {
+    "en": "Method",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:267",
+    "zh": "方法"
+  },
+  "dapp_signingLoopSignFact2": {
+    "en": "Transfer",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:269",
+    "zh": "转账"
+  },
+  "dapp_signingLoopSignFact3": {
+    "en": "Unknown method",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:270",
+    "zh": "未知方法"
+  },
+  "dapp_signingLoopSignFact4": {
+    "en": "Target contract",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:273",
+    "zh": "目标合约"
+  },
+  "dapp_signingLoopSignFact5": {
+    "en": "Data length",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:285",
+    "zh": "数据长度"
+  },
+  "dapp_signingLoopSignFact6": {
+    "en": "{dataLength} bytes",
+    "placeholders": {
+      "dataLength": {
+        "example": "call.dataLength",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/dapp/dapp_signing.dart:285",
+    "zh": "{dataLength} 字节"
+  },
+  "dapp_signingLoopSignFact7": {
+    "en": "Type",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:292",
+    "zh": "类型"
+  },
+  "dapp_signingLoopSignFact8": {
+    "en": "Structured data",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:294",
+    "zh": "结构化数据"
+  },
+  "dapp_signingMessage": {
+    "en": "Confirm signature",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:244, lib/features/dapp/dapp_signing.dart:722",
+    "zh": "确认签名"
+  },
+  "dapp_signingS": {
+    "en": "Contract call",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:269",
+    "zh": "合约调用"
+  },
+  "dapp_signingS2": {
+    "en": "Message",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:295",
+    "zh": "消息"
+  },
+  "dapp_signingShowDappConnectSheet": {
+    "en": "Connect wallet",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:488",
+    "zh": "连接钱包"
+  },
+  "dapp_signingSwitch": {
+    "en": "Cancelled. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:35",
+    "zh": "已取消，没有发生任何变化。"
+  },
+  "dapp_signingSwitch2": {
+    "en": "Verification didn't pass. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:36",
+    "zh": "身份验证没有通过，没有发生任何变化。"
+  },
+  "dapp_signingSwitch3": {
+    "en": "This request expired and wasn't signed. Go back to the page and try again.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:37",
+    "zh": "这笔请求已过期，没有签名。请回到页面重新发起。"
+  },
+  "dapp_signingSwitch4": {
+    "en": "The content to sign doesn't match the page's request. Signing refused.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:38",
+    "zh": "待签内容与页面请求不一致，已拒绝签名。"
+  },
+  "dapp_signingSwitch5": {
+    "en": "This transaction failed simulation and wasn't signed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:42",
+    "zh": "这笔交易预执行未通过，没有签名。"
+  },
+  "dapp_signingSwitch6": {
+    "en": "This transaction can't be simulated right now and wasn't signed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:43",
+    "zh": "这笔交易暂时无法预执行，没有签名。"
+  },
+  "dapp_signingSwitch7": {
+    "en": "The wallet can't sign on this chain right now. Nothing was signed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:47",
+    "zh": "钱包暂时不能在这条链上签名，没有签名。"
+  },
+  "dapp_signingSwitch8": {
+    "en": "The signed-in wallet isn't the wallet for this request. Nothing was signed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:48",
+    "zh": "当前登录的钱包不是这笔请求的钱包，没有签名。"
+  },
+  "dapp_signingSwitch9": {
+    "en": "The wallet didn't finish signing. Nothing changed.",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:49",
+    "zh": "钱包没有完成签名，没有发生任何变化。"
+  },
+  "dapp_signingTransaction": {
+    "en": "Confirm transaction",
+    "placeholders": {},
+    "where": "lib/features/dapp/dapp_signing.dart:243, lib/features/dapp/dapp_signing.dart:721",
+    "zh": "确认交易"
+  }
+}

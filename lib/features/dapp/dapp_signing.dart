@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -32,24 +33,25 @@ import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 /// zh-CN for a refusal before or at the wallet. Every line says nothing was
 /// signed.
 String dappSignReasonText(String reasonCode) => switch (reasonCode) {
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-  'INTENT_EXPIRED' => '这笔请求已过期，没有签名。请回到页面重新发起。',
-  'REVIEW_PAYLOAD_MISMATCH' => '待签内容与页面请求不一致，已拒绝签名。',
+  loopStepUpCancelledCode => LoopL10n.current.dapp_signingSwitch,
+  loopStepUpFailedCode => LoopL10n.current.dapp_signingSwitch2,
+  'INTENT_EXPIRED' => LoopL10n.current.dapp_signingSwitch3,
+  'REVIEW_PAYLOAD_MISMATCH' => LoopL10n.current.dapp_signingSwitch4,
   // dapp_tx pre-execution did not pass (signing.allowed = false).
   'BSC_CALL_REVERTED' ||
   'GAS_ESTIMATE_UNAVAILABLE' ||
-  'INTENT_NOT_SIGNABLE' => '这笔交易预执行未通过，没有签名。',
-  'SIMULATION_UNAVAILABLE' => '这笔交易暂时无法预执行，没有签名。',
+  'INTENT_NOT_SIGNABLE' => LoopL10n.current.dapp_signingSwitch5,
+  'SIMULATION_UNAVAILABLE' => LoopL10n.current.dapp_signingSwitch6,
   'CHAIN_SIGNING_DISABLED' ||
   'INTENT_CHAIN_NOT_PERMITTED' ||
   'intent_chain_not_permitted' => dappMainnetSigningLine,
-  'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有签名。',
-  'privy_wallet_mismatch' => '当前登录的钱包不是这笔请求的钱包，没有签名。',
-  _ => '钱包没有完成签名，没有发生任何变化。',
+  'privy_chain_switch_unsupported' => LoopL10n.current.dapp_signingSwitch7,
+  'privy_wallet_mismatch' => LoopL10n.current.dapp_signingSwitch8,
+  _ => LoopL10n.current.dapp_signingSwitch9,
 };
 
-const String dappMainnetSigningLine = '暂不支持在这个网络签名';
+String get dappMainnetSigningLine =>
+    LoopL10n.current.dapp_bridgeDappMainnetSigningText;
 
 /// The one path from a DApp intent to the wallet.
 final class DappSigner {
@@ -240,8 +242,8 @@ final dappSignerProvider = Provider<DappSigner>(
 );
 
 String dappSheetTitle(DappIntent intent) => switch (intent.kind) {
-  DappIntentKind.transaction => '确认交易',
-  DappIntentKind.message => '确认签名',
+  DappIntentKind.transaction => LoopL10n.current.dapp_signingTransaction,
+  DappIntentKind.message => LoopL10n.current.dapp_signingMessage,
 };
 
 /// `1.5` for 1.5 × 10¹⁸ wei, exact.
@@ -264,16 +266,19 @@ List<LoopSignFact> dappIntentFacts(DappIntent intent) {
     final call = tx.decodedCall;
     facts.add(
       LoopSignFact(
-        '方法',
+        LoopL10n.current.dapp_signingLoopSignFact,
         call == null
-            ? (tx.toIsContract == false ? '转账' : '合约调用')
-            : call.functionName ?? (call.selector ?? '未知方法'),
+            ? (tx.toIsContract == false
+                  ? LoopL10n.current.dapp_signingLoopSignFact2
+                  : LoopL10n.current.dapp_signingS)
+            : call.functionName ??
+                  (call.selector ?? LoopL10n.current.dapp_signingLoopSignFact3),
       ),
     );
-    facts.add(LoopSignFact('目标合约', tx.to));
+    facts.add(LoopSignFact(LoopL10n.current.dapp_signingLoopSignFact4, tx.to));
     facts.add(
       LoopSignFact(
-        '数量',
+        LoopL10n.current.common_amount,
         '${dappNativeAmount(tx.valueWei)} ${dappNativeSymbol(intent.chainId)}',
       ),
     );
@@ -282,21 +287,31 @@ List<LoopSignFact> dappIntentFacts(DappIntent intent) {
         facts.add(LoopSignFact(entry.key, entry.value));
       }
       if (call.functionName == null && call.dataLength != null) {
-        facts.add(LoopSignFact('数据长度', '${call.dataLength} 字节'));
+        facts.add(
+          LoopSignFact(
+            LoopL10n.current.dapp_signingLoopSignFact5,
+            LoopL10n.current.dapp_signingLoopSignFact6(call.dataLength),
+          ),
+        );
       }
     }
   }
   if (message != null) {
     facts.add(
       LoopSignFact(
-        '类型',
+        LoopL10n.current.dapp_signingLoopSignFact7,
         message.method == MessageSignaturePayload.signTypedDataV4
-            ? '结构化数据'
-            : '消息',
+            ? LoopL10n.current.dapp_signingLoopSignFact8
+            : LoopL10n.current.dapp_signingS2,
       ),
     );
   }
-  facts.add(LoopSignFact('网络', DappChains.label(intent.chainId)));
+  facts.add(
+    LoopSignFact(
+      LoopL10n.current.common_network,
+      DappChains.label(intent.chainId),
+    ),
+  );
   return facts;
 }
 
@@ -485,12 +500,15 @@ Future<bool> showDappConnectSheet(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('连接钱包', style: LoopType.heading),
+          Text(
+            context.l10n.dapp_signingShowDappConnectSheet,
+            style: LoopType.heading,
+          ),
           const SizedBox(height: LoopSpacing.card),
           DappSiteHeader(origin: origin, faviconUrl: faviconUrl),
           const SizedBox(height: LoopSpacing.card),
           LoopKeyValue(
-            label: '钱包地址',
+            label: context.l10n.dapp_signingLabel,
             value: loopTruncatedAddress(address),
             padding: const EdgeInsets.symmetric(vertical: 7),
           ),
@@ -500,12 +518,12 @@ Future<bool> showDappConnectSheet(
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('dapp-connect-cancel'),
-                label: '取消',
+                label: context.l10n.common_cancel,
                 onPressed: () => Navigator.of(context).pop(false),
               ),
               LoopButton(
                 key: const ValueKey<String>('dapp-connect-confirm'),
-                label: '连接',
+                label: context.l10n.dapp_signingDappConnectConfirmLabel,
                 primary: true,
                 onPressed: () => Navigator.of(context).pop(true),
               ),
@@ -718,12 +736,12 @@ class _DappIntentSheetState extends State<DappIntentSheet> {
             facts: dappIntentFacts(intent),
             reason: _reason,
             confirmLabel: intent.kind == DappIntentKind.transaction
-                ? '确认交易'
-                : '确认签名',
-            cancelLabel: '拒绝',
+                ? context.l10n.dapp_signingTransaction
+                : context.l10n.dapp_signingMessage,
+            cancelLabel: context.l10n.dapp_signingDappSignSheetCancelLabel,
             signingTitle: intent.kind == DappIntentKind.transaction
-                ? '正在签名并广播'
-                : '正在签名',
+                ? context.l10n.dapp_signingDappSignSheetSigningTitle
+                : context.l10n.dapp_signingDappSignSheetSigningTitle2,
             onConfirm: _submitted ? null : _confirm,
             onCancel: _cancel,
           ),

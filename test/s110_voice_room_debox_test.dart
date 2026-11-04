@@ -29,6 +29,7 @@ import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_v
 
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
+import 'support/loop_shots.dart';
 
 const _listenerId = 'c0a8012e-0000-4000-8000-0000000000';
 
@@ -92,6 +93,9 @@ Finder _inBar(String key) => find.descendant(
 );
 
 void main() {
+  // S355b: English copy under the box-per-glyph test font runs about twice
+  // its device width; the plaza card is measured with the App's own faces.
+  setUpAll(loopLoadShotFonts);
   group('S110 · the bottom bar has one shape per part', () {
     testWidgets('a listener: 举手 and 离开', (tester) async {
       await pumpCommunityPage(
@@ -964,7 +968,7 @@ void main() {
       expect(find.text('周五 AMA'), findsOneWidget);
       expect(find.text('Builders Guild'), findsOneWidget);
       expect(faces(), findsNWidgets(4));
-      expect(find.text('6 在听 · 开播 1 小时'), findsOneWidget);
+      expect(find.text('6 listening · Live 1h'), findsOneWidget);
     });
 
     testWidgets('no title is the community\'s room; no preview is the host', (
@@ -973,7 +977,7 @@ void main() {
       await pumpCard(tester, _liveRoom());
       expect(find.text('Builders Guild 语音房'), findsOneWidget);
       expect(faces(), findsOneWidget);
-      expect(find.text('主持 frog_maxi'), findsOneWidget);
+      expect(find.text('Host frog_maxi'), findsOneWidget);
     });
 
     testWidgets('an anonymous host and an anonymous face name nobody', (
@@ -996,7 +1000,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('主持 匿名成员'), findsOneWidget);
+      expect(find.text('Host 匿名成员'), findsOneWidget);
       expect(faces(), findsOneWidget);
     });
   });

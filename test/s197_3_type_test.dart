@@ -453,7 +453,7 @@ void main() {
     );
     // Decision 0277: 广场's search placeholder, body2Sm 14 textSecondary.
     _expectStep(
-      _painted(tester, '搜索社区'),
+      _painted(tester, 'Search communities'),
       LoopType.body2Sm,
       color: LoopColors.textSecondary,
       reason: 'search placeholder',
@@ -462,9 +462,12 @@ void main() {
     await tester.ensureVisible(rules);
     await tester.tap(rules);
     await tester.pumpAndSettle();
-    _expectSheetHeading(tester, '排序规则');
+    _expectSheetHeading(tester, 'Sorting rules');
     _expectStep(
-      _paintedAt(tester, find.textContaining('排序只用成员数')),
+      _paintedAt(
+        tester,
+        find.textContaining('Sorting uses only verifiable numbers'),
+      ),
       LoopType.bodySm,
       color: LoopColors.text2,
       reason: 'support copy',

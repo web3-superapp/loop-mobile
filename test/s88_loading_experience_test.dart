@@ -1192,7 +1192,7 @@ void main() {
         settle: false,
       );
       await _frames(tester);
-      expect(find.textContaining('个已登记项目'), findsOneWidget);
+      expect(find.textContaining('registered project'), findsOneWidget);
       expect(find.byType(LoopSkeleton), findsNothing);
       expect(_stripText(tester), contains('正在更新'));
     });
@@ -1216,7 +1216,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-folio-heading-skeleton')),
         findsOneWidget,
       );
-      expect(find.textContaining('个已登记项目'), findsNothing);
+      expect(find.textContaining('registered project'), findsNothing);
     });
 
     testWidgets('reduced motion: no pulse', (tester) async {

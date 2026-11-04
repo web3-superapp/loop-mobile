@@ -387,7 +387,7 @@ void main() {
       expect(wrong.invalidField, LaunchDraftField.community);
       expect(
         launchDraftFieldReason(LaunchDraftField.community),
-        '关联社区的标识无效，请重新选择。',
+        'The linked community ID is invalid. Choose again.',
       );
       final (api, adapter) = _launch(_body('launch_project_with_community'));
       expect(
@@ -435,7 +435,7 @@ void main() {
       expect(failure.detailsSafe?.reasonCode, 'LAUNCH_COMMUNITY_NOT_OWNED');
       expect(
         launchReasonCodeText('LAUNCH_COMMUNITY_NOT_OWNED'),
-        '只能关联你担任群主的社区；这个社区不存在、已被驳回，或你已不是群主。资料没有保存。',
+        'You can only link a community you own. This community doesn\'t exist, was rejected, or you\'re no longer its owner. The details weren\'t saved.',
       );
     });
   });

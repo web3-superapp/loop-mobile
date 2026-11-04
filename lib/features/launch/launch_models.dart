@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
 import 'package:loop_mobile/features/launch/launch_chain_models.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 export 'package:loop_mobile/features/launch/launch_chain_models.dart';
 
@@ -221,23 +222,23 @@ enum LaunchProjectKind {
 }
 
 String launchReviewStatusLabel(LaunchReviewStatus status) => switch (status) {
-  LaunchReviewStatus.draft => '草稿',
-  LaunchReviewStatus.submitted => '审核中',
-  LaunchReviewStatus.inReview => '审核中',
-  LaunchReviewStatus.returned => '已退回',
-  LaunchReviewStatus.approved => '已通过',
-  LaunchReviewStatus.rejected => '未通过',
+  LaunchReviewStatus.draft => LoopL10n.current.common_draft,
+  LaunchReviewStatus.submitted => LoopL10n.current.common_inReview,
+  LaunchReviewStatus.inReview => LoopL10n.current.common_inReview,
+  LaunchReviewStatus.returned => LoopL10n.current.launch_modelsReturned,
+  LaunchReviewStatus.approved => LoopL10n.current.launch_modelsApproved,
+  LaunchReviewStatus.rejected => LoopL10n.current.common_rejected,
 };
 
 /// What the applicant may do next. It restates the server's own state machine
 /// and never widens it.
 String launchReviewStatusHint(LaunchReviewStatus status) => switch (status) {
-  LaunchReviewStatus.draft => '可继续编辑并提交。',
-  LaunchReviewStatus.submitted => '已提交，等待人工审核；提交不代表通过。',
-  LaunchReviewStatus.inReview => '审核进行中，此期间资料只读。',
-  LaunchReviewStatus.returned => '已退回，可以按退回原因修改后重新提交。',
-  LaunchReviewStatus.approved => '已通过并进入目录；资料转为只读。',
-  LaunchReviewStatus.rejected => '未通过，可以按审核意见修改后重新提交。',
+  LaunchReviewStatus.draft => LoopL10n.current.launch_modelsDraft,
+  LaunchReviewStatus.submitted => LoopL10n.current.launch_modelsSubmitted,
+  LaunchReviewStatus.inReview => LoopL10n.current.launch_modelsInReview,
+  LaunchReviewStatus.returned => LoopL10n.current.launch_modelsReturned2,
+  LaunchReviewStatus.approved => LoopL10n.current.launch_modelsApproved2,
+  LaunchReviewStatus.rejected => LoopL10n.current.launch_modelsRejected,
 };
 
 /// The reviewer's reason for a rejection (loop-api decision 0122, requirer
@@ -245,19 +246,29 @@ String launchReviewStatusHint(LaunchReviewStatus status) => switch (status) {
 /// (`project.rejection`) and the MEME v2 launch configuration
 /// (`hooks-config.approval.rejection`).
 enum LaunchRejectionReason {
-  incompleteMaterials('incomplete_materials', '材料不完整'),
-  nameOrTickerConflict('name_or_ticker_conflict', '名称或代码与已有项目冲突'),
-  buybackRecipientInvalid('buyback_recipient_invalid', '回购收币地址不符合要求'),
-  communityBindingMismatch('community_binding_mismatch', '绑定的社区与项目不一致'),
-  other('other', '其他原因');
+  incompleteMaterials('incomplete_materials'),
+  nameOrTickerConflict('name_or_ticker_conflict'),
+  buybackRecipientInvalid('buyback_recipient_invalid'),
+  communityBindingMismatch('community_binding_mismatch'),
+  other('other');
 
-  const LaunchRejectionReason(this.wireName, this.label);
+  const LaunchRejectionReason(this.wireName);
 
   final String wireName;
 
   /// The reason in the applicant's words. The five codes are a closed set,
   /// so the client names them itself.
-  final String label;
+  String get label => switch (this) {
+    LaunchRejectionReason.incompleteMaterials =>
+      LoopL10n.current.launch_modelsIncompleteMaterials,
+    LaunchRejectionReason.nameOrTickerConflict =>
+      LoopL10n.current.launch_modelsNameOrTickerConflict,
+    LaunchRejectionReason.buybackRecipientInvalid =>
+      LoopL10n.current.launch_modelsBuybackRecipientInvalid,
+    LaunchRejectionReason.communityBindingMismatch =>
+      LoopL10n.current.launch_modelsCommunityBindingMismatch,
+    LaunchRejectionReason.other => LoopL10n.current.launch_modelsOther,
+  };
 
   static LaunchRejectionReason? tryParse(Object? value) {
     for (final reason in values) {
@@ -545,11 +556,11 @@ final class LaunchDraftCommunity {
 enum LaunchDraftField { name, ticker, narrative, officialLinks, community }
 
 String launchDraftFieldReason(LaunchDraftField field) => switch (field) {
-  LaunchDraftField.name => '项目名称需 1–20 个字（emoji 算 2 个字），不能含换行或不可见字符。',
-  LaunchDraftField.ticker => '代码需 1–20 个字，可用中文、字母、数字、emoji，不能含换行或不可见字符。',
-  LaunchDraftField.narrative => '叙事最多 2000 个字，不能含控制符；留空表示不提交这一项。',
-  LaunchDraftField.officialLinks => '官方链接必须是 https:// 开头且不超过 512 个字符。',
-  LaunchDraftField.community => '关联社区的标识无效，请重新选择。',
+  LaunchDraftField.name => LoopL10n.current.launch_modelsName,
+  LaunchDraftField.ticker => LoopL10n.current.launch_modelsTicker,
+  LaunchDraftField.narrative => LoopL10n.current.launch_modelsNarrative,
+  LaunchDraftField.officialLinks => LoopL10n.current.launch_modelsOfficialLinks,
+  LaunchDraftField.community => LoopL10n.current.launch_modelsCommunity,
 };
 
 // ---------------------------------------------------------------------------
@@ -620,14 +631,17 @@ final class LaunchConfigSlots {
   /// The slots in the fixed order the rules page renders them, with the label
   /// the prototype used for each.
   List<(String, LaunchConfigSlot)> get entries => <(String, LaunchConfigSlot)>[
-    ('单钱包单轮上限', walletRoundCap),
-    ('单钱包项目上限', walletProjectCap),
-    ('手续费（bps）', feeBps),
-    ('软顶', softCap),
-    ('硬顶', hardCap),
+    (LoopL10n.current.launch_modelsEntries, walletRoundCap),
+    (LoopL10n.current.launch_chainModelsEntries3, walletProjectCap),
+    (LoopL10n.current.launch_modelsEntries2, feeBps),
+    (LoopL10n.current.launch_chainModelsEntries, softCap),
+    (LoopL10n.current.launch_chainModelsEntries2, hardCap),
     ('TGE', tge),
     ('Vesting', vesting),
-    ('资格模式', tierModeV1),
+    (
+      LoopL10n.current.launch_detailScreensLaunchTierConditionsLabel,
+      tierModeV1,
+    ),
   ];
 }
 
@@ -720,10 +734,14 @@ enum LaunchGraduationStepKind {
 
 String launchGraduationStepLabel(LaunchGraduationStepKind step) =>
     switch (step) {
-      LaunchGraduationStepKind.stopInternalTrading => '停止内盘交易',
-      LaunchGraduationStepKind.preparePool => '归集并创建流动性池',
-      LaunchGraduationStepKind.addAndLockLiquidity => '注入并锁定流动性',
-      LaunchGraduationStepKind.openExternalTrading => '开放外盘交易',
+      LaunchGraduationStepKind.stopInternalTrading =>
+        LoopL10n.current.launch_modelsStopInternalTrading,
+      LaunchGraduationStepKind.preparePool =>
+        LoopL10n.current.launch_modelsPreparePool,
+      LaunchGraduationStepKind.addAndLockLiquidity =>
+        LoopL10n.current.launch_modelsAddAndLockLiquidity,
+      LaunchGraduationStepKind.openExternalTrading =>
+        LoopL10n.current.launch_modelsOpenExternalTrading,
     };
 
 /// What each migration step does, in the words 03 §10.1 uses for the rail.
@@ -735,10 +753,14 @@ String launchGraduationStepLabel(LaunchGraduationStepKind step) =>
 /// mechanism, and the numbers stay with the configuration that fixes them.
 String launchGraduationStepDetail(LaunchGraduationStepKind step) =>
     switch (step) {
-      LaunchGraduationStepKind.stopInternalTrading => '达到毕业条件的瞬间冻结内盘撮合',
-      LaunchGraduationStepKind.preparePool => '归集资金并在 DEX 建立流动性池',
-      LaunchGraduationStepKind.addAndLockLiquidity => '注入并锁定后状态才变为已毕业',
-      LaunchGraduationStepKind.openExternalTrading => '内盘持仓上限随外盘开放同步解除',
+      LaunchGraduationStepKind.stopInternalTrading =>
+        LoopL10n.current.launch_modelsStopInternalTrading2,
+      LaunchGraduationStepKind.preparePool =>
+        LoopL10n.current.launch_modelsPreparePool2,
+      LaunchGraduationStepKind.addAndLockLiquidity =>
+        LoopL10n.current.launch_modelsAddAndLockLiquidity2,
+      LaunchGraduationStepKind.openExternalTrading =>
+        LoopL10n.current.launch_modelsOpenExternalTrading2,
     };
 
 @immutable
@@ -889,19 +911,21 @@ enum LaunchEligibilityMode {
 }
 
 String launchEligibilityModeLabel(LaunchEligibilityMode mode) => switch (mode) {
-  LaunchEligibilityMode.whitelist => '白名单',
-  LaunchEligibilityMode.community => '社区',
-  LaunchEligibilityMode.activity => '活跃度',
-  LaunchEligibilityMode.unavailable => '未配置',
+  LaunchEligibilityMode.whitelist => LoopL10n.current.launch_modelsWhitelist,
+  LaunchEligibilityMode.community => LoopL10n.current.common_community,
+  LaunchEligibilityMode.activity => LoopL10n.current.launch_modelsActivity,
+  LaunchEligibilityMode.unavailable => LoopL10n.current.common_notConfigured,
 };
 
-String launchEligibilityModeDescription(LaunchEligibilityMode mode) =>
-    switch (mode) {
-      LaunchEligibilityMode.whitelist => '资格由运营维护的白名单决定。',
-      LaunchEligibilityMode.community => '资格由社区成员关系决定。',
-      LaunchEligibilityMode.activity => '资格由账号活跃度决定。',
-      LaunchEligibilityMode.unavailable => '本次发射还没有配置资格模式，因此没有资格结论。',
-    };
+String launchEligibilityModeDescription(
+  LaunchEligibilityMode mode,
+) => switch (mode) {
+  LaunchEligibilityMode.whitelist => LoopL10n.current.launch_modelsWhitelist2,
+  LaunchEligibilityMode.community => LoopL10n.current.launch_modelsCommunity2,
+  LaunchEligibilityMode.activity => LoopL10n.current.launch_modelsActivity2,
+  LaunchEligibilityMode.unavailable =>
+    LoopL10n.current.launch_modelsUnavailable,
+};
 
 @immutable
 final class LaunchEligibility {
@@ -1047,9 +1071,9 @@ enum LaunchMarketType {
 /// Alpha is not spot. The two are rendered as distinct market types and one
 /// never implies the other.
 String launchMarketTypeLabel(LaunchMarketType type) => switch (type) {
-  LaunchMarketType.spot => '现货',
+  LaunchMarketType.spot => LoopL10n.current.launch_modelsSpot,
   LaunchMarketType.alpha => 'Alpha',
-  LaunchMarketType.perpetual => '永续',
+  LaunchMarketType.perpetual => LoopL10n.current.launch_modelsPerpetual,
 };
 
 enum LaunchMilestoneState {
@@ -1081,15 +1105,17 @@ enum LaunchMilestoneState {
 }
 
 String launchMilestoneStateLabel(LaunchMilestoneState state) => switch (state) {
-  LaunchMilestoneState.preparing => '准备中',
-  LaunchMilestoneState.applied => '已申请',
-  LaunchMilestoneState.evidencePending => '待补材料',
-  LaunchMilestoneState.listed => '已上线',
-  LaunchMilestoneState.featured => '已获推荐位',
-  LaunchMilestoneState.rejected => '已拒绝',
-  LaunchMilestoneState.deferred => '已搁置',
-  LaunchMilestoneState.evidenceInvalid => '材料无效',
-  LaunchMilestoneState.delisted => '已下架',
+  LaunchMilestoneState.preparing => LoopL10n.current.launch_modelsPreparing,
+  LaunchMilestoneState.applied => LoopL10n.current.launch_modelsApplied,
+  LaunchMilestoneState.evidencePending =>
+    LoopL10n.current.launch_modelsEvidencePending,
+  LaunchMilestoneState.listed => LoopL10n.current.launch_modelsListed,
+  LaunchMilestoneState.featured => LoopL10n.current.launch_modelsFeatured,
+  LaunchMilestoneState.rejected => LoopL10n.current.launch_modelsRejected2,
+  LaunchMilestoneState.deferred => LoopL10n.current.launch_modelsDeferred,
+  LaunchMilestoneState.evidenceInvalid =>
+    LoopL10n.current.launch_modelsEvidenceInvalid,
+  LaunchMilestoneState.delisted => LoopL10n.current.launch_modelsDelisted,
 };
 
 /// `recordedAt` is the server clock when a reviewer filed the evidence;
@@ -1193,12 +1219,12 @@ final class LaunchProjectCounts {
   final int rejected;
 
   List<(String, int)> get entries => <(String, int)>[
-    ('草稿', draft),
-    ('已提交', submitted),
-    ('审核中', inReview),
-    ('已退回', returned),
-    ('已通过', approved),
-    ('未通过', rejected),
+    (LoopL10n.current.common_draft, draft),
+    (LoopL10n.current.common_submitted, submitted),
+    (LoopL10n.current.common_inReview, inReview),
+    (LoopL10n.current.launch_modelsReturned, returned),
+    (LoopL10n.current.launch_modelsApproved, approved),
+    (LoopL10n.current.common_rejected, rejected),
   ];
 }
 
@@ -1217,10 +1243,10 @@ final class LaunchScheduleCounts {
   final int ended;
 
   List<(String, int)> get entries => <(String, int)>[
-    ('待排期', unscheduled),
-    ('已排期', scheduled),
-    ('发射中', live),
-    ('已结束', ended),
+    (LoopL10n.current.launch_controllersAwaitingSchedule, unscheduled),
+    (LoopL10n.current.launch_modelsEntries3, scheduled),
+    (LoopL10n.current.launch_controllersLive, live),
+    (LoopL10n.current.common_ended, ended),
   ];
 }
 

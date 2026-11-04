@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_signing.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Single-flight guard shared by the S7 controllers: one in-flight operation
 /// per controller, and a generation counter so a result that arrives after a
@@ -210,10 +211,11 @@ abstract base class LaunchReadController<T>
 enum LaunchSegment { live, upcoming, awaitingSchedule, ended }
 
 String launchSegmentLabel(LaunchSegment segment) => switch (segment) {
-  LaunchSegment.live => '发射中',
-  LaunchSegment.upcoming => '即将开始',
-  LaunchSegment.awaitingSchedule => '待排期',
-  LaunchSegment.ended => '已结束',
+  LaunchSegment.live => LoopL10n.current.launch_controllersLive,
+  LaunchSegment.upcoming => LoopL10n.current.launch_controllersUpcoming,
+  LaunchSegment.awaitingSchedule =>
+    LoopL10n.current.launch_controllersAwaitingSchedule,
+  LaunchSegment.ended => LoopL10n.current.common_ended,
 };
 
 /// The catalogue is the one Launch read that outlives its page and may open

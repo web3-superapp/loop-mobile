@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile/user_profile_screen.dart';
 import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -99,7 +100,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
     ref
         .read(squareFeedControllerProvider(SquareFeedScope.global).notifier)
         .insertCreated(post);
-    LoopToast.show(context, message: '已发布');
+    LoopToast.show(context, message: LoopL10n.current.square_feedViewMessage);
   }
 
   Future<void> _like(SquareFeedScope scope, SquareFeedPost post) async {
@@ -109,7 +110,9 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
     if (failure == null || !mounted) return;
     LoopToast.show(
       context,
-      message: post.likedByViewer ? '没有取消点赞，请稍后再试' : '没有点上赞，请稍后再试',
+      message: post.likedByViewer
+          ? LoopL10n.current.square_feedViewMessage2
+          : LoopL10n.current.square_feedViewMessage3,
       kind: LoopToastKind.warn,
     );
   }
@@ -129,7 +132,9 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
     if (!mounted) return;
     LoopToast.show(
       context,
-      message: failure == null ? '已删除' : '没有删掉，请稍后再试',
+      message: failure == null
+          ? LoopL10n.current.square_feedViewMessage4
+          : LoopL10n.current.square_feedViewMessage5,
       kind: failure == null ? LoopToastKind.ok : LoopToastKind.warn,
     );
   }
@@ -154,7 +159,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
     return LoopStreamPage(
       key: const ValueKey<String>('square-feed'),
       archetype: LoopPageArchetype.listing,
-      title: '动态',
+      title: context.l10n.common_feed,
       embedded: true,
       tabPage: true,
       updating: state.refreshing,
@@ -179,7 +184,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
               key: const ValueKey<String>('square-feed-empty'),
               illustration: LoopIllustration.chat,
               // Decision 0248: one fact, no how-to.
-              title: '还没有动态',
+              title: context.l10n.square_feedViewSquareFeedEmptyTitle,
             )
           else ...<Widget>[
             LoopFreshnessStrip(
@@ -207,7 +212,7 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
                   padding: const EdgeInsets.only(top: 12),
                   child: LoopInlineUnavailable(
                     key: const ValueKey<String>('square-feed-more-failed'),
-                    message: '下一页没有读到',
+                    message: context.l10n.common_nextPageFailed,
                     onRetry: () => unawaited(controller.loadMore()),
                   ),
                 )
@@ -286,7 +291,7 @@ class _FeedTabs extends StatelessWidget {
             child: Center(
               child: LoopButton(
                 key: const ValueKey<String>('square-feed-compose'),
-                label: '发帖',
+                label: context.l10n.square_feedViewSquareFeedComposeLabel,
                 icon: 'plus',
                 size: LoopButtonSize.compact,
                 onPressed: onCompose,
@@ -318,7 +323,7 @@ class _FeedStateBlock extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16),
       child: LoopInlineUnavailable(
         key: const ValueKey<String>('square-feed-unavailable'),
-        message: '动态暂时读不到',
+        message: context.l10n.square_feedViewSquareFeedUnavailableMessage,
         detail: loopChainFailureReason(state.failureKind),
         detailMaxLines: 3,
         onRetry: state.phase == LoopChainViewPhase.unavailable ? null : onRetry,
@@ -369,7 +374,7 @@ class SquareFeedPostRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final author = post.author;
-    final name = author?.displayName ?? 'LOOP 官方';
+    final name = author?.displayName ?? context.l10n.square_feedViewBuild;
     final token = post.token;
     final badge = squareFeedBadge(post);
     final sentence = squareFeedPostSentence(post);
@@ -505,7 +510,7 @@ class SquareFeedPostRow extends StatelessWidget {
     );
     if (onLongPress == null) return content;
     return Semantics(
-      onLongPressHint: '删除这条动态',
+      onLongPressHint: context.l10n.square_feedViewSquarePostOwnOnLongPressHint,
       child: GestureDetector(
         key: const ValueKey<String>('square-post-own'),
         behavior: HitTestBehavior.opaque,
@@ -576,7 +581,11 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                           );
                           final capText = cap == null
                               ? null
-                              : '市值 ${memeCapLabel(cap)}';
+                              : context.l10n.square_feedViewMarketCapCompact(
+                                  memeCapLabel(cap),
+                                );
+                          // S355b: the compact row says 「Mcap」 in English;
+                          // titles and details keep 「Market cap」.
                           // S350a · decision 0274: the market cap is drawn
                           // whole or not at all — never 「市值 …」.
                           final showCap =
@@ -730,30 +739,42 @@ String? squareFeedPostSentence(SquareFeedPost post) {
     case SquareFeedPostKind.system:
       return null;
     case SquareFeedPostKind.graduation:
-      return named == null ? '这个代币打满内盘，官方池已建，回购开始。' : '$named 打满内盘，官方池已建，回购开始。';
+      return named == null
+          ? LoopL10n.current.square_feedViewSwitch
+          : LoopL10n.current.square_feedViewS(named);
     case SquareFeedPostKind.buy:
       final amount = usd1('amountUsd1');
       if (amount == null) return null;
-      return named == null ? '买入 $amount。' : '买入 $amount 的 $named。';
+      return named == null
+          ? LoopL10n.current.square_feedViewSwitch2(amount)
+          : LoopL10n.current.square_feedViewS2(amount, named);
     case SquareFeedPostKind.claim:
       final amount = usd1('amountUsd1');
       final roundText = post.event['roundId'];
       final round = roundText == null ? null : int.tryParse(roundText);
       final weight = post.eventDecimal('weightPct');
       final where = <String>[
-        if (named != null) '在 $named',
-        if (round != null && round > 0) '第 $round 轮',
+        if (named != null) LoopL10n.current.square_feedViewSwitch3(named),
+        if (round != null && round > 0)
+          LoopL10n.current.square_feedViewSwitch4(round),
       ].join(' ');
-      final got = amount == null ? '领到奖励' : '领到 $amount';
+      final got = amount == null
+          ? LoopL10n.current.square_feedViewSwitch5
+          : LoopL10n.current.square_feedViewS3(amount);
       // 「第 2 轮领到」 runs on; a Latin ticker before 「领到」 keeps its space.
+      // The round, when present, is the last part of `where`.
+      final endsWithRound = round != null && round > 0;
       final head = where.isEmpty
           ? got
-          : where.endsWith('轮')
-          ? '$where$got'
-          : '$where $got';
+          : endsWithRound
+          ? LoopL10n.current.square_feedViewClaimHeadJoined(got, where)
+          : LoopL10n.current.square_feedViewClaimHeadSpaced(got, where);
       return weight == null || weight < Decimal.zero
-          ? '$head。'
-          : '$head，权重 ${loopFormatDecimal(weight, maxFractionDigits: 2)}%。';
+          ? LoopL10n.current.square_feedViewClaimSentence(head)
+          : LoopL10n.current.square_feedViewS4(
+              loopFormatDecimal(weight, maxFractionDigits: 2),
+              head,
+            );
   }
 }
 
@@ -761,29 +782,29 @@ String? squareFeedPostSentence(SquareFeedPost post) {
 /// pinned. The claim's amount moved into the sentence, so its badge is the
 /// word alone.
 Widget? squareFeedBadge(SquareFeedPost post) => switch (post.kind) {
-  SquareFeedPostKind.opinion => const LoopBadge(
-    '观点',
+  SquareFeedPostKind.opinion => LoopBadge(
+    LoopL10n.current.square_feedViewSquarePostBadgeOpinion,
     key: ValueKey<String>('square-post-badge-opinion'),
   ),
-  SquareFeedPostKind.buy => const LoopBadge(
-    '买入',
+  SquareFeedPostKind.buy => LoopBadge(
+    LoopL10n.current.common_buy,
     key: ValueKey<String>('square-post-badge-buy'),
     kind: LoopBadgeKind.launch,
   ),
-  SquareFeedPostKind.claim => const LoopBadge(
-    '领奖',
+  SquareFeedPostKind.claim => LoopBadge(
+    LoopL10n.current.square_feedViewSquarePostBadgeClaim,
     key: ValueKey<String>('square-post-badge-claim'),
     kind: LoopBadgeKind.up,
   ),
-  SquareFeedPostKind.graduation => const LoopBadge(
-    '毕业',
+  SquareFeedPostKind.graduation => LoopBadge(
+    LoopL10n.current.common_graduate,
     key: ValueKey<String>('square-post-badge-graduation'),
     kind: LoopBadgeKind.launch,
   ),
   SquareFeedPostKind.system =>
     post.pinned
-        ? const LoopBadge(
-            '置顶',
+        ? LoopBadge(
+            LoopL10n.current.square_feedViewSquarePostBadgePinned,
             key: ValueKey<String>('square-post-badge-pinned'),
           )
         : null,
@@ -803,14 +824,33 @@ String? squareFeedTokenLocation(SquareFeedToken token) {
 String squareFeedAgeLabel(DateTime createdAt, {DateTime? now}) {
   final reference = (now ?? DateTime.now()).toUtc();
   final age = reference.difference(createdAt.toUtc());
-  if (age.inSeconds < 1) return '刚刚';
+  if (age.inSeconds < 1) return LoopL10n.current.common_justNow;
   if (age.inMinutes < 1) return '${age.inSeconds}s';
   if (age.inHours < 1) return '${age.inMinutes}m';
   if (age.inDays < 1) return '${age.inHours}h';
   if (age.inDays < 30) return '${age.inDays}d';
   final local = createdAt.toLocal();
-  return '${local.month} 月 ${local.day} 日';
+  // zh 「11 月 4 日」, en 「Nov 4」 (glossary §一 8).
+  final month = LoopL10n.currentLocale.languageCode == 'zh'
+      ? '${local.month}'
+      : _squareMonthAbbreviations[local.month - 1];
+  return LoopL10n.current.square_feedViewSquareFeedAgeLabel(local.day, month);
 }
+
+const List<String> _squareMonthAbbreviations = <String>[
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 /// LOOP's own face on an official post: the flat brand mark on Card2.
 class _OfficialAvatar extends StatelessWidget {
@@ -826,11 +866,11 @@ class _OfficialAvatar extends StatelessWidget {
       shape: BoxShape.circle,
       color: LoopColors.card2,
     ),
-    child: const LoopBrandMark(
+    child: LoopBrandMark(
       kind: LoopBrandMarkKind.appIcon,
       height: 18,
       vector: true,
-      semanticLabel: 'LOOP 官方',
+      semanticLabel: context.l10n.square_feedViewBuild,
     ),
   );
 }
@@ -912,7 +952,7 @@ class _OfficialRecapState extends State<_OfficialRecap> {
                               alignment: Alignment.centerLeft,
                               widthFactor: 1,
                               child: Text(
-                                '展开',
+                                context.l10n.square_feedViewBuild2,
                                 style: LoopTypography.withWeight(
                                   LoopType.label,
                                   FontWeight.w600,
@@ -982,8 +1022,9 @@ class _SquareFeedTextState extends State<SquareFeedText> {
       }
       final link = match.group(0)!;
       final recognizer = TapGestureRecognizer()
-        ..onTap = () =>
-            unawaited(LoopCopy.text(context, link, message: '已复制链接'));
+        ..onTap = () => unawaited(
+          LoopCopy.text(context, link, message: context.l10n.common_linkCopied),
+        );
       _recognizers.add(recognizer);
       spans.add(
         TextSpan(
@@ -1026,7 +1067,9 @@ class _LikeButton extends StatelessWidget {
     return Semantics(
       button: true,
       toggled: post.likedByViewer,
-      label: post.likedByViewer ? '取消点赞' : '点赞',
+      label: post.likedByViewer
+          ? context.l10n.square_feedViewSquarePostLikeLabel
+          : context.l10n.square_feedViewSquarePostLikeLabel2,
       value: '${post.likeCount}',
       excludeSemantics: true,
       child: InkWell(
@@ -1071,7 +1114,7 @@ class _DeleteConfirm extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const LoopSheetHeading('删除这条动态？'),
+      LoopSheetHeading(context.l10n.square_feedViewLoopSheetHeading),
       Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -1080,7 +1123,7 @@ class _DeleteConfirm extends StatelessWidget {
           16,
         ),
         child: Text(
-          '删除后所有人都看不到它，也不能恢复。',
+          context.l10n.square_feedViewBuild3,
           // M18 R19 sheet support copy: bodySm 13 (decision 0191).
           style: LoopType.bodySm,
         ),
@@ -1094,7 +1137,7 @@ class _DeleteConfirm extends StatelessWidget {
         ),
         child: LoopButton(
           key: const ValueKey<String>('square-post-delete-confirm'),
-          label: '删除',
+          label: context.l10n.common_delete,
           primary: true,
           block: true,
           onPressed: () => Navigator.of(context).pop(true),
@@ -1109,7 +1152,7 @@ class _DeleteConfirm extends StatelessWidget {
         ),
         child: LoopButton(
           key: const ValueKey<String>('square-post-delete-cancel'),
-          label: '取消',
+          label: context.l10n.common_cancel,
           block: true,
           onPressed: () => Navigator.of(context).pop(false),
         ),
@@ -1241,7 +1284,9 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
       return Padding(
         padding: padding,
         child: Text(
-          sources.loading ? '正在读取代币…' : '暂时读不到代币，稍后再试',
+          sources.loading
+              ? LoopL10n.current.square_feedViewSquareComposerTokenEmpty
+              : LoopL10n.current.square_feedViewSquareComposerTokenEmpty2,
           key: const ValueKey<String>('square-composer-token-empty'),
           style: LoopType.caption,
         ),
@@ -1278,7 +1323,9 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
             children: <Widget>[
               LoopSeg(
                 key: const ValueKey<String>('square-composer-token-none'),
-                label: '不带代币',
+                label: LoopL10n
+                    .current
+                    .square_feedViewSquareComposerTokenNoneLabel,
                 quiet: true,
                 selected: _token == null,
                 onSelected: _sending
@@ -1290,14 +1337,17 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
               if (hidden > 0)
                 LoopSeg(
                   key: const ValueKey<String>('square-composer-token-more'),
-                  label: '更多 $hidden',
+                  label: LoopL10n.current
+                      .square_feedViewSquareComposerTokenMoreLabel(hidden),
                   quiet: true,
                   selected: false,
                   onSelected: () => setState(() => _tokensExpanded = true),
                 ),
               LoopSeg(
                 key: const ValueKey<String>('square-composer-token-search'),
-                label: '搜索代币',
+                label: LoopL10n
+                    .current
+                    .square_feedViewSquareComposerTokenSearchLabel,
                 icon: 'search',
                 quiet: true,
                 selected: _searching,
@@ -1317,14 +1367,16 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
               enabled: !_sending,
               textInputAction: TextInputAction.search,
               style: LoopType.body,
-              decoration: loopFormFieldDecoration(hint: '按代码或名称搜索'),
+              decoration: loopFormFieldDecoration(
+                hint: LoopL10n.current.square_feedViewHint,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             if (query.isNotEmpty && pool.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '没有匹配的代币',
+                  LoopL10n.current.square_feedViewSquareComposerTokenNoMatch,
                   key: const ValueKey<String>('square-composer-token-no-match'),
                   style: LoopType.caption,
                 ),
@@ -1346,9 +1398,9 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('发帖'),
+        LoopSheetHeading(context.l10n.square_feedViewSquareFeedComposeLabel),
         LoopFlatField(
-          label: '内容',
+          label: context.l10n.square_feedViewSquareComposerFieldLabel,
           footnote: '$length/${SquareFeedPost.textMax}',
           error: over,
           child: TextField(
@@ -1359,11 +1411,13 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
             maxLines: 8,
             keyboardType: TextInputType.multiline,
             style: LoopType.bodyLg,
-            decoration: loopFormFieldDecoration(hint: '说点什么…'),
+            decoration: loopFormFieldDecoration(
+              hint: context.l10n.square_feedViewHint2,
+            ),
             onChanged: (_) => setState(() => _error = null),
           ),
         ),
-        const LoopLabel('关联代币（可不选）'),
+        LoopLabel(context.l10n.square_feedViewLoopLabel),
         _tokenPicker(),
         if (error != null)
           Padding(
@@ -1383,7 +1437,9 @@ class _SquareFeedComposerState extends ConsumerState<SquareFeedComposer> {
           ),
           child: LoopButton(
             key: const ValueKey<String>('square-composer-send'),
-            label: _sending ? '发布中…' : '发布',
+            label: _sending
+                ? context.l10n.square_feedViewSquareComposerSendLabel
+                : context.l10n.square_feedViewSquareComposerSendLabel2,
             primary: true,
             block: true,
             onPressed: canSend ? () => unawaited(_send()) : null,

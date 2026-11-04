@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The `available` branches loop-api decision 0076 (S83a) added beside every
 /// on-chain Launch slot. Decision 0088 records how the client reads them.
@@ -16,17 +17,24 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 // ---------------------------------------------------------------------------
 
 enum LaunchSaleState {
-  scheduled('SCHEDULED', '已排期，未开售'),
-  live('LIVE', '某一轮次在时间窗内'),
-  ended('ENDED', '全部轮次已结束，待最终化'),
-  succeeded('SUCCEEDED', '最终化：募集达到软顶'),
-  failed('FAILED', '最终化：募集未达软顶'),
-  cancelled('CANCELLED', '已被取消');
+  scheduled('SCHEDULED'),
+  live('LIVE'),
+  ended('ENDED'),
+  succeeded('SUCCEEDED'),
+  failed('FAILED'),
+  cancelled('CANCELLED');
 
-  const LaunchSaleState(this.wireName, this.meaning);
+  const LaunchSaleState(this.wireName);
 
   final String wireName;
-  final String meaning;
+  String get meaning => switch (this) {
+    LaunchSaleState.scheduled => LoopL10n.current.launch_chainModelsScheduled,
+    LaunchSaleState.live => LoopL10n.current.launch_chainModelsLive,
+    LaunchSaleState.ended => LoopL10n.current.launch_chainModelsEnded,
+    LaunchSaleState.succeeded => LoopL10n.current.launch_chainModelsSucceeded,
+    LaunchSaleState.failed => LoopL10n.current.launch_chainModelsFailed,
+    LaunchSaleState.cancelled => LoopL10n.current.launch_chainModelsCancelled,
+  };
 
   static LaunchSaleState? tryParse(String value) {
     for (final state in values) {
@@ -37,17 +45,28 @@ enum LaunchSaleState {
 }
 
 enum LaunchEntitlementState {
-  none('NONE', '尚未最终化'),
-  frozen('FROZEN', '份额已冻结，尚未开放领取'),
-  vesting('VESTING', '已开放领取，按释放计划成熟'),
-  completed('COMPLETED', '释放计划已全部到期'),
-  refunding('REFUNDING', '退款负债已冻结，可退款'),
-  refunded('REFUNDED', '退款窗口已关闭或已全部退完');
+  none('NONE'),
+  frozen('FROZEN'),
+  vesting('VESTING'),
+  completed('COMPLETED'),
+  refunding('REFUNDING'),
+  refunded('REFUNDED');
 
-  const LaunchEntitlementState(this.wireName, this.meaning);
+  const LaunchEntitlementState(this.wireName);
 
   final String wireName;
-  final String meaning;
+  String get meaning => switch (this) {
+    LaunchEntitlementState.none => LoopL10n.current.launch_chainModelsNone,
+    LaunchEntitlementState.frozen => LoopL10n.current.launch_chainModelsFrozen,
+    LaunchEntitlementState.vesting =>
+      LoopL10n.current.launch_chainModelsVesting,
+    LaunchEntitlementState.completed =>
+      LoopL10n.current.launch_chainModelsCompleted,
+    LaunchEntitlementState.refunding =>
+      LoopL10n.current.launch_chainModelsRefunding,
+    LaunchEntitlementState.refunded =>
+      LoopL10n.current.launch_chainModelsRefunded,
+  };
 
   bool get isRefundBranch =>
       this == LaunchEntitlementState.refunding ||
@@ -62,17 +81,29 @@ enum LaunchEntitlementState {
 }
 
 enum LaunchLiquidityState {
-  notStarted('NOT_STARTED', '未开始建池'),
-  preparing('PREPARING', '预算已冻结，等待建池'),
-  v3Live('V3_LIVE', 'V3 池已创建并注入流动性'),
-  lpLocked('LP_LOCKED', 'LP NFT 已锁定'),
-  completed('COMPLETED', '锁定期结束，LP 已取回'),
-  retryScheduled('RETRY_SCHEDULED', '建池或注资失败，已安排重试');
+  notStarted('NOT_STARTED'),
+  preparing('PREPARING'),
+  v3Live('V3_LIVE'),
+  lpLocked('LP_LOCKED'),
+  completed('COMPLETED'),
+  retryScheduled('RETRY_SCHEDULED');
 
-  const LaunchLiquidityState(this.wireName, this.meaning);
+  const LaunchLiquidityState(this.wireName);
 
   final String wireName;
-  final String meaning;
+  String get meaning => switch (this) {
+    LaunchLiquidityState.notStarted =>
+      LoopL10n.current.launch_chainModelsNotStarted,
+    LaunchLiquidityState.preparing =>
+      LoopL10n.current.launch_chainModelsPreparing,
+    LaunchLiquidityState.v3Live => LoopL10n.current.launch_chainModelsV3Live,
+    LaunchLiquidityState.lpLocked =>
+      LoopL10n.current.launch_chainModelsLpLocked,
+    LaunchLiquidityState.completed =>
+      LoopL10n.current.launch_chainModelsCompleted2,
+    LaunchLiquidityState.retryScheduled =>
+      LoopL10n.current.launch_chainModelsRetryScheduled,
+  };
 
   /// Only these two carry the locked-liquidity evidence 03 §8.3 requires
   /// before anything may say "已毕业".
@@ -89,13 +120,16 @@ enum LaunchLiquidityState {
 }
 
 enum LaunchOperationalState {
-  active('ACTIVE', '正常运行'),
-  paused('PAUSED', '已暂停：购买、领取与退款全部拒绝');
+  active('ACTIVE'),
+  paused('PAUSED');
 
-  const LaunchOperationalState(this.wireName, this.meaning);
+  const LaunchOperationalState(this.wireName);
 
   final String wireName;
-  final String meaning;
+  String get meaning => switch (this) {
+    LaunchOperationalState.active => LoopL10n.current.launch_chainModelsActive,
+    LaunchOperationalState.paused => LoopL10n.current.launch_chainModelsPaused,
+  };
 
   static LaunchOperationalState? tryParse(String value) {
     for (final state in values) {
@@ -171,15 +205,23 @@ final class LaunchOnChainAvailable extends LaunchOnChainState {
 
   /// The four axes in the fixed order every page renders them.
   List<LaunchAxisReading> get axes => <LaunchAxisReading>[
-    LaunchAxisReading('销售状态', saleState.wireName, saleState.meaning),
     LaunchAxisReading(
-      '权益状态',
+      LoopL10n.current.launch_chainModelsLaunchAxisReading,
+      saleState.wireName,
+      saleState.meaning,
+    ),
+    LaunchAxisReading(
+      LoopL10n.current.launch_chainModelsLaunchAxisReading2,
       entitlementState.wireName,
       entitlementState.meaning,
     ),
-    LaunchAxisReading('流动性状态', liquidityState.wireName, liquidityState.meaning),
     LaunchAxisReading(
-      '运营状态',
+      LoopL10n.current.launch_chainModelsLaunchAxisReading3,
+      liquidityState.wireName,
+      liquidityState.meaning,
+    ),
+    LaunchAxisReading(
+      LoopL10n.current.launch_chainModelsLaunchAxisReading4,
       operationalState.wireName,
       operationalState.meaning,
     ),
@@ -196,7 +238,37 @@ final class LaunchAxisReading {
 }
 
 /// The axis labels the unavailable block keeps, in the same order.
-const List<String> launchAxisLabels = <String>['销售状态', '权益状态', '流动性状态', '运营状态'];
+List<String> get launchAxisLabels => <String>[
+  LoopL10n.current.launch_chainModelsLaunchAxisReading,
+  LoopL10n.current.launch_chainModelsLaunchAxisReading2,
+  LoopL10n.current.launch_chainModelsLaunchAxisReading3,
+  LoopL10n.current.launch_chainModelsLaunchAxisReading4,
+];
+
+/// Stable ids for the four axes, in the same order (keys, not copy).
+const List<String> launchAxisIds = <String>[
+  'sale',
+  'entitlement',
+  'liquidity',
+  'operational',
+];
+
+/// Stable ids for [LaunchSaleConfig.entries], in the same order.
+const List<String> launchSaleConfigIds = <String>[
+  'soft-cap',
+  'hard-cap',
+  'wallet-project-cap',
+  'min-purchase',
+  'protocol-fee',
+  'liquidity',
+  'tge',
+  'cliff',
+  'vesting',
+  'pool-fee-tier',
+  'lp-lock',
+  'project-token',
+  'usd1',
+];
 
 /// The read-only combined projection 03 §8.3 allows: one sentence composed
 /// from the four axes and nothing else. It never introduces a fifth state,
@@ -205,52 +277,64 @@ String launchStateProjection(LaunchOnChainAvailable state) {
   final String body;
   switch (state.saleState) {
     case LaunchSaleState.scheduled:
-      body = '已排期，未开售';
+      body = LoopL10n.current.launch_chainModelsScheduled;
     case LaunchSaleState.live:
-      body = '销售进行中';
+      body = LoopL10n.current.launch_chainModelsBody;
     case LaunchSaleState.ended:
-      body = '销售已结束，待最终化';
+      body = LoopL10n.current.launch_chainModelsBody2;
     case LaunchSaleState.succeeded:
       final liquidity = switch (state.liquidityState) {
-        LaunchLiquidityState.notStarted => '销售成功',
-        LaunchLiquidityState.preparing => '销售成功，流动性准备中',
-        LaunchLiquidityState.retryScheduled => '销售成功，建池重试已排期',
+        LaunchLiquidityState.notStarted =>
+          LoopL10n.current.launch_chainModelsNotStarted2,
+        LaunchLiquidityState.preparing =>
+          LoopL10n.current.launch_chainModelsPreparing2,
+        LaunchLiquidityState.retryScheduled =>
+          LoopL10n.current.launch_chainModelsRetryScheduled2,
         // V3_LIVE is not a lock: 03 §8.3 forbids calling it graduated.
-        LaunchLiquidityState.v3Live => '销售成功，V3 池已上线，LP 未锁定',
-        LaunchLiquidityState.lpLocked => '已毕业，LP 已锁定',
-        LaunchLiquidityState.completed => '已毕业，LP 锁定期已结束',
+        LaunchLiquidityState.v3Live =>
+          LoopL10n.current.launch_chainModelsV3Live2,
+        LaunchLiquidityState.lpLocked =>
+          LoopL10n.current.launch_chainModelsLpLocked2,
+        LaunchLiquidityState.completed =>
+          LoopL10n.current.launch_chainModelsCompleted3,
       };
       final entitlement = switch (state.entitlementState) {
-        LaunchEntitlementState.vesting => '，已开放领取',
-        LaunchEntitlementState.completed => '，释放已全部到期',
+        LaunchEntitlementState.vesting =>
+          LoopL10n.current.launch_chainModelsVesting2,
+        LaunchEntitlementState.completed =>
+          LoopL10n.current.launch_chainModelsCompleted4,
         _ => '',
       };
       body = '$liquidity$entitlement';
     case LaunchSaleState.failed:
       body = switch (state.entitlementState) {
-        LaunchEntitlementState.refunding => '未达软顶，可退款',
-        LaunchEntitlementState.refunded => '未达软顶，退款窗口已关闭',
-        _ => '未达软顶',
+        LaunchEntitlementState.refunding =>
+          LoopL10n.current.launch_chainModelsRefunding2,
+        LaunchEntitlementState.refunded =>
+          LoopL10n.current.launch_chainModelsRefunded2,
+        _ => LoopL10n.current.launch_chainModelsSwitch,
       };
     case LaunchSaleState.cancelled:
       body = switch (state.entitlementState) {
-        LaunchEntitlementState.refunding => '已取消，可退款',
-        LaunchEntitlementState.refunded => '已取消，退款窗口已关闭',
-        _ => '已取消',
+        LaunchEntitlementState.refunding =>
+          LoopL10n.current.launch_chainModelsRefunding3,
+        LaunchEntitlementState.refunded =>
+          LoopL10n.current.launch_chainModelsRefunded3,
+        _ => LoopL10n.current.common_cancelled,
       };
   }
   return state.operationalState == LaunchOperationalState.paused
-      ? '已暂停，$body'
+      ? LoopL10n.current.launch_chainModelsSwitch2(body)
       : body;
 }
 
 /// "毕业中 / 已毕业" as the read-only projection 03 §8.3 describes, or `null`
 /// when neither applies.
 String? launchGraduationProjection(LaunchOnChainAvailable state) {
-  if (state.liquidityState.isLocked) return '已毕业';
+  if (state.liquidityState.isLocked) return LoopL10n.current.common_graduated;
   if (state.saleState == LaunchSaleState.succeeded &&
       state.liquidityState != LaunchLiquidityState.notStarted) {
-    return '毕业中';
+    return LoopL10n.current.launch_chainModelsIf;
   }
   return null;
 }
@@ -260,15 +344,28 @@ String? launchGraduationProjection(LaunchOnChainAvailable state) {
 // ---------------------------------------------------------------------------
 
 enum LaunchGraduationProgress {
-  pending('待触发'),
-  active('进行中'),
-  retrying('重试已排期'),
-  done('已完成'),
-  notApplicable('不适用');
+  pending(),
+  active(),
+  retrying(),
+  done(),
+  notApplicable();
 
-  const LaunchGraduationProgress(this.label);
+  const LaunchGraduationProgress();
 
-  final String label;
+  String get label => switch (this) {
+    LaunchGraduationProgress.pending =>
+      LoopL10n.current.launch_chainModelsPending,
+
+    LaunchGraduationProgress.active => LoopL10n.current.common_inProgress,
+
+    LaunchGraduationProgress.retrying =>
+      LoopL10n.current.launch_chainModelsRetrying,
+
+    LaunchGraduationProgress.done => LoopL10n.current.launch_chainModelsDone,
+
+    LaunchGraduationProgress.notApplicable =>
+      LoopL10n.current.launch_chainModelsNotApplicable,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,21 +406,40 @@ final class LaunchSaleConfig {
   final int lpLockSeconds;
   final String configVersion;
 
-  /// `(label, value)` in the order the rules page renders them.
+  /// `(label, value)` in the order the rules page renders them; the ids
+  /// for their keys are [launchSaleConfigIds].
   List<(String, String)> get entries => <(String, String)>[
-    ('软顶', launchUsd1Label(softCapUsd1)),
-    ('硬顶', launchUsd1Label(hardCapUsd1)),
-    ('单钱包项目上限', launchUsd1Label(walletProjectCapUsd1)),
-    ('最低单笔', launchUsd1Label(minPurchaseUsd1)),
-    ('协议费', launchBpsLabel(protocolFeeBps)),
-    ('进入流动性', launchBpsLabel(liquidityBps)),
-    ('TGE 释放', launchBpsLabel(tgeBps)),
+    (LoopL10n.current.launch_chainModelsEntries, launchUsd1Label(softCapUsd1)),
+    (LoopL10n.current.launch_chainModelsEntries2, launchUsd1Label(hardCapUsd1)),
+    (
+      LoopL10n.current.launch_chainModelsEntries3,
+      launchUsd1Label(walletProjectCapUsd1),
+    ),
+    (
+      LoopL10n.current.launch_chainModelsEntries4,
+      launchUsd1Label(minPurchaseUsd1),
+    ),
+    (
+      LoopL10n.current.launch_chainModelsEntries5,
+      launchBpsLabel(protocolFeeBps),
+    ),
+    (LoopL10n.current.launch_chainModelsEntries6, launchBpsLabel(liquidityBps)),
+    (LoopL10n.current.launch_chainModelsEntries7, launchBpsLabel(tgeBps)),
     ('Cliff', launchDurationLabel(cliffSeconds)),
     ('Vesting', launchDurationLabel(vestingSeconds)),
-    ('池费率档位', launchPoolFeeTierLabel(poolFeeTier)),
-    ('LP 锁定', launchDurationLabel(lpLockSeconds)),
-    ('项目代币', launchShortHex(projectToken)),
-    ('结算币 USD1', launchShortHex(usd1)),
+    (
+      LoopL10n.current.launch_chainModelsEntries8,
+      launchPoolFeeTierLabel(poolFeeTier),
+    ),
+    (
+      LoopL10n.current.launch_chainModelsEntries9,
+      launchDurationLabel(lpLockSeconds),
+    ),
+    (
+      LoopL10n.current.launch_chainModelsEntries10,
+      launchShortHex(projectToken),
+    ),
+    (LoopL10n.current.launch_chainModelsEntries11, launchShortHex(usd1)),
   ];
 }
 
@@ -516,14 +632,20 @@ final class LaunchIndexedSource {
 }
 
 enum LaunchConfirmationState {
-  pending('pending', '待确认'),
-  confirmed('confirmed', '已确认'),
-  reorged('reorged', '已被重组');
+  pending('pending'),
+  confirmed('confirmed'),
+  reorged('reorged');
 
-  const LaunchConfirmationState(this.wireName, this.label);
+  const LaunchConfirmationState(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LaunchConfirmationState.pending =>
+      LoopL10n.current.common_pendingConfirmation,
+    LaunchConfirmationState.confirmed => LoopL10n.current.common_confirmed,
+    LaunchConfirmationState.reorged =>
+      LoopL10n.current.launch_chainModelsReorged,
+  };
 
   static LaunchConfirmationState? tryParse(String value) {
     for (final state in values) {
@@ -565,14 +687,21 @@ final class LaunchPurchaseRecord {
 }
 
 enum LaunchEntitlementRecordState {
-  frozen('frozen', '已冻结'),
-  partiallyClaimed('partially_claimed', '部分已领取'),
-  claimed('claimed', '已全部领取');
+  frozen('frozen'),
+  partiallyClaimed('partially_claimed'),
+  claimed('claimed');
 
-  const LaunchEntitlementRecordState(this.wireName, this.label);
+  const LaunchEntitlementRecordState(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LaunchEntitlementRecordState.frozen =>
+      LoopL10n.current.launch_chainModelsFrozen2,
+    LaunchEntitlementRecordState.partiallyClaimed =>
+      LoopL10n.current.launch_chainModelsPartiallyClaimed,
+    LaunchEntitlementRecordState.claimed =>
+      LoopL10n.current.launch_chainModelsClaimed,
+  };
 
   static LaunchEntitlementRecordState? tryParse(String value) {
     for (final state in values) {
@@ -602,14 +731,21 @@ final class LaunchEntitlementRecord {
 }
 
 enum LaunchRefundRecordState {
-  frozen('frozen', '已冻结'),
-  partiallyRefunded('partially_refunded', '部分已退款'),
-  refunded('refunded', '已全部退款');
+  frozen('frozen'),
+  partiallyRefunded('partially_refunded'),
+  refunded('refunded');
 
-  const LaunchRefundRecordState(this.wireName, this.label);
+  const LaunchRefundRecordState(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LaunchRefundRecordState.frozen =>
+      LoopL10n.current.launch_chainModelsFrozen2,
+    LaunchRefundRecordState.partiallyRefunded =>
+      LoopL10n.current.launch_chainModelsPartiallyRefunded,
+    LaunchRefundRecordState.refunded =>
+      LoopL10n.current.launch_chainModelsRefunded4,
+  };
 
   static LaunchRefundRecordState? tryParse(String value) {
     for (final state in values) {
@@ -641,13 +777,17 @@ final class LaunchRefundRecord {
 /// `settlements[].kind` (loop-api decision 0087): one `Claimed` or one
 /// `Refunded` log of the caller's wallet.
 enum LaunchSettlementKind {
-  claimed('claimed', '已领取'),
-  refunded('refunded', '已退款');
+  claimed('claimed'),
+  refunded('refunded');
 
-  const LaunchSettlementKind(this.wireName, this.label);
+  const LaunchSettlementKind(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LaunchSettlementKind.claimed => LoopL10n.current.launch_chainModelsClaimed2,
+    LaunchSettlementKind.refunded =>
+      LoopL10n.current.launch_chainModelsRefunded5,
+  };
 
   static LaunchSettlementKind? tryParse(String value) {
     for (final kind in values) {
@@ -724,25 +864,36 @@ enum LaunchIntentKind {
 }
 
 enum LaunchIntentState {
-  prepared('prepared', '待确认'),
-  awaitingSignature('awaiting_signature', '待签名'),
+  prepared('prepared'),
+  awaitingSignature('awaiting_signature'),
   // The server moved it here on the device's broadcast report: pending
   // evidence, never a purchase.
-  submitted('submitted', '已提交，等待链上索引'),
+  submitted('submitted'),
   // The launch-event index saw the `Purchased` log of that transaction.
-  confirmed('confirmed', '已确认'),
-  reverted('reverted', '链上已回滚'),
-  failed('failed', '失败'),
-  unknown('unknown', '结果未知（已锁定）'),
-  cancelled('cancelled', '已取消'),
-  expired('expired', '已过期');
+  confirmed('confirmed'),
+  reverted('reverted'),
+  failed('failed'),
+  unknown('unknown'),
+  cancelled('cancelled'),
+  expired('expired');
 
-  const LaunchIntentState(this.wireName, this.label);
+  const LaunchIntentState(this.wireName);
 
   final String wireName;
 
   /// zh-CN, as the server states it. Only [confirmed] names a result.
-  final String label;
+  String get label => switch (this) {
+    LaunchIntentState.prepared => LoopL10n.current.common_pendingConfirmation,
+    LaunchIntentState.awaitingSignature =>
+      LoopL10n.current.common_awaitingSignature,
+    LaunchIntentState.submitted => LoopL10n.current.launch_chainModelsSubmitted,
+    LaunchIntentState.confirmed => LoopL10n.current.common_confirmed,
+    LaunchIntentState.reverted => LoopL10n.current.launch_chainModelsReverted,
+    LaunchIntentState.failed => LoopL10n.current.common_failed,
+    LaunchIntentState.unknown => LoopL10n.current.launch_chainModelsUnknown,
+    LaunchIntentState.cancelled => LoopL10n.current.common_cancelled,
+    LaunchIntentState.expired => LoopL10n.current.common_expired,
+  };
 
   bool get isSignable =>
       this == LaunchIntentState.prepared ||
@@ -814,14 +965,20 @@ final class LaunchUnsignedTransaction {
 /// `launchIntent.simulation` (optional, loop-api 0077): `eth_call` plus
 /// `estimateGas` of the exact `buy()` payload at prepare.
 enum LaunchSimulationStatus {
-  passed('passed', '试算通过'),
-  reverted('reverted', '试算被拒绝'),
-  unavailable('unavailable', '试算不可用');
+  passed('passed'),
+  reverted('reverted'),
+  unavailable('unavailable');
 
-  const LaunchSimulationStatus(this.wireName, this.label);
+  const LaunchSimulationStatus(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LaunchSimulationStatus.passed => LoopL10n.current.common_simulationPassed,
+    LaunchSimulationStatus.reverted =>
+      LoopL10n.current.common_simulationRejected,
+    LaunchSimulationStatus.unavailable =>
+      LoopL10n.current.common_simulationUnavailable,
+  };
 
   static LaunchSimulationStatus? tryParse(String value) {
     for (final status in values) {
@@ -1068,10 +1225,22 @@ String launchPoolFeeTierLabel(int tier) {
 
 String launchDurationLabel(int seconds) {
   if (seconds == 0) return '0';
-  if (seconds % 86400 == 0) return '${seconds ~/ 86400} 天';
-  if (seconds % 3600 == 0) return '${seconds ~/ 3600} 小时';
-  if (seconds % 60 == 0) return '${seconds ~/ 60} 分钟';
-  return '$seconds 秒';
+  if (seconds % 86400 == 0) {
+    return LoopL10n.current.launch_chainModelsLaunchDurationLabel(
+      seconds ~/ 86400,
+    );
+  }
+  if (seconds % 3600 == 0) {
+    return LoopL10n.current.launch_chainModelsLaunchDurationLabel2(
+      seconds ~/ 3600,
+    );
+  }
+  if (seconds % 60 == 0) {
+    return LoopL10n.current.launch_chainModelsLaunchDurationLabel3(
+      seconds ~/ 60,
+    );
+  }
+  return LoopL10n.current.launch_chainModelsLaunchDurationLabel4(seconds);
 }
 
 /// `0x1234…abcd` for a digest or an address. The full value stays the truth.

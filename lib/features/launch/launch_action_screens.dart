@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -48,20 +49,20 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('loop-stake-screen'),
       archetype: LoopPageArchetype.record,
-      title: 'LOOP 质押',
+      title: context.l10n.launch_actionScreensLoopStakeScreenTitle,
       onBack: widget.onBack,
       // 暂无数值 described a page with no figures as if figures were owed,
       // and the English state name beside it was the wire value of the
       // executability flag. Neither is what a reader needs: staking has not
       // opened, and the sentence under the heading says what that costs.
-      primary: const LoopLedgerComposite(
+      primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
           variant: LoopFolioVariant.quiet,
           archetype: LoopFolioArchetype.record,
-          kicker: '质押仓位',
-          heading: '质押还没有开放',
-          caption: '质押数量、可用余额与解除等待期都需要质押合约；本页不构造任何交易，也不打开签名。',
-          stamp: '未开放',
+          kicker: context.l10n.launch_actionScreensKicker,
+          heading: context.l10n.launch_actionScreensHeading,
+          caption: context.l10n.launch_actionScreensCaption,
+          stamp: context.l10n.common_notOpenYet,
           margin: EdgeInsets.zero,
           squareBottom: true,
         ),
@@ -69,19 +70,21 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
         // this folio. Both need the staking contract, so both are em dashes.
         detail: <Widget>[
           LoopCompositeDetailRow(
-            label: '钱包可用余额',
+            label: context.l10n.launch_actionScreensLabel,
             value: loopFigureDash,
             valueSize: 18,
-            trailingLabel: '已质押',
+            trailingLabel: context.l10n.launch_actionScreensTrailingLabel,
             trailingValue: loopFigureDash,
-            spoken: '质押还没有开放',
+            spoken: context.l10n.launch_actionScreensHeading,
           ),
         ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('loop-stake-capability-unavailable'),
-              title: 'LOOP 质押当前不可用',
+              title: context
+                  .l10n
+                  .launch_actionScreensLoopStakeCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -92,8 +95,8 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到质押状态',
-            emptyReason: '质押还没有开放。',
+            emptyMessage: context.l10n.launch_actionScreensEmptyMessage,
+            emptyReason: context.l10n.launch_actionScreensEmptyReason,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -103,9 +106,17 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
           // (visual audit 2026-09-21 §H.10).
           LoopChipRow(
             key: const ValueKey<String>('loop-stake-tabs'),
-            children: const <Widget>[
-              LoopSeg(label: '质押', selected: true, onSelected: null),
-              LoopSeg(label: '解除质押', selected: false, onSelected: null),
+            children: <Widget>[
+              LoopSeg(
+                label: context.l10n.launch_actionScreensLabel2,
+                selected: true,
+                onSelected: null,
+              ),
+              LoopSeg(
+                label: context.l10n.launch_actionScreensLabel3,
+                selected: false,
+                onSelected: null,
+              ),
             ],
           ),
           _StakeAmountCard(executable: stake.executable),
@@ -113,18 +124,20 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('loop-stake-submit'),
-              label: '确认质押',
+              label: context.l10n.launch_actionScreensLoopStakeSubmitLabel,
               primary: true,
               block: true,
               // 03 §10.1: staking has no approved contract scheme, so the
               // action is marked non-executable and no signing entry point
               // exists on this page at all.
               onPressed: null,
-              semanticLabel: '确认质押，当前不可执行',
+              semanticLabel:
+                  context.l10n.launch_actionScreensLoopStakeSubmitSemanticLabel,
             ),
           ),
           LaunchUnavailableCard(
-            label: '我的质押',
+            id: 'my-staking',
+            label: context.l10n.launch_actionScreensLabel4,
             fact: stake.stake,
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -177,12 +190,14 @@ class _StakeAmountCard extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      '质押数量',
+                      context.l10n.launch_actionScreensBuild,
                       style: LoopType.kicker.copyWith(color: auxiliary),
                     ),
                   ),
                   LoopBadge(
-                    executable ? '可执行' : '不可执行',
+                    executable
+                        ? context.l10n.launch_actionScreensLoopBadge
+                        : context.l10n.launch_actionScreensS,
                     kind: LoopBadgeKind.mute,
                   ),
                 ],
@@ -202,7 +217,7 @@ class _StakeAmountCard extends StatelessWidget {
               ),
               const LoopHairline(),
               Text(
-                '质押合约还没有上线，这一页不接受金额输入，也不会打开签名。',
+                context.l10n.launch_actionScreensBuild2,
                 style: LoopType.captionSm.copyWith(color: auxiliary),
               ),
             ],
@@ -245,25 +260,29 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('loop-economy-screen'),
       archetype: LoopPageArchetype.record,
-      title: 'LOOP 生态账本',
+      title: context.l10n.launch_actionScreensLoopEconomyScreenTitle,
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: '公开经济',
+        kicker: context.l10n.launch_actionScreensKicker2,
         // The only provable headline is a count of approved rounds.
         heading: economy == null
             ? launchMissingHeading
-            : '${economy.confirmedRoundCount} 个已确认轮次',
-        caption: '这里只显示 LOOP 能核对的数量；总量、发行与生态税暂时读不到。',
-        stamp: economy == null ? null : 'LOOP 记录',
+            : context.l10n.launch_actionScreensHeading2(
+                economy.confirmedRoundCount,
+              ),
+        caption: context.l10n.launch_actionScreensCaption2,
+        stamp: economy == null ? null : context.l10n.launch_actionScreensStamp,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>(
                 'loop-economy-capability-unavailable',
               ),
-              title: '生态账本当前不可用',
+              title: context
+                  .l10n
+                  .launch_actionScreensLoopEconomyCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -274,12 +293,12 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '没有读到账本计数',
-            emptyReason: '暂时读不到可核对的数量。',
+            emptyMessage: context.l10n.launch_actionScreensEmptyMessage2,
+            emptyReason: context.l10n.launch_actionScreensEmptyReason2,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('发射'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel),
           // `.chalk-card` with a 2x2 grid: the prototype's Launch half of the
           // ledger. The registry count is LOOP's own and is a number; the
           // other three need the contract and print the em dash.
@@ -291,24 +310,36 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           // absent key means no Launch contract is configured, and the page
           // stays exactly as it was before the contract.
           if (economy.onChain case final onChain?) ...<Widget>[
-            const LoopLabel('链上账本'),
+            LoopLabel(context.l10n.launch_actionScreensLoopLabel2),
             _EconomyOnChainCard(onChain: onChain),
           ],
           const LoopLabel('LOOP'),
           LoopStatGrid(
             key: const ValueKey<String>('loop-economy-loop-stats'),
             stats: <LoopStat>[
-              const LoopStat(label: '总量', value: loopFigureDash),
-              const LoopStat(label: '累计分发', value: loopFigureDash),
-              LoopStat(label: '已确认轮次', value: '${economy.confirmedRoundCount}'),
-              LoopStat(label: '已通过申请', value: '${economy.projects.approved}'),
+              LoopStat(
+                label: context.l10n.common_totalSupply,
+                value: loopFigureDash,
+              ),
+              LoopStat(
+                label: context.l10n.launch_actionScreensLabel5,
+                value: loopFigureDash,
+              ),
+              LoopStat(
+                label: context.l10n.launch_actionScreensLabel6,
+                value: '${economy.confirmedRoundCount}',
+              ),
+              LoopStat(
+                label: context.l10n.launch_actionScreensLabel7,
+                value: '${economy.projects.approved}',
+              ),
             ],
           ),
           _EconomyReasons(
             economy: economy,
             contractLive: capability.evidenceConfirmed,
           ),
-          const LoopLabel('价值飞轮'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel3),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-flywheel'),
             rows: <LoopRecordRow>[
@@ -325,7 +356,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
                 ),
             ],
           ),
-          const LoopLabel('申请状态计数'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel4),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-projects'),
             rows: <LoopRecordRow>[
@@ -347,7 +378,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
                 ),
             ],
           ),
-          const LoopLabel('排期状态计数'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel5),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-launches'),
             rows: <LoopRecordRow>[
@@ -386,10 +417,19 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
 /// The prototype's `Value Flywheel`: what LOOP's economy does with a launch
 /// once it graduates. No rate appears — the retired permanent-tax figure is
 /// forbidden copy (03 §10.1) and the live one is not approved.
-const List<(String, String)> _flywheel = <(String, String)>[
-  ('精品项目完成 Launch', '社区传播与内盘交易形成流动性'),
-  ('达线毕业并进入外盘', '迁移后由外部流动性承接交易'),
-  ('价值回流 LOOP', '增强流动性、挖矿吸引力与下一轮分发'),
+List<(String, String)> get _flywheel => <(String, String)>[
+  (
+    LoopL10n.current.launch_actionScreensText,
+    LoopL10n.current.launch_actionScreensText2,
+  ),
+  (
+    LoopL10n.current.launch_actionScreensText3,
+    LoopL10n.current.launch_actionScreensText4,
+  ),
+  (
+    LoopL10n.current.launch_actionScreensText5,
+    LoopL10n.current.launch_actionScreensText6,
+  ),
 ];
 
 /// `loop-economy` 的 `.chalk-card`: the Launch half of the public ledger.
@@ -418,15 +458,39 @@ class _EconomyLaunchCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(child: _cell(context, '$_registered', '已登记发射')),
-                Expanded(child: _cell(context, loopFigureDash, '已毕业')),
+                Expanded(
+                  child: _cell(
+                    context,
+                    '$_registered',
+                    context.l10n.launch_actionScreensCell,
+                  ),
+                ),
+                Expanded(
+                  child: _cell(
+                    context,
+                    loopFigureDash,
+                    context.l10n.common_graduated,
+                  ),
+                ),
               ],
             ),
             const LoopHairline(),
             Row(
               children: <Widget>[
-                Expanded(child: _cell(context, loopFigureDash, '累计成交量')),
-                Expanded(child: _cell(context, loopFigureDash, '累计生态税')),
+                Expanded(
+                  child: _cell(
+                    context,
+                    loopFigureDash,
+                    context.l10n.launch_actionScreensCell2,
+                  ),
+                ),
+                Expanded(
+                  child: _cell(
+                    context,
+                    loopFigureDash,
+                    context.l10n.launch_actionScreensCell3,
+                  ),
+                ),
               ],
             ),
           ],
@@ -438,7 +502,7 @@ class _EconomyLaunchCard extends StatelessWidget {
   Widget _cell(BuildContext context, String value, String label) => Semantics(
     container: true,
     label:
-        '$label，'
+        '$label${LoopL10n.current.common_listSeparator}'
         '${value == loopFigureDash ? launchEconomyReasonText(economy.ecosystemTax.reasonCode, contractLive: contractLive) : value}',
     child: ExcludeSemantics(
       child: Column(
@@ -466,8 +530,10 @@ class _EconomyLaunchCard extends StatelessWidget {
 /// ledger sentence of their own: the global one talks about a list row.
 String launchEconomyOnChainReasonText(String reasonCode) =>
     switch (reasonCode) {
-      'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' => 'LOOP 的链上事件索引还没有开始，链上账本稍后可见。',
-      'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' => 'LOOP 的链上事件索引还在追赶，链上账本稍后可见。',
+      'LAUNCH_ONCHAIN_STATE_NOT_INDEXED' =>
+        LoopL10n.current.launch_actionScreensSwitch,
+      'LAUNCH_ONCHAIN_STATE_NOT_PROJECTED' =>
+        LoopL10n.current.launch_actionScreensSwitch2,
       _ => launchReasonCodeText(reasonCode),
     };
 
@@ -487,7 +553,9 @@ class _EconomyOnChainCard extends StatelessWidget {
       LaunchEconomyOnChainUnavailable(:final reasonCode) =>
         LoopInlineUnavailable(
           key: const ValueKey<String>('loop-economy-onchain-unavailable'),
-          message: '链上账本暂时读不到',
+          message: context
+              .l10n
+              .launch_actionScreensLoopEconomyOnchainUnavailableMessage,
           detail: launchEconomyOnChainReasonText(reasonCode),
           maxLines: 2,
           detailMaxLines: 4,
@@ -503,7 +571,7 @@ class _EconomyOnChainCard extends StatelessWidget {
                 context,
                 const ValueKey<String>('loop-economy-onchain-raised'),
                 launchUsd1Label(value.totalRaisedUsd1),
-                '累计募集（仅成功的发售）',
+                context.l10n.launch_actionScreensCell4,
                 large: true,
               ),
               const LoopHairline(),
@@ -514,7 +582,7 @@ class _EconomyOnChainCard extends StatelessWidget {
                       context,
                       const ValueKey<String>('loop-economy-onchain-sales'),
                       '${value.registeredSaleCount}',
-                      '已登记发售',
+                      context.l10n.launch_actionScreensCell5,
                     ),
                   ),
                   Expanded(
@@ -522,7 +590,7 @@ class _EconomyOnChainCard extends StatelessWidget {
                       context,
                       const ValueKey<String>('loop-economy-onchain-lp'),
                       '${value.lockedLpCount}',
-                      '已锁 LP',
+                      context.l10n.launch_actionScreensCell6,
                     ),
                   ),
                 ],
@@ -531,8 +599,9 @@ class _EconomyOnChainCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '读自区块 ${loopGroupedFigure(value.indexedBlockNumber)}'
-                  '，LOOP 链上事件索引',
+                  context.l10n.launch_actionScreensLoopEconomyOnchainBlock(
+                    loopGroupedFigure(value.indexedBlockNumber),
+                  ),
                   key: const ValueKey<String>('loop-economy-onchain-block'),
                   style: LoopType.figureXs.copyWith(
                     color: LoopGround.auxiliaryOf(context),
@@ -555,7 +624,7 @@ class _EconomyOnChainCard extends StatelessWidget {
   }) => Semantics(
     key: key,
     container: true,
-    label: '$label，$value',
+    label: '$label${LoopL10n.current.common_listSeparator}$value',
     child: ExcludeSemantics(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -614,7 +683,7 @@ class _EconomyReasons extends StatelessWidget {
         for (final code in codes)
           LoopInlineUnavailable(
             key: ValueKey<String>('loop-economy-reason-$code'),
-            message: '总量、累计分发与累计生态税暂时没有数值',
+            message: context.l10n.launch_actionScreensMessage,
             detail: launchEconomyReasonText(code, contractLive: contractLive),
             maxLines: 2,
             detailMaxLines: 4,
@@ -712,21 +781,21 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-apply-screen'),
       archetype: LoopPageArchetype.action,
-      title: '申请发射',
+      title: context.l10n.launch_actionScreensLaunchApplyScreenTitle,
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
-        kicker: '精选发射',
+        kicker: context.l10n.launch_actionScreensKicker3,
         // The heading is a conclusion, not the page's own title: the length
         // of the review pipeline before a draft exists, the applicant's own
         // state once one does.
         heading: selected == null
-            ? '${_reviewPipeline.length} 步审核'
+            ? context.l10n.launch_actionScreensHeading3(_reviewPipeline.length)
             : launchReviewStatusLabel(selected.reviewStatus),
-        caption: '提交不代表通过。审核由人工进行，结果与上线时间以最新状态为准。',
+        caption: context.l10n.launch_actionScreensCaption3,
         stamp: selected == null
-            ? '${_reviewPipeline.length} 步'
+            ? context.l10n.launch_actionScreensStamp2(_reviewPipeline.length)
             : 'v${selected.materialVersion}',
       ),
       block: blocked
@@ -734,7 +803,9 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               key: const ValueKey<String>(
                 'launch-apply-capability-unavailable',
               ),
-              title: '申请入口当前不可用',
+              title: context
+                  .l10n
+                  .launch_actionScreensLaunchApplyCapabilityUnavailableTitle,
               capability: capability,
             )
           : null,
@@ -745,8 +816,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '还没有任何申请',
-            emptyReason: '填写下面的表单即可创建第一份草稿。',
+            emptyMessage: context.l10n.launch_actionScreensEmptyMessage3,
+            emptyReason: context.l10n.launch_actionScreensEmptyReason3,
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -755,7 +826,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
           // prototype opens on this block; the App opened straight onto the
           // form, so the page never said what submitting leads to
           // (visual audit 2026-09-21 §H.12).
-          const LoopLabel('审核记录'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel6),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-apply-pipeline'),
             rows: <LoopRecordRow>[
@@ -769,7 +840,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             ],
           ),
           if (state.projects.isNotEmpty) ...<Widget>[
-            const LoopLabel('我的申请'),
+            LoopLabel(context.l10n.launch_actionScreensLoopLabel7),
             LoopRecordGroup(
               key: const ValueKey<String>('launch-apply-projects'),
               rows: <LoopRecordRow>[
@@ -790,7 +861,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('launch-apply-new'),
-                    label: '新建另一份申请',
+                    label: context.l10n.launch_actionScreensLaunchApplyNewLabel,
                     onPressed: state.busy
                         ? null
                         : () => controller.select(null),
@@ -802,7 +873,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             _ReviewStatusBlock(project: selected),
             _MilestoneBlock(projectId: selected.projectId),
           ],
-          const LoopLabel('项目资料'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel8),
           _ApplyForm(
             name: _name,
             ticker: _ticker,
@@ -814,14 +885,15 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             enabled: editable && !state.busy,
             invalidField: state.invalidField,
           ),
-          const LoopLabel('附件与主体审核'),
+          LoopLabel(context.l10n.launch_actionScreensLoopLabel9),
           _DeferredProviderBlock(project: selected),
           if (state.writeFailureKind != null) ...<Widget>[
             LoopNotice(
               key: const ValueKey<String>('launch-apply-write-failure'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '这次提交没有完成',
+              title:
+                  context.l10n.launch_actionScreensLaunchApplyWriteFailureTitle,
               body: launchFailureReason(state.writeFailureKind),
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
@@ -834,7 +906,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('launch-apply-reload'),
-                  label: '重新加载',
+                  label: context.l10n.common_reload,
                   // A version conflict is resolved by re-reading the server's
                   // projection; the edits already typed stay in the fields.
                   onPressed: state.busy
@@ -848,7 +920,9 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('launch-apply-save'),
-                label: selected == null ? '保存草稿' : '保存修改',
+                label: selected == null
+                    ? context.l10n.launch_actionScreensLaunchApplySaveLabel
+                    : context.l10n.launch_actionScreensLaunchApplySaveLabel2,
                 primary: true,
                 onPressed: !editable || state.busy
                     ? null
@@ -859,8 +933,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
                 label:
                     selected?.reviewStatus == LaunchReviewStatus.returned ||
                         selected?.reviewStatus == LaunchReviewStatus.rejected
-                    ? '重新提交'
-                    : '提交审核',
+                    ? context.l10n.launch_actionScreensLaunchApplySubmitLabel
+                    : context.l10n.launch_actionScreensLaunchApplySubmitLabel2,
                 onPressed: selected == null || !selected.canSubmit || state.busy
                     ? null
                     : () => unawaited(controller.submit()),
@@ -869,19 +943,20 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
           ),
           // `details.focus-disclosure`: the curation statement and the
           // submission caveat, where the prototype keeps them.
-          const LoopDisclosure(
+          LoopDisclosure(
             key: ValueKey<String>('launch-apply-principles'),
-            summary: '筛选原则与提交说明',
+            summary:
+                context.l10n.launch_actionScreensLaunchApplyPrinciplesSummary,
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: _CurationCard(),
             ),
           ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('launch-apply-notice'),
             icon: 'info',
-            title: '提交不代表通过',
-            body: '审核由人工进行。通过后项目才会进入目录，再等待排期确认。',
+            title: context.l10n.launch_actionScreensLaunchApplyNoticeTitle,
+            body: context.l10n.launch_actionScreensLaunchApplyNoticeBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -912,12 +987,15 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       subtitle: launchReviewStatusHint(status),
       subtitleMaxLines: 2,
       trailingBadge: isCurrent
-          ? const LoopBadge('当前', kind: LoopBadgeKind.launch)
+          ? LoopBadge(
+              LoopL10n.current.launch_actionScreensLoopBadge2,
+              kind: LoopBadgeKind.launch,
+            )
           : null,
       position: launchRowPosition(index, _reviewPipeline.length),
       semanticLabel:
-          '$label，${launchReviewStatusHint(status)}'
-          '${isCurrent ? '，当前状态' : ''}',
+          '$label${LoopL10n.current.common_listSeparator}${launchReviewStatusHint(status)}'
+          '${isCurrent ? LoopL10n.current.launch_actionScreensCurrentSuffix : ''}',
     );
   }
 
@@ -931,9 +1009,11 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       key: ValueKey<String>('launch-apply-project-${project.projectId}'),
       leading: LaunchTickerTile(ticker: project.ticker),
       title: project.name,
-      subtitle:
-          '${project.ticker}，资料版本 ${project.materialVersion}，'
-          '更新于 ${launchTimestampLabel(project.updatedAt)}',
+      subtitle: LoopL10n.current.launch_actionScreensSubtitle(
+        launchTimestampLabel(project.updatedAt),
+        project.materialVersion,
+        project.ticker,
+      ),
       trailingBadge: LoopBadge(
         launchReviewStatusLabel(project.reviewStatus),
         kind: selected ? LoopBadgeKind.launch : LoopBadgeKind.mute,
@@ -941,8 +1021,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       onTap: onTap,
       position: position,
       semanticLabel:
-          '${project.name}，${launchReviewStatusLabel(project.reviewStatus)}'
-          '${selected ? '，已选中' : ''}',
+          '${project.name}${LoopL10n.current.common_listSeparator}${launchReviewStatusLabel(project.reviewStatus)}'
+          '${selected ? LoopL10n.current.launch_actionScreensSelectedSuffix : ''}',
     );
   }
 }
@@ -950,12 +1030,15 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
 /// The review pipeline, in the order the server's own state machine moves a
 /// draft through it. The terminal states share the last step, because an
 /// applicant reaches exactly one of them.
-const List<(String, LaunchReviewStatus)> _reviewPipeline =
+List<(String, LaunchReviewStatus)> get _reviewPipeline =>
     <(String, LaunchReviewStatus)>[
-      ('草稿', LaunchReviewStatus.draft),
-      ('已提交', LaunchReviewStatus.submitted),
-      ('审核中', LaunchReviewStatus.inReview),
-      ('审核结果', LaunchReviewStatus.approved),
+      (LoopL10n.current.common_draft, LaunchReviewStatus.draft),
+      (LoopL10n.current.common_submitted, LaunchReviewStatus.submitted),
+      (LoopL10n.current.common_inReview, LaunchReviewStatus.inReview),
+      (
+        LoopL10n.current.launch_actionScreensProjectRow,
+        LaunchReviewStatus.approved,
+      ),
     ];
 
 /// Which pipeline step one review status stands at.
@@ -980,16 +1063,25 @@ class _CurationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text('精选发射', style: LoopType.kicker),
+          Text(
+            context.l10n.launch_actionScreensKicker3,
+            style: LoopType.kicker,
+          ),
           const SizedBox(height: 8),
-          Text('先评估，再发射', style: LoopType.displaySm),
+          Text(
+            context.l10n.launch_actionScreensBuild3,
+            style: LoopType.displaySm,
+          ),
           const SizedBox(height: 5),
           Text(
-            'LOOP 与交易所、KOL 和社区共同筛选有叙事、有传播力、可长期运营的项目。',
+            context.l10n.launch_actionScreensBuild4,
             style: LoopType.captionSm.copyWith(color: LoopColors.text2),
           ),
           const LoopHairline(),
-          Text('人工审核，上限配置，流动性方案', style: LoopType.captionSm),
+          Text(
+            context.l10n.launch_actionScreensBuild5,
+            style: LoopType.captionSm,
+          ),
         ],
       ),
     );
@@ -1024,14 +1116,14 @@ class _MilestoneBlockState extends ConsumerState<_MilestoneBlock> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('交易所上线进度'),
+        LoopLabel(context.l10n.launch_actionScreensLoopLabel10),
         if (milestones == null)
           LaunchStateBlock(
             prefix: 'launch-milestones',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '没有读到上线进度',
-            emptyReason: '进度由运营记录，本页不推断任何上线结论。',
+            emptyMessage: context.l10n.launch_actionScreensEmptyMessage4,
+            emptyReason: context.l10n.launch_actionScreensEmptyReason4,
             onRetry: () => unawaited(controller.reload()),
           )
         else
@@ -1064,7 +1156,7 @@ class _ReviewStatusBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('审核状态'),
+        LoopLabel(context.l10n.launch_actionScreensLoopLabel11),
         LoopRecordGroup(
           key: const ValueKey<String>('launch-apply-review-status'),
           rows: <LoopRecordRow>[
@@ -1078,12 +1170,17 @@ class _ReviewStatusBlock extends StatelessWidget {
             ),
             LoopRecordRow(
               key: const ValueKey<String>('launch-apply-submitted-at'),
-              title: '提交时间',
+              title:
+                  context.l10n.launch_actionScreensLaunchApplySubmittedAtTitle,
               // A non-owner projection nulls the review trail; the em dash is
               // "not visible to you", not "never submitted".
               subtitle: project.isOwnerProjection
-                  ? '只有申请人可以看到审核轨迹'
-                  : '审核轨迹与版本只属于申请人',
+                  ? context
+                        .l10n
+                        .launch_actionScreensLaunchApplySubmittedAtSubtitle
+                  : context
+                        .l10n
+                        .launch_actionScreensLaunchApplySubmittedAtSubtitle2,
               trailing: project.submittedAt == null
                   ? launchMissingFigure
                   : launchTimestampLabel(project.submittedAt!),
@@ -1091,7 +1188,8 @@ class _ReviewStatusBlock extends StatelessWidget {
             ),
             LoopRecordRow(
               key: const ValueKey<String>('launch-apply-reviewed-at'),
-              title: '审核时间',
+              title:
+                  context.l10n.launch_actionScreensLaunchApplyReviewedAtTitle,
               trailing: project.reviewedAt == null
                   ? launchMissingFigure
                   : launchTimestampLabel(project.reviewedAt!),
@@ -1099,11 +1197,17 @@ class _ReviewStatusBlock extends StatelessWidget {
             ),
             LoopRecordRow(
               key: const ValueKey<String>('launch-apply-launch-id'),
-              title: '目录条目',
+              title: context.l10n.launch_actionScreensLaunchApplyLaunchIdTitle,
               subtitle: project.launchId == null
-                  ? '通过审核后才会生成目录条目'
-                  : '已进入目录，等待排期',
-              trailing: project.launchId == null ? launchMissingFigure : '已生成',
+                  ? context.l10n.launch_actionScreensLaunchApplyLaunchIdSubtitle
+                  : context
+                        .l10n
+                        .launch_actionScreensLaunchApplyLaunchIdSubtitle2,
+              trailing: project.launchId == null
+                  ? launchMissingFigure
+                  : context
+                        .l10n
+                        .launch_actionScreensLaunchApplyLaunchIdTrailing,
               position: LoopRowPosition.last,
             ),
           ],
@@ -1113,7 +1217,8 @@ class _ReviewStatusBlock extends StatelessWidget {
             key: const ValueKey<String>('launch-apply-returned-reason'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '退回原因',
+            title:
+                context.l10n.launch_actionScreensLaunchApplyReturnedReasonTitle,
             body: reason,
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -1165,7 +1270,7 @@ class _ApplyForm extends StatelessWidget {
             controller: name,
             enabled: enabled,
             decoration: InputDecoration(
-              labelText: '项目名称（1–20 个字）',
+              labelText: context.l10n.launch_actionScreensLabelText,
               errorText: _errorFor(LaunchDraftField.name),
             ),
           ),
@@ -1176,7 +1281,7 @@ class _ApplyForm extends StatelessWidget {
             enabled: enabled,
             textCapitalization: TextCapitalization.none,
             decoration: InputDecoration(
-              labelText: '代码（1–20 个字，可用中文、字母、数字、emoji）',
+              labelText: context.l10n.launch_actionScreensLabelText2,
               errorText: _errorFor(LaunchDraftField.ticker),
             ),
           ),
@@ -1187,7 +1292,7 @@ class _ApplyForm extends StatelessWidget {
             enabled: enabled,
             maxLines: 4,
             decoration: InputDecoration(
-              labelText: '叙事（可留空，≤2000）',
+              labelText: context.l10n.launch_actionScreensLabelText3,
               errorText: _errorFor(LaunchDraftField.narrative),
             ),
           ),
@@ -1197,7 +1302,7 @@ class _ApplyForm extends StatelessWidget {
             controller: website,
             enabled: enabled,
             decoration: InputDecoration(
-              labelText: '官网（可留空，https://）',
+              labelText: context.l10n.launch_actionScreensLabelText4,
               errorText: _errorFor(LaunchDraftField.officialLinks),
             ),
           ),
@@ -1206,15 +1311,17 @@ class _ApplyForm extends StatelessWidget {
             key: const ValueKey<String>('launch-apply-x'),
             controller: x,
             enabled: enabled,
-            decoration: const InputDecoration(labelText: 'X（可留空，https://）'),
+            decoration: InputDecoration(
+              labelText: context.l10n.launch_actionScreensLabelText5,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             key: const ValueKey<String>('launch-apply-telegram'),
             controller: telegram,
             enabled: enabled,
-            decoration: const InputDecoration(
-              labelText: 'Telegram（可留空，https://）',
+            decoration: InputDecoration(
+              labelText: context.l10n.launch_actionScreensLabelText6,
             ),
           ),
           const SizedBox(height: 12),
@@ -1222,15 +1329,15 @@ class _ApplyForm extends StatelessWidget {
             key: const ValueKey<String>('launch-apply-discord'),
             controller: discord,
             enabled: enabled,
-            decoration: const InputDecoration(
-              labelText: 'Discord（可留空，https://）',
+            decoration: InputDecoration(
+              labelText: context.l10n.launch_actionScreensLabelText7,
             ),
           ),
           if (!enabled)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(
-                '当前状态下资料为只读。只有草稿与被退回的申请可以修改。',
+                context.l10n.launch_actionScreensBuild6,
                 style: LoopType.captionSm.copyWith(color: LoopColors.text2),
               ),
             ),
@@ -1249,10 +1356,12 @@ class _DeferredProviderBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = project;
     if (current == null) {
-      return const LoopInlineUnavailable(
+      return LoopInlineUnavailable(
         key: ValueKey<String>('launch-apply-providers-pending'),
-        message: '附件上传与主体审核暂未开放',
-        detail: '开放后可以在这里上传材料并查看审核状态。',
+        message:
+            context.l10n.launch_actionScreensLaunchApplyProvidersPendingMessage,
+        detail:
+            context.l10n.launch_actionScreensLaunchApplyProvidersPendingDetail,
         maxLines: 2,
         detailMaxLines: 4,
       );
@@ -1260,11 +1369,15 @@ class _DeferredProviderBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LaunchUnavailableCard(label: '附件', fact: current.attachments),
+        LaunchUnavailableCard(
+          id: 'attachments',
+          label: context.l10n.launch_actionScreensLabel8,
+          fact: current.attachments,
+        ),
         LoopInlineUnavailable(
           key: const ValueKey<String>('launch-apply-kyb'),
           icon: 'shield',
-          message: '主体审核还没有开放',
+          message: context.l10n.launch_actionScreensLaunchApplyKybMessage,
           detail: launchReasonCodeText(current.kyb.reasonCode),
           maxLines: 2,
           detailMaxLines: 4,

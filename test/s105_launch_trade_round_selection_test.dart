@@ -175,7 +175,7 @@ void main() {
       final gateway = await _pumpTrade(tester, clock);
 
       expect(_highlighted(tester), <int>[1]);
-      expect(_caption(tester, 'launch-round-1'), '已选择');
+      expect(_caption(tester, 'launch-round-1'), 'Selected');
       await _typeAmount(tester);
       expect(_submit(tester), isNotNull);
       await _pressSubmit(tester);
@@ -228,7 +228,10 @@ void main() {
 
       expect(_highlighted(tester), <int>[2]);
       expect(_submit(tester), isNull);
-      expect(_refusal(tester), 'Round 2 尚未开始，2026-09-30 09:28 UTC 开放后才能认购。');
+      expect(
+        _refusal(tester),
+        'Round 2 hasn\'t started. You can buy once it opens at 2026-09-30 09:28 UTC.',
+      );
       await _pressSubmit(tester);
       expect(gateway.intents, isEmpty);
 
@@ -253,7 +256,10 @@ void main() {
 
       expect(_highlighted(tester), <int>[1]);
       expect(_submit(tester), isNull);
-      expect(_refusal(tester), 'Round 1 已于 2026-09-30 09:28 UTC 结束，请选择进行中的轮次。');
+      expect(
+        _refusal(tester),
+        'Round 1 ended at 2026-09-30 09:28 UTC. Choose a round in progress.',
+      );
       await _pressSubmit(tester);
       expect(gateway.intents, isEmpty);
     });
@@ -267,7 +273,10 @@ void main() {
 
       expect(_highlighted(tester), <int>[1]);
       expect(_submit(tester), isNull);
-      expect(_refusal(tester), 'Round 1 尚未开始，2026-09-30 09:25 UTC 开放后才能认购。');
+      expect(
+        _refusal(tester),
+        'Round 1 hasn\'t started. You can buy once it opens at 2026-09-30 09:25 UTC.',
+      );
     });
   });
 }
