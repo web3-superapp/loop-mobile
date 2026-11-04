@@ -86,7 +86,42 @@ void main() {
     });
   });
 
+  group('English day labels (S353a · decision 0278)', () {
+    setUp(() => LoopL10n.use(LoopL10n.english));
+    tearDown(LoopL10n.debugReset);
+
+    test('the inbox row reads Yesterday / Mon / MMM d in English', () {
+      final now = DateTime(2026, 9, 10, 15, 39);
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 10, 8, 4), now: now),
+        '08:04',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 9, 23, 59), now: now),
+        'Yesterday',
+      );
+      // 2026-09-07 is a Monday, three days back.
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 7, 8, 0), now: now),
+        'Mon',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 8, 20, 8, 0), now: now),
+        'Aug 20',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2025, 12, 24, 8, 0), now: now),
+        'Dec 24, 2025',
+      );
+      expect(loopStreamDayLabel(now, now: now), 'Today');
+    });
+  });
+
   group('24-hour clock and Chinese day labels', () {
+    // The ladder follows the App's language; this group reads it in Chinese.
+    setUp(() => LoopL10n.use(LoopL10n.simplifiedChinese));
+    tearDown(LoopL10n.debugReset);
+
     test('the clock is HH:mm, never a 12-hour AM/PM string', () {
       expect(loopStreamClockLabel(DateTime(2026, 9, 10, 15, 39)), '15:39');
       expect(loopStreamClockLabel(DateTime(2026, 9, 10, 0, 5)), '00:05');

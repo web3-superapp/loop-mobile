@@ -554,8 +554,9 @@ class _SquareSearchEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopSearchEntry(
-    // Decision 0277: the Figma's 44 search field, the 广场 placeholder.
-    placeholder: context.l10n.square_communityListPlaceholder,
+    // Decision 0277: the Figma's 44 search field. S353a · decision 0278:
+    // the one word, so it fits whole beside the two chips at 360.
+    placeholder: context.l10n.common_search,
     tone: LoopSearchTone.square,
     inkKey: const ValueKey<String>('square-community-search'),
     onTap: onTap,

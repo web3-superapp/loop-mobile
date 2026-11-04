@@ -7864,6 +7864,9 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'View profile';
 
   @override
+  String get integrations_streamDayLabelYesterday => 'Yesterday';
+
+  @override
   String get integrations_streamReactionIconResolverHint => 'Remove reaction';
 
   @override
@@ -21946,9 +21949,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get square_communityListPending => ', in review';
-
-  @override
-  String get square_communityListPlaceholder => 'Search communities';
 
   @override
   String get square_communityListResource => 'Community directory';

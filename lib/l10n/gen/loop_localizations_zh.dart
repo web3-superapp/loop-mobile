@@ -7125,6 +7125,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
       '查看资料';
 
   @override
+  String get integrations_streamDayLabelYesterday => '昨天';
+
+  @override
   String get integrations_streamReactionIconResolverHint => '取消回应';
 
   @override
@@ -20120,9 +20123,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get square_communityListPending => '，审核中';
-
-  @override
-  String get square_communityListPlaceholder => '搜索社区';
 
   @override
   String get square_communityListResource => '社区目录';

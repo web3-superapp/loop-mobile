@@ -12729,6 +12729,12 @@ abstract class LoopLocalizations {
   /// **'View profile'**
   String get integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel;
 
+  /// lib/integrations/communication/stream_chat_localizations_zh.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get integrations_streamDayLabelYesterday;
+
   /// lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366
   ///
   /// In en, this message translates to:
@@ -34682,12 +34688,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **', in review'**
   String get square_communityListPending;
-
-  /// lib/features/square/square_community_list.dart:535
-  ///
-  /// In en, this message translates to:
-  /// **'Search communities'**
-  String get square_communityListPlaceholder;
 
   /// lib/features/square/square_community_list.dart:152
   ///

@@ -9625,6 +9625,10 @@
   "@integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel": {
     "description": "lib/integrations/communication/stream_chat_appearance.dart:731"
   },
+  "integrations_streamDayLabelYesterday": "Yesterday",
+  "@integrations_streamDayLabelYesterday": {
+    "description": "lib/integrations/communication/stream_chat_localizations_zh.dart"
+  },
   "integrations_streamReactionIconResolverHint": "Remove reaction",
   "@integrations_streamReactionIconResolverHint": {
     "description": "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366"
@@ -27971,10 +27975,6 @@
   "square_communityListPending": ", in review",
   "@square_communityListPending": {
     "description": "lib/features/square/square_community_list.dart:722"
-  },
-  "square_communityListPlaceholder": "Search communities",
-  "@square_communityListPlaceholder": {
-    "description": "lib/features/square/square_community_list.dart:535"
   },
   "square_communityListResource": "Community directory",
   "@square_communityListResource": {

@@ -718,6 +718,12 @@
     "where": "lib/integrations/communication/stream_chat_appearance.dart:731",
     "zh": "查看资料"
   },
+  "integrations_streamDayLabelYesterday": {
+    "en": "Yesterday",
+    "placeholders": {},
+    "where": "lib/integrations/communication/stream_chat_localizations_zh.dart",
+    "zh": "昨天"
+  },
   "integrations_streamReactionIconResolverHint": {
     "en": "Remove reaction",
     "placeholders": {},

@@ -94,12 +94,6 @@
     "where": "lib/features/square/square_community_list.dart:722",
     "zh": "，审核中"
   },
-  "square_communityListPlaceholder": {
-    "en": "Search communities",
-    "placeholders": {},
-    "where": "lib/features/square/square_community_list.dart:535",
-    "zh": "搜索社区"
-  },
   "square_communityListResource": {
     "en": "Community directory",
     "placeholders": {},
