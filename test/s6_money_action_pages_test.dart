@@ -473,7 +473,32 @@ void main() {
 
       expect(find.text('Slippage limit'), findsWidgets);
       expect(find.text('Price impact'), findsOneWidget);
-      expect(find.textContaining('Not set'), findsOneWidget);
+      // S353c: no platform fee, no 「Platform fee」 row on the quote card.
+      expect(find.text('Platform fee'), findsNothing);
+      expect(find.textContaining('Not set'), findsNothing);
+    });
+
+    testWidgets('a platform fee is shown on the quote card', (tester) async {
+      await pumpS6Page(
+        tester,
+        SwapScreen(clock: _fresh),
+        wallet: _twoAssetWallet(),
+        quotes: FakeSwapQuoteGateway(quote: s6QuoteView(platformFeeBps: 30)),
+        intents: FakeWalletIntentsGateway(),
+      );
+
+      await _quote(tester);
+
+      final row = find.byKey(const ValueKey<String>('swap-quote-platform-fee'));
+      expect(row, findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text('Platform fee')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.text('30 bps')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unreachable provider is an error, not an empty quote', (

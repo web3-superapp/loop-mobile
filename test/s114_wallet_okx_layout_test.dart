@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_figma_glyph.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -14,7 +15,6 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -317,7 +317,11 @@ void main() {
 
     // Decision 0171 (docs/33 M15, user ruling): one full-accent key, 兑换;
     // the other three are outlined Card squares with a Chalk glyph (S241b).
-    testWidgets('no key wears yellow, 兑换 included (0212)', (tester) async {
+    // S353c · decision 0280 (docs/58 §5.11): no key has a ground at all —
+    // 兑换 included — and every open glyph is the primary text colour.
+    testWidgets('no key wears yellow or any ground, 兑换 included', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -328,45 +332,45 @@ void main() {
           swapEvidencePending: false,
         ),
       );
-      Color? disc(String label) =>
-          (tester.widget<Container>(key('wallet-quick-disc-$label')).decoration!
-                  as BoxDecoration)
-              .color;
       for (final label in const <String>['swap', 'receive', 'send', 'pay']) {
-        expect(disc(label), LoopColors.card2, reason: label);
+        final slot = key('wallet-quick-disc-$label');
+        expect(tester.widget(slot), isA<SizedBox>(), reason: label);
+        expect(tester.getSize(slot), const Size.square(24), reason: label);
+        final glyph = tester.widget<WalletFigmaGlyph>(
+          find.descendant(of: slot, matching: find.byType(WalletFigmaGlyph)),
+        );
+        expect(glyph.color, LoopColors.textPrimary, reason: label);
       }
-      final glyph = tester.widget<LoopIcon>(
-        find.descendant(
-          of: key('wallet-quick-disc-receive'),
-          matching: find.byType(LoopIcon),
-        ),
-      );
-      expect(glyph.color, LoopColors.chalk);
     });
 
-    // S325 · decision 0255 (UX-009): the tag's word says what it opens; no
-    // (i) after it.
-    testWidgets('产生算力 is a mute badge with no info glyph', (tester) async {
+    // S353c · decision 0280 (docs/58 §5.3): the frame's word and (i) — this
+    // reverses S325 · 0255 (UX-009) on the brief's instruction.
+    testWidgets('产生算力 is a 12 / 500 word with the (i), no badge', (
+      tester,
+    ) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
         wallet: FakeWalletReadGateway(),
       );
-      final badge = tester.widget<LoopBadge>(
+      expect(
         find.descendant(
           of: key('wallet-power-tag'),
           matching: find.byType(LoopBadge),
         ),
-      );
-      expect(badge.text, 'Earns power');
-      expect(badge.kind, LoopBadgeKind.mute);
-      expect(
-        find.descendant(
-          of: key('wallet-power-tag'),
-          matching: find.byType(LoopIcon),
-        ),
         findsNothing,
       );
+      final word = tester.widget<Text>(key('wallet-power-tag-label'));
+      expect(word.data, 'Earns power');
+      expect(word.style!.color, LoopColors.textSecondary);
+      final info = tester.widget<WalletFigmaGlyph>(
+        find.descendant(
+          of: key('wallet-power-tag'),
+          matching: find.byType(WalletFigmaGlyph),
+        ),
+      );
+      expect(info.asset, WalletFigmaGlyph.info);
+      expect(info.size, 16);
     });
 
     testWidgets('a closed write gate says its reason and opens nothing', (

@@ -114,6 +114,7 @@ Map<String, Object?> s6SwapPolicy() => <String, Object?>{
 Map<String, Object?> s6Quote({
   String expiresAt = '2026-09-09T13:36:00.000Z',
   Map<String, Object?>? priceImpact,
+  int? platformFeeBps,
 }) => <String, Object?>{
   'quoteId': s6QuoteId,
   'provider': 'privy',
@@ -126,23 +127,25 @@ Map<String, Object?> s6Quote({
   'quotedAt': '2026-09-09T13:35:30.000Z',
   'expiresAt': expiresAt,
   'priceImpact': priceImpact ?? s6PriceImpact(),
-  'platformFeeBps': null,
+  'platformFeeBps': platformFeeBps,
 };
 
-Map<String, Object?> s6QuoteBody({Map<String, Object?>? priceImpact}) =>
-    <String, Object?>{
-      'walletId': s5WalletId,
-      'sourceAsset': s6Asset(),
-      'destinationAsset': s6Asset(assetId: s5UsdtAssetId, symbol: 'USDT'),
-      'quote': s6Quote(priceImpact: priceImpact),
-      'policy': s6SwapPolicy(),
-      'canary': <String, Object?>{
-        'configVersion': 'bscWriteCanaryV1',
-        'canaryMaxUsd': '20',
-        'inputValueUsd': '3.75',
-      },
-      'contractVersion': '2.0',
-    };
+Map<String, Object?> s6QuoteBody({
+  Map<String, Object?>? priceImpact,
+  int? platformFeeBps,
+}) => <String, Object?>{
+  'walletId': s5WalletId,
+  'sourceAsset': s6Asset(),
+  'destinationAsset': s6Asset(assetId: s5UsdtAssetId, symbol: 'USDT'),
+  'quote': s6Quote(priceImpact: priceImpact, platformFeeBps: platformFeeBps),
+  'policy': s6SwapPolicy(),
+  'canary': <String, Object?>{
+    'configVersion': 'bscWriteCanaryV1',
+    'canaryMaxUsd': '20',
+    'inputValueUsd': '3.75',
+  },
+  'contractVersion': '2.0',
+};
 
 Map<String, Object?> s6PreflightBody({
   List<String> warnings = const <String>[
@@ -441,8 +444,12 @@ LoopWalletIntent s6ApprovalIntent({bool isUnlimited = false}) =>
       ),
     );
 
-LoopSwapQuoteView s6QuoteView({Map<String, Object?>? priceImpact}) =>
-    LoopV2IntentCodec.quoteView(s6QuoteBody(priceImpact: priceImpact));
+LoopSwapQuoteView s6QuoteView({
+  Map<String, Object?>? priceImpact,
+  int? platformFeeBps,
+}) => LoopV2IntentCodec.quoteView(
+  s6QuoteBody(priceImpact: priceImpact, platformFeeBps: platformFeeBps),
+);
 
 LoopSendPreflight s6Preflight({
   List<String> warnings = const <String>[

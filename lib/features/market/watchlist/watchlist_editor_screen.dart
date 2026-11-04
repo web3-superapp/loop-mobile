@@ -265,6 +265,26 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               ),
               key: const ValueKey<String>('watchlist-group-label'),
             ),
+            // S353c: the two gestures under the group's name, so the name
+            // and its count are never cut short in English at 360.
+            if (group.items.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  8,
+                ),
+                child: Text(
+                  context.l10n.marketWatchlist_editorWatchlistGroupHint,
+                  key: const ValueKey<String>('watchlist-group-hint'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.caption.copyWith(
+                    color: LoopColors.textSecondary,
+                  ),
+                ),
+              ),
             if (group.items.isEmpty)
               LoopEmptyState(
                 key: const ValueKey<String>('watchlist-group-empty'),

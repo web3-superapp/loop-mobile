@@ -407,6 +407,9 @@ class WalletPnlLine extends StatelessWidget {
     required this.onTap,
     super.key,
     this.hasHistory = true,
+    this.leading,
+    this.leadingText,
+    this.leadingExtra = 0,
   });
 
   final String keyPrefix;
@@ -418,22 +421,56 @@ class WalletPnlLine extends StatelessWidget {
   /// Whether the week was read, so 今日盈亏 has something true to say.
   final bool hasHistory;
 
+  /// The ¥ amount before 今日盈亏 (S353c · docs/58 §5.10: 「≈ ¥0.00 |
+  /// 今日盈亏 —」 is one line), when the server published one.
+  final Widget? leading;
+
+  /// [leading]'s words, measured to tell whether the line fits.
+  final String? leadingText;
+
+  /// What [leading] draws beyond [leadingText] (a stale badge).
+  final double leadingExtra;
+
+  /// The rule with its margins (21), the gaps (6 + 6) and the chevron (14).
+  static const double _fixedWidth = 21 + 12 + 14;
+
+  static double _width(
+    BuildContext context,
+    List<String> parts,
+    TextStyle style,
+  ) {
+    final scaler = MediaQuery.textScalerOf(context);
+    var total = 0.0;
+    for (final part in parts) {
+      final painter = TextPainter(
+        text: TextSpan(text: part, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      total += painter.width;
+      painter.dispose();
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final secondary = LoopGround.secondaryOf(context);
-    final auxiliary = LoopGround.auxiliaryOf(context);
+    final secondary = LoopColors.textSecondary;
     final move = change;
     final value = move == null
         ? context.l10n.common_none
         : walletSignedUsdText(move.usd, move.pct, hidden: hidden);
-    final colour = move == null
-        ? auxiliary
-        : hidden
+    final colour = move == null || hidden
         ? secondary
         : LoopPriceMove.of(move.usd).color;
     final action = expanded
         ? context.l10n.wallet_networthBuild
         : context.l10n.wallet_networthS;
+    // §5.10: 14 / 400 secondary. The frame's bar between the ¥ amount and
+    // 今日盈亏 is a near-invisible 「|」; here a 1 × 12 rule in dividerSolid.
+    final style = LoopType.body2Sm.copyWith(color: secondary);
+    final lead = leading;
     return Semantics(
       button: true,
       expanded: expanded,
@@ -449,30 +486,73 @@ class WalletPnlLine extends StatelessWidget {
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
-          child: Row(
-            children: <Widget>[
-              if (hasHistory) ...<Widget>[
-                Text(
-                  context.l10n.wallet_networthBuild2,
-                  style: LoopType.body.copyWith(color: LoopColors.chalk),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    value,
-                    key: ValueKey<String>('$keyPrefix-pnl-value'),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final pnl = <Widget>[
+                if (hasHistory) ...<Widget>[
+                  Text(
+                    context.l10n.wallet_networthBuild2,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopType.figureSm.copyWith(color: colour),
+                    style: style,
                   ),
-                ),
-                const SizedBox(width: 8),
-              ] else
-                const Spacer(),
-              // S355d: the English label is longer; it gives way before the
-              // figure does.
-              Flexible(child: WalletNetWorthChevron(expanded: expanded)),
-            ],
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      value,
+                      key: ValueKey<String>('$keyPrefix-pnl-value'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.copyWith(color: colour),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 6),
+                WalletNetWorthChevron(expanded: expanded),
+              ];
+              // §5.10 keeps the ¥ amount and 今日盈亏 on one line; when the
+              // two do not fit (a long ¥ figure in English at 360), the ¥
+              // amount takes a line of its own rather than cut 今日盈亏.
+              final split =
+                  lead != null &&
+                  hasHistory &&
+                  _width(context, <String>[
+                            leadingText ?? '',
+                            context.l10n.wallet_networthBuild2,
+                            value,
+                          ], style) +
+                          _fixedWidth +
+                          leadingExtra >
+                      constraints.maxWidth;
+              if (lead == null) return Row(children: pnl);
+              if (split) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      lead,
+                      const SizedBox(height: 4),
+                      Row(children: pnl),
+                    ],
+                  ),
+                );
+              }
+              return Row(
+                children: <Widget>[
+                  Flexible(child: lead),
+                  if (hasHistory)
+                    Container(
+                      key: ValueKey<String>('$keyPrefix-pnl-rule'),
+                      width: 1,
+                      height: 12,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      color: LoopColors.dividerSolid,
+                    ),
+                  ...pnl,
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -480,43 +560,130 @@ class WalletPnlLine extends StatelessWidget {
   }
 }
 
-/// 「净值走势 ⌄」 closed, 「收起 ⌃」 open — the right end of [WalletPnlLine].
-/// It draws only; the line around it takes the tap.
+/// The chevron after 今日盈亏: down closed, up open. It draws only; the line
+/// around it takes the tap. S353c (docs/58 §5.10): the frame has no word
+/// here — 「净值走势」 / 「收起」 is the line's spoken label, not drawn text.
 class WalletNetWorthChevron extends StatelessWidget {
   const WalletNetWorthChevron({required this.expanded, super.key});
 
   final bool expanded;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => Semantics(
     key: ValueKey<String>(
       expanded ? 'wallet-networth-collapse' : 'wallet-networth-expand',
     ),
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Flexible(
-        child: Text(
-          expanded
-              ? context.l10n.wallet_networthWalletNetworthChevronLabel
-              : context.l10n.wallet_networthWalletNetworthChevronLabel2,
-          key: const ValueKey<String>('wallet-networth-chevron-label'),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LoopType.captionSm.copyWith(
-            color: LoopGround.secondaryOf(context),
+    label: expanded
+        ? context.l10n.wallet_networthWalletNetworthChevronLabel
+        : context.l10n.wallet_networthWalletNetworthChevronLabel2,
+    child: RotatedBox(
+      // The chevron sprite points right; a quarter turn points down.
+      quarterTurns: expanded ? 3 : 1,
+      child: LoopIcon('chevron', size: 14, color: LoopColors.textSecondary),
+    ),
+  );
+}
+
+/// The week's net worth at the right of 总资产 (S353c · docs/58 §5.10):
+/// 124 × 86, a 2.2 Yellow line over a Yellow wash from 28 % to nothing and
+/// a dot on the latest snapshot. A tap opens the chart below, as the
+/// 今日盈亏 line does.
+class WalletNetWorthTrend extends StatelessWidget {
+  const WalletNetWorthTrend({
+    required this.history,
+    required this.expanded,
+    required this.onTap,
+    super.key,
+  });
+
+  final LoopNetWorthHistory history;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  static const Size size = Size(124, 86);
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    expanded: expanded,
+    label: expanded
+        ? context.l10n.wallet_networthWalletNetworthChevronLabel
+        : context.l10n.wallet_networthWalletNetworthChevronLabel2,
+    excludeSemantics: true,
+    child: LoopPressable(
+      scale: false,
+      onTap: onTap,
+      child: SizedBox.fromSize(
+        size: size,
+        child: CustomPaint(
+          painter: WalletNetWorthTrendPainter(
+            values: <Decimal>[
+              for (final point in history.points) point.netWorthUsd,
+            ],
           ),
         ),
       ),
-      const SizedBox(width: 2),
-      RotatedBox(
-        // The chevron sprite points right; a quarter turn points down.
-        quarterTurns: expanded ? 3 : 1,
-        child: LoopIcon(
-          'chevron',
-          size: 14,
-          color: LoopGround.auxiliaryOf(context),
-        ),
-      ),
-    ],
+    ),
   );
+}
+
+/// Paints [WalletNetWorthTrend]: the line, its wash and the end dot.
+class WalletNetWorthTrendPainter extends CustomPainter {
+  const WalletNetWorthTrendPainter({required this.values});
+
+  final List<Decimal> values;
+
+  static const double strokeWidth = 2.2;
+  static const double dotRadius = 3;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Room for the dot at the edges; the chart painter's own geometry.
+    const inset = dotRadius + 1;
+    final plotSize = Size(size.width - inset * 2, size.height - inset * 2);
+    final plotted = <Offset>[
+      for (final point in WalletNetWorthChartPainter.points(
+        values,
+        Size(plotSize.width, plotSize.height + 36),
+      ))
+        point.translate(inset, inset - 18),
+    ];
+    if (plotted.length < 2) return;
+    final line = Path()..moveTo(plotted.first.dx, plotted.first.dy);
+    for (final point in plotted.skip(1)) {
+      line.lineTo(point.dx, point.dy);
+    }
+    final area = Path.from(line)
+      ..lineTo(plotted.last.dx, size.height)
+      ..lineTo(plotted.first.dx, size.height)
+      ..close();
+    canvas.drawPath(
+      area,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: WalletNetWorthChartPainter.washColors(),
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = LoopColors.yellow
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round
+        ..isAntiAlias = true,
+    );
+    canvas.drawCircle(
+      plotted.last,
+      dotRadius,
+      Paint()..color = LoopColors.yellow,
+    );
+  }
+
+  @override
+  bool shouldRepaint(WalletNetWorthTrendPainter oldDelegate) =>
+      !listEquals(oldDelegate.values, values);
 }

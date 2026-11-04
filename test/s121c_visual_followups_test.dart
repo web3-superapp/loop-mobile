@@ -30,7 +30,7 @@ void main() {
 
   group('1 · wallet asset rows (钱包 C, decision 0188 supersedes 0123)', () {
     testWidgets('logo 40, symbol 15, amount 13, value 11 grey, '
-        'the 24h line and two quiet actions', (tester) async {
+        'the 24h line and no row actions', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -49,7 +49,8 @@ void main() {
           (widget) => widget.runtimeType.toString() == 'LoopTokenLogo',
         ),
       );
-      expect(tester.getSize(logo), const Size(40, 40));
+      // S353c · decision 0280 (docs/58 §5.13): the holdings avatar, 36.
+      expect(tester.getSize(logo), const Size(36, 36));
       final symbol = tester.widget<Text>(
         find.descendant(of: row, matching: find.text('BNB')).first,
       );
@@ -59,13 +60,15 @@ void main() {
       final amount = tester.widget<Text>(
         key('wallet-balance-amount-$s5NativeAssetId'),
       );
-      expect(amount.style!.fontSize, LoopType.figure.fontSize);
-      expect(amount.style!.fontWeight, LoopType.figure.fontWeight);
+      // S353c (§5.13): the amount is 14 / 600.
+      expect(amount.style!.fontSize, LoopType.figureSm.fontSize);
+      expect(amount.style!.fontWeight, LoopType.figureSm.fontWeight);
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5NativeAssetId'),
       );
-      // Decision 0229: the caption size, 14.
-      expect(value.style!.fontSize, 14);
+      // S353c (§5.13): the value is 12 / 300 secondary.
+      expect(value.style!.fontSize, 12);
+      expect(value.style!.fontWeight, FontWeight.w300);
       expect(value.style!.color, LoopColors.text2);
       // S343 · decision 0271: the grey line is one short fact — here the
       // price note; the gas reserve is stated on the asset's own page.
@@ -77,8 +80,9 @@ void main() {
       // Decision 0277: the caption step, 12.
       expect(mark.style!.fontSize, LoopType.captionSm.fontSize);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
-      expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);
-      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsOneWidget);
+      // S353c · decision 0280: no 发送 / 兑换 under the row any more.
+      expect(key('wallet-balance-send-$s5NativeAssetId'), findsNothing);
+      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

@@ -46,6 +46,7 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_wallet_rows.dart'; // S136
 import 'package:loop_mobile/features/wallet/wallet_holdings.dart';
+import 'package:loop_mobile/features/wallet/wallet_figma_glyph.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
@@ -457,13 +458,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       WalletQuickAction(
         actionKey: const ValueKey<String>('wallet-receive-entry'),
         label: LoopL10n.current.common_receive,
-        glyph: (color) => LoopIcon('arrow-down', size: 22, color: color),
+        glyph: (color) => WalletFigmaGlyph(
+          WalletFigmaGlyph.receive,
+          size: WalletQuickActions.glyphSize,
+          color: color,
+        ),
         onPressed: () => _open(WalletRoute.receive(walletId)),
       ),
       WalletQuickAction(
         actionKey: const ValueKey<String>('wallet-send-entry'),
         label: LoopL10n.current.common_send,
-        glyph: (color) => LoopIcon('arrow-up', size: 22, color: color),
+        glyph: (color) => WalletFigmaGlyph(
+          WalletFigmaGlyph.send,
+          size: WalletQuickActions.glyphSize,
+          color: color,
+        ),
         onPressed: sendGate.isAvailable ? () => _open('/wallet/send') : null,
         blockedReason: sendGate.isAvailable
             ? null
@@ -474,7 +483,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       WalletQuickAction(
         actionKey: const ValueKey<String>('wallet-swap-entry'),
         label: LoopL10n.current.common_swap,
-        glyph: (color) => LoopIcon('swap-vert', size: 22, color: color),
+        glyph: (color) => WalletFigmaGlyph(
+          WalletFigmaGlyph.swap,
+          size: WalletQuickActions.glyphSize,
+          color: color,
+        ),
         primary: true,
         onPressed: swapGate.isAvailable ? () => _open('/wallet/swap') : null,
         blockedReason: swapGate.isAvailable
@@ -490,8 +503,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       WalletQuickAction(
         actionKey: const ValueKey<String>('wallet-pay-entry'),
         label: LoopL10n.current.wallet_sendScreensSendRecipientScanLabel,
-        glyph: (color) =>
-            Icon(Icons.qr_code_scanner_rounded, size: 22, color: color),
+        glyph: (color) => WalletFigmaGlyph(
+          WalletFigmaGlyph.scan,
+          size: WalletQuickActions.glyphSize,
+          color: color,
+        ),
         onPressed: () => _open('/scan'),
       ),
       // S342 · decision 0270: `/wallet/dapp` opens the in-app browser when
@@ -500,7 +516,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       WalletQuickAction(
         actionKey: const ValueKey<String>('wallet-dapp-entry'),
         label: 'DApp',
-        glyph: (color) => LoopIcon('link', size: 22, color: color),
+        glyph: (color) => WalletFigmaGlyph(
+          WalletFigmaGlyph.link,
+          size: WalletQuickActions.glyphSize,
+          color: color,
+        ),
         onPressed: () => _openProfile('dapp'),
       ),
     ],
@@ -632,7 +652,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     );
   }
 
-  /// 总资产 on its chrome plate (decision 0221); its figure stays Yellow.
+  /// 总资产 (S353c · decision 0280, docs/58 §5.10): straight on the page,
+  /// no plate — the label and its eye, the white figure with the week's
+  /// trend beside it, the ¥ / 今日盈亏 line and the address.
   Widget _totalPlate({
     required LoopWalletBalances? balances,
     required bool balancesLoading,
@@ -640,19 +662,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     required bool directoryEmpty,
     required String? walletId,
     required LoopChainResourceState<LoopWalletBalances>? balancesState,
-  }) => LoopChromePlate(
+  }) => Padding(
     key: const ValueKey<String>('wallet-total-plate'),
-    mark: LoopChromePlateMark.tag,
-    // v3 (decision 0229): 28 from the plate to the keys (they keep 10
-    // of their own above them). S350c: 16 above it, where the person's
-    // card used to end on a rule.
-    margin: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.segmentGap,
-      LoopSpacing.page,
-      LoopSpacing.bannerGap - 10,
-    ),
-    padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
+    // 16 under the person's card; the keys keep their own 18 above them.
+    padding: const EdgeInsets.only(top: LoopSpacing.segmentGap),
     child: WalletTotalHeader(
       key: const ValueKey<String>('wallet-folio'),
       keyPrefix: 'wallet',
@@ -710,7 +723,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
       onRetry: retry,
       onBlocked: _blocked,
-      actions: _rowActions(row, sendGate, swapGate),
+      // S353c · decision 0280: no 发送 / 兑换 under a row (the Figma's
+      // holdings row); the asset page the row opens carries both.
+      actions: const <WalletRowAction>[],
     );
     final launch2Rows = <Widget>[
       for (final entry in walletHoldings(
@@ -752,6 +767,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
               key: ValueKey<String>('wallet-balances-state-empty'),
               illustration: LoopIllustration.history,
               title: LoopL10n.current.wallet_moneyAssetPickerTitle2,
+              // S353c (docs/58 §5.19): the page-size crown, 106.
+              art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
               compact: true,
             ),
           ...launch2Rows,
@@ -801,6 +818,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                 illustration: LoopIllustration.history,
                 title:
                     LoopL10n.current.wallet_readScreensWalletBalancesEmptyTitle,
+                // S353c (docs/58 §5.19): the page-size crown, 106.
+                art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
                 compact: true,
               ),
           ],
@@ -870,6 +889,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
           key: ValueKey<String>('wallet-nft-empty'),
           illustration: LoopIllustration.launchpad,
           title: LoopL10n.current.wallet_readScreensWalletNftEmptyTitle,
+          // S353c (docs/58 §5.19): the page-size crown, 106.
+          art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
           compact: true,
         ),
       ];
@@ -897,43 +918,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
       ),
     ];
   }
-
-  /// 发送 / 兑换 under a balance row (decision 0188). Each promises what the
-  /// four keys above promise: the same gate, the same server sentence when
-  /// it is shut. 兑换 starts from this row's asset.
-  List<WalletRowAction> _rowActions(
-    LoopAssetBalanceRow row,
-    LoopCapabilityProjection sendGate,
-    LoopCapabilityProjection swapGate,
-  ) => <WalletRowAction>[
-    WalletRowAction(
-      label: LoopL10n.current.common_send,
-      actionKey: ValueKey<String>('wallet-balance-send-${row.assetId}'),
-      onPressed: sendGate.isAvailable ? () => _open('/wallet/send') : null,
-      blockedReason: sendGate.isAvailable
-          ? null
-          : loopReasonCodeText(
-              sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-            ),
-    ),
-    WalletRowAction(
-      label: LoopL10n.current.common_swap,
-      actionKey: ValueKey<String>('wallet-balance-swap-${row.assetId}'),
-      onPressed: swapGate.isAvailable
-          ? () => _open(
-              Uri(
-                path: '/wallet/swap',
-                queryParameters: <String, String>{'from': row.assetId},
-              ).toString(),
-            )
-          : null,
-      blockedReason: swapGate.isAvailable
-          ? null
-          : loopReasonCodeText(
-              swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-            ),
-    ),
-  ];
 
   /// One short line per failure, so the asset list keeps its place.
   String _balancesFailureLine(

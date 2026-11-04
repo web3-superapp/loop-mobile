@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/wallet_home_widgets.dart';
@@ -354,17 +355,15 @@ void main() {
   });
 
   group('总资产 · 钱包 C header', () {
-    testWidgets('the figure carries USD, the ¥ line and 今日盈亏 in rise', (
-      tester,
-    ) async {
+    // S353c · decision 0280 (docs/58 §5.10): no 「USD」 after the figure.
+    testWidgets('the figure, the ¥ line and 今日盈亏 in rise', (tester) async {
       await pumpWallet(tester, history: _FakeHistory());
 
       expect(
         tester.widget<Text>(key('wallet-total-figure')).style!.fontSize,
-        // Decision 0224: the chrome plate's figure, Anton 40.
         LoopType.plateFigure.fontSize,
       );
-      expect(key('wallet-total-unit'), findsOneWidget);
+      expect(key('wallet-total-unit'), findsNothing);
       expect(
         tester
             .widget<Text>(key('wallet-total-subline'))
@@ -426,8 +425,11 @@ void main() {
       expect(key('wallet-networth-expand'), findsOneWidget);
       expect(key('wallet-networth-spark'), findsNothing);
       double top(String value) => tester.getTopLeft(key(value)).dy;
-      expect(top('wallet-total-figure'), lessThan(top('wallet-address-copy')));
-      expect(top('wallet-address-copy'), lessThan(top('wallet-pnl')));
+      // S353c · decision 0280 (docs/58 §5.10): figure → ¥ | 今日盈亏 →
+      // address; the week's trend beside the figure.
+      expect(top('wallet-total-figure'), lessThan(top('wallet-pnl')));
+      expect(top('wallet-pnl'), lessThan(top('wallet-address-copy')));
+      expect(key('wallet-networth-trend'), findsOneWidget);
 
       await openChart(tester);
       expect(key('wallet-networth-collapse'), findsOneWidget);
@@ -635,15 +637,22 @@ void main() {
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
       expect(key('wallet-networth-chart'), findsOneWidget);
+      // S353c (docs/58 §5.10): the chevron's word is spoken, not drawn.
       expect(
-        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        tester
+            .widget<Semantics>(key('wallet-networth-collapse'))
+            .properties
+            .label,
         'Collapse',
       );
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
       expect(key('wallet-networth-panel'), findsNothing);
       expect(
-        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        tester
+            .widget<Semantics>(key('wallet-networth-expand'))
+            .properties
+            .label,
         'Net value trend',
       );
       // Folding asks for nothing beyond the week 今日盈亏 reads.
@@ -843,7 +852,9 @@ void main() {
   });
 
   group('余额 rows', () {
-    testWidgets('发送 / 兑换 open their routes, 兑换 from the row\'s asset', (
+    // S353c · decision 0280: the Figma's holdings row has no 发送 / 兑换
+    // under it; the row opens its asset page, which carries both.
+    testWidgets('a row carries no 发送 / 兑换 and opens its asset page', (
       tester,
     ) async {
       final opened = <String>[];
@@ -856,35 +867,11 @@ void main() {
           swapEvidencePending: false,
         ),
       );
-      final send = key('wallet-balance-send-$s5NativeAssetId');
-      final swap = key('wallet-balance-swap-$s5NativeAssetId');
-      expect(tester.widget<LoopSeg>(send).quiet, isTrue);
-      expect(tester.widget<LoopSeg>(swap).quiet, isTrue);
-      await tester.tap(send);
+      expect(key('wallet-balance-send-$s5NativeAssetId'), findsNothing);
+      expect(key('wallet-balance-swap-$s5NativeAssetId'), findsNothing);
+      await tester.tap(key('wallet-balance-open-$s5NativeAssetId'));
       await tester.pumpAndSettle();
-      await tester.tap(swap);
-      await tester.pumpAndSettle();
-      expect(opened, <String>[
-        '/wallet/send',
-        Uri(
-          path: '/wallet/swap',
-          queryParameters: <String, String>{'from': s5NativeAssetId},
-        ).toString(),
-      ]);
-      expect(Uri.parse(opened.last).queryParameters['from'], s5NativeAssetId);
-    });
-
-    testWidgets('a closed gate keeps the chip and opens nothing', (
-      tester,
-    ) async {
-      final opened = <String>[];
-      await pumpWallet(tester, onNavigate: opened.add);
-      await tester.tap(key('wallet-balance-send-$s5NativeAssetId'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
-      expect(opened, isEmpty);
-      expect(find.textContaining('On-chain actions'), findsWidgets);
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      expect(opened, <String>[MarketAssetRoute.walletAsset(s5NativeAssetId)]);
     });
 
     testWidgets('a row without a 24h figure draws no 24 小时 line', (

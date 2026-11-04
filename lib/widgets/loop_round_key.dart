@@ -44,6 +44,7 @@ class LoopRoundKey extends StatefulWidget {
     this.badge,
     this.semanticLabel,
     this.onBlocked,
+    this.bare = false,
   });
 
   final String icon;
@@ -61,6 +62,11 @@ class LoopRoundKey extends StatefulWidget {
 
   /// Answers a tap on a key that cannot act.
   final VoidCallback? onBlocked;
+
+  /// S353c · decision 0280 (docs/58 §5.11, the wallet frame's quick keys):
+  /// no face — the 24 glyph over a 14 / 500 word, primary text colour, a
+  /// closed key in the tertiary colour. [tone] only keeps the fall colour.
+  final bool bare;
 
   @override
   State<LoopRoundKey> createState() => _LoopRoundKeyState();
@@ -105,6 +111,11 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
     final pressed = _pressed && enabled;
     final count = widget.badge;
     final onTap = widget.onPressed ?? widget.onBlocked;
+    final bareInk = !enabled
+        ? LoopColors.textTertiary
+        : widget.tone == LoopRoundKeyTone.fall
+        ? LoopColors.fall
+        : LoopColors.textPrimary;
     return Semantics(
       button: true,
       enabled: enabled,
@@ -124,71 +135,113 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
         onPointerCancel: (_) => _setPressed(false),
         child: LoopPressable(
           onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 80, minWidth: 64),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: <Widget>[
-                    Container(
-                      key: const ValueKey<String>('loop-round-key-face'),
-                      width: loopRoundKeyDiameter,
-                      height: loopRoundKeyDiameter,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: pressed
-                            ? (face == LoopColors.yellow
-                                  ? LoopColors.yellowPressed
-                                  : LoopColors.line)
-                            : face,
-                        borderRadius: LoopRadius.button,
-                        border: edge == null ? null : Border.all(color: edge),
+          child: widget.bare
+              ? Container(
+                  constraints: const BoxConstraints(minHeight: 58),
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      LoopIcon(
+                        widget.icon,
+                        key: const ValueKey<String>('loop-round-key-glyph'),
+                        size: 24,
+                        color: bareInk,
                       ),
-                      child: LoopIcon(widget.icon, size: 24, color: glyph),
-                    ),
-                    if (count != null)
-                      Positioned(
-                        right: -4,
-                        top: -2,
-                        child: Container(
-                          constraints: const BoxConstraints(minWidth: 20),
-                          height: 20,
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: LoopColors.yellow,
-                            borderRadius: LoopRadius.round,
-                            border: Border.all(color: LoopColors.ink, width: 2),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.label,
+                        // A long English word (Direct message) takes a second line
+                        // rather than an ellipsis.
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: LoopType.label.copyWith(color: bareInk),
+                      ),
+                    ],
+                  ),
+                )
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 80,
+                    minWidth: 64,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          Container(
+                            key: const ValueKey<String>('loop-round-key-face'),
+                            width: loopRoundKeyDiameter,
+                            height: loopRoundKeyDiameter,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: pressed
+                                  ? (face == LoopColors.yellow
+                                        ? LoopColors.yellowPressed
+                                        : LoopColors.line)
+                                  : face,
+                              borderRadius: LoopRadius.button,
+                              border: edge == null
+                                  ? null
+                                  : Border.all(color: edge),
+                            ),
+                            child: LoopIcon(
+                              widget.icon,
+                              size: 24,
+                              color: glyph,
+                            ),
                           ),
-                          child: Text(
-                            count,
-                            style: LoopTypography.withWeight(
-                              LoopType.figureXs,
+                          if (count != null)
+                            Positioned(
+                              right: -4,
+                              top: -2,
+                              child: Container(
+                                constraints: const BoxConstraints(minWidth: 20),
+                                height: 20,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: LoopColors.yellow,
+                                  borderRadius: LoopRadius.round,
+                                  border: Border.all(
+                                    color: LoopColors.ink,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Text(
+                                  count,
+                                  style: LoopTypography.withWeight(
+                                    LoopType.figureXs,
+                                    FontWeight.w600,
+                                  ).copyWith(color: LoopColors.ink),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            LoopTypography.withWeight(
+                              LoopType.titleSm,
                               FontWeight.w600,
-                            ).copyWith(color: LoopColors.ink),
-                          ),
-                        ),
+                            ).copyWith(
+                              color: enabled
+                                  ? LoopColors.chalk
+                                  : LoopColors.text3,
+                            ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      LoopTypography.withWeight(
-                        LoopType.titleSm,
-                        FontWeight.w600,
-                      ).copyWith(
-                        color: enabled ? LoopColors.chalk : LoopColors.text3,
-                      ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -201,17 +254,34 @@ class LoopRoundKeyRow extends StatelessWidget {
     required this.keys,
     super.key,
     this.padding = const EdgeInsets.fromLTRB(8, 20, 8, 4),
+    this.ruled = false,
   });
 
   final List<Widget> keys;
   final EdgeInsetsGeometry padding;
+
+  /// S353c (docs/58 §5.11): a 1 × 28 `dividerSolid` rule between two keys,
+  /// for a row of [LoopRoundKey.bare] keys.
+  final bool ruled;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: padding,
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[for (final entry in keys) Expanded(child: entry)],
+      children: <Widget>[
+        for (var index = 0; index < keys.length; index++) ...<Widget>[
+          if (ruled && index > 0)
+            Container(
+              width: 1,
+              height: 28,
+              // Level with a bare key's glyph and one-line word.
+              margin: const EdgeInsets.only(top: 15),
+              color: LoopColors.dividerSolid,
+            ),
+          Expanded(child: keys[index]),
+        ],
+      ],
     ),
   );
 }

@@ -1122,54 +1122,59 @@ class ProfileIdentityCard extends StatelessWidget {
             LoopSpacing.page,
             0,
           ),
-          child: Row(
+          // S353c: the counts on the left, 「Joined …」 on the right; when
+          // the English words do not fit on one 360-wide line, 「Joined …」
+          // drops under the counts instead of cutting either short.
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: <Widget>[
-              if (counts != null) ...<Widget>[
-                Flexible(
-                  child: _ProfileCountLink(
-                    key: const ValueKey<String>('profile-following-count'),
-                    figure: counts.following,
-                    label: context.l10n.common_following,
-                    onTap: onOpenConnections,
-                  ),
+              if (counts != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Flexible(
+                      child: _ProfileCountLink(
+                        key: const ValueKey<String>('profile-following-count'),
+                        figure: counts.following,
+                        label: context.l10n.common_following,
+                        onTap: onOpenConnections,
+                      ),
+                    ),
+                    Container(width: 1, height: 14, color: LoopColors.line2),
+                    Flexible(
+                      child: _ProfileCountLink(
+                        key: const ValueKey<String>('profile-followers-count'),
+                        figure: counts.followers,
+                        label: context.l10n.common_followers,
+                        onTap: onOpenConnections,
+                      ),
+                    ),
+                  ],
                 ),
-                Container(width: 1, height: 14, color: LoopColors.line2),
-                Flexible(
-                  child: _ProfileCountLink(
-                    key: const ValueKey<String>('profile-followers-count'),
-                    figure: counts.followers,
-                    label: context.l10n.common_followers,
-                    onTap: onOpenConnections,
-                  ),
-                ),
-              ],
-              const SizedBox(width: 8),
-              Expanded(
-                child: activatedAt == null
-                    ? const SizedBox.shrink()
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          const LoopIcon(
-                            'id',
-                            size: 14,
+              if (activatedAt != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const LoopIcon('id', size: 14, color: LoopColors.text3),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          joinedLine(activatedAt),
+                          key: const ValueKey<String>('profile-joined'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopType.caption.copyWith(
                             color: LoopColors.text3,
                           ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              joinedLine(activatedAt),
-                              key: const ValueKey<String>('profile-joined'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: LoopType.caption.copyWith(
-                                color: LoopColors.text3,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-              ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

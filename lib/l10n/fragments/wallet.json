@@ -3156,7 +3156,7 @@
     "zh": "无法打开这个资产"
   },
   "wallet_readScreensWalletAssetMarketActionTitle": {
-    "en": "Wallet asset · {asset}",
+    "en": "{asset}",
     "placeholders": {
       "asset": {
         "example": "asset?.symbol ?? row?.symbol ?? '—'",

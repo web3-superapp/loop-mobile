@@ -5534,7 +5534,7 @@
   "@common_devPreview": {
     "description": "common"
   },
-  "common_directMessage": "Direct message",
+  "common_directMessage": "Message",
   "@common_directMessage": {
     "description": "common"
   },
@@ -18924,7 +18924,11 @@
   "@marketWatchlist_editorWatchlistGroupEmptyTitle": {
     "description": "lib/features/market/watchlist/watchlist_editor_screen.dart:254"
   },
-  "marketWatchlist_editorWatchlistGroupLabel": "{name} {items} · Drag to sort · Swipe left to delete",
+  "marketWatchlist_editorWatchlistGroupHint": "Drag to sort · Swipe left to delete",
+  "@marketWatchlist_editorWatchlistGroupHint": {
+    "description": "lib/features/market/watchlist/watchlist_editor_screen.dart:270"
+  },
+  "marketWatchlist_editorWatchlistGroupLabel": "{name} {items}",
   "@marketWatchlist_editorWatchlistGroupLabel": {
     "description": "lib/features/market/watchlist/watchlist_editor_screen.dart:247",
     "placeholders": {
@@ -32009,7 +32013,7 @@
   "@wallet_readScreensWalletAssetInvalidTitle": {
     "description": "lib/features/wallet/wallet_read_screens.dart:1017"
   },
-  "wallet_readScreensWalletAssetMarketActionTitle": "Wallet asset · {asset}",
+  "wallet_readScreensWalletAssetMarketActionTitle": "{asset}",
   "@wallet_readScreensWalletAssetMarketActionTitle": {
     "description": "lib/features/wallet/wallet_read_screens.dart:1092",
     "placeholders": {

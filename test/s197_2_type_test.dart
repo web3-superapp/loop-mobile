@@ -163,7 +163,8 @@ void main() {
       _expectStep(_painted(tester, find.text('WBNB')), LoopType.title);
       _expectStep(
         _painted(tester, _key('wallet-balance-amount-${healthy.assetId}')),
-        LoopType.figure,
+        // S353c · decision 0280 (docs/58 §5.13): the amount is 14 / 600.
+        LoopType.figureSm,
       );
       // S343 · decision 0271: this row's one grey fact is its price note.
       _expectStep(
@@ -172,8 +173,8 @@ void main() {
       );
       _expectStep(
         _painted(tester, _key('wallet-balance-value-${healthy.assetId}')),
-        // Decision 0277: figureXs (13) and figureSm (14) are two steps now.
-        LoopType.figureSm,
+        // S353c · decision 0280 (docs/58 §5.13): the value is 12 / 300.
+        LoopType.caption,
       );
       expect(tester.takeException(), isNull);
     });

@@ -8,6 +8,7 @@ import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_figma_glyph.dart';
 import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_networth_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
@@ -239,8 +240,13 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
                 ),
               ),
               if (fullAddress != null) ...<Widget>[
-                const SizedBox(width: 4),
-                LoopIcon('copy', size: 12, color: auxiliary),
+                // §5.10: gap 7, the copy glyph 16.
+                const SizedBox(width: 7),
+                WalletFigmaGlyph(
+                  WalletFigmaGlyph.copy,
+                  size: 16,
+                  color: auxiliary,
+                ),
               ],
             ],
           ),
@@ -296,32 +302,23 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
 
     final caption = walletNetWorthCaption(netWorth);
 
-    final figureRow = Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            figure,
-            key: ValueKey<String>('$keyPrefix-total-figure'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            // Decision 0224: the chrome plate's figure — Inter Bold 40 in
-            // Yellow (docs/42 §2 keeps Inter Bold for big figures).
-            style: figureIsAmount
-                ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
-                : LoopType.headingSm.copyWith(color: secondary),
-          ),
+    // S353c · decision 0280 (docs/58 §5.10): the figure is Inter 40 / 700
+    // in white, no unit after it — the `$` already says USD. It scales down
+    // rather than cut a long figure short.
+    final figureRow = Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          figure,
+          key: ValueKey<String>('$keyPrefix-total-figure'),
+          maxLines: 1,
+          style: figureIsAmount
+              ? LoopType.plateFigure.copyWith(color: LoopColors.textPrimary)
+              : LoopType.headingSm.copyWith(color: secondary),
         ),
-        if (figureIsAmount) ...<Widget>[
-          const SizedBox(width: 4),
-          Text(
-            'USD',
-            key: ValueKey<String>('$keyPrefix-total-unit'),
-            style: LoopType.body.copyWith(color: LoopColors.text2),
-          ),
-        ],
-      ],
+      ),
     );
 
     final fiatText = fiat != null && fiat.currency == 'CNY'
@@ -332,113 +329,114 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     // right after the ¥ amount; the line's words do not change.
     final fiatStale = fiatText != null && fiat!.stale;
     final staleMarker = loopFactQualityMarker(LoopFactQuality.stale)!;
-    final sublineStyle = LoopType.caption.copyWith(color: auxiliary);
+    // §5.10: 「总资产」, the ¥ line and the address are 14 / 400 secondary.
+    final sublineStyle = LoopType.body2Sm.copyWith(
+      color: LoopColors.textSecondary,
+    );
     final address = widget.address;
 
-    final left = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Text(
-              context.l10n.wallet_homeText,
-              style: LoopType.caption.copyWith(color: secondary),
+    final fiatLine = fiatText == null
+        ? null
+        : Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(text: fiatText),
+                if (fiatStale)
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: LoopBadge(
+                        staleMarker,
+                        key: ValueKey<String>('$keyPrefix-total-fiat-stale'),
+                        kind: LoopBadgeKind.down,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            _HeaderGlyphButton(
-              key: ValueKey<String>('$keyPrefix-eye'),
-              label: hidden
-                  ? context.l10n.wallet_homeLabel2
-                  : context.l10n.wallet_homeLabel3,
-              toggled: hidden,
-              onTap: () => unawaited(
-                ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
-              ),
-              child: Icon(
-                hidden
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                size: 16,
-                color: auxiliary,
-              ),
+            key: ValueKey<String>('$keyPrefix-total-subline'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sublineStyle,
+          );
+
+    // §5.10: the yellow trend at the right of the figure, the week the
+    // server stored; a tap opens the chart as the 今日盈亏 line does. No
+    // history, no trend — never a drawn-in shape.
+    final trend = historyOn && (week?.drawable ?? false)
+        ? Padding(
+            padding: const EdgeInsets.only(left: 8, top: 8),
+            child: WalletNetWorthTrend(
+              key: ValueKey<String>('$keyPrefix-networth-trend'),
+              history: week!,
+              expanded: expanded,
+              onTap: _toggle,
             ),
-            const Spacer(),
-            if (widget.environmentTag case final String tag)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: LoopEnvironmentTag(
-                  tag,
-                  key: ValueKey<String>('$keyPrefix-environment-tag'),
-                ),
-              ),
-          ],
-        ),
-        if (widget.loading && netWorth == null)
-          Padding(
-            key: ValueKey<String>('$keyPrefix-total-loading'),
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: const LoopSkeletonBlock(width: 168, height: 30),
           )
-        else
-          figureRow,
-        if (fiatText != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: fiatText),
-                  if (fiatStale)
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 6),
-                        child: LoopBadge(
-                          staleMarker,
-                          key: ValueKey<String>('$keyPrefix-total-fiat-stale'),
-                          kind: LoopBadgeKind.down,
-                        ),
+        : null;
+
+    final head = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      context.l10n.wallet_homeText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sublineStyle,
+                    ),
+                  ),
+                  _HeaderGlyphButton(
+                    key: ValueKey<String>('$keyPrefix-eye'),
+                    label: hidden
+                        ? context.l10n.wallet_homeLabel2
+                        : context.l10n.wallet_homeLabel3,
+                    toggled: hidden,
+                    onTap: () => unawaited(
+                      ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
+                    ),
+                    child: hidden
+                        ? Icon(
+                            Icons.visibility_off_outlined,
+                            size: 19,
+                            color: LoopColors.textSecondary,
+                          )
+                        : const WalletFigmaGlyph(
+                            WalletFigmaGlyph.eye,
+                            size: 19,
+                            color: LoopColors.textSecondary,
+                          ),
+                  ),
+                  if (widget.environmentTag case final String tag)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: LoopEnvironmentTag(
+                        tag,
+                        key: ValueKey<String>('$keyPrefix-environment-tag'),
                       ),
                     ),
                 ],
               ),
-              key: ValueKey<String>('$keyPrefix-total-subline'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: sublineStyle,
-            ),
-          ),
-        // S349: the address, its copy glyph, then 管理 right after them on
-        // the same line — clear of the plate's lettering on the right.
-        if (address != null || widget.addressTrailing != null)
-          Row(
-            children: <Widget>[
-              if (address != null)
-                Flexible(
-                  child: _addressLine(
-                    context,
-                    address: address,
-                    fullAddress: fullAddress,
-                    sublineStyle: sublineStyle,
-                    auxiliary: auxiliary,
-                  ),
-                ),
-              if (address != null && widget.addressTrailing != null)
-                const SizedBox(width: 8),
-              ?widget.addressTrailing,
+              if (widget.loading && netWorth == null)
+                Padding(
+                  key: ValueKey<String>('$keyPrefix-total-loading'),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: const LoopSkeletonBlock(width: 168, height: 38),
+                )
+              else
+                figureRow,
             ],
           ),
-        if (caption.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, right: 8),
-            child: Text(
-              caption,
-              key: ValueKey<String>('$keyPrefix-total-caption'),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: LoopType.captionSm.copyWith(color: auxiliary),
-            ),
-          ),
+        ),
+        ?trend,
       ],
     );
 
@@ -446,7 +444,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
       key: ValueKey<String>('$keyPrefix-total-header'),
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        4,
+        0,
         LoopSpacing.page,
         2,
       ),
@@ -454,16 +452,11 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          left,
-          // 总资产 → 地址 → 今日盈亏 · 净值走势 ⌄ (decision 0259: the chart is
-          // folded by default; the line is the whole switch, no sparkline
-          // slot beside the total).
-          if (historyOn) ...<Widget>[
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              // Line2: Line is not there on the chrome plate's face.
-              child: Divider(height: 1, thickness: 1, color: LoopColors.line2),
-            ),
+          head,
+          // §5.10: 「≈ ¥0.00 | 今日盈亏 —」 is one line. With a history the
+          // whole line opens the chart (decision 0259); without one the ¥
+          // amount stands alone.
+          if (historyOn)
             WalletPnlLine(
               keyPrefix: keyPrefix,
               change: week?.change24h,
@@ -471,8 +464,43 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
               hidden: hidden,
               expanded: expanded,
               onTap: _toggle,
+              leading: fiatLine,
+              leadingText: fiatText,
+              // The stale badge after the ¥ amount, with its 6 before it.
+              leadingExtra: fiatStale ? 48 : 0,
+            )
+          else if (fiatLine != null)
+            Padding(padding: const EdgeInsets.only(top: 4), child: fiatLine),
+          // S349: the address, its copy glyph, then 管理 right after them.
+          if (address != null || widget.addressTrailing != null)
+            Row(
+              children: <Widget>[
+                if (address != null)
+                  Flexible(
+                    child: _addressLine(
+                      context,
+                      address: address,
+                      fullAddress: fullAddress,
+                      sublineStyle: sublineStyle,
+                      auxiliary: LoopColors.textSecondary,
+                    ),
+                  ),
+                if (address != null && widget.addressTrailing != null)
+                  const SizedBox(width: 12),
+                ?widget.addressTrailing,
+              ],
             ),
-          ],
+          if (caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, right: 8),
+              child: Text(
+                caption,
+                key: ValueKey<String>('$keyPrefix-total-caption'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.caption.copyWith(color: auxiliary),
+              ),
+            ),
           if (expanded)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -522,12 +550,19 @@ class _HeaderGlyphButton extends StatelessWidget {
     excludeSemantics: true,
     child: LoopPressable(
       onTap: onTap,
-      // 44 × 44 (audit 2026-10-09 m3): the glyph stays 36 wide in the eye,
-      // the finger gets the whole square.
+      // 44 × 44 (audit 2026-10-09 m3): the finger gets the whole square.
+      // S353c (docs/58 §5.10): the glyph sits 8 after the word before it,
+      // at the square's leading edge.
       child: SizedBox(
         width: LoopTouch.minimum,
         height: LoopTouch.minimum,
-        child: Center(child: child),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: 8),
+            child: child,
+          ),
+        ),
       ),
     ),
   );
@@ -723,9 +758,10 @@ final class WalletQuickAction {
   final bool primary;
 }
 
-/// 接收 / 发送 / 兑换 / 扫码 — one row, four equal columns, a round glyph
-/// over a label. A closed key keeps its place and says the server's sentence
-/// when pressed.
+/// 接收 / 发送 / 兑换 / 扫码 / DApp — one row of equal keys (S353c ·
+/// decision 0280, docs/58 §5.11): a 24 line glyph over a 14 / 500 word, no
+/// ground, a 1 × 28 rule between two keys. A closed key keeps its place,
+/// dimmed, and says the server's sentence when pressed.
 class WalletQuickActions extends StatelessWidget {
   const WalletQuickActions({
     required this.actions,
@@ -736,76 +772,66 @@ class WalletQuickActions extends StatelessWidget {
   final List<WalletQuickAction> actions;
   final void Function(String reason) onBlocked;
 
-  /// The disc's side where the line has room for it (OKX's 56).
-  static const double discMax = 56;
+  /// The glyph's side (§5.11).
+  static const double glyphSize = 24;
 
-  /// The least room between two discs (S350c: five keys at 360 wide).
-  static const double gapMin = 12;
+  /// The rule between two keys: 1 × 28, `dividerSolid` (§5.11).
+  static const Size ruleSize = Size(1, 28);
 
   @override
   Widget build(BuildContext context) {
-    // S350c · decision 0276: the outer discs stand on the page line, as the
-    // plate above them does, and the keys share the rest evenly; on a narrow
-    // phone the discs give up a little size before the gaps close in.
     return Padding(
       key: const ValueKey<String>('wallet-quick-actions'),
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
-        10,
+        18,
         LoopSpacing.page,
         6,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final count = actions.length;
-          final disc = count < 2
-              ? discMax
-              : math.min(
-                  discMax,
-                  (constraints.maxWidth - gapMin * (count - 1)) / count,
-                );
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              for (final action in actions)
-                _QuickActionTile(
-                  action: action,
-                  onBlocked: onBlocked,
-                  disc: disc,
+      // Top-aligned, so a word that takes a second line never moves its
+      // glyph; the rules sit level with the glyphs and single-line words.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (var index = 0; index < actions.length; index++) ...<Widget>[
+            if (index > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 15),
+                child: Container(
+                  key: ValueKey<String>('wallet-quick-rule-$index'),
+                  width: ruleSize.width,
+                  height: ruleSize.height,
+                  color: LoopColors.dividerSolid,
                 ),
-            ],
-          );
-        },
+              ),
+            Expanded(
+              child: _QuickActionTile(
+                action: actions[index],
+                onBlocked: onBlocked,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
 class _QuickActionTile extends StatelessWidget {
-  const _QuickActionTile({
-    required this.action,
-    required this.onBlocked,
-    required this.disc,
-  });
+  const _QuickActionTile({required this.action, required this.onBlocked});
 
   final WalletQuickAction action;
   final void Function(String reason) onBlocked;
-
-  /// The disc's side; the tile is as wide as its disc.
-  final double disc;
 
   @override
   Widget build(BuildContext context) {
     final run = action.onPressed;
     final reason = action.blockedReason;
     final enabled = run != null;
-    // Decision 0212 (docs/42 附C §6): all four keys are the raised grey
-    // ground with a Chalk glyph — 兑换 included, no solid Yellow — and a
-    // closed key keeps its place on the quiet ground. [primary] is kept on
-    // the model but no longer changes the paint.
-    final ink = enabled ? LoopColors.chalk : LoopGround.auxiliaryOf(context);
-    final ground = enabled ? LoopColors.card2 : LoopColors.bg2;
+    // §5.11: the glyph and the word in the primary text colour; a closed key
+    // keeps its place in the tertiary colour. [primary] is kept on the model
+    // but no longer changes the paint (decision 0212).
+    final ink = enabled ? LoopColors.textPrimary : LoopColors.textTertiary;
     final onTap = run ?? (reason == null ? null : () => onBlocked(reason));
     return Semantics(
       button: true,
@@ -820,41 +846,25 @@ class _QuickActionTile extends StatelessWidget {
       child: LoopPressable(
         key: action.actionKey,
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: 74,
-            minWidth: disc,
-            maxWidth: disc,
-          ),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 58),
+          padding: const EdgeInsets.only(top: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Container(
+              SizedBox.square(
                 key: ValueKey<String>('wallet-quick-disc-${_discId(action)}'),
-                width: disc,
-                height: disc,
-                decoration: BoxDecoration(
-                  color: ground,
-                  borderRadius: LoopRadius.control,
-                ),
-                alignment: Alignment.center,
-                child: action.glyph(ink),
+                dimension: WalletQuickActions.glyphSize,
+                child: Center(child: action.glyph(ink)),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 action.label,
-                maxLines: 1,
+                // A long word takes a second line rather than an ellipsis.
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                // v3 (decision 0229): the key's word at body2, 600.
-                style:
-                    LoopTypography.withWeight(
-                      LoopType.body2,
-                      FontWeight.w600,
-                    ).copyWith(
-                      color: enabled
-                          ? LoopGround.inkOf(context)
-                          : LoopGround.auxiliaryOf(context),
-                    ),
+                textAlign: TextAlign.center,
+                style: LoopType.label.copyWith(color: ink),
               ),
             ],
           ),
@@ -908,10 +918,10 @@ class WalletSectionHeading extends StatelessWidget {
   }
 }
 
-/// 「产生算力」: the small tag beside 资产 that opens the mining note.
+/// 「产生算力」 at the right of 「代币 / NFT」, opening 情报 · 算力.
 ///
-/// Decision 0171 (docs/33 L14): the shared mute `.badge`, in place of the
-/// hand-made r999 outlined capsule; no (i) after it since decision 0255.
+/// S353c · decision 0280 (docs/58 §5.3): the frame's word, 12 / 500
+/// secondary, with the (i) 16 after it — no badge ground.
 class WalletPowerTag extends StatelessWidget {
   const WalletPowerTag({required this.onTap, super.key});
 
@@ -928,11 +938,27 @@ class WalletPowerTag extends StatelessWidget {
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
-          child: Center(
-            widthFactor: 1,
-            // S325 · decision 0255 (UX-009): the tag already says what it
-            // opens; it carries no (i) after it.
-            child: LoopBadge(context.l10n.wallet_homeLoopBadge),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  context.l10n.wallet_homeLoopBadge,
+                  key: const ValueKey<String>('wallet-power-tag-label'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.meta.copyWith(
+                    color: LoopColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const WalletFigmaGlyph(
+                WalletFigmaGlyph.info,
+                size: 16,
+                color: LoopColors.textSecondary,
+              ),
+            ],
           ),
         ),
       ),
@@ -1482,7 +1508,6 @@ class WalletBalanceRow extends StatelessWidget {
     }
     final ink = LoopGround.inkOf(context);
     final secondary = LoopGround.secondaryOf(context);
-    final auxiliary = LoopGround.auxiliaryOf(context);
     final amount = hidden
         ? walletMaskedFigure
         : loopFormatDecimal(balance.displayBalance);
@@ -1523,6 +1548,8 @@ class WalletBalanceRow extends StatelessWidget {
         valueText = context.l10n.wallet_homeValueText;
     }
 
+    // S353c · decision 0280 (docs/58 §5.13): avatar 36, the symbol 14 / 500
+    // over a 12 / 300 line, the amount 14 / 600 over the 12 / 300 value.
     final top = LoopPressable(
       key: ValueKey<String>('wallet-balance-open-${row.assetId}'),
       scale: false,
@@ -1533,7 +1560,7 @@ class WalletBalanceRow extends StatelessWidget {
             assetSymbol: row.symbol,
             logoUrl: row.logoUrl,
             fallbackMonogram: row.symbol,
-            size: 40,
+            size: LoopRowHeight.holdingsAvatar,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1545,39 +1572,23 @@ class WalletBalanceRow extends StatelessWidget {
                   row.symbol,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  // v3 (decision 0229): body1 over a caption line.
-                  style: LoopType.body1.copyWith(color: ink),
+                  style: LoopType.body1.copyWith(color: ink, height: 1.25),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: <Widget>[
-                    // S343 · decision 0271: one short fact — the data
-                    // quality note when there is one, else the asset's name.
-                    if (marks.isEmpty)
-                      Flexible(
-                        child: Text(
-                          subtitle,
-                          key: ValueKey<String>(
-                            'wallet-balance-subtitle-${row.assetId}',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.caption.copyWith(color: auxiliary),
-                        ),
-                      )
-                    else
-                      Flexible(
-                        child: Text(
-                          marks.join(context.l10n.common_listSeparator),
-                          key: ValueKey<String>(
-                            'wallet-balance-mark-${row.assetId}',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.captionSm.copyWith(color: auxiliary),
-                        ),
-                      ),
-                  ],
+                // S343 · decision 0271: one short fact — the data quality
+                // note when there is one, else the asset's name.
+                Text(
+                  marks.isEmpty
+                      ? subtitle
+                      : marks.join(context.l10n.common_listSeparator),
+                  key: ValueKey<String>(
+                    marks.isEmpty
+                        ? 'wallet-balance-subtitle-${row.assetId}'
+                        : 'wallet-balance-mark-${row.assetId}',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.caption.copyWith(color: secondary),
                 ),
               ],
             ),
@@ -1591,11 +1602,11 @@ class WalletBalanceRow extends StatelessWidget {
                 amount,
                 key: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
                 maxLines: 1,
-                style: LoopType.figure.copyWith(color: ink),
+                style: LoopType.figureSm.copyWith(color: ink, height: 1.25),
               ),
               const SizedBox(height: 4),
               // v3 (decision 0229): the value and its 24 h move share the
-              // caption line; the move no longer takes a line of its own.
+              // caption line.
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -1605,7 +1616,7 @@ class WalletBalanceRow extends StatelessWidget {
                       'wallet-balance-value-${row.assetId}',
                     ),
                     maxLines: 1,
-                    style: LoopType.figureSm,
+                    style: LoopType.caption.copyWith(color: secondary),
                   ),
                   if (changePct != null) ...<Widget>[
                     const SizedBox(width: 6),
@@ -1615,10 +1626,7 @@ class WalletBalanceRow extends StatelessWidget {
                         'wallet-balance-change-${row.assetId}',
                       ),
                       maxLines: 1,
-                      style: LoopTypography.withWeight(
-                        LoopType.figureSm,
-                        FontWeight.w600,
-                      ).copyWith(color: changeColour!),
+                      style: LoopType.caption.copyWith(color: changeColour!),
                     ),
                   ],
                 ],
@@ -1632,54 +1640,54 @@ class WalletBalanceRow extends StatelessWidget {
     return Semantics(
       key: ValueKey<String>('wallet-balance-${row.assetId}'),
       container: true,
-      // v3 (decision 0229): no hairline; the row's own 14 above and below.
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: LoopSpacing.rowMinWithSub),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            14,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Semantics(
-                label: context.l10n.wallet_homeLabel15(
-                  amount,
-                  changeText == null
-                      ? ''
-                      : context.l10n.wallet_homeSX(changeText),
-                  subtitle,
-                  row.symbol,
-                  valueText,
-                ),
-                excludeSemantics: true,
-                button: onTap != null,
-                child: top,
+      // §9.4: a holdings row draws no divider; 6 above and below, 51 tall.
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ConstrainedBox(
+              key: ValueKey<String>('wallet-balance-head-${row.assetId}'),
+              constraints: const BoxConstraints(
+                minHeight: LoopRowHeight.holdings,
               ),
-              if (actions.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: WalletRowActions(
-                    actions: actions,
-                    onBlocked: onBlocked,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Center(
+                  child: Semantics(
+                    label: context.l10n.wallet_homeLabel15(
+                      amount,
+                      changeText == null
+                          ? ''
+                          : context.l10n.wallet_homeSX(changeText),
+                      subtitle,
+                      row.symbol,
+                      valueText,
+                    ),
+                    excludeSemantics: true,
+                    button: onTap != null,
+                    child: top,
                   ),
                 ),
-            ],
-          ),
+              ),
+            ),
+            if (actions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: WalletRowActions(actions: actions, onBlocked: onBlocked),
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// 钱包管理 on the 总资产 plate (S349): a small outlined capsule — the wallet
-/// glyph and 「管理」, 28 tall on the plate's own hairline — right after the
-/// address. The finger target stays [LoopTouch.minimum] tall.
+/// 钱包管理 right after the address (S349). S353c · decision 0280 (docs/58
+/// §5.20): the frame's dark secondary button — white 8 %, r8, the wallet
+/// glyph and 「管理」 in Yellow 13 / 600, 28 tall. The finger target stays
+/// [LoopTouch.minimum] tall.
 class WalletManagePill extends StatelessWidget {
   const WalletManagePill({required this.onPressed, super.key});
 
@@ -1687,7 +1695,6 @@ class WalletManagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = LoopGround.secondaryOf(context);
     return Semantics(
       button: true,
       label: context.l10n.wallet_homeLabel16,
@@ -1703,23 +1710,22 @@ class WalletManagePill extends StatelessWidget {
               height: 28,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                borderRadius: LoopRadius.pill,
-                border: Border.all(color: LoopColors.line2),
+                color: LoopColors.buttonGhost,
+                borderRadius: LoopRadius.button,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  LoopIcon('wallet', size: 14, color: ink),
+                  const WalletFigmaGlyph(
+                    WalletFigmaGlyph.wallet,
+                    size: 14,
+                    color: LoopColors.yellow,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     context.l10n.wallet_homeBuild2,
                     maxLines: 1,
-                    // S350c: the address line's own size, one step brighter
-                    // than the address, so the two read as one line.
-                    style: LoopTypography.withWeight(
-                      LoopType.caption,
-                      FontWeight.w600,
-                    ).copyWith(color: ink),
+                    style: LoopType.buttonSm.copyWith(color: LoopColors.yellow),
                   ),
                 ],
               ),

@@ -974,13 +974,14 @@ class _QuoteFacts extends StatelessWidget {
                       LoopPriceImpactDecision.allowed,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
-                LoopKeyValue(
-                  label: context.l10n.wallet_swapScreensLabel2,
-                  value: value.platformFeeBps == null
-                      ? context.l10n.wallet_swapScreensValue
-                      : '${value.platformFeeBps} bps',
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
+                // S353c: no platform fee, no row; a fee is shown as it is.
+                if (value.platformFeeBps case final int bps)
+                  LoopKeyValue(
+                    key: const ValueKey<String>('swap-quote-platform-fee'),
+                    label: context.l10n.wallet_swapScreensLabel2,
+                    value: '$bps bps',
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
                 LoopKeyValue(
                   label: context.l10n.wallet_swapScreensLabel3,
                   value:

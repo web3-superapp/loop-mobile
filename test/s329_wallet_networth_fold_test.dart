@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
 
 import 'support/loop_ground_probe.dart';
+import 'support/loop_shots.dart';
 import 'support/s5_page_harness.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
@@ -92,7 +93,8 @@ void main() {
     expect(_key('wallet-networth-ranges'), findsNothing);
     expect(_key('wallet-networth-spark'), findsNothing);
     expect(_key('wallet-networth-expand'), findsOneWidget);
-    expect(find.text('Net value trend'), findsOneWidget);
+    // S353c (docs/58 §5.10): the chevron's word is spoken, not drawn.
+    expect(find.bySemanticsLabel('Net value trend'), findsWidgets);
     expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
 
     await tester.tap(_key('wallet-networth-expand'));
@@ -100,7 +102,7 @@ void main() {
     expect(_key('wallet-networth-chart'), findsOneWidget);
     expect(_key('wallet-networth-ranges'), findsOneWidget);
     expect(_key('wallet-networth-collapse'), findsOneWidget);
-    expect(find.text('Collapse'), findsOneWidget);
+    expect(find.bySemanticsLabel('Collapse'), findsWidgets);
 
     await tester.tap(_key('wallet-networth-collapse'));
     await tester.pumpAndSettle();
@@ -111,6 +113,9 @@ void main() {
   testWidgets('the closed 总资产 header is lower than before S327', (
     tester,
   ) async {
+    // S353c: the ¥ amount and 今日盈亏 share a line when the real faces fit
+    // them (the test face draws every glyph a full em wide).
+    await tester.runAsync(loopLoadShotFonts);
     await pump(tester);
     final closed = tester.getSize(_key('wallet-total-header')).height;
     final plateClosed = tester.getSize(_key('wallet-total-plate')).height;
