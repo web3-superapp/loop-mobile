@@ -11033,6 +11033,30 @@
   "@launch2Creator_projectDetails": {
     "description": "lib/features/launch2/creator/launch2_creator_widgets.dart:373"
   },
+  "launch2Creator_termsNftPriceLabel": "NFT price (USD1)",
+  "@launch2Creator_termsNftPriceLabel": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
+  },
+  "launch2Creator_termsRange": "Enter a whole number from {from} to {to}",
+  "@launch2Creator_termsRange": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart",
+    "placeholders": {
+      "from": {
+        "type": "Object?"
+      },
+      "to": {
+        "type": "Object?"
+      }
+    }
+  },
+  "launch2Creator_termsWalletCapLabel": "Per-address cap (‰ of supply)",
+  "@launch2Creator_termsWalletCapLabel": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
+  },
+  "launch2Creator_termsWholeNumbers": "Whole numbers only",
+  "@launch2Creator_termsWholeNumbers": {
+    "description": "lib/features/launch2/creator/launch2_create_screen.dart"
+  },
   "launch2_buybackExecuted": "Filled",
   "@launch2_buybackExecuted": {
     "description": "lib/features/launch2/launch2_instance_screen.dart:2179"

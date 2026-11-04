@@ -14408,6 +14408,30 @@ abstract class LoopLocalizations {
   /// **'Project details'**
   String get launch2Creator_projectDetails;
 
+  /// lib/features/launch2/creator/launch2_create_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'NFT price (USD1)'**
+  String get launch2Creator_termsNftPriceLabel;
+
+  /// lib/features/launch2/creator/launch2_create_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number from {from} to {to}'**
+  String launch2Creator_termsRange(Object? from, Object? to);
+
+  /// lib/features/launch2/creator/launch2_create_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Per-address cap (‰ of supply)'**
+  String get launch2Creator_termsWalletCapLabel;
+
+  /// lib/features/launch2/creator/launch2_create_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Whole numbers only'**
+  String get launch2Creator_termsWholeNumbers;
+
   /// lib/features/launch2/launch2_instance_screen.dart:2179
   ///
   /// In en, this message translates to:

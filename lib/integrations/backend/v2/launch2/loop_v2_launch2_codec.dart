@@ -86,10 +86,23 @@ abstract final class LoopV2Launch2Codec {
   };
 
   /// Keys a server may omit: `pool` (loop-api S146, decision 0145).
+  /// Decision 0284 (S359): the project terms, sent only while loop-api's
+  /// `LAUNCH2_PROJECT_TERMS_EMIT` is on.
   static const detailOptionalKeys = <String>{
     'pool',
     'tradingHold',
     ...rowOptionalKeys,
+    ...projectTermsKeys,
+  };
+
+  /// Decision 0284 (S359): the instance's NFT price (whole USD1), its
+  /// per-address cap (per mille) and that cap in raw MEME. Optional on the
+  /// instance and in its template; absent or `null` keeps the template's
+  /// figure (today's 100 USD1 / 5,000,000 MEME).
+  static const projectTermsKeys = <String>{
+    'nftPriceUsd1',
+    'walletCapPerMille',
+    'maxCumulativeBuyRaw',
   };
 
   static const nftSaleKeys = <String>{
@@ -640,9 +653,18 @@ abstract final class LoopV2Launch2Codec {
   /// adds is ignored rather than failing the whole project page (decision
   /// 0198).
   static Launch2Template _template(Object? raw) {
-    final map = LoopV2Contract.knownKeysMap(raw, templateKeys);
+    final map = LoopV2Contract.knownKeysMap(raw, templateKeys, const <String>{
+      'walletCapPerMille',
+      'maxCumulativeBuyRaw',
+    });
     if (map['templateVersion'] != 'hooks_launch_v1') invalid();
-    return Launch2Template(
+    // Decision 0284: `nftPriceUsd1` stays the decimal string it always was;
+    // a whole JSON number (the S359 terms' own type) reads the same.
+    final priceRaw = map['nftPriceUsd1'];
+    if (priceRaw is int) {
+      map['nftPriceUsd1'] = _termPrice(map)!.toString();
+    }
+    final template = Launch2Template(
       templateVersion: 'hooks_launch_v1',
       memeTotalSupply: amount(map, 'memeTotalSupply'),
       curveSaleSupply: amount(map, 'curveSaleSupply'),
@@ -677,6 +699,45 @@ abstract final class LoopV2Launch2Codec {
         'buybackMinIntervalSeconds',
       ),
     );
+    return template.withProjectTerms(
+      walletCapPerMille: _termCap(map),
+      maxCumulativeBuyRaw: _termCapRaw(map),
+    );
+  }
+
+  /// The instance's own terms (decision 0284) over its template.
+  static Launch2Template _withTerms(
+    Launch2Template template,
+    Map<String, Object?> map,
+  ) => template.withProjectTerms(
+    nftPriceUsd1: _termPrice(map),
+    walletCapPerMille: _termCap(map),
+    maxCumulativeBuyRaw: _termCapRaw(map),
+  );
+
+  static int? _termPrice(Map<String, Object?> map) =>
+      LoopV2ChainCodec.optionalInt(
+        map,
+        'nftPriceUsd1',
+        minimum: 1,
+        maximum: 1000,
+      );
+
+  static int? _termCap(Map<String, Object?> map) =>
+      LoopV2ChainCodec.optionalInt(
+        map,
+        'walletCapPerMille',
+        minimum: 1,
+        maximum: 1000,
+      );
+
+  static BigInt? _termCapRaw(Map<String, Object?> map) {
+    final value = map['maxCumulativeBuyRaw'];
+    if (value == null) return null;
+    if (value is! String || !integerPattern.hasMatch(value)) invalid();
+    final raw = BigInt.parse(value);
+    if (raw == BigInt.zero) invalid();
+    return raw;
   }
 
   static Map<String, String> _contracts(Object? raw) {
@@ -1096,7 +1157,7 @@ abstract final class LoopV2Launch2Codec {
       configVersion: LoopV2ChainCodec.requireInt(map, 'configVersion'),
       configHash: hash(map, 'configHash'),
       buybackRecipient: address(map, 'buybackRecipient'),
-      template: _template(map['template']),
+      template: _withTerms(_template(map['template']), map),
       contracts: _contracts(map['contracts']),
       snapshot: snapshot,
       graduation: graduation,

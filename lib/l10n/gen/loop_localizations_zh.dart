@@ -8140,6 +8140,20 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get launch2Creator_projectDetails => '项目资料';
 
   @override
+  String get launch2Creator_termsNftPriceLabel => 'NFT 售价（USD1）';
+
+  @override
+  String launch2Creator_termsRange(Object? from, Object? to) {
+    return '请填 $from–$to 之间的整数';
+  }
+
+  @override
+  String get launch2Creator_termsWalletCapLabel => '单地址限额（占总量 ‰）';
+
+  @override
+  String get launch2Creator_termsWholeNumbers => '只能填整数';
+
+  @override
   String get launch2_buybackExecuted => '成交';
 
   @override

@@ -275,6 +275,7 @@ final class Launch2Template {
     required this.earlyRoundSeconds,
     required this.buybackOrderUsd1,
     required this.buybackMinIntervalSeconds,
+    this.walletCapPerMille,
   });
 
   final String templateVersion;
@@ -294,6 +295,59 @@ final class Launch2Template {
   final int earlyRoundSeconds;
   final Decimal buybackOrderUsd1;
   final int buybackMinIntervalSeconds;
+
+  /// Decision 0284 (S359): the project's per-address cap in per mille of
+  /// the supply; null when the server does not send it.
+  final int? walletCapPerMille;
+
+  /// This template with the instance's own terms (decision 0284): the NFT
+  /// price in whole USD1 and the cap in raw MEME. A null term keeps the
+  /// template's figure; the buyback order follows the NFT price.
+  Launch2Template withProjectTerms({
+    int? nftPriceUsd1,
+    int? walletCapPerMille,
+    BigInt? maxCumulativeBuyRaw,
+  }) {
+    if (nftPriceUsd1 == null &&
+        walletCapPerMille == null &&
+        maxCumulativeBuyRaw == null) {
+      return this;
+    }
+    final price = nftPriceUsd1 == null ? null : Decimal.fromInt(nftPriceUsd1);
+    final capRaw =
+        maxCumulativeBuyRaw ??
+        (walletCapPerMille == null
+            ? null
+            : BigInt.from(walletCapPerMille) * BigInt.from(10).pow(24));
+    final cap = capRaw == null
+        ? null
+        : (Decimal.fromBigInt(capRaw) / Decimal.fromBigInt(_wad)).toDecimal();
+    final total = memeTotalSupply;
+    return Launch2Template(
+      templateVersion: templateVersion,
+      memeTotalSupply: memeTotalSupply,
+      curveSaleSupply: curveSaleSupply,
+      initialLiquiditySupply: initialLiquiditySupply,
+      graduationReserveUsd1: graduationReserveUsd1,
+      curveBuyTaxBps: curveBuyTaxBps,
+      curveSellTaxBps: curveSellTaxBps,
+      officialPoolTaxBps: officialPoolTaxBps,
+      lpFee: lpFee,
+      tickSpacing: tickSpacing,
+      perAddressCap: cap ?? perAddressCap,
+      perAddressCapBps: cap == null || total == Decimal.zero
+          ? perAddressCapBps
+          : (cap * Decimal.fromInt(10000) / total).floor().toInt(),
+      nftPriceUsd1: price ?? this.nftPriceUsd1,
+      nftSaleSeconds: nftSaleSeconds,
+      earlyRoundSeconds: earlyRoundSeconds,
+      buybackOrderUsd1: price ?? buybackOrderUsd1,
+      buybackMinIntervalSeconds: buybackMinIntervalSeconds,
+      walletCapPerMille: walletCapPerMille ?? this.walletCapPerMille,
+    );
+  }
+
+  static final BigInt _wad = BigInt.from(10).pow(18);
 }
 
 enum Launch2SnapshotVerification { pending, verified, mismatch }
