@@ -407,8 +407,10 @@ void main() {
       expect(_key('loop-backdrop-slice'), findsOneWidget);
     });
 
-    testWidgets('钱包: 总资产 is a chrome plate with a Yellow figure; the '
-        'chosen asset tab wears the splat', (tester) async {
+    // S353c · decision 0280 (docs/58 §5.10): 总资产 stands on the wall with
+    // no plate, its figure white.
+    testWidgets('钱包: 总资产 has no plate and a white figure; the chosen '
+        'asset tab wears no splat', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -423,14 +425,11 @@ void main() {
         findsOneWidget,
       );
       final figure = tester.widget<Text>(_key('wallet-total-figure'));
-      expect(figure.style?.color, LoopColors.yellow);
+      expect(figure.style?.color, LoopColors.textPrimary);
       expect(figure.style?.fontSize, 40);
-      final face = tester.widget<DecoratedBox>(
-        find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),
-      );
       expect(
-        ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
-        LoopChromePlate.faceColors,
+        find.descendant(of: plate, matching: _key('loop-chrome-plate-face')),
+        findsNothing,
       );
       // Decision 0277: the Figma's filter chips wear no splat.
       expect(

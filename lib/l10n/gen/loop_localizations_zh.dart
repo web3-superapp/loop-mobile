@@ -13607,11 +13607,14 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get marketWatchlist_editorWatchlistGroupEmptyTitle => '这个分组还没有资产';
 
   @override
+  String get marketWatchlist_editorWatchlistGroupHint => '拖动排序 · 左滑删除';
+
+  @override
   String marketWatchlist_editorWatchlistGroupLabel(
     Object? items,
     Object? name,
   ) {
-    return '$name $items · 拖动排序 · 左滑删除';
+    return '$name $items';
   }
 
   @override

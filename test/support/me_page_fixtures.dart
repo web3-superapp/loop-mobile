@@ -155,6 +155,7 @@ Future<FakeWalletReadGateway> pumpMePage(
   LoopV2MetaSnapshot? meta,
   String? bio,
   Size size = const Size(390, 2400),
+  List<Override> overrides = const <Override>[],
 }) async {
   final wallet = FakeWalletReadGateway(
     activity: S5Answer<LoopWalletActivityPage>(value: activity ?? s5Activity()),
@@ -185,6 +186,7 @@ Future<FakeWalletReadGateway> pumpMePage(
       communityGatewayProvider.overrideWithValue(
         FakeCommunityGateway(home: home ?? meHome()),
       ),
+      ...overrides,
     ],
   );
   return wallet;

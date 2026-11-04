@@ -491,8 +491,13 @@ void main() {
         watchlist: watchlist,
       );
       expect(find.textContaining('3 watchlist assets'), findsOneWidget);
+      // S353c: the label names the group and its count; the gestures are
+      // the line under it.
       expect(
-        find.text('Mining 3 · Drag to sort · Swipe left to delete'),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('watchlist-group-label')),
+          matching: find.text('Mining 3'),
+        ),
         findsOneWidget,
       );
 
@@ -570,8 +575,13 @@ void main() {
       // the list's own label says what the list shows.
       expect(find.textContaining('3 watchlist assets'), findsOneWidget);
       expect(find.textContaining('4 watchlist assets'), findsNothing);
+      // S353c: the label names the group and its count; the gestures are
+      // the line under it.
       expect(
-        find.text('Mining 3 · Drag to sort · Swipe left to delete'),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('watchlist-group-label')),
+          matching: find.text('Mining 3'),
+        ),
         findsOneWidget,
       );
     });

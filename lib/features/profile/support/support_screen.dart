@@ -213,9 +213,11 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 ],
                 onChanged: (_) => setState(() {}),
                 style: LoopType.bodyLg,
+                // S353c: the hint wraps to a second line rather than cut
+                // 「Never enter a private key…」 short at 360.
                 decoration: loopFormFieldDecoration(
                   hint: context.l10n.profileSupport_screenHint,
-                ),
+                ).copyWith(hintMaxLines: 2),
               ),
             ),
             if (problem != null && length > 0)

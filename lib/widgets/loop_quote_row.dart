@@ -126,6 +126,7 @@ class LoopQuoteRow extends StatelessWidget {
     this.titleMinWidth,
     this.valueMaxWidth,
     this.trailingSlotWidth,
+    this.valueStyle,
   });
 
   final Widget leading;
@@ -147,6 +148,10 @@ class LoopQuoteRow extends StatelessWidget {
   final String? semanticLabel;
   final Key? tapKey;
   final double height;
+
+  /// The right figure's step when a list wants another one (S353c: a
+  /// holdings row's 14 / 600, docs/58 §5.13); `null` keeps [LoopType.figureMd].
+  final TextStyle? valueStyle;
 
   /// The width the title keeps however wide the figures are (decision 0146):
   /// the figure column gives way — a figure scales down, a caption ends in an
@@ -282,7 +287,7 @@ class LoopQuoteRow extends StatelessWidget {
                             key: valueKey,
                             maxLines: 1,
                             softWrap: false,
-                            style: LoopType.figureMd.copyWith(
+                            style: (valueStyle ?? LoopType.figureMd).copyWith(
                               color: LoopGround.inkOf(context),
                             ),
                           ),

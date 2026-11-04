@@ -23461,10 +23461,16 @@ abstract class LoopLocalizations {
   /// **'No assets in this group yet'**
   String get marketWatchlist_editorWatchlistGroupEmptyTitle;
 
+  /// lib/features/market/watchlist/watchlist_editor_screen.dart:270
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to sort · Swipe left to delete'**
+  String get marketWatchlist_editorWatchlistGroupHint;
+
   /// lib/features/market/watchlist/watchlist_editor_screen.dart:247
   ///
   /// In en, this message translates to:
-  /// **'{name} {items} · Drag to sort · Swipe left to delete'**
+  /// **'{name} {items}'**
   String marketWatchlist_editorWatchlistGroupLabel(Object? items, Object? name);
 
   /// lib/features/market/watchlist/watchlist_editor_screen.dart:345
@@ -39374,7 +39380,7 @@ abstract class LoopLocalizations {
   /// lib/features/wallet/wallet_read_screens.dart:1092
   ///
   /// In en, this message translates to:
-  /// **'Wallet asset · {asset}'**
+  /// **'{asset}'**
   String wallet_readScreensWalletAssetMarketActionTitle(Object? asset);
 
   /// lib/features/wallet/wallet_read_screens.dart:1164

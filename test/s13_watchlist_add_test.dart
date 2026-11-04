@@ -602,7 +602,8 @@ void main() {
 
       // Nothing is written until the explicit save.
       expect(watchlist.written, isEmpty);
-      expect(find.text('长期观察 0'), findsOneWidget);
+      // S353c: the list's label now reads as the group chip does.
+      expect(find.text('长期观察 0'), findsNWidgets(2));
 
       await scrollToS5Section(
         tester,
@@ -641,7 +642,8 @@ void main() {
         find.byKey(const ValueKey<String>('watchlist-group-name-confirm')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('短线 0'), findsOneWidget);
+      // S353c: the list's label now reads as the group chip does.
+      expect(find.text('短线 0'), findsNWidgets(2));
 
       await scrollToS5Section(
         tester,
@@ -653,7 +655,7 @@ void main() {
       // The group only ever lived in the draft, so discarding removes it and
       // nothing was ever sent.
       expect(find.text('短线 0'), findsNothing);
-      expect(find.text('Mining 3'), findsOneWidget);
+      expect(find.text('Mining 3'), findsWidgets);
       expect(watchlist.written, isEmpty);
     });
 

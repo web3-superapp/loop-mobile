@@ -471,6 +471,37 @@ abstract final class LoopSpacing {
   static const double x10 = 40;
 }
 
+/// List row heights from the Figma frames (docs/58 §3.2, ruled in §9.4;
+/// S353c · decision 0280). Each is the row's full height, its own divider
+/// included where it draws one.
+///
+/// Dividers (§9.4): token, chat, community, post and management rows draw a
+/// 1 px [LoopColors.divider] line under them (`LoopRecordRow.divider` where
+/// the row is a [LoopRecordRow]); holdings and rank rows draw none.
+abstract final class LoopRowHeight {
+  /// MEME token row · 71 (avatar 44), divider.
+  static const double token = 71;
+
+  /// Chat conversation row · 67 (avatar 48), divider.
+  static const double chat = 67;
+
+  /// Community row · 86 (square avatar 56 r12), divider.
+  static const double community = 86;
+
+  /// Wallet management row · 56 (glyph 20 on a 34 r9 ground), divider.
+  static const double management = 56;
+
+  /// Holdings row on 我的 and another account's page · 51 (avatar 36, 6
+  /// above and below), no divider.
+  static const double holdings = 51;
+
+  /// Leaderboard row · 51 (avatar 36, 6 above and below), no divider.
+  static const double rank = 51;
+
+  /// Avatar on a holdings or rank row · 36.
+  static const double holdingsAvatar = 36;
+}
+
 /// Corner radii — the requester's Figma (decision 0277, docs/58 §4 / §9.4,
 /// which revises 0211): a sheet and the shell at 20, a card, a control, a
 /// search field and the tab bar at 12, a button and a filter chip at 8, a

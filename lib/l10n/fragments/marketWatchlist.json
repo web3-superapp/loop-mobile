@@ -243,8 +243,14 @@
     "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:254",
     "zh": "这个分组还没有资产"
   },
+  "marketWatchlist_editorWatchlistGroupHint": {
+    "en": "Drag to sort · Swipe left to delete",
+    "placeholders": {},
+    "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:270",
+    "zh": "拖动排序 · 左滑删除"
+  },
   "marketWatchlist_editorWatchlistGroupLabel": {
-    "en": "{name} {items} · Drag to sort · Swipe left to delete",
+    "en": "{name} {items}",
     "placeholders": {
       "items": {
         "example": "group.items.length",
@@ -256,7 +262,7 @@
       }
     },
     "where": "lib/features/market/watchlist/watchlist_editor_screen.dart:247",
-    "zh": "{name} {items} · 拖动排序 · 左滑删除"
+    "zh": "{name} {items}"
   },
   "marketWatchlist_editorWatchlistGroupLimitBody": {
     "en": "You've reached the limit of {watchlistMaxGroups} groups. Delete one before creating another.",

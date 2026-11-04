@@ -14915,11 +14915,15 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'No assets in this group yet';
 
   @override
+  String get marketWatchlist_editorWatchlistGroupHint =>
+      'Drag to sort · Swipe left to delete';
+
+  @override
   String marketWatchlist_editorWatchlistGroupLabel(
     Object? items,
     Object? name,
   ) {
-    return '$name $items · Drag to sort · Swipe left to delete';
+    return '$name $items';
   }
 
   @override
@@ -24948,7 +24952,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String wallet_readScreensWalletAssetMarketActionTitle(Object? asset) {
-    return 'Wallet asset · $asset';
+    return '$asset';
   }
 
   @override

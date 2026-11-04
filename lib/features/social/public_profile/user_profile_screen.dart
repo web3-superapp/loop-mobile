@@ -29,6 +29,7 @@ import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -545,28 +546,24 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          Row(
+          // S353c: the three counts wrap rather than cut 「Followers」 /
+          // 「Communities」 short at 360 in English.
+          Wrap(
             key: const ValueKey<String>('user-profile-counts'),
+            spacing: 22,
+            runSpacing: 4,
             children: <Widget>[
-              Flexible(
-                child: _Count(
-                  label: context.l10n.socialPublicProfile_userCountFollowing,
-                  value: record.counts.following,
-                ),
+              _Count(
+                label: context.l10n.socialPublicProfile_userCountFollowing,
+                value: record.counts.following,
               ),
-              const SizedBox(width: 22),
-              Flexible(
-                child: _Count(
-                  label: context.l10n.common_followers,
-                  value: record.counts.followers,
-                ),
+              _Count(
+                label: context.l10n.common_followers,
+                value: record.counts.followers,
               ),
-              const SizedBox(width: 22),
-              Flexible(
-                child: _Count(
-                  label: context.l10n.socialPublicProfile_userCountCommunities,
-                  value: record.counts.communities,
-                ),
+              _Count(
+                label: context.l10n.socialPublicProfile_userCountCommunities,
+                value: record.counts.communities,
               ),
             ],
           ),
@@ -584,6 +581,7 @@ class _Count extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.baseline,
     textBaseline: TextBaseline.alphabetic,
     children: <Widget>[
@@ -633,11 +631,21 @@ class _ActionRow extends StatelessWidget {
         (friendship == ProfileFriendship.none ||
             friendship == ProfileFriendship.pendingIn);
     final message = onMessage;
+    // S353c · decision 0280: the wallet frame's quick keys (docs/58 §5.11),
+    // as on 我的 — bare glyph over a 14 / 500 word, a rule between two keys.
     return LoopRoundKeyRow(
       key: const ValueKey<String>('user-profile-keys'),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        18,
+        LoopSpacing.page,
+        6,
+      ),
+      ruled: true,
       keys: <Widget>[
         if (friendship != ProfileFriendship.friends)
           LoopRoundKey(
+            bare: true,
             key: ValueKey<String>('user-profile-friend-${friendship.wireName}'),
             tone: LoopRoundKeyTone.primary,
             icon: switch (friendship) {
@@ -658,6 +666,7 @@ class _ActionRow extends StatelessWidget {
             onPressed: friendEnabled ? onFriend : null,
           ),
         LoopRoundKey(
+          bare: true,
           key: const ValueKey<String>('user-profile-message'),
           icon: 'chat',
           label: friendship == ProfileFriendship.friends
@@ -666,6 +675,7 @@ class _ActionRow extends StatelessWidget {
           onPressed: busy || message == null ? null : message,
         ),
         LoopRoundKey(
+          bare: true,
           key: const ValueKey<String>('user-profile-share-card'),
           icon: 'share',
           label: context.l10n.common_share,
@@ -675,6 +685,7 @@ class _ActionRow extends StatelessWidget {
           onPressed: onShare,
         ),
         LoopRoundKey(
+          bare: true,
           key: const ValueKey<String>('user-profile-more'),
           icon: 'keypad',
           label: context.l10n.common_more,
@@ -727,6 +738,7 @@ class _HiddenSection extends StatelessWidget {
     title: sectionKey == 'holdings'
         ? context.l10n.socialPublicProfile_userHoldingsHidden
         : context.l10n.socialPublicProfile_userTradesHidden,
+    art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
     compact: true,
   );
 }
@@ -746,6 +758,7 @@ class _UnavailableSection extends StatelessWidget {
           key: ValueKey<String>('user-profile-$sectionKey-no-wallet'),
           illustration: LoopIllustration.watchlist,
           title: context.l10n.socialPublicProfile_userTitle4,
+          art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
           compact: true,
         )
       : LoopInlineUnavailable(
@@ -758,6 +771,11 @@ class _UnavailableSection extends StatelessWidget {
           detailMaxLines: 4,
         );
 }
+
+/// A holdings row's second figure: 12 / 300 secondary (docs/58 §5.13).
+final TextStyle _holdingCaption = LoopType.caption.copyWith(
+  color: LoopColors.textSecondary,
+);
 
 class _HoldingsSection extends StatelessWidget {
   const _HoldingsSection({
@@ -875,6 +893,7 @@ class _HoldingsSection extends StatelessWidget {
             title: context
                 .l10n
                 .socialPublicProfile_userUserProfileHoldingsEmptyTitle,
+            art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
             compact: true,
           )
         else
@@ -918,7 +937,10 @@ class _HoldingsSection extends StatelessWidget {
       subtitle: item.name,
       subtitleMark: where,
       value: amount,
-      valueCaption: usd1 == null ? null : Text(usd1),
+      valueCaption: usd1 == null ? null : Text(usd1, style: _holdingCaption),
+      // S353c · decision 0280 (docs/58 §5.13): the holdings row, 51 tall.
+      height: LoopRowHeight.holdings,
+      valueStyle: LoopType.figureSm,
       onTap: () => onOpen(Launch2Route.instance(item.instanceId)),
       semanticLabel: <String>[
         ticker,
@@ -951,7 +973,11 @@ class _HoldingsSection extends StatelessWidget {
         usd == null
             ? LoopL10n.current.socialPublicProfile_userUserProfileHoldingsTotal
             : balance,
+        style: _holdingCaption,
       ),
+      // S353c · decision 0280 (docs/58 §5.13): the holdings row, 51 tall.
+      height: LoopRowHeight.holdings,
+      valueStyle: LoopType.figureSm,
       onTap: open == null ? null : () => open(item.assetId),
       semanticLabel:
           '${item.symbol}${LoopL10n.current.common_listSeparator}${usd == null ? balance : loopFormatUsd(usd)}',
@@ -1034,6 +1060,7 @@ class _TradesSection extends StatelessWidget {
             title: context
                 .l10n
                 .socialPublicProfile_userUserProfileTradesEmptyTitle,
+            art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
             compact: true,
           ),
         ],
@@ -1179,6 +1206,7 @@ class _CommunitiesSection extends StatelessWidget {
         title: context
             .l10n
             .socialPublicProfile_userUserProfileCommunitiesHiddenTitle,
+        art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
         compact: true,
       );
     }
@@ -1189,6 +1217,7 @@ class _CommunitiesSection extends StatelessWidget {
         title: context
             .l10n
             .socialPublicProfile_userUserProfileCommunitiesEmptyTitle,
+        art: const LoopEmptyArt(width: LoopEmptyState.illustrationSize),
         compact: true,
       );
     }

@@ -458,9 +458,7 @@ void main() {
       expect(done.icon, 'check');
       // The prototype's order: the list the page exists to edit comes first.
       final hint = tester
-          .getTopLeft(
-            find.text('Mining 3 · Drag to sort · Swipe left to delete'),
-          )
+          .getTopLeft(find.text('Drag to sort · Swipe left to delete'))
           .dy;
       final groups = tester.getTopLeft(find.text('Groups')).dy;
       expect(hint, lessThan(groups));

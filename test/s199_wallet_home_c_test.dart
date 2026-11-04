@@ -354,17 +354,15 @@ void main() {
   });
 
   group('总资产 · 钱包 C header', () {
-    testWidgets('the figure carries USD, the ¥ line and 今日盈亏 in rise', (
-      tester,
-    ) async {
+    // S353c · decision 0280 (docs/58 §5.10): no 「USD」 after the figure.
+    testWidgets('the figure, the ¥ line and 今日盈亏 in rise', (tester) async {
       await pumpWallet(tester, history: _FakeHistory());
 
       expect(
         tester.widget<Text>(key('wallet-total-figure')).style!.fontSize,
-        // Decision 0224: the chrome plate's figure, Anton 40.
         LoopType.plateFigure.fontSize,
       );
-      expect(key('wallet-total-unit'), findsOneWidget);
+      expect(key('wallet-total-unit'), findsNothing);
       expect(
         tester
             .widget<Text>(key('wallet-total-subline'))
@@ -426,8 +424,11 @@ void main() {
       expect(key('wallet-networth-expand'), findsOneWidget);
       expect(key('wallet-networth-spark'), findsNothing);
       double top(String value) => tester.getTopLeft(key(value)).dy;
-      expect(top('wallet-total-figure'), lessThan(top('wallet-address-copy')));
-      expect(top('wallet-address-copy'), lessThan(top('wallet-pnl')));
+      // S353c · decision 0280 (docs/58 §5.10): figure → ¥ | 今日盈亏 →
+      // address; the week's trend beside the figure.
+      expect(top('wallet-total-figure'), lessThan(top('wallet-pnl')));
+      expect(top('wallet-pnl'), lessThan(top('wallet-address-copy')));
+      expect(key('wallet-networth-trend'), findsOneWidget);
 
       await openChart(tester);
       expect(key('wallet-networth-collapse'), findsOneWidget);
@@ -635,15 +636,22 @@ void main() {
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
       expect(key('wallet-networth-chart'), findsOneWidget);
+      // S353c (docs/58 §5.10): the chevron's word is spoken, not drawn.
       expect(
-        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        tester
+            .widget<Semantics>(key('wallet-networth-collapse'))
+            .properties
+            .label,
         'Collapse',
       );
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
       expect(key('wallet-networth-panel'), findsNothing);
       expect(
-        tester.widget<Text>(key('wallet-networth-chevron-label')).data,
+        tester
+            .widget<Semantics>(key('wallet-networth-expand'))
+            .properties
+            .label,
         'Net value trend',
       );
       // Folding asks for nothing beyond the week 今日盈亏 reads.
