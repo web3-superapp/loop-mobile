@@ -1,0 +1,4662 @@
+{
+  "wallet_activityExportDismissed": {
+    "en": "CSV created, but no share destination was chosen",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:56",
+    "zh": "已生成 CSV，但没有选择分享去处"
+  },
+  "wallet_activityExportEmpty": {
+    "en": "No records in this range to export",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:59",
+    "zh": "这一段没有记录可以导出"
+  },
+  "wallet_activityExportFailed": {
+    "en": "Export didn't finish; nothing left this device",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:57",
+    "zh": "导出没有完成，没有任何内容离开这台设备"
+  },
+  "wallet_activityExportIncoming": {
+    "en": "Received",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3355",
+    "zh": "收到"
+  },
+  "wallet_activityExportOutgoing": {
+    "en": "Sent",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3355",
+    "zh": "发出"
+  },
+  "wallet_activityExportSelf": {
+    "en": "Self-transfer",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:99, lib/features/wallet/wallet_read_screens.dart:3256",
+    "zh": "自转"
+  },
+  "wallet_activityExportShared": {
+    "en": "Records exported. Choose a destination in the share sheet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:55",
+    "zh": "记录已导出，请在分享面板中选择去处"
+  },
+  "wallet_activityExportSwitch": {
+    "en": "Time (UTC)",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:65",
+    "zh": "时间(UTC)"
+  },
+  "wallet_activityExportSwitch2": {
+    "en": "Direction",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:66",
+    "zh": "方向"
+  },
+  "wallet_activityExportSwitch3": {
+    "en": "Asset ID",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:68",
+    "zh": "资产标识"
+  },
+  "wallet_activityExportSwitch4": {
+    "en": "Amount (base units)",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:70",
+    "zh": "最小单位数量"
+  },
+  "wallet_activityExportSwitch5": {
+    "en": "Counterparty address",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:71",
+    "zh": "对方地址"
+  },
+  "wallet_activityExportSwitch6": {
+    "en": "Log index",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:73",
+    "zh": "日志序号"
+  },
+  "wallet_activityExportSwitch7": {
+    "en": "Block",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:74",
+    "zh": "区块"
+  },
+  "wallet_activityExportSwitch8": {
+    "en": "Status",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:76",
+    "zh": "状态"
+  },
+  "wallet_activityExportUnavailable": {
+    "en": "System sharing isn't set up in this session; nothing was exported",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:58",
+    "zh": "本次运行没有装配系统分享，没有导出任何内容"
+  },
+  "wallet_approvalScreensApprovalActionLimitLabel": {
+    "en": "Switch to limited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:706",
+    "zh": "改为限额授权"
+  },
+  "wallet_approvalScreensApprovalActionRevokeLabel": {
+    "en": "Revoke approval (approve 0)",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:713",
+    "zh": "回收授权（approve 0）"
+  },
+  "wallet_approvalScreensApprovalDecodedUnavailableLabel": {
+    "en": "Call can't be decoded",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:412",
+    "zh": "调用无法解码"
+  },
+  "wallet_approvalScreensApprovalGuardCapabilityBlockTitle": {
+    "en": "Approvals aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:159",
+    "zh": "授权当前不可用"
+  },
+  "wallet_approvalScreensApprovalGuardErrorTitle": {
+    "en": "The approval couldn't be prepared",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:289",
+    "zh": "授权没有准备成功"
+  },
+  "wallet_approvalScreensApprovalGuardExactLabel": {
+    "en": "Approve a limited amount",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:235",
+    "zh": "按限额授权"
+  },
+  "wallet_approvalScreensApprovalGuardExactLabel2": {
+    "en": "Approve a limit of {wire} {symbol}",
+    "placeholders": {
+      "symbol": {
+        "example": "widget.request.symbol",
+        "type": "Object"
+      },
+      "wire": {
+        "example": "amount.wire",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:236",
+    "zh": "按 {wire} {symbol} 限额授权"
+  },
+  "wallet_approvalScreensApprovalGuardFolioCaption": {
+    "en": "Token, spender, amount and the decoded call are shown in full before signing.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:131",
+    "zh": "代币、Spender、额度与解码后的调用在签名前完整显示。"
+  },
+  "wallet_approvalScreensApprovalGuardFolioHeading": {
+    "en": "{symbol} approval",
+    "placeholders": {
+      "symbol": {
+        "example": "widget.request.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:127",
+    "zh": "{symbol} 授权"
+  },
+  "wallet_approvalScreensApprovalGuardFolioHeading2": {
+    "en": "Unlimited {symbol} approval",
+    "placeholders": {
+      "symbol": {
+        "example": "widget.request.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:129",
+    "zh": "无限 {symbol} 授权"
+  },
+  "wallet_approvalScreensApprovalGuardFolioHeading3": {
+    "en": "{display} {symbol} limit",
+    "placeholders": {
+      "display": {
+        "example": "intent.review.amount.display",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "widget.request.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:130",
+    "zh": "{display} {symbol} 限额"
+  },
+  "wallet_approvalScreensApprovalGuardFolioKicker": {
+    "en": "Approval request",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:125",
+    "zh": "授权请求"
+  },
+  "wallet_approvalScreensApprovalGuardFolioStamp": {
+    "en": "Protected",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:132",
+    "zh": "受保护"
+  },
+  "wallet_approvalScreensApprovalGuardRestartLabel": {
+    "en": "Switch back to limited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:268",
+    "zh": "改回限额授权"
+  },
+  "wallet_approvalScreensApprovalGuardScreenTitle": {
+    "en": "Approval guard",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:115",
+    "zh": "授权拦截"
+  },
+  "wallet_approvalScreensApprovalGuardSignLabel": {
+    "en": "Facts expired · Prepare again",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:142, lib/features/wallet/send_screens.dart:1213",
+    "zh": "事实已过期 · 重新准备"
+  },
+  "wallet_approvalScreensApprovalGuardSignLabel2": {
+    "en": "Confirm approval ({moneyCountdownLabel})",
+    "placeholders": {
+      "moneyCountdownLabel": {
+        "example": "moneyCountdownLabel(remaining)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:143",
+    "zh": "确认授权（{moneyCountdownLabel}）"
+  },
+  "wallet_approvalScreensApprovalGuardUnlimitedConfirmedBody": {
+    "en": "You've confirmed twice. Once signed, this spender can keep using this token's entire balance, and the permission stays valid after you leave their interface until you revoke it in Token approvals.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:263",
+    "zh": "你已二次确认。签名后该 Spender 可持续动用这个代币的全部余额，离开对方界面后权限依然有效，直到你在授权盘点里回收。"
+  },
+  "wallet_approvalScreensApprovalGuardUnlimitedConfirmedTitle": {
+    "en": "This is an unlimited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:261",
+    "zh": "这是一次无限额度授权"
+  },
+  "wallet_approvalScreensApprovalGuardUnlimitedLabel": {
+    "en": "Approve unlimited anyway",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:248",
+    "zh": "仍要无限授权"
+  },
+  "wallet_approvalScreensApprovalGuardUnlimitedWarningBody": {
+    "en": "A contract with an unlimited allowance can move this token's entire balance at any time until you revoke it. LOOP's default is to approve only the amount needed this time.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:197",
+    "zh": "获得无限额度的合约可以在任何时间转走这个代币的全部余额，直到你主动回收。LOOP 的默认是只授权本次需要的额度。"
+  },
+  "wallet_approvalScreensApprovalGuardUnlimitedWarningTitle": {
+    "en": "Unlimited approval means ongoing access to your entire balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:195",
+    "zh": "无限授权意味着持续动用全部余额"
+  },
+  "wallet_approvalScreensApprovalUnlimitedAcceptLabel": {
+    "en": "I understand, approve unlimited anyway",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:330",
+    "zh": "我了解，仍要无限授权"
+  },
+  "wallet_approvalScreensApprovalUnlimitedCancelLabel": {
+    "en": "Use a limit instead",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:325",
+    "zh": "改用限额"
+  },
+  "wallet_approvalScreensApprovalsBatchActionLabel": {
+    "en": "Revoke in batch",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:530",
+    "zh": "批量回收"
+  },
+  "wallet_approvalScreensApprovalsCapabilityBlockTitle": {
+    "en": "Token approvals aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:542",
+    "zh": "授权盘点当前不可用"
+  },
+  "wallet_approvalScreensApprovalsFreshnessText": {
+    "en": "Approvals since block {groupedFigure} · Indexed {groupedFigure2} / head {groupedFigure3} · observed {relativeTime}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(inventory.freshness.approvalCoverageFromBlockNumber.toString())",
+        "type": "Object"
+      },
+      "groupedFigure2": {
+        "example": "loopGroupedFigure(inventory.freshness.indexerBlockNumber.toString())",
+        "type": "Object"
+      },
+      "groupedFigure3": {
+        "example": "loopGroupedFigure(inventory.freshness.headBlockNumber.toString())",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:636",
+    "zh": "授权记录自区块 {groupedFigure} 起 · 索引高度 {groupedFigure2} / 链头 {groupedFigure3} · 观察于 {relativeTime}"
+  },
+  "wallet_approvalScreensApprovalsPageBlockMessage": {
+    "en": "The approval list isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:560",
+    "zh": "授权清单当前不可用"
+  },
+  "wallet_approvalScreensApprovalsRevokeErrorTitle": {
+    "en": "The revoke couldn't be prepared",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:596",
+    "zh": "回收没有准备成功"
+  },
+  "wallet_approvalScreensBuild": {
+    "en": "Approval check",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:170",
+    "zh": "授权检查"
+  },
+  "wallet_approvalScreensConfirmUnlimited": {
+    "en": "An unlimited allowance doesn't expire over time or when this transaction ends. This spender can later move this token's entire balance without asking you again. It's only taken back when you send approve(spender, 0) from Token approvals.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:314",
+    "zh": "无限额度不会随时间或这笔交易结束而失效。该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。"
+  },
+  "wallet_approvalScreensEmptyMessage": {
+    "en": "This wallet has no active approvals",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:570, lib/features/wallet/approval_screens.dart:623",
+    "zh": "这个钱包没有有效授权"
+  },
+  "wallet_approvalScreensLabel": {
+    "en": "Function",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:424",
+    "zh": "函数"
+  },
+  "wallet_approvalScreensLabel2": {
+    "en": "Unlimited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:553, lib/features/wallet/approval_screens.dart:604",
+    "zh": "无限授权"
+  },
+  "wallet_approvalScreensLabel3": {
+    "en": "Limited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:554, lib/features/wallet/approval_screens.dart:612",
+    "zh": "限额授权"
+  },
+  "wallet_approvalScreensLabelText": {
+    "en": "Approval amount ({symbol})",
+    "placeholders": {
+      "symbol": {
+        "example": "widget.request.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:222",
+    "zh": "授权额度（{symbol}）"
+  },
+  "wallet_approvalScreensLoopBadge": {
+    "en": "Can't load",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:656, lib/features/wallet/money_asset_picker.dart:109, lib/features/wallet/wallet_read_widgets.dart:59",
+    "zh": "读不到"
+  },
+  "wallet_approvalScreensLoopBadge2": {
+    "en": "Unlimited",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:667",
+    "zh": "无限"
+  },
+  "wallet_approvalScreensLoopBadge3": {
+    "en": "Limited",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:668",
+    "zh": "限额"
+  },
+  "wallet_approvalScreensLoopLabel": {
+    "en": "Limited approval (default)",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:201",
+    "zh": "限额授权（默认）"
+  },
+  "wallet_approvalScreensLoopLabel2": {
+    "en": "Decoded call",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:253",
+    "zh": "解码后的调用"
+  },
+  "wallet_approvalScreensLoopLabel3": {
+    "en": "Sorted by amount",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:557, lib/features/wallet/approval_screens.dart:618",
+    "zh": "按额度排序"
+  },
+  "wallet_approvalScreensLoopSheetHeading": {
+    "en": "Confirm unlimited approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:306",
+    "zh": "确认无限授权"
+  },
+  "wallet_approvalScreensMessage": {
+    "en": "Batch revoke isn't available yet. Each revoke is a separate signature.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:533",
+    "zh": "批量回收还没有开放。每一笔回收都是一次单独的签名。"
+  },
+  "wallet_approvalScreensMoneyOfflinePause": {
+    "en": "Prepare approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:284",
+    "zh": "准备授权"
+  },
+  "wallet_approvalScreensMoneyOfflinePause2": {
+    "en": "Revoke approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:591",
+    "zh": "回收授权"
+  },
+  "wallet_approvalScreensMoneyOfflinePause3": {
+    "en": "Change amount",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:591",
+    "zh": "改额度"
+  },
+  "wallet_approvalScreensS": {
+    "en": "Allowance {display}",
+    "placeholders": {
+      "display": {
+        "example": "display",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:656",
+    "zh": "额度 {display}"
+  },
+  "wallet_approvalScreensSubtitle": {
+    "en": "{truncatedAddress} · {unlimited} · block {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(blockNumber.toString())",
+        "type": "Object"
+      },
+      "truncatedAddress": {
+        "example": "loopTruncatedAddress(row.spender.checksumAddress)",
+        "type": "Object"
+      },
+      "unlimited": {
+        "example": "unlimited ? '无限额度' : '额度 $display'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/approval_screens.dart:663",
+    "zh": "{truncatedAddress} · {unlimited} · 区块 {groupedFigure}"
+  },
+  "wallet_approvalScreensText": {
+    "en": "Approve only the amount this transaction needs.",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:227",
+    "zh": "只授权本次交易需要的额度。"
+  },
+  "wallet_approvalScreensValue": {
+    "en": "Native assets have no approvals",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:442",
+    "zh": "原生资产没有授权面"
+  },
+  "wallet_deferredScreensBlocked": {
+    "en": "Blocked",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:414, lib/features/wallet/deferred_screens.dart:450",
+    "zh": "已阻止"
+  },
+  "wallet_deferredScreensBody": {
+    "en": "A scan result never starts signing directly; amount, network and recipient are shown again.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:102",
+    "zh": "识别结果不会直接发起签名；金额、网络与收款方会再次展示。"
+  },
+  "wallet_deferredScreensBody2": {
+    "en": "Choose the source chain, destination chain and amount first; then estimated fees and arrival time are shown.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:159",
+    "zh": "先选来源链、目标链与数量，再显示预计费用和到账时间。"
+  },
+  "wallet_deferredScreensBody3": {
+    "en": "Source chain confirmation, bridging and destination arrival are three separate states.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:262",
+    "zh": "源链确认、桥接中和目标链到账是三个独立状态。"
+  },
+  "wallet_deferredScreensBody4": {
+    "en": "The check runs entirely on this device: it won't open this URL, follow redirects or connect a wallet.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:382",
+    "zh": "核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。"
+  },
+  "wallet_deferredScreensBridgeFolioHeading": {
+    "en": "Bridge isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:151, lib/features/wallet/deferred_screens.dart:201",
+    "zh": "跨链尚未开放"
+  },
+  "wallet_deferredScreensBridgeFolioKicker": {
+    "en": "Bridge intent",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:150",
+    "zh": "跨链意图"
+  },
+  "wallet_deferredScreensBridgeFolioStamp": {
+    "en": "Review",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:169",
+    "zh": "核对"
+  },
+  "wallet_deferredScreensBridgeFromCaption": {
+    "en": "From",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:177",
+    "zh": "从"
+  },
+  "wallet_deferredScreensBridgeOpenStatusLabel": {
+    "en": "View bridge progress",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:209",
+    "zh": "查看跨链进度"
+  },
+  "wallet_deferredScreensBridgeScopeNoticeBody": {
+    "en": "Bridge fees, received amount and estimated time can only come from a real route. Without a route there are no such numbers, and this page won't substitute sample data.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:164",
+    "zh": "跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，这一页不会用示例数据代替它们。"
+  },
+  "wallet_deferredScreensBridgeScopeNoticeTitle": {
+    "en": "About Bridge",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:157",
+    "zh": "关于跨链"
+  },
+  "wallet_deferredScreensBridgeScopeNoticeTitle2": {
+    "en": "No estimates appear here",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:162",
+    "zh": "这里不会出现预估数字"
+  },
+  "wallet_deferredScreensBridgeStartLabel": {
+    "en": "Start bridge",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:189",
+    "zh": "开始跨链"
+  },
+  "wallet_deferredScreensBridgeStatusBackToWalletLabel": {
+    "en": "Back to Wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:296",
+    "zh": "返回钱包"
+  },
+  "wallet_deferredScreensBridgeStatusFolioHeading": {
+    "en": "Bridge progress isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:255",
+    "zh": "跨链进度尚未开放"
+  },
+  "wallet_deferredScreensBridgeStatusLeaveNoticeBody": {
+    "en": "Once Bridge is available, it continues in the background, notifies you when done, and can be viewed in transaction history.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:266",
+    "zh": "跨链开放后会在后台继续，完成后推送通知，也可以从交易历史查看。"
+  },
+  "wallet_deferredScreensBridgeStatusLeaveNoticeTitle": {
+    "en": "About bridge progress",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:260",
+    "zh": "关于跨链进度"
+  },
+  "wallet_deferredScreensBridgeStatusLeaveNoticeTitle2": {
+    "en": "You can leave this page",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:265",
+    "zh": "可以离开此页"
+  },
+  "wallet_deferredScreensBridgeStatusPageBlockMessage": {
+    "en": "No bridge to track yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:282",
+    "zh": "还没有可跟踪的跨链"
+  },
+  "wallet_deferredScreensBridgeStatusScreenTitle": {
+    "en": "Bridge progress",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:245, lib/features/wallet/deferred_screens.dart:254",
+    "zh": "跨链进度"
+  },
+  "wallet_deferredScreensBridgeToCaption": {
+    "en": "To",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:182",
+    "zh": "到"
+  },
+  "wallet_deferredScreensDappConfusableNoticeBody": {
+    "en": "It looks like {confusableReading}, but it contains look-alike characters that aren't Latin letters. This is the most common phishing trick, so it was blocked.",
+    "placeholders": {
+      "confusableReading": {
+        "example": "review.confusableReading",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/deferred_screens.dart:469",
+    "zh": "它看起来像 {confusableReading}，但其中有不是拉丁字母的同形字符。这是最常见的钓鱼手法，已阻止。"
+  },
+  "wallet_deferredScreensDappConfusableNoticeTitle": {
+    "en": "This domain is impersonating another domain",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:467",
+    "zh": "这个域名在冒充另一个域名"
+  },
+  "wallet_deferredScreensDappExecutionUnavailableLabel": {
+    "en": "Wallet connection and signing aren't available yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:521",
+    "zh": "连接钱包与签名尚未开放"
+  },
+  "wallet_deferredScreensDappFindingsEmptyMessage": {
+    "en": "This only means the address itself is well-formed; it doesn't mean the site is trustworthy.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:484",
+    "zh": "这只说明地址本身规范；它不代表这个站点可信。"
+  },
+  "wallet_deferredScreensDappFindingsEmptyTitle": {
+    "en": "No issues found",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:483",
+    "zh": "没有发现问题"
+  },
+  "wallet_deferredScreensDappFolioKicker": {
+    "en": "DApp check · Read only",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:368",
+    "zh": "DApp 检查 · 只读"
+  },
+  "wallet_deferredScreensDappNoFetchNoticeBody": {
+    "en": "The check is purely local: no requests, no DNS lookups and no redirects, so the domain you see is exactly the one you typed.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:386",
+    "zh": "核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，所以你看到的域名一定是你输入的那个。"
+  },
+  "wallet_deferredScreensDappNoFetchNoticeTitle": {
+    "en": "This page won't open the URL",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:380",
+    "zh": "这一页不会打开网址"
+  },
+  "wallet_deferredScreensDappOmniboxHintText": {
+    "en": "Search assets / communities / users / Launch / DApps / URLs",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:357",
+    "zh": "搜索资产 / 社区 / 用户 / Launch / DApp / 网址"
+  },
+  "wallet_deferredScreensDappReputationUnavailableLabel": {
+    "en": "Domain reputation can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:514",
+    "zh": "读不到域名信誉"
+  },
+  "wallet_deferredScreensDappReviewCanonicalSubtitle": {
+    "en": "Couldn't normalize; blocked",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:445",
+    "zh": "无法规范化，已阻止"
+  },
+  "wallet_deferredScreensDappReviewCanonicalTitle": {
+    "en": "Normalized result",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:444",
+    "zh": "规范化结果"
+  },
+  "wallet_deferredScreensDappReviewEmptyMessage": {
+    "en": "Enter a URL to see the normalized result and any issues here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:430",
+    "zh": "输入网址后，这里会显示规范化结果与发现的问题。"
+  },
+  "wallet_deferredScreensDappReviewTypedTitle": {
+    "en": "What you typed",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:438",
+    "zh": "你输入的"
+  },
+  "wallet_deferredScreensDappScreenTitle": {
+    "en": "DApp check",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:345",
+    "zh": "DApp 核对"
+  },
+  "wallet_deferredScreensFlagged": {
+    "en": "Check origin",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:393",
+    "zh": "核对来源"
+  },
+  "wallet_deferredScreensFlagged2": {
+    "en": "Needs attention",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:413, lib/features/wallet/deferred_screens.dart:449",
+    "zh": "需注意"
+  },
+  "wallet_deferredScreensLoopFolioPrimary": {
+    "en": "No URL to check yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:373, lib/features/wallet/deferred_screens.dart:429",
+    "zh": "还没有可核对的网址"
+  },
+  "wallet_deferredScreensLoopLabel": {
+    "en": "Steps",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:277",
+    "zh": "步骤"
+  },
+  "wallet_deferredScreensLoopLabel2": {
+    "en": "Local check",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:424",
+    "zh": "本地核对"
+  },
+  "wallet_deferredScreensLoopLabel3": {
+    "en": "Findings",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:478",
+    "zh": "发现"
+  },
+  "wallet_deferredScreensLoopLabel4": {
+    "en": "Domain reputation",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:511",
+    "zh": "域名信誉"
+  },
+  "wallet_deferredScreensLoopLabel5": {
+    "en": "Connection and signing",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:518",
+    "zh": "连接与签名"
+  },
+  "wallet_deferredScreensNormalized": {
+    "en": "Origin matches",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:392",
+    "zh": "来源一致"
+  },
+  "wallet_deferredScreensNormalized2": {
+    "en": "Normalized",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:412",
+    "zh": "规范化完成"
+  },
+  "wallet_deferredScreensNormalized3": {
+    "en": "Readable",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:448",
+    "zh": "可读"
+  },
+  "wallet_deferredScreensPayFolioHeading": {
+    "en": "Scan to pay",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:94",
+    "zh": "扫码支付"
+  },
+  "wallet_deferredScreensPayFolioStamp": {
+    "en": "Camera",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:110",
+    "zh": "相机"
+  },
+  "wallet_deferredScreensPayWhyNoticeBody": {
+    "en": "Payments involve compliance and payment provider approval and need a separate review. Community, Mining and Launch come first.",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:106",
+    "zh": "支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。"
+  },
+  "wallet_deferredScreensPayWhyNoticeTitle": {
+    "en": "About Scan to pay",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:100",
+    "zh": "关于扫码支付"
+  },
+  "wallet_deferredScreensPayWhyNoticeTitle2": {
+    "en": "Why not now",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:105",
+    "zh": "为什么现在不做"
+  },
+  "wallet_deferredScreensS": {
+    "en": "This URL can't be used",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:373",
+    "zh": "这个网址不能使用"
+  },
+  "wallet_deferredScreensSemanticsLabel": {
+    "en": "View {title}",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/deferred_screens.dart:54",
+    "zh": "查看{title}"
+  },
+  "wallet_deferredScreensSubtitle": {
+    "en": "Block",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:494, lib/features/wallet/deferred_screens.dart:496",
+    "zh": "阻止"
+  },
+  "wallet_deferredScreensSubtitle2": {
+    "en": "Notice",
+    "placeholders": {},
+    "where": "lib/features/wallet/deferred_screens.dart:494, lib/features/wallet/deferred_screens.dart:496",
+    "zh": "提示"
+  },
+  "wallet_homeBarrierLabel": {
+    "en": "Close total assets notes",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:542",
+    "zh": "关闭总资产说明"
+  },
+  "wallet_homeBuild": {
+    "en": "Holdings breakdown",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1276",
+    "zh": "持仓分布"
+  },
+  "wallet_homeBuild2": {
+    "en": "Manage",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1669",
+    "zh": "管理"
+  },
+  "wallet_homeIf": {
+    "en": "Pending {hidden}",
+    "placeholders": {
+      "hidden": {
+        "example": "hidden ? walletMaskedFigure : loopFormatDecimal(value)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1062, lib/features/wallet/wallet_home_widgets.dart:1460",
+    "zh": "待确认 {hidden}"
+  },
+  "wallet_homeIf2": {
+    "en": "Data sources don't match yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1063, lib/features/wallet/wallet_home_widgets.dart:1461, lib/features/wallet/wallet_read_screens.dart:1649, lib/features/wallet/wallet_read_widgets.dart:89",
+    "zh": "数据源尚未对齐"
+  },
+  "wallet_homeLabel": {
+    "en": "{address}, copy wallet address",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:210",
+    "zh": "{address}，复制钱包地址"
+  },
+  "wallet_homeLabel10": {
+    "en": "Snapshot observed",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:643",
+    "zh": "快照观察于"
+  },
+  "wallet_homeLabel11": {
+    "en": "Fee reserve",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:650, lib/features/wallet/wallet_read_screens.dart:1537",
+    "zh": "手续费保留"
+  },
+  "wallet_homeLabel12": {
+    "en": "{label}, not available right now",
+    "placeholders": {
+      "label": {
+        "example": "action.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:789",
+    "zh": "{label}，暂不可用"
+  },
+  "wallet_homeLabel13": {
+    "en": "{symbol}, balance can't be loaded",
+    "placeholders": {
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1017",
+    "zh": "{symbol}，余额读不到"
+  },
+  "wallet_homeLabel14": {
+    "en": "Other",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1234",
+    "zh": "其它"
+  },
+  "wallet_homeLabel15": {
+    "en": "{symbol}, {subtitle}, balance {amount}, value {valueText}{changeText}",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      },
+      "changeText": {
+        "example": "changeText == null ? '' : '，24 小时 $changeText'",
+        "type": "Object"
+      },
+      "subtitle": {
+        "example": "subtitle",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      },
+      "valueText": {
+        "example": "valueText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1612",
+    "zh": "{symbol}，{subtitle}，余额 {amount}，估值 {valueText}{changeText}"
+  },
+  "wallet_homeLabel16": {
+    "en": "Wallet management",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1647, lib/features/wallet/wallet_read_screens.dart:527",
+    "zh": "钱包管理"
+  },
+  "wallet_homeLabel2": {
+    "en": "Show amounts",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:340",
+    "zh": "显示金额"
+  },
+  "wallet_homeLabel3": {
+    "en": "Hide amounts",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:340",
+    "zh": "隐藏金额"
+  },
+  "wallet_homeLabel4": {
+    "en": "Price source",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:587",
+    "zh": "价格来源"
+  },
+  "wallet_homeLabel5": {
+    "en": "Observed",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:592, lib/features/wallet/wallet_read_screens.dart:3287",
+    "zh": "观察于"
+  },
+  "wallet_homeLabel6": {
+    "en": "Not included",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:598",
+    "zh": "未计入"
+  },
+  "wallet_homeLabel7": {
+    "en": "24h change",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:603",
+    "zh": "24h 变动"
+  },
+  "wallet_homeLabel8": {
+    "en": "Balance block",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:621",
+    "zh": "余额区块"
+  },
+  "wallet_homeLabel9": {
+    "en": "Net value snapshot source",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:637",
+    "zh": "净值快照来源"
+  },
+  "wallet_homeLoopBadge": {
+    "en": "Earns power",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:909",
+    "zh": "产生算力"
+  },
+  "wallet_homeLoopNetWorthChangeAvailable": {
+    "en": "Calculated from the same price read",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:605",
+    "zh": "按同一次价格读取计算"
+  },
+  "wallet_homeLoopNetWorthChangeUnavailable": {
+    "en": "Some assets have no 24h price change, so it's hidden for now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:607",
+    "zh": "部分资产没有 24h 价格变化，暂不显示"
+  },
+  "wallet_homeLoopSheetHeading": {
+    "en": "About total assets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:553",
+    "zh": "关于总资产"
+  },
+  "wallet_homeLoopSheetHeading2": {
+    "en": "Holdings that earn power",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:934",
+    "zh": "持仓产生算力"
+  },
+  "wallet_homeMessage": {
+    "en": "Wallet address copied",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:218",
+    "zh": "钱包地址已复制"
+  },
+  "wallet_homeMessage2": {
+    "en": "Balance can't be loaded · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(balance.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1036",
+    "zh": "余额读不到 · {reasonCodeText}"
+  },
+  "wallet_homeS": {
+    "en": "Value {valueText}, 24h {walletRowChangeText}",
+    "placeholders": {
+      "valueText": {
+        "example": "valueText",
+        "type": "Object"
+      },
+      "walletRowChangeText": {
+        "example": "walletRowChangeText(pct)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1078",
+    "zh": "估值 {valueText}，24h {walletRowChangeText}"
+  },
+  "wallet_homeSX": {
+    "en": ", 24h {changeText}",
+    "placeholders": {
+      "changeText": {
+        "example": "changeText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1610",
+    "zh": "，24 小时 {changeText}"
+  },
+  "wallet_homeSemanticLabel": {
+    "en": "{symbol}, balance {amount}, {valueLabel}",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      },
+      "valueLabel": {
+        "example": "valueLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1114",
+    "zh": "{symbol}，余额 {amount}，{valueLabel}"
+  },
+  "wallet_homeShowWalletPowerSheet": {
+    "en": "Registered assets in your wallet earn mining power by their weights, and power decides how much LOOP you get each day. Community tokens count only after you join an approved linked community. See each asset's weight and power on the Mining page.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:938",
+    "zh": "钱包里已登记的资产会按各自的权重产生挖矿算力，算力决定每天能分到的 LOOP。社区币须加入已通过审核的绑定社区才计入。每个资产的权重与算力在挖矿页查看。"
+  },
+  "wallet_homeShowWalletTotalInfoSheet": {
+    "en": "Total assets is the value of registered assets at current prices, for display only; it isn't an available balance. The usable amount is the \"Usable\" figure on each asset page.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:561",
+    "zh": "总资产是按当前价格对已登记资产的估值，只用于展示，不是可用余额。能动用的数量以每个资产页的「可动用」为准。"
+  },
+  "wallet_homeSwitch": {
+    "en": "Value {valueText}",
+    "placeholders": {
+      "valueText": {
+        "example": "valueText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1077",
+    "zh": "估值 {valueText}"
+  },
+  "wallet_homeText": {
+    "en": "Total assets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:337, lib/features/wallet/wallet_home_widgets.dart:615",
+    "zh": "总资产"
+  },
+  "wallet_homeUnreadText": {
+    "en": "Not available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:146",
+    "zh": "暂不可用"
+  },
+  "wallet_homeValue": {
+    "en": "{unavailableCount, plural, =1{1 asset has no price yet} other{{unavailableCount} assets have no price yet}}",
+    "placeholders": {
+      "unavailableCount": {
+        "example": "valued.unavailableCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:599",
+    "zh": "{unavailableCount} 项资产暂无价格"
+  },
+  "wallet_homeValueText": {
+    "en": "No value yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1080, lib/features/wallet/wallet_home_widgets.dart:1082, lib/features/wallet/wallet_home_widgets.dart:1483",
+    "zh": "暂无估值"
+  },
+  "wallet_homeWalletDistributionBarLabel": {
+    "en": "Holdings breakdown, {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:1270",
+    "zh": "持仓分布，{label}"
+  },
+  "wallet_homeWalletPowerSheetBarrierLabel": {
+    "en": "Close power notes",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:925",
+    "zh": "关闭算力说明"
+  },
+  "wallet_homeWalletPowerTagLabel": {
+    "en": "Holdings earn power, view notes",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_home_widgets.dart:898",
+    "zh": "持仓产生算力，查看说明"
+  },
+  "wallet_homeWalletRowChangeUsd": {
+    "en": "{count, plural, =1{1 asset has no price yet, not included} other{{count} assets have no price yet, not included}}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_home_widgets.dart:125",
+    "zh": "{count} 项资产暂无价格，未计入"
+  },
+  "wallet_miningHooksFor": {
+    "en": "No weight",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:77",
+    "zh": "无权重"
+  },
+  "wallet_miningHooksLoopPowerHint": {
+    "en": "{power} power",
+    "placeholders": {
+      "power": {
+        "example": "power",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:120",
+    "zh": "{power} 算力"
+  },
+  "wallet_miningHooksLoopPowerHint2": {
+    "en": "No estimate for today yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:122",
+    "zh": "今日预估暂无"
+  },
+  "wallet_miningHooksLoopPowerHint3": {
+    "en": "{powerFigure} power",
+    "placeholders": {
+      "powerFigure": {
+        "example": "loopPowerFigure(row.power)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:164",
+    "zh": "{powerFigure} 算力"
+  },
+  "wallet_miningHooksLoopPowerHint4": {
+    "en": "Weight {weight}×",
+    "placeholders": {
+      "weight": {
+        "example": "row.weight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:165",
+    "zh": "权重 {weight}×"
+  },
+  "wallet_miningHooksS": {
+    "en": "Est. today {daily} LOOP",
+    "placeholders": {
+      "daily": {
+        "example": "daily",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:122",
+    "zh": "今日预估 {daily} LOOP"
+  },
+  "wallet_miningHooksWalletAssetPowerHintText": {
+    "en": "This asset's mining contribution",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:153, lib/features/wallet/wallet_mining_hooks.dart:162",
+    "zh": "这个资产的挖矿贡献"
+  },
+  "wallet_miningHooksWalletAssetPowerText": {
+    "en": "Power {loopFigureDash}",
+    "placeholders": {
+      "loopFigureDash": {
+        "example": "loopFigureDash",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:73, lib/features/wallet/wallet_mining_hooks.dart:79",
+    "zh": "算力 {loopFigureDash}"
+  },
+  "wallet_miningHooksWalletAssetPowerText2": {
+    "en": "Power {powerFigure}",
+    "placeholders": {
+      "powerFigure": {
+        "example": "loopPowerFigure(row.power)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:75",
+    "zh": "算力 {powerFigure}"
+  },
+  "wallet_miningHooksWalletPowerHintText": {
+    "en": "Wallet holdings are earning power",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:118",
+    "zh": "钱包持仓正在产生算力"
+  },
+  "wallet_miningHooksWalletPowerHintText2": {
+    "en": "Wallet holdings earn power by weight",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_mining_hooks.dart:118",
+    "zh": "钱包持仓按权重产生算力"
+  },
+  "wallet_moneyActionNameApprove": {
+    "en": "Approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:290",
+    "zh": "授权"
+  },
+  "wallet_moneyActionNameRevoke": {
+    "en": "Revoke",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:290",
+    "zh": "回收授权"
+  },
+  "wallet_moneyActionNameSend": {
+    "en": "Send",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:290",
+    "zh": "发送"
+  },
+  "wallet_moneyActionNameSendNft": {
+    "en": "NFT send",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:290",
+    "zh": "发送 NFT"
+  },
+  "wallet_moneyActionNameSwap": {
+    "en": "Swap",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:290",
+    "zh": "兑换"
+  },
+  "wallet_moneyActionsAssetBlocked": {
+    "en": "This asset is blocked; no fund actions are allowed.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:499",
+    "zh": "这个资产已被屏蔽，不能进行任何资金操作。"
+  },
+  "wallet_moneyActionsAssetNotInAllowlist": {
+    "en": "This asset isn't in the current range of supported assets, so this action didn't pass. LOOP maintains the range and it can't be changed in the app; use an asset within the range.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:485",
+    "zh": "这个资产不在当前可操作的资产范围里，这笔操作没有通过。范围由 LOOP 维护，不能在应用里调整；请换一个在范围内的资产。"
+  },
+  "wallet_moneyActionsBuild": {
+    "en": "{moneyActionTitle} · Final confirmation",
+    "placeholders": {
+      "moneyActionTitle": {
+        "example": "moneyActionTitle(intent.kind).replaceFirst('确认', '')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:380",
+    "zh": "{moneyActionTitle} · 最终确认"
+  },
+  "wallet_moneyActionsBuild2": {
+    "en": "Unlimited {symbol}",
+    "placeholders": {
+      "symbol": {
+        "example": "review.asset.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:387",
+    "zh": "无限 {symbol}"
+  },
+  "wallet_moneyActionsBuild3": {
+    "en": "No fresh market data this time, so no value is shown.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:394",
+    "zh": "本次没有可用的新鲜行情，因此不展示估值。"
+  },
+  "wallet_moneyActionsCanaryCeilingExceeded": {
+    "en": "{figures}This action exceeds the per-transaction limit. No transaction was submitted. LOOP sets the limit; lower the amount and try again.",
+    "placeholders": {
+      "figures": {
+        "example": "figures",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:491",
+    "zh": "{figures}这笔操作超过了单笔金额上限，没有提交任何交易。上限由 LOOP 设定，请降低本次金额后再试。"
+  },
+  "wallet_moneyActionsCanaryDailyCeilingExceeded": {
+    "en": "{figures}{budget}This action would exceed the 24-hour cumulative limit. No transaction was submitted. LOOP sets the limit; lower the amount, or wait until the 24-hour window rolls over.",
+    "placeholders": {
+      "budget": {
+        "example": "budget",
+        "type": "Object"
+      },
+      "figures": {
+        "example": "figures",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:494",
+    "zh": "{figures}{budget}这笔操作会超过 24 小时内的累计金额上限，没有提交任何交易。上限由 LOOP 设定，请降低金额，或等累计额度滚过这 24 小时。"
+  },
+  "wallet_moneyActionsCounterpartyNotInAllowlist": {
+    "en": "This recipient address isn't on the current allowed list, so this action didn't pass and no transaction was submitted. LOOP maintains the list and it can't be changed in the app; use an address on the list.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:488",
+    "zh": "这个收款地址不在当前允许的收款名单里，这笔操作没有通过，也没有提交任何交易。名单由 LOOP 维护，不能在应用里调整；请换一个名单内的地址。"
+  },
+  "wallet_moneyActionsMoneyCapabilityCheckingLabel": {
+    "en": "Checking availability",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:32",
+    "zh": "正在核对可用性"
+  },
+  "wallet_moneyActionsMoneyFactsFooterText": {
+    "en": "Block {groupedFigure} · {observed}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(balance.blockNumber.toString())",
+        "type": "Object"
+      },
+      "observed": {
+        "example": "observed",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:137",
+    "zh": "区块 {groupedFigure} · {observed}"
+  },
+  "wallet_moneyActionsMoneyPolicyRefusalText": {
+    "en": "This time ${exposureUsd} · limit ${ceilingUsd}. ",
+    "placeholders": {
+      "ceilingUsd": {
+        "example": "failure.ceilingUsd",
+        "type": "Object"
+      },
+      "exposureUsd": {
+        "example": "failure.exposureUsd",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:474",
+    "zh": "本次 ${exposureUsd} · 上限 ${ceilingUsd}。"
+  },
+  "wallet_moneyActionsMoneyPolicyRefusalText2": {
+    "en": "Used ${spentUsd} in 24 hours · ${remainingUsd} left. ",
+    "placeholders": {
+      "remainingUsd": {
+        "example": "failure.remainingUsd",
+        "type": "Object"
+      },
+      "spentUsd": {
+        "example": "failure.spentUsd",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:481",
+    "zh": "24 小时内已用 ${spentUsd} · 还剩 ${remainingUsd}。"
+  },
+  "wallet_moneyActionsNativeAssetNotApprovable": {
+    "en": "Native BNB has no approvals: it isn't ERC-20 and has no allowance to approve or revoke. This step doesn't apply to native assets.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:502",
+    "zh": "原生 BNB 没有授权面：它不是 ERC-20，没有 allowance 可以授权或回收。这一步不适用于原生资产。"
+  },
+  "wallet_moneyActionsObserved": {
+    "en": "Facts observed {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(intent.factsObservedAt, now: now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:132",
+    "zh": "事实观察于 {relativeTime}"
+  },
+  "wallet_moneyActionsPriceImpactBlocked": {
+    "en": "The price impact of this swap is too high, so it was blocked. Lower the amount or try again later.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:500",
+    "zh": "这笔兑换的价格影响过大，已被阻止。请减小金额或稍后再试。"
+  },
+  "wallet_moneyActionsPurpose": {
+    "en": "This step requires two-step verification, which isn't available yet. Nothing was signed, broadcast or submitted. Check the verification methods available in Security Center.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:556",
+    "zh": "这一步需要二次验证，二次验证还没有开放，没有签名、没有广播，也没有提交任何交易。请到安全中心查看当前可用的验证方式。"
+  },
+  "wallet_moneyActionsReason": {
+    "en": "Submitted, waiting for the on-chain receipt. A success message doesn't mean it's done on-chain.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:285",
+    "zh": "已提交，等待链上回执。成功提示不代表链上已完成。"
+  },
+  "wallet_moneyActionsReason2": {
+    "en": "This action was submitted and the result is unknown, so it's locked. Check the result page; don't submit again.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:288",
+    "zh": "这笔操作已提交且结果未知，已锁定。请在结果页查看，不要重复提交。"
+  },
+  "wallet_moneyActionsS": {
+    "en": "The wallet broadcast it ({txHash}), but this report wasn't accepted. The transaction may already be on-chain. Check the result page and report again later; don't sign again.",
+    "placeholders": {
+      "txHash": {
+        "example": "outcome.txHash",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:295",
+    "zh": "钱包已经广播（{txHash}），但这次上报没有被接受。这笔交易可能已经上链，请在结果页查看并稍后重新上报，不要重复签名。"
+  },
+  "wallet_moneyActionsS2": {
+    "en": "Estimated value {formatUsd} · source {intent}",
+    "placeholders": {
+      "formatUsd": {
+        "example": "loopFormatUsd(intent.policy.valueUsd!)",
+        "type": "Object"
+      },
+      "intent": {
+        "example": "intent.policy.priceSource ?? '未标注'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:395",
+    "zh": "预估价值 {formatUsd} · 来源 {intent}"
+  },
+  "wallet_moneyActionsSetState": {
+    "en": "The wallet signed, but this submission hasn't been recorded yet. Check the status on the result page; don't sign again.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:294",
+    "zh": "钱包已经签名，但这次提交还没有记录到。请到结果页查看状态，不要重复签名。"
+  },
+  "wallet_moneyActionsSetState2": {
+    "en": "The wallet didn't finish signing. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:307",
+    "zh": "钱包没有完成签名，没有提交任何交易。"
+  },
+  "wallet_moneyActionsSigningApprove": {
+    "en": "Confirm approval",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:284",
+    "zh": "确认授权"
+  },
+  "wallet_moneyActionsSigningLabel": {
+    "en": "Recipient",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:318, lib/features/wallet/money_actions_signing.dart:342, lib/features/wallet/send_screens.dart:1595, lib/features/wallet/send_screens.dart:1743",
+    "zh": "收款方"
+  },
+  "wallet_moneyActionsSigningLabel2": {
+    "en": "Allowance",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:331",
+    "zh": "额度"
+  },
+  "wallet_moneyActionsSigningLabel3": {
+    "en": "Max network fee",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:381, lib/features/wallet/send_screens.dart:1597, lib/features/wallet/tx_result_screen.dart:425",
+    "zh": "最高网络费"
+  },
+  "wallet_moneyActionsSigningRevoke": {
+    "en": "Confirm revoke",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:285",
+    "zh": "确认回收授权"
+  },
+  "wallet_moneyActionsSigningSend": {
+    "en": "Confirm send",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:283, lib/features/wallet/send_screens.dart:1201",
+    "zh": "确认发送"
+  },
+  "wallet_moneyActionsSigningSendNft": {
+    "en": "Confirm NFT send",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:287, lib/features/wallet/send_screens.dart:1201",
+    "zh": "确认发送 NFT"
+  },
+  "wallet_moneyActionsSigningSwap": {
+    "en": "Confirm swap",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_signing.dart:286",
+    "zh": "确认兑换"
+  },
+  "wallet_moneyActionsSigningValue": {
+    "en": "Unlimited allowance",
+    "placeholders": {},
+    "where": "lib/features/wallet/approval_screens.dart:656",
+    "zh": "无限额度"
+  },
+  "wallet_moneyActionsSwitch": {
+    "en": "The current policy doesn't allow this action. No transaction was submitted. We won't guess which rule applies.",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:504",
+    "zh": "当前策略不允许这笔操作，没有提交任何交易。这里不猜是哪一条。"
+  },
+  "wallet_moneyActionsTitle": {
+    "en": "This step requires two-step verification; no transaction was submitted",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:549",
+    "zh": "这一步需要二次验证，没有提交任何交易"
+  },
+  "wallet_moneyActionsTitle2": {
+    "en": "This action isn't available in your region; no transaction was submitted",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:551",
+    "zh": "当前地区不能执行此操作，没有提交任何交易"
+  },
+  "wallet_moneyActionsTitle3": {
+    "en": "Native assets can't be approved",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:553",
+    "zh": "原生资产不能授权"
+  },
+  "wallet_moneyActionsTitle4": {
+    "en": "Rejected by policy; no transaction was submitted",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:554",
+    "zh": "被策略拒绝，没有提交任何交易"
+  },
+  "wallet_moneyActionsUnknown": {
+    "en": "Unknown (locked)",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:51",
+    "zh": "未知（已锁定）"
+  },
+  "wallet_moneyActionsUnlimitedExposureExceedsCeiling": {
+    "en": "{figures}An unlimited approval's exposure is based on the current balance and exceeds the per-transaction limit. Use a limited approval, or lower this asset's balance first.",
+    "placeholders": {
+      "figures": {
+        "example": "figures",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_actions_widgets.dart:497",
+    "zh": "{figures}无限授权按当前余额计算敞口，已超过单笔上限。请改用限额授权，或先降低这个资产的余额。"
+  },
+  "wallet_moneyActionsWalletMoneyActionsS2": {
+    "en": "Not labeled",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_actions_widgets.dart:391, lib/features/wallet/swap_screens.dart:1030",
+    "zh": "未标注"
+  },
+  "wallet_moneyAssetPickerHintText": {
+    "en": "Search name or symbol",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_asset_picker.dart:147",
+    "zh": "搜索名称或代号"
+  },
+  "wallet_moneyAssetPickerLoopBalanceAvailable": {
+    "en": "{name} · Usable {formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(spendable)",
+        "type": "Object"
+      },
+      "name": {
+        "example": "row.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_asset_picker.dart:101",
+    "zh": "{name} · 可动用 {formatDecimal}"
+  },
+  "wallet_moneyAssetPickerSummary": {
+    "en": "Zero-balance assets · {folded}",
+    "placeholders": {
+      "folded": {
+        "example": "folded.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/money_asset_picker.dart:179",
+    "zh": "余额为 0 的资产 · {folded} 个"
+  },
+  "wallet_moneyAssetPickerTitle": {
+    "en": "Choose asset",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_asset_picker.dart:39, lib/features/wallet/money_asset_picker.dart:59",
+    "zh": "选择资产"
+  },
+  "wallet_moneyAssetPickerTitle2": {
+    "en": "This wallet has no readable assets yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_asset_picker.dart:159, lib/features/wallet/send_screens.dart:848, lib/features/wallet/swap_screens.dart:210, lib/features/wallet/wallet_read_screens.dart:752",
+    "zh": "这个钱包还没有可读资产"
+  },
+  "wallet_moneyAssetPickerTitle3": {
+    "en": "No matching assets",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_asset_picker.dart:159",
+    "zh": "没有匹配的资产"
+  },
+  "wallet_moneyAssetPickerTitle4": {
+    "en": "No assets with a usable balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/money_asset_picker.dart:167, lib/features/wallet/send_screens.dart:878",
+    "zh": "没有可动用余额的资产"
+  },
+  "wallet_networthBuild": {
+    "en": "Collapse net value trend",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:419",
+    "zh": "收起净值走势"
+  },
+  "wallet_networthBuild2": {
+    "en": "Today's P&L",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:437",
+    "zh": "今日盈亏"
+  },
+  "wallet_networthDetail": {
+    "en": "The trend is the USD value the server records hourly for this wallet, for display only; it isn't an available balance.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:141",
+    "zh": "走势是服务端每小时为这个钱包记下的 USD 估值，只用于展示，不是可用余额。"
+  },
+  "wallet_networthIf": {
+    "en": "CNY converted at {walletFxSourceLabel} 1 USD = {rate} CNY (published {published}, observed {observed}){stale}",
+    "placeholders": {
+      "observed": {
+        "example": "observed",
+        "type": "Object"
+      },
+      "published": {
+        "example": "published",
+        "type": "Object"
+      },
+      "rate": {
+        "example": "rate",
+        "type": "Object"
+      },
+      "stale": {
+        "example": "stale",
+        "type": "Object"
+      },
+      "walletFxSourceLabel": {
+        "example": "walletFxSourceLabel(source)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:185",
+    "zh": "人民币按{walletFxSourceLabel} 1 USD = {rate} CNY（{published} 发布，观察于 {observed}）折算{stale}"
+  },
+  "wallet_networthLabel": {
+    "en": "Today's P&L {value}, {action}",
+    "placeholders": {
+      "action": {
+        "example": "action",
+        "type": "Object"
+      },
+      "value": {
+        "example": "value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:423",
+    "zh": "今日盈亏 {value}，{action}"
+  },
+  "wallet_networthS": {
+    "en": "Expand net value trend",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:419",
+    "zh": "展开净值走势"
+  },
+  "wallet_networthSource": {
+    "en": "LOOP net value snapshot",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:139",
+    "zh": "LOOP 净值快照"
+  },
+  "wallet_networthSwitch": {
+    "en": "ECB reference rate",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:148",
+    "zh": "欧洲央行参考汇率"
+  },
+  "wallet_networthSwitch2": {
+    "en": "Reference rate",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:149",
+    "zh": "参考汇率"
+  },
+  "wallet_networthWalletNetworthChartEmptyMessage": {
+    "en": "No net value records in this range yet · recorded hourly; the line starts once you have assets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:86",
+    "zh": "这个区间还没有净值记录 · 每小时记一次，有资产后开始画线"
+  },
+  "wallet_networthWalletNetworthChartLabel": {
+    "en": "{label} net value trend, high {highText}, low {lowText}",
+    "placeholders": {
+      "highText": {
+        "example": "highText",
+        "type": "Object"
+      },
+      "label": {
+        "example": "history.range.label",
+        "type": "Object"
+      },
+      "lowText": {
+        "example": "lowText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:215",
+    "zh": "{label}净值走势，最高 {highText}，最低 {lowText}"
+  },
+  "wallet_networthWalletNetworthChartUnavailableMessage": {
+    "en": "Net value trend can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:100",
+    "zh": "净值走势暂时读不到"
+  },
+  "wallet_networthWalletNetworthChevronLabel": {
+    "en": "Collapse",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:477",
+    "zh": "收起"
+  },
+  "wallet_networthWalletNetworthChevronLabel2": {
+    "en": "Net value trend",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:477",
+    "zh": "净值走势"
+  },
+  "wallet_networthWalletNetworthRangesSemanticLabel": {
+    "en": "Net value trend range",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_networth_widgets.dart:116",
+    "zh": "净值走势区间"
+  },
+  "wallet_nftSendContractUnsupported": {
+    "en": "Sending this NFT isn't supported yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:118",
+    "zh": "暂不支持发送这个 NFT"
+  },
+  "wallet_nftSendIdempotencyConflict": {
+    "en": "This send was already submitted. Check the latest status",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:129",
+    "zh": "这笔发送已提交过，请查看最新状态"
+  },
+  "wallet_nftSendInsufficientBalance": {
+    "en": "Not enough {loopLaunchNativeSymbolText} for fees. Top up and try again",
+    "placeholders": {
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/nft_send.dart:128",
+    "zh": "{loopLaunchNativeSymbolText} 手续费不足，充值后再试"
+  },
+  "wallet_nftSendNftSendDisabledText": {
+    "en": "Sending NFTs isn't supported yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:96",
+    "zh": "暂不支持发送 NFT"
+  },
+  "wallet_nftSendNotOwned": {
+    "en": "This NFT is no longer in your wallet. Go back and choose again",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:116",
+    "zh": "这枚 NFT 已不在钱包，请返回重新选择"
+  },
+  "wallet_nftSendRecipientRejects": {
+    "en": "The recipient address doesn't accept this NFT",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:120",
+    "zh": "收款地址不接收这枚 NFT"
+  },
+  "wallet_nftSendRecipientSelf": {
+    "en": "You can't send to yourself",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:122",
+    "zh": "不能发送给自己"
+  },
+  "wallet_nftSendSimulationFailed": {
+    "en": "This send didn't pass simulation. Try again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/nft_send.dart:131",
+    "zh": "这笔发送预执行没有通过，请稍后再试"
+  },
+  "wallet_readBuild": {
+    "en": "Usable {hidden}",
+    "placeholders": {
+      "hidden": {
+        "example": "hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:657",
+    "zh": "可动用 {hidden}"
+  },
+  "wallet_readBuyback": {
+    "en": "Buyback · {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:263",
+    "zh": "回购 · {ticker}"
+  },
+  "wallet_readCreating": {
+    "en": "Requesting an embedded wallet from Privy; the list refreshes automatically when done.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:823",
+    "zh": "正在向 Privy 申请嵌入式钱包，完成后清单会自动刷新。"
+  },
+  "wallet_readFailed": {
+    "en": "The last creation didn't finish: {provisioning} Your sign-in is unchanged; you can try again.",
+    "placeholders": {
+      "provisioning": {
+        "example": "provisioning.errorMessage ?? '原因未知'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:825",
+    "zh": "上一次创建没有完成：{provisioning} 登录状态没有变化，可以再试一次。"
+  },
+  "wallet_readIf": {
+    "en": "Only the sum of valued assets, not total assets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:512, lib/features/wallet/wallet_read_widgets.dart:559",
+    "zh": "只是已估值资产的合计，不是总资产"
+  },
+  "wallet_readIf2": {
+    "en": "Net value ({valuationCurrency})",
+    "placeholders": {
+      "valuationCurrency": {
+        "example": "valued.valuationCurrency",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:532",
+    "zh": "净值（{valuationCurrency}）"
+  },
+  "wallet_readLabel": {
+    "en": "Creating…",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:838",
+    "zh": "创建中…"
+  },
+  "wallet_readLabel2": {
+    "en": "Create wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:838",
+    "zh": "创建钱包"
+  },
+  "wallet_readLabel3": {
+    "en": "Loading list",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:878",
+    "zh": "列表加载中"
+  },
+  "wallet_readLabel4": {
+    "en": "Loading receiving address",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:961",
+    "zh": "收款地址加载中"
+  },
+  "wallet_readLoopBalanceAvailable": {
+    "en": "Usable {formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(spendable)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:81, lib/features/wallet/wallet_read_widgets.dart:130",
+    "zh": "可动用 {formatDecimal}"
+  },
+  "wallet_readLoopBalanceAvailable2": {
+    "en": "Fee reserve {formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(reserve)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:139, lib/features/wallet/wallet_read_widgets.dart:654",
+    "zh": "手续费保留 {formatDecimal}"
+  },
+  "wallet_readLoopBalanceUnavailable": {
+    "en": "Usable {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:128",
+    "zh": "可动用 {reasonCodeText}"
+  },
+  "wallet_readLoopBalanceUnavailable2": {
+    "en": "Fee reserve {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:137",
+    "zh": "手续费保留 {reasonCodeText}"
+  },
+  "wallet_readMessage": {
+    "en": "Development preview doesn't create a real wallet or call Privy.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:816",
+    "zh": "开发预览不会创建真实钱包，也不会调用 Privy。"
+  },
+  "wallet_readMessage2": {
+    "en": "This session isn't verified, so a wallet can't be created right now. Sign in again and retry.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:817",
+    "zh": "当前会话未完成验证，暂时不能创建钱包。重新登录后可以再试。"
+  },
+  "wallet_readMessage3": {
+    "en": "Wallet created",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:853",
+    "zh": "钱包已创建"
+  },
+  "wallet_readModelsDay": {
+    "en": "1D",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:842",
+    "zh": "1 天"
+  },
+  "wallet_readModelsHalfYear": {
+    "en": "180D",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:845",
+    "zh": "180 天"
+  },
+  "wallet_readModelsMonth": {
+    "en": "30D",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:844",
+    "zh": "30 天"
+  },
+  "wallet_readModelsSwitch": {
+    "en": "Only receives assets on the BNB Smart Chain (BSC) network. Assets sent to this address from other networks may be lost permanently.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:832",
+    "zh": "只接收 BNB Smart Chain（BSC）网络的资产。把其他网络的资产发到这个地址可能永久丢失。"
+  },
+  "wallet_readModelsSwitch2": {
+    "en": "Make sure the sender's network matches the one shown here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:833",
+    "zh": "请先确认发送方使用的网络与这里显示的一致。"
+  },
+  "wallet_readModelsWeek": {
+    "en": "7D",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:843",
+    "zh": "7 天"
+  },
+  "wallet_readModelsYear": {
+    "en": "360D",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_models.dart:846",
+    "zh": "360 天"
+  },
+  "wallet_readNftMint": {
+    "en": "Mint badge · {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:261",
+    "zh": "铸造勋章 · {ticker}"
+  },
+  "wallet_readPoolBuy": {
+    "en": "Buy {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:258",
+    "zh": "买入 {ticker}"
+  },
+  "wallet_readPoolSell": {
+    "en": "Sell {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:260",
+    "zh": "卖出 {ticker}"
+  },
+  "wallet_readRewardClaim": {
+    "en": "Claim rewards · {ticker}",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:262",
+    "zh": "领取奖励 · {ticker}"
+  },
+  "wallet_readRowBalance": {
+    "en": "Balance {amount}",
+    "placeholders": {
+      "amount": {
+        "example": "amount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:114",
+    "zh": "余额 {amount}"
+  },
+  "wallet_readRowBalanceMissing": {
+    "en": "Balance can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:114",
+    "zh": "余额读不到"
+  },
+  "wallet_readS": {
+    "en": "Pending {formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(value)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:87",
+    "zh": "待确认 {formatDecimal}"
+  },
+  "wallet_readScreensBalancesFailureLine": {
+    "en": "This account doesn't have permission to read balances",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:936",
+    "zh": "当前账号没有权限读取余额"
+  },
+  "wallet_readScreensBuild": {
+    "en": "Native transfers",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3355",
+    "zh": "原生转账"
+  },
+  "wallet_readScreensBuild2": {
+    "en": "Bridge / Mining",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3355",
+    "zh": "跨链 / 挖矿"
+  },
+  "wallet_readScreensCopy": {
+    "en": "Address copied",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1875, lib/features/wallet/wallet_read_screens.dart:1886",
+    "zh": "地址已复制"
+  },
+  "wallet_readScreensEmptyMessage": {
+    "en": "The wallet list hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:538, lib/features/wallet/wallet_read_screens.dart:2244",
+    "zh": "钱包清单还没有读到"
+  },
+  "wallet_readScreensEmptyMessage2": {
+    "en": "This wallet doesn't have this row",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1149",
+    "zh": "这个钱包没有这一行"
+  },
+  "wallet_readScreensEmptyMessage3": {
+    "en": "No transfers for this asset yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1441, lib/features/wallet/wallet_read_screens.dart:1461",
+    "zh": "这个资产还没有收发记录"
+  },
+  "wallet_readScreensEmptyMessage4": {
+    "en": "No receiving address available",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1830",
+    "zh": "没有可用的接收地址"
+  },
+  "wallet_readScreensEmptyMessage5": {
+    "en": "No embedded wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2279",
+    "zh": "没有嵌入式钱包"
+  },
+  "wallet_readScreensEmptyMessage6": {
+    "en": "No connected external wallets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2291",
+    "zh": "没有已连接的外部钱包"
+  },
+  "wallet_readScreensEmptyMessage7": {
+    "en": "No on-chain activity yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2914, lib/features/wallet/wallet_read_screens.dart:3186",
+    "zh": "还没有链上活动"
+  },
+  "wallet_readScreensEmptyMessage8": {
+    "en": "No networks to show",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3465",
+    "zh": "没有可展示的网络"
+  },
+  "wallet_readScreensEmptyReason": {
+    "en": "This isn't \"no wallet\"; the list just wasn't loaded this time.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2245",
+    "zh": "这不是“没有钱包”，只是这次没有读到清单。"
+  },
+  "wallet_readScreensEmptyReason2": {
+    "en": "The indexer has read this range, but it has no transfers for this wallet.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2915",
+    "zh": "索引器已经读到这个区间，但其中没有属于这个钱包的转账。"
+  },
+  "wallet_readScreensExternalWalletKind": {
+    "en": "External wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2750",
+    "zh": "外部钱包"
+  },
+  "wallet_readScreensFor": {
+    "en": "Latency {best}ms",
+    "placeholders": {
+      "best": {
+        "example": "best",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3658",
+    "zh": "延迟 {best}ms"
+  },
+  "wallet_readScreensFor2": {
+    "en": "Latency unknown",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3658, lib/features/wallet/wallet_read_screens.dart:3685",
+    "zh": "延迟未知"
+  },
+  "wallet_readScreensIf": {
+    "en": "{ticker} · balance not loaded yet",
+    "placeholders": {
+      "ticker": {
+        "example": "ticker",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1338",
+    "zh": "{ticker} · 余额还没有读到"
+  },
+  "wallet_readScreensIf2": {
+    "en": "Name and decimals come only from on-chain calls",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1726",
+    "zh": "名称与精度只来自链上调用"
+  },
+  "wallet_readScreensIf3": {
+    "en": "Block height {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(asset.source.blockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1728",
+    "zh": "区块高度 {groupedFigure}"
+  },
+  "wallet_readScreensIf4": {
+    "en": "Checked {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(asset.source.verifiedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1730",
+    "zh": "校验于 {relativeTime}"
+  },
+  "wallet_readScreensLabel": {
+    "en": "On-chain balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1177, lib/features/wallet/wallet_read_screens.dart:1525",
+    "zh": "链上余额"
+  },
+  "wallet_readScreensLabel10": {
+    "en": "Balance in base units (integer, {decimals} decimals)",
+    "placeholders": {
+      "decimals": {
+        "example": "decimals",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1714",
+    "zh": "最小单位余额（{decimals} 位精度的整数）"
+  },
+  "wallet_readScreensLabel11": {
+    "en": "Registration status",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1717",
+    "zh": "登记状态"
+  },
+  "wallet_readScreensLabel12": {
+    "en": "Contract address",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1720",
+    "zh": "合约地址"
+  },
+  "wallet_readScreensLabel13": {
+    "en": "Network {name}",
+    "placeholders": {
+      "name": {
+        "example": "network.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2005",
+    "zh": "网络 {name}"
+  },
+  "wallet_readScreensLabel14": {
+    "en": "Native BNB transfers unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2979",
+    "zh": "原生 BNB 转账不可用"
+  },
+  "wallet_readScreensLabel15": {
+    "en": "Bridge and mining claim history unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2987",
+    "zh": "跨链与挖矿领取记录不可用"
+  },
+  "wallet_readScreensLabel16": {
+    "en": "MEME records not available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3000",
+    "zh": "MEME 记录暂不可用"
+  },
+  "wallet_readScreensLabel2": {
+    "en": "Usable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1186",
+    "zh": "可动用"
+  },
+  "wallet_readScreensLabel3": {
+    "en": "Current price",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1195",
+    "zh": "当前价"
+  },
+  "wallet_readScreensLabel4": {
+    "en": "Value",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1204, lib/features/wallet/wallet_read_screens.dart:1594",
+    "zh": "估值"
+  },
+  "wallet_readScreensLabel5": {
+    "en": "Available",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1529",
+    "zh": "可用"
+  },
+  "wallet_readScreensLabel6": {
+    "en": "Usable (after fee reserve)",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1533",
+    "zh": "可动用（扣除手续费保留）"
+  },
+  "wallet_readScreensLabel7": {
+    "en": "Pending incoming (not included in available)",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1552",
+    "zh": "待确认入账（不计入可用）"
+  },
+  "wallet_readScreensLabel8": {
+    "en": "Unit price",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1593",
+    "zh": "单价"
+  },
+  "wallet_readScreensLabel9": {
+    "en": "Decimals",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1709",
+    "zh": "精度"
+  },
+  "wallet_readScreensLaunchChainTitle": {
+    "en": "{name} (Launch)",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3721",
+    "zh": "{name}（Launch）"
+  },
+  "wallet_readScreensLoopBadge": {
+    "en": "Data may be out of date",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1606",
+    "zh": "数据可能过期"
+  },
+  "wallet_readScreensLoopBadge2": {
+    "en": "In use",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2763",
+    "zh": "使用中"
+  },
+  "wallet_readScreensLoopBadge3": {
+    "en": "Archived",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2765",
+    "zh": "已归档"
+  },
+  "wallet_readScreensLoopBadge4": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3547",
+    "zh": "已关闭"
+  },
+  "wallet_readScreensLoopBadge5": {
+    "en": "Running",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3618",
+    "zh": "运行中"
+  },
+  "wallet_readScreensLoopFolioPrimary": {
+    "en": "Balance not loaded yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1126",
+    "zh": "余额还没有读到"
+  },
+  "wallet_readScreensLoopLabel": {
+    "en": "Mining contribution",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1216",
+    "zh": "挖矿贡献"
+  },
+  "wallet_readScreensLoopLabel2": {
+    "en": "On-chain breakdown",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1256",
+    "zh": "链上分布"
+  },
+  "wallet_readScreensLoopLabel3": {
+    "en": "Transfers",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1277",
+    "zh": "收发记录"
+  },
+  "wallet_readScreensLoopLabel4": {
+    "en": "Embedded wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2272",
+    "zh": "嵌入式钱包"
+  },
+  "wallet_readScreensLoopLabel5": {
+    "en": "External wallets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2281",
+    "zh": "外部钱包"
+  },
+  "wallet_readScreensLoopLabel6": {
+    "en": "Enabled",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3477",
+    "zh": "已启用"
+  },
+  "wallet_readScreensLoopLabel7": {
+    "en": "RPC endpoints",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3577",
+    "zh": "RPC 端点"
+  },
+  "wallet_readScreensLoopLabel8": {
+    "en": "Indexer",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3596",
+    "zh": "索引器"
+  },
+  "wallet_readScreensLoopOfflineState": {
+    "en": "Switch active wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2260, lib/features/wallet/wallet_read_screens.dart:2664",
+    "zh": "切换活跃钱包"
+  },
+  "wallet_readScreensLoopOfflineState2": {
+    "en": "Load more",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2940",
+    "zh": "继续加载"
+  },
+  "wallet_readScreensLoopProvenanceFooter": {
+    "en": "Holdings in all linked wallets count toward power, no need to move them. LOOP ID is your identity; wallets are replaceable credentials and addresses aren't account identifiers.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2303",
+    "zh": "所有绑定钱包的持仓都计入算力，不用搬家。LOOP ID 是你的身份，钱包只是可更换的凭证，地址不是账号标识。"
+  },
+  "wallet_readScreensLoopProvenanceFooter2": {
+    "en": "Indexed height {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(page.freshness.indexerBlockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2926",
+    "zh": "索引高度 {groupedFigure}"
+  },
+  "wallet_readScreensLoopProvenanceFooter3": {
+    "en": "Data {groupedFigure} blocks behind",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(page.freshness.lagBlocks.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2929",
+    "zh": "数据落后 {groupedFigure} 块"
+  },
+  "wallet_readScreensLoopProvenanceLine": {
+    "en": "LOOP on-chain index",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:885",
+    "zh": "LOOP 链上索引"
+  },
+  "wallet_readScreensLoopRecordRow": {
+    "en": "Height {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(lane.lastBlockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3606",
+    "zh": "高度 {groupedFigure}"
+  },
+  "wallet_readScreensLoopRecordRow2": {
+    "en": "{groupedFigure} blocks behind",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(lane.lagBlocks.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3609, lib/features/wallet/wallet_read_screens.dart:3687",
+    "zh": "落后 {groupedFigure} 块"
+  },
+  "wallet_readScreensLoopRecordRow3": {
+    "en": "{reorgCount, plural, =1{1 reorg} other{{reorgCount} reorgs}}",
+    "placeholders": {
+      "reorgCount": {
+        "example": "lane.reorgCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3612",
+    "zh": "重组 {reorgCount} 次"
+  },
+  "wallet_readScreensLoopRecordRow4": {
+    "en": "Endpoint {index}",
+    "placeholders": {
+      "index": {
+        "example": "index + 1",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3681",
+    "zh": "端点 {index}"
+  },
+  "wallet_readScreensLoopRecordRow5": {
+    "en": "Latency {latencyMs}ms",
+    "placeholders": {
+      "latencyMs": {
+        "example": "endpoint.latencyMs",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3683",
+    "zh": "延迟 {latencyMs}ms"
+  },
+  "wallet_readScreensLoopRecordRow6": {
+    "en": "Checked {label}",
+    "placeholders": {
+      "label": {
+        "example": "endpoint.chainVerification.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3688",
+    "zh": "校验{label}"
+  },
+  "wallet_readScreensLoopSheetHeading": {
+    "en": "Link up to {limit} external wallets",
+    "placeholders": {
+      "limit": {
+        "example": "limit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2440",
+    "zh": "最多绑定 {limit} 个外部钱包"
+  },
+  "wallet_readScreensLoopSheetHeading2": {
+    "en": "Connect external wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2477",
+    "zh": "连接外部钱包"
+  },
+  "wallet_readScreensLoopSheetHeading3": {
+    "en": "External wallet {truncatedAddress}",
+    "placeholders": {
+      "truncatedAddress": {
+        "example": "wallet.truncatedAddress",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2544",
+    "zh": "外部钱包 {truncatedAddress}"
+  },
+  "wallet_readScreensLoopSheetHeading4": {
+    "en": "Unlink external wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2601",
+    "zh": "解绑外部钱包"
+  },
+  "wallet_readScreensLoopSheetHeading5": {
+    "en": "Transaction details",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3242",
+    "zh": "交易详情"
+  },
+  "wallet_readScreensMeTradesCapabilityBlockTitle": {
+    "en": "Wallet activity isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:613, lib/features/wallet/wallet_read_screens.dart:3175",
+    "zh": "钱包活动当前不可用"
+  },
+  "wallet_readScreensMessage": {
+    "en": "This device can't open the share sheet. Copy the address instead",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1957",
+    "zh": "这台设备打不开分享面板，请改用复制地址"
+  },
+  "wallet_readScreensMessage10": {
+    "en": "External wallet unlinked",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2648",
+    "zh": "已解绑外部钱包"
+  },
+  "wallet_readScreensMessage11": {
+    "en": "Active wallet switched",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2704",
+    "zh": "已切换活跃钱包"
+  },
+  "wallet_readScreensMessage12": {
+    "en": "Records haven't loaded yet; there's nothing to export.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3166",
+    "zh": "记录还没有读到，没有可以导出的内容。"
+  },
+  "wallet_readScreensMessage13": {
+    "en": "{what} copied",
+    "placeholders": {
+      "what": {
+        "example": "what",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3231",
+    "zh": "{what}已复制"
+  },
+  "wallet_readScreensMessage2": {
+    "en": "The wallet list isn't available right now, so external wallets can't be connected.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2225",
+    "zh": "钱包清单当前不可用，暂时不能连接外部钱包。"
+  },
+  "wallet_readScreensMessage3": {
+    "en": "The wallet list hasn't loaded yet. Connect an external wallet once it loads.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2327",
+    "zh": "钱包清单还没有读到，读到之后再连接外部钱包。"
+  },
+  "wallet_readScreensMessage4": {
+    "en": "Wallet linking didn't finish. Retry.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2364",
+    "zh": "钱包绑定没有完成，请重试。"
+  },
+  "wallet_readScreensMessage5": {
+    "en": "You've reached the limit of {limit} external wallets. Unlink one first",
+    "placeholders": {
+      "limit": {
+        "example": "limit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2407",
+    "zh": "已达 {limit} 个外部钱包上限，请先解绑一个"
+  },
+  "wallet_readScreensMessage6": {
+    "en": "External wallet linked; the wallet list will refresh shortly",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2426",
+    "zh": "外部钱包已绑定，钱包清单稍后刷新"
+  },
+  "wallet_readScreensMessage7": {
+    "en": "External wallet linked",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2427",
+    "zh": "外部钱包已绑定"
+  },
+  "wallet_readScreensMessage8": {
+    "en": "Unlinking didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2636",
+    "zh": "解绑没有完成，请稍后重试。"
+  },
+  "wallet_readScreensMessage9": {
+    "en": "External wallet unlinked; the wallet list will refresh shortly",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2647",
+    "zh": "已解绑外部钱包，钱包清单稍后刷新"
+  },
+  "wallet_readScreensNetworksCapabilityBlockTitle": {
+    "en": "On-chain reads aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3454",
+    "zh": "链上读取当前不可用"
+  },
+  "wallet_readScreensNetworksChainMismatchLabel": {
+    "en": "The endpoint didn't return BNB Smart Chain",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3473",
+    "zh": "端点返回的不是 BNB Smart Chain"
+  },
+  "wallet_readScreensNetworksChainParametersText": {
+    "en": "{status}{chainId} · {groupedFigure} confirmations · reorg tracking {groupedFigure2} blocks",
+    "placeholders": {
+      "chainId": {
+        "example": "status.chain.chainId",
+        "type": "Object"
+      },
+      "groupedFigure": {
+        "example": "loopGroupedFigure(status.chain.confirmations.toString())",
+        "type": "Object"
+      },
+      "groupedFigure2": {
+        "example": "loopGroupedFigure(status.chain.reorgDepthBlocks.toString())",
+        "type": "Object"
+      },
+      "status": {
+        "example": "status.rpc.head == null ? '' : '区块 ${loopGroupedFigure(status.rpc.head!.blockNumber.toString())} · '",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3571",
+    "zh": "{status}{chainId} · {groupedFigure} 确认 · 重组跟踪 {groupedFigure2} 块"
+  },
+  "wallet_readScreensNetworksChainRowTrailing": {
+    "en": "{healthyCount} / {endpoints} healthy",
+    "placeholders": {
+      "endpoints": {
+        "example": "status.rpc.endpoints.length",
+        "type": "Object"
+      },
+      "healthyCount": {
+        "example": "status.rpc.healthyCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3497",
+    "zh": "{healthyCount} / {endpoints} 正常"
+  },
+  "wallet_readScreensNetworksCustomRpcTitle": {
+    "en": "Custom RPC",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3530",
+    "zh": "自定义 RPC"
+  },
+  "wallet_readScreensNetworksLaunchChainRowSubtitle": {
+    "en": "{chainId} · {groupedFigure} confirmations · reorg tracking {groupedFigure2} blocks",
+    "placeholders": {
+      "chainId": {
+        "example": "launchChain.chainId",
+        "type": "Object"
+      },
+      "groupedFigure": {
+        "example": "loopGroupedFigure(launchChain.confirmations.toString())",
+        "type": "Object"
+      },
+      "groupedFigure2": {
+        "example": "loopGroupedFigure(launchChain.reorgDepthBlocks.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3737",
+    "zh": "{chainId} · {groupedFigure} 确认 · 重组跟踪 {groupedFigure2} 块"
+  },
+  "wallet_readScreensNetworksLaunchChainUnavailableLabel": {
+    "en": "{name} (Launch) has no RPC configured",
+    "placeholders": {
+      "name": {
+        "example": "launchChain.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3717",
+    "zh": "{name}（Launch）未配置 RPC"
+  },
+  "wallet_readScreensNetworksNoEndpointsLabel": {
+    "en": "No RPC endpoints configured",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3581",
+    "zh": "没有已配置的 RPC 端点"
+  },
+  "wallet_readScreensNetworksOperatorDisclosureSummary": {
+    "en": "Endpoints, indexer and chain parameters",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3561",
+    "zh": "端点、索引器与链参数"
+  },
+  "wallet_readScreensNetworksRegistryText": {
+    "en": "{readableAssetCount} readable assets · {registeredPoolCount} registered pools",
+    "placeholders": {
+      "readableAssetCount": {
+        "example": "status.registry.readableAssetCount",
+        "type": "Object"
+      },
+      "registeredPoolCount": {
+        "example": "status.registry.registeredPoolCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3629",
+    "zh": "可读资产 {readableAssetCount} 个 · 已登记池 {registeredPoolCount} 个"
+  },
+  "wallet_readScreensNetworksScreenTitle": {
+    "en": "Networks and RPC",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3449",
+    "zh": "网络与 RPC"
+  },
+  "wallet_readScreensNetworksTestnetSubtitle": {
+    "en": "{name} · Used by Launch only",
+    "placeholders": {
+      "name": {
+        "example": "status.launchChain!.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3545",
+    "zh": "{name} · 只有 Launch 使用"
+  },
+  "wallet_readScreensOffline": {
+    "en": "Network disconnected; balance not loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:938",
+    "zh": "网络已断开，余额没有读到"
+  },
+  "wallet_readScreensOpenExternalWallet": {
+    "en": "Wallet {truncatedAddress} becomes the current wallet for balances, activity and Receive.",
+    "placeholders": {
+      "truncatedAddress": {
+        "example": "wallet.truncatedAddress",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2547, lib/features/wallet/wallet_read_screens.dart:2670",
+    "zh": "钱包 {truncatedAddress} 会成为余额、活动与收款页的当前钱包。"
+  },
+  "wallet_readScreensRateLimited": {
+    "en": "Too many requests. Try again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:940",
+    "zh": "请求过于频繁，稍后再试"
+  },
+  "wallet_readScreensReceiveCopyAddressLabel": {
+    "en": "Copy address",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1884, lib/features/wallet/wallet_read_screens.dart:2087",
+    "zh": "复制地址"
+  },
+  "wallet_readScreensReceiveNoNetworkDetail": {
+    "en": "Receivable networks can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1845",
+    "zh": "暂时读不到可接收的网络。"
+  },
+  "wallet_readScreensReceiveNoNetworkMessage": {
+    "en": "No receivable network",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1844",
+    "zh": "没有可接收的网络"
+  },
+  "wallet_readScreensReceiveQrLabel": {
+    "en": "{name} receive QR code",
+    "placeholders": {
+      "name": {
+        "example": "network.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2064",
+    "zh": "{name} 收款二维码"
+  },
+  "wallet_readScreensReceiveQrUnavailableMessage": {
+    "en": "QR code unavailable · {reasonCodeText}",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText('RECEIVE_QR_ENCODING_FAILED')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2054",
+    "zh": "二维码不可用 · {reasonCodeText}"
+  },
+  "wallet_readScreensReceiveWarningTitle": {
+    "en": "Only receive assets on this network",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1920",
+    "zh": "只接收这一条网络的资产"
+  },
+  "wallet_readScreensS": {
+    "en": "Error",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3510, lib/features/wallet/wallet_read_screens.dart:3697, lib/features/wallet/wallet_read_screens.dart:3729",
+    "zh": "异常"
+  },
+  "wallet_readScreensS2": {
+    "en": "Published",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3547",
+    "zh": "已发布"
+  },
+  "wallet_readScreensS2X": {
+    "en": " ({blockDelta} blocks apart)",
+    "placeholders": {
+      "blockDelta": {
+        "example": "crossCheck.blockDelta",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1647",
+    "zh": "（相差 {blockDelta} 个区块）"
+  },
+  "wallet_readScreensS3": {
+    "en": "Not running",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3618",
+    "zh": "未运行"
+  },
+  "wallet_readScreensS3X": {
+    "en": "Block {groupedFigure} · ",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(status.rpc.head!.blockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:3558",
+    "zh": "区块 {groupedFigure} · "
+  },
+  "wallet_readScreensSX": {
+    "en": "Launch chain balances are read from block {groupedFigure} and aren't included in total assets.",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(launchSnapshot.blockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:823",
+    "zh": "Launch 链余额读自区块 {groupedFigure}，不计入总资产。"
+  },
+  "wallet_readScreensSubject": {
+    "en": "{name} receiving address",
+    "placeholders": {
+      "name": {
+        "example": "network.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1939",
+    "zh": "{name} 收款地址"
+  },
+  "wallet_readScreensSwitch": {
+    "en": "Balance can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:942",
+    "zh": "余额暂时读不到"
+  },
+  "wallet_readScreensSwitch2": {
+    "en": "Source {factSourceLabel}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(valued.priceSource)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1612, lib/features/wallet/wallet_read_widgets.dart:510, lib/features/wallet/wallet_read_widgets.dart:557",
+    "zh": "来源 {factSourceLabel}"
+  },
+  "wallet_readScreensSwitch3": {
+    "en": "Observed {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(valued.fetchedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1613, lib/features/wallet/wallet_read_screens.dart:2931, lib/features/wallet/wallet_read_screens.dart:3659, lib/features/wallet/wallet_read_widgets.dart:511, lib/features/wallet/wallet_read_widgets.dart:558",
+    "zh": "观察于 {relativeTime}"
+  },
+  "wallet_readScreensSwitch4": {
+    "en": "Proxy asset {truncatedAssetId}",
+    "placeholders": {
+      "truncatedAssetId": {
+        "example": "loopTruncatedAssetId(valued.proxyAsset!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1615",
+    "zh": "代理资产 {truncatedAssetId}"
+  },
+  "wallet_readScreensSwitch5": {
+    "en": "Pending check",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3728",
+    "zh": "待校验"
+  },
+  "wallet_readScreensText": {
+    "en": "{name} receiving address\n{address}",
+    "placeholders": {
+      "address": {
+        "example": "network.address",
+        "type": "Object"
+      },
+      "name": {
+        "example": "network.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1938",
+    "zh": "{name} 收款地址\n{address}"
+  },
+  "wallet_readScreensTimedOut": {
+    "en": "Read timed out; balance not loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:939",
+    "zh": "读取超时，余额没有读到"
+  },
+  "wallet_readScreensTitle": {
+    "en": "This page didn't finish loading",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2946",
+    "zh": "这一页没有加载完"
+  },
+  "wallet_readScreensTitle2": {
+    "en": "No records in this range",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3017",
+    "zh": "这一段没有记录"
+  },
+  "wallet_readScreensTxEntrySheetCopyHashLabel": {
+    "en": "Copy hash",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3308",
+    "zh": "复制哈希"
+  },
+  "wallet_readScreensTxEntrySheetCopyLinkLabel": {
+    "en": "Copy BscScan link",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3319",
+    "zh": "复制 BscScan 链接"
+  },
+  "wallet_readScreensTxEntrySheetExplorerNoticeBody": {
+    "en": "LOOP can't open an external browser directly yet. Copy the link and open it in a browser to see the same transaction on-chain.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3339",
+    "zh": "LOOP 目前不能直接唤起外部浏览器。复制链接后在浏览器里打开，看到的是链上的同一笔。"
+  },
+  "wallet_readScreensTxEntrySheetExplorerNoticeTitle": {
+    "en": "Paste it into a browser yourself",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3338",
+    "zh": "在浏览器里打开要自己粘贴"
+  },
+  "wallet_readScreensTxHistoryExportActionLabel": {
+    "en": "Exporting",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3158",
+    "zh": "导出中"
+  },
+  "wallet_readScreensTxHistoryExportActionLabel2": {
+    "en": "Export",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3158",
+    "zh": "导出"
+  },
+  "wallet_readScreensUnavailable": {
+    "en": "On-chain balance can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:941",
+    "zh": "链上余额暂时读不到"
+  },
+  "wallet_readScreensUnreachable": {
+    "en": "Unreachable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3698",
+    "zh": "不可达"
+  },
+  "wallet_readScreensWalletAssetActivityEmptyMessage": {
+    "en": "The indexer has read this range, but it has no transfers for this asset.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1462",
+    "zh": "索引器已经读到这个区间，但其中没有属于这个资产的转账。"
+  },
+  "wallet_readScreensWalletAssetBalanceMissingLabel": {
+    "en": "On-chain balance can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1515",
+    "zh": "链上余额读不到"
+  },
+  "wallet_readScreensWalletAssetCrosscheckBody": {
+    "en": "The on-chain reading doesn't match the value reported by Privy{crossCheck}. This page always shows the on-chain reading; the cross-check doesn't change it.",
+    "placeholders": {
+      "crossCheck": {
+        "example": "crossCheck.blockDelta == null ? '' : '（相差 ${crossCheck.blockDelta} 个区块）'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1651",
+    "zh": "链上读数与 Privy 报告的数值不一致{crossCheck}。这里显示的始终是链上读数，交叉核对不会改变它。"
+  },
+  "wallet_readScreensWalletAssetCrosscheckUnavailableLabel": {
+    "en": "Cross-check with Privy unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1640",
+    "zh": "与 Privy 的交叉核对不可用"
+  },
+  "wallet_readScreensWalletAssetFactsDisclosureSummary": {
+    "en": "Balance notes and asset facts",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1290",
+    "zh": "余额说明与资产事实"
+  },
+  "wallet_readScreensWalletAssetFolioKicker": {
+    "en": "Wallet asset",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1110",
+    "zh": "钱包资产"
+  },
+  "wallet_readScreensWalletAssetHistoryEntrySubtitle": {
+    "en": "All ERC-20 transfers for this wallet, from the on-chain index",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1478",
+    "zh": "这个钱包的全部 ERC-20 转账，来自链上索引"
+  },
+  "wallet_readScreensWalletAssetHistoryEntryTitle": {
+    "en": "Transaction history",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1477, lib/features/wallet/wallet_read_screens.dart:3145",
+    "zh": "交易历史"
+  },
+  "wallet_readScreensWalletAssetInvalidIdentityMessage": {
+    "en": "This page only accepts a canonical CAIP assetId; no balance was requested.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1024",
+    "zh": "本页只接受规范的 CAIP assetId，未请求任何余额。"
+  },
+  "wallet_readScreensWalletAssetInvalidIdentityTitle": {
+    "en": "No usable asset ID in the route",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1023",
+    "zh": "路由中没有可用的资产标识"
+  },
+  "wallet_readScreensWalletAssetInvalidTitle": {
+    "en": "Can't open this asset",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1017",
+    "zh": "无法打开这个资产"
+  },
+  "wallet_readScreensWalletAssetMarketActionTitle": {
+    "en": "Wallet asset · {asset}",
+    "placeholders": {
+      "asset": {
+        "example": "asset?.symbol ?? row?.symbol ?? '—'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:1092",
+    "zh": "钱包资产 · {asset}"
+  },
+  "wallet_readScreensWalletAssetMissingRowDetail": {
+    "en": "Only registered assets show a balance.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1164",
+    "zh": "只有已登记的资产才会显示余额。"
+  },
+  "wallet_readScreensWalletAssetMissingRowMessage": {
+    "en": "This asset isn't on the readable list",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1163",
+    "zh": "这个资产不在可读清单里"
+  },
+  "wallet_readScreensWalletAssetPendingMissingLabel": {
+    "en": "Pending amount unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1547",
+    "zh": "待确认金额不可用"
+  },
+  "wallet_readScreensWalletAssetProxied": {
+    "en": "Priced in WBNB",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1602, lib/features/wallet/wallet_read_widgets.dart:69",
+    "zh": "以 WBNB 计价"
+  },
+  "wallet_readScreensWalletAssetValuationUnavailableLabel": {
+    "en": "Value unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:1578",
+    "zh": "估值不可用"
+  },
+  "wallet_readScreensWalletBalancesEmptyTitle": {
+    "en": "No assets yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:800",
+    "zh": "还没有资产"
+  },
+  "wallet_readScreensWalletCapabilityBlockTitle": {
+    "en": "Wallet reads aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:565, lib/features/wallet/wallet_read_screens.dart:1135, lib/features/wallet/wallet_read_screens.dart:1809",
+    "zh": "钱包读取当前不可用"
+  },
+  "wallet_readScreensWalletDirectoryNoActiveTitle": {
+    "en": "No current wallet selected yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:524",
+    "zh": "还没有选定当前钱包"
+  },
+  "wallet_readScreensWalletFolioUnreadText": {
+    "en": "No wallet yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:660",
+    "zh": "还没有钱包"
+  },
+  "wallet_readScreensWalletFolioUnreadText2": {
+    "en": "No wallet selected",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:662",
+    "zh": "未选定钱包"
+  },
+  "wallet_readScreensWalletFolioUnreadText3": {
+    "en": "Offline",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:667",
+    "zh": "离线"
+  },
+  "wallet_readScreensWalletNftEmptyTitle": {
+    "en": "No NFTs yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:865",
+    "zh": "还没有 NFT"
+  },
+  "wallet_readScreensWalletNftUnavailableMessage": {
+    "en": "MEME v2 isn't available yet, so project NFTs can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:844",
+    "zh": "MEME v2 暂未开放，项目 NFT 暂时读不到"
+  },
+  "wallet_readScreensWalletScreenTitle": {
+    "en": "Me",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:328, lib/features/wallet/wallet_read_screens.dart:339",
+    "zh": "我的"
+  },
+  "wallet_readScreensWalletSnapshotFooterDetail": {
+    "en": "Every balance row is read from the same block ({groupedFigure} confirmations). Native BNB keeps {formatDecimal} BNB as a fee reserve, not included in usable. {launchSnapshot}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(balances.gasReservePolicy.nativeReserve)",
+        "type": "Object"
+      },
+      "groupedFigure": {
+        "example": "loopGroupedFigure(balances.snapshot.confirmations.toString())",
+        "type": "Object"
+      },
+      "launchSnapshot": {
+        "example": "launchSnapshot == null ? '' : 'Launch 链余额读自区块 ${loopGroupedFigure(launchSnapshot.blockNumber.toString())}，不计入总资产。'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:822",
+    "zh": "每一行余额都读自同一个区块（{groupedFigure} 确认）。原生 BNB 会保留 {formatDecimal} BNB 作为手续费，不计入可动用。{launchSnapshot}"
+  },
+  "wallet_readScreensWalletSnapshotFooterPrefix": {
+    "en": "Block {groupedFigure}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(balances.snapshot.blockNumber.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:815",
+    "zh": "区块 {groupedFigure}"
+  },
+  "wallet_readScreensWalletsActivateConfirmLabel": {
+    "en": "Switch",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2559, lib/features/wallet/wallet_read_screens.dart:2682",
+    "zh": "切换"
+  },
+  "wallet_readScreensWalletsAddActionLabel": {
+    "en": "Add",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2218",
+    "zh": "添加"
+  },
+  "wallet_readScreensWalletsAddSheetContinueLabel": {
+    "en": "Continue connecting",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2511",
+    "zh": "继续连接"
+  },
+  "wallet_readScreensWalletsAddSheetNetworkBody": {
+    "en": "Networks in mainland China need a VPN to connect external wallets.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2499",
+    "zh": "大陆网络需要开 VPN 才能连接外部钱包。"
+  },
+  "wallet_readScreensWalletsAddSheetNetworkTitle": {
+    "en": "Mainland China networks need a VPN",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2498",
+    "zh": "大陆网络需要开 VPN"
+  },
+  "wallet_readScreensWalletsAddSheetReasonBody": {
+    "en": "External wallets are only used to calculate power; you can't trade or claim rewards with them in LOOP. LOOP never gets your private key.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2483",
+    "zh": "外部钱包只用于计算算力，不能在 LOOP 内交易或领奖励；LOOP 不会获取你的私钥。"
+  },
+  "wallet_readScreensWalletsAddSheetReasonTitle": {
+    "en": "External wallets only count toward power",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2481",
+    "zh": "外部钱包只用于计算算力"
+  },
+  "wallet_readScreensWalletsAddSheetScopeBody": {
+    "en": "Community tokens in every linked wallet count toward power; no need to move assets into one wallet.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2491",
+    "zh": "已绑定钱包里的社区币都会计入算力，不用把资产搬到某一个钱包。"
+  },
+  "wallet_readScreensWalletsAddSheetScopeTitle": {
+    "en": "Holdings in all linked wallets count toward power",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2490",
+    "zh": "所有绑定钱包的持仓都计入算力"
+  },
+  "wallet_readScreensWalletsCapabilityBlockTitle": {
+    "en": "The wallet list isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2235",
+    "zh": "钱包清单当前不可用"
+  },
+  "wallet_readScreensWalletsLimitSheetBody": {
+    "en": "You can link up to {limit} external wallets. Unlink one before connecting a new wallet.",
+    "placeholders": {
+      "limit": {
+        "example": "limit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2442",
+    "zh": "最多绑定 {limit} 个外部钱包，请先解绑一个，再连接新的钱包。"
+  },
+  "wallet_readScreensWalletsScreenTitle": {
+    "en": "My wallets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2209",
+    "zh": "我的钱包"
+  },
+  "wallet_readScreensWalletsSourceText": {
+    "en": "Source Privy · observed {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(directory.observedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2301",
+    "zh": "来源 Privy · 观察于 {relativeTime}"
+  },
+  "wallet_readScreensWalletsSourceTitle": {
+    "en": "About linked wallets",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2300",
+    "zh": "关于绑定钱包"
+  },
+  "wallet_readScreensWalletsSwitchErrorTitle": {
+    "en": "Active wallet wasn't switched",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2266",
+    "zh": "活跃钱包没有切换"
+  },
+  "wallet_readScreensWalletsUnlinkActionLabel": {
+    "en": "Unlink this wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2571",
+    "zh": "解绑这个钱包"
+  },
+  "wallet_readScreensWalletsUnlinkConfirmLabel": {
+    "en": "Unlink",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:2618",
+    "zh": "解绑"
+  },
+  "wallet_readScreensWalletsUnlinkSheetBody": {
+    "en": "After unlinking, this wallet's holdings stop counting toward power from the next hour. Assets in wallet {truncatedAddress} aren't affected, and you can link it again later.",
+    "placeholders": {
+      "truncatedAddress": {
+        "example": "wallet.truncatedAddress",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_screens.dart:2603",
+    "zh": "解绑后这个钱包的持仓从下一小时起不再计入算力。钱包 {truncatedAddress} 里的资产不受影响，之后也可以重新绑定。"
+  },
+  "wallet_readScreensWhat": {
+    "en": "Explorer link",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_screens.dart:3320",
+    "zh": "浏览器链接"
+  },
+  "wallet_readSemanticLabel": {
+    "en": "Usable, power and fee reserve for {symbol}",
+    "placeholders": {
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:163",
+    "zh": "{symbol} 的可动用、算力与手续费保留"
+  },
+  "wallet_readSwitch": {
+    "en": "Spent {launch2Usd1Label}",
+    "placeholders": {
+      "launch2Usd1Label": {
+        "example": "launch2Usd1Label(amount)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:312",
+    "zh": "花费 {launch2Usd1Label}"
+  },
+  "wallet_readSwitch2": {
+    "en": "LOOP will create a Privy embedded wallet for this account. The address is a public on-chain fact, not an account identifier.",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:827",
+    "zh": "LOOP 会为这个账号创建一个 Privy 嵌入式钱包。地址是公开的链上事实，不是账号标识。"
+  },
+  "wallet_readTitle": {
+    "en": "This account has no wallet yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:814, lib/features/wallet/wallet_read_widgets.dart:834",
+    "zh": "这个账号还没有钱包"
+  },
+  "wallet_readTransferFrom": {
+    "en": "From {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:231",
+    "zh": "来自 {address}"
+  },
+  "wallet_readTransferTo": {
+    "en": "To {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:231",
+    "zh": "发往 {address}"
+  },
+  "wallet_readWalletActivityDayLabel": {
+    "en": "Yesterday",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:381",
+    "zh": "昨天"
+  },
+  "wallet_readWalletActivityDayLabel2": {
+    "en": "{month} {day}",
+    "placeholders": {
+      "day": {
+        "example": "local.day",
+        "type": "Object"
+      },
+      "month": {
+        "example": "local.month",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:382",
+    "zh": "{month}月{day}日"
+  },
+  "wallet_readWalletActivityDayLabel3": {
+    "en": "{month} {day}, {year}",
+    "placeholders": {
+      "day": {
+        "example": "local.day",
+        "type": "Object"
+      },
+      "month": {
+        "example": "local.month",
+        "type": "Object"
+      },
+      "year": {
+        "example": "local.year",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:383",
+    "zh": "{year}年{month}月{day}日"
+  },
+  "wallet_readWalletLaunch2ActivityRow": {
+    "en": "Launch chain",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:334, lib/features/wallet/wallet_read_widgets.dart:627",
+    "zh": "Launch 链"
+  },
+  "wallet_readWalletLaunch2ActivityRow2": {
+    "en": "Confirming",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:335",
+    "zh": "确认中"
+  },
+  "wallet_readWalletLaunchChainUnavailableLabel": {
+    "en": "{name} balance unavailable",
+    "placeholders": {
+      "name": {
+        "example": "launchChain.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:633",
+    "zh": "{name}余额不可用"
+  },
+  "wallet_readWalletLaunchUsd1Failed": {
+    "en": "Couldn't load",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:768",
+    "zh": "读取失败"
+  },
+  "wallet_readWalletNetworthNotSpendable": {
+    "en": "Not an available balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:502, lib/features/wallet/wallet_read_widgets.dart:549",
+    "zh": "不是可用余额"
+  },
+  "wallet_readWalletNetworthPartial": {
+    "en": "Partial value · {unavailableCount} without price",
+    "placeholders": {
+      "unavailableCount": {
+        "example": "valued.unavailableCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:496, lib/features/wallet/wallet_read_widgets.dart:542",
+    "zh": "部分估值 · {unavailableCount} 项无价格"
+  },
+  "wallet_readWalletNetworthUnavailableLabel": {
+    "en": "Net value unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:475",
+    "zh": "净值不可用"
+  },
+  "wallet_readWalletReadFailed": {
+    "en": "Unknown reason",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_read_widgets.dart:824",
+    "zh": "原因未知"
+  },
+  "wallet_readWalletSnapshotFooterText": {
+    "en": "Block {groupedFigure} · {groupedFigure2} confirmations · observed {relativeTime}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(snapshot.blockNumber.toString())",
+        "type": "Object"
+      },
+      "groupedFigure2": {
+        "example": "loopGroupedFigure(snapshot.confirmations.toString())",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(snapshot.observedAt, now: now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/wallet_read_widgets.dart:441",
+    "zh": "区块 {groupedFigure} · {groupedFigure2} 确认 · 观察于 {relativeTime}"
+  },
+  "wallet_sendScreensBody": {
+    "en": "{moneyActionTitle} · {moneyIntentStateLabel}. Preparing a new one will invalidate it; if it's already signed and broadcast, report or cancel it first.",
+    "placeholders": {
+      "moneyActionTitle": {
+        "example": "moneyActionTitle(intent.kind)",
+        "type": "Object"
+      },
+      "moneyIntentStateLabel": {
+        "example": "moneyIntentStateLabel(intent.state)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:1696",
+    "zh": "{moneyActionTitle} · {moneyIntentStateLabel}。再准备一笔新的会让它失效；如果它已经签名并广播，请先上报或取消。"
+  },
+  "wallet_sendScreensBuild": {
+    "en": "First transfer to this address",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1078, lib/features/wallet/send_screens.dart:1098",
+    "zh": "首次向该地址转账"
+  },
+  "wallet_sendScreensBuild2": {
+    "en": "Recipient is a contract address",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1079, lib/features/wallet/send_screens.dart:1106",
+    "zh": "收款方是合约地址"
+  },
+  "wallet_sendScreensBuild3": {
+    "en": "Malicious address screening unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1080, lib/features/wallet/send_screens.dart:1113",
+    "zh": "恶意地址筛查不可用"
+  },
+  "wallet_sendScreensBuild4": {
+    "en": "Not filled in yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1595, lib/features/wallet/send_screens.dart:1744, lib/features/wallet/send_screens.dart:1751",
+    "zh": "还没有填写"
+  },
+  "wallet_sendScreensBuild5": {
+    "en": "Not loaded yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1597, lib/features/wallet/send_screens.dart:1758",
+    "zh": "还没有读到"
+  },
+  "wallet_sendScreensBuild6": {
+    "en": "These two rows are what you entered in the previous step, not server facts yet. Network fee, balance and simulation appear together once this transfer is prepared.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1769",
+    "zh": "这两行是你在上一步填的内容，还不是服务端的事实。网络费、余额与试算会在准备好这一笔之后一起显示。"
+  },
+  "wallet_sendScreensBuild7": {
+    "en": "There's no source for arrival time, so no made-up seconds here. After submitting, track it by confirmations on the result page; that's the only progress.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1804",
+    "zh": "没有到账时间的来源，这里不给一个编出来的秒数。提交之后在结果页按确认数跟踪，那是唯一的进度。"
+  },
+  "wallet_sendScreensEmptyMessage": {
+    "en": "This account has no wallet that can send yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:617",
+    "zh": "这个账号还没有可用于发送的钱包"
+  },
+  "wallet_sendScreensEmptyReason": {
+    "en": "Only the Privy embedded wallet can sign and broadcast from this device.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:618",
+    "zh": "只有 Privy 嵌入式钱包可以从本机签名并广播。"
+  },
+  "wallet_sendScreensLabel": {
+    "en": "Recipient address",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:609, lib/features/wallet/send_screens.dart:627",
+    "zh": "收款地址"
+  },
+  "wallet_sendScreensLabel2": {
+    "en": "Amount and asset",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:828",
+    "zh": "金额与资产"
+  },
+  "wallet_sendScreensLabel3": {
+    "en": "Confirm and sign",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1244, lib/features/wallet/send_screens.dart:1249",
+    "zh": "确认并签名"
+  },
+  "wallet_sendScreensLoopBalanceAvailable": {
+    "en": "Usable {formatDecimal} {symbol} (after fee reserve)",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(s)",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:882",
+    "zh": "可动用 {formatDecimal} {symbol}（已扣除手续费保留）"
+  },
+  "wallet_sendScreensMissing": {
+    "en": "One more step: waiting for address check.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:577",
+    "zh": "还差一步：等待地址校验。"
+  },
+  "wallet_sendScreensMoneyOfflinePause": {
+    "en": "Check address",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:721",
+    "zh": "校验地址"
+  },
+  "wallet_sendScreensMoneyPendingCancelLabel": {
+    "en": "Cancel and prepare again",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1709",
+    "zh": "取消并重新准备"
+  },
+  "wallet_sendScreensMoneyPendingOpenLabel": {
+    "en": "View that transaction",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1704",
+    "zh": "查看那一笔"
+  },
+  "wallet_sendScreensRecipientHint": {
+    "en": "0x… ({chainName})",
+    "placeholders": {
+      "chainName": {
+        "example": "chainName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:654",
+    "zh": "0x…（{chainName}）"
+  },
+  "wallet_sendScreensRecipientStep": {
+    "en": "Checking address…",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:556",
+    "zh": "正在校验地址…"
+  },
+  "wallet_sendScreensRecipientStep2": {
+    "en": "Address checked · {chainName}",
+    "placeholders": {
+      "chainName": {
+        "example": "_chainName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:558",
+    "zh": "地址已校验 · {chainName}"
+  },
+  "wallet_sendScreensRecipientStep3": {
+    "en": "Invalid address format: starts with 0x, 42 characters",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:562",
+    "zh": "地址格式不对：0x 开头，共 42 位"
+  },
+  "wallet_sendScreensSendAddressNextMissing": {
+    "en": "One more step: enter the full recipient address (starts with 0x, 42 characters).",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:578",
+    "zh": "还差一步：填写完整的收款地址（0x 开头，42 位）。"
+  },
+  "wallet_sendScreensSendAddressScreenTitle": {
+    "en": "Send NFT",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:569",
+    "zh": "发送 NFT"
+  },
+  "wallet_sendScreensSendAmountMaxErrorText": {
+    "en": "Exceeds usable balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:919",
+    "zh": "超过可动用余额"
+  },
+  "wallet_sendScreensSendAmountMaxHintText": {
+    "en": "Enter amount",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:917",
+    "zh": "输入数量"
+  },
+  "wallet_sendScreensSendAmountNextMissing": {
+    "en": "One more step: choose the asset to send.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:794",
+    "zh": "还差一步：选择要发送的资产。"
+  },
+  "wallet_sendScreensSendAmountNextMissing2": {
+    "en": "One more step: enter the amount to send.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:796",
+    "zh": "还差一步：填写发送数量。"
+  },
+  "wallet_sendScreensSendAmountNextMissing3": {
+    "en": "The amount exceeds your usable balance. Lower it.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:798",
+    "zh": "发送数量超过了可动用余额，请改小。"
+  },
+  "wallet_sendScreensSendAmountRecipientSubtitle": {
+    "en": "Recipient address · Checked",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:836",
+    "zh": "收款地址 · 已校验"
+  },
+  "wallet_sendScreensSendAmountRecipientTrailingCaption": {
+    "en": "Change",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:837",
+    "zh": "修改"
+  },
+  "wallet_sendScreensSendAmountTitle": {
+    "en": "Amount to send",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:892",
+    "zh": "发送数量"
+  },
+  "wallet_sendScreensSendAmountTitle2": {
+    "en": "Amount to send ({symbol})",
+    "placeholders": {
+      "symbol": {
+        "example": "symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:892",
+    "zh": "发送数量（{symbol}）"
+  },
+  "wallet_sendScreensSendAssetSelectorSubtitle": {
+    "en": "{candidates, plural, =1{1 asset can be sent} other{{candidates} assets can be sent}}",
+    "placeholders": {
+      "candidates": {
+        "example": "candidates.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:879",
+    "zh": "{candidates} 个资产可发送"
+  },
+  "wallet_sendScreensSendAssetsEmptyMessage": {
+    "en": "Once assets are registered, each one always keeps a row here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:860",
+    "zh": "登记资产后，这里会为每一个资产恒定保留一行。"
+  },
+  "wallet_sendScreensSendAssetsEmptyTitle": {
+    "en": "No readable assets yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:859",
+    "zh": "还没有可读取的资产"
+  },
+  "wallet_sendScreensSendCapabilityBlockTitle": {
+    "en": "Send isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:602, lib/features/wallet/send_screens.dart:824, lib/features/wallet/send_screens.dart:1230",
+    "zh": "发送当前不可用"
+  },
+  "wallet_sendScreensSendConfirmDraftArrivalLabel": {
+    "en": "Estimated arrival",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1763, lib/features/wallet/send_screens.dart:1799",
+    "zh": "预估到账"
+  },
+  "wallet_sendScreensSendConfirmDraftArrivalValue": {
+    "en": "Not estimated",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1764, lib/features/wallet/send_screens.dart:1800",
+    "zh": "不预估"
+  },
+  "wallet_sendScreensSendConfirmDraftFeeLabel": {
+    "en": "Network fee",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1757",
+    "zh": "网络费"
+  },
+  "wallet_sendScreensSendConfirmExpiredBody": {
+    "en": "Prepare it again before signing.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1317",
+    "zh": "请重新准备一次再签名。"
+  },
+  "wallet_sendScreensSendConfirmExpiredBody2": {
+    "en": "Balance, fees and simulation all come from the same moment. Prepare it again before signing.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1342",
+    "zh": "余额、费用与试算结果都取自同一时刻。请重新准备一次再签名。"
+  },
+  "wallet_sendScreensSendConfirmExpiredTitle": {
+    "en": "Facts expired",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1316, lib/features/wallet/send_screens.dart:1341",
+    "zh": "事实已过期"
+  },
+  "wallet_sendScreensSendConfirmPowerBody": {
+    "en": "Power drops with your holdings after sending. The exact figure can't be loaded right now, so no estimate is made here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1360",
+    "zh": "转出后算力会随持仓下降。具体数值暂时读不到，这里不做估算。"
+  },
+  "wallet_sendScreensSendConfirmPowerTitle": {
+    "en": "Power drops with your holdings",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1359",
+    "zh": "算力会随持仓下降"
+  },
+  "wallet_sendScreensSendConfirmSignLabel": {
+    "en": "Confirm send ({moneyCountdownLabel})",
+    "placeholders": {
+      "moneyCountdownLabel": {
+        "example": "moneyCountdownLabel(remaining)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:1214",
+    "zh": "确认发送（{moneyCountdownLabel}）"
+  },
+  "wallet_sendScreensSendConfirmSigningExitText": {
+    "en": "Signing is done on this device by the Privy embedded wallet; every fund action goes through the same signing sheet, the only signing exit in the product.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1352",
+    "zh": "签名由 Privy 嵌入式钱包在本机执行；所有资金操作都汇聚到同一个签名弹层，这是全产品唯一的签名出口。"
+  },
+  "wallet_sendScreensSendConfirmSigningExitTitle": {
+    "en": "Unified signing exit",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1350",
+    "zh": "统一签名出口"
+  },
+  "wallet_sendScreensSendConfirmSimulationFailedTitle": {
+    "en": "Simulation didn't pass; can't sign",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1305, lib/features/wallet/send_screens.dart:1330",
+    "zh": "试算没有通过，不能签名"
+  },
+  "wallet_sendScreensSendPowerNoticeBody": {
+    "en": "After sending a weighted community token, power drops with your holdings. The exact figure can't be loaded right now, so no estimate is made here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:937",
+    "zh": "转出有权重的社区币后，算力会随持仓下降。具体数值暂时读不到，这里不做估算。"
+  },
+  "wallet_sendScreensSendPowerNoticeTitle": {
+    "en": "Sending lowers your power",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:936",
+    "zh": "发送会降低算力"
+  },
+  "wallet_sendScreensSendRecipientBasisText": {
+    "en": "First-time recipient is judged by your own ERC-20 transfer history indexed in LOOP",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1123",
+    "zh": "首次收款方的判断依据：你自己在 LOOP 已索引的 ERC-20 转账记录"
+  },
+  "wallet_sendScreensSendRecipientBasisTitle": {
+    "en": "Basis",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1122",
+    "zh": "判断依据"
+  },
+  "wallet_sendScreensSendRecipientChecksSummary": {
+    "en": "Address check · {headlines} to confirm · {first}",
+    "placeholders": {
+      "first": {
+        "example": "headlines.first",
+        "type": "Object"
+      },
+      "headlines": {
+        "example": "headlines.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:1086",
+    "zh": "地址核对 · {headlines} 项待确认 · {first}"
+  },
+  "wallet_sendScreensSendRecipientContractBody": {
+    "en": "Sending directly to a contract address may lose this asset permanently. Make sure this contract actually accepts direct transfers.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1107",
+    "zh": "向合约地址直接转账可能永久失去这笔资产。请确认这个合约确实接受直接转账。"
+  },
+  "wallet_sendScreensSendRecipientFirstTimeBody": {
+    "en": "This address isn't in your own indexed transfer history. Check the full address character by character before continuing.",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1099",
+    "zh": "这个地址不在你自己的已索引转账历史中。请逐字核对完整地址后再继续。"
+  },
+  "wallet_sendScreensSendRecipientPasteLabel": {
+    "en": "Paste",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:661",
+    "zh": "粘贴"
+  },
+  "wallet_sendScreensSendRecipientPrefill": {
+    "en": "Recipient address from scan, checked automatically",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:709",
+    "zh": "收款地址来自扫码，已自动校验"
+  },
+  "wallet_sendScreensSendRecipientPreflightErrorTitle": {
+    "en": "Address check didn't succeed",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:735",
+    "zh": "地址没有校验成功"
+  },
+  "wallet_sendScreensSendRecipientScanLabel": {
+    "en": "Scan",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:667, lib/features/wallet/wallet_read_screens.dart:491",
+    "zh": "扫码"
+  },
+  "wallet_sendScreensSendStepBarLabel": {
+    "en": "Step {step} of {total}, {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "step": {
+        "example": "step",
+        "type": "Object"
+      },
+      "total": {
+        "example": "total",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/send_screens.dart:1001",
+    "zh": "第 {step} 步，共 {total} 步，{label}"
+  },
+  "wallet_sendScreensTitle": {
+    "en": "This wallet has an unfinished action",
+    "placeholders": {},
+    "where": "lib/features/wallet/send_screens.dart:1694",
+    "zh": "这个钱包还有一笔未完成的操作"
+  },
+  "wallet_swapScreensBalanceLineFor": {
+    "en": "Choose the asset to pay with first; its usable balance shows here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:471",
+    "zh": "先选择要支付的资产，这里会显示它的可动用余额。"
+  },
+  "wallet_swapScreensBalanceLineFor2": {
+    "en": "Balance not loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:472",
+    "zh": "余额还没有读到。"
+  },
+  "wallet_swapScreensBalanceLineFor3": {
+    "en": "This wallet doesn't have this row, so its balance can't be read.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:474",
+    "zh": "这个钱包没有这一行，读不到它的余额。"
+  },
+  "wallet_swapScreensEmptyMessage": {
+    "en": "This account has no wallet that can swap yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:200",
+    "zh": "这个账号还没有可兑换的钱包"
+  },
+  "wallet_swapScreensIf": {
+    "en": "Can't price",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:928, lib/features/wallet/swap_screens.dart:1023",
+    "zh": "无法定价"
+  },
+  "wallet_swapScreensLabel": {
+    "en": "Price impact",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:857, lib/features/wallet/swap_screens.dart:1016",
+    "zh": "价格影响"
+  },
+  "wallet_swapScreensLabel2": {
+    "en": "Platform fee",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:865",
+    "zh": "平台费"
+  },
+  "wallet_swapScreensLabel3": {
+    "en": "Per-transaction limit",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:872",
+    "zh": "单笔上限"
+  },
+  "wallet_swapScreensLabel4": {
+    "en": "Estimated network fee",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1004",
+    "zh": "网络费估算"
+  },
+  "wallet_swapScreensLabel5": {
+    "en": "LOOP service fee",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1009",
+    "zh": "LOOP 服务费"
+  },
+  "wallet_swapScreensLabel6": {
+    "en": "Market value",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1021",
+    "zh": "市场估值"
+  },
+  "wallet_swapScreensLoopBalanceAvailable": {
+    "en": "Usable {formatDecimal} {symbol}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(spendable)",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "row.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/swap_screens.dart:477",
+    "zh": "可动用 {formatDecimal} {symbol}"
+  },
+  "wallet_swapScreensLoopLabel": {
+    "en": "Fee breakdown",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:995",
+    "zh": "费用构成"
+  },
+  "wallet_swapScreensLoopProvenanceFooter": {
+    "en": "Only the final quote is shown: per-hop details appear only when the quote provider supplies a path, and it didn't this time.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1038",
+    "zh": "只展示最终报价：只有报价方提供路径时才会显示逐跳明细，这次没有提供。"
+  },
+  "wallet_swapScreensMoneyOfflinePause": {
+    "en": "Quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:357",
+    "zh": "报价"
+  },
+  "wallet_swapScreensS": {
+    "en": "Shown after quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:802",
+    "zh": "报价后显示"
+  },
+  "wallet_swapScreensSwapCapabilityBlockLabel": {
+    "en": "Swap isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:189",
+    "zh": "兑换当前不可用"
+  },
+  "wallet_swapScreensSwapConfirmActionLabel": {
+    "en": "Quote expired · Get new quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:442",
+    "zh": "报价已过期 · 重新报价"
+  },
+  "wallet_swapScreensSwapConfirmActionLabel2": {
+    "en": "Swap is still being verified",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:444",
+    "zh": "兑换还在验证中"
+  },
+  "wallet_swapScreensSwapConfirmActionLabel3": {
+    "en": "Swap ({moneyCountdownLabel})",
+    "placeholders": {
+      "moneyCountdownLabel": {
+        "example": "moneyCountdownLabel(remaining)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/swap_screens.dart:445",
+    "zh": "兑换（{moneyCountdownLabel}）"
+  },
+  "wallet_swapScreensSwapDestinationBlockedCaption": {
+    "en": "Receive",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:184, lib/features/wallet/swap_screens.dart:794",
+    "zh": "获得"
+  },
+  "wallet_swapScreensSwapFlipLabel": {
+    "en": "Swap pay and receive",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:283",
+    "zh": "互换支付与获得"
+  },
+  "wallet_swapScreensSwapImpactBlockedTitle": {
+    "en": "Price impact exceeds the hard block line",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:917",
+    "zh": "价格影响超过硬阻断线"
+  },
+  "wallet_swapScreensSwapImpactConfirmBody": {
+    "en": "This swap will noticeably move the price. Slippage and price impact are different: slippage is the limit you set, price impact is the shift this trade itself causes.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:910",
+    "zh": "这笔兑换会明显推动价格。滑点与价格影响是两件事：滑点是你设定的上限，价格影响是这笔成交本身造成的偏移。"
+  },
+  "wallet_swapScreensSwapImpactConfirmTitle": {
+    "en": "Price impact is between 1% and 5%",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:908",
+    "zh": "价格影响在 1%–5% 之间"
+  },
+  "wallet_swapScreensSwapInfoActionLabel": {
+    "en": "About Swap",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:159, lib/features/wallet/swap_screens.dart:1049",
+    "zh": "关于兑换"
+  },
+  "wallet_swapScreensSwapPowerNoticeBody": {
+    "en": "The power change after buying can't be loaded right now, so no estimate is made here.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1062",
+    "zh": "买入后的算力变化暂时读不到，这里不做估算。"
+  },
+  "wallet_swapScreensSwapPowerNoticeTitle": {
+    "en": "Power impact unavailable",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1061",
+    "zh": "算力影响不可用"
+  },
+  "wallet_swapScreensSwapQuoteActionLabel": {
+    "en": "Quoting…",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:410, lib/features/wallet/swap_screens.dart:417, lib/features/wallet/swap_screens.dart:802",
+    "zh": "报价中…"
+  },
+  "wallet_swapScreensSwapQuoteActionLabel2": {
+    "en": "Choose assets to pay and receive",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:412",
+    "zh": "选择支付与获得的资产"
+  },
+  "wallet_swapScreensSwapQuoteActionLabel3": {
+    "en": "Enter an amount to get a quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:414",
+    "zh": "输入数量后自动报价"
+  },
+  "wallet_swapScreensSwapQuoteActionLabel4": {
+    "en": "Get new quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:416",
+    "zh": "重新报价"
+  },
+  "wallet_swapScreensSwapQuoteErrorTitle": {
+    "en": "Couldn't get a quote",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:363",
+    "zh": "没有取到报价"
+  },
+  "wallet_swapScreensSwapQuoteProvenanceText": {
+    "en": "Quoted by {provider} · {relativeTime}{quote}",
+    "placeholders": {
+      "provider": {
+        "example": "value.provider",
+        "type": "Object"
+      },
+      "quote": {
+        "example": "quote.policy.isPendingProductConfirmation ? ' · 待产品确认' : ''",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(value.quotedAt, now: clock?.call())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/swap_screens.dart:885",
+    "zh": "报价方 {provider} · 报价于 {relativeTime}{quote}"
+  },
+  "wallet_swapScreensSwapRouteActionLabel": {
+    "en": "Quote and fee details",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:166",
+    "zh": "报价与费用明细"
+  },
+  "wallet_swapScreensSwapRouteBackLabel": {
+    "en": "Back to Swap to confirm",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:957",
+    "zh": "返回兑换并确认"
+  },
+  "wallet_swapScreensSwapRouteEntryLabel": {
+    "en": "Quote details and fees",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:385",
+    "zh": "报价明细与费用"
+  },
+  "wallet_swapScreensSwapRouteProvenanceText": {
+    "en": "Quoted by {provider} · pricing source {priceImpact} · valid for {quoteTtlSeconds}s",
+    "placeholders": {
+      "priceImpact": {
+        "example": "value.priceImpact.priceSource ?? '未标注'",
+        "type": "Object"
+      },
+      "provider": {
+        "example": "value.provider",
+        "type": "Object"
+      },
+      "quoteTtlSeconds": {
+        "example": "quote.policy.quoteTtlSeconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/swap_screens.dart:1034",
+    "zh": "报价方 {provider} · 定价出处 {priceImpact} · 有效期 {quoteTtlSeconds} 秒"
+  },
+  "wallet_swapScreensSwapRouteScreenTitle": {
+    "en": "Quote and fees",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:953",
+    "zh": "报价与费用"
+  },
+  "wallet_swapScreensSwapRoutingNoticeBody": {
+    "en": "LOOP doesn't build its own routes or split hops. Only the final quote returned by Privy is shown here; swapped assets go straight into this wallet.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1056",
+    "zh": "LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；兑换所得资产直接进入本钱包。"
+  },
+  "wallet_swapScreensSwapRoutingNoticeTitle": {
+    "en": "The provider chooses the route",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:1054",
+    "zh": "路由由供应商选择"
+  },
+  "wallet_swapScreensText": {
+    "en": "I understand the price impact is between 1% and 5% and want to continue",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:380",
+    "zh": "我已知晓价格影响在 1%–5% 之间，仍要继续"
+  },
+  "wallet_swapScreensTitle": {
+    "en": "Choose asset to pay",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:496",
+    "zh": "选择支付资产"
+  },
+  "wallet_swapScreensTitle2": {
+    "en": "Choose asset to receive",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:496",
+    "zh": "选择获得资产"
+  },
+  "wallet_swapScreensValue": {
+    "en": "Not set",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:867, lib/features/wallet/swap_screens.dart:1011",
+    "zh": "未设置"
+  },
+  "wallet_swapScreensValue2": {
+    "en": "{display} {symbol} (slippage {moneySlippageLabel})",
+    "placeholders": {
+      "display": {
+        "example": "value.minimumOutputAmount.display",
+        "type": "Object"
+      },
+      "moneySlippageLabel": {
+        "example": "moneySlippageLabel(value.slippageBps)",
+        "type": "Object"
+      },
+      "symbol": {
+        "example": "quote.destinationAsset.symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/swap_screens.dart:986",
+    "zh": "{display} {symbol}（滑点 {moneySlippageLabel}）"
+  },
+  "wallet_swapScreensWalletSwapScreensSwapQuoteProvenanceText": {
+    "en": " · Pending product confirmation",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart:886",
+    "zh": " · 待产品确认"
+  },
+  "wallet_txResultCancelled": {
+    "en": "{action} cancelled",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:323",
+    "zh": "{action}已取消"
+  },
+  "wallet_txResultConfirmed": {
+    "en": "{action} confirmed",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:319",
+    "zh": "{action}已确认"
+  },
+  "wallet_txResultEmptyMessage": {
+    "en": "This action has no readable status",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:233",
+    "zh": "这笔操作没有可读状态"
+  },
+  "wallet_txResultExpired": {
+    "en": "{action} expired",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:324",
+    "zh": "{action}已过期"
+  },
+  "wallet_txResultFailed": {
+    "en": "{action} failed",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:321",
+    "zh": "{action}失败"
+  },
+  "wallet_txResultIf": {
+    "en": "Result, transaction hash and next steps are all here; no new quotes are mixed in.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:334",
+    "zh": "结果、交易哈希和下一步动作集中在这里，不会混入新的报价。"
+  },
+  "wallet_txResultIf2": {
+    "en": "Block {groupedFigure} · {receipt}",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(receipt.blockNumber.toString())",
+        "type": "Object"
+      },
+      "receipt": {
+        "example": "receipt.confirmations == null ? '确认数读不到' : '${loopGroupedFigure(receipt.confirmations.toString())} 确认'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:336",
+    "zh": "区块 {groupedFigure} · {receipt}"
+  },
+  "wallet_txResultMessage": {
+    "en": "Transaction confirmed",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:190",
+    "zh": "交易已确认"
+  },
+  "wallet_txResultReverted": {
+    "en": "{action} reverted",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:320",
+    "zh": "{action}已回滚"
+  },
+  "wallet_txResultS": {
+    "en": "{groupedFigure} confirmations",
+    "placeholders": {
+      "groupedFigure": {
+        "example": "loopGroupedFigure(receipt.confirmations.toString())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:334",
+    "zh": "{groupedFigure} 确认"
+  },
+  "wallet_txResultSwitch": {
+    "en": "{action} in progress",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:325",
+    "zh": "{action}进行中"
+  },
+  "wallet_txResultSwitch2": {
+    "en": "Waiting",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:350",
+    "zh": "等待中"
+  },
+  "wallet_txResultSwitch3": {
+    "en": "Latest status.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:375",
+    "zh": "最新状态。"
+  },
+  "wallet_txResultTxResultActionIdLabel": {
+    "en": "Provider action",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:409",
+    "zh": "供应商动作"
+  },
+  "wallet_txResultTxResultCapabilityBlockTitle": {
+    "en": "Transaction status can't be read right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:222",
+    "zh": "交易状态当前不可读"
+  },
+  "wallet_txResultTxResultConfirmationsLabel": {
+    "en": "Confirmations",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:75",
+    "zh": "确认数"
+  },
+  "wallet_txResultTxResultConfirmationsValue": {
+    "en": "No receipt yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:417",
+    "zh": "还没有回执"
+  },
+  "wallet_txResultTxResultConfirmationsValue2": {
+    "en": "Chain head can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:419",
+    "zh": "链头读不到"
+  },
+  "wallet_txResultTxResultEmptyMessage": {
+    "en": "When you come here from a Send, approval or Swap signing page, this page shows that transaction's status.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:167",
+    "zh": "从发送、授权或兑换的签名页进来时，这一页会显示那一笔的状态。"
+  },
+  "wallet_txResultTxResultEmptyTitle": {
+    "en": "No action to show here yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:166",
+    "zh": "这里还没有要展示的操作"
+  },
+  "wallet_txResultTxResultFolioCaption": {
+    "en": "The result page shows one specific action and needs to know which one.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:160",
+    "zh": "结果页只展示一笔具体操作，需要指定是哪一笔。"
+  },
+  "wallet_txResultTxResultFolioCaption2": {
+    "en": "The result follows the on-chain check; this page doesn't decide success on its own.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:214",
+    "zh": "结果以链上核对为准，这一页不会自己判断成败。"
+  },
+  "wallet_txResultTxResultFolioHeading": {
+    "en": "No result to show",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:159",
+    "zh": "没有可展示的结果"
+  },
+  "wallet_txResultTxResultFolioHeading2": {
+    "en": "Loading result",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:213",
+    "zh": "正在读取结果"
+  },
+  "wallet_txResultTxResultForwardLabel": {
+    "en": "Forward message",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:293",
+    "zh": "转发消息"
+  },
+  "wallet_txResultTxResultGasLabel": {
+    "en": "Gas used",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:425",
+    "zh": "实际用量"
+  },
+  "wallet_txResultTxResultHashLabel": {
+    "en": "Transaction hash",
+    "placeholders": {},
+    "where": "lib/features/wallet/wallet_activity_export.dart:72",
+    "zh": "交易哈希"
+  },
+  "wallet_txResultTxResultHashValue": {
+    "en": "Not reported yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:403",
+    "zh": "尚未上报"
+  },
+  "wallet_txResultTxResultMergeLabel": {
+    "en": "Merge into long image",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:300",
+    "zh": "合并长图"
+  },
+  "wallet_txResultTxResultPendingBody": {
+    "en": "A successful submission doesn't mean it's done on-chain; it still needs 15 block confirmations.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:265",
+    "zh": "提交成功不代表链上已完成，还需要 15 个区块确认。"
+  },
+  "wallet_txResultTxResultPendingTitle": {
+    "en": "Submitted, waiting for receipt",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:264",
+    "zh": "已提交，等待回执"
+  },
+  "wallet_txResultTxResultPollingStoppedBody": {
+    "en": "{maximumPollFailures} reads failed in a row, so this page has stopped retrying automatically. This action's status hasn't changed; retry manually.",
+    "placeholders": {
+      "maximumPollFailures": {
+        "example": "widget.maximumPollFailures",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:274",
+    "zh": "连续 {maximumPollFailures} 次读取失败，本页不再自动重试，已停止自动重试。这笔操作的状态没有改变，请手动重试。"
+  },
+  "wallet_txResultTxResultPollingStoppedTitle": {
+    "en": "Auto-refresh stopped",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:272",
+    "zh": "已停止自动查询"
+  },
+  "wallet_txResultTxResultScreenTitle": {
+    "en": "Transaction result",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:150, lib/features/wallet/tx_result_screen.dart:158, lib/features/wallet/tx_result_screen.dart:204, lib/features/wallet/tx_result_screen.dart:212",
+    "zh": "交易结果"
+  },
+  "wallet_txResultTxResultUnknownLockBody": {
+    "en": "{reasonCodeText} This page will only keep checking and won't submit again; don't sign again.",
+    "placeholders": {
+      "reasonCodeText": {
+        "example": "loopReasonCodeText(intent.result.reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:245",
+    "zh": "{reasonCodeText} 本页只会继续查询，不会重复提交；请勿再次签名。"
+  },
+  "wallet_txResultTxResultUnknownLockTitle": {
+    "en": "Result unknown, locked",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:243",
+    "zh": "结果未知，已锁定"
+  },
+  "wallet_txResultTxResultUnreportedBody": {
+    "en": "If the wallet already broadcast this transaction, it may be on-chain and only the report failed. Come back and retry later; don't sign again until the submission is accepted.",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:256",
+    "zh": "如果钱包已经广播过这笔交易，它可能已经上链，只是上报没有成功。请稍后回到这里重试，在提交被接受之前不要重新签名。"
+  },
+  "wallet_txResultTxResultUnreportedTitle": {
+    "en": "This submission hasn't been recorded yet",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:254",
+    "zh": "这次提交还没有记录到"
+  },
+  "wallet_txResultTxResultUpdatedLabel": {
+    "en": "Updated",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:435",
+    "zh": "更新于"
+  },
+  "wallet_txResultUnknown": {
+    "en": "{action} result unknown",
+    "placeholders": {
+      "action": {
+        "example": "_action(intent)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/tx_result_screen.dart:322",
+    "zh": "{action}结果未知"
+  },
+  "wallet_txResultWalletMoneyActionsMoneyFactsFooterText": {
+    "en": "Confirmations can't be loaded",
+    "placeholders": {},
+    "where": "lib/features/wallet/tx_result_screen.dart:334",
+    "zh": "确认数读不到"
+  }
+}

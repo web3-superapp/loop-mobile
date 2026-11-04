@@ -106,7 +106,10 @@ void main() {
       final card = tester.widget(_key('probe-state-unavailable'));
       expect(card, isA<LoopAlertCard>());
       expect((card as LoopAlertCard).compact, isTrue);
-      expect(find.text('该内容当前不可用'), findsOneWidget);
+      expect(
+        find.text('This content isn\'t available right now'),
+        findsOneWidget,
+      );
       expect(find.byType(LoopEmptyState), findsNothing);
     });
 

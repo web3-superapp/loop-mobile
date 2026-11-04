@@ -55,11 +55,11 @@ void main() {
       await _host(tester, const LoopProvenanceFooter(text: statement));
 
       expect(find.text(statement), findsNothing);
-      expect(find.textContaining('观察于'), findsNothing);
+      expect(find.textContaining('observed'), findsNothing);
       final trigger = _key('provenance-footer');
       expect(trigger, findsOneWidget);
       expect(
-        find.descendant(of: trigger, matching: find.text('来源')),
+        find.descendant(of: trigger, matching: find.text('Source')),
         findsOneWidget,
       );
       expect(tester.getSize(trigger).height, greaterThanOrEqualTo(44));
@@ -82,7 +82,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_key('provenance-footer-sheet'), findsOneWidget);
-      expect(find.text('数据来源'), findsOneWidget);
+      expect(find.text('Data source'), findsOneWidget);
       expect(
         tester
             .widget<Text>(
@@ -132,11 +132,11 @@ void main() {
       );
       await _host(tester, LoopFactLine(label: '价格', fact: fact));
       expect(find.text('747.39'), findsOneWidget);
-      expect(find.textContaining('观察于'), findsNothing);
+      expect(find.textContaining('observed'), findsNothing);
       await tester.tap(_key('fact-价格-provenance'));
       await tester.pumpAndSettle();
       expect(_key('fact-provenance-sheet'), findsOneWidget);
-      expect(find.textContaining('观察于'), findsOneWidget);
+      expect(find.textContaining('observed'), findsOneWidget);
     });
   });
 
@@ -144,19 +144,22 @@ void main() {
     testWidgets('the heading and the disabled form stay; nothing explains '
         'itself on the page', (tester) async {
       await pumpS8Page(tester, BridgeScreen(onOpenStatus: () {}));
-      expect(find.text('跨链尚未开放'), findsOneWidget);
+      expect(find.text('Bridge isn\'t available yet'), findsOneWidget);
       expect(_key('bridge-start'), findsOneWidget);
       expect(_key('bridge-open-status'), findsOneWidget);
-      expect(find.textContaining('先选来源链'), findsNothing);
-      expect(find.textContaining('这里不会出现预估数字'), findsNothing);
-      expect(find.textContaining('这里不会发起任何跨链操作'), findsNothing);
+      expect(find.textContaining('Choose the source chain'), findsNothing);
+      expect(find.textContaining('No estimates appear here'), findsNothing);
+      expect(
+        find.textContaining('no bridge action is started here'),
+        findsNothing,
+      );
 
       // S325 · decision 0255: the page's one (i), in its bar.
       expect(_key('bridge-info'), findsNothing);
       await openPageInfo(tester);
       expect(_key('loop-provenance-sheet'), findsOneWidget);
-      expect(find.textContaining('先选来源链'), findsOneWidget);
-      expect(find.text('这里不会出现预估数字'), findsOneWidget);
+      expect(find.textContaining('Choose the source chain'), findsOneWidget);
+      expect(find.text('No estimates appear here'), findsOneWidget);
     });
   });
 
@@ -197,12 +200,12 @@ void main() {
         const WalletScreen(),
         wallet: FakeWalletReadGateway(),
       );
-      expect(find.textContaining('观察于'), findsNothing);
-      expect(find.textContaining('区块 120,628,164'), findsNothing);
+      expect(find.textContaining('observed'), findsNothing);
+      expect(find.textContaining('Block 120,628,164'), findsNothing);
       // S343 · decision 0271: 我的 keeps its bar to three keys; the source
       // stays registered with the line.
       expect(_key('loop-page-info-action'), findsNothing);
-      expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
+      expect(findProvenanceContaining('Block 120,628,164'), findsOneWidget);
     });
   });
 

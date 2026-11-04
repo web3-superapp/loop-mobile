@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// How one trip through the signing exit ended.
 enum MoneySignStatus {
@@ -280,20 +281,57 @@ Decimal? _larger(Decimal? a, Decimal? b) {
 
 /// Sheet title for one intent kind.
 String moneyActionTitle(LoopIntentKind kind) => switch (kind) {
-  LoopIntentKind.send => '确认发送',
-  LoopIntentKind.approve => '确认授权',
-  LoopIntentKind.revoke => '确认回收授权',
-  LoopIntentKind.swap => '确认兑换',
-  LoopIntentKind.sendNft => '确认发送 NFT',
+  LoopIntentKind.send => LoopL10n.current.wallet_moneyActionsSigningSend,
+  LoopIntentKind.approve => LoopL10n.current.wallet_moneyActionsSigningApprove,
+  LoopIntentKind.revoke => LoopL10n.current.wallet_moneyActionsSigningRevoke,
+  LoopIntentKind.swap => LoopL10n.current.wallet_moneyActionsSigningSwap,
+  LoopIntentKind.sendNft => LoopL10n.current.wallet_moneyActionsSigningSendNft,
+};
+
+/// The action's own name (「发送」 / Send), for the headlines that say what
+/// happened to it — [moneyActionTitle] is the button's 「确认…」 wording.
+String moneyActionName(LoopIntentKind kind) => switch (kind) {
+  LoopIntentKind.send => LoopL10n.current.wallet_moneyActionNameSend,
+  LoopIntentKind.approve => LoopL10n.current.wallet_moneyActionNameApprove,
+  LoopIntentKind.revoke => LoopL10n.current.wallet_moneyActionNameRevoke,
+  LoopIntentKind.swap => LoopL10n.current.wallet_moneyActionNameSwap,
+  LoopIntentKind.sendNft => LoopL10n.current.wallet_moneyActionNameSendNft,
 };
 
 /// 「T #id」 for the NFT a `send_nft` intent moves; the project's name when
 /// the server named it, else [fallbackName], else 「NFT」.
 String moneyNftLabel(LoopWalletIntent intent, {String? fallbackName}) {
   final nft = intent.review.nft;
-  if (nft == null) return '不可用';
+  if (nft == null) return LoopL10n.current.common_unavailable;
   final name = nft.projectName ?? fallbackName ?? 'NFT';
   return '$name #${nft.tokenId}';
+}
+
+/// A stable id for one of [moneyActionFields]' lines (decision 0281: a key
+/// never carries copy). [IntentField] holds only the label, so the id is
+/// read back from the label the same build just wrote; an unknown label is
+/// returned as is.
+String moneyFieldId(String label) {
+  final l10n = LoopL10n.current;
+  final ids = <String, String>{
+    l10n.common_actions: 'action',
+    l10n.common_assets: 'asset',
+    l10n.common_amount: 'amount',
+    l10n.wallet_moneyActionsSigningLabel: 'recipient',
+    l10n.common_token: 'token',
+    'Spender': 'spender',
+    l10n.wallet_moneyActionsSigningLabel2: 'allowance',
+    'NFT': 'nft',
+    l10n.common_contract: 'contract',
+    l10n.common_pay: 'pay',
+    l10n.common_estimatedReceive: 'estimated-receive',
+    l10n.common_minimumReceive: 'minimum-receive',
+    l10n.common_slippageLimit: 'slippage',
+    l10n.common_network: 'network',
+    l10n.wallet_moneyActionsSigningLabel3: 'max-fee',
+    l10n.common_simulationResult: 'simulation',
+  };
+  return ids[label] ?? label;
 }
 
 /// The exact facts shown before signing, read from the server's review.
@@ -304,70 +342,90 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
   final review = intent.review;
   final fee = review.fee;
   final fields = <IntentField>[
-    IntentField(label: '操作', value: moneyActionTitle(intent.kind)),
+    IntentField(
+      label: LoopL10n.current.common_actions,
+      value: moneyActionTitle(intent.kind),
+    ),
   ];
   switch (intent.kind) {
     case LoopIntentKind.send:
       fields.addAll(<IntentField>[
-        IntentField(label: '资产', value: review.asset.symbol),
         IntentField(
-          label: '数量',
+          label: LoopL10n.current.common_assets,
+          value: review.asset.symbol,
+        ),
+        IntentField(
+          label: LoopL10n.current.common_amount,
           value: '${review.amount.display} ${review.asset.symbol}',
         ),
         IntentField(
-          label: '收款方',
-          value: review.recipient?.checksumAddress ?? '不可用',
+          label: LoopL10n.current.wallet_moneyActionsSigningLabel,
+          value:
+              review.recipient?.checksumAddress ??
+              LoopL10n.current.common_unavailable,
         ),
       ]);
     case LoopIntentKind.approve:
     case LoopIntentKind.revoke:
       fields.addAll(<IntentField>[
-        IntentField(label: '代币', value: review.asset.symbol),
         IntentField(
-          label: 'Spender',
-          value: review.spender?.checksumAddress ?? '不可用',
+          label: LoopL10n.current.common_token,
+          value: review.asset.symbol,
         ),
         IntentField(
-          label: '额度',
+          label: 'Spender',
+          value:
+              review.spender?.checksumAddress ??
+              LoopL10n.current.common_unavailable,
+        ),
+        IntentField(
+          label: LoopL10n.current.wallet_moneyActionsSigningLabel2,
           value: review.amount.isUnlimited
-              ? '无限额度'
+              ? LoopL10n.current.wallet_moneyActionsSigningValue
               : '${review.amount.display} ${review.asset.symbol}',
         ),
       ]);
     case LoopIntentKind.sendNft:
       fields.addAll(<IntentField>[
         IntentField(label: 'NFT', value: moneyNftLabel(intent)),
-        IntentField(label: '合约', value: review.nft?.contractAddress ?? '不可用'),
         IntentField(
-          label: '收款方',
-          value: review.recipient?.checksumAddress ?? '不可用',
+          label: LoopL10n.current.common_contract,
+          value:
+              review.nft?.contractAddress ??
+              LoopL10n.current.common_unavailable,
+        ),
+        IntentField(
+          label: LoopL10n.current.wallet_moneyActionsSigningLabel,
+          value:
+              review.recipient?.checksumAddress ??
+              LoopL10n.current.common_unavailable,
         ),
       ]);
     case LoopIntentKind.swap:
       final swap = review.swap;
       fields.addAll(<IntentField>[
         IntentField(
-          label: '支付',
+          label: LoopL10n.current.common_pay,
           value: '${review.amount.display} ${review.asset.symbol}',
         ),
         IntentField(
-          label: '预计获得',
+          label: LoopL10n.current.common_estimatedReceive,
           value: swap == null
-              ? '不可用'
+              ? LoopL10n.current.common_unavailable
               : '${swap.quote.estimatedOutputAmount.display} '
                     '${swap.destinationAsset.symbol}',
         ),
         IntentField(
-          label: '最少获得',
+          label: LoopL10n.current.common_minimumReceive,
           value: swap == null
-              ? '不可用'
+              ? LoopL10n.current.common_unavailable
               : '${swap.quote.minimumOutputAmount.display} '
                     '${swap.destinationAsset.symbol}',
         ),
         IntentField(
-          label: '滑点上限',
+          label: LoopL10n.current.common_slippageLimit,
           value: swap == null
-              ? '不可用'
+              ? LoopL10n.current.common_unavailable
               : moneySlippageLabel(swap.quote.slippageBps),
         ),
       ]);
@@ -375,17 +433,25 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
   // The chain is the intent's own value (decision 0038). Money actions are
   // locked to the primary chain, so this line reads "BNB Smart Chain" in
   // every delivered build — but it is read, never asserted.
-  fields.add(IntentField(label: '网络', value: loopChainName(intent.chainId)));
   fields.add(
     IntentField(
-      label: '最高网络费',
+      label: LoopL10n.current.common_network,
+      value: loopChainName(intent.chainId),
+    ),
+  );
+  fields.add(
+    IntentField(
+      label: LoopL10n.current.wallet_moneyActionsSigningLabel3,
       value: fee == null
-          ? '不可用'
+          ? LoopL10n.current.common_unavailable
           : '${loopFormatDecimal(fee.maximumFee, maxFractionDigits: 10)} BNB',
     ),
   );
   fields.add(
-    IntentField(label: '模拟结果', value: moneySimulationLabel(intent.simulation)),
+    IntentField(
+      label: LoopL10n.current.common_simulationResult,
+      value: moneySimulationLabel(intent.simulation),
+    ),
   );
   return fields;
 }
@@ -393,7 +459,9 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
 /// zh-CN label for the pre-execution result. It never says "safe".
 String moneySimulationLabel(LoopIntentSimulation simulation) =>
     switch (simulation.status) {
-      LoopSimulationStatus.passed => '试算通过',
-      LoopSimulationStatus.reverted => '试算被拒绝',
-      LoopSimulationStatus.unavailable => '试算不可用',
+      LoopSimulationStatus.passed => LoopL10n.current.common_simulationPassed,
+      LoopSimulationStatus.reverted =>
+        LoopL10n.current.common_simulationRejected,
+      LoopSimulationStatus.unavailable =>
+        LoopL10n.current.common_simulationUnavailable,
     };

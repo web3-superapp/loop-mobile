@@ -323,10 +323,10 @@ void main() {
       expect(_key('mining-composition-token-$s7WbnbAssetId'), findsNothing);
       expect(_key('mining-composition-excluded'), findsNothing);
       expect(find.text('未计入的资产'), findsNothing);
-      expect(find.text('未计入'), findsNothing);
+      expect(find.text('Not included'), findsNothing);
       // 有权重的社区币 is gone.
       expect(_key('mining-open-market'), findsNothing);
-      expect(find.text('有权重的社区币'), findsNothing);
+      expect(find.text('weighted community token'), findsNothing);
     });
 
     testWidgets('NFT lists only assets with NFT power', (tester) async {

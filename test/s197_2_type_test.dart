@@ -225,7 +225,7 @@ void main() {
     testWidgets('a provenance footer is a captionSm (i) 来源', (tester) async {
       await _pump(tester, const LoopProvenanceFooter(text: '区块 1 · 观察于 刚刚'));
       expect(find.text('区块 1 · 观察于 刚刚'), findsNothing);
-      _expectStep(_painted(tester, find.text('来源')), LoopType.captionSm);
+      _expectStep(_painted(tester, find.text('Source')), LoopType.captionSm);
     });
 
     testWidgets('a footnote is captionSm text3', (tester) async {

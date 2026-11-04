@@ -120,19 +120,21 @@ void main() {
         children: <Widget>[
           LoopPowerHint(
             key: const ValueKey<String>('tappable'),
-            text: '钱包持仓正在产生算力',
+            text: 'Wallet holdings are earning power',
             figure: '0 算力 · 今日预估 — LOOP · 当前算力公式',
             onTap: () {},
           ),
           const LoopPowerHint(
             key: ValueKey<String>('still'),
-            text: '这个资产的挖矿贡献',
-            figure: '算力 —',
+            text: "This asset's mining contribution",
+            figure: 'Power —',
           ),
         ],
       ),
     );
-    final sentence = tester.getTopLeft(find.text('钱包持仓正在产生算力'));
+    final sentence = tester.getTopLeft(
+      find.text('Wallet holdings are earning power'),
+    );
     final figure = tester.getTopLeft(find.text('0 算力 · 今日预估 — LOOP · 当前算力公式'));
     expect(figure.dy, greaterThan(sentence.dy));
     expect(figure.dx, sentence.dx);

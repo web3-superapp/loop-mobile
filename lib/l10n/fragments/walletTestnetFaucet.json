@@ -1,0 +1,463 @@
+{
+  "walletTestnetFaucet_sheetBarrierLabel": {
+    "en": "Close Get funds",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:164",
+    "zh": "关闭获取资金"
+  },
+  "walletTestnetFaucet_sheetBusy": {
+    "en": "Sending to someone else. Try again in a few seconds",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:141",
+    "zh": "正在给别人发放，几秒后再试"
+  },
+  "walletTestnetFaucet_sheetChainReadFailed": {
+    "en": "On-chain figures can't be fetched right now. Try again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:139",
+    "zh": "链上读数暂时取不到，稍后再试"
+  },
+  "walletTestnetFaucet_sheetCooldown": {
+    "en": "{testnetFaucetClaimedText}. Come back later",
+    "placeholders": {
+      "testnetFaucetClaimedText": {
+        "example": "testnetFaucetClaimedText(cooldownSeconds)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:145, lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:510",
+    "zh": "{testnetFaucetClaimedText}，稍后再来"
+  },
+  "walletTestnetFaucet_sheetDisabled": {
+    "en": "Claiming is closed",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:127",
+    "zh": "领取已关闭"
+  },
+  "walletTestnetFaucet_sheetIf": {
+    "en": "{loopLaunchNativeSymbolText} was sent but isn't confirmed yet; {loopLaunchUsd1SymbolText} wasn't sent this time. {again}",
+    "placeholders": {
+      "again": {
+        "example": "again",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:100",
+    "zh": "{loopLaunchNativeSymbolText} 已发出但还没确认，{loopLaunchUsd1SymbolText} 这次没发；{again}"
+  },
+  "walletTestnetFaucet_sheetIf2": {
+    "en": "{loopLaunchNativeSymbolText} was sent; {loopLaunchUsd1SymbolText} wasn't sent this time. {again}",
+    "placeholders": {
+      "again": {
+        "example": "again",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:107",
+    "zh": "{loopLaunchNativeSymbolText} 已发出，{loopLaunchUsd1SymbolText} 这次没发；{again}"
+  },
+  "walletTestnetFaucet_sheetIf3": {
+    "en": "{loopLaunchUsd1SymbolText} arrived; {loopLaunchNativeSymbolText} didn't go through this time. {again}",
+    "placeholders": {
+      "again": {
+        "example": "again",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:110",
+    "zh": "{loopLaunchUsd1SymbolText} 已到账，{loopLaunchNativeSymbolText} 这次没成功，{again}"
+  },
+  "walletTestnetFaucet_sheetIf4": {
+    "en": "Only part of it was sent this time. {again}",
+    "placeholders": {
+      "again": {
+        "example": "again",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:112",
+    "zh": "这次只发出了一部分，{again}"
+  },
+  "walletTestnetFaucet_sheetIf5": {
+    "en": "{loopLaunchNativeSymbolText} arrived; {loopLaunchUsd1SymbolText} didn't go through this time. {again}",
+    "placeholders": {
+      "again": {
+        "example": "again",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:113",
+    "zh": "{loopLaunchNativeSymbolText} 已到账，{loopLaunchUsd1SymbolText} 这次没成功，{again}"
+  },
+  "walletTestnetFaucet_sheetIf6": {
+    "en": "Loading claim status…",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:450",
+    "zh": "正在读取领取状态…"
+  },
+  "walletTestnetFaucet_sheetLabel": {
+    "en": "Claimed recently",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:534",
+    "zh": "最近已领过"
+  },
+  "walletTestnetFaucet_sheetLabel2": {
+    "en": "Claimed in the last {testnetFaucetCooldownText}",
+    "placeholders": {
+      "testnetFaucetCooldownText": {
+        "example": "testnetFaucetCooldownText(_cooldownSeconds!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:535",
+    "zh": "{testnetFaucetCooldownText}内已领过"
+  },
+  "walletTestnetFaucet_sheetLabel3": {
+    "en": "Next claim {testnetFaucetNextLabel}",
+    "placeholders": {
+      "testnetFaucetNextLabel": {
+        "example": "testnetFaucetNextLabel(next)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:536",
+    "zh": "下次可领 {testnetFaucetNextLabel}"
+  },
+  "walletTestnetFaucet_sheetLabel4": {
+    "en": "Copy {label} transaction hash",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:639",
+    "zh": "复制 {label} 交易哈希"
+  },
+  "walletTestnetFaucet_sheetLabel5": {
+    "en": "Copy {label} BscScan link",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:646",
+    "zh": "复制 {label} 的 BscScan 链接"
+  },
+  "walletTestnetFaucet_sheetMessage": {
+    "en": "Transaction hash copied",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:641",
+    "zh": "交易哈希已复制"
+  },
+  "walletTestnetFaucet_sheetMessage2": {
+    "en": "BscScan link copied",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:648",
+    "zh": "BscScan 链接已复制"
+  },
+  "walletTestnetFaucet_sheetRuntimeUnavailable": {
+    "en": "Claiming isn't available right now. Try again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:135",
+    "zh": "领取暂时不可用，稍后再试"
+  },
+  "walletTestnetFaucet_sheetS": {
+    "en": "You can claim again in {testnetFaucetCooldownText}",
+    "placeholders": {
+      "testnetFaucetCooldownText": {
+        "example": "testnetFaucetCooldownText(cooldownSeconds)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:85",
+    "zh": "{testnetFaucetCooldownText}后可再领"
+  },
+  "walletTestnetFaucet_sheetS2": {
+    "en": "This wallet already claimed in the last {testnetFaucetCooldownText}",
+    "placeholders": {
+      "testnetFaucetCooldownText": {
+        "example": "testnetFaucetCooldownText(cooldownSeconds)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:91",
+    "zh": "这个钱包 {testnetFaucetCooldownText}内已经领过"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetAddressLabel": {
+    "en": "Receiving wallet",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:432",
+    "zh": "收币钱包"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetBusyLabel": {
+    "en": "Sending… (about 30 seconds)",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:49",
+    "zh": "正在发放…（约 30 秒）"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText": {
+    "en": "24 hours",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:74",
+    "zh": "24 小时"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText2": {
+    "en": "{seconds, plural, =1{1 day} other{{seconds} days}}",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 86400",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:75",
+    "zh": "{seconds} 天"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText3": {
+    "en": "{seconds, plural, =1{1 hour} other{{seconds} hours}}",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 3600",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:76",
+    "zh": "{seconds} 小时"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText4": {
+    "en": "{seconds, plural, =1{1 minute} other{{seconds} minutes}}",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 60",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:77",
+    "zh": "{seconds} 分钟"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText5": {
+    "en": "{seconds, plural, =1{1 second} other{{seconds} seconds}}",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:78",
+    "zh": "{seconds} 秒"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText6": {
+    "en": "You can claim again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:84",
+    "zh": "稍后可再领"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetCooldownText7": {
+    "en": "This wallet claimed recently",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:90",
+    "zh": "这个钱包最近已经领过"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetGranted": {
+    "en": "Sent {formatDecimal} {loopLaunchNativeSymbolText} and {formatDecimal2} {loopLaunchUsd1SymbolText}. Arrival is final once confirmed on-chain; your balance refreshes automatically.",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(granted.bnb.amount)",
+        "type": "Object"
+      },
+      "formatDecimal2": {
+        "example": "loopFormatDecimal(granted.usd1.amount)",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:572",
+    "zh": "已发出 {formatDecimal} {loopLaunchNativeSymbolText} 和 {formatDecimal2} {loopLaunchUsd1SymbolText}，到账以链上确认为准，余额会自动刷新。"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetInFlightLaterText": {
+    "en": "Check the result here later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:52",
+    "zh": "结果稍后在这里查看"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetIntro": {
+    "en": "Claim {loopLaunchNativeSymbolText} and {loopLaunchUsd1SymbolText} to the current wallet for fees and trading, once every 24 hours.",
+    "placeholders": {
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:418",
+    "zh": "领取 {loopLaunchNativeSymbolText} 与 {loopLaunchUsd1SymbolText} 到当前钱包，用来支付手续费和买卖，每 24 小时一次。"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetIntro2": {
+    "en": "This sends {formatDecimal} {loopLaunchNativeSymbolText} and {formatDecimal2} {loopLaunchUsd1SymbolText} to the current wallet; you can claim once every {testnetFaucetCooldownText}.",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(status.bnbAmount)",
+        "type": "Object"
+      },
+      "formatDecimal2": {
+        "example": "loopFormatDecimal(status.usd1Amount)",
+        "type": "Object"
+      },
+      "loopLaunchNativeSymbolText": {
+        "example": "loopLaunchNativeSymbolText",
+        "type": "Object"
+      },
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      },
+      "testnetFaucetCooldownText": {
+        "example": "testnetFaucetCooldownText(status.cooldownSeconds)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:420",
+    "zh": "这次会发 {formatDecimal} {loopLaunchNativeSymbolText} 和 {formatDecimal2} {loopLaunchUsd1SymbolText} 到当前钱包，每 {testnetFaucetCooldownText}可以领一次。"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetNextLabel": {
+    "en": "Tomorrow {time}",
+    "placeholders": {
+      "time": {
+        "example": "time",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:66",
+    "zh": "明天 {time}"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetNextLabel2": {
+    "en": "{month} {day}, {time}",
+    "placeholders": {
+      "day": {
+        "example": "local.day",
+        "type": "Object"
+      },
+      "month": {
+        "example": "local.month",
+        "type": "Object"
+      },
+      "time": {
+        "example": "time",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:67",
+    "zh": "{month}月{day}日 {time}"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetNotOwnedText": {
+    "en": "Only the built-in wallet you're signed in with can claim",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:51",
+    "zh": "只能给当前登录的内置钱包领取"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetOperatorLowText": {
+    "en": "The funding pool is low right now. Try again later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:50",
+    "zh": "资金池暂时不足，请稍后再试"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetTimedOutLaterText": {
+    "en": "Still sending. Check back later",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:53",
+    "zh": "发放还在进行，稍后再进来看"
+  },
+  "walletTestnetFaucet_sheetTestnetFaucetTitle": {
+    "en": "Get funds",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:47",
+    "zh": "获取资金"
+  },
+  "walletTestnetFaucet_sheetText": {
+    "en": "{testnetFaucetClaimedText}. Next claim {testnetFaucetNextLabel}",
+    "placeholders": {
+      "testnetFaucetClaimedText": {
+        "example": "testnetFaucetClaimedText(_cooldownSeconds)",
+        "type": "Object"
+      },
+      "testnetFaucetNextLabel": {
+        "example": "testnetFaucetNextLabel(next)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:511",
+    "zh": "{testnetFaucetClaimedText}，下次可领 {testnetFaucetNextLabel}"
+  },
+  "walletTestnetFaucet_sheetTitle": {
+    "en": "Claim status can't be loaded right now",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:475",
+    "zh": "领取状态暂时读不到"
+  },
+  "walletTestnetFaucet_sheetTransferFailed": {
+    "en": "Nothing was sent this time. You can retry",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:143",
+    "zh": "这次没有发出，可以重试"
+  },
+  "walletTestnetFaucet_sheetUsd1Unavailable": {
+    "en": "The {loopLaunchUsd1SymbolText} contract isn't available right now. Try again later",
+    "placeholders": {
+      "loopLaunchUsd1SymbolText": {
+        "example": "loopLaunchUsd1SymbolText",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:137",
+    "zh": "{loopLaunchUsd1SymbolText} 合约暂时不可用，稍后再试"
+  },
+  "walletTestnetFaucet_sheetWrongChain": {
+    "en": "Claiming isn't supported on the current network",
+    "placeholders": {},
+    "where": "lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:129",
+    "zh": "当前网络不支持领取"
+  }
+}

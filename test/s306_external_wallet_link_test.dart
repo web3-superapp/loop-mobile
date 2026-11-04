@@ -149,11 +149,25 @@ void main() {
         find.byKey(const ValueKey<String>('wallets-add-sheet')),
         findsOneWidget,
       );
-      expect(find.text('连接外部钱包'), findsOneWidget);
-      expect(find.textContaining('不能在 LOOP 内交易或领奖励'), findsOneWidget);
-      expect(find.textContaining('LOOP 不会获取你的私钥'), findsOneWidget);
-      expect(find.textContaining('大陆网络需要开 VPN'), findsWidgets);
-      expect(find.text('所有绑定钱包的持仓都计入算力'), findsOneWidget);
+      expect(find.text('Connect external wallet'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "you can't trade or claim rewards with them in LOOP",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('LOOP never gets your private key'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Mainland China networks need a VPN'),
+        findsWidgets,
+      );
+      expect(
+        find.text('Holdings in all linked wallets count toward power'),
+        findsOneWidget,
+      );
       // The sheet no longer speaks of a future opening.
       expect(find.text('开放之后会发生什么'), findsNothing);
       expect(find.text('暂不支持绑定第二个钱包'), findsNothing);
@@ -165,7 +179,7 @@ void main() {
         ExternalWalletCredentialIntent.link,
       ]);
       expect(harness.external.principals, <String?>[_principal]);
-      expect(find.text('外部钱包已绑定'), findsOneWidget);
+      expect(find.text('External wallet linked'), findsOneWidget);
       expect(harness.sync.calls, 1);
       expect(wallet.directoryReads, greaterThan(readsBefore));
       expect(harness.intro.seen, isTrue);
@@ -224,7 +238,12 @@ void main() {
         find.byKey(const ValueKey<String>('wallets-limit-sheet')),
         findsOneWidget,
       );
-      expect(find.textContaining('最多绑定 3 个外部钱包，请先解绑一个'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'You can link up to 3 external wallets. Unlink one',
+        ),
+        findsOneWidget,
+      );
       expect(harness.external.intents, isEmpty);
     });
 
@@ -258,7 +277,10 @@ void main() {
 
       await _tapAdd(tester);
 
-      expect(find.textContaining('最多绑定 2 个外部钱包'), findsWidgets);
+      expect(
+        find.textContaining('Link up to 2 external wallets'),
+        findsWidgets,
+      );
       expect(harness.external.intents, isEmpty);
     });
   });
@@ -360,7 +382,7 @@ void main() {
         find.byKey(ValueKey<String>('wallet-row-${_externalId(9)}')),
         findsOneWidget,
       );
-      expect(find.text('外部钱包已绑定'), findsOneWidget);
+      expect(find.text('External wallet linked'), findsOneWidget);
     });
 
     testWidgets('Privy unreachable falls back to GET and says so', (
@@ -376,7 +398,12 @@ void main() {
       await _tapAdd(tester);
 
       expect(wallet.directoryReads, greaterThan(readsBefore));
-      expect(find.text('外部钱包已绑定，钱包清单稍后刷新'), findsOneWidget);
+      expect(
+        find.text(
+          'External wallet linked; the wallet list will refresh shortly',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a bind archived past the limit asks for an unbind', (
@@ -399,8 +426,13 @@ void main() {
 
       await _tapAdd(tester);
 
-      expect(find.text('已达 3 个外部钱包上限，请先解绑一个'), findsOneWidget);
-      expect(find.text('外部钱包已绑定'), findsNothing);
+      expect(
+        find.text(
+          "You've reached the limit of 3 external wallets. Unlink one first",
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('External wallet linked'), findsNothing);
     });
 
     testWidgets('a bind archived for an address conflict names the other '
@@ -454,7 +486,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('解绑后这个钱包的持仓从下一小时起不再计入算力'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "After unlinking, this wallet's holdings stop counting toward power from the next hour",
+        ),
+        findsOneWidget,
+      );
       expect(harness.credential.unlinked, isEmpty);
 
       await tester.tap(
@@ -467,7 +504,7 @@ void main() {
         _externalAddress(0).toUpperCase().replaceFirst('0X', '0x'),
       ]);
       expect(harness.credential.principals, <String>[_principal]);
-      expect(find.text('已解绑外部钱包'), findsOneWidget);
+      expect(find.text('External wallet unlinked'), findsOneWidget);
       expect(harness.sync.calls, 1);
       expect(wallet.directoryReads, greaterThan(readsBefore));
       expect(

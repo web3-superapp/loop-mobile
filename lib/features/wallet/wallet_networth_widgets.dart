@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_segmented_control.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -80,10 +81,11 @@ class WalletNetWorthPanel extends StatelessWidget {
       // the (i) beside 总资产 ([walletNetWorthProvenanceNotes]).
       body = history.drawable
           ? WalletNetWorthChart(history: history, hidden: hidden)
-          : const LoopInlineUnavailable(
+          : LoopInlineUnavailable(
               key: ValueKey<String>('wallet-networth-chart-empty'),
               icon: 'info',
-              message: '这个区间还没有净值记录 · 每小时记一次，有资产后开始画线',
+              message:
+                  context.l10n.wallet_networthWalletNetworthChartEmptyMessage,
               padding: EdgeInsets.zero,
             );
     } else if (read == null ||
@@ -97,7 +99,8 @@ class WalletNetWorthPanel extends StatelessWidget {
     } else {
       body = LoopInlineUnavailable(
         key: const ValueKey<String>('wallet-networth-chart-unavailable'),
-        message: '净值走势暂时读不到',
+        message:
+            context.l10n.wallet_networthWalletNetworthChartUnavailableMessage,
         onRetry: read.phase == LoopChainViewPhase.permission ? null : onRetry,
         retrying: read.refreshing,
         padding: EdgeInsets.zero,
@@ -113,7 +116,8 @@ class WalletNetWorthPanel extends StatelessWidget {
           padding: const EdgeInsets.only(top: 2),
           child: WalletQuietTabs<LoopNetWorthRange>(
             key: const ValueKey<String>('wallet-networth-ranges'),
-            semanticLabel: '净值走势区间',
+            semanticLabel:
+                context.l10n.wallet_networthWalletNetworthRangesSemanticLabel,
             options: LoopNetWorthRange.values,
             labelOf: (option) => option.label,
             keyOf: (option) =>
@@ -136,17 +140,19 @@ walletNetWorthProvenance(LoopNetWorthHistory? history) {
   final source = history.source;
   final parsed = source == null ? null : LoopFactSource.tryParse(source);
   return (
-    source: parsed != null ? loopFactSourceLabel(parsed) : 'LOOP 净值快照',
+    source: parsed != null
+        ? loopFactSourceLabel(parsed)
+        : LoopL10n.current.wallet_networthSource,
     observedAt: history.observedAt ?? history.currentAt,
-    detail: '走势是服务端每小时为这个钱包记下的 USD 估值，只用于展示，不是可用余额。',
+    detail: LoopL10n.current.wallet_networthDetail,
   );
 }
 
 /// zh-CN name of a rate publisher. An identifier LOOP does not know is
 /// 「参考汇率」, never the raw word.
 String walletFxSourceLabel(String source) => switch (source) {
-  'ecb' => '欧洲央行参考汇率',
-  _ => '参考汇率',
+  'ecb' => LoopL10n.current.wallet_networthSwitch,
+  _ => LoopL10n.current.wallet_networthSwitch2,
 };
 
 /// Decision 0194: the sentence that says where the ¥ came from —
@@ -180,10 +186,15 @@ String? walletFxProvenanceText(LoopNetWorthFiat fiat, {DateTime? now}) {
   final published = '${two(asOf.month)}-${two(asOf.day)}';
   final rate = loopFormatDecimal(fiat.rate, maxFractionDigits: 6);
   final stale = fiat.stale
-      ? '，${loopFactQualityMarker(LoopFactQuality.stale)}'
+      ? '${LoopL10n.current.common_listSeparator}${loopFactQualityMarker(LoopFactQuality.stale)}'
       : '';
-  return '人民币按${walletFxSourceLabel(source)} 1 USD = $rate CNY'
-      '（$published 发布，观察于 $observed）折算$stale';
+  return LoopL10n.current.wallet_networthIf(
+    observed,
+    published,
+    rate,
+    stale,
+    walletFxSourceLabel(source),
+  );
 }
 
 /// The 200-high area chart: a Lime line over a Lime wash that fades from
@@ -212,7 +223,11 @@ class WalletNetWorthChart extends StatelessWidget {
     return Semantics(
       container: true,
       image: true,
-      label: '${history.range.label}净值走势，最高 $highText，最低 $lowText',
+      label: context.l10n.wallet_networthWalletNetworthChartLabel(
+        highText,
+        history.range.label,
+        lowText,
+      ),
       child: ExcludeSemantics(
         child: SizedBox(
           key: const ValueKey<String>('wallet-networth-chart'),
@@ -409,18 +424,22 @@ class WalletPnlLine extends StatelessWidget {
     final auxiliary = LoopGround.auxiliaryOf(context);
     final move = change;
     final value = move == null
-        ? '暂无'
+        ? context.l10n.common_none
         : walletSignedUsdText(move.usd, move.pct, hidden: hidden);
     final colour = move == null
         ? auxiliary
         : hidden
         ? secondary
         : LoopPriceMove.of(move.usd).color;
-    final action = expanded ? '收起净值走势' : '展开净值走势';
+    final action = expanded
+        ? context.l10n.wallet_networthBuild
+        : context.l10n.wallet_networthS;
     return Semantics(
       button: true,
       expanded: expanded,
-      label: hasHistory ? '今日盈亏 $value，$action' : action,
+      label: hasHistory
+          ? context.l10n.wallet_networthLabel(action, value)
+          : action,
       excludeSemantics: true,
       child: LoopPressable(
         key: ValueKey<String>(
@@ -434,7 +453,7 @@ class WalletPnlLine extends StatelessWidget {
             children: <Widget>[
               if (hasHistory) ...<Widget>[
                 Text(
-                  '今日盈亏',
+                  context.l10n.wallet_networthBuild2,
                   style: LoopType.body.copyWith(color: LoopColors.chalk),
                 ),
                 const SizedBox(width: 10),
@@ -450,7 +469,9 @@ class WalletPnlLine extends StatelessWidget {
                 const SizedBox(width: 8),
               ] else
                 const Spacer(),
-              WalletNetWorthChevron(expanded: expanded),
+              // S355d: the English label is longer; it gives way before the
+              // figure does.
+              Flexible(child: WalletNetWorthChevron(expanded: expanded)),
             ],
           ),
         ),
@@ -473,12 +494,17 @@ class WalletNetWorthChevron extends StatelessWidget {
     ),
     mainAxisSize: MainAxisSize.min,
     children: <Widget>[
-      Text(
-        expanded ? '收起' : '净值走势',
-        key: const ValueKey<String>('wallet-networth-chevron-label'),
-        maxLines: 1,
-        style: LoopType.captionSm.copyWith(
-          color: LoopGround.secondaryOf(context),
+      Flexible(
+        child: Text(
+          expanded
+              ? context.l10n.wallet_networthWalletNetworthChevronLabel
+              : context.l10n.wallet_networthWalletNetworthChevronLabel2,
+          key: const ValueKey<String>('wallet-networth-chevron-label'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LoopType.captionSm.copyWith(
+            color: LoopGround.secondaryOf(context),
+          ),
         ),
       ),
       const SizedBox(width: 2),

@@ -1212,7 +1212,7 @@ const walletRecoveryProviderPending = '当前版本的登录服务还没有开�
 /// It is the same sentence the second-factor sheets print, read off the one
 /// constant so the two pages can never drift apart: a passkey belongs to a
 /// domain, and a build with no domain credential cannot make one.
-const walletRecoveryPasskeyPending = loopPasskeyDomainPending;
+String get walletRecoveryPasskeyPending => loopPasskeyDomainPending;
 
 class WalletRecoveryScreen extends StatefulWidget {
   const WalletRecoveryScreen({

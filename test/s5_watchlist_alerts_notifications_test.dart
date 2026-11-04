@@ -44,7 +44,10 @@ void main() {
 
       expect(find.textContaining('3 个自选资产'), findsOneWidget);
       expect(find.text('不可读'), findsOneWidget);
-      expect(find.textContaining('这个资产已经读不到'), findsOneWidget);
+      expect(
+        find.textContaining('This asset can no longer be loaded'),
+        findsOneWidget,
+      );
       // No price is rendered: the Watchlist is not a market fact.
       expect(find.textContaining('\$'), findsNothing);
     });
@@ -832,7 +835,10 @@ void main() {
       );
 
       expect(find.text('推送尚不可用'), findsOneWidget);
-      expect(find.textContaining('推送还没有开放'), findsWidgets);
+      expect(
+        find.textContaining("Push notifications aren't available yet"),
+        findsWidgets,
+      );
     });
 
     // S73: the capability document answers for LOOP, and this page used to

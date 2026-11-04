@@ -109,7 +109,7 @@ void main() {
       );
       await _check(tester, settle: false);
 
-      expect(find.text('正在校验地址…'), findsOneWidget);
+      expect(find.text('Checking address…'), findsOneWidget);
       // Nothing has been decided about the address yet.
       expect(
         find.byKey(const ValueKey<String>('send-recipient-preflight-error')),
@@ -174,7 +174,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-preflight-error')),
         findsNothing,
       );
-      expect(find.text('地址没有校验成功'), findsNothing);
+      expect(find.text('Address check didn\'t succeed'), findsNothing);
       final next = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('send-address-next')),
       );
@@ -312,8 +312,8 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-sheet-complete')),
         findsOneWidget,
       );
-      expect(find.textContaining('可能已经上链'), findsOneWidget);
-      expect(find.textContaining('没有提交任何交易'), findsNothing);
+      expect(find.textContaining('may already be on-chain'), findsOneWidget);
+      expect(find.textContaining('No transaction was submitted'), findsNothing);
       // The offline pause belongs to the pre-handoff half only.
       expect(
         find.byKey(const ValueKey<String>('send-confirm-state-offline')),
@@ -339,7 +339,7 @@ void main() {
       await _swapInputs(tester);
       await tester.pump(swapQuoteDebounce);
 
-      expect(find.text('报价中…'), findsWidgets);
+      expect(find.text('Quoting…'), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('swap-quote-facts')),
         findsNothing,
@@ -597,7 +597,7 @@ void main() {
         find.byKey(const ValueKey<String>('tx-result-state-loading')),
         findsOneWidget,
       );
-      expect(find.text('交易已确认'), findsNothing);
+      expect(find.text('Transaction confirmed'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('tx-result-hash')),
         findsNothing,
@@ -631,7 +631,7 @@ void main() {
           find.byKey(const ValueKey<String>('tx-result-state-empty')),
           findsNothing,
         );
-        expect(find.text('交易已确认'), findsNothing);
+        expect(find.text('Transaction confirmed'), findsNothing);
       },
     );
 
@@ -660,7 +660,7 @@ void main() {
         find.byKey(const ValueKey<String>('tx-result-state-offline')),
         findsNothing,
       );
-      expect(find.textContaining('不要重新签名'), findsOneWidget);
+      expect(find.textContaining("don't sign again"), findsOneWidget);
     });
   });
 
@@ -784,7 +784,7 @@ void main() {
       );
       // Step-up is not delivered, so the only offer is the one page that could
       // ever change the answer.
-      expect(find.text('前往安全中心'), findsOneWidget);
+      expect(find.text('Go to Security Center'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('approval-guard-error')),
         findsNothing,

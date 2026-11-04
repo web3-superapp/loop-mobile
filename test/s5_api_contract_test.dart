@@ -117,8 +117,14 @@ void main() {
 
               final read = loopChainFailureKindForV2(failure, write: false);
               expect(read, LoopChainFailureKind.invalidData);
-              expect(loopChainFailureReason(read), isNot(contains('重复提交')));
-              expect(loopChainFailureReason(read), isNot(contains('结果未确认')));
+              expect(
+                loopChainFailureReason(read),
+                isNot(contains('submit again')),
+              );
+              expect(
+                loopChainFailureReason(read),
+                isNot(contains("isn't confirmed")),
+              );
               expect(loopChainOutcomeIsUnresolved(read), isFalse);
               // A read that failed is retryable: the page keeps its 重试.
               expect(loopChainPhaseForFailure(read), LoopChainViewPhase.error);
@@ -188,7 +194,10 @@ void main() {
                 final kind = loopChainFailureKindForV2(failure, write: false);
                 expect(kind, row.kind);
                 expect(loopChainPhaseForFailure(kind), row.phase);
-                expect(loopChainFailureReason(kind), isNot(contains('重复提交')));
+                expect(
+                  loopChainFailureReason(kind),
+                  isNot(contains('submit again')),
+                );
               },
             );
       });
@@ -220,8 +229,14 @@ void main() {
               expect(kind, LoopChainFailureKind.rateLimited);
               // It is retryable, just not yet: the phase keeps the button.
               expect(loopChainPhaseForFailure(kind), LoopChainViewPhase.error);
-              expect(loopChainFailureReason(kind), contains('请求过于频繁'));
-              expect(loopChainFailureReason(kind), isNot(contains('重复提交')));
+              expect(
+                loopChainFailureReason(kind),
+                contains('Too many requests'),
+              );
+              expect(
+                loopChainFailureReason(kind),
+                isNot(contains('submit again')),
+              );
             },
           );
     });
@@ -244,8 +259,11 @@ void main() {
 
               final read = loopChainFailureKindForV2(failure, write: false);
               expect(read, LoopChainFailureKind.readFailed);
-              expect(loopChainFailureReason(read), isNot(contains('重复提交')));
-              expect(loopChainFailureReason(read), contains('读不到'));
+              expect(
+                loopChainFailureReason(read),
+                isNot(contains('submit again')),
+              );
+              expect(loopChainFailureReason(read), contains("can't be loaded"));
               expect(loopChainOutcomeIsUnresolved(read), isFalse);
               expect(
                 loopChainFailureKindForV2(failure, write: true),
@@ -846,7 +864,7 @@ void main() {
       expect(identity, isA<MarketAssetIdentitySettled>());
       final asset = identity.settled!;
       expect(asset.status, LoopAssetStatus.unregistered);
-      expect(asset.status.label, '未登记');
+      expect(asset.status.label, 'Unregistered');
       expect(asset.symbol, isNull);
       expect(asset.decimals, isNull);
       expect(asset.hasPrecision, isFalse);

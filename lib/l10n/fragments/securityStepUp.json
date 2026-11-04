@@ -1,0 +1,255 @@
+{
+  "securityStepUp_controllerAsk": {
+    "en": "Verify your identity to turn on large-amount verification",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_controller.dart:190",
+    "zh": "验证身份以开启大额交易二次验证"
+  },
+  "securityStepUp_controllerAsk2": {
+    "en": "Verify your identity to raise the large-amount verification threshold",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_controller.dart:205",
+    "zh": "验证身份以提高大额交易的验证金额"
+  },
+  "securityStepUp_controllerAsk3": {
+    "en": "Verify your identity to sign this large transaction",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_controller.dart:263",
+    "zh": "验证身份以签名这笔大额交易"
+  },
+  "securityStepUp_controllerAsk4": {
+    "en": "Verify your identity to sign this request",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_controller.dart:285",
+    "zh": "验证身份以签名这笔请求"
+  },
+  "securityStepUp_controllerS": {
+    "en": "Verify your identity to turn off large-amount verification",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_controller.dart:190",
+    "zh": "验证身份以关闭大额交易二次验证"
+  },
+  "securityStepUp_modelsIf": {
+    "en": "Amount must be between 1 and 1,000,000 USD1",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_models.dart:141",
+    "zh": "金额需在 1 到 1,000,000 USD1 之间"
+  },
+  "securityStepUp_modelsLoopStepUpAfterApprovalText": {
+    "en": "Approval sent; the transaction wasn't started.",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_models.dart:58",
+    "zh": "授权已发出，交易未发起。"
+  },
+  "securityStepUp_modelsLoopStepUpSubtitle": {
+    "en": "Verify again at {stepUpThresholdLabel} USD1 or more",
+    "placeholders": {
+      "stepUpThresholdLabel": {
+        "example": "loopStepUpThresholdLabel(threshold)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/step_up/step_up_models.dart:167",
+    "zh": "达到 {stepUpThresholdLabel} USD1 时再验一次身份"
+  },
+  "securityStepUp_modelsLoopStepUpThresholdError": {
+    "en": "Enter a whole number",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_models.dart:138",
+    "zh": "请输入整数金额"
+  },
+  "securityStepUp_modelsSwitch": {
+    "en": "Cancelled. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_models.dart:63",
+    "zh": "已取消，没有发生任何变化。"
+  },
+  "securityStepUp_modelsSwitch2": {
+    "en": "Identity verification didn't pass. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_models.dart:64",
+    "zh": "身份验证没有通过，没有发生任何变化。"
+  },
+  "securityStepUp_widgetsActive": {
+    "en": "Confirm in your wallet",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:56",
+    "zh": "请在钱包确认"
+  },
+  "securityStepUp_widgetsBuild": {
+    "en": "Valid this time only; not remembered after reopening the app",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:303",
+    "zh": "这次有效，重开 App 后不会记得"
+  },
+  "securityStepUp_widgetsBuild2": {
+    "en": "When a signed amount reaches or exceeds this value, this device verifies your identity first.",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:437",
+    "zh": "签名的金额达到或超过这个数时，会先用这台设备验证身份。"
+  },
+  "securityStepUp_widgetsDone": {
+    "en": "Verified",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:39",
+    "zh": "已验证"
+  },
+  "securityStepUp_widgetsError": {
+    "en": "Verification didn't pass. The amount wasn't changed.",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:422",
+    "zh": "没有通过验证，金额没有改。"
+  },
+  "securityStepUp_widgetsFailed": {
+    "en": "Not completed",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:59",
+    "zh": "未完成"
+  },
+  "securityStepUp_widgetsHint": {
+    "en": "e.g. 1000",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:454",
+    "zh": "例如 1000"
+  },
+  "securityStepUp_widgetsLabel": {
+    "en": "Verify identity",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:46",
+    "zh": "验证身份"
+  },
+  "securityStepUp_widgetsLoopBadge": {
+    "en": "Loading…",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:328",
+    "zh": "读取中…"
+  },
+  "securityStepUp_widgetsLoopSheetHeading": {
+    "en": "Large-amount verification threshold",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:434",
+    "zh": "大额交易验证金额"
+  },
+  "securityStepUp_widgetsRefreshing": {
+    "en": "Verifying",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:38",
+    "zh": "验证中"
+  },
+  "securityStepUp_widgetsRefreshing2": {
+    "en": "Refreshing quote",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:57",
+    "zh": "正在刷新报价"
+  },
+  "securityStepUp_widgetsS": {
+    "en": "Signing and broadcasting",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:97",
+    "zh": "正在签名并广播"
+  },
+  "securityStepUp_widgetsSX": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:341",
+    "zh": "已关闭"
+  },
+  "securityStepUp_widgetsSecurityStepUpInfoBodyBody": {
+    "en": "{stepUpSubtitle}. Tap this row to change the amount.",
+    "placeholders": {
+      "stepUpSubtitle": {
+        "example": "loopStepUpSubtitle(threshold)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/step_up/step_up_widgets.dart:355",
+    "zh": "{stepUpSubtitle}。点按这一行可以修改金额。"
+  },
+  "securityStepUp_widgetsSecurityStepUpSwitchSemanticLabel": {
+    "en": "{stepUpTitle}, unavailable: {capability}",
+    "placeholders": {
+      "capability": {
+        "example": "capability == null ? '还没有读到这台设备的锁屏能力' : loopAppLockFactorText(capability)",
+        "type": "Object"
+      },
+      "stepUpTitle": {
+        "example": "_stepUpTitle",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/step_up/step_up_widgets.dart:339",
+    "zh": "{stepUpTitle}，不可用：{capability}"
+  },
+  "securityStepUp_widgetsSecurityStepUpSwitchSemanticLabel2": {
+    "en": "{stepUpTitle}, {on}, {base}, tap to change the amount",
+    "placeholders": {
+      "base": {
+        "example": "base",
+        "type": "Object"
+      },
+      "on": {
+        "example": "on ? '已开启' : '已关闭'",
+        "type": "Object"
+      },
+      "stepUpTitle": {
+        "example": "_stepUpTitle",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/step_up/step_up_widgets.dart:340",
+    "zh": "{stepUpTitle}，{on}，{base}，点按修改金额"
+  },
+  "securityStepUp_widgetsSemanticLabel": {
+    "en": "{stepUpTitle}, unavailable: no device verification available in this session",
+    "placeholders": {
+      "stepUpTitle": {
+        "example": "_stepUpTitle",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/step_up/step_up_widgets.dart:249",
+    "zh": "{stepUpTitle}，不可用：这次运行没有可用的设备验证"
+  },
+  "securityStepUp_widgetsStepUpSigningTitle": {
+    "en": "Verifying identity",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:97",
+    "zh": "正在验证身份"
+  },
+  "securityStepUp_widgetsStepUpThresholdFieldFootnote": {
+    "en": "Whole number, 1 to 1,000,000",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:441",
+    "zh": "整数，1 到 1,000,000"
+  },
+  "securityStepUp_widgetsStepUpThresholdFieldLabel": {
+    "en": "Amount (USD1)",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:440",
+    "zh": "金额（USD1）"
+  },
+  "securityStepUp_widgetsStepUpTitle": {
+    "en": "Large-amount verification",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:212",
+    "zh": "大额交易二次验证"
+  },
+  "securityStepUp_widgetsSubtitle": {
+    "en": "No device verification available in this session",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:244",
+    "zh": "这次运行没有可用的设备验证"
+  },
+  "securityStepUp_widgetsUnknown": {
+    "en": "Result unknown",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:60",
+    "zh": "结果未知"
+  },
+  "securityStepUp_widgetsWaiting": {
+    "en": "Pending verification",
+    "placeholders": {},
+    "where": "lib/features/security/step_up/step_up_widgets.dart:37, lib/features/security/step_up/step_up_widgets.dart:49",
+    "zh": "待验证"
+  }
+}

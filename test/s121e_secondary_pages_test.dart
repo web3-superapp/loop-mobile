@@ -41,7 +41,7 @@ void main() {
               LoopRecordRow(
                 key: const ValueKey<String>('row'),
                 leading: const LoopRowIcon(icon: 'wallet'),
-                title: '我的钱包',
+                title: 'My wallets',
                 trailing: '1 个已绑定',
                 onTap: () {},
               ),
@@ -51,7 +51,7 @@ void main() {
 
         final row = find.byKey(const ValueKey<String>('row'));
         expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
-        final title = tester.widget<Text>(find.text('我的钱包'));
+        final title = tester.widget<Text>(find.text('My wallets'));
         // Decision 0189 S2: a flat row shares the ledger row's steps.
         expect(title.style?.fontSize, LoopType.title.fontSize);
         final value = tester.widget<Text>(find.text('1 个已绑定'));
@@ -446,7 +446,10 @@ void main() {
         const WalletManagerScreen(),
         wallet: FakeWalletReadGateway(),
       );
-      expect(_labels(tester), containsAll(<String>['嵌入式钱包', '外部钱包']));
+      expect(
+        _labels(tester),
+        containsAll(<String>['Embedded wallet', 'External wallets']),
+      );
       expect(find.text('0x0000…00a1'), findsOneWidget);
       expect(find.byType(LoopFolioPrimary), findsNothing);
       _expectCleanCopy(tester);
@@ -463,7 +466,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('networks-chain-row')),
       );
-      expect(row.trailing, '1 / 1 正常');
+      expect(row.trailing, '1 / 1 healthy');
       expect(find.byType(LoopFolioPrimary), findsNothing);
     });
 

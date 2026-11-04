@@ -173,7 +173,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('持有人分布暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining("Holder distribution can't be loaded"),
+        findsOneWidget,
+      );
     });
   });
 

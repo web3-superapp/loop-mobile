@@ -301,7 +301,7 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       '/wallet/bridge/status',
     );
-    expect(find.text('跨链进度尚未开放'), findsOneWidget);
+    expect(find.text('Bridge progress isn\'t available yet'), findsOneWidget);
     for (final step in <String>['源链确认', '中继处理', '目标链到账']) {
       expect(find.text(step), findsNothing, reason: step);
     }

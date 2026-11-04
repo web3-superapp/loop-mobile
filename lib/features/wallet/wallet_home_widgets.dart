@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/wallet/wallet_networth_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -122,7 +123,7 @@ String walletNetWorthCaption(LoopNetWorth? netWorth) => <String>[
     partial: true,
     unavailableCount: final count,
   ))
-    '$count 项资产暂无价格，未计入',
+    LoopL10n.current.wallet_homeWalletRowChangeUsd(count),
   if (netWorth is LoopNetWorthValued) ?loopFactQualityMarker(netWorth.quality),
   if (netWorth case LoopNetWorthUnavailable(reasonCode: final reason))
     loopReasonCodeText(reason),
@@ -142,7 +143,7 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
     required this.balances,
     required this.loading,
     super.key,
-    this.unreadText = '暂不可用',
+    this.unreadText,
     this.address,
     this.fullAddress,
     this.environmentTag,
@@ -153,7 +154,7 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
   final String keyPrefix;
   final LoopWalletBalances? balances;
   final bool loading;
-  final String unreadText;
+  final String? unreadText;
 
   /// The active wallet's truncated address, when one is active.
   final String? address;
@@ -207,7 +208,9 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final keyPrefix = widget.keyPrefix;
     return Semantics(
       button: fullAddress != null,
-      label: fullAddress == null ? address : '$address，复制钱包地址',
+      label: fullAddress == null
+          ? address
+          : context.l10n.wallet_homeLabel(address),
       excludeSemantics: true,
       child: LoopPressable(
         key: ValueKey<String>('$keyPrefix-address-copy'),
@@ -215,7 +218,11 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
         onTap: fullAddress == null
             ? null
             : () => unawaited(
-                LoopCopy.text(context, fullAddress, message: '钱包地址已复制'),
+                LoopCopy.text(
+                  context,
+                  fullAddress,
+                  message: context.l10n.wallet_homeMessage,
+                ),
               ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
@@ -258,8 +265,8 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     final figure = switch (netWorth) {
       LoopNetWorthValued(valueUsd: final value) =>
         hidden ? walletMaskedFigure : loopFormatUsd(value),
-      LoopNetWorthUnavailable() => '暂不可用',
-      null => widget.unreadText,
+      LoopNetWorthUnavailable() => context.l10n.wallet_homeUnreadText,
+      null => widget.unreadText ?? context.l10n.wallet_homeUnreadText,
     };
     final figureIsAmount = netWorth is LoopNetWorthValued;
 
@@ -334,10 +341,15 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Text('总资产', style: LoopType.caption.copyWith(color: secondary)),
+            Text(
+              context.l10n.wallet_homeText,
+              style: LoopType.caption.copyWith(color: secondary),
+            ),
             _HeaderGlyphButton(
               key: ValueKey<String>('$keyPrefix-eye'),
-              label: hidden ? '显示金额' : '隐藏金额',
+              label: hidden
+                  ? context.l10n.wallet_homeLabel2
+                  : context.l10n.wallet_homeLabel3,
               toggled: hidden,
               onTap: () => unawaited(
                 ref.read(loopBalanceVisibilityProvider.notifier).toggle(),
@@ -539,7 +551,7 @@ Future<void> showWalletTotalInfoSheet(
   final snapshot = balances?.snapshot;
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭总资产说明',
+    barrierLabel: context.l10n.wallet_homeBarrierLabel,
     builder: (sheetContext) {
       final secondary = LoopGround.secondaryOf(sheetContext);
       return SingleChildScrollView(
@@ -550,7 +562,7 @@ Future<void> showWalletTotalInfoSheet(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             // R2 (decision 0190 M14).
-            const LoopSheetHeading('关于总资产'),
+            LoopSheetHeading(context.l10n.wallet_homeLoopSheetHeading),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -558,8 +570,7 @@ Future<void> showWalletTotalInfoSheet(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Text(
-                    '总资产是按当前价格对已登记资产的估值，只用于展示，不是可用余额。'
-                    '能动用的数量以每个资产页的「可动用」为准。',
+                    context.l10n.wallet_homeShowWalletTotalInfoSheet,
                     key: ValueKey<String>('$keyPrefix-not-spendable'),
                     style: LoopType.bodySm.copyWith(color: secondary),
                   ),
@@ -584,27 +595,30 @@ Future<void> showWalletTotalInfoSheet(
                   if (netWorth
                       case final LoopNetWorthValued valued) ...<Widget>[
                     LoopKeyValue(
-                      label: '价格来源',
+                      label: context.l10n.wallet_homeLabel4,
                       value: loopFactSourceLabel(valued.priceSource),
                       padding: EdgeInsets.zero,
                     ),
                     LoopKeyValue(
-                      label: '观察于',
+                      label: context.l10n.wallet_homeLabel5,
                       value: loopDateTimeLabel(valued.asOf),
                       padding: EdgeInsets.zero,
                     ),
                     if (valued.partial)
                       LoopKeyValue(
-                        label: '未计入',
-                        value: '${valued.unavailableCount} 项资产暂无价格',
+                        label: context.l10n.wallet_homeLabel6,
+                        value: context.l10n.wallet_homeValue(
+                          valued.unavailableCount,
+                        ),
                         padding: EdgeInsets.zero,
                       ),
                     LoopKeyValue(
-                      label: '24h 变动',
+                      label: context.l10n.wallet_homeLabel7,
                       value: switch (valued.change24h) {
-                        LoopNetWorthChangeAvailable() => '按同一次价格读取计算',
+                        LoopNetWorthChangeAvailable() =>
+                          context.l10n.wallet_homeLoopNetWorthChangeAvailable,
                         LoopNetWorthChangeUnavailable() =>
-                          '部分资产没有 24h 价格变化，暂不显示',
+                          context.l10n.wallet_homeLoopNetWorthChangeUnavailable,
                       },
                       padding: EdgeInsets.zero,
                     ),
@@ -612,18 +626,20 @@ Future<void> showWalletTotalInfoSheet(
                     reasonCode: final reason,
                   ))
                     LoopKeyValue(
-                      label: '总资产',
+                      label: context.l10n.wallet_homeText,
                       value: loopReasonCodeText(reason),
                       padding: EdgeInsets.zero,
                     ),
                   if (snapshot != null) ...<Widget>[
                     LoopKeyValue(
-                      label: '余额区块',
+                      label: context.l10n.wallet_homeLabel8,
                       value: loopGroupedFigure(snapshot.blockNumber.toString()),
                       padding: EdgeInsets.zero,
                     ),
                     LoopKeyValue(
-                      label: '确认数',
+                      label: context
+                          .l10n
+                          .wallet_txResultTxResultConfirmationsLabel,
                       value: loopGroupedFigure(
                         snapshot.confirmations.toString(),
                       ),
@@ -634,27 +650,27 @@ Future<void> showWalletTotalInfoSheet(
                   if (snapshotSource != null) ...<Widget>[
                     LoopKeyValue(
                       key: ValueKey<String>('$keyPrefix-info-history-source'),
-                      label: '净值快照来源',
+                      label: context.l10n.wallet_homeLabel9,
                       value: snapshotSource.source,
                       padding: EdgeInsets.zero,
                     ),
                     if (snapshotSource.observedAt case final DateTime at)
                       LoopKeyValue(
-                        label: '快照观察于',
+                        label: context.l10n.wallet_homeLabel10,
                         value: loopDateTimeLabel(at),
                         padding: EdgeInsets.zero,
                       ),
                   ],
                   if (balances != null)
                     LoopKeyValue(
-                      label: '手续费保留',
+                      label: context.l10n.wallet_homeLabel11,
                       value:
                           '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
                       padding: EdgeInsets.zero,
                     ),
                   const SizedBox(height: 16),
                   LoopButton(
-                    label: '知道了',
+                    label: context.l10n.common_gotIt,
                     block: true,
                     onPressed: () => Navigator.of(sheetContext).pop(),
                   ),
@@ -671,6 +687,14 @@ Future<void> showWalletTotalInfoSheet(
 // ---------------------------------------------------------------------------
 // Four keys
 // ---------------------------------------------------------------------------
+
+/// The disc's key id: the action key's own id (`wallet-receive-entry` →
+/// `receive`), never the label (decision 0281).
+String _discId(WalletQuickAction action) => switch (action.actionKey) {
+  ValueKey<String>(:final value) =>
+    value.replaceFirst('wallet-', '').replaceFirst(RegExp(r'-entry$'), ''),
+  _ => action.label,
+};
 
 /// One of the four equal keys under the total.
 @immutable
@@ -786,7 +810,9 @@ class _QuickActionTile extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: enabled ? action.label : '${action.label}，暂不可用',
+      label: enabled
+          ? action.label
+          : context.l10n.wallet_homeLabel12(action.label),
       // The gesture below is excluded with the rest of the subtree, so the
       // tap is offered here or a screen reader could not press the key.
       onTap: onTap,
@@ -804,7 +830,7 @@ class _QuickActionTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                key: ValueKey<String>('wallet-quick-disc-${action.label}'),
+                key: ValueKey<String>('wallet-quick-disc-${_discId(action)}'),
                 width: disc,
                 height: disc,
                 decoration: BoxDecoration(
@@ -895,7 +921,7 @@ class WalletPowerTag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '持仓产生算力，查看说明',
+      label: context.l10n.wallet_homeWalletPowerTagLabel,
       excludeSemantics: true,
       child: LoopPressable(
         key: const ValueKey<String>('wallet-power-tag'),
@@ -906,7 +932,7 @@ class WalletPowerTag extends StatelessWidget {
             widthFactor: 1,
             // S325 · decision 0255 (UX-009): the tag already says what it
             // opens; it carries no (i) after it.
-            child: const LoopBadge('产生算力'),
+            child: LoopBadge(context.l10n.wallet_homeLoopBadge),
           ),
         ),
       ),
@@ -922,7 +948,7 @@ Future<void> showWalletPowerSheet(
 }) {
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭算力说明',
+    barrierLabel: context.l10n.wallet_homeWalletPowerSheetBarrierLabel,
     builder: (sheetContext) => Padding(
       key: const ValueKey<String>('wallet-power-sheet'),
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
@@ -931,13 +957,11 @@ Future<void> showWalletPowerSheet(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           // R2 (decision 0190 M14).
-          const LoopSheetHeading('持仓产生算力'),
+          LoopSheetHeading(context.l10n.wallet_homeLoopSheetHeading2),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              '钱包里已登记的资产会按各自的权重产生挖矿算力，算力决定每天能分到的 LOOP。'
-              '社区币须加入已通过审核的绑定社区才计入。'
-              '每个资产的权重与算力在挖矿页查看。',
+              context.l10n.wallet_homeShowWalletPowerSheet,
               style: LoopType.bodySm.copyWith(
                 color: LoopGround.secondaryOf(sheetContext),
               ),
@@ -954,7 +978,7 @@ Future<void> showWalletPowerSheet(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('wallet-power-sheet-close'),
-              label: '知道了',
+              label: context.l10n.common_gotIt,
               block: true,
               onPressed: () => Navigator.of(sheetContext).pop(),
             ),
@@ -1014,7 +1038,7 @@ class WalletAssetLine extends StatelessWidget {
       return Semantics(
         key: ValueKey<String>('wallet-balance-${row.assetId}'),
         container: true,
-        label: '${row.symbol}，余额读不到',
+        label: context.l10n.wallet_homeLabel13(row.symbol),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 10, 0, 0),
           child: Row(
@@ -1032,8 +1056,9 @@ class WalletAssetLine extends StatelessWidget {
                       key: ValueKey<String>(
                         'wallet-balance-unavailable-${row.assetId}',
                       ),
-                      message:
-                          '余额读不到 · ${loopReasonCodeText(balance.reasonCode)}',
+                      message: context.l10n.wallet_homeMessage2(
+                        loopReasonCodeText(balance.reasonCode),
+                      ),
                       onRetry: onRetry,
                       padding: const EdgeInsets.only(right: LoopSpacing.page),
                     ),
@@ -1059,8 +1084,10 @@ class WalletAssetLine extends StatelessWidget {
         ?loopFactQualityMarker(valuation.quality),
       if (row.pending case LoopPendingAvailable(value: final value)
           when value > Decimal.zero)
-        '待确认 ${hidden ? walletMaskedFigure : loopFormatDecimal(value)}',
-      if (row.crossCheck.isMisaligned) '数据源尚未对齐',
+        context.l10n.wallet_homeIf(
+          hidden ? walletMaskedFigure : loopFormatDecimal(value),
+        ),
+      if (row.crossCheck.isMisaligned) context.l10n.wallet_homeIf2,
     ];
 
     final String valueText;
@@ -1074,12 +1101,12 @@ class WalletAssetLine extends StatelessWidget {
         valueText = '≈${hidden ? walletMaskedFigure : loopFormatUsd(value)}';
         change = pct;
         valueLabel = pct == null
-            ? '估值 $valueText'
-            : '估值 $valueText，24h ${walletRowChangeText(pct)}';
+            ? context.l10n.wallet_homeSwitch(valueText)
+            : context.l10n.wallet_homeS(valueText, walletRowChangeText(pct));
       case LoopValuationUnavailable():
-        valueText = '暂无估值';
+        valueText = context.l10n.wallet_homeValueText;
         change = null;
-        valueLabel = '暂无估值';
+        valueLabel = context.l10n.wallet_homeValueText;
     }
 
     // The OKX asset row (decision 0123, S121 §1.1.1 rule 1): round logo 36,
@@ -1111,7 +1138,11 @@ class WalletAssetLine extends StatelessWidget {
         child: LoopChangePill(change: change),
       ),
       onTap: onTap,
-      semanticLabel: '${row.symbol}，余额 $amount，$valueLabel',
+      semanticLabel: context.l10n.wallet_homeSemanticLabel(
+        amount,
+        row.symbol,
+        valueLabel,
+      ),
     );
   }
 }
@@ -1154,7 +1185,10 @@ class WalletAssetTabs extends StatelessWidget {
     this.trailing,
   });
 
-  static const List<String> labels = <String>['代币', 'NFT'];
+  static List<String> get labels => <String>[
+    LoopL10n.current.common_token,
+    'NFT',
+  ];
   static const int tokens = 0;
   static const int nft = 1;
   static const List<String> _keys = <String>['tokens', 'nft'];
@@ -1231,7 +1265,8 @@ List<WalletHoldingShare>? walletHoldingShares(LoopWalletBalances balances) {
   return <WalletHoldingShare>[
     for (final entry in shown)
       (label: entry.symbol, percent: share(entry.value)),
-    if (rest > Decimal.zero) (label: '其它', percent: share(rest)),
+    if (rest > Decimal.zero)
+      (label: LoopL10n.current.wallet_homeLabel14, percent: share(rest)),
   ];
 }
 
@@ -1259,7 +1294,7 @@ class WalletHoldingsDistribution extends StatelessWidget {
     final auxiliary = LoopGround.auxiliaryOf(context);
     final label = shares
         .map((entry) => '${entry.label} ${percentText(entry.percent)}')
-        .join('，');
+        .join(context.l10n.common_listSeparator);
     return LoopRecordCard(
       key: const ValueKey<String>('wallet-distribution'),
       // S241b: room under the square quick keys, which had touched the card.
@@ -1267,13 +1302,16 @@ class WalletHoldingsDistribution extends StatelessWidget {
       padding: const EdgeInsets.all(LoopSpacing.card),
       child: Semantics(
         container: true,
-        label: '持仓分布，$label',
+        label: context.l10n.wallet_homeWalletDistributionBarLabel(label),
         excludeSemantics: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('持仓分布', style: LoopType.body2.copyWith(color: secondary)),
+            Text(
+              context.l10n.wallet_homeBuild,
+              style: LoopType.body2.copyWith(color: secondary),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               key: const ValueKey<String>('wallet-distribution-bar'),
@@ -1457,8 +1495,10 @@ class WalletBalanceRow extends StatelessWidget {
         ?loopFactQualityMarker(valuation.quality),
       if (row.pending case LoopPendingAvailable(value: final value)
           when value > Decimal.zero)
-        '待确认 ${hidden ? walletMaskedFigure : loopFormatDecimal(value)}',
-      if (row.crossCheck.isMisaligned) '数据源尚未对齐',
+        context.l10n.wallet_homeIf(
+          hidden ? walletMaskedFigure : loopFormatDecimal(value),
+        ),
+      if (row.crossCheck.isMisaligned) context.l10n.wallet_homeIf2,
     ];
 
     final String valueText;
@@ -1480,7 +1520,7 @@ class WalletBalanceRow extends StatelessWidget {
           }
         }
       case LoopValuationUnavailable():
-        valueText = '暂无估值';
+        valueText = context.l10n.wallet_homeValueText;
     }
 
     final top = LoopPressable(
@@ -1528,7 +1568,7 @@ class WalletBalanceRow extends StatelessWidget {
                     else
                       Flexible(
                         child: Text(
-                          marks.join('，'),
+                          marks.join(context.l10n.common_listSeparator),
                           key: ValueKey<String>(
                             'wallet-balance-mark-${row.assetId}',
                           ),
@@ -1608,9 +1648,15 @@ class WalletBalanceRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Semantics(
-                label:
-                    '${row.symbol}，$subtitle，余额 $amount，估值 $valueText'
-                    '${changeText == null ? '' : '，24 小时 $changeText'}',
+                label: context.l10n.wallet_homeLabel15(
+                  amount,
+                  changeText == null
+                      ? ''
+                      : context.l10n.wallet_homeSX(changeText),
+                  subtitle,
+                  row.symbol,
+                  valueText,
+                ),
                 excludeSemantics: true,
                 button: onTap != null,
                 child: top,
@@ -1644,7 +1690,7 @@ class WalletManagePill extends StatelessWidget {
     final ink = LoopGround.secondaryOf(context);
     return Semantics(
       button: true,
-      label: '钱包管理',
+      label: context.l10n.wallet_homeLabel16,
       excludeSemantics: true,
       onTap: onPressed,
       child: LoopPressable(
@@ -1666,7 +1712,7 @@ class WalletManagePill extends StatelessWidget {
                   LoopIcon('wallet', size: 14, color: ink),
                   const SizedBox(width: 4),
                   Text(
-                    '管理',
+                    context.l10n.wallet_homeBuild2,
                     maxLines: 1,
                     // S350c: the address line's own size, one step brighter
                     // than the address, so the two read as one line.

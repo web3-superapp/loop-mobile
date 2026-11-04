@@ -224,7 +224,7 @@ void main() {
         find.byKey(const ValueKey<String>('chain-preview-notice')),
         findsOneWidget,
       );
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('Demo data'), findsOneWidget);
       expect(find.text('4 个自选资产'), findsOneWidget);
       // A labelled Preview is never also an unavailable surface.
       expect(
@@ -246,7 +246,7 @@ void main() {
         find.byKey(const ValueKey<String>('chain-preview-notice')),
         findsOneWidget,
       );
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('Demo data'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('notification-push-unavailable')),
         findsOneWidget,

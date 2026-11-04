@@ -23,7 +23,12 @@ import 'support/s5_page_harness.dart';
 void main() {
   /// Every page's offline block names the same four paused actions, so the
   /// user is told what stopped rather than only that something did.
-  const pausedActions = <String>['刷新', '切换钱包', '保存自选', '价格提醒'];
+  const pausedActions = <String>[
+    'Refresh',
+    'Switch wallet',
+    'Save to watchlist',
+    'Price alerts',
+  ];
 
   Future<void> expectOffline(WidgetTester tester, String keyPrefix) async {
     final offline = find.byKey(ValueKey<String>('$keyPrefix-state-offline'));
@@ -82,7 +87,10 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-balances-state-offline')),
         findsOneWidget,
       );
-      expect(find.text('网络已断开，余额没有读到'), findsOneWidget);
+      expect(
+        find.text('Network disconnected; balance not loaded'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('loop-inline-unavailable-retry')),
         findsOneWidget,
@@ -134,7 +142,7 @@ void main() {
       );
 
       await expectOffline(tester, 'wallets');
-      expect(find.text('使用中'), findsNothing);
+      expect(find.text('In use'), findsNothing);
     });
 
     testWidgets('tx-history pauses without claiming an empty tape', (
@@ -151,7 +159,7 @@ void main() {
       );
 
       await expectOffline(tester, 'tx-history');
-      expect(find.text('这一段没有记录'), findsNothing);
+      expect(find.text('No records in this range'), findsNothing);
     });
 
     testWidgets('networks pauses without an endpoint', (tester) async {
@@ -185,7 +193,10 @@ void main() {
       );
 
       await expectPermission(tester, 'wallet-directory');
-      expect(find.textContaining('没有执行这个操作的权限'), findsOneWidget);
+      expect(
+        find.textContaining("doesn't have permission for this action"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('asset reads a refused account as a permission state', (

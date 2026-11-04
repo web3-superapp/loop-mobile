@@ -1,0 +1,1057 @@
+{
+  "chain_contractBootstrapRequired": {
+    "en": "Your account isn't set up yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:311",
+    "zh": "账号尚未完成初始化，请稍后重试。"
+  },
+  "chain_contractCancelled": {
+    "en": "The request was cancelled and the result is unknown. Check the latest status before deciding whether to retry.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:299",
+    "zh": "请求已被取消，结果未知。请查看最新状态后再决定是否重试。"
+  },
+  "chain_contractChainMismatch": {
+    "en": "This chain isn't supported: Wallet, Market, Swap and approvals run on BNB Smart Chain; Launch runs on the Launch chain published by LOOP.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:314",
+    "zh": "这条链现在不支持：钱包、行情、兑换与授权都在 BNB Smart Chain 上，Launch 在 LOOP 发布的 Launch 链上。"
+  },
+  "chain_contractDerived": {
+    "en": "Converted at trade price",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:289",
+    "zh": "按成交价折算"
+  },
+  "chain_contractIdempotencyConflict": {
+    "en": "The same action was already submitted with different content. Check the latest status and try again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:317",
+    "zh": "同一操作已被提交过且内容不同，请检查最新状态后再试。"
+  },
+  "chain_contractIndexingDelayed": {
+    "en": "On-chain records are still syncing. They can't be read right now; that doesn't mean there are none.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:302",
+    "zh": "链上记录还在同步，这里是暂时读不到，不是没有记录。"
+  },
+  "chain_contractInsufficientBalance": {
+    "en": "Balance doesn't cover this amount, the maximum network fee or the fee reserve. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:319",
+    "zh": "余额不足以覆盖这笔金额、最高网络费或手续费保留，没有提交任何交易。"
+  },
+  "chain_contractInvalidData": {
+    "en": "The returned data was incomplete. Nothing on this page was used.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:324",
+    "zh": "返回的数据不完整，这一页没有采用任何内容。"
+  },
+  "chain_contractLoopCurve": {
+    "en": "LOOP curve",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:207",
+    "zh": "LOOP 曲线"
+  },
+  "chain_contractLoopIndexer": {
+    "en": "LOOP on-chain index",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:206",
+    "zh": "LOOP 链上索引"
+  },
+  "chain_contractNotFound": {
+    "en": "The target doesn't exist, isn't registered, or isn't visible to this account.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:309",
+    "zh": "目标不存在、未登记，或对当前账号不可见。"
+  },
+  "chain_contractOffline": {
+    "en": "This device is offline. Nothing was loaded on this page and no action was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:297",
+    "zh": "设备已离线，这一页没有读到数据，也没有提交任何操作。"
+  },
+  "chain_contractOutcomeUnknown": {
+    "en": "The returned data was incomplete and the result isn't confirmed. Refresh to see the latest status; don't submit again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:300",
+    "zh": "返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。"
+  },
+  "chain_contractPermissionDenied": {
+    "en": "This account doesn't have permission for this action.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:303",
+    "zh": "当前账号没有执行这个操作的权限。"
+  },
+  "chain_contractPoolSlot0": {
+    "en": "Derived from pool",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:208",
+    "zh": "池子推算"
+  },
+  "chain_contractProxied": {
+    "en": "Priced in WBNB",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:290",
+    "zh": "以 WBNB 计价"
+  },
+  "chain_contractQuoteExpired": {
+    "en": "The quote has expired. No swap was submitted. Get a new quote before confirming.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:321",
+    "zh": "报价已过期，没有提交任何兑换。请重新报价后再确认。"
+  },
+  "chain_contractRateLimited": {
+    "en": "Too many requests. Wait a moment and try again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:316",
+    "zh": "请求过于频繁，请稍等片刻再试。"
+  },
+  "chain_contractReadFailed": {
+    "en": "This page can't be loaded right now. Nothing was submitted. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:325",
+    "zh": "这一页暂时读不到，没有提交任何内容。请稍后重试。"
+  },
+  "chain_contractRegionBlocked": {
+    "en": "This action isn't available in your region right now. Nothing was changed. This isn't related to your account or assets, and switching won't change the result.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:305",
+    "zh": "你所在的地区暂时不支持这个操作，没有发生任何变化。这与账号或资产无关，换一个也不会改变结果。"
+  },
+  "chain_contractSimulationFailed": {
+    "en": "This transaction didn't pass simulation and can't be signed. Go back to the confirmation page and prepare it again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:320",
+    "zh": "这笔交易试算没有通过，不能签名。请返回确认页重新准备一次。"
+  },
+  "chain_contractStale": {
+    "en": "Data may be out of date",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:288",
+    "zh": "数据可能过期"
+  },
+  "chain_contractStepUpCancelled": {
+    "en": "Cancelled. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:308",
+    "zh": "已取消，没有发生任何变化。"
+  },
+  "chain_contractStepUpRequired": {
+    "en": "This step requires two-step verification, which isn't available yet. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:307",
+    "zh": "这一步需要二次验证，二次验证还没有开放，没有发生任何变化。"
+  },
+  "chain_contractSubmissionUnknown": {
+    "en": "This action was already submitted once and the result is unknown, so it's locked. Only check the latest status; don't submit again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:323",
+    "zh": "这笔操作已经提交过一次且结果未知，已锁定。请只查看最新状态，不要重复提交。"
+  },
+  "chain_contractSwitch": {
+    "en": "On-chain data can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:353",
+    "zh": "链上数据暂时读不到。"
+  },
+  "chain_contractSwitch10": {
+    "en": "The balance wasn't loaded this time, so no number is shown.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:364",
+    "zh": "这次余额没有读到，因此不显示数字。"
+  },
+  "chain_contractSwitch11": {
+    "en": "Transfer history can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:365",
+    "zh": "转账记录暂时读不到。"
+  },
+  "chain_contractSwitch12": {
+    "en": "Trades and candlesticks can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:366",
+    "zh": "成交与 K 线暂时读不到。"
+  },
+  "chain_contractSwitch13": {
+    "en": "BNB transfer history can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:367",
+    "zh": "BNB 转账记录暂时读不到。"
+  },
+  "chain_contractSwitch14": {
+    "en": "Bridge and mining claim history can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:368",
+    "zh": "跨链与挖矿领取记录暂时读不到。"
+  },
+  "chain_contractSwitch15": {
+    "en": "MEME records on the Launch chain haven't started syncing; only transfers are listed below.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:370",
+    "zh": "Launch 链的 MEME 记录还没有开始同步，下面只列出转账。"
+  },
+  "chain_contractSwitch16": {
+    "en": "MEME records weren't loaded this time; only transfers are listed below. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:371",
+    "zh": "MEME 记录这次没有读到，下面只列出转账，稍后再看。"
+  },
+  "chain_contractSwitch17": {
+    "en": "This asset can't be reconciled with wallet records.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:372",
+    "zh": "这个资产无法与钱包记录核对。"
+  },
+  "chain_contractSwitch18": {
+    "en": "External wallets can't be reconciled with wallet records.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:373",
+    "zh": "外部钱包无法与钱包记录核对。"
+  },
+  "chain_contractSwitch19": {
+    "en": "Balance reconciliation failed; on-chain figures aren't affected.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:374",
+    "zh": "余额核对没有成功，链上数字不受影响。"
+  },
+  "chain_contractSwitch2": {
+    "en": "On-chain data isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:354",
+    "zh": "链上数据暂时不可用，稍后再试。"
+  },
+  "chain_contractSwitch20": {
+    "en": "Swap isn't available yet; this page has no buy or sell entry.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:376",
+    "zh": "兑换还没有开放，这一页没有买卖入口。"
+  },
+  "chain_contractSwitch21": {
+    "en": "This asset can no longer be loaded. The row is kept so you can remove it.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:377",
+    "zh": "这个资产已经读不到，保留这一行方便你移除。"
+  },
+  "chain_contractSwitch22": {
+    "en": "This address isn't in the LOOP asset catalog. The data below comes from a market data source and can't be traded.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:380",
+    "zh": "这个地址不在 LOOP 资产目录里，下面的数据来自行情数据源，不能买卖。"
+  },
+  "chain_contractSwitch23": {
+    "en": "This asset is blocked.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:381",
+    "zh": "这个资产已被屏蔽。"
+  },
+  "chain_contractSwitch24": {
+    "en": "Market data isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:383",
+    "zh": "行情暂时不可用，稍后再试。"
+  },
+  "chain_contractSwitch25": {
+    "en": "Price can't be loaded right now, so no value is shown.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:384",
+    "zh": "暂时读不到价格，不显示估值。"
+  },
+  "chain_contractSwitch26": {
+    "en": "DexScreener data is currently turned off.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:385",
+    "zh": "DexScreener 数据当前已关闭。"
+  },
+  "chain_contractSwitch27": {
+    "en": "Security info and holder count can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:386",
+    "zh": "安全信息与持有人数暂时读不到。"
+  },
+  "chain_contractSwitch28": {
+    "en": "New token discovery and related market data can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:387",
+    "zh": "新币发现与相关行情暂时读不到。"
+  },
+  "chain_contractSwitch29": {
+    "en": "The data service is rate limited; no new figures for now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:388",
+    "zh": "数据服务限流中，暂时没有新数值。"
+  },
+  "chain_contractSwitch3": {
+    "en": "Checking the on-chain connection; on-chain figures are hidden for now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:355",
+    "zh": "正在校验链上连接，暂时不显示链上数字。"
+  },
+  "chain_contractSwitch30": {
+    "en": "The data service rejected this request. It isn't your network. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:389",
+    "zh": "数据服务拒绝了这次请求，与你的网络无关，稍后再看。"
+  },
+  "chain_contractSwitch31": {
+    "en": "Market data can't be loaded right now, so this item has no value. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:390",
+    "zh": "行情数据暂时读不到，这一项没有数值，稍后再看。"
+  },
+  "chain_contractSwitch32": {
+    "en": "Market data can't be fetched right now. It isn't your network. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:391",
+    "zh": "行情暂时取不到，与你的网络无关，稍后再看。"
+  },
+  "chain_contractSwitch33": {
+    "en": "The returned data was incomplete and was discarded.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:392",
+    "zh": "返回的数据不完整，已整体丢弃。"
+  },
+  "chain_contractSwitch34": {
+    "en": "No trading pair found for this asset.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:393",
+    "zh": "没有找到这个资产的交易对。"
+  },
+  "chain_contractSwitch35": {
+    "en": "The data source didn't report this item.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:394",
+    "zh": "数据源没有报告这一项。"
+  },
+  "chain_contractSwitch36": {
+    "en": "Native BNB has no contract address, so this item doesn't apply.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:395",
+    "zh": "原生 BNB 没有合约地址，这一项不适用。"
+  },
+  "chain_contractSwitch37": {
+    "en": "This asset has no PancakeSwap V3 pool yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:396",
+    "zh": "这个资产还没有 PancakeSwap V3 交易池。"
+  },
+  "chain_contractSwitch38": {
+    "en": "No trades in the selected range.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:397",
+    "zh": "所选区间内没有成交。"
+  },
+  "chain_contractSwitch39": {
+    "en": "This row's balance can't be loaded, so it can't be valued.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:398",
+    "zh": "这一行余额读不到，无法估值。"
+  },
+  "chain_contractSwitch4": {
+    "en": "Can't reach the on-chain node right now. It isn't your network. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:356",
+    "zh": "链上节点暂时连不上，与你的网络无关，稍后再看。"
+  },
+  "chain_contractSwitch40": {
+    "en": "No data",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:499",
+    "zh": "未报告"
+  },
+  "chain_contractSwitch5": {
+    "en": "Not connected to BNB Smart Chain; this page is unavailable.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:357",
+    "zh": "连接到的不是 BNB Smart Chain，这一页不可用。"
+  },
+  "chain_contractSwitch6": {
+    "en": "Launch chain data can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:360",
+    "zh": "Launch 链上数据暂时读不到。"
+  },
+  "chain_contractSwitch7": {
+    "en": "Checking the Launch chain connection; on-chain figures are hidden for now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:361",
+    "zh": "正在校验 Launch 链连接，暂时不显示链上数字。"
+  },
+  "chain_contractSwitch8": {
+    "en": "Can't reach the Launch chain node right now. It isn't your network. Check back later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:362",
+    "zh": "Launch 链节点暂时连不上，与你的网络无关，稍后再看。"
+  },
+  "chain_contractSwitch9": {
+    "en": "Not connected to the Launch chain; Launch content is unavailable.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:363",
+    "zh": "连接到的不是 Launch 链，Launch 相关内容不可用。"
+  },
+  "chain_contractText": {
+    "en": "Holder distribution can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:400",
+    "zh": "持有人分布暂时读不到。"
+  },
+  "chain_contractText10": {
+    "en": "Fund actions aren't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:410",
+    "zh": "资金操作暂时不可用，稍后再试。"
+  },
+  "chain_contractText11": {
+    "en": "On-chain actions are currently turned off; view only for now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:411",
+    "zh": "链上操作当前已关闭，现在只能查看。"
+  },
+  "chain_contractText12": {
+    "en": "Swap isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:412",
+    "zh": "兑换暂时不可用，稍后再试。"
+  },
+  "chain_contractText13": {
+    "en": "Swap is still being verified. You can view quotes but can't execute.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:413",
+    "zh": "兑换还在验证中，可以查看报价，但不能执行。"
+  },
+  "chain_contractText14": {
+    "en": "Swap can't be simulated right now, so it can't be executed.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:414",
+    "zh": "兑换暂时无法试算，因此不能执行。"
+  },
+  "chain_contractText15": {
+    "en": "Can't check whether this address is on known scam lists right now. That doesn't mean it's safe.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:415",
+    "zh": "暂时无法核对这个地址是否在已知诈骗名单里。这不代表它安全。"
+  },
+  "chain_contractText16": {
+    "en": "Approval risk info can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:416",
+    "zh": "授权风险信息暂时读不到。"
+  },
+  "chain_contractText17": {
+    "en": "This row's approval amount can't be loaded, so no number is shown.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:417",
+    "zh": "这一行的授权额度读不到，因此不显示数字。"
+  },
+  "chain_contractText18": {
+    "en": "This transaction was rejected on-chain during simulation and can't be signed.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:418",
+    "zh": "这笔交易试算时被链上拒绝，不能签名。"
+  },
+  "chain_contractText19": {
+    "en": "Simulation returned no verifiable result, so it can't be signed.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:419",
+    "zh": "试算没有返回可核对的结果，不能签名。"
+  },
+  "chain_contractText2": {
+    "en": "Smart money tracking isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:401",
+    "zh": "聪明钱追踪还没有开放。"
+  },
+  "chain_contractText20": {
+    "en": "Can't estimate the network fee, so no signable transaction can be built.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:420",
+    "zh": "无法估算网络费，因此不能构造可签名的交易。"
+  },
+  "chain_contractText21": {
+    "en": "This action has expired. Prepare it again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:421",
+    "zh": "这次操作已过期，请重新准备一次。"
+  },
+  "chain_contractText22": {
+    "en": "This wallet has prepared a new action; this one was replaced and not submitted.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:422",
+    "zh": "这个钱包已经准备了新的操作，这一笔被取代，没有提交。"
+  },
+  "chain_contractText23": {
+    "en": "You cancelled this action. No transaction was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:423",
+    "zh": "这次操作已由你取消，没有提交任何交易。"
+  },
+  "chain_contractText24": {
+    "en": "The transaction was submitted but isn't on-chain yet. LOOP will keep checking.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:424",
+    "zh": "交易已提交，链上还没有查到，LOOP 会继续核对。"
+  },
+  "chain_contractText25": {
+    "en": "The submitted transaction didn't match what was prepared and was rejected.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:425",
+    "zh": "提交的交易与准备好的内容不一致，已拒绝。"
+  },
+  "chain_contractText26": {
+    "en": "The transaction is on-chain but failed; the network fee was spent.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:426",
+    "zh": "交易已上链但执行失败，网络费已消耗。"
+  },
+  "chain_contractText27": {
+    "en": "The transaction receipt can't be loaded right now; the result is pending.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:427",
+    "zh": "交易回执暂时读不到，结果待确认。"
+  },
+  "chain_contractText28": {
+    "en": "The wallet rejected this swap. Nothing was submitted on-chain.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:428",
+    "zh": "钱包拒绝了这次兑换，没有提交到链上。"
+  },
+  "chain_contractText29": {
+    "en": "The result of this action isn't certain yet. Wait for confirmation; don't submit again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:429",
+    "zh": "这次操作的结果还不确定，请等待确认，不要重复提交。"
+  },
+  "chain_contractText3": {
+    "en": "Push notifications aren't available yet; alerts only appear in the in-app notification list.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:402",
+    "zh": "推送还没有开放，提醒只出现在应用内的通知列表里。"
+  },
+  "chain_contractText30": {
+    "en": "Price impact is over 5%; this swap was blocked.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:430",
+    "zh": "价格影响超过 5%，已阻止这笔兑换。"
+  },
+  "chain_contractText31": {
+    "en": "Can't calculate the price impact of this swap, so it was blocked.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:431",
+    "zh": "无法计算这笔兑换的价格影响，已阻止。"
+  },
+  "chain_contractText32": {
+    "en": "This action can't go to wallet signing right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:432",
+    "zh": "这笔操作暂时无法进入钱包签名。"
+  },
+  "chain_contractText33": {
+    "en": "This chain doesn't support this action: Send, approvals, revokes and Swap only work on mainnet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:433",
+    "zh": "这条链不支持这个操作：发送、授权、回收与兑换只能在主网进行。"
+  },
+  "chain_contractText34": {
+    "en": "Security settings aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:435",
+    "zh": "安全设置还没有开放。"
+  },
+  "chain_contractText35": {
+    "en": "Security settings aren't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:436",
+    "zh": "安全设置暂时不可用，稍后再试。"
+  },
+  "chain_contractText36": {
+    "en": "Account settings aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:437",
+    "zh": "账号设置还没有开放。"
+  },
+  "chain_contractText37": {
+    "en": "Settings aren't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:438",
+    "zh": "设置暂时不可用，稍后再试。"
+  },
+  "chain_contractText38": {
+    "en": "Support isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:439",
+    "zh": "客服还没有开放。"
+  },
+  "chain_contractText39": {
+    "en": "Support isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:440",
+    "zh": "客服暂时不可用，稍后再试。"
+  },
+  "chain_contractText4": {
+    "en": "No community has linked this asset yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:403",
+    "zh": "还没有社区绑定这个资产。"
+  },
+  "chain_contractText40": {
+    "en": "The device list can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:441",
+    "zh": "设备列表暂时读不到。"
+  },
+  "chain_contractText41": {
+    "en": "Recent security events can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:442",
+    "zh": "最近的安全事件暂时读不到。"
+  },
+  "chain_contractText42": {
+    "en": "Two-step verification is required, but it isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:443",
+    "zh": "需要二次验证，二次验证还没有开放。"
+  },
+  "chain_contractText43": {
+    "en": "Tickets can't take attachments right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:444",
+    "zh": "工单暂时不能上传附件。"
+  },
+  "chain_contractText44": {
+    "en": "Legal document links can't be opened right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:445",
+    "zh": "法律文件链接暂时打不开。"
+  },
+  "chain_contractText45": {
+    "en": "The new terms haven't taken effect yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:446",
+    "zh": "新版协议还没有生效。"
+  },
+  "chain_contractText46": {
+    "en": "Version and build number come from this device.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:447",
+    "zh": "版本与构建号来自这台设备。"
+  },
+  "chain_contractText47": {
+    "en": "No wallet selected yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:448",
+    "zh": "还没有选择钱包。"
+  },
+  "chain_contractText48": {
+    "en": "The approval list can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:449",
+    "zh": "授权列表暂时读不到。"
+  },
+  "chain_contractText49": {
+    "en": "The approval list isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:450",
+    "zh": "授权列表还没有开放。"
+  },
+  "chain_contractText5": {
+    "en": "Per-asset mining figures aren't available yet; power and details are on the Mining page.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:404",
+    "zh": "按资产拆分的挖矿数字暂未开放；算力与明细在挖矿页。"
+  },
+  "chain_contractText50": {
+    "en": "On-chain records are still syncing; the approval list can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:451",
+    "zh": "链上记录还在同步，授权列表暂时读不到。"
+  },
+  "chain_contractText51": {
+    "en": "This feature isn't available right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:452",
+    "zh": "这个功能当前不可用。"
+  },
+  "chain_contractText52": {
+    "en": "Multi-factor authentication isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:454",
+    "zh": "多因素验证还没有开放。"
+  },
+  "chain_contractText53": {
+    "en": "Passkeys aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:455",
+    "zh": "Passkey 还没有开放。"
+  },
+  "chain_contractText54": {
+    "en": "Recovery password isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:456",
+    "zh": "恢复密码还没有开放。"
+  },
+  "chain_contractText55": {
+    "en": "Automatic recovery isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:457",
+    "zh": "自动恢复还没有开放。"
+  },
+  "chain_contractText56": {
+    "en": "Social recovery isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:458",
+    "zh": "社交恢复还没有开放。"
+  },
+  "chain_contractText57": {
+    "en": "Private key export isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:459",
+    "zh": "私钥导出还没有开放。"
+  },
+  "chain_contractText58": {
+    "en": "Scan to pay isn't available yet; the camera won't open and no payment code is generated here.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:461",
+    "zh": "扫码支付还没有开放，这里不会打开相机或生成收款码。"
+  },
+  "chain_contractText59": {
+    "en": "Bridge isn't available yet; no bridge action is started here.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:462",
+    "zh": "跨链还没有开放，这里不会发起任何跨链操作。"
+  },
+  "chain_contractText6": {
+    "en": "Indicators and drawing tools aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:405",
+    "zh": "指标与画线工具还没有开放。"
+  },
+  "chain_contractText60": {
+    "en": "DApp connection and signing aren't available yet; this page only runs local checks.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:463",
+    "zh": "DApp 连接与签名还没有开放，这一页只做本地检查。"
+  },
+  "chain_contractText61": {
+    "en": "Community AI isn't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:464",
+    "zh": "Community AI 还没有开放。"
+  },
+  "chain_contractText7": {
+    "en": "Net value trend and 24h change can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:406",
+    "zh": "净值走势与 24h 涨跌暂时读不到。"
+  },
+  "chain_contractText8": {
+    "en": "Custom networks aren't available yet; only networks LOOP supports are shown here.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:407",
+    "zh": "自定义网络还没有开放，这里只显示 LOOP 支持的网络。"
+  },
+  "chain_contractText9": {
+    "en": "Security Center and DApp status aren't available yet.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:408",
+    "zh": "安全中心与 DApp 状态还没有开放。"
+  },
+  "chain_contractTimedOut": {
+    "en": "LOOP timed out. Nothing was loaded on this page and no action was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:298",
+    "zh": "LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。"
+  },
+  "chain_contractUnavailable": {
+    "en": "On-chain data can't be loaded right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:301",
+    "zh": "暂时读不到链上数据，请稍后再试。"
+  },
+  "chain_contractUnexpected": {
+    "en": "The action didn't finish. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:326",
+    "zh": "操作没有完成，请稍后再试。"
+  },
+  "chain_contractValidationFailed": {
+    "en": "The input isn't valid (for example, an unregistered asset or an invalid threshold). Fix it and try again.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:312",
+    "zh": "输入内容不符合要求（例如资产未登记或阈值非法），请修改后重试。"
+  },
+  "chain_contractVersionConflict": {
+    "en": "The data was changed on another device. Reload before submitting; nothing was overwritten this time.",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_contract.dart:310",
+    "zh": "数据已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。"
+  },
+  "chain_modelsBlocked": {
+    "en": "Blocked",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:44",
+    "zh": "已屏蔽"
+  },
+  "chain_modelsErc20Transfer": {
+    "en": "ERC-20 transfer index",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:411",
+    "zh": "ERC-20 转账索引"
+  },
+  "chain_modelsLoopProvenanceLabel": {
+    "en": "Unknown source",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:575",
+    "zh": "来源未知"
+  },
+  "chain_modelsLoopProvenanceLabel2": {
+    "en": "{sourceLabel} · observed {observedAtLabel}",
+    "placeholders": {
+      "observedAtLabel": {
+        "example": "loopObservedAtLabel(observedAt)",
+        "type": "Object"
+      },
+      "sourceLabel": {
+        "example": "sourceLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_models.dart:578",
+    "zh": "{sourceLabel} · 观察于 {observedAtLabel}"
+  },
+  "chain_modelsMismatched": {
+    "en": "Mismatch",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:289",
+    "zh": "不一致"
+  },
+  "chain_modelsPending": {
+    "en": "Pending check",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:42",
+    "zh": "待核验"
+  },
+  "chain_modelsPoolEvent": {
+    "en": "Pool event index",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:412",
+    "zh": "池事件索引"
+  },
+  "chain_modelsS": {
+    "en": "Source {factSourceLabel}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(source)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_models.dart:576, lib/features/chain/chain_widgets.dart:231",
+    "zh": "来源 {factSourceLabel}"
+  },
+  "chain_modelsUnavailable": {
+    "en": "Can't load right now",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:62",
+    "zh": "暂时读不到"
+  },
+  "chain_modelsUnreachable": {
+    "en": "Unreachable",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:290",
+    "zh": "连不上"
+  },
+  "chain_modelsUnregistered": {
+    "en": "Unregistered",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:51",
+    "zh": "未登记"
+  },
+  "chain_modelsVerified": {
+    "en": "Verified",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:43",
+    "zh": "已核验"
+  },
+  "chain_modelsVerified2": {
+    "en": "Passed",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_models.dart:288",
+    "zh": "通过"
+  },
+  "chain_widgetsChainPreviewNoticeBody": {
+    "en": "{resource} exists only in this development preview; it isn't written to your account or uploaded.",
+    "placeholders": {
+      "resource": {
+        "example": "resource",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:445",
+    "zh": "{resource}只存在于这次开发预览里，不会写入账号，也不会上传。"
+  },
+  "chain_widgetsLabel": {
+    "en": "Source",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:817",
+    "zh": "来源"
+  },
+  "chain_widgetsLoopFactProvenance": {
+    "en": "Source not labeled",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:230",
+    "zh": "来源未标注"
+  },
+  "chain_widgetsLoopFactProvenance2": {
+    "en": "{label} · observed {relativeTime}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "relativeTime": {
+        "example": "loopRelativeTime(fetchedAt, now: now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:233",
+    "zh": "{label} · 观察于 {relativeTime}"
+  },
+  "chain_widgetsLoopOfflineState": {
+    "en": "Switch wallet",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:316",
+    "zh": "切换钱包"
+  },
+  "chain_widgetsLoopOfflineState2": {
+    "en": "Save to watchlist",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:316",
+    "zh": "保存自选"
+  },
+  "chain_widgetsLoopRelativeTime": {
+    "en": "{inSeconds}s ago",
+    "placeholders": {
+      "inSeconds": {
+        "example": "delta.inSeconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:220",
+    "zh": "{inSeconds} 秒前"
+  },
+  "chain_widgetsLoopRelativeTime2": {
+    "en": "{inMinutes}m ago",
+    "placeholders": {
+      "inMinutes": {
+        "example": "delta.inMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:221",
+    "zh": "{inMinutes} 分钟前"
+  },
+  "chain_widgetsLoopRelativeTime3": {
+    "en": "{inHours}h ago",
+    "placeholders": {
+      "inHours": {
+        "example": "delta.inHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:222",
+    "zh": "{inHours} 小时前"
+  },
+  "chain_widgetsLoopRelativeTime4": {
+    "en": "{inDays}d ago",
+    "placeholders": {
+      "inDays": {
+        "example": "delta.inDays",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:223",
+    "zh": "{inDays} 天前"
+  },
+  "chain_widgetsProvenanceFooterSemanticsLabel": {
+    "en": "{text}, view {title}",
+    "placeholders": {
+      "text": {
+        "example": "text",
+        "type": "Object"
+      },
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:865",
+    "zh": "{text}，查看{title}"
+  },
+  "chain_widgetsRegionBlocked": {
+    "en": "{chainFailureReason} Content already loaded on this page isn't affected.",
+    "placeholders": {
+      "chainFailureReason": {
+        "example": "loopChainFailureReason(kind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:471",
+    "zh": "{chainFailureReason}本页已读到的内容不受影响。"
+  },
+  "chain_widgetsRetryLabel": {
+    "en": "Try again later",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:416",
+    "zh": "稍后重试"
+  },
+  "chain_widgetsSemanticsLabel": {
+    "en": "{factProvenance}, view data source notes",
+    "placeholders": {
+      "factProvenance": {
+        "example": "loopFactProvenance(fact, now: now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:785",
+    "zh": "{factProvenance}，查看数据来源说明"
+  },
+  "chain_widgetsStepUpRequired": {
+    "en": "{chainFailureReason} Check the verification methods available in Security Center; content already loaded on this page isn't affected.",
+    "placeholders": {
+      "chainFailureReason": {
+        "example": "loopChainFailureReason(kind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:466",
+    "zh": "{chainFailureReason}请到安全中心查看当前可用的验证方式；本页已读到的内容不受影响。"
+  },
+  "chain_widgetsSwitch": {
+    "en": "{chainFailureReason} This permission can't be changed in the app. You can switch to an authorized account or asset; content already loaded on this page isn't affected.",
+    "placeholders": {
+      "chainFailureReason": {
+        "example": "loopChainFailureReason(kind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chain/chain_widgets.dart:473",
+    "zh": "{chainFailureReason}这项权限不能在应用里自行调整；可以换一个已获授权的账号或资产，本页已读到的内容不受影响。"
+  },
+  "chain_widgetsTitle": {
+    "en": "This content isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:323",
+    "zh": "该内容当前不可用"
+  },
+  "chain_widgetsTitle2": {
+    "en": "This step requires two-step verification",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:337, lib/features/chain/chain_widgets.dart:514",
+    "zh": "这一步需要二次验证"
+  },
+  "chain_widgetsTitle3": {
+    "en": "This action isn't available in your region",
+    "placeholders": {},
+    "where": "lib/features/chain/chain_widgets.dart:339, lib/features/chain/chain_widgets.dart:516",
+    "zh": "当前地区不能执行此操作"
+  }
+}

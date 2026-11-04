@@ -201,7 +201,10 @@ void main() {
       await _pump(
         tester,
         _dashboard(
-          block: const LoopPageBlock(title: '钱包读取当前不可用', message: '链上节点当前连不上。'),
+          block: const LoopPageBlock(
+            title: "Wallet reads aren't available right now",
+            message: '链上节点当前连不上。',
+          ),
         ),
       );
 
@@ -217,7 +220,10 @@ void main() {
       );
       expect(find.text('folio-figure'), findsNothing);
       expect(find.text('row-one'), findsNothing);
-      expect(find.text('钱包读取当前不可用'), findsOneWidget);
+      expect(
+        find.text('Wallet reads aren\'t available right now'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the three states stay three different widgets', (
@@ -273,7 +279,10 @@ void main() {
       // The server never answered, so the page must not borrow one of its
       // sentences — including the one about the chain node.
       expect(find.textContaining('链上节点当前连不上'), findsNothing);
-      expect(find.text('钱包读取当前不可用'), findsNothing);
+      expect(
+        find.text('Wallet reads aren\'t available right now'),
+        findsNothing,
+      );
     });
 
     testWidgets('a node the server reported keeps the server sentence', (
@@ -283,13 +292,16 @@ void main() {
         tester,
         const Scaffold(
           body: LoopCapabilityPageBlock(
-            title: '钱包读取当前不可用',
+            title: "Wallet reads aren't available right now",
             reasonCode: 'BSC_RPC_UNREACHABLE',
           ),
         ),
       );
 
-      expect(find.text('钱包读取当前不可用'), findsOneWidget);
+      expect(
+        find.text('Wallet reads aren\'t available right now'),
+        findsOneWidget,
+      );
       expect(
         find.text(loopReasonCodeText('BSC_RPC_UNREACHABLE')),
         findsOneWidget,
@@ -307,7 +319,7 @@ void main() {
         tester,
         Scaffold(
           body: LoopCapabilityPageBlock.of(
-            title: '钱包读取当前不可用',
+            title: "Wallet reads aren't available right now",
             capability: const LoopCapabilityProjection.unknown(),
             fallbackReasonCode: 'WALLET_RUNTIME_UNAVAILABLE',
           ),
@@ -316,7 +328,10 @@ void main() {
 
       // Nothing was read and nothing failed: the page says what it cannot do
       // and never blames the network.
-      expect(find.text('钱包读取当前不可用'), findsOneWidget);
+      expect(
+        find.text('Wallet reads aren\'t available right now'),
+        findsOneWidget,
+      );
       expect(find.text(LoopPageBlock.unreachableTitle), findsNothing);
     });
 

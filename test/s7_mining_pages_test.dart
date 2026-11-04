@@ -1365,8 +1365,8 @@ void main() {
       final hint = tester.widget<LoopPowerHint>(
         find.byKey(const ValueKey<String>('wallet-power-hint')),
       );
-      expect(hint.figure, startsWith('1,000 算力'));
-      expect(hint.figure, isNot(contains('今日预估')));
+      expect(hint.figure, startsWith('1,000 power'));
+      expect(hint.figure, isNot(contains('Est. today')));
       expect(hint.figure, isNot(contains('LOOP')));
     });
 
@@ -1377,7 +1377,7 @@ void main() {
       final hint = tester.widget<LoopPowerHint>(
         find.byKey(const ValueKey<String>('wallet-power-hint')),
       );
-      expect(hint.figure, contains('今日预估'));
+      expect(hint.figure, contains('Est. today'));
       expect(hint.figure, contains('LOOP'));
     });
   });

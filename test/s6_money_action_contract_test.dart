@@ -295,7 +295,7 @@ void main() {
       // The ceiling is LOOP's own grey-release limit. The copy says that and
       // names the one thing the owner can do; it no longer blames a
       // 「自定义上限」 that was never part of this refusal (S77a).
-      expect(text, contains('单笔金额上限'));
+      expect(text, contains('per-transaction limit'));
       expect(text, isNot(contains('自定义上限')));
     });
 
@@ -311,7 +311,7 @@ void main() {
       );
 
       final text = moneyPolicyRefusalText(failure);
-      expect(text, contains('不在当前可操作的资产范围里'));
+      expect(text, contains("isn't in the current range of supported assets"));
       expect(text, isNot(contains('750.51')));
     });
 
@@ -348,7 +348,10 @@ void main() {
 
       expect(failure.kind, LoopChainFailureKind.validationFailed);
       expect(MoneyPolicyNotice.covers(failure), isTrue);
-      expect(moneyPolicyRefusalText(failure), contains('原生 BNB 没有授权面'));
+      expect(
+        moneyPolicyRefusalText(failure),
+        contains('Native BNB has no approvals'),
+      );
     });
 
     test('an unlisted details key never reaches a page', () {

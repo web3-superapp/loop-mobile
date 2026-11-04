@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 @immutable
 final class LoopStepUpState {
@@ -187,7 +188,11 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
       return true;
     }
     if (!state.isAvailable) return false;
-    final passed = await _ask(enabled ? '验证身份以开启大额交易二次验证' : '验证身份以关闭大额交易二次验证');
+    final passed = await _ask(
+      enabled
+          ? LoopL10n.current.securityStepUp_controllerAsk
+          : LoopL10n.current.securityStepUp_controllerS,
+    );
     if (!passed) return false;
     await _save(state.settings.copyWith(enabled: enabled));
     return true;
@@ -202,7 +207,7 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
     final current = state.settings;
     if (current.thresholdUsd1 == threshold) return true;
     if (state.isActive && threshold > current.thresholdUsd1) {
-      final passed = await _ask('验证身份以提高大额交易的验证金额');
+      final passed = await _ask(LoopL10n.current.securityStepUp_controllerAsk2);
       if (!passed) return false;
     }
     await _save(state.settings.copyWith(thresholdUsd1: threshold));
@@ -260,7 +265,7 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
         usd1 <= grant.coveredUsd1) {
       return LoopStepUpVerdict.passed;
     }
-    final passed = await _ask('验证身份以签名这笔大额交易');
+    final passed = await _ask(LoopL10n.current.securityStepUp_controllerAsk3);
     if (!ref.mounted) return LoopStepUpVerdict.failed;
     if (passed) {
       _grant = _LoopStepUpGrant(
@@ -282,7 +287,7 @@ final class LoopStepUpController extends Notifier<LoopStepUpState>
       return LoopStepUpVerdict.notRequired;
     }
     if (_capabilityUnknown) return LoopStepUpVerdict.failed;
-    final passed = await _ask('验证身份以签名这笔请求');
+    final passed = await _ask(LoopL10n.current.securityStepUp_controllerAsk4);
     if (!ref.mounted) return LoopStepUpVerdict.failed;
     if (passed) return LoopStepUpVerdict.passed;
     return state.lastOutcome == LoopDeviceAuthOutcome.canceled

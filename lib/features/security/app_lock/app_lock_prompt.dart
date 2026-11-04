@@ -7,12 +7,14 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 
 /// The one sentence the first-launch prompt says (decision 0186).
-const loopAppLockPromptBody = '切到后台 60 秒后回来需要 Face ID / 指纹，钱包和聊天更安全';
+String get loopAppLockPromptBody =>
+    LoopL10n.current.securityAppLock_promptLoopAppLockPromptBody;
 
 /// Timeout for the one read and the write, the same second every other
 /// device-local preference uses (AGENTS rule 23).
@@ -208,7 +210,7 @@ class _LoopAppLockPromptSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('开启应用锁'),
+        LoopSheetHeading(context.l10n.securityAppLock_promptLoopSheetHeading),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Text(loopAppLockPromptBody, style: LoopType.bodySm),
@@ -231,7 +233,9 @@ class _LoopAppLockPromptSheetState
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: LoopButton(
             key: const ValueKey<String>('app-lock-prompt-enable'),
-            label: lock.busy ? '正在验证…' : '开启',
+            label: lock.busy
+                ? context.l10n.securityAppLock_gateLoopAppLockUnlockLabel
+                : context.l10n.securityAppLock_promptAppLockPromptEnableLabel,
             primary: true,
             block: true,
             onPressed: lock.busy || !lock.isAvailable ? null : _enable,
@@ -241,7 +245,7 @@ class _LoopAppLockPromptSheetState
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: LoopButton(
             key: const ValueKey<String>('app-lock-prompt-later'),
-            label: '以后再说',
+            label: context.l10n.securityAppLock_promptAppLockPromptLaterLabel,
             block: true,
             onPressed: lock.busy ? null : _later,
           ),

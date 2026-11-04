@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_alert_card.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -212,25 +213,59 @@ String _loopSubUnitFigure(
 String loopFormatPercent(Decimal value) =>
     '${loopFormatDecimal(value, maxFractionDigits: 2, signed: true)}%';
 
+/// The month as the date strings print it (glossary §一 8): the number in
+/// Chinese (「11月4日」 reads it as `{month}月`), the three-letter English
+/// abbreviation otherwise (`Nov 4`). Hand-written, so no intl locale data is
+/// needed.
+String loopMonthLabel(int month) {
+  if (LoopL10n.currentLocale.languageCode == 'zh') return '$month';
+  const names = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return names[(month - 1).clamp(0, 11)];
+}
+
 /// Coarse "N 分钟前" label. It always accompanies, never replaces, the source.
 String loopRelativeTime(DateTime observedAt, {DateTime? now}) {
   final reference = (now ?? DateTime.now()).toUtc();
   final delta = reference.difference(observedAt.toUtc());
-  if (delta.isNegative) return '刚刚';
-  if (delta.inSeconds < 60) return '${delta.inSeconds} 秒前';
-  if (delta.inMinutes < 60) return '${delta.inMinutes} 分钟前';
-  if (delta.inHours < 24) return '${delta.inHours} 小时前';
-  return '${delta.inDays} 天前';
+  if (delta.isNegative) return LoopL10n.current.common_justNow;
+  if (delta.inSeconds < 60) {
+    return LoopL10n.current.chain_widgetsLoopRelativeTime(delta.inSeconds);
+  }
+  if (delta.inMinutes < 60) {
+    return LoopL10n.current.chain_widgetsLoopRelativeTime2(delta.inMinutes);
+  }
+  if (delta.inHours < 24) {
+    return LoopL10n.current.chain_widgetsLoopRelativeTime3(delta.inHours);
+  }
+  return LoopL10n.current.chain_widgetsLoopRelativeTime4(delta.inDays);
 }
 
 /// "来源 DexScreener · 观察于 4 分钟前" — the sentence every fact carries.
 String loopFactProvenance(LoopFact fact, {DateTime? now}) {
   final source = fact.source;
   final fetchedAt = fact.fetchedAt;
-  if (source == null) return '来源未标注';
-  final label = '来源 ${loopFactSourceLabel(source)}';
+  if (source == null) return LoopL10n.current.chain_widgetsLoopFactProvenance;
+  final label = LoopL10n.current.wallet_readScreensSwitch2(
+    loopFactSourceLabel(source),
+  );
   if (fetchedAt == null) return label;
-  return '$label · 观察于 ${loopRelativeTime(fetchedAt, now: now)}';
+  return LoopL10n.current.chain_modelsLoopProvenanceLabel2(
+    loopRelativeTime(fetchedAt, now: now),
+    label,
+  );
 }
 
 /// The offline card's wording for a chain failure (S88d): a timed-out read
@@ -247,9 +282,9 @@ class LoopChainStateBlock extends StatelessWidget {
     required this.failureKind,
     super.key,
     this.onRetry,
-    this.emptyMessage = '这里还没有内容',
+    this.emptyMessage,
     this.emptyReason,
-    this.permissionTitle = '当前账号没有权限',
+    this.permissionTitle,
     this.onOpenSecurity,
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
@@ -270,9 +305,9 @@ class LoopChainStateBlock extends StatelessWidget {
   final LoopChainViewPhase phase;
   final LoopChainFailureKind? failureKind;
   final VoidCallback? onRetry;
-  final String emptyMessage;
+  final String? emptyMessage;
   final String? emptyReason;
-  final String permissionTitle;
+  final String? permissionTitle;
 
   /// Only the step-up branch uses it: step-up is not delivered, so the security
   /// centre is the one destination that could ever change the answer.
@@ -304,7 +339,7 @@ class LoopChainStateBlock extends StatelessWidget {
               showMessage: true,
               key: ValueKey<String>('$keyPrefix-state-empty'),
               illustration: emptyIllustration,
-              title: emptyMessage,
+              title: emptyMessage ?? context.l10n.common_nothingHereYet,
               message: emptyReason,
               compact: true,
             );
@@ -313,14 +348,19 @@ class LoopChainStateBlock extends StatelessWidget {
           key: ValueKey<String>('$keyPrefix-state-offline'),
           cause: loopOfflineCauseFor(failureKind),
           onRetry: onRetry,
-          pausedActions: const <String>['刷新', '切换钱包', '保存自选', '价格提醒'],
+          pausedActions: <String>[
+            context.l10n.common_refresh,
+            context.l10n.chain_widgetsLoopOfflineState,
+            context.l10n.chain_widgetsLoopOfflineState2,
+            context.l10n.common_priceAlerts,
+          ],
         );
       case LoopChainViewPhase.unavailable:
         // UX-010 (decision 0254): the same compact warning card as
         // [LoopUnavailableLine].
         return LoopAlertCard(
           key: ValueKey<String>('$keyPrefix-state-unavailable'),
-          title: '该内容当前不可用',
+          title: context.l10n.chain_widgetsTitle,
           body: loopChainFailureReason(failureKind),
           compact: true,
           bodyMaxLines: 4,
@@ -334,12 +374,12 @@ class LoopChainStateBlock extends StatelessWidget {
           // The server answered; the block never offers a retry.
           denied: true,
           title: stepUp
-              ? '这一步需要二次验证'
+              ? context.l10n.chain_widgetsTitle2
               : failureKind == LoopChainFailureKind.regionBlocked
-              ? '当前地区不能执行此操作'
-              : permissionTitle,
+              ? context.l10n.chain_widgetsTitle3
+              : permissionTitle ?? context.l10n.common_noPermission,
           purpose: loopChainPermissionPurpose(failureKind),
-          settingsLabel: '前往安全中心',
+          settingsLabel: context.l10n.common_openSecurityCenter,
           onOpenSettings: stepUp ? onOpenSecurity : null,
         );
       case LoopChainViewPhase.error:
@@ -413,7 +453,9 @@ class _LoopChainCoolingRetryState extends State<_LoopChainCoolingRetry> {
       reason: widget.reason,
       onRetry: widget.onRetry,
       retryEnabled: !_cooling,
-      retryLabel: _cooling ? '稍后重试' : '重试',
+      retryLabel: _cooling
+          ? context.l10n.chain_widgetsRetryLabel
+          : context.l10n.common_retry,
     );
   }
 }
@@ -441,8 +483,8 @@ class LoopChainPreviewNotice extends StatelessWidget {
       key: const ValueKey<String>('chain-preview-notice'),
       icon: 'info',
       tone: LoopNoticeTone.warn,
-      title: '演示数据',
-      body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
+      title: context.l10n.common_demoData,
+      body: context.l10n.chain_widgetsChainPreviewNoticeBody(resource),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         14,
@@ -455,7 +497,9 @@ class LoopChainPreviewNotice extends StatelessWidget {
 
 /// `开发预览` eyebrow for a Preview-backed chain page.
 String? loopChainPreviewKicker(LoopChainGatewayMode mode) =>
-    mode == LoopChainGatewayMode.preview ? '开发预览' : null;
+    mode == LoopChainGatewayMode.preview
+    ? LoopL10n.current.common_devPreview
+    : null;
 
 /// The sentence a refused read or write renders.
 ///
@@ -463,15 +507,12 @@ String? loopChainPreviewKicker(LoopChainGatewayMode mode) =>
 /// actually exists. It never offers a setting the product has not delivered.
 String loopChainPermissionPurpose(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.stepUpRequired =>
-    '${loopChainFailureReason(kind)}请到安全中心查看当前可用的验证方式；'
-        '本页已读到的内容不受影响。',
+    LoopL10n.current.chain_widgetsStepUpRequired(loopChainFailureReason(kind)),
   // A jurisdiction rule is not an account one, so no alternative account or
   // asset is offered — there is none.
   LoopChainFailureKind.regionBlocked =>
-    '${loopChainFailureReason(kind)}本页已读到的内容不受影响。',
-  _ =>
-    '${loopChainFailureReason(kind)}这项权限不能在应用里自行调整；'
-        '可以换一个已获授权的账号或资产，本页已读到的内容不受影响。',
+    LoopL10n.current.chain_widgetsRegionBlocked(loopChainFailureReason(kind)),
+  _ => LoopL10n.current.chain_widgetsSwitch(loopChainFailureReason(kind)),
 };
 
 /// The block a page renders when the server refused a **command** it issued
@@ -511,12 +552,12 @@ class LoopChainCommandPermission extends StatelessWidget {
       icon: 'shield',
       denied: true,
       title: stepUp
-          ? '这一步需要二次验证'
+          ? context.l10n.chain_widgetsTitle2
           : failureKind == LoopChainFailureKind.regionBlocked
-          ? '当前地区不能执行此操作'
+          ? context.l10n.chain_widgetsTitle3
           : title,
       purpose: loopChainPermissionPurpose(failureKind),
-      settingsLabel: '前往安全中心',
+      settingsLabel: context.l10n.common_openSecurityCenter,
       onOpenSettings: stepUp ? onOpenSecurity : null,
     );
   }
@@ -781,12 +822,13 @@ class LoopFactLine extends StatelessWidget {
                 ),
                 fallback: LoopInfoTrigger(
                   key: ValueKey<String>('fact-$label-provenance'),
-                  semanticsLabel:
-                      '${loopFactProvenance(fact, now: now)}，查看数据来源说明',
+                  semanticsLabel: context.l10n.chain_widgetsSemanticsLabel(
+                    loopFactProvenance(fact, now: now),
+                  ),
                   onTap: () => unawaited(
                     showLoopInfoSheet(
                       context,
-                      title: '数据来源',
+                      title: context.l10n.common_dataSource,
                       sheetKey: 'fact-provenance-sheet',
                       notes: <LoopInfoNote>[
                         LoopInfoNote(body: loopFactProvenance(fact, now: now)),
@@ -815,8 +857,8 @@ class LoopProvenanceFooter extends StatelessWidget {
     required this.text,
     super.key,
     this.margin = const EdgeInsets.fromLTRB(16, 0, 12, 4),
-    this.label = '来源',
-    this.title = '数据来源',
+    this.label,
+    this.title,
     this.notes = const <String>[],
   });
 
@@ -826,10 +868,10 @@ class LoopProvenanceFooter extends StatelessWidget {
 
   /// The word beside the glyph: 「来源」 for provenance, 「说明」 for an
   /// explanation.
-  final String label;
+  final String? label;
 
   /// The sheet's heading.
-  final String title;
+  final String? title;
 
   /// Further paragraphs the sheet adds under [text].
   final List<String> notes;
@@ -841,7 +883,7 @@ class LoopProvenanceFooter extends StatelessWidget {
     // block; elsewhere the block keeps its own 「(i) [label]」.
     return LoopProvenanceReport(
       entry: LoopProvenanceEntry(
-        heading: title == '数据来源' ? null : title,
+        heading: title == context.l10n.common_dataSource ? null : title,
         statement: text,
         notes: <LoopInfoNote>[
           LoopInfoNote(
@@ -860,13 +902,17 @@ class LoopProvenanceFooter extends StatelessWidget {
       padding: margin,
       child: LoopInfoTrigger(
         key: const ValueKey<String>('provenance-footer'),
-        label: label,
+        label: label ?? context.l10n.chain_widgetsLabel,
         expand: true,
-        semanticsLabel: '$text，查看$title',
+        semanticsLabel: context.l10n
+            .chain_widgetsProvenanceFooterSemanticsLabel(
+              text,
+              title ?? context.l10n.common_dataSource,
+            ),
         onTap: () => unawaited(
           showLoopInfoSheet(
             context,
-            title: title,
+            title: title ?? context.l10n.common_dataSource,
             sheetKey: 'provenance-footer-sheet',
             notes: <LoopInfoNote>[
               LoopInfoNote(

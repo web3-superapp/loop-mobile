@@ -20,7 +20,7 @@ void main() {
       ]) {
         expect(
           launch2SignReasonText(code, approvalSent: true),
-          '授权已发出，交易未发起。',
+          'Approval sent; the transaction wasn\'t started.',
           reason: code,
         );
       }

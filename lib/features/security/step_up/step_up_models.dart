@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // Large-amount step-up (decision 0152)
@@ -55,13 +56,14 @@ LoopChainFailureKind? loopStepUpFailureKind(String? reasonCode) =>
 
 /// What a step-up refusal says when an approval of the same operation had
 /// already been broadcast (decision 0158): something did change on chain.
-const String loopStepUpAfterApprovalText = '授权已发出，交易未发起。';
+String get loopStepUpAfterApprovalText =>
+    LoopL10n.current.securityStepUp_modelsLoopStepUpAfterApprovalText;
 
 /// The one sentence a signing sheet shows after a step-up refusal, or `null`
 /// when [reasonCode] is not one.
 String? loopStepUpReasonText(String? reasonCode) => switch (reasonCode) {
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
+  loopStepUpCancelledCode => LoopL10n.current.chain_contractStepUpCancelled,
+  loopStepUpFailedCode => LoopL10n.current.securityStepUp_modelsSwitch2,
   _ => null,
 };
 
@@ -135,10 +137,12 @@ final class LoopStepUpSettings {
 
 /// Why [threshold] cannot be saved, or `null` when it can.
 String? loopStepUpThresholdError(int? threshold) {
-  if (threshold == null) return '请输入整数金额';
+  if (threshold == null) {
+    return LoopL10n.current.securityStepUp_modelsLoopStepUpThresholdError;
+  }
   if (threshold < loopStepUpMinThresholdUsd1 ||
       threshold > loopStepUpMaxThresholdUsd1) {
-    return '金额需在 1 到 1,000,000 USD1 之间';
+    return LoopL10n.current.securityStepUp_modelsIf;
   }
   return null;
 }
@@ -164,7 +168,9 @@ String loopStepUpThresholdLabel(int threshold) {
 
 /// The row's subtitle.
 String loopStepUpSubtitle(int threshold) =>
-    '达到 ${loopStepUpThresholdLabel(threshold)} USD1 时再验一次身份';
+    LoopL10n.current.securityStepUp_modelsLoopStepUpSubtitle(
+      loopStepUpThresholdLabel(threshold),
+    );
 
 /// What one signing sheet will ask before the wallet opens.
 @immutable

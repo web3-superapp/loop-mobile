@@ -157,14 +157,17 @@ void main() {
         tester,
         const ValueKey<String>('approvals-batch-action'),
         icon: 'blocked',
-        name: '批量回收',
+        name: 'Revoke in batch',
       );
-      final button = await tapByName(tester, '批量回收');
+      final button = await tapByName(tester, 'Revoke in batch');
       // Disabled paint, disabled semantics — and an answer all the same.
       expect(button.onPressed, isNull);
       expect(button.onBlocked, isNotNull);
 
-      expect(find.textContaining('批量回收还没有开放'), findsOneWidget);
+      expect(
+        find.textContaining("Batch revoke isn't available yet"),
+        findsOneWidget,
+      );
     });
   });
 
@@ -186,9 +189,9 @@ void main() {
         tester,
         const ValueKey<String>('wallet-asset-market-action'),
         icon: 'chart',
-        name: '行情',
+        name: 'Market',
       );
-      await tapByName(tester, '行情');
+      await tapByName(tester, 'Market');
 
       expect(routes, hasLength(1));
       expect(routes.single, startsWith('/market/token'));
@@ -209,15 +212,15 @@ void main() {
         tester,
         const ValueKey<String>('wallets-add-action'),
         icon: 'plus',
-        name: '添加',
+        name: 'Add',
       );
-      await tapByName(tester, '添加');
+      await tapByName(tester, 'Add');
 
       expect(
         find.byKey(const ValueKey<String>('wallets-add-sheet')),
         findsOneWidget,
       );
-      expect(find.text('连接外部钱包'), findsOneWidget);
+      expect(find.text('Connect external wallet'), findsOneWidget);
     });
   });
 
@@ -237,13 +240,16 @@ void main() {
         tester,
         const ValueKey<String>('tx-history-export-action'),
         icon: 'share',
-        name: '导出',
+        name: 'Export',
       );
-      await tapByName(tester, '导出');
+      await tapByName(tester, 'Export');
 
       expect(sink.fileNames, hasLength(1));
       expect(sink.fileNames.single, endsWith('.csv'));
-      expect(find.text('记录已导出，请在分享面板中选择去处'), findsOneWidget);
+      expect(
+        find.text('Records exported. Choose a destination in the share sheet'),
+        findsOneWidget,
+      );
     });
   });
 }

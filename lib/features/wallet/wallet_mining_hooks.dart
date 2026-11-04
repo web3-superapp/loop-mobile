@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_controllers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -70,13 +71,25 @@ String walletAssetPowerText(
   String assetId,
 ) {
   final value = state.value;
-  if (value == null) return '算力 $loopFigureDash';
-  final row = walletMiningRowFor(state, assetId);
-  if (row != null) return '算力 ${loopPowerFigure(row.power)}';
-  for (final excluded in value.excluded) {
-    if (excluded.assetId == assetId) return '无权重';
+  if (value == null) {
+    return LoopL10n.current.wallet_miningHooksWalletAssetPowerText(
+      loopFigureDash,
+    );
   }
-  return '算力 $loopFigureDash';
+  final row = walletMiningRowFor(state, assetId);
+  if (row != null) {
+    return LoopL10n.current.wallet_miningHooksWalletAssetPowerText(
+      loopPowerFigure(row.power),
+    );
+  }
+  for (final excluded in value.excluded) {
+    if (excluded.assetId == assetId) {
+      return LoopL10n.current.wallet_miningHooksFor;
+    }
+  }
+  return LoopL10n.current.wallet_miningHooksWalletAssetPowerText(
+    loopFigureDash,
+  );
 }
 
 /// The Lime strip the prototype puts under the wallet page's action groups.
@@ -115,11 +128,16 @@ class WalletHoldingsPowerHint extends ConsumerWidget {
       key: const ValueKey<String>('wallet-power-hint'),
       state: producing ? LoopPowerHintState.active : LoopPowerHintState.pending,
       // 「正在产生」 only while it is; at zero the strip states the rule.
-      text: producing ? '钱包持仓正在产生算力' : '钱包持仓按权重产生算力',
+      text: producing
+          ? context.l10n.wallet_miningHooksWalletPowerHintText
+          : context.l10n.wallet_miningHooksWalletPowerHintText2,
       figure: <String>[
-        '$power 算力',
+        context.l10n.wallet_miningHooksLoopPowerHint(power),
         // Decision 0149: 「今日预估 — LOOP」 read as a broken figure.
-        if (live) daily == loopFigureDash ? '今日预估暂无' : '今日预估 $daily LOOP',
+        if (live)
+          daily == loopFigureDash
+              ? context.l10n.wallet_miningHooksLoopPowerHint2
+              : context.l10n.wallet_miningHooksS(daily),
         if (baseline) miningBaselineLabel,
       ].join(' · '),
       onTap: onOpenMining,
@@ -150,7 +168,7 @@ class WalletAssetPowerHint extends ConsumerWidget {
       return LoopPowerHint(
         key: const ValueKey<String>('wallet-asset-power-hint'),
         state: LoopPowerHintState.pending,
-        text: '这个资产的挖矿贡献',
+        text: context.l10n.wallet_miningHooksWalletAssetPowerHintText,
         figure: walletAssetPowerText(state, assetId),
         onTap: onOpenMining,
       );
@@ -159,10 +177,12 @@ class WalletAssetPowerHint extends ConsumerWidget {
     final baseline = value != null && miningGateIsBaseline(value.formula);
     return LoopPowerHint(
       key: const ValueKey<String>('wallet-asset-power-hint'),
-      text: '这个资产的挖矿贡献',
+      text: context.l10n.wallet_miningHooksWalletAssetPowerHintText,
       figure: <String>[
-        '${loopPowerFigure(row.power)} 算力',
-        '权重 ${row.weight}×',
+        context.l10n.wallet_miningHooksLoopPowerHint(
+          loopPowerFigure(row.power),
+        ),
+        context.l10n.wallet_miningHooksLoopPowerHint4(row.weight),
         if (baseline) miningBaselineLabel,
       ].join(' · '),
       onTap: onOpenMining,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -147,24 +148,24 @@ class _TransactionResultScreenState
       return LoopFocusPage(
         key: const ValueKey<String>('tx-result-screen'),
         archetype: LoopPageArchetype.state,
-        title: '交易结果',
+        title: context.l10n.wallet_txResultTxResultScreenTitle,
         onBack: widget.onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
           key: ValueKey<String>('tx-result-folio'),
           // S241b: flat dark card, Chalk heading (no light slab on Ink).
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
           ring: false,
-          kicker: '交易结果',
-          heading: '没有可展示的结果',
-          caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
+          kicker: context.l10n.wallet_txResultTxResultScreenTitle,
+          heading: context.l10n.wallet_txResultTxResultFolioHeading,
+          caption: context.l10n.wallet_txResultTxResultFolioCaption,
         ),
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('tx-result-empty'),
             illustration: LoopIllustration.history,
-            title: '这里还没有要展示的操作',
-            message: '从发送、授权或兑换的签名页进来时，这一页会显示那一笔的状态。',
+            title: context.l10n.wallet_txResultTxResultEmptyTitle,
+            message: context.l10n.wallet_txResultTxResultEmptyMessage,
             compact: true,
           ),
         ],
@@ -187,7 +188,12 @@ class _TransactionResultScreenState
       if (_announced != announcement) {
         _announced = announcement;
         scheduleMicrotask(() {
-          if (mounted) LoopToast.show(context, message: '交易已确认');
+          if (mounted) {
+            LoopToast.show(
+              context,
+              message: context.l10n.wallet_txResultMessage,
+            );
+          }
         });
         // S339 · decision 0267: a confirmed NFT send moved a Launch holding.
         if (intent.kind == LoopIntentKind.sendNft) {
@@ -201,7 +207,7 @@ class _TransactionResultScreenState
     return LoopFocusPage(
       key: const ValueKey<String>('tx-result-screen'),
       archetype: LoopPageArchetype.state,
-      title: '交易结果',
+      title: context.l10n.wallet_txResultTxResultScreenTitle,
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('tx-result-folio'),
@@ -209,17 +215,21 @@ class _TransactionResultScreenState
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
-        kicker: '交易结果',
-        heading: intent == null ? '正在读取结果' : _headline(intent),
-        caption: intent == null ? '结果以链上核对为准，这一页不会自己判断成败。' : _caption(intent),
+        kicker: context.l10n.wallet_txResultTxResultScreenTitle,
+        heading: intent == null
+            ? context.l10n.wallet_txResultTxResultFolioHeading2
+            : _headline(intent),
+        caption: intent == null
+            ? context.l10n.wallet_txResultTxResultFolioCaption2
+            : _caption(intent),
         stamp: intent == null
             ? null
             : moneyIntentStateLabel(intent.state).toUpperCase(),
       ),
       block: blocked
-          ? const LoopCapabilityPageBlock(
+          ? LoopCapabilityPageBlock(
               key: ValueKey<String>('tx-result-capability-block'),
-              title: '交易状态当前不可读',
+              title: context.l10n.wallet_txResultTxResultCapabilityBlockTitle,
               reasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
             )
           : null,
@@ -230,7 +240,7 @@ class _TransactionResultScreenState
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
-            emptyMessage: '这笔操作没有可读状态',
+            emptyMessage: context.l10n.wallet_txResultEmptyMessage,
             onRetry: () => unawaited(_retry()),
           )
         else ...<Widget>[
@@ -240,42 +250,40 @@ class _TransactionResultScreenState
               key: const ValueKey<String>('tx-result-unknown-lock'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '结果未知，已锁定',
-              body:
-                  '${loopReasonCodeText(intent.result.reasonCode)}'
-                  ' 本页只会继续查询，不会重复提交；请勿再次签名。',
+              title: context.l10n.wallet_txResultTxResultUnknownLockTitle,
+              body: context.l10n.wallet_txResultTxResultUnknownLockBody(
+                loopReasonCodeText(intent.result.reasonCode),
+              ),
             ),
           if (intent.state == LoopIntentState.awaitingSignature ||
               intent.state == LoopIntentState.prepared)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('tx-result-unreported'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '这次提交还没有记录到',
-              body:
-                  '如果钱包已经广播过这笔交易，它可能已经上链，只是上报没有成功。'
-                  '请稍后回到这里重试，在提交被接受之前不要重新签名。',
+              title: context.l10n.wallet_txResultTxResultUnreportedTitle,
+              body: context.l10n.wallet_txResultTxResultUnreportedBody,
             ),
           if (intent.state == LoopIntentState.submitted)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('tx-result-pending'),
               icon: 'clock',
               tone: LoopNoticeTone.warn,
-              title: '已提交，等待回执',
-              body: '提交成功不代表链上已完成，还需要 15 个区块确认。',
+              title: context.l10n.wallet_txResultTxResultPendingTitle,
+              body: context.l10n.wallet_txResultTxResultPendingBody,
             ),
           if (_pollingStopped)
             LoopNotice(
               key: const ValueKey<String>('tx-result-polling-stopped'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '已停止自动查询',
-              body:
-                  '连续 ${widget.maximumPollFailures} 次读取失败，本页不再自动重试，'
-                  '已停止自动重试。这笔操作的状态没有改变，请手动重试。',
+              title: context.l10n.wallet_txResultTxResultPollingStoppedTitle,
+              body: context.l10n.wallet_txResultTxResultPollingStoppedBody(
+                widget.maximumPollFailures,
+              ),
               trailing: LoopButton(
                 key: const ValueKey<String>('tx-result-poll-retry'),
-                label: '重试',
+                label: context.l10n.common_retry,
                 onPressed: () => unawaited(_retry()),
               ),
             ),
@@ -285,26 +293,26 @@ class _TransactionResultScreenState
           // dash, never a zero.
           WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
           _ResultFacts(intent: intent),
-          const LoopLabel('分享'),
+          LoopLabel(context.l10n.common_share),
           LoopButtonPair(
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('tx-result-forward'),
-                label: '转发消息',
+                label: context.l10n.wallet_txResultTxResultForwardLabel,
                 onPressed: intent.state == LoopIntentState.confirmed
                     ? () => _open('/chat/forward')
                     : null,
               ),
               LoopButton(
                 key: const ValueKey<String>('tx-result-merge'),
-                label: '合并长图',
+                label: context.l10n.wallet_txResultTxResultMergeLabel,
                 onPressed: intent.state == LoopIntentState.confirmed
                     ? () => _open('/chat/merge-preview')
                     : null,
               ),
               LoopButton(
                 key: const ValueKey<String>('tx-result-community'),
-                label: '社区',
+                label: context.l10n.common_community,
                 onPressed: () => _open('/community/chat'),
               ),
             ],
@@ -316,25 +324,44 @@ class _TransactionResultScreenState
   }
 
   String _headline(LoopWalletIntent intent) => switch (intent.state) {
-    LoopIntentState.confirmed => '${_action(intent)}已确认',
-    LoopIntentState.reverted => '${_action(intent)}已回滚',
-    LoopIntentState.failed => '${_action(intent)}失败',
-    LoopIntentState.unknown => '${_action(intent)}结果未知',
-    LoopIntentState.cancelled => '${_action(intent)}已取消',
-    LoopIntentState.expired => '${_action(intent)}已过期',
-    _ => '${_action(intent)}进行中',
+    LoopIntentState.confirmed => LoopL10n.current.wallet_txResultConfirmed(
+      _action(intent),
+    ),
+    LoopIntentState.reverted => LoopL10n.current.wallet_txResultReverted(
+      _action(intent),
+    ),
+    LoopIntentState.failed => LoopL10n.current.wallet_txResultFailed(
+      _action(intent),
+    ),
+    LoopIntentState.unknown => LoopL10n.current.wallet_txResultUnknown(
+      _action(intent),
+    ),
+    LoopIntentState.cancelled => LoopL10n.current.wallet_txResultCancelled(
+      _action(intent),
+    ),
+    LoopIntentState.expired => LoopL10n.current.wallet_txResultExpired(
+      _action(intent),
+    ),
+    _ => LoopL10n.current.wallet_txResultSwitch(_action(intent)),
   };
 
-  String _action(LoopWalletIntent intent) =>
-      moneyActionTitle(intent.kind).replaceFirst('确认', '');
+  String _action(LoopWalletIntent intent) => moneyActionName(intent.kind);
 
   String _caption(LoopWalletIntent intent) {
     final receipt = intent.result.receipt;
     if (receipt == null) {
-      return '结果、交易哈希和下一步动作集中在这里，不会混入新的报价。';
+      return LoopL10n.current.wallet_txResultIf;
     }
-    return '区块 ${loopGroupedFigure(receipt.blockNumber.toString())} · '
-        '${receipt.confirmations == null ? '确认数读不到' : '${loopGroupedFigure(receipt.confirmations.toString())} 确认'}';
+    return LoopL10n.current.wallet_moneyActionsMoneyFactsFooterText(
+      loopGroupedFigure(receipt.blockNumber.toString()),
+      receipt.confirmations == null
+          ? LoopL10n
+                .current
+                .wallet_txResultWalletMoneyActionsMoneyFactsFooterText
+          : LoopL10n.current.wallet_txResultS(
+              loopGroupedFigure(receipt.confirmations.toString()),
+            ),
+    );
   }
 }
 
@@ -346,11 +373,22 @@ class _ResultBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String label, LoopBadgeKind kind) = switch (intent.state) {
-      LoopIntentState.confirmed => ('已确认', LoopBadgeKind.up),
-      LoopIntentState.submitted => ('等待中', LoopBadgeKind.mining),
-      LoopIntentState.reverted ||
-      LoopIntentState.failed => ('失败', LoopBadgeKind.down),
-      LoopIntentState.unknown => ('未知', LoopBadgeKind.down),
+      LoopIntentState.confirmed => (
+        context.l10n.common_confirmed,
+        LoopBadgeKind.up,
+      ),
+      LoopIntentState.submitted => (
+        context.l10n.wallet_txResultSwitch2,
+        LoopBadgeKind.mining,
+      ),
+      LoopIntentState.reverted || LoopIntentState.failed => (
+        context.l10n.common_failed,
+        LoopBadgeKind.down,
+      ),
+      LoopIntentState.unknown => (
+        context.l10n.common_unknown,
+        LoopBadgeKind.down,
+      ),
       _ => (moneyIntentStateLabel(intent.state), LoopBadgeKind.mute),
     };
     return LoopRecordCard(
@@ -372,7 +410,7 @@ class _ResultBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             intent.result.reasonCode == null
-                ? '最新状态。'
+                ? context.l10n.wallet_txResultSwitch3
                 : loopReasonCodeText(intent.result.reasonCode),
             style: LoopType.bodySm,
           ),
@@ -399,40 +437,44 @@ class _ResultFacts extends StatelessWidget {
           children: <Widget>[
             LoopKeyValue(
               key: const ValueKey<String>('tx-result-hash'),
-              label: '交易哈希',
-              value: intent.result.transactionHash ?? '尚未上报',
+              label: context.l10n.wallet_txResultTxResultHashLabel,
+              value:
+                  intent.result.transactionHash ??
+                  context.l10n.wallet_txResultTxResultHashValue,
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             if (intent.result.providerActionId != null)
               LoopKeyValue(
                 key: const ValueKey<String>('tx-result-action-id'),
-                label: '供应商动作',
+                label: context.l10n.wallet_txResultTxResultActionIdLabel,
                 value: intent.result.providerActionId!,
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
             LoopKeyValue(
               key: const ValueKey<String>('tx-result-confirmations'),
-              label: '确认数',
+              label: context.l10n.wallet_txResultTxResultConfirmationsLabel,
               value: receipt == null
-                  ? '还没有回执'
+                  ? context.l10n.wallet_txResultTxResultConfirmationsValue
                   : receipt.confirmations == null
-                  ? '链头读不到'
+                  ? context.l10n.wallet_txResultTxResultConfirmationsValue2
                   : loopGroupedFigure(receipt.confirmations.toString()),
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(
               key: const ValueKey<String>('tx-result-gas'),
-              label: receipt == null ? '最高网络费' : '实际用量',
+              label: receipt == null
+                  ? context.l10n.wallet_moneyActionsSigningLabel3
+                  : context.l10n.wallet_txResultTxResultGasLabel,
               value: receipt == null
                   ? (fee == null
-                        ? '不可用'
+                        ? context.l10n.common_unavailable
                         : '${loopFormatDecimal(fee.maximumFee, maxFractionDigits: 10)} BNB')
                   : '${loopGroupedFigure(receipt.gasUsed)} gas',
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(
               key: const ValueKey<String>('tx-result-updated'),
-              label: '更新于',
+              label: context.l10n.wallet_txResultTxResultUpdatedLabel,
               value: loopRelativeTime(intent.updatedAt),
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),

@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -35,7 +36,7 @@ Future<String?> showMoneyAssetPicker(
   required String rowKeyPrefix,
   String? selectedAssetId,
   bool requireBalance = true,
-  String title = '选择资产',
+  String? title,
 }) => showLoopSheet<String>(
   context,
   builder: (context) => MoneyAssetPickerSheet(
@@ -55,14 +56,16 @@ class MoneyAssetPickerSheet extends StatefulWidget {
     super.key,
     this.selectedAssetId,
     this.requireBalance = true,
-    this.title = '选择资产',
+    this.title,
   });
 
   final LoopWalletBalances balances;
   final String rowKeyPrefix;
   final String? selectedAssetId;
   final bool requireBalance;
-  final String title;
+
+  /// Null reads the default heading from ARB.
+  final String? title;
 
   @override
   State<MoneyAssetPickerSheet> createState() => _MoneyAssetPickerSheetState();
@@ -98,7 +101,10 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
         LoopBalanceUnavailable(reasonCode: final reasonCode) =>
           loopReasonCodeText(reasonCode),
         LoopBalanceAvailable(spendableBalance: final spendable) =>
-          '${row.name} · 可动用 ${loopFormatDecimal(spendable)}',
+          LoopL10n.current.wallet_moneyAssetPickerLoopBalanceAvailable(
+            loopFormatDecimal(spendable),
+            row.name,
+          ),
       },
       trailing: switch (balance) {
         LoopBalanceUnavailable() => null,
@@ -106,7 +112,10 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
           loopFormatDecimal(display),
       },
       trailingBadge: balance is LoopBalanceUnavailable
-          ? const LoopBadge('读不到', kind: LoopBadgeKind.down)
+          ? LoopBadge(
+              LoopL10n.current.wallet_approvalScreensLoopBadge,
+              kind: LoopBadgeKind.down,
+            )
           : null,
       selected: row.assetId == widget.selectedAssetId,
       chevron: false,
@@ -133,7 +142,9 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSheetHeading(widget.title),
+        LoopSheetHeading(
+          widget.title ?? context.l10n.wallet_moneyAssetPickerTitle,
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: TextField(
@@ -143,8 +154,8 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
             enableSuggestions: false,
             textInputAction: TextInputAction.search,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: '搜索名称或代号',
+            decoration: InputDecoration(
+              hintText: context.l10n.wallet_moneyAssetPickerHintText,
               prefixIcon: Padding(
                 padding: EdgeInsets.all(12),
                 child: LoopIcon('search', size: 18, color: LoopColors.text3),
@@ -156,7 +167,9 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
           LoopEmptyState(
             key: ValueKey<String>('${widget.rowKeyPrefix}-none'),
             illustration: LoopIllustration.search,
-            title: _query.text.trim().isEmpty ? '这个钱包还没有可读资产' : '没有匹配的资产',
+            title: _query.text.trim().isEmpty
+                ? context.l10n.wallet_moneyAssetPickerTitle2
+                : context.l10n.wallet_moneyAssetPickerTitle3,
             compact: true,
           )
         else ...<Widget>[
@@ -164,7 +177,7 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
             LoopEmptyState(
               key: ValueKey<String>('${widget.rowKeyPrefix}-none-spendable'),
               illustration: LoopIllustration.search,
-              title: '没有可动用余额的资产',
+              title: context.l10n.wallet_moneyAssetPickerTitle4,
               compact: true,
             )
           else
@@ -176,7 +189,9 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
           if (folded.isNotEmpty)
             LoopDisclosure(
               key: ValueKey<String>('${widget.rowKeyPrefix}-zero'),
-              summary: '余额为 0 的资产 · ${folded.length} 个',
+              summary: context.l10n.wallet_moneyAssetPickerSummary(
+                folded.length,
+              ),
               child: LoopRecordGroup(
                 rows: <LoopRecordRow>[
                   for (final row in folded) _row(row, choosable: false),

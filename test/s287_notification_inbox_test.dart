@@ -707,7 +707,7 @@ void main() {
         ),
       );
       expect(_key('chain-preview-notice'), findsOneWidget);
-      expect(find.text('演示数据'), findsOneWidget);
+      expect(find.text('Demo data'), findsOneWidget);
     });
 
     testWidgets('the next page follows the feed cursor', (tester) async {

@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -184,7 +185,7 @@ void main() {
         'MARKET_PROVIDER_UNREACHABLE',
       ]) {
         final text = loopReasonCodeText(code);
-        expect(text, contains('与你的网络无关'), reason: code);
+        expect(text, contains("It isn't your network"), reason: code);
         // One sentence, and no instruction to go and fix a working radio.
         expect(text, isNot(contains('请检查')), reason: code);
         expect(text, isNot(contains('离线')), reason: code);
@@ -193,13 +194,17 @@ void main() {
       // same fact and never share a sentence.
       expect(
         loopChainFailureReason(LoopChainFailureKind.offline),
-        contains('设备已离线'),
+        contains('This device is offline'),
       );
     });
   });
 
   group('a wire value never reaches a text slot', () {
     test('both registry enums carry a display name of their own', () {
+      // S355d (decision 0281): English labels are ASCII, so the
+      // "not a wire value" check reads the Chinese copy.
+      LoopL10n.use(LoopL10n.simplifiedChinese);
+      addTearDown(LoopL10n.debugReset);
       for (final status in LoopAssetStatus.values) {
         expect(status.label, isNot(status.wireName));
         expect(RegExp(r'^[\x00-\x7F]+$').hasMatch(status.label), isFalse);

@@ -2446,7 +2446,10 @@ void main() {
       expect(await signOnce(tester, unanswered), isEmpty);
       expect(unanswered.submittedSignatures, hasLength(2));
       expect(unanswered.configReads, 1);
-      expect(find.text('操作没有完成，请稍后再试。'), findsOneWidget);
+      expect(
+        find.text("The action didn't finish. Try again later."),
+        findsOneWidget,
+      );
       await _drain(tester);
 
       final refused = _FakeCreator(

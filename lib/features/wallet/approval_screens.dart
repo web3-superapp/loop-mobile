@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -112,7 +113,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('approval-guard-screen'),
       archetype: LoopPageArchetype.action,
-      title: '授权拦截',
+      title: context.l10n.wallet_approvalScreensApprovalGuardScreenTitle,
       onBack: widget.onBack,
       folioCollapsed: typing,
       keyboardAccessory: true,
@@ -122,14 +123,21 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
-        kicker: '授权请求',
+        kicker: context.l10n.wallet_approvalScreensApprovalGuardFolioKicker,
         heading: intent == null
-            ? '${widget.request.symbol} 授权'
+            ? context.l10n.wallet_approvalScreensApprovalGuardFolioHeading(
+                widget.request.symbol,
+              )
             : intent.review.amount.isUnlimited
-            ? '无限 ${widget.request.symbol} 授权'
-            : '${intent.review.amount.display} ${widget.request.symbol} 限额',
-        caption: '代币、Spender、额度与解码后的调用在签名前完整显示。',
-        stamp: '受保护',
+            ? context.l10n.wallet_approvalScreensApprovalGuardFolioHeading2(
+                widget.request.symbol,
+              )
+            : context.l10n.wallet_approvalScreensApprovalGuardFolioHeading3(
+                intent.review.amount.display,
+                widget.request.symbol,
+              ),
+        caption: context.l10n.wallet_approvalScreensApprovalGuardFolioCaption,
+        stamp: context.l10n.wallet_approvalScreensApprovalGuardFolioStamp,
       ),
       primaryAction: intent == null
           ? null
@@ -139,8 +147,11 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
               builder: (context, remaining) => LoopButton(
                 key: const ValueKey<String>('approval-guard-sign'),
                 label: remaining == Duration.zero
-                    ? '事实已过期 · 重新准备'
-                    : '确认授权（${moneyCountdownLabel(remaining)}）',
+                    ? context.l10n.wallet_approvalScreensApprovalGuardSignLabel
+                    : context.l10n
+                          .wallet_approvalScreensApprovalGuardSignLabel2(
+                            moneyCountdownLabel(remaining),
+                          ),
                 primary: true,
                 block: true,
                 onPressed: _busy
@@ -156,7 +167,9 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           ? sendCapabilityPageBlock(
               ref,
               key: const ValueKey<String>('approval-guard-capability-block'),
-              title: '授权当前不可用',
+              title: context
+                  .l10n
+                  .wallet_approvalScreensApprovalGuardCapabilityBlockTitle,
             )
           : null,
       body: <Widget>[
@@ -167,10 +180,13 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text('授权检查', style: LoopType.eyebrow),
+                Text(
+                  context.l10n.wallet_approvalScreensBuild,
+                  style: LoopType.eyebrow,
+                ),
                 const SizedBox(height: 10),
                 LoopKeyValue(
-                  label: '代币',
+                  label: context.l10n.common_token,
                   value: widget.request.symbol,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
@@ -180,7 +196,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '网络',
+                  label: context.l10n.common_network,
                   value: 'BNB Smart Chain',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
@@ -188,17 +204,19 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             ),
           ),
         ),
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('approval-guard-unlimited-warning'),
           icon: 'shield',
           tone: LoopNoticeTone.danger,
-          title: '无限授权意味着持续动用全部余额',
-          body:
-              '获得无限额度的合约可以在任何时间转走这个代币的全部余额，直到你主动回收。'
-              'LOOP 的默认是只授权本次需要的额度。',
+          title: context
+              .l10n
+              .wallet_approvalScreensApprovalGuardUnlimitedWarningTitle,
+          body: context
+              .l10n
+              .wallet_approvalScreensApprovalGuardUnlimitedWarningBody,
         ),
         if (intent == null) ...<Widget>[
-          const LoopLabel('限额授权（默认）'),
+          LoopLabel(context.l10n.wallet_approvalScreensLoopLabel),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: LoopSurfaceCard(
@@ -219,12 +237,17 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                     maxLengthEnforcement: MaxLengthEnforcement.enforced,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: '授权额度（${widget.request.symbol}）',
+                      labelText: context.l10n.wallet_approvalScreensLabelText(
+                        widget.request.symbol,
+                      ),
                       counterText: '',
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text('只授权本次交易需要的额度。', style: LoopType.caption),
+                  Text(
+                    context.l10n.wallet_approvalScreensText,
+                    style: LoopType.caption,
+                  ),
                 ],
               ),
             ),
@@ -232,8 +255,11 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           LoopButton(
             key: const ValueKey<String>('approval-guard-exact'),
             label: amount == null
-                ? '按限额授权'
-                : '按 ${amount.wire} ${widget.request.symbol} 限额授权',
+                ? context.l10n.wallet_approvalScreensApprovalGuardExactLabel
+                : context.l10n.wallet_approvalScreensApprovalGuardExactLabel2(
+                    widget.request.symbol,
+                    amount.wire,
+                  ),
             primary: true,
             block: true,
             onPressed: _busy || amount == null
@@ -245,27 +271,30 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('approval-guard-unlimited'),
-            label: '仍要无限授权',
+            label:
+                context.l10n.wallet_approvalScreensApprovalGuardUnlimitedLabel,
             block: true,
             onPressed: _busy ? null : () => unawaited(_confirmUnlimited()),
           ),
         ] else ...<Widget>[
-          const LoopLabel('解码后的调用'),
+          LoopLabel(context.l10n.wallet_approvalScreensLoopLabel2),
           _DecodedCallCard(intent: intent),
           MoneyIntentReviewCard(intent: intent, clock: widget.clock),
           if (intent.review.spender?.isUnlimited ?? false)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('approval-guard-unlimited-confirmed'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '这是一次无限额度授权',
-              body:
-                  '你已二次确认。签名后该 Spender 可持续动用这个代币的全部余额，'
-                  '离开对方界面后权限依然有效，直到你在授权盘点里回收。',
+              title: context
+                  .l10n
+                  .wallet_approvalScreensApprovalGuardUnlimitedConfirmedTitle,
+              body: context
+                  .l10n
+                  .wallet_approvalScreensApprovalGuardUnlimitedConfirmedBody,
             ),
           LoopButton(
             key: const ValueKey<String>('approval-guard-restart'),
-            label: '改回限额授权',
+            label: context.l10n.wallet_approvalScreensApprovalGuardRestartLabel,
             block: true,
             onPressed: _busy ? null : () => setState(() => _intent = null),
           ),
@@ -279,14 +308,17 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         // A prepare that never reached the server has not opened a wallet.
         // The guard pauses; it never says the approval failed.
         else if (MoneyOfflinePause.covers(_failure))
-          const MoneyOfflinePause(
+          MoneyOfflinePause(
             blockKey: 'approval-guard-offline',
-            pausedActions: <String>['准备授权', '签名'],
+            pausedActions: <String>[
+              context.l10n.wallet_approvalScreensMoneyOfflinePause,
+              context.l10n.common_sign,
+            ],
           )
         else if (_failure != null)
           LoopErrorState(
             key: const ValueKey<String>('approval-guard-error'),
-            title: '授权没有准备成功',
+            title: context.l10n.wallet_approvalScreensApprovalGuardErrorTitle,
             reason: loopChainFailureReason(_failure!.kind),
           ),
       ],
@@ -303,7 +335,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('确认无限授权'),
+          LoopSheetHeading(context.l10n.wallet_approvalScreensLoopSheetHeading),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -311,9 +343,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Text(
-                  '无限额度不会随时间或这笔交易结束而失效。'
-                  '该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。'
-                  '只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。',
+                  context.l10n.wallet_approvalScreensConfirmUnlimited,
                   style: LoopType.bodySm,
                 ),
                 const SizedBox(height: 16),
@@ -322,12 +352,16 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                   children: <Widget>[
                     LoopButton(
                       key: const ValueKey<String>('approval-unlimited-cancel'),
-                      label: '改用限额',
+                      label: context
+                          .l10n
+                          .wallet_approvalScreensApprovalUnlimitedCancelLabel,
                       onPressed: () => Navigator.of(context).pop(false),
                     ),
                     LoopButton(
                       key: const ValueKey<String>('approval-unlimited-accept'),
-                      label: '我了解，仍要无限授权',
+                      label: context
+                          .l10n
+                          .wallet_approvalScreensApprovalUnlimitedAcceptLabel,
                       primary: true,
                       onPressed: () => Navigator.of(context).pop(true),
                     ),
@@ -407,9 +441,10 @@ class _DecodedCallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final decoded = intent.review.decodedCall;
     if (decoded == null) {
-      return const LoopUnavailableLine(
+      return LoopUnavailableLine(
         key: ValueKey<String>('approval-decoded-unavailable'),
-        label: '调用无法解码',
+        label:
+            context.l10n.wallet_approvalScreensApprovalDecodedUnavailableLabel,
         reasonCode: 'SIGNING_PAYLOAD_UNAVAILABLE',
       );
     }
@@ -421,7 +456,7 @@ class _DecodedCallCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             LoopKeyValue(
-              label: '函数',
+              label: context.l10n.wallet_approvalScreensLabel,
               value: '${decoded.functionName.wireName}()',
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
@@ -438,8 +473,10 @@ class _DecodedCallCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
             LoopKeyValue(
-              label: '合约',
-              value: intent.review.asset.address ?? '原生资产没有授权面',
+              label: context.l10n.common_contract,
+              value:
+                  intent.review.asset.address ??
+                  context.l10n.wallet_approvalScreensValue,
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
           ],
@@ -516,7 +553,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('approvals-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '授权盘点',
+        title: context.l10n.common_tokenApprovals,
         onBack: widget.onBack,
         actions: <Widget>[
           // The prototype's 批量回收, now a glyph like every other top-bar
@@ -527,10 +564,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           LoopIconButton(
             key: const ValueKey<String>('approvals-batch-action'),
             icon: 'blocked',
-            label: '批量回收',
+            label: context.l10n.wallet_approvalScreensApprovalsBatchActionLabel,
             onBlocked: () => LoopToast.show(
               context,
-              message: '批量回收还没有开放。每一笔回收都是一次单独的签名。',
+              message: context.l10n.wallet_approvalScreensMessage,
               kind: LoopToastKind.warn,
             ),
           ),
@@ -539,7 +576,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             ? sendCapabilityPageBlock(
                 ref,
                 key: const ValueKey<String>('approvals-capability-block'),
-                title: '授权盘点当前不可用',
+                title: context
+                    .l10n
+                    .wallet_approvalScreensApprovalsCapabilityBlockTitle,
               )
             : null,
         sections: <Widget>[
@@ -548,16 +587,23 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           // its skeleton — primary, group heading, reason — because the shape is
           // what says which page this is.
           if (unavailable) ...<Widget>[
-            const LoopStatGrid(
+            LoopStatGrid(
               stats: <LoopStat>[
-                LoopStat(label: '无限授权', value: loopFigureDash),
-                LoopStat(label: '限额授权', value: loopFigureDash),
+                LoopStat(
+                  label: context.l10n.wallet_approvalScreensLabel2,
+                  value: loopFigureDash,
+                ),
+                LoopStat(
+                  label: context.l10n.wallet_approvalScreensLabel3,
+                  value: loopFigureDash,
+                ),
               ],
             ),
-            const LoopLabel('按额度排序'),
+            LoopLabel(context.l10n.wallet_approvalScreensLoopLabel3),
             LoopInlineUnavailable(
               key: const ValueKey<String>('approvals-page-block'),
-              message: '授权清单当前不可用',
+              message:
+                  context.l10n.wallet_approvalScreensApprovalsPageBlockMessage,
               detail: loopChainFailureReason(state!.failureKind),
               detailMaxLines: 3,
               maxLines: 2,
@@ -567,7 +613,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               keyPrefix: 'approvals',
               phase: state?.phase ?? LoopChainViewPhase.loading,
               failureKind: state?.failureKind,
-              emptyMessage: '这个钱包没有有效授权',
+              emptyMessage: context.l10n.wallet_approvalScreensEmptyMessage,
               onRetry: walletId == null
                   ? null
                   : () => unawaited(
@@ -586,14 +632,20 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             // The inventory above still renders: only the revoke prepare went
             // offline, and it opened no wallet, so the row list stays readable.
             else if (MoneyOfflinePause.covers(_revokeFailure))
-              const MoneyOfflinePause(
+              MoneyOfflinePause(
                 blockKey: 'approvals-revoke-offline',
-                pausedActions: <String>['回收授权', '改额度', '签名'],
+                pausedActions: <String>[
+                  context.l10n.wallet_approvalScreensMoneyOfflinePause2,
+                  context.l10n.wallet_approvalScreensMoneyOfflinePause3,
+                  context.l10n.common_sign,
+                ],
               )
             else if (_revokeFailure != null)
               LoopErrorState(
                 key: const ValueKey<String>('approvals-revoke-error'),
-                title: '回收没有准备成功',
+                title: context
+                    .l10n
+                    .wallet_approvalScreensApprovalsRevokeErrorTitle,
                 reason: loopChainFailureReason(_revokeFailure!.kind),
               ),
             // The prototype opens with the two counts, as a 2x2.
@@ -601,7 +653,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               stats: <LoopStat>[
                 LoopStat(
                   statKey: const ValueKey<String>('approvals-stat-unlimited'),
-                  label: '无限授权',
+                  label: context.l10n.wallet_approvalScreensLabel2,
                   value: '${inventory!.summary.unlimitedCount}',
                   tone: inventory.summary.unlimitedCount > 0
                       ? LoopStatTone.down
@@ -609,18 +661,18 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 ),
                 LoopStat(
                   statKey: const ValueKey<String>('approvals-stat-limited'),
-                  label: '限额授权',
+                  label: context.l10n.wallet_approvalScreensLabel3,
                   value:
                       '${inventory.summary.activeCount - inventory.summary.unlimitedCount}',
                 ),
               ],
             ),
-            const LoopLabel('按额度排序'),
+            LoopLabel(context.l10n.wallet_approvalScreensLoopLabel3),
             if (inventory.items.isEmpty)
-              const LoopEmptyState(
+              LoopEmptyState(
                 key: ValueKey<String>('approvals-empty'),
                 illustration: LoopIllustration.history,
-                title: '这个钱包没有有效授权',
+                title: context.l10n.wallet_approvalScreensEmptyMessage,
                 compact: true,
               )
             else
@@ -632,12 +684,22 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               ),
             LoopProvenanceFooter(
               key: const ValueKey<String>('approvals-freshness'),
-              text:
-                  '授权记录自区块 '
-                  '${loopGroupedFigure(inventory.freshness.approvalCoverageFromBlockNumber.toString())} 起 · '
-                  '索引高度 ${loopGroupedFigure(inventory.freshness.indexerBlockNumber.toString())} / '
-                  '链头 ${loopGroupedFigure(inventory.freshness.headBlockNumber.toString())} · 观察于 '
-                  '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
+              text: context.l10n.wallet_approvalScreensApprovalsFreshnessText(
+                loopGroupedFigure(
+                  inventory.freshness.approvalCoverageFromBlockNumber
+                      .toString(),
+                ),
+                loopGroupedFigure(
+                  inventory.freshness.indexerBlockNumber.toString(),
+                ),
+                loopGroupedFigure(
+                  inventory.freshness.headBlockNumber.toString(),
+                ),
+                loopRelativeTime(
+                  inventory.freshness.observedAt,
+                  now: widget.clock?.call(),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
           ],
@@ -653,19 +715,28 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     switch (allowance) {
       case LoopAllowanceUnavailable(reasonCode: final reasonCode):
         subtitle = loopReasonCodeText(reasonCode);
-        badge = const LoopBadge('读不到', kind: LoopBadgeKind.down);
+        badge = LoopBadge(
+          LoopL10n.current.wallet_approvalScreensLoopBadge,
+          kind: LoopBadgeKind.down,
+        );
       case LoopAllowanceAvailable(
         isUnlimited: final unlimited,
         displayValue: final display,
         blockNumber: final blockNumber,
       ):
-        subtitle =
-            '${loopTruncatedAddress(row.spender.checksumAddress)} · '
-            '${unlimited ? '无限额度' : '额度 $display'} · '
-            '区块 ${loopGroupedFigure(blockNumber.toString())}';
+        subtitle = LoopL10n.current.wallet_approvalScreensSubtitle(
+          loopGroupedFigure(blockNumber.toString()),
+          loopTruncatedAddress(row.spender.checksumAddress),
+          unlimited
+              ? LoopL10n.current.wallet_moneyActionsSigningValue
+              : LoopL10n.current.wallet_approvalScreensS(display),
+        );
         badge = unlimited
-            ? const LoopBadge('无限', kind: LoopBadgeKind.down)
-            : const LoopBadge('限额');
+            ? LoopBadge(
+                LoopL10n.current.wallet_approvalScreensLoopBadge2,
+                kind: LoopBadgeKind.down,
+              )
+            : LoopBadge(LoopL10n.current.wallet_approvalScreensLoopBadge3);
     }
     final unlimited =
         allowance is LoopAllowanceAvailable && allowance.isUnlimited;
@@ -703,14 +774,18 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 const SizedBox(height: 16),
                 LoopButton(
                   key: const ValueKey<String>('approval-action-limit'),
-                  label: '改为限额授权',
+                  label: context
+                      .l10n
+                      .wallet_approvalScreensApprovalActionLimitLabel,
                   block: true,
                   onPressed: () => Navigator.of(context).pop('limit'),
                 ),
                 const SizedBox(height: 10),
                 LoopButton(
                   key: const ValueKey<String>('approval-action-revoke'),
-                  label: '回收授权（approve 0）',
+                  label: context
+                      .l10n
+                      .wallet_approvalScreensApprovalActionRevokeLabel,
                   primary: true,
                   block: true,
                   onPressed: () => Navigator.of(context).pop('revoke'),

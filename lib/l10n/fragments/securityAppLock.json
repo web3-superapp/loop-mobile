@@ -1,0 +1,139 @@
+{
+  "securityAppLock_controllerReason": {
+    "en": "Verify your identity to turn on App lock",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_controller.dart:177",
+    "zh": "验证身份以开启应用锁"
+  },
+  "securityAppLock_controllerReason2": {
+    "en": "Verify your identity to turn off App lock",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_controller.dart:177",
+    "zh": "验证身份以关闭应用锁"
+  },
+  "securityAppLock_controllerReason3": {
+    "en": "Verify your identity to open LOOP",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_controller.dart:202",
+    "zh": "验证身份以进入 LOOP"
+  },
+  "securityAppLock_gateBiometric": {
+    "en": "Unlock with this device's biometrics; falls back to the device passcode if not recognized",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:35",
+    "zh": "用这台设备的生物识别解锁；识别不了时会退回设备密码"
+  },
+  "securityAppLock_gateCanceled": {
+    "en": "You cancelled this verification.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:23",
+    "zh": "你取消了这次验证。"
+  },
+  "securityAppLock_gateDeviceCredential": {
+    "en": "Unlock with this device's screen lock passcode",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:36",
+    "zh": "用这台设备的锁屏密码解锁"
+  },
+  "securityAppLock_gateFailed": {
+    "en": "Verification didn't pass. Try again.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:22",
+    "zh": "没有通过验证，可以再试一次。"
+  },
+  "securityAppLock_gateLockedOut": {
+    "en": "The system has paused verification for now. Wait a moment and try again, or use the device passcode.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:24",
+    "zh": "系统暂时停用了验证，等一会儿再试，或改用设备密码。"
+  },
+  "securityAppLock_gateLoopAppLockUnlockLabel": {
+    "en": "Verifying…",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:112, lib/features/security/app_lock/app_lock_prompt.dart:234",
+    "zh": "正在验证…"
+  },
+  "securityAppLock_gateLoopAppLockUnlockLabel2": {
+    "en": "Verify identity",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:112",
+    "zh": "验证身份"
+  },
+  "securityAppLock_gateLoopAppLockUnlockSemanticLabel": {
+    "en": "LOOP is locked",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:100, lib/features/security/app_lock/app_lock_gate.dart:103",
+    "zh": "LOOP 已锁定"
+  },
+  "securityAppLock_gateNoCredentialSet": {
+    "en": "This device has no screen lock passcode or biometrics yet. Add one in system Settings first",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:39",
+    "zh": "这台设备还没有设置锁屏密码或生物识别，先在系统设置里加上"
+  },
+  "securityAppLock_gateS": {
+    "en": "Verification didn't finish · System message: {systemMessage}",
+    "placeholders": {
+      "systemMessage": {
+        "example": "systemMessage.trim()",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:29",
+    "zh": "验证没有完成 · 系统提示：{systemMessage}"
+  },
+  "securityAppLock_gateSucceeded": {
+    "en": "Verified.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:21",
+    "zh": "验证通过。"
+  },
+  "securityAppLock_gateSwitch": {
+    "en": "Verification didn't finish.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:28",
+    "zh": "验证没有完成。"
+  },
+  "securityAppLock_gateSwitch2": {
+    "en": "Haven't read this device's screen lock capability yet",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:41",
+    "zh": "还没有读到这台设备的锁屏能力"
+  },
+  "securityAppLock_gateUnavailable": {
+    "en": "This device has no screen lock verification available right now.",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:25",
+    "zh": "这台设备现在没有可用的锁屏验证。"
+  },
+  "securityAppLock_gateUnsupportedPlatform": {
+    "en": "This device doesn't support screen lock verification",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_gate.dart:40",
+    "zh": "这台设备不支持锁屏验证"
+  },
+  "securityAppLock_promptAppLockPromptEnableLabel": {
+    "en": "Turn on",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_prompt.dart:234",
+    "zh": "开启"
+  },
+  "securityAppLock_promptAppLockPromptLaterLabel": {
+    "en": "Not now",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_prompt.dart:244",
+    "zh": "以后再说"
+  },
+  "securityAppLock_promptLoopAppLockPromptBody": {
+    "en": "Require Face ID / fingerprint when you return after 60 seconds in the background, keeping your wallet and chats safer",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_prompt.dart:15",
+    "zh": "切到后台 60 秒后回来需要 Face ID / 指纹，钱包和聊天更安全"
+  },
+  "securityAppLock_promptLoopSheetHeading": {
+    "en": "Turn on App lock",
+    "placeholders": {},
+    "where": "lib/features/security/app_lock/app_lock_prompt.dart:211",
+    "zh": "开启应用锁"
+  }
+}

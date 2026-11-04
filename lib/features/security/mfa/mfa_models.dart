@@ -1,18 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// A second factor the login service can hold for this account.
 ///
 /// These are the provider's, not LOOP's: the account is enrolled at Privy and
 /// LOOP only reports what Privy says it holds.
 enum LoopMfaMethodKind {
-  totp('验证器 App'),
-  sms('短信'),
-  passkey('Passkey');
+  totp(),
+  sms(),
+  passkey();
 
-  const LoopMfaMethodKind(this.label);
+  const LoopMfaMethodKind();
 
-  final String label;
+  String get label => switch (this) {
+    LoopMfaMethodKind.totp => LoopL10n.current.securityMfa_modelsTotp,
+
+    LoopMfaMethodKind.sms => LoopL10n.current.securityMfa_modelsSms,
+
+    LoopMfaMethodKind.passkey => 'Passkey',
+  };
 }
 
 @immutable

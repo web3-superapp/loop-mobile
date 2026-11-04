@@ -248,7 +248,7 @@ void main() {
     ) async {
       await _pumpMe(tester);
       expect(
-        find.descendant(of: find.byType(LoopTopbar), matching: find.text('我的')),
+        find.descendant(of: find.byType(LoopTopbar), matching: find.text('Me')),
         findsWidgets,
       );
       // S349: the bar keeps 通知 and 设置; 交易历史 is the 交易 section and
@@ -296,9 +296,9 @@ void main() {
       expect(find.text(_loopId), findsOneWidget);
       // No 持仓分布, no (i) beside 总资产, no explanation under a row.
       expect(_key('wallet-holdings-distribution'), findsNothing);
-      expect(find.text('持仓分布'), findsNothing);
+      expect(find.text('Holdings breakdown'), findsNothing);
       expect(_key('wallet-info'), findsNothing);
-      expect(find.textContaining('手续费保留'), findsNothing);
+      expect(find.textContaining('Fee reserve'), findsNothing);
       expect(top('profile-identity-card'), lessThan(top('wallet-total-plate')));
       expect(top('wallet-total-plate'), lessThan(top('wallet-receive-entry')));
       for (final key in <String>[
@@ -343,9 +343,9 @@ void main() {
       ]) {
         expect(_key(gone), findsNothing, reason: gone);
       }
-      expect(find.text('跨链'), findsNothing);
+      expect(find.text('Bridge'), findsNothing);
       expect(find.text('代币授权'), findsNothing);
-      expect(find.text('网络'), findsNothing);
+      expect(find.text('Network'), findsNothing);
       expect(find.text('充值'), findsNothing);
       expect(tester.takeException(), isNull);
     });

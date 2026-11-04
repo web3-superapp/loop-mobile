@@ -66,10 +66,10 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.text('总资产'), findsOneWidget);
+      expect(find.text('Total assets'), findsOneWidget);
       // S259 · decision 0217: the 余额 label is the 代币 / NFT tab row.
       expect(find.text('余额'), findsNothing);
-      expect(find.text('代币'), findsOneWidget);
+      expect(find.text('Token'), findsOneWidget);
       expect(find.text('NFT'), findsOneWidget);
       expect(find.text('WALLET LEDGER'), findsNothing);
       expect(find.text('WALLET ASSETS'), findsNothing);
@@ -88,11 +88,11 @@ void main() {
         chain: FakeChainGateway(),
       );
 
-      await scrollToS5Section(tester, find.text('链上分布'));
-      expect(find.text('链上分布'), findsOneWidget);
+      await scrollToS5Section(tester, find.text('On-chain breakdown'));
+      expect(find.text('On-chain breakdown'), findsOneWidget);
 
-      await scrollToS5Section(tester, find.text('收发记录'));
-      expect(find.text('收发记录'), findsOneWidget);
+      await scrollToS5Section(tester, find.text('Transfers'));
+      expect(find.text('Transfers'), findsOneWidget);
       expect(find.text('WALLET 收发记录'), findsNothing);
     });
   });
@@ -146,10 +146,20 @@ void main() {
       );
       // A count is not an identity: the heading names the wallet in use.
       expect(find.text('1 个钱包'), findsNothing);
-      expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsNothing);
+      expect(
+        find.textContaining(
+          'Holdings in all linked wallets count toward power',
+        ),
+        findsNothing,
+      );
       // S325 · decision 0255: the statement opens from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('所有绑定钱包的持仓都计入算力'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Holdings in all linked wallets count toward power',
+        ),
+        findsOneWidget,
+      );
       await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
       // 添加 keeps its shape and says what it would need.
@@ -172,7 +182,7 @@ void main() {
       // app's rows had no leading column at all.
       expect(find.byType(LoopRowIcon), findsWidgets);
       // The primary heads with a figure, never with the page's own title.
-      expect(find.text('交易历史'), findsOneWidget);
+      expect(find.text('Transaction history'), findsOneWidget);
     });
   });
 
@@ -351,8 +361,8 @@ void main() {
         const ValueKey<String>('bridge-status-folio'),
         const ValueKey<String>('bridge-status-page-block'),
       ]);
-      expect(find.text('步骤'), findsOneWidget);
-      for (final state in <String>['等待', '完成', '进行中']) {
+      expect(find.text('Steps'), findsOneWidget);
+      for (final state in <String>['等待', 'Done', 'In progress']) {
         expect(find.text(state), findsNothing, reason: state);
       }
     });

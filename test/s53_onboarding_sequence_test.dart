@@ -827,7 +827,16 @@ void main() {
       // Nothing is on: this tree composed no device lock at all — 应用锁,
       // 大额交易二次验证 (decision 0152) and MFA.
       expect(find.text('已开启'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(3));
+      // 不可用 in either language: the step-up row (S355d · decision 0281)
+      // may be migrated before 应用锁 and MFA.
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == 'Unavailable' || widget.data == '不可用'),
+        ),
+        findsNWidgets(3),
+      );
       expect(_enabled(tester, 'security-setup-continue'), isTrue);
     });
 
@@ -842,7 +851,7 @@ void main() {
       for (final reason in <String>[
         '还没有读到这台设备的锁屏能力',
         // S278 · decision 0236: the threshold sentence is behind (i).
-        '这次运行没有可用的设备验证',
+        'No device verification available in this session',
         '这次运行没有连上登录服务',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);

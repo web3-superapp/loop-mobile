@@ -150,7 +150,7 @@ void main() {
           home: const Scaffold(
             body: LoopChatAiUnavailableBubble(
               name: 'PEPE AI',
-              reason: 'Community AI 还没有开放。',
+              reason: "Community AI isn't available yet.",
               collapsed: false,
             ),
           ),
@@ -158,7 +158,7 @@ void main() {
       );
 
       expect(find.text('PEPE AI'), findsOneWidget);
-      expect(find.text('Community AI 还没有开放。'), findsOneWidget);
+      expect(find.text('Community AI isn\'t available yet.'), findsOneWidget);
       // It is not a message: nothing about it may read as one.
       expect(find.byType(LoopInitialsAvatar), findsNothing);
     });

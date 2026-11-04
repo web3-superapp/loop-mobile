@@ -102,13 +102,19 @@ void main() {
       var reads = 0;
       await _pump(
         tester,
-        const LoopPageBlock(title: '钱包读取当前不可用', message: '链上节点当前连不上。'),
+        const LoopPageBlock(
+          title: "Wallet reads aren't available right now",
+          message: '链上节点当前连不上。',
+        ),
         retry: () async => reads += 1,
       );
 
       // Nothing on this device can move a rule the server stated, so the page
       // never offers a button whose only outcome is the same refusal.
-      expect(find.text('钱包读取当前不可用'), findsOneWidget);
+      expect(
+        find.text('Wallet reads aren\'t available right now'),
+        findsOneWidget,
+      );
       expect(_retryButton, findsNothing);
       expect(reads, 0);
     });

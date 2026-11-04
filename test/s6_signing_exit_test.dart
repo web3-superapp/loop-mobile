@@ -45,10 +45,10 @@ void main() {
         for (final field in signing.fields) field.label: field.value,
       };
 
-      expect(shown['数量'], '0.01 WBNB');
-      expect(shown['收款方'], s6RecipientChecksum);
-      expect(shown['最高网络费'], '0.0000020775 BNB');
-      expect(shown['模拟结果'], '试算通过');
+      expect(shown['Amount'], '0.01 WBNB');
+      expect(shown['Recipient'], s6RecipientChecksum);
+      expect(shown['Max network fee'], '0.0000020775 BNB');
+      expect(shown['Simulation result'], 'Simulation passed');
       // The same object produced both halves, so the review and the payload
       // cannot describe different calls.
       expect(intent.payloadMatchesReview, isTrue);

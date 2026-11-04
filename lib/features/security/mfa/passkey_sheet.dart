@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -67,7 +68,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Passkey 由这台设备的系统保管，登录服务只记下它的公钥。换手机后，用同一个系统账号同步过去的 Passkey 就能再次进入。',
+            context.l10n.securityMfa_passkeySheetBuild,
             style: LoopType.bodySm,
           ),
           if (failure != null) ...<Widget>[
@@ -81,9 +82,11 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
                   ? LoopNoticeTone.warn
                   : LoopNoticeTone.danger,
               title: switch (failure) {
-                LoopMfaFailureKind.passkeyDomainUnconfigured => 'Passkey 暂不可用',
-                LoopMfaFailureKind.cancelled => '这次没有完成',
-                _ => '这一步没有完成',
+                LoopMfaFailureKind.passkeyDomainUnconfigured =>
+                  context.l10n.securityMfa_sheetMfaSheetPasskeyUnavailableTitle,
+                LoopMfaFailureKind.cancelled =>
+                  context.l10n.securityMfa_passkeySheetCancelled,
+                _ => context.l10n.securityMfa_sheetMfaSheetFailureTitle2,
               },
               body: loopMfaFailureText(failure),
             ),
@@ -93,7 +96,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
           const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('passkey-sheet-close'),
-            label: '关闭',
+            label: context.l10n.common_close,
             block: true,
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -108,7 +111,8 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
         LoopNotice(
           key: const ValueKey<String>('passkey-sheet-unavailable'),
           icon: 'info',
-          title: 'Passkey 暂不可用',
+          title:
+              LoopL10n.current.securityMfa_sheetMfaSheetPasskeyUnavailableTitle,
           body: loopMfaFailureText(
             LoopMfaFailureKind.passkeyDomainUnconfigured,
           ),
@@ -132,7 +136,8 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
           key: const ValueKey<String>('passkey-sheet-unknown'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '还没有读到登录服务的回答',
+          title:
+              LoopL10n.current.securityMfa_passkeySheetPasskeySheetUnknownTitle,
           body: failureOrDefault(state.failure),
         ),
       ];
@@ -140,23 +145,32 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
     final confirming = _confirming;
     return <Widget>[
       if (state.passkeys.isEmpty)
-        const LoopEmptyState(
+        LoopEmptyState(
           key: ValueKey<String>('passkey-sheet-empty'),
           illustration: LoopIllustration.profile,
-          title: '这个账号还没有 Passkey',
-          message: '绑定后，这台设备的面容或指纹就是一条独立的回来路。',
+          title:
+              LoopL10n.current.securityMfa_passkeySheetPasskeySheetEmptyTitle,
+          message:
+              LoopL10n.current.securityMfa_passkeySheetPasskeySheetEmptyMessage,
           compact: true,
         )
       else ...<Widget>[
-        const LoopLabel('已绑定', tight: true),
+        LoopLabel(
+          LoopL10n.current.securityMfa_passkeySheetLoopLabel,
+          tight: true,
+        ),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             for (final (index, passkey) in state.passkeys.indexed)
               LoopRecordRow(
                 key: ValueKey<String>('passkey-${passkey.credentialId}'),
-                title: passkey.label ?? '这个账号的 Passkey',
-                subtitle: passkey.enrolledInMfa ? '也用作二次验证' : '用于登录与恢复',
-                trailing: '已设置',
+                title:
+                    passkey.label ??
+                    LoopL10n.current.securityMfa_passkeySheetTitle,
+                subtitle: passkey.enrolledInMfa
+                    ? LoopL10n.current.securityMfa_passkeySheetSubtitle
+                    : LoopL10n.current.securityMfa_passkeySheetSubtitle2,
+                trailing: LoopL10n.current.securityMfa_passkeySheetTrailing,
                 position: state.passkeys.length == 1
                     ? LoopRowPosition.single
                     : index == 0
@@ -171,24 +185,33 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
                             ? null
                             : passkey.credentialId,
                       ),
-                semanticLabel: '${passkey.label ?? 'Passkey'}，已设置，点按后可以解绑',
+                semanticLabel: LoopL10n.current
+                    .securityMfa_passkeySheetSemanticLabel(
+                      passkey.label ?? 'Passkey',
+                    ),
               ),
           ],
         ),
       ],
       const SizedBox(height: 14),
       if (confirming != null) ...<Widget>[
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('passkey-sheet-confirm'),
           icon: 'warn',
           tone: LoopNoticeTone.danger,
-          title: '解绑后这条路就没有了',
-          body: '解绑前设备会先验证一次身份。系统里的那份 Passkey 由系统管理，LOOP 删不掉它，只是登录服务不再认它。',
+          title:
+              LoopL10n.current.securityMfa_passkeySheetPasskeySheetConfirmTitle,
+          body:
+              LoopL10n.current.securityMfa_passkeySheetPasskeySheetConfirmBody,
         ),
         const SizedBox(height: 10),
         LoopButton(
           key: const ValueKey<String>('passkey-sheet-unlink'),
-          label: state.passkeyWorking ? '正在解绑…' : '确认解绑',
+          label: state.passkeyWorking
+              ? LoopL10n.current.securityMfa_passkeySheetPasskeySheetUnlinkLabel
+              : LoopL10n
+                    .current
+                    .securityMfa_passkeySheetPasskeySheetUnlinkLabel2,
           block: true,
           onPressed: state.isBusy
               ? null
@@ -203,10 +226,10 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
       LoopButton(
         key: const ValueKey<String>('passkey-sheet-link'),
         label: state.passkeyWorking && confirming == null
-            ? '正在等待系统验证…'
+            ? LoopL10n.current.securityMfa_sheetMfaSheetPasskeyLabel
             : state.passkeys.isEmpty
-            ? '绑定 Passkey'
-            : '再绑定一个 Passkey',
+            ? LoopL10n.current.securityMfa_passkeySheetPasskeySheetLinkLabel
+            : LoopL10n.current.securityMfa_passkeySheetPasskeySheetLinkLabel2,
         primary: state.passkeys.isEmpty,
         block: true,
         onPressed: state.isBusy
@@ -217,6 +240,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
   }
 
   /// What to print when a read failed but the failure has no words yet.
-  static String failureOrDefault(LoopMfaFailureKind? kind) =>
-      kind == null ? '这次运行还没有得到登录服务的回答。' : loopMfaFailureText(kind);
+  static String failureOrDefault(LoopMfaFailureKind? kind) => kind == null
+      ? LoopL10n.current.securityMfa_passkeySheetText
+      : loopMfaFailureText(kind);
 }

@@ -144,7 +144,7 @@ void main() {
       // The page renders the reason LOOP published, not a sentence the client
       // invented. This gate named no rule, so it keeps the neutral sentence —
       // and it is never the "check your network" one, because LOOP answered.
-      expect(find.textContaining('暂时读不到'), findsOneWidget);
+      expect(find.textContaining("can't be loaded right now"), findsOneWidget);
       expect(find.text(LoopPageBlock.unreachableTitle), findsNothing);
     });
 

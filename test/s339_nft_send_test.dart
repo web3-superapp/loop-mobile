@@ -203,11 +203,11 @@ void main() {
       final fields = <String, String>{
         for (final field in moneyActionFields(intent)) field.label: field.value,
       };
-      expect(fields['操作'], '确认发送 NFT');
+      expect(fields['Actions'], 'Confirm NFT send');
       expect(fields['NFT'], 'Frog Launch #7');
-      expect(fields['合约'], l2Nft);
-      expect(fields['收款方'], s6RecipientChecksum);
-      expect(fields['最高网络费'], '0.0000020775 BNB');
+      expect(fields['Contract'], l2Nft);
+      expect(fields['Recipient'], s6RecipientChecksum);
+      expect(fields['Max network fee'], '0.0000020775 BNB');
     });
 
     test('without an nft block the contract is the asset address and the '
@@ -529,25 +529,34 @@ void main() {
               reasonCode: reason,
             ),
           );
-      expect(text(NftSendReason.notOwned), '这枚 NFT 已不在钱包，请返回重新选择');
-      expect(text(NftSendReason.contractUnsupported), '暂不支持发送这个 NFT');
-      expect(text(NftSendReason.recipientRejects), '收款地址不接收这枚 NFT');
-      expect(text(NftSendReason.recipientSelf), '不能发送给自己');
+      expect(
+        text(NftSendReason.notOwned),
+        'This NFT is no longer in your wallet. Go back and choose again',
+      );
+      expect(
+        text(NftSendReason.contractUnsupported),
+        'Sending this NFT isn\'t supported yet',
+      );
+      expect(
+        text(NftSendReason.recipientRejects),
+        'The recipient address doesn\'t accept this NFT',
+      );
+      expect(text(NftSendReason.recipientSelf), 'You can\'t send to yourself');
       expect(
         text(NftSendReason.disabled, LoopChainFailureKind.unavailable),
-        '暂不支持发送 NFT',
+        'Sending NFTs isn\'t supported yet',
       );
       expect(
         text(null, LoopChainFailureKind.insufficientBalance),
-        endsWith('手续费不足，充值后再试'),
+        endsWith('for fees. Top up and try again'),
       );
       expect(
         text(null, LoopChainFailureKind.idempotencyConflict),
-        '这笔发送已提交过，请查看最新状态',
+        'This send was already submitted. Check the latest status',
       );
       expect(
         text(null, LoopChainFailureKind.simulationFailed),
-        '这笔发送预执行没有通过，请稍后再试',
+        'This send didn\'t pass simulation. Try again later',
       );
       expect(text(null, LoopChainFailureKind.offline), isNull);
     });
@@ -595,7 +604,7 @@ void main() {
       expect(_key('launch2-nft-send'), findsOneWidget);
       await tester.tap(_key('launch2-nft-send'));
       await tester.pump();
-      expect(find.text('暂不支持发送 NFT'), findsOneWidget);
+      expect(find.text('Sending NFTs isn\'t supported yet'), findsOneWidget);
       expect(sent, isEmpty);
       await drainS285(tester);
     });
@@ -655,7 +664,7 @@ void main() {
       );
       await tester.tap(_key('launch2-nft-send'));
       await tester.pump();
-      expect(find.text('暂不支持发送 NFT'), findsOneWidget);
+      expect(find.text('Sending NFTs isn\'t supported yet'), findsOneWidget);
       expect(sent, isEmpty);
       await drainS285(tester);
     });
@@ -676,7 +685,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
         intents: intents,
       );
-      expect(find.text('发送 NFT'), findsOneWidget);
+      expect(find.text('Send NFT'), findsOneWidget);
       expect(_key('send-nft-summary'), findsOneWidget);
       expect(find.text('FROG #7'), findsOneWidget);
       expect(_key('send-step-segment-2'), findsOneWidget);
@@ -708,10 +717,10 @@ void main() {
         settle: false,
       );
       await tester.pump();
-      expect(find.text('确认发送 NFT'), findsOneWidget);
+      expect(find.text('Confirm NFT send'), findsOneWidget);
       expect(_key('send-nft-draft'), findsOneWidget);
-      expect(_key('send-nft-review-最高网络费'), findsOneWidget);
-      expect(find.text('还没有读到'), findsOneWidget);
+      expect(_key('send-nft-review-max-fee'), findsOneWidget);
+      expect(find.text('Not loaded yet'), findsOneWidget);
       expect(_key('send-confirm-sign'), findsNothing);
     });
 
@@ -735,10 +744,10 @@ void main() {
       expect(_key('send-nft-picture'), findsOneWidget);
       expect(find.text('Frog Launch'), findsOneWidget);
       expect(find.text('#7'), findsOneWidget);
-      expect(_key('send-nft-review-收款方'), findsOneWidget);
-      expect(_key('send-nft-review-网络'), findsOneWidget);
-      expect(_key('send-nft-review-最高网络费'), findsOneWidget);
-      expect(_key('send-nft-review-合约'), findsOneWidget);
+      expect(_key('send-nft-review-recipient'), findsOneWidget);
+      expect(_key('send-nft-review-network'), findsOneWidget);
+      expect(_key('send-nft-review-max-fee'), findsOneWidget);
+      expect(_key('send-nft-review-contract'), findsOneWidget);
       expect(find.text('数量'), findsNothing);
       expect(_key('send-confirm-arrival'), findsNothing);
       final sign = tester.widget<LoopButton>(_key('send-confirm-sign'));
@@ -746,10 +755,22 @@ void main() {
     });
 
     for (final (reason, line, retry) in <(String, String, bool)>[
-      (NftSendReason.notOwned, '这枚 NFT 已不在钱包，请返回重新选择', false),
-      (NftSendReason.contractUnsupported, '暂不支持发送这个 NFT', false),
-      (NftSendReason.recipientRejects, '收款地址不接收这枚 NFT', false),
-      (NftSendReason.recipientSelf, '不能发送给自己', false),
+      (
+        NftSendReason.notOwned,
+        'This NFT is no longer in your wallet. Go back and choose again',
+        false,
+      ),
+      (
+        NftSendReason.contractUnsupported,
+        "Sending this NFT isn't supported yet",
+        false,
+      ),
+      (
+        NftSendReason.recipientRejects,
+        "The recipient address doesn't accept this NFT",
+        false,
+      ),
+      (NftSendReason.recipientSelf, "You can't send to yourself", false),
     ]) {
       testWidgets('422 $reason: 「$line」', (tester) async {
         await pumpS6Page(
@@ -765,7 +786,7 @@ void main() {
         );
         expect(_key('send-nft-failure-$reason'), findsOneWidget);
         expect(find.text(line), findsOneWidget);
-        expect(find.text('重试'), retry ? findsOneWidget : findsNothing);
+        expect(find.text('Retry'), retry ? findsOneWidget : findsNothing);
         expect(_key('send-confirm-sign'), findsNothing);
       });
     }
@@ -783,7 +804,10 @@ void main() {
         ),
       );
       expect(_key('send-nft-failure-insufficientBalance'), findsOneWidget);
-      expect(find.textContaining('手续费不足，充值后再试'), findsOneWidget);
+      expect(
+        find.textContaining('for fees. Top up and try again'),
+        findsOneWidget,
+      );
       await tester.pumpWidget(const SizedBox.shrink());
 
       await pumpS6Page(
@@ -796,7 +820,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('这笔发送已提交过，请查看最新状态'), findsOneWidget);
+      expect(
+        find.text('This send was already submitted. Check the latest status'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('409 SIMULATION_FAILED is its own line, with a retry; 403 '
@@ -811,7 +838,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('这笔发送预执行没有通过，请稍后再试'), findsOneWidget);
+      expect(
+        find.text('This send didn\'t pass simulation. Try again later'),
+        findsOneWidget,
+      );
       expect(find.text('重试'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
 
@@ -827,7 +857,12 @@ void main() {
         ),
       );
       expect(_key('send-confirm-permission'), findsOneWidget);
-      expect(find.textContaining('这个收款地址不在当前允许的收款名单里'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "This recipient address isn't on the current allowed list",
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('503 NFT_SEND_DISABLED: the toast, the line, and the session '
@@ -843,7 +878,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('暂不支持发送 NFT'), findsNWidgets(2));
+      expect(find.text('Sending NFTs isn\'t supported yet'), findsNWidgets(2));
       final container = ProviderScope.containerOf(
         tester.element(_key('send-confirm-screen')),
       );
@@ -965,7 +1000,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump();
-      expect(find.text('发送已确认'), findsOneWidget);
+      expect(find.text('Send confirmed'), findsOneWidget);
       expect(launch2.positionReads, 0);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 5));
@@ -997,7 +1032,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump();
-      expect(find.text('发送 NFT已确认'), findsOneWidget);
+      expect(find.text('NFT send confirmed'), findsOneWidget);
       // Nothing else reads the positions here: the one read is the refresh.
       expect(launch2.positionReads, 1);
       await tester.pumpWidget(const SizedBox.shrink());
