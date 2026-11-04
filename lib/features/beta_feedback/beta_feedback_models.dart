@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// S332 · decision 0262: the internal-test feedback (docs/52 §二).
 ///
@@ -8,14 +9,19 @@ import 'package:flutter/foundation.dart';
 /// `GET /v2/feedback/mine?cursor=` → `{ items, nextCursor }`.
 
 enum BetaFeedbackCategory {
-  bug('bug', 'Bug'),
-  suggestion('suggestion', '建议'),
-  other('other', '其他');
+  bug('bug'),
+  suggestion('suggestion'),
+  other('other');
 
-  const BetaFeedbackCategory(this.wireName, this.label);
+  const BetaFeedbackCategory(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    BetaFeedbackCategory.bug => 'Bug',
+    BetaFeedbackCategory.suggestion =>
+      LoopL10n.current.betaFeedback_categorySuggestion,
+    BetaFeedbackCategory.other => LoopL10n.current.betaFeedback_categoryOther,
+  };
 
   static BetaFeedbackCategory? tryParse(String value) {
     for (final category in values) {
@@ -26,15 +32,20 @@ enum BetaFeedbackCategory {
 }
 
 enum BetaFeedbackStatus {
-  open('open', '待处理'),
-  triaged('triaged', '已确认'),
-  resolved('resolved', '已解决'),
-  wontFix('wont_fix', '暂不处理');
+  open('open'),
+  triaged('triaged'),
+  resolved('resolved'),
+  wontFix('wont_fix');
 
-  const BetaFeedbackStatus(this.wireName, this.label);
+  const BetaFeedbackStatus(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    BetaFeedbackStatus.open => LoopL10n.current.betaFeedback_statusOpen,
+    BetaFeedbackStatus.triaged => LoopL10n.current.common_confirmed,
+    BetaFeedbackStatus.resolved => LoopL10n.current.betaFeedback_statusResolved,
+    BetaFeedbackStatus.wontFix => LoopL10n.current.betaFeedback_statusWontFix,
+  };
 
   static BetaFeedbackStatus? tryParse(String value) {
     for (final status in values) {

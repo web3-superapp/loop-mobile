@@ -137,11 +137,11 @@ void main() {
 
     final items = tester.widgetList<LoopTabItem>(find.byType(LoopTabItem));
     expect(items.map((item) => item.label), <String>[
-      '聊天',
-      '广场',
+      'Chat',
+      'Square',
       'MEME',
-      '情报',
-      '我的',
+      'Intel',
+      'Me',
     ]);
     expect(items.map((item) => item.slug), <String>[
       'chat',
@@ -172,7 +172,7 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '情报')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, 'Intel')).dx,
       ),
     );
 
@@ -180,7 +180,7 @@ void main() {
     // would read as a second, contradicting selection.
     final ink = tester.widget<InkWell>(
       find.descendant(
-        of: find.widgetWithText(LoopTabItem, '我的'),
+        of: find.widgetWithText(LoopTabItem, 'Me'),
         matching: find.byType(InkWell),
       ),
     );
@@ -197,17 +197,17 @@ void main() {
         )
         .style!
         .color!;
-    expect(labelColor('情报'), LoopColors.yellow);
-    expect(labelColor('我的'), LoopColors.text3);
+    expect(labelColor('Intel'), LoopColors.yellow);
+    expect(labelColor('Me'), LoopColors.text3);
 
     expect(
-      tester.getSize(find.widgetWithText(LoopTabItem, '我的')).height,
+      tester.getSize(find.widgetWithText(LoopTabItem, 'Me')).height,
       greaterThanOrEqualTo(LoopTouch.tabCellMinHeight),
     );
     expect(
-      tester.getSemantics(find.widgetWithText(LoopTabItem, '情报')),
+      tester.getSemantics(find.widgetWithText(LoopTabItem, 'Intel')),
       matchesSemantics(
-        label: '情报',
+        label: 'Intel',
         isButton: true,
         isSelected: true,
         hasSelectedState: true,
@@ -220,7 +220,7 @@ void main() {
     // The indicator travels: mid-flight it is between the two tabs, and it is
     // still the same single widget — nothing was created or destroyed.
     final from = tester.getCenter(indicator).dx;
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(selected, 4);
@@ -231,12 +231,12 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '我的')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, 'Me')).dx,
       ),
     );
     expect(travelling, lessThan(tester.getCenter(indicator).dx));
-    expect(labelColor('我的'), LoopColors.yellow);
-    expect(labelColor('情报'), LoopColors.text3);
+    expect(labelColor('Me'), LoopColors.yellow);
+    expect(labelColor('Intel'), LoopColors.text3);
     semantics.dispose();
   });
 
@@ -268,26 +268,26 @@ void main() {
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '聊天')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, 'Chat')).dx,
       ),
     );
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     // One frame, no elapsed time: the indicator is already at the destination.
     await tester.pump();
     expect(selected, 4);
     expect(
       tester.getCenter(indicator).dx,
       moreOrLessEquals(
-        tester.getCenter(find.widgetWithText(LoopTabItem, '我的')).dx,
+        tester.getCenter(find.widgetWithText(LoopTabItem, 'Me')).dx,
       ),
     );
     expect(
       tester
           .widget<Text>(
             find.descendant(
-              of: find.widgetWithText(LoopTabItem, '我的'),
-              matching: find.text('我的'),
+              of: find.widgetWithText(LoopTabItem, 'Me'),
+              matching: find.text('Me'),
             ),
           )
           .style!
@@ -432,11 +432,11 @@ void main() {
     expect(rail.backgroundColor, LoopColors.ink);
     expect(rail.indicatorColor, Colors.transparent);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
-      '聊天',
-      '广场',
+      'Chat',
+      'Square',
       'MEME',
-      '情报',
-      '我的',
+      'Intel',
+      'Me',
     ]);
   });
 }

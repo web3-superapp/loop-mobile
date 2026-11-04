@@ -10,6 +10,155 @@ class LoopLocalizationsEn extends LoopLocalizations {
   LoopLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get betaFeedback_cameraFailed => 'Couldn\'t open the camera';
+
+  @override
+  String get betaFeedback_categoryOther => 'Other';
+
+  @override
+  String get betaFeedback_categorySuggestion => 'Suggestion';
+
+  @override
+  String get betaFeedback_copyBootstrapRequired =>
+      'Your account isn\'t set up yet. Try again later.';
+
+  @override
+  String get betaFeedback_copyLoadFailed =>
+      'Couldn\'t load feedback. Try again later.';
+
+  @override
+  String get betaFeedback_copyLoadMalformed => 'The response was incomplete.';
+
+  @override
+  String get betaFeedback_copyLoadOffline =>
+      'No network; couldn\'t load feedback.';
+
+  @override
+  String get betaFeedback_copyRateLimited =>
+      'Too many submissions. Try again later.';
+
+  @override
+  String get betaFeedback_copyRegionBlocked =>
+      'This account can\'t send feedback.';
+
+  @override
+  String get betaFeedback_copySubmissionUnknown =>
+      'The result isn\'t confirmed. Submitting again won\'t create a duplicate.';
+
+  @override
+  String get betaFeedback_copySubmitFailed =>
+      'Feedback wasn\'t sent. Try again later.';
+
+  @override
+  String get betaFeedback_copySubmitMalformed =>
+      'The response was incomplete; the result isn\'t confirmed.';
+
+  @override
+  String get betaFeedback_copySubmitOffline =>
+      'No network; feedback wasn\'t sent.';
+
+  @override
+  String get betaFeedback_copyUnavailable =>
+      'Feedback isn\'t available right now.';
+
+  @override
+  String get betaFeedback_copyValidationFailed =>
+      'The text or images don\'t meet the requirements. Edit them and try again.';
+
+  @override
+  String get betaFeedback_description => 'Description';
+
+  @override
+  String get betaFeedback_envDevice => 'Device';
+
+  @override
+  String get betaFeedback_envPage => 'Page';
+
+  @override
+  String get betaFeedback_envSystem => 'OS';
+
+  @override
+  String get betaFeedback_envVersion => 'Version';
+
+  @override
+  String get betaFeedback_environment => 'Environment';
+
+  @override
+  String get betaFeedback_feedback => 'Feedback';
+
+  @override
+  String betaFeedback_imageLimit(Object? maximumImages) {
+    return 'Up to $maximumImages images';
+  }
+
+  @override
+  String get betaFeedback_imageUnusable => 'Some images can\'t be used';
+
+  @override
+  String get betaFeedback_images => 'Images';
+
+  @override
+  String get betaFeedback_mineEmpty => 'No feedback yet';
+
+  @override
+  String get betaFeedback_mineErrorTitle => 'Couldn\'t load feedback';
+
+  @override
+  String get betaFeedback_minePermissionTitle => 'No permission';
+
+  @override
+  String get betaFeedback_mineTitle => 'My feedback';
+
+  @override
+  String get betaFeedback_mineUnavailableMessage =>
+      'Feedback history can\'t be loaded right now.';
+
+  @override
+  String get betaFeedback_mineUnavailableTitle => 'Feedback isn\'t available';
+
+  @override
+  String get betaFeedback_noCameraAccess => 'No camera access';
+
+  @override
+  String get betaFeedback_noPhotoAccess => 'No photo access';
+
+  @override
+  String get betaFeedback_notSent => 'Not sent';
+
+  @override
+  String get betaFeedback_photos => 'Photos';
+
+  @override
+  String get betaFeedback_photosFailed => 'Couldn\'t open Photos';
+
+  @override
+  String get betaFeedback_removeImage => 'Remove image';
+
+  @override
+  String get betaFeedback_send => 'Send feedback';
+
+  @override
+  String get betaFeedback_statusOpen => 'Open';
+
+  @override
+  String get betaFeedback_statusResolved => 'Resolved';
+
+  @override
+  String get betaFeedback_statusWontFix => 'Won\'t fix';
+
+  @override
+  String get betaFeedback_takePhoto => 'Take photo';
+
+  @override
+  String get betaFeedback_unavailableMessage =>
+      'Feedback can\'t be sent right now.';
+
+  @override
+  String betaFeedback_uploading(Object? images, Object? uploaded) {
+    return 'Uploading images $uploaded / $images';
+  }
+
+  @override
   String get common_about => 'Notes';
 
   @override
@@ -200,6 +349,9 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get common_liquidity => 'Liquidity';
+
+  @override
+  String get common_listSeparator => ', ';
 
   @override
   String get common_loading => 'Loading';
@@ -437,4 +589,401 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get common_watchlist => 'Watchlist';
+
+  @override
+  String get notifications_applicationNoReason =>
+      'No reason was given. Edit the community profile and submit again.';
+
+  @override
+  String notifications_applicationReason(Object? reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String notifications_applicationRejected(Object? subject) {
+    return '$subject wasn\'t approved';
+  }
+
+  @override
+  String get notifications_applicationSubject => 'Your community';
+
+  @override
+  String notifications_applicationSubjectNamed(Object? communityName) {
+    return 'Your community \"$communityName\"';
+  }
+
+  @override
+  String notifications_applicationVerified(Object? subject) {
+    return '$subject was approved';
+  }
+
+  @override
+  String get notifications_applicationVerifiedBody =>
+      'The verified badge is showing; mining weight and the official group are open.';
+
+  @override
+  String get notifications_badgeMinted => 'Consensus badge minted';
+
+  @override
+  String notifications_bellUnread(Object? label) {
+    return 'Notifications, $label unread';
+  }
+
+  @override
+  String get notifications_categoryAnnouncement => 'Announcements';
+
+  @override
+  String get notifications_categoryCommunityAll => 'All messages';
+
+  @override
+  String get notifications_categoryCommunityAllDetail =>
+      'Best kept off for large groups';
+
+  @override
+  String get notifications_categoryGraduation => 'Graduations';
+
+  @override
+  String get notifications_categoryLaunchRound =>
+      'Eligibility snapshots and start reminders';
+
+  @override
+  String get notifications_categoryLaunchRoundDetail =>
+      'Includes consensus badges, launch review results and on-chain progress';
+
+  @override
+  String get notifications_categoryMention => 'Mentions of me';
+
+  @override
+  String get notifications_categoryPriceAlertDetail =>
+      'When off, price alerts are still recorded but no notification is sent';
+
+  @override
+  String get notifications_categorySecurityDetail => 'Can\'t be turned off';
+
+  @override
+  String get notifications_categorySettlement => 'Daily settlement complete';
+
+  @override
+  String get notifications_categoryTradeResult => 'Trade results';
+
+  @override
+  String get notifications_categoryWeight => 'Weight changes';
+
+  @override
+  String get notifications_categoryWeightDetail =>
+      'When a held token\'s Mining Weight changes';
+
+  @override
+  String get notifications_deployFailed => 'Deployment failed';
+
+  @override
+  String get notifications_deviceSessionRevoked =>
+      'A device session was revoked';
+
+  @override
+  String get notifications_earlier => 'Earlier';
+
+  @override
+  String get notifications_emptyMessage =>
+      'Token graduations, badge mints, friend requests and security alerts show up here.';
+
+  @override
+  String get notifications_emptyTitle => 'No notifications yet';
+
+  @override
+  String get notifications_friendAccepted => 'Friend request accepted';
+
+  @override
+  String notifications_friendAcceptedBody(Object? name) {
+    return 'You and $name are now friends';
+  }
+
+  @override
+  String get notifications_friendRequest => 'New friend request';
+
+  @override
+  String notifications_friendRequestBody(Object? name) {
+    return '$name wants to add you as a friend';
+  }
+
+  @override
+  String get notifications_graduated => 'A project you joined graduated';
+
+  @override
+  String notifications_graduatedNamed(Object? subject) {
+    return '$subject graduated';
+  }
+
+  @override
+  String get notifications_launchApprovedBody => 'Sign to deploy the launch';
+
+  @override
+  String get notifications_launchDeployFailed => 'Launch deployment failed';
+
+  @override
+  String get notifications_launchOnChain => 'Your launch is on-chain';
+
+  @override
+  String get notifications_launchReviewApproved => 'Launch approved';
+
+  @override
+  String get notifications_launchReviewRejected => 'Launch not approved';
+
+  @override
+  String notifications_launchSaleStart(Object? saleStartAt) {
+    return 'Sale starts $saleStartAt';
+  }
+
+  @override
+  String get notifications_onChain => 'On-chain';
+
+  @override
+  String notifications_priceAlertBody(Object? observed, Object? threshold) {
+    return 'Target $threshold · Observed $observed';
+  }
+
+  @override
+  String get notifications_priceAlertTriggered => 'Price alert triggered';
+
+  @override
+  String notifications_priceAlertTriggeredNamed(Object? symbol) {
+    return '$symbol price alert triggered';
+  }
+
+  @override
+  String get notifications_readAll => 'Mark all read';
+
+  @override
+  String get notifications_readAllDone => 'All marked as read';
+
+  @override
+  String get notifications_readAllFailed =>
+      'Couldn\'t mark as read. Try again later';
+
+  @override
+  String get notifications_reviewApproved => 'Approved';
+
+  @override
+  String get notifications_reviewRejected => 'Not approved';
+
+  @override
+  String get notifications_securityEvent => 'Security event';
+
+  @override
+  String get notifications_settingsSubtitle =>
+      'Choose which notifications you get';
+
+  @override
+  String notifications_source(Object? factSourceLabel) {
+    return 'Source: $factSourceLabel';
+  }
+
+  @override
+  String notifications_unreadCount(Object? unreadCount) {
+    return '$unreadCount unread';
+  }
+
+  @override
+  String get profileSettings_aboutAndLegal => 'About and legal';
+
+  @override
+  String get profileSettings_appLock => 'App lock';
+
+  @override
+  String get profileSettings_appLockCapabilityUnknown =>
+      'This device\'s screen lock hasn\'t been read yet';
+
+  @override
+  String profileSettings_appLockNotPersisted(Object? appLockFactorText) {
+    return '$appLockFactorText · Applies now; won\'t be remembered after the app restarts';
+  }
+
+  @override
+  String get profileSettings_appLockOff => 'Off';
+
+  @override
+  String profileSettings_appLockSemantic(Object? appLockLabel) {
+    return 'App lock, $appLockLabel. Tap and verify to change';
+  }
+
+  @override
+  String profileSettings_appLockUnavailableSemantic(Object? appLockDetail) {
+    return 'App lock, unavailable: $appLockDetail';
+  }
+
+  @override
+  String get profileSettings_capabilityBlocked =>
+      'Account settings aren\'t available right now';
+
+  @override
+  String get profileSettings_currency => 'Currency';
+
+  @override
+  String get profileSettings_displaySavedLocally =>
+      'Saved on this device only; never written to your account or sent to the server';
+
+  @override
+  String get profileSettings_displaySaving => 'Applied; saving to this device';
+
+  @override
+  String get profileSettings_displaySessionOnly =>
+      'Applies for this session; saving on this device isn\'t available';
+
+  @override
+  String get profileSettings_empty => 'No account settings yet';
+
+  @override
+  String get profileSettings_fixedThemeNote =>
+      'Theme is fixed in this version.';
+
+  @override
+  String get profileSettings_fixedValuesNote =>
+      'Currency and theme are fixed in this version.';
+
+  @override
+  String get profileSettings_general => 'General';
+
+  @override
+  String get profileSettings_helpAndSupport => 'Help and support';
+
+  @override
+  String get profileSettings_reduceMotion => 'Reduce motion';
+
+  @override
+  String profileSettings_reduceMotionSemantic(Object? preferences) {
+    return 'Reduce motion, $preferences';
+  }
+
+  @override
+  String get profileSettings_storageUnavailableBody =>
+      'Reduce motion still applies for this session. Retry only reads this device\'s storage again; it doesn\'t use your account or the server.';
+
+  @override
+  String get profileSettings_storageUnavailableTitle =>
+      'Can\'t save on this device';
+
+  @override
+  String get profileSettings_theme => 'Theme';
+
+  @override
+  String get profileSettings_themeDark => 'Dark';
+
+  @override
+  String profileSettings_updatedAt(Object? relativeTime) {
+    return 'Updated $relativeTime';
+  }
+
+  @override
+  String get profileSettings_usingDefaults => 'Using default settings';
+
+  @override
+  String get scan_cameraDeniedBody =>
+      'Scanning is unavailable. Turn it back on in Settings → LOOP → Camera.';
+
+  @override
+  String get scan_cameraErrorReason =>
+      'The camera didn\'t open. Retry, or use Photos below.';
+
+  @override
+  String get scan_cameraNoAccess => 'No camera access';
+
+  @override
+  String get scan_cameraOpening => 'Opening camera…';
+
+  @override
+  String get scan_cameraUnsupported => 'This device has no available camera';
+
+  @override
+  String get scan_cameraUnsupportedDetail =>
+      'Use Photos below to read a QR code from an image.';
+
+  @override
+  String get scan_contentCopied => 'QR code content copied';
+
+  @override
+  String get scan_hint =>
+      'Point at a LOOP profile card, invite poster, community QR code or wallet address QR code.';
+
+  @override
+  String get scan_imageNoCode => 'No QR code found in this image';
+
+  @override
+  String get scan_imageNoPhotoAccess =>
+      'No photo access. Allow LOOP to access Photos in Settings, then try again';
+
+  @override
+  String get scan_imageUnreadable =>
+      'Couldn\'t read the image. Try another one';
+
+  @override
+  String get scan_keepScanning => 'Keep scanning';
+
+  @override
+  String get scan_pickImageLabel => 'Photos';
+
+  @override
+  String get scan_pickImageReading => 'Reading…';
+
+  @override
+  String get scan_pickImageSemantic => 'Choose from Photos';
+
+  @override
+  String get scan_torch => 'Flashlight';
+
+  @override
+  String get scan_torchOff => 'Turn off flashlight';
+
+  @override
+  String get scan_unavailable => 'Scanning isn\'t available right now';
+
+  @override
+  String get scan_unavailableDetail =>
+      'This build doesn\'t include camera scanning; this page won\'t open the camera.';
+
+  @override
+  String get scan_unknownBody =>
+      'LOOP won\'t open this content; it\'s only shown below.';
+
+  @override
+  String get scan_unknownTitle => 'Not a LOOP QR code';
+
+  @override
+  String get shell_payUnavailableHeadline => 'Pay isn\'t available';
+
+  @override
+  String get shell_payUnavailableMessage =>
+      'Pay isn\'t open yet. This page doesn\'t scan codes, ask for camera access, collect payment details or submit any transaction.';
+
+  @override
+  String get shell_pendingBackToCommunity => 'Back to community';
+
+  @override
+  String get shell_pendingHeadline => 'This page isn\'t open yet';
+
+  @override
+  String shell_pendingMessage(Object? title) {
+    return '\"$title\" isn\'t open yet. Nothing is shown here and no action can be taken.';
+  }
+
+  @override
+  String shell_pendingSourceLine(Object? label) {
+    return 'Module: $label';
+  }
+
+  @override
+  String get shell_tabChat => 'Chat';
+
+  @override
+  String get shell_tabIntel => 'Intel';
+
+  @override
+  String get shell_tabMe => 'Me';
+
+  @override
+  String shell_tabNewMessages(Object? label) {
+    return '$label, new messages';
+  }
+
+  @override
+  String get shell_tabSquare => 'Square';
 }

@@ -96,3 +96,45 @@ extension LoopL10nContext on BuildContext {
       Localizations.of<LoopLocalizations>(this, LoopLocalizations) ??
       LoopL10n.current;
 }
+
+/// Rebuilds everything below it when the app language changes
+/// (decision 0281).
+///
+/// `context.l10n` registers a dependency on `Localizations`, so its readers
+/// rebuild by themselves. Copy read through [LoopL10n.current] inside a
+/// `build` — an enum label, a formatter — does not; this scope marks the
+/// subtree dirty once per switch so those readers repaint too, keeping every
+/// route, scroll position and form state.
+class LoopLocaleScope extends StatefulWidget {
+  const LoopLocaleScope({required this.locale, required this.child, super.key});
+
+  final Locale locale;
+  final Widget child;
+
+  @override
+  State<LoopLocaleScope> createState() => _LoopLocaleScopeState();
+}
+
+class _LoopLocaleScopeState extends State<LoopLocaleScope> {
+  @override
+  void initState() {
+    super.initState();
+    LoopL10n.use(widget.locale);
+  }
+
+  @override
+  void didUpdateWidget(LoopLocaleScope oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.locale == widget.locale) return;
+    LoopL10n.use(widget.locale);
+    void markDirty(Element element) {
+      element.markNeedsBuild();
+      element.visitChildren(markDirty);
+    }
+
+    (context as Element).visitChildren(markDirty);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

@@ -526,11 +526,14 @@ void main() {
       expect(_key('notification-icon-${s287Id(3)}-crown'), findsOneWidget);
       expect(_key('notification-icon-${s287Id(4)}-users'), findsOneWidget);
       expect(_key('notification-icon-${s287Id(5)}-bell'), findsOneWidget);
-      expect(find.text('FROG 已毕业'), findsOneWidget);
-      expect(find.text('Nightowl 想加你为好友'), findsOneWidget);
+      expect(find.text('FROG graduated'), findsOneWidget);
+      expect(
+        find.text('Nightowl wants to add you as a friend'),
+        findsOneWidget,
+      );
       expect(find.text('FROG · #12'), findsOneWidget);
       expect(find.text('一条新通知'), findsOneWidget);
-      expect(find.text('未读 3 条'), findsOneWidget);
+      expect(find.text('3 unread'), findsOneWidget);
     });
 
     testWidgets('a tap marks the row read, then opens its destination', (
@@ -587,7 +590,7 @@ void main() {
         expect(_key('notification-unread-${s287Id(n)}'), findsNothing);
       }
       expect(_key('notification-inbox-read-all'), findsNothing);
-      expect(find.text('已全部标为已读'), findsOneWidget);
+      expect(find.text('All marked as read'), findsOneWidget);
       await tester.pump(LoopToast.defaultDuration);
       await tester.pumpAndSettle();
     });
@@ -623,7 +626,7 @@ void main() {
       await pumpS287Inbox(tester, S287NotificationsGateway());
 
       expect(_key('notification-inbox-empty'), findsOneWidget);
-      expect(find.text('还没有通知'), findsOneWidget);
+      expect(find.text('No notifications yet'), findsOneWidget);
       expect(_key('notification-inbox-read-all'), findsNothing);
       expect(_key('notification-inbox-settings'), findsOneWidget);
     });
@@ -729,7 +732,7 @@ void main() {
 
       expect(gateway.cursors, <String?>[null, 'cursor-2']);
       expect(_key('notification-row-${s287Id(6)}'), findsOneWidget);
-      expect(find.text('MOON 已毕业'), findsOneWidget);
+      expect(find.text('MOON graduated'), findsOneWidget);
     });
   });
 

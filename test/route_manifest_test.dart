@@ -142,11 +142,11 @@ void main() {
       expect(LoopShell.homeIndex, 2);
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
-        '聊天',
-        '广场',
+        'Chat',
+        'Square',
         'MEME',
-        '情报',
-        '我的',
+        'Intel',
+        'Me',
       ]);
       // The four v2 tabs keep their slug, path and page; only the tab flag
       // moved.

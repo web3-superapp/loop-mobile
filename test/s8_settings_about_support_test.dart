@@ -85,7 +85,10 @@ void main() {
       expect(find.text('USD'), findsOneWidget);
       // The CAS version and whether a row exists are write-path mechanics,
       // not facts about the account.
-      expect(findProvenanceContaining('当前使用默认设置'), findsOneWidget);
+      expect(
+        findProvenanceContaining('Using default settings'),
+        findsOneWidget,
+      );
       expect(find.textContaining('版本 0'), findsNothing);
       expect(find.textContaining('尚未写入过'), findsNothing);
     });

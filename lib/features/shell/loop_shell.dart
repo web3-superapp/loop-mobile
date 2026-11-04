@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_entry.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/widgets/loop_dock_bar.dart';
@@ -52,16 +53,19 @@ class LoopShell extends StatefulWidget {
     // S343 · decision 0271: 钱包 became 我的 with a person glyph; its path
     // and slug stay `/wallet`. Slugs stay the stable test and analytics
     // identifiers.
-    _LoopDestination('聊天', chatPath, 'chat'),
-    _LoopDestination('广场', '/square', 'compass'),
-    _LoopDestination('MEME', '/meme', 'launch'),
-    _LoopDestination('情报', '/intel', 'chart'),
-    _LoopDestination('我的', '/wallet', 'user'),
+    // Decision 0281: the labels are ARB copy (`shell_tab*`), resolved per
+    // language by [_LoopDestination.labelIn].
+    _LoopDestination(chatPath, 'chat'),
+    _LoopDestination('/square', 'compass'),
+    _LoopDestination('/meme', 'launch'),
+    _LoopDestination('/intel', 'chart'),
+    _LoopDestination('/wallet', 'user'),
   ];
 
   /// Labels in shell order, for tests and the desktop rail.
-  static List<String> get destinationLabels =>
-      _destinations.map((item) => item.label).toList(growable: false);
+  static List<String> get destinationLabels => _destinations
+      .map((item) => item.labelIn(LoopL10n.current))
+      .toList(growable: false);
 
   /// 聊天's root, where the inbox floats its 「发起」 key (decision 0123).
   static const String chatPath = '/chat';
@@ -597,7 +601,9 @@ class _LoopTabBarState extends State<LoopTabBar> with TickerProviderStateMixin {
                             backgroundBuilder: (context, cells) =>
                                 _indicator(cells[selectedIndex].shift),
                             cellBuilder: (context, index, cell) => LoopTabItem(
-                              label: LoopShell._destinations[index].label,
+                              label: LoopShell._destinations[index].labelIn(
+                                context.l10n,
+                              ),
                               slug: LoopShell._destinations[index].slug,
                               icon: LoopShell._destinations[index].icon,
                               selected: index == selectedIndex,
@@ -733,7 +739,7 @@ class LoopTabItem extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: dot ? '$label，有新消息' : label,
+      label: dot ? context.l10n.shell_tabNewMessages(label) : label,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -1163,7 +1169,7 @@ class _DesktopRail extends StatelessWidget {
               return NavigationRailDestination(
                 icon: LoopIcon(item.icon, color: LoopColors.text2),
                 selectedIcon: LoopIcon(item.icon, color: LoopColors.ink),
-                label: Text(item.label),
+                label: Text(item.labelIn(context.l10n)),
               );
             })
             .toList(growable: false),
@@ -1173,10 +1179,18 @@ class _DesktopRail extends StatelessWidget {
 }
 
 class _LoopDestination {
-  const _LoopDestination(this.label, this.path, this.icon);
+  const _LoopDestination(this.path, this.icon);
 
-  final String label;
   final String path;
+
+  /// The tab's name in the app's language (decision 0281).
+  String labelIn(LoopLocalizations l10n) => switch (slug) {
+    'chat' => l10n.shell_tabChat,
+    'square' => l10n.shell_tabSquare,
+    'meme' => 'MEME',
+    'intel' => l10n.shell_tabIntel,
+    _ => l10n.shell_tabMe,
+  };
 
   String get slug => path.substring(1);
 

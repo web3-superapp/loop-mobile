@@ -383,6 +383,12 @@
     "where": "common",
     "zh": "流动性"
   },
+  "common_listSeparator": {
+    "en": ", ",
+    "placeholders": {},
+    "where": "common: joins the parts of one screen-reader label",
+    "zh": "，"
+  },
   "common_loading": {
     "en": "Loading",
     "placeholders": {},

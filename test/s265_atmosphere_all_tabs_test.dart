@@ -172,11 +172,11 @@ void main() {
       expect(_location(router), '/meme');
       expect(find.byType(MemeScreen), findsOneWidget);
       expect(LoopShell.destinationLabels, <String>[
-        '聊天',
-        '广场',
+        'Chat',
+        'Square',
         'MEME',
-        '情报',
-        '我的',
+        'Intel',
+        'Me',
       ]);
       expect(LoopShell.homeIndex, 2);
       // `/`, `/home` and an illegal location all land on MEME.
@@ -192,10 +192,10 @@ void main() {
       final router = await _pumpApp(tester);
       expect(_shellScope(tester).canPop, isTrue);
       for (final (label, path) in <(String, String)>[
-        ('聊天', '/chat'),
-        ('广场', '/square'),
-        ('情报', '/intel'),
-        ('我的', '/wallet'),
+        ('Chat', '/chat'),
+        ('Square', '/square'),
+        ('Intel', '/intel'),
+        ('Me', '/wallet'),
       ]) {
         await tester.tap(find.widgetWithText(LoopTabItem, label));
         await tester.pumpAndSettle();
@@ -216,10 +216,10 @@ void main() {
     ) async {
       await _pumpApp(tester);
       for (final (label, prefix) in <(String, String)>[
-        ('聊天', 'chat'),
-        ('广场', 'square'),
-        ('情报', 'intel'),
-        ('我的', 'wallet'),
+        ('Chat', 'chat'),
+        ('Square', 'square'),
+        ('Intel', 'intel'),
+        ('Me', 'wallet'),
       ]) {
         await tester.tap(find.widgetWithText(LoopTabItem, label));
         await tester.pumpAndSettle();
@@ -234,7 +234,7 @@ void main() {
         expect(tester.binding.hasScheduledFrame, isFalse, reason: label);
       }
       // S343 · decision 0271: 聊天 has no filter strip any more.
-      await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
       await tester.pumpAndSettle();
       expect(_key('chat-inbox-filters'), findsNothing);
       // The five walls are not one copy.

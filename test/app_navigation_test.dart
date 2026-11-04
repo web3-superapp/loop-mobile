@@ -84,7 +84,13 @@ void main() {
 
     // Decision 0221: the App lands on MEME.
     expect(find.byType(MemeScreen), findsOneWidget);
-    for (final destination in <String>['广场', 'MEME', '情报', '我的', '聊天']) {
+    for (final destination in <String>[
+      'Square',
+      'MEME',
+      'Intel',
+      'Me',
+      'Chat',
+    ]) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }
@@ -107,7 +113,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '情报'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Intel'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey<String>('intel-segment-1')));
     await tester.pumpAndSettle();
@@ -115,12 +121,12 @@ void main() {
     expect(find.textContaining('Perp trading'), findsNothing);
     expect(find.textContaining('Live perpetual markets'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     await tester.pumpAndSettle();
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);

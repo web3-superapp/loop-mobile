@@ -9,7 +9,7 @@ Usage:
 
 Every `lib/l10n/fragments/*.json` entry becomes one ARB message: `en` in the
 English template (with `@key.description` = where it is used and each
-placeholder typed `Object`), `zh` in the Chinese file. Keys are sorted. It
+placeholder typed `Object?`), `zh` in the Chinese file. Keys are sorted. It
 refuses a key defined twice, an entry with an empty `en`, and an `en` / `zh`
 pair whose `{placeholders}` differ.
 
@@ -64,7 +64,7 @@ def build() -> tuple[dict, dict, list[str]]:
         meta: dict = {"description": str(entry.get("where", ""))}
         if names_zh:
             meta["placeholders"] = {
-                name: {"type": "Object"} for name in sorted(names_zh)
+                name: {"type": "Object?"} for name in sorted(names_zh)
             }
         en[key] = en_text
         en["@" + key] = meta

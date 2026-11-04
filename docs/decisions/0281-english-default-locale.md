@@ -26,12 +26,12 @@ Accepted · 2026-11-04（S354-mobile）。用户裁决：App 默认语言改成�
 - `l10n.yaml`：`arb-dir: lib/l10n`、模板 `app_en.arb`、`output-dir: lib/l10n/gen`（生成文件入库，analyze 能看到）、类 `LoopLocalizations`（`lib/l10n/gen/loop_localizations.dart`）、`nullable-getter: false`、`format: true`、未翻译清单写 `build/l10n_untranslated.json`。`pubspec.yaml`：`flutter: generate: true`，`intl: 0.20.3` 直接依赖（= lockfile 原 transitive 版本，lock 只有 `dependency` 字段变为 `direct main`）。`synthetic-package` 在 Flutter 3.47 已移除，未写。
 - **ARB 是生成物**：真源是 `lib/l10n/fragments/*.json`（每目录一个 + `common.json`），`scripts/l10n/merge.py` 合成 `app_en.arb` / `app_zh.arb` 再跑 `flutter gen-l10n`。不要手改 ARB；harness 比对 fragments 与 ARB，不一致即失败。
 - key = `<feature>_<slug>`：feature 是 `lib/features/` 下的目录（camelCase，如 `profileSettings`），slug 来自文件名 + 就近标识符（调用的 ValueKey、命名参数、变量 / getter / switch 分支）。跨目录常用短句用 `common_*`（`common.json`，约 140 条，已按术语表填好英文）。
-- 占位符一律 `Object` 类型，名字取自插值表达式；en 与 zh 的占位符集合必须一致（merge 拒绝）。复数 / select 本批不用；需要时在 fragment 的 en 里直接写 ICU。
+- 占位符一律 `Object?` 类型（与 Dart 插值同语义：null 印成 `null`），名字取自插值表达式；en 与 zh 的占位符集合必须一致（merge 拒绝）。复数 / select 本批不用；需要时在 fragment 的 en 里直接写 ICU。
 
 ### 两种取值方式
 
 - `context.l10n.<key>`：手里有 `BuildContext`（`build`、builder 回调、带 context 参数的函数）时一律用它——它登记依赖，切语言时该 widget 重建。没有装 `LoopL10n.delegate` 的上下文（只挂了 `MaterialApp()` 的测试）回退到 `LoopL10n.current`，不会抛错。
-- `LoopL10n.current.<key>`：没有 context 的地方——view model、gateway 错误映射、通知文案、formatter、`State` 的非 build 方法（`initState` 里不能读 `Localizations`）、`static` getter。它是 App 当前语言的那份实例：`LoopLocaleController` 切换时赋值，App 的 `builder` 每次按解析出的 `Localizations` 再对一次。它本身不触发重建，所以**不要缓存**到 `static final` / 顶层 `final`，常量声明改成 getter（`static String get x => LoopL10n.current.k;`）。
+- `LoopL10n.current.<key>`：没有 context 的地方——view model、gateway 错误映射、通知文案、formatter、`State` 的非 build 方法（`initState` 里不能读 `Localizations`）、`static` getter。它是 App 当前语言的那份实例：`LoopLocaleController` 切换时赋值，App `builder` 外层的 `LoopLocaleScope` 按解析出的 `Localizations` 再对一次，并在语言变化时把整棵子树标脏重建一次（不重挂载，路由、滚动、表单状态都保留），所以 build 里读 `LoopL10n.current`（enum 标签、formatter）切换后也会更新。仍然**不要缓存**到 `static final` / 顶层 `final`，常量声明改成 getter（`static String get x => LoopL10n.current.k;`）。
 - 测试里 `LoopL10n.current` 默认英文；`test/flutter_test_config.dart` 每个用例后 `LoopL10n.debugReset()`。
 
 ### 迁移流程（S355 每个目录照做）
@@ -39,8 +39,16 @@ Accepted · 2026-11-04（S354-mobile）。用户裁决：App 默认语言改成�
 1. `python3 scripts/l10n/extract.py lib/features/<dir>` → `lib/l10n/fragments/<feature>.json`（zh 已填、en 空、`where` = 文件:行）。
 2. 人工按 `docs/59-英文文案术语表-2026-11-04.md`（LOOP/docs）填 en，可以改 key 名，不要改占位符名。
 3. `python3 scripts/l10n/apply.py lib/l10n/fragments/<feature>.json`：改源码（字面量 → getter / 带参调用，去最近的 `const`，常量声明 → getter）并把 `test/` 里对同一中文的 `find.text` / `textContaining` / `expect` 断言改成英文——仅当 lib 里已经没有任何地方再印这句中文。打印 `TODO`：enum 构造参数、switch-case 模式、参数默认值、const 集合声明里的字面量、插值表达式里的中文、`State` 非 build 方法（已用 current，请复核）、测试里只部分匹配的断言。
+   apply 还会把 enum 的中文构造参数（`chat('chat', '聊天')` + `this.label`）改成 `String get label => switch (this) {...}`（只支持位置参数 `this.x`）。
 4. `python3 scripts/l10n/merge.py`（合 ARB + gen-l10n）→ `bin/dart fix --apply` → `bin/dart format lib test` → `flutter analyze` → 全量 `flutter test`；手工处理 TODO。
+   测试仍失败时，读完原因再用 `apply.py <fragments> --force-tests test/a_test.dart …`：只改这些文件里断言调用（`find.text`、`expect`、`containsAllInOrder`、`matchesSemantics`…）中与 fragment zh 完全相等或按模板匹配的字面量。**不要**改：服务端 fixture 原样回显的文案（如「服务端 title / body 优先」用例）、未迁移页面自己印的中文（页面标题等）、`group(` / `testWidgets(` 的名字（harness 的行为证据按名字匹配）。
 5. 从 `scripts/l10n/pending_dirs.txt` 删掉该目录（或加 `!子目录`），`python3 scripts/check_harness.py` 的 `check_no_hardcoded_cjk` 从此拦住该目录的新中文字面量。
+
+### S354 试点学到的规则（S355 照做）
+
+- **Key 不随语言变**：`ValueKey('x-$label')` 这种用文案拼的 key 改成稳定 id（试点：意见反馈环境块改为 `version / device / system / page / language`）。
+- **不要拿文案当数据比较**：`category.section == '挖矿'` 这类分组在英文下全部落空（试点：通知设置的分组改为从枚举推导）。grep `== '` 与 `case '` 里的中文。
+- **过渡期混排是预期的**：已迁移目录的文案嵌进未迁移页面的中文句子（「关闭『All messages』通知？」「Theme，Dark，不可更改」）或反过来（`Updated 5 分钟前`），等对应目录迁完自然消失；测试按当时的真实输出断言并注明。
 
 ### 门禁
 
@@ -55,7 +63,7 @@ Accepted · 2026-11-04（S354-mobile）。用户裁决：App 默认语言改成�
 
 ### 不在范围
 
-后端返回的文案；`Accept-Language` 请求头（`LoopDioFactory` 若需要由后续单加，本单未改网络层）；数字单位「万 / 亿」在 en 下改 K / M / B、日期格式 en `MMM d, HH:mm` 的实施（规则写在术语表，S355 落）。
+后端返回的文案（只在 LOOP 后端请求上加了 `Accept-Language`：`LoopDioFactory.createLoopBackend(acceptLanguage:)` 每次请求读 `LoopL10n.currentLocale`，请求自带的同名头优先）；数字单位「万 / 亿」在 en 下改 K / M / B、日期格式 en `MMM d, HH:mm` 的实施（规则写在术语表，S355 落）。
 
 ## Consequences
 

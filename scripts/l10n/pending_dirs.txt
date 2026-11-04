@@ -26,9 +26,5 @@ lib/features/system
 lib/features/wallet
 lib/integrations
 lib/widgets
-# S354 pilot (removed in its C commit):
-lib/features/profile/settings
-lib/features/beta_feedback
-lib/features/notifications
-lib/features/scan
-lib/features/shell
+# S354 pilot: migrated (decision 0281).
+!lib/features/profile/settings

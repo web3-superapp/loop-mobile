@@ -9074,24 +9074,34 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("LoopShell must retain one inspectable destination list")
         else:
             block = source[start:end]
+            # Decision 0281: the labels are ARB copy (`shell_tab*`, zh
+            # 聊天 / 广场 / 情报 / 我的); the list keeps the paths in order and
+            # `labelIn` maps each slug to its key.
             markers = (
-                ("'聊天'", "'/chat'"),
-                ("'广场'", "'/square'"),
-                ("'MEME'", "'/meme'"),
-                ("'情报'", "'/intel'"),
+                ("shell_tabChat", "chatPath", "聊天"),
+                ("shell_tabSquare", "'/square'", "广场"),
+                (None, "'/meme'", "MEME"),
+                ("shell_tabIntel", "'/intel'", "情报"),
                 # S343 · decision 0271: the 钱包 tab is 我的; path unchanged.
-                ("'我的'", "'/wallet'"),
+                ("shell_tabMe", "'/wallet'", "我的"),
             )
+            zh_copy, _ = L10N_RULES.arb_tables(root)
             positions: list[int] = []
-            for label, path in markers:
-                label_at = block.find(label)
-                path_at = block.find(path, label_at)
-                if label_at < 0 or path_at < 0:
+            for key, path, label in markers:
+                path_at = block.find(path)
+                if path_at < 0:
                     errors.append(
                         f"LoopShell must retain the V2 destination {label} at {path}"
                     )
-                else:
-                    positions.append(label_at)
+                    continue
+                positions.append(path_at)
+                if key is None:
+                    if f"=> '{label}'" not in source:
+                        errors.append(f"LoopShell must label {path} `{label}`")
+                elif f"l10n.{key}" not in source or zh_copy.get(key) != label:
+                    errors.append(
+                        f"LoopShell must label {path} with `{key}` = {label} (decision 0281)"
+                    )
             if len(positions) == len(markers) and positions != sorted(positions):
                 errors.append("LoopShell V2 destinations must retain their reviewed order")
             for forbidden in (

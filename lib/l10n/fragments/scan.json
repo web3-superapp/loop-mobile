@@ -1,0 +1,128 @@
+{
+  "scan_cameraDeniedBody": {
+    "en": "Scanning is unavailable. Turn it back on in Settings → LOOP → Camera.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:20",
+    "zh": "扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。"
+  },
+  "scan_cameraErrorReason": {
+    "en": "The camera didn't open. Retry, or use Photos below.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:550",
+    "zh": "相机没有打开。可以重试，或改用下方的「相册」。"
+  },
+  "scan_cameraNoAccess": {
+    "en": "No camera access",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:530",
+    "zh": "没有相机权限"
+  },
+  "scan_cameraOpening": {
+    "en": "Opening camera…",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:521",
+    "zh": "正在打开相机…"
+  },
+  "scan_cameraUnsupported": {
+    "en": "This device has no available camera",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:540",
+    "zh": "这台设备没有可用的相机"
+  },
+  "scan_cameraUnsupportedDetail": {
+    "en": "Use Photos below to read a QR code from an image.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:541",
+    "zh": "可以改用下方的「相册」识别二维码图片。"
+  },
+  "scan_contentCopied": {
+    "en": "QR code content copied",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:194",
+    "zh": "已复制二维码内容"
+  },
+  "scan_hint": {
+    "en": "Point at a LOOP profile card, invite poster, community QR code or wallet address QR code.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:296",
+    "zh": "对准 LOOP 名片、邀请海报、社区二维码或钱包地址二维码。"
+  },
+  "scan_imageNoCode": {
+    "en": "No QR code found in this image",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:175",
+    "zh": "这张图片里没有识别到二维码"
+  },
+  "scan_imageNoPhotoAccess": {
+    "en": "No photo access. Allow LOOP to access Photos in Settings, then try again",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:181",
+    "zh": "没有相册权限，去系统设置里允许 LOOP 访问照片后再试"
+  },
+  "scan_imageUnreadable": {
+    "en": "Couldn't read the image. Try another one",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:187",
+    "zh": "图片没有读出来，请换一张再试"
+  },
+  "scan_keepScanning": {
+    "en": "Keep scanning",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:634",
+    "zh": "继续扫描"
+  },
+  "scan_pickImageLabel": {
+    "en": "Photos",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:314",
+    "zh": "相册"
+  },
+  "scan_pickImageReading": {
+    "en": "Reading…",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:314",
+    "zh": "正在读取…"
+  },
+  "scan_pickImageSemantic": {
+    "en": "Choose from Photos",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:315",
+    "zh": "从相册选图"
+  },
+  "scan_torch": {
+    "en": "Flashlight",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:325",
+    "zh": "手电筒"
+  },
+  "scan_torchOff": {
+    "en": "Turn off flashlight",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:325",
+    "zh": "关闭手电筒"
+  },
+  "scan_unavailable": {
+    "en": "Scanning isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:210",
+    "zh": "扫码当前不可用"
+  },
+  "scan_unavailableDetail": {
+    "en": "This build doesn't include camera scanning; this page won't open the camera.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:211",
+    "zh": "这个版本没有装配相机扫码，本页不会打开相机。"
+  },
+  "scan_unknownBody": {
+    "en": "LOOP won't open this content; it's only shown below.",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:612",
+    "zh": "LOOP 不会打开这段内容，只把它显示在下面。"
+  },
+  "scan_unknownTitle": {
+    "en": "Not a LOOP QR code",
+    "placeholders": {},
+    "where": "lib/features/scan/scan_screen.dart:611",
+    "zh": "不是 LOOP 二维码"
+  }
+}

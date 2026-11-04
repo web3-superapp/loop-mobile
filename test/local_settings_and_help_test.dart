@@ -32,8 +32,13 @@ void main() {
         container.read(loopDisplayPreferencesProvider).reduceMotion,
         isFalse,
       );
-      expect(find.text('本次运行内生效；本机保存当前不可用'), findsOneWidget);
-      expect(find.text('本机保存不可用'), findsOneWidget);
+      expect(
+        find.text(
+          'Applies for this session; saving on this device isn\'t available',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Can\'t save on this device'), findsOneWidget);
 
       await tester.tap(setting);
       await tester.pumpAndSettle();
@@ -62,7 +67,7 @@ void main() {
     expect(container.read(loopDisplayPreferencesProvider).reduceMotion, isTrue);
     expect(store.writes, isEmpty);
     expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
-    expect(find.text('本机保存不可用'), findsNothing);
+    expect(find.text('Can\'t save on this device'), findsNothing);
   });
 
   testWidgets('restored device preference disables animations globally', (
@@ -80,8 +85,13 @@ void main() {
     expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
     // Decision 0126: the usual storage line is not news; only an unavailable
     // store speaks under the switch.
-    expect(find.text('只保存在本机，不写入账号，也不调用后端'), findsNothing);
-    expect(find.text('减少动效'), findsOneWidget);
+    expect(
+      find.text(
+        'Saved on this device only; never written to your account or sent to the server',
+      ),
+      findsNothing,
+    );
+    expect(find.text('Reduce motion'), findsOneWidget);
   });
 
   testWidgets('system animation setting remains stricter than stored false', (

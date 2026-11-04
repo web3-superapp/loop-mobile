@@ -209,7 +209,7 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(gone)), findsNothing, reason: gone);
       }
-      expect(_labels(tester), containsAllInOrder(<String>['隐私与安全', '通用']));
+      expect(_labels(tester), containsAllInOrder(<String>['隐私与安全', 'General']));
       expect(_labels(tester), isNot(contains('账号')));
       expect(_labels(tester), isNot(contains('资产与挖矿')));
       expect(

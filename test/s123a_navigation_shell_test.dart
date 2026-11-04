@@ -233,10 +233,10 @@ void main() {
 
       // 广场 is built once: leaving it for 钱包 and coming back shows the
       // same page, not a new one.
-      await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Square'));
       await tester.pumpAndSettle();
       final square = tester.element(find.byType(SquareScreen));
-      await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
       await tester.pumpAndSettle();
       expect(_location(router), '/wallet');
       expect(find.byType(SquareScreen), findsNothing);
@@ -245,7 +245,7 @@ void main() {
         findsOneWidget,
         reason: 'the left tab stays mounted offstage',
       );
-      await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Square'));
       await tester.pumpAndSettle();
       expect(tester.element(find.byType(SquareScreen)), same(square));
     });
@@ -254,17 +254,17 @@ void main() {
       tester,
     ) async {
       final router = await _pumpMirror(tester);
-      await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Square'));
       await tester.pumpAndSettle();
       await tester.drag(_key('square-list'), const Offset(0, -900));
       await tester.pumpAndSettle();
       final offset = _position(tester, 'square').pixels;
       expect(offset, greaterThan(500));
 
-      await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
       await tester.pumpAndSettle();
       expect(_location(router), '/wallet');
-      await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Square'));
       await tester.pumpAndSettle();
       expect(_location(router), '/square');
       expect(_position(tester, 'square').pixels, offset);
@@ -279,7 +279,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_position(tester, 'chat').pixels, greaterThan(500));
 
-      await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       final midway = _position(tester, 'chat').pixels;
@@ -294,7 +294,7 @@ void main() {
       await _pumpMirror(tester, reduceMotion: true);
       await tester.drag(_key('chat-list'), const Offset(0, -900));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
       await tester.pump();
       expect(_position(tester, 'chat').pixels, 0);
     });
@@ -306,7 +306,7 @@ void main() {
       final router = await _pumpApp(tester);
       // The App lands on MEME.
       expect(_location(router), '/meme');
-      await tester.tap(find.widgetWithText(LoopTabItem, '广场'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Square'));
       await tester.pumpAndSettle();
       expect(_location(router), '/square');
 
@@ -317,7 +317,7 @@ void main() {
       expect(find.byType(LoopTabBar), findsOneWidget);
 
       // 聊天 goes back to MEME too.
-      await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
       await tester.pumpAndSettle();
       expect(_location(router), '/chat');
       expect(await tester.binding.handlePopRoute(), isTrue);
@@ -354,7 +354,7 @@ void main() {
     tester,
   ) async {
     await _pumpMirror(tester);
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     await tester.pumpAndSettle();
     final rootNavigator = Navigator.of(
       tester.element(find.byType(LoopTabBar)),
@@ -368,7 +368,7 @@ void main() {
     );
     // The bar is under the veil: a tap on it reaches the barrier instead.
     await tester.tap(
-      find.widgetWithText(LoopTabItem, '聊天'),
+      find.widgetWithText(LoopTabItem, 'Chat'),
       warnIfMissed: false,
     );
     await tester.pumpAndSettle();

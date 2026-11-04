@@ -1,0 +1,383 @@
+{
+  "notifications_applicationNoReason": {
+    "en": "No reason was given. Edit the community profile and submit again.",
+    "placeholders": {},
+    "where": "lib/features/notifications/community_application_notifications.dart:93",
+    "zh": "运维没有给出原因。修改社区资料后可以重新提交。"
+  },
+  "notifications_applicationReason": {
+    "en": "Reason: {reason}",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/community_application_notifications.dart:93",
+    "zh": "原因：{reason}"
+  },
+  "notifications_applicationRejected": {
+    "en": "{subject} wasn't approved",
+    "placeholders": {
+      "subject": {
+        "example": "subject",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/community_application_notifications.dart:85",
+    "zh": "{subject}未通过审核"
+  },
+  "notifications_applicationSubject": {
+    "en": "Your community",
+    "placeholders": {},
+    "where": "lib/features/notifications/community_application_notifications.dart:82",
+    "zh": "你的社区"
+  },
+  "notifications_applicationSubjectNamed": {
+    "en": "Your community \"{communityName}\"",
+    "placeholders": {
+      "communityName": {
+        "example": "communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/community_application_notifications.dart:82",
+    "zh": "你的社区「{communityName}」"
+  },
+  "notifications_applicationVerified": {
+    "en": "{subject} was approved",
+    "placeholders": {
+      "subject": {
+        "example": "subject",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/community_application_notifications.dart:84",
+    "zh": "{subject}已通过审核"
+  },
+  "notifications_applicationVerifiedBody": {
+    "en": "The verified badge is showing; mining weight and the official group are open.",
+    "placeholders": {},
+    "where": "lib/features/notifications/community_application_notifications.dart:91",
+    "zh": "已显示验证标记，挖矿权重与官方群已开放。"
+  },
+  "notifications_badgeMinted": {
+    "en": "Consensus badge minted",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:280",
+    "zh": "共识勋章铸造完成"
+  },
+  "notifications_bellUnread": {
+    "en": "Notifications, {label} unread",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_bell.dart:60",
+    "zh": "通知，未读 {label} 条"
+  },
+  "notifications_categoryAnnouncement": {
+    "en": "Announcements",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:19",
+    "zh": "公告"
+  },
+  "notifications_categoryCommunityAll": {
+    "en": "All messages",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:20",
+    "zh": "全部消息"
+  },
+  "notifications_categoryCommunityAllDetail": {
+    "en": "Best kept off for large groups",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:20",
+    "zh": "大群建议关闭"
+  },
+  "notifications_categoryGraduation": {
+    "en": "Graduations",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:15",
+    "zh": "毕业通知"
+  },
+  "notifications_categoryLaunchRound": {
+    "en": "Eligibility snapshots and start reminders",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:14",
+    "zh": "资格快照与开始提醒"
+  },
+  "notifications_categoryLaunchRoundDetail": {
+    "en": "Includes consensus badges, launch review results and on-chain progress",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:14",
+    "zh": "含共识勋章、发射审核结果与上链进度"
+  },
+  "notifications_categoryMention": {
+    "en": "Mentions of me",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:18",
+    "zh": "@我的消息"
+  },
+  "notifications_categoryPriceAlertDetail": {
+    "en": "When off, price alerts are still recorded but no notification is sent",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:17",
+    "zh": "关闭后价格提醒仍会记录事件，但不会生成通知"
+  },
+  "notifications_categorySecurityDetail": {
+    "en": "Can't be turned off",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:21",
+    "zh": "无法关闭"
+  },
+  "notifications_categorySettlement": {
+    "en": "Daily settlement complete",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:9",
+    "zh": "每日结算完成"
+  },
+  "notifications_categoryTradeResult": {
+    "en": "Trade results",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:16",
+    "zh": "成交结果"
+  },
+  "notifications_categoryWeight": {
+    "en": "Weight changes",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:10",
+    "zh": "权重变化"
+  },
+  "notifications_categoryWeightDetail": {
+    "en": "When a held token's Mining Weight changes",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_models.dart:10",
+    "zh": "持有币的 Mining Weight 调整时"
+  },
+  "notifications_deployFailed": {
+    "en": "Deployment failed",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:327",
+    "zh": "部署失败"
+  },
+  "notifications_deviceSessionRevoked": {
+    "en": "A device session was revoked",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:360",
+    "zh": "撤销了一个设备会话"
+  },
+  "notifications_earlier": {
+    "en": "Earlier",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox.dart:251",
+    "zh": "更早"
+  },
+  "notifications_emptyMessage": {
+    "en": "Token graduations, badge mints, friend requests and security alerts show up here.",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:134",
+    "zh": "代币毕业、勋章铸造、好友申请和安全提醒会出现在这里。"
+  },
+  "notifications_emptyTitle": {
+    "en": "No notifications yet",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:133",
+    "zh": "还没有通知"
+  },
+  "notifications_friendAccepted": {
+    "en": "Friend request accepted",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:299",
+    "zh": "好友申请已通过"
+  },
+  "notifications_friendAcceptedBody": {
+    "en": "You and {name} are now friends",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:300",
+    "zh": "你和 {name} 已成为好友"
+  },
+  "notifications_friendRequest": {
+    "en": "New friend request",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:293",
+    "zh": "新的好友申请"
+  },
+  "notifications_friendRequestBody": {
+    "en": "{name} wants to add you as a friend",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:294",
+    "zh": "{name} 想加你为好友"
+  },
+  "notifications_graduated": {
+    "en": "A project you joined graduated",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:272",
+    "zh": "你参与的项目已毕业"
+  },
+  "notifications_graduatedNamed": {
+    "en": "{subject} graduated",
+    "placeholders": {
+      "subject": {
+        "example": "subject",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:271",
+    "zh": "{subject} 已毕业"
+  },
+  "notifications_launchApprovedBody": {
+    "en": "Sign to deploy the launch",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:309",
+    "zh": "请完成签名，发射才会部署"
+  },
+  "notifications_launchDeployFailed": {
+    "en": "Launch deployment failed",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:327",
+    "zh": "发射部署失败"
+  },
+  "notifications_launchOnChain": {
+    "en": "Your launch is on-chain",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:321",
+    "zh": "你的发射已上链"
+  },
+  "notifications_launchReviewApproved": {
+    "en": "Launch approved",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:308",
+    "zh": "发射审核已通过"
+  },
+  "notifications_launchReviewRejected": {
+    "en": "Launch not approved",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:314",
+    "zh": "发射审核未通过"
+  },
+  "notifications_launchSaleStart": {
+    "en": "Sale starts {saleStartAt}",
+    "placeholders": {
+      "saleStartAt": {
+        "example": "saleStartAt",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:322",
+    "zh": "开售时间 {saleStartAt}"
+  },
+  "notifications_onChain": {
+    "en": "On-chain",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:321",
+    "zh": "已上链"
+  },
+  "notifications_priceAlertBody": {
+    "en": "Target {threshold} · Observed {observed}",
+    "placeholders": {
+      "observed": {
+        "example": "observed",
+        "type": "Object"
+      },
+      "threshold": {
+        "example": "threshold",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:352",
+    "zh": "目标 {threshold} · 观察值 {observed}"
+  },
+  "notifications_priceAlertTriggered": {
+    "en": "Price alert triggered",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:347",
+    "zh": "价格提醒已触发"
+  },
+  "notifications_priceAlertTriggeredNamed": {
+    "en": "{symbol} price alert triggered",
+    "placeholders": {
+      "symbol": {
+        "example": "symbol",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:347",
+    "zh": "{symbol} 价格提醒已触发"
+  },
+  "notifications_readAll": {
+    "en": "Mark all read",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:106",
+    "zh": "全部已读"
+  },
+  "notifications_readAllDone": {
+    "en": "All marked as read",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:203",
+    "zh": "已全部标为已读"
+  },
+  "notifications_readAllFailed": {
+    "en": "Couldn't mark as read. Try again later",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:203",
+    "zh": "没有标记成功，请稍后再试"
+  },
+  "notifications_reviewApproved": {
+    "en": "Approved",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:308",
+    "zh": "审核已通过"
+  },
+  "notifications_reviewRejected": {
+    "en": "Not approved",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:314",
+    "zh": "审核未通过"
+  },
+  "notifications_securityEvent": {
+    "en": "Security event",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:361, lib/features/notifications/notification_models.dart:21",
+    "zh": "安全事件"
+  },
+  "notifications_settingsSubtitle": {
+    "en": "Choose which notifications you get",
+    "placeholders": {},
+    "where": "lib/features/notifications/notification_inbox_screen.dart:125",
+    "zh": "选择想收到哪些通知"
+  },
+  "notifications_source": {
+    "en": "Source: {factSourceLabel}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(provider)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_models.dart:315",
+    "zh": "来源 {factSourceLabel}"
+  },
+  "notifications_unreadCount": {
+    "en": "{unreadCount} unread",
+    "placeholders": {
+      "unreadCount": {
+        "example": "feed.unreadCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/notifications/notification_inbox_screen.dart:99",
+    "zh": "未读 {unreadCount} 条"
+  }
+}

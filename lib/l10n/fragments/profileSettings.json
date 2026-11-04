@@ -1,0 +1,177 @@
+{
+  "profileSettings_aboutAndLegal": {
+    "en": "About and legal",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:261",
+    "zh": "关于与法务"
+  },
+  "profileSettings_appLock": {
+    "en": "App lock",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:183",
+    "zh": "应用锁"
+  },
+  "profileSettings_appLockCapabilityUnknown": {
+    "en": "This device's screen lock hasn't been read yet",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:83",
+    "zh": "还没有读到这台设备的锁屏能力"
+  },
+  "profileSettings_appLockNotPersisted": {
+    "en": "{appLockFactorText} · Applies now; won't be remembered after the app restarts",
+    "placeholders": {
+      "appLockFactorText": {
+        "example": "loopAppLockFactorText(appLock.capability!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/settings/settings_screen.dart:85",
+    "zh": "{appLockFactorText} · 这次有效，重开 App 后不会记得"
+  },
+  "profileSettings_appLockOff": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:81",
+    "zh": "已关闭"
+  },
+  "profileSettings_appLockSemantic": {
+    "en": "App lock, {appLockLabel}. Tap and verify to change",
+    "placeholders": {
+      "appLockLabel": {
+        "example": "appLockLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/settings/settings_screen.dart:212",
+    "zh": "应用锁，{appLockLabel}，点按后验证身份可切换"
+  },
+  "profileSettings_appLockUnavailableSemantic": {
+    "en": "App lock, unavailable: {appLockDetail}",
+    "placeholders": {
+      "appLockDetail": {
+        "example": "appLockDetail",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/settings/settings_screen.dart:213",
+    "zh": "应用锁，不可用：{appLockDetail}"
+  },
+  "profileSettings_capabilityBlocked": {
+    "en": "Account settings aren't available right now",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:111",
+    "zh": "账号设置当前不可用"
+  },
+  "profileSettings_currency": {
+    "en": "Currency",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:149",
+    "zh": "货币单位"
+  },
+  "profileSettings_displaySavedLocally": {
+    "en": "Saved on this device only; never written to your account or sent to the server",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:69",
+    "zh": "只保存在本机，不写入账号，也不调用后端"
+  },
+  "profileSettings_displaySaving": {
+    "en": "Applied; saving to this device",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:70",
+    "zh": "已生效，正在保存到本机"
+  },
+  "profileSettings_displaySessionOnly": {
+    "en": "Applies for this session; saving on this device isn't available",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:71",
+    "zh": "本次运行内生效；本机保存当前不可用"
+  },
+  "profileSettings_empty": {
+    "en": "No account settings yet",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:120",
+    "zh": "还没有账号设置"
+  },
+  "profileSettings_fixedThemeNote": {
+    "en": "Theme is fixed in this version.",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:225",
+    "zh": "主题在当前版本固定，不能更改。"
+  },
+  "profileSettings_fixedValuesNote": {
+    "en": "Currency and theme are fixed in this version.",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:225",
+    "zh": "货币单位与主题在当前版本固定，不能更改。"
+  },
+  "profileSettings_general": {
+    "en": "General",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:107",
+    "zh": "通用"
+  },
+  "profileSettings_helpAndSupport": {
+    "en": "Help and support",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:267",
+    "zh": "帮助与客服"
+  },
+  "profileSettings_reduceMotion": {
+    "en": "Reduce motion",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:161",
+    "zh": "减少动效"
+  },
+  "profileSettings_reduceMotionSemantic": {
+    "en": "Reduce motion, {preferences}",
+    "placeholders": {
+      "preferences": {
+        "example": "preferences.reduceMotion ? '已开启' : '已关闭'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/settings/settings_screen.dart:175",
+    "zh": "减少动效，{preferences}"
+  },
+  "profileSettings_storageUnavailableBody": {
+    "en": "Reduce motion still applies for this session. Retry only reads this device's storage again; it doesn't use your account or the server.",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:238",
+    "zh": "减少动效仍会在本次运行内生效。重试只会再读一次本机存储，不会使用账号或后端。"
+  },
+  "profileSettings_storageUnavailableTitle": {
+    "en": "Can't save on this device",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:237",
+    "zh": "本机保存不可用"
+  },
+  "profileSettings_theme": {
+    "en": "Theme",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:155",
+    "zh": "主题"
+  },
+  "profileSettings_themeDark": {
+    "en": "Dark",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:156",
+    "zh": "深色"
+  },
+  "profileSettings_updatedAt": {
+    "en": "Updated {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(settings.updatedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/settings/settings_screen.dart:282",
+    "zh": "更新于 {relativeTime}"
+  },
+  "profileSettings_usingDefaults": {
+    "en": "Using default settings",
+    "placeholders": {},
+    "where": "lib/features/profile/settings/settings_screen.dart:281",
+    "zh": "当前使用默认设置"
+  }
+}

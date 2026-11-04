@@ -56,6 +56,11 @@ ASSERT_CALLEES = {
     "startsWith",
     "endsWith",
     "isNot",
+    "containsAll",
+    "containsAllInOrder",
+    "orderedEquals",
+    "unorderedEquals",
+    "matchesSemantics",
 }
 
 
@@ -95,14 +100,22 @@ def access_for(mask: str, pos: int) -> tuple[str, str | None]:
     k = pos - 1
     level = 0
     in_state = False
+    # An arrow before a `;` or `,` at this level belongs to a sibling
+    # statement, member or argument, not to an enclosing function.
+    arrows_blocked = False
     while k >= 0:
         c = mask[k]
+        if c in ";," and level == 0:
+            arrows_blocked = True
         if c in ")]}":
             level += 1
         elif c in "([{":
             if level:
                 level -= 1
-            elif c == "{":
+                k -= 1
+                continue
+            arrows_blocked = False
+            if c == "{":
                 head = mask[max(0, k - 400) : k]
                 if _FUNC_TAIL.search(head):
                     j = k - 1
@@ -116,7 +129,7 @@ def access_for(mask: str, pos: int) -> tuple[str, str | None]:
                     seg = head[head.rfind("class") :] if "class" in head else head
                     in_state = bool(re.search(r"\bextends\s+\w*State\s*<", seg))
                     break
-        elif c == ">" and k > 0 and mask[k - 1] == "=" and level == 0:
+        elif c == ">" and k > 0 and mask[k - 1] == "=" and level == 0 and not arrows_blocked:
             # `(...) => expr` at this level.
             j = k - 2
             while j >= 0 and mask[j].isspace():
@@ -161,7 +174,7 @@ def dart_quote(text: str) -> str:
 def ensure_import(source: str) -> str:
     if IMPORT in source:
         return source
-    imports = list(re.finditer(r"^import '([^']+)'[^;]*;\s*$", source, flags=re.M))
+    imports = list(re.finditer(r"^import '([^']+)'[^;]*;", source, flags=re.M))
     if not imports:
         return IMPORT + "\n" + source
     for m in imports:
@@ -225,7 +238,10 @@ def apply_file(rel: str, table: dict, todo: list[str], migrated: dict[str, str],
             receiver = "LoopL10n.current"
             call = f"{receiver}.{key}" + (f"({', '.join(args)})" if args else "")
             semi = end + after.index(";")
-            edits.append((stmt_start, semi + 1, f"{indent}{static or ''}String get {name} => {call};"))
+            # Comments are blank in the mask: start at the declaration itself
+            # so a doc comment above it survives.
+            decl_start = stmt_start + len(head) - len(head.lstrip())
+            edits.append((decl_start, semi + 1, f"{static or ''}String get {name} => {call};"))
             count += 1
             if not args:
                 migrated[entry["zh"]] = entry["en"]
@@ -259,11 +275,14 @@ def apply_file(rel: str, table: dict, todo: list[str], migrated: dict[str, str],
 def lib_still_prints(text: str) -> bool:
     for path in L.iter_dart([L.ROOT / "lib"]):
         rel = L.rel_of(path)
-        if L.is_skipped_file(rel):
+        if rel.startswith(L.SKIP_PREFIXES):
             continue
         source = path.read_text(encoding="utf-8")
         if text not in source:
             continue
+        if rel in L.SKIP_FILES:
+            # Stream's Chinese table still prints its words in zh.
+            return True
         sites, _, _ = L.literal_sites(rel, source)
         if any(not s.skip and text in s.group.text for s in sites):
             return True
@@ -294,7 +313,7 @@ def apply_tests(migrated: dict[str, str], todo: list[str], dry: bool) -> tuple[i
             short = (callee or "").split(".")[-1]
             if text in safe and short in ASSERT_CALLEES:
                 edits.append((group.start, group.end, dart_quote(safe[text])))
-            elif short in ASSERT_CALLEES and any(text in zh for zh in safe if text != zh):
+            elif short in ASSERT_CALLEES and len(text) >= 4 and any(text in zh for zh in safe if text != zh):
                 todo.append(f"TODO {L.rel_of(path)}:{group.line} partial match {text[:30]!r}")
         if edits:
             out = source
@@ -307,13 +326,74 @@ def apply_tests(migrated: dict[str, str], todo: list[str], dry: bool) -> tuple[i
     return total, changed_files
 
 
+def force_tests(fragments: list[Path], files: list[str], dry: bool) -> int:
+    """Rewrite every literal in [files] that is exactly a fragment's zh value
+    (or its template filled in) to the en value — for the tests a migration
+    broke, after reading why. Common phrases are left alone."""
+
+    templates = []
+    for frag in fragments:
+        for key, entry in L.load_json(frag).items():
+            zh, en = entry["zh"], entry.get("en", "")
+            if not en:
+                continue
+            names = placeholder_order(zh)
+            pattern = re.escape(zh)
+            for name in names:
+                pattern = pattern.replace(re.escape("{" + name + "}"), f"(?P<{name}>.+?)", 1)
+            templates.append((re.compile("^" + pattern + "$"), names, en))
+    total = 0
+    for rel in files:
+        path = L.ROOT / rel
+        source = path.read_text(encoding="utf-8")
+        lexer = L.Lexer(source).run()
+        mask = L.mask_source(source, lexer)
+        edits = []
+        for group in L.groups_of(source, lexer):
+            if any(p.kind != "text" for p in group.parts) or not L.CJK.search(group.text):
+                continue
+            openers = L.enclosing_openers(mask, group.start)
+            # The first call around it, through any list / set literal.
+            call = next((o for o in openers if mask[o] == "("), None)
+            callee = L.callee_before(mask, call) if call is not None else None
+            if (callee or "").split(".")[-1] not in ASSERT_CALLEES:
+                continue
+            for pattern, names, en in templates:
+                m = pattern.match(group.text)
+                if m:
+                    value = en
+                    for name in names:
+                        value = value.replace("{" + name + "}", m.group(name))
+                    edits.append((group.start, group.end, dart_quote(value)))
+                    break
+        out = source
+        for a, b, t in sorted(edits, reverse=True):
+            out = out[:a] + t + out[b:]
+        if edits:
+            print(f"  {rel}: {len(edits)}")
+            total += len(edits)
+            if not dry:
+                path.write_text(out, encoding="utf-8")
+    return total
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("fragments", nargs="+", type=Path)
     parser.add_argument("--files", nargs="*", help="limit to these lib files (default: the fragments' `where`)")
     parser.add_argument("--no-tests", action="store_true", help="leave test/ alone")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--force-tests",
+        nargs="+",
+        metavar="TEST",
+        help="only rewrite these test files: every exact (or template) match of a fragment zh",
+    )
     args = parser.parse_args()
+    if args.force_tests:
+        n = force_tests(args.fragments, [L.rel_of(Path(f)) for f in args.force_tests], args.dry_run)
+        print(f"test: {n} literals")
+        return 0
     table, files = load_entries(args.fragments)
     if args.files:
         files = {L.rel_of(Path(f)) for f in args.files}

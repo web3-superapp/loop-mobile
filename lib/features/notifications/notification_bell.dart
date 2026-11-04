@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/notifications/notification_inbox.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 
@@ -57,7 +58,9 @@ class _NotificationBellButtonState
         LoopIconButton(
           key: const ValueKey<String>('me-notification-bell'),
           icon: 'bell',
-          label: label == null ? '通知' : '通知，未读 $label 条',
+          label: label == null
+              ? context.l10n.common_notifications
+              : context.l10n.notifications_bellUnread(label),
           onPressed: widget.onPressed,
         ),
         if (label != null)

@@ -323,10 +323,21 @@ void main() {
         find.byKey(const ValueKey<String>('profile-application-notifications')),
       );
 
-      expect(find.text('你的社区「Builders Guild」已通过审核'), findsOneWidget);
-      expect(find.text('已显示验证标记，挖矿权重与官方群已开放。'), findsOneWidget);
-      expect(find.text('你的社区「Writers Room」未通过审核'), findsOneWidget);
-      expect(find.text('原因：名称与官方社区重复'), findsOneWidget);
+      expect(
+        find.text('Your community "Builders Guild" was approved'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'The verified badge is showing; mining weight and the official group are open.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Your community "Writers Room" wasn\'t approved'),
+        findsOneWidget,
+      );
+      expect(find.text('Reason: 名称与官方社区重复'), findsOneWidget);
     });
 
     testWidgets('tapping one reads it and opens the community record', (
@@ -681,8 +692,11 @@ void main() {
       final result = CommunityApplicationNotification.read(
         _reviewNotification(event: 'community.application.rejected'),
       )!;
-      expect(result.title, '你的社区「Builders Guild」未通过审核');
-      expect(result.body, '运维没有给出原因。修改社区资料后可以重新提交。');
+      expect(result.title, 'Your community "Builders Guild" wasn\'t approved');
+      expect(
+        result.body,
+        'No reason was given. Edit the community profile and submit again.',
+      );
     });
 
     test('a row with no name names no community', () {
@@ -692,7 +706,7 @@ void main() {
           communityName: null,
         ),
       )!;
-      expect(result.title, '你的社区已通过审核');
+      expect(result.title, 'Your community was approved');
     });
   });
 
@@ -737,7 +751,7 @@ void main() {
       final feed = await readFeed(reason);
       final result = CommunityApplicationNotification.read(feed.items.single)!;
       expect(result.reason, reason);
-      expect(result.body, '原因：$reason');
+      expect(result.body, 'Reason: $reason');
     });
 
     test('a value past the raised bound is still an invalid payload', () async {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
 /// Placeholder mounted for every manifest route whose page is not connected.
@@ -23,15 +24,17 @@ class LoopPendingSurface extends StatelessWidget {
   final LoopRouteEntry entry;
   final bool _unavailable;
 
-  static const String pendingHeadline = '该页面还没有开放';
-  static const String unavailableHeadline = 'Pay 暂不可用';
+  static String get pendingHeadline => LoopL10n.current.shell_pendingHeadline;
+  static String get unavailableHeadline =>
+      LoopL10n.current.shell_payUnavailableHeadline;
 
   /// Pay is the only fail-closed manifest page in this step; the wording is
   /// shared with the Wallet entry card so both tell the same truth.
-  static const String unavailableMessage =
-      'Pay 尚未开放。此页面不会扫码、不会请求相机权限、不会收集支付信息，也不会提交任何交易。';
+  static String get unavailableMessage =>
+      LoopL10n.current.shell_payUnavailableMessage;
 
-  String get sourceLine => '所属模块：${entry.module.label}';
+  String get sourceLine =>
+      LoopL10n.current.shell_pendingSourceLine(entry.module.label);
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +59,9 @@ class LoopPendingSurface extends StatelessWidget {
                   context.go(LoopRouteManifest.defaultPath);
                 }
               },
-              backLabel: canPop ? '返回' : '返回社区',
+              backLabel: canPop
+                  ? context.l10n.common_back
+                  : context.l10n.shell_pendingBackToCommunity,
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -109,7 +114,9 @@ class LoopPendingSurface extends StatelessWidget {
                           Text(
                             _unavailable
                                 ? unavailableMessage
-                                : '「${entry.title}」还没有开放，这里暂时不显示任何内容，也不能执行任何操作。',
+                                : context.l10n.shell_pendingMessage(
+                                    entry.title,
+                                  ),
                             style: theme.textTheme.bodyMedium,
                           ),
                           const SizedBox(height: LoopSpacing.tight),

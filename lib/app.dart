@@ -730,9 +730,6 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       scrollBehavior: const LoopScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
-        // `LoopL10n.current` answers for the language this tree resolved,
-        // for the code below it that has no context (decision 0281).
-        LoopL10n.use(Localizations.localeOf(context));
         Widget content = child ?? const SizedBox.shrink();
         if (reduceMotion && !MediaQuery.disableAnimationsOf(context)) {
           content = MediaQuery(
@@ -806,10 +803,15 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         // Decision 0234: every field's keyboard goes away on a tap outside
         // it, and an iOS number pad gets a 完成 bar. Above the root
         // navigator, so sheets and dialogs are covered by the same scope.
-        return LoopKeyboardScope(
-          child: LoopPageRecoveryScope(
-            retry: metaObserver.retryObservation,
-            child: LoopAppLockGate(child: LoopToastHost(child: content)),
+        // Decision 0281: `LoopL10n.current` follows the language this tree
+        // resolved, and a switch repaints the copy it serves.
+        return LoopLocaleScope(
+          locale: Localizations.localeOf(context),
+          child: LoopKeyboardScope(
+            child: LoopPageRecoveryScope(
+              retry: metaObserver.retryObservation,
+              child: LoopAppLockGate(child: LoopToastHost(child: content)),
+            ),
           ),
         );
       },

@@ -359,7 +359,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LoopTabBar), findsOneWidget);
     // Decision 0221: the App lands on MEME; 「＋」 is on 聊天.
-    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
@@ -439,7 +439,7 @@ void main() {
     await tester.pumpAndSettle();
     // Decision 0221: the App lands on MEME. S343 · decision 0271: 聊天 no
     // longer carries the row; 我的 does, and its tab wears a dot.
-    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey<String>('stream-chat-message-requests-entry')),
@@ -449,7 +449,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-tab-dot-wallet')),
       findsOneWidget,
     );
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     await tester.pumpAndSettle();
 
     // A request that has not been accepted is not a conversation and never

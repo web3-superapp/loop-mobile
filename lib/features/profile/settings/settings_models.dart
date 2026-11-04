@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// `GET/PUT /v2/settings` (decision 0037).
 ///
@@ -18,9 +19,12 @@ final class LoopAccountSettingsValues {
   final String displayCurrency;
   final String language;
 
-  /// Human label for the fixed language value. It is a display mapping, not a
-  /// localisation runtime: the build ships one language.
-  String get languageLabel => language == fixedLanguage ? '简体中文' : language;
+  /// Human label for the account's language value: the language's own name
+  /// (decision 0281). The app language itself is device-local
+  /// (`loopLocaleProvider`), not this value.
+  String get languageLabel => language == fixedLanguage
+      ? LoopL10n.nativeName(LoopL10n.simplifiedChinese)
+      : language;
 }
 
 @immutable

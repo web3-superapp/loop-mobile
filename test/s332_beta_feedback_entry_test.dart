@@ -186,18 +186,18 @@ void main() {
       final word = tester.widget<Text>(
         find.descendant(of: find.byKey(keyFinder), matching: find.byType(Text)),
       );
-      expect(word.data, '意见反馈');
+      expect(word.data, 'Feedback');
       expect(word.style?.fontSize, 10);
       expect(word.style?.fontWeight, FontWeight.w600);
       expect(word.style?.color, LoopColors.ink);
       // Glyph over word, both inside the key.
       final glyphRect = tester.getRect(find.byType(LoopIcon));
-      final wordRect = tester.getRect(find.text('意见反馈'));
+      final wordRect = tester.getRect(find.text('Feedback'));
       expect(glyphRect.bottom, lessThanOrEqualTo(wordRect.top));
       expect(target(tester).contains(glyphRect.center), isTrue);
       expect(wordRect.left, greaterThanOrEqualTo(target(tester).left));
       expect(wordRect.right, lessThanOrEqualTo(target(tester).right));
-      expect(find.bySemanticsLabel('意见反馈'), findsOneWidget);
+      expect(find.bySemanticsLabel('Feedback'), findsOneWidget);
       expect(find.bySemanticsLabel('内测反馈'), findsNothing);
 
       await tester.tap(find.byKey(_entry));
@@ -381,7 +381,7 @@ void main() {
         expect(find.byType(BetaFeedbackScreen), findsOneWidget);
         expect(find.byKey(_entry), findsNothing);
         // S337 · decision 0266: the page says 意见反馈, never 内测反馈.
-        expect(find.textContaining('意见反馈'), findsWidgets);
+        expect(find.textContaining('Feedback'), findsWidgets);
         expect(find.textContaining('内测反馈'), findsNothing);
         expect(
           GoRouterState.of(tester.element(find.byType(BetaFeedbackScreen)))

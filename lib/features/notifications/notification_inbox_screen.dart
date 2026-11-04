@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/notifications/community_application_notific
 import 'package:loop_mobile/features/notifications/notification_inbox.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -90,20 +91,20 @@ class _NotificationInboxScreenState
       child: LoopStreamPage(
         key: const ValueKey<String>('notification-inbox-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '通知',
+        title: context.l10n.common_notifications,
         kicker: loopChainPreviewKicker(mode),
         onBack: widget.onBack,
         subtitle: feed == null
             ? null
             : feed.unreadCount > 0
-            ? '未读 ${feed.unreadCount} 条'
+            ? context.l10n.notifications_unreadCount(feed.unreadCount)
             : null,
         actions: <Widget>[
           if (hasUnread)
             LoopIconButton(
               key: const ValueKey<String>('notification-inbox-read-all'),
               icon: 'check',
-              label: '全部已读',
+              label: context.l10n.notifications_readAll,
               onPressed: controller.markingAll
                   ? null
                   : () => unawaited(_markAllRead(controller)),
@@ -116,22 +117,25 @@ class _NotificationInboxScreenState
           physics: loopRefreshablePhysics(refresh),
           padding: const EdgeInsets.only(bottom: 24),
           children: <Widget>[
-            LoopChainPreviewNotice(mode: mode, resource: '通知'),
+            LoopChainPreviewNotice(
+              mode: mode,
+              resource: context.l10n.common_notifications,
+            ),
             LoopPersonRow(
               key: const ValueKey<String>('notification-inbox-settings'),
               height: 56,
               leading: const LoopEntryIcon('settings', size: 36),
-              title: '通知设置',
-              subtitle: '选择想收到哪些通知',
+              title: context.l10n.common_notificationSettings,
+              subtitle: context.l10n.notifications_settingsSubtitle,
               chevron: true,
               onTap: widget.onOpenSettings,
             ),
             if (empty)
-              const LoopEmptyState(
+              LoopEmptyState(
                 key: ValueKey<String>('notification-inbox-empty'),
                 illustration: LoopIllustration.history,
-                title: '还没有通知',
-                message: '代币毕业、勋章铸造、好友申请和安全提醒会出现在这里。',
+                title: context.l10n.notifications_emptyTitle,
+                message: context.l10n.notifications_emptyMessage,
               )
             else if (state.phase != LoopChainViewPhase.ready || feed == null)
               LoopChainStateBlock(
@@ -200,7 +204,9 @@ class _NotificationInboxScreenState
     if (!mounted) return;
     LoopToast.show(
       context,
-      message: marked == null ? '没有标记成功，请稍后再试' : '已全部标为已读',
+      message: marked == null
+          ? LoopL10n.current.notifications_readAllFailed
+          : LoopL10n.current.notifications_readAllDone,
       kind: marked == null ? LoopToastKind.err : LoopToastKind.ok,
     );
   }
@@ -268,8 +274,9 @@ LoopNotificationPresentation loopNotificationPresentation(
         title:
             title ??
             switch (symbol ?? _text(entry, 'projectName')) {
-              final String subject => '$subject 已毕业',
-              null => '你参与的项目已毕业',
+              final String subject =>
+                LoopL10n.current.notifications_graduatedNamed(subject),
+              null => LoopL10n.current.notifications_graduated,
             },
         body: body ?? _text(entry, 'projectName'),
       );
@@ -277,7 +284,7 @@ LoopNotificationPresentation loopNotificationPresentation(
       final tokenId = _text(entry, 'tokenId');
       return LoopNotificationPresentation(
         icon: 'crown',
-        title: title ?? '共识勋章铸造完成',
+        title: title ?? LoopL10n.current.notifications_badgeMinted,
         body:
             body ??
             switch ((symbol, tokenId)) {
@@ -290,14 +297,22 @@ LoopNotificationPresentation loopNotificationPresentation(
     case LoopNotificationKind.friendRequest:
       return LoopNotificationPresentation(
         icon: 'user',
-        title: title ?? '新的好友申请',
-        body: body ?? (name == null ? null : '$name 想加你为好友'),
+        title: title ?? LoopL10n.current.notifications_friendRequest,
+        body:
+            body ??
+            (name == null
+                ? null
+                : LoopL10n.current.notifications_friendRequestBody(name)),
       );
     case LoopNotificationKind.friendAccepted:
       return LoopNotificationPresentation(
         icon: 'users',
-        title: title ?? '好友申请已通过',
-        body: body ?? (name == null ? null : '你和 $name 已成为好友'),
+        title: title ?? LoopL10n.current.notifications_friendAccepted,
+        body:
+            body ??
+            (name == null
+                ? null
+                : LoopL10n.current.notifications_friendAcceptedBody(name)),
       );
     // Decision 0242: a launched project's review and deployment progress.
     // The server's own title / body win; the fallbacks are the contract's
@@ -305,26 +320,54 @@ LoopNotificationPresentation loopNotificationPresentation(
     case LoopNotificationKind.launchReviewApproved:
       return LoopNotificationPresentation(
         icon: 'key',
-        title: title ?? _launchTitle(entry, '审核已通过', '发射审核已通过'),
-        body: body ?? '请完成签名，发射才会部署',
+        title:
+            title ??
+            _launchTitle(
+              entry,
+              LoopL10n.current.notifications_reviewApproved,
+              LoopL10n.current.notifications_launchReviewApproved,
+            ),
+        body: body ?? LoopL10n.current.notifications_launchApprovedBody,
       );
     case LoopNotificationKind.launchReviewRejected:
       return LoopNotificationPresentation(
         icon: 'blocked',
-        title: title ?? _launchTitle(entry, '审核未通过', '发射审核未通过'),
+        title:
+            title ??
+            _launchTitle(
+              entry,
+              LoopL10n.current.notifications_reviewRejected,
+              LoopL10n.current.notifications_launchReviewRejected,
+            ),
         body: body ?? _text(entry, 'reasonText'),
       );
     case LoopNotificationKind.launchActivated:
       final saleStartAt = _saleStart(entry);
       return LoopNotificationPresentation(
         icon: 'launch',
-        title: title ?? _launchTitle(entry, '已上链', '你的发射已上链'),
-        body: body ?? (saleStartAt == null ? null : '开售时间 $saleStartAt'),
+        title:
+            title ??
+            _launchTitle(
+              entry,
+              LoopL10n.current.notifications_onChain,
+              LoopL10n.current.notifications_launchOnChain,
+            ),
+        body:
+            body ??
+            (saleStartAt == null
+                ? null
+                : LoopL10n.current.notifications_launchSaleStart(saleStartAt)),
       );
     case LoopNotificationKind.launchDeployFailed:
       return LoopNotificationPresentation(
         icon: 'warn',
-        title: title ?? _launchTitle(entry, '部署失败', '发射部署失败'),
+        title:
+            title ??
+            _launchTitle(
+              entry,
+              LoopL10n.current.notifications_deployFailed,
+              LoopL10n.current.notifications_launchDeployFailed,
+            ),
         body: body ?? _text(entry, 'reasonText'),
       );
     case null:
@@ -344,12 +387,21 @@ LoopNotificationPresentation loopNotificationPresentation(
       final observed = _text(entry, 'observedValue');
       return LoopNotificationPresentation(
         icon: 'chart',
-        title: title ?? (symbol == null ? '价格提醒已触发' : '$symbol 价格提醒已触发'),
+        title:
+            title ??
+            (symbol == null
+                ? LoopL10n.current.notifications_priceAlertTriggered
+                : LoopL10n.current.notifications_priceAlertTriggeredNamed(
+                    symbol,
+                  )),
         body:
             body ??
             (threshold == null || observed == null
                 ? null
-                : '目标 $threshold · 观察值 $observed'),
+                : LoopL10n.current.notifications_priceAlertBody(
+                    observed,
+                    threshold,
+                  )),
       );
     case LoopNotificationCategory.securityEvent:
       return LoopNotificationPresentation(
@@ -357,8 +409,8 @@ LoopNotificationPresentation loopNotificationPresentation(
         title:
             title ??
             (entry.payload['event'] == 'session_revoked'
-                ? '撤销了一个设备会话'
-                : '安全事件'),
+                ? LoopL10n.current.notifications_deviceSessionRevoked
+                : LoopL10n.current.notifications_securityEvent),
         body: body ?? _text(entry, 'platform'),
       );
     case LoopNotificationCategory.communityMention:
@@ -392,7 +444,7 @@ LoopNotificationPresentation loopNotificationPresentation(
     case null:
       return LoopNotificationPresentation(
         icon: 'bell',
-        title: title ?? '通知',
+        title: title ?? LoopL10n.current.common_notifications,
         body: body,
       );
   }
@@ -491,9 +543,12 @@ class _NotificationRow extends StatelessWidget {
     );
     return Semantics(
       button: true,
-      label:
-          '${unread ? '未读，' : ''}${view.title}'
-          '${view.body == null ? '' : '，${view.body}'}，$time',
+      label: <String>[
+        if (unread) context.l10n.common_unread,
+        view.title,
+        if (view.body != null) view.body!,
+        time,
+      ].join(context.l10n.common_listSeparator),
       excludeSemantics: true,
       child: Material(
         type: MaterialType.transparency,

@@ -326,13 +326,12 @@ class _NotificationPreferencesScreenState
     );
   }
 
-  static const List<String> _sections = <String>[
-    '挖矿',
-    'Launch',
-    '交易',
-    '社区',
-    '安全',
-  ];
+  /// 挖矿 / Launch / 交易 / 社区 / 安全, in category order. Derived from the
+  /// categories so the grouping holds in every language (decision 0281).
+  static List<String> get _sections => LoopNotificationCategory.values
+      .map((category) => category.section)
+      .toSet()
+      .toList(growable: false);
 
   List<Widget> _sectionWidgets(
     String section,

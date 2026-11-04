@@ -1,36 +1,82 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The ten reviewed notification categories.
 ///
 /// `security.event` is forced on and locked: the server rejects `false` for it
 /// rather than ignoring it, so the UI must always submit `true`.
 enum LoopNotificationCategory {
-  miningSettlement('mining.settlement', '挖矿', '每日结算完成', null),
-  miningWeight('mining.weight', '挖矿', '权重变化', '持有币的 Mining Weight 调整时'),
+  miningSettlement('mining.settlement'),
+  miningWeight('mining.weight'),
   // Decision 0242: the category also files the badge (0241) and a launched
   // project's review and deployment progress. The detail names what it
   // covers; whether any of it is sent today is the separate 暂不生效 mark.
-  launchRound('launch.round', 'Launch', '资格快照与开始提醒', '含共识勋章、发射审核结果与上链进度'),
-  launchGraduation('launch.graduation', 'Launch', '毕业通知', null),
-  tradeResult('trade.result', '交易', '成交结果', null),
-  tradePriceAlert('trade.priceAlert', '交易', '价格提醒', '关闭后价格提醒仍会记录事件，但不会生成通知'),
-  communityMention('community.mention', '社区', '@我的消息', null),
-  communityAnnouncement('community.announcement', '社区', '公告', null),
-  communityAll('community.all', '社区', '全部消息', '大群建议关闭'),
-  securityEvent('security.event', '安全', '安全事件', '无法关闭');
+  launchRound('launch.round'),
+  launchGraduation('launch.graduation'),
+  tradeResult('trade.result'),
+  tradePriceAlert('trade.priceAlert'),
+  communityMention('community.mention'),
+  communityAnnouncement('community.announcement'),
+  communityAll('community.all'),
+  securityEvent('security.event');
 
-  const LoopNotificationCategory(
-    this.wireName,
-    this.section,
-    this.label,
-    this.detail,
-  );
+  const LoopNotificationCategory(this.wireName);
 
   final String wireName;
-  final String section;
-  final String label;
-  final String? detail;
+  String get section => switch (this) {
+    LoopNotificationCategory.miningSettlement => LoopL10n.current.common_mining,
+    LoopNotificationCategory.miningWeight => LoopL10n.current.common_mining,
+    LoopNotificationCategory.launchRound => 'Launch',
+    LoopNotificationCategory.launchGraduation => 'Launch',
+    LoopNotificationCategory.tradeResult => LoopL10n.current.common_trade,
+    LoopNotificationCategory.tradePriceAlert => LoopL10n.current.common_trade,
+    LoopNotificationCategory.communityMention =>
+      LoopL10n.current.common_community,
+    LoopNotificationCategory.communityAnnouncement =>
+      LoopL10n.current.common_community,
+    LoopNotificationCategory.communityAll => LoopL10n.current.common_community,
+    LoopNotificationCategory.securityEvent => LoopL10n.current.common_security,
+  };
+  String get label => switch (this) {
+    LoopNotificationCategory.miningSettlement =>
+      LoopL10n.current.notifications_categorySettlement,
+    LoopNotificationCategory.miningWeight =>
+      LoopL10n.current.notifications_categoryWeight,
+    LoopNotificationCategory.launchRound =>
+      LoopL10n.current.notifications_categoryLaunchRound,
+    LoopNotificationCategory.launchGraduation =>
+      LoopL10n.current.notifications_categoryGraduation,
+    LoopNotificationCategory.tradeResult =>
+      LoopL10n.current.notifications_categoryTradeResult,
+    LoopNotificationCategory.tradePriceAlert =>
+      LoopL10n.current.common_priceAlerts,
+    LoopNotificationCategory.communityMention =>
+      LoopL10n.current.notifications_categoryMention,
+    LoopNotificationCategory.communityAnnouncement =>
+      LoopL10n.current.notifications_categoryAnnouncement,
+    LoopNotificationCategory.communityAll =>
+      LoopL10n.current.notifications_categoryCommunityAll,
+    LoopNotificationCategory.securityEvent =>
+      LoopL10n.current.notifications_securityEvent,
+  };
+  String? get detail => switch (this) {
+    LoopNotificationCategory.miningSettlement => null,
+    LoopNotificationCategory.miningWeight =>
+      LoopL10n.current.notifications_categoryWeightDetail,
+    LoopNotificationCategory.launchRound =>
+      LoopL10n.current.notifications_categoryLaunchRoundDetail,
+    LoopNotificationCategory.launchGraduation => null,
+    LoopNotificationCategory.tradeResult => null,
+    LoopNotificationCategory.tradePriceAlert =>
+      LoopL10n.current.notifications_categoryPriceAlertDetail,
+    LoopNotificationCategory.communityMention => null,
+    LoopNotificationCategory.communityAnnouncement => null,
+    LoopNotificationCategory.communityAll =>
+      LoopL10n.current.notifications_categoryCommunityAllDetail,
+    LoopNotificationCategory.securityEvent =>
+      LoopL10n.current.notifications_categorySecurityDetail,
+  };
 
   /// Whether turning this category on produces a notification today.
   ///
@@ -312,7 +358,9 @@ final class LoopNotificationFeed {
 String? loopNotificationSourceLabel(String? source) {
   if (source == null) return null;
   final provider = LoopFactSource.tryParse(source);
-  return provider == null ? null : '来源 ${loopFactSourceLabel(provider)}';
+  return provider == null
+      ? null
+      : LoopL10n.current.notifications_source(loopFactSourceLabel(provider));
 }
 
 /// `GET /v2/notifications/unread-count` (decision 0241, loop-api S286).

@@ -52,8 +52,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Bug'), findsOneWidget);
-      expect(find.text('建议'), findsOneWidget);
-      expect(find.text('其他'), findsOneWidget);
+      expect(find.text('Suggestion'), findsOneWidget);
+      expect(find.text('Other'), findsOneWidget);
       expect(_enabled(tester), isFalse);
       expect(find.text('0 / 2000'), findsOneWidget);
 
@@ -114,7 +114,7 @@ void main() {
         find.byKey(const ValueKey<String>('beta-feedback-image-4')),
         findsNothing,
       );
-      expect(find.text('最多 4 张图片'), findsOneWidget);
+      expect(find.text('Up to 4 images'), findsOneWidget);
       // Full: the two add tiles are gone.
       expect(
         find.byKey(const ValueKey<String>('beta-feedback-add-library')),
@@ -146,13 +146,13 @@ void main() {
         find.byKey(const ValueKey<String>('beta-feedback-add-camera')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('没有相机权限'), findsOneWidget);
+      expect(find.text('No camera access'), findsOneWidget);
       await tester.pumpAndSettle(const Duration(seconds: 3));
       await tester.tap(
         find.byKey(const ValueKey<String>('beta-feedback-add-library')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('没有相册权限'), findsOneWidget);
+      expect(find.text('No photo access'), findsOneWidget);
     });
 
     testWidgets(
@@ -162,7 +162,7 @@ void main() {
         picker.photo = s332Picked();
         await pumpS332Page(tester, page(), gateway: gateway, picker: picker);
 
-        await tester.tap(find.text('建议'));
+        await tester.tap(find.text('Suggestion'));
         await tester.tap(
           find.byKey(const ValueKey<String>('beta-feedback-add-library')),
         );
@@ -198,7 +198,7 @@ void main() {
           'route': '/meme',
           'locale': 'zh-CN',
         });
-        expect(find.text('已提交'), findsOneWidget);
+        expect(find.text('Submitted'), findsOneWidget);
         expect(done, 1);
       },
     );
@@ -212,11 +212,11 @@ void main() {
             find.byKey(ValueKey<String>('beta-feedback-environment-$label')),
           )
           .data!;
-      expect(value('版本'), '1.0.0 (57)');
-      expect(value('设备'), 'iPhone17,1');
-      expect(value('系统'), 'iOS 26.1.0');
-      expect(value('页面'), '/meme');
-      expect(value('语言'), 'zh-CN');
+      expect(value('version'), '1.0.0 (57)');
+      expect(value('device'), 'iPhone17,1');
+      expect(value('system'), 'iOS 26.1.0');
+      expect(value('page'), '/meme');
+      expect(value('language'), 'zh-CN');
     });
 
     testWidgets('while the environment is read it is a skeleton', (
@@ -256,8 +256,8 @@ void main() {
           find.byKey(const ValueKey<String>('beta-feedback-error')),
           findsOneWidget,
         );
-        expect(find.text('网络不可用，反馈没有提交。'), findsOneWidget);
-        expect(find.text('没有提交'), findsWidgets);
+        expect(find.text('No network; feedback wasn\'t sent.'), findsOneWidget);
+        expect(find.text('Not sent'), findsWidgets);
         expect(done, 0);
         expect(find.text('闪退'), findsOneWidget);
 
@@ -284,7 +284,7 @@ void main() {
       await tester.tap(find.byKey(_submit));
       await tester.pump();
       await tester.pump();
-      expect(find.text('提交中'), findsOneWidget);
+      expect(find.text('Submitting'), findsOneWidget);
       expect(_enabled(tester), isFalse);
       gateway.submitGate!.complete();
       await tester.pumpAndSettle();
@@ -313,7 +313,7 @@ void main() {
         find.byKey(const ValueKey<String>('beta-feedback-open-mine')),
       );
       expect(openedMine, 1);
-      expect(find.bySemanticsLabel('我的反馈'), findsOneWidget);
+      expect(find.bySemanticsLabel('My feedback'), findsOneWidget);
     });
   });
 
@@ -352,7 +352,7 @@ void main() {
         find.byKey(const ValueKey<String>('beta-feedback-mine-empty')),
         findsOneWidget,
       );
-      expect(find.text('还没有提交过反馈'), findsOneWidget);
+      expect(find.text('No feedback yet'), findsOneWidget);
     });
 
     testWidgets('a failed read offers a retry that reads again', (
@@ -448,7 +448,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: row, matching: find.text('已解决')),
+        find.descendant(of: row, matching: find.text('Resolved')),
         findsOneWidget,
       );
       expect(find.text('第 1 条反馈'), findsOneWidget);
@@ -458,7 +458,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('暂不处理'), findsOneWidget);
+      expect(find.text('Won\'t fix'), findsOneWidget);
     });
 
     testWidgets('the next page is read by its cursor', (tester) async {

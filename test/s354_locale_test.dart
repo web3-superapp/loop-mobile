@@ -192,6 +192,56 @@ void main() {
     );
     expect(LoopL10n.current.common_language, '语言');
   });
+
+  testWidgets(
+    'the tab bar and LoopL10n.current copy follow a switch in place',
+    (tester) async {
+      await _pumpSettings(tester);
+      expect(LoopShell.destinationLabels, <String>[
+        'Chat',
+        'Square',
+        'MEME',
+        'Intel',
+        'Me',
+      ]);
+      expect(find.text('Reduce motion'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey<String>('settings-language')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings-language-zh-CN')),
+      );
+      await tester.pumpAndSettle();
+
+      // Same route, same page: nothing was remounted, the copy repainted.
+      expect(
+        find.byKey(const ValueKey<String>('settings-language')),
+        findsOneWidget,
+      );
+      expect(find.text('减少动效'), findsOneWidget);
+      expect(LoopShell.destinationLabels.first, '聊天');
+    },
+  );
+
+  testWidgets('LoopLocaleScope repaints a reader of LoopL10n.current', (
+    tester,
+  ) async {
+    Widget app(Locale locale) => MaterialApp(
+      locale: locale,
+      supportedLocales: LoopL10n.supportedLocales,
+      localizationsDelegates: loopLocalizationsDelegates,
+      builder: (context, child) => LoopLocaleScope(
+        locale: Localizations.localeOf(context),
+        child: child!,
+      ),
+      home: const _CurrentReader(),
+    );
+    await tester.pumpWidget(app(LoopL10n.english));
+    expect(find.text('Language'), findsOneWidget);
+    await tester.pumpWidget(app(LoopL10n.simplifiedChinese));
+    await tester.pump();
+    expect(find.text('语言'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpSettings(
@@ -236,4 +286,12 @@ class _MemoryLocaleStore implements LoopLocaleStore {
   Future<void> writeLocaleTag(String value) async {
     tag = value;
   }
+}
+
+class _CurrentReader extends StatelessWidget {
+  const _CurrentReader();
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(LoopL10n.current.common_language, textDirection: TextDirection.ltr);
 }

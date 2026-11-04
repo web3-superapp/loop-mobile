@@ -1,4 +1,5 @@
 import 'package:loop_mobile/features/notifications/notification_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The two review outcomes the feed carries for a community applicant.
 ///
@@ -79,18 +80,25 @@ class CommunityApplicationNotification {
 
   /// 「你的社区「Frog Holders」已通过审核」.
   String get title {
-    final subject = communityName == null ? '你的社区' : '你的社区「$communityName」';
+    final subject = communityName == null
+        ? LoopL10n.current.notifications_applicationSubject
+        : LoopL10n.current.notifications_applicationSubjectNamed(communityName);
     return switch (event) {
-      CommunityApplicationEvent.verified => '$subject已通过审核',
-      CommunityApplicationEvent.rejected => '$subject未通过审核',
+      CommunityApplicationEvent.verified =>
+        LoopL10n.current.notifications_applicationVerified(subject),
+      CommunityApplicationEvent.rejected =>
+        LoopL10n.current.notifications_applicationRejected(subject),
     };
   }
 
   /// What the verdict changes, or why it was refused.
   String get body => switch (event) {
-    CommunityApplicationEvent.verified => '已显示验证标记，挖矿权重与官方群已开放。',
+    CommunityApplicationEvent.verified =>
+      LoopL10n.current.notifications_applicationVerifiedBody,
     CommunityApplicationEvent.rejected =>
-      reason == null ? '运维没有给出原因。修改社区资料后可以重新提交。' : '原因：$reason',
+      reason == null
+          ? LoopL10n.current.notifications_applicationNoReason
+          : LoopL10n.current.notifications_applicationReason(reason),
   };
 }
 

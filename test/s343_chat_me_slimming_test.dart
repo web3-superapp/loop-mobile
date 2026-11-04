@@ -588,11 +588,11 @@ void main() {
 
   group('the 我的 tab', () {
     testWidgets('label 我的, a person glyph, path /wallet', (tester) async {
-      expect(LoopShell.destinationLabels.last, '我的');
+      expect(LoopShell.destinationLabels.last, 'Me');
       expect(LoopShell.destinationPaths.last, '/wallet');
       await _pumpApp(tester);
       final item = tester.widget<LoopTabItem>(
-        find.widgetWithText(LoopTabItem, '我的'),
+        find.widgetWithText(LoopTabItem, 'Me'),
       );
       expect(item.icon, 'user');
       expect(item.slug, 'wallet');
@@ -604,7 +604,7 @@ void main() {
       await _pumpApp(tester, requests: _oneRequest());
       expect(_key('loop-tab-dot-wallet'), findsOneWidget);
       final dot = tester.getCenter(_key('loop-tab-dot-wallet'));
-      final tab = tester.getRect(find.widgetWithText(LoopTabItem, '我的'));
+      final tab = tester.getRect(find.widgetWithText(LoopTabItem, 'Me'));
       expect(tab.contains(dot), isTrue);
       for (final other in <String>['chat', 'square', 'meme', 'intel']) {
         expect(_key('loop-tab-dot-$other'), findsNothing, reason: other);
@@ -630,7 +630,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(_key('loop-tab-dot-wallet'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('我的，有新消息')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Me, new messages')), findsOneWidget);
     });
   });
 

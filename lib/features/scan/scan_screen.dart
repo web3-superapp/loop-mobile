@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/scan/loop_qr_scanner.dart';
 import 'package:loop_mobile/features/scan/scan_result.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -17,7 +18,7 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 
 /// The camera-permission sentence LOOP already uses on `permission-notice`.
-const String scanCameraDeniedBody = '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。';
+String get scanCameraDeniedBody => LoopL10n.current.scan_cameraDeniedBody;
 
 /// `scan` · action / focus (decision 0113, S109b §3.2).
 ///
@@ -172,26 +173,30 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       case LoopQrImageNoCode():
         LoopToast.show(
           context,
-          message: '这张图片里没有识别到二维码',
+          message: LoopL10n.current.scan_imageNoCode,
           kind: LoopToastKind.warn,
         );
       case LoopQrImagePermissionDenied():
         LoopToast.show(
           context,
-          message: '没有相册权限，去系统设置里允许 LOOP 访问照片后再试',
+          message: LoopL10n.current.scan_imageNoPhotoAccess,
           kind: LoopToastKind.warn,
         );
       case LoopQrImageFailed():
         LoopToast.show(
           context,
-          message: '图片没有读出来，请换一张再试',
+          message: LoopL10n.current.scan_imageUnreadable,
           kind: LoopToastKind.warn,
         );
     }
   }
 
   Future<void> _copyUnknown(String text) async {
-    await LoopCopy.text(context, text, message: '已复制二维码内容');
+    await LoopCopy.text(
+      context,
+      text,
+      message: LoopL10n.current.scan_contentCopied,
+    );
   }
 
   @override
@@ -202,13 +207,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       return LoopFocusPage(
         key: const ValueKey<String>('scan-screen'),
         archetype: LoopPageArchetype.action,
-        title: '扫一扫',
+        title: context.l10n.common_scan,
         onBack: widget.onBack,
-        block: const LoopInlineUnavailable(
+        block: LoopInlineUnavailable(
           key: ValueKey<String>('scan-unavailable'),
           icon: 'camera',
-          message: '扫码当前不可用',
-          detail: '这个版本没有装配相机扫码，本页不会打开相机。',
+          message: context.l10n.scan_unavailable,
+          detail: context.l10n.scan_unavailableDetail,
           maxLines: 2,
           detailMaxLines: 4,
         ),
@@ -293,7 +298,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                             Padding(
                               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                               child: Text(
-                                '对准 LOOP 名片、邀请海报、社区二维码或钱包地址二维码。',
+                                context.l10n.scan_hint,
                                 key: const ValueKey<String>('scan-hint'),
                                 textAlign: TextAlign.center,
                                 style: LoopType.bodySm.copyWith(
@@ -311,8 +316,11 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                                     'scan-pick-image',
                                   ),
                                   icon: Icons.photo_library_outlined,
-                                  label: _pickingImage ? '正在读取…' : '相册',
-                                  semanticLabel: '从相册选图',
+                                  label: _pickingImage
+                                      ? context.l10n.scan_pickImageReading
+                                      : context.l10n.scan_pickImageLabel,
+                                  semanticLabel:
+                                      context.l10n.scan_pickImageSemantic,
                                   onPressed: _pickingImage
                                       ? null
                                       : () => unawaited(_pickImage()),
@@ -322,7 +330,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                                   icon: torchOn
                                       ? Icons.flashlight_off_outlined
                                       : Icons.flashlight_on_outlined,
-                                  label: torchOn ? '关闭手电筒' : '手电筒',
+                                  label: torchOn
+                                      ? context.l10n.scan_torchOff
+                                      : context.l10n.scan_torch,
                                   toggled: torchOn,
                                   onPressed:
                                       running &&
@@ -370,7 +380,7 @@ class _ScanBar extends StatelessWidget {
             LoopIconButton(
               key: const ValueKey<String>('loop-topbar-back'),
               icon: 'back',
-              label: '返回',
+              label: context.l10n.common_back,
               color: LoopColors.chalk,
               onPressed: onBack,
             ),
@@ -378,7 +388,7 @@ class _ScanBar extends StatelessWidget {
           ],
           Semantics(
             header: true,
-            child: Text('扫一扫', style: LoopType.flatTitle),
+            child: Text(context.l10n.common_scan, style: LoopType.flatTitle),
           ),
         ],
       ),
@@ -511,34 +521,34 @@ class _ViewfinderState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (status) {
     LoopQrCameraStatus.running => const SizedBox.shrink(),
-    _ => ColoredBox(color: LoopColors.ink, child: _body()),
+    _ => ColoredBox(color: LoopColors.ink, child: _body(context)),
   };
 
-  Widget _body() => switch (status) {
+  Widget _body(BuildContext context) => switch (status) {
     LoopQrCameraStatus.running => const SizedBox.shrink(),
     LoopQrCameraStatus.starting => Center(
       child: Text(
-        '正在打开相机…',
+        context.l10n.scan_cameraOpening,
         key: const ValueKey<String>('scan-state-loading'),
         style: LoopType.caption.copyWith(color: LoopColors.text2),
       ),
     ),
-    LoopQrCameraStatus.permissionDenied => const Center(
+    LoopQrCameraStatus.permissionDenied => Center(
       child: LoopInlineUnavailable(
         key: ValueKey<String>('scan-state-permission'),
         icon: 'camera',
-        message: '没有相机权限',
+        message: context.l10n.scan_cameraNoAccess,
         detail: scanCameraDeniedBody,
         maxLines: 2,
         detailMaxLines: 4,
       ),
     ),
-    LoopQrCameraStatus.unsupported => const Center(
+    LoopQrCameraStatus.unsupported => Center(
       child: LoopInlineUnavailable(
         key: ValueKey<String>('scan-state-unsupported'),
         icon: 'camera',
-        message: '这台设备没有可用的相机',
-        detail: '可以改用下方的「相册」识别二维码图片。',
+        message: context.l10n.scan_cameraUnsupported,
+        detail: context.l10n.scan_cameraUnsupportedDetail,
         maxLines: 2,
         detailMaxLines: 4,
       ),
@@ -547,7 +557,7 @@ class _ViewfinderState extends StatelessWidget {
       child: SingleChildScrollView(
         child: LoopErrorState(
           key: const ValueKey<String>('scan-state-error'),
-          reason: '相机没有打开。可以重试，或改用下方的「相册」。',
+          reason: context.l10n.scan_cameraErrorReason,
           onRetry: onRetry,
         ),
       ),
@@ -608,8 +618,8 @@ class _UnknownCode extends StatelessWidget {
     children: <Widget>[
       LoopNotice(
         icon: 'info',
-        title: '不是 LOOP 二维码',
-        body: 'LOOP 不会打开这段内容，只把它显示在下面。',
+        title: context.l10n.scan_unknownTitle,
+        body: context.l10n.scan_unknownBody,
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -626,12 +636,12 @@ class _UnknownCode extends StatelessWidget {
         children: <Widget>[
           LoopButton(
             key: const ValueKey<String>('scan-unknown-copy'),
-            label: '复制',
+            label: context.l10n.common_copy,
             onPressed: onCopy,
           ),
           LoopButton(
             key: const ValueKey<String>('scan-unknown-continue'),
-            label: '继续扫描',
+            label: context.l10n.scan_keepScanning,
             primary: true,
             onPressed: onContinue,
           ),

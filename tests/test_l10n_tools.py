@@ -65,6 +65,13 @@ class AccessTest(unittest.TestCase):
     def test_builder_closure_uses_context(self):
         self.assertEqual(self.access("final w = Builder(builder: (context) => Text('中'));\n"), "context")
 
+    def test_a_sibling_member_arrow_is_not_enclosing(self):
+        src = (
+            "class W extends StatelessWidget {\n  Widget build(BuildContext context) => X();\n\n"
+            "  Widget _body() => switch (s) {\n    a => Text('中'),\n  };\n}\n"
+        )
+        self.assertEqual(self.access(src), "current")
+
     def test_top_level_uses_current(self):
         self.assertEqual(self.access("String label() => '中';\n"), "current")
 

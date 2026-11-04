@@ -655,8 +655,11 @@ void main() {
       await tester.tap(row('mining.weight'));
       await tester.pumpAndSettle();
 
-      expect(find.text('关闭『权重变化』通知？'), findsOneWidget);
-      expect(find.text('持有币的 Mining Weight 调整时'), findsWidgets);
+      expect(find.text('关闭『Weight changes』通知？'), findsOneWidget);
+      expect(
+        find.text('When a held token\'s Mining Weight changes'),
+        findsWidgets,
+      );
       expect(find.text('关闭'), findsOneWidget);
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
@@ -744,7 +747,7 @@ void main() {
       // below the screen, a reduced-motion one is already in place.
       await tester.pump();
       await tester.pump();
-      final title = find.text('关闭『权重变化』通知？');
+      final title = find.text('关闭『Weight changes』通知？');
       expect(title, findsOneWidget);
       final sheet = tester.getRect(
         find.byKey(const ValueKey<String>('loop-sheet')),
@@ -755,11 +758,11 @@ void main() {
     test('titles and bodies come from the category', () {
       expect(
         notificationDisableTitle(LoopNotificationCategory.communityAll),
-        '关闭『全部消息』通知？',
+        '关闭『All messages』通知？',
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.communityAll),
-        '大群建议关闭',
+        'Best kept off for large groups',
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.launchGraduation),

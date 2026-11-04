@@ -167,7 +167,8 @@ void main() {
         tester.getSemantics(
           find.byKey(const ValueKey<String>('settings-theme')),
         ),
-        matchesSemantics(label: '主题，深色，不可更改', isReadOnly: true),
+        // The row's own separators and 不可更改 are lib/widgets copy (S355).
+        matchesSemantics(label: 'Theme，Dark，不可更改', isReadOnly: true),
       );
       expect(
         find.byKey(const ValueKey<String>('settings-fixed-values-note')),
