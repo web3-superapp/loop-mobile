@@ -225,6 +225,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   () => _section = PublicProfileSection.values[section.index],
                 ),
               ),
+              // S350c · decision 0276: the section opens 8 under the tabs'
+              // dash, as 我的's sections do.
+              const SizedBox(height: LoopSpacing.tight),
               switch (_section) {
                 PublicProfileSection.holdings => _HoldingsSection(
                   record: record,
@@ -661,7 +664,6 @@ class _HiddenSection extends StatelessWidget {
     key: ValueKey<String>('user-profile-$sectionKey-hidden'),
     illustration: LoopIllustration.watchlist,
     title: '对方未公开$what',
-    message: '对方在隐私设置里关闭了「公开持仓与交易」。',
     compact: true,
   );
 }
@@ -686,7 +688,6 @@ class _UnavailableSection extends StatelessWidget {
           key: ValueKey<String>('user-profile-$sectionKey-no-wallet'),
           illustration: LoopIllustration.watchlist,
           title: '对方暂无钱包',
-          message: '对方还没有绑定钱包，没有可显示的$what。',
           compact: true,
         )
       : LoopInlineUnavailable(
@@ -802,7 +803,6 @@ class _HoldingsSection extends StatelessWidget {
             key: ValueKey<String>('user-profile-holdings-empty'),
             illustration: LoopIllustration.watchlist,
             title: '还没有持仓',
-            message: '对方的钱包里暂时没有可显示的资产。',
             compact: true,
           )
         else
@@ -955,7 +955,6 @@ class _TradesSection extends StatelessWidget {
             key: ValueKey<String>('user-profile-trades-empty'),
             illustration: LoopIllustration.chartEmpty,
             title: '还没有交易',
-            message: '对方的钱包还没有可显示的买卖或转账。',
             compact: true,
           ),
         ],
@@ -1094,7 +1093,6 @@ class _CommunitiesSection extends StatelessWidget {
         key: ValueKey<String>('user-profile-communities-hidden'),
         illustration: LoopIllustration.watchlist,
         title: '对方未公开社区列表',
-        message: '对方在隐私设置里没有公开加入的社区。',
         compact: true,
       );
     }
@@ -1103,7 +1101,6 @@ class _CommunitiesSection extends StatelessWidget {
         key: ValueKey<String>('user-profile-communities-empty'),
         illustration: LoopIllustration.watchlist,
         title: '还没有加入社区',
-        message: '对方暂时没有加入任何社区。',
         compact: true,
       );
     }
