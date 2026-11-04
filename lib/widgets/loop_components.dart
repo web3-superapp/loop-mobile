@@ -190,7 +190,12 @@ class LoopTopbar extends StatelessWidget {
                           // all fit, and the subtitle is the line that carries
                           // the room's own state, so the title gives up its
                           // second line rather than the bar overflowing.
-                          maxLines: flat
+                          // S355f: under an enlarged text scale a second
+                          // line no longer fits the fixed bar, so the title
+                          // keeps one line and ellipsizes.
+                          maxLines:
+                              flat ||
+                                  MediaQuery.textScalerOf(context).scale(1) > 1
                               ? 1
                               : subtitle == null && kicker == null
                               ? titleMaxLines
