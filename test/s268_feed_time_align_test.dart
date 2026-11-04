@@ -5,16 +5,18 @@ import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/square/square_feed_view.dart';
 
 // ---------------------------------------------------------------------------
-// S268 · 广场「动态」: the age sits on the row's trailing edge (decision 0228)
+// S268 · 广场「动态」: every age lines up (decision 0228). S353a · decision
+// 0278 (docs/58 §5.7): the age stands under the name, on the name column's
+// leading edge.
 // ---------------------------------------------------------------------------
 
 final DateTime _now = DateTime.utc(2026, 10, 21, 12);
 
 const double _rowWidth = 390;
 
-/// The age's trailing edge: the post card's content edge (S350a · decision
-/// 0274 — 16 from the screen, 16 inside the card).
-const double _page = squareFeedCardInset + squareFeedCardPadding;
+/// The age's leading edge: the page gutter, the 48 face and its 12 gap.
+const double _nameColumn =
+    20 + SquareFeedPostRow.avatarSize + SquareFeedPostRow.avatarGap;
 
 SquareFeedPost _post(
   int n, {
@@ -64,7 +66,7 @@ Future<void> _pumpRows(WidgetTester tester, List<SquareFeedPost> posts) async {
 }
 
 void main() {
-  testWidgets('every post puts its age on the same trailing edge', (
+  testWidgets('every post puts its age on the same edge, under the name', (
     tester,
   ) async {
     final posts = <SquareFeedPost>[
@@ -76,11 +78,11 @@ void main() {
 
     final ages = find.byKey(const ValueKey<String>('square-post-age'));
     expect(ages, findsNWidgets(3));
-    final rights = <double>[
-      for (var i = 0; i < 3; i += 1) tester.getRect(ages.at(i)).right,
-    ];
-    for (final right in rights) {
-      expect(right, moreOrLessEquals(_rowWidth - _page));
+    final names = find.byKey(const ValueKey<String>('square-post-name'));
+    for (var i = 0; i < 3; i += 1) {
+      final age = tester.getRect(ages.at(i));
+      expect(age.left, moreOrLessEquals(_nameColumn));
+      expect(age.top, greaterThanOrEqualTo(tester.getRect(names.at(i)).bottom));
     }
     for (var i = 0; i < 3; i += 1) {
       expect(find.text('3d').at(i), findsOneWidget);
@@ -109,7 +111,7 @@ void main() {
     expect(badge, findsOneWidget);
     final age = find.byKey(const ValueKey<String>('square-post-age'));
     final ageRect = tester.getRect(age);
-    expect(ageRect.right, moreOrLessEquals(_rowWidth - _page));
+    expect(ageRect.left, moreOrLessEquals(_nameColumn));
 
     final badgeRect = tester.getRect(badge);
     final nameRect = tester.getRect(
@@ -117,6 +119,7 @@ void main() {
     );
     expect(badgeRect.width, greaterThan(0));
     expect(nameRect.right, lessThanOrEqualTo(badgeRect.left));
-    expect(badgeRect.right, lessThanOrEqualTo(ageRect.left));
+    expect(badgeRect.right, lessThanOrEqualTo(_rowWidth - 20));
+    expect(ageRect.top, greaterThanOrEqualTo(nameRect.bottom));
   });
 }

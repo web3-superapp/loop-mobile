@@ -2476,6 +2476,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get chatTokenCard_viewPartial => '数据缺失';
 
   @override
+  String get chatTokenCard_viewProvenanceSeparator => '；';
+
+  @override
   String get chatTokenCard_viewRisk => '风险事实';
 
   @override
@@ -3233,6 +3236,11 @@ class LoopLocalizationsZh extends LoopLocalizations {
   @override
   String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand =>
       '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。';
+
+  @override
+  String chatV2_voiceRoomScreensCommandConfirmTitle(Object? command) {
+    return '$command？';
+  }
 
   @override
   String get chatV2_voiceRoomScreensConfirmLabel => '离开';
@@ -7123,6 +7131,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String
   get integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel =>
       '查看资料';
+
+  @override
+  String get integrations_streamDayLabelYesterday => '昨天';
 
   @override
   String get integrations_streamReactionIconResolverHint => '取消回应';
@@ -20120,9 +20131,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get square_communityListPending => '，审核中';
-
-  @override
-  String get square_communityListPlaceholder => '搜索社区';
 
   @override
   String get square_communityListResource => '社区目录';

@@ -118,8 +118,11 @@ void main() {
     );
   });
 
-  testWidgets('a chosen LoopButton wears it; a primary, a secondary and an '
-      'unchosen choice do not', (tester) async {
+  // S353a · decision 0278 (docs/58 §9.3): a chosen state is the white word
+  // on white 10 %; the chosen LoopButton no longer wears the splat.
+  testWidgets('no LoopButton wears it: chosen, unchosen, primary, secondary', (
+    tester,
+  ) async {
     await _pump(
       tester,
       Wrap(
@@ -150,11 +153,7 @@ void main() {
         ],
       ),
     );
-    expect(
-      find.descendant(of: _key('chosen'), matching: _splat),
-      findsOneWidget,
-    );
-    for (final key in <String>['unchosen', 'primary', 'secondary']) {
+    for (final key in <String>['chosen', 'unchosen', 'primary', 'secondary']) {
       expect(
         find.descendant(of: _key(key), matching: _splat),
         findsNothing,
@@ -164,7 +163,7 @@ void main() {
   });
 
   testWidgets('MarketTabBar (行情 / 代币 / MEME home strips): the chosen tab '
-      'wears it', (tester) async {
+      'is the white chip, no splat (S353a)', (tester) async {
     await _pump(
       tester,
       MarketTabBar(
@@ -173,16 +172,13 @@ void main() {
         onSelected: (_) {},
       ),
     );
-    expect(_splat, findsOneWidget);
-    final chosen = find.ancestor(
-      of: find.text('MEME'),
-      matching: find.byType(Container),
+    expect(_splat, findsNothing);
+    final chosen = tester.widget<Container>(
+      find
+          .ancestor(of: find.text('MEME'), matching: find.byType(Container))
+          .first,
     );
-    final splat = tester.getRect(_splat);
-    final word = tester.getRect(find.text('MEME'));
-    expect(splat.center.dx, lessThan(word.center.dx));
-    expect(splat.center.dy, lessThan(word.center.dy));
-    expect(chosen, findsWidgets);
+    expect((chosen.decoration! as BoxDecoration).color, LoopColors.chipActive);
   });
 
   testWidgets('钱包 代币 / NFT: the Figma chips wear no splat (0277)', (

@@ -451,9 +451,10 @@ void main() {
       SquareCommunityList(onOpenCommunity: (_) {}, onOpenSearch: () {}),
       community: FakeCommunityGateway(),
     );
-    // Decision 0277: 广场's search placeholder, body2Sm 14 textSecondary.
+    // Decision 0277: 广场's search placeholder, body2Sm 14 textSecondary
+    // (S353a: the one word 「Search」).
     _expectStep(
-      _painted(tester, 'Search communities'),
+      _painted(tester, 'Search'),
       LoopType.body2Sm,
       color: LoopColors.textSecondary,
       reason: 'search placeholder',

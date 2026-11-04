@@ -514,7 +514,8 @@ void main() {
       // One conversation row is about as tall as the tile it stands for.
       final first = tester.getRect(rows.at(0));
       final second = tester.getRect(rows.at(1));
-      expect(second.top - first.top, inInclusiveRange(70, 84));
+      // S353a · decision 0278: the Figma's 67 conversation row.
+      expect(second.top - first.top, chatInboxRowHeight);
     });
   });
 

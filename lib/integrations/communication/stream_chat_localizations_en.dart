@@ -764,3 +764,30 @@ class LoopStreamChatEnglishLocalizations implements StreamChatLocalizations {
   @override
   String notifyRoleText(String role) => _english.notifyRoleText(role);
 }
+
+/// English weekday abbreviations, Monday first (glossary §三: `Mon`).
+const List<String> loopStreamWeekdaysEn = <String>[
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+];
+
+/// English month abbreviations for `MMM d` (glossary §三).
+const List<String> loopStreamMonthsEn = <String>[
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];

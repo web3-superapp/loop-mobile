@@ -267,12 +267,13 @@ class _ChatInboxSwipeInherited extends InheritedWidget {
 /// conversation when tapped — the tap closes it — so the swipe and the tap
 /// never act on the same touch. A vertical drag is the list's: the swipe
 /// starts only once the finger has moved sideways.
-/// A pinned conversation's row on the board (S350a · decision 0274): Chalk
-/// 5 % over [loopChatBoardFill], one step lighter than its neighbours.
-final Color loopChatBoardPinnedFill = Color.alphaBlend(
-  LoopColors.chalk.withValues(alpha: 0.05),
-  loopChatBoardFill,
-);
+/// A pinned conversation's row (S350a · decision 0274): one step up the
+/// Figma's surface scale — the card ground ([LoopColors.card], as
+/// [loopChatBoardFill]) — so the pinned rows read as one group. S353a ·
+/// decision 0278: every other row at rest sits on the page itself (the
+/// Figma draws the list straight on the page ground), and a row that is
+/// sliding takes the same card ground so it covers its swipe actions.
+const Color loopChatBoardPinnedFill = loopChatBoardFill;
 
 class ChatInboxSwipeRow extends StatefulWidget {
   const ChatInboxSwipeRow({
@@ -405,9 +406,11 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
 
   @override
   Widget build(BuildContext context) {
-    // Decisions 0221, 0224: on the wall the row is the translucent board.
-    final ground = LoopBackdropScope.on(context)
-        ? (widget.pinned ? loopChatBoardPinnedFill : loopChatBoardFill)
+    // Decisions 0221, 0224, S353a: on the wall a row at rest is the page
+    // itself, a pinned one the card step; off the wall, the page ground.
+    final onWall = LoopBackdropScope.on(context);
+    final resting = onWall
+        ? (widget.pinned ? loopChatBoardPinnedFill : null)
         : Theme.of(context).scaffoldBackgroundColor;
     return GestureDetector(
       key: const ValueKey<String>('chat-inbox-swipe-row'),
@@ -442,14 +445,24 @@ class _ChatInboxSwipeRowState extends State<ChatInboxSwipeRow>
                       ],
                     ),
                   ),
-                Transform.translate(offset: Offset(value, 0), child: child),
+                Transform.translate(
+                  offset: Offset(value, 0),
+                  child: switch (value == 0 ? resting : loopChatBoardFill) {
+                    final Color ground => ColoredBox(
+                      key: const ValueKey<String>('chat-inbox-row-ground'),
+                      color: ground,
+                      child: child,
+                    ),
+                    null => child,
+                  },
+                ),
               ],
             );
           },
-          // The row's own ground covers the actions underneath; a Material,
-          // so the row's press highlight still paints on it.
+          // The row's ground (above) covers the actions underneath; a
+          // Material, so the row's press highlight still paints on it.
           child: Material(
-            color: ground,
+            type: MaterialType.transparency,
             child: _OpenRowGuard(
               offset: _offset,
               onClose: () => _settle(0),

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart'
+    show loopGroupedFigure;
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
@@ -13,7 +15,6 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
-import 'package:loop_mobile/features/shell/loop_shell.dart' show loopTabBarEdge;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
@@ -372,7 +373,8 @@ class _SquareHeaderLine extends StatelessWidget {
                 context.l10n.square_communityListBuild,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.title.copyWith(color: LoopColors.chalk),
+                // docs/58 §5.9: the small block heading, 16 / 700.
+                style: LoopType.headlineSm,
               ),
             ),
           ),
@@ -415,10 +417,7 @@ class _SquareTextLink extends StatelessWidget {
             children: <Widget>[
               Text(
                 label,
-                style: LoopTypography.withWeight(
-                  LoopType.label,
-                  FontWeight.w600,
-                ).copyWith(color: LoopColors.text2),
+                style: LoopType.meta.copyWith(color: LoopColors.textSecondary),
               ),
               const SizedBox(width: 2),
               const LoopIcon('chevron', size: 14, color: LoopColors.text2),
@@ -463,14 +462,20 @@ class _SquareSortButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(label, style: LoopType.meta),
+                  // docs/58 §5.3: 「成员最多」 at 12 / 500 in textSecondary.
+                  Text(
+                    label,
+                    style: LoopType.meta.copyWith(
+                      color: LoopColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(width: 4),
                   const RotatedBox(
                     quarterTurns: 1,
                     child: LoopIcon(
                       'chevron',
                       size: 12,
-                      color: LoopColors.text3,
+                      color: LoopColors.textSecondary,
                     ),
                   ),
                 ],
@@ -549,8 +554,9 @@ class _SquareSearchEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopSearchEntry(
-    // Decision 0277: the Figma's 44 search field, the 广场 placeholder.
-    placeholder: context.l10n.square_communityListPlaceholder,
+    // Decision 0277: the Figma's 44 search field. S353a · decision 0278:
+    // the one word, so it fits whole beside the two chips at 360.
+    placeholder: context.l10n.common_search,
     tone: LoopSearchTone.square,
     inkKey: const ValueKey<String>('square-community-search'),
     onTap: onTap,
@@ -686,23 +692,23 @@ String? squareCommunityRankedFact(
   return ranked == null ? null : '${ranked.caption} ${ranked.value}';
 }
 
-/// The card's measures (S335 · decision 0264, the requester's 390-wide
-/// board): a card per community, 16 in from the screen edge, 12 apart, 16
-/// inside, a 60 logo at a 14 corner; the facts line's chips 20 high.
-const double squareCommunityCardInset = 16;
+/// The row's measures (S353a · decision 0278, docs/58 §5.8 / §3.2): rows on
+/// the page in the page gutter, 86 high, a 56 logo at a 12 corner, a 1px
+/// white 5 % hairline under each. [squareCommunityCardInset] keeps its name
+/// for the pinned line's insets.
+const double squareCommunityCardInset = LoopSpacing.page;
 
 /// The pinned line's controls (S350a · decision 0274): the search field
 /// and, beside it, the 全部 / 我加入的 track, as tall as the field — 44
 /// since decision 0277 (the Figma's search field).
 const double squareCommunityControlHeight = LoopTouch.searchField;
-const double squareCommunityCardGap = 12;
-const double squareCommunityCardPadding = 16;
-const double squareCommunityLogoSize = 60;
-const double squareCommunityLogoRadius = 14;
-const double squareCommunityPillWidth = 52;
-const double squareCommunityPillHeight = 32;
-const double squareCommunityChipHeight = 20;
-const double squareCommunityTokenLogoSize = 16;
+const double squareCommunityRowHeight = 86;
+const double squareCommunityLogoSize = 56;
+const double squareCommunityLogoRadius = LoopRadius.cardValue;
+const double squareCommunityPillWidth = 54;
+const double squareCommunityPillHeight = 28;
+const double squareCommunityChipHeight = 16;
+const double squareCommunityTokenLogoSize = 10;
 const double squareCommunityMetaGap = 8;
 const double squareCommunityTokenChipMaxWidth = 136;
 
@@ -744,18 +750,14 @@ class SquareCommunityRow extends StatelessWidget {
       SquareMembershipAction.pending =>
         context.l10n.square_communityListPending,
     };
+    // S353a · decision 0278 (docs/58 §5.8): one row on the page, 86 high,
+    // a hairline under it inside the page gutter.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        squareCommunityCardInset,
-        0,
-        squareCommunityCardInset,
-        squareCommunityCardGap,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: squareCommunityCardInset),
       child: Material(
         key: ValueKey<String>('square-community-card-$id'),
-        color: LoopColors.card,
-        borderRadius: LoopRadius.shell,
-        clipBehavior: Clip.antiAlias,
+        type: MaterialType.transparency,
+        shape: const Border(bottom: BorderSide(color: LoopColors.divider)),
         child: Row(
           children: <Widget>[
             Expanded(
@@ -768,12 +770,9 @@ class SquareCommunityRow extends StatelessWidget {
                 child: InkWell(
                   key: ValueKey<String>('square-community-open-$id'),
                   onTap: onOpen,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      squareCommunityCardPadding,
-                      squareCommunityCardPadding,
-                      8,
-                      squareCommunityCardPadding,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: squareCommunityRowHeight,
                     ),
                     child: Row(
                       children: <Widget>[
@@ -799,12 +798,10 @@ class SquareCommunityRow extends StatelessWidget {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopType.body1.copyWith(
-                                  color: LoopColors.chalk,
-                                ),
+                                style: LoopType.body1,
                               ),
                               if (described) ...<Widget>[
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 1),
                                 Text(
                                   description,
                                   key: ValueKey<String>(
@@ -813,17 +810,18 @@ class SquareCommunityRow extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: LoopType.caption.copyWith(
-                                    color: LoopColors.text2,
+                                    color: LoopColors.textSecondary,
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               _SquareCommunityMeta(
                                 communityId: id,
-                                members: context.l10n
-                                    .square_communityListSquareCommunitySubline(
-                                      community.memberCount,
-                                    ),
+                                // docs/58 §5.8: the people mark and the
+                                // number; the words stay in the spoken label.
+                                members: loopGroupedFigure(
+                                  community.memberCount.toString(),
+                                ),
                                 ranked: ranked,
                                 symbol: community.assetSymbol,
                                 logoUrl:
@@ -842,9 +840,7 @@ class SquareCommunityRow extends StatelessWidget {
             ),
             if (action != SquareMembershipAction.none)
               Padding(
-                padding: const EdgeInsets.only(
-                  right: squareCommunityCardPadding,
-                ),
+                padding: const EdgeInsets.only(left: 8),
                 child: _MembershipCapsule(
                   communityId: id,
                   action: action,
@@ -852,9 +848,7 @@ class SquareCommunityRow extends StatelessWidget {
                   onJoin: onJoin,
                   onOpen: onOpen,
                 ),
-              )
-            else
-              const SizedBox(width: 4),
+              ),
           ],
         ),
       ),
@@ -896,7 +890,11 @@ class _SquareCommunityMeta extends StatelessWidget {
       height: squareCommunityChipHeight,
       child: Row(
         children: <Widget>[
-          const LoopIcon('users', size: 14, color: LoopColors.muted),
+          const LoopIcon(
+            'users',
+            size: squareCommunityMetaIconSize,
+            color: LoopColors.textSecondary,
+          ),
           const SizedBox(width: 4),
           Text(
             members,
@@ -938,7 +936,7 @@ class _SquareCommunityMeta extends StatelessWidget {
                     size: squareCommunityTokenLogoSize,
                   ),
                   text: '\$$asset',
-                  color: LoopColors.chalk,
+                  color: LoopColors.textSecondary,
                   semanticsLabel: bolted
                       ? '\$$asset${LoopL10n.current.common_listSeparator}${communityLabelDisplay(mark)}'
                       : '\$$asset',
@@ -987,12 +985,12 @@ class _SquareCommunityMeta extends StatelessWidget {
   }
 }
 
-/// The facts line's words (S350a · decision 0274): meta 13 one grey step
-/// under the description's Text2 — Muted, not Text3, which sits within a
-/// shade of Text2 — so name, description and facts read as three levels.
-final TextStyle _squareMetaFacts = LoopType.meta.copyWith(
-  color: LoopColors.muted,
-);
+/// The facts line's words (S353a · docs/58 §5.8): the member count and the
+/// token at 10 / 400 in textSecondary.
+final TextStyle _squareMetaFacts = LoopType.metaSm;
+
+/// The people mark before the member count (docs/58 §3.3: 12).
+const double squareCommunityMetaIconSize = 12;
 
 /// The narrowest a label chip may be drawn: its first four characters (and
 /// an ellipsis when there is more) plus the chip's own padding and edge.
@@ -1000,7 +998,7 @@ double squareMetaChipFloor(BuildContext context, String text) {
   final chars = text.characters;
   final shown = chars.length <= 4 ? text : '${chars.take(4)}…';
   final painter = TextPainter(
-    text: TextSpan(text: shown, style: LoopType.tag),
+    text: TextSpan(text: shown, style: _squareMetaFacts),
     textDirection: TextDirection.ltr,
     textScaler: MediaQuery.textScalerOf(context),
     maxLines: 1,
@@ -1011,7 +1009,7 @@ double squareMetaChipFloor(BuildContext context, String text) {
 }
 
 /// The bolt inside a 算力社区's token chip.
-const double squareCommunityBoltSize = 12;
+const double squareCommunityBoltSize = 10;
 
 /// The operator's label that marks a 算力社区 (decision 0264 supplement).
 /// Operators write it in Chinese, so it is matched as data against the zh
@@ -1023,10 +1021,10 @@ String get squareMiningLabel =>
 /// Whether [label] is the 算力社区 mark.
 bool squareIsMiningLabel(String label) => label.trim() == squareMiningLabel;
 
-const double squareMetaChipPadding = 6;
+const double squareMetaChipPadding = 5;
 
-/// A 20-high outlined chip on the facts line: the tab bar's own hairline
-/// edge, a 10 corner, an optional 16 logo, one 12 / 600 word.
+/// A 16-high outlined chip on the facts line (docs/58 §5.8): a 1px white 8 %
+/// edge, round ends, an optional 10 logo, one 10 / 400 word.
 class _SquareMetaChip extends StatelessWidget {
   const _SquareMetaChip({
     required this.text,
@@ -1054,12 +1052,12 @@ class _SquareMetaChip extends StatelessWidget {
     child: Container(
       height: squareCommunityChipHeight,
       padding: EdgeInsets.only(
-        left: leading == null ? squareMetaChipPadding : 2,
+        left: leading == null ? squareMetaChipPadding : 3,
         right: squareMetaChipPadding,
       ),
       decoration: BoxDecoration(
-        borderRadius: LoopRadius.inner,
-        border: Border.all(color: loopTabBarEdge),
+        borderRadius: LoopRadius.card,
+        border: Border.all(color: LoopColors.buttonGhost),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1074,7 +1072,7 @@ class _SquareMetaChip extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: LoopType.tag.copyWith(color: color),
+              style: _squareMetaFacts.copyWith(color: color),
             ),
           ),
           if (trailing case final Widget mark) ...<Widget>[
@@ -1137,9 +1135,9 @@ class _MembershipCapsule extends StatelessWidget {
       SquareMembershipAction.none => ('none', '', false, null),
     };
     final word = joining ? context.l10n.square_communityListSwitch3 : label;
-    // Decision 0212 (docs/42 附C §6): 「加入」 is the Yellow primary step —
-    // the one thing on the card that asks to be tapped; 「已加入」 and the
-    // others are the quiet grey capsule (S335 · decision 0264: 52 × 32).
+    // S353a · decision 0278 (docs/58 §5.8 / §5.20): the Figma's small 「加入」
+    // — 54 × 28 at a 6 corner on white 8 %, the word 12 / 600 Yellow; 「已加入」
+    // and the others the same key with the word in textSecondary.
     final solid = primary && onTap != null;
     return Semantics(
       button: true,
@@ -1162,18 +1160,18 @@ class _MembershipCapsule extends StatelessWidget {
               constraints: const BoxConstraints(
                 minWidth: squareCommunityPillWidth,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: solid ? LoopColors.yellow : LoopColors.card2,
-                borderRadius: LoopRadius.pill,
+              decoration: const BoxDecoration(
+                color: LoopColors.buttonGhost,
+                borderRadius: LoopRadius.compactButton,
               ),
               child: Text(
                 word,
                 maxLines: 1,
                 softWrap: false,
-                style: LoopType.label.copyWith(
-                  color: solid ? LoopColors.ink : LoopColors.text2,
+                style: LoopType.buttonXs.copyWith(
+                  color: solid ? LoopColors.yellow : LoopColors.textSecondary,
                 ),
               ),
             ),

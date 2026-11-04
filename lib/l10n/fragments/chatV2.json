@@ -1457,6 +1457,17 @@
     "where": "lib/features/chat/v2/voice_room_screens.dart:1735",
     "zh": "这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。"
   },
+  "chatV2_voiceRoomScreensCommandConfirmTitle": {
+    "en": "{command}?",
+    "placeholders": {
+      "command": {
+        "example": "command.label",
+        "type": "String"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1284",
+    "zh": "{command}？"
+  },
   "chatV2_voiceRoomScreensConfirmLabel": {
     "en": "Leave",
     "placeholders": {},

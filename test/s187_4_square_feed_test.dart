@@ -273,16 +273,18 @@ void main() {
       // The claim's amount is in its sentence now (decision 0187).
       expect(find.text('Claimed 10.94 USD1.'), findsOneWidget);
       expect(find.text('Graduate'), findsOneWidget);
+      // S353a · decision 0278 (docs/58 §5.7): the Figma's post tags.
       final badges = tester
-          .widgetList<LoopBadge>(find.byType(LoopBadge))
+          .widgetList<LoopStatusTag>(find.byType(LoopStatusTag))
           .toList();
       expect(badges, hasLength(5));
-      LoopBadge badge(String text) => badges.singleWhere((b) => b.text == text);
-      expect(badge('Opinion').kind, LoopBadgeKind.mute);
-      expect(badge('Pinned').kind, LoopBadgeKind.mute);
-      expect(badge('Buy').kind, LoopBadgeKind.launch);
-      expect(badge('Graduate').kind, LoopBadgeKind.launch);
-      expect(badge('Claim').kind, LoopBadgeKind.up);
+      LoopStatusTag badge(String text) =>
+          badges.singleWhere((b) => b.text == text);
+      expect(badge('Opinion').tone, LoopTagTone.purple);
+      expect(badge('Pinned').tone, LoopTagTone.yellow);
+      expect(badge('Buy').tone, LoopTagTone.rise);
+      expect(badge('Graduate').tone, LoopTagTone.green);
+      expect(badge('Claim').tone, LoopTagTone.green);
       // The pinned post is first and its text sits in a record card.
       final pinnedTop = tester.getTopLeft(_key('square-post-${_uuid(1)}')).dy;
       final opinionTop = tester.getTopLeft(_key('square-post-${_uuid(2)}')).dy;
@@ -403,10 +405,11 @@ void main() {
       );
       final bare = tester.getSize(_key('square-post-${_uuid(1)}')).height;
       final quoted = tester.getSize(_key('square-post-${_uuid(2)}')).height;
-      // 140 since decision 0229's 16 body and 17 name (112 under 0210).
-      expect(bare, lessThanOrEqualTo(140));
-      expect(quoted, lessThanOrEqualTo(190));
-      // The capsule is the design's 40 dp Card strip.
+      // S353a · decision 0278: the Figma's post — a 48 face, 16 / 25 body,
+      // ♡ under it — is 154 with two lines, 221 with a quote card.
+      expect(bare, lessThanOrEqualTo(154));
+      expect(quoted, lessThanOrEqualTo(221));
+      // The quote card is the Figma's 64 strip.
       expect(
         tester.getSize(_key('square-post-quote')).height,
         SquareFeedPostRow.capsuleHeight,
@@ -414,9 +417,8 @@ void main() {
       await _teardown(tester);
     });
 
-    // S355b: 360 is the verification width (S350 shot baseline). At 320 the
-    // Global / Following + Post head overflows by 7.3px; the shared
-    // market_widgets.dart:298 tab bar is made shrinkable in S353a.
+    // S355b: 360 is the verification width (S350 shot baseline). S353a: the
+    // head is the Figma's filter chips now, which shrink on a narrow line.
     testWidgets('the price stays on one line on a narrow phone', (
       tester,
     ) async {
@@ -525,17 +527,22 @@ void main() {
     });
 
     test('badge by kind', () {
-      LoopBadge? badge(SquareFeedPostKind kind, {bool pinned = false}) =>
-          squareFeedBadge(_post(1, kind: kind, pinned: pinned)) as LoopBadge?;
+      LoopStatusTag? badge(SquareFeedPostKind kind, {bool pinned = false}) =>
+          squareFeedBadge(_post(1, kind: kind, pinned: pinned))
+              as LoopStatusTag?;
       expect(badge(SquareFeedPostKind.opinion)!.text, 'Opinion');
-      expect(badge(SquareFeedPostKind.opinion)!.kind, LoopBadgeKind.mute);
+      expect(badge(SquareFeedPostKind.opinion)!.tone, LoopTagTone.purple);
       expect(badge(SquareFeedPostKind.buy)!.text, 'Buy');
-      expect(badge(SquareFeedPostKind.buy)!.kind, LoopBadgeKind.launch);
+      expect(badge(SquareFeedPostKind.buy)!.tone, LoopTagTone.rise);
       expect(badge(SquareFeedPostKind.claim)!.text, 'Claim');
-      expect(badge(SquareFeedPostKind.claim)!.kind, LoopBadgeKind.up);
+      expect(badge(SquareFeedPostKind.claim)!.tone, LoopTagTone.green);
       expect(badge(SquareFeedPostKind.graduation)!.text, 'Graduate');
-      expect(badge(SquareFeedPostKind.graduation)!.kind, LoopBadgeKind.launch);
+      expect(badge(SquareFeedPostKind.graduation)!.tone, LoopTagTone.green);
       expect(badge(SquareFeedPostKind.system, pinned: true)!.text, 'Pinned');
+      expect(
+        badge(SquareFeedPostKind.system, pinned: true)!.tone,
+        LoopTagTone.yellow,
+      );
       expect(badge(SquareFeedPostKind.system), isNull);
     });
 

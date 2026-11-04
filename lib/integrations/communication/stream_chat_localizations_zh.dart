@@ -61,9 +61,21 @@ const List<String> _loopWeekdays = <String>[
   '周日',
 ];
 
-/// `今天` / `昨天` / `周三` / `9月10日` / `2025年9月10日`.
+/// `今天` / `昨天` / `周三` / `9月10日` / `2025年9月10日`; in English (S353a ·
+/// decision 0278) `Today` / `Yesterday` / `Wed` / `Sep 10` / `Sep 10, 2025`.
 String loopStreamDayLabel(DateTime dateTime, {DateTime? now}) {
   final local = dateTime.toLocal();
+  if (LoopL10n.currentLocale != LoopL10n.simplifiedChinese) {
+    final day = '${loopStreamMonthsEn[local.month - 1]} ${local.day}';
+    return switch (_loopDayBucket(dateTime, now)) {
+      _LoopDayBucket.today => LoopL10n.current.common_today,
+      _LoopDayBucket.yesterday =>
+        LoopL10n.current.integrations_streamDayLabelYesterday,
+      _LoopDayBucket.thisWeek => loopStreamWeekdaysEn[local.weekday - 1],
+      _LoopDayBucket.thisYear => day,
+      _LoopDayBucket.older => '$day, ${local.year}',
+    };
+  }
   return switch (_loopDayBucket(dateTime, now)) {
     _LoopDayBucket.today => '今天',
     _LoopDayBucket.yesterday => '昨天',

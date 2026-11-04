@@ -19,6 +19,9 @@ enum _ChatCreateAction { addFriend, createCommunity, createGroup, scan }
 /// 搜索/添加用户 opens the global search, where a person is found and asked;
 /// 创建社区 is the same application 发现社区 submits; 创建群聊 opens the group
 /// form; 扫一扫 opens the scanner (decision 0113).
+/// The face of the bar's Yellow 「＋」 key (docs/58 §5.20: 32 × 32).
+const double chatCreateKeySize = 32;
+
 class ChatCreateMenuButton extends ConsumerWidget {
   const ChatCreateMenuButton({super.key, this.floating = false});
 
@@ -55,11 +58,42 @@ class ChatCreateMenuButton extends ConsumerWidget {
         ),
       );
     }
-    return LoopIconButton(
-      key: const ValueKey<String>('chat-create-menu'),
-      icon: 'plus',
+    // S353a · decision 0278 (docs/58 §5.20): the bar's 「＋」 is the Figma's
+    // Yellow square key — 32 at a 4 corner, a 22 plus in onYellow — drawn
+    // inside the 44 target.
+    return Semantics(
+      button: true,
       label: context.l10n.chatFriends_createMenuButtonChatCreateMenuLabel2,
-      onPressed: () => unawaited(_open(context, ref)),
+      excludeSemantics: true,
+      child: InkWell(
+        key: const ValueKey<String>('chat-create-menu'),
+        onTap: () => unawaited(_open(context, ref)),
+        customBorder: const RoundedRectangleBorder(
+          borderRadius: LoopRadius.stage,
+        ),
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        child: SizedBox.square(
+          dimension: LoopTouch.minimum,
+          child: Center(
+            child: Container(
+              key: const ValueKey<String>('chat-create-menu-face'),
+              width: chatCreateKeySize,
+              height: chatCreateKeySize,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: LoopColors.yellow,
+                borderRadius: LoopRadius.stage,
+              ),
+              child: const LoopIcon(
+                'plus',
+                size: 22,
+                color: LoopColors.onYellow,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
