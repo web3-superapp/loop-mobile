@@ -9777,10 +9777,29 @@ TYPOGRAPHY_FORBIDDEN_LITERALS = {
     ),
 }
 
-# The proportional voice is the platform's own UI sans (decision 0080), so no
-# display face is bundled any more. A file that comes back is a page deciding
-# its own voice.
-TYPOGRAPHY_RETIRED_FONT_ASSETS = ("Sora-Variable.ttf", "OFL-Sora.txt")
+# Decision 0277: every Latin letter and figure is Inter (the requester's
+# Figma system), with the bundled Noto Sans SC behind it for Han. The faces
+# it replaced — Sora (0080), Anton and Arimo (0210) — must not come back: a
+# file that does is a page deciding its own voice.
+TYPOGRAPHY_INTER_FONT_ASSETS = (
+    "Inter-Light.ttf",
+    "Inter-Regular.ttf",
+    "Inter-Medium.ttf",
+    "Inter-SemiBold.ttf",
+    "Inter-Bold.ttf",
+    "Inter-BlackItalic.ttf",
+    "OFL-Inter.txt",
+)
+TYPOGRAPHY_RETIRED_FONT_ASSETS = (
+    "Sora-Variable.ttf",
+    "OFL-Sora.txt",
+    "Anton-Regular.ttf",
+    "OFL-Anton.txt",
+    "Arimo-Regular.ttf",
+    "Arimo-Bold.ttf",
+    "OFL-Arimo.txt",
+)
+TYPOGRAPHY_RETIRED_FAMILIES = ("Sora", "Anton", "Arimo", "Noto Sans SC Display")
 
 
 def check_typography_band_contract(root: Path) -> list[str]:
@@ -9825,8 +9844,20 @@ def check_typography_band_contract(root: Path) -> list[str]:
     if "family: Noto Sans SC" not in pubspec:
         errors.append("pubspec.yaml does not declare the `Noto Sans SC` family")
 
-    # IBM Plex Mono is the address/hash band and keeps its registration; the
-    # display face is gone and must not come back through either door.
+    # Inter is the one proportional face (decision 0277).
+    for asset in TYPOGRAPHY_INTER_FONT_ASSETS:
+        if not (fonts_dir / asset).is_file():
+            errors.append(
+                f"assets/fonts/{asset} is missing; Latin text and figures have "
+                "no bundled Inter face (decision 0277)"
+            )
+        elif asset.endswith(".ttf") and f"assets/fonts/{asset}" not in pubspec:
+            errors.append(f"assets/fonts/{asset} is not registered in pubspec.yaml")
+    if "family: Inter" not in pubspec:
+        errors.append("pubspec.yaml does not declare the `Inter` family (decision 0277)")
+
+    # IBM Plex Mono keeps its registration for a real code block; the retired
+    # faces must not come back through either door.
     for asset in (
         "IBMPlexMono-Regular.ttf",
         "IBMPlexMono-Medium.ttf",
@@ -9843,14 +9874,15 @@ def check_typography_band_contract(root: Path) -> list[str]:
     for asset in TYPOGRAPHY_RETIRED_FONT_ASSETS:
         if (fonts_dir / asset).is_file():
             errors.append(
-                f"assets/fonts/{asset} is back; the proportional voice is the "
-                "platform's own sans (decision 0080)"
+                f"assets/fonts/{asset} is back; the proportional voice is "
+                "Inter (decision 0277)"
             )
-    if "family: Sora" in pubspec:
-        errors.append(
-            "pubspec.yaml declares the `Sora` family; the proportional bands "
-            "take the platform sans (decision 0080)"
-        )
+    for family in TYPOGRAPHY_RETIRED_FAMILIES:
+        if re.search(rf"family:\s*{re.escape(family)}\s*$", pubspec, re.MULTILINE):
+            errors.append(
+                f"pubspec.yaml declares the `{family}` family; the proportional "
+                "bands are Inter (decision 0277)"
+            )
 
     theme_path = root / "lib" / "core" / "theme" / "loop_theme.dart"
     if theme_path.is_file():

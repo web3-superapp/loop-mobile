@@ -528,44 +528,39 @@ abstract final class LoopLayout {
   static const double topbarContentHeight = 74;
 }
 
-/// Font families (decision 0210, which supersedes decision 0080's platform
-/// sans). The looplabs.meme voice is Impact for headings and Arial for body;
-/// neither may be embedded (Monotype commercial licence), so LOOP bundles their
-/// open stand-ins:
+/// Font families (decision 0277, which supersedes 0210's Anton / Arimo).
+/// The requester's Figma system sets every screen in **Inter**; Inter has
+/// Latin, figures and punctuation only, so a Chinese run falls through
+/// [systemFallback] to the bundled **Noto Sans SC**:
 ///
-/// - **Anton** (SIL OFL 1.1) — the condensed display face of every heading
-///   band. It has Latin only; a Chinese heading falls through to
-///   [cjkDisplay], the bundled Noto Sans SC Bold, so the Han half of a 中英
-///   heading is bold as well.
-/// - **Arimo** (SIL OFL 1.1, Arial-metric compatible) — every other
-///   proportional band, 400 and 700. Its Han fallback is [cjk].
-/// - **IBM Plex Mono** — addresses, hashes and code, where a fixed advance is
-///   the point. Figures stay proportional-family tabular figures.
+/// - [sans] — Inter, static 300 / 400 / 500 / 600 / 700, and Black Italic
+///   900 for the 「第 N 名」 place figure ([LoopType.rankFigure]).
+/// - [cjk] — Noto Sans SC Regular 400 / Medium 500 / Bold 700. The engine
+///   resolves a Han glyph at the nearest bundled weight, so the Chinese half
+///   of a line follows the Latin half like this: 300 / 400 → Regular,
+///   500 → Medium, 600 / 700 / 900 → Bold.
+/// - [mono] — IBM Plex Mono, kept registered for a real code block. An
+///   address or a link is Inter since 0277 ([LoopType.code] 14 / 400,
+///   [LoopType.codeSm] 13 / 400).
 abstract final class LoopFonts {
-  /// The condensed display face (headings, hero figures).
-  static const String display = 'Anton';
+  /// Inter — every Latin letter and figure on screen.
+  static const String sans = 'Inter';
 
-  /// The body face (body, captions, labels, figures).
-  static const String body = 'Arimo';
+  /// Retained name: the body face is [sans].
+  static const String body = sans;
 
   static const String mono = 'IBM Plex Mono';
 
   /// The bundled CJK family — the controlled Chinese face.
   static const String cjk = 'Noto Sans SC';
 
-  /// Noto Sans SC Bold registered as its own one-face family, so a heading
-  /// run in Anton (which asks for 400, Anton's only weight) still lands on
-  /// the bold Han face rather than the regular one.
-  static const String cjkDisplay = 'Noto Sans SC Display';
-
   /// Retained names: call sites that asked for "the system face".
-  static const String system = body;
-  static const String systemDisplay = display;
+  static const String system = sans;
 
   /// Retired with decision 0210: a band no longer switches optical cut.
-  static String familyFor(double size) => body;
+  static String familyFor(double size) => sans;
 
-  /// Fallback chain for the body bands: the bundled CJK face first, then the
+  /// Fallback chain behind Inter: the bundled CJK face first, then the
   /// platform stacks for scripts it does not carry.
   static const List<String> systemFallback = <String>[
     cjk,
@@ -576,17 +571,11 @@ abstract final class LoopFonts {
     'sans-serif',
   ];
 
-  /// Fallback chain for the display bands: bold Han, then [systemFallback].
-  static const List<String> displayFallback = <String>[
-    cjkDisplay,
-    ...systemFallback,
-  ];
-
   /// Retained name for the body chain (Stream's theme adapter calls it).
   static const List<String> cjkFallback = systemFallback;
 
   /// Fallback chain for the fixed-width band. IBM Plex Mono has no Han
-  /// coverage, so a Chinese run inside an address line still lands on a real
+  /// coverage, so a Chinese run inside a code line still lands on a real
   /// CJK face instead of the system monospace.
   static const List<String> monoFallback = <String>[
     'SF Mono',
@@ -601,7 +590,8 @@ abstract final class LoopFonts {
 /// ([TextLeadingDistribution.even]) because a mixed 中英 line resolves two
 /// files with different ascent/descent ratios.
 abstract final class LoopTypography {
-  /// The body builder (Arimo, Noto Sans SC behind it).
+  /// The one builder (Inter, Noto Sans SC behind it). [italic] is only for
+  /// the Black Italic place figure.
   static TextStyle sans({
     required double size,
     required FontWeight weight,
@@ -609,9 +599,11 @@ abstract final class LoopTypography {
     double? letterSpacing,
     Color color = LoopColors.chalk,
     bool tabularFigures = false,
+    bool italic = false,
   }) {
     return TextStyle(
-      fontFamily: LoopFonts.body,
+      fontFamily: LoopFonts.sans,
+      fontStyle: italic ? FontStyle.italic : null,
       fontFamilyFallback: LoopFonts.systemFallback,
       fontSize: size,
       fontWeight: weight,
@@ -624,27 +616,6 @@ abstract final class LoopTypography {
       fontFeatures: tabularFigures
           ? const <FontFeature>[FontFeature.tabularFigures()]
           : null,
-    );
-  }
-
-  /// The display builder: Anton, tracked in by [trackingEm] of its size, with
-  /// bold Noto Sans SC behind it. Anton has one weight, so the weight is
-  /// fixed at 400 (asking for more would only invite synthetic bolding).
-  static TextStyle condensed({
-    required double size,
-    required double height,
-    double trackingEm = 0,
-    Color color = LoopColors.chalk,
-  }) {
-    return TextStyle(
-      fontFamily: LoopFonts.display,
-      fontFamilyFallback: LoopFonts.displayFallback,
-      fontSize: size,
-      fontWeight: FontWeight.w400,
-      height: height,
-      leadingDistribution: TextLeadingDistribution.even,
-      letterSpacing: size * trackingEm,
-      color: color,
     );
   }
 
@@ -732,20 +703,27 @@ abstract final class LoopTypography {
     tabularFigures: true,
   );
 
-  /// Band 7b · code — the fixed-width band.
+  /// Band 7b · code — an address, a hash, a link. Inter 400 with tabular
+  /// figures since decision 0277 (the Figma sets the wallet address in Inter
+  /// 14 / 400 and the invite link in Inter 13 / 400); [mono] stays for a
+  /// real code block.
   static TextStyle code(
     double size, {
-    FontWeight weight = FontWeight.w500,
+    FontWeight weight = FontWeight.w400,
     double height = 1.4,
     Color color = LoopColors.chalk,
-  }) => mono(size: size, weight: weight, height: height, color: color);
+  }) => sans(
+    size: size,
+    weight: weight,
+    height: height,
+    color: color,
+    tabularFigures: true,
+  );
 
-  /// Restate [style] at [weight]. On an Anton step the weight is ignored —
-  /// Anton has one weight, and a heavier request would only fake-bold it.
+  /// Restate [style] at [weight]. Every step is Inter since decision 0277,
+  /// and Inter carries every weight the ladder names.
   static TextStyle withWeight(TextStyle style, FontWeight weight) =>
-      style.fontFamily == LoopFonts.display
-      ? style
-      : style.copyWith(fontWeight: weight);
+      style.copyWith(fontWeight: weight);
 }
 
 /// The named steps — docs/46 字体与间距规范 v3 (decision 0229, OKX-calibrated;
@@ -839,10 +817,11 @@ abstract final class LoopType {
 
   // Band 1 · display.
   /// A hero line — the one statement on an intro page (`-0.035em`).
-  static final TextStyle heroDisplay = LoopTypography.condensed(
+  static final TextStyle heroDisplay = LoopTypography.sans(
     size: 56,
+    weight: FontWeight.w700,
     height: 1.0,
-    trackingEm: -0.035,
+    letterSpacing: 56 * -0.02,
   );
 
   /// R9 folio heading on the intro / record / state archetypes — [title1].
@@ -864,36 +843,23 @@ abstract final class LoopType {
 
   /// The MEME project page hero price and its big figures: the one place
   /// Anton survives (docs/42 附C §2).
-  static final TextStyle heroFigure = LoopTypography.condensed(
-    size: 30,
-    height: 1.1,
-    trackingEm: -0.025,
-  );
+  static final TextStyle heroFigure = LoopTypography.figure(30, height: 1.21);
 
   /// S265d (decision 0224): the one big figure on a chrome plate — 总资产
   /// and 我的名次 — Anton 40, Yellow at the call site (docs/42 §2 keeps Anton
   /// for big figures).
-  static final TextStyle plateFigure = LoopTypography.condensed(
-    size: 40,
-    height: 1.0,
-    trackingEm: 0.01,
+  static final TextStyle plateFigure = LoopTypography.figure(
+    40,
+    height: 46 / 40,
   );
 
   /// S264 (decision 0220): the MEME home's section index 「01」 — Anton 30,
   /// Yellow at the call site.
-  static final TextStyle sectionIndex = LoopTypography.condensed(
-    size: 30,
-    height: 1.0,
-    trackingEm: 0.02,
-  );
+  static final TextStyle sectionIndex = LoopTypography.figure(30, height: 1.0);
 
   /// S279 (decision 0237): the same Anton index at the headline step (18),
   /// inside a MEME home tab 「01 内盘」.
-  static final TextStyle tabIndex = LoopTypography.condensed(
-    size: 18,
-    height: 1.0,
-    trackingEm: 0.02,
-  );
+  static final TextStyle tabIndex = LoopTypography.figure(18, height: 1.0);
 
   /// A figure at the body2 size (16 / 600 tabular): a fact table's value, a
   /// record line's amount.

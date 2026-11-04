@@ -141,13 +141,13 @@ void main() {
   });
 
   test(
-    'headings are bold Arimo / Noto, body is Arimo, figures are tabular',
+    'every step is Inter with Noto Sans SC behind it, figures are tabular',
     () {
       final text = LoopTheme.dark.textTheme;
       final title = text.headlineLarge!;
-      // Decision 0211: a page title is Arimo 700 with Noto Sans SC behind it,
-      // in sentence case and untracked; Anton stays for the big figures.
-      expect(title.fontFamily, 'Arimo');
+      // Decision 0277: a page title is Inter 700 with Noto Sans SC behind
+      // it, in sentence case and untracked.
+      expect(title.fontFamily, 'Inter');
       // Decision 0229: title1, 28.
       expect(title.fontSize, 28);
       expect(title.fontWeight, FontWeight.w700);
@@ -156,7 +156,7 @@ void main() {
 
       expect(text.displayMedium!.fontSize, 28);
       expect(text.bodyLarge, same(LoopType.bodyLg));
-      expect(text.bodyLarge!.fontFamily, 'Arimo');
+      expect(text.bodyLarge!.fontFamily, 'Inter');
       expect(text.bodyMedium!.fontSize, 16);
       expect(text.bodyMedium!.height, 1.5);
 
@@ -176,33 +176,42 @@ void main() {
       }
       expect(LoopMono.display.fontSize, 28);
 
-      // Fixed width survives for one job: addresses, hashes, code.
-      expect(LoopMono.address.fontFamily, LoopFonts.mono);
-      expect(LoopType.code.fontFamily, LoopFonts.mono);
-      expect(LoopType.codeSm.fontFamily, LoopFonts.mono);
+      // Decision 0277: an address or a link is Inter 400 (the Figma's
+      // wallet address 14 / 400, invite link 13 / 400); IBM Plex Mono stays
+      // registered for a real code block.
+      expect(LoopMono.address.fontFamily, LoopFonts.sans);
+      expect(LoopType.code.fontFamily, LoopFonts.sans);
+      expect(LoopType.code.fontWeight, FontWeight.w400);
+      expect(LoopType.codeSm.fontFamily, LoopFonts.sans);
+      expect(
+        LoopType.code.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
       expect(LoopTypography.mono(size: 12).fontFamily, 'IBM Plex Mono');
     },
   );
 
   test('the seven bands are the whole vocabulary', () {
-    // Decision 0212: Anton only for the hero line and the MEME project
-    // page's hero figures; the stat and key figures are Arimo.
-    final condensed = <String, TextStyle>{
+    // Decision 0277: Anton is gone — the big figures are Inter Bold.
+    final big = <String, TextStyle>{
       'heroDisplay': LoopType.heroDisplay,
       'heroFigure': LoopType.heroFigure,
+      'plateFigure': LoopType.plateFigure,
+      'sectionIndex': LoopType.sectionIndex,
+      'tabIndex': LoopType.tabIndex,
     };
     for (final style in <TextStyle>[LoopType.statFigure, LoopType.keyFigure]) {
       expect(style.fontFamily, LoopFonts.body);
       expect(style.fontWeight, FontWeight.w700);
     }
     expect(LoopType.keyFigure.fontSize, 32);
-    condensed.forEach((name, style) {
-      expect(style.fontFamily, LoopFonts.display, reason: name);
-      expect(style.fontWeight, FontWeight.w400, reason: name);
-      expect(style.fontFamilyFallback!.first, LoopFonts.cjkDisplay);
-      // Anton is tracked in, never out.
-      expect(style.letterSpacing, lessThan(0), reason: name);
-      expect(style.height, inInclusiveRange(1.0, 1.15), reason: name);
+    big.forEach((name, style) {
+      expect(style.fontFamily, LoopFonts.sans, reason: name);
+      expect(style.fontWeight, FontWeight.w700, reason: name);
+      expect(style.fontFamilyFallback!.first, LoopFonts.cjk, reason: name);
+      // Inter is never tracked out.
+      expect(style.letterSpacing, lessThanOrEqualTo(0), reason: name);
+      expect(style.height, inInclusiveRange(1.0, 1.25), reason: name);
     });
     final headings = <String, TextStyle>{
       'displayXl': LoopType.displayXl,
@@ -283,31 +292,46 @@ void main() {
     expect(LoopType.monoTitle, LoopType.figureLg);
     expect(LoopType.monoStamp, LoopType.figureXs);
 
-    // Restating a weight moves a body step; an Anton step has one weight.
+    // Restating a weight moves any step: Inter carries every weight.
     final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w700);
     expect(bold.fontWeight, FontWeight.w700);
     expect(bold.fontSize, LoopType.body.fontSize);
     expect(
-      LoopTypography.withWeight(LoopType.heroFigure, FontWeight.w700),
-      same(LoopType.heroFigure),
+      LoopTypography.withWeight(
+        LoopType.heroFigure,
+        FontWeight.w600,
+      ).fontWeight,
+      FontWeight.w600,
     );
   });
 
   test('the shipped font assets are registered with their licences', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(pubspec, contains('family: Anton'));
-    expect(pubspec, contains('family: Arimo'));
-    expect(pubspec, contains('family: Noto Sans SC Display'));
+    // Decision 0277: Inter replaces Anton, Arimo and the Noto Sans SC
+    // Display face that sat behind Anton.
+    expect(pubspec, contains('family: Inter'));
+    expect(pubspec, isNot(contains('family: Anton')));
+    expect(pubspec, isNot(contains('family: Arimo')));
+    expect(pubspec, isNot(contains('family: Noto Sans SC Display')));
     expect(pubspec, contains('family: Noto Sans SC'));
     expect(pubspec, contains('family: IBM Plex Mono'));
     expect(pubspec, isNot(contains('family: Sora')));
     expect(File('assets/fonts/Sora-Variable.ttf').existsSync(), isFalse);
-    for (final asset in <String>[
+    for (final retired in <String>[
       'assets/fonts/Anton-Regular.ttf',
-      'assets/fonts/OFL-Anton.txt',
       'assets/fonts/Arimo-Regular.ttf',
       'assets/fonts/Arimo-Bold.ttf',
-      'assets/fonts/OFL-Arimo.txt',
+    ]) {
+      expect(File(retired).existsSync(), isFalse, reason: retired);
+    }
+    for (final asset in <String>[
+      'assets/fonts/Inter-Light.ttf',
+      'assets/fonts/Inter-Regular.ttf',
+      'assets/fonts/Inter-Medium.ttf',
+      'assets/fonts/Inter-SemiBold.ttf',
+      'assets/fonts/Inter-Bold.ttf',
+      'assets/fonts/Inter-BlackItalic.ttf',
+      'assets/fonts/OFL-Inter.txt',
       'assets/fonts/NotoSansSC-Regular.ttf',
       'assets/fonts/NotoSansSC-Medium.ttf',
       'assets/fonts/NotoSansSC-Bold.ttf',

@@ -716,7 +716,7 @@ Widget loopSplatted(Widget chosen, {Key? key}) => Stack(
   ],
 );
 
-/// A section heading: with an [index] the Anton number in Yellow with a
+/// A section heading: with an [index] the Inter Bold number in Yellow with a
 /// small splat at its top right (only for an order or a ranking), without
 /// one the 18 / 700 [LoopType.headline] with the splat after it. A Yellow 「全部」 when the
 /// section has somewhere to go.
@@ -1286,7 +1286,7 @@ class LoopChromePlate extends StatelessWidget {
   }
 }
 
-/// The Anton index 「01」 in Yellow with a small splat at its top right — the
+/// The Inter Bold index 「01」 in Yellow with a small splat at its top right — the
 /// section heading's number (decision 0220 §7), also the podium's place
 /// (decision 0224).
 class LoopSprayIndex extends StatelessWidget {

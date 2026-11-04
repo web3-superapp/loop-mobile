@@ -89,7 +89,7 @@ void main() {
       lessThan(tester.getTopLeft(titleFinder).dy),
     );
     final title = tester.widget<Text>(titleFinder);
-    // Decision 0211: the step title is bold Arimo / Noto Sans SC.
+    // Decision 0211: the step title is bold Inter / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
   });

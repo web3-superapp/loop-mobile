@@ -9,7 +9,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 //
 // Shared by the MEME pages (launch2, the classic curve, IDO, market and the
 // reward pages) without touching `lib/widgets/`: the two-tone folio heading
-// (Yellow line over a Purple line), the stat figures in the Anton
+// (Yellow line over a Purple line), the stat figures in the Inter Bold
 // `statFigure` step, and the stage tag in its three tones.
 
 /// Redraws a folio heading [Text] as two lines: [first] in Yellow over
@@ -43,7 +43,7 @@ Widget memeTwoToneHeading(
 }
 
 /// The looplabs stat block (`.stat-value`): pairs of flat cells, each figure
-/// in [LoopType.statFigure] Yellow (Anton [LoopType.heroFigure] on the project
+/// in [LoopType.statFigure] Yellow (Inter Bold [LoopType.heroFigure] on the project
 /// page hero) over a small label. A
 /// figure wider than its cell scales down rather than wrapping. Each cell
 /// keeps its [LoopStat.statKey] and reads as one sentence, exactly as
@@ -66,9 +66,9 @@ class MemeStatFigures extends StatelessWidget {
   String? _noteAt(int index) => index < notes.length ? notes[index] : null;
   final EdgeInsets? margin;
 
-  /// The MEME project page's hero figures: the one place Anton survives
+  /// The MEME project page's hero figures: the one place Inter Bold survives
   /// ([LoopType.heroFigure], docs/42 附C §2). Elsewhere the figures are the
-  /// Arimo [LoopType.statFigure].
+  /// Inter [LoopType.statFigure].
   final bool hero;
 
   /// Between two cells and two rows of cells: 12 (decision 0229).
@@ -166,7 +166,7 @@ class _MemeStatCell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               // A fixed line box: a Han unit (「枚」) falls back to a face
-              // with a taller line than Arimo's, and an unfixed box let the
+              // with a taller line than Inter's, and an unfixed box let the
               // pair's IntrinsicHeight under-measure the cell (decision 0229).
               SizedBox(
                 height: 36,

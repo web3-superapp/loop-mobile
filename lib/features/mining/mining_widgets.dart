@@ -370,7 +370,7 @@ class MiningSummaryHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // S350b · decision 0275: one hero for 情报 · 算力 — 我的总算力 leads in
-    // Anton Yellow, the place and the crown are the way into 算力榜 at the
+    // Inter Bold Yellow, the place and the crown are the way into 算力榜 at the
     // top right, 全网总算力 sits under a hairline as the supporting figure,
     // and a cell with no figure is left out rather than drawn as 「—」.
     const muted = LoopColors.text3;
@@ -399,7 +399,7 @@ class MiningSummaryHero extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       // Decision 0192 / S241b: a settled figure is the page's hero figure;
       // words in that slot stay a Chalk folio heading. S350b: the figure
-      // takes the plate's Anton 40 (as 「我的名次」 on 算力榜).
+      // takes the plate's Inter Bold 40 (as 「我的名次」 on 算力榜).
       style: settled
           ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
           : LoopType.displayXl.copyWith(color: LoopColors.chalk),

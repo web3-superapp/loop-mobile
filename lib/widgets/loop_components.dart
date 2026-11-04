@@ -176,7 +176,7 @@ class LoopTopbar extends StatelessWidget {
                     Semantics(
                       header: true,
                       child: Text(
-                        // Decision 0210: Anton, in the title's own spelling —
+                        // Decision 0210: Inter Bold, in the title's own spelling —
                         // a page title often carries a name (a person, a
                         // room, a token), which is not ours to recase.
                         title,

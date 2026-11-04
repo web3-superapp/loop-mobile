@@ -298,8 +298,8 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             key: ValueKey<String>('$keyPrefix-total-figure'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            // Decision 0224: the chrome plate's figure — Anton 40 in
-            // Yellow (docs/42 §2 keeps Anton for big figures).
+            // Decision 0224: the chrome plate's figure — Inter Bold 40 in
+            // Yellow (docs/42 §2 keeps Inter Bold for big figures).
             style: figureIsAmount
                 ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
                 : LoopType.headingSm.copyWith(color: secondary),

@@ -64,7 +64,9 @@ final class _History implements WalletNetWorthHistoryGateway {
 const double _closedBeforeS327 = 238;
 
 /// What decision 0259 allows the closed header: lower than before S327.
-const double _closedCeiling = 212;
+/// Decision 0277: the total is Inter 40 on the Figma's 46 line (Anton sat
+/// on a 40 line), so the ceiling takes those 6.
+const double _closedCeiling = 218;
 
 void main() {
   loopWatchGround();

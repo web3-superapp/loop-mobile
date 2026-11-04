@@ -50,7 +50,7 @@ void main() {
     await _pump(tester, showApple: false);
 
     final title = tester.widget<Text>(find.text('欢迎来到 LOOP'));
-    // Decision 0211: the step title is bold Arimo / Noto Sans SC.
+    // Decision 0211: the step title is bold Inter / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
     expect(find.text('选择一种方式登录或创建账户'), findsOneWidget);
