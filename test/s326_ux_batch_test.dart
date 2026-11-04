@@ -608,7 +608,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('是代理合约 —— 来源 GoPlus，观察于 1m ago'),
+        find.textContaining('是代理合约 — source GoPlus, observed 1m ago'),
         findsOneWidget,
       );
       final figure = tester.widget<Text>(find.text(r'$204.3M'));

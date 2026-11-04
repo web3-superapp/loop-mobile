@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/chat/v2/loop_message_selection.dart'
     show LoopSelectionCheck;
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -87,25 +88,27 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
     return LoopFocusPage(
       key: const ValueKey<String>('friend-group-create-screen'),
       archetype: LoopPageArchetype.action,
-      title: '创建群组',
-      kicker: preview ? '开发预览' : null,
+      title: context.l10n.chatFriends_screensFriendGroupCreateScreenTitle,
+      kicker: preview ? context.l10n.common_devPreview : null,
       onBack: _friendPageBack(context),
       keyboardAccessory: true,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
         key: ValueKey<String>('friend-group-folio'),
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
-        kicker: '好友建群',
-        heading: '创建群组',
-        caption: '从已接受的好友里选人。群由 LOOP 后端创建，成功后才会出现在聊天里。',
-        stamp: '仅好友',
+        kicker: context.l10n.chatFriends_screensFriendGroupFolioKicker,
+        heading: context.l10n.chatFriends_screensFriendGroupCreateScreenTitle,
+        caption: context.l10n.chatFriends_screensFriendGroupFolioCaption,
+        stamp: context.l10n.chatFriends_screensFriendGroupFolioStamp,
       ),
       block: group.phase == FriendGroupPhase.unavailable
-          ? const LoopEmptyState(
+          ? LoopEmptyState(
               key: ValueKey<String>('friend-group-unavailable'),
               illustration: LoopIllustration.friends,
-              title: '创建群聊还没有开放',
-              message: '这里不会创建任何群或添加成员。',
+              title:
+                  context.l10n.chatFriends_screensFriendGroupUnavailableTitle,
+              message:
+                  context.l10n.chatFriends_screensFriendGroupUnavailableMessage,
             )
           : null,
       body: <Widget>[
@@ -134,8 +137,9 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
           const SizedBox(height: LoopSpacing.group),
           LoopFlatField(
             key: const ValueKey<String>('friend-group-name-field'),
-            label: '群组名称',
-            footnote: '最多 60 个字符',
+            label: context.l10n.chatFriends_screensFriendGroupNameFieldLabel,
+            footnote:
+                context.l10n.chatFriends_screensFriendGroupNameFieldFootnote,
             child: TextField(
               key: const ValueKey<String>('friend-group-name-input'),
               controller: _nameController,
@@ -144,14 +148,17 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
               textInputAction: TextInputAction.next,
               style: LoopType.bodyLg,
               decoration: loopFormFieldDecoration(
-                hint: '群组名称',
+                hint: context.l10n.chatFriends_screensFriendGroupNameFieldLabel,
                 counterText: '',
               ),
               onChanged: groupController.editName,
             ),
           ),
           LoopLabel(
-            '选择好友 · ${group.selectedFriendRefs.length}/$groupMaximumSelectedFriends',
+            context.l10n.chatFriends_screensFriendGroupSelectionLabel(
+              groupMaximumSelectedFriends,
+              group.selectedFriendRefs.length,
+            ),
             key: const ValueKey<String>('friend-group-selection-label'),
           ),
           ..._friendSelection(
@@ -170,8 +177,12 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
                 LoopButton(
                   key: const ValueKey<String>('friend-group-create-submit'),
                   label: group.phase == FriendGroupPhase.creating
-                      ? '创建中…'
-                      : '创建群组',
+                      ? context
+                            .l10n
+                            .chatFriends_screensFriendGroupCreateSubmitLabel
+                      : context
+                            .l10n
+                            .chatFriends_screensFriendGroupCreateScreenTitle,
                   primary: true,
                   block: true,
                   onPressed: group.canCreate
@@ -180,7 +191,9 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
                 ),
                 const SizedBox(height: LoopSpacing.tight),
                 Text(
-                  '至少选择 $groupMinimumSelectedFriends 位好友',
+                  context.l10n.chatFriends_screensText(
+                    groupMinimumSelectedFriends,
+                  ),
                   textAlign: TextAlign.center,
                   style: LoopType.captionSm,
                 ),
@@ -212,12 +225,14 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
         LoopEmptyState(
           key: const ValueKey<String>('friend-group-friends-failure'),
           illustration: LoopIllustration.friends,
-          title: '好友列表暂时无法加载',
+          title: LoopL10n
+              .current
+              .chatFriends_screensFriendGroupFriendsFailureTitle,
           message: _friendFailureMessage(directory.failureKind),
           compact: true,
           action: LoopButton(
             key: const ValueKey<String>('friend-group-friends-retry'),
-            label: '重试',
+            label: LoopL10n.current.common_retry,
             icon: 'refresh',
             onPressed: directory.isBusy
                 ? null
@@ -231,12 +246,16 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
         LoopEmptyState(
           key: const ValueKey<String>('friend-group-friends-empty'),
           illustration: LoopIllustration.friends,
-          title: '没有可选择的好友',
-          message: '好友请求被对方接受后，才能邀请对方创建群组。',
+          title:
+              LoopL10n.current.chatFriends_screensFriendGroupFriendsEmptyTitle,
+          message: LoopL10n
+              .current
+              .chatFriends_screensFriendGroupFriendsEmptyMessage,
           compact: true,
           action: LoopButton(
             key: const ValueKey<String>('friend-group-find-friends'),
-            label: '添加好友',
+            label:
+                LoopL10n.current.chatFriends_screensFriendGroupFindFriendsLabel,
             icon: 'users',
             onPressed: () => context.push('/search'),
           ),
@@ -271,7 +290,8 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
       final recovery = group.canReconcile
           ? LoopButton(
               key: const ValueKey<String>('friend-group-reconcile'),
-              label: '查询结果',
+              label:
+                  LoopL10n.current.chatFriends_screensFriendGroupReconcileLabel,
               icon: 'search',
               block: true,
               onPressed: () => unawaited(groupController.reconcile()),
@@ -279,7 +299,9 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
           : group.canResumeEditing
           ? LoopButton(
               key: const ValueKey<String>('friend-group-resume-editing'),
-              label: '修改草稿',
+              label: LoopL10n
+                  .current
+                  .chatFriends_screensFriendGroupResumeEditingLabel,
               block: true,
               onPressed: groupController.resumeEditing,
             )
@@ -290,12 +312,21 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
           icon: 'warn',
           tone: LoopNoticeTone.danger,
           title: group.failureKind == FriendGatewayFailureKind.operatorRequired
-              ? '群组创建需人工核对'
+              ? LoopL10n
+                    .current
+                    .chatFriends_screensFriendGroupCreateFailureTitle
               : group.failureKind == FriendGatewayFailureKind.outcomeUnknown
-              ? '群组创建结果待确认'
-              : '群组未创建',
+              ? LoopL10n
+                    .current
+                    .chatFriends_screensFriendGroupCreateFailureTitle2
+              : LoopL10n
+                    .current
+                    .chatFriends_screensFriendGroupCreateFailureTitle3,
           body: unresolved
-              ? '${_friendFailureMessage(group.failureKind)} 当前草稿已冻结，不会自动重复提交。'
+              ? LoopL10n.current
+                    .chatFriends_screensFriendGroupCreateFailureBody(
+                      _friendFailureMessage(group.failureKind),
+                    )
               : _friendFailureMessage(group.failureKind),
         ),
         if (recovery != null)
@@ -330,7 +361,8 @@ LoopRecordRow _selectableFriendRow({
   trailingBadge: LoopSelectionCheck(selected: selected),
   chevron: false,
   onTap: onChanged,
-  semanticLabel: '${identity.alias}，${selected ? '已选择' : '未选择'}',
+  semanticLabel:
+      '${identity.alias}${LoopL10n.current.common_listSeparator}${selected ? LoopL10n.current.chatFriends_screensSelected : LoopL10n.current.chatFriends_screensNotSelected}',
 );
 
 /// The topbar's back control while there is a page under this one, as the
@@ -345,11 +377,11 @@ class _FriendPreviewNotice extends StatelessWidget {
   const _FriendPreviewNotice();
 
   @override
-  Widget build(BuildContext context) => const LoopNotice(
+  Widget build(BuildContext context) => LoopNotice(
     key: ValueKey<String>('friend-preview-banner'),
     icon: 'info',
-    title: '开发预览 · 仅本次运行',
-    body: '好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。',
+    title: context.l10n.chatFriends_screensFriendPreviewBannerTitle,
+    body: context.l10n.chatFriends_screensFriendPreviewBannerBody,
     margin: EdgeInsets.fromLTRB(LoopSpacing.page, 14, LoopSpacing.page, 0),
   );
 }
@@ -380,20 +412,29 @@ class _CreatedFriendGroupResult extends StatelessWidget {
       ),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('结果'),
+        LoopLabel(context.l10n.chatFriends_screensLoopLabel),
         LoopNotice(
           icon: 'check',
-          title: preview ? '开发预览群组已创建' : '群组已创建',
+          title: preview
+              ? context.l10n.chatFriends_screensTitle
+              : context.l10n.chatFriends_screensTitle2,
           body: preview
-              ? '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。这个结果仅存在于本次运行，未创建 Stream 频道。'
-              : '${receipt.name} · ${receipt.friendRefs.length + 1} 位成员。频道已由 LOOP 后端创建并授权。',
+              ? context.l10n.chatFriends_screensBody(
+                  receipt.name,
+                  receipt.friendRefs.length + 1,
+                )
+              : context.l10n.chatFriends_screensBody2(
+                  receipt.name,
+                  receipt.friendRefs.length + 1,
+                ),
         ),
         if (preview)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: LoopButton(
               key: const ValueKey<String>('friend-group-create-another'),
-              label: '再建一个',
+              label:
+                  context.l10n.chatFriends_screensFriendGroupCreateAnotherLabel,
               icon: 'plus',
               block: true,
               onPressed: onReset,
@@ -404,14 +445,15 @@ class _CreatedFriendGroupResult extends StatelessWidget {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('friend-group-set-alias'),
-                label: '设置群昵称',
+                label: context.l10n.chatFriends_screensFriendGroupSetAliasLabel,
                 icon: 'id',
                 block: true,
                 onPressed: onSetAlias,
               ),
               LoopButton(
                 key: const ValueKey<String>('friend-group-open-channel'),
-                label: '进入群聊',
+                label:
+                    context.l10n.chatFriends_screensFriendGroupOpenChannelLabel,
                 icon: 'chat',
                 primary: true,
                 block: true,
@@ -425,21 +467,37 @@ class _CreatedFriendGroupResult extends StatelessWidget {
 }
 
 String _friendFailureMessage(FriendGatewayFailureKind? kind) => switch (kind) {
-  FriendGatewayFailureKind.unavailable => '好友服务当前不可用，没有关系或群组被修改。',
-  FriendGatewayFailureKind.invalidData => '输入或服务返回的数据不符合当前安全约束。',
-  FriendGatewayFailureKind.notFound => '目标当前不可用。不可发现和不存在的账号不会被区分。',
-  FriendGatewayFailureKind.permissionDenied => '当前账号无权完成该操作，没有关系或群组被修改。',
-  FriendGatewayFailureKind.conflict => '好友关系已经变化，请刷新后再试。',
-  FriendGatewayFailureKind.rateLimited => '操作过于频繁，请稍后再试。',
-  FriendGatewayFailureKind.profileRequired => '请先在 Profile 中设置 LOOP 主昵称。',
-  FriendGatewayFailureKind.incomingRequestPending => '对方已经向你发送申请，请在好友申请中处理。',
-  FriendGatewayFailureKind.outgoingRequestPending => '好友申请已经发送，正在等待对方处理。',
-  FriendGatewayFailureKind.alreadyFriends => '你们已经是好友。',
-  FriendGatewayFailureKind.cooldown => '该好友申请处于冷却期，请稍后再试。',
-  FriendGatewayFailureKind.alreadyDecided => '这条好友申请已经处理，请刷新列表。',
-  FriendGatewayFailureKind.cursorInvalid => '列表分页已过期，需要从第一页重新加载。',
-  FriendGatewayFailureKind.operatorRequired => '频道需要后台人工核对；不会自动创建第二个频道。',
-  FriendGatewayFailureKind.outcomeUnknown => '请求可能已被接收，当前无法安全确认最终结果。',
-  FriendGatewayFailureKind.unexpected => '服务暂时无法完成请求；没有好友关系或群组被修改。',
-  null => '操作暂时无法完成。',
+  FriendGatewayFailureKind.unavailable =>
+    LoopL10n.current.chatFriends_screensUnavailable,
+  FriendGatewayFailureKind.invalidData =>
+    LoopL10n.current.chatFriends_screensInvalidData,
+  FriendGatewayFailureKind.notFound =>
+    LoopL10n.current.chatFriends_screensNotFound,
+  FriendGatewayFailureKind.permissionDenied =>
+    LoopL10n.current.chatFriends_screensPermissionDenied,
+  FriendGatewayFailureKind.conflict =>
+    LoopL10n.current.chatFriends_screensConflict,
+  FriendGatewayFailureKind.rateLimited =>
+    LoopL10n.current.chatFriends_screensRateLimited,
+  FriendGatewayFailureKind.profileRequired =>
+    LoopL10n.current.chatFriends_screensProfileRequired,
+  FriendGatewayFailureKind.incomingRequestPending =>
+    LoopL10n.current.chatFriends_screensIncomingRequestPending,
+  FriendGatewayFailureKind.outgoingRequestPending =>
+    LoopL10n.current.chatFriends_screensOutgoingRequestPending,
+  FriendGatewayFailureKind.alreadyFriends =>
+    LoopL10n.current.chatFriends_screensAlreadyFriends,
+  FriendGatewayFailureKind.cooldown =>
+    LoopL10n.current.chatFriends_screensCooldown,
+  FriendGatewayFailureKind.alreadyDecided =>
+    LoopL10n.current.chatFriends_screensAlreadyDecided,
+  FriendGatewayFailureKind.cursorInvalid =>
+    LoopL10n.current.chatFriends_screensCursorInvalid,
+  FriendGatewayFailureKind.operatorRequired =>
+    LoopL10n.current.chatFriends_screensOperatorRequired,
+  FriendGatewayFailureKind.outcomeUnknown =>
+    LoopL10n.current.chatFriends_screensOutcomeUnknown,
+  FriendGatewayFailureKind.unexpected =>
+    LoopL10n.current.chatFriends_screensUnexpected,
+  null => LoopL10n.current.chatFriends_screensSwitch,
 };

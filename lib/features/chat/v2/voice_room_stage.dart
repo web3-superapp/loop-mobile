@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/chat/v2/voice_room_share.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -112,7 +113,7 @@ VoiceRoomMicState voiceRoomMemberMicState(
 /// own row is 「我 · alias」.
 String voiceRoomRosterName(VoiceRoomMember member) => switch (member.name) {
   VoiceRoomMemberAlias(alias: final alias) =>
-    member.isSelf ? '我 · $alias' : alias,
+    member.isSelf ? LoopL10n.current.chatV2_voiceRoomScreensName(alias) : alias,
   VoiceRoomMemberAnonymousName(labelKey: final key) => voiceRoomDisplayKeyText(
     key,
   ),
@@ -143,15 +144,18 @@ class VoiceRoomHostStage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final caption = mic.speaking
-        ? '正在发言'
+        ? context.l10n.chatCalls_streamForegroundViewMicrophoneState
         : mic.open == true
-        ? '麦克风已开'
+        ? context.l10n.chatCalls_streamForegroundViewMicrophoneState2
         : mic.open == false
-        ? '已静音'
+        ? context.l10n.common_muted
         : null;
     return Semantics(
       container: true,
-      label: '主持人 $name${caption == null ? '' : '，$caption'}',
+      label: context.l10n.chatV2_voiceRoomStageVoiceroomHostLabel(
+        caption == null ? '' : '${context.l10n.common_listSeparator}$caption',
+        name,
+      ),
       child: Stack(
         children: <Widget>[
           Padding(
@@ -185,14 +189,15 @@ class VoiceRoomHostStage extends StatelessWidget {
                     children: <Widget>[
                       // A host this page cannot name is already called
                       // 主持人; the mark would only say it twice.
-                      if (name != '主持人')
-                        const LoopTag(
-                          '主持',
+                      if (name != context.l10n.chatV2_modelsHost)
+                        LoopTag(
+                          context.l10n.chat_voiceRoomLabel,
                           key: ValueKey<String>('voiceroom-host-tag'),
                           lime: true,
                         ),
                       if (caption != null) ...<Widget>[
-                        if (name != '主持人') const SizedBox(width: 8),
+                        if (name != context.l10n.chatV2_modelsHost)
+                          const SizedBox(width: 8),
                         Text(
                           caption,
                           style: LoopType.caption.copyWith(
@@ -289,11 +294,12 @@ class _MemberTile extends StatelessWidget {
         : null;
     final description = <String>[
       name,
-      if (speaking) '正在发言',
-      if (state?.open == false) '已静音',
-      if (state?.open == true && !speaking) '麦克风已开',
-      if (handRaised) '已举手',
-    ].join('，');
+      if (speaking) context.l10n.chatCalls_streamForegroundViewMicrophoneState,
+      if (state?.open == false) context.l10n.common_muted,
+      if (state?.open == true && !speaking)
+        context.l10n.chatCalls_streamForegroundViewMicrophoneState2,
+      if (handRaised) context.l10n.chatV2_voiceRoomScreensLoopBadge2,
+    ].join(LoopL10n.current.common_listSeparator);
     final ring = VoiceRoomSpeakingRing.width + 2;
     final tile = SizedBox(
       width: width,
@@ -433,25 +439,28 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
     CommunityViewPhase.empty => const _SpeakersEmpty(),
     CommunityViewPhase.offline => LoopOfflineState(
       key: const ValueKey<String>('voiceroom-speakers-offline'),
-      pausedActions: const <String>['查看发言人'],
+      pausedActions: <String>[
+        context.l10n.chatV2_voiceRoomStageLoopOfflineState,
+      ],
       onRetry: onRetry,
     ),
     CommunityViewPhase.permission => LoopPermissionState(
       key: const ValueKey<String>('voiceroom-speakers-permission'),
       icon: 'shield',
-      title: '没有权限查看发言人名单',
+      title: context.l10n.chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle,
       purpose: communityFailureReason(roster.failureKind),
     ),
     CommunityViewPhase.unavailable => LoopInlineUnavailable(
       key: const ValueKey<String>('voiceroom-speakers-unavailable'),
-      message: '发言人名单当前不可用',
+      message:
+          context.l10n.chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage,
       detail: communityFailureReason(roster.failureKind),
       maxLines: 2,
       detailMaxLines: 4,
     ),
     CommunityViewPhase.error => LoopErrorState(
       key: const ValueKey<String>('voiceroom-speakers-error'),
-      title: '发言人名单读不到',
+      title: context.l10n.chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle,
       reason: communityFailureReason(roster.failureKind),
       onRetry: onRetry,
     ),
@@ -547,25 +556,30 @@ class VoiceRoomListenerGrid extends StatelessWidget {
     CommunityViewPhase.empty => _ready(),
     CommunityViewPhase.offline => LoopOfflineState(
       key: const ValueKey<String>('voiceroom-listeners-offline'),
-      pausedActions: const <String>['查看听众'],
+      pausedActions: <String>[
+        context.l10n.chatV2_voiceRoomStageLoopOfflineState2,
+      ],
       onRetry: onRetry,
     ),
     CommunityViewPhase.permission => LoopPermissionState(
       key: const ValueKey<String>('voiceroom-listeners-permission'),
       icon: 'shield',
-      title: '没有权限查看听众名单',
+      title:
+          context.l10n.chatV2_voiceRoomStageVoiceroomListenersPermissionTitle,
       purpose: communityFailureReason(roster.failureKind),
     ),
     CommunityViewPhase.unavailable => LoopInlineUnavailable(
       key: const ValueKey<String>('voiceroom-listeners-unavailable'),
-      message: '听众名单当前不可用',
+      message: context
+          .l10n
+          .chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage,
       detail: communityFailureReason(roster.failureKind),
       maxLines: 2,
       detailMaxLines: 4,
     ),
     CommunityViewPhase.error => LoopErrorState(
       key: const ValueKey<String>('voiceroom-listeners-error'),
-      title: '听众名单读不到',
+      title: context.l10n.chatV2_voiceRoomStageVoiceroomListenersErrorTitle,
       reason: communityFailureReason(roster.failureKind),
       onRetry: onRetry,
     ),
@@ -575,10 +589,11 @@ class VoiceRoomListenerGrid extends StatelessWidget {
   Widget _ready() {
     final items = roster.items;
     if (items.isEmpty && total <= 0) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('voiceroom-listeners-empty'),
         illustration: LoopIllustration.holders,
-        title: '还没有听众',
+        title:
+            LoopL10n.current.chatV2_voiceRoomStageVoiceroomListenersEmptyTitle,
         compact: true,
       );
     }
@@ -654,7 +669,10 @@ class _MoreTile extends StatelessWidget {
     final outer = size + (VoiceRoomSpeakingRing.width + 2) * 2;
     return Semantics(
       button: onTap != null,
-      label: '还有 $count 位听众${onTap == null ? '' : '，查看完整名单'}',
+      label: context.l10n.chatV2_voiceRoomStageLabel(
+        count,
+        onTap == null ? '' : context.l10n.chatV2_voiceRoomStageViewFullList,
+      ),
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -690,7 +708,7 @@ class _MoreTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '全部',
+                  context.l10n.common_all,
                   style: LoopType.captionSm.copyWith(color: LoopColors.text2),
                 ),
               ],
@@ -708,10 +726,10 @@ class _SpeakersEmpty extends StatelessWidget {
   const _SpeakersEmpty();
 
   @override
-  Widget build(BuildContext context) => const LoopEmptyState(
+  Widget build(BuildContext context) => LoopEmptyState(
     key: ValueKey<String>('voiceroom-speakers-empty'),
     illustration: LoopIllustration.voiceRoom,
-    title: '还没有人上麦',
+    title: context.l10n.chatV2_voiceRoomStageVoiceroomSpeakersEmptyTitle,
     compact: true,
   );
 }
@@ -775,7 +793,9 @@ class VoiceRoomControlBar extends StatelessWidget {
     if (!viewer.hasJoined) {
       content = LoopButton(
         key: const ValueKey<String>('voiceroom-join'),
-        label: busy ? '正在加入…' : '加入语音房',
+        label: busy
+            ? context.l10n.common_joining
+            : context.l10n.chatV2_voiceRoomScreensVoiceroomJoinLabel,
         block: true,
         primary: true,
         icon: 'voice',
@@ -788,20 +808,20 @@ class VoiceRoomControlBar extends StatelessWidget {
           _BarItem(
             key: const ValueKey<String>('voiceroom-invite-open'),
             icon: 'hand',
-            label: '邀请发言',
+            label: context.l10n.chatV2_voiceRoomStageVoiceroomInviteOpenLabel,
             badge: pendingHands > 0 ? '$pendingHands' : null,
             onPressed: disabled || onInvite == null ? null : onInvite,
           ),
           _BarItem(
             key: const ValueKey<String>('voiceroom-mute-all'),
             icon: 'voice-off',
-            label: '全体静音',
+            label: context.l10n.chatV2_voiceRoomScreensVoiceroomMuteAllLabel,
             onPressed: disabled || !viewer.canMuteAll ? null : onMuteAll,
           ),
           _BarItem(
             key: const ValueKey<String>('voiceroom-end'),
             icon: 'close',
-            label: '结束房间',
+            label: context.l10n.chatV2_voiceRoomScreensConfirmLabel2,
             danger: true,
             onPressed: disabled || !viewer.canEndRoom ? null : onEnd,
           ),
@@ -811,13 +831,13 @@ class VoiceRoomControlBar extends StatelessWidget {
           _BarItem(
             key: const ValueKey<String>('voiceroom-step-down'),
             icon: 'arrow-down',
-            label: '下麦',
+            label: context.l10n.chatV2_voiceRoomStageVoiceroomStepDownLabel,
             onPressed: disabled ? null : onStepDown,
           ),
           _BarItem(
             key: const ValueKey<String>('voiceroom-leave'),
             icon: 'close',
-            label: '离开',
+            label: context.l10n.chatV2_voiceRoomScreensConfirmLabel,
             danger: true,
             onPressed: disabled ? null : onLeave,
           ),
@@ -827,7 +847,7 @@ class VoiceRoomControlBar extends StatelessWidget {
             _BarItem(
               key: const ValueKey<String>('voiceroom-cancel-hand'),
               icon: 'hand',
-              label: '取消举手',
+              label: context.l10n.chatV2_voiceRoomScreensLabel,
               active: true,
               onPressed: disabled ? null : onCancel,
             )
@@ -835,13 +855,13 @@ class VoiceRoomControlBar extends StatelessWidget {
             _BarItem(
               key: const ValueKey<String>('voiceroom-raise-hand'),
               icon: 'hand',
-              label: '举手',
+              label: context.l10n.chatV2_voiceRoomScreensLabel2,
               onPressed: disabled ? null : onRaise,
             ),
           _BarItem(
             key: const ValueKey<String>('voiceroom-leave'),
             icon: 'close',
-            label: '离开',
+            label: context.l10n.chatV2_voiceRoomScreensConfirmLabel,
             danger: true,
             onPressed: disabled ? null : onLeave,
           ),
@@ -883,10 +903,10 @@ class _MicrophoneItem extends StatelessWidget {
       if (control == null) {
         // No call on the page yet — it is still connecting, or the room is
         // not open for listening. The slot says so rather than pretend.
-        return const _BarItem(
+        return _BarItem(
           key: ValueKey<String>('voiceroom-bar-mic'),
           icon: 'voice-off',
-          label: '未连接',
+          label: context.l10n.chatGroupAlias_screenUnavailable3,
           onPressed: null,
         );
       }
@@ -931,7 +951,9 @@ class _BarItem extends StatelessWidget {
     tone: danger ? LoopRoundKeyTone.fall : LoopRoundKeyTone.quiet,
     active: active,
     badge: badge,
-    semanticLabel: badge == null ? label : '$label，$badge 人举手',
+    semanticLabel: badge == null
+        ? label
+        : context.l10n.chatV2_voiceRoomStageSemanticLabel(badge, label),
     onPressed: onPressed,
   );
 }
@@ -949,7 +971,8 @@ Future<void> showVoiceRoomInfoSheet(
   final role = snapshot.viewer.role;
   return showLoopSheet<void>(
     context,
-    barrierLabel: '关闭房间说明',
+    barrierLabel:
+        context.l10n.chatV2_voiceRoomStageVoiceroomInfoSheetBarrierLabel,
     builder: (sheetContext) => Column(
       key: const ValueKey<String>('voiceroom-info-sheet'),
       mainAxisSize: MainAxisSize.min,
@@ -969,24 +992,24 @@ Future<void> showVoiceRoomInfoSheet(
               ),
               const SizedBox(height: 12),
               LoopKeyValue(
-                label: '社区',
+                label: context.l10n.common_community,
                 value: room.communityName,
                 padding: EdgeInsets.zero,
               ),
               LoopKeyValue(
-                label: '开播',
+                label: context.l10n.chatV2_voiceRoomStageLabel2,
                 value: loopLocalClockLabel(room.createdAt),
                 padding: EdgeInsets.zero,
               ),
               if (figures != null)
                 LoopKeyValue(
-                  label: '人数',
+                  label: context.l10n.chatV2_voiceRoomStageLabel3,
                   value: figures,
                   padding: EdgeInsets.zero,
                 ),
               LoopKeyValue(
-                label: '我的身份',
-                value: role?.label ?? '还没有加入',
+                label: context.l10n.chatV2_voiceRoomStageLabel4,
+                value: role?.label ?? context.l10n.chatV2_voiceRoomStageValue,
                 padding: EdgeInsets.zero,
               ),
               if (!snapshot.providerSync.confirmed)
@@ -994,14 +1017,16 @@ Future<void> showVoiceRoomInfoSheet(
                   key: const ValueKey<String>('voiceroom-provider-unconfirmed'),
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '服务商侧未确认',
+                  title: context
+                      .l10n
+                      .chatV2_voiceRoomStageVoiceroomProviderUnconfirmedTitle,
                   body: providerSyncText,
                   margin: const EdgeInsets.only(top: 14),
                 ),
               const SizedBox(height: 16),
               LoopButton(
                 key: const ValueKey<String>('voiceroom-info-close'),
-                label: '知道了',
+                label: context.l10n.common_gotIt,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop(),
               ),
@@ -1026,7 +1051,7 @@ Future<VoiceRoomOpenOutcome?> showVoiceRoomStartSheet(
   String communityId,
 ) => showLoopSheet<VoiceRoomOpenOutcome>(
   context,
-  barrierLabel: '关闭开播弹层',
+  barrierLabel: context.l10n.chatV2_voiceRoomStageBarrierLabel,
   // The sheet carries the answer of a write that may be in flight, so it is
   // closed by its own buttons (and the system back while idle) only: a drag
   // or a tap outside would drop that answer on the floor.
@@ -1099,7 +1124,7 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading('开播'),
+          LoopSheetHeading(context.l10n.chatV2_voiceRoomStageLabel2),
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -1112,8 +1137,7 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Text(
-                  '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
-                  '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
+                  context.l10n.chatV2_voiceRoomStageBuild3,
                   // R19 sheet support copy in text2 (decision 0191 L1).
                   style: LoopType.bodySm,
                 ),
@@ -1126,16 +1150,16 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
                   inputFormatters: <TextInputFormatter>[
                     _CodePointLimit(voiceRoomTitleMaxCodePoints),
                   ],
-                  decoration: const InputDecoration(
-                    labelText: '房间标题（可留空）',
-                    hintText: '留空时显示「社区名 语音房」',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.chatV2_voiceRoomStageLabelText,
+                    hintText: context.l10n.chatV2_voiceRoomStageHintText,
                   ),
                   onSubmitted: opening ? null : (_) => unawaited(_submit()),
                 ),
                 if (pending != null) ...<Widget>[
                   const SizedBox(height: 6),
                   Text(
-                    '上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。',
+                    context.l10n.chatV2_voiceRoomStageVoiceroomStartPending,
                     key: const ValueKey<String>('voiceroom-start-pending'),
                     style: LoopType.caption.copyWith(color: LoopColors.text2),
                   ),
@@ -1154,14 +1178,18 @@ class _VoiceRoomStartSheetState extends ConsumerState<_VoiceRoomStartSheet> {
                   children: <Widget>[
                     LoopButton(
                       key: const ValueKey<String>('voiceroom-start-submit'),
-                      label: opening ? '正在开播…' : '开播',
+                      label: opening
+                          ? context
+                                .l10n
+                                .chatV2_voiceRoomStageVoiceroomStartSubmitLabel
+                          : context.l10n.chatV2_voiceRoomStageLabel2,
                       primary: true,
                       icon: 'voice',
                       onPressed: opening ? null : () => unawaited(_submit()),
                     ),
                     LoopButton(
                       key: const ValueKey<String>('voiceroom-start-cancel'),
-                      label: '取消',
+                      label: context.l10n.common_cancel,
                       onPressed: opening
                           ? null
                           : () => Navigator.of(context).pop(),

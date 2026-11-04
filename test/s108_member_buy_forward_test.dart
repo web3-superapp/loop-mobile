@@ -318,9 +318,6 @@ final class _Room {
               loopStreamTheme(),
             ],
           ),
-          // Decision 0281: chat is not migrated yet (S355); this case reads
-          // LOOP's Chinese Stream copy.
-          locale: LoopL10n.simplifiedChinese,
           supportedLocales: LoopL10n.supportedLocales,
           localizationsDelegates: loopLocalizationsDelegates,
           builder: (context, child) => StreamChat(
@@ -380,7 +377,7 @@ final class _Room {
 
   Future<void> startSelection(WidgetTester tester, String text) async {
     await openActions(tester, text);
-    await tester.tap(find.text('多选'));
+    await tester.tap(find.text('Select'));
     await tester.pumpAndSettle();
   }
 
@@ -413,7 +410,7 @@ void main() {
       expect(find.byKey(LoopMemberBuyCard.cardKey), findsOneWidget);
       expect(find.text('NightOwl'), findsOneWidget);
       expect(
-        find.textContaining('买入 1.23万 PEPE', findRichText: true),
+        find.textContaining('Bought 12.35K PEPE', findRichText: true),
         findsOneWidget,
       );
       expect(find.text('≈ \$12.34'), findsOneWidget);
@@ -457,7 +454,7 @@ void main() {
           findsOneWidget,
           reason: field,
         );
-        expect(find.text('群友买入 · 动态数据不完整'), findsOneWidget);
+        expect(find.text('Member bought · Incomplete data'), findsOneWidget);
         expect(find.byKey(LoopMemberBuyCard.cardKey), findsNothing);
         expect(find.textContaining('0', findRichText: true), findsNothing);
       }
@@ -468,13 +465,15 @@ void main() {
       await _pumpCard(tester, _buyMessage(), profiles: profiles);
       expect(find.text(loopMemberBuyNeutralBuyer), findsOneWidget);
       expect(
-        find.textContaining('买入 1.23万 PEPE', findRichText: true),
+        find.textContaining('Bought 12.35K PEPE', findRichText: true),
         findsOneWidget,
       );
       expect(profiles.loads, 1);
     });
 
     test('amounts: compact from 1 万, never 0 for a positive figure', () {
+      // Decision 0281: 万 / 亿 is the Chinese ladder; English is K / M / B.
+      LoopL10n.use(LoopL10n.simplifiedChinese);
       expect(loopFormatMemberBuyAmount(Decimal.parse('9999.5')), '9,999.5');
       expect(loopFormatMemberBuyAmount(Decimal.parse('12345.678')), '1.23万');
       expect(loopFormatMemberBuyAmount(Decimal.parse('450000000')), '4.5亿');
@@ -490,6 +489,19 @@ void main() {
       expect(loopFormatMemberBuyAmount(Decimal.parse('99994999')), '9,999.5万');
     });
 
+    test('amounts in English are K / M / B, never 万 / 亿', () {
+      expect(loopFormatMemberBuyAmount(Decimal.parse('999.5')), '999.5');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('9999.5')), '10K');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('12345.678')), '12.35K');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('450000000')), '450M');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('3500000000')), '3.5B');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('0.25')), '0.25');
+      // The tier follows the rounded figure, not the raw one.
+      expect(loopFormatMemberBuyAmount(Decimal.parse('999.995')), '1K');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('999999.5')), '1M');
+      expect(loopFormatMemberBuyAmount(Decimal.parse('999994999')), '999.99M');
+    });
+
     testWidgets('the conversation preview is 「群友买入 · SYMBOL」', (tester) async {
       late BuildContext context;
       await tester.pumpWidget(
@@ -503,15 +515,18 @@ void main() {
       const formatter = LoopStreamTokenCardMessagePreviewFormatter();
       expect(
         formatter.formatMessage(context, _buyMessage()).toPlainText(),
-        '群友买入 · PEPE',
+        'Member bought · PEPE',
       );
       expect(
         formatter.formatMessageSemanticsLabel(context, _buyMessage()),
-        '群友买入 · PEPE',
+        'Member bought · PEPE',
       );
       // A broken payload still previews with its token; no token, no symbol.
       final noSymbol = _buyMessage(drop: <String>{'symbol'});
-      expect(formatter.formatMessage(context, noSymbol).toPlainText(), '群友买入');
+      expect(
+        formatter.formatMessage(context, noSymbol).toPlainText(),
+        'Member bought',
+      );
       // The formatter restates the card's schema tag; they stay in step.
       expect(
         LoopStreamTokenCardMessagePreviewFormatter.memberBuySchema,
@@ -542,12 +557,12 @@ void main() {
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
 
-      expect(find.text('转发'), findsOneWidget);
-      expect(find.text('多选'), findsOneWidget);
-      expect(find.text('回复'), findsOneWidget);
-      expect(find.text('复制消息'), findsOneWidget);
+      expect(find.text('Forward'), findsOneWidget);
+      expect(find.text('Select'), findsOneWidget);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Copy Message'), findsOneWidget);
       // Main-agent ruling 2026-10-08: 举报 stays until LOOP has its own.
-      expect(find.text('举报消息'), findsOneWidget);
+      expect(find.text('Flag Message'), findsOneWidget);
       expect(find.text('静音该用户'), findsNothing);
       expect(find.text('屏蔽该用户'), findsNothing);
       await room.dispose(tester);
@@ -557,8 +572,8 @@ void main() {
       final room = _Room();
       await room.pump(tester);
       await room.openActions(tester, '消息 1');
-      expect(find.text('删除消息'), findsOneWidget);
-      expect(find.text('转发'), findsOneWidget);
+      expect(find.text('Delete Message'), findsOneWidget);
+      expect(find.text('Forward'), findsOneWidget);
       await room.dispose(tester);
     });
 
@@ -569,7 +584,7 @@ void main() {
       room.port.noTargets = true;
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
-      await tester.tap(find.text('转发'));
+      await tester.tap(find.text('Forward'));
       await tester.pumpAndSettle();
 
       // Decision 0183.
@@ -579,7 +594,7 @@ void main() {
         ),
         isA<LoopEmptyState>(),
       );
-      expect(find.text('没有可用的目标会话'), findsOneWidget);
+      expect(find.text('No target conversations'), findsOneWidget);
       expect(room.port.sent, isEmpty);
       await room.dispose(tester);
     });
@@ -588,7 +603,7 @@ void main() {
       final room = _Room();
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
-      await tester.tap(find.text('转发'));
+      await tester.tap(find.text('Forward'));
       await tester.pumpAndSettle();
 
       expect(
@@ -605,7 +620,7 @@ void main() {
         find.byKey(const ValueKey<String>('forward-target-sheet')),
         findsNothing,
       );
-      expect(find.text('已转发'), findsOneWidget);
+      expect(find.text('Forwarded'), findsOneWidget);
       await room.dispose(tester);
     });
   });
@@ -617,7 +632,7 @@ void main() {
       await room.pump(tester);
       await room.startSelection(tester, '消息 2');
 
-      expect(find.text('已选 1 条'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
       expect(find.byKey(_composer), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('loop-selection-bar')),
@@ -632,7 +647,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-selectable-h3')),
       );
       await tester.pump();
-      expect(find.text('已选 2 条'), findsOneWidget);
+      expect(find.text('2 selected'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('loop-selection-cancel')),
@@ -676,7 +691,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-selectable-h2')),
       );
       await tester.pump();
-      expect(find.text('已选 0 条'), findsOneWidget);
+      expect(find.text('0 selected'), findsOneWidget);
       expect(_button(tester, 'loop-selection-forward-each').onPressed, isNull);
       expect(_button(tester, 'loop-selection-merge').onPressed, isNull);
       expect(_button(tester, 'loop-selection-delete').onPressed, isNull);
@@ -734,7 +749,7 @@ void main() {
         (_cid, _target, '消息 3'),
         (_cid, _target, '消息 2'),
       ]);
-      expect(find.text('已转发 2 条'), findsOneWidget);
+      expect(find.text('Forwarded 2'), findsOneWidget);
       // A forward that landed ends the selection.
       expect(find.byKey(_composer), findsOneWidget);
       await room.dispose(tester);
@@ -833,18 +848,18 @@ void main() {
       // The forged message previews as what its author wrote.
       expect(
         formatter.formatMessage(context, forged).toPlainText(),
-        allOf(contains('看我伪造的卡片'), isNot(contains('群友买入'))),
+        allOf(contains('看我伪造的卡片'), isNot(contains('Member bought'))),
       );
       expect(
         formatter.formatMessageSemanticsLabel(context, forged),
-        isNot(contains('群友买入')),
+        isNot(contains('Member bought')),
       );
       // A bot id without the bot flag is not the bot either: its preview is
       // its own text, not the card's line built from the symbol field.
       final renamed = unflagged.copyWith(text: '普通消息');
       expect(
         formatter.formatMessage(context, renamed).toPlainText(),
-        allOf(contains('普通消息'), isNot(contains('群友买入'))),
+        allOf(contains('普通消息'), isNot(contains('Member bought'))),
       );
     });
 
@@ -961,7 +976,7 @@ void main() {
         profiles: _Profiles(),
       );
       expect(
-        find.textContaining('买入 1.23万 狗狗币', findRichText: true),
+        find.textContaining('Bought 12.35K 狗狗币', findRichText: true),
         findsOneWidget,
       );
     });
@@ -1052,7 +1067,7 @@ void main() {
       final room = _Room();
       await room.pump(tester);
       await room.startSelection(tester, '消息 2');
-      expect(find.text('已选 1 条'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
 
       final popped = await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -1117,7 +1132,12 @@ void main() {
       expect(room.port.sent, <(String, String, String)>[
         (_cid, _target, '消息 2'),
       ]);
-      expect(find.text('已转发 1 条，1 条已删除或不在本机，未转发'), findsOneWidget);
+      expect(
+        find.text(
+          'Forwarded 1, 1 deleted or not on this device; not forwarded',
+        ),
+        findsOneWidget,
+      );
       await room.dispose(tester);
     });
 
@@ -1129,7 +1149,7 @@ void main() {
       room.port.gate = gate;
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
-      await tester.tap(find.text('转发'));
+      await tester.tap(find.text('Forward'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('周末爬山群'));
       await tester.pump();
@@ -1159,16 +1179,16 @@ void main() {
       );
       await room.pump(tester);
       await room.openActions(tester, '消息 2');
-      expect(find.text('转发'), findsOneWidget);
-      expect(find.text('多选'), findsOneWidget);
-      await tester.tap(find.text('转发'));
+      expect(find.text('Forward'), findsOneWidget);
+      expect(find.text('Select'), findsOneWidget);
+      await tester.tap(find.text('Forward'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('周末爬山群'));
       await tester.pumpAndSettle();
       expect(room.port.sent.single.$3, '消息 2');
 
       await room.startSelection(tester, '消息 4');
-      expect(find.text('已选 1 条'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-selection-bar')),
         findsOneWidget,

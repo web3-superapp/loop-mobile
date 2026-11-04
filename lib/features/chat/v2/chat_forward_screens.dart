@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
 import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
@@ -38,7 +39,8 @@ const int chatMergeSelectionLimit = 50;
 const int chatForwardTargetPageSize = 30;
 
 /// The anonymous author label used by every merged row.
-const String chatMergeAnonymousLabel = '匿名成员';
+String get chatMergeAnonymousLabel =>
+    LoopL10n.current.chatV2_forwardScreensChatMergeAnonymousLabel;
 
 /// One selectable message, reduced to what the two pages may render.
 ///
@@ -499,12 +501,14 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('chat-forward-screen'),
       archetype: LoopPageArchetype.state,
-      title: '转发消息',
+      title: context.l10n.chatV2_forwardScreensChatForwardScreenTitle,
       // `#scr-chat-forward .topbar` carries `3 SELECTED · CHOOSE DESTINATION`
       // under the title: the count and the next step, in one line, before the
       // reader reaches the hero.
       kicker: null,
-      subtitle: '$selectedCount 条已选择 · 选择目标会话',
+      subtitle: context.l10n.chatV2_forwardScreensChatForwardScreenSubtitle(
+        selectedCount,
+      ),
       onBack: widget.onBack,
       framedTools: true,
       primary: LoopFolioPrimary(
@@ -513,22 +517,28 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         // in the prototype, and the app had none (audit 2026-09-20 · B.6).
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.state,
-        kicker: '已选消息',
+        kicker: context.l10n.chatV2_forwardScreensKicker,
         heading: switch ((state.sourceLabel, selectedCount)) {
-          (final String source?, final int count) => '$source · $count 条',
-          (null, final int count) => '$count 条已选择',
+          (final String source?, final int count) =>
+            context.l10n.chatV2_forwardScreensLoopFolioPrimary(count, source),
+          (null, final int count) =>
+            context.l10n.chatV2_forwardScreensLoopFolioPrimary2(count),
         },
-        caption:
-            '一次最多转发 $chatForwardSelectionLimit 条，目标只能是你已加入的会话。'
-            '已删除或没有正文的消息会被跳过并计数。',
-        stamp: '已选 $selectedCount',
+        caption: context.l10n.chatV2_forwardScreensCaption(
+          chatForwardSelectionLimit,
+        ),
+        stamp: context.l10n.chatV2_forwardScreensStamp(selectedCount),
       ),
       sections: <Widget>[
         if (widget.sourceCid == null)
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('chat-forward-missing-source'),
-            message: '找不到原会话',
-            detail: '请从会话页进入转发，本页不会猜测要转发哪个会话的消息。',
+            message: context
+                .l10n
+                .chatV2_forwardScreensChatForwardMissingSourceMessage,
+            detail: context
+                .l10n
+                .chatV2_forwardScreensChatForwardMissingSourceDetail,
             maxLines: 2,
             detailMaxLines: 4,
           )
@@ -541,7 +551,11 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         else if (state.offline)
           LoopOfflineState(
             key: const ValueKey<String>('chat-forward-state-offline'),
-            pausedActions: const <String>['读取消息', '选择目标', '转发'],
+            pausedActions: <String>[
+              context.l10n.chatV2_forwardScreensLoopOfflineState,
+              context.l10n.chatV2_forwardScreensLoopOfflineState2,
+              context.l10n.chatV2_forwardScreensLoopOfflineState3,
+            ],
             onRetry: () => unawaited(
               ref
                   .read(chatForwardControllerProvider.notifier)
@@ -551,7 +565,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         else if (state.failed)
           LoopErrorState(
             key: const ValueKey<String>('chat-forward-error'),
-            reason: '没有读到这个会话的消息与可用目标，本页没有转发任何内容。',
+            reason: context.l10n.chatV2_forwardScreensChatForwardErrorReason,
             onRetry: () => unawaited(
               ref
                   .read(chatForwardControllerProvider.notifier)
@@ -559,13 +573,16 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
             ),
           )
         else ...<Widget>[
-          const LoopLabel('选择消息'),
+          LoopLabel(context.l10n.chatV2_forwardScreensLoopLabel),
           if (state.messages.isEmpty)
-            const LoopEmptyState(
+            LoopEmptyState(
               key: ValueKey<String>('chat-forward-no-messages'),
               illustration: LoopIllustration.chat,
-              title: '这个会话还没有可转发的消息',
-              message: '只有已同步到本机的文本消息可以被转发。',
+              title:
+                  context.l10n.chatV2_forwardScreensChatForwardNoMessagesTitle,
+              message: context
+                  .l10n
+                  .chatV2_forwardScreensChatForwardNoMessagesMessage,
               compact: true,
             )
           else
@@ -578,13 +595,19 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
           // `.label` — the prototype's `发送到`, with the scope of the list in
           // it rather than in a fourth explanation card below it
           // (audit 2026-09-20 · B.6).
-          const LoopLabel('发送到 · 最近 $chatForwardTargetPageSize 个会话'),
+          LoopLabel(
+            context.l10n.chatV2_forwardScreensLoopLabel2(
+              chatForwardTargetPageSize,
+            ),
+          ),
           if (state.targets.isEmpty)
-            const LoopEmptyState(
+            LoopEmptyState(
               key: ValueKey<String>('chat-forward-no-targets'),
               illustration: LoopIllustration.chat,
-              title: '没有可用的目标会话',
-              message: '转发目标必须是你已加入的会话。',
+              title:
+                  context.l10n.chatV2_forwardScreensChatForwardNoTargetsTitle,
+              message:
+                  context.l10n.chatV2_forwardScreensChatForwardNoTargetsMessage,
               compact: true,
             )
           else
@@ -598,12 +621,13 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('chat-forward-cancel'),
-                label: '取消',
+                label: context.l10n.common_cancel,
                 onPressed: widget.onBack,
               ),
               LoopButton(
                 key: const ValueKey<String>('chat-forward-open-merge'),
-                label: '预览合并长图',
+                label:
+                    context.l10n.chatV2_forwardScreensChatForwardOpenMergeLabel,
                 primary: true,
                 onPressed: selectedCount == 0
                     ? null
@@ -622,12 +646,17 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     final selected = state.selected.contains(message.messageId);
     return LoopRecordRow(
       key: ValueKey<String>('chat-forward-message-${message.messageId}'),
-      title: message.forwardable ? message.text : '这条消息不能转发',
+      title: message.forwardable
+          ? message.text
+          : LoopL10n.current.chatV2_forwardScreensTitle,
       subtitle: message.forwardable
           ? communityObservedAtLabel(message.createdAt)
-          : '已删除或没有正文，转发时会被跳过。',
+          : LoopL10n.current.chatV2_forwardScreensSubtitle,
       trailingBadge: selected
-          ? const LoopBadge('已选', kind: LoopBadgeKind.up)
+          ? LoopBadge(
+              LoopL10n.current.chatV2_forwardScreensLoopBadge,
+              kind: LoopBadgeKind.up,
+            )
           : null,
       position: index == 0
           ? LoopRowPosition.first
@@ -642,7 +671,9 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
               if (!accepted) {
                 LoopToast.show(
                   context,
-                  message: '一次最多选择 $chatForwardSelectionLimit 条',
+                  message: LoopL10n.current.chatV2_forwardScreensMessage(
+                    chatForwardSelectionLimit,
+                  ),
                   kind: LoopToastKind.warn,
                 );
               }
@@ -685,9 +716,9 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
   Future<void> _forward(ChatForwardTarget target) async {
     final confirmed = await confirmCommunityAction(
       context,
-      title: '转发到这个会话？',
-      body: '选中的消息会作为新消息发出，并标注来自哪个会话。已删除或没有正文的消息会跳过。',
-      confirmLabel: '转发',
+      title: LoopL10n.current.chatV2_forwardScreensTitle2,
+      body: LoopL10n.current.chatV2_forwardScreensBody,
+      confirmLabel: LoopL10n.current.chatV2_forwardScreensLoopOfflineState3,
       sheetKey: 'chat-forward-confirm-sheet',
     );
     if (!confirmed || !mounted) return;
@@ -696,15 +727,22 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         .forward(target.cid);
     if (!mounted) return;
     if (outcome == null) {
-      LoopToast.show(context, message: '没有转发任何消息', kind: LoopToastKind.warn);
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.chatV2_forwardScreensMessage2,
+        kind: LoopToastKind.warn,
+      );
       return;
     }
     final skipped = outcome.skipped + outcome.failed;
     LoopToast.show(
       context,
       message: skipped == 0
-          ? '已转发 ${outcome.sent} 条'
-          : '已转发 ${outcome.sent} 条，跳过 $skipped 条',
+          ? LoopL10n.current.chatV2_forwardScreensMessage3(outcome.sent)
+          : LoopL10n.current.chatV2_forwardScreensMessage4(
+              outcome.sent,
+              skipped,
+            ),
       kind: skipped == 0 ? LoopToastKind.ok : LoopToastKind.warn,
     );
   }
@@ -739,10 +777,12 @@ class _ChatMergePreviewScreenState
     return LoopDashboardPage(
       key: const ValueKey<String>('chat-merge-preview-screen'),
       archetype: LoopPageArchetype.state,
-      title: '合并长图预览',
+      title: context.l10n.chatV2_forwardScreensChatMergePreviewScreenTitle,
       // `#scr-chat-merge-preview .topbar`: `Merge Preview` over
       // `ANONYMOUS BY DEFAULT`.
-      subtitle: rows.any((row) => row.senderName != null) ? '显示发送者用户名' : '默认匿名',
+      subtitle: rows.any((row) => row.senderName != null)
+          ? context.l10n.chatV2_forwardScreensChatMergePreviewScreenSubtitle
+          : context.l10n.chatV2_forwardScreensChatMergePreviewScreenSubtitle2,
       onBack: widget.onBack,
       framedTools: true,
       // `#scr-chat-merge-preview` has no folio of its own: the Chalk card
@@ -753,15 +793,17 @@ class _ChatMergePreviewScreenState
       // The exported image is captured from exactly this subtree, so the
       // anonymous rendering inside it is the only thing that can be encoded.
       primary: rows.isEmpty
-          ? const LoopFolioPrimary(
+          ? LoopFolioPrimary(
               variant: LoopFolioVariant.quiet,
               archetype: LoopFolioArchetype.state,
-              kicker: '默认匿名',
-              heading: '0 条内容',
-              caption:
-                  '合并预览只输出「$chatMergeAnonymousLabel」、时间与正文，'
-                  '不含昵称、LOOP ID 或钱包地址。',
-              stamp: '匿名',
+              kicker: context
+                  .l10n
+                  .chatV2_forwardScreensChatMergePreviewScreenSubtitle2,
+              heading: context.l10n.chatV2_forwardScreensHeading,
+              caption: context.l10n.chatV2_forwardScreensCaption2(
+                chatMergeAnonymousLabel,
+              ),
+              stamp: context.l10n.chatV2_forwardScreensStamp2,
             )
           : RepaintBoundary(
               key: _cardKey,
@@ -774,11 +816,13 @@ class _ChatMergePreviewScreenState
             ),
       sections: <Widget>[
         if (rows.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('chat-merge-empty'),
             illustration: LoopIllustration.chat,
-            title: '还没有选择任何消息',
-            message: '回到转发页选择要合并的消息，最多 $chatMergeSelectionLimit 条。',
+            title: context.l10n.chatV2_forwardScreensChatMergeEmptyTitle,
+            message: context.l10n.chatV2_forwardScreensChatMergeEmptyMessage(
+              chatMergeSelectionLimit,
+            ),
             compact: true,
           )
         else ...<Widget>[
@@ -787,8 +831,10 @@ class _ChatMergePreviewScreenState
               key: const ValueKey<String>('chat-merge-truncated'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '已截断',
-              body: '一次最多合并 $chatMergeSelectionLimit 条，多出的部分不会出现在预览里。',
+              title: context.l10n.chatV2_forwardScreensChatMergeTruncatedTitle,
+              body: context.l10n.chatV2_forwardScreensChatMergeTruncatedBody(
+                chatMergeSelectionLimit,
+              ),
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
                 0,
@@ -800,12 +846,12 @@ class _ChatMergePreviewScreenState
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('chat-merge-back'),
-                label: '返回聊天',
+                label: context.l10n.chatV2_forwardScreensChatMergeBackLabel,
                 onPressed: widget.onBack,
               ),
               LoopButton(
                 key: const ValueKey<String>('chat-merge-export'),
-                label: '生成长图',
+                label: context.l10n.chatV2_forwardScreensChatMergeExportLabel,
                 primary: true,
                 onPressed: _exporting ? null : () => unawaited(_export()),
               ),
@@ -906,14 +952,16 @@ class _MergeCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    sourceLabel == null ? '已选择的会话' : '$sourceLabel · 已选择的会话',
+                    sourceLabel == null
+                        ? context.l10n.chatV2_forwardScreensEncode
+                        : context.l10n.chatV2_forwardScreensS(sourceLabel),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.kicker.copyWith(color: LoopColors.inkText3),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '社区信号摘要',
+                    context.l10n.chatV2_forwardScreensEncode2,
                     style: LoopType.display.copyWith(color: LoopColors.ink),
                   ),
                 ],
@@ -940,7 +988,7 @@ class _MergeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    '将输出',
+                    context.l10n.chatV2_forwardScreensText,
                     style: LoopType.kicker.copyWith(
                       color: LoopColors.chalk.withValues(alpha: 0.72),
                     ),
@@ -979,7 +1027,7 @@ class _MergeCard extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。',
+                context.l10n.chatV2_forwardScreensText2,
                 style: LoopType.captionSm.copyWith(color: LoopColors.inkText3),
               ),
             ),

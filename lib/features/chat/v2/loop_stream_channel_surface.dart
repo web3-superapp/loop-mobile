@@ -21,6 +21,7 @@ import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
 import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -44,7 +45,8 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 // Two characters shorter than it was: at the app's 14pt body the old string
 // wrapped the field onto a second line and made the composer half again as
 // tall as the prototype's (audit 2026-09-20 · B.2). The promise is unchanged.
-const String loopChatComposerHint = '发消息 · 贴合约地址识别代币';
+String get loopChatComposerHint =>
+    LoopL10n.current.chatV2_streamChannelSurfaceLoopChatComposerHint;
 
 // `#scr-dm .composer input` carries the bare 发消息, and LOOP's direct
 // conversation does not: the Token Card builder is registered for every
@@ -60,7 +62,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     this.header,
     this.banner,
     this.footer,
-    this.notConnectedMessage = '这个会话暂时打不开，稍后再试。',
+    this.notConnectedMessage,
     this.unresolvedMessage,
     this.keyPrefix = 'loop-stream-channel',
     this.mayPinMessages,
@@ -86,7 +88,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   /// composer: the last thing a reader passes on the way to the field, not
   /// the first thing they meet on the way in (audit 2026-09-20 · B.3).
   final Widget? footer;
-  final String notConnectedMessage;
+  final String? notConnectedMessage;
 
   /// What to say when Stream answers the membership query with no channel for
   /// this account. The caller passes the sentence its own server reason code
@@ -119,7 +121,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     if (parseLoopStreamChannelCid(cid) == null) {
       return LoopStreamChannelStateBlock(
         key: ValueKey<String>('$keyPrefix-invalid'),
-        message: '这个会话链接不是 LOOP 支持的频道地址，本页没有发起任何连接。',
+        message: context.l10n.chatV2_streamChannelSurfaceMessage,
         icon: 'warn',
       );
     }
@@ -130,7 +132,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
           skipLoadingOnRefresh: false,
           loading: () => LoopStreamChannelStateBlock(
             key: ValueKey<String>('$keyPrefix-connecting'),
-            message: '正在恢复聊天会话…',
+            message: context.l10n.chatV2_streamChannelSurfaceMessage2,
             loading: true,
           ),
           // A token call that never reached the server has not refused
@@ -139,19 +141,23 @@ class LoopStreamChannelSurface extends ConsumerWidget {
           error: (error, stackTrace) => loopStreamFailureIsOffline(error)
               ? LoopStreamChannelStateBlock(
                   key: ValueKey<String>('$keyPrefix-offline'),
-                  offlinePausedActions: const <String>[
-                    '打开会话',
-                    '发消息',
-                    '搜索',
-                    '转发',
+                  offlinePausedActions: <String>[
+                    context
+                        .l10n
+                        .chatV2_streamChannelSurfaceLoopStreamChannelStateBlock,
+                    context
+                        .l10n
+                        .chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2,
+                    context.l10n.common_search,
+                    context.l10n.chatV2_forwardScreensLoopOfflineState3,
                   ],
-                  message: '设备当前离线，没有恢复聊天授权，也没有发送任何消息。',
+                  message: context.l10n.chatV2_streamChannelSurfaceMessage3,
                   onRetry: () =>
                       ref.invalidate(streamChatAuthorizationProvider),
                 )
               : LoopStreamChannelStateBlock(
                   key: ValueKey<String>('$keyPrefix-error'),
-                  message: '聊天授权没有恢复成功，本页没有发起任何消息操作。',
+                  message: context.l10n.chatV2_streamChannelSurfaceMessage4,
                   icon: 'warn',
                   onRetry: () =>
                       ref.invalidate(streamChatAuthorizationProvider),
@@ -164,7 +170,9 @@ class LoopStreamChannelSurface extends ConsumerWidget {
                 currentUser == null) {
               return LoopStreamChannelStateBlock(
                 key: ValueKey<String>('$keyPrefix-not-connected'),
-                message: notConnectedMessage,
+                message:
+                    notConnectedMessage ??
+                    context.l10n.chatV2_streamChannelSurfaceNotConnectedMessage,
                 icon: 'warn',
                 onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
               );
@@ -448,7 +456,7 @@ class _LoopStreamMemberChannelBodyState
           if (cached != null) return _conversation(cached);
           return LoopStreamChannelStateBlock(
             key: ValueKey<String>('${widget.keyPrefix}-confirming'),
-            message: '正在确认这个频道以及你的成员身份…',
+            message: context.l10n.chatV2_streamChannelSurfaceMessage5,
             loading: true,
           );
         }
@@ -474,8 +482,17 @@ class _LoopStreamMemberChannelBodyState
           if (block == LoopStreamChannelBlock.offline) {
             return LoopStreamChannelStateBlock(
               key: ValueKey<String>('${widget.keyPrefix}-offline'),
-              offlinePausedActions: const <String>['打开会话', '发消息', '搜索', '转发'],
-              message: '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
+              offlinePausedActions: <String>[
+                context
+                    .l10n
+                    .chatV2_streamChannelSurfaceLoopStreamChannelStateBlock,
+                context
+                    .l10n
+                    .chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2,
+                context.l10n.common_search,
+                context.l10n.chatV2_forwardScreensLoopOfflineState3,
+              ],
+              message: context.l10n.chatV2_streamChannelSurfaceMessage6,
               onRetry: () => setState(_reload),
             );
           }
@@ -806,14 +823,18 @@ String loopStreamChannelBlockMessage(
 }) => switch (block) {
   // Stream itself refused this account the channel. This is the only case
   // that may name membership.
-  LoopStreamChannelBlock.refused => '你还不是这个群的成员，LOOP 没有打开任何会话。',
+  LoopStreamChannelBlock.refused =>
+    LoopL10n.current.chatV2_streamChannelSurfaceRefused,
   // Nothing was asked, so nothing about membership may be said. The socket is
   // the thing that is missing, and the network is where the member looks.
-  LoopStreamChannelBlock.notConnected => '没有连上聊天服务，请检查网络后重试。',
-  LoopStreamChannelBlock.notOpened => '没能打开这个频道的会话，请稍后重试。',
+  LoopStreamChannelBlock.notConnected =>
+    LoopL10n.current.chatV2_streamChannelSurfaceNotConnected,
+  LoopStreamChannelBlock.notOpened =>
+    LoopL10n.current.chatV2_streamChannelSurfaceNotOpened,
   LoopStreamChannelBlock.unresolved =>
-    unresolvedMessage ?? '这个频道还没有同步到你的账号，LOOP 没有打开任何会话。',
-  LoopStreamChannelBlock.offline => '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
+    unresolvedMessage ?? LoopL10n.current.chatV2_streamChannelSurfaceSwitch,
+  LoopStreamChannelBlock.offline =>
+    LoopL10n.current.chatV2_streamChannelSurfaceMessage6,
 };
 
 /// The key suffix a blocked channel renders under, so an acceptance assertion
@@ -881,7 +902,7 @@ class LoopStreamChannelStateBlock extends StatelessWidget {
           : onRetry == null
           ? LoopInlineUnavailable(
               icon: icon,
-              message: '会话不可用',
+              message: context.l10n.chat_streamInboxTitle10,
               detail: message,
               maxLines: 2,
               detailMaxLines: 4,
@@ -924,7 +945,9 @@ class LoopChannelPinnedNotice extends StatelessWidget {
   Widget build(BuildContext context) => LoopNotice(
     key: const ValueKey<String>('loop-channel-pinned-unavailable'),
     icon: 'pin',
-    title: '置顶公告',
+    title: context
+        .l10n
+        .chatV2_streamChannelSurfaceLoopChannelPinnedUnavailableTitle,
     body: reason,
     margin: const EdgeInsets.fromLTRB(
       LoopSpacing.page,

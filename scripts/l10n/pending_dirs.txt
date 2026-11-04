@@ -8,7 +8,6 @@ lib/app
 lib/app.dart
 lib/core
 lib/features/account
-lib/features/chat
 lib/features/community
 lib/features/intel
 lib/features/market

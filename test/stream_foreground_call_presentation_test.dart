@@ -8,21 +8,21 @@ void main() {
   test('joined waits for official media connection before showing live', () {
     final status = CallStatus.joined();
 
-    expect(StreamCallStatusPresentation.label(status), '媒体连接中');
+    expect(StreamCallStatusPresentation.label(status), 'Connecting media');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.warning);
   });
 
   test('connected status is presented as official live state', () {
     final status = CallStatus.connected();
 
-    expect(StreamCallStatusPresentation.label(status), '已连接');
+    expect(StreamCallStatusPresentation.label(status), 'Connected');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.positive);
   });
 
   test('reconnecting status stays a warning', () {
     final status = CallStatus.reconnecting(1);
 
-    expect(StreamCallStatusPresentation.label(status), '重连中');
+    expect(StreamCallStatusPresentation.label(status), 'Reconnecting');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.warning);
   });
 
@@ -30,14 +30,17 @@ void main() {
     final status = CallStatus.reconnectingFailed();
 
     expect(status.toStatusString(), isEmpty);
-    expect(StreamCallStatusPresentation.label(status), '重连失败');
+    expect(StreamCallStatusPresentation.label(status), 'Reconnect failed');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.danger);
   });
 
   test('the live count says it is the one happening now', () {
     // The room count on the same screen was taken when LOOP last looked and
     // keeps its own name; neither of them is 「在线」 on its own any more.
-    expect(StreamCallParticipantPresentation.countLabel(1), '此刻在通话里 1 人');
+    expect(
+      StreamCallParticipantPresentation.countLabel(1),
+      '1 person in the call now',
+    );
     expect(
       StreamCallParticipantPresentation.countLabel(0),
       isNot(contains('在线')),
@@ -66,7 +69,10 @@ void main() {
       ),
       isNull,
     );
-    expect(StreamCallParticipantPresentation.countLabel(null), '此刻在通话里的人数正在统计');
+    expect(
+      StreamCallParticipantPresentation.countLabel(null),
+      'Counting people in the call',
+    );
     expect(
       StreamCallParticipantPresentation.countLabel(null),
       isNot(contains('0')),
@@ -108,7 +114,10 @@ void main() {
       phase: StreamCallPhase.disconnected,
       count: null,
     );
-    expect(disconnected, '语音已断开，人数以重新连接后为准');
+    expect(
+      disconnected,
+      'Voice disconnected; count updates after reconnecting',
+    );
     expect(disconnected, isNot(contains('此刻在通话里')));
     expect(disconnected, isNot(matches(RegExp(r'\d'))));
 
@@ -116,7 +125,10 @@ void main() {
       phase: StreamCallPhase.reconnecting,
       count: null,
     );
-    expect(reconnecting, '语音正在重连，人数以重新连接后为准');
+    expect(
+      reconnecting,
+      'Voice reconnecting; count updates after reconnecting',
+    );
     expect(reconnecting, isNot(matches(RegExp(r'\d'))));
 
     // R7-2: the room facts above this panel print the same two sentences for
@@ -165,7 +177,7 @@ void main() {
         phase: StreamCallPhase.connecting,
         count: null,
       ),
-      '此刻在通话里的人数正在统计',
+      'Counting people in the call',
     );
     expect(
       StreamCallParticipantPresentation.countLine(
@@ -180,7 +192,7 @@ void main() {
         phase: StreamCallPhase.connected,
         count: 3,
       ),
-      '此刻在通话里 3 人',
+      '3 people in the call now',
     );
   });
 
@@ -272,7 +284,7 @@ void main() {
     // 我 — and the caption must then be the microphone state, not 我 again.
     expect(
       StreamCallParticipantPresentation.name(suppliedName: '', isLocal: true),
-      '我',
+      'Me',
     );
     expect(
       StreamCallParticipantPresentation.marksSelf(
@@ -286,7 +298,7 @@ void main() {
         isSpeaking: false,
         isAudioEnabled: false,
       ),
-      '已静音',
+      'Muted',
     );
   });
 
@@ -314,7 +326,7 @@ void main() {
     );
     expect(
       StreamCallParticipantPresentation.name(suppliedName: '', isLocal: false),
-      '成员',
+      'Member',
     );
   });
 
@@ -324,14 +336,14 @@ void main() {
         isSpeaking: true,
         isAudioEnabled: true,
       ),
-      '正在发言',
+      'Speaking',
     );
     expect(
       StreamCallParticipantPresentation.microphoneState(
         isSpeaking: false,
         isAudioEnabled: true,
       ),
-      '麦克风已开',
+      'Mic on',
     );
   });
 
@@ -407,7 +419,7 @@ void main() {
         everCouldSendAudio: true,
         speakSpent: true,
       ),
-      startsWith('你已静音。'),
+      startsWith('You\'re muted.'),
     );
     expect(
       streamMicrophoneNote(
@@ -417,7 +429,7 @@ void main() {
         everCouldSendAudio: true,
         speakSpent: true,
       ),
-      startsWith('你已被移出发言席'),
+      startsWith('You were moved off stage'),
     );
     // An account that was never a speaker is simply a listener.
     expect(
@@ -428,7 +440,7 @@ void main() {
         everCouldSendAudio: false,
         speakSpent: false,
       ),
-      '你在这个房间是只收听的角色。',
+      'You\'re a listener in this room.',
     );
     // An open microphone says so instead of telling the reader how to open
     // one.
@@ -440,7 +452,7 @@ void main() {
         everCouldSendAudio: true,
         speakSpent: true,
       ),
-      startsWith('你的麦克风已打开'),
+      startsWith('Your mic is on'),
     );
   });
 

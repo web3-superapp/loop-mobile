@@ -426,6 +426,7 @@ TOKEN_CARD_RENDER_IMPORTS = {
             "'package:flutter/widgets.dart' show BuildContext, EdgeInsets, StatelessWidget, ValueKey, Widget",
             "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
             "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
+            "'package:loop_mobile/l10n/loop_l10n.dart'",
             "'package:loop_mobile/widgets/loop_token_card.dart' show LoopTokenCard, LoopTokenCardModel, LoopTokenCardState",
             "'package:stream_chat_flutter/stream_chat_flutter.dart' show Attachment, Message, StreamAttachmentWidgetBuilder",
         }
@@ -434,6 +435,7 @@ TOKEN_CARD_RENDER_IMPORTS = {
         {
             "'package:flutter/widgets.dart' show BuildContext, TextSpan",
             "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
+            "'package:loop_mobile/l10n/loop_l10n.dart'",
             "'package:stream_chat_flutter/stream_chat_flutter.dart' show ChannelModel, DraftMessage, Message, MessageState, StreamMessagePreviewFormatter, User",
         }
     ),
@@ -2415,12 +2417,12 @@ CHAT_SPOT_SNAPSHOT_TEST_MARKERS = {
     ),
 }
 CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS = {
-    "card": "e2adf5c9590d6c07bcc023439952cbbe9317ec642eeddef8a4ca9f3b6de7634c",
-    "page": "3ef6f193083f4c829553570849783cf9fa515a8d721fc3f1ebf93dd3d8c69e7d",
+    "card": "6b797b6cbbbf7d024d881156f6ff907d502cb378c6ce3ee441ba2b4141bc7721",
+    "page": "3c87778753573f998e55f09e7715968ec163e2b5f5578f8ed2c96466574f1cc8",
     # Decision 0117 re-keyed the fixture's reactions from Emoji to LOOP's
     # reaction types (`like` / `wow` / `sad` / `love` / `haha`).
     "content": "3c160077f0e4770abe8650c6485536eaba26887231ff91892941dd94534eddb6",
-    "test": "1b0ceb55baafa0f6ff2ea5a8784dc656f7f34229b8bc9c37d01aa1ce69894fc0",
+    "test": "c2da9064391028f4ba523c70a9c6dbb4221e3ab0c4e9eb10529d47ee8b0a0d02",
 }
 
 
@@ -2433,9 +2435,9 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
             "lib/features/chat/widgets/chat_components.dart": (
                 "ValueKey<String>('chat-spot-snapshot-semantics')",
                 "ValueKey<String>('chat-spot-snapshot-card')",
-                "label: 'ETH Spot market snapshot · 开发预览'",
+                "ETH Spot market snapshot · 开发预览",
                 "'ETH spot market snapshot'",
-                "'Shared at 14:12 · 演示数据'",
+                "Shared at 14:12 · 演示数据",
                 "label: 'SPOT PREVIEW'",
                 "ValueKey<String>('chat-spot-market-entry')",
                 "onPressed: () => context.go('/market')",
@@ -2463,7 +2465,7 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
                 "chat Spot snapshot supports 390pt at 2x Dynamic Type",
                 "find.text('ETH position snapshot'), findsNothing",
                 "find.text('Save setup'), findsNothing",
-                "expect(semantics.properties.label, 'ETH Spot market snapshot · 开发预览')",
+                "expect(semantics.properties.label, 'ETH Spot market snapshot · Development preview')",
                 "expect(watchButton.onPressed, isNull)",
                 "find.byKey(const ValueKey<String>('public-spot-market-ledger'))",
                 "TextScaler.linear(textScale)",
@@ -2901,9 +2903,9 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
         exact_assertions = {
             "chat preview asset snapshot is spot-only and labels fixture facts": (
                 r"expect\s*\(\s*find\.text\s*\(\s*'SPOT PREVIEW'\s*\)\s*,\s*findsOneWidget\s*\)",
-                r"expect\s*\(\s*find\.text\s*\(\s*'Shared at 14:12 · 演示数据'\s*\)\s*,\s*findsOneWidget\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'Shared at 14:12 · Demo data'\s*\)\s*,\s*findsOneWidget\s*\)",
                 r"tester\.widget<Semantics>\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'chat-spot-snapshot-semantics'\s*\)",
-                r"expect\s*\(\s*semantics\.properties\.label\s*,\s*'ETH Spot market snapshot · 开发预览'\s*\)",
+                r"expect\s*\(\s*semantics\.properties\.label\s*,\s*'ETH Spot market snapshot · Development preview'\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'ETH position snapshot'\s*\)\s*,\s*findsNothing\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'LONG'\s*\)\s*,\s*findsNothing\s*\)",
                 r"expect\s*\(\s*find\.text\s*\(\s*'Entry'\s*\)\s*,\s*findsNothing\s*\)",
@@ -2957,12 +2959,12 @@ CHAT_PREVIEW_REQUEST_TEST_MARKERS = {
 # Decision 0229 re-reviewed the test: `_tapRequestAction` now pumps after
 # `ensureVisible` so the tap lands where the scrolled control is.
 CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
-    "fd58ea04aa06691fffbf5b42f9c893de507fad7a97c389a68552eacb77b3a476"
+    "b6ab719dced77c96d6c675907930c4335306c2c0d95a5571e17f3354d3fc42e6"
 )
 # Decision 0130 re-reviewed `page` and `inbox`: their SnackBars became
 # LoopToast with the same copy; nothing else in the slices changed.
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
-    "page": "726d50ec89ae4d17051651faa2ba249d3015ef2af5dbf8ebe679070a098e930b",
+    "page": "acbfe0fa03abbf2e0a5b5b0df87e53a14aeb638a09c28cbdd01ccd3f2c6367e6",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "inbox": "225e12f426fcc96db95dd6d569956a2fb8434d0fe2afeacf96d0ffda7a989bbb",
 }
@@ -3002,8 +3004,8 @@ def check_chat_preview_message_request_contract(root: Path) -> list[str]:
                 "Accept does not create a Stream conversation",
                 "Report does not submit a moderation report",
                 "No simulated requests remain in this Development Preview.",
-                "No Stream conversation was created.",
-                "No sender interaction occurred.",
+                "开发预览 and removed locally. No Stream conversation was created.",
+                "开发预览 only. No sender interaction occurred.",
                 "no report is submitted.",
                 "No report was submitted.",
                 "resolving ? null : onAccept",
@@ -8239,7 +8241,7 @@ def check_chat_token_card_contract(root: Path) -> list[str]:
             "买入 and 卖出 must be shut by the same gate the wallet reads, "
             "not by a sentence of this card's own"
         )
-    for action in ("const LoopTokenCardAction('买入', buy: true)", "const LoopTokenCardAction('卖出')"):
+    for action in ("LoopTokenCardAction(context.l10n.common_buy, buy: true)", "LoopTokenCardAction(context.l10n.common_sell)"):
         if action not in view:
             errors.append(
                 f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer renders {action}; a "
@@ -8272,8 +8274,12 @@ def check_chat_token_card_contract(root: Path) -> list[str]:
             )
 
     surface = read_text(root / CHAT_TOKEN_CARD_SURFACE_PATH)
-    hint = re.search(
-        r"const String loopChatComposerHint = '([^']*)';", surface
+    # Decision 0281: the hint is ARB copy; read the zh value of its key.
+    hint_key = re.search(
+        r"String get loopChatComposerHint =>\s*LoopL10n\.current\.(\w+);", surface
+    )
+    hint = None if hint_key is None else re.match(
+        r"(.*)", L10N_RULES.arb_tables(root)[0].get(hint_key.group(1), ""), re.DOTALL
     )
     if hint is None:
         errors.append(
@@ -13137,8 +13143,8 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "ValueKey<String>('chat-create-menu')",
                 "key: 'chat-create-group-menu-item'",
                 "key: 'chat-add-friend-menu-item'",
-                "title: '创建群聊'",
-                "title: '搜索 / 添加用户'",
+                "创建群聊",
+                "搜索 / 添加用户",
                 "context.push<void>('/chat/groups/create')",
                 # Step 3 folded the V1 alias search into the V2 global search.
                 "context.push<void>('/search')",
@@ -13224,8 +13230,8 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "if (_disposed || !_canLookup()) return;",
             ),
             "lib/features/chat/group_alias/group_alias_stream_message_identity.dart": (
-                "loopGroupMemberNeutralLabel = '成员'",
-                "loopGroupConversationNeutralLabel = '群聊'",
+                "loopGroupMemberNeutralLabel =>\n    LoopL10n.current.chatGroupAlias_neutralMember",
+                "loopGroupConversationNeutralLabel =>\n    LoopL10n.current.common_groupChat",
                 "parseLoopGroupAliasMemberProjection",
                 "if (!setEquals(projectionFields, _aliasProjectionFields)) return null;",
                 "resolveLoopGroupMessageSenderLabel",
@@ -14065,7 +14071,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         # the avatar beside their bubble can open it; the name still comes
         # from the passed profile alone.
         compact_direct = re.sub(r"\s+", "", direct_screen)
-        if "identity?.displayName ?? '私聊'" not in direct_screen or any(
+        if "identity?.displayName??context.l10n.common_directMessage" not in compact_direct or any(
             marker not in compact_direct
             for marker in (
                 "LoopDirectPeerScope(displayName:peer,",

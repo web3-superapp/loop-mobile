@@ -99,7 +99,7 @@ void main() {
       // it at 18pt, which holds the whole name — and the ellipsis is still
       // there for one that does not fit. S253: the room's size now sits on
       // the line under the name, so the bar gives the name one line.
-      expect(find.text('128 成员'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
       expect(tester.widget<Text>(title).maxLines, 1);
       expect(tester.widget<Text>(title).overflow, TextOverflow.ellipsis);
       expect(
@@ -190,7 +190,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-chat-syncing')),
         findsOneWidget,
       );
-      expect(find.text('聊天权限同步中'), findsOneWidget);
+      expect(find.text('Syncing chat access'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-chat-unavailable')),
         findsNothing,
@@ -219,7 +219,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-chat-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('成员上限'), findsOneWidget);
+      expect(find.textContaining('member limit'), findsOneWidget);
     });
 
     test('a persona still on its way says that, and no name', () {
@@ -230,7 +230,7 @@ void main() {
             projectionState: CommunityChatPersonaProjection.pending,
           ),
         ),
-        '正在同步你的显示名',
+        'Syncing your display name',
       );
       // Nothing issued, or not a member: the page states neither in place of
       // the other.
@@ -336,7 +336,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(social.commands, contains('message-request:$testMemberId'));
-      expect(find.text('消息请求已发送'), findsOneWidget);
+      expect(find.text('Message request sent'), findsOneWidget);
     });
 
     testWidgets('a refused message request stays on the page, and retries', (
@@ -366,13 +366,13 @@ void main() {
         find.byKey(const ValueKey<String>('dm-message-request-failed')),
         findsOneWidget,
       );
-      expect(find.textContaining('对方没有开放被找到'), findsWidgets);
+      expect(find.textContaining('aren\'t discoverable'), findsWidgets);
       // The control is still there, and it says what pressing it does now.
       final retry = find.byKey(
         const ValueKey<String>('dm-send-message-request'),
       );
       expect(retry, findsOneWidget);
-      expect(tester.widget<LoopButton>(retry).label, '重新发送消息请求');
+      expect(tester.widget<LoopButton>(retry).label, 'Resend message request');
       expect(tester.widget<LoopButton>(retry).onPressed, isNotNull);
 
       await tester.tap(retry);
@@ -390,7 +390,7 @@ void main() {
     ) async {
       expect(
         directMessageRequestFailureReason(CommunityFailureKind.notFound),
-        '对方没有开放被找到，或者这个账号不存在，消息请求没有送出。',
+        'They aren\'t discoverable, or this account doesn\'t exist. The message request wasn\'t sent.',
       );
       // Every other kind keeps the shared sentence; none of them enumerates.
       expect(
@@ -480,7 +480,7 @@ void main() {
 
       expect(find.text('Voyager_09'), findsOneWidget);
       expect(find.text('LOOP-3HJKMNPQ'), findsOneWidget);
-      expect(find.text('私聊'), findsNothing);
+      expect(find.text('Direct message'), findsNothing);
       expect(find.textContaining('loop_'), findsNothing);
       // The same word travels to the Stream widgets under the page, so the
       // `@` candidate row names the peer the header just named.
@@ -528,7 +528,7 @@ void main() {
         chat: FakeChatV2Gateway(),
       );
 
-      expect(find.text('私聊'), findsOneWidget);
+      expect(find.text('Direct message'), findsOneWidget);
       expect(find.byType(LoopDirectPeerScope), findsNothing);
     });
 
@@ -672,10 +672,10 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('退出').last);
+      await tester.tap(find.text('Exit').last);
       await tester.pumpAndSettle();
       expect(chat.commands, contains('leave-group:$testResolvedGroupId'));
-      expect(find.text('已退出群聊'), findsOneWidget);
+      expect(find.text('Left group chat'), findsOneWidget);
     });
   });
 
@@ -711,7 +711,13 @@ void main() {
         ChatSearchScreen(originCid: testGroupCid),
       );
 
-      for (final label in <String>['当前会话', '全部', '社区', '群聊', '私聊']) {
+      for (final label in <String>[
+        'This conversation',
+        'All',
+        'Community',
+        'Group chat',
+        'Direct message',
+      ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
     });
@@ -727,7 +733,7 @@ void main() {
         chatSearchSenderLabel(LoopChatSurface.communityChat),
         loopGroupMemberNeutralLabel,
       );
-      expect(chatSearchSenderLabel(LoopChatSurface.direct), '私聊');
+      expect(chatSearchSenderLabel(LoopChatSurface.direct), 'Direct message');
     });
   });
 
@@ -840,7 +846,7 @@ void main() {
     });
 
     test('the anonymous label is the only author a merged row can carry', () {
-      expect(chatMergeAnonymousLabel, '匿名成员');
+      expect(chatMergeAnonymousLabel, 'Anonymous member');
     });
 
     testWidgets('the export encodes the anonymous card and shares it once', (
@@ -864,7 +870,7 @@ void main() {
       // Only the anonymous label is rendered, so only it can be captured.
       // The author and the clock are two lines of the export row now, the way
       // `#scr-chat-merge-preview` sets them.
-      expect(find.text('匿名成员'), findsOneWidget);
+      expect(find.text('Anonymous member'), findsOneWidget);
       expect(
         find.text(loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 9, 34))),
         findsOneWidget,
@@ -920,7 +926,12 @@ void main() {
       });
       await tester.pumpAndSettle();
 
-      expect(find.text('本次运行没有装配系统分享，长图未生成'), findsOneWidget);
+      expect(
+        find.text(
+          'System sharing isn\'t available in this run; no image was created',
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -950,7 +961,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('语音房还在验证中'), findsOneWidget);
+      expect(find.textContaining('still being verified'), findsOneWidget);
       // The page must not read the room while the evidence is missing.
       expect(voice.commands, isEmpty);
     });
@@ -978,8 +989,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('PEPE 语音房'), findsNothing);
-      expect(find.text('3,241 在线'), findsNothing);
+      expect(find.text('PEPE voice room'), findsNothing);
+      expect(find.text('3,241 online'), findsNothing);
     });
 
     testWidgets('an offline read keeps the offline state', (tester) async {
@@ -1008,7 +1019,7 @@ void main() {
 
       // Decision 0052: the room resource carries the community name, so the
       // page says which room this is without a second read.
-      expect(find.text('Builders Guild 语音房'), findsOneWidget);
+      expect(find.text('Builders Guild voice room'), findsOneWidget);
     });
 
     testWidgets('a listener sees no host control', (tester) async {
@@ -1133,7 +1144,7 @@ void main() {
       final own = find.byKey(const ValueKey<String>('voiceroom-queue-self'));
       await scrollToCommunitySection(tester, own);
       expect(own, findsOneWidget);
-      expect(find.textContaining('第 2 位'), findsOneWidget);
+      expect(find.textContaining('#2'), findsOneWidget);
       expect(voice.commands, isNot(contains('hand-raises')));
       expect(
         find.byKey(const ValueKey<String>('voiceroom-invite-empty')),
@@ -1178,11 +1189,11 @@ void main() {
       expect(find.textContaining('UTC'), findsNothing);
       // Decision 0115: the top bar states the room's own total, host inside
       // it (46 = 1 + 3 + 42), and the split is in (i).
-      expect(find.textContaining('46 在听 · '), findsOneWidget);
-      expect(find.text('听众 42'), findsOneWidget);
+      expect(find.textContaining('46 listening · '), findsOneWidget);
+      expect(find.text('Listeners 42'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
       await tester.pumpAndSettle();
-      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
+      expect(find.text('Live · Speaking 4 · Listeners 42'), findsOneWidget);
     });
 
     testWidgets('a backstage room is never handed to the provider', (
@@ -1207,7 +1218,10 @@ void main() {
       );
       await scrollToCommunitySection(tester, block);
       expect(block, findsOneWidget);
-      expect(find.text('这个房间还没有开放收听'), findsOneWidget);
+      expect(
+        find.text('Listening isn\'t open in this room yet'),
+        findsOneWidget,
+      );
       // No call was made at all: the surface that would connect is not even
       // mounted.
       expect(media.handles, isEmpty);
@@ -1246,7 +1260,12 @@ void main() {
       await tester.tap(join);
       await tester.pumpAndSettle();
 
-      expect(find.text('这个房间还没有开放收听。刷新一次，或让主持人重新开启。'), findsWidgets);
+      expect(
+        find.text(
+          'Listening isn\'t open in this room yet. Refresh, or ask the host to reopen it.',
+        ),
+        findsWidgets,
+      );
       // Neither the generic class sentence nor the server's own name for the
       // rule reaches the reader.
       expect(find.text('语音房暂时不可用，稍后再试。'), findsNothing);
@@ -1280,7 +1299,9 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。'),
+        find.text(
+          'This room hasn\'t confirmed listening is open, so you may not hear anything. Refresh, or ask the host to reopen it.',
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('GO_LIVE'), findsNothing);
@@ -1322,7 +1343,7 @@ void main() {
       );
       expect(find.text('0'), findsNothing);
       // LOOP's own record of the room is a different reading and stays.
-      expect(find.textContaining('46 在听 · '), findsOneWidget);
+      expect(find.textContaining('46 listening · '), findsOneWidget);
     });
 
     testWidgets(
@@ -1351,7 +1372,7 @@ void main() {
         // 「已连接」 beside 「0」 was read as an empty room. The panel says the
         // number is still being taken; nothing on the page prints a zero.
         expect(find.text('0'), findsNothing);
-        expect(find.text('此刻在通话里 0 人'), findsNothing);
+        expect(find.text('0 people in the call now'), findsNothing);
       },
     );
 
@@ -1406,7 +1427,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('0'), findsNothing);
-      expect(find.textContaining('46 在听 · '), findsOneWidget);
+      expect(find.textContaining('46 listening · '), findsOneWidget);
     });
 
     testWidgets('a join reads the room again so the count is not lost', (
@@ -1446,7 +1467,7 @@ void main() {
       );
       // The answer to the join is what the page states: the room read that
       // followed it carries the counts.
-      expect(find.textContaining('46 在听 · '), findsOneWidget);
+      expect(find.textContaining('46 listening · '), findsOneWidget);
     });
 
     testWidgets('an unprovisioned room says why it cannot be joined', (
@@ -1550,7 +1571,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(voice.commands, contains('leave'));
-      expect(find.textContaining('房间已结束'), findsWidgets);
+      expect(find.textContaining('Room ended'), findsWidgets);
       expect(back, <String>['back']);
       // The strip is the only sign the account was in a room; left standing
       // it offers a way back into one that is gone.
@@ -1611,7 +1632,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-speakers-empty')),
         findsOneWidget,
       );
-      expect(find.text('正在发言'), findsNothing);
+      expect(find.text('Speaking'), findsNothing);
 
       final speaking = find.byKey(
         const ValueKey<String>('fake-presence-speaking'),
@@ -1623,7 +1644,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('voiceroom-host')),
-          matching: find.text('正在发言'),
+          matching: find.text('Speaking'),
         ),
         findsOneWidget,
       );
@@ -1660,11 +1681,11 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('voiceroom-host')),
-          matching: find.text('已静音'),
+          matching: find.text('Muted'),
         ),
         findsOneWidget,
       );
-      expect(find.text('正在发言'), findsNothing);
+      expect(find.text('Speaking'), findsNothing);
     });
 
     testWidgets('a hand raised in the room reaches the host who is watching', (
@@ -1736,8 +1757,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(voice.commands, contains('raise-hand'));
-      expect(find.textContaining('主持人可能要稍后才看到'), findsOneWidget);
-      expect(find.text('已举手，等待主持人邀请'), findsNothing);
+      expect(
+        find.textContaining('the host may see it a bit later'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Hand raised, waiting for the host to invite you'),
+        findsNothing,
+      );
     });
 
     testWidgets('a listener who arrives changes the count the host reads', (
@@ -1760,7 +1787,7 @@ void main() {
         audioRoomCallFactory: media,
       );
 
-      expect(find.textContaining('1 在听 · '), findsOneWidget);
+      expect(find.textContaining('1 listening · '), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1770,7 +1797,7 @@ void main() {
       media.handles.single.emitSignal(AudioRoomRoomSignal.participants);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2 在听 · '), findsOneWidget);
+      expect(find.textContaining('2 listening · '), findsOneWidget);
     });
 
     testWidgets('a page that is gone, or behind, reads nothing', (
@@ -1830,7 +1857,7 @@ void main() {
         voiceRoom: voice,
       );
 
-      expect(find.textContaining('1 在听 · '), findsOneWidget);
+      expect(find.textContaining('1 listening · '), findsOneWidget);
 
       voice.loadSnapshot = testVoiceRoomSnapshot(
         role: VoiceRoomRole.host,
@@ -1840,7 +1867,7 @@ void main() {
       await tester.pump(const Duration(seconds: 15));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2 在听 · '), findsOneWidget);
+      expect(find.textContaining('2 listening · '), findsOneWidget);
     });
 
     testWidgets('the queue names its rows the way the roster does', (
@@ -1882,8 +1909,8 @@ void main() {
       // server sent `invite_speaker` for are listed again under the host
       // controls. No loop id and no avatar reference arrive here at all.
       expect(find.text('DeFiMaxi_349'), findsNWidgets(2));
-      expect(find.text('匿名成员'), findsNWidgets(3));
-      expect(find.textContaining('第 3 位'), findsOneWidget);
+      expect(find.text('Anonymous member'), findsNWidgets(3));
+      expect(find.textContaining('#3'), findsOneWidget);
 
       final invite = find.byKey(
         ValueKey<String>('voiceroom-invite-$testAdminId'),
@@ -1958,10 +1985,10 @@ void main() {
       // Nothing is committed while the question is open.
       expect(voice.commands, isNot(contains('leave')));
 
-      await tester.tap(find.text('离开').last);
+      await tester.tap(find.text('Leave').last);
       await tester.pumpAndSettle();
       expect(voice.commands, contains('leave'));
-      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(find.text('Left voice room'), findsOneWidget);
     });
 
     // `DELETE /v2/voice-rooms/{id}/members/me` refuses the host by design
@@ -2020,12 +2047,15 @@ void main() {
       await scrollToCommunitySection(tester, end);
       await tester.tap(end);
       await tester.pumpAndSettle();
-      expect(find.textContaining('所有人都会立刻断开'), findsOneWidget);
-      expect(find.textContaining('主持人没有「离开」'), findsWidgets);
+      expect(
+        find.textContaining('disconnects everyone in the room right away'),
+        findsOneWidget,
+      );
+      expect(find.textContaining("Hosts don't have Leave"), findsWidgets);
       expect(media.leaveCalls, 0);
       expect(voice.commands, isNot(contains('end')));
 
-      await tester.tap(find.text('结束房间').last);
+      await tester.tap(find.text('End room').last);
       await tester.pumpAndSettle();
       // Same order as 离开: the provider call goes down before the room does.
       expect(media.leaveCalls, 1);
@@ -2033,7 +2063,7 @@ void main() {
         voice.commands.indexOf('end'),
         greaterThan(voice.commands.indexOf('media:leave')),
       );
-      expect(find.text('房间已结束'), findsOneWidget);
+      expect(find.text('Room ended'), findsOneWidget);
     });
 
     testWidgets('hanging up as the host asks the end-room question', (
@@ -2087,7 +2117,7 @@ void main() {
       );
       expect(voice.commands, isNot(contains('end')));
 
-      await tester.tap(find.text('结束房间').last);
+      await tester.tap(find.text('End room').last);
       await tester.pumpAndSettle();
       expect(voice.commands, contains('end'));
     });
@@ -2195,7 +2225,7 @@ void main() {
         audioRoomCallFactory: media,
       );
 
-      final failure = find.text('已加入，语音连接失败');
+      final failure = find.text('Joined, voice connection failed');
       await scrollToCommunitySection(tester, failure);
       expect(failure, findsOneWidget);
       expect(find.text('语音已连接（测试）'), findsNothing);
@@ -2235,10 +2265,10 @@ void main() {
         videoAuthorization: StreamVideoSessionAuthorization.unavailable,
       );
 
-      final failure = find.text('已加入，语音连接失败');
+      final failure = find.text('Joined, voice connection failed');
       await scrollToCommunitySection(tester, failure);
       expect(failure, findsOneWidget);
-      expect(find.text('重试会话'), findsOneWidget);
+      expect(find.text('Retry session'), findsOneWidget);
       expect(voice.commands, isNot(contains('leave')));
     });
 
@@ -2265,7 +2295,7 @@ void main() {
       expect(media.leaveCalls, 0);
       expect(voice.commands, isNot(contains('leave')));
 
-      await tester.tap(find.text('离开').last);
+      await tester.tap(find.text('Leave').last);
       await tester.pumpAndSettle();
 
       expect(media.leaveCalls, 1);
@@ -2277,7 +2307,7 @@ void main() {
         voice.commands.indexOf('leave'),
         greaterThan(voice.commands.indexOf('media:leave')),
       );
-      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(find.text('Left voice room'), findsOneWidget);
     });
 
     // R7-1: on the review device the five seconds after 离开 showed the
@@ -2302,7 +2332,7 @@ void main() {
       await scrollToCommunitySection(tester, leave);
       await tester.tap(leave);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('离开').last);
+      await tester.tap(find.text('Leave').last);
       // The sheet closes and the call goes down; LOOP has not answered yet,
       // so the departing card holds a spinner and cannot settle.
       await tester.pump();
@@ -2310,11 +2340,11 @@ void main() {
 
       expect(media.leaveCalls, 1);
       expect(voice.commands, isNot(contains('leave')));
-      final departing = find.text('正在离开语音房…');
+      final departing = find.text('Leaving voice room…');
       await scrollToCommunitySection(tester, departing);
       expect(departing, findsOneWidget);
-      expect(find.text('语音已断开'), findsNothing);
-      expect(find.text('重新连接语音'), findsNothing);
+      expect(find.text('Voice disconnected'), findsNothing);
+      expect(find.text('Reconnect voice'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
         findsNothing,
@@ -2323,8 +2353,8 @@ void main() {
       voice.membershipGate!.complete();
       await tester.pumpAndSettle();
       expect(voice.commands, contains('leave'));
-      expect(find.text('已离开语音房'), findsOneWidget);
-      expect(find.text('正在离开语音房…'), findsNothing);
+      expect(find.text('Left voice room'), findsOneWidget);
+      expect(find.text('Leaving voice room…'), findsNothing);
     });
 
     // A leave LOOP refused leaves this account a member of a room it can no
@@ -2347,7 +2377,7 @@ void main() {
       await scrollToCommunitySection(tester, leave);
       await tester.tap(leave);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('离开').last);
+      await tester.tap(find.text('Leave').last);
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
@@ -2355,14 +2385,14 @@ void main() {
       voice.membershipGate!.complete();
       await tester.pumpAndSettle();
 
-      final disconnected = find.text('语音已断开');
+      final disconnected = find.text('Voice disconnected');
       await scrollToCommunitySection(tester, disconnected);
       expect(disconnected, findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
         findsOneWidget,
       );
-      expect(find.text('正在离开语音房…'), findsNothing);
+      expect(find.text('Leaving voice room…'), findsNothing);
     });
 
     // The host ends the room and every other device simply stops hearing it.
@@ -2403,11 +2433,11 @@ void main() {
       expect(voice.commands, contains('load'));
       final ended = find.byKey(const ValueKey<String>('voiceroom-ended'));
       await scrollToCommunitySection(tester, ended);
-      expect(find.text('房间已结束'), findsOneWidget);
+      expect(find.text('Room ended'), findsOneWidget);
       // The hero says it too, in the same words.
-      expect(find.text('主持人已经结束这个语音房。'), findsNWidgets(2));
-      expect(find.text('语音已断开'), findsNothing);
-      expect(find.text('重新连接语音'), findsNothing);
+      expect(find.text('The host ended this voice room.'), findsNWidgets(2));
+      expect(find.text('Voice disconnected'), findsNothing);
+      expect(find.text('Reconnect voice'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
         findsNothing,
@@ -2508,7 +2538,7 @@ void main() {
 
       // The call is down, the lobby says the app is on it, and nothing is
       // offered to press.
-      expect(find.text('语音连接中断，正在自动重连'), findsOneWidget);
+      expect(find.text('Voice dropped, reconnecting'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
         findsNothing,
@@ -2523,7 +2553,7 @@ void main() {
       expect(media.handles.first.leaveCalls, 1);
       expect(media.handles.last.joinCalls, 1);
       expect(find.text('语音已连接（测试）'), findsOneWidget);
-      expect(find.text('房间已结束'), findsNothing);
+      expect(find.text('Room ended'), findsNothing);
     });
 
     testWidgets('hanging up inside the call is the same single exit', (
@@ -2618,7 +2648,7 @@ void main() {
       );
       await scrollToCommunitySection(tester, speakerRow);
       expect(speakerRow, findsOneWidget);
-      expect(find.text('已静音'), findsOneWidget);
+      expect(find.text('Muted'), findsOneWidget);
 
       await tester.tap(speakerRow);
       await tester.pumpAndSettle();
@@ -2696,13 +2726,13 @@ void main() {
       await tester.pumpAndSettle();
       // The question says what the command does not do: it opens no
       // microphone for anyone.
-      expect(find.textContaining('不会替对方打开麦克风'), findsOneWidget);
+      expect(find.textContaining('won\'t turn on their mic'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('community-confirm-accept')),
       );
       await tester.pumpAndSettle();
       expect(voice.commands, contains('unmute:$testMemberId'));
-      expect(find.text('已取消静音意图'), findsOneWidget);
+      expect(find.text('Mute intent withdrawn'), findsOneWidget);
     });
 
     testWidgets(
@@ -2766,7 +2796,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.textContaining('不会打开麦克风'), findsOneWidget);
+        expect(find.textContaining('won\'t turn on your mic'), findsOneWidget);
         await tester.tap(
           find.byKey(const ValueKey<String>('community-confirm-accept')),
         );
@@ -2853,7 +2883,7 @@ void main() {
         const ValueKey<String>('voiceroom-member-listener-$testMemberId'),
       );
       await scrollToCommunitySection(tester, row);
-      expect(find.text('已举手'), findsOneWidget);
+      expect(find.text('Hand raised'), findsOneWidget);
       await tester.tap(row);
       await tester.pumpAndSettle();
       await tester.tap(
@@ -2903,7 +2933,7 @@ void main() {
         const ValueKey<String>('voiceroom-member-listener-0'),
       );
       await scrollToCommunitySection(tester, row);
-      expect(find.text('匿名成员'), findsOneWidget);
+      expect(find.text('Anonymous member'), findsOneWidget);
       await tester.tap(row);
       await tester.pumpAndSettle();
       expect(
@@ -2961,7 +2991,7 @@ void main() {
       await scrollToCommunitySection(tester, error);
       expect(error, findsOneWidget);
       // The room above it was read and stays readable.
-      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
+      expect(find.text('Live · Speaking 4 · Listeners 42'), findsOneWidget);
     });
 
     testWidgets('another page is read with the cursor and nothing else', (
@@ -3063,8 +3093,11 @@ void main() {
       // room's own joined figure — never an observation from some earlier
       // moment. R5-2: off the call that figure counts memberships, so the
       // strip says 「已加入」 and not 「在线」.
-      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
-      expect(find.text('听众 · 46 人已加入'), findsOneWidget);
+      expect(
+        find.text('In voice room · $testVoiceRoomCommunityName'),
+        findsOneWidget,
+      );
+      expect(find.text('Listener · 46 joined'), findsOneWidget);
       expect(find.textContaining('上次观察'), findsNothing);
       expect(find.textContaining('人在线'), findsNothing);
 
@@ -3102,8 +3135,11 @@ void main() {
       expect(voice.commands, isNot(contains('media:leave')));
       // The strip carries the call's own head count, on whatever screen the
       // reader is looking at.
-      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
-      expect(find.text('听众 · 3 人在通话'), findsOneWidget);
+      expect(
+        find.text('In voice room · $testVoiceRoomCommunityName'),
+        findsOneWidget,
+      );
+      expect(find.text('Listener · 3 in call'), findsOneWidget);
 
       // Coming back is a view binding to a call that never stopped: no second
       // call, no second token.
@@ -3141,9 +3177,12 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
-      expect(find.text('听众 · 语音正在重连'), findsOneWidget);
-      expect(find.text('重新连接'), findsNothing);
+      expect(
+        find.text('In voice room · $testVoiceRoomCommunityName'),
+        findsOneWidget,
+      );
+      expect(find.text('Listener · Voice reconnecting'), findsOneWidget);
+      expect(find.text('Reconnect'), findsNothing);
       expect(media.handles.first.leaveCalls, 1);
 
       // Decision 0106 · 3: the app joins the same room again on its own,
@@ -3155,7 +3194,7 @@ void main() {
       expect(voice.commands, isNot(contains('leave')));
       expect(media.handles, hasLength(2));
       expect(media.handles.last.joinCalls, 1);
-      expect(find.text('听众 · 语音已断开'), findsNothing);
+      expect(find.text('Listener · Voice disconnected'), findsNothing);
     });
 
     // Decision 0106 · 1 reverses the foreground-only rule: a speaker who
@@ -3205,7 +3244,7 @@ void main() {
       // output route on it again.
       expect(media.handles, hasLength(1));
       expect(media.leaveCalls, 0);
-      expect(find.text('听众 · 3 人在通话'), findsOneWidget);
+      expect(find.text('Listener · 3 in call'), findsOneWidget);
       expect(
         media.handles.single.outputs.last,
         AudioRoomOutputPreference.speaker,
@@ -3273,7 +3312,10 @@ void main() {
         expect(media.leaveCalls, 1);
         // A marker the reader saw a moment ago cannot simply vanish: the strip
         // going is the whole visible consequence, so one line accounts for it.
-        expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+        expect(
+          find.text('Room ended · The host ended this voice room'),
+          findsOneWidget,
+        );
       },
     );
 
@@ -3336,10 +3378,10 @@ void main() {
         expect(authorizations, 1);
         expect(media.leaveCalls, 0);
         expect(
-          find.text('正在语音房 · $testVoiceRoomCommunityName'),
+          find.text('In voice room · $testVoiceRoomCommunityName'),
           findsOneWidget,
         );
-        expect(find.text('听众 · 3 人在通话'), findsOneWidget);
+        expect(find.text('Listener · 3 in call'), findsOneWidget);
 
         // The host ends the room while the reader is somewhere else.
         voice.loadSnapshot = testVoiceRoomSnapshot(
@@ -3356,7 +3398,10 @@ void main() {
           find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
           findsNothing,
         );
-        expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+        expect(
+          find.text('Room ended · The host ended this voice room'),
+          findsOneWidget,
+        );
         expect(authorizations, 1);
       },
     );
@@ -3382,7 +3427,10 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('离开后你会退出这次通话，举手也会一并取消。'), findsOneWidget);
+      expect(
+        find.text('Leaving exits this call and cancels your raised hand.'),
+        findsOneWidget,
+      );
       expect(media.leaveCalls, 0);
       expect(voice.commands, isNot(contains('leave')));
 
@@ -3397,7 +3445,7 @@ void main() {
         voice.commands.indexOf('leave'),
         greaterThan(voice.commands.indexOf('media:leave')),
       );
-      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(find.text('Left voice room'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
         findsNothing,
@@ -3438,7 +3486,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(find.text('Left voice room'), findsOneWidget);
       final placement = tester.widget<Positioned>(
         find
             .ancestor(
@@ -3497,7 +3545,7 @@ void main() {
       await scrollToCommunitySection(tester, leave);
       await tester.tap(leave);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('离开').last);
+      await tester.tap(find.text('Leave').last);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
@@ -3539,7 +3587,7 @@ void main() {
 
       // The state and the count are set whole: the line wraps, it does not
       // end in an ellipsis, and nothing of it is left unpainted.
-      final status = find.text('听众 · 3 人在通话');
+      final status = find.text('Listener · 3 in call');
       expect(status, findsOneWidget);
       final statusText = tester.widget<Text>(status);
       expect(statusText.maxLines, isNull);
@@ -3551,7 +3599,7 @@ void main() {
 
       // The room name is on a line of its own, and that is the line the
       // width is taken out of.
-      final title = find.text('正在语音房 · $longName');
+      final title = find.text('In voice room · $longName');
       expect(title, findsOneWidget);
       expect(tester.widget<Text>(title).maxLines, 1);
       expect(
@@ -3564,10 +3612,12 @@ void main() {
       media.handles.first.emit(AudioRoomLivePhase.disconnected);
       await tester.pump();
       await tester.pump();
-      expect(find.text('听众 · 语音正在重连'), findsOneWidget);
+      expect(find.text('Listener · Voice reconnecting'), findsOneWidget);
       expect(
         tester
-            .renderObject<RenderParagraph>(find.text('听众 · 语音正在重连'))
+            .renderObject<RenderParagraph>(
+              find.text('Listener · Voice reconnecting'),
+            )
             .didExceedMaxLines,
         isFalse,
       );
@@ -3590,7 +3640,7 @@ void main() {
           count: 4,
           phase: AudioRoomLivePhase.connected,
         ),
-        '正在语音房 · Builders Guild · 主持人 · 4 人在通话',
+        'In voice room · Builders Guild · Host · 4 in call',
       );
       expect(
         voiceRoomBannerLabel(
@@ -3599,7 +3649,7 @@ void main() {
           count: 4,
           phase: AudioRoomLivePhase.idle,
         ),
-        '正在语音房 · Builders Guild · 主持人 · 4 人已加入',
+        'In voice room · Builders Guild · Host · 4 joined',
       );
       // No figure is invented when there is none to state.
       expect(
@@ -3609,7 +3659,7 @@ void main() {
           count: null,
           phase: AudioRoomLivePhase.idle,
         ),
-        '正在语音房 · Builders Guild · 发言人',
+        'In voice room · Builders Guild · Speaker',
       );
       // Connected without a count yet: never a 0, and never silence either.
       expect(
@@ -3619,7 +3669,7 @@ void main() {
           count: null,
           phase: AudioRoomLivePhase.connected,
         ),
-        '正在语音房 · Builders Guild · 发言人 · 人数正在统计',
+        'In voice room · Builders Guild · Speaker · Counting',
       );
       // S41: the call outlives the page, so the strip carries what it is
       // doing instead of one word for every moment off the call. A figure
@@ -3631,7 +3681,7 @@ void main() {
           count: 46,
           phase: AudioRoomLivePhase.connecting,
         ),
-        '正在语音房 · Builders Guild · 听众 · 正在连接语音',
+        'In voice room · Builders Guild · Listener · Connecting voice',
       );
       expect(
         voiceRoomBannerLabel(
@@ -3640,7 +3690,7 @@ void main() {
           count: 46,
           phase: AudioRoomLivePhase.reconnecting,
         ),
-        '正在语音房 · Builders Guild · 听众 · 语音正在重连',
+        'In voice room · Builders Guild · Listener · Voice reconnecting',
       );
       expect(
         voiceRoomBannerLabel(
@@ -3649,7 +3699,7 @@ void main() {
           count: 46,
           phase: AudioRoomLivePhase.disconnected,
         ),
-        '正在语音房 · Builders Guild · 听众 · 语音已断开',
+        'In voice room · Builders Guild · Listener · Voice disconnected',
       );
     });
 
@@ -3658,14 +3708,14 @@ void main() {
     // together — that is what assistive tech is handed.
     test('the two halves are the whole sentence, split where it may give', () {
       const name = '链上治理与合约安全长期研讨会共建者联盟第七期常设分会场';
-      expect(voiceRoomBannerTitle(name), '正在语音房 · $name');
+      expect(voiceRoomBannerTitle(name), 'In voice room · $name');
       expect(
         voiceRoomBannerStatus(
           role: VoiceRoomRole.listener,
           count: 3,
           phase: AudioRoomLivePhase.connected,
         ),
-        '听众 · 3 人在通话',
+        'Listener · 3 in call',
       );
       expect(
         voiceRoomBannerStatus(
@@ -3673,7 +3723,7 @@ void main() {
           count: null,
           phase: AudioRoomLivePhase.idle,
         ),
-        '主持人',
+        'Host',
       );
       for (final phase in AudioRoomLivePhase.values) {
         expect(
@@ -3706,7 +3756,7 @@ void main() {
       expect(find.text('Community AI 还没有开放'), findsOneWidget);
       // The server's own sentence reaches the reader, and no reason code
       // does.
-      expect(find.textContaining('这一页暂时不可用。'), findsWidgets);
+      expect(find.textContaining('this page is unavailable.'), findsWidgets);
       expect(find.textContaining('COMMUNITY_AI'), findsNothing);
 
       final collection = tester.widget<ListView>(

@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
@@ -24,7 +25,8 @@ import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// The line above every recognised card. The reader is told the card was not
 /// written by the sender: LOOP read the address out of the message.
-const String loopChatTokenCardKicker = '自动识别到代币';
+String get loopChatTokenCardKicker =>
+    LoopL10n.current.chatTokenCard_cardLoopChatTokenCardKicker;
 
 /// How many contract facts one chat card prints before it points at the
 /// token page. A bubble is not a fact list.
@@ -96,7 +98,8 @@ class ChatTokenCard extends ConsumerStatefulWidget {
 
 /// The words of a card whose read failed while the device has a network
 /// (S253). It is a failed load, not an offline device, and a tap retries it.
-const String loopChatTokenCardFailedMessage = '加载失败，点按重试';
+String get loopChatTokenCardFailedMessage =>
+    LoopL10n.current.chatTokenCard_cardLoopChatTokenCardFailedMessage;
 
 class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
   String get address => widget.address;
@@ -224,8 +227,10 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
       LoopChainFailureKind.notFound => LoopInlineUnavailable(
         key: ValueKey<String>('chat-token-card-unlisted-$address'),
         icon: 'info',
-        message: '未收录的代币 · ${loopChatTokenShortAddress(address)}',
-        detail: '这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。',
+        message: context.l10n.chatTokenCard_cardMessage(
+          loopChatTokenShortAddress(address),
+        ),
+        detail: context.l10n.chatTokenCard_cardDetail,
         maxLines: 2,
         detailMaxLines: 4,
       ),
@@ -233,7 +238,7 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
       LoopChainFailureKind.offline => LoopInlineUnavailable(
         key: ValueKey<String>('chat-token-card-offline-$address'),
         icon: 'offline',
-        message: '设备离线，没有读这个合约',
+        message: context.l10n.chatTokenCard_cardMessage2,
         detail: loopChainFailureReason(entry.asset.failureKind),
         maxLines: 2,
         detailMaxLines: 4,
@@ -253,8 +258,12 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
             icon: 'warn',
             message: loopChatTokenCardFailedMessage,
             detail: entry.asset.failureKind == LoopChainFailureKind.timedOut
-                ? 'LOOP 响应超时 · ${loopChatTokenShortAddress(address)}'
-                : '没有读到这个合约 · ${loopChatTokenShortAddress(address)}',
+                ? context.l10n.chatTokenCard_cardDetail2(
+                    loopChatTokenShortAddress(address),
+                  )
+                : context.l10n.chatTokenCard_cardDetail3(
+                    loopChatTokenShortAddress(address),
+                  ),
             maxLines: 2,
             detailMaxLines: 2,
             onRetry: () => unawaited(cache.resolve(address, force: true)),
@@ -270,17 +279,26 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         model: LoopTokenCardModel(
           symbol: loopChatTokenShortAddress(address),
           identifier: loopChatTokenShortAddress(address),
-          metrics: const <LoopTokenMetric>[
-            LoopTokenMetric('市值', '等待数据'),
-            LoopTokenMetric('流动性', '等待数据'),
-            LoopTokenMetric('持有人', '等待数据'),
+          metrics: <LoopTokenMetric>[
+            LoopTokenMetric(
+              context.l10n.common_marketCap,
+              context.l10n.common_waitingForData,
+            ),
+            LoopTokenMetric(
+              context.l10n.common_liquidity,
+              context.l10n.common_waitingForData,
+            ),
+            LoopTokenMetric(
+              context.l10n.common_holders,
+              context.l10n.common_waitingForData,
+            ),
           ],
         ),
-        actions: const <LoopTokenCardAction>[
-          LoopTokenCardAction('买入', buy: true),
-          LoopTokenCardAction('卖出'),
-          LoopTokenCardAction('图表'),
-          LoopTokenCardAction('社区'),
+        actions: <LoopTokenCardAction>[
+          LoopTokenCardAction(context.l10n.common_buy, buy: true),
+          LoopTokenCardAction(context.l10n.common_sell),
+          LoopTokenCardAction(context.l10n.common_chart),
+          LoopTokenCardAction(context.l10n.common_community),
         ],
       ),
       // Everything else is LOOP not answering for this contract: the card
@@ -319,23 +337,32 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
       model: LoopTokenCardModel(
         symbol: loopChatTokenShortAddress(address),
         identifier: loopChatTokenShortAddress(address),
-        priceReason: '没有读到报价',
-        metrics: const <LoopTokenMetric>[
-          LoopTokenMetric('市值', '数据不可得'),
-          LoopTokenMetric('流动性', '数据不可得'),
-          LoopTokenMetric('持有人', '数据不可得'),
+        priceReason: context.l10n.chatTokenCard_cardPriceReason,
+        metrics: <LoopTokenMetric>[
+          LoopTokenMetric(
+            context.l10n.common_marketCap,
+            context.l10n.common_dataUnavailable,
+          ),
+          LoopTokenMetric(
+            context.l10n.common_liquidity,
+            context.l10n.common_dataUnavailable,
+          ),
+          LoopTokenMetric(
+            context.l10n.common_holders,
+            context.l10n.common_dataUnavailable,
+          ),
         ],
         footnotes: <String>[sentence],
       ),
       actions: <LoopTokenCardAction>[
         LoopTokenCardAction(
-          '重试',
+          context.l10n.common_retry,
           onTap: rateLimited
               ? null
               : () => unawaited(cache.resolve(address, force: true)),
         ),
         LoopTokenCardAction(
-          '代币页',
+          context.l10n.chatTokenCard_cardLoopTokenCardAction,
           onTap: () => _open(context, MarketAssetRoute.token(entry.assetId)),
         ),
       ],
@@ -373,14 +400,16 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
       // card says so rather than letting a reader take the card itself as a
       // listing.
       if (asset.status != LoopAssetStatus.verified)
-        '资产目录状态 · ${asset.status.label}',
+        context.l10n.chatTokenCard_cardReadCard(asset.status.label),
       // The provider could not be reached this time; the identity on the
       // card is the last one it gave.
       if (source.quality == LoopFactQuality.stale)
         loopFactQualityMarker(LoopFactQuality.stale)!,
       if (riskFactCount > riskFacts.length)
-        '另有 ${riskFactCount - riskFacts.length} 条合约事实，在代币页',
-      '买入与卖出现在不可用 · $tradeReason',
+        context.l10n.chatTokenCard_cardReadCard2(
+          riskFactCount - riskFacts.length,
+        ),
+      context.l10n.chatTokenCard_cardReadCard3(tradeReason),
     ];
     // S278 · decision 0236: where the identity and the quote came from is
     // behind the strip's (i), not printed. A provider's own answer is not a
@@ -390,11 +419,18 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
           (source.provider != null || source.fetchedAt != null))
         <String>[
           if (source.provider != null)
-            '身份来自 ${loopFactSourceLabel(source.provider!)}',
+            context.l10n.chatTokenCard_cardReadCard4(
+              loopFactSourceLabel(source.provider!),
+            ),
           if (source.fetchedAt != null)
-            '观察于 ${loopRelativeTime(source.fetchedAt!)}',
+            context.l10n.chatTokenCard_cardReadCard5(
+              loopRelativeTime(source.fetchedAt!),
+            ),
         ].join(' · '),
-      if (detail.price.isAvailable) '报价 ${loopFactProvenance(detail.price)}',
+      if (detail.price.isAvailable)
+        context.l10n.chatTokenCard_cardReadCard6(
+          loopFactProvenance(detail.price),
+        ),
     ];
     return ChatTokenCardView(
       key: ValueKey<String>('chat-token-card-$address'),
@@ -425,22 +461,31 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
               : null,
         ),
         metrics: <LoopTokenMetric>[
-          _metric('市值', detail.marketCap),
-          _metric('流动性', detail.liquidityUsd),
+          _metric(context.l10n.common_marketCap, detail.marketCap),
+          _metric(context.l10n.common_liquidity, detail.liquidityUsd),
           // An address outside the registry has no holder page to open and
           // no holder count to read; the cell says which of the two gaps it
           // is instead of the generic one.
           if (unregistered && !detail.holderCount.isAvailable)
-            const LoopTokenMetric('持有人', '未收录')
+            LoopTokenMetric(
+              context.l10n.common_holders,
+              context.l10n.chatTokenCard_cardLoopTokenMetric,
+            )
           else
-            _metric('持有人', detail.holderCount, usd: false),
+            _metric(
+              context.l10n.common_holders,
+              detail.holderCount,
+              usd: false,
+            ),
         ],
         communityLine: switch (community) {
           MarketCommunityBound(:final name, :final memberCount) =>
-            'LOOP 社区 $name · '
-                '${loopFormatCompactFigure(Decimal.fromInt(memberCount), usd: false)} 成员',
+            context.l10n.chatTokenCard_cardMarketCommunityBound(
+              loopFormatCompactFigure(Decimal.fromInt(memberCount), usd: false),
+              name,
+            ),
           MarketCommunityUnavailable(reasonCode: 'COMMUNITY_NOT_BOUND') =>
-            '暂无 LOOP 社区',
+            context.l10n.chatTokenCard_cardMarketCommunityUnavailable,
           MarketCommunityUnavailable(:final reasonCode) => loopReasonCodeText(
             reasonCode,
           ),
@@ -448,18 +493,20 @@ class _ChatTokenCardState extends ConsumerState<ChatTokenCard> {
         riskFacts: riskFacts,
         footnotes: footnotes,
         provenance: provenance,
-        chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
+        chartRangeLabel: context.l10n.chatTokenCard_cardChartRangeLabel(
+          loopSparklineWindow,
+        ),
         chart: _chart(entry),
       ),
       actions: <LoopTokenCardAction>[
-        const LoopTokenCardAction('买入', buy: true),
-        const LoopTokenCardAction('卖出'),
+        LoopTokenCardAction(context.l10n.common_buy, buy: true),
+        LoopTokenCardAction(context.l10n.common_sell),
         LoopTokenCardAction(
-          '图表',
+          context.l10n.common_chart,
           onTap: () => _open(context, MarketAssetRoute.token(entry.assetId)),
         ),
         LoopTokenCardAction(
-          '社区',
+          context.l10n.common_community,
           onTap: switch (community) {
             MarketCommunityBound(:final communityId) => () => _open(
               context,

@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_presentation.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_state_card.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -75,16 +76,32 @@ abstract final class StreamCallStatusPresentation {
       };
 
   static String label(CallStatus status) {
-    if (status is CallStatusReconnectionFailed) return '重连失败';
-    if (status.isIdle) return '等待中';
-    if (status.isJoining) return '加入中';
-    if (status.isJoined) return '媒体连接中';
-    if (status.isConnected) return '已连接';
-    if (status.isReconnecting) return '重连中';
-    if (status.isMigrating) return '切换连接';
-    if (status.isConnecting) return '连接中';
-    if (status.isDisconnected) return '已断开';
-    return '通话不可用';
+    if (status is CallStatusReconnectionFailed) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel;
+    }
+    if (status.isIdle) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel2;
+    }
+    if (status.isJoining) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel3;
+    }
+    if (status.isJoined) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel4;
+    }
+    if (status.isConnected) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel5;
+    }
+    if (status.isReconnecting) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel6;
+    }
+    if (status.isMigrating) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel7;
+    }
+    if (status.isConnecting) {
+      return LoopL10n.current.chatCalls_streamForegroundViewLabel8;
+    }
+    if (status.isDisconnected) return LoopL10n.current.common_disconnected;
+    return LoopL10n.current.chatCalls_streamForegroundViewLabel9;
   }
 
   static LoopTone tone(CallStatus status) {
@@ -217,8 +234,9 @@ abstract final class StreamCallParticipantPresentation {
   ///
   /// A null count is a connection whose head count has not arrived yet; it is
   /// never printed as 0. See [liveCount].
-  static String countLabel(int? count) =>
-      count == null ? '此刻在通话里的人数正在统计' : '此刻在通话里 $count 人';
+  static String countLabel(int? count) => count == null
+      ? LoopL10n.current.chatCalls_streamForegroundViewCanRequest
+      : LoopL10n.current.chatCalls_streamForegroundViewS(count);
 
   /// The whole line about the people in the call, for the phase it is in.
   ///
@@ -233,7 +251,8 @@ abstract final class StreamCallParticipantPresentation {
     required int? count,
   }) => switch (phase) {
     StreamCallPhase.connected => countLabel(count),
-    StreamCallPhase.connecting => '此刻在通话里的人数正在统计',
+    StreamCallPhase.connecting =>
+      LoopL10n.current.chatCalls_streamForegroundViewCanRequest,
     // The two sentences a screen may carry twice — the room facts above this
     // panel print the same line for the same phase — are written once, in the
     // contract both surfaces read.
@@ -278,7 +297,9 @@ abstract final class StreamCallParticipantPresentation {
   static String name({required String suppliedName, required bool isLocal}) {
     final alias = suppliedName.trim();
     if (alias.isNotEmpty) return alias;
-    return isLocal ? '我' : '成员';
+    return isLocal
+        ? LoopL10n.current.common_me
+        : LoopL10n.current.chatGroupAlias_neutralMember;
   }
 
   /// Whether the row gets the 「我」 badge beside its title.
@@ -329,8 +350,12 @@ abstract final class StreamCallParticipantPresentation {
     required bool isSpeaking,
     required bool isAudioEnabled,
   }) {
-    if (isSpeaking) return '正在发言';
-    return isAudioEnabled ? '麦克风已开' : '已静音';
+    if (isSpeaking) {
+      return LoopL10n.current.chatCalls_streamForegroundViewMicrophoneState;
+    }
+    return isAudioEnabled
+        ? LoopL10n.current.chatCalls_streamForegroundViewMicrophoneState2
+        : LoopL10n.current.common_muted;
   }
 }
 
@@ -372,20 +397,29 @@ String streamMicrophoneNote({
   required bool canSendAudio,
   required bool everCouldSendAudio,
   required bool speakSpent,
-  String speakLabel = '发言',
-  String speakAgainLabel = '重新连接后发言',
+  String? speakLabel,
+  String? speakAgainLabel,
 }) {
   if (retiring && !microphoneEnabled) {
-    return '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。';
+    return LoopL10n.current.chatCalls_streamForegroundViewIf;
   }
-  if (microphoneEnabled) return '你的麦克风已打开，房间里的人能听到你。点「静音」随时关掉。';
+  if (microphoneEnabled) {
+    return LoopL10n.current.chatCalls_streamForegroundViewIf2;
+  }
   if (!canSendAudio) {
     return everCouldSendAudio
-        ? '你已被移出发言席，现在只能收听。要再发言，请等主持人重新邀请。'
-        : '你在这个房间是只收听的角色。';
+        ? LoopL10n.current.chatCalls_streamForegroundViewIf3
+        : LoopL10n.current.chatCalls_streamForegroundViewS2;
   }
-  if (speakSpent) return '你已静音。要再次发言，点「$speakAgainLabel」把这次语音重新接一遍。';
-  return '你以静音状态进入。准备好后点「$speakLabel」，系统麦克风权限只在开始采集时申请。';
+  if (speakSpent) {
+    return LoopL10n.current.chatCalls_streamForegroundViewIf4(
+      speakAgainLabel ??
+          LoopL10n.current.chatCalls_streamForegroundViewSpeakAgainLabel,
+    );
+  }
+  return LoopL10n.current.chatCalls_streamForegroundViewIf5(
+    speakLabel ?? LoopL10n.current.chatCalls_streamForegroundViewSpeakLabel,
+  );
 }
 
 /// The microphone control's short words for the room page's bottom bar
@@ -400,12 +434,30 @@ String streamBarMicrophoneLabel({
   required bool speakSpent,
   required bool retiring,
 }) {
-  if (speakAgain) return speakAgainBusy ? '正在重连' : '重新发言';
-  if (microphoneBusy) return '切换中';
-  if (microphoneEnabled) return '静音';
-  if (canSendAudio && !speakSpent && !retiring) return '取消静音';
-  if (retiring) return '正在退出';
-  return canSendAudio ? '不能开麦' : '仅收听';
+  if (speakAgain) {
+    return speakAgainBusy
+        ? LoopL10n
+              .current
+              .chatCalls_streamForegroundViewStreamBarMicrophoneLabel
+        : LoopL10n.current.chatCalls_streamForegroundViewS3;
+  }
+  if (microphoneBusy) {
+    return LoopL10n
+        .current
+        .chatCalls_streamForegroundViewStreamBarMicrophoneLabel2;
+  }
+  if (microphoneEnabled) return LoopL10n.current.common_mute;
+  if (canSendAudio && !speakSpent && !retiring) {
+    return LoopL10n.current.common_unmute;
+  }
+  if (retiring) {
+    return LoopL10n
+        .current
+        .chatCalls_streamForegroundViewStreamBarMicrophoneLabel3;
+  }
+  return canSendAudio
+      ? LoopL10n.current.chatCalls_streamForegroundViewStreamBarMicrophoneLabel4
+      : LoopL10n.current.chatCalls_streamForegroundViewS4;
 }
 
 /// Foreground Audio Room UI driven directly by Stream's official [CallState].
@@ -422,10 +474,13 @@ String streamBarMicrophoneLabel({
 String audioRoomMicrophoneRefusalText(AudioRoomMicrophoneRefusal refusal) =>
     switch (refusal) {
       AudioRoomMicrophoneRefusal.systemPermission =>
-        '没有麦克风权限，去系统设置里允许 LOOP 使用麦克风后再试。',
-      AudioRoomMicrophoneRefusal.roomPermission => '这个房间还没有让你发言，麦克风没有打开。',
-      AudioRoomMicrophoneRefusal.callClosed => '这次通话已经不能再发言了，请退出后重新进入。',
-      AudioRoomMicrophoneRefusal.unknown => '麦克风没能打开，请再试一次。',
+        LoopL10n.current.chatCalls_streamForegroundViewSystemPermission,
+      AudioRoomMicrophoneRefusal.roomPermission =>
+        LoopL10n.current.chatCalls_streamForegroundViewRoomPermission,
+      AudioRoomMicrophoneRefusal.callClosed =>
+        LoopL10n.current.chatCalls_streamForegroundViewCallClosed,
+      AudioRoomMicrophoneRefusal.unknown =>
+        LoopL10n.current.chatCalls_streamForegroundViewUnknown,
     };
 
 class StreamForegroundCallView extends StatefulWidget {
@@ -727,7 +782,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         if (!widget.inline) ...<Widget>[
           const SizedBox(height: 18),
           Text(
-            '语音房',
+            context.l10n.common_voiceRooms,
             textAlign: TextAlign.center,
             // M43 R31 a centred state title: titleLg 16 (decision 0191).
             style: LoopType.titleLg,
@@ -752,8 +807,10 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           const SizedBox(height: 14),
           Align(
             alignment: widget.inline ? Alignment.centerLeft : Alignment.center,
-            child: const LoopBadge(
-              '系统已暂停音频',
+            child: LoopBadge(
+              context
+                  .l10n
+                  .chatCalls_streamForegroundViewVoiceroomMediaAudioSuspended,
               key: ValueKey<String>('voiceroom-media-audio-suspended'),
               kind: LoopBadgeKind.mining,
             ),
@@ -772,8 +829,12 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             canSendAudio: data.canSendAudio,
             everCouldSendAudio: _hadSendAudio,
             speakSpent: _microphoneEnableRequested,
-            speakLabel: barMicrophone ? '取消静音' : '发言',
-            speakAgainLabel: barMicrophone ? '重新发言' : '重新连接后发言',
+            speakLabel: barMicrophone
+                ? context.l10n.common_unmute
+                : context.l10n.chatCalls_streamForegroundViewSpeakLabel,
+            speakAgainLabel: barMicrophone
+                ? context.l10n.chatCalls_streamForegroundViewS3
+                : context.l10n.chatCalls_streamForegroundViewSpeakAgainLabel,
           ),
           textAlign: widget.inline ? TextAlign.start : TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
@@ -891,7 +952,13 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                       ),
                       block: true,
                       icon: 'refresh',
-                      label: _speakAgainBusy ? '正在重新连接语音' : '重新连接后发言',
+                      label: _speakAgainBusy
+                          ? context
+                                .l10n
+                                .chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel
+                          : context
+                                .l10n
+                                .chatCalls_streamForegroundViewSpeakAgainLabel,
                       onPressed:
                           _speakAgainBusy || _leaveBusy || _microphoneBusy
                           ? null
@@ -916,18 +983,26 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                           ? 'mic'
                           : 'voice',
                       label: _microphoneBusy
-                          ? '正在切换麦克风'
+                          ? context
+                                .l10n
+                                .chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel
                           : data.microphoneEnabled
-                          ? '静音'
+                          ? context.l10n.common_mute
                           : data.canSendAudio &&
                                 !_microphoneEnableRequested &&
                                 !retirementStarted
-                          ? '发言'
+                          ? context
+                                .l10n
+                                .chatCalls_streamForegroundViewSpeakLabel
                           : retirementStarted
-                          ? '需要先重试退出'
+                          ? context
+                                .l10n
+                                .chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel2
                           : data.canSendAudio
-                          ? '这次通话不能再开麦'
-                          : '仅收听',
+                          ? context
+                                .l10n
+                                .chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel3
+                          : context.l10n.chatCalls_streamForegroundViewS4,
                     ),
             ),
             if (widget.onOutputSelected != null) ...<Widget>[
@@ -946,7 +1021,9 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
             // Decision 0170: the prototype's `.btn-danger` — flat Chalk
             // with an Ink glyph. The pink disc is gone.
             Tooltip(
-              message: '断开语音连接',
+              message: context
+                  .l10n
+                  .chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage,
               excludeFromSemantics: true,
               child: LoopButton(
                 key: const ValueKey<String>('voiceroom-media-disconnect'),
@@ -954,7 +1031,9 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                 tone: LoopButtonTone.danger,
                 icon: 'phone',
                 label: '',
-                semanticLabel: '断开语音连接',
+                semanticLabel: context
+                    .l10n
+                    .chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage,
                 onPressed: _leaveBusy ? null : _leave,
               ),
             ),
@@ -978,7 +1057,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       if (!mounted) return;
       setState(() {
         _speakAgainBusy = false;
-        _commandError = '语音没能重新接上，请再试一次。';
+        _commandError =
+            LoopL10n.current.chatCalls_streamForegroundViewCommandError;
       });
       return;
     }
@@ -1015,7 +1095,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       if (!outcome.opened) {
         _commandError = enabled
             ? audioRoomMicrophoneRefusalText(outcome.refusal)
-            : '麦克风没能静音。请重试，或退出这个房间。';
+            : LoopL10n.current.chatCalls_streamForegroundViewSetState;
       }
     });
   }
@@ -1032,7 +1112,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       if (!mounted) return;
       setState(() {
         _leaveBusy = false;
-        _commandError = '这次通话没能干净地退出，请重试。';
+        _commandError =
+            LoopL10n.current.chatCalls_streamForegroundViewCommandError2;
       });
       return;
     }
@@ -1074,13 +1155,14 @@ class _OutputControl extends StatelessWidget {
       null => 'voice',
     };
     final hint = next == null
-        ? '声音从已连接的设备输出'
+        ? context.l10n.chatCalls_streamForegroundViewSwitch
         : next == AudioRoomOutputPreference.speaker
-        ? '切换到扬声器'
-        : '切换到听筒';
+        ? context.l10n.chatCalls_streamForegroundViewSwitch2
+        : context.l10n.chatCalls_streamForegroundViewS5;
     return Semantics(
       button: true,
-      label: '声音输出：$label',
+      label: context.l10n
+          .chatCalls_streamForegroundViewVoiceroomMediaOutputLabel(label),
       hint: hint,
       excludeSemantics: true,
       child: Tooltip(
@@ -1111,27 +1193,27 @@ class _ParticipantGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (phase != StreamCallPhase.connected) {
       return switch (phase) {
-        StreamCallPhase.reconnecting => const VoiceMediaStateCard(
-          title: '正在重新连接',
-          message: '这次通话掉线了，正在自动接回来。成员明细会在连上后重新读出。',
+        StreamCallPhase.reconnecting => VoiceMediaStateCard(
+          title: context.l10n.chatCalls_streamForegroundViewTitle,
+          message: context.l10n.chatCalls_streamForegroundViewMessage,
           icon: 'refresh',
         ),
-        StreamCallPhase.disconnected => const VoiceMediaStateCard(
-          title: '语音已断开',
-          message: '这次通话已经断开，成员明细要重新连接语音之后才能读出。',
+        StreamCallPhase.disconnected => VoiceMediaStateCard(
+          title: context.l10n.chatCalls_streamForegroundViewTitle2,
+          message: context.l10n.chatCalls_streamForegroundViewMessage2,
           icon: 'voice-off',
         ),
-        _ => const VoiceMediaStateCard(
-          title: '正在连接语音',
-          message: '还没有连上这次通话，成员明细会在连上后读出。',
+        _ => VoiceMediaStateCard(
+          title: context.l10n.chatCalls_streamForegroundViewTitle3,
+          message: context.l10n.chatCalls_streamForegroundViewMessage3,
           icon: 'refresh',
         ),
       };
     }
     if (participants.isEmpty) {
-      return const VoiceMediaStateCard(
-        title: '正在读取通话成员',
-        message: '这次通话刚连上，服务商还没有给出成员明细。',
+      return VoiceMediaStateCard(
+        title: context.l10n.chatCalls_streamForegroundViewTitle4,
+        message: context.l10n.chatCalls_streamForegroundViewMessage4,
         icon: 'refresh',
       );
     }
@@ -1229,7 +1311,10 @@ class _ParticipantCard extends StatelessWidget {
                       ),
                       if (marksSelf) ...<Widget>[
                         const SizedBox(width: 8),
-                        const LoopBadge('我', kind: LoopBadgeKind.mute),
+                        LoopBadge(
+                          context.l10n.common_me,
+                          kind: LoopBadgeKind.mute,
+                        ),
                       ],
                     ],
                   ),

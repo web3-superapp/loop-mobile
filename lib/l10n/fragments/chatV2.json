@@ -1,0 +1,2506 @@
+{
+  "chatV2_channelHeadingNull": {
+    "en": "{memberCount, plural, =1{1 member} other{{memberCount} members}}",
+    "placeholders": {
+      "memberCount": {
+        "example": "memberCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_channel_heading.dart:45",
+    "zh": "{memberCount} 位成员"
+  },
+  "chatV2_communityCommunityChatNeutralTitle": {
+    "en": "Community group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:384",
+    "zh": "社区群聊"
+  },
+  "chatV2_communityCommunityChatOpenProfileLabel": {
+    "en": "Community info",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:163",
+    "zh": "社区信息"
+  },
+  "chatV2_communityCommunityChatOpenSearchLabel": {
+    "en": "Search this conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:141, lib/features/chat/v2/group_screens.dart:98",
+    "zh": "搜索这个会话"
+  },
+  "chatV2_communityCommunityChatOpenVoiceLabel": {
+    "en": "Join voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:152",
+    "zh": "进入语音房"
+  },
+  "chatV2_communityCommunityChatPersonaSegment": {
+    "en": "Syncing your display name",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:436",
+    "zh": "正在同步你的显示名"
+  },
+  "chatV2_communityCommunityChatSyncingBody": {
+    "en": "{communicationUnavailableReason}LOOP has recorded your membership; the provider hasn't caught up yet. Retry later; you don't need to rejoin the community.",
+    "placeholders": {
+      "communicationUnavailableReason": {
+        "example": "communicationUnavailableReason(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/community_chat_screen.dart:456",
+    "zh": "{communicationUnavailableReason}LOOP 已经记录了你的成员身份，服务商侧还没跟上。稍后重试即可，不需要重新加入社区。"
+  },
+  "chatV2_communityCommunityChatSyncingRetryLabel": {
+    "en": "Check again",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:474",
+    "zh": "重新检查"
+  },
+  "chatV2_communityCommunityChatSyncingTitle": {
+    "en": "Syncing chat access",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:454",
+    "zh": "聊天权限同步中"
+  },
+  "chatV2_communityCommunityOnlineCountObserved": {
+    "en": "{count} online",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/community_chat_screen.dart:398",
+    "zh": "{count} 在线"
+  },
+  "chatV2_communityEmptyMessage": {
+    "en": "Community not found",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:238",
+    "zh": "找不到这个社区"
+  },
+  "chatV2_communityEmptyReason": {
+    "en": "It may have been removed or isn't visible to this account.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:239",
+    "zh": "它可能已被移除，或对当前账号不可见。"
+  },
+  "chatV2_communityMessage": {
+    "en": "Missing community ID",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:214, lib/features/chat/v2/voice_room_screens.dart:427",
+    "zh": "缺少社区标识"
+  },
+  "chatV2_communityMessage2": {
+    "en": "Community chat unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:221",
+    "zh": "社区聊天当前不可用"
+  },
+  "chatV2_communityMessage3": {
+    "en": "Official group unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:255",
+    "zh": "官方群当前不可用"
+  },
+  "chatV2_communityReason": {
+    "en": "Enter from the community list or community page; this page won't guess which community's official group to open.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:215",
+    "zh": "请从社区列表或社区主页进入，本页不会猜测要打开哪个社区的官方群。"
+  },
+  "chatV2_communityReason2": {
+    "en": "Capabilities haven't loaded yet; this page doesn't request any channel.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/community_chat_screen.dart:223, lib/features/chat/v2/direct_message_screen.dart:155, lib/features/chat/v2/group_screens.dart:118",
+    "zh": "尚未读取到能力清单，本页不请求任何频道。"
+  },
+  "chatV2_communityS": {
+    "en": "You appear as {alias} in this community",
+    "placeholders": {
+      "alias": {
+        "example": "persona.alias",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/community_chat_screen.dart:436",
+    "zh": "你在这个社区显示为 {alias}"
+  },
+  "chatV2_communitySwitch": {
+    "en": "{communityCountLabel} members",
+    "placeholders": {
+      "communityCountLabel": {
+        "example": "communityCountLabel(members)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/community_chat_screen.dart:401",
+    "zh": "{communityCountLabel} 成员"
+  },
+  "chatV2_conversationLabelLoopCommunityConversationNeutralLabel": {
+    "en": "Community official group",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_conversation_label.dart:8, lib/features/chat/v2/chat_search_screen.dart:236, lib/features/chat/v2/community_chat_screen.dart:310",
+    "zh": "社区官方群"
+  },
+  "chatV2_conversationLabelNull": {
+    "en": "{memberCount, plural, =1{1 member} other{{memberCount} members}}",
+    "placeholders": {
+      "memberCount": {
+        "example": "memberCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_conversation_label.dart:59",
+    "zh": "{memberCount} 名成员"
+  },
+  "chatV2_directMessageCaption": {
+    "en": "Direct messages show minimal identity by default; asset and signature requests are labelled separately.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:51",
+    "zh": "私聊默认展示最少身份信息，资产与签名请求会单独标识。"
+  },
+  "chatV2_directMessageDmFriendshipRequiredMessage": {
+    "en": "Message request sent. The conversation appears here once they accept.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:340",
+    "zh": "消息请求已经发出。对方接受之前，这里不会出现会话。"
+  },
+  "chatV2_directMessageDmFriendshipRequiredMessage2": {
+    "en": "Direct messages need both of you to be friends, and the other person mustn't have turned off direct messages in Privacy Center. Send a message request first; the conversation opens once they accept. This doesn't mean the account exists.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:345",
+    "zh": "私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。先发送一条消息请求，对方接受后这个会话才会打开。这个结果不代表对方账号一定存在。"
+  },
+  "chatV2_directMessageDmFriendshipRequiredTitle": {
+    "en": "Can't message directly yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:338",
+    "zh": "还不能直接私聊"
+  },
+  "chatV2_directMessageDmMessageRequestFailedTitle": {
+    "en": "Message request not sent",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:359",
+    "zh": "消息请求没有送出"
+  },
+  "chatV2_directMessageDmOperatorRequiredDetail": {
+    "en": "This request was received and needs manual handling to finish. There's no retry here: resubmitting opens a second action. Contact support, then come back to this conversation.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:191",
+    "zh": "这次请求已经收到，需要人工处理才能完成。这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。"
+  },
+  "chatV2_directMessageDmOperatorRequiredMessage": {
+    "en": "Needs manual handling",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:189",
+    "zh": "需要人工处理"
+  },
+  "chatV2_directMessageDmOperatorRequiredNoticeBody": {
+    "en": "This request is recorded. Sending it again won't be faster; it only adds another pending record.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:201",
+    "zh": "这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。"
+  },
+  "chatV2_directMessageDmOperatorRequiredNoticeTitle": {
+    "en": "Don't resubmit",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:200",
+    "zh": "不要重复提交"
+  },
+  "chatV2_directMessageDmSendMessageRequestLabel": {
+    "en": "Send message request",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:378",
+    "zh": "发送消息请求"
+  },
+  "chatV2_directMessageDmSendMessageRequestLabel2": {
+    "en": "Resend message request",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:378",
+    "zh": "重新发送消息请求"
+  },
+  "chatV2_directMessageEmptyMessage": {
+    "en": "This direct message isn't open yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:219",
+    "zh": "还没有打开这个私聊"
+  },
+  "chatV2_directMessageEmptyReason": {
+    "en": "This conversation can't be opened right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:220",
+    "zh": "这个会话暂时打不开。"
+  },
+  "chatV2_directMessageHeading": {
+    "en": "One-on-one direct message",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:50",
+    "zh": "一对一的私聊"
+  },
+  "chatV2_directMessageHeading2": {
+    "en": "Direct message with {displayName}",
+    "placeholders": {
+      "displayName": {
+        "example": "identity.displayName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/direct_message_screen.dart:50",
+    "zh": "和 {displayName} 的私聊"
+  },
+  "chatV2_directMessageMessage": {
+    "en": "Direct messages unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:153",
+    "zh": "私聊当前不可用"
+  },
+  "chatV2_directMessageMessage2": {
+    "en": "Missing conversation ID",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:162",
+    "zh": "缺少会话标识"
+  },
+  "chatV2_directMessageMessage3": {
+    "en": "Message request sent",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:279",
+    "zh": "消息请求已发送"
+  },
+  "chatV2_directMessageNotFound": {
+    "en": "They aren't discoverable, or this account doesn't exist. The message request wasn't sent.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:302",
+    "zh": "对方没有开放被找到，或者这个账号不存在，消息请求没有送出。"
+  },
+  "chatV2_directMessageReason": {
+    "en": "Enter from Following, Message requests or a public profile; this page won't guess whose direct message to open.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:163",
+    "zh": "请从关注列表、陌生人请求或公开资料进入，本页不会猜测要打开谁的私聊。"
+  },
+  "chatV2_directMessageStamp": {
+    "en": "Private",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/direct_message_screen.dart:52, lib/features/chat/v2/group_screens.dart:335",
+    "zh": "私密"
+  },
+  "chatV2_forwardScreensBody": {
+    "en": "Selected messages are sent as new messages labelled with their source conversation. Deleted or empty messages are skipped.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:689",
+    "zh": "选中的消息会作为新消息发出，并标注来自哪个会话。已删除或没有正文的消息会跳过。"
+  },
+  "chatV2_forwardScreensCaption": {
+    "en": "Forward up to {chatForwardSelectionLimit} messages at a time, only to conversations you've joined. Deleted or empty messages are skipped and counted.",
+    "placeholders": {
+      "chatForwardSelectionLimit": {
+        "example": "chatForwardSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:522",
+    "zh": "一次最多转发 {chatForwardSelectionLimit} 条，目标只能是你已加入的会话。已删除或没有正文的消息会被跳过并计数。"
+  },
+  "chatV2_forwardScreensCaption2": {
+    "en": "The merged preview only shows \"{chatMergeAnonymousLabel}\", time and text, with no nickname, LOOP ID or wallet address.",
+    "placeholders": {
+      "chatMergeAnonymousLabel": {
+        "example": "chatMergeAnonymousLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:762",
+    "zh": "合并预览只输出「{chatMergeAnonymousLabel}」、时间与正文，不含昵称、LOOP ID 或钱包地址。"
+  },
+  "chatV2_forwardScreensChatForwardErrorReason": {
+    "en": "Couldn't load this conversation's messages and targets; nothing was forwarded.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:554",
+    "zh": "没有读到这个会话的消息与可用目标，本页没有转发任何内容。"
+  },
+  "chatV2_forwardScreensChatForwardMissingSourceDetail": {
+    "en": "Enter Forward from a conversation; this page won't guess which conversation to forward from.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:531",
+    "zh": "请从会话页进入转发，本页不会猜测要转发哪个会话的消息。"
+  },
+  "chatV2_forwardScreensChatForwardMissingSourceMessage": {
+    "en": "Source conversation not found",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:530",
+    "zh": "找不到原会话"
+  },
+  "chatV2_forwardScreensChatForwardNoMessagesMessage": {
+    "en": "Only text messages synced to this device can be forwarded.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:568",
+    "zh": "只有已同步到本机的文本消息可以被转发。"
+  },
+  "chatV2_forwardScreensChatForwardNoMessagesTitle": {
+    "en": "No messages to forward in this conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:567",
+    "zh": "这个会话还没有可转发的消息"
+  },
+  "chatV2_forwardScreensChatForwardNoTargetsMessage": {
+    "en": "Forward targets must be conversations you've joined.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:587, lib/features/chat/v2/forward_target_sheet.dart:279",
+    "zh": "转发目标必须是你已加入的会话。"
+  },
+  "chatV2_forwardScreensChatForwardNoTargetsTitle": {
+    "en": "No target conversations",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:586, lib/features/chat/v2/forward_target_sheet.dart:278",
+    "zh": "没有可用的目标会话"
+  },
+  "chatV2_forwardScreensChatForwardOpenMergeLabel": {
+    "en": "Preview merged image",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:606",
+    "zh": "预览合并长图"
+  },
+  "chatV2_forwardScreensChatForwardScreenSubtitle": {
+    "en": "{selectedCount} selected · Choose a conversation",
+    "placeholders": {
+      "selectedCount": {
+        "example": "selectedCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:507",
+    "zh": "{selectedCount} 条已选择 · 选择目标会话"
+  },
+  "chatV2_forwardScreensChatForwardScreenTitle": {
+    "en": "Forward messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:502",
+    "zh": "转发消息"
+  },
+  "chatV2_forwardScreensChatMergeAnonymousLabel": {
+    "en": "Anonymous member",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:41, lib/features/chat/v2/chat_v2_models.dart:671",
+    "zh": "匿名成员"
+  },
+  "chatV2_forwardScreensChatMergeBackLabel": {
+    "en": "Back to chat",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:803",
+    "zh": "返回聊天"
+  },
+  "chatV2_forwardScreensChatMergeEmptyMessage": {
+    "en": "Go back to Forward and pick up to {chatMergeSelectionLimit} messages to merge.",
+    "placeholders": {
+      "chatMergeSelectionLimit": {
+        "example": "chatMergeSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:781",
+    "zh": "回到转发页选择要合并的消息，最多 {chatMergeSelectionLimit} 条。"
+  },
+  "chatV2_forwardScreensChatMergeEmptyTitle": {
+    "en": "No messages selected",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:780",
+    "zh": "还没有选择任何消息"
+  },
+  "chatV2_forwardScreensChatMergeExportLabel": {
+    "en": "Create image",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:808",
+    "zh": "生成长图"
+  },
+  "chatV2_forwardScreensChatMergePreviewScreenSubtitle": {
+    "en": "Show sender usernames",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:745",
+    "zh": "显示发送者用户名"
+  },
+  "chatV2_forwardScreensChatMergePreviewScreenSubtitle2": {
+    "en": "Anonymous by default",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:745, lib/features/chat/v2/chat_forward_screens.dart:759",
+    "zh": "默认匿名"
+  },
+  "chatV2_forwardScreensChatMergePreviewScreenTitle": {
+    "en": "Merged image preview",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:742",
+    "zh": "合并长图预览"
+  },
+  "chatV2_forwardScreensChatMergeTruncatedBody": {
+    "en": "Merge up to {chatMergeSelectionLimit} messages at a time; the rest won't appear in the preview.",
+    "placeholders": {
+      "chatMergeSelectionLimit": {
+        "example": "chatMergeSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:791",
+    "zh": "一次最多合并 {chatMergeSelectionLimit} 条，多出的部分不会出现在预览里。"
+  },
+  "chatV2_forwardScreensChatMergeTruncatedTitle": {
+    "en": "Truncated",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:790",
+    "zh": "已截断"
+  },
+  "chatV2_forwardScreensEncode": {
+    "en": "Selected conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:909",
+    "zh": "已选择的会话"
+  },
+  "chatV2_forwardScreensEncode2": {
+    "en": "Community signal summary",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:916",
+    "zh": "社区信号摘要"
+  },
+  "chatV2_forwardScreensHeading": {
+    "en": "0 items",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:760",
+    "zh": "0 条内容"
+  },
+  "chatV2_forwardScreensKicker": {
+    "en": "Selected messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:516",
+    "zh": "已选消息"
+  },
+  "chatV2_forwardScreensLoopBadge": {
+    "en": "Selected",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:630",
+    "zh": "已选"
+  },
+  "chatV2_forwardScreensLoopFolioPrimary": {
+    "en": "{source} · {count}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      },
+      "source": {
+        "example": "source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:518",
+    "zh": "{source} · {count} 条"
+  },
+  "chatV2_forwardScreensLoopFolioPrimary2": {
+    "en": "{count} selected",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:519",
+    "zh": "{count} 条已选择"
+  },
+  "chatV2_forwardScreensLoopLabel": {
+    "en": "Select messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:562",
+    "zh": "选择消息"
+  },
+  "chatV2_forwardScreensLoopLabel2": {
+    "en": "Send to · Last {chatForwardTargetPageSize} conversations",
+    "placeholders": {
+      "chatForwardTargetPageSize": {
+        "example": "chatForwardTargetPageSize",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:581",
+    "zh": "发送到 · 最近 {chatForwardTargetPageSize} 个会话"
+  },
+  "chatV2_forwardScreensLoopOfflineState": {
+    "en": "Load messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:544",
+    "zh": "读取消息"
+  },
+  "chatV2_forwardScreensLoopOfflineState2": {
+    "en": "Choose target",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:544",
+    "zh": "选择目标"
+  },
+  "chatV2_forwardScreensLoopOfflineState3": {
+    "en": "Forward",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:544, lib/features/chat/v2/chat_forward_screens.dart:690, lib/features/chat/v2/forward_target_sheet.dart:258, lib/features/chat/v2/loop_message_selection.dart:341, lib/features/chat/v2/loop_stream_channel_surface.dart:146, lib/features/chat/v2/loop_stream_channel_surface.dart:477",
+    "zh": "转发"
+  },
+  "chatV2_forwardScreensMessage": {
+    "en": "Select up to {chatForwardSelectionLimit} at a time",
+    "placeholders": {
+      "chatForwardSelectionLimit": {
+        "example": "chatForwardSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:645",
+    "zh": "一次最多选择 {chatForwardSelectionLimit} 条"
+  },
+  "chatV2_forwardScreensMessage2": {
+    "en": "Nothing forwarded",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:699, lib/features/chat/v2/forward_target_sheet.dart:137",
+    "zh": "没有转发任何消息"
+  },
+  "chatV2_forwardScreensMessage3": {
+    "en": "Forwarded {sent}",
+    "placeholders": {
+      "sent": {
+        "example": "outcome.sent",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:706, lib/features/chat/v2/forward_target_sheet.dart:141",
+    "zh": "已转发 {sent} 条"
+  },
+  "chatV2_forwardScreensMessage4": {
+    "en": "Forwarded {sent}, skipped {skipped}",
+    "placeholders": {
+      "sent": {
+        "example": "outcome.sent",
+        "type": "Object"
+      },
+      "skipped": {
+        "example": "skipped",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:707",
+    "zh": "已转发 {sent} 条，跳过 {skipped} 条"
+  },
+  "chatV2_forwardScreensS": {
+    "en": "{sourceLabel} · Selected conversation",
+    "placeholders": {
+      "sourceLabel": {
+        "example": "sourceLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:909",
+    "zh": "{sourceLabel} · 已选择的会话"
+  },
+  "chatV2_forwardScreensStamp": {
+    "en": "Selected {selectedCount}",
+    "placeholders": {
+      "selectedCount": {
+        "example": "selectedCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:524",
+    "zh": "已选 {selectedCount}"
+  },
+  "chatV2_forwardScreensStamp2": {
+    "en": "Anonymous",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:764",
+    "zh": "匿名"
+  },
+  "chatV2_forwardScreensSubtitle": {
+    "en": "Deleted or empty; skipped when forwarding.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:628",
+    "zh": "已删除或没有正文，转发时会被跳过。"
+  },
+  "chatV2_forwardScreensText": {
+    "en": "Output",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:943",
+    "zh": "将输出"
+  },
+  "chatV2_forwardScreensText2": {
+    "en": "Wallet addresses, nicknames and internal IDs don't appear in the image, and the image isn't uploaded.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:982",
+    "zh": "钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。"
+  },
+  "chatV2_forwardScreensTitle": {
+    "en": "This message can't be forwarded",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:625",
+    "zh": "这条消息不能转发"
+  },
+  "chatV2_forwardScreensTitle2": {
+    "en": "Forward to this conversation?",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_forward_screens.dart:688",
+    "zh": "转发到这个会话？"
+  },
+  "chatV2_forwardTargetSheetBarrierLabel": {
+    "en": "Close forward",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:105",
+    "zh": "关闭转发"
+  },
+  "chatV2_forwardTargetSheetChatForwardOutcomeMessage": {
+    "en": "Forwarded",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:139",
+    "zh": "已转发"
+  },
+  "chatV2_forwardTargetSheetChatForwardOutcomeMessage2": {
+    "en": "Skipped {skipped}",
+    "placeholders": {
+      "skipped": {
+        "example": "skipped",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:142",
+    "zh": "跳过 {skipped} 条"
+  },
+  "chatV2_forwardTargetSheetChatForwardOutcomeMessage3": {
+    "en": "{unavailable} deleted or not on this device; not forwarded",
+    "placeholders": {
+      "unavailable": {
+        "example": "unavailable",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:143",
+    "zh": "{unavailable} 条已删除或不在本机，未转发"
+  },
+  "chatV2_forwardTargetSheetContent": {
+    "en": "Last {chatForwardTargetPageSize} joined conversations · Forwarded messages show their source",
+    "placeholders": {
+      "chatForwardTargetPageSize": {
+        "example": "chatForwardTargetPageSize",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:235",
+    "zh": "最近 {chatForwardTargetPageSize} 个已加入的会话 · 转发后会标注来源会话"
+  },
+  "chatV2_forwardTargetSheetForwardTargetSheetErrorReason": {
+    "en": "Couldn't load conversations to forward to; nothing was forwarded.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:267",
+    "zh": "没有读到可转发的会话，本次没有转发任何内容。"
+  },
+  "chatV2_forwardTargetSheetLoopOfflineState": {
+    "en": "Load conversations",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:258",
+    "zh": "读取会话"
+  },
+  "chatV2_forwardTargetSheetLoopSheetHeading": {
+    "en": "Forward to",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:226",
+    "zh": "转发到"
+  },
+  "chatV2_forwardTargetSheetS": {
+    "en": "Forward {count} one by one to",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/forward_target_sheet.dart:226",
+    "zh": "逐条转发 {count} 条到"
+  },
+  "chatV2_groupScreensBarrierLabel": {
+    "en": "Close group name editor",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:505",
+    "zh": "关闭群名称修改"
+  },
+  "chatV2_groupScreensBody": {
+    "en": "You won't get messages from this group after leaving. The group creator can't leave.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:442",
+    "zh": "退出后你不会再收到这个群的消息。群创建者不能退出。"
+  },
+  "chatV2_groupScreensCaption": {
+    "en": "Members, notifications and Leave are ordered from low to high risk. Only confirmed info is shown here.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:334",
+    "zh": "成员、通知与退出按风险从低到高排列。这里只显示已确认的信息。"
+  },
+  "chatV2_groupScreensErrorText": {
+    "en": "Group name must be 1–40 characters with no control characters",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:567",
+    "zh": "群名称需要 1–40 个字符，且不能含控制字符"
+  },
+  "chatV2_groupScreensGroupInfoCapabilityUnavailableDetail": {
+    "en": "Capabilities haven't loaded yet; this page doesn't request any group resource.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:344",
+    "zh": "尚未读取到能力清单，本页不请求任何群资源。"
+  },
+  "chatV2_groupScreensGroupInfoMembersUnavailableLabel": {
+    "en": "Members and member management",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:361",
+    "zh": "成员与成员管理"
+  },
+  "chatV2_groupScreensGroupInfoMissingCidDetail": {
+    "en": "Enter from a group chat; this page won't guess which group's info to open.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:353",
+    "zh": "请从群聊页进入，本页不会猜测要打开哪个群的信息。"
+  },
+  "chatV2_groupScreensGroupInfoNameSubtitle": {
+    "en": "Loading group name",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:489",
+    "zh": "正在读取群名称"
+  },
+  "chatV2_groupScreensGroupInfoNameSubtitle2": {
+    "en": "Couldn't load group name",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:489",
+    "zh": "群名称暂时读不到"
+  },
+  "chatV2_groupScreensGroupInfoNameTitle": {
+    "en": "Group name",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:488",
+    "zh": "群名称"
+  },
+  "chatV2_groupScreensGroupInfoNameTrailingCaption": {
+    "en": "Edit",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:490",
+    "zh": "修改"
+  },
+  "chatV2_groupScreensGroupInfoNameTrailingCaption2": {
+    "en": "Owner only",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:490",
+    "zh": "仅群主可改"
+  },
+  "chatV2_groupScreensGroupInfoResolveFailedReason": {
+    "en": "This group's info isn't confirmed yet, so you can't leave; no change was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:411",
+    "zh": "这个群的信息还没确认，暂时不能退出，也没有提交任何改动。"
+  },
+  "chatV2_groupScreensGroupInfoSettingsUnavailableLabel": {
+    "en": "Notifications and pinned conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:375",
+    "zh": "消息通知与置顶会话"
+  },
+  "chatV2_groupScreensGroupInfoStateEmptyMessage": {
+    "en": "This group wasn't found, or you're no longer a member. This doesn't mean leaving failed.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:397",
+    "zh": "找不到这个群，或者你已经不是成员了。这不代表退出失败。"
+  },
+  "chatV2_groupScreensGroupInfoStateEmptyTitle": {
+    "en": "No group membership to leave",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:396",
+    "zh": "没有可退出的群成员关系"
+  },
+  "chatV2_groupScreensGroupInfoStateUnavailableDetail": {
+    "en": "The group membership service isn't available right now; no change was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:404",
+    "zh": "群成员关系服务暂时不可用，本页没有提交任何变更。"
+  },
+  "chatV2_groupScreensGroupInfoStateUnavailableMessage": {
+    "en": "Leave isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:403",
+    "zh": "退出操作当前不可用"
+  },
+  "chatV2_groupScreensGroupOpenInfoLabel": {
+    "en": "Group info",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:104, lib/features/chat/v2/group_screens.dart:326, lib/features/chat/v2/group_screens.dart:333, lib/features/chat/v2/group_screens.dart:338",
+    "zh": "群信息"
+  },
+  "chatV2_groupScreensGroupScopeNoteText": {
+    "en": "Regular groups have no community token, no Mining Weight and no Community AI. Communities with tokens are under Community.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:146",
+    "zh": "普通群没有社区币、没有 Mining Weight，也没有 Community AI。带币社区在「社区」栏。"
+  },
+  "chatV2_groupScreensGroupScopeNoteTitle": {
+    "en": "Groups vs. communities",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:143",
+    "zh": "普通群与社区的区别"
+  },
+  "chatV2_groupScreensKicker": {
+    "en": "Group profile",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:332, lib/features/chat/v2/group_screens.dart:364",
+    "zh": "群资料"
+  },
+  "chatV2_groupScreensLabelText": {
+    "en": "Group name (1–{groupNameMaximumRunes} characters)",
+    "placeholders": {
+      "groupNameMaximumRunes": {
+        "example": "groupNameMaximumRunes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/group_screens.dart:566",
+    "zh": "群名称（1–{groupNameMaximumRunes} 个字符）"
+  },
+  "chatV2_groupScreensLoopOfflineState": {
+    "en": "Leave group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:389, lib/features/chat/v2/group_screens.dart:424",
+    "zh": "退出群聊"
+  },
+  "chatV2_groupScreensLoopSheetHeading": {
+    "en": "Edit group name",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:545",
+    "zh": "修改群名称"
+  },
+  "chatV2_groupScreensMessage": {
+    "en": "Group chat unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:116, lib/features/chat/v2/group_screens.dart:342",
+    "zh": "群聊当前不可用"
+  },
+  "chatV2_groupScreensMessage2": {
+    "en": "Missing group chat ID",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:123, lib/features/chat/v2/group_screens.dart:352",
+    "zh": "缺少群聊标识"
+  },
+  "chatV2_groupScreensMessage3": {
+    "en": "Group name changed to \"{name}\"",
+    "placeholders": {
+      "name": {
+        "example": "renamed.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/group_screens.dart:255",
+    "zh": "群名称已改为「{name}」"
+  },
+  "chatV2_groupScreensMessage4": {
+    "en": "Left group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:452",
+    "zh": "已退出群聊"
+  },
+  "chatV2_groupScreensNotFound": {
+    "en": "The group doesn't exist or you're no longer in it.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:263",
+    "zh": "群不存在或你已不在群里。"
+  },
+  "chatV2_groupScreensPermissionDenied": {
+    "en": "Only the group owner can change the group name; nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:261",
+    "zh": "只有群主可以修改群名称；这次没有改动。"
+  },
+  "chatV2_groupScreensReason": {
+    "en": "Enter from the conversation list or group info; this page won't guess which group to open.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:124",
+    "zh": "请从会话列表或群信息进入，本页不会猜测要打开哪个群。"
+  },
+  "chatV2_groupScreensTitle": {
+    "en": "Leave this group chat?",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:441",
+    "zh": "退出这个群聊？"
+  },
+  "chatV2_groupScreensUnavailable": {
+    "en": "Renaming isn't available right now; the group name wasn't changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:262",
+    "zh": "改名暂时不可用，群名称没有改动。"
+  },
+  "chatV2_groupScreensValidationFailed": {
+    "en": "Group name must be 1–40 characters with no control characters.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/group_screens.dart:264",
+    "zh": "群名称需要 1–40 个字符，且不能含控制字符。"
+  },
+  "chatV2_mergeExportDismissed": {
+    "en": "Image created, but no share destination was chosen",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_merge_export.dart:52",
+    "zh": "已生成长图，但没有选择分享去处"
+  },
+  "chatV2_mergeExportFailed": {
+    "en": "Couldn't create the image; nothing left this device",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_merge_export.dart:53",
+    "zh": "长图没有生成成功，没有任何内容离开这台设备"
+  },
+  "chatV2_mergeExportShared": {
+    "en": "Image created. Choose where to share it",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_merge_export.dart:51",
+    "zh": "长图已生成，请在分享面板中选择去处"
+  },
+  "chatV2_mergeExportUnavailable": {
+    "en": "System sharing isn't available in this run; no image was created",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_merge_export.dart:54",
+    "zh": "本次运行没有装配系统分享，长图未生成"
+  },
+  "chatV2_messageSelectionBody": {
+    "en": "Everyone in the conversation will see \"Message deleted\". This can't be undone.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:464",
+    "zh": "删除后会话里的每个人都会看到「消息已删除」，无法撤回。"
+  },
+  "chatV2_messageSelectionLabel": {
+    "en": "Message selected",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:257",
+    "zh": "已选择这条消息"
+  },
+  "chatV2_messageSelectionLabel2": {
+    "en": "Select this message",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:257",
+    "zh": "选择这条消息"
+  },
+  "chatV2_messageSelectionLoopMessageForwardActions": {
+    "en": "Select",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:365",
+    "zh": "多选"
+  },
+  "chatV2_messageSelectionLoopSelectionForwardEachLabel": {
+    "en": "Forward one by one",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:523",
+    "zh": "逐条转发"
+  },
+  "chatV2_messageSelectionLoopSelectionMergeLabel": {
+    "en": "Forward as one",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_message_selection.dart:534",
+    "zh": "合并转发"
+  },
+  "chatV2_messageSelectionLoopSelectionTopbarSubtitle": {
+    "en": "Up to {loopMessageSelectionLimit}",
+    "placeholders": {
+      "loopMessageSelectionLimit": {
+        "example": "loopMessageSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:200",
+    "zh": "最多 {loopMessageSelectionLimit} 条"
+  },
+  "chatV2_messageSelectionLoopSelectionTopbarTitle": {
+    "en": "{count} selected",
+    "placeholders": {
+      "count": {
+        "example": "selection.count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:199",
+    "zh": "已选 {count} 条"
+  },
+  "chatV2_messageSelectionMessage": {
+    "en": "Select up to {loopMessageSelectionLimit} at a time",
+    "placeholders": {
+      "loopMessageSelectionLimit": {
+        "example": "loopMessageSelectionLimit",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:266",
+    "zh": "一次最多选择 {loopMessageSelectionLimit} 条"
+  },
+  "chatV2_messageSelectionMessage2": {
+    "en": "{unavailable} deleted or not on this device; left out of the image",
+    "placeholders": {
+      "unavailable": {
+        "example": "selection.unavailable",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:439",
+    "zh": "{unavailable} 条已删除或不在本机，没有放进长图"
+  },
+  "chatV2_messageSelectionShow": {
+    "en": "Deleted {deleted}",
+    "placeholders": {
+      "deleted": {
+        "example": "deleted",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:488",
+    "zh": "已删除 {deleted} 条"
+  },
+  "chatV2_messageSelectionShow2": {
+    "en": "{failed} couldn't be deleted",
+    "placeholders": {
+      "failed": {
+        "example": "failed",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:489",
+    "zh": "{failed} 条没有删除成功"
+  },
+  "chatV2_messageSelectionShow3": {
+    "en": "{unavailable} no longer on this device; skipped",
+    "placeholders": {
+      "unavailable": {
+        "example": "selection.unavailable",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:490",
+    "zh": "{unavailable} 条已不在本机，跳过"
+  },
+  "chatV2_messageSelectionTitle": {
+    "en": "{count, plural, =1{Delete this message?} other{Delete these {count} messages?}}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/loop_message_selection.dart:463",
+    "zh": "删除这 {count} 条消息？"
+  },
+  "chatV2_modelsHost": {
+    "en": "Host",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:162, lib/features/chat/v2/voice_room_screens.dart:924, lib/features/chat/v2/voice_room_screens.dart:1029, lib/features/chat/v2/voice_room_screens.dart:1048, lib/features/chat/v2/voice_room_stage.dart:188, lib/features/chat/v2/voice_room_stage.dart:195",
+    "zh": "主持人"
+  },
+  "chatV2_modelsInviteSpeaker": {
+    "en": "Invite to speak",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:453, lib/features/chat/v2/voice_room_screens.dart:1572",
+    "zh": "邀请上麦"
+  },
+  "chatV2_modelsListener": {
+    "en": "Listener",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:164, lib/features/chat/v2/chat_v2_models.dart:354",
+    "zh": "听众"
+  },
+  "chatV2_modelsRemoveSpeaker": {
+    "en": "Remove from stage",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:454, lib/features/chat/v2/voice_room_screens.dart:1572",
+    "zh": "移出发言"
+  },
+  "chatV2_modelsSpeaker": {
+    "en": "Speaker",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:163, lib/features/chat/v2/chat_v2_models.dart:353",
+    "zh": "发言人"
+  },
+  "chatV2_modelsSwitch": {
+    "en": "Only members with anonymous mode on show as anonymous; discoverability doesn't affect this row.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:673",
+    "zh": "只有开启匿名模式的成员显示为匿名；是否可被发现不影响这一行。"
+  },
+  "chatV2_modelsSwitch10": {
+    "en": "The voice room is still being verified; this page won't start any voice connection until it passes.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:696",
+    "zh": "语音房还在验证中，验证通过前这一页不会发起任何语音连接。"
+  },
+  "chatV2_modelsSwitch11": {
+    "en": "Couldn't load the online count, so no number is shown.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:698",
+    "zh": "在线人数暂时读不到，因此不显示数字。"
+  },
+  "chatV2_modelsSwitch12": {
+    "en": "Listening isn't open in this room yet. Refresh, or ask the host to reopen it.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:702",
+    "zh": "这个房间还没有开放收听。刷新一次，或让主持人重新开启。"
+  },
+  "chatV2_modelsSwitch13": {
+    "en": "This room hasn't confirmed listening is open, so you may not hear anything. Refresh, or ask the host to reopen it.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:704",
+    "zh": "这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。"
+  },
+  "chatV2_modelsSwitch14": {
+    "en": "This voice room isn't set up on the provider yet, so you can't join.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:707",
+    "zh": "这个语音房还没有在服务商那边建好，现在进不去。"
+  },
+  "chatV2_modelsSwitch15": {
+    "en": "Your raised hand is recorded; the host may see it a bit later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:709",
+    "zh": "举手已经记下了，主持人可能要稍后才看到。"
+  },
+  "chatV2_modelsSwitch16": {
+    "en": "The provider hasn't confirmed this mute yet.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:710",
+    "zh": "这次静音还没有在服务商那边确认。"
+  },
+  "chatV2_modelsSwitch17": {
+    "en": "Community AI isn't available yet, so this page is unavailable.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:711",
+    "zh": "Community AI 还没有开放，这一页暂时不可用。"
+  },
+  "chatV2_modelsSwitch2": {
+    "en": "This community doesn't have an official group channel yet.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:685",
+    "zh": "该社区还没有官方群频道。"
+  },
+  "chatV2_modelsSwitch3": {
+    "en": "Your channel membership is syncing; you can join shortly.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:686",
+    "zh": "你的频道成员身份正在同步，稍后即可进入。"
+  },
+  "chatV2_modelsSwitch4": {
+    "en": "The official group hit the provider's member limit, so you can't join right now. Your LOOP community membership isn't affected.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:688",
+    "zh": "官方群已达到服务商的成员上限，暂时无法进入。你的 LOOP 社区成员资格不受影响。"
+  },
+  "chatV2_modelsSwitch5": {
+    "en": "The official group failed to create or sync and needs ops to fix it before you can join.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:689",
+    "zh": "官方群创建或同步失败，需要运维介入后才能进入。"
+  },
+  "chatV2_modelsSwitch6": {
+    "en": "Join this community first to enter its official group.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:690",
+    "zh": "需要先加入该社区，才能进入官方群。"
+  },
+  "chatV2_modelsSwitch7": {
+    "en": "Chat isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:691, lib/features/chat/v2/chat_v2_models.dart:693",
+    "zh": "聊天暂时不可用，稍后再试。"
+  },
+  "chatV2_modelsSwitch8": {
+    "en": "No live voice room in this community right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:692",
+    "zh": "该社区当前没有进行中的语音房。"
+  },
+  "chatV2_modelsSwitch9": {
+    "en": "Chat isn't available in this environment yet.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:694",
+    "zh": "聊天在当前环境还没有开放。"
+  },
+  "chatV2_modelsUnmuteSelf": {
+    "en": "Unmute me",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_v2_models.dart:457",
+    "zh": "取消我的静音"
+  },
+  "chatV2_searchChatSearchEmptyMessage": {
+    "en": "Try another keyword or a wider scope.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:531",
+    "zh": "换一个关键词，或切换到更大的范围再试。"
+  },
+  "chatV2_searchChatSearchEmptyTitle": {
+    "en": "No matching messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:530",
+    "zh": "没有匹配的消息"
+  },
+  "chatV2_searchChatSearchErrorReason": {
+    "en": "This search didn't finish; no results are shown.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:509",
+    "zh": "这次检索没有完成，本页没有展示任何结果。"
+  },
+  "chatV2_searchChatSearchIdleMessage": {
+    "en": "Enter at least 2 characters. Results only come from conversations you've joined.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:520",
+    "zh": "至少输入 2 个字符。结果只来自你已加入的会话。"
+  },
+  "chatV2_searchChatSearchIdleTitle": {
+    "en": "Enter a keyword to search",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:519",
+    "zh": "输入关键词开始搜索"
+  },
+  "chatV2_searchChatSearchNotConnectedDetail": {
+    "en": "Chat search isn't available right now; this page made no request.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:481",
+    "zh": "聊天搜索暂时不可用，这一页没有发起任何请求。"
+  },
+  "chatV2_searchChatSearchNotConnectedMessage": {
+    "en": "Chat search unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:480",
+    "zh": "聊天搜索当前不可用"
+  },
+  "chatV2_searchChatSearchScreenSubtitle": {
+    "en": "{label} · Not searched yet",
+    "placeholders": {
+      "label": {
+        "example": "_scope.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_search_screen.dart:448",
+    "zh": "{label} · 还没有检索"
+  },
+  "chatV2_searchChatSearchScreenSubtitle2": {
+    "en": "{label} · {hits, plural, =1{1 result} other{{hits} results}}",
+    "placeholders": {
+      "hits": {
+        "example": "hits.length",
+        "type": "Object"
+      },
+      "label": {
+        "example": "_scope.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/chat_search_screen.dart:449",
+    "zh": "{label} · {hits} 条"
+  },
+  "chatV2_searchChatSearchScreenTitle": {
+    "en": "Search messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:397, lib/features/chat/v2/chat_search_screen.dart:416",
+    "zh": "搜消息"
+  },
+  "chatV2_searchCurrentConversation": {
+    "en": "This conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:28",
+    "zh": "当前会话"
+  },
+  "chatV2_searchLoopOfflineState": {
+    "en": "Search messages",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/chat_search_screen.dart:500",
+    "zh": "搜索消息"
+  },
+  "chatV2_streamChannelSurfaceLoopChannelPinnedUnavailableTitle": {
+    "en": "Pinned notice",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:927",
+    "zh": "置顶公告"
+  },
+  "chatV2_streamChannelSurfaceLoopChatComposerHint": {
+    "en": "Type or paste CA",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:47",
+    "zh": "发消息 · 贴合约地址识别代币"
+  },
+  "chatV2_streamChannelSurfaceLoopStreamChannelStateBlock": {
+    "en": "Open conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:143, lib/features/chat/v2/loop_stream_channel_surface.dart:477",
+    "zh": "打开会话"
+  },
+  "chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2": {
+    "en": "Send message",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:144, lib/features/chat/v2/loop_stream_channel_surface.dart:477",
+    "zh": "发消息"
+  },
+  "chatV2_streamChannelSurfaceMessage": {
+    "en": "This conversation link isn't a channel address LOOP supports; no connection was made.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:122",
+    "zh": "这个会话链接不是 LOOP 支持的频道地址，本页没有发起任何连接。"
+  },
+  "chatV2_streamChannelSurfaceMessage2": {
+    "en": "Restoring chat session…",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:133",
+    "zh": "正在恢复聊天会话…"
+  },
+  "chatV2_streamChannelSurfaceMessage3": {
+    "en": "Device offline. Chat authorization wasn't restored and no message was sent.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:148",
+    "zh": "设备当前离线，没有恢复聊天授权，也没有发送任何消息。"
+  },
+  "chatV2_streamChannelSurfaceMessage4": {
+    "en": "Couldn't restore chat authorization; no message action was taken.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:154",
+    "zh": "聊天授权没有恢复成功，本页没有发起任何消息操作。"
+  },
+  "chatV2_streamChannelSurfaceMessage5": {
+    "en": "Confirming this channel and your membership…",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:451",
+    "zh": "正在确认这个频道以及你的成员身份…"
+  },
+  "chatV2_streamChannelSurfaceMessage6": {
+    "en": "Device offline. Channel membership wasn't confirmed and no message was sent.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:478, lib/features/chat/v2/loop_stream_channel_surface.dart:816",
+    "zh": "设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。"
+  },
+  "chatV2_streamChannelSurfaceMessage7": {
+    "en": "Conversation unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:884",
+    "zh": "会话不可用"
+  },
+  "chatV2_streamChannelSurfaceNotConnected": {
+    "en": "Couldn't reach the chat service. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:812",
+    "zh": "没有连上聊天服务，请检查网络后重试。"
+  },
+  "chatV2_streamChannelSurfaceNotConnectedMessage": {
+    "en": "This conversation can't be opened right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:65",
+    "zh": "这个会话暂时打不开，稍后再试。"
+  },
+  "chatV2_streamChannelSurfaceNotOpened": {
+    "en": "Couldn't open this channel's conversation. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:813",
+    "zh": "没能打开这个频道的会话，请稍后重试。"
+  },
+  "chatV2_streamChannelSurfaceRefused": {
+    "en": "You're not a member of this group yet; LOOP didn't open any conversation.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:809",
+    "zh": "你还不是这个群的成员，LOOP 没有打开任何会话。"
+  },
+  "chatV2_streamChannelSurfaceSwitch": {
+    "en": "This channel hasn't synced to your account yet; LOOP didn't open any conversation.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/loop_stream_channel_surface.dart:815",
+    "zh": "这个频道还没有同步到你的账号，LOOP 没有打开任何会话。"
+  },
+  "chatV2_voiceRoomQueueInvited": {
+    "en": "Invited",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1945",
+    "zh": "已邀请"
+  },
+  "chatV2_voiceRoomQueueWaiting": {
+    "en": "Waiting for invite",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1945",
+    "zh": "等待邀请"
+  },
+  "chatV2_voiceRoomRosterListenersCount": {
+    "en": "Listeners {count}",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1639",
+    "zh": "听众 {count}"
+  },
+  "chatV2_voiceRoomRosterListenersEmpty": {
+    "en": "No listeners right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1656",
+    "zh": "当前没有听众"
+  },
+  "chatV2_voiceRoomRosterSpeakersCount": {
+    "en": "Speakers {count}",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1639",
+    "zh": "发言人 {count}"
+  },
+  "chatV2_voiceRoomRosterSpeakersEmpty": {
+    "en": "No speakers right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1656",
+    "zh": "当前没有发言人"
+  },
+  "chatV2_voiceRoomScreensBody": {
+    "en": "Leaving exits this call and cancels your raised hand; to keep listening you'll need to rejoin.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1119",
+    "zh": "离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。"
+  },
+  "chatV2_voiceRoomScreensBody2": {
+    "en": "Ending disconnects everyone in the room right away; the room can't be entered again and the hand-raise queue is discarded. Hosts don't have Leave: the host decides whether the room continues. To step away from this page, use Back; the room collapses to the top and you can return anytime. The community can start a new one.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1264",
+    "zh": "结束后房间里的所有人都会立刻断开，这个房间不能再进入，举手队列也会作废。主持人没有「离开」：房间的存续由主持人决定。只是想暂时离开这一页，请用返回键，房间会收起在顶部，随时可以回来。社区可以再开一个新的。"
+  },
+  "chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand": {
+    "en": "The server sends the actions available for each row; only the ones you can actually use are listed.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1735",
+    "zh": "这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。"
+  },
+  "chatV2_voiceRoomScreensConfirmLabel": {
+    "en": "Leave",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1120, lib/features/chat/v2/voice_room_screens.dart:2069, lib/features/chat/v2/voice_room_screens.dart:2342, lib/features/chat/v2/voice_room_stage.dart:820, lib/features/chat/v2/voice_room_stage.dart:844",
+    "zh": "离开"
+  },
+  "chatV2_voiceRoomScreensConfirmLabel2": {
+    "en": "End room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1268, lib/features/chat/v2/voice_room_screens.dart:2028, lib/features/chat/v2/voice_room_stage.dart:804",
+    "zh": "结束房间"
+  },
+  "chatV2_voiceRoomScreensConnecting": {
+    "en": "{part} · Connecting voice",
+    "placeholders": {
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2142",
+    "zh": "{part} · 正在连接语音"
+  },
+  "chatV2_voiceRoomScreensDetail": {
+    "en": "No voice connection is started here. Refresh, or ask the host to reopen it.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:461, lib/features/chat/v2/voice_room_screens.dart:653",
+    "zh": "这里不会发起语音连接。刷新一次，或让主持人重新开启。"
+  },
+  "chatV2_voiceRoomScreensDisconnected": {
+    "en": "{part} · Voice disconnected",
+    "placeholders": {
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2144",
+    "zh": "{part} · 语音已断开"
+  },
+  "chatV2_voiceRoomScreensEmpty": {
+    "en": "No voice room right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2596",
+    "zh": "当前没有语音房"
+  },
+  "chatV2_voiceRoomScreensEmpty2": {
+    "en": "This community has no live voice room right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2613",
+    "zh": "这个社区现在没有进行中的语音房。"
+  },
+  "chatV2_voiceRoomScreensEmptyMessage": {
+    "en": "No live voice room right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:436",
+    "zh": "当前没有进行中的语音房"
+  },
+  "chatV2_voiceRoomScreensInviteSpeaker": {
+    "en": "Target: {name}. Once invited, they become a speaker and can talk in this call.",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1205",
+    "zh": "目标：{name}。邀请后对方成为发言人，可以在这次通话里说话。"
+  },
+  "chatV2_voiceRoomScreensKicker": {
+    "en": "Voice live",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:378",
+    "zh": "语音进行中"
+  },
+  "chatV2_voiceRoomScreensKicker2": {
+    "en": "Voice lobby",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:378",
+    "zh": "语音大厅"
+  },
+  "chatV2_voiceRoomScreensLabel": {
+    "en": "Lower hand",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2061, lib/features/chat/v2/voice_room_stage.dart:830",
+    "zh": "取消举手"
+  },
+  "chatV2_voiceRoomScreensLabel2": {
+    "en": "Raise hand",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2061, lib/features/chat/v2/voice_room_stage.dart:838",
+    "zh": "举手"
+  },
+  "chatV2_voiceRoomScreensLoading": {
+    "en": "Loading voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2595",
+    "zh": "正在读取语音房"
+  },
+  "chatV2_voiceRoomScreensLoading2": {
+    "en": "Loading this community's voice room.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2612",
+    "zh": "正在读取这个社区的语音房。"
+  },
+  "chatV2_voiceRoomScreensLoopBadge": {
+    "en": "Speaking",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1050",
+    "zh": "发言中"
+  },
+  "chatV2_voiceRoomScreensLoopBadge2": {
+    "en": "Hand raised",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1678, lib/features/chat/v2/voice_room_stage.dart:295",
+    "zh": "已举手"
+  },
+  "chatV2_voiceRoomScreensLoopLabel": {
+    "en": "Hand-raise queue {handRaises}",
+    "placeholders": {
+      "handRaises": {
+        "example": "state.handRaises.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:533",
+    "zh": "举手队列 {handRaises}"
+  },
+  "chatV2_voiceRoomScreensLoopLabel2": {
+    "en": "Host controls",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:542",
+    "zh": "主持人控制"
+  },
+  "chatV2_voiceRoomScreensLoopLabel3": {
+    "en": "Speakers {speakerCount}",
+    "placeholders": {
+      "speakerCount": {
+        "example": "snapshot.participants.speakerCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:694",
+    "zh": "发言者 {speakerCount}"
+  },
+  "chatV2_voiceRoomScreensLoopLabel4": {
+    "en": "Listeners {listening}",
+    "placeholders": {
+      "listening": {
+        "example": "headcount.listening",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:702",
+    "zh": "听众 {listening}"
+  },
+  "chatV2_voiceRoomScreensLoopTopbarBackLabel": {
+    "en": "Minimize voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:784",
+    "zh": "收起语音房"
+  },
+  "chatV2_voiceRoomScreensMessage": {
+    "en": "Couldn't open share",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:301",
+    "zh": "无法打开分享"
+  },
+  "chatV2_voiceRoomScreensMessage10": {
+    "en": "LOOP has no speakers recorded for this room yet. The host isn't in this list.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1566",
+    "zh": "LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。"
+  },
+  "chatV2_voiceRoomScreensMessage11": {
+    "en": "LOOP has no listeners recorded for this room yet. The host isn't in this list.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1567",
+    "zh": "LOOP 记录里这个房间还没有听众。主持人不在这份名单里。"
+  },
+  "chatV2_voiceRoomScreensMessage2": {
+    "en": "Listening isn't open in this room yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:456, lib/features/chat/v2/voice_room_screens.dart:651",
+    "zh": "这个房间还没有开放收听"
+  },
+  "chatV2_voiceRoomScreensMessage3": {
+    "en": "Left stage, back to listening",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:997",
+    "zh": "已下麦，回到听众"
+  },
+  "chatV2_voiceRoomScreensMessage4": {
+    "en": "Leaving stage isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1008",
+    "zh": "下麦暂不可用"
+  },
+  "chatV2_voiceRoomScreensMessage5": {
+    "en": "Room ended · The host ended this voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1151, lib/features/chat/v2/voice_room_screens.dart:2248, lib/features/chat/v2/voice_room_screens.dart:2465",
+    "zh": "房间已结束 · 主持人已经结束这个语音房"
+  },
+  "chatV2_voiceRoomScreensMessage6": {
+    "en": "Left voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1166, lib/features/chat/v2/voice_room_screens.dart:2480",
+    "zh": "已离开语音房"
+  },
+  "chatV2_voiceRoomScreensMessage7": {
+    "en": "Left voice room; voice cleanup wasn't confirmed",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1167, lib/features/chat/v2/voice_room_screens.dart:2480",
+    "zh": "已离开语音房，语音连接的收尾没有确认"
+  },
+  "chatV2_voiceRoomScreensMessage8": {
+    "en": "Mic is on, but the mute flag on the list couldn't be cleared: {communityFailureReason}",
+    "placeholders": {
+      "communityFailureReason": {
+        "example": "communityFailureReason(failure)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1249",
+    "zh": "麦克风已打开，但名单上的静音标记没能撤回：{communityFailureReason}"
+  },
+  "chatV2_voiceRoomScreensMessage9": {
+    "en": "Hand raised, waiting for the host to invite you",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1317",
+    "zh": "已举手，等待主持人邀请"
+  },
+  "chatV2_voiceRoomScreensMute": {
+    "en": "Target: {name}. Mute is a LOOP-side intent; their device may still unmute itself. You can undo it on this row later.",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1208",
+    "zh": "目标：{name}。静音是 LOOP 侧的意图，对方的设备仍可能自行开麦；之后可以在这一行取消。"
+  },
+  "chatV2_voiceRoomScreensMute2": {
+    "en": "Mute requested",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1229",
+    "zh": "已请求静音"
+  },
+  "chatV2_voiceRoomScreensName": {
+    "en": "Me · {named}",
+    "placeholders": {
+      "named": {
+        "example": "named",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:919",
+    "zh": "我 · {named}"
+  },
+  "chatV2_voiceRoomScreensPart": {
+    "en": "{part} · {count} joined",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      },
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2147",
+    "zh": "{part} · {count} 人已加入"
+  },
+  "chatV2_voiceRoomScreensReconnecting": {
+    "en": "{part} · Voice reconnecting",
+    "placeholders": {
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2143",
+    "zh": "{part} · 语音正在重连"
+  },
+  "chatV2_voiceRoomScreensRemoveSpeaker": {
+    "en": "Target: {name}. After removal they go back to listening and stay in the room.",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1206",
+    "zh": "目标：{name}。移出后对方回到听众，仍然留在房间里。"
+  },
+  "chatV2_voiceRoomScreensRemoveSpeaker2": {
+    "en": "Removed from stage",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1228",
+    "zh": "已移出发言"
+  },
+  "chatV2_voiceRoomScreensRun": {
+    "en": "Mute all requested",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:545, lib/features/chat/v2/voice_room_screens.dart:752",
+    "zh": "已请求全体静音"
+  },
+  "chatV2_voiceRoomScreensRun2": {
+    "en": "Invited to speak",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:547, lib/features/chat/v2/voice_room_screens.dart:1227",
+    "zh": "已邀请发言"
+  },
+  "chatV2_voiceRoomScreensRun3": {
+    "en": "Joined, connecting voice",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:567, lib/features/chat/v2/voice_room_screens.dart:746",
+    "zh": "已加入，正在连接语音"
+  },
+  "chatV2_voiceRoomScreensRun4": {
+    "en": "Hand lowered",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:570, lib/features/chat/v2/voice_room_screens.dart:750",
+    "zh": "已取消举手"
+  },
+  "chatV2_voiceRoomScreensRun5": {
+    "en": "Room ended",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1279, lib/features/chat/v2/voice_room_screens.dart:1973",
+    "zh": "房间已结束"
+  },
+  "chatV2_voiceRoomScreensS": {
+    "en": "Hand-raise queue",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:534",
+    "zh": "举手队列"
+  },
+  "chatV2_voiceRoomScreensS2": {
+    "en": "Room ended; voice cleanup wasn't confirmed",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1279",
+    "zh": "房间已结束，语音连接的收尾没有确认"
+  },
+  "chatV2_voiceRoomScreensS3": {
+    "en": "{part} · {count} in call",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      },
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2141",
+    "zh": "{part} · {count} 人在通话"
+  },
+  "chatV2_voiceRoomScreensS4": {
+    "en": "{inRoom} in the room",
+    "placeholders": {
+      "inRoom": {
+        "example": "headcount.inRoom",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2602",
+    "zh": "{inRoom} 人在房间里"
+  },
+  "chatV2_voiceRoomScreensSubtitle": {
+    "en": "Tap this row to unmute",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1691",
+    "zh": "点这一行可以取消静音"
+  },
+  "chatV2_voiceRoomScreensSubtitle2": {
+    "en": "Muted by host in LOOP",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1691",
+    "zh": "主持人已在 LOOP 侧静音"
+  },
+  "chatV2_voiceRoomScreensSubtitle3": {
+    "en": "Can speak",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1692",
+    "zh": "可以发言"
+  },
+  "chatV2_voiceRoomScreensSubtitle4": {
+    "en": "Waiting for the host to invite",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1693",
+    "zh": "等待主持人邀请发言"
+  },
+  "chatV2_voiceRoomScreensSubtitle5": {
+    "en": "Listening",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1693",
+    "zh": "收听中"
+  },
+  "chatV2_voiceRoomScreensSubtitle6": {
+    "en": "#{entries} · {entries2}",
+    "placeholders": {
+      "entries": {
+        "example": "entries[index].handRaise.sequence",
+        "type": "Object"
+      },
+      "entries2": {
+        "example": "entries[index].handRaise.isPending ? '等待邀请' : '已邀请'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1830",
+    "zh": "第 {entries} 位 · {entries2}"
+  },
+  "chatV2_voiceRoomScreensSubtitle7": {
+    "en": "Invite to speak",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1897",
+    "zh": "邀请其发言"
+  },
+  "chatV2_voiceRoomScreensSwitch": {
+    "en": "The voice room is recorded, but the call isn't set up yet. Tap Start voice room again to continue.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1464",
+    "zh": "语音房记下了，但通话还没有建好。再点一次「开启语音房」可以接着建。"
+  },
+  "chatV2_voiceRoomScreensSwitch10": {
+    "en": "Back collapses the room to the top; tap it to return anytime.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2621",
+    "zh": "返回会把房间收起在顶部，随时点开回来。"
+  },
+  "chatV2_voiceRoomScreensSwitch11": {
+    "en": "Check the host, online count and recording notice before joining.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2622",
+    "zh": "进入前确认主持人、在线人数与录音说明。"
+  },
+  "chatV2_voiceRoomScreensSwitch2": {
+    "en": "The voice room is set up but listening isn't open yet. Tap Start voice room again to retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1465",
+    "zh": "语音房建好了，但还没有开放收听。再点一次「开启语音房」可以重试。"
+  },
+  "chatV2_voiceRoomScreensSwitch3": {
+    "en": "The voice room isn't ready, so no one can join yet. Tap Start voice room again to retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1466",
+    "zh": "语音房还没有准备好，现在谁都进不去。再点一次「开启语音房」可以重试。"
+  },
+  "chatV2_voiceRoomScreensSwitch4": {
+    "en": "LOOP submitted this change; the provider hasn't confirmed it yet. Refresh later for the latest status.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1475",
+    "zh": "LOOP 已经提交这次变更，服务商还没有确认结果。请稍后刷新查看最新状态。"
+  },
+  "chatV2_voiceRoomScreensSwitch5": {
+    "en": "Me · {alias}",
+    "placeholders": {
+      "alias": {
+        "example": "alias",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1501, lib/features/chat/v2/voice_room_stage.dart:115",
+    "zh": "我 · {alias}"
+  },
+  "chatV2_voiceRoomScreensSwitch6": {
+    "en": "{part} · Counting",
+    "placeholders": {
+      "part": {
+        "example": "part",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2141",
+    "zh": "{part} · 人数正在统计"
+  },
+  "chatV2_voiceRoomScreensSwitch7": {
+    "en": "Couldn't load voice room status",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2597",
+    "zh": "语音房状态读不到"
+  },
+  "chatV2_voiceRoomScreensSwitch8": {
+    "en": "{speaking} on mic",
+    "placeholders": {
+      "speaking": {
+        "example": "headcount.speaking",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2602",
+    "zh": "{speaking} 人在麦上"
+  },
+  "chatV2_voiceRoomScreensSwitch9": {
+    "en": "Couldn't load the voice room status this time; you can retry below.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2614",
+    "zh": "这次没有读到语音房的状态，下面可以重试。"
+  },
+  "chatV2_voiceRoomScreensText": {
+    "en": "Leaving exits this call and cancels your raised hand.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2372",
+    "zh": "离开后你会退出这次通话，举手也会一并取消。"
+  },
+  "chatV2_voiceRoomScreensTitle": {
+    "en": "Leave voice room?",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1118",
+    "zh": "离开语音房？"
+  },
+  "chatV2_voiceRoomScreensTitle2": {
+    "en": "End voice room?",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1262",
+    "zh": "结束语音房？"
+  },
+  "chatV2_voiceRoomScreensUnmute": {
+    "en": "Target: {name}. This only withdraws the LOOP-side mute intent and won't turn on their mic; only their device can do that.",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1211",
+    "zh": "目标：{name}。只撤回 LOOP 侧的静音意图，不会替对方打开麦克风——开麦只能由对方的设备完成。"
+  },
+  "chatV2_voiceRoomScreensUnmute2": {
+    "en": "Mute intent withdrawn",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1230",
+    "zh": "已取消静音意图"
+  },
+  "chatV2_voiceRoomScreensUnmuteSelf": {
+    "en": "This is your own speaker row. It only clears the LOOP-side mute flag and won't turn on your mic; unmute yourself in the call.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1214",
+    "zh": "这是你自己的发言人行。只撤回 LOOP 侧的静音标记，不会打开麦克风——请在通话里自己开麦。"
+  },
+  "chatV2_voiceRoomScreensUnmuteSelf2": {
+    "en": "My mute flag cleared",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1231",
+    "zh": "已取消我的静音标记"
+  },
+  "chatV2_voiceRoomScreensVoiceRoomBannerTitle": {
+    "en": "In voice room · {communityName}",
+    "placeholders": {
+      "communityName": {
+        "example": "communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2121",
+    "zh": "正在语音房 · {communityName}"
+  },
+  "chatV2_voiceRoomScreensVoiceRoomLiveLine": {
+    "en": "{inRoom} listening · {liveVoiceRoomElapsedLabel}",
+    "placeholders": {
+      "inRoom": {
+        "example": "inRoom",
+        "type": "Object"
+      },
+      "liveVoiceRoomElapsedLabel": {
+        "example": "liveVoiceRoomElapsedLabel(openedAt, now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2652",
+    "zh": "{inRoom} 在听 · {liveVoiceRoomElapsedLabel}"
+  },
+  "chatV2_voiceRoomScreensVoiceRoomTopbarLine": {
+    "en": "Live · Speaking {speaking} · Listeners {listening}",
+    "placeholders": {
+      "listening": {
+        "example": "headcount.listening",
+        "type": "Object"
+      },
+      "speaking": {
+        "example": "headcount.speaking",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2643",
+    "zh": "进行中 · 发言 {speaking} · 听众 {listening}"
+  },
+  "chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel": {
+    "en": "Leaving…",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2393",
+    "zh": "正在离开…"
+  },
+  "chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel2": {
+    "en": "Confirm leave",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2393",
+    "zh": "确认离开"
+  },
+  "chatV2_voiceRoomScreensVoiceroomBannerOpenLabel": {
+    "en": "Reconnect",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2351",
+    "zh": "重新连接"
+  },
+  "chatV2_voiceRoomScreensVoiceroomBannerOpenLabel2": {
+    "en": "Return to room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2352",
+    "zh": "返回房间"
+  },
+  "chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail": {
+    "en": "This device couldn't load the voice room's availability. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:417",
+    "zh": "这台设备没能读到语音房的开放状态，请检查网络后重试。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail2": {
+    "en": "Couldn't load the voice room's availability yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:419",
+    "zh": "这次还没有读到语音房的开放状态，请稍后再试。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomEndedBackLabel": {
+    "en": "Back to community",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1979",
+    "zh": "返回社区"
+  },
+  "chatV2_voiceRoomScreensVoiceroomEndedMessage": {
+    "en": "The host ended this voice room.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1974, lib/features/chat/v2/voice_room_screens.dart:2617",
+    "zh": "主持人已经结束这个语音房。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage": {
+    "en": "Voice room unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:398, lib/features/chat/v2/voice_room_screens.dart:409",
+    "zh": "语音房当前不可用"
+  },
+  "chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail": {
+    "en": "Couldn't load End room this time. Try again later. Back collapses the room to the top.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:715, lib/features/chat/v2/voice_room_screens.dart:2019",
+    "zh": "「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage": {
+    "en": "Can't end the room right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:714, lib/features/chat/v2/voice_room_screens.dart:2018",
+    "zh": "现在不能结束房间"
+  },
+  "chatV2_voiceRoomScreensVoiceroomInfoLabel": {
+    "en": "Room info, one item unconfirmed by the provider",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:842",
+    "zh": "房间说明，有一项服务商未确认"
+  },
+  "chatV2_voiceRoomScreensVoiceroomInfoLabel2": {
+    "en": "Room info",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:842",
+    "zh": "房间说明"
+  },
+  "chatV2_voiceRoomScreensVoiceroomInviteEmptyMessage": {
+    "en": "Raised hands are listed here in order.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1882",
+    "zh": "有人举手后会按顺序列在这里。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomInviteEmptyTitle": {
+    "en": "No raised hands to invite",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1881",
+    "zh": "没有待邀请的举手"
+  },
+  "chatV2_voiceRoomScreensVoiceroomJoinLabel": {
+    "en": "Join voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2002, lib/features/chat/v2/voice_room_stage.dart:778",
+    "zh": "加入语音房"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel": {
+    "en": "Refreshing…",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:474, lib/features/chat/v2/voice_room_screens.dart:666",
+    "zh": "正在刷新…"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMediaUnavailableDetail": {
+    "en": "This voice room can't be opened right now; no connection was made.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1396",
+    "zh": "这个语音房暂时打不开，没有发起任何连接。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMediaUnavailableMessage": {
+    "en": "Voice connection unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1395",
+    "zh": "语音连接不可用"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMemberSheetBarrierLabel": {
+    "en": "Close member actions",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1721",
+    "zh": "关闭成员操作弹层"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMissingIdDetail": {
+    "en": "Enter from a community page or its official group; this page won't guess which community's voice room to open.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:428",
+    "zh": "请从社区主页或社区官方群进入，本页不会猜测要打开哪个社区的语音房。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomMuteAllLabel": {
+    "en": "Mute all",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1922, lib/features/chat/v2/voice_room_stage.dart:798",
+    "zh": "全体静音"
+  },
+  "chatV2_voiceRoomScreensVoiceroomNotJoinableDetail": {
+    "en": "The provider hasn't confirmed this room is ready, so joining would be refused. Refresh and try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:690, lib/features/chat/v2/voice_room_screens.dart:1993",
+    "zh": "服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomNotJoinableMessage": {
+    "en": "This room can't be joined yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:689, lib/features/chat/v2/voice_room_screens.dart:1992",
+    "zh": "这个房间还不能加入"
+  },
+  "chatV2_voiceRoomScreensVoiceroomQueueEmptyMessage": {
+    "en": "No one is waiting. Raised hands are listed here in order.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1807",
+    "zh": "没有成员在排队。有人举手后会按顺序列在这里。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomQueueEmptyTitle": {
+    "en": "Hand-raise queue is empty",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1806",
+    "zh": "举手队列为空"
+  },
+  "chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyMessage": {
+    "en": "Only the host can see the full queue. Your position shows here after you raise your hand.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1784",
+    "zh": "完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyTitle": {
+    "en": "You haven't raised your hand",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1783",
+    "zh": "你还没有举手"
+  },
+  "chatV2_voiceRoomScreensVoiceroomQueueSelfSubtitle": {
+    "en": "#{sequence} · Waiting for invite",
+    "placeholders": {
+      "sequence": {
+        "example": "own.sequence",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1794",
+    "zh": "第 {sequence} 位 · 等待邀请"
+  },
+  "chatV2_voiceRoomScreensVoiceroomShareLabel": {
+    "en": "Share voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:365, lib/features/chat/v2/voice_room_screens.dart:804",
+    "zh": "分享语音房"
+  },
+  "chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle": {
+    "en": "Host · Speaking",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1045",
+    "zh": "主持人 · 发言中"
+  },
+  "chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle2": {
+    "en": "Host · Mic on",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:1047",
+    "zh": "主持人 · 麦克风已开"
+  },
+  "chatV2_voiceRoomScreensVoiceroomStepDownUnavailableDetail": {
+    "en": "Only the host can change speakers. To leave the stage, ask the host or leave the room.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2050",
+    "zh": "后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。"
+  },
+  "chatV2_voiceRoomScreensVoiceroomStepDownUnavailableMessage": {
+    "en": "Leaving stage yourself isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_screens.dart:2049",
+    "zh": "自助下麦当前不可用"
+  },
+  "chatV2_voiceRoomShareLine": {
+    "en": "Join the \"{communityName}\" voice room on LOOP: {roomTitle}",
+    "placeholders": {
+      "communityName": {
+        "example": "communityName",
+        "type": "Object"
+      },
+      "roomTitle": {
+        "example": "roomTitle",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_share.dart:62",
+    "zh": "来 LOOP 的『{communityName}』语音房：{roomTitle}"
+  },
+  "chatV2_voiceRoomShareVoiceRoomTitle": {
+    "en": "{communityName} voice room",
+    "placeholders": {
+      "communityName": {
+        "example": "communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_share.dart:53",
+    "zh": "{communityName} 语音房"
+  },
+  "chatV2_voiceRoomStageBarrierLabel": {
+    "en": "Close go-live sheet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1029",
+    "zh": "关闭开播弹层"
+  },
+  "chatV2_voiceRoomStageBuild": {
+    "en": "Speaking",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:146, lib/features/chat/v2/voice_room_stage.dart:292",
+    "zh": "正在发言"
+  },
+  "chatV2_voiceRoomStageBuild2": {
+    "en": "Mic on",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:148, lib/features/chat/v2/voice_room_stage.dart:294",
+    "zh": "麦克风已开"
+  },
+  "chatV2_voiceRoomStageBuild3": {
+    "en": "The room is visible to community members right away and anyone can listen in. As host, you or other admins invite speakers, mute all and end the room; the mic is off by default.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1115",
+    "zh": "房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。"
+  },
+  "chatV2_voiceRoomStageHintText": {
+    "en": "Leave blank to show \"Community name voice room\"",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1131",
+    "zh": "留空时显示「社区名 语音房」"
+  },
+  "chatV2_voiceRoomStageLabel": {
+    "en": "{count, plural, =1{1 more listener} other{{count} more listeners}}{onTap}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      },
+      "onTap": {
+        "example": "onTap == null ? '' : '，查看完整名单'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_stage.dart:657",
+    "zh": "还有 {count} 位听众{onTap}"
+  },
+  "chatV2_voiceRoomStageLabel2": {
+    "en": "Go live",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:977, lib/features/chat/v2/voice_room_stage.dart:1102, lib/features/chat/v2/voice_room_stage.dart:1157",
+    "zh": "开播"
+  },
+  "chatV2_voiceRoomStageLabel3": {
+    "en": "People",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:983",
+    "zh": "人数"
+  },
+  "chatV2_voiceRoomStageLabel4": {
+    "en": "My role",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:988",
+    "zh": "我的身份"
+  },
+  "chatV2_voiceRoomStageLabelText": {
+    "en": "Room title (optional)",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1130",
+    "zh": "房间标题（可留空）"
+  },
+  "chatV2_voiceRoomStageLoopOfflineState": {
+    "en": "View speakers",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:436",
+    "zh": "查看发言人"
+  },
+  "chatV2_voiceRoomStageLoopOfflineState2": {
+    "en": "View listeners",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:550",
+    "zh": "查看听众"
+  },
+  "chatV2_voiceRoomStageSemanticLabel": {
+    "en": "{label}, {badge} hands raised",
+    "placeholders": {
+      "badge": {
+        "example": "badge",
+        "type": "Object"
+      },
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_stage.dart:934",
+    "zh": "{label}，{badge} 人举手"
+  },
+  "chatV2_voiceRoomStageValue": {
+    "en": "Not joined",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:989",
+    "zh": "还没有加入"
+  },
+  "chatV2_voiceRoomStageViewFullList": {
+    "en": ", view full list",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:674",
+    "zh": "，查看完整名单"
+  },
+  "chatV2_voiceRoomStageVoiceroomBarMicLabel": {
+    "en": "Not connected",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:889",
+    "zh": "未连接"
+  },
+  "chatV2_voiceRoomStageVoiceroomHostLabel": {
+    "en": "Host {name}{caption}",
+    "placeholders": {
+      "caption": {
+        "example": "caption == null ? '' : '，$caption'",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/v2/voice_room_stage.dart:154",
+    "zh": "主持人 {name}{caption}"
+  },
+  "chatV2_voiceRoomStageVoiceroomHostTag": {
+    "en": "Host",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:190",
+    "zh": "主持"
+  },
+  "chatV2_voiceRoomStageVoiceroomInfoSheetBarrierLabel": {
+    "en": "Close room info",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:952",
+    "zh": "关闭房间说明"
+  },
+  "chatV2_voiceRoomStageVoiceroomInviteOpenLabel": {
+    "en": "Invite to speak",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:791",
+    "zh": "邀请发言"
+  },
+  "chatV2_voiceRoomStageVoiceroomListenersEmptyTitle": {
+    "en": "No listeners yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:581",
+    "zh": "还没有听众"
+  },
+  "chatV2_voiceRoomStageVoiceroomListenersErrorTitle": {
+    "en": "Couldn't load listeners",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:568",
+    "zh": "听众名单读不到"
+  },
+  "chatV2_voiceRoomStageVoiceroomListenersPermissionTitle": {
+    "en": "No permission to view listeners",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:556",
+    "zh": "没有权限查看听众名单"
+  },
+  "chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage": {
+    "en": "Listener list unavailable right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:561",
+    "zh": "听众名单当前不可用"
+  },
+  "chatV2_voiceRoomStageVoiceroomProviderUnconfirmedTitle": {
+    "en": "Unconfirmed by provider",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:997",
+    "zh": "服务商侧未确认"
+  },
+  "chatV2_voiceRoomStageVoiceroomSpeakersEmptyTitle": {
+    "en": "No one on stage yet",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:714",
+    "zh": "还没有人上麦"
+  },
+  "chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle": {
+    "en": "Couldn't load speakers",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:454",
+    "zh": "发言人名单读不到"
+  },
+  "chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle": {
+    "en": "No permission to view speakers",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:442",
+    "zh": "没有权限查看发言人名单"
+  },
+  "chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage": {
+    "en": "Speaker list unavailable right now",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:447",
+    "zh": "发言人名单当前不可用"
+  },
+  "chatV2_voiceRoomStageVoiceroomStartPending": {
+    "en": "The last go-live didn't finish. Going live again finishes it and keeps the title you entered.",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1138",
+    "zh": "上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。"
+  },
+  "chatV2_voiceRoomStageVoiceroomStartSubmitLabel": {
+    "en": "Going live…",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:1157",
+    "zh": "正在开播…"
+  },
+  "chatV2_voiceRoomStageVoiceroomStepDownLabel": {
+    "en": "Leave stage",
+    "placeholders": {},
+    "where": "lib/features/chat/v2/voice_room_stage.dart:814",
+    "zh": "下麦"
+  }
+}

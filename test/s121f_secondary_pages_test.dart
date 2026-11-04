@@ -342,7 +342,7 @@ void main() {
         findsNothing,
       );
       expect(_key('voiceroom-info'), findsOneWidget);
-      expect(find.textContaining(' 在听 · '), findsOneWidget);
+      expect(find.textContaining(' listening · '), findsOneWidget);
       _expectCleanCopy(tester);
     });
 
@@ -371,7 +371,7 @@ void main() {
           openedAt: opened,
           now: opened.add(const Duration(minutes: 23)),
         ),
-        '12 在听 · Live 23m',
+        '12 listening · Live 23m',
       );
       expect(
         voiceRoomLiveLine(
@@ -379,7 +379,7 @@ void main() {
           openedAt: opened,
           now: opened.subtract(const Duration(minutes: 1)),
         ),
-        '3 在听 · Just started',
+        '3 listening · Just started',
       );
     });
   });

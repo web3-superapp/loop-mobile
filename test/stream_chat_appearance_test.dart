@@ -8,6 +8,7 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_localizations_en.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -274,9 +275,6 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,
-          // Decision 0281: chat is not migrated yet (S355); this case reads
-          // LOOP's Chinese Stream copy.
-          locale: LoopL10n.simplifiedChinese,
           supportedLocales: LoopL10n.supportedLocales,
           localizationsDelegates: loopLocalizationsDelegates,
           home: Builder(
@@ -302,8 +300,9 @@ void main() {
       );
 
       final localizations = StreamChatLocalizations.of(captured);
-      expect(localizations, isA<LoopStreamChatLocalizations>());
-      expect(localizations!.todayLabel, '今天');
+      // Decision 0281: the default (English) locale gets the SDK's own words.
+      expect(localizations, isA<LoopStreamChatEnglishLocalizations>());
+      expect(localizations!.todayLabel, 'Today');
 
       final streamTheme = StreamTheme.of(captured);
       expect(streamTheme.colorScheme.accentPrimary, LoopColors.yellow);

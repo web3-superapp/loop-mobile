@@ -25,7 +25,7 @@ void main() {
     expect(find.byType(UnreadIndicatorButton), findsNothing);
     expect(find.byType(StreamJumpToUnreadButton), findsNothing);
     expect(find.byType(LoopUnreadJumpPill), findsOneWidget);
-    expect(find.text('4 条未读'), findsOneWidget);
+    expect(find.text('4 unread'), findsOneWidget);
 
     final pill = tester.getRect(find.byType(LoopUnreadJumpPill));
     final list = tester.getRect(find.byType(StreamMessageListView));
@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('4 条未读'), findsOneWidget);
+    expect(find.text('4 unread'), findsOneWidget);
 
     await harness.dispose(tester);
   });
@@ -100,7 +100,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(harness.messageItem('m30'), findsNothing);
 
-    await tester.tap(find.text('4 条未读'));
+    await tester.tap(find.text('4 unread'));
     await tester.pumpAndSettle();
 
     expect(harness.messageItem('m30'), findsOneWidget);
@@ -223,9 +223,6 @@ final class _PillHarness {
       MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: MaterialApp(
-          // Decision 0281: chat is not migrated yet (S355); this case reads
-          // LOOP's Chinese Stream copy.
-          locale: LoopL10n.simplifiedChinese,
           supportedLocales: LoopL10n.supportedLocales,
           localizationsDelegates: loopLocalizationsDelegates,
           home: StreamChat(

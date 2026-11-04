@@ -12,6 +12,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -102,7 +103,7 @@ Future<ChatForwardOutcome?> showChatForwardTargetSheet(
 }) async {
   final outcome = await showLoopSheet<ChatForwardOutcome>(
     context,
-    barrierLabel: '关闭转发',
+    barrierLabel: context.l10n.chatV2_forwardTargetSheetBarrierLabel,
     // A drag would close the sheet past its own PopScope while a forward is
     // being sent; the barrier and the back gesture both respect it.
     enableDrag: false,
@@ -134,15 +135,21 @@ String chatForwardOutcomeMessage(
   final skipped = outcome.skipped + outcome.failed;
   final parts = <String>[
     if (outcome.sent == 0)
-      '没有转发任何消息'
+      LoopL10n.current.chatV2_forwardScreensMessage2
     else if (single && skipped + unavailable == 0)
-      '已转发'
+      LoopL10n.current.chatV2_forwardTargetSheetChatForwardOutcomeMessage
     else
-      '已转发 ${outcome.sent} 条',
-    if (skipped > 0) '跳过 $skipped 条',
-    if (unavailable > 0) '$unavailable 条已删除或不在本机，未转发',
+      LoopL10n.current.chatV2_forwardScreensMessage3(outcome.sent),
+    if (skipped > 0)
+      LoopL10n.current.chatV2_forwardTargetSheetChatForwardOutcomeMessage2(
+        skipped,
+      ),
+    if (unavailable > 0)
+      LoopL10n.current.chatV2_forwardTargetSheetChatForwardOutcomeMessage3(
+        unavailable,
+      ),
   ];
-  return parts.join('，');
+  return parts.join(LoopL10n.current.common_listSeparator);
 }
 
 /// `ForwardTargetSheet`: pick one recent conversation; the forward is sent
@@ -223,7 +230,11 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopSheetHeading(count == 1 ? '转发到' : '逐条转发 $count 条到'),
+        LoopSheetHeading(
+          count == 1
+              ? context.l10n.chatV2_forwardTargetSheetLoopSheetHeading
+              : context.l10n.chatV2_forwardTargetSheetS(count),
+        ),
         Flexible(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -232,7 +243,9 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Text(
-                  '最近 $chatForwardTargetPageSize 个已加入的会话 · 转发后会标注来源会话',
+                  context.l10n.chatV2_forwardTargetSheetContent(
+                    chatForwardTargetPageSize,
+                  ),
                   // R19 sheet support copy (decision 0191 M17).
                   style: LoopType.bodySm,
                 ),
@@ -255,7 +268,14 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
                             key: const ValueKey<String>(
                               'forward-target-sheet-offline',
                             ),
-                            pausedActions: const <String>['读取会话', '转发'],
+                            pausedActions: <String>[
+                              context
+                                  .l10n
+                                  .chatV2_forwardTargetSheetLoopOfflineState,
+                              context
+                                  .l10n
+                                  .chatV2_forwardScreensLoopOfflineState3,
+                            ],
                             onRetry: retry,
                             margin: EdgeInsets.zero,
                           );
@@ -264,7 +284,9 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
                           key: const ValueKey<String>(
                             'forward-target-sheet-error',
                           ),
-                          reason: '没有读到可转发的会话，本次没有转发任何内容。',
+                          reason: context
+                              .l10n
+                              .chatV2_forwardTargetSheetForwardTargetSheetErrorReason,
                           onRetry: retry,
                           margin: EdgeInsets.zero,
                         );
@@ -272,11 +294,15 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
                       final targets =
                           snapshot.data ?? const <ChatForwardTarget>[];
                       if (targets.isEmpty) {
-                        return const LoopEmptyState(
+                        return LoopEmptyState(
                           key: ValueKey<String>('forward-target-sheet-empty'),
                           illustration: LoopIllustration.chat,
-                          title: '没有可用的目标会话',
-                          message: '转发目标必须是你已加入的会话。',
+                          title: context
+                              .l10n
+                              .chatV2_forwardScreensChatForwardNoTargetsTitle,
+                          message: context
+                              .l10n
+                              .chatV2_forwardScreensChatForwardNoTargetsMessage,
                           compact: true,
                         );
                       }

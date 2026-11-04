@@ -224,13 +224,13 @@ void main() {
         find.byKey(ValueKey<String>('chat-token-card-loading-$_address')),
         findsOneWidget,
       );
-      expect(find.text('识别中…'), findsOneWidget);
-      expect(find.text('等待数据'), findsNWidgets(3));
+      expect(find.text('Detecting…'), findsOneWidget);
+      expect(find.text('Waiting for data'), findsNWidgets(3));
       final semantics = tester.ensureSemantics();
       expect(
-        tester.getSemantics(find.bySemanticsLabel('图表')),
+        tester.getSemantics(find.bySemanticsLabel('Chart')),
         matchesSemantics(
-          label: '图表',
+          label: 'Chart',
           isButton: true,
           hasEnabledState: true,
           isEnabled: false,
@@ -260,21 +260,21 @@ void main() {
       expect(find.text(r'$747.39'), findsOneWidget);
       // 市值 was not reported; the cell says so instead of printing 0.
       expect(find.text('No data'), findsOneWidget);
-      expect(find.textContaining('LOOP 社区 PEPE 社区'), findsOneWidget);
+      expect(find.textContaining('LOOP community PEPE 社区'), findsOneWidget);
       expect(find.textContaining('检测到 mint 函数'), findsOneWidget);
       // A fact the provider answered "false" for is not a card line.
       expect(find.textContaining('合约已验证开源'), findsNothing);
-      expect(findProvenanceContaining('报价 Source DexScreener'), findsOneWidget);
+      expect(findProvenanceContaining('Quote Source DexScreener'), findsOneWidget);
       // The opaque identity never reaches the screen; the address does.
       expect(find.textContaining('eip155'), findsNothing);
 
-      await tester.tap(find.text('图表'));
+      await tester.tap(find.text('Chart'));
       await tester.pump();
       expect(navigated, <String>[
         MarketAssetRoute.token('eip155:56:$_address'),
       ]);
 
-      await tester.tap(find.text('社区'));
+      await tester.tap(find.text('Community'));
       await tester.pump();
       expect(navigated.last, contains('c0ffee00-0000-4000-8000-000000000001'));
     });
@@ -289,11 +289,11 @@ void main() {
         ),
       );
 
-      expect(find.text('买入'), findsOneWidget);
-      expect(find.text('卖出'), findsOneWidget);
-      expect(find.textContaining('买入与卖出现在不可用'), findsOneWidget);
+      expect(find.text('Buy'), findsOneWidget);
+      expect(find.text('Sell'), findsOneWidget);
+      expect(find.textContaining('Buy and sell unavailable'), findsOneWidget);
       final semantics = tester.ensureSemantics();
-      for (final label in const <String>['买入', '卖出']) {
+      for (final label in const <String>['Buy', 'Sell']) {
         expect(
           tester.getSemantics(find.bySemanticsLabel(label)),
           matchesSemantics(
@@ -305,8 +305,8 @@ void main() {
         );
       }
       semantics.dispose();
-      await tester.tap(find.text('买入'), warnIfMissed: false);
-      await tester.tap(find.text('卖出'), warnIfMissed: false);
+      await tester.tap(find.text('Buy'), warnIfMissed: false);
+      await tester.tap(find.text('Sell'), warnIfMissed: false);
       await tester.pump();
       expect(navigated, isEmpty);
     });
@@ -321,8 +321,8 @@ void main() {
         ),
       );
 
-      expect(find.text('暂无 LOOP 社区'), findsOneWidget);
-      await tester.tap(find.text('社区'), warnIfMissed: false);
+      expect(find.text('No LOOP community'), findsOneWidget);
+      await tester.tap(find.text('Community'), warnIfMissed: false);
       await tester.pump();
       expect(navigated, isEmpty);
     });
@@ -347,12 +347,15 @@ void main() {
       expect(find.text(r'$2,575.14'), findsOneWidget);
       // S278 · decision 0236: the status stays printed; where the identity
       // came from is behind the strip's (i).
-      expect(find.textContaining('资产目录状态 · Unregistered'), findsOneWidget);
-      expect(findProvenanceContaining('身份来自 GeckoTerminal'), findsOneWidget);
+      expect(find.textContaining('Catalog status · Unregistered'), findsOneWidget);
+      expect(
+        findProvenanceContaining('Identity from GeckoTerminal'),
+        findsOneWidget,
+      );
       // There is no holder page for an address outside the registry, and the
       // cell says which gap it is.
-      expect(find.text('未收录'), findsOneWidget);
-      expect(find.text('暂无 LOOP 社区'), findsOneWidget);
+      expect(find.text('Not listed'), findsOneWidget);
+      expect(find.text('No LOOP community'), findsOneWidget);
     });
 
     // S57: the server answered 200 and said it has no identity for this
@@ -383,12 +386,12 @@ void main() {
       expect(find.text(loopChatTokenShortAddress(_address)), findsNWidgets(2));
       expect(find.textContaining('MARKET_PROVIDER'), findsNothing);
       // Every figure beside it is unavailable for the same reason.
-      expect(find.text('数据不可得'), findsNWidgets(3));
-      expect(find.text('没有读到报价'), findsOneWidget);
+      expect(find.text('Data unavailable'), findsNWidgets(3));
+      expect(find.text('No quote received'), findsOneWidget);
 
       // The retry is on the card and cannot be spent while the quota is out.
       final reads = market.assetReads.length;
-      await tester.tap(find.text('重试'), warnIfMissed: false);
+      await tester.tap(find.text('Retry'), warnIfMissed: false);
       await tester.pump();
       expect(market.assetReads.length, reads);
     });
@@ -407,7 +410,7 @@ void main() {
       await _pumpCard(tester, market: market);
 
       final reads = market.assetReads.length;
-      await tester.tap(find.text('重试'), warnIfMissed: false);
+      await tester.tap(find.text('Retry'), warnIfMissed: false);
       await tester.pumpAndSettle();
       expect(market.assetReads.length, greaterThan(reads));
     });
@@ -436,7 +439,7 @@ void main() {
         isA<LoopInlineUnavailable>(),
       );
       expect(
-        find.text('未收录的代币 · ${loopChatTokenShortAddress(_address)}'),
+        find.text('Unlisted token · ${loopChatTokenShortAddress(_address)}'),
         findsOneWidget,
       );
       expect(find.byType(ChatTokenCardView), findsNothing);
@@ -458,12 +461,12 @@ void main() {
         find.byKey(ValueKey<String>('chat-token-card-unavailable-$_address')),
         findsOneWidget,
       );
-      expect(find.text('数据不可得'), findsNWidgets(3));
+      expect(find.text('Data unavailable'), findsNWidgets(3));
       expect(
         find.text(loopChainFailureReason(LoopChainFailureKind.unavailable)),
         findsOneWidget,
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
     });
 
     testWidgets('a closed capability renders the server own reason', (
@@ -730,8 +733,8 @@ void main() {
   });
 
   test('the composer promises the recognition and nothing more', () {
-    expect(loopChatComposerHint, contains('贴合约地址'));
-    expect(loopChatComposerHint, contains('发消息'));
+    expect(loopChatComposerHint, contains('paste CA'));
+    expect(loopChatComposerHint, contains('Type'));
     expect(loopChatComposerHint.contains('AI'), isFalse);
     // It has to stay on one line beside the attachment and send controls.
     expect(loopChatComposerHint.runes.length, lessThanOrEqualTo(16));

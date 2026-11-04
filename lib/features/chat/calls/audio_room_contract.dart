@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// One backend-authorized Stream Audio Room target.
 ///
@@ -218,8 +219,10 @@ enum AudioRoomLivePhase {
 /// carries both never says two things about one room. A phase that can state
 /// a count of its own gets nothing here.
 String? audioRoomLivePhaseNote(AudioRoomLivePhase phase) => switch (phase) {
-  AudioRoomLivePhase.reconnecting => '语音正在重连，人数以重新连接后为准',
-  AudioRoomLivePhase.disconnected => '语音已断开，人数以重新连接后为准',
+  AudioRoomLivePhase.reconnecting =>
+    LoopL10n.current.chatCalls_audioRoomContractReconnecting,
+  AudioRoomLivePhase.disconnected =>
+    LoopL10n.current.chatCalls_audioRoomContractDisconnected,
   AudioRoomLivePhase.idle ||
   AudioRoomLivePhase.connecting ||
   AudioRoomLivePhase.connected => null,
@@ -442,17 +445,23 @@ final class AudioRoomOutputRoute {
 /// A route the provider has not reported yet is not guessed from the
 /// preference: the control says it is still reading.
 String audioRoomOutputLabel(AudioRoomOutputRoute? route) {
-  if (route == null) return '声音输出';
+  if (route == null) {
+    return LoopL10n.current.chatCalls_audioRoomContractAudioRoomOutputLabel;
+  }
   return switch (route.kind) {
-    AudioRoomOutputKind.speaker => '扬声器',
-    AudioRoomOutputKind.earpiece => '听筒',
+    AudioRoomOutputKind.speaker =>
+      LoopL10n.current.chatCalls_audioRoomContractSpeaker,
+    AudioRoomOutputKind.earpiece =>
+      LoopL10n.current.chatCalls_audioRoomContractEarpiece,
     AudioRoomOutputKind.external => _externalOutputLabel(route.label),
   };
 }
 
 String _externalOutputLabel(String? label) {
   final name = label?.trim();
-  if (name == null || name.isEmpty) return '耳机';
+  if (name == null || name.isEmpty) {
+    return LoopL10n.current.chatCalls_audioRoomContractExternalOutputLabel;
+  }
   return name.length > 12 ? '${name.substring(0, 12)}…' : name;
 }
 
@@ -544,7 +553,8 @@ Duration audioRoomRecoveryDelay(int attempt) {
 }
 
 /// The line the room prints after a recovery put a speaker back in muted.
-const audioRoomRestoredMicrophoneNote = '已重新连接，点麦克风继续发言';
+String get audioRoomRestoredMicrophoneNote =>
+    LoopL10n.current.chatCalls_audioRoomContractAudioRoomRestoredMicrophoneNote;
 
 /// Publishes the recovery the active call holder is running.
 final class AudioRoomRecoveryController extends Notifier<AudioRoomRecovery?> {
@@ -569,8 +579,8 @@ final audioRoomRecoveryProvider =
 /// because it is the one place that knows how to open the room and how to
 /// leave it.
 final class AudioRoomNotificationBridge {
-  String title = '正在语音房';
-  String? text = '点按回到语音房';
+  String title = LoopL10n.current.chatCalls_audioRoomContractTitle;
+  String? text = LoopL10n.current.chatCalls_audioRoomContractText;
 
   /// Opens the room page for the room this device is in.
   Future<void> Function()? onOpen;
@@ -597,6 +607,8 @@ final audioRoomNotificationBridgeProvider =
 /// The notification's title for the room this device is in.
 String audioRoomNotificationTitle(String? communityName) {
   final name = communityName?.trim();
-  if (name == null || name.isEmpty) return '正在语音房';
-  return '正在语音房 · $name';
+  if (name == null || name.isEmpty) {
+    return LoopL10n.current.chatCalls_audioRoomContractTitle;
+  }
+  return LoopL10n.current.chat_streamInboxChatVoiceRoomReturnEntryTitle(name);
 }

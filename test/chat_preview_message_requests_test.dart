@@ -91,7 +91,7 @@ void main() {
       await _tapRequestAction(tester, 'chat-preview-request-accept-r1');
       expect(
         find.text(
-          'Marked accepted in 开发预览 and removed locally. No Stream conversation was created.',
+          'Marked accepted in Development preview and removed locally. No Stream conversation was created.',
         ),
         findsOneWidget,
       );
@@ -137,7 +137,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Removed from 开发预览. No report was submitted.'),
+        find.text('Removed from Development preview. No report was submitted.'),
         findsOneWidget,
       );
       expect(find.text('Report submitted and request removed.'), findsNothing);
@@ -159,7 +159,9 @@ void main() {
 
       await _tapRequestAction(tester, 'chat-preview-request-ignore-r1');
       expect(
-        find.text('Removed from 开发预览 only. No sender interaction occurred.'),
+        find.text(
+          'Removed from Development preview only. No sender interaction occurred.',
+        ),
         findsOneWidget,
       );
       await _tapRequestAction(tester, 'chat-preview-request-ignore-r2');

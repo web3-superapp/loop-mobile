@@ -311,10 +311,10 @@ void main() {
       expect(find.text('Builders Guild'), findsOneWidget);
       // Decision 0115: the card is the room's title, its community, the host
       // and the room's own total (host + speakers + listeners).
-      expect(find.text('Builders Guild 语音房'), findsOneWidget);
+      expect(find.text('Builders Guild voice room'), findsOneWidget);
       expect(find.text('Host frog_maxi'), findsOneWidget);
       expect(find.text('6 listening · Live 1h'), findsOneWidget);
-      expect(find.text('Host 匿名成员'), findsOneWidget);
+      expect(find.text('Host Anonymous member'), findsOneWidget);
       expect(find.text('1 listening · Live 3h'), findsOneWidget);
       expect(find.textContaining('在线'), findsNothing);
       expect(find.textContaining('演示数据'), findsNothing);
@@ -629,7 +629,10 @@ void main() {
       // Decision 0113: 扫一扫 is open and says what it reads; the route it
       // pushes is covered by the full-app test in
       // `stream_chat_inbox_page_test.dart`.
-      expect(find.text('扫名片、社区码或钱包地址'), findsOneWidget);
+      expect(
+        find.text('Scan a profile card, community code or wallet address'),
+        findsOneWidget,
+      );
       expect(find.text('暂未开放'), findsNothing);
     });
 
@@ -646,7 +649,7 @@ void main() {
         find.byKey(const ValueKey<String>('stream-chat-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
     });
 
     test('the provider default stays closed', () {

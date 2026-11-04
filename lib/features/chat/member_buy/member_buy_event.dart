@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart' show Message;
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The schema tag the backend's `community_member_buy_feed` lane writes on
 /// every member-buy message (S108 §1.2, loop-api decision 0097).
@@ -20,13 +21,17 @@ const String loopFeedBotFlagField = 'loop_bot';
 const String loopMemberBuySymbolField = 'symbol';
 
 /// What a buyer reads as when LOOP could not name them.
-const String loopMemberBuyNeutralBuyer = '群友';
+String get loopMemberBuyNeutralBuyer =>
+    LoopL10n.current.chatMemberBuy_eventLoopMemberBuyNeutralBuyer;
 
 /// The one character the neutral buyer avatar draws.
-const String loopMemberBuyNeutralInitial = '群';
+String get loopMemberBuyNeutralInitial =>
+    LoopL10n.current.chatMemberBuy_eventLoopMemberBuyNeutralInitial;
 
 /// The preview line when the message carries no usable symbol.
-const String loopMemberBuyPreviewLabel = '群友买入';
+String get loopMemberBuyPreviewLabel => LoopL10n
+    .current
+    .chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel;
 
 /// Every quote asset on BSC LOOP classifies swaps against (WBNB, USDT, USDC,
 /// USD1) is an 18-decimal token. The v1 payload carries no quote decimals, so
@@ -216,7 +221,8 @@ final Decimal _hundredMillion = Decimal.fromInt(100000000);
 
 /// A token amount the way the card prints it.
 ///
-/// From 1 万 up it is compact (`1.23万`, `4.5亿`); below that it is grouped
+/// Chinese (decision 0281: by [LoopL10n.currentLocale]): from 1 万 up it is
+/// compact (`1.23万`, `4.5亿`); below that it is grouped
 /// with two fraction digits, and an amount under one keeps up to six so a
 /// small buy does not round to `0`. The tier is chosen after rounding to the
 /// digits that will be shown, so `9,999.995` reads `1万`, not `10,000`, and
@@ -230,14 +236,46 @@ String loopFormatMemberBuyAmount(Decimal value) {
     return text == '0' ? '<0.000001' : text;
   }
   final plain = value.round(scale: 2);
+  if (LoopL10n.currentLocale.languageCode != 'zh') {
+    return _compactEnglish(value, plain);
+  }
   if (plain < _tenThousand) {
     return loopFormatDecimal(plain, maxFractionDigits: 2);
   }
   final wan = _scaledTo(value, _tenThousand);
   if (wan < _tenThousand) {
-    return '${loopFormatDecimal(wan, maxFractionDigits: 2)}万';
+    return LoopL10n.current.chatMemberBuy_eventIf(
+      loopFormatDecimal(wan, maxFractionDigits: 2),
+    );
   }
-  return '${loopFormatDecimal(_scaledTo(value, _hundredMillion), maxFractionDigits: 2)}亿';
+  return LoopL10n.current.chatMemberBuy_eventIf2(
+    loopFormatDecimal(_scaledTo(value, _hundredMillion), maxFractionDigits: 2),
+  );
+}
+
+final Decimal _thousand = Decimal.fromInt(1000);
+
+/// English compact tiers (glossary §一 7): `K` / `M` / `B`, never 万 / 亿.
+final List<(Decimal, String)> _englishTiers = <(Decimal, String)>[
+  (Decimal.fromInt(1000), 'K'),
+  (Decimal.fromInt(1000000), 'M'),
+  (Decimal.fromInt(1000000000), 'B'),
+];
+
+/// The English twin of the 万 / 亿 ladder: below 1,000 grouped with two
+/// fraction digits, then `12.35K`, `3.5M`, `1.2B`. The tier is chosen after
+/// rounding, so `999.995` reads `1K` and `999,999.5` reads `1M`.
+String _compactEnglish(Decimal value, Decimal plain) {
+  if (plain < _thousand) {
+    return loopFormatDecimal(plain, maxFractionDigits: 2);
+  }
+  for (final (unit, suffix) in _englishTiers) {
+    final scaled = _scaledTo(value, unit);
+    if (scaled < _thousand || suffix == 'B') {
+      return '${loopFormatDecimal(scaled, maxFractionDigits: 2)}$suffix';
+    }
+  }
+  return loopFormatDecimal(plain, maxFractionDigits: 2);
 }
 
 Decimal _scaledTo(Decimal value, Decimal unit) =>

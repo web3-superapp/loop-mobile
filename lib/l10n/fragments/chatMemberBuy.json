@@ -1,0 +1,82 @@
+{
+  "chatMemberBuy_cardBody": {
+    "en": "{loopMemberBuyPreviewLabel} · Incomplete data",
+    "placeholders": {
+      "loopMemberBuyPreviewLabel": {
+        "example": "loopMemberBuyPreviewLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/member_buy/loop_member_buy_card.dart:444",
+    "zh": "{loopMemberBuyPreviewLabel} · 动态数据不完整"
+  },
+  "chatMemberBuy_cardLabel": {
+    "en": "View {name}'s profile",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/member_buy/loop_member_buy_card.dart:293",
+    "zh": "查看 {name} 的资料"
+  },
+  "chatMemberBuy_cardLabel2": {
+    "en": "Copy transaction hash",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/loop_member_buy_card.dart:408",
+    "zh": "复制交易哈希"
+  },
+  "chatMemberBuy_cardMessage": {
+    "en": "Transaction hash copied",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/loop_member_buy_card.dart:431",
+    "zh": "已复制交易哈希"
+  },
+  "chatMemberBuy_cardText": {
+    "en": "Bought ",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/loop_member_buy_card.dart:338",
+    "zh": "买入 "
+  },
+  "chatMemberBuy_eventIf": {
+    "en": "{formatDecimal} × 10,000",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(wan, maxFractionDigits: 2)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/member_buy/member_buy_event.dart:238",
+    "zh": "{formatDecimal}万"
+  },
+  "chatMemberBuy_eventIf2": {
+    "en": "{formatDecimal} × 100,000,000",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(_scaledTo(value, _hundredMillion), maxFractionDigits: 2)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/member_buy/member_buy_event.dart:240",
+    "zh": "{formatDecimal}亿"
+  },
+  "chatMemberBuy_eventLoopMemberBuyNeutralBuyer": {
+    "en": "Member",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/member_buy_event.dart:23",
+    "zh": "群友"
+  },
+  "chatMemberBuy_eventLoopMemberBuyNeutralInitial": {
+    "en": "M",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/member_buy_event.dart:26",
+    "zh": "群"
+  },
+  "chatMemberBuy_eventLoopMemberBuyPreviewLabel": {
+    "en": "Member bought",
+    "placeholders": {},
+    "where": "lib/features/chat/member_buy/member_buy_event.dart:29",
+    "zh": "群友买入"
+  }
+}

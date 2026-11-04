@@ -120,13 +120,13 @@ void main() {
         voiceRoom: _gateway(),
       );
 
-      expect(find.textContaining('46 在听 · '), findsOneWidget);
+      expect(find.textContaining('46 listening · '), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-host')),
         findsOneWidget,
       );
-      expect(find.text('发言者 3'), findsOneWidget);
-      expect(find.text('听众 42'), findsOneWidget);
+      expect(find.text('Speakers 3'), findsOneWidget);
+      expect(find.text('Listeners 42'), findsOneWidget);
 
       final bar = find.byKey(const ValueKey<String>('voiceroom-control-bar'));
       expect(
@@ -151,7 +151,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-provider-note')),
         findsNothing,
       );
-      expect(find.text('进行中 · 发言 4 · 听众 42'), findsOneWidget);
+      expect(find.text('Live · Speaking 4 · Listeners 42'), findsOneWidget);
     });
 
     testWidgets('the table of figures and the repeated notes are gone', (
@@ -174,7 +174,12 @@ void main() {
       expect(find.byType(LoopFolioPrimary), findsNothing);
       await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
       await tester.pumpAndSettle();
-      expect(find.text('返回会把房间收起在顶部，随时点开回来。'), findsOneWidget);
+      expect(
+        find.text(
+          'Back collapses the room to the top; tap it to return anytime.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the host is given 结束房间, not a paragraph about 离开', (
@@ -219,7 +224,12 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey<String>('voiceroom-info')));
       await tester.pumpAndSettle();
-      expect(find.text('进入前确认主持人、在线人数与录音说明。'), findsOneWidget);
+      expect(
+        find.text(
+          'Check the host, online count and recording notice before joining.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an ended room says so in words, and asks nothing', (
@@ -232,11 +242,11 @@ void main() {
       );
 
       final folio = _folio(tester);
-      expect(folio.heading, '已结束');
+      expect(folio.heading, 'Ended');
       // 「ENDED」 was the one bare English word standing for a state.
-      expect(folio.stamp, '已结束');
+      expect(folio.stamp, 'Ended');
       expect(find.text('ENDED'), findsNothing);
-      expect(folio.caption, '主持人已经结束这个语音房。');
+      expect(folio.caption, 'The host ended this voice room.');
       // The pre-entry checklist belongs to a room somebody can still enter.
       expect(find.textContaining('进入前确认'), findsNothing);
       expect(
@@ -267,10 +277,10 @@ void main() {
       );
 
       final folio = _folio(tester);
-      expect(folio.heading, '当前没有语音房');
-      expect(folio.caption, '这个社区现在没有进行中的语音房。');
+      expect(folio.heading, 'No voice room right now');
+      expect(folio.caption, 'This community has no live voice room right now.');
       expect(folio.stamp, isNull);
-      expect(find.text('当前没有进行中的语音房'), findsOneWidget);
+      expect(find.text('No live voice room right now'), findsOneWidget);
       // The sentence that contradicted the block under it.
       expect(find.textContaining('语音房状态'), findsNothing);
     });
@@ -285,9 +295,12 @@ void main() {
       );
 
       final folio = _folio(tester);
-      expect(folio.heading, '语音房状态读不到');
-      expect(folio.caption, '这次没有读到语音房的状态，下面可以重试。');
-      expect(find.text('当前没有进行中的语音房'), findsNothing);
+      expect(folio.heading, 'Couldn\'t load voice room status');
+      expect(
+        folio.caption,
+        'Couldn\'t load the voice room status this time; you can retry below.',
+      );
+      expect(find.text('No live voice room right now'), findsNothing);
     });
   });
 
@@ -319,26 +332,26 @@ void main() {
       );
 
       final folio = _folio(tester);
-      expect(folio.kicker, '语音进行中');
+      expect(folio.kicker, 'Voice live');
       // `#scr-voiceroom-full` opens on 「13 人在麦上」.
-      expect(folio.heading, '4 人在麦上');
+      expect(folio.heading, '4 on mic');
       expect(folio.stamp, 'ON AIR');
 
       // 发言人, and the host on it: LOOP's roster never carries the host.
-      expect(find.text('发言人 4'), findsOneWidget);
+      expect(find.text('Speakers 4'), findsOneWidget);
       final hostRow = find.byKey(
         const ValueKey<String>('voiceroom-speaker-host'),
       );
       await scrollToCommunitySection(tester, hostRow);
       expect(hostRow, findsOneWidget);
-      expect(tester.widget<LoopRecordRow>(hostRow).subtitle, '主持人');
-      expect(find.text('已静音'), findsOneWidget);
+      expect(tester.widget<LoopRecordRow>(hostRow).subtitle, 'Host');
+      expect(find.text('Muted'), findsOneWidget);
 
       // 举手队列, with the position on the row.
-      final queue = find.text('举手队列 1');
+      final queue = find.text('Hand-raise queue 1');
       await scrollToCommunitySection(tester, queue);
       expect(queue, findsOneWidget);
-      expect(find.textContaining('第 3 位 · 等待邀请'), findsOneWidget);
+      expect(find.textContaining('#3 · Waiting for invite'), findsOneWidget);
 
       // 主持人控制, and the exit under it.
       final controls = find.byKey(
@@ -350,7 +363,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-mute-all')),
         findsOneWidget,
       );
-      final listeners = find.text('听众 42');
+      final listeners = find.text('Listeners 42');
       await scrollToCommunitySection(tester, listeners);
       expect(listeners, findsOneWidget);
       final end = find.byKey(const ValueKey<String>('voiceroom-end'));
@@ -380,21 +393,24 @@ void main() {
         ),
       );
 
-      expect(_folio(tester).heading, '4 人在麦上');
+      expect(_folio(tester).heading, '4 on mic');
       // The room has a host and this reader is not it: the row states the
       // one thing that is certain, and names nobody.
       final hostRow = find.byKey(
         const ValueKey<String>('voiceroom-speaker-host'),
       );
       await scrollToCommunitySection(tester, hostRow);
-      expect(tester.widget<LoopRecordRow>(hostRow).title, '主持人');
+      expect(tester.widget<LoopRecordRow>(hostRow).title, 'Host');
 
       final own = find.byKey(const ValueKey<String>('voiceroom-queue-self'));
       await scrollToCommunitySection(tester, own);
-      expect(tester.widget<LoopRecordRow>(own).subtitle, '第 2 位 · 等待邀请');
+      expect(
+        tester.widget<LoopRecordRow>(own).subtitle,
+        '#2 · Waiting for invite',
+      );
       // The whole queue is a host read: a listener has no figure for it, and
       // 「举手队列 0」 over 「第 2 位」 would be one more contradiction.
-      expect(find.text('举手队列'), findsOneWidget);
+      expect(find.text('Hand-raise queue'), findsOneWidget);
 
       expect(
         find.byKey(const ValueKey<String>('voiceroom-host-controls')),
@@ -435,7 +451,7 @@ void main() {
       );
       await scrollToCommunitySection(tester, hostRow);
       expect(hostRow, findsOneWidget);
-      expect(tester.widget<LoopRecordRow>(hostRow).title, '我');
+      expect(tester.widget<LoopRecordRow>(hostRow).title, 'Me');
       expect(
         find.byKey(const ValueKey<String>('voiceroom-roster-speaker-empty')),
         findsNothing,

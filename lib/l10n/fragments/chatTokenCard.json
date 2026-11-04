@@ -1,0 +1,225 @@
+{
+  "chatTokenCard_cardChartRangeLabel": {
+    "en": "1H · Last {loopSparklineWindow} closes",
+    "placeholders": {
+      "loopSparklineWindow": {
+        "example": "loopSparklineWindow",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:451",
+    "zh": "1H · 最近 {loopSparklineWindow} 根收盘价"
+  },
+  "chatTokenCard_cardDetail": {
+    "en": "This contract address isn't in the LOOP asset catalog, so there's no market data.",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:228",
+    "zh": "这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。"
+  },
+  "chatTokenCard_cardDetail2": {
+    "en": "LOOP timed out · {chatTokenShortAddress}",
+    "placeholders": {
+      "chatTokenShortAddress": {
+        "example": "loopChatTokenShortAddress(address)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:256",
+    "zh": "LOOP 响应超时 · {chatTokenShortAddress}"
+  },
+  "chatTokenCard_cardDetail3": {
+    "en": "Couldn't read this contract · {chatTokenShortAddress}",
+    "placeholders": {
+      "chatTokenShortAddress": {
+        "example": "loopChatTokenShortAddress(address)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:257",
+    "zh": "没有读到这个合约 · {chatTokenShortAddress}"
+  },
+  "chatTokenCard_cardLoopChatTokenCardFailedMessage": {
+    "en": "Couldn't load. Tap to retry",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:99",
+    "zh": "加载失败，点按重试"
+  },
+  "chatTokenCard_cardLoopChatTokenCardKicker": {
+    "en": "Token detected",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:27",
+    "zh": "自动识别到代币"
+  },
+  "chatTokenCard_cardLoopTokenCardAction": {
+    "en": "Token page",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:338",
+    "zh": "代币页"
+  },
+  "chatTokenCard_cardLoopTokenMetric": {
+    "en": "Not listed",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:434",
+    "zh": "未收录"
+  },
+  "chatTokenCard_cardMarketCommunityBound": {
+    "en": "LOOP community {name} · {formatCompactFigure} members",
+    "placeholders": {
+      "formatCompactFigure": {
+        "example": "loopFormatCompactFigure(Decimal.fromInt(memberCount), usd: false)",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:440",
+    "zh": "LOOP 社区 {name} · {formatCompactFigure} 成员"
+  },
+  "chatTokenCard_cardMarketCommunityUnavailable": {
+    "en": "No LOOP community",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:443",
+    "zh": "暂无 LOOP 社区"
+  },
+  "chatTokenCard_cardMessage": {
+    "en": "Unlisted token · {chatTokenShortAddress}",
+    "placeholders": {
+      "chatTokenShortAddress": {
+        "example": "loopChatTokenShortAddress(address)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:227",
+    "zh": "未收录的代币 · {chatTokenShortAddress}"
+  },
+  "chatTokenCard_cardMessage2": {
+    "en": "Device offline; contract not read",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:236",
+    "zh": "设备离线，没有读这个合约"
+  },
+  "chatTokenCard_cardPriceReason": {
+    "en": "No quote received",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card.dart:322",
+    "zh": "没有读到报价"
+  },
+  "chatTokenCard_cardReadCard": {
+    "en": "Catalog status · {label}",
+    "placeholders": {
+      "label": {
+        "example": "asset.status.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:376",
+    "zh": "资产目录状态 · {label}"
+  },
+  "chatTokenCard_cardReadCard2": {
+    "en": "{riskFactCount} more contract facts on the token page",
+    "placeholders": {
+      "riskFactCount": {
+        "example": "riskFactCount - riskFacts.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:382",
+    "zh": "另有 {riskFactCount} 条合约事实，在代币页"
+  },
+  "chatTokenCard_cardReadCard3": {
+    "en": "Buy and sell unavailable · {tradeReason}",
+    "placeholders": {
+      "tradeReason": {
+        "example": "tradeReason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:383",
+    "zh": "买入与卖出现在不可用 · {tradeReason}"
+  },
+  "chatTokenCard_cardReadCard4": {
+    "en": "Identity from {factSourceLabel}",
+    "placeholders": {
+      "factSourceLabel": {
+        "example": "loopFactSourceLabel(source.provider!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:393",
+    "zh": "身份来自 {factSourceLabel}"
+  },
+  "chatTokenCard_cardReadCard5": {
+    "en": "Observed {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(source.fetchedAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:395",
+    "zh": "观察于 {relativeTime}"
+  },
+  "chatTokenCard_cardReadCard6": {
+    "en": "Quote {factProvenance}",
+    "placeholders": {
+      "factProvenance": {
+        "example": "loopFactProvenance(detail.price)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card.dart:397",
+    "zh": "报价 {factProvenance}"
+  },
+  "chatTokenCard_viewLoading": {
+    "en": "Detecting",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:58, lib/features/chat/token_card/chat_token_card_view.dart:233",
+    "zh": "识别中"
+  },
+  "chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel": {
+    "en": "{provenance}, view data source",
+    "placeholders": {
+      "provenance": {
+        "example": "provenance.join('；')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:510",
+    "zh": "{provenance}，查看数据来源说明"
+  },
+  "chatTokenCard_viewPartial": {
+    "en": "Data missing",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:60",
+    "zh": "数据缺失"
+  },
+  "chatTokenCard_viewRisk": {
+    "en": "Risk facts",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:61",
+    "zh": "风险事实"
+  },
+  "chatTokenCard_viewSwitch": {
+    "en": "Detecting…",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:200",
+    "zh": "识别中…"
+  },
+  "chatTokenCard_viewText": {
+    "en": " — source {source}, observed {observedLabel}",
+    "placeholders": {
+      "observedLabel": {
+        "example": "fact.observedLabel",
+        "type": "Object"
+      },
+      "source": {
+        "example": "fact.source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:344",
+    "zh": " —— 来源 {source}，观察于 {observedLabel}"
+  }
+}

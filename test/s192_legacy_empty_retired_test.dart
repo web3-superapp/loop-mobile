@@ -259,7 +259,7 @@ void main() {
         tester.widget(_key('voiceroom-speakers-unavailable')),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('发言人名单当前不可用'), findsOneWidget);
+      expect(find.text('Speaker list unavailable right now'), findsOneWidget);
 
       await _pump(
         tester,
@@ -277,7 +277,7 @@ void main() {
         tester.widget(_key('voiceroom-listeners-unavailable')),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('听众名单当前不可用'), findsOneWidget);
+      expect(find.text('Listener list unavailable right now'), findsOneWidget);
     });
   });
 
@@ -298,7 +298,7 @@ void main() {
     final line = tester.widget<LoopInlineUnavailable>(
       find.byType(LoopInlineUnavailable),
     );
-    expect(line.message, '会话不可用');
+    expect(line.message, 'Conversation unavailable');
     expect(line.detail, '这个会话暂时打不开。');
     expect(line.onRetry, isNull);
   });

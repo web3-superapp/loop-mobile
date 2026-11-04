@@ -152,7 +152,10 @@ void main() {
       expect(media.handles, hasLength(1));
       expect(_recovery(tester), isNull);
       expect(_session(tester), isNull);
-      expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+      expect(
+        find.text('Room ended · The host ended this voice room'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an account that is no longer in the room is not put back', (
@@ -212,7 +215,7 @@ void main() {
       await tester.pump();
 
       // The page says what the app is doing; nothing to press.
-      expect(find.text('语音连接中断，正在自动重连'), findsOneWidget);
+      expect(find.text('Voice dropped, reconnecting'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
         findsNothing,
@@ -400,10 +403,10 @@ void main() {
         AudioRoomOutputKind.external,
         label: 'AirPods Pro',
       );
-      expect(audioRoomOutputLabel(speaker), '扬声器');
-      expect(audioRoomOutputLabel(earpiece), '听筒');
+      expect(audioRoomOutputLabel(speaker), 'Speaker');
+      expect(audioRoomOutputLabel(earpiece), 'Earpiece');
       expect(audioRoomOutputLabel(headset), 'AirPods Pro');
-      expect(audioRoomOutputLabel(null), '声音输出');
+      expect(audioRoomOutputLabel(null), 'Audio output');
       expect(
         audioRoomOutputToggle(
           current: speaker,

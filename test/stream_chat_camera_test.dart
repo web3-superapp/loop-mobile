@@ -43,7 +43,7 @@ void main() {
       );
       final camera = options.last;
       expect(camera, isA<SystemAttachmentPickerOption>());
-      expect(camera.title, '拍照');
+      expect(camera.title, 'Photo from camera');
       expect(camera.title!.contains('附件'), isFalse);
       // The composer only allows images, and an option whose supported types
       // fall outside that list is filtered out before it is ever drawn.
@@ -99,7 +99,7 @@ void main() {
       expect(said.single, loopChatCameraPermissionMessage);
       expect(controller.value.attachments, isEmpty);
       // LOOP cannot open that settings page itself, so it never promises to.
-      expect(said.single.contains('重试'), isFalse);
+      expect(said.single.contains('Try Again'), isFalse);
     });
 
     testWidgets('相机出别的错时，不说成已经发出去了', (tester) async {
@@ -259,7 +259,7 @@ Future<List<AttachmentPickerOption>> _pickerOptions(WidgetTester tester) async {
                   AttachmentPickerType.images,
                 ],
                 icon: Icons.image,
-                title: '从相册选择图片',
+                title: 'Upload a photo',
                 onTap: (_, _) async {},
               ),
             ],
@@ -313,9 +313,6 @@ Widget _themed(Widget child) {
         loopStreamTheme(platform: theme.platform),
       ],
     ),
-    // Decision 0281: chat is not migrated yet (S355); this case reads
-    // LOOP's Chinese Stream copy.
-    locale: LoopL10n.simplifiedChinese,
     supportedLocales: LoopL10n.supportedLocales,
     localizationsDelegates: loopLocalizationsDelegates,
     home: Scaffold(

@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/social/public_profile/public_profile_gatewa
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
@@ -290,7 +291,7 @@ class _Card extends StatelessWidget {
           children: <Widget>[
             Semantics(
               button: open != null,
-              label: '查看 $name 的资料',
+              label: context.l10n.chatMemberBuy_cardLabel(name),
               child: GestureDetector(
                 key: LoopMemberBuyCard.avatarKey,
                 behavior: HitTestBehavior.opaque,
@@ -335,7 +336,10 @@ class _Card extends StatelessWidget {
                   Text.rich(
                     TextSpan(
                       children: <InlineSpan>[
-                        TextSpan(text: '买入 ', style: LoopType.title),
+                        TextSpan(
+                          text: context.l10n.chatMemberBuy_cardText,
+                          style: LoopType.title,
+                        ),
                         TextSpan(
                           text: loopFormatMemberBuyAmount(event.amount),
                           style: LoopType.title.copyWith(
@@ -405,7 +409,7 @@ class _TxHash extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '复制交易哈希',
+    label: context.l10n.chatMemberBuy_cardLabel2,
     child: InkWell(
       key: LoopMemberBuyCard.txKey,
       borderRadius: LoopRadius.inner,
@@ -428,7 +432,11 @@ class _TxHash extends StatelessWidget {
   );
 
   Future<void> _copy(BuildContext context) async {
-    await LoopCopy.text(context, event.txHash, message: '已复制交易哈希');
+    await LoopCopy.text(
+      context,
+      event.txHash,
+      message: context.l10n.chatMemberBuy_cardMessage,
+    );
   }
 }
 
@@ -438,10 +446,10 @@ class _IncompleteCard extends StatelessWidget {
 
   // Decision 0172: an informational `.notice`, not a hand-drawn card.
   @override
-  Widget build(BuildContext context) => const LoopNotice(
+  Widget build(BuildContext context) => LoopNotice(
     key: LoopMemberBuyCard.incompleteKey,
     icon: 'info',
-    body: '$loopMemberBuyPreviewLabel · 动态数据不完整',
+    body: context.l10n.chatMemberBuy_cardBody(loopMemberBuyPreviewLabel),
     margin: EdgeInsets.fromLTRB(LoopSpacing.page, 6, LoopSpacing.page, 6),
   );
 }

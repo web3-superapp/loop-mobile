@@ -1346,6 +1346,4317 @@ abstract class LoopLocalizations {
   /// **'This action isn\'t available in your region'**
   String get chain_widgetsTitle3;
 
+  /// lib/features/chat/attachments/stream_token_card_attachment_builder.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP hasn\'t received a live price or contract facts for this card yet. The message only stores the token ID, so price, risk, Buy and Watch aren\'t shown.'**
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel;
+
+  /// lib/features/chat/attachments/stream_token_card_attachment_builder.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot {snapshotLabel}'**
+  String chatAttachments_streamTokenCardBuilderLoopTokenCardModel2(
+    Object? snapshotLabel,
+  );
+
+  /// lib/features/chat/attachments/stream_token_card_attachment_builder.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'This attachment doesn\'t match LOOP token_card.v1, so no token facts or actions are shown.'**
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel3;
+
+  /// lib/features/chat/attachments/stream_token_card_attachment_builder.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'Current facts unavailable'**
+  String get chatAttachments_streamTokenCardBuilderPriceReason;
+
+  /// lib/features/chat/attachments/stream_token_card_attachment_builder.dart:89
+  ///
+  /// In en, this message translates to:
+  /// **'Unrecognized token card'**
+  String get chatAttachments_streamTokenCardBuilderSymbol;
+
+  /// lib/features/chat/attachments/stream_token_card_message_preview_formatter.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'Member bought'**
+  String
+  get chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:601
+  ///
+  /// In en, this message translates to:
+  /// **'In voice room · {name}'**
+  String chatCalls_audioRoomContractAudioRoomNotificationTitle(Object? name);
+
+  /// lib/features/chat/calls/audio_room_contract.dart:445
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output'**
+  String get chatCalls_audioRoomContractAudioRoomOutputLabel;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:547
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnected. Tap the mic to keep speaking'**
+  String get chatCalls_audioRoomContractAudioRoomRestoredMicrophoneNote;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:222
+  ///
+  /// In en, this message translates to:
+  /// **'Voice disconnected; count updates after reconnecting'**
+  String get chatCalls_audioRoomContractDisconnected;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:448
+  ///
+  /// In en, this message translates to:
+  /// **'Earpiece'**
+  String get chatCalls_audioRoomContractEarpiece;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:455
+  ///
+  /// In en, this message translates to:
+  /// **'Headphones'**
+  String get chatCalls_audioRoomContractExternalOutputLabel;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Voice reconnecting; count updates after reconnecting'**
+  String get chatCalls_audioRoomContractReconnecting;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:447
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get chatCalls_audioRoomContractSpeaker;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:573
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to return to the voice room'**
+  String get chatCalls_audioRoomContractText;
+
+  /// lib/features/chat/calls/audio_room_contract.dart:572, lib/features/chat/calls/audio_room_contract.dart:600
+  ///
+  /// In en, this message translates to:
+  /// **'In voice room'**
+  String get chatCalls_audioRoomContractTitle;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t speak in this call anymore. Leave and join again.'**
+  String get chatCalls_streamForegroundViewCallClosed;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:221, lib/features/chat/calls/stream_foreground_call_view.dart:236
+  ///
+  /// In en, this message translates to:
+  /// **'Counting people in the call'**
+  String get chatCalls_streamForegroundViewCanRequest;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:981
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reconnect voice. Try again.'**
+  String get chatCalls_streamForegroundViewCommandError;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1035
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave this call cleanly. Retry.'**
+  String get chatCalls_streamForegroundViewCommandError2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:379
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving this call. The mic won\'t start again; mute first if needed, then retry leaving.'**
+  String get chatCalls_streamForegroundViewIf;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:381
+  ///
+  /// In en, this message translates to:
+  /// **'Your mic is on and people in the room can hear you. Tap Mute to turn it off anytime.'**
+  String get chatCalls_streamForegroundViewIf2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:384
+  ///
+  /// In en, this message translates to:
+  /// **'You were moved off stage and can only listen now. Wait for the host to invite you again to speak.'**
+  String get chatCalls_streamForegroundViewIf3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:387
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re muted. To speak again, tap {speakAgainLabel} to reconnect voice.'**
+  String chatCalls_streamForegroundViewIf4(Object? speakAgainLabel);
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:388
+  ///
+  /// In en, this message translates to:
+  /// **'You joined muted. Tap {speakLabel} when you\'re ready; mic access is only requested when capture starts.'**
+  String chatCalls_streamForegroundViewIf5(Object? speakLabel);
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect failed'**
+  String get chatCalls_streamForegroundViewLabel;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get chatCalls_streamForegroundViewLabel2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Joining'**
+  String get chatCalls_streamForegroundViewLabel3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:81
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting media'**
+  String get chatCalls_streamForegroundViewLabel4;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:82
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get chatCalls_streamForegroundViewLabel5;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:83
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting'**
+  String get chatCalls_streamForegroundViewLabel6;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Switching connection'**
+  String get chatCalls_streamForegroundViewLabel7;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get chatCalls_streamForegroundViewLabel8;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:87
+  ///
+  /// In en, this message translates to:
+  /// **'Call unavailable'**
+  String get chatCalls_streamForegroundViewLabel9;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1116
+  ///
+  /// In en, this message translates to:
+  /// **'This call dropped and is reconnecting. Member details reload once connected.'**
+  String get chatCalls_streamForegroundViewMessage;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1121
+  ///
+  /// In en, this message translates to:
+  /// **'This call disconnected. Member details load after voice reconnects.'**
+  String get chatCalls_streamForegroundViewMessage2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1126
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to this call yet. Member details load once connected.'**
+  String get chatCalls_streamForegroundViewMessage3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1134
+  ///
+  /// In en, this message translates to:
+  /// **'This call just connected; the provider hasn\'t sent member details yet.'**
+  String get chatCalls_streamForegroundViewMessage4;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:332
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get chatCalls_streamForegroundViewMicrophoneState;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:333
+  ///
+  /// In en, this message translates to:
+  /// **'Mic on'**
+  String get chatCalls_streamForegroundViewMicrophoneState2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:426
+  ///
+  /// In en, this message translates to:
+  /// **'This room hasn\'t let you speak yet; your mic is off.'**
+  String get chatCalls_streamForegroundViewRoomPermission;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person in the call now} other{{count} people in the call now}}'**
+  String chatCalls_streamForegroundViewS(num count);
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:385
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re a listener in this room.'**
+  String get chatCalls_streamForegroundViewS2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:403, lib/features/chat/calls/stream_foreground_call_view.dart:776
+  ///
+  /// In en, this message translates to:
+  /// **'Speak again'**
+  String get chatCalls_streamForegroundViewS3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:408, lib/features/chat/calls/stream_foreground_call_view.dart:930
+  ///
+  /// In en, this message translates to:
+  /// **'Listen only'**
+  String get chatCalls_streamForegroundViewS4;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1080
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to earpiece'**
+  String get chatCalls_streamForegroundViewS5;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1018
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t mute the mic. Retry, or leave this room.'**
+  String get chatCalls_streamForegroundViewSetState;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:401
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect to speak'**
+  String get chatCalls_streamForegroundViewSpeakAgainLabel;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:400, lib/features/chat/calls/stream_voice_room_page.dart:547, lib/features/chat/calls/stream_voice_room_page.dart:1599
+  ///
+  /// In en, this message translates to:
+  /// **'Speak'**
+  String get chatCalls_streamForegroundViewSpeakLabel;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting'**
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:404
+  ///
+  /// In en, this message translates to:
+  /// **'Switching'**
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:407
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving'**
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t unmute'**
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel4;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1077
+  ///
+  /// In en, this message translates to:
+  /// **'Audio plays from the connected device'**
+  String get chatCalls_streamForegroundViewSwitch;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1079
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to speaker'**
+  String get chatCalls_streamForegroundViewSwitch2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:425
+  ///
+  /// In en, this message translates to:
+  /// **'No mic access. Allow LOOP to use the microphone in system settings, then try again.'**
+  String get chatCalls_streamForegroundViewSystemPermission;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1115
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting'**
+  String get chatCalls_streamForegroundViewTitle;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1120, lib/features/chat/calls/stream_voice_room_page.dart:1394
+  ///
+  /// In en, this message translates to:
+  /// **'Voice disconnected'**
+  String get chatCalls_streamForegroundViewTitle2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1125
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting voice'**
+  String get chatCalls_streamForegroundViewTitle3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1133
+  ///
+  /// In en, this message translates to:
+  /// **'Loading call members'**
+  String get chatCalls_streamForegroundViewTitle4;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:428
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t turn on the mic. Try again.'**
+  String get chatCalls_streamForegroundViewUnknown;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:756
+  ///
+  /// In en, this message translates to:
+  /// **'Audio paused by the system'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaAudioSuspended;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:949, lib/features/chat/calls/stream_foreground_call_view.dart:957
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect voice'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:919
+  ///
+  /// In en, this message translates to:
+  /// **'Switching mic'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:927
+  ///
+  /// In en, this message translates to:
+  /// **'Retry leaving first'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel2;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:929
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t unmute in this call'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel3;
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:1083
+  ///
+  /// In en, this message translates to:
+  /// **'Audio output: {label}'**
+  String chatCalls_streamForegroundViewVoiceroomMediaOutputLabel(Object? label);
+
+  /// lib/features/chat/calls/stream_foreground_call_view.dart:894, lib/features/chat/calls/stream_voice_room_page.dart:1363
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting voice'**
+  String get chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1540
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in changed while connecting. Leave this page and come back.'**
+  String get chatCalls_streamVoiceRoomAccountChanged;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1538
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t set up voice on this device. Try again.'**
+  String get chatCalls_streamVoiceRoomClient;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1539
+  ///
+  /// In en, this message translates to:
+  /// **'This device couldn\'t reach the voice service. Check your network and retry.'**
+  String get chatCalls_streamVoiceRoomConnection;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1537
+  ///
+  /// In en, this message translates to:
+  /// **'The voice credential for this call wasn\'t issued. Check your network and retry.'**
+  String get chatCalls_streamVoiceRoomCredential;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1574
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re the host and also join muted; mic access is only requested when you tap {speakLabel}. The room doesn\'t end if voice can\'t connect; use End room below to end it.'**
+  String chatCalls_streamVoiceRoomHost(Object? speakLabel);
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1536
+  ///
+  /// In en, this message translates to:
+  /// **'This device doesn\'t have a voice identity yet. Leave this page and come back.'**
+  String get chatCalls_streamVoiceRoomIdentity;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:733
+  ///
+  /// In en, this message translates to:
+  /// **'You always join muted; mic access is only requested when you tap Speak. Voice continues in the background or when locked; only Leave disconnects.'**
+  String get chatCalls_streamVoiceRoomIf;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:777
+  ///
+  /// In en, this message translates to:
+  /// **'Join muted · Continues in background'**
+  String get chatCalls_streamVoiceRoomIf2;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:789
+  ///
+  /// In en, this message translates to:
+  /// **'No demo members, presence or room activity are shown here.'**
+  String get chatCalls_streamVoiceRoomIf3;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1014
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get this voice room ready. Check the conversation and retry.'**
+  String get chatCalls_streamVoiceRoomJoinError;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1344
+  ///
+  /// In en, this message translates to:
+  /// **'This call disconnected. Recording your exit in the LOOP room record.'**
+  String get chatCalls_streamVoiceRoomMessage;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1456
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting a voice identity and short-lived token. No call is joined meanwhile.'**
+  String get chatCalls_streamVoiceRoomMessage10;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1476
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the authorized voice room. Your mic stays off.'**
+  String get chatCalls_streamVoiceRoomMessage11;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1484
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the authorized voice room. No other room is joined and no demo data is shown instead.'**
+  String get chatCalls_streamVoiceRoomMessage12;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1493
+  ///
+  /// In en, this message translates to:
+  /// **'This session doesn\'t have an authorized voice room yet. Enter from a community\'s voice room.'**
+  String get chatCalls_streamVoiceRoomMessage13;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1502
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room is authorized, but the voice client for this account has expired. Re-authorize the session.'**
+  String get chatCalls_streamVoiceRoomMessage14;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1519
+  ///
+  /// In en, this message translates to:
+  /// **'Voice room authorized. You always join muted, and voice continues in the background.'**
+  String get chatCalls_streamVoiceRoomMessage15;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1600
+  ///
+  /// In en, this message translates to:
+  /// **'No local audio is published while connecting.'**
+  String get chatCalls_streamVoiceRoomMessage16;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1606
+  ///
+  /// In en, this message translates to:
+  /// **'Mic access is only requested after you tap Speak.'**
+  String get chatCalls_streamVoiceRoomMessage17;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1612
+  ///
+  /// In en, this message translates to:
+  /// **'Voice continues when you switch apps or lock the screen; only Leave disconnects.'**
+  String get chatCalls_streamVoiceRoomMessage18;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1355
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re still in the room and will reconnect automatically when the network is back. Use Leave below to exit.'**
+  String get chatCalls_streamVoiceRoomMessage2;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1364
+  ///
+  /// In en, this message translates to:
+  /// **'Reloading this room and getting a new voice identity, then reconnecting.'**
+  String get chatCalls_streamVoiceRoomMessage3;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1385
+  ///
+  /// In en, this message translates to:
+  /// **'{joinError}You\'re still in this room and haven\'t been removed.'**
+  String chatCalls_streamVoiceRoomMessage4(Object? joinError);
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1395
+  ///
+  /// In en, this message translates to:
+  /// **'This call disconnected. LOOP still lists you as a member of this room.'**
+  String get chatCalls_streamVoiceRoomMessage5;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1404
+  ///
+  /// In en, this message translates to:
+  /// **'Joined the room, connecting voice. You joined muted as a listener.'**
+  String get chatCalls_streamVoiceRoomMessage6;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1431
+  ///
+  /// In en, this message translates to:
+  /// **'Voice only starts in a verified sign-in session; offline or unverified sessions don\'t connect.'**
+  String get chatCalls_streamVoiceRoomMessage7;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1438
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect again until the last call has turned off the mic and left.'**
+  String get chatCalls_streamVoiceRoomMessage8;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1447
+  ///
+  /// In en, this message translates to:
+  /// **'The last call didn\'t confirm leaving. Retry cleanup first, then connect voice.'**
+  String get chatCalls_streamVoiceRoomMessage9;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1554
+  ///
+  /// In en, this message translates to:
+  /// **'This connection didn\'t go through. Check your network and retry.'**
+  String get chatCalls_streamVoiceRoomNetwork;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1552
+  ///
+  /// In en, this message translates to:
+  /// **'Listening isn\'t open in this room yet. Ask the host to reopen it.'**
+  String get chatCalls_streamVoiceRoomPermission;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1553
+  ///
+  /// In en, this message translates to:
+  /// **'This room can\'t be joined anymore. Check the community to see if it\'s still live.'**
+  String get chatCalls_streamVoiceRoomRoomUnavailable;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1555
+  ///
+  /// In en, this message translates to:
+  /// **'This voice identity has expired. Leave this page and come back.'**
+  String get chatCalls_streamVoiceRoomSession;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1577
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re a speaker and also join muted; mic access is only requested when you tap {speakLabel}. Voice isn\'t connected but you\'re still in the room; tap Leave below to exit.'**
+  String chatCalls_streamVoiceRoomSpeaker(Object? speakLabel);
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1541
+  ///
+  /// In en, this message translates to:
+  /// **'This device couldn\'t set up a voice session. It stays disconnected and no call is created.'**
+  String get chatCalls_streamVoiceRoomSwitch;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1580
+  ///
+  /// In en, this message translates to:
+  /// **'You joined muted as a listener and mic access isn\'t requested. Voice isn\'t connected but you\'re still in the room; tap Leave below to exit.'**
+  String get chatCalls_streamVoiceRoomSwitch2;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1343
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving voice room…'**
+  String get chatCalls_streamVoiceRoomTitle;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1475
+  ///
+  /// In en, this message translates to:
+  /// **'Loading voice room'**
+  String get chatCalls_streamVoiceRoomTitle10;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1483
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load voice room'**
+  String get chatCalls_streamVoiceRoomTitle11;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1492
+  ///
+  /// In en, this message translates to:
+  /// **'No voice room yet'**
+  String get chatCalls_streamVoiceRoomTitle12;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1501
+  ///
+  /// In en, this message translates to:
+  /// **'Voice client unavailable'**
+  String get chatCalls_streamVoiceRoomTitle13;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1510
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get chatCalls_streamVoiceRoomTitle14;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1518
+  ///
+  /// In en, this message translates to:
+  /// **'Voice ready to connect'**
+  String get chatCalls_streamVoiceRoomTitle15;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1599
+  ///
+  /// In en, this message translates to:
+  /// **'Muted on entry'**
+  String get chatCalls_streamVoiceRoomTitle16;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1605
+  ///
+  /// In en, this message translates to:
+  /// **'Mic access on demand'**
+  String get chatCalls_streamVoiceRoomTitle17;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1611
+  ///
+  /// In en, this message translates to:
+  /// **'Continues in background'**
+  String get chatCalls_streamVoiceRoomTitle18;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1354
+  ///
+  /// In en, this message translates to:
+  /// **'Voice dropped, reconnecting'**
+  String get chatCalls_streamVoiceRoomTitle2;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1384, lib/features/chat/calls/stream_voice_room_page.dart:1413
+  ///
+  /// In en, this message translates to:
+  /// **'Joined, voice connection failed'**
+  String get chatCalls_streamVoiceRoomTitle3;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1403
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting voice…'**
+  String get chatCalls_streamVoiceRoomTitle4;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1430
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in verification required'**
+  String get chatCalls_streamVoiceRoomTitle5;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1437
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming the last call ended'**
+  String get chatCalls_streamVoiceRoomTitle6;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1446
+  ///
+  /// In en, this message translates to:
+  /// **'The last call didn\'t end cleanly'**
+  String get chatCalls_streamVoiceRoomTitle7;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1455
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing voice connection'**
+  String get chatCalls_streamVoiceRoomTitle8;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1464
+  ///
+  /// In en, this message translates to:
+  /// **'Voice session unavailable right now'**
+  String get chatCalls_streamVoiceRoomTitle9;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:1556
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect to this voice room. Try again later.'**
+  String get chatCalls_streamVoiceRoomUnknown;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:680
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting muted'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:680
+  ///
+  /// In en, this message translates to:
+  /// **'Connect voice'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel2;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect voice'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaReconnectLabel;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:544
+  ///
+  /// In en, this message translates to:
+  /// **'Your mic was on when the network dropped. It stays muted after reconnecting; tap {vVoiceMediaPresentation} when you need it.'**
+  String chatCalls_streamVoiceRoomVoiceroomMediaRestoredMessage(
+    Object? vVoiceMediaPresentation,
+  );
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:667
+  ///
+  /// In en, this message translates to:
+  /// **'Retry cleanup'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryCleanupLabel;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:651
+  ///
+  /// In en, this message translates to:
+  /// **'Retry session'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetrySessionLabel;
+
+  /// lib/features/chat/calls/stream_voice_room_page.dart:660
+  ///
+  /// In en, this message translates to:
+  /// **'Reload voice room'**
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryTargetLabel;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get chatFriends_createMenuButtonChatCreateMenuLabel;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get chatFriends_createMenuButtonChatCreateMenuLabel2;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'Find people by LOOP ID or nickname and send a message request'**
+  String get chatFriends_createMenuButtonSubtitle;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to list; goes live after review'**
+  String get chatFriends_createMenuButtonSubtitle2;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'Start a small group with friends'**
+  String get chatFriends_createMenuButtonSubtitle3;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a profile card, community code or wallet address'**
+  String get chatFriends_createMenuButtonSubtitle4;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Search / add users'**
+  String get chatFriends_createMenuButtonTitle;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:87
+  ///
+  /// In en, this message translates to:
+  /// **'Create community'**
+  String get chatFriends_createMenuButtonTitle2;
+
+  /// lib/features/chat/friends/chat_create_menu_button.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'Create group chat'**
+  String get chatFriends_createMenuButtonTitle3;
+
+  /// lib/features/chat/friends/friend_screens.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'This friend request was already handled. Refresh the list.'**
+  String get chatFriends_screensAlreadyDecided;
+
+  /// lib/features/chat/friends/friend_screens.dart:437
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already friends.'**
+  String get chatFriends_screensAlreadyFriends;
+
+  /// lib/features/chat/friends/friend_screens.dart:388
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {receipt, plural, =1{1 member} other{{receipt} members}}. This result exists only in this run; no Stream channel was created.'**
+  String chatFriends_screensBody(Object? name, num receipt);
+
+  /// lib/features/chat/friends/friend_screens.dart:389
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {receipt, plural, =1{1 member} other{{receipt} members}}. The channel was created and authorized by the LOOP backend.'**
+  String chatFriends_screensBody2(Object? name, num receipt);
+
+  /// lib/features/chat/friends/friend_screens.dart:432
+  ///
+  /// In en, this message translates to:
+  /// **'The friendship changed. Refresh and try again.'**
+  String get chatFriends_screensConflict;
+
+  /// lib/features/chat/friends/friend_screens.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'This friend request is cooling down. Try again later.'**
+  String get chatFriends_screensCooldown;
+
+  /// lib/features/chat/friends/friend_screens.dart:440
+  ///
+  /// In en, this message translates to:
+  /// **'The list page expired; reload from the first page.'**
+  String get chatFriends_screensCursorInvalid;
+
+  /// lib/features/chat/friends/friend_screens.dart:396
+  ///
+  /// In en, this message translates to:
+  /// **'Create another'**
+  String get chatFriends_screensFriendGroupCreateAnotherLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:298
+  ///
+  /// In en, this message translates to:
+  /// **'{friendFailureMessage} The draft is frozen and won\'t be resubmitted automatically.'**
+  String chatFriends_screensFriendGroupCreateFailureBody(
+    Object? friendFailureMessage,
+  );
+
+  /// lib/features/chat/friends/friend_screens.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'Group creation needs manual review'**
+  String get chatFriends_screensFriendGroupCreateFailureTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Group creation result pending'**
+  String get chatFriends_screensFriendGroupCreateFailureTitle2;
+
+  /// lib/features/chat/friends/friend_screens.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'Group not created'**
+  String get chatFriends_screensFriendGroupCreateFailureTitle3;
+
+  /// lib/features/chat/friends/friend_screens.dart:90, lib/features/chat/friends/friend_screens.dart:99, lib/features/chat/friends/friend_screens.dart:174
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get chatFriends_screensFriendGroupCreateScreenTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:173
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get chatFriends_screensFriendGroupCreateSubmitLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends'**
+  String get chatFriends_screensFriendGroupFindFriendsLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:100
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from accepted friends. The LOOP backend creates the group; it only appears in Chat once that succeeds.'**
+  String get chatFriends_screensFriendGroupFolioCaption;
+
+  /// lib/features/chat/friends/friend_screens.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'Group with friends'**
+  String get chatFriends_screensFriendGroupFolioKicker;
+
+  /// lib/features/chat/friends/friend_screens.dart:101
+  ///
+  /// In en, this message translates to:
+  /// **'Friends only'**
+  String get chatFriends_screensFriendGroupFolioStamp;
+
+  /// lib/features/chat/friends/friend_screens.dart:235
+  ///
+  /// In en, this message translates to:
+  /// **'You can invite someone to a group after they accept your friend request.'**
+  String get chatFriends_screensFriendGroupFriendsEmptyMessage;
+
+  /// lib/features/chat/friends/friend_screens.dart:234
+  ///
+  /// In en, this message translates to:
+  /// **'No friends to choose'**
+  String get chatFriends_screensFriendGroupFriendsEmptyTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:215
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load friends right now'**
+  String get chatFriends_screensFriendGroupFriendsFailureTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 60 characters'**
+  String get chatFriends_screensFriendGroupNameFieldFootnote;
+
+  /// lib/features/chat/friends/friend_screens.dart:137, lib/features/chat/friends/friend_screens.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get chatFriends_screensFriendGroupNameFieldLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:414
+  ///
+  /// In en, this message translates to:
+  /// **'Open group chat'**
+  String get chatFriends_screensFriendGroupOpenChannelLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'Check result'**
+  String get chatFriends_screensFriendGroupReconcileLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:282
+  ///
+  /// In en, this message translates to:
+  /// **'Edit draft'**
+  String get chatFriends_screensFriendGroupResumeEditingLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Choose friends · {selectedFriendRefs}/{groupMaximumSelectedFriends}'**
+  String chatFriends_screensFriendGroupSelectionLabel(
+    Object? groupMaximumSelectedFriends,
+    Object? selectedFriendRefs,
+  );
+
+  /// lib/features/chat/friends/friend_screens.dart:407
+  ///
+  /// In en, this message translates to:
+  /// **'Set group nickname'**
+  String get chatFriends_screensFriendGroupSetAliasLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:108
+  ///
+  /// In en, this message translates to:
+  /// **'No group is created and no members are added here.'**
+  String get chatFriends_screensFriendGroupUnavailableMessage;
+
+  /// lib/features/chat/friends/friend_screens.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat creation isn\'t available yet'**
+  String get chatFriends_screensFriendGroupUnavailableTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Friends, requests and new groups are kept in memory only and aren\'t written to the LOOP backend or Stream.'**
+  String get chatFriends_screensFriendPreviewBannerBody;
+
+  /// lib/features/chat/friends/friend_screens.dart:351
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview · This run only'**
+  String get chatFriends_screensFriendPreviewBannerTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:435
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ve already sent you a request. Handle it in friend requests.'**
+  String get chatFriends_screensIncomingRequestPending;
+
+  /// lib/features/chat/friends/friend_screens.dart:429
+  ///
+  /// In en, this message translates to:
+  /// **'The input or server data doesn\'t meet current safety constraints.'**
+  String get chatFriends_screensInvalidData;
+
+  /// lib/features/chat/friends/friend_screens.dart:383
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get chatFriends_screensLoopLabel;
+
+  /// lib/features/chat/friends/friend_screens.dart:430
+  ///
+  /// In en, this message translates to:
+  /// **'The target isn\'t available right now. Hidden and nonexistent accounts aren\'t distinguished.'**
+  String get chatFriends_screensNotFound;
+
+  /// lib/features/chat/friends/friend_screens.dart:364
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get chatFriends_screensNotSelected;
+
+  /// lib/features/chat/friends/friend_screens.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'The channel needs manual review; a second channel won\'t be created automatically.'**
+  String get chatFriends_screensOperatorRequired;
+
+  /// lib/features/chat/friends/friend_screens.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'The request may have been received, but the final result can\'t be safely confirmed right now.'**
+  String get chatFriends_screensOutcomeUnknown;
+
+  /// lib/features/chat/friends/friend_screens.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent, waiting for them to respond.'**
+  String get chatFriends_screensOutgoingRequestPending;
+
+  /// lib/features/chat/friends/friend_screens.dart:431
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t do that. No friendship or group was changed.'**
+  String get chatFriends_screensPermissionDenied;
+
+  /// lib/features/chat/friends/friend_screens.dart:434
+  ///
+  /// In en, this message translates to:
+  /// **'Set your LOOP nickname in Profile first.'**
+  String get chatFriends_screensProfileRequired;
+
+  /// lib/features/chat/friends/friend_screens.dart:433
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later.'**
+  String get chatFriends_screensRateLimited;
+
+  /// lib/features/chat/friends/friend_screens.dart:364
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get chatFriends_screensSelected;
+
+  /// lib/features/chat/friends/friend_screens.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete the action right now.'**
+  String get chatFriends_screensSwitch;
+
+  /// lib/features/chat/friends/friend_screens.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'{groupMinimumSelectedFriends, plural, =1{Choose at least 1 friend} other{Choose at least {groupMinimumSelectedFriends} friends}}'**
+  String chatFriends_screensText(num groupMinimumSelectedFriends);
+
+  /// lib/features/chat/friends/friend_screens.dart:386
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview group created'**
+  String get chatFriends_screensTitle;
+
+  /// lib/features/chat/friends/friend_screens.dart:386
+  ///
+  /// In en, this message translates to:
+  /// **'Group created'**
+  String get chatFriends_screensTitle2;
+
+  /// lib/features/chat/friends/friend_screens.dart:428
+  ///
+  /// In en, this message translates to:
+  /// **'The friend service isn\'t available right now. No friendship or group was changed.'**
+  String get chatFriends_screensUnavailable;
+
+  /// lib/features/chat/friends/friend_screens.dart:443
+  ///
+  /// In en, this message translates to:
+  /// **'The service couldn\'t complete the request; no friendship or group was changed.'**
+  String get chatFriends_screensUnexpected;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get chatGroupAlias_neutralMember;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **'Your nickname is reserved; the group display is still syncing. Retry with the exact same nickname.'**
+  String get chatGroupAlias_screenBody;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:314
+  ///
+  /// In en, this message translates to:
+  /// **'This nickname is permanently reserved in this group and can\'t be changed. It doesn\'t reveal your public profile or Stream user identity.'**
+  String get chatGroupAlias_screenBody2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:420
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t set group nickname'**
+  String get chatGroupAlias_screenGroupAliasBlockedTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:591
+  ///
+  /// In en, this message translates to:
+  /// **'Your group nickname only shows in this group and isn\'t linked to your public profile or wallet address.'**
+  String get chatGroupAlias_screenGroupAliasBoundaryBody;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:120
+  ///
+  /// In en, this message translates to:
+  /// **'This page didn\'t get a valid Stream group chat reference; no network request was made.'**
+  String get chatGroupAlias_screenGroupAliasChannelInvalidMessage;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:119
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid group chat reference'**
+  String get chatGroupAlias_screenGroupAliasChannelInvalidTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'Group nickname not reserved'**
+  String get chatGroupAlias_screenGroupAliasFailureTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:390
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be changed after submitting; nicknames must be unique in a group.'**
+  String get chatGroupAlias_screenGroupAliasFieldFootnote;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:389
+  ///
+  /// In en, this message translates to:
+  /// **'Group nickname'**
+  String get chatGroupAlias_screenGroupAliasFieldLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'You can use a different nickname in each group. It\'s permanent once reserved; the app doesn\'t link identities across groups, but this isn\'t a guarantee of anonymity.'**
+  String get chatGroupAlias_screenGroupAliasFolioCaption;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'Group nickname'**
+  String get chatGroupAlias_screenGroupAliasFolioKicker;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:343
+  ///
+  /// In en, this message translates to:
+  /// **'\"{pendingAlias}\" may already be permanently reserved. To avoid locking a different value, you can only retry the exact same nickname.'**
+  String chatGroupAlias_screenGroupAliasOutcomeUnknownBody(
+    Object? pendingAlias,
+  );
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:340
+  ///
+  /// In en, this message translates to:
+  /// **'Reservation result pending'**
+  String get chatGroupAlias_screenGroupAliasOutcomeUnknownTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'Group members show with their own avatar and username. No request was made here.'**
+  String get chatGroupAlias_screenGroupAliasPausedMessage;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:89
+  ///
+  /// In en, this message translates to:
+  /// **'Group nicknames aren\'t available yet'**
+  String get chatGroupAlias_screenGroupAliasPausedTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:374
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get chatGroupAlias_screenGroupAliasReloadLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:186
+  ///
+  /// In en, this message translates to:
+  /// **'Retry check'**
+  String get chatGroupAlias_screenGroupAliasResolverRetryLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:348
+  ///
+  /// In en, this message translates to:
+  /// **'Retry with same nickname'**
+  String get chatGroupAlias_screenGroupAliasRetryPendingLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:320
+  ///
+  /// In en, this message translates to:
+  /// **'Retry sync'**
+  String get chatGroupAlias_screenGroupAliasRetryProjectionLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'This page didn\'t get a valid LOOP group_id; no network request was made.'**
+  String get chatGroupAlias_screenGroupAliasRouteInvalidMessage;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid group reference'**
+  String get chatGroupAlias_screenGroupAliasRouteInvalidTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:522
+  ///
+  /// In en, this message translates to:
+  /// **'Members still syncing, members who left, and you won\'t appear in results.'**
+  String get chatGroupAlias_screenGroupAliasSearchEmptyMessage;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:521
+  ///
+  /// In en, this message translates to:
+  /// **'No matching nicknames'**
+  String get chatGroupAlias_screenGroupAliasSearchEmptyTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t search the group: {groupAliasFailureMessage}'**
+  String chatGroupAlias_screenGroupAliasSearchFailureMessage(
+    Object? groupAliasFailureMessage,
+  );
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:483
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 2 characters'**
+  String get chatGroupAlias_screenGroupAliasSearchFieldFootnote;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:486
+  ///
+  /// In en, this message translates to:
+  /// **'Searching'**
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:486
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'Search group nicknames'**
+  String get chatGroupAlias_screenGroupAliasSearchSubmitSemanticLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:533
+  ///
+  /// In en, this message translates to:
+  /// **'Keep typing a fuller nickname to narrow results.'**
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedBody;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Results truncated'**
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'Reserving…'**
+  String get chatGroupAlias_screenGroupAliasSubmitLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve this nickname permanently'**
+  String get chatGroupAlias_screenGroupAliasSubmitLabel2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:21, lib/features/chat/group_alias/group_alias_screen.dart:482
+  ///
+  /// In en, this message translates to:
+  /// **'Group nicknames'**
+  String get chatGroupAlias_screenGroupAliasTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'No demo nickname is shown, and your account nickname or wallet address isn\'t used as your group identity.'**
+  String get chatGroupAlias_screenGroupAliasUnavailableMessage;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:278
+  ///
+  /// In en, this message translates to:
+  /// **'Group nickname service unavailable'**
+  String get chatGroupAlias_screenGroupAliasUnavailableTitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:399
+  ///
+  /// In en, this message translates to:
+  /// **'1–40 characters'**
+  String get chatGroupAlias_screenHint;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:501
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a nickname to search'**
+  String get chatGroupAlias_screenHint2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:602
+  ///
+  /// In en, this message translates to:
+  /// **'This account already reserved a different nickname in this group; it can\'t be changed.'**
+  String get chatGroupAlias_screenImmutable;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:604
+  ///
+  /// In en, this message translates to:
+  /// **'This nickname isn\'t available. Try another.'**
+  String get chatGroupAlias_screenInvalidData;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get chatGroupAlias_screenLoopBadge;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:248
+  ///
+  /// In en, this message translates to:
+  /// **'My group nickname'**
+  String get chatGroupAlias_screenLoopLabel;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'Find member nicknames'**
+  String get chatGroupAlias_screenLoopLabel2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:158
+  ///
+  /// In en, this message translates to:
+  /// **'Group unavailable'**
+  String get chatGroupAlias_screenNotFound;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'This channel isn\'t a visible group, or this account is no longer a member; nickname actions aren\'t available.'**
+  String get chatGroupAlias_screenNotFound2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:601
+  ///
+  /// In en, this message translates to:
+  /// **'No visible group nickname; you may no longer be a member of this Stream group.'**
+  String get chatGroupAlias_screenNotFound3;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:598
+  ///
+  /// In en, this message translates to:
+  /// **'Device offline. Group nicknames weren\'t loaded and nothing was submitted.'**
+  String get chatGroupAlias_screenOffline;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:605
+  ///
+  /// In en, this message translates to:
+  /// **'The request may have been submitted; you can only confirm with the exact same nickname.'**
+  String get chatGroupAlias_screenOutcomeUnknown;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:587
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview · This run only'**
+  String get chatGroupAlias_screenPreview;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:242
+  ///
+  /// In en, this message translates to:
+  /// **'This group only'**
+  String get chatGroupAlias_screenProduction;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:588
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP group identity boundary'**
+  String get chatGroupAlias_screenProduction2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:161
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t resolve group'**
+  String get chatGroupAlias_screenResolved;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:169
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this group\'s info right now; the group nickname can\'t be changed yet.'**
+  String get chatGroupAlias_screenResolved2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming group'**
+  String get chatGroupAlias_screenResolving;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is confirming this account is still a member of this Stream group chat.'**
+  String get chatGroupAlias_screenResolving2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently reserved'**
+  String get chatGroupAlias_screenS;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved · Syncing in group'**
+  String get chatGroupAlias_screenSubtitle;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:299, lib/features/chat/group_alias/group_alias_screen.dart:544
+  ///
+  /// In en, this message translates to:
+  /// **'Current group nickname'**
+  String get chatGroupAlias_screenSubtitle2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:607
+  ///
+  /// In en, this message translates to:
+  /// **'Group nicknames aren\'t available right now.'**
+  String get chatGroupAlias_screenSwitch;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:603
+  ///
+  /// In en, this message translates to:
+  /// **'Another member of this group has permanently reserved this nickname. Try another.'**
+  String get chatGroupAlias_screenTaken;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Group service unavailable right now'**
+  String get chatGroupAlias_screenUnavailable;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:167
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm group membership right now; nickname actions aren\'t available.'**
+  String get chatGroupAlias_screenUnavailable2;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:243
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get chatGroupAlias_screenUnavailable3;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:589
+  ///
+  /// In en, this message translates to:
+  /// **'Production connection unavailable'**
+  String get chatGroupAlias_screenUnavailable4;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:599
+  ///
+  /// In en, this message translates to:
+  /// **'The group nickname service isn\'t available right now; no nickname is shown as reserved.'**
+  String get chatGroupAlias_screenUnavailable5;
+
+  /// lib/features/chat/group_alias/group_alias_screen.dart:606
+  ///
+  /// In en, this message translates to:
+  /// **'The group nickname action failed; no result is shown as confirmed.'**
+  String get chatGroupAlias_screenUnexpected;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:1261
+  ///
+  /// In en, this message translates to:
+  /// **'{replyCount, plural, =1{1 reply} other{{replyCount} replies}}'**
+  String chatGroupAlias_streamMessageIdentityBuild(num replyCount);
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:670
+  ///
+  /// In en, this message translates to:
+  /// **'No one has spoken yet'**
+  String get chatGroupAlias_streamMessageIdentityLoopChannelQuietLabel;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:64
+  ///
+  /// In en, this message translates to:
+  /// **'D'**
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectConversationNeutralInitial;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:74
+  ///
+  /// In en, this message translates to:
+  /// **'X'**
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerInitial;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:71
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted account'**
+  String get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerLabel;
+
+  /// lib/features/chat/group_alias/group_alias_stream_message_identity.dart:1212
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 member} other{{count} members}}'**
+  String chatGroupAlias_streamMessageIdentityS(num count);
+
+  /// lib/features/chat/member_buy/loop_member_buy_card.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'{loopMemberBuyPreviewLabel} · Incomplete data'**
+  String chatMemberBuy_cardBody(Object? loopMemberBuyPreviewLabel);
+
+  /// lib/features/chat/member_buy/loop_member_buy_card.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'View {name}\'s profile'**
+  String chatMemberBuy_cardLabel(Object? name);
+
+  /// lib/features/chat/member_buy/loop_member_buy_card.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'Copy transaction hash'**
+  String get chatMemberBuy_cardLabel2;
+
+  /// lib/features/chat/member_buy/loop_member_buy_card.dart:431
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction hash copied'**
+  String get chatMemberBuy_cardMessage;
+
+  /// lib/features/chat/member_buy/loop_member_buy_card.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Bought '**
+  String get chatMemberBuy_cardText;
+
+  /// lib/features/chat/member_buy/member_buy_event.dart:238
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} × 10,000'**
+  String chatMemberBuy_eventIf(Object? formatDecimal);
+
+  /// lib/features/chat/member_buy/member_buy_event.dart:240
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} × 100,000,000'**
+  String chatMemberBuy_eventIf2(Object? formatDecimal);
+
+  /// lib/features/chat/member_buy/member_buy_event.dart:23
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get chatMemberBuy_eventLoopMemberBuyNeutralBuyer;
+
+  /// lib/features/chat/member_buy/member_buy_event.dart:26
+  ///
+  /// In en, this message translates to:
+  /// **'M'**
+  String get chatMemberBuy_eventLoopMemberBuyNeutralInitial;
+
+  /// lib/features/chat/member_buy/member_buy_event.dart:29
+  ///
+  /// In en, this message translates to:
+  /// **'Member bought'**
+  String get chatMemberBuy_eventLoopMemberBuyPreviewLabel;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:451
+  ///
+  /// In en, this message translates to:
+  /// **'1H · Last {loopSparklineWindow} closes'**
+  String chatTokenCard_cardChartRangeLabel(Object? loopSparklineWindow);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:228
+  ///
+  /// In en, this message translates to:
+  /// **'This contract address isn\'t in the LOOP asset catalog, so there\'s no market data.'**
+  String get chatTokenCard_cardDetail;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:256
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP timed out · {chatTokenShortAddress}'**
+  String chatTokenCard_cardDetail2(Object? chatTokenShortAddress);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:257
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read this contract · {chatTokenShortAddress}'**
+  String chatTokenCard_cardDetail3(Object? chatTokenShortAddress);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load. Tap to retry'**
+  String get chatTokenCard_cardLoopChatTokenCardFailedMessage;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:27
+  ///
+  /// In en, this message translates to:
+  /// **'Token detected'**
+  String get chatTokenCard_cardLoopChatTokenCardKicker;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Token page'**
+  String get chatTokenCard_cardLoopTokenCardAction;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:434
+  ///
+  /// In en, this message translates to:
+  /// **'Not listed'**
+  String get chatTokenCard_cardLoopTokenMetric;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:440
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP community {name} · {formatCompactFigure} members'**
+  String chatTokenCard_cardMarketCommunityBound(
+    Object? formatCompactFigure,
+    Object? name,
+  );
+
+  /// lib/features/chat/token_card/chat_token_card.dart:443
+  ///
+  /// In en, this message translates to:
+  /// **'No LOOP community'**
+  String get chatTokenCard_cardMarketCommunityUnavailable;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'Unlisted token · {chatTokenShortAddress}'**
+  String chatTokenCard_cardMessage(Object? chatTokenShortAddress);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:236
+  ///
+  /// In en, this message translates to:
+  /// **'Device offline; contract not read'**
+  String get chatTokenCard_cardMessage2;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:322
+  ///
+  /// In en, this message translates to:
+  /// **'No quote received'**
+  String get chatTokenCard_cardPriceReason;
+
+  /// lib/features/chat/token_card/chat_token_card.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog status · {label}'**
+  String chatTokenCard_cardReadCard(Object? label);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:382
+  ///
+  /// In en, this message translates to:
+  /// **'{riskFactCount} more contract facts on the token page'**
+  String chatTokenCard_cardReadCard2(Object? riskFactCount);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:383
+  ///
+  /// In en, this message translates to:
+  /// **'Buy and sell unavailable · {tradeReason}'**
+  String chatTokenCard_cardReadCard3(Object? tradeReason);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:393
+  ///
+  /// In en, this message translates to:
+  /// **'Identity from {factSourceLabel}'**
+  String chatTokenCard_cardReadCard4(Object? factSourceLabel);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:395
+  ///
+  /// In en, this message translates to:
+  /// **'Observed {relativeTime}'**
+  String chatTokenCard_cardReadCard5(Object? relativeTime);
+
+  /// lib/features/chat/token_card/chat_token_card.dart:397
+  ///
+  /// In en, this message translates to:
+  /// **'Quote {factProvenance}'**
+  String chatTokenCard_cardReadCard6(Object? factProvenance);
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:58, lib/features/chat/token_card/chat_token_card_view.dart:233
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting'**
+  String get chatTokenCard_viewLoading;
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:510
+  ///
+  /// In en, this message translates to:
+  /// **'{provenance}, view data source'**
+  String chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel(
+    Object? provenance,
+  );
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'Data missing'**
+  String get chatTokenCard_viewPartial;
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Risk facts'**
+  String get chatTokenCard_viewRisk;
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting…'**
+  String get chatTokenCard_viewSwitch;
+
+  /// lib/features/chat/token_card/chat_token_card_view.dart:344
+  ///
+  /// In en, this message translates to:
+  /// **' — source {source}, observed {observedLabel}'**
+  String chatTokenCard_viewText(Object? observedLabel, Object? source);
+
+  /// lib/features/chat/v2/loop_channel_heading.dart:45
+  ///
+  /// In en, this message translates to:
+  /// **'{memberCount, plural, =1{1 member} other{{memberCount} members}}'**
+  String chatV2_channelHeadingNull(num memberCount);
+
+  /// lib/features/chat/v2/community_chat_screen.dart:384
+  ///
+  /// In en, this message translates to:
+  /// **'Community group chat'**
+  String get chatV2_communityCommunityChatNeutralTitle;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'Community info'**
+  String get chatV2_communityCommunityChatOpenProfileLabel;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:141, lib/features/chat/v2/group_screens.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'Search this conversation'**
+  String get chatV2_communityCommunityChatOpenSearchLabel;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'Join voice room'**
+  String get chatV2_communityCommunityChatOpenVoiceLabel;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing your display name'**
+  String get chatV2_communityCommunityChatPersonaSegment;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:456
+  ///
+  /// In en, this message translates to:
+  /// **'{communicationUnavailableReason}LOOP has recorded your membership; the provider hasn\'t caught up yet. Retry later; you don\'t need to rejoin the community.'**
+  String chatV2_communityCommunityChatSyncingBody(
+    Object? communicationUnavailableReason,
+  );
+
+  /// lib/features/chat/v2/community_chat_screen.dart:474
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get chatV2_communityCommunityChatSyncingRetryLabel;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:454
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing chat access'**
+  String get chatV2_communityCommunityChatSyncingTitle;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:398
+  ///
+  /// In en, this message translates to:
+  /// **'{count} online'**
+  String chatV2_communityCommunityOnlineCountObserved(Object? count);
+
+  /// lib/features/chat/v2/community_chat_screen.dart:238
+  ///
+  /// In en, this message translates to:
+  /// **'Community not found'**
+  String get chatV2_communityEmptyMessage;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been removed or isn\'t visible to this account.'**
+  String get chatV2_communityEmptyReason;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:214, lib/features/chat/v2/voice_room_screens.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'Missing community ID'**
+  String get chatV2_communityMessage;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Community chat unavailable'**
+  String get chatV2_communityMessage2;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:255
+  ///
+  /// In en, this message translates to:
+  /// **'Official group unavailable'**
+  String get chatV2_communityMessage3;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:215
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from the community list or community page; this page won\'t guess which community\'s official group to open.'**
+  String get chatV2_communityReason;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:223, lib/features/chat/v2/direct_message_screen.dart:155, lib/features/chat/v2/group_screens.dart:118
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities haven\'t loaded yet; this page doesn\'t request any channel.'**
+  String get chatV2_communityReason2;
+
+  /// lib/features/chat/v2/community_chat_screen.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'You appear as {alias} in this community'**
+  String chatV2_communityS(Object? alias);
+
+  /// lib/features/chat/v2/community_chat_screen.dart:401
+  ///
+  /// In en, this message translates to:
+  /// **'{communityCountLabel} members'**
+  String chatV2_communitySwitch(Object? communityCountLabel);
+
+  /// lib/features/chat/v2/chat_conversation_label.dart:8, lib/features/chat/v2/chat_search_screen.dart:236, lib/features/chat/v2/community_chat_screen.dart:310
+  ///
+  /// In en, this message translates to:
+  /// **'Community official group'**
+  String get chatV2_conversationLabelLoopCommunityConversationNeutralLabel;
+
+  /// lib/features/chat/v2/chat_conversation_label.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'{memberCount, plural, =1{1 member} other{{memberCount} members}}'**
+  String chatV2_conversationLabelNull(num memberCount);
+
+  /// lib/features/chat/v2/direct_message_screen.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages show minimal identity by default; asset and signature requests are labelled separately.'**
+  String get chatV2_directMessageCaption;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:340
+  ///
+  /// In en, this message translates to:
+  /// **'Message request sent. The conversation appears here once they accept.'**
+  String get chatV2_directMessageDmFriendshipRequiredMessage;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:345
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages need both of you to be friends, and the other person mustn\'t have turned off direct messages in Privacy Center. Send a message request first; the conversation opens once they accept. This doesn\'t mean the account exists.'**
+  String get chatV2_directMessageDmFriendshipRequiredMessage2;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t message directly yet'**
+  String get chatV2_directMessageDmFriendshipRequiredTitle;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Message request not sent'**
+  String get chatV2_directMessageDmMessageRequestFailedTitle;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:191
+  ///
+  /// In en, this message translates to:
+  /// **'This request was received and needs manual handling to finish. There\'s no retry here: resubmitting opens a second action. Contact support, then come back to this conversation.'**
+  String get chatV2_directMessageDmOperatorRequiredDetail;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:189
+  ///
+  /// In en, this message translates to:
+  /// **'Needs manual handling'**
+  String get chatV2_directMessageDmOperatorRequiredMessage;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:201
+  ///
+  /// In en, this message translates to:
+  /// **'This request is recorded. Sending it again won\'t be faster; it only adds another pending record.'**
+  String get chatV2_directMessageDmOperatorRequiredNoticeBody;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t resubmit'**
+  String get chatV2_directMessageDmOperatorRequiredNoticeTitle;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'Send message request'**
+  String get chatV2_directMessageDmSendMessageRequestLabel;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'Resend message request'**
+  String get chatV2_directMessageDmSendMessageRequestLabel2;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:219
+  ///
+  /// In en, this message translates to:
+  /// **'This direct message isn\'t open yet'**
+  String get chatV2_directMessageEmptyMessage;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation can\'t be opened right now.'**
+  String get chatV2_directMessageEmptyReason;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:50
+  ///
+  /// In en, this message translates to:
+  /// **'One-on-one direct message'**
+  String get chatV2_directMessageHeading;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:50
+  ///
+  /// In en, this message translates to:
+  /// **'Direct message with {displayName}'**
+  String chatV2_directMessageHeading2(Object? displayName);
+
+  /// lib/features/chat/v2/direct_message_screen.dart:153
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages unavailable'**
+  String get chatV2_directMessageMessage;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:162
+  ///
+  /// In en, this message translates to:
+  /// **'Missing conversation ID'**
+  String get chatV2_directMessageMessage2;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'Message request sent'**
+  String get chatV2_directMessageMessage3;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:302
+  ///
+  /// In en, this message translates to:
+  /// **'They aren\'t discoverable, or this account doesn\'t exist. The message request wasn\'t sent.'**
+  String get chatV2_directMessageNotFound;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from Following, Message requests or a public profile; this page won\'t guess whose direct message to open.'**
+  String get chatV2_directMessageReason;
+
+  /// lib/features/chat/v2/direct_message_screen.dart:52, lib/features/chat/v2/group_screens.dart:335
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get chatV2_directMessageStamp;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:689
+  ///
+  /// In en, this message translates to:
+  /// **'Selected messages are sent as new messages labelled with their source conversation. Deleted or empty messages are skipped.'**
+  String get chatV2_forwardScreensBody;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:522
+  ///
+  /// In en, this message translates to:
+  /// **'Forward up to {chatForwardSelectionLimit} messages at a time, only to conversations you\'ve joined. Deleted or empty messages are skipped and counted.'**
+  String chatV2_forwardScreensCaption(Object? chatForwardSelectionLimit);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:762
+  ///
+  /// In en, this message translates to:
+  /// **'The merged preview only shows \"{chatMergeAnonymousLabel}\", time and text, with no nickname, LOOP ID or wallet address.'**
+  String chatV2_forwardScreensCaption2(Object? chatMergeAnonymousLabel);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:554
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this conversation\'s messages and targets; nothing was forwarded.'**
+  String get chatV2_forwardScreensChatForwardErrorReason;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Forward from a conversation; this page won\'t guess which conversation to forward from.'**
+  String get chatV2_forwardScreensChatForwardMissingSourceDetail;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:530
+  ///
+  /// In en, this message translates to:
+  /// **'Source conversation not found'**
+  String get chatV2_forwardScreensChatForwardMissingSourceMessage;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:568
+  ///
+  /// In en, this message translates to:
+  /// **'Only text messages synced to this device can be forwarded.'**
+  String get chatV2_forwardScreensChatForwardNoMessagesMessage;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'No messages to forward in this conversation'**
+  String get chatV2_forwardScreensChatForwardNoMessagesTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:587, lib/features/chat/v2/forward_target_sheet.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'Forward targets must be conversations you\'ve joined.'**
+  String get chatV2_forwardScreensChatForwardNoTargetsMessage;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:586, lib/features/chat/v2/forward_target_sheet.dart:278
+  ///
+  /// In en, this message translates to:
+  /// **'No target conversations'**
+  String get chatV2_forwardScreensChatForwardNoTargetsTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:606
+  ///
+  /// In en, this message translates to:
+  /// **'Preview merged image'**
+  String get chatV2_forwardScreensChatForwardOpenMergeLabel;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:507
+  ///
+  /// In en, this message translates to:
+  /// **'{selectedCount} selected · Choose a conversation'**
+  String chatV2_forwardScreensChatForwardScreenSubtitle(Object? selectedCount);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Forward messages'**
+  String get chatV2_forwardScreensChatForwardScreenTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:41, lib/features/chat/v2/chat_v2_models.dart:671
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous member'**
+  String get chatV2_forwardScreensChatMergeAnonymousLabel;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:803
+  ///
+  /// In en, this message translates to:
+  /// **'Back to chat'**
+  String get chatV2_forwardScreensChatMergeBackLabel;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:781
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to Forward and pick up to {chatMergeSelectionLimit} messages to merge.'**
+  String chatV2_forwardScreensChatMergeEmptyMessage(
+    Object? chatMergeSelectionLimit,
+  );
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:780
+  ///
+  /// In en, this message translates to:
+  /// **'No messages selected'**
+  String get chatV2_forwardScreensChatMergeEmptyTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:808
+  ///
+  /// In en, this message translates to:
+  /// **'Create image'**
+  String get chatV2_forwardScreensChatMergeExportLabel;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:745
+  ///
+  /// In en, this message translates to:
+  /// **'Show sender usernames'**
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:745, lib/features/chat/v2/chat_forward_screens.dart:759
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous by default'**
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:742
+  ///
+  /// In en, this message translates to:
+  /// **'Merged image preview'**
+  String get chatV2_forwardScreensChatMergePreviewScreenTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:791
+  ///
+  /// In en, this message translates to:
+  /// **'Merge up to {chatMergeSelectionLimit} messages at a time; the rest won\'t appear in the preview.'**
+  String chatV2_forwardScreensChatMergeTruncatedBody(
+    Object? chatMergeSelectionLimit,
+  );
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:790
+  ///
+  /// In en, this message translates to:
+  /// **'Truncated'**
+  String get chatV2_forwardScreensChatMergeTruncatedTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:909
+  ///
+  /// In en, this message translates to:
+  /// **'Selected conversation'**
+  String get chatV2_forwardScreensEncode;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:916
+  ///
+  /// In en, this message translates to:
+  /// **'Community signal summary'**
+  String get chatV2_forwardScreensEncode2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:760
+  ///
+  /// In en, this message translates to:
+  /// **'0 items'**
+  String get chatV2_forwardScreensHeading;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:516
+  ///
+  /// In en, this message translates to:
+  /// **'Selected messages'**
+  String get chatV2_forwardScreensKicker;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:630
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get chatV2_forwardScreensLoopBadge;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:518
+  ///
+  /// In en, this message translates to:
+  /// **'{source} · {count}'**
+  String chatV2_forwardScreensLoopFolioPrimary(Object? count, Object? source);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:519
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String chatV2_forwardScreensLoopFolioPrimary2(Object? count);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:562
+  ///
+  /// In en, this message translates to:
+  /// **'Select messages'**
+  String get chatV2_forwardScreensLoopLabel;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:581
+  ///
+  /// In en, this message translates to:
+  /// **'Send to · Last {chatForwardTargetPageSize} conversations'**
+  String chatV2_forwardScreensLoopLabel2(Object? chatForwardTargetPageSize);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:544
+  ///
+  /// In en, this message translates to:
+  /// **'Load messages'**
+  String get chatV2_forwardScreensLoopOfflineState;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:544
+  ///
+  /// In en, this message translates to:
+  /// **'Choose target'**
+  String get chatV2_forwardScreensLoopOfflineState2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:544, lib/features/chat/v2/chat_forward_screens.dart:690, lib/features/chat/v2/forward_target_sheet.dart:258, lib/features/chat/v2/loop_message_selection.dart:341, lib/features/chat/v2/loop_stream_channel_surface.dart:146, lib/features/chat/v2/loop_stream_channel_surface.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get chatV2_forwardScreensLoopOfflineState3;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:645
+  ///
+  /// In en, this message translates to:
+  /// **'Select up to {chatForwardSelectionLimit} at a time'**
+  String chatV2_forwardScreensMessage(Object? chatForwardSelectionLimit);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:699, lib/features/chat/v2/forward_target_sheet.dart:137
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing forwarded'**
+  String get chatV2_forwardScreensMessage2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:706, lib/features/chat/v2/forward_target_sheet.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded {sent}'**
+  String chatV2_forwardScreensMessage3(Object? sent);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:707
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded {sent}, skipped {skipped}'**
+  String chatV2_forwardScreensMessage4(Object? sent, Object? skipped);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:909
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceLabel} · Selected conversation'**
+  String chatV2_forwardScreensS(Object? sourceLabel);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:524
+  ///
+  /// In en, this message translates to:
+  /// **'Selected {selectedCount}'**
+  String chatV2_forwardScreensStamp(Object? selectedCount);
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:764
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get chatV2_forwardScreensStamp2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:628
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted or empty; skipped when forwarding.'**
+  String get chatV2_forwardScreensSubtitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:943
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get chatV2_forwardScreensText;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:982
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet addresses, nicknames and internal IDs don\'t appear in the image, and the image isn\'t uploaded.'**
+  String get chatV2_forwardScreensText2;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:625
+  ///
+  /// In en, this message translates to:
+  /// **'This message can\'t be forwarded'**
+  String get chatV2_forwardScreensTitle;
+
+  /// lib/features/chat/v2/chat_forward_screens.dart:688
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to this conversation?'**
+  String get chatV2_forwardScreensTitle2;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'Close forward'**
+  String get chatV2_forwardTargetSheetBarrierLabel;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded'**
+  String get chatV2_forwardTargetSheetChatForwardOutcomeMessage;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:142
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {skipped}'**
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage2(Object? skipped);
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:143
+  ///
+  /// In en, this message translates to:
+  /// **'{unavailable} deleted or not on this device; not forwarded'**
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage3(
+    Object? unavailable,
+  );
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:235
+  ///
+  /// In en, this message translates to:
+  /// **'Last {chatForwardTargetPageSize} joined conversations · Forwarded messages show their source'**
+  String chatV2_forwardTargetSheetContent(Object? chatForwardTargetPageSize);
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:267
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load conversations to forward to; nothing was forwarded.'**
+  String get chatV2_forwardTargetSheetForwardTargetSheetErrorReason;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:258
+  ///
+  /// In en, this message translates to:
+  /// **'Load conversations'**
+  String get chatV2_forwardTargetSheetLoopOfflineState;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:226
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to'**
+  String get chatV2_forwardTargetSheetLoopSheetHeading;
+
+  /// lib/features/chat/v2/forward_target_sheet.dart:226
+  ///
+  /// In en, this message translates to:
+  /// **'Forward {count} one by one to'**
+  String chatV2_forwardTargetSheetS(Object? count);
+
+  /// lib/features/chat/v2/group_screens.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'Close group name editor'**
+  String get chatV2_groupScreensBarrierLabel;
+
+  /// lib/features/chat/v2/group_screens.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t get messages from this group after leaving. The group creator can\'t leave.'**
+  String get chatV2_groupScreensBody;
+
+  /// lib/features/chat/v2/group_screens.dart:334
+  ///
+  /// In en, this message translates to:
+  /// **'Members, notifications and Leave are ordered from low to high risk. Only confirmed info is shown here.'**
+  String get chatV2_groupScreensCaption;
+
+  /// lib/features/chat/v2/group_screens.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'Group name must be 1–40 characters with no control characters'**
+  String get chatV2_groupScreensErrorText;
+
+  /// lib/features/chat/v2/group_screens.dart:344
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities haven\'t loaded yet; this page doesn\'t request any group resource.'**
+  String get chatV2_groupScreensGroupInfoCapabilityUnavailableDetail;
+
+  /// lib/features/chat/v2/group_screens.dart:361
+  ///
+  /// In en, this message translates to:
+  /// **'Members and member management'**
+  String get chatV2_groupScreensGroupInfoMembersUnavailableLabel;
+
+  /// lib/features/chat/v2/group_screens.dart:353
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from a group chat; this page won\'t guess which group\'s info to open.'**
+  String get chatV2_groupScreensGroupInfoMissingCidDetail;
+
+  /// lib/features/chat/v2/group_screens.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'Loading group name'**
+  String get chatV2_groupScreensGroupInfoNameSubtitle;
+
+  /// lib/features/chat/v2/group_screens.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load group name'**
+  String get chatV2_groupScreensGroupInfoNameSubtitle2;
+
+  /// lib/features/chat/v2/group_screens.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get chatV2_groupScreensGroupInfoNameTitle;
+
+  /// lib/features/chat/v2/group_screens.dart:490
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption;
+
+  /// lib/features/chat/v2/group_screens.dart:490
+  ///
+  /// In en, this message translates to:
+  /// **'Owner only'**
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption2;
+
+  /// lib/features/chat/v2/group_screens.dart:411
+  ///
+  /// In en, this message translates to:
+  /// **'This group\'s info isn\'t confirmed yet, so you can\'t leave; no change was submitted.'**
+  String get chatV2_groupScreensGroupInfoResolveFailedReason;
+
+  /// lib/features/chat/v2/group_screens.dart:375
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications and pinned conversation'**
+  String get chatV2_groupScreensGroupInfoSettingsUnavailableLabel;
+
+  /// lib/features/chat/v2/group_screens.dart:397
+  ///
+  /// In en, this message translates to:
+  /// **'This group wasn\'t found, or you\'re no longer a member. This doesn\'t mean leaving failed.'**
+  String get chatV2_groupScreensGroupInfoStateEmptyMessage;
+
+  /// lib/features/chat/v2/group_screens.dart:396
+  ///
+  /// In en, this message translates to:
+  /// **'No group membership to leave'**
+  String get chatV2_groupScreensGroupInfoStateEmptyTitle;
+
+  /// lib/features/chat/v2/group_screens.dart:404
+  ///
+  /// In en, this message translates to:
+  /// **'The group membership service isn\'t available right now; no change was submitted.'**
+  String get chatV2_groupScreensGroupInfoStateUnavailableDetail;
+
+  /// lib/features/chat/v2/group_screens.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'Leave isn\'t available right now'**
+  String get chatV2_groupScreensGroupInfoStateUnavailableMessage;
+
+  /// lib/features/chat/v2/group_screens.dart:104, lib/features/chat/v2/group_screens.dart:326, lib/features/chat/v2/group_screens.dart:333, lib/features/chat/v2/group_screens.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Group info'**
+  String get chatV2_groupScreensGroupOpenInfoLabel;
+
+  /// lib/features/chat/v2/group_screens.dart:146
+  ///
+  /// In en, this message translates to:
+  /// **'Regular groups have no community token, no Mining Weight and no Community AI. Communities with tokens are under Community.'**
+  String get chatV2_groupScreensGroupScopeNoteText;
+
+  /// lib/features/chat/v2/group_screens.dart:143
+  ///
+  /// In en, this message translates to:
+  /// **'Groups vs. communities'**
+  String get chatV2_groupScreensGroupScopeNoteTitle;
+
+  /// lib/features/chat/v2/group_screens.dart:332, lib/features/chat/v2/group_screens.dart:364
+  ///
+  /// In en, this message translates to:
+  /// **'Group profile'**
+  String get chatV2_groupScreensKicker;
+
+  /// lib/features/chat/v2/group_screens.dart:566
+  ///
+  /// In en, this message translates to:
+  /// **'Group name (1–{groupNameMaximumRunes} characters)'**
+  String chatV2_groupScreensLabelText(Object? groupNameMaximumRunes);
+
+  /// lib/features/chat/v2/group_screens.dart:389, lib/features/chat/v2/group_screens.dart:424
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group chat'**
+  String get chatV2_groupScreensLoopOfflineState;
+
+  /// lib/features/chat/v2/group_screens.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group name'**
+  String get chatV2_groupScreensLoopSheetHeading;
+
+  /// lib/features/chat/v2/group_screens.dart:116, lib/features/chat/v2/group_screens.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat unavailable'**
+  String get chatV2_groupScreensMessage;
+
+  /// lib/features/chat/v2/group_screens.dart:123, lib/features/chat/v2/group_screens.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Missing group chat ID'**
+  String get chatV2_groupScreensMessage2;
+
+  /// lib/features/chat/v2/group_screens.dart:255
+  ///
+  /// In en, this message translates to:
+  /// **'Group name changed to \"{name}\"'**
+  String chatV2_groupScreensMessage3(Object? name);
+
+  /// lib/features/chat/v2/group_screens.dart:452
+  ///
+  /// In en, this message translates to:
+  /// **'Left group chat'**
+  String get chatV2_groupScreensMessage4;
+
+  /// lib/features/chat/v2/group_screens.dart:263
+  ///
+  /// In en, this message translates to:
+  /// **'The group doesn\'t exist or you\'re no longer in it.'**
+  String get chatV2_groupScreensNotFound;
+
+  /// lib/features/chat/v2/group_screens.dart:261
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group owner can change the group name; nothing was changed.'**
+  String get chatV2_groupScreensPermissionDenied;
+
+  /// lib/features/chat/v2/group_screens.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from the conversation list or group info; this page won\'t guess which group to open.'**
+  String get chatV2_groupScreensReason;
+
+  /// lib/features/chat/v2/group_screens.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this group chat?'**
+  String get chatV2_groupScreensTitle;
+
+  /// lib/features/chat/v2/group_screens.dart:262
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming isn\'t available right now; the group name wasn\'t changed.'**
+  String get chatV2_groupScreensUnavailable;
+
+  /// lib/features/chat/v2/group_screens.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'Group name must be 1–40 characters with no control characters.'**
+  String get chatV2_groupScreensValidationFailed;
+
+  /// lib/features/chat/v2/chat_merge_export.dart:52
+  ///
+  /// In en, this message translates to:
+  /// **'Image created, but no share destination was chosen'**
+  String get chatV2_mergeExportDismissed;
+
+  /// lib/features/chat/v2/chat_merge_export.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the image; nothing left this device'**
+  String get chatV2_mergeExportFailed;
+
+  /// lib/features/chat/v2/chat_merge_export.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'Image created. Choose where to share it'**
+  String get chatV2_mergeExportShared;
+
+  /// lib/features/chat/v2/chat_merge_export.dart:54
+  ///
+  /// In en, this message translates to:
+  /// **'System sharing isn\'t available in this run; no image was created'**
+  String get chatV2_mergeExportUnavailable;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:464
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone in the conversation will see \"Message deleted\". This can\'t be undone.'**
+  String get chatV2_messageSelectionBody;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:257
+  ///
+  /// In en, this message translates to:
+  /// **'Message selected'**
+  String get chatV2_messageSelectionLabel;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:257
+  ///
+  /// In en, this message translates to:
+  /// **'Select this message'**
+  String get chatV2_messageSelectionLabel2;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get chatV2_messageSelectionLoopMessageForwardActions;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:523
+  ///
+  /// In en, this message translates to:
+  /// **'Forward one by one'**
+  String get chatV2_messageSelectionLoopSelectionForwardEachLabel;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'Forward as one'**
+  String get chatV2_messageSelectionLoopSelectionMergeLabel;
+
+  /// lib/features/chat/v2/loop_message_selection.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {loopMessageSelectionLimit}'**
+  String chatV2_messageSelectionLoopSelectionTopbarSubtitle(
+    Object? loopMessageSelectionLimit,
+  );
+
+  /// lib/features/chat/v2/loop_message_selection.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String chatV2_messageSelectionLoopSelectionTopbarTitle(Object? count);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:266
+  ///
+  /// In en, this message translates to:
+  /// **'Select up to {loopMessageSelectionLimit} at a time'**
+  String chatV2_messageSelectionMessage(Object? loopMessageSelectionLimit);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'{unavailable} deleted or not on this device; left out of the image'**
+  String chatV2_messageSelectionMessage2(Object? unavailable);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {deleted}'**
+  String chatV2_messageSelectionShow(Object? deleted);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'{failed} couldn\'t be deleted'**
+  String chatV2_messageSelectionShow2(Object? failed);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:490
+  ///
+  /// In en, this message translates to:
+  /// **'{unavailable} no longer on this device; skipped'**
+  String chatV2_messageSelectionShow3(Object? unavailable);
+
+  /// lib/features/chat/v2/loop_message_selection.dart:463
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Delete this message?} other{Delete these {count} messages?}}'**
+  String chatV2_messageSelectionTitle(num count);
+
+  /// lib/features/chat/v2/chat_v2_models.dart:162, lib/features/chat/v2/voice_room_screens.dart:924, lib/features/chat/v2/voice_room_screens.dart:1029, lib/features/chat/v2/voice_room_screens.dart:1048, lib/features/chat/v2/voice_room_stage.dart:188, lib/features/chat/v2/voice_room_stage.dart:195
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get chatV2_modelsHost;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:453, lib/features/chat/v2/voice_room_screens.dart:1572
+  ///
+  /// In en, this message translates to:
+  /// **'Invite to speak'**
+  String get chatV2_modelsInviteSpeaker;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:164, lib/features/chat/v2/chat_v2_models.dart:354
+  ///
+  /// In en, this message translates to:
+  /// **'Listener'**
+  String get chatV2_modelsListener;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:454, lib/features/chat/v2/voice_room_screens.dart:1572
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from stage'**
+  String get chatV2_modelsRemoveSpeaker;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:163, lib/features/chat/v2/chat_v2_models.dart:353
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get chatV2_modelsSpeaker;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:673
+  ///
+  /// In en, this message translates to:
+  /// **'Only members with anonymous mode on show as anonymous; discoverability doesn\'t affect this row.'**
+  String get chatV2_modelsSwitch;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:696
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room is still being verified; this page won\'t start any voice connection until it passes.'**
+  String get chatV2_modelsSwitch10;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:698
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the online count, so no number is shown.'**
+  String get chatV2_modelsSwitch11;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'Listening isn\'t open in this room yet. Refresh, or ask the host to reopen it.'**
+  String get chatV2_modelsSwitch12;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:704
+  ///
+  /// In en, this message translates to:
+  /// **'This room hasn\'t confirmed listening is open, so you may not hear anything. Refresh, or ask the host to reopen it.'**
+  String get chatV2_modelsSwitch13;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:707
+  ///
+  /// In en, this message translates to:
+  /// **'This voice room isn\'t set up on the provider yet, so you can\'t join.'**
+  String get chatV2_modelsSwitch14;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:709
+  ///
+  /// In en, this message translates to:
+  /// **'Your raised hand is recorded; the host may see it a bit later.'**
+  String get chatV2_modelsSwitch15;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:710
+  ///
+  /// In en, this message translates to:
+  /// **'The provider hasn\'t confirmed this mute yet.'**
+  String get chatV2_modelsSwitch16;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:711
+  ///
+  /// In en, this message translates to:
+  /// **'Community AI isn\'t available yet, so this page is unavailable.'**
+  String get chatV2_modelsSwitch17;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:685
+  ///
+  /// In en, this message translates to:
+  /// **'This community doesn\'t have an official group channel yet.'**
+  String get chatV2_modelsSwitch2;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:686
+  ///
+  /// In en, this message translates to:
+  /// **'Your channel membership is syncing; you can join shortly.'**
+  String get chatV2_modelsSwitch3;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:688
+  ///
+  /// In en, this message translates to:
+  /// **'The official group hit the provider\'s member limit, so you can\'t join right now. Your LOOP community membership isn\'t affected.'**
+  String get chatV2_modelsSwitch4;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:689
+  ///
+  /// In en, this message translates to:
+  /// **'The official group failed to create or sync and needs ops to fix it before you can join.'**
+  String get chatV2_modelsSwitch5;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Join this community first to enter its official group.'**
+  String get chatV2_modelsSwitch6;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:691, lib/features/chat/v2/chat_v2_models.dart:693
+  ///
+  /// In en, this message translates to:
+  /// **'Chat isn\'t available right now. Try again later.'**
+  String get chatV2_modelsSwitch7;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'No live voice room in this community right now.'**
+  String get chatV2_modelsSwitch8;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:694
+  ///
+  /// In en, this message translates to:
+  /// **'Chat isn\'t available in this environment yet.'**
+  String get chatV2_modelsSwitch9;
+
+  /// lib/features/chat/v2/chat_v2_models.dart:457
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute me'**
+  String get chatV2_modelsUnmuteSelf;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'Try another keyword or a wider scope.'**
+  String get chatV2_searchChatSearchEmptyMessage;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:530
+  ///
+  /// In en, this message translates to:
+  /// **'No matching messages'**
+  String get chatV2_searchChatSearchEmptyTitle;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:509
+  ///
+  /// In en, this message translates to:
+  /// **'This search didn\'t finish; no results are shown.'**
+  String get chatV2_searchChatSearchErrorReason;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:520
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 2 characters. Results only come from conversations you\'ve joined.'**
+  String get chatV2_searchChatSearchIdleMessage;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:519
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a keyword to search'**
+  String get chatV2_searchChatSearchIdleTitle;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:481
+  ///
+  /// In en, this message translates to:
+  /// **'Chat search isn\'t available right now; this page made no request.'**
+  String get chatV2_searchChatSearchNotConnectedDetail;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:480
+  ///
+  /// In en, this message translates to:
+  /// **'Chat search unavailable'**
+  String get chatV2_searchChatSearchNotConnectedMessage;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:448
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · Not searched yet'**
+  String chatV2_searchChatSearchScreenSubtitle(Object? label);
+
+  /// lib/features/chat/v2/chat_search_screen.dart:449
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {hits, plural, =1{1 result} other{{hits} results}}'**
+  String chatV2_searchChatSearchScreenSubtitle2(num hits, Object? label);
+
+  /// lib/features/chat/v2/chat_search_screen.dart:397, lib/features/chat/v2/chat_search_screen.dart:416
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chatV2_searchChatSearchScreenTitle;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:28
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation'**
+  String get chatV2_searchCurrentConversation;
+
+  /// lib/features/chat/v2/chat_search_screen.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chatV2_searchLoopOfflineState;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:927
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned notice'**
+  String get chatV2_streamChannelSurfaceLoopChannelPinnedUnavailableTitle;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:47
+  ///
+  /// In en, this message translates to:
+  /// **'Type or paste CA'**
+  String get chatV2_streamChannelSurfaceLoopChatComposerHint;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:143, lib/features/chat/v2/loop_stream_channel_surface.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'Open conversation'**
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:144, lib/features/chat/v2/loop_stream_channel_surface.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:122
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation link isn\'t a channel address LOOP supports; no connection was made.'**
+  String get chatV2_streamChannelSurfaceMessage;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:133
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring chat session…'**
+  String get chatV2_streamChannelSurfaceMessage2;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'Device offline. Chat authorization wasn\'t restored and no message was sent.'**
+  String get chatV2_streamChannelSurfaceMessage3;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore chat authorization; no message action was taken.'**
+  String get chatV2_streamChannelSurfaceMessage4;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:451
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming this channel and your membership…'**
+  String get chatV2_streamChannelSurfaceMessage5;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:478, lib/features/chat/v2/loop_stream_channel_surface.dart:816
+  ///
+  /// In en, this message translates to:
+  /// **'Device offline. Channel membership wasn\'t confirmed and no message was sent.'**
+  String get chatV2_streamChannelSurfaceMessage6;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:884
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation unavailable'**
+  String get chatV2_streamChannelSurfaceMessage7;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:812
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the chat service. Check your network and retry.'**
+  String get chatV2_streamChannelSurfaceNotConnected;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation can\'t be opened right now. Try again later.'**
+  String get chatV2_streamChannelSurfaceNotConnectedMessage;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:813
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this channel\'s conversation. Try again later.'**
+  String get chatV2_streamChannelSurfaceNotOpened;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:809
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not a member of this group yet; LOOP didn\'t open any conversation.'**
+  String get chatV2_streamChannelSurfaceRefused;
+
+  /// lib/features/chat/v2/loop_stream_channel_surface.dart:815
+  ///
+  /// In en, this message translates to:
+  /// **'This channel hasn\'t synced to your account yet; LOOP didn\'t open any conversation.'**
+  String get chatV2_streamChannelSurfaceSwitch;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1945
+  ///
+  /// In en, this message translates to:
+  /// **'Invited'**
+  String get chatV2_voiceRoomQueueInvited;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1945
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for invite'**
+  String get chatV2_voiceRoomQueueWaiting;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1639
+  ///
+  /// In en, this message translates to:
+  /// **'Listeners {count}'**
+  String chatV2_voiceRoomRosterListenersCount(Object? count);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1656
+  ///
+  /// In en, this message translates to:
+  /// **'No listeners right now'**
+  String get chatV2_voiceRoomRosterListenersEmpty;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1639
+  ///
+  /// In en, this message translates to:
+  /// **'Speakers {count}'**
+  String chatV2_voiceRoomRosterSpeakersCount(Object? count);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1656
+  ///
+  /// In en, this message translates to:
+  /// **'No speakers right now'**
+  String get chatV2_voiceRoomRosterSpeakersEmpty;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1119
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving exits this call and cancels your raised hand; to keep listening you\'ll need to rejoin.'**
+  String get chatV2_voiceRoomScreensBody;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1264
+  ///
+  /// In en, this message translates to:
+  /// **'Ending disconnects everyone in the room right away; the room can\'t be entered again and the hand-raise queue is discarded. Hosts don\'t have Leave: the host decides whether the room continues. To step away from this page, use Back; the room collapses to the top and you can return anytime. The community can start a new one.'**
+  String get chatV2_voiceRoomScreensBody2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1735
+  ///
+  /// In en, this message translates to:
+  /// **'The server sends the actions available for each row; only the ones you can actually use are listed.'**
+  String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1120, lib/features/chat/v2/voice_room_screens.dart:2069, lib/features/chat/v2/voice_room_screens.dart:2342, lib/features/chat/v2/voice_room_stage.dart:820, lib/features/chat/v2/voice_room_stage.dart:844
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get chatV2_voiceRoomScreensConfirmLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1268, lib/features/chat/v2/voice_room_screens.dart:2028, lib/features/chat/v2/voice_room_stage.dart:804
+  ///
+  /// In en, this message translates to:
+  /// **'End room'**
+  String get chatV2_voiceRoomScreensConfirmLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2142
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · Connecting voice'**
+  String chatV2_voiceRoomScreensConnecting(Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:461, lib/features/chat/v2/voice_room_screens.dart:653
+  ///
+  /// In en, this message translates to:
+  /// **'No voice connection is started here. Refresh, or ask the host to reopen it.'**
+  String get chatV2_voiceRoomScreensDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2144
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · Voice disconnected'**
+  String chatV2_voiceRoomScreensDisconnected(Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2596
+  ///
+  /// In en, this message translates to:
+  /// **'No voice room right now'**
+  String get chatV2_voiceRoomScreensEmpty;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2613
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no live voice room right now.'**
+  String get chatV2_voiceRoomScreensEmpty2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'No live voice room right now'**
+  String get chatV2_voiceRoomScreensEmptyMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1205
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {name}. Once invited, they become a speaker and can talk in this call.'**
+  String chatV2_voiceRoomScreensInviteSpeaker(Object? name);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'Voice live'**
+  String get chatV2_voiceRoomScreensKicker;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:378
+  ///
+  /// In en, this message translates to:
+  /// **'Voice lobby'**
+  String get chatV2_voiceRoomScreensKicker2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2061, lib/features/chat/v2/voice_room_stage.dart:830
+  ///
+  /// In en, this message translates to:
+  /// **'Lower hand'**
+  String get chatV2_voiceRoomScreensLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2061, lib/features/chat/v2/voice_room_stage.dart:838
+  ///
+  /// In en, this message translates to:
+  /// **'Raise hand'**
+  String get chatV2_voiceRoomScreensLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2595
+  ///
+  /// In en, this message translates to:
+  /// **'Loading voice room'**
+  String get chatV2_voiceRoomScreensLoading;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2612
+  ///
+  /// In en, this message translates to:
+  /// **'Loading this community\'s voice room.'**
+  String get chatV2_voiceRoomScreensLoading2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1050
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get chatV2_voiceRoomScreensLoopBadge;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1678, lib/features/chat/v2/voice_room_stage.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Hand raised'**
+  String get chatV2_voiceRoomScreensLoopBadge2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:533
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-raise queue {handRaises}'**
+  String chatV2_voiceRoomScreensLoopLabel(Object? handRaises);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:542
+  ///
+  /// In en, this message translates to:
+  /// **'Host controls'**
+  String get chatV2_voiceRoomScreensLoopLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:694
+  ///
+  /// In en, this message translates to:
+  /// **'Speakers {speakerCount}'**
+  String chatV2_voiceRoomScreensLoopLabel3(Object? speakerCount);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'Listeners {listening}'**
+  String chatV2_voiceRoomScreensLoopLabel4(Object? listening);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:784
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize voice room'**
+  String get chatV2_voiceRoomScreensLoopTopbarBackLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open share'**
+  String get chatV2_voiceRoomScreensMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1566
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP has no speakers recorded for this room yet. The host isn\'t in this list.'**
+  String get chatV2_voiceRoomScreensMessage10;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1567
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP has no listeners recorded for this room yet. The host isn\'t in this list.'**
+  String get chatV2_voiceRoomScreensMessage11;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:456, lib/features/chat/v2/voice_room_screens.dart:651
+  ///
+  /// In en, this message translates to:
+  /// **'Listening isn\'t open in this room yet'**
+  String get chatV2_voiceRoomScreensMessage2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:997
+  ///
+  /// In en, this message translates to:
+  /// **'Left stage, back to listening'**
+  String get chatV2_voiceRoomScreensMessage3;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1008
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving stage isn\'t available right now'**
+  String get chatV2_voiceRoomScreensMessage4;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1151, lib/features/chat/v2/voice_room_screens.dart:2248, lib/features/chat/v2/voice_room_screens.dart:2465
+  ///
+  /// In en, this message translates to:
+  /// **'Room ended · The host ended this voice room'**
+  String get chatV2_voiceRoomScreensMessage5;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1166, lib/features/chat/v2/voice_room_screens.dart:2480
+  ///
+  /// In en, this message translates to:
+  /// **'Left voice room'**
+  String get chatV2_voiceRoomScreensMessage6;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1167, lib/features/chat/v2/voice_room_screens.dart:2480
+  ///
+  /// In en, this message translates to:
+  /// **'Left voice room; voice cleanup wasn\'t confirmed'**
+  String get chatV2_voiceRoomScreensMessage7;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1249
+  ///
+  /// In en, this message translates to:
+  /// **'Mic is on, but the mute flag on the list couldn\'t be cleared: {communityFailureReason}'**
+  String chatV2_voiceRoomScreensMessage8(Object? communityFailureReason);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1317
+  ///
+  /// In en, this message translates to:
+  /// **'Hand raised, waiting for the host to invite you'**
+  String get chatV2_voiceRoomScreensMessage9;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {name}. Mute is a LOOP-side intent; their device may still unmute itself. You can undo it on this row later.'**
+  String chatV2_voiceRoomScreensMute(Object? name);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1229
+  ///
+  /// In en, this message translates to:
+  /// **'Mute requested'**
+  String get chatV2_voiceRoomScreensMute2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:919
+  ///
+  /// In en, this message translates to:
+  /// **'Me · {named}'**
+  String chatV2_voiceRoomScreensName(Object? named);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2147
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · {count} joined'**
+  String chatV2_voiceRoomScreensPart(Object? count, Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2143
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · Voice reconnecting'**
+  String chatV2_voiceRoomScreensReconnecting(Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1206
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {name}. After removal they go back to listening and stay in the room.'**
+  String chatV2_voiceRoomScreensRemoveSpeaker(Object? name);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1228
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from stage'**
+  String get chatV2_voiceRoomScreensRemoveSpeaker2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:545, lib/features/chat/v2/voice_room_screens.dart:752
+  ///
+  /// In en, this message translates to:
+  /// **'Mute all requested'**
+  String get chatV2_voiceRoomScreensRun;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:547, lib/features/chat/v2/voice_room_screens.dart:1227
+  ///
+  /// In en, this message translates to:
+  /// **'Invited to speak'**
+  String get chatV2_voiceRoomScreensRun2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:567, lib/features/chat/v2/voice_room_screens.dart:746
+  ///
+  /// In en, this message translates to:
+  /// **'Joined, connecting voice'**
+  String get chatV2_voiceRoomScreensRun3;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:570, lib/features/chat/v2/voice_room_screens.dart:750
+  ///
+  /// In en, this message translates to:
+  /// **'Hand lowered'**
+  String get chatV2_voiceRoomScreensRun4;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1279, lib/features/chat/v2/voice_room_screens.dart:1973
+  ///
+  /// In en, this message translates to:
+  /// **'Room ended'**
+  String get chatV2_voiceRoomScreensRun5;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-raise queue'**
+  String get chatV2_voiceRoomScreensS;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1279
+  ///
+  /// In en, this message translates to:
+  /// **'Room ended; voice cleanup wasn\'t confirmed'**
+  String get chatV2_voiceRoomScreensS2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2141
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · {count} in call'**
+  String chatV2_voiceRoomScreensS3(Object? count, Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2602
+  ///
+  /// In en, this message translates to:
+  /// **'{inRoom} in the room'**
+  String chatV2_voiceRoomScreensS4(Object? inRoom);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1691
+  ///
+  /// In en, this message translates to:
+  /// **'Tap this row to unmute'**
+  String get chatV2_voiceRoomScreensSubtitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1691
+  ///
+  /// In en, this message translates to:
+  /// **'Muted by host in LOOP'**
+  String get chatV2_voiceRoomScreensSubtitle2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1692
+  ///
+  /// In en, this message translates to:
+  /// **'Can speak'**
+  String get chatV2_voiceRoomScreensSubtitle3;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1693
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to invite'**
+  String get chatV2_voiceRoomScreensSubtitle4;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1693
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get chatV2_voiceRoomScreensSubtitle5;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1830
+  ///
+  /// In en, this message translates to:
+  /// **'#{entries} · {entries2}'**
+  String chatV2_voiceRoomScreensSubtitle6(Object? entries, Object? entries2);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1897
+  ///
+  /// In en, this message translates to:
+  /// **'Invite to speak'**
+  String get chatV2_voiceRoomScreensSubtitle7;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1464
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room is recorded, but the call isn\'t set up yet. Tap Start voice room again to continue.'**
+  String get chatV2_voiceRoomScreensSwitch;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2621
+  ///
+  /// In en, this message translates to:
+  /// **'Back collapses the room to the top; tap it to return anytime.'**
+  String get chatV2_voiceRoomScreensSwitch10;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2622
+  ///
+  /// In en, this message translates to:
+  /// **'Check the host, online count and recording notice before joining.'**
+  String get chatV2_voiceRoomScreensSwitch11;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1465
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room is set up but listening isn\'t open yet. Tap Start voice room again to retry.'**
+  String get chatV2_voiceRoomScreensSwitch2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1466
+  ///
+  /// In en, this message translates to:
+  /// **'The voice room isn\'t ready, so no one can join yet. Tap Start voice room again to retry.'**
+  String get chatV2_voiceRoomScreensSwitch3;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1475
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP submitted this change; the provider hasn\'t confirmed it yet. Refresh later for the latest status.'**
+  String get chatV2_voiceRoomScreensSwitch4;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1501, lib/features/chat/v2/voice_room_stage.dart:115
+  ///
+  /// In en, this message translates to:
+  /// **'Me · {alias}'**
+  String chatV2_voiceRoomScreensSwitch5(Object? alias);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2141
+  ///
+  /// In en, this message translates to:
+  /// **'{part} · Counting'**
+  String chatV2_voiceRoomScreensSwitch6(Object? part);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2597
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load voice room status'**
+  String get chatV2_voiceRoomScreensSwitch7;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2602
+  ///
+  /// In en, this message translates to:
+  /// **'{speaking} on mic'**
+  String chatV2_voiceRoomScreensSwitch8(Object? speaking);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2614
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the voice room status this time; you can retry below.'**
+  String get chatV2_voiceRoomScreensSwitch9;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2372
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving exits this call and cancels your raised hand.'**
+  String get chatV2_voiceRoomScreensText;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1118
+  ///
+  /// In en, this message translates to:
+  /// **'Leave voice room?'**
+  String get chatV2_voiceRoomScreensTitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1262
+  ///
+  /// In en, this message translates to:
+  /// **'End voice room?'**
+  String get chatV2_voiceRoomScreensTitle2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1211
+  ///
+  /// In en, this message translates to:
+  /// **'Target: {name}. This only withdraws the LOOP-side mute intent and won\'t turn on their mic; only their device can do that.'**
+  String chatV2_voiceRoomScreensUnmute(Object? name);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1230
+  ///
+  /// In en, this message translates to:
+  /// **'Mute intent withdrawn'**
+  String get chatV2_voiceRoomScreensUnmute2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1214
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own speaker row. It only clears the LOOP-side mute flag and won\'t turn on your mic; unmute yourself in the call.'**
+  String get chatV2_voiceRoomScreensUnmuteSelf;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1231
+  ///
+  /// In en, this message translates to:
+  /// **'My mute flag cleared'**
+  String get chatV2_voiceRoomScreensUnmuteSelf2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2121
+  ///
+  /// In en, this message translates to:
+  /// **'In voice room · {communityName}'**
+  String chatV2_voiceRoomScreensVoiceRoomBannerTitle(Object? communityName);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2652
+  ///
+  /// In en, this message translates to:
+  /// **'{inRoom} listening · {liveVoiceRoomElapsedLabel}'**
+  String chatV2_voiceRoomScreensVoiceRoomLiveLine(
+    Object? inRoom,
+    Object? liveVoiceRoomElapsedLabel,
+  );
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2643
+  ///
+  /// In en, this message translates to:
+  /// **'Live · Speaking {speaking} · Listeners {listening}'**
+  String chatV2_voiceRoomScreensVoiceRoomTopbarLine(
+    Object? listening,
+    Object? speaking,
+  );
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2393
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving…'**
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2393
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm leave'**
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2351
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2352
+  ///
+  /// In en, this message translates to:
+  /// **'Return to room'**
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:417
+  ///
+  /// In en, this message translates to:
+  /// **'This device couldn\'t load the voice room\'s availability. Check your network and retry.'**
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the voice room\'s availability yet. Try again later.'**
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1979
+  ///
+  /// In en, this message translates to:
+  /// **'Back to community'**
+  String get chatV2_voiceRoomScreensVoiceroomEndedBackLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1974, lib/features/chat/v2/voice_room_screens.dart:2617
+  ///
+  /// In en, this message translates to:
+  /// **'The host ended this voice room.'**
+  String get chatV2_voiceRoomScreensVoiceroomEndedMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:398, lib/features/chat/v2/voice_room_screens.dart:409
+  ///
+  /// In en, this message translates to:
+  /// **'Voice room unavailable'**
+  String get chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:715, lib/features/chat/v2/voice_room_screens.dart:2019
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load End room this time. Try again later. Back collapses the room to the top.'**
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:714, lib/features/chat/v2/voice_room_screens.dart:2018
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t end the room right now'**
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:842
+  ///
+  /// In en, this message translates to:
+  /// **'Room info, one item unconfirmed by the provider'**
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:842
+  ///
+  /// In en, this message translates to:
+  /// **'Room info'**
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1882
+  ///
+  /// In en, this message translates to:
+  /// **'Raised hands are listed here in order.'**
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1881
+  ///
+  /// In en, this message translates to:
+  /// **'No raised hands to invite'**
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyTitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2002, lib/features/chat/v2/voice_room_stage.dart:778
+  ///
+  /// In en, this message translates to:
+  /// **'Join voice room'**
+  String get chatV2_voiceRoomScreensVoiceroomJoinLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:474, lib/features/chat/v2/voice_room_screens.dart:666
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing…'**
+  String get chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1396
+  ///
+  /// In en, this message translates to:
+  /// **'This voice room can\'t be opened right now; no connection was made.'**
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1395
+  ///
+  /// In en, this message translates to:
+  /// **'Voice connection unavailable'**
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1721
+  ///
+  /// In en, this message translates to:
+  /// **'Close member actions'**
+  String get chatV2_voiceRoomScreensVoiceroomMemberSheetBarrierLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:428
+  ///
+  /// In en, this message translates to:
+  /// **'Enter from a community page or its official group; this page won\'t guess which community\'s voice room to open.'**
+  String get chatV2_voiceRoomScreensVoiceroomMissingIdDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1922, lib/features/chat/v2/voice_room_stage.dart:798
+  ///
+  /// In en, this message translates to:
+  /// **'Mute all'**
+  String get chatV2_voiceRoomScreensVoiceroomMuteAllLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:690, lib/features/chat/v2/voice_room_screens.dart:1993
+  ///
+  /// In en, this message translates to:
+  /// **'The provider hasn\'t confirmed this room is ready, so joining would be refused. Refresh and try again later.'**
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:689, lib/features/chat/v2/voice_room_screens.dart:1992
+  ///
+  /// In en, this message translates to:
+  /// **'This room can\'t be joined yet'**
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1807
+  ///
+  /// In en, this message translates to:
+  /// **'No one is waiting. Raised hands are listed here in order.'**
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1806
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-raise queue is empty'**
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyTitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1784
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host can see the full queue. Your position shows here after you raise your hand.'**
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyMessage;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1783
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t raised your hand'**
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyTitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1794
+  ///
+  /// In en, this message translates to:
+  /// **'#{sequence} · Waiting for invite'**
+  String chatV2_voiceRoomScreensVoiceroomQueueSelfSubtitle(Object? sequence);
+
+  /// lib/features/chat/v2/voice_room_screens.dart:365, lib/features/chat/v2/voice_room_screens.dart:804
+  ///
+  /// In en, this message translates to:
+  /// **'Share voice room'**
+  String get chatV2_voiceRoomScreensVoiceroomShareLabel;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1045
+  ///
+  /// In en, this message translates to:
+  /// **'Host · Speaking'**
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1047
+  ///
+  /// In en, this message translates to:
+  /// **'Host · Mic on'**
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle2;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2050
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host can change speakers. To leave the stage, ask the host or leave the room.'**
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableDetail;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:2049
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving stage yourself isn\'t available right now'**
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableMessage;
+
+  /// lib/features/chat/v2/voice_room_share.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Join the \"{communityName}\" voice room on LOOP: {roomTitle}'**
+  String chatV2_voiceRoomShareLine(Object? communityName, Object? roomTitle);
+
+  /// lib/features/chat/v2/voice_room_share.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'{communityName} voice room'**
+  String chatV2_voiceRoomShareVoiceRoomTitle(Object? communityName);
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1029
+  ///
+  /// In en, this message translates to:
+  /// **'Close go-live sheet'**
+  String get chatV2_voiceRoomStageBarrierLabel;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:146, lib/features/chat/v2/voice_room_stage.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get chatV2_voiceRoomStageBuild;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:148, lib/features/chat/v2/voice_room_stage.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Mic on'**
+  String get chatV2_voiceRoomStageBuild2;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1115
+  ///
+  /// In en, this message translates to:
+  /// **'The room is visible to community members right away and anyone can listen in. As host, you or other admins invite speakers, mute all and end the room; the mic is off by default.'**
+  String get chatV2_voiceRoomStageBuild3;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1131
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to show \"Community name voice room\"'**
+  String get chatV2_voiceRoomStageHintText;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:657
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more listener} other{{count} more listeners}}{onTap}'**
+  String chatV2_voiceRoomStageLabel(num count, Object? onTap);
+
+  /// lib/features/chat/v2/voice_room_stage.dart:977, lib/features/chat/v2/voice_room_stage.dart:1102, lib/features/chat/v2/voice_room_stage.dart:1157
+  ///
+  /// In en, this message translates to:
+  /// **'Go live'**
+  String get chatV2_voiceRoomStageLabel2;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:983
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get chatV2_voiceRoomStageLabel3;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:988
+  ///
+  /// In en, this message translates to:
+  /// **'My role'**
+  String get chatV2_voiceRoomStageLabel4;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1130
+  ///
+  /// In en, this message translates to:
+  /// **'Room title (optional)'**
+  String get chatV2_voiceRoomStageLabelText;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:436
+  ///
+  /// In en, this message translates to:
+  /// **'View speakers'**
+  String get chatV2_voiceRoomStageLoopOfflineState;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:550
+  ///
+  /// In en, this message translates to:
+  /// **'View listeners'**
+  String get chatV2_voiceRoomStageLoopOfflineState2;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:934
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {badge} hands raised'**
+  String chatV2_voiceRoomStageSemanticLabel(Object? badge, Object? label);
+
+  /// lib/features/chat/v2/voice_room_stage.dart:989
+  ///
+  /// In en, this message translates to:
+  /// **'Not joined'**
+  String get chatV2_voiceRoomStageValue;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:674
+  ///
+  /// In en, this message translates to:
+  /// **', view full list'**
+  String get chatV2_voiceRoomStageViewFullList;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:889
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get chatV2_voiceRoomStageVoiceroomBarMicLabel;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Host {name}{caption}'**
+  String chatV2_voiceRoomStageVoiceroomHostLabel(Object? caption, Object? name);
+
+  /// lib/features/chat/v2/voice_room_stage.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get chatV2_voiceRoomStageVoiceroomHostTag;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:952
+  ///
+  /// In en, this message translates to:
+  /// **'Close room info'**
+  String get chatV2_voiceRoomStageVoiceroomInfoSheetBarrierLabel;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:791
+  ///
+  /// In en, this message translates to:
+  /// **'Invite to speak'**
+  String get chatV2_voiceRoomStageVoiceroomInviteOpenLabel;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:581
+  ///
+  /// In en, this message translates to:
+  /// **'No listeners yet'**
+  String get chatV2_voiceRoomStageVoiceroomListenersEmptyTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:568
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load listeners'**
+  String get chatV2_voiceRoomStageVoiceroomListenersErrorTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:556
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to view listeners'**
+  String get chatV2_voiceRoomStageVoiceroomListenersPermissionTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:561
+  ///
+  /// In en, this message translates to:
+  /// **'Listener list unavailable right now'**
+  String get chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:997
+  ///
+  /// In en, this message translates to:
+  /// **'Unconfirmed by provider'**
+  String get chatV2_voiceRoomStageVoiceroomProviderUnconfirmedTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:714
+  ///
+  /// In en, this message translates to:
+  /// **'No one on stage yet'**
+  String get chatV2_voiceRoomStageVoiceroomSpeakersEmptyTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:454
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load speakers'**
+  String get chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'No permission to view speakers'**
+  String get chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:447
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker list unavailable right now'**
+  String get chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1138
+  ///
+  /// In en, this message translates to:
+  /// **'The last go-live didn\'t finish. Going live again finishes it and keeps the title you entered.'**
+  String get chatV2_voiceRoomStageVoiceroomStartPending;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:1157
+  ///
+  /// In en, this message translates to:
+  /// **'Going live…'**
+  String get chatV2_voiceRoomStageVoiceroomStartSubmitLabel;
+
+  /// lib/features/chat/v2/voice_room_stage.dart:814
+  ///
+  /// In en, this message translates to:
+  /// **'Leave stage'**
+  String get chatV2_voiceRoomStageVoiceroomStepDownLabel;
+
+  /// lib/features/chat/widgets/chat_components.dart:884
+  ///
+  /// In en, this message translates to:
+  /// **'Shared at 14:12 · Demo data'**
+  String get chatWidgets_componentsBuild;
+
+  /// lib/features/chat/widgets/chat_components.dart:825
+  ///
+  /// In en, this message translates to:
+  /// **'+8.4% · Demo data'**
+  String get chatWidgets_componentsChange;
+
+  /// lib/features/chat/widgets/chat_components.dart:860
+  ///
+  /// In en, this message translates to:
+  /// **'ETH Spot market snapshot · Development preview'**
+  String get chatWidgets_componentsChatSpotSnapshotSemanticsLabel;
+
+  /// lib/features/chat/widgets/chat_components.dart:828
+  ///
+  /// In en, this message translates to:
+  /// **'LP unlocks in 3 days'**
+  String get chatWidgets_componentsFact;
+
+  /// lib/features/chat/widgets/chat_components.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'Top 10 holders own 61%'**
+  String get chatWidgets_componentsFact2;
+
+  /// lib/features/chat/widgets/chat_components.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get chatWidgets_componentsLabel;
+
+  /// lib/features/chat/widgets/chat_components.dart:839
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview facts · Not a provider response · 14:06 UTC'**
+  String get chatWidgets_componentsLoopTokenCardModel;
+
+  /// lib/features/chat/widgets/chat_components.dart:840
+  ///
+  /// In en, this message translates to:
+  /// **'Demo data can\'t trigger trades or watchlist changes.'**
+  String get chatWidgets_componentsLoopTokenCardModel2;
+
+  /// lib/features/chat/widgets/chat_components.dart:829, lib/features/chat/widgets/chat_components.dart:834
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview facts'**
+  String get chatWidgets_componentsSource;
+
+  /// lib/features/chat/chat_inbox_row_actions.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Close conversation actions'**
+  String get chat_inboxRowActionsChatInboxRowSheetBarrierLabel;
+
+  /// lib/features/chat/chat_inbox_row_actions.dart:20
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get chat_inboxRowActionsMarkRead;
+
+  /// lib/features/chat/chat_inbox_row_actions.dart:16
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get chat_inboxRowActionsPin;
+
+  /// lib/features/chat/chat_inbox_row_actions.dart:17
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get chat_inboxRowActionsUnpin;
+
+  /// lib/features/chat/chat_preview_pages.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'Shared in chat · Development preview'**
+  String get chat_previewPagesEyebrow;
+
+  /// lib/features/chat/chat_preview_pages.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'Demo prices and facts aren\'t provider responses. In production, cards without fresh facts don\'t show price, Buy or Watch.'**
+  String get chat_previewPagesMessage;
+
+  /// lib/features/chat/chat_preview_pages.dart:193
+  ///
+  /// In en, this message translates to:
+  /// **'Reference price, 24h change, and volume are labelled Demo data. Opening Market loads a separate current public Spot snapshot.'**
+  String get chat_previewPagesMessage2;
+
+  /// lib/features/chat/chat_preview_pages.dart:14
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview: messages only store the asset ID; current price and facts are re-verified when shown.'**
+  String get chat_previewPagesSubtitle;
+
+  /// lib/features/chat/chat_secondary_pages.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences · Development preview'**
+  String get chat_secondaryPagesLoopSectionLabel;
+
+  /// lib/features/chat/chat_secondary_pages.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from Development preview only. No sender interaction occurred.'**
+  String get chat_secondaryPagesS;
+
+  /// lib/features/chat/chat_secondary_pages.dart:312
+  ///
+  /// In en, this message translates to:
+  /// **'Marked accepted in Development preview and removed locally. No Stream conversation was created.'**
+  String get chat_secondaryPagesShowRequestNotice;
+
+  /// lib/features/chat/chat_secondary_pages.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from Development preview. No report was submitted.'**
+  String get chat_secondaryPagesShowRequestNotice2;
+
+  /// lib/features/chat/chat_secondary_pages.dart:246
+  ///
+  /// In en, this message translates to:
+  /// **'Development Preview only · Development preview'**
+  String get chat_secondaryPagesTitle;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:1012
+  ///
+  /// In en, this message translates to:
+  /// **'The conversation is removed from the list and comes back when there\'s a new message. Chat history isn\'t cleared.'**
+  String get chat_streamInboxBody;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:404
+  ///
+  /// In en, this message translates to:
+  /// **'In voice room, {communityName}, return to room'**
+  String chat_streamInboxChatVoiceRoomReturnEntrySemanticLabel(
+    Object? communityName,
+  );
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:402
+  ///
+  /// In en, this message translates to:
+  /// **'In voice room · {communityName}'**
+  String chat_streamInboxChatVoiceRoomReturnEntryTitle(Object? communityName);
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'Loading conversations'**
+  String get chat_streamInboxLabel;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:181
+  ///
+  /// In en, this message translates to:
+  /// **'This build isn\'t connected to the chat service, so conversations won\'t show here.'**
+  String get chat_streamInboxMessage;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:515
+  ///
+  /// In en, this message translates to:
+  /// **'Before resolving a LOOP group, we need to confirm you\'re still a member of this group chat.'**
+  String get chat_streamInboxMessage10;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:582
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is confirming you\'re a member of this group chat.'**
+  String get chat_streamInboxMessage11;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:589
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm your membership in this group chat. No group was resolved.'**
+  String get chat_streamInboxMessage12;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:649
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is confirming this channel and your membership.'**
+  String get chat_streamInboxMessage13;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:656
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm your membership in this channel. No channel was created or opened.'**
+  String get chat_streamInboxMessage14;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:1024
+  ///
+  /// In en, this message translates to:
+  /// **'\"{label}\" didn\'t finish. Try again later'**
+  String chat_streamInboxMessage15(Object? label);
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore the conversation. No message action was taken on this page.'**
+  String get chat_streamInboxMessage2;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'The chat service isn\'t connected yet. Try again later.'**
+  String get chat_streamInboxMessage3;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'This link doesn\'t point to a conversation LOOP supports. No channel was opened.'**
+  String get chat_streamInboxMessage4;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:438, lib/features/chat/stream_chat_inbox_page.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is restoring the server-authorized chat connection.'**
+  String get chat_streamInboxMessage5;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:443
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore chat authorization. No conversation was opened.'**
+  String get chat_streamInboxMessage6;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:451
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this conversation needs a server-confirmed chat identity and a short-lived token.'**
+  String get chat_streamInboxMessage7;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'This link doesn\'t point to a group chat LOOP supports. No group was resolved.'**
+  String get chat_streamInboxMessage8;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore chat authorization. No group was resolved.'**
+  String get chat_streamInboxMessage9;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:372
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get chat_streamInboxPlaceholder;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:952
+  ///
+  /// In en, this message translates to:
+  /// **'Find friends'**
+  String get chat_streamInboxStreamChatEmptyActionLabel;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:951
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get chat_streamInboxStreamChatEmptyMessage;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:964
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the conversation list on this page. Local history wasn\'t deleted.'**
+  String get chat_streamInboxStreamChatListErrorMessage;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:963
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load conversations'**
+  String get chat_streamInboxStreamChatListErrorTitle;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations not connected yet'**
+  String get chat_streamInboxStreamChatUnavailableTitle;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:426
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid conversation link'**
+  String get chat_streamInboxTitle;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:655
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation unavailable'**
+  String get chat_streamInboxTitle10;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:996
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation actions'**
+  String get chat_streamInboxTitle11;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:1011
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this conversation?'**
+  String get chat_streamInboxTitle12;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:437, lib/features/chat/stream_chat_inbox_page.dart:499
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring conversation'**
+  String get chat_streamInboxTitle2;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'Chat isn\'t available right now'**
+  String get chat_streamInboxTitle3;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:450, lib/features/chat/stream_chat_inbox_page.dart:514
+  ///
+  /// In en, this message translates to:
+  /// **'Chat service not connected yet'**
+  String get chat_streamInboxTitle4;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:488
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid group chat link'**
+  String get chat_streamInboxTitle5;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:504
+  ///
+  /// In en, this message translates to:
+  /// **'Group identity unavailable'**
+  String get chat_streamInboxTitle6;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:581
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming group chat'**
+  String get chat_streamInboxTitle7;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:588
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat unavailable'**
+  String get chat_streamInboxTitle8;
+
+  /// lib/features/chat/stream_chat_inbox_page.dart:648
+  ///
+  /// In en, this message translates to:
+  /// **'Opening conversation'**
+  String get chat_streamInboxTitle9;
+
+  /// lib/features/chat/voice_room_page.dart:258
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get chat_voiceRoomLabel;
+
+  /// lib/features/chat/voice_room_page.dart:133
+  ///
+  /// In en, this message translates to:
+  /// **'Mock seat'**
+  String get chat_voiceRoomText;
+
   /// common
   ///
   /// In en, this message translates to:

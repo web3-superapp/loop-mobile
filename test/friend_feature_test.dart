@@ -50,7 +50,7 @@ void main() {
       const ValueKey<String>('friend-group-create-submit'),
     );
     await tester.ensureVisible(submit);
-    expect(tester.widget<LoopButton>(submit).label, '创建群组');
+    expect(tester.widget<LoopButton>(submit).label, 'Create group');
     expect(tester.widget<LoopButton>(submit).block, isTrue);
     expect(tester.widget<LoopButton>(submit).primary, isTrue);
     // Decision 0168: the flow is the prototype's — a quiet folio, a labelled
@@ -724,7 +724,7 @@ void main() {
           ?.text,
       'Spot Research',
     );
-    expect(find.text('群组创建结果待确认'), findsOneWidget);
+    expect(find.text('Group creation result pending'), findsOneWidget);
   });
 
   testWidgets(
@@ -776,7 +776,10 @@ void main() {
         find.byKey(const ValueKey<String>('friend-group-created-preview')),
         findsOneWidget,
       );
-      expect(find.textContaining('未创建 Stream 频道'), findsOneWidget);
+      expect(
+        find.textContaining('no Stream channel was created'),
+        findsOneWidget,
+      );
       expect(gateway.createdGroups, hasLength(1));
       expect(gateway.createdGroups.single.streamCid, isNull);
     },
@@ -842,7 +845,7 @@ void main() {
         find.byKey(const ValueKey<String>('friend-group-created')),
         findsOneWidget,
       );
-      expect(find.text('群组已创建'), findsOneWidget);
+      expect(find.text('Group created'), findsOneWidget);
       expect(find.textContaining('开发预览群组'), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('friend-group-open-channel')),
@@ -893,10 +896,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
     await tester.pumpAndSettle();
     // Decision 0110: 「＋」 is one sheet with every way to start something.
-    expect(find.text('创建群聊'), findsOneWidget);
-    expect(find.text('搜索 / 添加用户'), findsOneWidget);
-    expect(find.text('创建社区'), findsOneWidget);
-    expect(find.text('扫一扫'), findsOneWidget);
+    expect(find.text('Create group chat'), findsOneWidget);
+    expect(find.text('Search / add users'), findsOneWidget);
+    expect(find.text('Create community'), findsOneWidget);
+    expect(find.text('Scan'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey<String>('chat-create-group-menu-item')),
     );

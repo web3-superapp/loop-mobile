@@ -24,6 +24,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_localizations
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_unread_pill_band.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
@@ -36,10 +37,12 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// Decision 0055 (`frontend-v2-communication-api.md` §4) fixes this word: a
 /// member whose projection has not landed reads as 「成员」, and never as an
 /// account-level name or a Stream id.
-const String loopGroupMemberNeutralLabel = '成员';
+String get loopGroupMemberNeutralLabel =>
+    LoopL10n.current.chatGroupAlias_neutralMember;
 
 /// Neutral group label used when Stream does not carry a reviewed group name.
-const String loopGroupConversationNeutralLabel = '群聊';
+String get loopGroupConversationNeutralLabel =>
+    LoopL10n.current.common_groupChat;
 
 /// Neutral label for a direct conversation LOOP has no name for.
 ///
@@ -54,24 +57,31 @@ const String loopGroupConversationNeutralLabel = '群聊';
 /// [LoopDirectChannelDirectoryScope]. This label is what remains when that
 /// read has not landed, or answered `503`: the row says only what it knows —
 /// this is a direct conversation. It never says `loop_`.
-const String loopDirectConversationNeutralLabel = '私聊';
+String get loopDirectConversationNeutralLabel =>
+    LoopL10n.current.common_directMessage;
 
 /// The one character the neutral direct avatar may draw.
 ///
 /// It comes from [loopDirectConversationNeutralLabel], not from a Stream id:
 /// the initial Stream's own avatar drew was `L`, the first letter of
 /// `loop_…` (device report 2026-09-20 · R14-5).
-const String loopDirectConversationNeutralInitial = '私';
+String get loopDirectConversationNeutralInitial => LoopL10n
+    .current
+    .chatGroupAlias_streamMessageIdentityLoopDirectConversationNeutralInitial;
 
 /// What a direct row reads when the peer has no presentable public profile.
 ///
 /// `peer: null` is a contract value, not a missing read: that account is
 /// deactivated or was never activated. Saying so is honest, and it is
 /// different from saying nothing (decision 0056).
-const String loopDirectDeactivatedPeerLabel = '已注销用户';
+String get loopDirectDeactivatedPeerLabel => LoopL10n
+    .current
+    .chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerLabel;
 
 /// The one character the deactivated-peer avatar may draw.
-const String loopDirectDeactivatedPeerInitial = '注';
+String get loopDirectDeactivatedPeerInitial => LoopL10n
+    .current
+    .chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerInitial;
 
 /// How one direct inbox row names itself.
 ///
@@ -117,7 +127,7 @@ LoopDirectRowIdentity resolveLoopDirectRowIdentity({
   required LoopDirectChannelDirectory? directory,
 }) {
   if (directory == null || !directory.knows(cid)) {
-    return const LoopDirectRowIdentity(
+    return LoopDirectRowIdentity(
       title: loopDirectConversationNeutralLabel,
       initial: loopDirectConversationNeutralInitial,
       peer: null,
@@ -125,7 +135,7 @@ LoopDirectRowIdentity resolveLoopDirectRowIdentity({
   }
   final peer = directory.peerOf(cid);
   if (peer == null) {
-    return const LoopDirectRowIdentity(
+    return LoopDirectRowIdentity(
       title: loopDirectDeactivatedPeerLabel,
       initial: loopDirectDeactivatedPeerInitial,
       peer: null,
@@ -667,7 +677,8 @@ Message loopPrepareChannelMessageForSend({
 
 /// The second line of a group or community row that has no message yet
 /// (decision 0122), in place of Stream's 「还没有消息」.
-const String loopChannelQuietLabel = '还没有人说话';
+String get loopChannelQuietLabel =>
+    LoopL10n.current.chatGroupAlias_streamMessageIdentityLoopChannelQuietLabel;
 
 /// Uses a reviewed group name without falling back to Stream member names.
 @visibleForTesting
@@ -1209,7 +1220,11 @@ class _LoopGroupChannelSubtitle extends StatelessWidget {
     builder: (context, snapshot) {
       final state = snapshot.data ?? channel.state!.channelState;
       final count = state.channel?.memberCount ?? state.members?.length;
-      return Text(count == null ? '群聊' : '$count 位成员');
+      return Text(
+        count == null
+            ? context.l10n.common_groupChat
+            : context.l10n.chatGroupAlias_streamMessageIdentityS(count),
+      );
     },
   );
 }
@@ -1258,7 +1273,9 @@ class _LoopStreamGroupThreadPageState
     final replyCount = widget.parent.replyCount;
     final subtitle = replyCount == null || replyCount == 0
         ? const SizedBox.shrink()
-        : Text('$replyCount 条回复');
+        : Text(
+            context.l10n.chatGroupAlias_streamMessageIdentityBuild(replyCount),
+          );
     final composer = widget.parent.isDeleted
         ? null
         : StreamMessageComposer(

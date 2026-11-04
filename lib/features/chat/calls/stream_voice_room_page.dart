@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_state_card.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -496,7 +497,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         backgroundColor: Colors.transparent,
         leading: LoopIconButton(
           icon: 'arrow-down',
-          label: '返回',
+          label: context.l10n.common_back,
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
@@ -540,9 +541,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         child: VoiceMediaStateCard(
           key: const ValueKey<String>('voiceroom-media-restored'),
           title: audioRoomRestoredMicrophoneNote,
-          message:
-              '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点'
-              '「${VoiceMediaPresentation.maybeOf(context)?.microphone == null ? '发言' : '取消静音'}」。',
+          message: context.l10n
+              .chatCalls_streamVoiceRoomVoiceroomMediaRestoredMessage(
+                VoiceMediaPresentation.maybeOf(context)?.microphone == null
+                    ? context.l10n.chatCalls_streamForegroundViewSpeakLabel
+                    : context.l10n.common_unmute,
+              ),
           tone: LoopTone.positive,
           icon: 'voice-off',
         ),
@@ -648,7 +652,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             ? LoopButton(
                 key: const ValueKey<String>('voiceroom-media-retry-session'),
                 icon: 'refresh',
-                label: '重试会话',
+                label: context
+                    .l10n
+                    .chatCalls_streamVoiceRoomVoiceroomMediaRetrySessionLabel,
                 onPressed: _refreshingConnection
                     ? null
                     : () => unawaited(_reconnect()),
@@ -657,14 +663,18 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             ? LoopButton(
                 key: const ValueKey<String>('voiceroom-media-retry-target'),
                 icon: 'refresh',
-                label: '重试读取语音房',
+                label: context
+                    .l10n
+                    .chatCalls_streamVoiceRoomVoiceroomMediaRetryTargetLabel,
                 onPressed: widget.onRetryTarget,
               )
             : content.retryCleanup
             ? LoopButton(
                 key: const ValueKey<String>('voiceroom-media-retry-cleanup'),
                 icon: 'refresh',
-                label: '重试收尾',
+                label: context
+                    .l10n
+                    .chatCalls_streamVoiceRoomVoiceroomMediaRetryCleanupLabel,
                 onPressed: _retryCleanup,
               )
             : null,
@@ -677,7 +687,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       primary: true,
       block: true,
       icon: 'voice',
-      label: _joining ? '正在静音连接' : '连接语音',
+      label: _joining
+          ? context.l10n.chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel
+          : context.l10n.chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel2,
       onPressed: joinEnabled ? _joinMuted : null,
     );
     if (widget.autoConnect) {
@@ -699,7 +711,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                 primary: true,
                 block: true,
                 icon: 'voice',
-                label: '重新连接语音',
+                label: context
+                    .l10n
+                    .chatCalls_streamVoiceRoomVoiceroomMediaReconnectLabel,
                 onPressed: joinEnabled ? _reconnect : null,
               ),
             ],
@@ -709,8 +723,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                 widget.viewerRole,
                 speakLabel:
                     VoiceMediaPresentation.maybeOf(context)?.microphone == null
-                    ? '发言'
-                    : '取消静音',
+                    ? context.l10n.chatCalls_streamForegroundViewSpeakLabel
+                    : context.l10n.common_unmute,
               ),
               style: Theme.of(context).textTheme.labelMedium,
             ),
@@ -730,7 +744,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
             joinButton,
             const SizedBox(height: 10),
             Text(
-              '始终静音进入；系统麦克风权限只在你点「发言」时申请。切到后台或锁屏后语音继续，点「离开」才会断开。',
+              context.l10n.chatCalls_streamVoiceRoomIf,
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
@@ -767,14 +781,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                     ),
                     const SizedBox(height: 22),
                     Text(
-                      '语音房',
+                      context.l10n.common_voiceRooms,
                       textAlign: TextAlign.center,
                       // M43 R31 a centred state title: titleLg 16 (0191).
                       style: LoopType.titleLg,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '静音进入 · 后台继续',
+                      context.l10n.chatCalls_streamVoiceRoomIf2,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -786,7 +800,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
                     ],
                     const SizedBox(height: 20),
                     Text(
-                      '这里不展示演示成员、在线状态或房间动态。',
+                      context.l10n.chatCalls_streamVoiceRoomIf3,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
@@ -1011,7 +1025,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() {
-        _joinError = '这个语音房没能准备好，请检查会话后重试。';
+        _joinError = LoopL10n.current.chatCalls_streamVoiceRoomJoinError;
       });
       return;
     }
@@ -1339,9 +1353,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       // The reader asked to go and is waiting for it. Nothing here offers a
       // connection: 「重新连接语音」 under this is an answer to a question
       // nobody asked.
-      return const _StreamVoiceContent(
-        title: '正在离开语音房…',
-        message: '这次通话已经断开，正在把离开记到 LOOP 的房间记录里。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage,
         icon: 'back',
         loading: true,
       );
@@ -1350,18 +1364,20 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       // Decision 0106: the provider gave up and the app is putting the room
       // back on its own. Nothing is offered here — there is nothing to press
       // that the app is not already doing — and the membership is untouched.
-      return const _StreamVoiceContent(
-        title: '语音连接中断，正在自动重连',
-        message: '网络恢复后会自动接回这个房间，你仍然在房间里。要退出请用下面的「离开」。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle2,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage2,
         tone: LoopTone.warning,
         icon: 'refresh',
         loading: true,
       );
     }
     if (refreshingConnection) {
-      return const _StreamVoiceContent(
-        title: '正在重新连接语音',
-        message: '正在重新读取这个房间并重新取得语音身份，然后再连接一次。',
+      return _StreamVoiceContent(
+        title: LoopL10n
+            .current
+            .chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage3,
         icon: 'refresh',
         loading: true,
         ready: true,
@@ -1381,8 +1397,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     if (content.ready) {
       if (joinError != null) {
         return _StreamVoiceContent(
-          title: '已加入，语音连接失败',
-          message: '$joinError你仍然在这个房间里，没有被移出。',
+          title: LoopL10n.current.chatCalls_streamVoiceRoomTitle3,
+          message: LoopL10n.current.chatCalls_streamVoiceRoomMessage4(
+            joinError,
+          ),
           tone: LoopTone.danger,
           icon: 'offline',
           ready: true,
@@ -1390,18 +1408,18 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
         );
       }
       if (autoConnectSuspended) {
-        return const _StreamVoiceContent(
-          title: '语音已断开',
-          message: '这次通话已经断开，你在 LOOP 记录里仍然是这个房间的成员。',
+        return _StreamVoiceContent(
+          title: LoopL10n.current.chatCalls_streamForegroundViewTitle2,
+          message: LoopL10n.current.chatCalls_streamVoiceRoomMessage5,
           tone: LoopTone.warning,
           icon: 'voice-off',
           ready: true,
           reconnect: true,
         );
       }
-      return const _StreamVoiceContent(
-        title: '正在连接语音…',
-        message: '已经加入房间，正在建立语音连接。你以听众身份静音进入。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle4,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage6,
         icon: 'voice',
         loading: true,
         ready: true,
@@ -1410,7 +1428,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     if (content.retryAuthorization ||
         content.retryTarget ||
         content.retryCleanup) {
-      return content.retitled('已加入，语音连接失败');
+      return content.retitled(LoopL10n.current.chatCalls_streamVoiceRoomTitle3);
     }
     return content;
   }
@@ -1426,34 +1444,34 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     required bool cleanupFailed,
   }) {
     if (principalKey == null) {
-      return const _StreamVoiceContent(
-        title: '需要完成登录验证',
-        message: '语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle5,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage7,
         icon: 'lock',
       );
     }
     if (cleanupPending) {
-      return const _StreamVoiceContent(
-        title: '正在确认上一次通话的收尾',
-        message: '在确认上一次通话已关闭麦克风并退出之前，不能再次连接。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle6,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage8,
         tone: LoopTone.warning,
         icon: 'refresh',
         loading: true,
       );
     }
     if (cleanupFailed) {
-      return const _StreamVoiceContent(
-        title: '上一次通话没有收尾',
-        message: '上一次通话没有确认退出。请先重试收尾，再连接语音。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle7,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage9,
         tone: LoopTone.danger,
         icon: 'warn',
         retryCleanup: true,
       );
     }
     if (authorization == null || authorization.isLoading) {
-      return const _StreamVoiceContent(
-        title: '正在准备语音连接',
-        message: '正在向后端申请语音身份与短时令牌。期间不会加入任何通话。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle8,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage10,
         icon: 'refresh',
         loading: true,
       );
@@ -1461,7 +1479,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     if (authorization.hasError ||
         authorization.value != StreamVideoSessionAuthorization.authorized) {
       return _StreamVoiceContent(
-        title: '语音会话暂时不可用',
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle9,
         // The step that did not finish, instead of a sentence that guessed
         // two causes aloud and named neither.
         message: streamVideoSessionRefusalText(sessionRefusal),
@@ -1471,35 +1489,35 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       );
     }
     if (target == null || target.isLoading) {
-      return const _StreamVoiceContent(
-        title: '正在读取语音房',
-        message: '正在读取后端已授权的语音房。麦克风保持关闭。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle10,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage11,
         icon: 'community',
         loading: true,
       );
     }
     if (target.hasError) {
-      return const _StreamVoiceContent(
-        title: '语音房读不到',
-        message: '已授权的语音房读取失败，不会改连其他房间，也不会用演示数据顶替。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle11,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage12,
         tone: LoopTone.warning,
         icon: 'community',
         retryTarget: true,
       );
     }
     if (target.value == null) {
-      return const _StreamVoiceContent(
-        title: '还没有拿到语音房',
-        message: '这次会话还没有拿到已授权的语音房，请从社区的语音房入口进入。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle12,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage13,
         tone: LoopTone.warning,
         icon: 'community',
         retryTarget: true,
       );
     }
     if (callFactory == null) {
-      return const _StreamVoiceContent(
-        title: '语音客户端不可用',
-        message: '语音房已授权，但绑定当前账号的语音客户端已经失效，请重新授权会话。',
+      return _StreamVoiceContent(
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle13,
+        message: LoopL10n.current.chatCalls_streamVoiceRoomMessage14,
         tone: LoopTone.warning,
         icon: 'warn',
         retryAuthorization: true,
@@ -1507,16 +1525,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     }
     if (joinError != null) {
       return _StreamVoiceContent(
-        title: '连接失败',
+        title: LoopL10n.current.chatCalls_streamVoiceRoomTitle14,
         message: joinError,
         tone: LoopTone.danger,
         icon: 'offline',
         ready: true,
       );
     }
-    return const _StreamVoiceContent(
-      title: '语音可以连接',
-      message: '已拿到后端授权的语音房。始终静音进入，切到后台后语音继续。',
+    return _StreamVoiceContent(
+      title: LoopL10n.current.chatCalls_streamVoiceRoomTitle15,
+      message: LoopL10n.current.chatCalls_streamVoiceRoomMessage15,
       tone: LoopTone.positive,
       icon: 'shield',
       ready: true,
@@ -1533,12 +1551,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
 /// in the debug log: it is an SDK string, not something a reader can use.
 String streamVideoSessionRefusalText(StreamVideoSessionRefusal? refusal) =>
     switch (refusal) {
-      StreamVideoSessionRefusal.identity => '这台设备还没有拿到语音身份。请退出这一页再进来。',
-      StreamVideoSessionRefusal.credential => '这次通话的语音凭证没有发下来。请检查网络后重试。',
-      StreamVideoSessionRefusal.client => '语音连接没能在这台设备上建立。请重试一次。',
-      StreamVideoSessionRefusal.connection => '这台设备没能连上语音服务。请检查网络后重试。',
-      StreamVideoSessionRefusal.accountChanged => '登录状态在连接过程中发生了变化。请退出这一页再进来。',
-      null => '这台设备没能建立语音会话。这里保持断开，不会创建任何通话。',
+      StreamVideoSessionRefusal.identity =>
+        LoopL10n.current.chatCalls_streamVoiceRoomIdentity,
+      StreamVideoSessionRefusal.credential =>
+        LoopL10n.current.chatCalls_streamVoiceRoomCredential,
+      StreamVideoSessionRefusal.client =>
+        LoopL10n.current.chatCalls_streamVoiceRoomClient,
+      StreamVideoSessionRefusal.connection =>
+        LoopL10n.current.chatCalls_streamVoiceRoomConnection,
+      StreamVideoSessionRefusal.accountChanged =>
+        LoopL10n.current.chatCalls_streamVoiceRoomAccountChanged,
+      null => LoopL10n.current.chatCalls_streamVoiceRoomSwitch,
     };
 
 /// One sentence for one refusal.
@@ -1549,11 +1572,16 @@ String streamVideoSessionRefusalText(StreamVideoSessionRefusal? refusal) =>
 /// need opposite next steps. The answer itself is in the debug log.
 String audioRoomJoinRefusalText(AudioRoomJoinRefusal refusal) =>
     switch (refusal) {
-      AudioRoomJoinRefusal.permission => '这个房间还没有开放收听，请让主持人重新开启。',
-      AudioRoomJoinRefusal.roomUnavailable => '这个房间已经不能加入了，请回到社区看它是否还在进行。',
-      AudioRoomJoinRefusal.network => '这次连接没有接通，请检查网络后重试。',
-      AudioRoomJoinRefusal.session => '这次的语音身份已经失效，请退出这一页再进来。',
-      AudioRoomJoinRefusal.unknown => '没能连上这个语音房，请稍后重试。',
+      AudioRoomJoinRefusal.permission =>
+        LoopL10n.current.chatCalls_streamVoiceRoomPermission,
+      AudioRoomJoinRefusal.roomUnavailable =>
+        LoopL10n.current.chatCalls_streamVoiceRoomRoomUnavailable,
+      AudioRoomJoinRefusal.network =>
+        LoopL10n.current.chatCalls_streamVoiceRoomNetwork,
+      AudioRoomJoinRefusal.session =>
+        LoopL10n.current.chatCalls_streamVoiceRoomSession,
+      AudioRoomJoinRefusal.unknown =>
+        LoopL10n.current.chatCalls_streamVoiceRoomUnknown,
     };
 
 /// What the connection means for this account, by the part it plays.
@@ -1568,17 +1596,16 @@ String audioRoomJoinRefusalText(AudioRoomJoinRefusal refusal) =>
 /// bottom bar (decision 0115).
 String audioRoomConnectionNote(
   AudioRoomViewerRole? role, {
-  String speakLabel = '发言',
+  String? speakLabel,
 }) => switch (role) {
-  AudioRoomViewerRole.host =>
-    '你是主持人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；'
-        '语音没连上房间也不会结束，要结束请用下面的「结束房间」。',
+  AudioRoomViewerRole.host => LoopL10n.current.chatCalls_streamVoiceRoomHost(
+    speakLabel ?? LoopL10n.current.chatCalls_streamForegroundViewSpeakLabel,
+  ),
   AudioRoomViewerRole.speaker =>
-    '你是发言人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；'
-        '语音没连上，你仍在房间里；要退出请点下面的「离开」。',
-  _ =>
-    '你以听众身份静音进入，不会申请麦克风权限；'
-        '语音没连上，你仍在房间里；要退出请点下面的「离开」。',
+    LoopL10n.current.chatCalls_streamVoiceRoomSpeaker(
+      speakLabel ?? LoopL10n.current.chatCalls_streamForegroundViewSpeakLabel,
+    ),
+  _ => LoopL10n.current.chatCalls_streamVoiceRoomSwitch2,
 };
 
 class _AudioRoomLobbyFacts extends StatelessWidget {
@@ -1592,24 +1619,24 @@ class _AudioRoomLobbyFacts extends StatelessWidget {
         color: LoopColors.card,
         borderRadius: LoopRadius.card,
       ),
-      child: const Column(
+      child: Column(
         children: <Widget>[
           _LobbyFact(
             icon: 'voice-off',
-            title: '进入即静音',
-            message: '连接过程中不会发布任何本地音频。',
+            title: context.l10n.chatCalls_streamVoiceRoomTitle16,
+            message: context.l10n.chatCalls_streamVoiceRoomMessage16,
           ),
           LoopHairline(margin: EdgeInsets.symmetric(vertical: 12)),
           _LobbyFact(
             icon: 'shield',
-            title: '按需申请权限',
-            message: '系统麦克风权限只在你点「发言」之后才申请。',
+            title: context.l10n.chatCalls_streamVoiceRoomTitle17,
+            message: context.l10n.chatCalls_streamVoiceRoomMessage17,
           ),
           LoopHairline(margin: EdgeInsets.symmetric(vertical: 12)),
           _LobbyFact(
             icon: 'phone',
-            title: '后台继续',
-            message: '切到其他 App 或锁屏后语音继续，只有「离开」才会断开。',
+            title: context.l10n.chatCalls_streamVoiceRoomTitle18,
+            message: context.l10n.chatCalls_streamVoiceRoomMessage18,
           ),
         ],
       ),

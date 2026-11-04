@@ -21,11 +21,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('SPOT PREVIEW'), findsOneWidget);
-      expect(find.text('Shared at 14:12 · 演示数据'), findsOneWidget);
+      expect(find.text('Shared at 14:12 · Demo data'), findsOneWidget);
       final semantics = tester.widget<Semantics>(
         find.byKey(const ValueKey<String>('chat-spot-snapshot-semantics')),
       );
-      expect(semantics.properties.label, 'ETH Spot market snapshot · 开发预览');
+      expect(
+        semantics.properties.label,
+        'ETH Spot market snapshot · Development preview',
+      );
       expect(find.text('ETH position snapshot'), findsNothing);
       expect(find.text('LONG'), findsNothing);
       expect(find.text('Entry'), findsNothing);

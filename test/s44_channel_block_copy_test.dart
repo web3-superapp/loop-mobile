@@ -60,7 +60,7 @@ void main() {
       );
       expect(
         loopStreamChannelBlockMessage(LoopStreamChannelBlock.refused),
-        '你还不是这个群的成员，LOOP 没有打开任何会话。',
+        'You\'re not a member of this group yet; LOOP didn\'t open any conversation.',
       );
     });
 
@@ -94,7 +94,7 @@ void main() {
       );
       expect(
         loopStreamChannelBlockMessage(LoopStreamChannelBlock.notOpened),
-        '没能打开这个频道的会话，请稍后重试。',
+        'Couldn\'t open this channel\'s conversation. Try again later.',
       );
     });
 
@@ -107,7 +107,7 @@ void main() {
             'COMMUNITY_CHANNEL_MEMBER_SYNCING',
           ),
         ),
-        '你的频道成员身份正在同步，稍后即可进入。',
+        'Your channel membership is syncing; you can join shortly.',
       );
       // Without one it states what it observed and nothing more. It never
       // borrows the refusal's sentence.

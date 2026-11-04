@@ -1,0 +1,393 @@
+{
+  "chatFriends_createMenuButtonChatCreateMenuLabel": {
+    "en": "New",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:33",
+    "zh": "发起"
+  },
+  "chatFriends_createMenuButtonChatCreateMenuLabel2": {
+    "en": "Add",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:60",
+    "zh": "添加"
+  },
+  "chatFriends_createMenuButtonSubtitle": {
+    "en": "Find people by LOOP ID or nickname and send a message request",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:79",
+    "zh": "按 LOOP ID 或昵称找人，发送消息请求"
+  },
+  "chatFriends_createMenuButtonSubtitle2": {
+    "en": "Apply to list; goes live after review",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:88",
+    "zh": "提交入驻申请，审核通过后上线"
+  },
+  "chatFriends_createMenuButtonSubtitle3": {
+    "en": "Start a small group with friends",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:96",
+    "zh": "和好友建一个小群"
+  },
+  "chatFriends_createMenuButtonSubtitle4": {
+    "en": "Scan a profile card, community code or wallet address",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:104",
+    "zh": "扫名片、社区码或钱包地址"
+  },
+  "chatFriends_createMenuButtonTitle": {
+    "en": "Search / add users",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:78",
+    "zh": "搜索 / 添加用户"
+  },
+  "chatFriends_createMenuButtonTitle2": {
+    "en": "Create community",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:87",
+    "zh": "创建社区"
+  },
+  "chatFriends_createMenuButtonTitle3": {
+    "en": "Create group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/chat_create_menu_button.dart:95",
+    "zh": "创建群聊"
+  },
+  "chatFriends_screensAlreadyDecided": {
+    "en": "This friend request was already handled. Refresh the list.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:439",
+    "zh": "这条好友申请已经处理，请刷新列表。"
+  },
+  "chatFriends_screensAlreadyFriends": {
+    "en": "You're already friends.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:437",
+    "zh": "你们已经是好友。"
+  },
+  "chatFriends_screensBody": {
+    "en": "{name} · {receipt, plural, =1{1 member} other{{receipt} members}}. This result exists only in this run; no Stream channel was created.",
+    "placeholders": {
+      "name": {
+        "example": "receipt.name",
+        "type": "Object"
+      },
+      "receipt": {
+        "example": "receipt.friendRefs.length + 1",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/friends/friend_screens.dart:388",
+    "zh": "{name} · {receipt} 位成员。这个结果仅存在于本次运行，未创建 Stream 频道。"
+  },
+  "chatFriends_screensBody2": {
+    "en": "{name} · {receipt, plural, =1{1 member} other{{receipt} members}}. The channel was created and authorized by the LOOP backend.",
+    "placeholders": {
+      "name": {
+        "example": "receipt.name",
+        "type": "Object"
+      },
+      "receipt": {
+        "example": "receipt.friendRefs.length + 1",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/friends/friend_screens.dart:389",
+    "zh": "{name} · {receipt} 位成员。频道已由 LOOP 后端创建并授权。"
+  },
+  "chatFriends_screensConflict": {
+    "en": "The friendship changed. Refresh and try again.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:432",
+    "zh": "好友关系已经变化，请刷新后再试。"
+  },
+  "chatFriends_screensCooldown": {
+    "en": "This friend request is cooling down. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:438",
+    "zh": "该好友申请处于冷却期，请稍后再试。"
+  },
+  "chatFriends_screensCursorInvalid": {
+    "en": "The list page expired; reload from the first page.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:440",
+    "zh": "列表分页已过期，需要从第一页重新加载。"
+  },
+  "chatFriends_screensFriendGroupCreateAnotherLabel": {
+    "en": "Create another",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:396",
+    "zh": "再建一个"
+  },
+  "chatFriends_screensFriendGroupCreateFailureBody": {
+    "en": "{friendFailureMessage} The draft is frozen and won't be resubmitted automatically.",
+    "placeholders": {
+      "friendFailureMessage": {
+        "example": "_friendFailureMessage(group.failureKind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/friends/friend_screens.dart:298",
+    "zh": "{friendFailureMessage} 当前草稿已冻结，不会自动重复提交。"
+  },
+  "chatFriends_screensFriendGroupCreateFailureTitle": {
+    "en": "Group creation needs manual review",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:293",
+    "zh": "群组创建需人工核对"
+  },
+  "chatFriends_screensFriendGroupCreateFailureTitle2": {
+    "en": "Group creation result pending",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:295",
+    "zh": "群组创建结果待确认"
+  },
+  "chatFriends_screensFriendGroupCreateFailureTitle3": {
+    "en": "Group not created",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:296",
+    "zh": "群组未创建"
+  },
+  "chatFriends_screensFriendGroupCreateScreenTitle": {
+    "en": "Create group",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:90, lib/features/chat/friends/friend_screens.dart:99, lib/features/chat/friends/friend_screens.dart:174",
+    "zh": "创建群组"
+  },
+  "chatFriends_screensFriendGroupCreateSubmitLabel": {
+    "en": "Creating…",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:173",
+    "zh": "创建中…"
+  },
+  "chatFriends_screensFriendGroupFindFriendsLabel": {
+    "en": "Add friends",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:239",
+    "zh": "添加好友"
+  },
+  "chatFriends_screensFriendGroupFolioCaption": {
+    "en": "Pick from accepted friends. The LOOP backend creates the group; it only appears in Chat once that succeeds.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:100",
+    "zh": "从已接受的好友里选人。群由 LOOP 后端创建，成功后才会出现在聊天里。"
+  },
+  "chatFriends_screensFriendGroupFolioKicker": {
+    "en": "Group with friends",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:98",
+    "zh": "好友建群"
+  },
+  "chatFriends_screensFriendGroupFolioStamp": {
+    "en": "Friends only",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:101",
+    "zh": "仅好友"
+  },
+  "chatFriends_screensFriendGroupFriendsEmptyMessage": {
+    "en": "You can invite someone to a group after they accept your friend request.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:235",
+    "zh": "好友请求被对方接受后，才能邀请对方创建群组。"
+  },
+  "chatFriends_screensFriendGroupFriendsEmptyTitle": {
+    "en": "No friends to choose",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:234",
+    "zh": "没有可选择的好友"
+  },
+  "chatFriends_screensFriendGroupFriendsFailureTitle": {
+    "en": "Couldn't load friends right now",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:215",
+    "zh": "好友列表暂时无法加载"
+  },
+  "chatFriends_screensFriendGroupNameFieldFootnote": {
+    "en": "Up to 60 characters",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:138",
+    "zh": "最多 60 个字符"
+  },
+  "chatFriends_screensFriendGroupNameFieldLabel": {
+    "en": "Group name",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:137, lib/features/chat/friends/friend_screens.dart:147",
+    "zh": "群组名称"
+  },
+  "chatFriends_screensFriendGroupOpenChannelLabel": {
+    "en": "Open group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:414",
+    "zh": "进入群聊"
+  },
+  "chatFriends_screensFriendGroupReconcileLabel": {
+    "en": "Check result",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:274",
+    "zh": "查询结果"
+  },
+  "chatFriends_screensFriendGroupResumeEditingLabel": {
+    "en": "Edit draft",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:282",
+    "zh": "修改草稿"
+  },
+  "chatFriends_screensFriendGroupSelectionLabel": {
+    "en": "Choose friends · {selectedFriendRefs}/{groupMaximumSelectedFriends}",
+    "placeholders": {
+      "groupMaximumSelectedFriends": {
+        "example": "groupMaximumSelectedFriends",
+        "type": "Object"
+      },
+      "selectedFriendRefs": {
+        "example": "group.selectedFriendRefs.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/friends/friend_screens.dart:154",
+    "zh": "选择好友 · {selectedFriendRefs}/{groupMaximumSelectedFriends}"
+  },
+  "chatFriends_screensFriendGroupSetAliasLabel": {
+    "en": "Set group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:407",
+    "zh": "设置群昵称"
+  },
+  "chatFriends_screensFriendGroupUnavailableMessage": {
+    "en": "No group is created and no members are added here.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:108",
+    "zh": "这里不会创建任何群或添加成员。"
+  },
+  "chatFriends_screensFriendGroupUnavailableTitle": {
+    "en": "Group chat creation isn't available yet",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:107",
+    "zh": "创建群聊还没有开放"
+  },
+  "chatFriends_screensFriendPreviewBannerBody": {
+    "en": "Friends, requests and new groups are kept in memory only and aren't written to the LOOP backend or Stream.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:352",
+    "zh": "好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。"
+  },
+  "chatFriends_screensFriendPreviewBannerTitle": {
+    "en": "Development preview · This run only",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:351",
+    "zh": "开发预览 · 仅本次运行"
+  },
+  "chatFriends_screensIncomingRequestPending": {
+    "en": "They've already sent you a request. Handle it in friend requests.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:435",
+    "zh": "对方已经向你发送申请，请在好友申请中处理。"
+  },
+  "chatFriends_screensInvalidData": {
+    "en": "The input or server data doesn't meet current safety constraints.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:429",
+    "zh": "输入或服务返回的数据不符合当前安全约束。"
+  },
+  "chatFriends_screensLoopLabel": {
+    "en": "Result",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:383",
+    "zh": "结果"
+  },
+  "chatFriends_screensNotFound": {
+    "en": "The target isn't available right now. Hidden and nonexistent accounts aren't distinguished.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:430",
+    "zh": "目标当前不可用。不可发现和不存在的账号不会被区分。"
+  },
+  "chatFriends_screensNotSelected": {
+    "en": "Not selected",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:364",
+    "zh": "未选择"
+  },
+  "chatFriends_screensOperatorRequired": {
+    "en": "The channel needs manual review; a second channel won't be created automatically.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:441",
+    "zh": "频道需要后台人工核对；不会自动创建第二个频道。"
+  },
+  "chatFriends_screensOutcomeUnknown": {
+    "en": "The request may have been received, but the final result can't be safely confirmed right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:442",
+    "zh": "请求可能已被接收，当前无法安全确认最终结果。"
+  },
+  "chatFriends_screensOutgoingRequestPending": {
+    "en": "Friend request sent, waiting for them to respond.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:436",
+    "zh": "好友申请已经发送，正在等待对方处理。"
+  },
+  "chatFriends_screensPermissionDenied": {
+    "en": "This account can't do that. No friendship or group was changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:431",
+    "zh": "当前账号无权完成该操作，没有关系或群组被修改。"
+  },
+  "chatFriends_screensProfileRequired": {
+    "en": "Set your LOOP nickname in Profile first.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:434",
+    "zh": "请先在 Profile 中设置 LOOP 主昵称。"
+  },
+  "chatFriends_screensRateLimited": {
+    "en": "Too many attempts. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:433",
+    "zh": "操作过于频繁，请稍后再试。"
+  },
+  "chatFriends_screensSelected": {
+    "en": "Selected",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:364",
+    "zh": "已选择"
+  },
+  "chatFriends_screensSwitch": {
+    "en": "Couldn't complete the action right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:444",
+    "zh": "操作暂时无法完成。"
+  },
+  "chatFriends_screensText": {
+    "en": "{groupMinimumSelectedFriends, plural, =1{Choose at least 1 friend} other{Choose at least {groupMinimumSelectedFriends} friends}}",
+    "placeholders": {
+      "groupMinimumSelectedFriends": {
+        "example": "groupMinimumSelectedFriends",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/friends/friend_screens.dart:183",
+    "zh": "至少选择 {groupMinimumSelectedFriends} 位好友"
+  },
+  "chatFriends_screensTitle": {
+    "en": "Development preview group created",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:386",
+    "zh": "开发预览群组已创建"
+  },
+  "chatFriends_screensTitle2": {
+    "en": "Group created",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:386",
+    "zh": "群组已创建"
+  },
+  "chatFriends_screensUnavailable": {
+    "en": "The friend service isn't available right now. No friendship or group was changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:428",
+    "zh": "好友服务当前不可用，没有关系或群组被修改。"
+  },
+  "chatFriends_screensUnexpected": {
+    "en": "The service couldn't complete the request; no friendship or group was changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/friends/friend_screens.dart:443",
+    "zh": "服务暂时无法完成请求；没有好友关系或群组被修改。"
+  }
+}

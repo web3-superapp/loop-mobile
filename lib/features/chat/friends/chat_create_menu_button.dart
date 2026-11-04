@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -30,7 +31,7 @@ class ChatCreateMenuButton extends ConsumerWidget {
     if (floating) {
       return Semantics(
         button: true,
-        label: '发起',
+        label: context.l10n.chatFriends_createMenuButtonChatCreateMenuLabel,
         excludeSemantics: true,
         child: Material(
           key: const ValueKey<String>('chat-create-menu'),
@@ -57,7 +58,7 @@ class ChatCreateMenuButton extends ConsumerWidget {
     return LoopIconButton(
       key: const ValueKey<String>('chat-create-menu'),
       icon: 'plus',
-      label: '添加',
+      label: context.l10n.chatFriends_createMenuButtonChatCreateMenuLabel2,
       onPressed: () => unawaited(_open(context, ref)),
     );
   }
@@ -75,8 +76,8 @@ class ChatCreateMenuButton extends ConsumerWidget {
             sheetContext,
             key: 'chat-add-friend-menu-item',
             icon: 'search',
-            title: '搜索 / 添加用户',
-            subtitle: '按 LOOP ID 或昵称找人，发送消息请求',
+            title: context.l10n.chatFriends_createMenuButtonTitle,
+            subtitle: context.l10n.chatFriends_createMenuButtonSubtitle,
             action: _ChatCreateAction.addFriend,
             position: LoopRowPosition.first,
           ),
@@ -84,24 +85,24 @@ class ChatCreateMenuButton extends ConsumerWidget {
             sheetContext,
             key: 'chat-create-community-menu-item',
             icon: 'community',
-            title: '创建社区',
-            subtitle: '提交入驻申请，审核通过后上线',
+            title: context.l10n.chatFriends_createMenuButtonTitle2,
+            subtitle: context.l10n.chatFriends_createMenuButtonSubtitle2,
             action: _ChatCreateAction.createCommunity,
           ),
           _row(
             sheetContext,
             key: 'chat-create-group-menu-item',
             icon: 'users',
-            title: '创建群聊',
-            subtitle: '和好友建一个小群',
+            title: context.l10n.chatFriends_createMenuButtonTitle3,
+            subtitle: context.l10n.chatFriends_createMenuButtonSubtitle3,
             action: _ChatCreateAction.createGroup,
           ),
           _row(
             sheetContext,
             key: 'chat-scan-menu-item',
             icon: 'camera',
-            title: '扫一扫',
-            subtitle: '扫名片、社区码或钱包地址',
+            title: context.l10n.common_scan,
+            subtitle: context.l10n.chatFriends_createMenuButtonSubtitle4,
             action: _ChatCreateAction.scan,
             position: LoopRowPosition.last,
           ),

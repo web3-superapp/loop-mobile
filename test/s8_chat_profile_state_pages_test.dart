@@ -444,7 +444,7 @@ void main() {
         find.byKey(const ValueKey<String>('chat-search-empty')),
         findsNothing,
       );
-      expect(find.text('没有匹配的消息'), findsNothing);
+      expect(find.text('No matching messages'), findsNothing);
     });
   });
 
@@ -468,7 +468,7 @@ void main() {
         find.byKey(const ValueKey<String>('chat-forward-loading')),
         findsOneWidget,
       );
-      expect(find.text('0 条已选择'), findsOneWidget);
+      expect(find.text('0 selected'), findsOneWidget);
     });
 
     testWidgets('a read with nothing forwardable states both empties', (

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// What the conversation header may say about one Stream channel this client
 /// already holds (S253 · decision 0216).
@@ -42,7 +43,9 @@ final class LoopChannelHeading {
 
 /// The header's member line, `12 位成员`, or `null` when Stream stated none.
 String? loopChannelMemberLine(int? memberCount) =>
-    memberCount == null || memberCount <= 0 ? null : '$memberCount 位成员';
+    memberCount == null || memberCount <= 0
+    ? null
+    : LoopL10n.current.chatGroupAlias_streamMessageIdentityS(memberCount);
 
 /// Rebuilds [builder] with the heading of channel [cid] as this client holds
 /// it, and again whenever the channel arrives or its name or membership

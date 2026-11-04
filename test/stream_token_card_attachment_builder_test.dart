@@ -62,8 +62,11 @@ void main() {
     expect(tester.widget<LoopTokenCard>(card).actions, isEmpty);
     expect(find.text('GLYPH'), findsOneWidget);
     expect(find.text('base · 0x71e40…09a2c'), findsOneWidget);
-    expect(find.text('当前事实不可得'), findsOneWidget);
-    expect(find.textContaining('消息只保存代币标识'), findsOneWidget);
+    expect(find.text('Current facts unavailable'), findsOneWidget);
+    expect(
+      find.textContaining('The message only stores the token ID'),
+      findsOneWidget,
+    );
     expect(find.textContaining('2026-08-23 14:07 UTC'), findsOneWidget);
     expect(find.textContaining(r'$0.0842'), findsNothing);
     expect(find.text('Buy'), findsNothing);
@@ -84,7 +87,7 @@ void main() {
       find.byKey(const ValueKey<String>('token-card-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('当前事实不可得'), findsOneWidget);
+    expect(find.text('Current facts unavailable'), findsOneWidget);
     expect(find.text('Buy'), findsNothing);
   });
 
@@ -128,7 +131,7 @@ void main() {
       find.byKey(const ValueKey<String>('token-card-malformed')),
       findsOneWidget,
     );
-    expect(find.text('无法识别的代币卡'), findsOneWidget);
+    expect(find.text('Unrecognized token card'), findsOneWidget);
     expect(
       tester
           .widget<LoopTokenCard>(
@@ -175,7 +178,7 @@ void main() {
     ], textScaler: const TextScaler.linear(2));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('当前事实不可得'), findsOneWidget);
+    expect(find.text('Current facts unavailable'), findsOneWidget);
   });
 
   testWidgets('fixture card is visibly preview-only and has no mutation', (
@@ -201,13 +204,14 @@ void main() {
 
     final card = find.byKey(const ValueKey<String>('token-card-preview'));
     expect(tester.widget(card), isA<LoopTokenCard>());
-    expect(find.text('开发预览'), findsOneWidget);
-    expect(find.textContaining('非 provider 响应'), findsOneWidget);
-    expect(find.textContaining('演示数据'), findsWidgets);
-    expect(find.text('图表'), findsOneWidget);
-    expect(find.text('买入'), findsOneWidget);
-    expect(find.text('自选'), findsOneWidget);
-    expect(find.text('Buy'), findsNothing);
+    expect(find.text('Development preview'), findsOneWidget);
+    expect(find.textContaining('Not a provider response'), findsOneWidget);
+    expect(find.textContaining('Demo data'), findsWidgets);
+    expect(find.text('Chart'), findsOneWidget);
+    expect(find.text('Buy'), findsOneWidget);
+    expect(find.text('Watchlist'), findsOneWidget);
+    // Decision 0281: the default locale is English, so no Chinese label.
+    expect(find.text('买入'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
     for (final action in tester.widget<LoopTokenCard>(card).actions) {

@@ -407,7 +407,7 @@ void main() {
         tester,
         (context) => unawaited(showGroupRenameSheet(context, current: '蛙群')),
       );
-      _expectSheetHeading(tester, '修改群名称');
+      _expectSheetHeading(tester, 'Edit group name');
     });
 
     testWidgets('M10 inbox row actions', (tester) async {

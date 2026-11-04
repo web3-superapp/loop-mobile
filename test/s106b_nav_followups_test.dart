@@ -135,8 +135,8 @@ void main() {
         const ValueKey<String>('chat-voice-room-return-entry'),
       );
       expect(entry, findsOneWidget);
-      expect(find.text('正在语音房 · Frog Holders'), findsOneWidget);
-      expect(find.text('返回'), findsOneWidget);
+      expect(find.text('In voice room · Frog Holders'), findsOneWidget);
+      expect(find.text('Back'), findsOneWidget);
       await tester.tap(entry);
       await tester.pumpAndSettle();
       expect(opened, <String>[testCommunityId]);

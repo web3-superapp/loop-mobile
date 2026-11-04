@@ -5,6 +5,8 @@
 /// the tests read one definition of what a room link looks like.
 library;
 
+import 'package:loop_mobile/l10n/loop_l10n.dart';
+
 /// `/c/{communityId}/room`. The community is the stable address; which room
 /// is live is read again when the link is opened, never carried in it.
 final RegExp _roomLinkPath = RegExp(r'^/c/([A-Za-z0-9_-]{1,64})/room/?$');
@@ -50,7 +52,9 @@ String? voiceRoomShareLink(String backendBaseUrl, String communityId) {
 /// and otherwise the community's room.
 String voiceRoomTitle(String communityName, {String? title}) {
   final own = title?.trim();
-  return own == null || own.isEmpty ? '$communityName 语音房' : own;
+  return own == null || own.isEmpty
+      ? LoopL10n.current.chatV2_voiceRoomShareVoiceRoomTitle(communityName)
+      : own;
 }
 
 /// The text handed to the system share sheet.
@@ -59,6 +63,9 @@ String voiceRoomShareText({
   required String roomTitle,
   String? link,
 }) {
-  final line = '来 LOOP 的『$communityName』语音房：$roomTitle';
+  final line = LoopL10n.current.chatV2_voiceRoomShareLine(
+    communityName,
+    roomTitle,
+  );
   return link == null ? line : '$line\n$link';
 }

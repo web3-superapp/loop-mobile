@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -54,11 +55,11 @@ class ChatTokenCardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final muted = state == LoopTokenCardState.loading;
     final stateLabel = switch (state) {
-      LoopTokenCardState.normal => '正常',
-      LoopTokenCardState.loading => '识别中',
-      LoopTokenCardState.graduated => '已毕业',
-      LoopTokenCardState.partial => '数据缺失',
-      LoopTokenCardState.risk => '风险事实',
+      LoopTokenCardState.normal => context.l10n.common_normal,
+      LoopTokenCardState.loading => context.l10n.chatTokenCard_viewLoading,
+      LoopTokenCardState.graduated => context.l10n.common_graduated,
+      LoopTokenCardState.partial => context.l10n.chatTokenCard_viewPartial,
+      LoopTokenCardState.risk => context.l10n.chatTokenCard_viewRisk,
     };
     final chartShown =
         (state == LoopTokenCardState.normal ||
@@ -197,7 +198,9 @@ class _Head extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: <Widget>[
                   Text(
-                    muted ? '识别中…' : model.symbol,
+                    muted
+                        ? context.l10n.chatTokenCard_viewSwitch
+                        : model.symbol,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopTypography.withWeight(
@@ -230,7 +233,7 @@ class _Head extends StatelessWidget {
             children: <Widget>[
               if (muted)
                 Text(
-                  '识别中',
+                  context.l10n.chatTokenCard_viewLoading,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LoopType.figureMd.copyWith(color: secondary),
@@ -341,7 +344,10 @@ class _Facts extends StatelessWidget {
                         ).copyWith(color: LoopColors.chalk, fontSize: 13),
                       ),
                       TextSpan(
-                        text: ' —— 来源 ${fact.source}，观察于 ${fact.observedLabel}',
+                        text: context.l10n.chatTokenCard_viewText(
+                          fact.observedLabel,
+                          fact.source,
+                        ),
                         style: quiet,
                       ),
                     ],
@@ -507,11 +513,14 @@ class _Footnotes extends StatelessWidget {
       if (provenance.isNotEmpty)
         LoopInfoTrigger(
           key: const ValueKey<String>('loop-token-card-provenance'),
-          semanticsLabel: '${provenance.join('；')}，查看数据来源说明',
+          semanticsLabel: context.l10n
+              .chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel(
+                provenance.join('；'),
+              ),
           onTap: () => unawaited(
             showLoopInfoSheet(
               context,
-              title: '数据来源',
+              title: context.l10n.common_dataSource,
               sheetKey: 'loop-token-card-provenance-sheet',
               notes: <LoopInfoNote>[
                 for (final line in provenance) LoopInfoNote(body: line),
@@ -547,7 +556,7 @@ class _Actions extends StatelessWidget {
               final action = actions[index];
               final onTap = disabled ? null : action.onTap;
               Widget button({required bool block}) => LoopButton(
-                key: ValueKey<String>('chat-token-card-action-${action.label}'),
+                key: ValueKey<String>('chat-token-card-action-$index'),
                 label: action.label,
                 primary: action.buy,
                 block: block,

@@ -81,7 +81,10 @@ void main() {
             findsOneWidget,
             reason: cid,
           );
-          expect(find.textContaining('没有发起网络请求'), findsOneWidget);
+          expect(
+            find.textContaining('no network request was made'),
+            findsOneWidget,
+          );
           expect(find.byType(GroupAliasPage), findsNothing);
         }
 
@@ -256,7 +259,7 @@ void main() {
 
       await _pumpResolverPage(tester, gateway);
 
-      expect(find.text('群组不可用'), findsOneWidget);
+      expect(find.text('Group unavailable'), findsOneWidget);
       final retry = find.byKey(
         const ValueKey<String>('group-alias-resolver-retry'),
       );

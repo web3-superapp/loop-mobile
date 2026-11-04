@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
 import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/loop_reactions.dart';
@@ -399,8 +400,8 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          const LoopStatusPill(
-                            label: '语音',
+                          LoopStatusPill(
+                            label: context.l10n.chatWidgets_componentsLabel,
                             tone: LoopTone.conversation,
                             icon: Icons.graphic_eq_rounded,
                           ),
@@ -820,30 +821,30 @@ class TokenMessageCard extends StatelessWidget {
       model: LoopTokenCardModel(
         symbol: reference.assetId,
         identifier: '${reference.chainId} · ${reference.compactContract}',
-        badge: '开发预览',
+        badge: context.l10n.common_devPreview,
         price: r'$0.0842',
-        change: '+8.4% · 演示数据',
-        riskFacts: const <LoopTokenRiskFact>[
+        change: context.l10n.chatWidgets_componentsChange,
+        riskFacts: <LoopTokenRiskFact>[
           LoopTokenRiskFact(
-            fact: 'LP 3 天后解锁',
-            source: '开发预览事实',
+            fact: context.l10n.chatWidgets_componentsFact,
+            source: context.l10n.chatWidgets_componentsSource,
             observedLabel: '14:06 UTC',
           ),
           LoopTokenRiskFact(
-            fact: '前十持有人占 61%',
-            source: '开发预览事实',
+            fact: context.l10n.chatWidgets_componentsFact2,
+            source: context.l10n.chatWidgets_componentsSource,
             observedLabel: '14:06 UTC',
           ),
         ],
-        footnotes: const <String>[
-          '开发预览事实 · 非 provider 响应 · 14:06 UTC',
-          '演示数据不能触发交易或自选变更。',
+        footnotes: <String>[
+          context.l10n.chatWidgets_componentsLoopTokenCardModel,
+          context.l10n.chatWidgets_componentsLoopTokenCardModel2,
         ],
       ),
-      actions: const <LoopTokenCardAction>[
-        LoopTokenCardAction('图表'),
-        LoopTokenCardAction('自选'),
-        LoopTokenCardAction('买入', buy: true),
+      actions: <LoopTokenCardAction>[
+        LoopTokenCardAction(context.l10n.common_chart),
+        LoopTokenCardAction(context.l10n.common_watchlist),
+        LoopTokenCardAction(context.l10n.common_buy, buy: true),
       ],
     );
   }
@@ -857,7 +858,7 @@ class AssetSnapshotMessageCard extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('chat-spot-snapshot-semantics'),
       container: true,
-      label: 'ETH Spot market snapshot · 开发预览',
+      label: context.l10n.chatWidgets_componentsChatSpotSnapshotSemanticsLabel,
       child: LoopCard(
         key: const ValueKey<String>('chat-spot-snapshot-card'),
         tone: LoopTone.market,
@@ -881,7 +882,7 @@ class AssetSnapshotMessageCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Shared at 14:12 · 演示数据',
+                        context.l10n.chatWidgets_componentsBuild,
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                     ],

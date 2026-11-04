@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class TokenCardPreviewPage extends StatelessWidget {
@@ -11,7 +12,7 @@ class TokenCardPreviewPage extends StatelessWidget {
     return LoopPage(
       eyebrow: 'Shared in chat',
       title: 'Token context',
-      subtitle: '开发预览：消息只保存资产标识；当前价格与事实必须在展示时重新验证。',
+      subtitle: context.l10n.chat_previewPagesSubtitle,
       children: <Widget>[
         const LoopContextRail(stage: LoopStage.discuss),
         const SizedBox(height: 20),
@@ -43,9 +44,9 @@ class TokenCardPreviewPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        const LoopStateCard(
+        LoopStateCard(
           title: 'Shared context is not a recommendation',
-          message: '演示价格和事实不是 provider 响应。生产卡片缺少新鲜事实时不会显示价格、Buy 或 Watch。',
+          message: context.l10n.chat_previewPagesMessage,
           icon: Icons.schedule_rounded,
           tone: LoopTone.conversation,
         ),
@@ -180,7 +181,7 @@ class AssetMessagePreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: 'Shared in chat · 开发预览',
+      eyebrow: context.l10n.chat_previewPagesEyebrow,
       title: 'Spot market snapshot',
       subtitle: 'A labelled point-in-time fixture. Open Market for current public Testnet facts.',
       children: <Widget>[
@@ -188,9 +189,9 @@ class AssetMessagePreviewPage extends StatelessWidget {
         const SizedBox(height: 20),
         const AssetSnapshotMessageCard(),
         const LoopSectionLabel('Snapshot boundaries'),
-        const LoopStateCard(
+        LoopStateCard(
           title: 'Preview facts are not live',
-          message: 'Reference price, 24h change, and volume are labelled 演示数据. Opening Market loads a separate current public Spot snapshot.',
+          message: context.l10n.chat_previewPagesMessage2,
           icon: Icons.camera_alt_outlined,
           tone: LoopTone.market,
         ),

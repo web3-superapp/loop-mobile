@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -13,16 +14,22 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// What one conversation row in 聊天 can do besides opening (decision 0129,
 /// S123 M2): the same four things behind a swipe and behind a long press.
 enum ChatInboxRowAction {
-  pin('置顶'),
-  unpin('取消置顶'),
-  mute('静音'),
-  unmute('取消静音'),
-  markRead('标为已读'),
-  delete('删除');
+  pin,
+  unpin,
+  mute,
+  unmute,
+  markRead,
+  delete;
 
-  const ChatInboxRowAction(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    ChatInboxRowAction.pin => LoopL10n.current.chat_inboxRowActionsPin,
+    ChatInboxRowAction.unpin => LoopL10n.current.chat_inboxRowActionsUnpin,
+    ChatInboxRowAction.mute => LoopL10n.current.common_mute,
+    ChatInboxRowAction.unmute => LoopL10n.current.common_unmute,
+    ChatInboxRowAction.markRead =>
+      LoopL10n.current.chat_inboxRowActionsMarkRead,
+    ChatInboxRowAction.delete => LoopL10n.current.common_delete,
+  };
 
   /// Whether the action is revealed by a swipe towards the start (the
   /// leading side). 标为已读 is the only one; the rest sit at the end.
@@ -135,7 +142,8 @@ Future<ChatInboxRowAction?> showChatInboxRowActionSheet(
   LoopHaptics.medium();
   return showLoopSheet<ChatInboxRowAction>(
     context,
-    barrierLabel: '关闭会话操作',
+    barrierLabel:
+        context.l10n.chat_inboxRowActionsChatInboxRowSheetBarrierLabel,
     // The inbox is a tab root: the sheet goes over the floating tab bar.
     useRootNavigator: true,
     builder: (sheetContext) => Column(
@@ -167,7 +175,7 @@ Future<ChatInboxRowAction?> showChatInboxRowActionSheet(
               const SizedBox(height: 2),
               LoopButton(
                 key: const ValueKey<String>('chat-inbox-row-sheet-cancel'),
-                label: '取消',
+                label: context.l10n.common_cancel,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop(),
               ),

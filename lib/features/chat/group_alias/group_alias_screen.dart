@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_controller.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -18,7 +19,8 @@ import 'package:loop_mobile/widgets/loop_person_row.dart'
     show loopFormFieldDecoration;
 
 /// The page title every group-Alias location carries.
-const String _groupAliasTitle = '群内昵称';
+String get _groupAliasTitle =>
+    LoopL10n.current.chatGroupAlias_screenGroupAliasTitle;
 
 /// The topbar's back control while there is a page under this one: the old
 /// `LoopPage` shell drew it from the same fact, so a deep link that opens the
@@ -61,13 +63,14 @@ class GroupAliasRoutePage extends StatelessWidget {
     try {
       return GroupAliasPage(groupId: GroupId.fromWire(routeGroupId));
     } on InvalidGroupAliasContractException {
-      return const _GroupAliasBlockedPage(
+      return _GroupAliasBlockedPage(
         state: LoopEmptyState(
           showMessage: true,
           key: ValueKey<String>('group-alias-route-invalid'),
           illustration: LoopIllustration.members,
-          title: '群组引用无效',
-          message: '这个页面没有收到有效的 LOOP group_id；没有发起网络请求。',
+          title: context.l10n.chatGroupAlias_screenGroupAliasRouteInvalidTitle,
+          message:
+              context.l10n.chatGroupAlias_screenGroupAliasRouteInvalidMessage,
         ),
       );
     }
@@ -82,12 +85,12 @@ class GroupAliasPausedPage extends StatelessWidget {
   const GroupAliasPausedPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const _GroupAliasBlockedPage(
+  Widget build(BuildContext context) => _GroupAliasBlockedPage(
     state: LoopEmptyState(
       key: ValueKey<String>('group-alias-paused'),
       illustration: LoopIllustration.members,
-      title: '群内昵称暂未开放',
-      message: '群成员以自己的头像和用户名显示。这里没有发起任何请求。',
+      title: context.l10n.chatGroupAlias_screenGroupAliasPausedTitle,
+      message: context.l10n.chatGroupAlias_screenGroupAliasPausedMessage,
     ),
   );
 }
@@ -111,13 +114,15 @@ class GroupAliasChannelRoutePage extends StatelessWidget {
         channelId: GroupAliasStreamChannelId.fromCid(routeCid),
       );
     } on InvalidGroupAliasContractException {
-      return const _GroupAliasBlockedPage(
+      return _GroupAliasBlockedPage(
         state: LoopEmptyState(
           showMessage: true,
           key: ValueKey<String>('group-alias-channel-invalid'),
           illustration: LoopIllustration.members,
-          title: '群聊引用无效',
-          message: '这个页面没有收到可解析的 Stream 群聊引用；没有发起网络请求。',
+          title:
+              context.l10n.chatGroupAlias_screenGroupAliasChannelInvalidTitle,
+          message:
+              context.l10n.chatGroupAlias_screenGroupAliasChannelInvalidMessage,
         ),
       );
     }
@@ -153,20 +158,24 @@ class _GroupAliasResolverPageState
     }
 
     final title = switch (state.phase) {
-      GroupAliasResolverPhase.initial ||
-      GroupAliasResolverPhase.resolving => '正在确认群组',
-      GroupAliasResolverPhase.notFound => '群组不可用',
-      GroupAliasResolverPhase.unavailable => '群组服务暂不可用',
-      GroupAliasResolverPhase.failure ||
-      GroupAliasResolverPhase.resolved => '无法解析群组',
+      GroupAliasResolverPhase.initial || GroupAliasResolverPhase.resolving =>
+        context.l10n.chatGroupAlias_screenResolving,
+      GroupAliasResolverPhase.notFound =>
+        context.l10n.chatGroupAlias_screenNotFound,
+      GroupAliasResolverPhase.unavailable =>
+        context.l10n.chatGroupAlias_screenUnavailable,
+      GroupAliasResolverPhase.failure || GroupAliasResolverPhase.resolved =>
+        context.l10n.chatGroupAlias_screenResolved,
     };
     final message = switch (state.phase) {
-      GroupAliasResolverPhase.initial ||
-      GroupAliasResolverPhase.resolving => 'LOOP 正在确认当前账号仍是这个 Stream 群聊的成员。',
-      GroupAliasResolverPhase.notFound => '这个频道不是可见群组，或当前账号已不是成员；没有开放群昵称操作。',
-      GroupAliasResolverPhase.unavailable => '暂时无法确认群组成员关系；没有开放群昵称操作。',
-      GroupAliasResolverPhase.failure ||
-      GroupAliasResolverPhase.resolved => '这个群的信息暂时读不到，群昵称暂时不能修改。',
+      GroupAliasResolverPhase.initial || GroupAliasResolverPhase.resolving =>
+        context.l10n.chatGroupAlias_screenResolving2,
+      GroupAliasResolverPhase.notFound =>
+        context.l10n.chatGroupAlias_screenNotFound2,
+      GroupAliasResolverPhase.unavailable =>
+        context.l10n.chatGroupAlias_screenUnavailable2,
+      GroupAliasResolverPhase.failure || GroupAliasResolverPhase.resolved =>
+        context.l10n.chatGroupAlias_screenResolved2,
     };
     final isLoading =
         state.phase == GroupAliasResolverPhase.initial ||
@@ -183,7 +192,9 @@ class _GroupAliasResolverPageState
         action: canRetry
             ? LoopButton(
                 key: const ValueKey<String>('group-alias-resolver-retry'),
-                label: '重试确认',
+                label: context
+                    .l10n
+                    .chatGroupAlias_screenGroupAliasResolverRetryLabel,
                 icon: 'refresh',
                 primary: true,
                 onPressed: () => unawaited(controller.resolve()),
@@ -228,27 +239,29 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
       key: const ValueKey<String>('group-alias-screen'),
       archetype: LoopPageArchetype.record,
       title: _groupAliasTitle,
-      kicker: preview ? '开发预览' : null,
+      kicker: preview ? context.l10n.common_devPreview : null,
       onBack: _groupAliasBack(context),
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('group-alias-folio'),
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: '群昵称',
+        kicker: context.l10n.chatGroupAlias_screenGroupAliasFolioKicker,
         heading: _groupAliasTitle,
-        caption: '每个群可以使用不同昵称。首次保留后永久不可修改；前端不做跨群身份关联，但这不构成强匿名保证。',
+        caption: context.l10n.chatGroupAlias_screenGroupAliasFolioCaption,
         stamp: switch (state.mode) {
-          GroupAliasGatewayMode.preview => '开发预览',
-          GroupAliasGatewayMode.production => '仅本群',
-          GroupAliasGatewayMode.unavailable => '未连接',
+          GroupAliasGatewayMode.preview => context.l10n.common_devPreview,
+          GroupAliasGatewayMode.production =>
+            context.l10n.chatGroupAlias_screenProduction,
+          GroupAliasGatewayMode.unavailable =>
+            context.l10n.chatGroupAlias_screenUnavailable3,
         },
       ),
       sections: <Widget>[
         _GroupAliasBoundaryNotice(mode: state.mode),
-        const LoopLabel('我的群昵称'),
+        LoopLabel(context.l10n.chatGroupAlias_screenLoopLabel),
         ..._aliasContent(state, controller),
         if (state.mode != GroupAliasGatewayMode.unavailable) ...<Widget>[
-          const LoopLabel('查找群成员昵称'),
+          LoopLabel(context.l10n.chatGroupAlias_screenLoopLabel2),
           _GroupAliasSearch(groupId: widget.groupId),
         ],
       ],
@@ -271,12 +284,15 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
     }
 
     if (state.phase == GroupAliasPhase.unavailable) {
-      return const <Widget>[
+      return <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('group-alias-unavailable'),
           illustration: LoopIllustration.members,
-          title: '群内昵称服务不可用',
-          message: '没有展示演示昵称，也没有把账号昵称或钱包地址当作群内身份。',
+          title:
+              LoopL10n.current.chatGroupAlias_screenGroupAliasUnavailableTitle,
+          message: LoopL10n
+              .current
+              .chatGroupAlias_screenGroupAliasUnavailableMessage,
           compact: true,
         ),
       ];
@@ -296,9 +312,13 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
                   LoopRecordRow(
                     leading: LoopInitialsAvatar(label: resource.alias),
                     title: resource.alias,
-                    subtitle: syncing ? '已保留 · 群里的显示同步中' : '当前群内昵称',
+                    subtitle: syncing
+                        ? LoopL10n.current.chatGroupAlias_screenSubtitle
+                        : LoopL10n.current.chatGroupAlias_screenSubtitle2,
                     trailingBadge: LoopBadge(
-                      syncing ? '同步中' : '已永久保留',
+                      syncing
+                          ? LoopL10n.current.chatGroupAlias_screenLoopBadge
+                          : LoopL10n.current.chatGroupAlias_screenS,
                       kind: syncing ? LoopBadgeKind.mute : LoopBadgeKind.up,
                     ),
                     chevron: false,
@@ -310,14 +330,16 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
                 icon: syncing ? 'refresh' : 'lock',
                 tone: syncing ? LoopNoticeTone.warn : LoopNoticeTone.normal,
                 body: syncing
-                    ? '昵称已经为你保留，群里的显示还在同步。请用完全相同的昵称重试。'
-                    : '这个昵称已在当前群永久保留，不能修改。它不会暴露公开 Profile 或 Stream 用户身份。',
+                    ? LoopL10n.current.chatGroupAlias_screenBody
+                    : LoopL10n.current.chatGroupAlias_screenBody2,
               ),
               if (syncing)
                 _GroupAliasAction(
                   child: LoopButton(
                     key: const ValueKey<String>('group-alias-retry-projection'),
-                    label: '重试同步',
+                    label: LoopL10n
+                        .current
+                        .chatGroupAlias_screenGroupAliasRetryProjectionLabel,
                     icon: 'refresh',
                     block: true,
                     onPressed: state.isBusy
@@ -337,15 +359,22 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
       return <Widget>[
         LoopNotice(
           key: const ValueKey<String>('group-alias-outcome-unknown'),
-          title: '保留结果待确认',
+          title: LoopL10n
+              .current
+              .chatGroupAlias_screenGroupAliasOutcomeUnknownTitle,
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          body: '“${state.pendingAlias}”可能已经永久保留。为避免锁定另一个值，当前只允许重试完全相同的昵称。',
+          body: LoopL10n.current
+              .chatGroupAlias_screenGroupAliasOutcomeUnknownBody(
+                state.pendingAlias,
+              ),
         ),
         _GroupAliasAction(
           child: LoopButton(
             key: const ValueKey<String>('group-alias-retry-pending'),
-            label: '用相同昵称重试',
+            label: LoopL10n
+                .current
+                .chatGroupAlias_screenGroupAliasRetryPendingLabel,
             icon: 'refresh',
             primary: true,
             block: true,
@@ -362,7 +391,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
       content.addAll(<Widget>[
         LoopNotice(
           key: const ValueKey<String>('group-alias-failure'),
-          title: '群内昵称未保留',
+          title: LoopL10n.current.chatGroupAlias_screenGroupAliasFailureTitle,
           icon: 'warn',
           tone: LoopNoticeTone.danger,
           body: _groupAliasFailureMessage(state.failureKind),
@@ -371,7 +400,8 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
           _GroupAliasAction(
             child: LoopButton(
               key: const ValueKey<String>('group-alias-reload'),
-              label: '重新读取',
+              label:
+                  LoopL10n.current.chatGroupAlias_screenGroupAliasReloadLabel,
               icon: 'refresh',
               block: true,
               onPressed: state.isBusy
@@ -386,8 +416,9 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
       content.addAll(<Widget>[
         LoopFlatField(
           key: const ValueKey<String>('group-alias-field'),
-          label: '当前群昵称',
-          footnote: '提交后不可改名；同一群内昵称必须唯一。',
+          label: LoopL10n.current.chatGroupAlias_screenGroupAliasFieldLabel,
+          footnote:
+              LoopL10n.current.chatGroupAlias_screenGroupAliasFieldFootnote,
           child: TextField(
             key: const ValueKey<String>('group-alias-input'),
             controller: _aliasController,
@@ -396,7 +427,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
             textInputAction: TextInputAction.done,
             style: LoopType.bodyLg,
             decoration: loopFormFieldDecoration(
-              hint: '1–40 个字符',
+              hint: LoopL10n.current.chatGroupAlias_screenHint,
               counterText: '',
             ),
             onSubmitted: (_) => _reserve(controller),
@@ -405,7 +436,9 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
         _GroupAliasAction(
           child: LoopButton(
             key: const ValueKey<String>('group-alias-submit'),
-            label: state.isBusy ? '保留中…' : '永久保留这个昵称',
+            label: state.isBusy
+                ? LoopL10n.current.chatGroupAlias_screenGroupAliasSubmitLabel
+                : LoopL10n.current.chatGroupAlias_screenGroupAliasSubmitLabel2,
             icon: 'lock',
             primary: true,
             block: true,
@@ -417,7 +450,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
       content.add(
         LoopNotice(
           key: const ValueKey<String>('group-alias-blocked'),
-          title: '无法设置群内昵称',
+          title: LoopL10n.current.chatGroupAlias_screenGroupAliasBlockedTitle,
           icon: 'lock',
           tone: LoopNoticeTone.warn,
           body: _groupAliasFailureMessage(state.failureKind),
@@ -479,13 +512,20 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
       children: <Widget>[
         LoopFlatField(
           key: const ValueKey<String>('group-alias-search-field'),
-          label: '群内昵称',
-          footnote: '至少输入 2 个字符',
+          label: context.l10n.chatGroupAlias_screenGroupAliasTitle,
+          footnote:
+              context.l10n.chatGroupAlias_screenGroupAliasSearchFieldFootnote,
           trailing: LoopButton(
             key: const ValueKey<String>('group-alias-search-submit'),
-            label: state.isBusy ? '查找中' : '查找',
+            label: state.isBusy
+                ? context.l10n.chatGroupAlias_screenGroupAliasSearchSubmitLabel
+                : context
+                      .l10n
+                      .chatGroupAlias_screenGroupAliasSearchSubmitLabel2,
             icon: 'search',
-            semanticLabel: '查找群内昵称',
+            semanticLabel: context
+                .l10n
+                .chatGroupAlias_screenGroupAliasSearchSubmitSemanticLabel,
             onPressed: state.isBusy
                 ? null
                 : () => unawaited(controller.search(_controller.text)),
@@ -498,7 +538,7 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
             textInputAction: TextInputAction.search,
             style: LoopType.bodyLg,
             decoration: loopFormFieldDecoration(
-              hint: '输入要查找的昵称',
+              hint: context.l10n.chatGroupAlias_screenHint2,
               counterText: '',
             ),
             onSubmitted: (value) => unawaited(controller.search(value)),
@@ -513,24 +553,30 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
               rows: 2,
             ),
           ],
-          GroupAliasSearchPhase.ready when state.page.items.isEmpty =>
-            const <Widget>[
-              LoopEmptyState(
-                key: ValueKey<String>('group-alias-search-empty'),
-                illustration: LoopIllustration.search,
-                title: '没有找到匹配昵称',
-                message: '还没同步完成的成员、已退群的成员和你自己不会出现在结果里。',
-                compact: true,
-              ),
-            ],
+          GroupAliasSearchPhase.ready when state.page.items.isEmpty => <Widget>[
+            LoopEmptyState(
+              key: ValueKey<String>('group-alias-search-empty'),
+              illustration: LoopIllustration.search,
+              title:
+                  context.l10n.chatGroupAlias_screenGroupAliasSearchEmptyTitle,
+              message: context
+                  .l10n
+                  .chatGroupAlias_screenGroupAliasSearchEmptyMessage,
+              compact: true,
+            ),
+          ],
           GroupAliasSearchPhase.ready => <Widget>[
             if (state.page.truncated)
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('group-alias-search-truncated'),
                 icon: 'info',
                 tone: LoopNoticeTone.warn,
-                title: '结果已截断',
-                body: '请继续输入更完整的昵称以缩小范围。',
+                title: context
+                    .l10n
+                    .chatGroupAlias_screenGroupAliasSearchTruncatedTitle,
+                body: context
+                    .l10n
+                    .chatGroupAlias_screenGroupAliasSearchTruncatedBody,
               ),
             LoopRecordGroup(
               rows: <LoopRecordRow>[
@@ -541,7 +587,7 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
                       label: state.page.items[index].alias,
                     ),
                     title: state.page.items[index].alias,
-                    subtitle: '当前群内昵称',
+                    subtitle: context.l10n.chatGroupAlias_screenSubtitle2,
                     chevron: false,
                   ),
               ],
@@ -551,8 +597,10 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
           GroupAliasSearchPhase.failure => <Widget>[
             LoopInlineUnavailable(
               key: const ValueKey<String>('group-alias-search-failure'),
-              message:
-                  '无法完成群内搜索：${_groupAliasFailureMessage(state.failureKind)}',
+              message: context.l10n
+                  .chatGroupAlias_screenGroupAliasSearchFailureMessage(
+                    _groupAliasFailureMessage(state.failureKind),
+                  ),
               maxLines: 3,
             ),
           ],
@@ -584,25 +632,35 @@ class _GroupAliasBoundaryNotice extends StatelessWidget {
         0,
       ),
       title: switch (mode) {
-        GroupAliasGatewayMode.preview => '开发预览 · 仅本次运行',
-        GroupAliasGatewayMode.production => 'LOOP 群组身份边界',
-        GroupAliasGatewayMode.unavailable => '生产连接不可用',
+        GroupAliasGatewayMode.preview =>
+          context.l10n.chatFriends_screensFriendPreviewBannerTitle,
+        GroupAliasGatewayMode.production =>
+          context.l10n.chatGroupAlias_screenProduction2,
+        GroupAliasGatewayMode.unavailable =>
+          context.l10n.chatGroupAlias_screenUnavailable4,
       },
-      body: '群昵称只在这个群里显示，不会关联到你的公开资料或钱包地址。',
+      body: context.l10n.chatGroupAlias_screenGroupAliasBoundaryBody,
     );
   }
 }
 
 String _groupAliasFailureMessage(GroupAliasGatewayFailureKind? kind) =>
     switch (kind) {
-      GroupAliasGatewayFailureKind.offline => '设备当前离线，没有读到群昵称，也没有提交任何昵称。',
-      GroupAliasGatewayFailureKind.unavailable => '群昵称服务当前不可用，没有昵称被显示为已保留。',
+      GroupAliasGatewayFailureKind.offline =>
+        LoopL10n.current.chatGroupAlias_screenOffline,
+      GroupAliasGatewayFailureKind.unavailable =>
+        LoopL10n.current.chatGroupAlias_screenUnavailable5,
       GroupAliasGatewayFailureKind.notFound =>
-        '当前没有可见的群昵称；也可能已不再是这个 Stream 群的成员。',
-      GroupAliasGatewayFailureKind.immutable => '这个账号已在当前群永久保留了另一个昵称，不能修改。',
-      GroupAliasGatewayFailureKind.taken => '这个昵称已经被当前群的其他成员永久保留，请换一个。',
-      GroupAliasGatewayFailureKind.invalidData => '这个昵称不可用，请换一个再试。',
-      GroupAliasGatewayFailureKind.outcomeUnknown => '请求可能已经提交，只能用完全相同的昵称继续确认。',
-      GroupAliasGatewayFailureKind.unexpected => '群昵称操作暂时失败，没有结果被显示为已确认。',
-      null => '群昵称当前不可用。',
+        LoopL10n.current.chatGroupAlias_screenNotFound3,
+      GroupAliasGatewayFailureKind.immutable =>
+        LoopL10n.current.chatGroupAlias_screenImmutable,
+      GroupAliasGatewayFailureKind.taken =>
+        LoopL10n.current.chatGroupAlias_screenTaken,
+      GroupAliasGatewayFailureKind.invalidData =>
+        LoopL10n.current.chatGroupAlias_screenInvalidData,
+      GroupAliasGatewayFailureKind.outcomeUnknown =>
+        LoopL10n.current.chatGroupAlias_screenOutcomeUnknown,
+      GroupAliasGatewayFailureKind.unexpected =>
+        LoopL10n.current.chatGroupAlias_screenUnexpected,
+      null => LoopL10n.current.chatGroupAlias_screenSwitch,
     };

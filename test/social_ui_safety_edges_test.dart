@@ -67,8 +67,13 @@ void main() {
           find.byKey(const ValueKey<String>('friend-group-create-failure')),
           findsOneWidget,
         );
-        expect(find.text('群组创建需人工核对'), findsOneWidget);
-        expect(find.textContaining('频道需要后台人工核对；不会自动创建第二个频道。'), findsOneWidget);
+        expect(find.text('Group creation needs manual review'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'The channel needs manual review; a second channel won\'t be created automatically.',
+          ),
+          findsOneWidget,
+        );
         expect(
           find.byKey(const ValueKey<String>('friend-group-resume-editing')),
           findsNothing,
@@ -102,7 +107,12 @@ void main() {
         expect(restored.requestId, frozen.requestId);
         expect(restored.failureKind, FriendGatewayFailureKind.operatorRequired);
         expect(gateway.groupOperationIds, <String>[frozen.requestId!]);
-        expect(find.textContaining('频道需要后台人工核对；不会自动创建第二个频道。'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'The channel needs manual review; a second channel won\'t be created automatically.',
+          ),
+          findsOneWidget,
+        );
       },
     );
 
@@ -200,8 +210,11 @@ void main() {
         const GroupAliasRoutePage(routeGroupId: 'messaging:loop_group_unsafe'),
       );
 
-      expect(find.text('群组引用无效'), findsOneWidget);
-      expect(find.textContaining('没有发起网络请求'), findsOneWidget);
+      expect(find.text('Invalid group reference'), findsOneWidget);
+      expect(
+        find.textContaining('no network request was made'),
+        findsOneWidget,
+      );
       expect(gateway.loadCalls, 0);
       expect(gateway.putCalls, 0);
       expect(gateway.searchCalls, 0);
@@ -291,7 +304,12 @@ void main() {
                 find.byKey(const ValueKey<String>('group-alias-reserved')),
                 findsOneWidget,
               );
-              expect(find.textContaining('已在当前群永久保留，不能修改'), findsOneWidget);
+              expect(
+                find.textContaining(
+                  'permanently reserved in this group and can\'t be changed',
+                ),
+                findsOneWidget,
+              );
               expect(
                 find.byKey(
                   const ValueKey<String>('group-alias-retry-projection'),
@@ -303,7 +321,10 @@ void main() {
                 find.byKey(const ValueKey<String>('group-alias-reserved')),
                 findsOneWidget,
               );
-              expect(find.textContaining('群里的显示还在同步'), findsOneWidget);
+              expect(
+                find.textContaining('the group display is still syncing'),
+                findsOneWidget,
+              );
               expect(
                 find.byKey(
                   const ValueKey<String>('group-alias-retry-projection'),
@@ -317,7 +338,10 @@ void main() {
                 ),
                 findsOneWidget,
               );
-              expect(find.textContaining('可能已经永久保留'), findsOneWidget);
+              expect(
+                find.textContaining('may already be permanently reserved'),
+                findsOneWidget,
+              );
               expect(
                 find.byKey(const ValueKey<String>('group-alias-reserved')),
                 findsNothing,
@@ -368,7 +392,10 @@ void main() {
           findsOneWidget,
         );
         expect(
-          find.descendant(of: row, matching: find.text('当前群内昵称')),
+          find.descendant(
+            of: row,
+            matching: find.text('Current group nickname'),
+          ),
           findsOneWidget,
         );
         expect(find.text(_groupAliasIdValue), findsNothing);

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The result of one merged-image export.
 enum ChatMergeExportOutcome {
@@ -46,10 +47,13 @@ final chatMergeExportSinkProvider = Provider<ChatMergeExportSink>(
 );
 
 /// zh-CN copy for one export outcome. It states only what happened.
-String chatMergeExportMessage(ChatMergeExportOutcome outcome) =>
-    switch (outcome) {
-      ChatMergeExportOutcome.shared => '长图已生成，请在分享面板中选择去处',
-      ChatMergeExportOutcome.dismissed => '已生成长图，但没有选择分享去处',
-      ChatMergeExportOutcome.failed => '长图没有生成成功，没有任何内容离开这台设备',
-      ChatMergeExportOutcome.unavailable => '本次运行没有装配系统分享，长图未生成',
-    };
+String chatMergeExportMessage(
+  ChatMergeExportOutcome outcome,
+) => switch (outcome) {
+  ChatMergeExportOutcome.shared => LoopL10n.current.chatV2_mergeExportShared,
+  ChatMergeExportOutcome.dismissed =>
+    LoopL10n.current.chatV2_mergeExportDismissed,
+  ChatMergeExportOutcome.failed => LoopL10n.current.chatV2_mergeExportFailed,
+  ChatMergeExportOutcome.unavailable =>
+    LoopL10n.current.chatV2_mergeExportUnavailable,
+};

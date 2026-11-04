@@ -211,7 +211,7 @@ void main() {
         'BSC 早期盘互助',
       );
       expect(groupChatTitle(LoopChannelHeading.none), groupChatNeutralTitle);
-      expect(loopChannelMemberLine(4), '4 位成员');
+      expect(loopChannelMemberLine(4), '4 members');
       expect(loopChannelMemberLine(0), isNull);
       expect(loopChannelMemberLine(null), isNull);
     });
@@ -267,7 +267,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('群聊'), findsOneWidget);
+      expect(find.text('Group chat'), findsOneWidget);
       expect(find.text('-'), findsOneWidget);
 
       final channel = Channel.fromState(
@@ -286,7 +286,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('BSC 早期盘互助'), findsOneWidget);
-      expect(find.text('4 位成员'), findsOneWidget);
+      expect(find.text('4 members'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       channel.dispose();
