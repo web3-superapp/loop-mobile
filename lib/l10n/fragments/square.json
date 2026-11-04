@@ -355,6 +355,17 @@
     "where": "lib/features/square/square_feed_view.dart:1074",
     "zh": "删除这条动态？"
   },
+  "square_feedViewMarketCapCompact": {
+    "en": "Mcap {memeCapLabel}",
+    "placeholders": {
+      "memeCapLabel": {
+        "example": "memeCapLabel(cap)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/square/square_feed_view.dart:579",
+    "zh": "市值 {memeCapLabel}"
+  },
   "square_feedViewMessage": {
     "en": "Posted",
     "placeholders": {},
@@ -384,17 +395,6 @@
     "placeholders": {},
     "where": "lib/features/square/square_feed_view.dart:132",
     "zh": "没有删掉，请稍后再试"
-  },
-  "square_feedViewNull": {
-    "en": "Market cap {memeCapLabel}",
-    "placeholders": {
-      "memeCapLabel": {
-        "example": "memeCapLabel(cap)",
-        "type": "Object"
-      }
-    },
-    "where": "lib/features/square/square_feed_view.dart:579",
-    "zh": "市值 {memeCapLabel}"
   },
   "square_feedViewS": {
     "en": "{named} filled the bonding pool. The official pool is live and buybacks have started.",

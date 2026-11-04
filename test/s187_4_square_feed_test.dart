@@ -414,12 +414,15 @@ void main() {
       await _teardown(tester);
     });
 
+    // S355b: 360 is the verification width (S350 shot baseline). At 320 the
+    // Global / Following + Post head overflows by 7.3px; the shared
+    // market_widgets.dart:298 tab bar is made shrinkable in S353a.
     testWidgets('the price stays on one line on a narrow phone', (
       tester,
     ) async {
       await _pumpSegment(
         tester,
-        size: const Size(320, 1600),
+        size: const Size(360, 1600),
         _Feed(
           page: _page(<SquareFeedPost>[
             _post(

@@ -4134,6 +4134,11 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get square_feedViewLoopSheetHeading => '删除这条动态？';
 
   @override
+  String square_feedViewMarketCapCompact(Object? memeCapLabel) {
+    return '市值 $memeCapLabel';
+  }
+
+  @override
   String get square_feedViewMessage => '已发布';
 
   @override
@@ -4147,11 +4152,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get square_feedViewMessage5 => '没有删掉，请稍后再试';
-
-  @override
-  String square_feedViewNull(Object? memeCapLabel) {
-    return '市值 $memeCapLabel';
-  }
 
   @override
   String square_feedViewS(Object? named) {

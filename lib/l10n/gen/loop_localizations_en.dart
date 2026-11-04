@@ -4509,6 +4509,11 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get square_feedViewLoopSheetHeading => 'Delete this post?';
 
   @override
+  String square_feedViewMarketCapCompact(Object? memeCapLabel) {
+    return 'Mcap $memeCapLabel';
+  }
+
+  @override
   String get square_feedViewMessage => 'Posted';
 
   @override
@@ -4522,11 +4527,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get square_feedViewMessage5 => 'Couldn\'t delete. Try again later.';
-
-  @override
-  String square_feedViewNull(Object? memeCapLabel) {
-    return 'Market cap $memeCapLabel';
-  }
 
   @override
   String square_feedViewS(Object? named) {

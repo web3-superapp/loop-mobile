@@ -7368,6 +7368,12 @@ abstract class LoopLocalizations {
   /// **'Delete this post?'**
   String get square_feedViewLoopSheetHeading;
 
+  /// lib/features/square/square_feed_view.dart:579
+  ///
+  /// In en, this message translates to:
+  /// **'Mcap {memeCapLabel}'**
+  String square_feedViewMarketCapCompact(Object? memeCapLabel);
+
   /// lib/features/square/square_feed_view.dart:102
   ///
   /// In en, this message translates to:
@@ -7397,12 +7403,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t delete. Try again later.'**
   String get square_feedViewMessage5;
-
-  /// lib/features/square/square_feed_view.dart:579
-  ///
-  /// In en, this message translates to:
-  /// **'Market cap {memeCapLabel}'**
-  String square_feedViewNull(Object? memeCapLabel);
 
   /// lib/features/square/square_feed_view.dart:733
   ///

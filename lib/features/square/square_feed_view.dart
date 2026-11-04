@@ -581,9 +581,11 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                           );
                           final capText = cap == null
                               ? null
-                              : context.l10n.square_feedViewNull(
+                              : context.l10n.square_feedViewMarketCapCompact(
                                   memeCapLabel(cap),
                                 );
+                          // S355b: the compact row says 「Mcap」 in English;
+                          // titles and details keep 「Market cap」.
                           // S350a · decision 0274: the market cap is drawn
                           // whole or not at all — never 「市值 …」.
                           final showCap =

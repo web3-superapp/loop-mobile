@@ -5844,6 +5844,15 @@
   "@square_feedViewLoopSheetHeading": {
     "description": "lib/features/square/square_feed_view.dart:1074"
   },
+  "square_feedViewMarketCapCompact": "Mcap {memeCapLabel}",
+  "@square_feedViewMarketCapCompact": {
+    "description": "lib/features/square/square_feed_view.dart:579",
+    "placeholders": {
+      "memeCapLabel": {
+        "type": "Object?"
+      }
+    }
+  },
   "square_feedViewMessage": "Posted",
   "@square_feedViewMessage": {
     "description": "lib/features/square/square_feed_view.dart:102"
@@ -5863,15 +5872,6 @@
   "square_feedViewMessage5": "Couldn't delete. Try again later.",
   "@square_feedViewMessage5": {
     "description": "lib/features/square/square_feed_view.dart:132"
-  },
-  "square_feedViewNull": "Market cap {memeCapLabel}",
-  "@square_feedViewNull": {
-    "description": "lib/features/square/square_feed_view.dart:579",
-    "placeholders": {
-      "memeCapLabel": {
-        "type": "Object?"
-      }
-    }
   },
   "square_feedViewS": "{named} filled the bonding pool. The official pool is live and buybacks have started.",
   "@square_feedViewS": {
