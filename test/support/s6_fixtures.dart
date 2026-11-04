@@ -296,29 +296,34 @@ Map<String, Object?> s6AuthorizationPayload() => <String, Object?>{
   },
 };
 
-/// The swap intent the backend produces today: no provider simulation, so it
-/// stays `prepared` and can never be signed.
-Map<String, Object?> s6SwapIntentBody({String state = 'prepared'}) =>
-    s6IntentBody(
-      kind: 'swap',
-      state: state,
-      simulationStatus: 'unavailable',
-      simulationSource: 'provider_quote',
-      simulationReason: 'SWAP_SIMULATION_PROVIDER_PENDING',
-      signingAllowed: false,
-      signingReason: 'SIMULATION_UNAVAILABLE',
-      signingMode: 'privy_authorization_signature',
-      unsignedTransaction: null,
-      authorizationPayload: s6AuthorizationPayload(),
-      decodedCall: null,
-      recipient: null,
-      amount: s6Amount(raw: '5000000000000000', display: '0.005'),
-      swap: <String, Object?>{
-        'destinationAsset': s6Asset(assetId: s5UsdtAssetId, symbol: 'USDT'),
-        'quote': s6Quote(),
-        'policy': s6SwapPolicy(),
-      },
-    );
+/// The swap intent the backend produces with `PRIVY_SWAP_EXECUTION_ENABLED`
+/// off: no provider simulation, so it stays `prepared` and can never be
+/// signed. With [executable] it is the `on` intent (loop-api decision 0198):
+/// `awaiting_signature` and `signing.allowed`, the simulation still
+/// unavailable.
+Map<String, Object?> s6SwapIntentBody({
+  String state = 'prepared',
+  bool executable = false,
+}) => s6IntentBody(
+  kind: 'swap',
+  state: executable ? 'awaiting_signature' : state,
+  simulationStatus: 'unavailable',
+  simulationSource: 'provider_quote',
+  simulationReason: 'SWAP_SIMULATION_PROVIDER_PENDING',
+  signingAllowed: executable,
+  signingReason: executable ? null : 'SIMULATION_UNAVAILABLE',
+  signingMode: 'privy_authorization_signature',
+  unsignedTransaction: null,
+  authorizationPayload: s6AuthorizationPayload(),
+  decodedCall: null,
+  recipient: null,
+  amount: s6Amount(raw: '5000000000000000', display: '0.005'),
+  swap: <String, Object?>{
+    'destinationAsset': s6Asset(assetId: s5UsdtAssetId, symbol: 'USDT'),
+    'quote': s6Quote(),
+    'policy': s6SwapPolicy(),
+  },
+);
 
 Map<String, Object?> s6ApprovalIntentBody({
   String allowanceDisplay = '5',
@@ -421,8 +426,12 @@ LoopWalletIntent s6Intent({
   ),
 );
 
-LoopWalletIntent s6SwapIntent({String state = 'prepared'}) =>
-    LoopV2IntentCodec.intent(s6SwapIntentBody(state: state));
+LoopWalletIntent s6SwapIntent({
+  String state = 'prepared',
+  bool executable = false,
+}) => LoopV2IntentCodec.intent(
+  s6SwapIntentBody(state: state, executable: executable),
+);
 
 LoopWalletIntent s6ApprovalIntent({bool isUnlimited = false}) =>
     LoopV2IntentCodec.intent(
@@ -513,6 +522,9 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
   int intentReads = 0;
   final List<String> reportedHashes = <String>[];
   final List<String> signatures = <String>[];
+
+  /// The `reviewSha256` each execute carried (decision 0282).
+  final List<String?> executedReviews = <String?>[];
   final List<LoopAllowanceRequest> allowances = <LoopAllowanceRequest>[];
   final List<bool> priceImpactConfirmations = <bool>[];
 
@@ -635,9 +647,11 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
   Future<LoopWalletIntent> execute({
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
   }) {
     executeCalls += 1;
     signatures.add(authorizationSignature);
+    executedReviews.add(reviewSha256);
     final kind = reportFailure;
     if (kind != null) {
       return Future<LoopWalletIntent>.error(LoopChainException(kind));

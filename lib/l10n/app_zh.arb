@@ -6529,6 +6529,8 @@
   "wallet_sendScreensSendRecipientScanLabel": "扫码",
   "wallet_sendScreensSendStepBarLabel": "第 {step} 步，共 {total} 步，{label}",
   "wallet_sendScreensTitle": "这个钱包还有一笔未完成的操作",
+  "wallet_swapMainnetOnly": "兑换只支持 BSC 主网资产。",
+  "wallet_swapNoMainnetBalanceTitle": "BSC 主网暂无余额",
   "wallet_swapScreensBalanceLineFor": "先选择要支付的资产，这里会显示它的可动用余额。",
   "wallet_swapScreensBalanceLineFor2": "余额还没有读到。",
   "wallet_swapScreensBalanceLineFor3": "这个钱包没有这一行，读不到它的余额。",

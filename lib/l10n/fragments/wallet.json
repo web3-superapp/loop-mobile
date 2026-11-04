@@ -4658,5 +4658,17 @@
     "placeholders": {},
     "where": "lib/features/wallet/tx_result_screen.dart:334",
     "zh": "确认数读不到"
+  },
+  "wallet_swapNoMainnetBalanceTitle": {
+    "en": "No BNB Chain mainnet balance",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart",
+    "zh": "BSC 主网暂无余额"
+  },
+  "wallet_swapMainnetOnly": {
+    "en": "Swap supports BNB Chain mainnet assets only.",
+    "placeholders": {},
+    "where": "lib/features/wallet/swap_screens.dart",
+    "zh": "兑换只支持 BSC 主网资产。"
   }
 }

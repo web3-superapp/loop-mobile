@@ -247,6 +247,7 @@ final class DioLoopV2WalletIntentsGateway
   Future<LoopWalletIntent> execute({
     required String intentId,
     required String authorizationSignature,
+    String? reviewSha256,
   }) async {
     final writeOrigin = await origin();
     return idempotent(
@@ -258,6 +259,7 @@ final class DioLoopV2WalletIntentsGateway
         idempotencyKey: key,
         intentId: intentId,
         authorizationSignature: authorizationSignature,
+        reviewSha256: reviewSha256,
         origin: writeOrigin,
       ),
     );

@@ -25424,6 +25424,13 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get wallet_sendScreensTitle => 'This wallet has an unfinished action';
 
   @override
+  String get wallet_swapMainnetOnly =>
+      'Swap supports BNB Chain mainnet assets only.';
+
+  @override
+  String get wallet_swapNoMainnetBalanceTitle => 'No BNB Chain mainnet balance';
+
+  @override
   String get wallet_swapScreensBalanceLineFor =>
       'Choose the asset to pay with first; its usable balance shows here.';
 

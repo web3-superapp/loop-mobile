@@ -199,6 +199,9 @@ final class MoneyActionSigner {
         LoopSigningMode.privyAuthorizationSignature => await intents.execute(
           intentId: intent.intentId,
           authorizationSignature: produced,
+          // The digest the sheet rendered: a review that changed on the
+          // server since is refused there before anything is sent.
+          reviewSha256: intent.reviewSha256,
         ),
       };
       return MoneySignOutcome(

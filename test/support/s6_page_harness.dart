@@ -79,6 +79,7 @@ Future<void> pumpS6Page(
   // S346 · M11: an NFT send is gated by `nftSend`, not `sendApprovals`.
   LoopV2CapabilityAvailability nftSend = LoopV2CapabilityAvailability.available,
   bool swapEvidencePending = true,
+  bool swapEvidenceConfirmed = false,
   Size size = const Size(390, 2400),
   bool settle = true,
   // S88d: when given, the capability document is read through this port and
@@ -116,6 +117,7 @@ Future<void> pumpS6Page(
               privySwap: privySwap,
               nftSend: nftSend,
               swapEvidencePending: swapEvidencePending,
+              swapEvidenceConfirmed: swapEvidenceConfirmed,
             ),
           ),
         ...overrides,
