@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -69,14 +70,15 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
       step: true,
       child: LoopFocusPage(
         archetype: LoopPageArchetype.intro,
-        title: '完善资料',
+        title: context.l10n.account_idSetupLoopIdSubmitTitle,
         onBack: widget.onBack,
         actionsFollowBody: true,
         primaryAction: LoopButton(
           key: const ValueKey<String>('loop-id-submit'),
           label: switch (state.phase) {
-            LoopIdSetupPhase.submitting => '提交中…',
-            _ => '下一步',
+            LoopIdSetupPhase.submitting =>
+              context.l10n.account_idSetupSubmitting,
+            _ => context.l10n.common_next,
           },
           primary: true,
           block: true,
@@ -87,8 +89,12 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
               : null,
         ),
         body: <Widget>[
-          const IdentityProgress(step: 5, total: 5, label: '完善资料'),
-          const IdentityStepCopy('头像和用户名是别人在聊天里看到的你，钱包地址不会公开。'),
+          IdentityProgress(
+            step: 5,
+            total: 5,
+            label: context.l10n.account_idSetupLoopIdSubmitTitle,
+          ),
+          IdentityStepCopy(context.l10n.account_idSetupIdentityStepCopy),
           if (state.phase == LoopIdSetupPhase.loading && state.resource == null)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -102,7 +108,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
               key: const ValueKey<String>('loop-id-unavailable'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '资料服务暂不可用',
+              title: context.l10n.account_idSetupLoopIdUnavailableTitle,
               body: profileFailureReason(state.failureKind),
             )
           else if (state.resource == null && state.failureKind == null)
@@ -111,23 +117,28 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             LoopEmptyState(
               key: const ValueKey<String>('loop-id-empty'),
               illustration: LoopIllustration.profile,
-              title: '还没有读取到你的 LOOP ID',
-              message: '账号资料尚未载入。',
-              action: LoopButton(label: '载入', onPressed: controller.reload),
+              title: context.l10n.account_idSetupLoopIdEmptyTitle,
+              message: context.l10n.account_idSetupLoopIdEmptyMessage,
+              action: LoopButton(
+                label: context.l10n.account_idSetupLabel,
+                onPressed: controller.reload,
+              ),
               compact: true,
             )
           else if (state.resource == null)
             LoopErrorState(
               key: const ValueKey<String>('loop-id-error'),
               reason: profileFailureReason(state.failureKind),
-              source: '资料服务',
+              source: context.l10n.account_idSetupLoopIdErrorSource,
               onRetry: controller.reload,
             )
           else ...<Widget>[
             if (state.failureKind == ProfileGatewayFailureKind.offline)
               LoopOfflineState(
                 key: const ValueKey<String>('loop-id-offline'),
-                pausedActions: const <String>['保存资料'],
+                pausedActions: <String>[
+                  context.l10n.account_idSetupLoopOfflineState,
+                ],
                 onRetry: () => unawaited(_submit(controller)),
               )
             else if (state.phase == LoopIdSetupPhase.failure)
@@ -135,17 +146,17 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                 key: const ValueKey<String>('loop-id-failure'),
                 icon: 'close',
                 tone: LoopNoticeTone.danger,
-                title: '没有保存成功',
+                title: context.l10n.account_idSetupLoopIdFailureTitle,
                 body: profileFailureReason(state.failureKind),
               ),
             if (state.phase == LoopIdSetupPhase.activated)
               LoopNotice(
                 key: const ValueKey<String>('loop-id-activated'),
                 icon: 'check',
-                title: '资料已保存',
+                title: context.l10n.account_idSetupLoopIdActivatedTitle,
                 body: state.bioSaveFailed
-                    ? '简介没有保存成功，可以之后在「编辑资料」里补上。'
-                    : '之后可以在「编辑资料」里修改。',
+                    ? context.l10n.account_idSetupLoopIdActivatedBody
+                    : context.l10n.account_idSetupLoopIdActivatedBody2,
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -157,7 +168,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                 onChanged: controller.editAvatarRef,
               ),
             ),
-            const LoopLabel('用户名'),
+            LoopLabel(context.l10n.account_idSetupLoopLabel),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               // UX-008 (decision 0254): the card is the field's box, so the
@@ -181,20 +192,21 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                             required maxLength,
                           }) => null,
                           style: LoopType.bodyLg,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             filled: false,
-                            hintText: '1–40 个字符，可以和别人重复',
+                            hintText: context.l10n.account_idSetupHintText,
                           ),
                           onChanged: controller.editAlias,
                         ),
                       ),
                       LoopSeg(
                         key: const ValueKey<String>('loop-id-alias-suggest'),
-                        label: '换一个',
+                        label:
+                            context.l10n.account_idSetupLoopIdAliasSuggestLabel,
                         selected: false,
                         onSelected: editable
                             ? () => _suggest(controller)
@@ -205,7 +217,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                 ),
               ),
             ),
-            const LoopLabel('简介'),
+            LoopLabel(context.l10n.account_idSetupLoopLabel2),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: LoopFocusRing(
@@ -220,13 +232,13 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                     maxLines: 3,
                     minLines: 1,
                     style: LoopType.bodyLg,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       disabledBorder: InputBorder.none,
                       filled: false,
-                      hintText: '一句话介绍自己（可以不填）',
+                      hintText: context.l10n.account_idSetupHintText2,
                     ),
                     onChanged: controller.editBio,
                   ),
@@ -252,13 +264,16 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                     else
                       Text(
                         key: const ValueKey<String>('loop-id-value'),
-                        '尚未分配',
+                        context.l10n.account_idSetupLoopIdValue,
                         style: LoopType.bodySm.copyWith(
                           color: LoopColors.text3,
                         ),
                       ),
                     const SizedBox(height: 4),
-                    Text('系统生成、唯一、不可更改。好友可以用它搜到你。', style: LoopType.caption),
+                    Text(
+                      context.l10n.account_idSetupText,
+                      style: LoopType.caption,
+                    ),
                   ],
                 ),
               ),

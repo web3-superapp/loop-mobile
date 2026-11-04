@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -201,7 +202,11 @@ class IdentityProgress extends StatelessWidget {
     // `04 / 05` counter over a filled track.
     return Semantics(
       container: true,
-      label: '流程第 $step 步，共 $total 步：$label',
+      label: context.l10n.account_screensIdentityProgressTrackLabel(
+        label,
+        step,
+        total,
+      ),
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 14),
@@ -273,6 +278,7 @@ class IdentityOptionIcon extends StatelessWidget {
 /// It is never a switch: nothing here can enrol, configure or store anything.
 class CapabilityChoiceRow extends StatelessWidget {
   const CapabilityChoiceRow({
+    required this.id,
     required this.title,
     required this.detail,
     required this.available,
@@ -281,6 +287,8 @@ class CapabilityChoiceRow extends StatelessWidget {
     this.position = LoopRowPosition.single,
   });
 
+  /// Stable id for the row's key; the key never spells copy.
+  final String id;
   final String title;
   final String detail;
   final bool available;
@@ -290,14 +298,19 @@ class CapabilityChoiceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopRecordRow(
-      key: ValueKey<String>('capability-$title'),
+      key: ValueKey<String>('capability-$id'),
       title: title,
       subtitle: available ? detail : '$detail · $unavailableReason',
-      trailing: available ? '可用' : '不可用',
+      trailing: available
+          ? context.l10n.account_screensTrailing
+          : context.l10n.common_unavailable,
       position: position,
       semanticLabel: available
-          ? '$title，可用但未开启'
-          : '$title，不可用：$unavailableReason',
+          ? context.l10n.account_screensSemanticLabel(title)
+          : context.l10n.account_screensSemanticLabel2(
+              title,
+              unavailableReason,
+            ),
     );
   }
 }
@@ -349,7 +362,8 @@ class SplashScreen extends StatelessWidget {
   /// The one line the launch frame says while the account is prepared. The
   /// frames before it (restoring, the hand-over) already say it, so the move
   /// onto this page changes nothing on screen (UX-001).
-  static const String preparingText = '正在准备你的账号…';
+  static String get preparingText =>
+      LoopL10n.current.account_screensPreparingText;
 
   @override
   Widget build(BuildContext context) {
@@ -381,7 +395,7 @@ class SplashScreen extends StatelessWidget {
       bottomAction: phase == LoopSplashPhase.entry
           ? LoopButton(
               key: const ValueKey<String>('loop-splash-enter'),
-              label: '进入 LOOP',
+              label: context.l10n.account_screensLoopSplashEnterLabel,
               primary: true,
               block: true,
               onPressed: onContinue,
@@ -670,7 +684,7 @@ class LoopBrandLoaderState extends State<LoopBrandLoader>
     return Semantics(
       // Spoken from the wait itself, never from whether the band happens to
       // move: a reduced-motion device is still waiting and still says so.
-      label: widget.animating ? 'LOOP 正在加载' : 'LOOP',
+      label: widget.animating ? context.l10n.account_screensLabel : 'LOOP',
       liveRegion: widget.animating,
       child: SizedBox(
         width: widget.width,
@@ -805,18 +819,18 @@ class ExternalWalletScreen extends StatelessWidget {
       step: true,
       child: LoopFocusPage(
         archetype: LoopPageArchetype.intro,
-        title: '连接钱包',
+        title: context.l10n.account_screensExternalWalletConnectTitle,
         onBack: onBack,
         actionsFollowBody: true,
         primaryAction: LoopButton(
           key: const ValueKey<String>('external-wallet-connect'),
-          label: '选择钱包并签名',
+          label: context.l10n.account_screensExternalWalletConnectLabel,
           primary: true,
           block: true,
           onPressed: capabilityAvailable ? onConnect : null,
         ),
-        disclosure: const LoopDisclosure(
-          summary: '扫码连接与失败说明',
+        disclosure: LoopDisclosure(
+          summary: context.l10n.account_screensSummary,
           child: Padding(
             padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
             child: Column(
@@ -824,28 +838,28 @@ class ExternalWalletScreen extends StatelessWidget {
               children: <Widget>[
                 LoopNotice(
                   icon: 'info',
-                  title: '外部钱包只是登录凭证',
-                  body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
+                  title: context.l10n.account_screensTitle,
+                  body: context.l10n.account_screensBody,
                   margin: EdgeInsets.only(bottom: 10),
                 ),
                 LoopNotice(
                   icon: 'mine',
-                  title: '连接已有钱包就能挖矿',
-                  body: '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。',
+                  title: context.l10n.account_screensTitle2,
+                  body: context.l10n.account_screensBody2,
                   margin: EdgeInsets.only(bottom: 10),
                 ),
                 LoopNotice(
                   icon: 'close',
                   tone: LoopNoticeTone.danger,
-                  title: '签名被拒绝',
-                  body: '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。',
+                  title: context.l10n.account_screensTitle3,
+                  body: context.l10n.account_screensBody3,
                   margin: EdgeInsets.only(bottom: 10),
                 ),
                 LoopNotice(
                   icon: 'clock',
                   tone: LoopNoticeTone.warn,
-                  title: '连接超时',
-                  body: '会话已过期，请回到这一页重新发起连接。',
+                  title: context.l10n.account_screensTitle4,
+                  body: context.l10n.account_screensBody4,
                   margin: EdgeInsets.zero,
                 ),
               ],
@@ -853,21 +867,28 @@ class ExternalWalletScreen extends StatelessWidget {
           ),
         ),
         body: <Widget>[
-          const IdentityProgress(step: 1, total: 2, label: '选择钱包'),
-          const IdentityStepCopy('连接只验证所有权，不会转移资产。'),
+          IdentityProgress(
+            step: 1,
+            total: 2,
+            label: context.l10n.account_screensLabel2,
+          ),
+          IdentityStepCopy(context.l10n.account_screensIdentityStepCopy),
           if (!capabilityAvailable)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('external-wallet-unavailable'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '外部钱包连接暂不可用',
-              body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
+              title: context.l10n.account_screensExternalWalletUnavailableTitle,
+              body: context.l10n.account_screensExternalWalletUnavailableBody,
             ),
-          const LoopLabel('可连接的钱包'),
-          const LoopInlineUnavailable(
+          LoopLabel(context.l10n.account_screensLoopLabel),
+          LoopInlineUnavailable(
             key: ValueKey<String>('external-wallet-list-unavailable'),
-            message: '已安装钱包清单暂不可读',
-            detail: '连接钱包后才会显示可用的钱包名称。',
+            message: context
+                .l10n
+                .account_screensExternalWalletListUnavailableMessage,
+            detail:
+                context.l10n.account_screensExternalWalletListUnavailableDetail,
             maxLines: 2,
             detailMaxLines: 4,
           ),
@@ -898,55 +919,60 @@ class WalletCreateScreen extends StatelessWidget {
     final phase = facts.phase;
     final (String headline, String detail) = switch (phase) {
       LoopWalletCreationPhase.observed => (
-        '钱包已创建',
-        '这个账号下已经能看到内置钱包。LOOP 不使用助记词。',
+        context.l10n.account_screensSwitch,
+        context.l10n.account_screensSwitch2,
       ),
       LoopWalletCreationPhase.working => (
-        '正在创建你的钱包',
-        '密钥在本地生成，不会离开这台设备。LOOP 不使用助记词。',
+        context.l10n.account_screensSwitch3,
+        context.l10n.account_screensSwitch4,
       ),
       LoopWalletCreationPhase.timedOut => (
-        '钱包还在创建中，可以先继续',
-        '等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。',
+        context.l10n.account_screensSwitch5,
+        context.l10n.account_screensSwitch6,
       ),
       LoopWalletCreationPhase.unavailable => (
-        '还没有开始创建',
-        'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。',
+        context.l10n.account_screensSwitch7,
+        context.l10n.account_screensSwitch8,
       ),
     };
     return LoopFlat(
       step: true,
       child: LoopFocusPage(
         archetype: LoopPageArchetype.intro,
-        title: '创建 LOOP 钱包',
+        title: context.l10n.account_screensWalletCreateContinueTitle,
         onBack: onBack,
         // `.wallet-create-action{margin-top:auto}`: this is the one step page
         // whose button the prototype does push to the bottom, because the ring
         // above it owns the rest of the screen.
         primaryAction: LoopButton(
           key: const ValueKey<String>('wallet-create-continue'),
-          label: '设置恢复方式',
+          label: context.l10n.account_screensWalletCreateContinueLabel,
           primary: true,
           block: true,
           onPressed: facts.canContinue ? onContinue : null,
         ),
         body: <Widget>[
-          const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
-          const IdentityStepCopy('安全钱包正在本地初始化。'),
+          IdentityProgress(
+            step: 2,
+            total: 5,
+            label: context.l10n.account_screensLabel3,
+          ),
+          IdentityStepCopy(context.l10n.account_screensIdentityStepCopy2),
           if (phase == LoopWalletCreationPhase.unavailable)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('wallet-create-unavailable'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '钱包创建暂不可用',
-              body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
+              title: context.l10n.account_screensWalletCreateUnavailableTitle,
+              body: context.l10n.account_screensWalletCreateUnavailableBody,
             ),
           if (facts.providerMessage case final String message)
             LoopNotice(
               key: const ValueKey<String>('wallet-create-provider-message'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '这次创建没有完成',
+              title:
+                  context.l10n.account_screensWalletCreateProviderMessageTitle,
               body: message,
             ),
           // `.wallet-create-progress`: the ring, the headline, one line of copy
@@ -996,27 +1022,27 @@ class WalletCreateScreen extends StatelessWidget {
                 const SizedBox(height: 22),
                 _step(
                   id: 'keypair',
-                  title: '生成密钥对',
+                  title: context.l10n.account_screensTitle5,
                   done: facts.walletObserved,
-                  pendingDetail: '钱包出现后才算完成',
+                  pendingDetail: context.l10n.account_screensPendingDetail,
                 ),
                 _step(
                   id: 'secure-element',
-                  title: '写入安全区',
+                  title: context.l10n.account_screensTitle6,
                   done: facts.walletObserved,
-                  pendingDetail: '钱包出现后才算完成',
+                  pendingDetail: context.l10n.account_screensPendingDetail,
                 ),
                 _step(
                   id: 'recovery',
-                  title: '设置恢复方式',
+                  title: context.l10n.account_screensWalletCreateContinueLabel,
                   done: facts.recoveryEnrolled,
-                  pendingDetail: '第 3 步选择后才算完成',
+                  pendingDetail: context.l10n.account_screensPendingDetail2,
                 ),
                 _step(
                   id: 'loop-id',
-                  title: '绑定 LOOP ID',
+                  title: context.l10n.account_screensTitle7,
                   done: facts.loopIdActivated,
-                  pendingDetail: '第 5 步完成后才算完成',
+                  pendingDetail: context.l10n.account_screensPendingDetail3,
                 ),
               ],
             ),
@@ -1037,7 +1063,9 @@ class WalletCreateScreen extends StatelessWidget {
     return Semantics(
       key: ValueKey<String>('wallet-create-step-$id'),
       container: true,
-      label: done ? '$title，已完成' : '$title，未完成：$pendingDetail',
+      label: done
+          ? LoopL10n.current.account_screensLabel4(title)
+          : LoopL10n.current.account_screensLabel5(pendingDetail, title),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 280, minHeight: 30),
         child: Padding(
@@ -1090,7 +1118,9 @@ class WalletCreateScreen extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                done ? '已完成' : '未完成',
+                done
+                    ? LoopL10n.current.account_screensStep
+                    : LoopL10n.current.account_screensS,
                 style: LoopTypography.withWeight(
                   LoopType.figureXs,
                   FontWeight.w500,
@@ -1181,13 +1211,20 @@ class _WalletCreationRingPainter extends CustomPainter {
 /// one. Passkey is an enrolment LOOP would have to perform, and the SDK
 /// in this build exposes no call that performs it.
 enum WalletRecoveryMethod {
-  passkey('Passkey（推荐）', '用设备生物识别，跟随系统钥匙串同步', 'key'),
-  cloud('自动恢复', '凭登录方式恢复，换设备后用同一邮箱登录即可', 'cloud');
+  passkey('key'),
+  cloud('cloud');
 
-  const WalletRecoveryMethod(this.title, this.detail, this.icon);
+  const WalletRecoveryMethod(this.icon);
 
-  final String title;
-  final String detail;
+  String get title => switch (this) {
+    WalletRecoveryMethod.passkey => LoopL10n.current.account_screensPasskey,
+
+    WalletRecoveryMethod.cloud => LoopL10n.current.account_screensCloud,
+  };
+  String get detail => switch (this) {
+    WalletRecoveryMethod.passkey => LoopL10n.current.account_screensPasskey2,
+    WalletRecoveryMethod.cloud => LoopL10n.current.account_screensCloud2,
+  };
   final String icon;
 }
 
@@ -1196,8 +1233,8 @@ enum WalletRecoveryMethod {
 /// A page may say 已启用 only where it can also say why it is true and who
 /// says so. This is that evidence: Privy's own documented behaviour for the
 /// embedded wallets LOOP creates, named as Privy's and not as LOOP's.
-const walletAutomaticRecoveryEvidence =
-    'Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）';
+String get walletAutomaticRecoveryEvidence =>
+    LoopL10n.current.account_screensWalletAutomaticRecoveryEvidence;
 
 /// What the product can say today about a method it does not offer.
 ///
@@ -1205,7 +1242,8 @@ const walletAutomaticRecoveryEvidence =
 /// 能力»). An owner cannot do anything with that, and it reads as a fault.
 /// This says the same thing in the owner's terms: the service has not opened
 /// it in this version.
-const walletRecoveryProviderPending = '当前版本的登录服务还没有开放这一项';
+String get walletRecoveryProviderPending =>
+    LoopL10n.current.account_screensWalletRecoveryProviderPending;
 
 /// Why Passkey is not offered, which is a different thing from the rest.
 ///
@@ -1301,8 +1339,8 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
         .where((label) => label.trim().isNotEmpty)
         .toList(growable: false);
     return named.isEmpty
-        ? '登录服务说这个账号已经有 Passkey'
-        : '登录服务说这个账号已经有 Passkey：${named.join(' · ')}';
+        ? LoopL10n.current.account_screensPasskeyBoundDetail
+        : LoopL10n.current.account_screensS2(named.join(' · '));
   }
 
   /// Any method on this page the owner could still act on.
@@ -1322,7 +1360,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       step: true,
       child: LoopFocusPage(
         archetype: LoopPageArchetype.intro,
-        title: '恢复方式',
+        title: context.l10n.account_screensWalletRecoveryConfirmTitle,
         onBack: widget.onBack,
         // The prototype stacks the two full-width buttons under the options and
         // puts the skip risk above them, so the risk is read before the choice
@@ -1340,7 +1378,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
             // · F2).
             LoopButton(
               key: const ValueKey<String>('wallet-recovery-confirm'),
-              label: '确认',
+              label: context.l10n.common_confirm,
               primary: true,
               block: true,
               onPressed: blocked ? null : () => _decide(_chosen),
@@ -1348,32 +1386,34 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
             const SizedBox(height: 10),
             LoopButton(
               key: const ValueKey<String>('wallet-recovery-later'),
-              label: '稍后设置',
+              label: context.l10n.account_screensWalletRecoveryLaterLabel,
               block: true,
               onPressed: () => _decide(null),
             ),
           ],
         ),
         disclosure: LoopDisclosure(
-          summary: '其他恢复方式与跳过风险',
+          summary: context.l10n.account_screensSummary2,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const LoopLabel('另外', tight: true),
+                LoopLabel(context.l10n.account_screensLoopLabel2, tight: true),
                 LoopRecordGroup(
                   rows: <LoopRecordRow>[
                     _capabilityRow(
-                      title: '社交恢复 2-of-3',
-                      detail: '指定 3 个守护人，2 个同意即可恢复',
+                      id: 'social-recovery',
+                      title: context.l10n.account_screensTitle8,
+                      detail: context.l10n.account_screensDetail,
                       available: widget.capabilities.canUseSocialRecovery,
                       reason: walletRecoveryProviderPending,
                       position: LoopRowPosition.first,
                     ),
                     _capabilityRow(
-                      title: '导出私钥',
-                      detail: '随时可导出，这是你的逃生舱',
+                      id: 'key-export',
+                      title: context.l10n.account_screensTitle9,
+                      detail: context.l10n.account_screensDetail2,
                       available: widget.capabilities.canExportPrivateKey,
                       reason: walletRecoveryProviderPending,
                       position: LoopRowPosition.last,
@@ -1384,11 +1424,11 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
                 // everything": the account has a recovery method. What it
                 // depends on is the login method, and that is the thing to
                 // keep.
-                const LoopNotice(
+                LoopNotice(
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '自动恢复依赖你的登录方式',
-                  body: '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。',
+                  title: context.l10n.account_screensTitle10,
+                  body: context.l10n.account_screensBody5,
                   margin: EdgeInsets.only(top: 12),
                 ),
               ],
@@ -1396,13 +1436,19 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
           ),
         ),
         body: <Widget>[
-          const IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
-          const IdentityStepCopy('你的钱包已经有一种恢复方式，其余的等开放后再补。'),
-          const LoopNotice(
+          IdentityProgress(
+            step: 3,
+            total: 5,
+            label: context.l10n.account_screensWalletCreateContinueLabel,
+          ),
+          IdentityStepCopy(context.l10n.account_screensIdentityStepCopy3),
+          LoopNotice(
             key: ValueKey<String>('wallet-recovery-default'),
             icon: 'check',
-            title: '换手机后你已经能拿回资产',
-            body: '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。',
+            title: context.l10n.account_screensWalletRecoveryDefaultTitle,
+            body: context.l10n.account_screensWalletRecoveryDefaultBody(
+              walletAutomaticRecoveryEvidence,
+            ),
           ),
           if (widget.loading)
             const Padding(
@@ -1417,18 +1463,21 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
             LoopErrorState(
               key: const ValueKey<String>('wallet-recovery-error'),
               reason: widget.failureReason!,
-              source: '能力清单',
+              source: context.l10n.account_screensWalletRecoveryErrorSource,
               onRetry: widget.onRetry,
             )
           else ...<Widget>[
             if (!_anySelectable)
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('wallet-recovery-unavailable'),
                 icon: 'info',
-                title: '现在还不能再加一种',
-                body: '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。',
+                title:
+                    context.l10n.account_screensWalletRecoveryUnavailableTitle,
+                body: context.l10n.account_screensWalletRecoveryUnavailableBody(
+                  walletRecoveryProviderPending,
+                ),
               ),
-            const LoopLabel('恢复方式'),
+            LoopLabel(context.l10n.account_screensWalletRecoveryConfirmTitle),
             LoopRecordGroup(
               rows: <LoopRecordRow>[
                 for (final method in WalletRecoveryMethod.values)
@@ -1474,14 +1523,14 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       subtitleMaxLines: 3,
       selected: chosen,
       trailing: enabled
-          ? '已启用'
+          ? LoopL10n.current.account_screensTrailing2
           : bound
-          ? '已设置'
+          ? LoopL10n.current.account_screensTrailing3
           : chosen
-          ? '已选'
+          ? LoopL10n.current.account_screensTrailing4
           : selectable
-          ? '可用'
-          : '不可用',
+          ? LoopL10n.current.account_screensTrailing
+          : LoopL10n.current.common_unavailable,
       onTap: selectable
           ? () => _choose(method)
           : bound
@@ -1493,12 +1542,21 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
           ? LoopRowPosition.last
           : LoopRowPosition.middle,
       semanticLabel: enabled
-          ? '${method.title}，已启用：$reason'
+          ? LoopL10n.current.account_screensSemanticLabel3(reason, method.title)
           : bound
-          ? '${method.title}，已设置：$detail，点按可以解绑'
+          ? LoopL10n.current.account_screensSemanticLabel4(detail, method.title)
           : selectable
-          ? '${method.title}，${chosen ? '已选' : '可选'}'
-          : '${method.title}，不可用：$reason',
+          ? (chosen
+                ? LoopL10n.current.account_screensMethodSelectedSemanticLabel(
+                    method.title,
+                  )
+                : LoopL10n.current.account_screensMethodSelectableSemanticLabel(
+                    method.title,
+                  ))
+          : LoopL10n.current.account_screensSemanticLabel2(
+              method.title,
+              reason,
+            ),
     );
   }
 
@@ -1515,6 +1573,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   }
 
   LoopRecordRow _capabilityRow({
+    required String id,
     required String title,
     required String detail,
     required bool available,
@@ -1522,13 +1581,17 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
     required LoopRowPosition position,
   }) {
     return LoopRecordRow(
-      key: ValueKey<String>('recovery-$title'),
+      key: ValueKey<String>('recovery-$id'),
       title: title,
       subtitle: available ? detail : '$detail · $reason',
       subtitleMaxLines: 2,
-      trailing: available ? '可用' : '不可用',
+      trailing: available
+          ? LoopL10n.current.account_screensTrailing
+          : LoopL10n.current.common_unavailable,
       position: position,
-      semanticLabel: available ? '$title，能力可用' : '$title，不可用：$reason',
+      semanticLabel: available
+          ? LoopL10n.current.account_screensSemanticLabel6(title)
+          : LoopL10n.current.account_screensSemanticLabel2(title, reason),
     );
   }
 }
@@ -1538,7 +1601,8 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
 // ---------------------------------------------------------------------------
 
 /// The one 11px line under `security-setup`'s rows (decision 0121).
-const String securityBiometricFallbackLine = '设备不支持生物识别时，会改用系统锁屏密码验证。';
+String get securityBiometricFallbackLine =>
+    LoopL10n.current.account_screensSecurityBiometricFallbackLine;
 
 class SecuritySetupScreen extends StatelessWidget {
   const SecuritySetupScreen({
@@ -1578,26 +1642,30 @@ class SecuritySetupScreen extends StatelessWidget {
       step: true,
       child: LoopFocusPage(
         archetype: LoopPageArchetype.intro,
-        title: '安全设置',
+        title: context.l10n.account_screensSecuritySetupContinueTitle,
         onBack: onBack,
         actionsFollowBody: true,
         primaryAction: LoopButton(
           key: const ValueKey<String>('security-setup-continue'),
-          label: '下一步',
+          label: context.l10n.common_next,
           primary: true,
           block: true,
           onPressed: onContinue,
         ),
         body: <Widget>[
-          const IdentityProgress(step: 4, total: 5, label: '安全设置'),
-          const IdentityStepCopy('应用锁由这台设备把关，交易验证由登录服务决定。'),
+          IdentityProgress(
+            step: 4,
+            total: 5,
+            label: context.l10n.account_screensSecuritySetupContinueTitle,
+          ),
+          IdentityStepCopy(context.l10n.account_screensIdentityStepCopy4),
           // Decision 0121 (device report 2026-10-09 · 4): the warning banner
           // that opened this page spoke to engineers. Each row below states its
           // own state; the page saves no PIN and claims no protection is on.
-          const LoopLabel('应用锁'),
+          LoopLabel(context.l10n.account_screensLoopLabel3),
           // Decision 0172: both groups are the shared `.record-card` rows.
           LoopRecordGroup(rows: <LoopRecordRow>[_appLockRow()]),
-          const LoopLabel('交易验证'),
+          LoopLabel(context.l10n.account_screensLoopLabel4),
           // Prototype order: the amount rule first, the second factor after it.
           // The step-up row reads its own state, so it is not a plain
           // [LoopRecordRow] a [LoopRecordGroup] could re-position; the two
@@ -1639,31 +1707,31 @@ class SecuritySetupScreen extends StatelessWidget {
     final enabled = lock?.enabled ?? false;
     final busy = lock?.busy ?? false;
     final detail = lock?.capability == null
-        ? '还没有读到这台设备的锁屏能力'
+        ? LoopL10n.current.account_screensAppLockRow
         : loopAppLockFactorText(lock!.capability!);
     final subtitle = enabled && lock != null && !lock.persisted
-        ? '$detail · 这次有效，重开 App 后不会记得'
+        ? LoopL10n.current.account_screensAppLockRow2(detail)
         : detail;
     return LoopRecordRow(
       key: const ValueKey<String>('security-app-lock'),
       leading: const IdentityOptionIcon('lock'),
-      title: '应用锁',
+      title: LoopL10n.current.account_screensLoopLabel3,
       subtitle: subtitle,
       subtitleMaxLines: 2,
       selected: enabled,
       trailing: busy
-          ? '验证中…'
+          ? LoopL10n.current.common_verifying
           : !available
-          ? '不可用'
+          ? LoopL10n.current.common_unavailable
           : enabled
-          ? '已开启'
-          : '未开启',
+          ? LoopL10n.current.common_on
+          : LoopL10n.current.account_screensSecurityAppLockTrailing,
       onTap: available && !busy ? onToggleAppLock : null,
       semanticLabel: !available
-          ? '应用锁，不可用：$detail'
+          ? LoopL10n.current.account_screensSecurityAppLockSemanticLabel(detail)
           : enabled
-          ? '应用锁，已开启，点按后验证身份可关闭'
-          : '应用锁，未开启，点按后验证身份可开启',
+          ? LoopL10n.current.account_screensSecurityAppLockSemanticLabel2
+          : LoopL10n.current.account_screensSecurityAppLockSemanticLabel3,
     );
   }
 
@@ -1679,19 +1747,19 @@ class SecuritySetupScreen extends StatelessWidget {
     final known = mfa?.phase == LoopMfaPhase.known;
     final reading = mfa?.phase == LoopMfaPhase.reading;
     final trailing = reading
-        ? '读取中…'
+        ? LoopL10n.current.account_screensMfaRow
         : !known
-        ? '不可用'
+        ? LoopL10n.current.common_unavailable
         : enrolled.isEmpty
-        ? '未开启'
-        : '已开启';
+        ? LoopL10n.current.account_screensSecurityAppLockTrailing
+        : LoopL10n.current.common_on;
     final detail = enrolled.isEmpty
         ? 'SMS / TOTP / Passkey'
         : enrolled.map((one) => one.kind.label).join(' · ');
     final reason = mfa == null
-        ? '这次运行没有连上登录服务'
+        ? LoopL10n.current.account_screensMfaRow2
         : mfa.failure == null
-        ? '还没有读到登录服务的回答'
+        ? LoopL10n.current.account_screensMfaRow3
         : loopMfaFailureText(mfa.failure!);
     return LoopRecordRow(
       key: const ValueKey<String>('security-mfa'),
@@ -1704,9 +1772,11 @@ class SecuritySetupScreen extends StatelessWidget {
       position: LoopRowPosition.last,
       semanticLabel: known
           ? enrolled.isEmpty
-                ? 'MFA，未开启，点按开启'
-                : 'MFA，已开启：$detail'
-          : 'MFA，不可用：$reason',
+                ? LoopL10n.current.account_screensSecurityMfaSemanticLabel
+                : LoopL10n.current.account_screensSecurityMfaSemanticLabel2(
+                    detail,
+                  )
+          : LoopL10n.current.account_screensSecurityMfaSemanticLabel3(reason),
     );
   }
 }
@@ -1716,15 +1786,15 @@ class UnknownAccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LoopFocusPage(
+    return LoopFocusPage(
       archetype: LoopPageArchetype.state,
-      title: '页面不存在',
+      title: context.l10n.account_screensUnknownAccountSurfaceTitle,
       body: <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('unknown-account-surface'),
           illustration: LoopIllustration.profile,
-          title: '这个账户页面不在 93 页产品清单里',
-          message: '请返回社区。请求已被记录。',
+          title: context.l10n.account_screensUnknownAccountSurfaceTitle2,
+          message: context.l10n.account_screensUnknownAccountSurfaceMessage,
           compact: true,
         ),
       ],

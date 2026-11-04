@@ -10,6 +10,730 @@ class LoopLocalizationsZh extends LoopLocalizations {
   LoopLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get account_emailAuthControllerErrorMessage =>
+      '需要先提供 Privy Mobile App Client ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage10 =>
+      '需要先通过 --dart-define 提供 Privy Mobile App Client ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage11 =>
+      '登录未完成，请检查网络和应用回跳后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage12 =>
+      '需要先通过 --dart-define 提供有效的 Reown Project ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage13 =>
+      '需要先通过 --dart-define 提供 Privy Client ID 和 Reown Project ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage14 =>
+      '只有退出登录状态或已验证的 Privy 账号可以连接钱包。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage15 =>
+      '钱包操作未完成，请检查网络和应用回跳后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage16 =>
+      '只有已验证的 Privy 账号可以解绑钱包。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage17 => '解绑没有完成，请检查网络后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage2 => '请输入有效的邮箱地址。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage3 => '请重新发送验证码。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage4 => '尝试次数已用完，请重新发送验证码。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage5 => '请输入 6 位数字验证码。';
+
+  @override
+  String account_emailAuthControllerErrorMessage6(Object? userMessage) {
+    return '$userMessage 尝试次数已用完，请重新发送验证码。';
+  }
+
+  @override
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  ) {
+    return '$userMessage 还可尝试 $emailAuthMaximumAttempts 次。';
+  }
+
+  @override
+  String get account_emailAuthControllerErrorMessage8 => 'Apple 登录仅支持 iOS。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage9 => '当前会话状态已变化，请重新检查。';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage =>
+      '外部钱包已绑定为 Privy 登录凭据。';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage2 => '已解绑外部钱包。';
+
+  @override
+  String get account_idSetupHintText => '1–40 个字符，可以和别人重复';
+
+  @override
+  String get account_idSetupHintText2 => '一句话介绍自己（可以不填）';
+
+  @override
+  String get account_idSetupIdentityStepCopy => '头像和用户名是别人在聊天里看到的你，钱包地址不会公开。';
+
+  @override
+  String get account_idSetupLabel => '载入';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody => '简介没有保存成功，可以之后在「编辑资料」里补上。';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody2 => '之后可以在「编辑资料」里修改。';
+
+  @override
+  String get account_idSetupLoopIdActivatedTitle => '资料已保存';
+
+  @override
+  String get account_idSetupLoopIdAliasSuggestLabel => '换一个';
+
+  @override
+  String get account_idSetupLoopIdEmptyMessage => '账号资料尚未载入。';
+
+  @override
+  String get account_idSetupLoopIdEmptyTitle => '还没有读取到你的 LOOP ID';
+
+  @override
+  String get account_idSetupLoopIdErrorSource => '资料服务';
+
+  @override
+  String get account_idSetupLoopIdFailureTitle => '没有保存成功';
+
+  @override
+  String get account_idSetupLoopIdSubmitTitle => '完善资料';
+
+  @override
+  String get account_idSetupLoopIdUnavailableTitle => '资料服务暂不可用';
+
+  @override
+  String get account_idSetupLoopIdValue => '尚未分配';
+
+  @override
+  String get account_idSetupLoopLabel => '用户名';
+
+  @override
+  String get account_idSetupLoopLabel2 => '简介';
+
+  @override
+  String get account_idSetupLoopOfflineState => '保存资料';
+
+  @override
+  String get account_idSetupSubmitting => '提交中…';
+
+  @override
+  String get account_idSetupText => '系统生成、唯一、不可更改。好友可以用它搜到你。';
+
+  @override
+  String get account_onboardingCommunitiesDetail => '正在为你把刚加入的社区设为免打扰…';
+
+  @override
+  String get account_onboardingCommunitiesIf => '继续进入 LOOP';
+
+  @override
+  String get account_onboardingCommunitiesIf2 => '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。';
+
+  @override
+  String get account_onboardingCommunitiesJoined => '已加入 · 已免打扰';
+
+  @override
+  String get account_onboardingCommunitiesJoinedMutePending => '已加入 · 免打扰生效中';
+
+  @override
+  String get account_onboardingCommunitiesLoopRecordRow => '没有加入成功';
+
+  @override
+  String account_onboardingCommunitiesMembers(Object? formatDecimal) {
+    return '$formatDecimal 成员';
+  }
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle =>
+      '加入社区';
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel =>
+      '跳过';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage =>
+      '还没有可加入的社区';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason =>
+      '可以先进入 LOOP，之后在广场里找社区。';
+
+  @override
+  String get account_onboardingCommunitiesResource => '推荐社区';
+
+  @override
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name，$members，已选';
+  }
+
+  @override
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name，$members，未选';
+  }
+
+  @override
+  String account_onboardingCommunitiesS(num count) {
+    return '加入 $count 个社区并进入';
+  }
+
+  @override
+  String get account_onboardingCommunitiesState => '已加入';
+
+  @override
+  String get account_onboardingCommunitiesState2 => '未选';
+
+  @override
+  String get account_onboardingCommunitiesTitle => '正在进入 LOOP';
+
+  @override
+  String get account_privyLoginAnotherAccountLabel => '换个账号登录';
+
+  @override
+  String account_privyLoginAuthMethodBusyLabel(Object? label) {
+    return '$label，正在进行';
+  }
+
+  @override
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel => '进入开发预览';
+
+  @override
+  String get account_privyLoginIf => '欢迎来到 LOOP';
+
+  @override
+  String get account_privyLoginIf2 => '选择一种方式登录或创建账户';
+
+  @override
+  String get account_privyLoginMessage => '联网后会自动确认这台设备上的登录状态，不需要重新登录。';
+
+  @override
+  String get account_privyLoginPrivyAppleLoginButtonLabel => '使用 Apple 登录';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody =>
+      '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle =>
+      '登录配置不完整';
+
+  @override
+  String get account_privyLoginPrivyAuthErrorTitle => '无法继续';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel => '发送中…';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2 => '获取验证码';
+
+  @override
+  String get account_privyLoginPrivyEmailLoginButtonLabel => '使用邮箱登录';
+
+  @override
+  String get account_privyLoginPrivyEmailScreenTitle => '邮箱登录';
+
+  @override
+  String get account_privyLoginPrivyGoogleLoginButtonLabel => '使用 Google 登录';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel =>
+      'LOOP 暂时无法确认登录状态';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus =>
+      '暂时无法确认登录状态';
+
+  @override
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel =>
+      'LOOP 正在恢复登录状态';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel =>
+      'LOOP 正在安全退出';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenStatus => '正在安全退出';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel => '正在连接钱包';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel2 => '已有钱包？连接钱包';
+
+  @override
+  String get account_privyLoginRestoringTitle => '正在恢复登录状态';
+
+  @override
+  String get account_privyLoginS => '暂不可用 · 缺少有效的 Reown Project ID';
+
+  @override
+  String get account_privyLoginSlowMessage => '网络较慢，仍在恢复登录状态…';
+
+  @override
+  String get account_privyLoginText => '暂不可用 · 缺少 Privy Mobile App Client ID';
+
+  @override
+  String get account_privyLoginText2 => '继续即表示同意 ';
+
+  @override
+  String get account_privyLoginText3 => '用户协议';
+
+  @override
+  String get account_privyLoginText4 => ' 和 ';
+
+  @override
+  String get account_privyLoginText5 => '隐私政策';
+
+  @override
+  String get account_privyLoginText6 => '已有钱包？';
+
+  @override
+  String get account_privyLoginText7 => '正在连接…';
+
+  @override
+  String get account_privyLoginTitle => '网络不可用，正在等待连接';
+
+  @override
+  String get account_privyOtpIdentityStepCopy => '尚未发送验证码';
+
+  @override
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay) {
+    return '验证码已发送至 $maskEmailForDisplay';
+  }
+
+  @override
+  String get account_privyOtpIdentityStepCopyTitle => '验证邮箱';
+
+  @override
+  String get account_privyOtpLoopOfflineState => '重新发送验证码';
+
+  @override
+  String account_privyOtpPrivyOtpCaretLabel(Object? index) {
+    return '验证码第 $index 位';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpCaretValue => '未填写';
+
+  @override
+  String get account_privyOtpPrivyOtpChangeEmailLabel => '更换邮箱';
+
+  @override
+  String get account_privyOtpPrivyOtpErrorTitle => '验证未通过';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationMessage => '返回上一步输入邮箱。';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationTitle => '没有待验证的邮箱';
+
+  @override
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown) {
+    return '$cooldown 秒后可重新发送';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpResendLabel => '重新发送';
+
+  @override
+  String get account_screensAppLockRow => '还没有读到这台设备的锁屏能力';
+
+  @override
+  String account_screensAppLockRow2(Object? detail) {
+    return '$detail · 这次有效，重开 App 后不会记得';
+  }
+
+  @override
+  String get account_screensBody => '它不是 LOOP 交易钱包，也不能授权任何交易。';
+
+  @override
+  String get account_screensBody2 =>
+      '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。';
+
+  @override
+  String get account_screensBody3 => '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。';
+
+  @override
+  String get account_screensBody4 => '会话已过期，请回到这一页重新发起连接。';
+
+  @override
+  String get account_screensBody5 =>
+      '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。';
+
+  @override
+  String get account_screensCloud => '自动恢复';
+
+  @override
+  String get account_screensCloud2 => '凭登录方式恢复，换设备后用同一邮箱登录即可';
+
+  @override
+  String get account_screensDetail => '指定 3 个守护人，2 个同意即可恢复';
+
+  @override
+  String get account_screensDetail2 => '随时可导出，这是你的逃生舱';
+
+  @override
+  String get account_screensExternalWalletConnectLabel => '选择钱包并签名';
+
+  @override
+  String get account_screensExternalWalletConnectTitle => '连接钱包';
+
+  @override
+  String get account_screensExternalWalletListUnavailableDetail =>
+      '连接钱包后才会显示可用的钱包名称。';
+
+  @override
+  String get account_screensExternalWalletListUnavailableMessage =>
+      '已安装钱包清单暂不可读';
+
+  @override
+  String get account_screensExternalWalletUnavailableBody =>
+      '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。';
+
+  @override
+  String get account_screensExternalWalletUnavailableTitle => '外部钱包连接暂不可用';
+
+  @override
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return '流程第 $step 步，共 $total 步：$label';
+  }
+
+  @override
+  String get account_screensIdentityStepCopy => '连接只验证所有权，不会转移资产。';
+
+  @override
+  String get account_screensIdentityStepCopy2 => '安全钱包正在本地初始化。';
+
+  @override
+  String get account_screensIdentityStepCopy3 => '你的钱包已经有一种恢复方式，其余的等开放后再补。';
+
+  @override
+  String get account_screensIdentityStepCopy4 => '应用锁由这台设备把关，交易验证由登录服务决定。';
+
+  @override
+  String get account_screensLabel => 'LOOP 正在加载';
+
+  @override
+  String get account_screensLabel2 => '选择钱包';
+
+  @override
+  String get account_screensLabel3 => '创建钱包';
+
+  @override
+  String account_screensLabel4(Object? title) {
+    return '$title，已完成';
+  }
+
+  @override
+  String account_screensLabel5(Object? pendingDetail, Object? title) {
+    return '$title，未完成：$pendingDetail';
+  }
+
+  @override
+  String get account_screensLoopLabel => '可连接的钱包';
+
+  @override
+  String get account_screensLoopLabel2 => '另外';
+
+  @override
+  String get account_screensLoopLabel3 => '应用锁';
+
+  @override
+  String get account_screensLoopLabel4 => '交易验证';
+
+  @override
+  String get account_screensLoopSplashEnterLabel => '进入 LOOP';
+
+  @override
+  String account_screensMethodSelectableSemanticLabel(Object? title) {
+    return '$title，可选';
+  }
+
+  @override
+  String account_screensMethodSelectedSemanticLabel(Object? title) {
+    return '$title，已选';
+  }
+
+  @override
+  String get account_screensMfaRow => '读取中…';
+
+  @override
+  String get account_screensMfaRow2 => '这次运行没有连上登录服务';
+
+  @override
+  String get account_screensMfaRow3 => '还没有读到登录服务的回答';
+
+  @override
+  String get account_screensPasskey => 'Passkey（推荐）';
+
+  @override
+  String get account_screensPasskey2 => '用设备生物识别，跟随系统钥匙串同步';
+
+  @override
+  String get account_screensPasskeyBoundDetail => '登录服务说这个账号已经有 Passkey';
+
+  @override
+  String get account_screensPendingDetail => '钱包出现后才算完成';
+
+  @override
+  String get account_screensPendingDetail2 => '第 3 步选择后才算完成';
+
+  @override
+  String get account_screensPendingDetail3 => '第 5 步完成后才算完成';
+
+  @override
+  String get account_screensPreparingText => '正在准备你的账号…';
+
+  @override
+  String get account_screensS => '未完成';
+
+  @override
+  String account_screensS2(Object? named) {
+    return '登录服务说这个账号已经有 Passkey：$named';
+  }
+
+  @override
+  String account_screensSecurityAppLockSemanticLabel(Object? detail) {
+    return '应用锁，不可用：$detail';
+  }
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel2 =>
+      '应用锁，已开启，点按后验证身份可关闭';
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel3 =>
+      '应用锁，未开启，点按后验证身份可开启';
+
+  @override
+  String get account_screensSecurityAppLockTrailing => '未开启';
+
+  @override
+  String get account_screensSecurityBiometricFallbackLine =>
+      '设备不支持生物识别时，会改用系统锁屏密码验证。';
+
+  @override
+  String get account_screensSecurityMfaSemanticLabel => 'MFA，未开启，点按开启';
+
+  @override
+  String account_screensSecurityMfaSemanticLabel2(Object? detail) {
+    return 'MFA，已开启：$detail';
+  }
+
+  @override
+  String account_screensSecurityMfaSemanticLabel3(Object? reason) {
+    return 'MFA，不可用：$reason';
+  }
+
+  @override
+  String get account_screensSecuritySetupContinueTitle => '安全设置';
+
+  @override
+  String account_screensSemanticLabel(Object? title) {
+    return '$title，可用但未开启';
+  }
+
+  @override
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  ) {
+    return '$title，不可用：$unavailableReason';
+  }
+
+  @override
+  String account_screensSemanticLabel3(Object? reason, Object? title) {
+    return '$title，已启用：$reason';
+  }
+
+  @override
+  String account_screensSemanticLabel4(Object? detail, Object? title) {
+    return '$title，已设置：$detail，点按可以解绑';
+  }
+
+  @override
+  String account_screensSemanticLabel5(Object? reason, Object? title) {
+    return '$title，不可用：$reason';
+  }
+
+  @override
+  String account_screensSemanticLabel6(Object? title) {
+    return '$title，能力可用';
+  }
+
+  @override
+  String get account_screensStep => '已完成';
+
+  @override
+  String get account_screensSummary => '扫码连接与失败说明';
+
+  @override
+  String get account_screensSummary2 => '其他恢复方式与跳过风险';
+
+  @override
+  String get account_screensSwitch => '钱包已创建';
+
+  @override
+  String get account_screensSwitch2 => '这个账号下已经能看到内置钱包。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch3 => '正在创建你的钱包';
+
+  @override
+  String get account_screensSwitch4 => '密钥在本地生成，不会离开这台设备。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch5 => '钱包还在创建中，可以先继续';
+
+  @override
+  String get account_screensSwitch6 => '等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch7 => '还没有开始创建';
+
+  @override
+  String get account_screensSwitch8 =>
+      'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensTitle => '外部钱包只是登录凭证';
+
+  @override
+  String get account_screensTitle10 => '自动恢复依赖你的登录方式';
+
+  @override
+  String get account_screensTitle2 => '连接已有钱包就能挖矿';
+
+  @override
+  String get account_screensTitle3 => '签名被拒绝';
+
+  @override
+  String get account_screensTitle4 => '连接超时';
+
+  @override
+  String get account_screensTitle5 => '生成密钥对';
+
+  @override
+  String get account_screensTitle6 => '写入安全区';
+
+  @override
+  String get account_screensTitle7 => '绑定 LOOP ID';
+
+  @override
+  String get account_screensTitle8 => '社交恢复 2-of-3';
+
+  @override
+  String get account_screensTitle9 => '导出私钥';
+
+  @override
+  String get account_screensTrailing => '可用';
+
+  @override
+  String get account_screensTrailing2 => '已启用';
+
+  @override
+  String get account_screensTrailing3 => '已设置';
+
+  @override
+  String get account_screensTrailing4 => '已选';
+
+  @override
+  String get account_screensUnknownAccountSurfaceMessage => '请返回社区。请求已被记录。';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle => '页面不存在';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle2 => '这个账户页面不在 93 页产品清单里';
+
+  @override
+  String get account_screensWalletAutomaticRecoveryEvidence =>
+      'Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）';
+
+  @override
+  String get account_screensWalletCreateContinueLabel => '设置恢复方式';
+
+  @override
+  String get account_screensWalletCreateContinueTitle => '创建 LOOP 钱包';
+
+  @override
+  String get account_screensWalletCreateProviderMessageTitle => '这次创建没有完成';
+
+  @override
+  String get account_screensWalletCreateUnavailableBody =>
+      'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。';
+
+  @override
+  String get account_screensWalletCreateUnavailableTitle => '钱包创建暂不可用';
+
+  @override
+  String get account_screensWalletRecoveryConfirmTitle => '恢复方式';
+
+  @override
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  ) {
+    return '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。';
+  }
+
+  @override
+  String get account_screensWalletRecoveryDefaultTitle => '换手机后你已经能拿回资产';
+
+  @override
+  String get account_screensWalletRecoveryErrorSource => '能力清单';
+
+  @override
+  String get account_screensWalletRecoveryLaterLabel => '稍后设置';
+
+  @override
+  String get account_screensWalletRecoveryProviderPending =>
+      '当前版本的登录服务还没有开放这一项';
+
+  @override
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  ) {
+    return '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。';
+  }
+
+  @override
+  String get account_screensWalletRecoveryUnavailableTitle => '现在还不能再加一种';
+
+  @override
   String get betaFeedback_cameraFailed => '无法打开相机';
 
   @override

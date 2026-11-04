@@ -98,6 +98,1257 @@ abstract class LoopLocalizations {
     Locale('zh'),
   ];
 
+  /// lib/features/account/email_auth_controller.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'A Privy Mobile App Client ID is required.'**
+  String get account_emailAuthControllerErrorMessage;
+
+  /// lib/features/account/email_auth_controller.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a Privy Mobile App Client ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage10;
+
+  /// lib/features/account/email_auth_controller.dart:325
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in didn\'t finish. Check your network and the app redirect, then try again.'**
+  String get account_emailAuthControllerErrorMessage11;
+
+  /// lib/features/account/email_auth_controller.dart:347
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a valid Reown Project ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage12;
+
+  /// lib/features/account/email_auth_controller.dart:348
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a Privy Client ID and a Reown Project ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage13;
+
+  /// lib/features/account/email_auth_controller.dart:375
+  ///
+  /// In en, this message translates to:
+  /// **'Only a signed-out session or a verified Privy account can connect a wallet.'**
+  String get account_emailAuthControllerErrorMessage14;
+
+  /// lib/features/account/email_auth_controller.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet action didn\'t finish. Check your network and the app redirect, then try again.'**
+  String get account_emailAuthControllerErrorMessage15;
+
+  /// lib/features/account/email_auth_controller.dart:458
+  ///
+  /// In en, this message translates to:
+  /// **'Only a verified Privy account can unlink a wallet.'**
+  String get account_emailAuthControllerErrorMessage16;
+
+  /// lib/features/account/email_auth_controller.dart:504
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinking didn\'t finish. Check your network and try again.'**
+  String get account_emailAuthControllerErrorMessage17;
+
+  /// lib/features/account/email_auth_controller.dart:146
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get account_emailAuthControllerErrorMessage2;
+
+  /// lib/features/account/email_auth_controller.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Resend the code.'**
+  String get account_emailAuthControllerErrorMessage3;
+
+  /// lib/features/account/email_auth_controller.dart:186, lib/features/account/privy_otp_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'No attempts left. Resend the code.'**
+  String get account_emailAuthControllerErrorMessage4;
+
+  /// lib/features/account/email_auth_controller.dart:196
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code.'**
+  String get account_emailAuthControllerErrorMessage5;
+
+  /// lib/features/account/email_auth_controller.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'{userMessage} No attempts left. Resend the code.'**
+  String account_emailAuthControllerErrorMessage6(Object? userMessage);
+
+  /// lib/features/account/email_auth_controller.dart:225
+  ///
+  /// In en, this message translates to:
+  /// **'{userMessage} Attempts left: {emailAuthMaximumAttempts}.'**
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  );
+
+  /// lib/features/account/email_auth_controller.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple is only available on iOS.'**
+  String get account_emailAuthControllerErrorMessage8;
+
+  /// lib/features/account/email_auth_controller.dart:286, lib/features/account/email_auth_controller.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'The session changed. Check again.'**
+  String get account_emailAuthControllerErrorMessage9;
+
+  /// lib/features/account/email_auth_controller.dart:406
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet linked as a Privy sign-in method.'**
+  String get account_emailAuthControllerSuccessMessage;
+
+  /// lib/features/account/email_auth_controller.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet unlinked.'**
+  String get account_emailAuthControllerSuccessMessage2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'1–40 characters, doesn\'t have to be unique'**
+  String get account_idSetupHintText;
+
+  /// lib/features/account/loop_id_setup_screen.dart:229
+  ///
+  /// In en, this message translates to:
+  /// **'A line about yourself (optional)'**
+  String get account_idSetupHintText2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Others see your avatar and username in chats. Your wallet address stays private.'**
+  String get account_idSetupIdentityStepCopy;
+
+  /// lib/features/account/loop_id_setup_screen.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get account_idSetupLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'Your bio wasn\'t saved. You can add it later in \"Edit profile\".'**
+  String get account_idSetupLoopIdActivatedBody;
+
+  /// lib/features/account/loop_id_setup_screen.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'You can change it later in \"Edit profile\".'**
+  String get account_idSetupLoopIdActivatedBody2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved'**
+  String get account_idSetupLoopIdActivatedTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'Try another'**
+  String get account_idSetupLoopIdAliasSuggestLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:115
+  ///
+  /// In en, this message translates to:
+  /// **'Account profile hasn\'t loaded yet.'**
+  String get account_idSetupLoopIdEmptyMessage;
+
+  /// lib/features/account/loop_id_setup_screen.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Your LOOP ID hasn\'t loaded yet'**
+  String get account_idSetupLoopIdEmptyTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:123
+  ///
+  /// In en, this message translates to:
+  /// **'Profile service'**
+  String get account_idSetupLoopIdErrorSource;
+
+  /// lib/features/account/loop_id_setup_screen.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save'**
+  String get account_idSetupLoopIdFailureTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:72, lib/features/account/loop_id_setup_screen.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get account_idSetupLoopIdSubmitTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'Profile service isn\'t available right now'**
+  String get account_idSetupLoopIdUnavailableTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:255
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned yet'**
+  String get account_idSetupLoopIdValue;
+
+  /// lib/features/account/loop_id_setup_screen.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get account_idSetupLoopLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get account_idSetupLoopLabel2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:130
+  ///
+  /// In en, this message translates to:
+  /// **'Save profile'**
+  String get account_idSetupLoopOfflineState;
+
+  /// lib/features/account/loop_id_setup_screen.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get account_idSetupSubmitting;
+
+  /// lib/features/account/loop_id_setup_screen.dart:261
+  ///
+  /// In en, this message translates to:
+  /// **'System-generated, unique and permanent. Friends can find you with it.'**
+  String get account_idSetupText;
+
+  /// lib/features/account/onboarding_communities.dart:737
+  ///
+  /// In en, this message translates to:
+  /// **'Muting the communities you just joined…'**
+  String get account_onboardingCommunitiesDetail;
+
+  /// lib/features/account/onboarding_communities.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to LOOP'**
+  String get account_onboardingCommunitiesIf;
+
+  /// lib/features/account/onboarding_communities.dart:592
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a few communities you like. They\'re muted after you join, and you can leave anytime.'**
+  String get account_onboardingCommunitiesIf2;
+
+  /// lib/features/account/onboarding_communities.dart:681
+  ///
+  /// In en, this message translates to:
+  /// **'Joined · Muted'**
+  String get account_onboardingCommunitiesJoined;
+
+  /// lib/features/account/onboarding_communities.dart:682
+  ///
+  /// In en, this message translates to:
+  /// **'Joined · Muting'**
+  String get account_onboardingCommunitiesJoinedMutePending;
+
+  /// lib/features/account/onboarding_communities.dart:683
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join'**
+  String get account_onboardingCommunitiesLoopRecordRow;
+
+  /// lib/features/account/onboarding_communities.dart:669
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} members'**
+  String account_onboardingCommunitiesMembers(Object? formatDecimal);
+
+  /// lib/features/account/onboarding_communities.dart:542
+  ///
+  /// In en, this message translates to:
+  /// **'Join communities'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle;
+
+  /// lib/features/account/onboarding_communities.dart:548, lib/features/account/onboarding_communities.dart:574
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel;
+
+  /// lib/features/account/onboarding_communities.dart:603
+  ///
+  /// In en, this message translates to:
+  /// **'No communities to join yet'**
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage;
+
+  /// lib/features/account/onboarding_communities.dart:604
+  ///
+  /// In en, this message translates to:
+  /// **'Enter LOOP first and find communities in Square later.'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason;
+
+  /// lib/features/account/onboarding_communities.dart:588
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended communities'**
+  String get account_onboardingCommunitiesResource;
+
+  /// lib/features/account/onboarding_communities.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {members}, selected'**
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  );
+
+  /// lib/features/account/onboarding_communities.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {members}, not selected'**
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  );
+
+  /// lib/features/account/onboarding_communities.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Join 1 community and enter} other{Join {count} communities and enter}}'**
+  String account_onboardingCommunitiesS(num count);
+
+  /// lib/features/account/onboarding_communities.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get account_onboardingCommunitiesState;
+
+  /// lib/features/account/onboarding_communities.dart:693
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get account_onboardingCommunitiesState2;
+
+  /// lib/features/account/onboarding_communities.dart:736
+  ///
+  /// In en, this message translates to:
+  /// **'Entering LOOP'**
+  String get account_onboardingCommunitiesTitle;
+
+  /// lib/features/account/privy_login_screen.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Use another account'**
+  String get account_privyLoginAnotherAccountLabel;
+
+  /// lib/features/account/privy_login_screen.dart:416
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, in progress'**
+  String account_privyLoginAuthMethodBusyLabel(Object? label);
+
+  /// lib/features/account/privy_login_screen.dart:216
+  ///
+  /// In en, this message translates to:
+  /// **'Enter development preview'**
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to LOOP'**
+  String get account_privyLoginIf;
+
+  /// lib/features/account/privy_login_screen.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a way to sign in or create an account'**
+  String get account_privyLoginIf2;
+
+  /// lib/features/account/privy_login_screen.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'Once you\'re online, sign-in on this device is confirmed automatically. No need to sign in again.'**
+  String get account_privyLoginMessage;
+
+  /// lib/features/account/privy_login_screen.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple'**
+  String get account_privyLoginPrivyAppleLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'The Privy Mobile App Client ID is missing, so real code requests stay off.'**
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody;
+
+  /// lib/features/account/privy_login_screen.dart:130
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in setup is incomplete'**
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle;
+
+  /// lib/features/account/privy_login_screen.dart:175, lib/features/account/privy_login_screen.dart:347
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t continue'**
+  String get account_privyLoginPrivyAuthErrorTitle;
+
+  /// lib/features/account/privy_login_screen.dart:359, lib/features/account/privy_otp_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Get code'**
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2;
+
+  /// lib/features/account/privy_login_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get account_privyLoginPrivyEmailLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Email sign-in'**
+  String get account_privyLoginPrivyEmailScreenTitle;
+
+  /// lib/features/account/privy_login_screen.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get account_privyLoginPrivyGoogleLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:637
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP can\'t confirm your sign-in right now'**
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:640
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t confirm sign-in right now'**
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus;
+
+  /// lib/features/account/privy_login_screen.dart:626
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is restoring your sign-in'**
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:722
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is signing you out'**
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:723
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out'**
+  String get account_privyLoginPrivySigningOutScreenStatus;
+
+  /// lib/features/account/privy_login_screen.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting wallet'**
+  String get account_privyLoginPrivyWalletLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'Have a wallet? Connect it'**
+  String get account_privyLoginPrivyWalletLoginButtonLabel2;
+
+  /// lib/features/account/privy_login_screen.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring sign-in'**
+  String get account_privyLoginRestoringTitle;
+
+  /// lib/features/account/privy_login_screen.dart:201
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable · No valid Reown Project ID'**
+  String get account_privyLoginS;
+
+  /// lib/features/account/privy_login_screen.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'Slow network, still restoring sign-in…'**
+  String get account_privyLoginSlowMessage;
+
+  /// lib/features/account/privy_login_screen.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable · No Privy Mobile App Client ID'**
+  String get account_privyLoginText;
+
+  /// lib/features/account/privy_login_screen.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you agree to the '**
+  String get account_privyLoginText2;
+
+  /// lib/features/account/privy_login_screen.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get account_privyLoginText3;
+
+  /// lib/features/account/privy_login_screen.dart:245
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get account_privyLoginText4;
+
+  /// lib/features/account/privy_login_screen.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get account_privyLoginText5;
+
+  /// lib/features/account/privy_login_screen.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'Have a wallet? '**
+  String get account_privyLoginText6;
+
+  /// lib/features/account/privy_login_screen.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get account_privyLoginText7;
+
+  /// lib/features/account/privy_login_screen.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Network unavailable, waiting to connect'**
+  String get account_privyLoginTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'No code sent yet'**
+  String get account_privyOtpIdentityStepCopy;
+
+  /// lib/features/account/privy_otp_screen.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent to {maskEmailForDisplay}'**
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay);
+
+  /// lib/features/account/privy_otp_screen.dart:88, lib/features/account/privy_otp_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get account_privyOtpIdentityStepCopyTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get account_privyOtpLoopOfflineState;
+
+  /// lib/features/account/privy_otp_screen.dart:318
+  ///
+  /// In en, this message translates to:
+  /// **'Code digit {index}'**
+  String account_privyOtpPrivyOtpCaretLabel(Object? index);
+
+  /// lib/features/account/privy_otp_screen.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get account_privyOtpPrivyOtpCaretValue;
+
+  /// lib/features/account/privy_otp_screen.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get account_privyOtpPrivyOtpChangeEmailLabel;
+
+  /// lib/features/account/privy_otp_screen.dart:206
+  ///
+  /// In en, this message translates to:
+  /// **'Verification failed'**
+  String get account_privyOtpPrivyOtpErrorTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Go back and enter your email.'**
+  String get account_privyOtpPrivyOtpNoDestinationMessage;
+
+  /// lib/features/account/privy_otp_screen.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'No email to verify'**
+  String get account_privyOtpPrivyOtpNoDestinationTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {cooldown}s'**
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown);
+
+  /// lib/features/account/privy_otp_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Resend'**
+  String get account_privyOtpPrivyOtpResendLabel;
+
+  /// lib/features/account/account_screens.dart:1642
+  ///
+  /// In en, this message translates to:
+  /// **'Screen lock not read yet'**
+  String get account_screensAppLockRow;
+
+  /// lib/features/account/account_screens.dart:1645
+  ///
+  /// In en, this message translates to:
+  /// **'{detail} · Applies now; won\'t be remembered after the app restarts'**
+  String account_screensAppLockRow2(Object? detail);
+
+  /// lib/features/account/account_screens.dart:828
+  ///
+  /// In en, this message translates to:
+  /// **'It isn\'t a LOOP trading wallet and can\'t authorize any transaction.'**
+  String get account_screensBody;
+
+  /// lib/features/account/account_screens.dart:834
+  ///
+  /// In en, this message translates to:
+  /// **'Your community tokens stay where they are. Once linked, your holdings count toward power. That\'s why the external wallet option stays.'**
+  String get account_screensBody2;
+
+  /// lib/features/account/account_screens.dart:841
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.'**
+  String get account_screensBody3;
+
+  /// lib/features/account/account_screens.dart:848
+  ///
+  /// In en, this message translates to:
+  /// **'The session expired. Come back to this page and connect again.'**
+  String get account_screensBody4;
+
+  /// lib/features/account/account_screens.dart:1391
+  ///
+  /// In en, this message translates to:
+  /// **'If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.'**
+  String get account_screensBody5;
+
+  /// lib/features/account/account_screens.dart:1185
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic recovery'**
+  String get account_screensCloud;
+
+  /// lib/features/account/account_screens.dart:1185
+  ///
+  /// In en, this message translates to:
+  /// **'Recover with your sign-in method; on a new device, sign in with the same email'**
+  String get account_screensCloud2;
+
+  /// lib/features/account/account_screens.dart:1369
+  ///
+  /// In en, this message translates to:
+  /// **'Pick 3 guardians; any 2 can recover'**
+  String get account_screensDetail;
+
+  /// lib/features/account/account_screens.dart:1376
+  ///
+  /// In en, this message translates to:
+  /// **'Export anytime. It\'s your escape hatch'**
+  String get account_screensDetail2;
+
+  /// lib/features/account/account_screens.dart:813
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet and sign'**
+  String get account_screensExternalWalletConnectLabel;
+
+  /// lib/features/account/account_screens.dart:808, lib/features/account/privy_login_screen.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Connect wallet'**
+  String get account_screensExternalWalletConnectTitle;
+
+  /// lib/features/account/account_screens.dart:870
+  ///
+  /// In en, this message translates to:
+  /// **'Available wallet names show after you connect a wallet.'**
+  String get account_screensExternalWalletListUnavailableDetail;
+
+  /// lib/features/account/account_screens.dart:869
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read the installed wallet list right now'**
+  String get account_screensExternalWalletListUnavailableMessage;
+
+  /// lib/features/account/account_screens.dart:864
+  ///
+  /// In en, this message translates to:
+  /// **'No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.'**
+  String get account_screensExternalWalletUnavailableBody;
+
+  /// lib/features/account/account_screens.dart:863
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet connection isn\'t available right now'**
+  String get account_screensExternalWalletUnavailableTitle;
+
+  /// lib/features/account/account_screens.dart:204, lib/features/account/identity_step_scaffold.dart:161
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}: {label}'**
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  );
+
+  /// lib/features/account/account_screens.dart:857
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting only proves ownership. No assets move.'**
+  String get account_screensIdentityStepCopy;
+
+  /// lib/features/account/account_screens.dart:935
+  ///
+  /// In en, this message translates to:
+  /// **'Your secure wallet is setting up on this device.'**
+  String get account_screensIdentityStepCopy2;
+
+  /// lib/features/account/account_screens.dart:1400
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet already has one recovery method. Add the others once they open.'**
+  String get account_screensIdentityStepCopy3;
+
+  /// lib/features/account/account_screens.dart:1593
+  ///
+  /// In en, this message translates to:
+  /// **'App lock is handled by this device; transaction verification by the sign-in service.'**
+  String get account_screensIdentityStepCopy4;
+
+  /// lib/features/account/account_screens.dart:673
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is loading'**
+  String get account_screensLabel;
+
+  /// lib/features/account/account_screens.dart:856
+  ///
+  /// In en, this message translates to:
+  /// **'Choose wallet'**
+  String get account_screensLabel2;
+
+  /// lib/features/account/account_screens.dart:934
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallet'**
+  String get account_screensLabel3;
+
+  /// lib/features/account/account_screens.dart:1040
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, done'**
+  String account_screensLabel4(Object? title);
+
+  /// lib/features/account/account_screens.dart:1040
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, not done: {pendingDetail}'**
+  String account_screensLabel5(Object? pendingDetail, Object? title);
+
+  /// lib/features/account/account_screens.dart:866
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets you can connect'**
+  String get account_screensLoopLabel;
+
+  /// lib/features/account/account_screens.dart:1364
+  ///
+  /// In en, this message translates to:
+  /// **'Also'**
+  String get account_screensLoopLabel2;
+
+  /// lib/features/account/account_screens.dart:1597, lib/features/account/account_screens.dart:1650
+  ///
+  /// In en, this message translates to:
+  /// **'App lock'**
+  String get account_screensLoopLabel3;
+
+  /// lib/features/account/account_screens.dart:1600
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction verification'**
+  String get account_screensLoopLabel4;
+
+  /// lib/features/account/account_screens.dart:384, lib/features/account/onboarding_communities.dart:533
+  ///
+  /// In en, this message translates to:
+  /// **'Enter LOOP'**
+  String get account_screensLoopSplashEnterLabel;
+
+  /// lib/features/account/account_screens.dart:1509
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, optional'**
+  String account_screensMethodSelectableSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:1509
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, selected'**
+  String account_screensMethodSelectedSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:1682
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get account_screensMfaRow;
+
+  /// lib/features/account/account_screens.dart:1692
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in service unreachable this run'**
+  String get account_screensMfaRow2;
+
+  /// lib/features/account/account_screens.dart:1694
+  ///
+  /// In en, this message translates to:
+  /// **'No answer from the sign-in service yet'**
+  String get account_screensMfaRow3;
+
+  /// lib/features/account/account_screens.dart:1184
+  ///
+  /// In en, this message translates to:
+  /// **'Passkey (recommended)'**
+  String get account_screensPasskey;
+
+  /// lib/features/account/account_screens.dart:1184
+  ///
+  /// In en, this message translates to:
+  /// **'Uses device biometrics and syncs with the system keychain'**
+  String get account_screensPasskey2;
+
+  /// lib/features/account/account_screens.dart:1304
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service says this account already has a passkey'**
+  String get account_screensPasskeyBoundDetail;
+
+  /// lib/features/account/account_screens.dart:1001, lib/features/account/account_screens.dart:1007
+  ///
+  /// In en, this message translates to:
+  /// **'Done once the wallet appears'**
+  String get account_screensPendingDetail;
+
+  /// lib/features/account/account_screens.dart:1013
+  ///
+  /// In en, this message translates to:
+  /// **'Done after the choice in step 3'**
+  String get account_screensPendingDetail2;
+
+  /// lib/features/account/account_screens.dart:1019
+  ///
+  /// In en, this message translates to:
+  /// **'Done after step 5'**
+  String get account_screensPendingDetail3;
+
+  /// lib/features/account/account_screens.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your account…'**
+  String get account_screensPreparingText;
+
+  /// lib/features/account/account_screens.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'Not done'**
+  String get account_screensS;
+
+  /// lib/features/account/account_screens.dart:1305
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service says this account already has a passkey: {named}'**
+  String account_screensS2(Object? named);
+
+  /// lib/features/account/account_screens.dart:1663
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, unavailable: {detail}'**
+  String account_screensSecurityAppLockSemanticLabel(Object? detail);
+
+  /// lib/features/account/account_screens.dart:1665
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, on. Tap and verify to turn off'**
+  String get account_screensSecurityAppLockSemanticLabel2;
+
+  /// lib/features/account/account_screens.dart:1666
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, off. Tap and verify to turn on'**
+  String get account_screensSecurityAppLockSemanticLabel3;
+
+  /// lib/features/account/account_screens.dart:1660, lib/features/account/account_screens.dart:1686
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get account_screensSecurityAppLockTrailing;
+
+  /// lib/features/account/account_screens.dart:1541
+  ///
+  /// In en, this message translates to:
+  /// **'If the device doesn\'t support biometrics, the system screen lock passcode is used instead.'**
+  String get account_screensSecurityBiometricFallbackLine;
+
+  /// lib/features/account/account_screens.dart:1707
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, off. Tap to turn on'**
+  String get account_screensSecurityMfaSemanticLabel;
+
+  /// lib/features/account/account_screens.dart:1708
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, on: {detail}'**
+  String account_screensSecurityMfaSemanticLabel2(Object? detail);
+
+  /// lib/features/account/account_screens.dart:1709
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, unavailable: {reason}'**
+  String account_screensSecurityMfaSemanticLabel3(Object? reason);
+
+  /// lib/features/account/account_screens.dart:1581, lib/features/account/account_screens.dart:1592
+  ///
+  /// In en, this message translates to:
+  /// **'Security setup'**
+  String get account_screensSecuritySetupContinueTitle;
+
+  /// lib/features/account/account_screens.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, available but off'**
+  String account_screensSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, unavailable: {unavailableReason}'**
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  );
+
+  /// lib/features/account/account_screens.dart:1496
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, enabled: {reason}'**
+  String account_screensSemanticLabel3(Object? reason, Object? title);
+
+  /// lib/features/account/account_screens.dart:1498
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, set up: {detail}. Tap to unlink'**
+  String account_screensSemanticLabel4(Object? detail, Object? title);
+
+  /// lib/features/account/account_screens.dart:1501, lib/features/account/account_screens.dart:1531
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, unavailable: {reason}'**
+  String account_screensSemanticLabel5(Object? reason, Object? title);
+
+  /// lib/features/account/account_screens.dart:1531
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, available'**
+  String account_screensSemanticLabel6(Object? title);
+
+  /// lib/features/account/account_screens.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get account_screensStep;
+
+  /// lib/features/account/account_screens.dart:819
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to connect and failure notes'**
+  String get account_screensSummary;
+
+  /// lib/features/account/account_screens.dart:1358
+  ///
+  /// In en, this message translates to:
+  /// **'Other recovery methods and the risk of skipping'**
+  String get account_screensSummary2;
+
+  /// lib/features/account/account_screens.dart:901
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created'**
+  String get account_screensSwitch;
+
+  /// lib/features/account/account_screens.dart:902
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a built-in wallet. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch2;
+
+  /// lib/features/account/account_screens.dart:905
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your wallet'**
+  String get account_screensSwitch3;
+
+  /// lib/features/account/account_screens.dart:906
+  ///
+  /// In en, this message translates to:
+  /// **'Keys are generated on this device and never leave it. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch4;
+
+  /// lib/features/account/account_screens.dart:909
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet is still being created. You can continue for now'**
+  String get account_screensSwitch5;
+
+  /// lib/features/account/account_screens.dart:910
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet after 60 seconds. That doesn\'t mean it failed. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch6;
+
+  /// lib/features/account/account_screens.dart:913
+  ///
+  /// In en, this message translates to:
+  /// **'Not started yet'**
+  String get account_screensSwitch7;
+
+  /// lib/features/account/account_screens.dart:914
+  ///
+  /// In en, this message translates to:
+  /// **'Privy hasn\'t confirmed built-in wallet support, so this page won\'t fake progress. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch8;
+
+  /// lib/features/account/account_screens.dart:827
+  ///
+  /// In en, this message translates to:
+  /// **'An external wallet is only a sign-in method'**
+  String get account_screensTitle;
+
+  /// lib/features/account/account_screens.dart:1390
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic recovery depends on your sign-in method'**
+  String get account_screensTitle10;
+
+  /// lib/features/account/account_screens.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an existing wallet to mine'**
+  String get account_screensTitle2;
+
+  /// lib/features/account/account_screens.dart:840
+  ///
+  /// In en, this message translates to:
+  /// **'Signature rejected'**
+  String get account_screensTitle3;
+
+  /// lib/features/account/account_screens.dart:847
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out'**
+  String get account_screensTitle4;
+
+  /// lib/features/account/account_screens.dart:999
+  ///
+  /// In en, this message translates to:
+  /// **'Generate key pair'**
+  String get account_screensTitle5;
+
+  /// lib/features/account/account_screens.dart:1005
+  ///
+  /// In en, this message translates to:
+  /// **'Write to secure enclave'**
+  String get account_screensTitle6;
+
+  /// lib/features/account/account_screens.dart:1017
+  ///
+  /// In en, this message translates to:
+  /// **'Link LOOP ID'**
+  String get account_screensTitle7;
+
+  /// lib/features/account/account_screens.dart:1368
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery 2-of-3'**
+  String get account_screensTitle8;
+
+  /// lib/features/account/account_screens.dart:1375
+  ///
+  /// In en, this message translates to:
+  /// **'Export private key'**
+  String get account_screensTitle9;
+
+  /// lib/features/account/account_screens.dart:296, lib/features/account/account_screens.dart:1483, lib/features/account/account_screens.dart:1529
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get account_screensTrailing;
+
+  /// lib/features/account/account_screens.dart:1477
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get account_screensTrailing2;
+
+  /// lib/features/account/account_screens.dart:1479
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get account_screensTrailing3;
+
+  /// lib/features/account/account_screens.dart:1481, lib/features/account/onboarding_communities.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get account_screensTrailing4;
+
+  /// lib/features/account/account_screens.dart:1727
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to Community. The request has been logged.'**
+  String get account_screensUnknownAccountSurfaceMessage;
+
+  /// lib/features/account/account_screens.dart:1721
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get account_screensUnknownAccountSurfaceTitle;
+
+  /// lib/features/account/account_screens.dart:1726
+  ///
+  /// In en, this message translates to:
+  /// **'This account page isn\'t in the 93-page product list'**
+  String get account_screensUnknownAccountSurfaceTitle2;
+
+  /// lib/features/account/account_screens.dart:1200
+  ///
+  /// In en, this message translates to:
+  /// **'Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)'**
+  String get account_screensWalletAutomaticRecoveryEvidence;
+
+  /// lib/features/account/account_screens.dart:928, lib/features/account/account_screens.dart:1011, lib/features/account/account_screens.dart:1399
+  ///
+  /// In en, this message translates to:
+  /// **'Set up recovery'**
+  String get account_screensWalletCreateContinueLabel;
+
+  /// lib/features/account/account_screens.dart:921
+  ///
+  /// In en, this message translates to:
+  /// **'Create LOOP wallet'**
+  String get account_screensWalletCreateContinueTitle;
+
+  /// lib/features/account/account_screens.dart:949
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation didn\'t finish'**
+  String get account_screensWalletCreateProviderMessageTitle;
+
+  /// lib/features/account/account_screens.dart:942
+  ///
+  /// In en, this message translates to:
+  /// **'Privy hasn\'t confirmed built-in wallet support. This page won\'t fake progress, and no wallet was created.'**
+  String get account_screensWalletCreateUnavailableBody;
+
+  /// lib/features/account/account_screens.dart:941
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation isn\'t available right now'**
+  String get account_screensWalletCreateUnavailableTitle;
+
+  /// lib/features/account/account_screens.dart:1325, lib/features/account/account_screens.dart:1431
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery methods'**
+  String get account_screensWalletRecoveryConfirmTitle;
+
+  /// lib/features/account/account_screens.dart:1405
+  ///
+  /// In en, this message translates to:
+  /// **'{walletAutomaticRecoveryEvidence}. LOOP has no recovery phrase; this is the default path.'**
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  );
+
+  /// lib/features/account/account_screens.dart:1404
+  ///
+  /// In en, this message translates to:
+  /// **'You can already get your assets back on a new phone'**
+  String get account_screensWalletRecoveryDefaultTitle;
+
+  /// lib/features/account/account_screens.dart:1420
+  ///
+  /// In en, this message translates to:
+  /// **'Capability list'**
+  String get account_screensWalletRecoveryErrorSource;
+
+  /// lib/features/account/account_screens.dart:1351
+  ///
+  /// In en, this message translates to:
+  /// **'Set up later'**
+  String get account_screensWalletRecoveryLaterLabel;
+
+  /// lib/features/account/account_screens.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service in this version doesn\'t offer this yet'**
+  String get account_screensWalletRecoveryProviderPending;
+
+  /// lib/features/account/account_screens.dart:1429
+  ///
+  /// In en, this message translates to:
+  /// **'{walletRecoveryProviderPending}. The options below aren\'t simulated locally and aren\'t pre-selected.'**
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  );
+
+  /// lib/features/account/account_screens.dart:1428
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t add another one yet'**
+  String get account_screensWalletRecoveryUnavailableTitle;
+
   /// lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94
   ///
   /// In en, this message translates to:

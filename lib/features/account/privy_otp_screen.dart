@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/identity_step_scaffold.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inputs.dart';
@@ -85,14 +86,14 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
     }
 
     return IdentityStepScaffold(
-      title: '验证邮箱',
+      title: context.l10n.account_privyOtpIdentityStepCopyTitle,
       step: 1,
       total: 5,
-      progressLabel: '验证邮箱',
+      progressLabel: context.l10n.account_privyOtpIdentityStepCopyTitle,
       onBack: back,
       subtitle: destination == null
           ? Text(
-              '尚未发送验证码',
+              context.l10n.account_privyOtpIdentityStepCopy,
               key: const ValueKey<String>('identity-step-copy'),
               style: LoopType.body.copyWith(color: LoopColors.text2),
             )
@@ -101,7 +102,9 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    '验证码已发送至 ${maskEmailForDisplay(destination)}',
+                    context.l10n.account_privyOtpIdentityStepCopy2(
+                      maskEmailForDisplay(destination),
+                    ),
                     key: const ValueKey<String>('identity-step-copy'),
                     style: LoopType.body.copyWith(color: LoopColors.text2),
                   ),
@@ -109,7 +112,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                 const SizedBox(width: 8),
                 _TextLink(
                   key: const ValueKey<String>('privy-otp-change-email'),
-                  label: '更换邮箱',
+                  label: context.l10n.account_privyOtpPrivyOtpChangeEmailLabel,
                   onPressed: authState.isBusy ? null : changeEmail,
                 ),
               ],
@@ -118,7 +121,9 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
           ? null
           : LoopButton(
               key: const ValueKey<String>('privy-auth-primary-button'),
-              label: verifying ? '验证中…' : '继续',
+              label: verifying
+                  ? context.l10n.common_verifying
+                  : context.l10n.common_continueAction,
               primary: true,
               block: true,
               onPressed:
@@ -129,11 +134,11 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
             ),
       body: <Widget>[
         if (destination == null)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('privy-otp-no-destination'),
             illustration: LoopIllustration.profile,
-            title: '没有待验证的邮箱',
-            message: '返回上一步输入邮箱。',
+            title: context.l10n.account_privyOtpPrivyOtpNoDestinationTitle,
+            message: context.l10n.account_privyOtpPrivyOtpNoDestinationMessage,
             compact: true,
           )
         else ...<Widget>[
@@ -156,14 +161,18 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
                     liveRegion: true,
                     child: Text(
                       key: const ValueKey<String>('privy-otp-resend-hint'),
-                      '$cooldown 秒后可重新发送',
+                      context.l10n.account_privyOtpPrivyOtpResendHint(cooldown),
                       textAlign: TextAlign.center,
                       style: LoopType.caption,
                     ),
                   )
                 : _TextLink(
                     key: const ValueKey<String>('privy-otp-resend'),
-                    label: resending ? '发送中…' : '重新发送',
+                    label: resending
+                        ? context
+                              .l10n
+                              .account_privyLoginPrivyAuthPrimaryButtonLabel
+                        : context.l10n.account_privyOtpPrivyOtpResendLabel,
                     onPressed: canResend
                         ? () => unawaited(controller.resendCode())
                         : null,
@@ -179,7 +188,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
               ),
               child: Text(
                 key: const ValueKey<String>('privy-otp-attempts'),
-                '尝试次数已用完，请重新发送验证码。',
+                context.l10n.account_emailAuthControllerErrorMessage4,
                 textAlign: TextAlign.center,
                 style: LoopType.caption.copyWith(color: LoopColors.chalk),
               ),
@@ -187,7 +196,9 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
           if (authState.deliveryUnconfirmed)
             LoopOfflineState(
               key: const ValueKey<String>('privy-otp-offline'),
-              pausedActions: const <String>['重新发送验证码'],
+              pausedActions: <String>[
+                context.l10n.account_privyOtpLoopOfflineState,
+              ],
               onRetry: canResend
                   ? () => unawaited(controller.resendCode())
                   : null,
@@ -203,7 +214,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
               key: const ValueKey<String>('privy-otp-error'),
               icon: 'close',
               tone: LoopNoticeTone.danger,
-              title: '验证未通过',
+              title: context.l10n.account_privyOtpPrivyOtpErrorTitle,
               body: authState.errorMessage!,
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
@@ -315,8 +326,12 @@ class _OtpGrid extends StatelessWidget {
                 if (index > 0) const SizedBox(width: 8),
                 Expanded(
                   child: Semantics(
-                    label: '验证码第 ${index + 1} 位',
-                    value: index < digits.length ? digits[index] : '未填写',
+                    label: context.l10n.account_privyOtpPrivyOtpCaretLabel(
+                      index + 1,
+                    ),
+                    value: index < digits.length
+                        ? digits[index]
+                        : context.l10n.account_privyOtpPrivyOtpCaretValue,
                     readOnly: true,
                     child: Container(
                       key: ValueKey<String>('privy-otp-cell-${index + 1}'),

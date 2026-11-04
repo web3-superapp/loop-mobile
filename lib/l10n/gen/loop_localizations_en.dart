@@ -10,6 +10,793 @@ class LoopLocalizationsEn extends LoopLocalizations {
   LoopLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get account_emailAuthControllerErrorMessage =>
+      'A Privy Mobile App Client ID is required.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage10 =>
+      'Provide a Privy Mobile App Client ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage11 =>
+      'Sign-in didn\'t finish. Check your network and the app redirect, then try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage12 =>
+      'Provide a valid Reown Project ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage13 =>
+      'Provide a Privy Client ID and a Reown Project ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage14 =>
+      'Only a signed-out session or a verified Privy account can connect a wallet.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage15 =>
+      'The wallet action didn\'t finish. Check your network and the app redirect, then try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage16 =>
+      'Only a verified Privy account can unlink a wallet.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage17 =>
+      'Unlinking didn\'t finish. Check your network and try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage2 =>
+      'Enter a valid email address.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage3 => 'Resend the code.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage4 =>
+      'No attempts left. Resend the code.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage5 =>
+      'Enter the 6-digit code.';
+
+  @override
+  String account_emailAuthControllerErrorMessage6(Object? userMessage) {
+    return '$userMessage No attempts left. Resend the code.';
+  }
+
+  @override
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  ) {
+    return '$userMessage Attempts left: $emailAuthMaximumAttempts.';
+  }
+
+  @override
+  String get account_emailAuthControllerErrorMessage8 =>
+      'Sign in with Apple is only available on iOS.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage9 =>
+      'The session changed. Check again.';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage =>
+      'External wallet linked as a Privy sign-in method.';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage2 =>
+      'External wallet unlinked.';
+
+  @override
+  String get account_idSetupHintText =>
+      '1–40 characters, doesn\'t have to be unique';
+
+  @override
+  String get account_idSetupHintText2 => 'A line about yourself (optional)';
+
+  @override
+  String get account_idSetupIdentityStepCopy =>
+      'Others see your avatar and username in chats. Your wallet address stays private.';
+
+  @override
+  String get account_idSetupLabel => 'Load';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody =>
+      'Your bio wasn\'t saved. You can add it later in \"Edit profile\".';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody2 =>
+      'You can change it later in \"Edit profile\".';
+
+  @override
+  String get account_idSetupLoopIdActivatedTitle => 'Profile saved';
+
+  @override
+  String get account_idSetupLoopIdAliasSuggestLabel => 'Try another';
+
+  @override
+  String get account_idSetupLoopIdEmptyMessage =>
+      'Account profile hasn\'t loaded yet.';
+
+  @override
+  String get account_idSetupLoopIdEmptyTitle =>
+      'Your LOOP ID hasn\'t loaded yet';
+
+  @override
+  String get account_idSetupLoopIdErrorSource => 'Profile service';
+
+  @override
+  String get account_idSetupLoopIdFailureTitle => 'Couldn\'t save';
+
+  @override
+  String get account_idSetupLoopIdSubmitTitle => 'Complete your profile';
+
+  @override
+  String get account_idSetupLoopIdUnavailableTitle =>
+      'Profile service isn\'t available right now';
+
+  @override
+  String get account_idSetupLoopIdValue => 'Not assigned yet';
+
+  @override
+  String get account_idSetupLoopLabel => 'Username';
+
+  @override
+  String get account_idSetupLoopLabel2 => 'Bio';
+
+  @override
+  String get account_idSetupLoopOfflineState => 'Save profile';
+
+  @override
+  String get account_idSetupSubmitting => 'Submitting…';
+
+  @override
+  String get account_idSetupText =>
+      'System-generated, unique and permanent. Friends can find you with it.';
+
+  @override
+  String get account_onboardingCommunitiesDetail =>
+      'Muting the communities you just joined…';
+
+  @override
+  String get account_onboardingCommunitiesIf => 'Continue to LOOP';
+
+  @override
+  String get account_onboardingCommunitiesIf2 =>
+      'Pick a few communities you like. They\'re muted after you join, and you can leave anytime.';
+
+  @override
+  String get account_onboardingCommunitiesJoined => 'Joined · Muted';
+
+  @override
+  String get account_onboardingCommunitiesJoinedMutePending =>
+      'Joined · Muting';
+
+  @override
+  String get account_onboardingCommunitiesLoopRecordRow => 'Couldn\'t join';
+
+  @override
+  String account_onboardingCommunitiesMembers(Object? formatDecimal) {
+    return '$formatDecimal members';
+  }
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle =>
+      'Join communities';
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel =>
+      'Skip';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage =>
+      'No communities to join yet';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason =>
+      'Enter LOOP first and find communities in Square later.';
+
+  @override
+  String get account_onboardingCommunitiesResource => 'Recommended communities';
+
+  @override
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name, $members, selected';
+  }
+
+  @override
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name, $members, not selected';
+  }
+
+  @override
+  String account_onboardingCommunitiesS(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Join $count communities and enter',
+      one: 'Join 1 community and enter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get account_onboardingCommunitiesState => 'Joined';
+
+  @override
+  String get account_onboardingCommunitiesState2 => 'Not selected';
+
+  @override
+  String get account_onboardingCommunitiesTitle => 'Entering LOOP';
+
+  @override
+  String get account_privyLoginAnotherAccountLabel => 'Use another account';
+
+  @override
+  String account_privyLoginAuthMethodBusyLabel(Object? label) {
+    return '$label, in progress';
+  }
+
+  @override
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel =>
+      'Enter development preview';
+
+  @override
+  String get account_privyLoginIf => 'Welcome to LOOP';
+
+  @override
+  String get account_privyLoginIf2 =>
+      'Choose a way to sign in or create an account';
+
+  @override
+  String get account_privyLoginMessage =>
+      'Once you\'re online, sign-in on this device is confirmed automatically. No need to sign in again.';
+
+  @override
+  String get account_privyLoginPrivyAppleLoginButtonLabel =>
+      'Sign in with Apple';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody =>
+      'The Privy Mobile App Client ID is missing, so real code requests stay off.';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle =>
+      'Sign-in setup is incomplete';
+
+  @override
+  String get account_privyLoginPrivyAuthErrorTitle => 'Can\'t continue';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel => 'Sending…';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2 => 'Get code';
+
+  @override
+  String get account_privyLoginPrivyEmailLoginButtonLabel =>
+      'Sign in with email';
+
+  @override
+  String get account_privyLoginPrivyEmailScreenTitle => 'Email sign-in';
+
+  @override
+  String get account_privyLoginPrivyGoogleLoginButtonLabel =>
+      'Sign in with Google';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel =>
+      'LOOP can\'t confirm your sign-in right now';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus =>
+      'Can\'t confirm sign-in right now';
+
+  @override
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel =>
+      'LOOP is restoring your sign-in';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel =>
+      'LOOP is signing you out';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenStatus => 'Signing out';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel =>
+      'Connecting wallet';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel2 =>
+      'Have a wallet? Connect it';
+
+  @override
+  String get account_privyLoginRestoringTitle => 'Restoring sign-in';
+
+  @override
+  String get account_privyLoginS => 'Unavailable · No valid Reown Project ID';
+
+  @override
+  String get account_privyLoginSlowMessage =>
+      'Slow network, still restoring sign-in…';
+
+  @override
+  String get account_privyLoginText =>
+      'Unavailable · No Privy Mobile App Client ID';
+
+  @override
+  String get account_privyLoginText2 => 'By continuing, you agree to the ';
+
+  @override
+  String get account_privyLoginText3 => 'Terms of Service';
+
+  @override
+  String get account_privyLoginText4 => ' and ';
+
+  @override
+  String get account_privyLoginText5 => 'Privacy Policy';
+
+  @override
+  String get account_privyLoginText6 => 'Have a wallet? ';
+
+  @override
+  String get account_privyLoginText7 => 'Connecting…';
+
+  @override
+  String get account_privyLoginTitle =>
+      'Network unavailable, waiting to connect';
+
+  @override
+  String get account_privyOtpIdentityStepCopy => 'No code sent yet';
+
+  @override
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay) {
+    return 'Code sent to $maskEmailForDisplay';
+  }
+
+  @override
+  String get account_privyOtpIdentityStepCopyTitle => 'Verify email';
+
+  @override
+  String get account_privyOtpLoopOfflineState => 'Resend code';
+
+  @override
+  String account_privyOtpPrivyOtpCaretLabel(Object? index) {
+    return 'Code digit $index';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpCaretValue => 'Empty';
+
+  @override
+  String get account_privyOtpPrivyOtpChangeEmailLabel => 'Change email';
+
+  @override
+  String get account_privyOtpPrivyOtpErrorTitle => 'Verification failed';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationMessage =>
+      'Go back and enter your email.';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationTitle => 'No email to verify';
+
+  @override
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown) {
+    return 'Resend in ${cooldown}s';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpResendLabel => 'Resend';
+
+  @override
+  String get account_screensAppLockRow => 'Screen lock not read yet';
+
+  @override
+  String account_screensAppLockRow2(Object? detail) {
+    return '$detail · Applies now; won\'t be remembered after the app restarts';
+  }
+
+  @override
+  String get account_screensBody =>
+      'It isn\'t a LOOP trading wallet and can\'t authorize any transaction.';
+
+  @override
+  String get account_screensBody2 =>
+      'Your community tokens stay where they are. Once linked, your holdings count toward power. That\'s why the external wallet option stays.';
+
+  @override
+  String get account_screensBody3 =>
+      'Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.';
+
+  @override
+  String get account_screensBody4 =>
+      'The session expired. Come back to this page and connect again.';
+
+  @override
+  String get account_screensBody5 =>
+      'If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.';
+
+  @override
+  String get account_screensCloud => 'Automatic recovery';
+
+  @override
+  String get account_screensCloud2 =>
+      'Recover with your sign-in method; on a new device, sign in with the same email';
+
+  @override
+  String get account_screensDetail => 'Pick 3 guardians; any 2 can recover';
+
+  @override
+  String get account_screensDetail2 =>
+      'Export anytime. It\'s your escape hatch';
+
+  @override
+  String get account_screensExternalWalletConnectLabel =>
+      'Choose a wallet and sign';
+
+  @override
+  String get account_screensExternalWalletConnectTitle => 'Connect wallet';
+
+  @override
+  String get account_screensExternalWalletListUnavailableDetail =>
+      'Available wallet names show after you connect a wallet.';
+
+  @override
+  String get account_screensExternalWalletListUnavailableMessage =>
+      'Can\'t read the installed wallet list right now';
+
+  @override
+  String get account_screensExternalWalletUnavailableBody =>
+      'No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.';
+
+  @override
+  String get account_screensExternalWalletUnavailableTitle =>
+      'External wallet connection isn\'t available right now';
+
+  @override
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return 'Step $step of $total: $label';
+  }
+
+  @override
+  String get account_screensIdentityStepCopy =>
+      'Connecting only proves ownership. No assets move.';
+
+  @override
+  String get account_screensIdentityStepCopy2 =>
+      'Your secure wallet is setting up on this device.';
+
+  @override
+  String get account_screensIdentityStepCopy3 =>
+      'Your wallet already has one recovery method. Add the others once they open.';
+
+  @override
+  String get account_screensIdentityStepCopy4 =>
+      'App lock is handled by this device; transaction verification by the sign-in service.';
+
+  @override
+  String get account_screensLabel => 'LOOP is loading';
+
+  @override
+  String get account_screensLabel2 => 'Choose wallet';
+
+  @override
+  String get account_screensLabel3 => 'Create wallet';
+
+  @override
+  String account_screensLabel4(Object? title) {
+    return '$title, done';
+  }
+
+  @override
+  String account_screensLabel5(Object? pendingDetail, Object? title) {
+    return '$title, not done: $pendingDetail';
+  }
+
+  @override
+  String get account_screensLoopLabel => 'Wallets you can connect';
+
+  @override
+  String get account_screensLoopLabel2 => 'Also';
+
+  @override
+  String get account_screensLoopLabel3 => 'App lock';
+
+  @override
+  String get account_screensLoopLabel4 => 'Transaction verification';
+
+  @override
+  String get account_screensLoopSplashEnterLabel => 'Enter LOOP';
+
+  @override
+  String account_screensMethodSelectableSemanticLabel(Object? title) {
+    return '$title, optional';
+  }
+
+  @override
+  String account_screensMethodSelectedSemanticLabel(Object? title) {
+    return '$title, selected';
+  }
+
+  @override
+  String get account_screensMfaRow => 'Loading…';
+
+  @override
+  String get account_screensMfaRow2 => 'Sign-in service unreachable this run';
+
+  @override
+  String get account_screensMfaRow3 => 'No answer from the sign-in service yet';
+
+  @override
+  String get account_screensPasskey => 'Passkey (recommended)';
+
+  @override
+  String get account_screensPasskey2 =>
+      'Uses device biometrics and syncs with the system keychain';
+
+  @override
+  String get account_screensPasskeyBoundDetail =>
+      'The sign-in service says this account already has a passkey';
+
+  @override
+  String get account_screensPendingDetail => 'Done once the wallet appears';
+
+  @override
+  String get account_screensPendingDetail2 => 'Done after the choice in step 3';
+
+  @override
+  String get account_screensPendingDetail3 => 'Done after step 5';
+
+  @override
+  String get account_screensPreparingText => 'Preparing your account…';
+
+  @override
+  String get account_screensS => 'Not done';
+
+  @override
+  String account_screensS2(Object? named) {
+    return 'The sign-in service says this account already has a passkey: $named';
+  }
+
+  @override
+  String account_screensSecurityAppLockSemanticLabel(Object? detail) {
+    return 'App lock, unavailable: $detail';
+  }
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel2 =>
+      'App lock, on. Tap and verify to turn off';
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel3 =>
+      'App lock, off. Tap and verify to turn on';
+
+  @override
+  String get account_screensSecurityAppLockTrailing => 'Off';
+
+  @override
+  String get account_screensSecurityBiometricFallbackLine =>
+      'If the device doesn\'t support biometrics, the system screen lock passcode is used instead.';
+
+  @override
+  String get account_screensSecurityMfaSemanticLabel =>
+      'MFA, off. Tap to turn on';
+
+  @override
+  String account_screensSecurityMfaSemanticLabel2(Object? detail) {
+    return 'MFA, on: $detail';
+  }
+
+  @override
+  String account_screensSecurityMfaSemanticLabel3(Object? reason) {
+    return 'MFA, unavailable: $reason';
+  }
+
+  @override
+  String get account_screensSecuritySetupContinueTitle => 'Security setup';
+
+  @override
+  String account_screensSemanticLabel(Object? title) {
+    return '$title, available but off';
+  }
+
+  @override
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  ) {
+    return '$title, unavailable: $unavailableReason';
+  }
+
+  @override
+  String account_screensSemanticLabel3(Object? reason, Object? title) {
+    return '$title, enabled: $reason';
+  }
+
+  @override
+  String account_screensSemanticLabel4(Object? detail, Object? title) {
+    return '$title, set up: $detail. Tap to unlink';
+  }
+
+  @override
+  String account_screensSemanticLabel5(Object? reason, Object? title) {
+    return '$title, unavailable: $reason';
+  }
+
+  @override
+  String account_screensSemanticLabel6(Object? title) {
+    return '$title, available';
+  }
+
+  @override
+  String get account_screensStep => 'Done';
+
+  @override
+  String get account_screensSummary => 'Scan to connect and failure notes';
+
+  @override
+  String get account_screensSummary2 =>
+      'Other recovery methods and the risk of skipping';
+
+  @override
+  String get account_screensSwitch => 'Wallet created';
+
+  @override
+  String get account_screensSwitch2 =>
+      'This account already has a built-in wallet. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch3 => 'Creating your wallet';
+
+  @override
+  String get account_screensSwitch4 =>
+      'Keys are generated on this device and never leave it. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch5 =>
+      'Your wallet is still being created. You can continue for now';
+
+  @override
+  String get account_screensSwitch6 =>
+      'No wallet after 60 seconds. That doesn\'t mean it failed. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch7 => 'Not started yet';
+
+  @override
+  String get account_screensSwitch8 =>
+      'Privy hasn\'t confirmed built-in wallet support, so this page won\'t fake progress. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensTitle =>
+      'An external wallet is only a sign-in method';
+
+  @override
+  String get account_screensTitle10 =>
+      'Automatic recovery depends on your sign-in method';
+
+  @override
+  String get account_screensTitle2 => 'Connect an existing wallet to mine';
+
+  @override
+  String get account_screensTitle3 => 'Signature rejected';
+
+  @override
+  String get account_screensTitle4 => 'Connection timed out';
+
+  @override
+  String get account_screensTitle5 => 'Generate key pair';
+
+  @override
+  String get account_screensTitle6 => 'Write to secure enclave';
+
+  @override
+  String get account_screensTitle7 => 'Link LOOP ID';
+
+  @override
+  String get account_screensTitle8 => 'Social recovery 2-of-3';
+
+  @override
+  String get account_screensTitle9 => 'Export private key';
+
+  @override
+  String get account_screensTrailing => 'Available';
+
+  @override
+  String get account_screensTrailing2 => 'Enabled';
+
+  @override
+  String get account_screensTrailing3 => 'Set up';
+
+  @override
+  String get account_screensTrailing4 => 'Selected';
+
+  @override
+  String get account_screensUnknownAccountSurfaceMessage =>
+      'Go back to Community. The request has been logged.';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle => 'Page not found';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle2 =>
+      'This account page isn\'t in the 93-page product list';
+
+  @override
+  String get account_screensWalletAutomaticRecoveryEvidence =>
+      'Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)';
+
+  @override
+  String get account_screensWalletCreateContinueLabel => 'Set up recovery';
+
+  @override
+  String get account_screensWalletCreateContinueTitle => 'Create LOOP wallet';
+
+  @override
+  String get account_screensWalletCreateProviderMessageTitle =>
+      'Wallet creation didn\'t finish';
+
+  @override
+  String get account_screensWalletCreateUnavailableBody =>
+      'Privy hasn\'t confirmed built-in wallet support. This page won\'t fake progress, and no wallet was created.';
+
+  @override
+  String get account_screensWalletCreateUnavailableTitle =>
+      'Wallet creation isn\'t available right now';
+
+  @override
+  String get account_screensWalletRecoveryConfirmTitle => 'Recovery methods';
+
+  @override
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  ) {
+    return '$walletAutomaticRecoveryEvidence. LOOP has no recovery phrase; this is the default path.';
+  }
+
+  @override
+  String get account_screensWalletRecoveryDefaultTitle =>
+      'You can already get your assets back on a new phone';
+
+  @override
+  String get account_screensWalletRecoveryErrorSource => 'Capability list';
+
+  @override
+  String get account_screensWalletRecoveryLaterLabel => 'Set up later';
+
+  @override
+  String get account_screensWalletRecoveryProviderPending =>
+      'The sign-in service in this version doesn\'t offer this yet';
+
+  @override
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  ) {
+    return '$walletRecoveryProviderPending. The options below aren\'t simulated locally and aren\'t pre-selected.';
+  }
+
+  @override
+  String get account_screensWalletRecoveryUnavailableTitle =>
+      'You can\'t add another one yet';
+
+  @override
   String get betaFeedback_cameraFailed => 'Couldn\'t open the camera';
 
   @override

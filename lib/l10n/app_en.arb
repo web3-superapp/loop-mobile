@@ -1,5 +1,995 @@
 {
   "@@locale": "en",
+  "account_emailAuthControllerErrorMessage": "A Privy Mobile App Client ID is required.",
+  "@account_emailAuthControllerErrorMessage": {
+    "description": "lib/features/account/email_auth_controller.dart:139"
+  },
+  "account_emailAuthControllerErrorMessage10": "Provide a Privy Mobile App Client ID with --dart-define first.",
+  "@account_emailAuthControllerErrorMessage10": {
+    "description": "lib/features/account/email_auth_controller.dart:293"
+  },
+  "account_emailAuthControllerErrorMessage11": "Sign-in didn't finish. Check your network and the app redirect, then try again.",
+  "@account_emailAuthControllerErrorMessage11": {
+    "description": "lib/features/account/email_auth_controller.dart:325"
+  },
+  "account_emailAuthControllerErrorMessage12": "Provide a valid Reown Project ID with --dart-define first.",
+  "@account_emailAuthControllerErrorMessage12": {
+    "description": "lib/features/account/email_auth_controller.dart:347"
+  },
+  "account_emailAuthControllerErrorMessage13": "Provide a Privy Client ID and a Reown Project ID with --dart-define first.",
+  "@account_emailAuthControllerErrorMessage13": {
+    "description": "lib/features/account/email_auth_controller.dart:348"
+  },
+  "account_emailAuthControllerErrorMessage14": "Only a signed-out session or a verified Privy account can connect a wallet.",
+  "@account_emailAuthControllerErrorMessage14": {
+    "description": "lib/features/account/email_auth_controller.dart:375"
+  },
+  "account_emailAuthControllerErrorMessage15": "The wallet action didn't finish. Check your network and the app redirect, then try again.",
+  "@account_emailAuthControllerErrorMessage15": {
+    "description": "lib/features/account/email_auth_controller.dart:438"
+  },
+  "account_emailAuthControllerErrorMessage16": "Only a verified Privy account can unlink a wallet.",
+  "@account_emailAuthControllerErrorMessage16": {
+    "description": "lib/features/account/email_auth_controller.dart:458"
+  },
+  "account_emailAuthControllerErrorMessage17": "Unlinking didn't finish. Check your network and try again.",
+  "@account_emailAuthControllerErrorMessage17": {
+    "description": "lib/features/account/email_auth_controller.dart:504"
+  },
+  "account_emailAuthControllerErrorMessage2": "Enter a valid email address.",
+  "@account_emailAuthControllerErrorMessage2": {
+    "description": "lib/features/account/email_auth_controller.dart:146"
+  },
+  "account_emailAuthControllerErrorMessage3": "Resend the code.",
+  "@account_emailAuthControllerErrorMessage3": {
+    "description": "lib/features/account/email_auth_controller.dart:177"
+  },
+  "account_emailAuthControllerErrorMessage4": "No attempts left. Resend the code.",
+  "@account_emailAuthControllerErrorMessage4": {
+    "description": "lib/features/account/email_auth_controller.dart:186, lib/features/account/privy_otp_screen.dart:182"
+  },
+  "account_emailAuthControllerErrorMessage5": "Enter the 6-digit code.",
+  "@account_emailAuthControllerErrorMessage5": {
+    "description": "lib/features/account/email_auth_controller.dart:196"
+  },
+  "account_emailAuthControllerErrorMessage6": "{userMessage} No attempts left. Resend the code.",
+  "@account_emailAuthControllerErrorMessage6": {
+    "description": "lib/features/account/email_auth_controller.dart:224",
+    "placeholders": {
+      "userMessage": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_emailAuthControllerErrorMessage7": "{userMessage} Attempts left: {emailAuthMaximumAttempts}.",
+  "@account_emailAuthControllerErrorMessage7": {
+    "description": "lib/features/account/email_auth_controller.dart:225",
+    "placeholders": {
+      "emailAuthMaximumAttempts": {
+        "type": "Object?"
+      },
+      "userMessage": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_emailAuthControllerErrorMessage8": "Sign in with Apple is only available on iOS.",
+  "@account_emailAuthControllerErrorMessage8": {
+    "description": "lib/features/account/email_auth_controller.dart:273"
+  },
+  "account_emailAuthControllerErrorMessage9": "The session changed. Check again.",
+  "@account_emailAuthControllerErrorMessage9": {
+    "description": "lib/features/account/email_auth_controller.dart:286, lib/features/account/email_auth_controller.dart:526"
+  },
+  "account_emailAuthControllerSuccessMessage": "External wallet linked as a Privy sign-in method.",
+  "@account_emailAuthControllerSuccessMessage": {
+    "description": "lib/features/account/email_auth_controller.dart:406"
+  },
+  "account_emailAuthControllerSuccessMessage2": "External wallet unlinked.",
+  "@account_emailAuthControllerSuccessMessage2": {
+    "description": "lib/features/account/email_auth_controller.dart:489"
+  },
+  "account_idSetupHintText": "1–40 characters, doesn't have to be unique",
+  "@account_idSetupHintText": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:190"
+  },
+  "account_idSetupHintText2": "A line about yourself (optional)",
+  "@account_idSetupHintText2": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:229"
+  },
+  "account_idSetupIdentityStepCopy": "Others see your avatar and username in chats. Your wallet address stays private.",
+  "@account_idSetupIdentityStepCopy": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:91"
+  },
+  "account_idSetupLabel": "Load",
+  "@account_idSetupLabel": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:116"
+  },
+  "account_idSetupLoopIdActivatedBody": "Your bio wasn't saved. You can add it later in \"Edit profile\".",
+  "@account_idSetupLoopIdActivatedBody": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:147"
+  },
+  "account_idSetupLoopIdActivatedBody2": "You can change it later in \"Edit profile\".",
+  "@account_idSetupLoopIdActivatedBody2": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:148"
+  },
+  "account_idSetupLoopIdActivatedTitle": "Profile saved",
+  "@account_idSetupLoopIdActivatedTitle": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:145"
+  },
+  "account_idSetupLoopIdAliasSuggestLabel": "Try another",
+  "@account_idSetupLoopIdAliasSuggestLabel": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:197"
+  },
+  "account_idSetupLoopIdEmptyMessage": "Account profile hasn't loaded yet.",
+  "@account_idSetupLoopIdEmptyMessage": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:115"
+  },
+  "account_idSetupLoopIdEmptyTitle": "Your LOOP ID hasn't loaded yet",
+  "@account_idSetupLoopIdEmptyTitle": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:114"
+  },
+  "account_idSetupLoopIdErrorSource": "Profile service",
+  "@account_idSetupLoopIdErrorSource": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:123"
+  },
+  "account_idSetupLoopIdFailureTitle": "Couldn't save",
+  "@account_idSetupLoopIdFailureTitle": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:138"
+  },
+  "account_idSetupLoopIdSubmitTitle": "Complete your profile",
+  "@account_idSetupLoopIdSubmitTitle": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:72, lib/features/account/loop_id_setup_screen.dart:90"
+  },
+  "account_idSetupLoopIdUnavailableTitle": "Profile service isn't available right now",
+  "@account_idSetupLoopIdUnavailableTitle": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:105"
+  },
+  "account_idSetupLoopIdValue": "Not assigned yet",
+  "@account_idSetupLoopIdValue": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:255"
+  },
+  "account_idSetupLoopLabel": "Username",
+  "@account_idSetupLoopLabel": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:160"
+  },
+  "account_idSetupLoopLabel2": "Bio",
+  "@account_idSetupLoopLabel2": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:208"
+  },
+  "account_idSetupLoopOfflineState": "Save profile",
+  "@account_idSetupLoopOfflineState": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:130"
+  },
+  "account_idSetupSubmitting": "Submitting…",
+  "@account_idSetupSubmitting": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:78"
+  },
+  "account_idSetupText": "System-generated, unique and permanent. Friends can find you with it.",
+  "@account_idSetupText": {
+    "description": "lib/features/account/loop_id_setup_screen.dart:261"
+  },
+  "account_onboardingCommunitiesDetail": "Muting the communities you just joined…",
+  "@account_onboardingCommunitiesDetail": {
+    "description": "lib/features/account/onboarding_communities.dart:737"
+  },
+  "account_onboardingCommunitiesIf": "Continue to LOOP",
+  "@account_onboardingCommunitiesIf": {
+    "description": "lib/features/account/onboarding_communities.dart:531"
+  },
+  "account_onboardingCommunitiesIf2": "Pick a few communities you like. They're muted after you join, and you can leave anytime.",
+  "@account_onboardingCommunitiesIf2": {
+    "description": "lib/features/account/onboarding_communities.dart:592"
+  },
+  "account_onboardingCommunitiesJoined": "Joined · Muted",
+  "@account_onboardingCommunitiesJoined": {
+    "description": "lib/features/account/onboarding_communities.dart:681"
+  },
+  "account_onboardingCommunitiesJoinedMutePending": "Joined · Muting",
+  "@account_onboardingCommunitiesJoinedMutePending": {
+    "description": "lib/features/account/onboarding_communities.dart:682"
+  },
+  "account_onboardingCommunitiesLoopRecordRow": "Couldn't join",
+  "@account_onboardingCommunitiesLoopRecordRow": {
+    "description": "lib/features/account/onboarding_communities.dart:683"
+  },
+  "account_onboardingCommunitiesMembers": "{formatDecimal} members",
+  "@account_onboardingCommunitiesMembers": {
+    "description": "lib/features/account/onboarding_communities.dart:669",
+    "placeholders": {
+      "formatDecimal": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesScreenTitle": "Join communities",
+  "@account_onboardingCommunitiesOnboardingCommunitiesScreenTitle": {
+    "description": "lib/features/account/onboarding_communities.dart:542"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesSkipLabel": "Skip",
+  "@account_onboardingCommunitiesOnboardingCommunitiesSkipLabel": {
+    "description": "lib/features/account/onboarding_communities.dart:548, lib/features/account/onboarding_communities.dart:574"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage": "No communities to join yet",
+  "@account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage": {
+    "description": "lib/features/account/onboarding_communities.dart:603"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason": "Enter LOOP first and find communities in Square later.",
+  "@account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason": {
+    "description": "lib/features/account/onboarding_communities.dart:604"
+  },
+  "account_onboardingCommunitiesResource": "Recommended communities",
+  "@account_onboardingCommunitiesResource": {
+    "description": "lib/features/account/onboarding_communities.dart:588"
+  },
+  "account_onboardingCommunitiesRowSelectedSemanticLabel": "{name}, {members}, selected",
+  "@account_onboardingCommunitiesRowSelectedSemanticLabel": {
+    "description": "lib/features/account/onboarding_communities.dart:702",
+    "placeholders": {
+      "members": {
+        "type": "Object?"
+      },
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_onboardingCommunitiesRowUnselectedSemanticLabel": "{name}, {members}, not selected",
+  "@account_onboardingCommunitiesRowUnselectedSemanticLabel": {
+    "description": "lib/features/account/onboarding_communities.dart:702",
+    "placeholders": {
+      "members": {
+        "type": "Object?"
+      },
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_onboardingCommunitiesS": "{count, plural, =1{Join 1 community and enter} other{Join {count} communities and enter}}",
+  "@account_onboardingCommunitiesS": {
+    "description": "lib/features/account/onboarding_communities.dart:534",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "account_onboardingCommunitiesState": "Joined",
+  "@account_onboardingCommunitiesState": {
+    "description": "lib/features/account/onboarding_communities.dart:690"
+  },
+  "account_onboardingCommunitiesState2": "Not selected",
+  "@account_onboardingCommunitiesState2": {
+    "description": "lib/features/account/onboarding_communities.dart:693"
+  },
+  "account_onboardingCommunitiesTitle": "Entering LOOP",
+  "@account_onboardingCommunitiesTitle": {
+    "description": "lib/features/account/onboarding_communities.dart:736"
+  },
+  "account_privyLoginAnotherAccountLabel": "Use another account",
+  "@account_privyLoginAnotherAccountLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:692"
+  },
+  "account_privyLoginAuthMethodBusyLabel": "{label}, in progress",
+  "@account_privyLoginAuthMethodBusyLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:416",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_privyLoginEnterDevelopmentPreviewButtonLabel": "Enter development preview",
+  "@account_privyLoginEnterDevelopmentPreviewButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:216"
+  },
+  "account_privyLoginIf": "Welcome to LOOP",
+  "@account_privyLoginIf": {
+    "description": "lib/features/account/privy_login_screen.dart:107"
+  },
+  "account_privyLoginIf2": "Choose a way to sign in or create an account",
+  "@account_privyLoginIf2": {
+    "description": "lib/features/account/privy_login_screen.dart:113"
+  },
+  "account_privyLoginMessage": "Once you're online, sign-in on this device is confirmed automatically. No need to sign in again.",
+  "@account_privyLoginMessage": {
+    "description": "lib/features/account/privy_login_screen.dart:691"
+  },
+  "account_privyLoginPrivyAppleLoginButtonLabel": "Sign in with Apple",
+  "@account_privyLoginPrivyAppleLoginButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:136"
+  },
+  "account_privyLoginPrivyAuthConfigurationIncompleteBody": "The Privy Mobile App Client ID is missing, so real code requests stay off.",
+  "@account_privyLoginPrivyAuthConfigurationIncompleteBody": {
+    "description": "lib/features/account/privy_login_screen.dart:131"
+  },
+  "account_privyLoginPrivyAuthConfigurationIncompleteTitle": "Sign-in setup is incomplete",
+  "@account_privyLoginPrivyAuthConfigurationIncompleteTitle": {
+    "description": "lib/features/account/privy_login_screen.dart:130"
+  },
+  "account_privyLoginPrivyAuthErrorTitle": "Can't continue",
+  "@account_privyLoginPrivyAuthErrorTitle": {
+    "description": "lib/features/account/privy_login_screen.dart:175, lib/features/account/privy_login_screen.dart:347"
+  },
+  "account_privyLoginPrivyAuthPrimaryButtonLabel": "Sending…",
+  "@account_privyLoginPrivyAuthPrimaryButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:359, lib/features/account/privy_otp_screen.dart:166"
+  },
+  "account_privyLoginPrivyAuthPrimaryButtonLabel2": "Get code",
+  "@account_privyLoginPrivyAuthPrimaryButtonLabel2": {
+    "description": "lib/features/account/privy_login_screen.dart:359"
+  },
+  "account_privyLoginPrivyEmailLoginButtonLabel": "Sign in with email",
+  "@account_privyLoginPrivyEmailLoginButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:159"
+  },
+  "account_privyLoginPrivyEmailScreenTitle": "Email sign-in",
+  "@account_privyLoginPrivyEmailScreenTitle": {
+    "description": "lib/features/account/privy_login_screen.dart:319"
+  },
+  "account_privyLoginPrivyGoogleLoginButtonLabel": "Sign in with Google",
+  "@account_privyLoginPrivyGoogleLoginButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:150"
+  },
+  "account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel": "LOOP can't confirm your sign-in right now",
+  "@account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:637"
+  },
+  "account_privyLoginPrivyRestoreUnavailableScreenStatus": "Can't confirm sign-in right now",
+  "@account_privyLoginPrivyRestoreUnavailableScreenStatus": {
+    "description": "lib/features/account/privy_login_screen.dart:640"
+  },
+  "account_privyLoginPrivyRestoringScreenSemanticLabel": "LOOP is restoring your sign-in",
+  "@account_privyLoginPrivyRestoringScreenSemanticLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:626"
+  },
+  "account_privyLoginPrivySigningOutScreenSemanticLabel": "LOOP is signing you out",
+  "@account_privyLoginPrivySigningOutScreenSemanticLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:722"
+  },
+  "account_privyLoginPrivySigningOutScreenStatus": "Signing out",
+  "@account_privyLoginPrivySigningOutScreenStatus": {
+    "description": "lib/features/account/privy_login_screen.dart:723"
+  },
+  "account_privyLoginPrivyWalletLoginButtonLabel": "Connecting wallet",
+  "@account_privyLoginPrivyWalletLoginButtonLabel": {
+    "description": "lib/features/account/privy_login_screen.dart:484"
+  },
+  "account_privyLoginPrivyWalletLoginButtonLabel2": "Have a wallet? Connect it",
+  "@account_privyLoginPrivyWalletLoginButtonLabel2": {
+    "description": "lib/features/account/privy_login_screen.dart:484"
+  },
+  "account_privyLoginRestoringTitle": "Restoring sign-in",
+  "@account_privyLoginRestoringTitle": {
+    "description": "lib/features/account/privy_login_screen.dart:563"
+  },
+  "account_privyLoginS": "Unavailable · No valid Reown Project ID",
+  "@account_privyLoginS": {
+    "description": "lib/features/account/privy_login_screen.dart:201"
+  },
+  "account_privyLoginSlowMessage": "Slow network, still restoring sign-in…",
+  "@account_privyLoginSlowMessage": {
+    "description": "lib/features/account/privy_login_screen.dart:567"
+  },
+  "account_privyLoginText": "Unavailable · No Privy Mobile App Client ID",
+  "@account_privyLoginText": {
+    "description": "lib/features/account/privy_login_screen.dart:200"
+  },
+  "account_privyLoginText2": "By continuing, you agree to the ",
+  "@account_privyLoginText2": {
+    "description": "lib/features/account/privy_login_screen.dart:237"
+  },
+  "account_privyLoginText3": "Terms of Service",
+  "@account_privyLoginText3": {
+    "description": "lib/features/account/privy_login_screen.dart:239"
+  },
+  "account_privyLoginText4": " and ",
+  "@account_privyLoginText4": {
+    "description": "lib/features/account/privy_login_screen.dart:245"
+  },
+  "account_privyLoginText5": "Privacy Policy",
+  "@account_privyLoginText5": {
+    "description": "lib/features/account/privy_login_screen.dart:247"
+  },
+  "account_privyLoginText6": "Have a wallet? ",
+  "@account_privyLoginText6": {
+    "description": "lib/features/account/privy_login_screen.dart:500"
+  },
+  "account_privyLoginText7": "Connecting…",
+  "@account_privyLoginText7": {
+    "description": "lib/features/account/privy_login_screen.dart:502"
+  },
+  "account_privyLoginTitle": "Network unavailable, waiting to connect",
+  "@account_privyLoginTitle": {
+    "description": "lib/features/account/privy_login_screen.dart:690"
+  },
+  "account_privyOtpIdentityStepCopy": "No code sent yet",
+  "@account_privyOtpIdentityStepCopy": {
+    "description": "lib/features/account/privy_otp_screen.dart:95"
+  },
+  "account_privyOtpIdentityStepCopy2": "Code sent to {maskEmailForDisplay}",
+  "@account_privyOtpIdentityStepCopy2": {
+    "description": "lib/features/account/privy_otp_screen.dart:104",
+    "placeholders": {
+      "maskEmailForDisplay": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_privyOtpIdentityStepCopyTitle": "Verify email",
+  "@account_privyOtpIdentityStepCopyTitle": {
+    "description": "lib/features/account/privy_otp_screen.dart:88, lib/features/account/privy_otp_screen.dart:91"
+  },
+  "account_privyOtpLoopOfflineState": "Resend code",
+  "@account_privyOtpLoopOfflineState": {
+    "description": "lib/features/account/privy_otp_screen.dart:190"
+  },
+  "account_privyOtpPrivyOtpCaretLabel": "Code digit {index}",
+  "@account_privyOtpPrivyOtpCaretLabel": {
+    "description": "lib/features/account/privy_otp_screen.dart:318",
+    "placeholders": {
+      "index": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_privyOtpPrivyOtpCaretValue": "Empty",
+  "@account_privyOtpPrivyOtpCaretValue": {
+    "description": "lib/features/account/privy_otp_screen.dart:319"
+  },
+  "account_privyOtpPrivyOtpChangeEmailLabel": "Change email",
+  "@account_privyOtpPrivyOtpChangeEmailLabel": {
+    "description": "lib/features/account/privy_otp_screen.dart:112"
+  },
+  "account_privyOtpPrivyOtpErrorTitle": "Verification failed",
+  "@account_privyOtpPrivyOtpErrorTitle": {
+    "description": "lib/features/account/privy_otp_screen.dart:206"
+  },
+  "account_privyOtpPrivyOtpNoDestinationMessage": "Go back and enter your email.",
+  "@account_privyOtpPrivyOtpNoDestinationMessage": {
+    "description": "lib/features/account/privy_otp_screen.dart:136"
+  },
+  "account_privyOtpPrivyOtpNoDestinationTitle": "No email to verify",
+  "@account_privyOtpPrivyOtpNoDestinationTitle": {
+    "description": "lib/features/account/privy_otp_screen.dart:135"
+  },
+  "account_privyOtpPrivyOtpResendHint": "Resend in {cooldown}s",
+  "@account_privyOtpPrivyOtpResendHint": {
+    "description": "lib/features/account/privy_otp_screen.dart:159",
+    "placeholders": {
+      "cooldown": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_privyOtpPrivyOtpResendLabel": "Resend",
+  "@account_privyOtpPrivyOtpResendLabel": {
+    "description": "lib/features/account/privy_otp_screen.dart:166"
+  },
+  "account_screensAppLockRow": "Screen lock not read yet",
+  "@account_screensAppLockRow": {
+    "description": "lib/features/account/account_screens.dart:1642"
+  },
+  "account_screensAppLockRow2": "{detail} · Applies now; won't be remembered after the app restarts",
+  "@account_screensAppLockRow2": {
+    "description": "lib/features/account/account_screens.dart:1645",
+    "placeholders": {
+      "detail": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensBody": "It isn't a LOOP trading wallet and can't authorize any transaction.",
+  "@account_screensBody": {
+    "description": "lib/features/account/account_screens.dart:828"
+  },
+  "account_screensBody2": "Your community tokens stay where they are. Once linked, your holdings count toward power. That's why the external wallet option stays.",
+  "@account_screensBody2": {
+    "description": "lib/features/account/account_screens.dart:834"
+  },
+  "account_screensBody3": "Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.",
+  "@account_screensBody3": {
+    "description": "lib/features/account/account_screens.dart:841"
+  },
+  "account_screensBody4": "The session expired. Come back to this page and connect again.",
+  "@account_screensBody4": {
+    "description": "lib/features/account/account_screens.dart:848"
+  },
+  "account_screensBody5": "If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.",
+  "@account_screensBody5": {
+    "description": "lib/features/account/account_screens.dart:1391"
+  },
+  "account_screensCloud": "Automatic recovery",
+  "@account_screensCloud": {
+    "description": "lib/features/account/account_screens.dart:1185"
+  },
+  "account_screensCloud2": "Recover with your sign-in method; on a new device, sign in with the same email",
+  "@account_screensCloud2": {
+    "description": "lib/features/account/account_screens.dart:1185"
+  },
+  "account_screensDetail": "Pick 3 guardians; any 2 can recover",
+  "@account_screensDetail": {
+    "description": "lib/features/account/account_screens.dart:1369"
+  },
+  "account_screensDetail2": "Export anytime. It's your escape hatch",
+  "@account_screensDetail2": {
+    "description": "lib/features/account/account_screens.dart:1376"
+  },
+  "account_screensExternalWalletConnectLabel": "Choose a wallet and sign",
+  "@account_screensExternalWalletConnectLabel": {
+    "description": "lib/features/account/account_screens.dart:813"
+  },
+  "account_screensExternalWalletConnectTitle": "Connect wallet",
+  "@account_screensExternalWalletConnectTitle": {
+    "description": "lib/features/account/account_screens.dart:808, lib/features/account/privy_login_screen.dart:502"
+  },
+  "account_screensExternalWalletListUnavailableDetail": "Available wallet names show after you connect a wallet.",
+  "@account_screensExternalWalletListUnavailableDetail": {
+    "description": "lib/features/account/account_screens.dart:870"
+  },
+  "account_screensExternalWalletListUnavailableMessage": "Can't read the installed wallet list right now",
+  "@account_screensExternalWalletListUnavailableMessage": {
+    "description": "lib/features/account/account_screens.dart:869"
+  },
+  "account_screensExternalWalletUnavailableBody": "No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.",
+  "@account_screensExternalWalletUnavailableBody": {
+    "description": "lib/features/account/account_screens.dart:864"
+  },
+  "account_screensExternalWalletUnavailableTitle": "External wallet connection isn't available right now",
+  "@account_screensExternalWalletUnavailableTitle": {
+    "description": "lib/features/account/account_screens.dart:863"
+  },
+  "account_screensIdentityProgressTrackLabel": "Step {step} of {total}: {label}",
+  "@account_screensIdentityProgressTrackLabel": {
+    "description": "lib/features/account/account_screens.dart:204, lib/features/account/identity_step_scaffold.dart:161",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      },
+      "step": {
+        "type": "Object?"
+      },
+      "total": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensIdentityStepCopy": "Connecting only proves ownership. No assets move.",
+  "@account_screensIdentityStepCopy": {
+    "description": "lib/features/account/account_screens.dart:857"
+  },
+  "account_screensIdentityStepCopy2": "Your secure wallet is setting up on this device.",
+  "@account_screensIdentityStepCopy2": {
+    "description": "lib/features/account/account_screens.dart:935"
+  },
+  "account_screensIdentityStepCopy3": "Your wallet already has one recovery method. Add the others once they open.",
+  "@account_screensIdentityStepCopy3": {
+    "description": "lib/features/account/account_screens.dart:1400"
+  },
+  "account_screensIdentityStepCopy4": "App lock is handled by this device; transaction verification by the sign-in service.",
+  "@account_screensIdentityStepCopy4": {
+    "description": "lib/features/account/account_screens.dart:1593"
+  },
+  "account_screensLabel": "LOOP is loading",
+  "@account_screensLabel": {
+    "description": "lib/features/account/account_screens.dart:673"
+  },
+  "account_screensLabel2": "Choose wallet",
+  "@account_screensLabel2": {
+    "description": "lib/features/account/account_screens.dart:856"
+  },
+  "account_screensLabel3": "Create wallet",
+  "@account_screensLabel3": {
+    "description": "lib/features/account/account_screens.dart:934"
+  },
+  "account_screensLabel4": "{title}, done",
+  "@account_screensLabel4": {
+    "description": "lib/features/account/account_screens.dart:1040",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensLabel5": "{title}, not done: {pendingDetail}",
+  "@account_screensLabel5": {
+    "description": "lib/features/account/account_screens.dart:1040",
+    "placeholders": {
+      "pendingDetail": {
+        "type": "Object?"
+      },
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensLoopLabel": "Wallets you can connect",
+  "@account_screensLoopLabel": {
+    "description": "lib/features/account/account_screens.dart:866"
+  },
+  "account_screensLoopLabel2": "Also",
+  "@account_screensLoopLabel2": {
+    "description": "lib/features/account/account_screens.dart:1364"
+  },
+  "account_screensLoopLabel3": "App lock",
+  "@account_screensLoopLabel3": {
+    "description": "lib/features/account/account_screens.dart:1597, lib/features/account/account_screens.dart:1650"
+  },
+  "account_screensLoopLabel4": "Transaction verification",
+  "@account_screensLoopLabel4": {
+    "description": "lib/features/account/account_screens.dart:1600"
+  },
+  "account_screensLoopSplashEnterLabel": "Enter LOOP",
+  "@account_screensLoopSplashEnterLabel": {
+    "description": "lib/features/account/account_screens.dart:384, lib/features/account/onboarding_communities.dart:533"
+  },
+  "account_screensMethodSelectableSemanticLabel": "{title}, optional",
+  "@account_screensMethodSelectableSemanticLabel": {
+    "description": "lib/features/account/account_screens.dart:1509",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensMethodSelectedSemanticLabel": "{title}, selected",
+  "@account_screensMethodSelectedSemanticLabel": {
+    "description": "lib/features/account/account_screens.dart:1509",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensMfaRow": "Loading…",
+  "@account_screensMfaRow": {
+    "description": "lib/features/account/account_screens.dart:1682"
+  },
+  "account_screensMfaRow2": "Sign-in service unreachable this run",
+  "@account_screensMfaRow2": {
+    "description": "lib/features/account/account_screens.dart:1692"
+  },
+  "account_screensMfaRow3": "No answer from the sign-in service yet",
+  "@account_screensMfaRow3": {
+    "description": "lib/features/account/account_screens.dart:1694"
+  },
+  "account_screensPasskey": "Passkey (recommended)",
+  "@account_screensPasskey": {
+    "description": "lib/features/account/account_screens.dart:1184"
+  },
+  "account_screensPasskey2": "Uses device biometrics and syncs with the system keychain",
+  "@account_screensPasskey2": {
+    "description": "lib/features/account/account_screens.dart:1184"
+  },
+  "account_screensPasskeyBoundDetail": "The sign-in service says this account already has a passkey",
+  "@account_screensPasskeyBoundDetail": {
+    "description": "lib/features/account/account_screens.dart:1304"
+  },
+  "account_screensPendingDetail": "Done once the wallet appears",
+  "@account_screensPendingDetail": {
+    "description": "lib/features/account/account_screens.dart:1001, lib/features/account/account_screens.dart:1007"
+  },
+  "account_screensPendingDetail2": "Done after the choice in step 3",
+  "@account_screensPendingDetail2": {
+    "description": "lib/features/account/account_screens.dart:1013"
+  },
+  "account_screensPendingDetail3": "Done after step 5",
+  "@account_screensPendingDetail3": {
+    "description": "lib/features/account/account_screens.dart:1019"
+  },
+  "account_screensPreparingText": "Preparing your account…",
+  "@account_screensPreparingText": {
+    "description": "lib/features/account/account_screens.dart:352"
+  },
+  "account_screensS": "Not done",
+  "@account_screensS": {
+    "description": "lib/features/account/account_screens.dart:1093"
+  },
+  "account_screensS2": "The sign-in service says this account already has a passkey: {named}",
+  "@account_screensS2": {
+    "description": "lib/features/account/account_screens.dart:1305",
+    "placeholders": {
+      "named": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSecurityAppLockSemanticLabel": "App lock, unavailable: {detail}",
+  "@account_screensSecurityAppLockSemanticLabel": {
+    "description": "lib/features/account/account_screens.dart:1663",
+    "placeholders": {
+      "detail": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSecurityAppLockSemanticLabel2": "App lock, on. Tap and verify to turn off",
+  "@account_screensSecurityAppLockSemanticLabel2": {
+    "description": "lib/features/account/account_screens.dart:1665"
+  },
+  "account_screensSecurityAppLockSemanticLabel3": "App lock, off. Tap and verify to turn on",
+  "@account_screensSecurityAppLockSemanticLabel3": {
+    "description": "lib/features/account/account_screens.dart:1666"
+  },
+  "account_screensSecurityAppLockTrailing": "Off",
+  "@account_screensSecurityAppLockTrailing": {
+    "description": "lib/features/account/account_screens.dart:1660, lib/features/account/account_screens.dart:1686"
+  },
+  "account_screensSecurityBiometricFallbackLine": "If the device doesn't support biometrics, the system screen lock passcode is used instead.",
+  "@account_screensSecurityBiometricFallbackLine": {
+    "description": "lib/features/account/account_screens.dart:1541"
+  },
+  "account_screensSecurityMfaSemanticLabel": "MFA, off. Tap to turn on",
+  "@account_screensSecurityMfaSemanticLabel": {
+    "description": "lib/features/account/account_screens.dart:1707"
+  },
+  "account_screensSecurityMfaSemanticLabel2": "MFA, on: {detail}",
+  "@account_screensSecurityMfaSemanticLabel2": {
+    "description": "lib/features/account/account_screens.dart:1708",
+    "placeholders": {
+      "detail": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSecurityMfaSemanticLabel3": "MFA, unavailable: {reason}",
+  "@account_screensSecurityMfaSemanticLabel3": {
+    "description": "lib/features/account/account_screens.dart:1709",
+    "placeholders": {
+      "reason": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSecuritySetupContinueTitle": "Security setup",
+  "@account_screensSecuritySetupContinueTitle": {
+    "description": "lib/features/account/account_screens.dart:1581, lib/features/account/account_screens.dart:1592"
+  },
+  "account_screensSemanticLabel": "{title}, available but off",
+  "@account_screensSemanticLabel": {
+    "description": "lib/features/account/account_screens.dart:299",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSemanticLabel2": "{title}, unavailable: {unavailableReason}",
+  "@account_screensSemanticLabel2": {
+    "description": "lib/features/account/account_screens.dart:300",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      },
+      "unavailableReason": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSemanticLabel3": "{title}, enabled: {reason}",
+  "@account_screensSemanticLabel3": {
+    "description": "lib/features/account/account_screens.dart:1496",
+    "placeholders": {
+      "reason": {
+        "type": "Object?"
+      },
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSemanticLabel4": "{title}, set up: {detail}. Tap to unlink",
+  "@account_screensSemanticLabel4": {
+    "description": "lib/features/account/account_screens.dart:1498",
+    "placeholders": {
+      "detail": {
+        "type": "Object?"
+      },
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSemanticLabel5": "{title}, unavailable: {reason}",
+  "@account_screensSemanticLabel5": {
+    "description": "lib/features/account/account_screens.dart:1501, lib/features/account/account_screens.dart:1531",
+    "placeholders": {
+      "reason": {
+        "type": "Object?"
+      },
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensSemanticLabel6": "{title}, available",
+  "@account_screensSemanticLabel6": {
+    "description": "lib/features/account/account_screens.dart:1531",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensStep": "Done",
+  "@account_screensStep": {
+    "description": "lib/features/account/account_screens.dart:1093"
+  },
+  "account_screensSummary": "Scan to connect and failure notes",
+  "@account_screensSummary": {
+    "description": "lib/features/account/account_screens.dart:819"
+  },
+  "account_screensSummary2": "Other recovery methods and the risk of skipping",
+  "@account_screensSummary2": {
+    "description": "lib/features/account/account_screens.dart:1358"
+  },
+  "account_screensSwitch": "Wallet created",
+  "@account_screensSwitch": {
+    "description": "lib/features/account/account_screens.dart:901"
+  },
+  "account_screensSwitch2": "This account already has a built-in wallet. LOOP doesn't use recovery phrases.",
+  "@account_screensSwitch2": {
+    "description": "lib/features/account/account_screens.dart:902"
+  },
+  "account_screensSwitch3": "Creating your wallet",
+  "@account_screensSwitch3": {
+    "description": "lib/features/account/account_screens.dart:905"
+  },
+  "account_screensSwitch4": "Keys are generated on this device and never leave it. LOOP doesn't use recovery phrases.",
+  "@account_screensSwitch4": {
+    "description": "lib/features/account/account_screens.dart:906"
+  },
+  "account_screensSwitch5": "Your wallet is still being created. You can continue for now",
+  "@account_screensSwitch5": {
+    "description": "lib/features/account/account_screens.dart:909"
+  },
+  "account_screensSwitch6": "No wallet after 60 seconds. That doesn't mean it failed. LOOP doesn't use recovery phrases.",
+  "@account_screensSwitch6": {
+    "description": "lib/features/account/account_screens.dart:910"
+  },
+  "account_screensSwitch7": "Not started yet",
+  "@account_screensSwitch7": {
+    "description": "lib/features/account/account_screens.dart:913"
+  },
+  "account_screensSwitch8": "Privy hasn't confirmed built-in wallet support, so this page won't fake progress. LOOP doesn't use recovery phrases.",
+  "@account_screensSwitch8": {
+    "description": "lib/features/account/account_screens.dart:914"
+  },
+  "account_screensTitle": "An external wallet is only a sign-in method",
+  "@account_screensTitle": {
+    "description": "lib/features/account/account_screens.dart:827"
+  },
+  "account_screensTitle10": "Automatic recovery depends on your sign-in method",
+  "@account_screensTitle10": {
+    "description": "lib/features/account/account_screens.dart:1390"
+  },
+  "account_screensTitle2": "Connect an existing wallet to mine",
+  "@account_screensTitle2": {
+    "description": "lib/features/account/account_screens.dart:833"
+  },
+  "account_screensTitle3": "Signature rejected",
+  "@account_screensTitle3": {
+    "description": "lib/features/account/account_screens.dart:840"
+  },
+  "account_screensTitle4": "Connection timed out",
+  "@account_screensTitle4": {
+    "description": "lib/features/account/account_screens.dart:847"
+  },
+  "account_screensTitle5": "Generate key pair",
+  "@account_screensTitle5": {
+    "description": "lib/features/account/account_screens.dart:999"
+  },
+  "account_screensTitle6": "Write to secure enclave",
+  "@account_screensTitle6": {
+    "description": "lib/features/account/account_screens.dart:1005"
+  },
+  "account_screensTitle7": "Link LOOP ID",
+  "@account_screensTitle7": {
+    "description": "lib/features/account/account_screens.dart:1017"
+  },
+  "account_screensTitle8": "Social recovery 2-of-3",
+  "@account_screensTitle8": {
+    "description": "lib/features/account/account_screens.dart:1368"
+  },
+  "account_screensTitle9": "Export private key",
+  "@account_screensTitle9": {
+    "description": "lib/features/account/account_screens.dart:1375"
+  },
+  "account_screensTrailing": "Available",
+  "@account_screensTrailing": {
+    "description": "lib/features/account/account_screens.dart:296, lib/features/account/account_screens.dart:1483, lib/features/account/account_screens.dart:1529"
+  },
+  "account_screensTrailing2": "Enabled",
+  "@account_screensTrailing2": {
+    "description": "lib/features/account/account_screens.dart:1477"
+  },
+  "account_screensTrailing3": "Set up",
+  "@account_screensTrailing3": {
+    "description": "lib/features/account/account_screens.dart:1479"
+  },
+  "account_screensTrailing4": "Selected",
+  "@account_screensTrailing4": {
+    "description": "lib/features/account/account_screens.dart:1481, lib/features/account/onboarding_communities.dart:692"
+  },
+  "account_screensUnknownAccountSurfaceMessage": "Go back to Community. The request has been logged.",
+  "@account_screensUnknownAccountSurfaceMessage": {
+    "description": "lib/features/account/account_screens.dart:1727"
+  },
+  "account_screensUnknownAccountSurfaceTitle": "Page not found",
+  "@account_screensUnknownAccountSurfaceTitle": {
+    "description": "lib/features/account/account_screens.dart:1721"
+  },
+  "account_screensUnknownAccountSurfaceTitle2": "This account page isn't in the 93-page product list",
+  "@account_screensUnknownAccountSurfaceTitle2": {
+    "description": "lib/features/account/account_screens.dart:1726"
+  },
+  "account_screensWalletAutomaticRecoveryEvidence": "Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)",
+  "@account_screensWalletAutomaticRecoveryEvidence": {
+    "description": "lib/features/account/account_screens.dart:1200"
+  },
+  "account_screensWalletCreateContinueLabel": "Set up recovery",
+  "@account_screensWalletCreateContinueLabel": {
+    "description": "lib/features/account/account_screens.dart:928, lib/features/account/account_screens.dart:1011, lib/features/account/account_screens.dart:1399"
+  },
+  "account_screensWalletCreateContinueTitle": "Create LOOP wallet",
+  "@account_screensWalletCreateContinueTitle": {
+    "description": "lib/features/account/account_screens.dart:921"
+  },
+  "account_screensWalletCreateProviderMessageTitle": "Wallet creation didn't finish",
+  "@account_screensWalletCreateProviderMessageTitle": {
+    "description": "lib/features/account/account_screens.dart:949"
+  },
+  "account_screensWalletCreateUnavailableBody": "Privy hasn't confirmed built-in wallet support. This page won't fake progress, and no wallet was created.",
+  "@account_screensWalletCreateUnavailableBody": {
+    "description": "lib/features/account/account_screens.dart:942"
+  },
+  "account_screensWalletCreateUnavailableTitle": "Wallet creation isn't available right now",
+  "@account_screensWalletCreateUnavailableTitle": {
+    "description": "lib/features/account/account_screens.dart:941"
+  },
+  "account_screensWalletRecoveryConfirmTitle": "Recovery methods",
+  "@account_screensWalletRecoveryConfirmTitle": {
+    "description": "lib/features/account/account_screens.dart:1325, lib/features/account/account_screens.dart:1431"
+  },
+  "account_screensWalletRecoveryDefaultBody": "{walletAutomaticRecoveryEvidence}. LOOP has no recovery phrase; this is the default path.",
+  "@account_screensWalletRecoveryDefaultBody": {
+    "description": "lib/features/account/account_screens.dart:1405",
+    "placeholders": {
+      "walletAutomaticRecoveryEvidence": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensWalletRecoveryDefaultTitle": "You can already get your assets back on a new phone",
+  "@account_screensWalletRecoveryDefaultTitle": {
+    "description": "lib/features/account/account_screens.dart:1404"
+  },
+  "account_screensWalletRecoveryErrorSource": "Capability list",
+  "@account_screensWalletRecoveryErrorSource": {
+    "description": "lib/features/account/account_screens.dart:1420"
+  },
+  "account_screensWalletRecoveryLaterLabel": "Set up later",
+  "@account_screensWalletRecoveryLaterLabel": {
+    "description": "lib/features/account/account_screens.dart:1351"
+  },
+  "account_screensWalletRecoveryProviderPending": "The sign-in service in this version doesn't offer this yet",
+  "@account_screensWalletRecoveryProviderPending": {
+    "description": "lib/features/account/account_screens.dart:1208"
+  },
+  "account_screensWalletRecoveryUnavailableBody": "{walletRecoveryProviderPending}. The options below aren't simulated locally and aren't pre-selected.",
+  "@account_screensWalletRecoveryUnavailableBody": {
+    "description": "lib/features/account/account_screens.dart:1429",
+    "placeholders": {
+      "walletRecoveryProviderPending": {
+        "type": "Object?"
+      }
+    }
+  },
+  "account_screensWalletRecoveryUnavailableTitle": "You can't add another one yet",
+  "@account_screensWalletRecoveryUnavailableTitle": {
+    "description": "lib/features/account/account_screens.dart:1428"
+  },
   "betaFeedback_cameraFailed": "Couldn't open the camera",
   "@betaFeedback_cameraFailed": {
     "description": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94"
