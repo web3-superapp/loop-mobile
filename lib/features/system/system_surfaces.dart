@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/system/system_specimens.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -51,7 +52,7 @@ final class LoopConnectivityObservation {
     final local = value.toLocal();
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
-    return '上次同步 $hour:$minute';
+    return LoopL10n.current.system_surfacesLastSyncKicker(hour, minute);
   }
 }
 
@@ -426,7 +427,10 @@ class LoopConnectivityBanner extends StatelessWidget {
         bottom: false,
         child: Semantics(
           liveRegion: true,
-          label: '${content.title}。${content.body}',
+          label: context.l10n.system_surfacesTitleBody(
+            content.body,
+            content.title,
+          ),
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -446,7 +450,10 @@ class LoopConnectivityBanner extends StatelessWidget {
                   ),
                 ),
                 if (onRetry != null)
-                  TextButton(onPressed: onRetry, child: const Text('重试')),
+                  TextButton(
+                    onPressed: onRetry,
+                    child: Text(context.l10n.common_retry),
+                  ),
               ],
             ),
           ),
@@ -499,7 +506,10 @@ class LoopGlobalNotice extends StatelessWidget {
                 padded: false,
                 children: <Widget>[
                   if (onDismiss != null)
-                    LoopButton(label: '关闭', onPressed: onDismiss),
+                    LoopButton(
+                      label: context.l10n.common_close,
+                      onPressed: onDismiss,
+                    ),
                   if (actionLabel != null && onAction != null)
                     LoopButton(
                       label: actionLabel,
@@ -555,12 +565,22 @@ Future<void> showLoopForceUpdateDialog(
       canPop: false,
       child: AlertDialog(
         icon: const LoopIcon('upgrade', size: 34, color: LoopColors.yellow),
-        title: const Text('请更新 LOOP 后继续'),
+        title: Text(context.l10n.system_surfacesShowLoopForceUpdateDialog),
         content: Text(
-          '已批准的版本策略要求受支持的版本${requirement.forceUpdateBelow == null ? '' : '（强制更新下限 ${requirement.forceUpdateBelow}）'}。安装受支持的版本后再回到 LOOP。',
+          context.l10n.system_surfacesShowLoopForceUpdateDialog2(
+            requirement.forceUpdateBelow == null
+                ? ''
+                : context.l10n.system_surfacesForceUpdateFloorSuffix(
+                    requirement.forceUpdateBelow,
+                  ),
+          ),
         ),
         actions: <Widget>[
-          LoopButton(label: '立即更新', primary: true, onPressed: onUpdate),
+          LoopButton(
+            label: context.l10n.system_surfacesLabel,
+            primary: true,
+            onPressed: onUpdate,
+          ),
         ],
       ),
     ),
@@ -772,12 +792,15 @@ class _PolicyGatePage extends StatelessWidget {
 /// it is what left the blocked page with nothing on it.
 class _PolicyExit extends StatelessWidget {
   const _PolicyExit({
+    required this.id,
     required this.label,
     required this.onPressed,
     required this.unavailableReason,
     this.primary = false,
   });
 
+  /// Stable id for the key; the key never spells copy.
+  final String id;
   final String label;
   final VoidCallback? onPressed;
   final String unavailableReason;
@@ -791,7 +814,7 @@ class _PolicyExit extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           LoopButton(
-            key: ValueKey<String>('policy-exit-$label'),
+            key: ValueKey<String>('policy-exit-$id'),
             label: label,
             primary: primary,
             block: true,
@@ -840,7 +863,7 @@ Widget? _returnAction(VoidCallback? onContinue) => onContinue == null
     ? null
     : LoopButton(
         key: const ValueKey<String>('system-return'),
-        label: '返回 LOOP',
+        label: LoopL10n.current.system_surfacesSystemReturnLabel,
         block: true,
         onPressed: onContinue,
       );
@@ -852,23 +875,23 @@ Widget? _returnAction(VoidCallback? onContinue) => onContinue == null
 ({String title, String body, String banner, String icon, LoopNoticeTone tone})
 _connectivityCopy(LoopConnectivityScope scope) => switch (scope) {
   LoopConnectivityScope.fullyOffline => (
-    title: '完全离线',
-    body: '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。',
-    banner: '离线，实时信息已暂停',
+    title: LoopL10n.current.system_surfacesTitle,
+    body: LoopL10n.current.system_surfacesBody,
+    banner: LoopL10n.current.system_surfacesBanner,
     icon: 'offline',
     tone: LoopNoticeTone.danger,
   ),
   LoopConnectivityScope.marketDataUnavailable => (
-    title: '行情暂时不可用',
-    body: '其他功能正常。价格与图表可能不准，依赖当前价格的动作已暂停。',
-    banner: '行情不可用，价格可能已过期',
+    title: LoopL10n.current.system_surfacesTitle2,
+    body: LoopL10n.current.system_surfacesBody2,
+    banner: LoopL10n.current.system_surfacesBanner2,
     icon: 'warn',
     tone: LoopNoticeTone.warn,
   ),
   LoopConnectivityScope.tradingServiceUnavailable => (
-    title: '交易服务暂时不可用',
-    body: '订单与账户变更无法提交；行情浏览与聊天仍可使用。',
-    banner: '交易服务中断，动作已暂停',
+    title: LoopL10n.current.system_surfacesTitle3,
+    body: LoopL10n.current.system_surfacesBody3,
+    banner: LoopL10n.current.system_surfacesBanner3,
     icon: 'warn',
     tone: LoopNoticeTone.warn,
   ),
@@ -896,43 +919,49 @@ class _OfflinePage extends StatelessWidget {
       // which is what `offline.html` exists to show (audit §K.2). The bar
       // says 组件样例 · 不是当前状态 above every line of it.
       return _StatePage(
-        title: '无网络',
+        title: context.l10n.system_surfacesConnectivitySpecimenTitle,
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
+          headingMaxLines: 2,
+          captionMaxLines: 3,
           ring: false,
           key: ValueKey<String>('connectivity-specimen'),
-          kicker: '上次同步 09:38',
-          heading: '当前设备离线',
-          caption: '缓存仍可查看；发送、兑换与跨链已经暂停。',
-          stamp: '离线',
+          kicker: context.l10n.system_surfacesConnectivitySpecimenKicker,
+          heading: context.l10n.system_surfacesConnectivitySpecimenHeading,
+          caption: context.l10n.system_surfacesConnectivitySpecimenCaption,
+          stamp: context.l10n.system_surfacesConnectivitySpecimenStamp,
           archetype: LoopFolioArchetype.state,
         ),
         body: <Widget>[
-          const LoopNotice(
+          LoopNotice(
             icon: 'offline',
             tone: LoopNoticeTone.danger,
-            title: '完全离线',
-            body: '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。',
+            title: context.l10n.system_surfacesTitle,
+            body: context.l10n.system_surfacesBody,
           ),
           _CenteredStateBlock(
             key: const ValueKey<String>('connectivity-specimen-retry'),
             icon: 'offline',
-            message: '无法连接到服务器',
+            message:
+                context.l10n.system_surfacesConnectivitySpecimenRetryMessage,
             // 重试 has no request of its own to repeat here: it returns to
             // the page that opened this one, which reads again as it builds.
-            action: LoopButton(label: '重试', onPressed: onRetry),
+            action: LoopButton(
+              label: context.l10n.common_retry,
+              onPressed: onRetry,
+            ),
           ),
-          const LoopLabel('部分故障（另一种态）', followsLabel: true),
-          const LoopNotice(
+          LoopLabel(context.l10n.system_surfacesLoopLabel, followsLabel: true),
+          LoopNotice(
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: 'BSC 网络暂时不可用',
-            body: '其他链正常。BSC 上的资产余额可能不准，该链的交易已暂停。',
+            title: context.l10n.system_surfacesTitle4,
+            body: context.l10n.system_surfacesBody4,
           ),
-          const LoopNotice(
-            title: '为什么区分这两种',
-            body: '完全断网时所有操作都要拦；单链故障时其他链应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
+          LoopNotice(
+            title: context.l10n.system_surfacesTitle5,
+            body: context.l10n.system_surfacesBody5,
           ),
           const SizedBox(height: 20),
         ],
@@ -943,16 +972,26 @@ class _OfflinePage extends StatelessWidget {
     final fullyOffline = scope == LoopConnectivityScope.fullyOffline;
     final outage = observation.partialOutage;
     return _StatePage(
-      title: '无网络',
+      title: context.l10n.system_surfacesConnectivitySpecimenTitle,
       onBack: onBack,
       folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: observation.lastSyncKicker ?? (fullyOffline ? '设备离线' : '服务中断'),
-        heading: fullyOffline ? '当前设备离线' : copy.title,
+        kicker:
+            observation.lastSyncKicker ??
+            (fullyOffline
+                ? context.l10n.system_surfacesKicker
+                : context.l10n.system_surfacesKicker2),
+        heading: fullyOffline
+            ? context.l10n.system_surfacesConnectivitySpecimenHeading
+            : copy.title,
         caption: fullyOffline
-            ? '缓存仍可查看；发送、兑换与跨链已经暂停。'
-            : '其他部分仍可使用；受影响的动作在恢复前保持禁用。',
-        stamp: fullyOffline ? '离线' : '部分中断',
+            ? context.l10n.system_surfacesConnectivitySpecimenCaption
+            : context.l10n.system_surfacesCaption,
+        stamp: fullyOffline
+            ? context.l10n.system_surfacesConnectivitySpecimenStamp
+            : context.l10n.system_surfacesStamp,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -965,39 +1004,50 @@ class _OfflinePage extends StatelessWidget {
         if (fullyOffline)
           LoopInlineUnavailable(
             icon: 'offline',
-            message: '无法连接到服务器',
+            message:
+                context.l10n.system_surfacesConnectivitySpecimenRetryMessage,
             maxLines: 2,
             onRetry: onRetry,
           )
         else if (onRetry != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: LoopButton(label: '重试', block: true, onPressed: onRetry),
+            child: LoopButton(
+              label: context.l10n.common_retry,
+              block: true,
+              onPressed: onRetry,
+            ),
           ),
-        const LoopLabel('部分故障（另一种态）', followsLabel: true),
+        LoopLabel(context.l10n.system_surfacesLoopLabel, followsLabel: true),
         if (outage == null)
-          const _SourceUnavailableNotice(
+          _SourceUnavailableNotice(
             keyName: 'partial-outage-source-unavailable',
-            title: '没有分链的故障信息',
-            body: '暂时读不到单条链的状态，这一页不会替你判断某条链是否可用。',
+            title: context.l10n.system_surfacesTitle6,
+            body: context.l10n.system_surfacesBody6,
           )
         else
           LoopNotice(
             key: const ValueKey<String>('partial-outage-notice'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '${outage.networkLabel} 网络暂时不可用',
-            body: outage.detail ?? '其他链正常。该链上的资产余额可能不准，该链的交易已暂停。',
+            title: context.l10n.system_surfacesPartialOutageNoticeTitle(
+              outage.networkLabel,
+            ),
+            body:
+                outage.detail ??
+                context.l10n.system_surfacesPartialOutageNoticeBody,
           ),
-        const LoopNotice(
-          title: '为什么区分这两种',
-          body: '完全断网时所有操作都要拦；单链故障时其他链应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
+        LoopNotice(
+          title: context.l10n.system_surfacesTitle5,
+          body: context.l10n.system_surfacesBody5,
         ),
       ],
       primaryAction: onContinue == null
           ? null
           : LoopButton(
-              label: fullyOffline ? '查看缓存内容' : '继续使用可用功能',
+              label: fullyOffline
+                  ? context.l10n.system_surfacesLabel2
+                  : context.l10n.system_surfacesLabel3,
               block: true,
               onPressed: onContinue,
             ),
@@ -1029,29 +1079,38 @@ class _ServerErrorPage extends StatelessWidget {
       // The specimen of `server-error.html`: the shape a failed request
       // takes, with the prototype's own 502 and trace id (audit §K.3).
       return _StatePage(
-        title: '服务状态',
+        title: context.l10n.system_surfacesServiceErrorSpecimenTitle,
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
+          headingMaxLines: 2,
+          captionMaxLines: 3,
           ring: false,
           key: ValueKey<String>('service-error-specimen'),
-          kicker: '服务状态',
-          heading: '服务暂时不可用',
-          caption: '钱包仍在你的设备上；稍后重试或联系支持。',
-          stamp: '可重试',
+          kicker: context.l10n.system_surfacesServiceErrorSpecimenTitle,
+          heading: context.l10n.system_surfacesServiceErrorSpecimenHeading,
+          caption: context.l10n.system_surfacesServiceErrorSpecimenCaption,
+          stamp: context.l10n.system_surfacesServiceErrorSpecimenStamp,
           archetype: LoopFolioArchetype.state,
         ),
         body: <Widget>[
-          const LoopNotice(
+          LoopNotice(
             icon: 'maintenance',
             tone: LoopNoticeTone.danger,
-            title: '错误 502',
-            body: '追踪号 7f3a2c9e，Wallet 资产仍在链上，不受影响。',
+            title: context.l10n.system_surfacesTitle7,
+            body: context.l10n.system_surfacesBody7,
           ),
           LoopButtonPair(
             children: <Widget>[
-              LoopButton(label: '重试', primary: true, onPressed: onRetry),
-              LoopButton(label: '联系客服', onPressed: onSupport),
+              LoopButton(
+                label: context.l10n.common_retry,
+                primary: true,
+                onPressed: onRetry,
+              ),
+              LoopButton(
+                label: context.l10n.system_surfacesLabel4,
+                onPressed: onSupport,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1060,14 +1119,16 @@ class _ServerErrorPage extends StatelessWidget {
     }
     final trace = observation.traceId;
     return _StatePage(
-      title: '服务状态',
+      title: context.l10n.system_surfacesServiceErrorSpecimenTitle,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '服务状态',
-        heading: '服务暂时不可用',
-        caption: '钱包仍在你的设备上；稍后重试或联系支持。',
-        stamp: '可重试',
+        kicker: context.l10n.system_surfacesServiceErrorSpecimenTitle,
+        heading: context.l10n.system_surfacesServiceErrorSpecimenHeading,
+        caption: context.l10n.system_surfacesServiceErrorSpecimenCaption,
+        stamp: context.l10n.system_surfacesServiceErrorSpecimenStamp,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1075,18 +1136,28 @@ class _ServerErrorPage extends StatelessWidget {
           icon: 'maintenance',
           tone: LoopNoticeTone.danger,
           title: observation.statusLabel == null
-              ? '结果未确认'
-              : '错误 ${observation.statusLabel}',
-          body:
-              '${trace == null ? '追踪号未提供' : '追踪号 $trace'}，不要假定成功或失败；重试前先查看最新状态。Wallet 资产仍在链上，不受影响。',
+              ? context.l10n.system_surfacesTitle8
+              : context.l10n.system_surfacesTitle9(observation.statusLabel),
+          body: context.l10n.system_surfacesBody8(
+            trace == null
+                ? context.l10n.system_surfacesTraceMissing
+                : context.l10n.system_surfacesTraceId(trace),
+          ),
         ),
         if (onRetry != null || onSupport != null)
           LoopButtonPair(
             children: <Widget>[
               if (onRetry != null)
-                LoopButton(label: '重试', primary: true, onPressed: onRetry),
+                LoopButton(
+                  label: context.l10n.common_retry,
+                  primary: true,
+                  onPressed: onRetry,
+                ),
               if (onSupport != null)
-                LoopButton(label: '联系客服', onPressed: onSupport),
+                LoopButton(
+                  label: context.l10n.system_surfacesLabel4,
+                  onPressed: onSupport,
+                ),
             ],
           ),
       ],
@@ -1116,36 +1187,40 @@ class _ForceUpdatePage extends StatelessWidget {
     final requirement = this.requirement;
     if (requirement == null) {
       return _StatePage(
-        title: '强制更新',
+        title: context.l10n.system_surfacesTitle10,
         onBack: onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
+          headingMaxLines: 2,
+          captionMaxLines: 3,
           ring: false,
-          kicker: '版本策略',
-          heading: '版本策略还没有开放',
-          caption: '打开此页不代表当前版本不受支持或不安全。',
-          stamp: '未知',
+          kicker: context.l10n.system_surfacesKicker3,
+          heading: context.l10n.system_surfacesHeading,
+          caption: context.l10n.system_surfacesCaption2,
+          stamp: context.l10n.common_unknown,
           // S241b: flat dark card, Chalk heading (no light slab on Ink).
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
           archetype: LoopFolioArchetype.state,
         ),
-        body: const <Widget>[
+        body: <Widget>[
           _SourceUnavailableNotice(
             keyName: 'update-policy-unavailable',
-            title: '没有已批准的最低版本策略',
-            body: '只有已批准的版本策略要求更新，并且当前版本低于它的下限时，LOOP 才会拦截。',
+            title: context.l10n.system_surfacesTitle11,
+            body: context.l10n.system_surfacesBody9,
           ),
         ],
         primaryAction: _returnAction(onContinue),
       );
     }
     return _PolicyGatePage(
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '发布闸门',
-        heading: '请更新 LOOP 后继续',
-        caption: '已批准的版本策略要求受支持的版本，此要求不可跳过。',
-        stamp: '需更新',
+        kicker: context.l10n.system_surfacesKicker4,
+        heading: context.l10n.system_surfacesShowLoopForceUpdateDialog,
+        caption: context.l10n.system_surfacesCaption3,
+        stamp: context.l10n.system_surfacesStamp2,
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
@@ -1163,34 +1238,35 @@ class _ForceUpdatePage extends StatelessWidget {
           child: Column(
             children: <Widget>[
               LoopKeyValue(
-                label: '强制更新下限',
+                label: context.l10n.system_surfacesLabel5,
                 value: requirement.forceUpdateBelow ?? '—',
               ),
               if (requirement.minimumSupportedVersion != null)
                 LoopKeyValue(
-                  label: '最低支持版本',
+                  label: context.l10n.system_surfacesLabel6,
                   value: requirement.minimumSupportedVersion!,
                 ),
             ],
           ),
         ),
         if (onUpdate == null)
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('force-update-store-unavailable'),
             icon: 'info',
-            title: '已确认需要更新',
-            body: '暂时不能直接跳转商店，请手动前往应用商店更新。',
+            title: context.l10n.system_surfacesForceUpdateStoreUnavailableTitle,
+            body: context.l10n.system_surfacesForceUpdateStoreUnavailableBody,
           ),
       ],
       exits: <Widget>[
         _PolicyExit(
-          label: '前往更新',
+          id: 'update',
+          label: context.l10n.system_surfacesLabel7,
           primary: true,
           onPressed: onUpdate,
-          unavailableReason: '没有已审阅的商店跳转，请手动打开应用商店。',
+          unavailableReason: context.l10n.system_surfacesUnavailableReason,
         ),
       ],
-      footnote: '已批准的版本策略要求更新，无法跳过',
+      footnote: context.l10n.system_surfacesForceUpdateStoreUnavailableFootnote,
     );
   }
 }
@@ -1224,61 +1300,83 @@ class _MaintenancePage extends StatelessWidget {
       // The specimen of `maintenance.html`. Its one promise — Mining Power
       // keeps accruing — is the reason the page exists (audit §K.4).
       return _StatePage(
-        title: '计划维护',
+        title: context.l10n.system_surfacesMaintenanceSpecimenTitle,
         kicker: loopStateSpecimenLabel,
         onBack: onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
+          headingMaxLines: 2,
+          captionMaxLines: 3,
           ring: false,
           key: ValueKey<String>('maintenance-specimen'),
-          kicker: '维护窗口',
+          kicker: context.l10n.system_surfacesMaintenanceSpecimenKicker,
           heading: '03:00–05:00 UTC',
-          caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
-          stamp: '2 小时',
+          caption: context.l10n.system_surfacesMaintenanceSpecimenCaption,
+          stamp: context.l10n.system_surfacesMaintenanceSpecimenStamp,
           archetype: LoopFolioArchetype.state,
         ),
-        body: const <Widget>[
+        body: <Widget>[
           LoopNotice(
             icon: 'mine',
-            title: 'Mining Power 正常累计',
-            body: '维护结束后可正常领取，不会漏算。',
+            title: context.l10n.system_surfacesTitle12,
+            body: context.l10n.system_surfacesBody10,
           ),
         ],
         actionFollowsBody: true,
         primaryAction: LoopButton(
           key: const ValueKey<String>('maintenance-specimen-read-only'),
-          label: '查看只读内容',
+          label: context.l10n.system_surfacesMaintenanceSpecimenReadOnlyLabel,
           block: true,
           onPressed: onReadOnly,
         ),
       );
     }
     return _StatePage(
-      title: '计划维护',
+      title: context.l10n.system_surfacesMaintenanceSpecimenTitle,
       onBack: onBack,
       folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '维护窗口',
-        heading: notice.windowLabel ?? '维护通知已生效',
-        caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
-        stamp: notice.windowLabel == null ? '生效中' : '已排期',
+        kicker: context.l10n.system_surfacesMaintenanceSpecimenKicker,
+        heading: notice.windowLabel ?? context.l10n.system_surfacesHeading2,
+        caption: context.l10n.system_surfacesMaintenanceSpecimenCaption,
+        stamp: notice.windowLabel == null
+            ? context.l10n.system_surfacesStamp3
+            : context.l10n.system_surfacesStamp4,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
         if (notice.detail != null)
-          LoopNotice(icon: 'mine', title: '维护说明', body: notice.detail!),
+          LoopNotice(
+            icon: 'mine',
+            title: context.l10n.system_surfacesTitle13,
+            body: notice.detail!,
+          ),
         if (onRecheck != null || onStatus != null)
           LoopButtonPair(
             children: <Widget>[
               if (onRecheck != null)
-                LoopButton(label: '再次检查', primary: true, onPressed: onRecheck),
+                LoopButton(
+                  label: context.l10n.system_surfacesLabel8,
+                  primary: true,
+                  onPressed: onRecheck,
+                ),
               if (onStatus != null)
-                LoopButton(label: '查看服务状态', onPressed: onStatus),
+                LoopButton(
+                  label: context.l10n.system_surfacesLabel9,
+                  onPressed: onStatus,
+                ),
             ],
           ),
       ],
       primaryAction: onReadOnly == null
           ? null
-          : LoopButton(label: '查看只读内容', block: true, onPressed: onReadOnly),
+          : LoopButton(
+              label:
+                  context.l10n.system_surfacesMaintenanceSpecimenReadOnlyLabel,
+              block: true,
+              onPressed: onReadOnly,
+            ),
     );
   }
 }
@@ -1315,24 +1413,26 @@ class _RegionPage extends StatelessWidget {
     final restriction = this.restriction;
     if (restriction == null) {
       return _StatePage(
-        title: '地区限制',
+        title: context.l10n.system_surfacesTitle14,
         onBack: onBack,
-        folio: const LoopFolioPrimary(
+        folio: LoopFolioPrimary(
+          headingMaxLines: 2,
+          captionMaxLines: 3,
           ring: false,
-          kicker: '访问策略',
-          heading: '地区策略还没有开放',
-          caption: '打开此页不代表你所在的地区或账号受限。',
-          stamp: '未知',
+          kicker: context.l10n.system_surfacesKicker5,
+          heading: context.l10n.system_surfacesHeading3,
+          caption: context.l10n.system_surfacesCaption4,
+          stamp: context.l10n.common_unknown,
           // S241b: flat dark card, Chalk heading (no light slab on Ink).
           variant: LoopFolioVariant.quiet,
           headingTone: LoopFolioHeadingTone.neutral,
           archetype: LoopFolioArchetype.state,
         ),
-        body: const <Widget>[
+        body: <Widget>[
           _SourceUnavailableNotice(
             keyName: 'region-policy-unavailable',
-            title: '没有已批准的地区判定',
-            body: 'LOOP 不会从设备语言、SIM 或 IP 推断地区；没有已批准的判定时一律视为未知。',
+            title: context.l10n.system_surfacesTitle15,
+            body: context.l10n.system_surfacesBody11,
           ),
         ],
         primaryAction: _returnAction(onReturn),
@@ -1343,47 +1443,53 @@ class _RegionPage extends StatelessWidget {
       // off this page, so it does not trap the back gesture.
       blocking: false,
       folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '访问策略',
-        heading: '部分功能在当前地区不可用',
+        kicker: context.l10n.system_surfacesKicker5,
+        heading: context.l10n.system_surfacesHeading4,
         caption: restriction.readOnlyAssetAccess == true
-            ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
-            : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
-        stamp: '受限',
+            ? context.l10n.system_surfacesCaption5
+            : context.l10n.system_surfacesCaption6,
+        stamp: context.l10n.system_surfacesStamp5,
         // S241b: flat dark card, Chalk heading (no light slab on Ink).
         variant: LoopFolioVariant.quiet,
         headingTone: LoopFolioHeadingTone.neutral,
         archetype: LoopFolioArchetype.state,
       ),
-      facts: const <Widget>[
+      facts: <Widget>[
         LoopNotice(
           icon: 'globe',
-          title: '这页不提供位置或原因细节',
-          body: '不推断你所在的位置，也不确认其他功能一定可用。',
+          title: context.l10n.system_surfacesTitle16,
+          body: context.l10n.system_surfacesBody12,
         ),
       ],
       exits: <Widget>[
         _PolicyExit(
-          label: '查看资产',
+          id: 'view-assets',
+          label: context.l10n.system_surfacesLabel10,
           primary: true,
           onPressed: onViewAssets,
-          unavailableReason: '钱包页当前不可达。',
+          unavailableReason: context.l10n.system_surfacesUnavailableReason2,
         ),
         _PolicyExit(
-          label: '导出私钥',
+          id: 'export-key',
+          label: context.l10n.system_surfacesLabel11,
           onPressed: onExportKey,
-          unavailableReason: '私钥导出页当前不可达。',
+          unavailableReason: context.l10n.system_surfacesUnavailableReason3,
         ),
         _PolicyExit(
-          label: '联系客服',
+          id: 'support',
+          label: context.l10n.system_surfacesLabel4,
           onPressed: onSupport,
-          unavailableReason: '帮助页当前不可达。',
+          unavailableReason: context.l10n.system_surfacesUnavailableReason4,
         ),
         if (onPolicy != null)
           _PolicyExit(
-            label: '查看资格政策',
+            id: 'policy',
+            label: context.l10n.system_surfacesLabel12,
             onPressed: onPolicy,
-            unavailableReason: '没有已批准的资格政策链接。',
+            unavailableReason: context.l10n.system_surfacesUnavailableReason5,
           ),
       ],
     );
@@ -1397,22 +1503,22 @@ class _RegionPage extends StatelessWidget {
 ({String shortName, String icon, String purpose, String deniedBody})
 _permissionCopy(LoopPermissionKind kind) => switch (kind) {
   LoopPermissionKind.notifications => (
-    shortName: '通知',
+    shortName: LoopL10n.current.common_notifications,
     icon: 'bell',
-    purpose: '用来推送挖矿结算、Launch 开始、@我的消息与安全事件。不会推送营销内容。',
-    deniedBody: '你将收不到挖矿结算与 Launch 提醒。可在 系统设置 → LOOP → 通知 中重新开启。',
+    purpose: LoopL10n.current.system_surfacesPurpose,
+    deniedBody: LoopL10n.current.system_surfacesDeniedBody,
   ),
   LoopPermissionKind.camera => (
-    shortName: '相机',
+    shortName: LoopL10n.current.system_surfacesShortName,
     icon: 'camera',
-    purpose: '只在扫二维码时使用 —— 扫收款地址、扫 WalletConnect。不会在后台访问。',
-    deniedBody: '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。',
+    purpose: LoopL10n.current.system_surfacesPurpose2,
+    deniedBody: LoopL10n.current.system_surfacesDeniedBody2,
   ),
   LoopPermissionKind.microphone => (
-    shortName: '麦克风',
+    shortName: LoopL10n.current.system_surfacesShortName2,
     icon: 'mic',
-    purpose: '只在你于语音房点击「发言」后使用；进入语音房时麦克风默认关闭。',
-    deniedBody: '语音房只能收听；可在 系统设置 → LOOP → 麦克风 中重新开启。',
+    purpose: LoopL10n.current.system_surfacesPurpose3,
+    deniedBody: LoopL10n.current.system_surfacesDeniedBody3,
   ),
 };
 
@@ -1437,75 +1543,88 @@ class _PermissionPage extends StatelessWidget {
     final denied = prompt?.mode == LoopPermissionPromptMode.settingsRecovery;
     final copy = prompt == null ? null : _permissionCopy(prompt.kind);
     return _StatePage(
-      title: '权限说明',
+      title: context.l10n.system_surfacesPermissionDeniedSpecimenTitle,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '权限控制',
-        heading: '使用前再申请',
-        caption: '相机、通知和生物识别只在对应动作发生时请求。',
-        stamp: '按需申请',
+        kicker: context.l10n.system_surfacesKicker6,
+        heading: context.l10n.system_surfacesHeading5,
+        caption: context.l10n.system_surfacesCaption7,
+        stamp: context.l10n.system_surfacesStamp6,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
-        const LoopLabel('申请前说明', tight: true),
-        const LoopNotice(
+        LoopLabel(context.l10n.system_surfacesLoopLabel2, tight: true),
+        LoopNotice(
           icon: 'bell',
-          title: '通知权限',
-          body: '用来推送挖矿结算、Launch 开始、@我的消息与安全事件。不会推送营销内容。',
+          title: context.l10n.system_surfacesTitle17,
+          body: context.l10n.system_surfacesPurpose,
         ),
-        const LoopNotice(
+        LoopNotice(
           icon: 'camera',
-          title: '相机权限',
-          body: '只在扫二维码时使用 —— 扫收款地址、扫 WalletConnect。不会在后台访问。',
+          title: context.l10n.system_surfacesTitle18,
+          body: context.l10n.system_surfacesPurpose2,
         ),
-        const LoopNotice(
+        LoopNotice(
           icon: 'user',
-          title: '生物识别',
-          body: '用于应用锁与签名前验证。生物特征由系统保管，LOOP 拿不到。',
+          title: context.l10n.system_surfacesTitle19,
+          body: context.l10n.system_surfacesBody13,
         ),
         if (copy == null) ...<Widget>[
           // No live prompt: the page shows the prototype's 被拒后的引导 as a
           // specimen instead of a card saying there is nothing to show
           // (audit §K.5). It is the same LoopPermissionState the real
           // request uses, so this group is the component's own baseline.
-          const LoopLabel('被拒后的引导（组件样例）', followsLabel: true),
+          LoopLabel(context.l10n.system_surfacesLoopLabel3, followsLabel: true),
           LoopPermissionState(
             key: const ValueKey<String>('permission-denied-specimen'),
             icon: 'bell',
             denied: true,
-            title: '通知权限已被系统关闭',
-            purpose: '你将收不到挖矿结算与 Launch 提醒。可在 系统设置 → LOOP → 通知 中重新开启。',
+            title: context.l10n.system_surfacesPermissionDeniedSpecimenTitle2,
+            purpose: context.l10n.system_surfacesDeniedBody,
             onOpenSettings:
                 onOpenSettings ??
                 (LoopToastHost.maybeOf(context) == null
                     ? null
                     : () => LoopToast.show(
                         context,
-                        message: '请在系统设置中打开 LOOP 权限',
+                        message: context.l10n.system_surfacesMessage,
                         kind: LoopToastKind.warn,
                       )),
           ),
           const SizedBox(height: 20),
         ] else ...<Widget>[
-          LoopLabel(denied ? '被拒后的引导' : '本次申请', followsLabel: true),
+          LoopLabel(
+            denied
+                ? context.l10n.system_surfacesLoopLabel4
+                : context.l10n.system_surfacesS,
+            followsLabel: true,
+          ),
           LoopPermissionState(
             key: ValueKey<String>(
               'permission-prompt-${prompt!.kind.name}-${prompt.mode.name}',
             ),
             icon: copy.icon,
             denied: denied,
-            title: denied ? '${copy.shortName}权限已被系统关闭' : '${copy.shortName}权限',
+            title: denied
+                ? context.l10n.system_surfacesTitle20(copy.shortName)
+                : context.l10n.system_surfacesTitle21(copy.shortName),
             purpose: denied ? copy.deniedBody : copy.purpose,
             onRequest: onRequest,
             onOpenSettings: onOpenSettings,
-            requestLabel: '继续',
-            settingsLabel: '前往系统设置',
+            requestLabel: context.l10n.common_continueAction,
+            settingsLabel: context.l10n.system_surfacesSettingsLabel,
           ),
           if (onNotNow != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: LoopButton(label: '暂不', block: true, onPressed: onNotNow),
+              child: LoopButton(
+                label: context.l10n.system_surfacesLabel13,
+                block: true,
+                onPressed: onNotNow,
+              ),
             ),
         ],
       ],
@@ -1530,11 +1649,24 @@ class _ToastStatesPage extends StatelessWidget {
   final VoidCallback? onDismiss;
   final VoidCallback? onBack;
 
-  static const samples = <(String, LoopToastKind, String)>[
-    ('成功', LoopToastKind.ok, '地址已复制'),
-    ('警告', LoopToastKind.warn, '价格已变动，请刷新报价'),
-    ('错误', LoopToastKind.err, '交易失败：gas 不足'),
-  ];
+  static List<(String, LoopToastKind, String)> get samples =>
+      <(String, LoopToastKind, String)>[
+        (
+          LoopL10n.current.common_success,
+          LoopToastKind.ok,
+          LoopL10n.current.system_surfacesText,
+        ),
+        (
+          LoopL10n.current.system_surfacesText2,
+          LoopToastKind.warn,
+          LoopL10n.current.system_surfacesText3,
+        ),
+        (
+          LoopL10n.current.system_surfacesText4,
+          LoopToastKind.err,
+          LoopL10n.current.system_surfacesText5,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -1542,34 +1674,36 @@ class _ToastStatesPage extends StatelessWidget {
     final hasFeedback = feedback?.presentationMessage != null;
     final canToast = LoopToastHost.maybeOf(context) != null;
     return _StatePage(
-      title: 'Toast 三态',
+      title: context.l10n.system_surfacesTitle22,
       kicker: hasFeedback ? null : loopComponentSpecimenLabel,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '反馈',
-        heading: 'Toast 三态',
-        caption: '成功、警告与错误共用同一位置和清晰语义。',
-        stamp: '3 种状态',
+        kicker: context.l10n.system_surfacesKicker7,
+        heading: context.l10n.system_surfacesTitle22,
+        caption: context.l10n.system_surfacesCaption8,
+        stamp: context.l10n.system_surfacesStamp7,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
         if (hasFeedback) ...<Widget>[
-          const LoopLabel('当前反馈', tight: true),
+          LoopLabel(context.l10n.system_surfacesLoopLabel5, tight: true),
           LoopGlobalNotice(
             feedback: feedback!,
             onAction: onAction,
             onDismiss: onDismiss,
           ),
         ],
-        const LoopNotice(icon: 'info', body: '点按钮触发真实 Toast，2.6 秒后自动消失。'),
+        LoopNotice(icon: 'info', body: context.l10n.system_surfacesBody14),
         for (final (label, kind, message) in samples) ...<Widget>[
           LoopLabel(label, followsLabel: true),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: LoopButton(
               key: ValueKey<String>('toast-trigger-${kind.name}'),
-              label: '触发$label Toast',
+              label: context.l10n.system_surfacesLabel14(label),
               block: true,
               onPressed: canToast
                   ? () => LoopToast.show(context, message: message, kind: kind)
@@ -1577,7 +1711,7 @@ class _ToastStatesPage extends StatelessWidget {
             ),
           ),
         ],
-        const LoopLabel('静态样式对照', followsLabel: true),
+        LoopLabel(context.l10n.system_surfacesLoopLabel6, followsLabel: true),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
@@ -1613,29 +1747,35 @@ class _SkeletonStatesPage extends StatelessWidget {
     final presentation = this.presentation;
     final valid = presentation != null && presentation.isPresentable;
     return _StatePage(
-      title: '骨架屏三类',
+      title: context.l10n.system_surfacesLoadingPresentationActiveTitle,
       kicker: valid ? null : loopComponentSpecimenLabel,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '加载状态',
-        heading: '骨架屏三类',
-        caption: '列表、详情和图表分别保留稳定布局，避免内容跳动。',
-        stamp: '3 种',
+        kicker: context.l10n.system_surfacesKicker8,
+        heading: context.l10n.system_surfacesLoadingPresentationActiveTitle,
+        caption: context.l10n.system_surfacesCaption9,
+        stamp: context.l10n.system_surfacesStamp8,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
         if (valid) ...<Widget>[
-          const LoopLabel('当前加载', tight: true),
+          LoopLabel(context.l10n.system_surfacesLoopLabel7, tight: true),
           LoopNotice(
             key: const ValueKey<String>('loading-presentation-active'),
             icon: 'clock',
-            body:
-                '拥有方选择了${switch (presentation.kind) {
-                  LoopSkeletonKind.list => '列表',
-                  LoopSkeletonKind.detail => '详情',
-                  LoopSkeletonKind.chart => '图表',
-                }}骨架；占位不代表结果数量、身份或成功。',
+            body: context.l10n.system_surfacesLoadingPresentationActiveBody(
+              switch (presentation.kind) {
+                LoopSkeletonKind.list =>
+                  context.l10n.system_surfacesSkeletonList,
+                LoopSkeletonKind.detail =>
+                  context.l10n.system_surfacesSkeletonDetail,
+                LoopSkeletonKind.chart =>
+                  context.l10n.system_surfacesSkeletonChart,
+              },
+            ),
           ),
           LoopSkeletonView(presentation: presentation),
         ],
@@ -1651,11 +1791,11 @@ class _SkeletonStatesPage extends StatelessWidget {
             ],
           ),
         ),
-        const LoopLabel('列表骨架', followsLabel: true),
+        LoopLabel(context.l10n.system_surfacesLoopLabel8, followsLabel: true),
         const LoopSkeleton(type: LoopSkeletonType.list, rows: 3),
-        const LoopLabel('详情骨架'),
+        LoopLabel(context.l10n.system_surfacesLoopLabel9),
         const LoopSkeleton(type: LoopSkeletonType.detail),
-        const LoopLabel('图表骨架'),
+        LoopLabel(context.l10n.system_surfacesLoopLabel10),
         const LoopSkeleton(type: LoopSkeletonType.chart),
         const SizedBox(height: 20),
       ],
@@ -1682,14 +1822,16 @@ class _TokenCardStatesPage extends StatelessWidget {
     final showcase = this.showcase ?? buildLoopSystemSpecimens();
     final items = showcase.tokenCards;
     return _StatePage(
-      title: 'Token Card 五态',
+      title: context.l10n.system_surfacesTitle23,
       kicker: showcase.sourceLabel,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '代币卡片',
-        heading: '5 种卡片状态',
-        stamp: '5 种状态',
+        kicker: context.l10n.system_surfacesKicker9,
+        heading: context.l10n.system_surfacesHeading6,
+        stamp: context.l10n.system_surfacesStamp9,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
@@ -1704,8 +1846,8 @@ class _TokenCardStatesPage extends StatelessWidget {
           // The prototype folds this note under the first card, where it
           // answers the question the first card raises.
           if (index == 0)
-            const LoopDisclosure(
-              summary: '查看组件出现位置',
+            LoopDisclosure(
+              summary: context.l10n.system_surfacesSummary,
               child: LoopNotice(
                 margin: EdgeInsets.fromLTRB(
                   LoopSpacing.page,
@@ -1713,19 +1855,19 @@ class _TokenCardStatesPage extends StatelessWidget {
                   LoopSpacing.page,
                   14,
                 ),
-                body: '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。',
+                body: context.l10n.system_surfacesBody15,
               ),
             ),
         ],
-        const LoopNotice(
+        LoopNotice(
           margin: EdgeInsets.fromLTRB(
             LoopSpacing.page,
             14,
             LoopSpacing.page,
             14,
           ),
-          title: '风险态只列事实',
-          body: '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。',
+          title: context.l10n.system_surfacesTitle24,
+          body: context.l10n.system_surfacesBody16,
         ),
         const SizedBox(height: 20),
       ],
@@ -1748,22 +1890,24 @@ class _SignSheetStatesPage extends StatelessWidget {
     final showcase = this.showcase ?? buildLoopSystemSpecimens();
     final items = showcase.signSheets;
     return _StatePage(
-      title: '签名弹层四态',
+      title: context.l10n.system_surfacesSignSheetTriggerPendingTitle,
       kicker: showcase.sourceLabel,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '统一签名出口',
-        heading: '4 种签名状态',
-        caption: '发送、兑换、DApp 与跨链统一进入同一签名出口。',
-        stamp: '安全',
+        kicker: context.l10n.system_surfacesKicker10,
+        heading: context.l10n.system_surfacesHeading7,
+        caption: context.l10n.system_surfacesCaption10,
+        stamp: context.l10n.common_security,
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
-        const LoopNotice(
+        LoopNotice(
           icon: 'lock',
-          title: '全产品唯一签名出口',
-          body: 'Send、Swap、Launch 买入、授权全部汇聚到这一个弹层；质押要等独立合约方案批准后才会加入。',
+          title: context.l10n.system_surfacesTitle25,
+          body: context.l10n.system_surfacesBody17,
         ),
         for (final item in items) ...<Widget>[
           LoopLabel(item.label, followsLabel: true),
@@ -1772,7 +1916,7 @@ class _SignSheetStatesPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: LoopButton(
                 key: const ValueKey<String>('sign-sheet-trigger-pending'),
-                label: '触发待确认弹层',
+                label: context.l10n.system_surfacesSignSheetTriggerPendingLabel,
                 block: true,
                 onPressed: () => LoopSignSheet.show(
                   context,
@@ -1780,7 +1924,7 @@ class _SignSheetStatesPage extends StatelessWidget {
                     state: item.state,
                     facts: item.facts,
                     reason: item.reason,
-                    confirmLabel: '确认',
+                    confirmLabel: context.l10n.common_confirm,
                     onConfirm: () => Navigator.of(context).pop(),
                     onCancel: () => Navigator.of(context).pop(),
                   ),
@@ -1794,7 +1938,7 @@ class _SignSheetStatesPage extends StatelessWidget {
                 state: item.state,
                 facts: item.facts,
                 reason: item.reason,
-                confirmLabel: '确认',
+                confirmLabel: context.l10n.common_confirm,
                 onConfirm: () {},
                 onCancel: () {},
                 onAdjustPolicy: item.state == LoopSignSheetState.policyRejected
@@ -1803,15 +1947,15 @@ class _SignSheetStatesPage extends StatelessWidget {
               ),
             ),
         ],
-        const LoopNotice(
+        LoopNotice(
           margin: EdgeInsets.fromLTRB(
             LoopSpacing.page,
             14,
             LoopSpacing.page,
             14,
           ),
-          title: '策略拒绝不是错误',
-          body: '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。',
+          title: context.l10n.system_surfacesTitle26,
+          body: context.l10n.system_surfacesBody18,
         ),
         const SizedBox(height: 20),
       ],
@@ -1827,16 +1971,18 @@ class _UnknownSystemPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _StatePage(
-      title: '系统',
+      title: context.l10n.system_surfacesTitle27,
       onBack: onBack,
-      folio: const LoopFolioPrimary(
+      folio: LoopFolioPrimary(
+        headingMaxLines: 2,
+        captionMaxLines: 3,
         ring: false,
-        kicker: '系统',
-        heading: '此页面不可用',
-        caption: 'LOOP 无法识别请求的系统页面。',
+        kicker: context.l10n.system_surfacesTitle27,
+        heading: context.l10n.system_surfacesHeading8,
+        caption: context.l10n.system_surfacesCaption11,
         archetype: LoopFolioArchetype.state,
       ),
-      body: const <Widget>[LoopNotice(body: '返回上一页后重试。')],
+      body: <Widget>[LoopNotice(body: context.l10n.system_surfacesBody19)],
     );
   }
 }

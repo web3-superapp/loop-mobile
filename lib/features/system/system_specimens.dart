@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
@@ -14,13 +15,15 @@ import 'package:loop_mobile/widgets/loop_token_card.dart';
 /// a body with none. A specimen is not an observation, so it does not wait
 /// for one — it is labelled instead, and the label sits above the folio where
 /// it frames everything under it rather than pushing the content down.
-const String loopComponentSpecimenLabel = '组件样例';
+String get loopComponentSpecimenLabel =>
+    LoopL10n.current.system_specimensLoopComponentSpecimenLabel;
 
 /// The same eyebrow for a *state* page whose specimen reads like a claim.
 ///
 /// `当前设备离线` and `03:00–05:00 UTC` are sentences about now. Drawn as
 /// specimens they need the stronger label.
-const String loopStateSpecimenLabel = '组件样例，不是当前状态';
+String get loopStateSpecimenLabel =>
+    LoopL10n.current.system_specimensLoopStateSpecimenLabel;
 
 /// The five Token Cards and four signing sheets of the frozen prototype
 /// (`token-card-states.html`, `sign-sheet-states.html`; figures from its
@@ -30,14 +33,12 @@ const String loopStateSpecimenLabel = '组件样例，不是当前状态';
 /// 组件样例 — the specification pages' own label — and `lib/main_preview.dart`
 /// passes 演示数据 · 开发预览 so a Development Preview build still says which
 /// root it is running.
-LoopSystemShowcase buildLoopSystemSpecimens({
-  String sourceLabel = loopComponentSpecimenLabel,
-}) {
+LoopSystemShowcase buildLoopSystemSpecimens({String? sourceLabel}) {
   return LoopSystemShowcase(
-    sourceLabel: sourceLabel,
+    sourceLabel: sourceLabel ?? loopComponentSpecimenLabel,
     tokenCards: <LoopTokenCardShowcaseItem>[
       LoopTokenCardShowcaseItem(
-        label: '态 1，正常',
+        label: LoopL10n.current.system_specimensLabel,
         state: LoopTokenCardState.normal,
         // The prototype draws the normal state, and only it, on Chalk.
         chalk: true,
@@ -49,46 +50,55 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           price: r'$0.0000082',
           change: '+12.4%',
           move: LoopPriceMove.up,
-          metrics: const <LoopTokenMetric>[
-            LoopTokenMetric('市值', r'$3.4B'),
-            LoopTokenMetric('流动性', r'$18.2M'),
-            LoopTokenMetric('持有人', '284,912'),
+          metrics: <LoopTokenMetric>[
+            LoopTokenMetric(LoopL10n.current.common_marketCap, r'$3.4B'),
+            LoopTokenMetric(LoopL10n.current.common_liquidity, r'$18.2M'),
+            LoopTokenMetric(LoopL10n.current.common_holders, '284,912'),
           ],
-          communityLine: 'LOOP 社区 128,420 成员，0.35×',
-          chartRangeLabel: '1H，固定演示',
+          communityLine: LoopL10n.current.system_specimensCommunityLine,
+          chartRangeLabel: LoopL10n.current.system_specimensChartRangeLabel,
           chart: LoopSparkline(
             closes: _specimenCloses,
-            semanticLabel: 'PEPE 1 小时走势，组件样例',
+            semanticLabel: LoopL10n.current.system_specimensSemanticLabel,
             color: LoopPriceMove.up.color,
           ),
         ),
-        actions: const <LoopTokenCardAction>[
-          LoopTokenCardAction('买入', buy: true),
-          LoopTokenCardAction('卖出'),
-          LoopTokenCardAction('图表'),
-          LoopTokenCardAction('社区'),
+        actions: <LoopTokenCardAction>[
+          LoopTokenCardAction(LoopL10n.current.common_buy, buy: true),
+          LoopTokenCardAction(LoopL10n.current.common_sell),
+          LoopTokenCardAction(LoopL10n.current.system_surfacesSkeletonChart),
+          LoopTokenCardAction(LoopL10n.current.common_community),
         ],
       ),
-      const LoopTokenCardShowcaseItem(
-        label: '态 2，识别中',
+      LoopTokenCardShowcaseItem(
+        label: LoopL10n.current.system_specimensLabel2,
         state: LoopTokenCardState.loading,
         model: LoopTokenCardModel(
           symbol: 'PEPE',
           identifier: '0x6982...1933',
           metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', '等待数据'),
-            LoopTokenMetric('流动性', '等待数据'),
-            LoopTokenMetric('持有人', '等待数据'),
+            LoopTokenMetric(
+              LoopL10n.current.common_marketCap,
+              LoopL10n.current.common_waitingForData,
+            ),
+            LoopTokenMetric(
+              LoopL10n.current.common_liquidity,
+              LoopL10n.current.common_waitingForData,
+            ),
+            LoopTokenMetric(
+              LoopL10n.current.common_holders,
+              LoopL10n.current.common_waitingForData,
+            ),
           ],
         ),
         actions: <LoopTokenCardAction>[
-          LoopTokenCardAction('买入', buy: true),
-          LoopTokenCardAction('图表'),
-          LoopTokenCardAction('社区'),
+          LoopTokenCardAction(LoopL10n.current.common_buy, buy: true),
+          LoopTokenCardAction(LoopL10n.current.system_surfacesSkeletonChart),
+          LoopTokenCardAction(LoopL10n.current.common_community),
         ],
       ),
-      const LoopTokenCardShowcaseItem(
-        label: '态 3，已毕业（LOOP Launch 资产）',
+      LoopTokenCardShowcaseItem(
+        label: LoopL10n.current.system_specimensLabel3,
         state: LoopTokenCardState.graduated,
         model: LoopTokenCardModel(
           symbol: 'BONEZ',
@@ -96,43 +106,62 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           price: r'$0.0024',
           change: '+712%',
           move: LoopPriceMove.up,
-          badge: '已毕业',
+          badge: LoopL10n.current.common_graduated,
           metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', r'$2.4M'),
-            LoopTokenMetric('流动性', r'$412K', accent: true),
-            LoopTokenMetric('持有人', '4,120'),
+            LoopTokenMetric(LoopL10n.current.common_marketCap, r'$2.4M'),
+            LoopTokenMetric(
+              LoopL10n.current.common_liquidity,
+              r'$412K',
+              accent: true,
+            ),
+            LoopTokenMetric(LoopL10n.current.common_holders, '4,120'),
           ],
           communityIcon: 'graduate',
-          communityLine: '08-22 毕业，外盘流动性已建立',
+          communityLine: LoopL10n.current.system_specimensCommunityLine2,
         ),
         actions: <LoopTokenCardAction>[
-          LoopTokenCardAction('买入', buy: true),
-          LoopTokenCardAction('卖出'),
-          LoopTokenCardAction('毕业详情'),
+          LoopTokenCardAction(LoopL10n.current.common_buy, buy: true),
+          LoopTokenCardAction(LoopL10n.current.common_sell),
+          LoopTokenCardAction(
+            LoopL10n.current.system_specimensLoopTokenCardAction,
+          ),
         ],
       ),
-      const LoopTokenCardShowcaseItem(
-        label: '态 4，数据缺失',
+      LoopTokenCardShowcaseItem(
+        label: LoopL10n.current.system_specimensLabel4,
         state: LoopTokenCardState.partial,
         model: LoopTokenCardModel(
           symbol: 'UNKNOWN',
           identifier: '0x9c4b...7f82',
           price: r'$0.000004',
           metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', '数据不可得'),
-            LoopTokenMetric('流动性', '数据不可得'),
-            LoopTokenMetric('持有人', '数据不可得'),
+            LoopTokenMetric(
+              LoopL10n.current.common_marketCap,
+              LoopL10n.current.common_dataUnavailable,
+            ),
+            LoopTokenMetric(
+              LoopL10n.current.common_liquidity,
+              LoopL10n.current.common_dataUnavailable,
+            ),
+            LoopTokenMetric(
+              LoopL10n.current.common_holders,
+              LoopL10n.current.common_dataUnavailable,
+            ),
           ],
           communityIcon: 'info',
-          communityLine: '该代币未加入 LOOP 社区，无 Mining Weight',
+          communityLine: LoopL10n.current.system_specimensCommunityLine3,
         ),
         actions: <LoopTokenCardAction>[
-          LoopTokenCardAction('查看合约'),
-          LoopTokenCardAction('交易不可用'),
+          LoopTokenCardAction(
+            LoopL10n.current.system_specimensLoopTokenCardAction2,
+          ),
+          LoopTokenCardAction(
+            LoopL10n.current.system_specimensLoopTokenCardAction3,
+          ),
         ],
       ),
-      const LoopTokenCardShowcaseItem(
-        label: '态 5，风险事实红条',
+      LoopTokenCardShowcaseItem(
+        label: LoopL10n.current.system_specimensLabel5,
         state: LoopTokenCardState.risk,
         model: LoopTokenCardModel(
           symbol: 'PEPE',
@@ -142,63 +171,85 @@ LoopSystemShowcase buildLoopSystemSpecimens({
           move: LoopPriceMove.up,
           riskFacts: <LoopTokenRiskFact>[
             LoopTokenRiskFact(
-              fact: '该合约含 mint 函数，发行方可增发',
+              fact: LoopL10n.current.system_specimensFact,
               source: 'GoPlus',
-              observedLabel: '2 分钟前',
+              observedLabel: LoopL10n.current.system_specimensObservedLabel,
             ),
             LoopTokenRiskFact(
-              fact: '合约地址与 PEPE 官方不一致',
-              source: '链上比对',
-              observedLabel: '2 分钟前',
+              fact: LoopL10n.current.system_specimensFact2,
+              source: LoopL10n.current.system_specimensSource,
+              observedLabel: LoopL10n.current.system_specimensObservedLabel,
             ),
           ],
           metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', r'$142K'),
-            LoopTokenMetric('流动性', r'$8,200'),
-            LoopTokenMetric('持有人', '84'),
+            LoopTokenMetric(LoopL10n.current.common_marketCap, r'$142K'),
+            LoopTokenMetric(LoopL10n.current.common_liquidity, r'$8,200'),
+            LoopTokenMetric(LoopL10n.current.common_holders, '84'),
           ],
         ),
         actions: <LoopTokenCardAction>[
-          LoopTokenCardAction('确认事实后买入', buy: true),
-          LoopTokenCardAction('查看全部事实'),
-          LoopTokenCardAction('举报'),
+          LoopTokenCardAction(
+            LoopL10n.current.system_specimensLoopTokenCardAction4,
+            buy: true,
+          ),
+          LoopTokenCardAction(
+            LoopL10n.current.system_specimensLoopTokenCardAction5,
+          ),
+          LoopTokenCardAction(LoopL10n.current.common_report),
         ],
       ),
     ],
-    signSheets: const <LoopSignSheetShowcaseItem>[
+    signSheets: <LoopSignSheetShowcaseItem>[
       LoopSignSheetShowcaseItem(
-        label: '态 1，待确认（正常）',
+        label: LoopL10n.current.system_specimensLabel6,
         state: LoopSignSheetState.pending,
         facts: <LoopSignFact>[
-          LoopSignFact('操作', 'Swap'),
-          LoopSignFact('资产', '0.5 ETH → USDC'),
-          LoopSignFact('网络', 'BSC'),
-          LoopSignFact('费用', '0.0012 BNB'),
-          LoopSignFact('模拟结果', '通过'),
+          LoopSignFact(LoopL10n.current.common_actions, 'Swap'),
+          LoopSignFact(LoopL10n.current.common_assets, '0.5 ETH → USDC'),
+          LoopSignFact(LoopL10n.current.common_network, 'BSC'),
+          LoopSignFact(
+            LoopL10n.current.system_specimensLoopSignFact,
+            '0.0012 BNB',
+          ),
+          LoopSignFact(
+            LoopL10n.current.common_simulationResult,
+            LoopL10n.current.system_specimensLoopSignFact2,
+          ),
         ],
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 2，模拟失败',
+        label: LoopL10n.current.system_specimensLabel7,
         state: LoopSignSheetState.simulationFailed,
         facts: <LoopSignFact>[
-          LoopSignFact('操作', 'Swap'),
-          LoopSignFact('模拟结果', '失败，无法预演', down: true),
+          LoopSignFact(LoopL10n.current.common_actions, 'Swap'),
+          LoopSignFact(
+            LoopL10n.current.common_simulationResult,
+            LoopL10n.current.system_specimensLoopSignFact3,
+            down: true,
+          ),
         ],
-        reason: '模拟服务未返回可验证结果。当前不能确认；可重试模拟或取消操作。',
+        reason: LoopL10n.current.system_specimensReason,
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 3，签名中',
+        label: LoopL10n.current.system_specimensLabel8,
         state: LoopSignSheetState.signing,
         facts: <LoopSignFact>[],
       ),
       LoopSignSheetShowcaseItem(
-        label: '态 4，被策略拒绝',
+        label: LoopL10n.current.system_specimensLabel9,
         state: LoopSignSheetState.policyRejected,
         facts: <LoopSignFact>[
-          LoopSignFact('操作', '转账 5,000 USDC'),
-          LoopSignFact('结果', '被拒绝', down: true),
+          LoopSignFact(
+            LoopL10n.current.common_actions,
+            LoopL10n.current.system_specimensLoopSignFact4,
+          ),
+          LoopSignFact(
+            LoopL10n.current.system_specimensLoopSignFact5,
+            LoopL10n.current.system_specimensLoopSignFact6,
+            down: true,
+          ),
         ],
-        reason: '超过你设置的单笔转账上限 \$1,000。这是你自己配置的钱包策略 —— 可在安全中心调整，或降低本次金额。',
+        reason: LoopL10n.current.system_specimensReason2,
       ),
     ],
   );
@@ -206,8 +257,9 @@ LoopSystemShowcase buildLoopSystemSpecimens({
 
 /// The Development Preview alias. It exists so the explicit Preview root
 /// keeps naming its own label rather than relying on the default.
-LoopSystemShowcase buildLoopSystemShowcasePreview() =>
-    buildLoopSystemSpecimens(sourceLabel: '演示数据，开发预览');
+LoopSystemShowcase buildLoopSystemShowcasePreview() => buildLoopSystemSpecimens(
+  sourceLabel: LoopL10n.current.system_specimensSourceLabel,
+);
 
 /// The 24 hourly closes the normal card's line draws.
 ///
