@@ -159,7 +159,10 @@ void main() {
         block,
       );
       expect(loopStreamChannelBlockOf(const LoopStreamNotConnected()), block);
-      expect(loopStreamChannelBlockMessage(block), '没有连上聊天服务，请检查网络后重试。');
+      expect(
+        loopStreamChannelBlockMessage(block),
+        'Couldn\'t reach the chat service. Check your network and retry.',
+      );
       expect(
         loopStreamChannelBlockMessage(block),
         isNot(contains('你还不是这个群的成员')),
@@ -206,7 +209,12 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('没有连上聊天服务，请检查网络后重试。'), findsOneWidget);
+      expect(
+        find.text(
+          'Couldn\'t reach the chat service. Check your network and retry.',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('你还不是这个群的成员'), findsNothing);
       expect(connection.openCalls, 1);
       expect(queries, 0);
@@ -232,7 +240,12 @@ void main() {
         find.byKey(const ValueKey<String>('community-chat-channel-unresolved')),
         findsOneWidget,
       );
-      expect(find.text('没有连上聊天服务，请检查网络后重试。'), findsNothing);
+      expect(
+        find.text(
+          'Couldn\'t reach the chat service. Check your network and retry.',
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('a retry that still cannot connect never blames membership', (
@@ -259,7 +272,12 @@ void main() {
 
       expect(connection.openCalls, 2);
       expect(queries, 0, reason: 'a read with no socket was never sent');
-      expect(find.text('没有连上聊天服务，请检查网络后重试。'), findsOneWidget);
+      expect(
+        find.text(
+          'Couldn\'t reach the chat service. Check your network and retry.',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('你还不是这个群的成员'), findsNothing);
       expect(find.textContaining('没能打开这个频道的会话'), findsNothing);
     });

@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -66,7 +67,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       child: LoopStreamPage(
         key: const ValueKey<String>('connections-screen'),
         archetype: LoopPageArchetype.record,
-        title: '关注与粉丝',
+        title: context.l10n.social_connectionsConnectionsScreenTitle,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         filters: Padding(
@@ -83,7 +84,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   child: LoopSeg(
                     key: const ValueKey<String>('connections-seg-following'),
                     quiet: true,
-                    label: counts == null ? '关注' : '关注 ${counts.following}',
+                    label: counts == null
+                        ? context.l10n.socialPublicProfile_userCountFollowing
+                        : context.l10n
+                              .social_connectionsConnectionsSegFollowingLabel(
+                                counts.following,
+                              ),
                     selected: state.direction == ConnectionDirection.following,
                     onSelected: () => unawaited(
                       controller.selectDirection(ConnectionDirection.following),
@@ -93,7 +99,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                 LoopSeg(
                   key: const ValueKey<String>('connections-seg-followers'),
                   quiet: true,
-                  label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
+                  label: counts == null
+                      ? context.l10n.common_followers
+                      : context.l10n
+                            .social_connectionsConnectionsSegFollowersLabel(
+                              counts.followers,
+                            ),
                   selected: state.direction == ConnectionDirection.followers,
                   onSelected: () => unawaited(
                     controller.selectDirection(ConnectionDirection.followers),
@@ -109,7 +120,9 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   'connections-capability-unavailable',
                 ),
                 capability: capability,
-                title: '关注关系当前不可用',
+                title: context
+                    .l10n
+                    .social_connectionsConnectionsCapabilityUnavailableTitle,
               )
             : null,
         onRefresh: controller.refresh,
@@ -121,23 +134,38 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           physics: loopRefreshablePhysics(controller.refresh),
           padding: const EdgeInsets.only(bottom: 24),
           children: <Widget>[
-            CommunityPreviewNotice(mode: mode, resource: '关注关系'),
+            CommunityPreviewNotice(
+              mode: mode,
+              resource: context.l10n.social_connectionsResource,
+            ),
             if (state.phase != CommunityViewPhase.ready)
               CommunityStateBlock(
                 phase: state.phase,
                 failureKind: state.failureKind,
                 emptyMessage: state.direction == ConnectionDirection.following
-                    ? '还没有关注任何人'
-                    : '还没有粉丝',
-                emptyReason: '被你屏蔽的账号不会出现在这里。',
+                    ? context
+                          .l10n
+                          .social_connectionsCommunityStateEmptyEmptyMessage
+                    : context
+                          .l10n
+                          .social_connectionsCommunityStateEmptyEmptyMessage2,
+                emptyReason: context
+                    .l10n
+                    .social_connectionsCommunityStateEmptyEmptyReason,
                 empty: LoopEmptyState(
                   showMessage: true,
                   key: const ValueKey<String>('community-state-empty'),
                   illustration: LoopIllustration.friends,
                   title: state.direction == ConnectionDirection.following
-                      ? '还没有关注任何人'
-                      : '还没有粉丝',
-                  message: '被你屏蔽的账号不会出现在这里。',
+                      ? context
+                            .l10n
+                            .social_connectionsCommunityStateEmptyEmptyMessage
+                      : context
+                            .l10n
+                            .social_connectionsCommunityStateEmptyEmptyMessage2,
+                  message: context
+                      .l10n
+                      .social_connectionsCommunityStateEmptyEmptyReason,
                 ),
                 onRetry: () => unawaited(controller.reload()),
               )
@@ -147,7 +175,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   key: const ValueKey<String>('connections-action-failure'),
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '上一次操作没有完成',
+                  title: context.l10n.common_lastActionIncomplete,
                   body: communityFailureReason(state.failureKind),
                   margin: const EdgeInsets.fromLTRB(
                     LoopSpacing.page,
@@ -175,7 +203,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   0,
                 ),
                 child: Text(
-                  '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。',
+                  context.l10n.social_connectionsConnectionsDiscoverableNotice,
                   key: const ValueKey<String>(
                     'connections-discoverable-notice',
                   ),
@@ -220,7 +248,9 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         key: ValueKey<String>(
           'connection-follow-${target ?? entry.profile.loopId}',
         ),
-        label: following ? '已关注' : '关注',
+        label: following
+            ? LoopL10n.current.common_following
+            : LoopL10n.current.common_follow,
         primary: !following,
         onPressed: state.busy || target == null
             ? null
@@ -230,7 +260,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           ? null
           : () => unawaited(_openRow(entry, target, controller)),
       semanticLabel:
-          '${entry.profile.displayName}，${following ? '已关注' : '未关注'}',
+          '${entry.profile.displayName}${LoopL10n.current.common_listSeparator}${following ? LoopL10n.current.common_following : LoopL10n.current.social_publicProfileSheetPublicProfileFollowState}',
     );
   }
 
@@ -244,7 +274,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     final following = entry.viewerFollows;
     final choice = await showLoopSheet<String>(
       context,
-      barrierLabel: '关闭联系人操作',
+      barrierLabel:
+          LoopL10n.current.social_connectionsConnectionActionsSheetBarrierLabel,
       builder: (sheetContext) => Padding(
         key: const ValueKey<String>('connection-actions-sheet'),
         padding: const EdgeInsets.fromLTRB(
@@ -262,7 +293,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: LoopButton(
                 key: const ValueKey<String>('connection-action-dm'),
-                label: '打开私聊',
+                label:
+                    LoopL10n.current.social_connectionsConnectionActionDmLabel,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop('dm'),
               ),
@@ -271,14 +303,18 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: LoopButton(
                 key: const ValueKey<String>('connection-action-follow'),
-                label: following ? '取消关注' : '关注',
+                label: following
+                    ? LoopL10n
+                          .current
+                          .social_connectionsConnectionActionFollowLabel
+                    : LoopL10n.current.common_follow,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop('follow'),
               ),
             ),
             LoopButton(
               key: const ValueKey<String>('connection-action-cancel'),
-              label: '取消',
+              label: LoopL10n.current.common_cancel,
               block: true,
               onPressed: () => Navigator.of(sheetContext).pop(),
             ),
@@ -302,11 +338,15 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     final following = entry.viewerFollows;
     final confirmed = await confirmCommunityAction(
       context,
-      title: following ? '取消关注？' : '关注这个账号？',
+      title: following
+          ? LoopL10n.current.social_connectionsTitle
+          : LoopL10n.current.social_connectionsTitle2,
       body: following
-          ? '取消关注后，你不会再看到对方的公开动态。'
-          : '关注是单向的，不需要对方同意。对方需要开启"可被发现"才能被关注。',
-      confirmLabel: following ? '取消关注' : '关注',
+          ? LoopL10n.current.social_connectionsBody
+          : LoopL10n.current.social_connectionsBody2,
+      confirmLabel: following
+          ? LoopL10n.current.social_connectionsConnectionActionFollowLabel
+          : LoopL10n.current.common_follow,
       sheetKey: 'connections-follow-sheet',
     );
     if (!confirmed) return;
@@ -316,7 +356,12 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     );
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: following ? '已取消关注' : '已关注');
+      LoopToast.show(
+        context,
+        message: following
+            ? LoopL10n.current.social_connectionsMessage
+            : LoopL10n.current.common_following,
+      );
       return;
     }
     LoopToast.show(

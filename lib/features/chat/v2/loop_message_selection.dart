@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/forward_target_sheet.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -196,8 +197,12 @@ class LoopSelectionAwareTopbar extends StatelessWidget {
     if (selection == null || !selection.active) return child;
     return LoopTopbar(
       key: const ValueKey<String>('loop-selection-topbar'),
-      title: '已选 ${selection.count} 条',
-      subtitle: '最多 $loopMessageSelectionLimit 条',
+      title: context.l10n.chatV2_messageSelectionLoopSelectionTopbarTitle(
+        selection.count,
+      ),
+      subtitle: context.l10n.chatV2_messageSelectionLoopSelectionTopbarSubtitle(
+        loopMessageSelectionLimit,
+      ),
       minHeight: 72,
       framedTools: true,
       dense: true,
@@ -207,7 +212,7 @@ class LoopSelectionAwareTopbar extends StatelessWidget {
         LoopIconButton(
           key: const ValueKey<String>('loop-selection-cancel'),
           icon: 'close',
-          label: '取消',
+          label: context.l10n.common_cancel,
           framed: true,
           onPressed: selection.cancel,
         ),
@@ -254,7 +259,9 @@ class LoopSelectableMessage extends StatelessWidget {
     return Semantics(
       checked: selected,
       button: true,
-      label: selected ? '已选择这条消息' : '选择这条消息',
+      label: selected
+          ? context.l10n.chatV2_messageSelectionLabel
+          : context.l10n.chatV2_messageSelectionLabel2,
       child: GestureDetector(
         key: ValueKey<String>('loop-selectable-${message.id}'),
         behavior: HitTestBehavior.opaque,
@@ -263,7 +270,9 @@ class LoopSelectableMessage extends StatelessWidget {
           if (change == LoopMessageSelectionChange.refusedAtLimit) {
             LoopToast.show(
               context,
-              message: '一次最多选择 $loopMessageSelectionLimit 条',
+              message: context.l10n.chatV2_forwardScreensMessage(
+                loopMessageSelectionLimit,
+              ),
               kind: LoopToastKind.warn,
             );
           }
@@ -338,7 +347,7 @@ List<StreamContextMenuAction<MessageAction>> loopMessageForwardActions(
     if (cid != null && chatForwardMessageIsForwardable(message))
       StreamContextMenuAction<MessageAction>(
         key: const ValueKey<String>('loop-message-action-forward'),
-        label: const Text('转发'),
+        label: Text(context.l10n.chatV2_forwardScreensLoopOfflineState3),
         leading: const LoopIcon('share', size: 20),
         onTap: () {
           if (!context.mounted) return;
@@ -362,7 +371,9 @@ List<StreamContextMenuAction<MessageAction>> loopMessageForwardActions(
     if (selection != null)
       StreamContextMenuAction<MessageAction>(
         key: const ValueKey<String>('loop-message-action-select'),
-        label: const Text('多选'),
+        label: Text(
+          context.l10n.chatV2_messageSelectionLoopMessageForwardActions,
+        ),
         leading: const LoopIcon('check', size: 20),
         onTap: () {
           FocusManager.instance.primaryFocus?.unfocus();
@@ -436,7 +447,9 @@ class _LoopMessageSelectionBarState
     if (selection.unavailable > 0) {
       LoopToast.show(
         context,
-        message: '${selection.unavailable} 条已删除或不在本机，没有放进长图',
+        message: LoopL10n.current.chatV2_messageSelectionMessage2(
+          selection.unavailable,
+        ),
         kind: LoopToastKind.warn,
       );
     }
@@ -460,9 +473,9 @@ class _LoopMessageSelectionBarState
     final count = widget.controller.count;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '删除这 $count 条消息？',
-      body: '删除后会话里的每个人都会看到「消息已删除」，无法撤回。',
-      confirmLabel: '删除',
+      title: LoopL10n.current.chatV2_messageSelectionTitle(count),
+      body: LoopL10n.current.chatV2_messageSelectionBody,
+      confirmLabel: LoopL10n.current.common_delete,
       sheetKey: 'loop-selection-delete-confirm',
     );
     if (!confirmed || !mounted) return;
@@ -485,10 +498,11 @@ class _LoopMessageSelectionBarState
     LoopToast.show(
       context,
       message: <String>[
-        '已删除 $deleted 条',
-        if (failed > 0) '$failed 条没有删除成功',
-        if (selection.unavailable > 0) '${selection.unavailable} 条已不在本机，跳过',
-      ].join('，'),
+        LoopL10n.current.chatV2_messageSelectionShow(deleted),
+        if (failed > 0) LoopL10n.current.chatV2_messageSelectionShow2(failed),
+        if (selection.unavailable > 0)
+          LoopL10n.current.chatV2_messageSelectionShow3(selection.unavailable),
+      ].join(LoopL10n.current.common_listSeparator),
       kind: failed == 0 && selection.unavailable == 0
           ? LoopToastKind.ok
           : LoopToastKind.warn,
@@ -520,7 +534,9 @@ class _LoopMessageSelectionBarState
           Expanded(
             child: LoopButton(
               key: const ValueKey<String>('loop-selection-forward-each'),
-              label: '逐条转发',
+              label: context
+                  .l10n
+                  .chatV2_messageSelectionLoopSelectionForwardEachLabel,
               block: true,
               onPressed: _busy || !anyForwardable
                   ? null
@@ -531,7 +547,8 @@ class _LoopMessageSelectionBarState
           Expanded(
             child: LoopButton(
               key: const ValueKey<String>('loop-selection-merge'),
-              label: '合并转发',
+              label:
+                  context.l10n.chatV2_messageSelectionLoopSelectionMergeLabel,
               primary: true,
               block: true,
               onPressed: _busy || !anyForwardable
@@ -543,7 +560,7 @@ class _LoopMessageSelectionBarState
           Expanded(
             child: LoopButton(
               key: const ValueKey<String>('loop-selection-delete'),
-              label: '删除',
+              label: context.l10n.common_delete,
               block: true,
               onPressed: _busy || !mayDelete
                   ? null

@@ -1,0 +1,476 @@
+{
+  "social_blocklistBlocklistCapabilityUnavailableTitle": {
+    "en": "Block list unavailable",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:110",
+    "zh": "屏蔽名单当前不可用"
+  },
+  "social_blocklistBlocklistDeferredKindsDetail": {
+    "en": "These two block types aren't available yet, so nothing is listed here.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:182",
+    "zh": "这两类屏蔽还没有开放，这里不会列出任何条目。"
+  },
+  "social_blocklistBlocklistDeferredKindsMessage": {
+    "en": "Contract and domain blocks aren't available yet",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:181",
+    "zh": "合约与域名屏蔽暂不可用"
+  },
+  "social_blocklistBlocklistPrecedenceNoticeBody": {
+    "en": "Blocking immediately removes follows both ways and hides them from search, follow lists and message requests. Unblocking doesn't restore follows; you'll need to follow again.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:197",
+    "zh": "屏蔽会立即断开双向关注，并让对方从搜索、关注列表和陌生人请求中消失。解除屏蔽不会自动恢复关注，需要重新关注。"
+  },
+  "social_blocklistBlocklistPrecedenceNoticeTitle": {
+    "en": "What blocking does",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:195",
+    "zh": "屏蔽的效果"
+  },
+  "social_blocklistBody": {
+    "en": "After unblocking, they can show up in search and message requests again. Removed follows aren't restored automatically.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:243",
+    "zh": "解除后对方可以重新出现在搜索与陌生人请求里。已经断开的关注关系不会自动恢复。"
+  },
+  "social_blocklistCaption": {
+    "en": "Blocking overrides follows and direct messages. Unblocking doesn't restore follows.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:74",
+    "zh": "屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。"
+  },
+  "social_blocklistConfirmLabel": {
+    "en": "Unblock",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:244",
+    "zh": "解除屏蔽"
+  },
+  "social_blocklistDetail": {
+    "en": "Contract and domain blocks aren't available yet, so nothing is listed here.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:129",
+    "zh": "合约与域名屏蔽还没有开放，这里不会列出任何条目。"
+  },
+  "social_blocklistDomain": {
+    "en": "Domain",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:39",
+    "zh": "域名"
+  },
+  "social_blocklistEmptyMessage": {
+    "en": "No blocked accounts",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:137",
+    "zh": "没有屏蔽任何账号"
+  },
+  "social_blocklistEmptyReason": {
+    "en": "Choosing Report on a message request blocks the sender automatically.",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:138",
+    "zh": "在陌生人请求里选择\"举报\"会自动屏蔽发起人。"
+  },
+  "social_blocklistHeading": {
+    "en": "{userCount, plural, =1{1 blocked account} other{{userCount} blocked accounts}}",
+    "placeholders": {
+      "userCount": {
+        "example": "state.userCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/blocklist_screen.dart:73",
+    "zh": "{userCount} 个已屏蔽账号"
+  },
+  "social_blocklistLabel": {
+    "en": "Users {userCount}",
+    "placeholders": {
+      "userCount": {
+        "example": "state.userCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/blocklist_screen.dart:94",
+    "zh": "用户 {userCount}"
+  },
+  "social_blocklistLoopBadge": {
+    "en": "Unblock",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:227",
+    "zh": "解除"
+  },
+  "social_blocklistMessage": {
+    "en": "\"{segmentLabels}\" blocks aren't available yet",
+    "placeholders": {
+      "segmentLabels": {
+        "example": "_segmentLabels[state.kind]",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/blocklist_screen.dart:128",
+    "zh": "\"{segmentLabels}\" 屏蔽暂不可用"
+  },
+  "social_blocklistMessage2": {
+    "en": "Unblocked",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:251",
+    "zh": "已解除屏蔽"
+  },
+  "social_blocklistSemanticLabel": {
+    "en": "{title}, {blockReasonText}, can unblock",
+    "placeholders": {
+      "blockReasonText": {
+        "example": "blockReasonText(entry.reasonCode)",
+        "type": "Object"
+      },
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/blocklist_screen.dart:231",
+    "zh": "{title}，{blockReasonText}，可解除屏蔽"
+  },
+  "social_blocklistStamp": {
+    "en": "Private",
+    "placeholders": {},
+    "where": "lib/features/social/blocklist_screen.dart:75",
+    "zh": "私密"
+  },
+  "social_blocklistTitle": {
+    "en": "Unblock {title}?",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/blocklist_screen.dart:242",
+    "zh": "解除对 {title} 的屏蔽？"
+  },
+  "social_connectionsBody": {
+    "en": "After unfollowing, you won't see their public posts.",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:307",
+    "zh": "取消关注后，你不会再看到对方的公开动态。"
+  },
+  "social_connectionsBody2": {
+    "en": "Following is one-way and doesn't need their approval. They need Discoverable on to be followed.",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:308",
+    "zh": "关注是单向的，不需要对方同意。对方需要开启\"可被发现\"才能被关注。"
+  },
+  "social_connectionsCommunityStateEmptyEmptyMessage": {
+    "en": "Not following anyone yet",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:130, lib/features/social/connections_screen.dart:138",
+    "zh": "还没有关注任何人"
+  },
+  "social_connectionsCommunityStateEmptyEmptyMessage2": {
+    "en": "No followers yet",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:131, lib/features/social/connections_screen.dart:139",
+    "zh": "还没有粉丝"
+  },
+  "social_connectionsCommunityStateEmptyEmptyReason": {
+    "en": "Accounts you've blocked don't appear here.",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:132, lib/features/social/connections_screen.dart:140, lib/features/social/dm_requests_screen.dart:95, lib/features/social/dm_requests_screen.dart:100",
+    "zh": "被你屏蔽的账号不会出现在这里。"
+  },
+  "social_connectionsConnectionActionDmLabel": {
+    "en": "Open direct message",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:265, lib/features/social/public_profile_sheet.dart:354",
+    "zh": "打开私聊"
+  },
+  "social_connectionsConnectionActionFollowLabel": {
+    "en": "Unfollow",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:274, lib/features/social/connections_screen.dart:309, lib/features/social/public_profile_sheet.dart:338",
+    "zh": "取消关注"
+  },
+  "social_connectionsConnectionActionsSheetBarrierLabel": {
+    "en": "Close contact actions",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:247",
+    "zh": "关闭联系人操作"
+  },
+  "social_connectionsConnectionsCapabilityUnavailableTitle": {
+    "en": "Follows unavailable",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:112",
+    "zh": "关注关系当前不可用"
+  },
+  "social_connectionsConnectionsDiscoverableNotice": {
+    "en": "Others can find you by nickname once Privacy Center · Discoverable is on; your LOOP ID can always be searched exactly.",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:178",
+    "zh": "在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。"
+  },
+  "social_connectionsConnectionsScreenTitle": {
+    "en": "Following and followers",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:69",
+    "zh": "关注与粉丝"
+  },
+  "social_connectionsConnectionsSegFollowersLabel": {
+    "en": "Followers {followers}",
+    "placeholders": {
+      "followers": {
+        "example": "counts.followers",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/connections_screen.dart:96",
+    "zh": "粉丝 {followers}"
+  },
+  "social_connectionsConnectionsSegFollowingLabel": {
+    "en": "Following {following}",
+    "placeholders": {
+      "following": {
+        "example": "counts.following",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/connections_screen.dart:86",
+    "zh": "关注 {following}"
+  },
+  "social_connectionsMessage": {
+    "en": "Unfollowed",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:319",
+    "zh": "已取消关注"
+  },
+  "social_connectionsResource": {
+    "en": "Follows",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:124",
+    "zh": "关注关系"
+  },
+  "social_connectionsTitle": {
+    "en": "Unfollow?",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:305",
+    "zh": "取消关注？"
+  },
+  "social_connectionsTitle2": {
+    "en": "Follow this account?",
+    "placeholders": {},
+    "where": "lib/features/social/connections_screen.dart:305",
+    "zh": "关注这个账号？"
+  },
+  "social_dmRequestsAccept": {
+    "en": "Accept",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:148, lib/features/social/dm_requests_screen.dart:224",
+    "zh": "接受"
+  },
+  "social_dmRequestsAccept2": {
+    "en": "Accepting connects you. It can't connect if either of you has blocked the other.",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:156",
+    "zh": "接受后会建立联系。如果任一方屏蔽了对方，则无法建立。"
+  },
+  "social_dmRequestsAcceptTitle": {
+    "en": "Accept this request?",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:154",
+    "zh": "接受这个请求？"
+  },
+  "social_dmRequestsAccepted": {
+    "en": "Accepted",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:182",
+    "zh": "已接受"
+  },
+  "social_dmRequestsBarrierLabel": {
+    "en": "Close request actions",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:234",
+    "zh": "关闭请求操作"
+  },
+  "social_dmRequestsCommunityStateEmptyEmptyMessage": {
+    "en": "No pending requests",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:94, lib/features/social/dm_requests_screen.dart:99",
+    "zh": "没有待处理的请求"
+  },
+  "social_dmRequestsDmRequestsActionFailureTitle": {
+    "en": "The last decision didn't finish",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:110",
+    "zh": "上一次决定没有完成"
+  },
+  "social_dmRequestsDmRequestsCapabilityUnavailableTitle": {
+    "en": "Message requests unavailable",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:77",
+    "zh": "陌生人请求当前不可用"
+  },
+  "social_dmRequestsEmpty": {
+    "en": "0 pending",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:68",
+    "zh": "0 个待处理"
+  },
+  "social_dmRequestsIgnore": {
+    "en": "Ignore",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:149, lib/features/social/dm_requests_screen.dart:254",
+    "zh": "忽略"
+  },
+  "social_dmRequestsIgnore2": {
+    "en": "After ignoring, they can't send another request for 24 hours.",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:157",
+    "zh": "忽略后对方在 24 小时内不能再次发起请求。"
+  },
+  "social_dmRequestsIgnoreTitle": {
+    "en": "Ignore this request?",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:154",
+    "zh": "忽略这个请求？"
+  },
+  "social_dmRequestsIgnored": {
+    "en": "Ignored",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:182",
+    "zh": "已忽略"
+  },
+  "social_dmRequestsMessage": {
+    "en": "Reported and blocked",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:182",
+    "zh": "已举报并屏蔽"
+  },
+  "social_dmRequestsReady": {
+    "en": "{items} pending",
+    "placeholders": {
+      "items": {
+        "example": "state.items.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/dm_requests_screen.dart:67",
+    "zh": "{items} 个待处理"
+  },
+  "social_dmRequestsReport": {
+    "en": "Report and block",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:150, lib/features/social/dm_requests_screen.dart:264",
+    "zh": "举报并屏蔽"
+  },
+  "social_dmRequestsReport2": {
+    "en": "Reporting declines the request, blocks the sender, writes an audit record and removes follows both ways.",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:158",
+    "zh": "举报会拒绝请求、屏蔽发起人并写入审计，同时断开双向关注。"
+  },
+  "social_dmRequestsReportTitle": {
+    "en": "Report and block this request?",
+    "placeholders": {},
+    "where": "lib/features/social/dm_requests_screen.dart:154",
+    "zh": "举报并屏蔽这个请求？"
+  },
+  "social_idCopyLabel": {
+    "en": "Copy LOOP ID",
+    "placeholders": {},
+    "where": "lib/features/social/loop_id_copy.dart:62",
+    "zh": "复制 LOOP ID"
+  },
+  "social_idCopyMessage": {
+    "en": "LOOP ID copied",
+    "placeholders": {},
+    "where": "lib/features/social/loop_id_copy.dart:85",
+    "zh": "已复制 LOOP ID"
+  },
+  "social_idShareLine": {
+    "en": "Add me as a friend on LOOP: {loopId}",
+    "placeholders": {
+      "loopId": {
+        "example": "loopId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/loop_id_share.dart:76",
+    "zh": "在 LOOP 上加我为好友：{loopId}"
+  },
+  "social_modelsSwitch": {
+    "en": "Blocked by you",
+    "placeholders": {},
+    "where": "lib/features/social/social_models.dart:162",
+    "zh": "由你手动屏蔽"
+  },
+  "social_modelsSwitch2": {
+    "en": "Blocked automatically when reporting a message request",
+    "placeholders": {},
+    "where": "lib/features/social/social_models.dart:163",
+    "zh": "举报陌生人请求时自动屏蔽"
+  },
+  "social_modelsSwitch3": {
+    "en": "Block reason",
+    "placeholders": {},
+    "where": "lib/features/social/social_models.dart:164",
+    "zh": "屏蔽原因"
+  },
+  "social_profileFaceLinkLabel": {
+    "en": "View my profile",
+    "placeholders": {},
+    "where": "lib/features/social/profile_face_link.dart:67",
+    "zh": "查看我的主页"
+  },
+  "social_profileFaceLinkLabel2": {
+    "en": "View {name}'s profile",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/profile_face_link.dart:67",
+    "zh": "查看 {name} 的主页"
+  },
+  "social_publicProfileSheetBarrierLabel": {
+    "en": "Close public profile",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:165",
+    "zh": "关闭公开资料"
+  },
+  "social_publicProfileSheetPublicProfileDmHint": {
+    "en": "If you're not connected yet, you'll send a message request first.",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:365",
+    "zh": "还没有建立联系时，会先请你发送一条消息请求。"
+  },
+  "social_publicProfileSheetPublicProfileFollowState": {
+    "en": "Not following",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:313",
+    "zh": "未关注"
+  },
+  "social_publicProfileSheetPublicProfileFollowUnknownBody": {
+    "en": "The current follow status can't be read here; the result after the action applies.",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:333",
+    "zh": "这里读不到当前的关注状态，以操作后的结果为准。"
+  },
+  "social_publicProfileSheetPublicProfileNotTargetableDetail": {
+    "en": "This account has no public profile; it can't be followed or acted on.",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:323",
+    "zh": "这个账号没有公开资料，不能关注，也不能进行其他操作。"
+  },
+  "social_publicProfileSheetPublicProfileNotTargetableMessage": {
+    "en": "This member has no public profile",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:322",
+    "zh": "这个成员没有可用的公开资料"
+  },
+  "social_publicProfileSheetPublicProfileOpenPageLabel": {
+    "en": "View profile",
+    "placeholders": {},
+    "where": "lib/features/social/public_profile_sheet.dart:376",
+    "zh": "查看资料"
+  }
+}

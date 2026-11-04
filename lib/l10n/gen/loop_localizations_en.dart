@@ -1574,6 +1574,2822 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'This action isn\'t available in your region';
 
   @override
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel =>
+      'LOOP hasn\'t received a live price or contract facts for this card yet. The message only stores the token ID, so price, risk, Buy and Watch aren\'t shown.';
+
+  @override
+  String chatAttachments_streamTokenCardBuilderLoopTokenCardModel2(
+    Object? snapshotLabel,
+  ) {
+    return 'Snapshot $snapshotLabel';
+  }
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel3 =>
+      'This attachment doesn\'t match LOOP token_card.v1, so no token facts or actions are shown.';
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderPriceReason =>
+      'Current facts unavailable';
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderSymbol =>
+      'Unrecognized token card';
+
+  @override
+  String
+  get chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel =>
+      'Member bought';
+
+  @override
+  String chatCalls_audioRoomContractAudioRoomNotificationTitle(Object? name) {
+    return 'In voice room · $name';
+  }
+
+  @override
+  String get chatCalls_audioRoomContractAudioRoomOutputLabel => 'Audio output';
+
+  @override
+  String get chatCalls_audioRoomContractAudioRoomRestoredMicrophoneNote =>
+      'Reconnected. Tap the mic to keep speaking';
+
+  @override
+  String get chatCalls_audioRoomContractDisconnected =>
+      'Voice disconnected; count updates after reconnecting';
+
+  @override
+  String get chatCalls_audioRoomContractEarpiece => 'Earpiece';
+
+  @override
+  String get chatCalls_audioRoomContractExternalOutputLabel => 'Headphones';
+
+  @override
+  String get chatCalls_audioRoomContractReconnecting =>
+      'Voice reconnecting; count updates after reconnecting';
+
+  @override
+  String get chatCalls_audioRoomContractSpeaker => 'Speaker';
+
+  @override
+  String get chatCalls_audioRoomContractText =>
+      'Tap to return to the voice room';
+
+  @override
+  String get chatCalls_audioRoomContractTitle => 'In voice room';
+
+  @override
+  String get chatCalls_streamForegroundViewCallClosed =>
+      'You can\'t speak in this call anymore. Leave and join again.';
+
+  @override
+  String get chatCalls_streamForegroundViewCanRequest =>
+      'Counting people in the call';
+
+  @override
+  String get chatCalls_streamForegroundViewCommandError =>
+      'Couldn\'t reconnect voice. Try again.';
+
+  @override
+  String get chatCalls_streamForegroundViewCommandError2 =>
+      'Couldn\'t leave this call cleanly. Retry.';
+
+  @override
+  String get chatCalls_streamForegroundViewIf =>
+      'Leaving this call. The mic won\'t start again; mute first if needed, then retry leaving.';
+
+  @override
+  String get chatCalls_streamForegroundViewIf2 =>
+      'Your mic is on and people in the room can hear you. Tap Mute to turn it off anytime.';
+
+  @override
+  String get chatCalls_streamForegroundViewIf3 =>
+      'You were moved off stage and can only listen now. Wait for the host to invite you again to speak.';
+
+  @override
+  String chatCalls_streamForegroundViewIf4(Object? speakAgainLabel) {
+    return 'You\'re muted. To speak again, tap $speakAgainLabel to reconnect voice.';
+  }
+
+  @override
+  String chatCalls_streamForegroundViewIf5(Object? speakLabel) {
+    return 'You joined muted. Tap $speakLabel when you\'re ready; mic access is only requested when capture starts.';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewLabel => 'Reconnect failed';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel2 => 'Waiting';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel3 => 'Joining';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel4 => 'Connecting media';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel5 => 'Connected';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel6 => 'Reconnecting';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel7 => 'Switching connection';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel8 => 'Connecting';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel9 => 'Call unavailable';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage =>
+      'This call dropped and is reconnecting. Member details reload once connected.';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage2 =>
+      'This call disconnected. Member details load after voice reconnects.';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage3 =>
+      'Not connected to this call yet. Member details load once connected.';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage4 =>
+      'This call just connected; the provider hasn\'t sent member details yet.';
+
+  @override
+  String get chatCalls_streamForegroundViewMicrophoneState => 'Speaking';
+
+  @override
+  String get chatCalls_streamForegroundViewMicrophoneState2 => 'Mic on';
+
+  @override
+  String get chatCalls_streamForegroundViewRoomPermission =>
+      'This room hasn\'t let you speak yet; your mic is off.';
+
+  @override
+  String chatCalls_streamForegroundViewS(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people in the call now',
+      one: '1 person in the call now',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewS2 =>
+      'You\'re a listener in this room.';
+
+  @override
+  String get chatCalls_streamForegroundViewS3 => 'Speak again';
+
+  @override
+  String get chatCalls_streamForegroundViewS4 => 'Listen only';
+
+  @override
+  String get chatCalls_streamForegroundViewS5 => 'Switch to earpiece';
+
+  @override
+  String get chatCalls_streamForegroundViewSetState =>
+      'Couldn\'t mute the mic. Retry, or leave this room.';
+
+  @override
+  String get chatCalls_streamForegroundViewSpeakAgainLabel =>
+      'Reconnect to speak';
+
+  @override
+  String get chatCalls_streamForegroundViewSpeakLabel => 'Speak';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel =>
+      'Reconnecting';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel2 =>
+      'Switching';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel3 =>
+      'Leaving';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel4 =>
+      'Can\'t unmute';
+
+  @override
+  String get chatCalls_streamForegroundViewSwitch =>
+      'Audio plays from the connected device';
+
+  @override
+  String get chatCalls_streamForegroundViewSwitch2 => 'Switch to speaker';
+
+  @override
+  String get chatCalls_streamForegroundViewSystemPermission =>
+      'No mic access. Allow LOOP to use the microphone in system settings, then try again.';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle => 'Reconnecting';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle2 => 'Voice disconnected';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle3 => 'Connecting voice';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle4 => 'Loading call members';
+
+  @override
+  String get chatCalls_streamForegroundViewUnknown =>
+      'Couldn\'t turn on the mic. Try again.';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaAudioSuspended =>
+      'Audio paused by the system';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage =>
+      'Disconnect voice';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel =>
+      'Switching mic';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel2 =>
+      'Retry leaving first';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel3 =>
+      'Can\'t unmute in this call';
+
+  @override
+  String chatCalls_streamForegroundViewVoiceroomMediaOutputLabel(
+    Object? label,
+  ) {
+    return 'Audio output: $label';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel =>
+      'Reconnecting voice';
+
+  @override
+  String get chatCalls_streamVoiceRoomAccountChanged =>
+      'Your sign-in changed while connecting. Leave this page and come back.';
+
+  @override
+  String get chatCalls_streamVoiceRoomClient =>
+      'Couldn\'t set up voice on this device. Try again.';
+
+  @override
+  String get chatCalls_streamVoiceRoomConnection =>
+      'This device couldn\'t reach the voice service. Check your network and retry.';
+
+  @override
+  String get chatCalls_streamVoiceRoomCredential =>
+      'The voice credential for this call wasn\'t issued. Check your network and retry.';
+
+  @override
+  String chatCalls_streamVoiceRoomHost(Object? speakLabel) {
+    return 'You\'re the host and also join muted; mic access is only requested when you tap $speakLabel. The room doesn\'t end if voice can\'t connect; use End room below to end it.';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomIdentity =>
+      'This device doesn\'t have a voice identity yet. Leave this page and come back.';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf =>
+      'You always join muted; mic access is only requested when you tap Speak. Voice continues in the background or when locked; only Leave disconnects.';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf2 =>
+      'Join muted · Continues in background';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf3 =>
+      'No demo members, presence or room activity are shown here.';
+
+  @override
+  String get chatCalls_streamVoiceRoomJoinError =>
+      'Couldn\'t get this voice room ready. Check the conversation and retry.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage =>
+      'This call disconnected. Recording your exit in the LOOP room record.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage10 =>
+      'Requesting a voice identity and short-lived token. No call is joined meanwhile.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage11 =>
+      'Loading the authorized voice room. Your mic stays off.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage12 =>
+      'Couldn\'t load the authorized voice room. No other room is joined and no demo data is shown instead.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage13 =>
+      'This session doesn\'t have an authorized voice room yet. Enter from a community\'s voice room.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage14 =>
+      'The voice room is authorized, but the voice client for this account has expired. Re-authorize the session.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage15 =>
+      'Voice room authorized. You always join muted, and voice continues in the background.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage16 =>
+      'No local audio is published while connecting.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage17 =>
+      'Mic access is only requested after you tap Speak.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage18 =>
+      'Voice continues when you switch apps or lock the screen; only Leave disconnects.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage2 =>
+      'You\'re still in the room and will reconnect automatically when the network is back. Use Leave below to exit.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage3 =>
+      'Reloading this room and getting a new voice identity, then reconnecting.';
+
+  @override
+  String chatCalls_streamVoiceRoomMessage4(Object? joinError) {
+    return '${joinError}You\'re still in this room and haven\'t been removed.';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage5 =>
+      'This call disconnected. LOOP still lists you as a member of this room.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage6 =>
+      'Joined the room, connecting voice. You joined muted as a listener.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage7 =>
+      'Voice only starts in a verified sign-in session; offline or unverified sessions don\'t connect.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage8 =>
+      'Can\'t connect again until the last call has turned off the mic and left.';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage9 =>
+      'The last call didn\'t confirm leaving. Retry cleanup first, then connect voice.';
+
+  @override
+  String get chatCalls_streamVoiceRoomNetwork =>
+      'This connection didn\'t go through. Check your network and retry.';
+
+  @override
+  String get chatCalls_streamVoiceRoomPermission =>
+      'Listening isn\'t open in this room yet. Ask the host to reopen it.';
+
+  @override
+  String get chatCalls_streamVoiceRoomRoomUnavailable =>
+      'This room can\'t be joined anymore. Check the community to see if it\'s still live.';
+
+  @override
+  String get chatCalls_streamVoiceRoomSession =>
+      'This voice identity has expired. Leave this page and come back.';
+
+  @override
+  String chatCalls_streamVoiceRoomSpeaker(Object? speakLabel) {
+    return 'You\'re a speaker and also join muted; mic access is only requested when you tap $speakLabel. Voice isn\'t connected but you\'re still in the room; tap Leave below to exit.';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomSwitch =>
+      'This device couldn\'t set up a voice session. It stays disconnected and no call is created.';
+
+  @override
+  String get chatCalls_streamVoiceRoomSwitch2 =>
+      'You joined muted as a listener and mic access isn\'t requested. Voice isn\'t connected but you\'re still in the room; tap Leave below to exit.';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle => 'Leaving voice room…';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle10 => 'Loading voice room';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle11 => 'Couldn\'t load voice room';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle12 => 'No voice room yet';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle13 => 'Voice client unavailable';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle14 => 'Connection failed';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle15 => 'Voice ready to connect';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle16 => 'Muted on entry';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle17 => 'Mic access on demand';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle18 => 'Continues in background';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle2 => 'Voice dropped, reconnecting';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle3 =>
+      'Joined, voice connection failed';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle4 => 'Connecting voice…';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle5 => 'Sign-in verification required';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle6 =>
+      'Confirming the last call ended';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle7 =>
+      'The last call didn\'t end cleanly';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle8 => 'Preparing voice connection';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle9 =>
+      'Voice session unavailable right now';
+
+  @override
+  String get chatCalls_streamVoiceRoomUnknown =>
+      'Couldn\'t connect to this voice room. Try again later.';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel =>
+      'Connecting muted';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel2 =>
+      'Connect voice';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaReconnectLabel =>
+      'Reconnect voice';
+
+  @override
+  String chatCalls_streamVoiceRoomVoiceroomMediaRestoredMessage(
+    Object? vVoiceMediaPresentation,
+  ) {
+    return 'Your mic was on when the network dropped. It stays muted after reconnecting; tap $vVoiceMediaPresentation when you need it.';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryCleanupLabel =>
+      'Retry cleanup';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetrySessionLabel =>
+      'Retry session';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryTargetLabel =>
+      'Reload voice room';
+
+  @override
+  String get chatFriends_createMenuButtonChatCreateMenuLabel => 'New';
+
+  @override
+  String get chatFriends_createMenuButtonChatCreateMenuLabel2 => 'Add';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle =>
+      'Find people by LOOP ID or nickname and send a message request';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle2 =>
+      'Apply to list; goes live after review';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle3 =>
+      'Start a small group with friends';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle4 =>
+      'Scan a profile card, community code or wallet address';
+
+  @override
+  String get chatFriends_createMenuButtonTitle => 'Search / add users';
+
+  @override
+  String get chatFriends_createMenuButtonTitle2 => 'Create community';
+
+  @override
+  String get chatFriends_createMenuButtonTitle3 => 'Create group chat';
+
+  @override
+  String get chatFriends_screensAlreadyDecided =>
+      'This friend request was already handled. Refresh the list.';
+
+  @override
+  String get chatFriends_screensAlreadyFriends => 'You\'re already friends.';
+
+  @override
+  String chatFriends_screensBody(Object? name, num receipt) {
+    String _temp0 = intl.Intl.pluralLogic(
+      receipt,
+      locale: localeName,
+      other: '$receipt members',
+      one: '1 member',
+    );
+    return '$name · $_temp0. This result exists only in this run; no Stream channel was created.';
+  }
+
+  @override
+  String chatFriends_screensBody2(Object? name, num receipt) {
+    String _temp0 = intl.Intl.pluralLogic(
+      receipt,
+      locale: localeName,
+      other: '$receipt members',
+      one: '1 member',
+    );
+    return '$name · $_temp0. The channel was created and authorized by the LOOP backend.';
+  }
+
+  @override
+  String get chatFriends_screensConflict =>
+      'The friendship changed. Refresh and try again.';
+
+  @override
+  String get chatFriends_screensCooldown =>
+      'This friend request is cooling down. Try again later.';
+
+  @override
+  String get chatFriends_screensCursorInvalid =>
+      'The list page expired; reload from the first page.';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateAnotherLabel =>
+      'Create another';
+
+  @override
+  String chatFriends_screensFriendGroupCreateFailureBody(
+    Object? friendFailureMessage,
+  ) {
+    return '$friendFailureMessage The draft is frozen and won\'t be resubmitted automatically.';
+  }
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle =>
+      'Group creation needs manual review';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle2 =>
+      'Group creation result pending';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle3 =>
+      'Group not created';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateScreenTitle => 'Create group';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateSubmitLabel => 'Creating…';
+
+  @override
+  String get chatFriends_screensFriendGroupFindFriendsLabel => 'Add friends';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioCaption =>
+      'Pick from accepted friends. The LOOP backend creates the group; it only appears in Chat once that succeeds.';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioKicker => 'Group with friends';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioStamp => 'Friends only';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsEmptyMessage =>
+      'You can invite someone to a group after they accept your friend request.';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsEmptyTitle =>
+      'No friends to choose';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsFailureTitle =>
+      'Couldn\'t load friends right now';
+
+  @override
+  String get chatFriends_screensFriendGroupNameFieldFootnote =>
+      'Up to 60 characters';
+
+  @override
+  String get chatFriends_screensFriendGroupNameFieldLabel => 'Group name';
+
+  @override
+  String get chatFriends_screensFriendGroupOpenChannelLabel =>
+      'Open group chat';
+
+  @override
+  String get chatFriends_screensFriendGroupReconcileLabel => 'Check result';
+
+  @override
+  String get chatFriends_screensFriendGroupResumeEditingLabel => 'Edit draft';
+
+  @override
+  String chatFriends_screensFriendGroupSelectionLabel(
+    Object? groupMaximumSelectedFriends,
+    Object? selectedFriendRefs,
+  ) {
+    return 'Choose friends · $selectedFriendRefs/$groupMaximumSelectedFriends';
+  }
+
+  @override
+  String get chatFriends_screensFriendGroupSetAliasLabel =>
+      'Set group nickname';
+
+  @override
+  String get chatFriends_screensFriendGroupUnavailableMessage =>
+      'No group is created and no members are added here.';
+
+  @override
+  String get chatFriends_screensFriendGroupUnavailableTitle =>
+      'Group chat creation isn\'t available yet';
+
+  @override
+  String get chatFriends_screensFriendPreviewBannerBody =>
+      'Friends, requests and new groups are kept in memory only and aren\'t written to the LOOP backend or Stream.';
+
+  @override
+  String get chatFriends_screensFriendPreviewBannerTitle =>
+      'Development preview · This run only';
+
+  @override
+  String get chatFriends_screensIncomingRequestPending =>
+      'They\'ve already sent you a request. Handle it in friend requests.';
+
+  @override
+  String get chatFriends_screensInvalidData =>
+      'The input or server data doesn\'t meet current safety constraints.';
+
+  @override
+  String get chatFriends_screensLoopLabel => 'Result';
+
+  @override
+  String get chatFriends_screensNotFound =>
+      'The target isn\'t available right now. Hidden and nonexistent accounts aren\'t distinguished.';
+
+  @override
+  String get chatFriends_screensNotSelected => 'Not selected';
+
+  @override
+  String get chatFriends_screensOperatorRequired =>
+      'The channel needs manual review; a second channel won\'t be created automatically.';
+
+  @override
+  String get chatFriends_screensOutcomeUnknown =>
+      'The request may have been received, but the final result can\'t be safely confirmed right now.';
+
+  @override
+  String get chatFriends_screensOutgoingRequestPending =>
+      'Friend request sent, waiting for them to respond.';
+
+  @override
+  String get chatFriends_screensPermissionDenied =>
+      'This account can\'t do that. No friendship or group was changed.';
+
+  @override
+  String get chatFriends_screensProfileRequired =>
+      'Set your LOOP nickname in Profile first.';
+
+  @override
+  String get chatFriends_screensRateLimited =>
+      'Too many attempts. Try again later.';
+
+  @override
+  String get chatFriends_screensSelected => 'Selected';
+
+  @override
+  String get chatFriends_screensSwitch =>
+      'Couldn\'t complete the action right now.';
+
+  @override
+  String chatFriends_screensText(num groupMinimumSelectedFriends) {
+    String _temp0 = intl.Intl.pluralLogic(
+      groupMinimumSelectedFriends,
+      locale: localeName,
+      other: 'Choose at least $groupMinimumSelectedFriends friends',
+      one: 'Choose at least 1 friend',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatFriends_screensTitle => 'Development preview group created';
+
+  @override
+  String get chatFriends_screensTitle2 => 'Group created';
+
+  @override
+  String get chatFriends_screensUnavailable =>
+      'The friend service isn\'t available right now. No friendship or group was changed.';
+
+  @override
+  String get chatFriends_screensUnexpected =>
+      'The service couldn\'t complete the request; no friendship or group was changed.';
+
+  @override
+  String get chatGroupAlias_neutralMember => 'Member';
+
+  @override
+  String get chatGroupAlias_screenBody =>
+      'Your nickname is reserved; the group display is still syncing. Retry with the exact same nickname.';
+
+  @override
+  String get chatGroupAlias_screenBody2 =>
+      'This nickname is permanently reserved in this group and can\'t be changed. It doesn\'t reveal your public profile or Stream user identity.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasBlockedTitle =>
+      'Can\'t set group nickname';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasBoundaryBody =>
+      'Your group nickname only shows in this group and isn\'t linked to your public profile or wallet address.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasChannelInvalidMessage =>
+      'This page didn\'t get a valid Stream group chat reference; no network request was made.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasChannelInvalidTitle =>
+      'Invalid group chat reference';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFailureTitle =>
+      'Group nickname not reserved';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFieldFootnote =>
+      'Can\'t be changed after submitting; nicknames must be unique in a group.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFieldLabel => 'Group nickname';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFolioCaption =>
+      'You can use a different nickname in each group. It\'s permanent once reserved; the app doesn\'t link identities across groups, but this isn\'t a guarantee of anonymity.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFolioKicker => 'Group nickname';
+
+  @override
+  String chatGroupAlias_screenGroupAliasOutcomeUnknownBody(
+    Object? pendingAlias,
+  ) {
+    return '\"$pendingAlias\" may already be permanently reserved. To avoid locking a different value, you can only retry the exact same nickname.';
+  }
+
+  @override
+  String get chatGroupAlias_screenGroupAliasOutcomeUnknownTitle =>
+      'Reservation result pending';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasPausedMessage =>
+      'Group members show with their own avatar and username. No request was made here.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasPausedTitle =>
+      'Group nicknames aren\'t available yet';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasReloadLabel => 'Reload';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasResolverRetryLabel => 'Retry check';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRetryPendingLabel =>
+      'Retry with same nickname';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRetryProjectionLabel =>
+      'Retry sync';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRouteInvalidMessage =>
+      'This page didn\'t get a valid LOOP group_id; no network request was made.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRouteInvalidTitle =>
+      'Invalid group reference';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchEmptyMessage =>
+      'Members still syncing, members who left, and you won\'t appear in results.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchEmptyTitle =>
+      'No matching nicknames';
+
+  @override
+  String chatGroupAlias_screenGroupAliasSearchFailureMessage(
+    Object? groupAliasFailureMessage,
+  ) {
+    return 'Couldn\'t search the group: $groupAliasFailureMessage';
+  }
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchFieldFootnote =>
+      'Enter at least 2 characters';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel => 'Searching';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel2 => 'Search';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitSemanticLabel =>
+      'Search group nicknames';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedBody =>
+      'Keep typing a fuller nickname to narrow results.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedTitle =>
+      'Results truncated';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSubmitLabel => 'Reserving…';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSubmitLabel2 =>
+      'Reserve this nickname permanently';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasTitle => 'Group nicknames';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasUnavailableMessage =>
+      'No demo nickname is shown, and your account nickname or wallet address isn\'t used as your group identity.';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasUnavailableTitle =>
+      'Group nickname service unavailable';
+
+  @override
+  String get chatGroupAlias_screenHint => '1–40 characters';
+
+  @override
+  String get chatGroupAlias_screenHint2 => 'Enter a nickname to search';
+
+  @override
+  String get chatGroupAlias_screenImmutable =>
+      'This account already reserved a different nickname in this group; it can\'t be changed.';
+
+  @override
+  String get chatGroupAlias_screenInvalidData =>
+      'This nickname isn\'t available. Try another.';
+
+  @override
+  String get chatGroupAlias_screenLoopBadge => 'Syncing';
+
+  @override
+  String get chatGroupAlias_screenLoopLabel => 'My group nickname';
+
+  @override
+  String get chatGroupAlias_screenLoopLabel2 => 'Find member nicknames';
+
+  @override
+  String get chatGroupAlias_screenNotFound => 'Group unavailable';
+
+  @override
+  String get chatGroupAlias_screenNotFound2 =>
+      'This channel isn\'t a visible group, or this account is no longer a member; nickname actions aren\'t available.';
+
+  @override
+  String get chatGroupAlias_screenNotFound3 =>
+      'No visible group nickname; you may no longer be a member of this Stream group.';
+
+  @override
+  String get chatGroupAlias_screenOffline =>
+      'Device offline. Group nicknames weren\'t loaded and nothing was submitted.';
+
+  @override
+  String get chatGroupAlias_screenOutcomeUnknown =>
+      'The request may have been submitted; you can only confirm with the exact same nickname.';
+
+  @override
+  String get chatGroupAlias_screenPreview =>
+      'Development preview · This run only';
+
+  @override
+  String get chatGroupAlias_screenProduction => 'This group only';
+
+  @override
+  String get chatGroupAlias_screenProduction2 => 'LOOP group identity boundary';
+
+  @override
+  String get chatGroupAlias_screenResolved => 'Couldn\'t resolve group';
+
+  @override
+  String get chatGroupAlias_screenResolved2 =>
+      'Couldn\'t load this group\'s info right now; the group nickname can\'t be changed yet.';
+
+  @override
+  String get chatGroupAlias_screenResolving => 'Confirming group';
+
+  @override
+  String get chatGroupAlias_screenResolving2 =>
+      'LOOP is confirming this account is still a member of this Stream group chat.';
+
+  @override
+  String get chatGroupAlias_screenS => 'Permanently reserved';
+
+  @override
+  String get chatGroupAlias_screenSubtitle => 'Reserved · Syncing in group';
+
+  @override
+  String get chatGroupAlias_screenSubtitle2 => 'Current group nickname';
+
+  @override
+  String get chatGroupAlias_screenSwitch =>
+      'Group nicknames aren\'t available right now.';
+
+  @override
+  String get chatGroupAlias_screenTaken =>
+      'Another member of this group has permanently reserved this nickname. Try another.';
+
+  @override
+  String get chatGroupAlias_screenUnavailable =>
+      'Group service unavailable right now';
+
+  @override
+  String get chatGroupAlias_screenUnavailable2 =>
+      'Couldn\'t confirm group membership right now; nickname actions aren\'t available.';
+
+  @override
+  String get chatGroupAlias_screenUnavailable3 => 'Not connected';
+
+  @override
+  String get chatGroupAlias_screenUnavailable4 =>
+      'Production connection unavailable';
+
+  @override
+  String get chatGroupAlias_screenUnavailable5 =>
+      'The group nickname service isn\'t available right now; no nickname is shown as reserved.';
+
+  @override
+  String get chatGroupAlias_screenUnexpected =>
+      'The group nickname action failed; no result is shown as confirmed.';
+
+  @override
+  String chatGroupAlias_streamMessageIdentityBuild(num replyCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      replyCount,
+      locale: localeName,
+      other: '$replyCount replies',
+      one: '1 reply',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatGroupAlias_streamMessageIdentityLoopChannelQuietLabel =>
+      'No one has spoken yet';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectConversationNeutralInitial =>
+      'D';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerInitial =>
+      'X';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerLabel =>
+      'Deleted account';
+
+  @override
+  String chatGroupAlias_streamMessageIdentityS(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String chatMemberBuy_cardBody(Object? loopMemberBuyPreviewLabel) {
+    return '$loopMemberBuyPreviewLabel · Incomplete data';
+  }
+
+  @override
+  String chatMemberBuy_cardLabel(Object? name) {
+    return 'View $name\'s profile';
+  }
+
+  @override
+  String get chatMemberBuy_cardLabel2 => 'Copy transaction hash';
+
+  @override
+  String get chatMemberBuy_cardMessage => 'Transaction hash copied';
+
+  @override
+  String get chatMemberBuy_cardText => 'Bought ';
+
+  @override
+  String chatMemberBuy_eventIf(Object? formatDecimal) {
+    return '$formatDecimal × 10,000';
+  }
+
+  @override
+  String chatMemberBuy_eventIf2(Object? formatDecimal) {
+    return '$formatDecimal × 100,000,000';
+  }
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyNeutralBuyer => 'Member';
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyNeutralInitial => 'M';
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyPreviewLabel => 'Member bought';
+
+  @override
+  String chatTokenCard_cardChartRangeLabel(Object? loopSparklineWindow) {
+    return '1H · Last $loopSparklineWindow closes';
+  }
+
+  @override
+  String get chatTokenCard_cardDetail =>
+      'This contract address isn\'t in the LOOP asset catalog, so there\'s no market data.';
+
+  @override
+  String chatTokenCard_cardDetail2(Object? chatTokenShortAddress) {
+    return 'LOOP timed out · $chatTokenShortAddress';
+  }
+
+  @override
+  String chatTokenCard_cardDetail3(Object? chatTokenShortAddress) {
+    return 'Couldn\'t read this contract · $chatTokenShortAddress';
+  }
+
+  @override
+  String get chatTokenCard_cardLoopChatTokenCardFailedMessage =>
+      'Couldn\'t load. Tap to retry';
+
+  @override
+  String get chatTokenCard_cardLoopChatTokenCardKicker => 'Token detected';
+
+  @override
+  String get chatTokenCard_cardLoopTokenCardAction => 'Token page';
+
+  @override
+  String get chatTokenCard_cardLoopTokenMetric => 'Not listed';
+
+  @override
+  String chatTokenCard_cardMarketCommunityBound(
+    Object? formatCompactFigure,
+    Object? name,
+  ) {
+    return 'LOOP community $name · $formatCompactFigure members';
+  }
+
+  @override
+  String get chatTokenCard_cardMarketCommunityUnavailable =>
+      'No LOOP community';
+
+  @override
+  String chatTokenCard_cardMessage(Object? chatTokenShortAddress) {
+    return 'Unlisted token · $chatTokenShortAddress';
+  }
+
+  @override
+  String get chatTokenCard_cardMessage2 => 'Device offline; contract not read';
+
+  @override
+  String get chatTokenCard_cardPriceReason => 'No quote received';
+
+  @override
+  String chatTokenCard_cardReadCard(Object? label) {
+    return 'Catalog status · $label';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard2(Object? riskFactCount) {
+    return '$riskFactCount more contract facts on the token page';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard3(Object? tradeReason) {
+    return 'Buy and sell unavailable · $tradeReason';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard4(Object? factSourceLabel) {
+    return 'Identity from $factSourceLabel';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard5(Object? relativeTime) {
+    return 'Observed $relativeTime';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard6(Object? factProvenance) {
+    return 'Quote $factProvenance';
+  }
+
+  @override
+  String get chatTokenCard_viewLoading => 'Detecting';
+
+  @override
+  String chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel(
+    Object? provenance,
+  ) {
+    return '$provenance, view data source';
+  }
+
+  @override
+  String get chatTokenCard_viewPartial => 'Data missing';
+
+  @override
+  String get chatTokenCard_viewRisk => 'Risk facts';
+
+  @override
+  String get chatTokenCard_viewSwitch => 'Detecting…';
+
+  @override
+  String chatTokenCard_viewText(Object? observedLabel, Object? source) {
+    return ' — source $source, observed $observedLabel';
+  }
+
+  @override
+  String chatV2_channelHeadingNull(num memberCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      memberCount,
+      locale: localeName,
+      other: '$memberCount members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatV2_communityCommunityChatNeutralTitle =>
+      'Community group chat';
+
+  @override
+  String get chatV2_communityCommunityChatOpenProfileLabel => 'Community info';
+
+  @override
+  String get chatV2_communityCommunityChatOpenSearchLabel =>
+      'Search this conversation';
+
+  @override
+  String get chatV2_communityCommunityChatOpenVoiceLabel => 'Join voice room';
+
+  @override
+  String get chatV2_communityCommunityChatPersonaSegment =>
+      'Syncing your display name';
+
+  @override
+  String chatV2_communityCommunityChatSyncingBody(
+    Object? communicationUnavailableReason,
+  ) {
+    return '${communicationUnavailableReason}LOOP has recorded your membership; the provider hasn\'t caught up yet. Retry later; you don\'t need to rejoin the community.';
+  }
+
+  @override
+  String get chatV2_communityCommunityChatSyncingRetryLabel => 'Check again';
+
+  @override
+  String get chatV2_communityCommunityChatSyncingTitle => 'Syncing chat access';
+
+  @override
+  String chatV2_communityCommunityOnlineCountObserved(Object? count) {
+    return '$count online';
+  }
+
+  @override
+  String get chatV2_communityEmptyMessage => 'Community not found';
+
+  @override
+  String get chatV2_communityEmptyReason =>
+      'It may have been removed or isn\'t visible to this account.';
+
+  @override
+  String get chatV2_communityMessage => 'Missing community ID';
+
+  @override
+  String get chatV2_communityMessage2 => 'Community chat unavailable';
+
+  @override
+  String get chatV2_communityMessage3 => 'Official group unavailable';
+
+  @override
+  String get chatV2_communityReason =>
+      'Enter from the community list or community page; this page won\'t guess which community\'s official group to open.';
+
+  @override
+  String get chatV2_communityReason2 =>
+      'Capabilities haven\'t loaded yet; this page doesn\'t request any channel.';
+
+  @override
+  String chatV2_communityS(Object? alias) {
+    return 'You appear as $alias in this community';
+  }
+
+  @override
+  String chatV2_communitySwitch(Object? communityCountLabel) {
+    return '$communityCountLabel members';
+  }
+
+  @override
+  String get chatV2_conversationLabelLoopCommunityConversationNeutralLabel =>
+      'Community official group';
+
+  @override
+  String chatV2_conversationLabelNull(num memberCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      memberCount,
+      locale: localeName,
+      other: '$memberCount members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatV2_directMessageCaption =>
+      'Direct messages show minimal identity by default; asset and signature requests are labelled separately.';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredMessage =>
+      'Message request sent. The conversation appears here once they accept.';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredMessage2 =>
+      'Direct messages need both of you to be friends, and the other person mustn\'t have turned off direct messages in Privacy Center. Send a message request first; the conversation opens once they accept. This doesn\'t mean the account exists.';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredTitle =>
+      'Can\'t message directly yet';
+
+  @override
+  String get chatV2_directMessageDmMessageRequestFailedTitle =>
+      'Message request not sent';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredDetail =>
+      'This request was received and needs manual handling to finish. There\'s no retry here: resubmitting opens a second action. Contact support, then come back to this conversation.';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredMessage =>
+      'Needs manual handling';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredNoticeBody =>
+      'This request is recorded. Sending it again won\'t be faster; it only adds another pending record.';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredNoticeTitle =>
+      'Don\'t resubmit';
+
+  @override
+  String get chatV2_directMessageDmSendMessageRequestLabel =>
+      'Send message request';
+
+  @override
+  String get chatV2_directMessageDmSendMessageRequestLabel2 =>
+      'Resend message request';
+
+  @override
+  String get chatV2_directMessageEmptyMessage =>
+      'This direct message isn\'t open yet';
+
+  @override
+  String get chatV2_directMessageEmptyReason =>
+      'This conversation can\'t be opened right now.';
+
+  @override
+  String get chatV2_directMessageHeading => 'One-on-one direct message';
+
+  @override
+  String chatV2_directMessageHeading2(Object? displayName) {
+    return 'Direct message with $displayName';
+  }
+
+  @override
+  String get chatV2_directMessageMessage => 'Direct messages unavailable';
+
+  @override
+  String get chatV2_directMessageMessage2 => 'Missing conversation ID';
+
+  @override
+  String get chatV2_directMessageMessage3 => 'Message request sent';
+
+  @override
+  String get chatV2_directMessageNotFound =>
+      'They aren\'t discoverable, or this account doesn\'t exist. The message request wasn\'t sent.';
+
+  @override
+  String get chatV2_directMessageReason =>
+      'Enter from Following, Message requests or a public profile; this page won\'t guess whose direct message to open.';
+
+  @override
+  String get chatV2_directMessageStamp => 'Private';
+
+  @override
+  String get chatV2_forwardScreensBody =>
+      'Selected messages are sent as new messages labelled with their source conversation. Deleted or empty messages are skipped.';
+
+  @override
+  String chatV2_forwardScreensCaption(Object? chatForwardSelectionLimit) {
+    return 'Forward up to $chatForwardSelectionLimit messages at a time, only to conversations you\'ve joined. Deleted or empty messages are skipped and counted.';
+  }
+
+  @override
+  String chatV2_forwardScreensCaption2(Object? chatMergeAnonymousLabel) {
+    return 'The merged preview only shows \"$chatMergeAnonymousLabel\", time and text, with no nickname, LOOP ID or wallet address.';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatForwardErrorReason =>
+      'Couldn\'t load this conversation\'s messages and targets; nothing was forwarded.';
+
+  @override
+  String get chatV2_forwardScreensChatForwardMissingSourceDetail =>
+      'Enter Forward from a conversation; this page won\'t guess which conversation to forward from.';
+
+  @override
+  String get chatV2_forwardScreensChatForwardMissingSourceMessage =>
+      'Source conversation not found';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoMessagesMessage =>
+      'Only text messages synced to this device can be forwarded.';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoMessagesTitle =>
+      'No messages to forward in this conversation';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoTargetsMessage =>
+      'Forward targets must be conversations you\'ve joined.';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoTargetsTitle =>
+      'No target conversations';
+
+  @override
+  String get chatV2_forwardScreensChatForwardOpenMergeLabel =>
+      'Preview merged image';
+
+  @override
+  String chatV2_forwardScreensChatForwardScreenSubtitle(Object? selectedCount) {
+    return '$selectedCount selected · Choose a conversation';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatForwardScreenTitle => 'Forward messages';
+
+  @override
+  String get chatV2_forwardScreensChatMergeAnonymousLabel => 'Anonymous member';
+
+  @override
+  String get chatV2_forwardScreensChatMergeBackLabel => 'Back to chat';
+
+  @override
+  String chatV2_forwardScreensChatMergeEmptyMessage(
+    Object? chatMergeSelectionLimit,
+  ) {
+    return 'Go back to Forward and pick up to $chatMergeSelectionLimit messages to merge.';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatMergeEmptyTitle => 'No messages selected';
+
+  @override
+  String get chatV2_forwardScreensChatMergeExportLabel => 'Create image';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle =>
+      'Show sender usernames';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle2 =>
+      'Anonymous by default';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenTitle =>
+      'Merged image preview';
+
+  @override
+  String chatV2_forwardScreensChatMergeTruncatedBody(
+    Object? chatMergeSelectionLimit,
+  ) {
+    return 'Merge up to $chatMergeSelectionLimit messages at a time; the rest won\'t appear in the preview.';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatMergeTruncatedTitle => 'Truncated';
+
+  @override
+  String get chatV2_forwardScreensEncode => 'Selected conversation';
+
+  @override
+  String get chatV2_forwardScreensEncode2 => 'Community signal summary';
+
+  @override
+  String get chatV2_forwardScreensHeading => '0 items';
+
+  @override
+  String get chatV2_forwardScreensKicker => 'Selected messages';
+
+  @override
+  String get chatV2_forwardScreensLoopBadge => 'Selected';
+
+  @override
+  String chatV2_forwardScreensLoopFolioPrimary(Object? count, Object? source) {
+    return '$source · $count';
+  }
+
+  @override
+  String chatV2_forwardScreensLoopFolioPrimary2(Object? count) {
+    return '$count selected';
+  }
+
+  @override
+  String get chatV2_forwardScreensLoopLabel => 'Select messages';
+
+  @override
+  String chatV2_forwardScreensLoopLabel2(Object? chatForwardTargetPageSize) {
+    return 'Send to · Last $chatForwardTargetPageSize conversations';
+  }
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState => 'Load messages';
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState2 => 'Choose target';
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState3 => 'Forward';
+
+  @override
+  String chatV2_forwardScreensMessage(Object? chatForwardSelectionLimit) {
+    return 'Select up to $chatForwardSelectionLimit at a time';
+  }
+
+  @override
+  String get chatV2_forwardScreensMessage2 => 'Nothing forwarded';
+
+  @override
+  String chatV2_forwardScreensMessage3(Object? sent) {
+    return 'Forwarded $sent';
+  }
+
+  @override
+  String chatV2_forwardScreensMessage4(Object? sent, Object? skipped) {
+    return 'Forwarded $sent, skipped $skipped';
+  }
+
+  @override
+  String chatV2_forwardScreensS(Object? sourceLabel) {
+    return '$sourceLabel · Selected conversation';
+  }
+
+  @override
+  String chatV2_forwardScreensStamp(Object? selectedCount) {
+    return 'Selected $selectedCount';
+  }
+
+  @override
+  String get chatV2_forwardScreensStamp2 => 'Anonymous';
+
+  @override
+  String get chatV2_forwardScreensSubtitle =>
+      'Deleted or empty; skipped when forwarding.';
+
+  @override
+  String get chatV2_forwardScreensText => 'Output';
+
+  @override
+  String get chatV2_forwardScreensText2 =>
+      'Wallet addresses, nicknames and internal IDs don\'t appear in the image, and the image isn\'t uploaded.';
+
+  @override
+  String get chatV2_forwardScreensTitle => 'This message can\'t be forwarded';
+
+  @override
+  String get chatV2_forwardScreensTitle2 => 'Forward to this conversation?';
+
+  @override
+  String get chatV2_forwardTargetSheetBarrierLabel => 'Close forward';
+
+  @override
+  String get chatV2_forwardTargetSheetChatForwardOutcomeMessage => 'Forwarded';
+
+  @override
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage2(Object? skipped) {
+    return 'Skipped $skipped';
+  }
+
+  @override
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage3(
+    Object? unavailable,
+  ) {
+    return '$unavailable deleted or not on this device; not forwarded';
+  }
+
+  @override
+  String chatV2_forwardTargetSheetContent(Object? chatForwardTargetPageSize) {
+    return 'Last $chatForwardTargetPageSize joined conversations · Forwarded messages show their source';
+  }
+
+  @override
+  String get chatV2_forwardTargetSheetForwardTargetSheetErrorReason =>
+      'Couldn\'t load conversations to forward to; nothing was forwarded.';
+
+  @override
+  String get chatV2_forwardTargetSheetLoopOfflineState => 'Load conversations';
+
+  @override
+  String get chatV2_forwardTargetSheetLoopSheetHeading => 'Forward to';
+
+  @override
+  String chatV2_forwardTargetSheetS(Object? count) {
+    return 'Forward $count one by one to';
+  }
+
+  @override
+  String get chatV2_groupScreensBarrierLabel => 'Close group name editor';
+
+  @override
+  String get chatV2_groupScreensBody =>
+      'You won\'t get messages from this group after leaving. The group creator can\'t leave.';
+
+  @override
+  String get chatV2_groupScreensCaption =>
+      'Members, notifications and Leave are ordered from low to high risk. Only confirmed info is shown here.';
+
+  @override
+  String get chatV2_groupScreensErrorText =>
+      'Group name must be 1–40 characters with no control characters';
+
+  @override
+  String get chatV2_groupScreensGroupInfoCapabilityUnavailableDetail =>
+      'Capabilities haven\'t loaded yet; this page doesn\'t request any group resource.';
+
+  @override
+  String get chatV2_groupScreensGroupInfoMembersUnavailableLabel =>
+      'Members and member management';
+
+  @override
+  String get chatV2_groupScreensGroupInfoMissingCidDetail =>
+      'Enter from a group chat; this page won\'t guess which group\'s info to open.';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameSubtitle => 'Loading group name';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameSubtitle2 =>
+      'Couldn\'t load group name';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTitle => 'Group name';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption => 'Edit';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption2 => 'Owner only';
+
+  @override
+  String get chatV2_groupScreensGroupInfoResolveFailedReason =>
+      'This group\'s info isn\'t confirmed yet, so you can\'t leave; no change was submitted.';
+
+  @override
+  String get chatV2_groupScreensGroupInfoSettingsUnavailableLabel =>
+      'Notifications and pinned conversation';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateEmptyMessage =>
+      'This group wasn\'t found, or you\'re no longer a member. This doesn\'t mean leaving failed.';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateEmptyTitle =>
+      'No group membership to leave';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateUnavailableDetail =>
+      'The group membership service isn\'t available right now; no change was submitted.';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateUnavailableMessage =>
+      'Leave isn\'t available right now';
+
+  @override
+  String get chatV2_groupScreensGroupOpenInfoLabel => 'Group info';
+
+  @override
+  String get chatV2_groupScreensGroupScopeNoteText =>
+      'Regular groups have no community token, no Mining Weight and no Community AI. Communities with tokens are under Community.';
+
+  @override
+  String get chatV2_groupScreensGroupScopeNoteTitle => 'Groups vs. communities';
+
+  @override
+  String get chatV2_groupScreensKicker => 'Group profile';
+
+  @override
+  String chatV2_groupScreensLabelText(Object? groupNameMaximumRunes) {
+    return 'Group name (1–$groupNameMaximumRunes characters)';
+  }
+
+  @override
+  String get chatV2_groupScreensLoopOfflineState => 'Leave group chat';
+
+  @override
+  String get chatV2_groupScreensLoopSheetHeading => 'Edit group name';
+
+  @override
+  String get chatV2_groupScreensMessage => 'Group chat unavailable';
+
+  @override
+  String get chatV2_groupScreensMessage2 => 'Missing group chat ID';
+
+  @override
+  String chatV2_groupScreensMessage3(Object? name) {
+    return 'Group name changed to \"$name\"';
+  }
+
+  @override
+  String get chatV2_groupScreensMessage4 => 'Left group chat';
+
+  @override
+  String get chatV2_groupScreensNotFound =>
+      'The group doesn\'t exist or you\'re no longer in it.';
+
+  @override
+  String get chatV2_groupScreensPermissionDenied =>
+      'Only the group owner can change the group name; nothing was changed.';
+
+  @override
+  String get chatV2_groupScreensReason =>
+      'Enter from the conversation list or group info; this page won\'t guess which group to open.';
+
+  @override
+  String get chatV2_groupScreensTitle => 'Leave this group chat?';
+
+  @override
+  String get chatV2_groupScreensUnavailable =>
+      'Renaming isn\'t available right now; the group name wasn\'t changed.';
+
+  @override
+  String get chatV2_groupScreensValidationFailed =>
+      'Group name must be 1–40 characters with no control characters.';
+
+  @override
+  String get chatV2_mergeExportDismissed =>
+      'Image created, but no share destination was chosen';
+
+  @override
+  String get chatV2_mergeExportFailed =>
+      'Couldn\'t create the image; nothing left this device';
+
+  @override
+  String get chatV2_mergeExportShared =>
+      'Image created. Choose where to share it';
+
+  @override
+  String get chatV2_mergeExportUnavailable =>
+      'System sharing isn\'t available in this run; no image was created';
+
+  @override
+  String get chatV2_messageSelectionBody =>
+      'Everyone in the conversation will see \"Message deleted\". This can\'t be undone.';
+
+  @override
+  String get chatV2_messageSelectionLabel => 'Message selected';
+
+  @override
+  String get chatV2_messageSelectionLabel2 => 'Select this message';
+
+  @override
+  String get chatV2_messageSelectionLoopMessageForwardActions => 'Select';
+
+  @override
+  String get chatV2_messageSelectionLoopSelectionForwardEachLabel =>
+      'Forward one by one';
+
+  @override
+  String get chatV2_messageSelectionLoopSelectionMergeLabel => 'Forward as one';
+
+  @override
+  String chatV2_messageSelectionLoopSelectionTopbarSubtitle(
+    Object? loopMessageSelectionLimit,
+  ) {
+    return 'Up to $loopMessageSelectionLimit';
+  }
+
+  @override
+  String chatV2_messageSelectionLoopSelectionTopbarTitle(Object? count) {
+    return '$count selected';
+  }
+
+  @override
+  String chatV2_messageSelectionMessage(Object? loopMessageSelectionLimit) {
+    return 'Select up to $loopMessageSelectionLimit at a time';
+  }
+
+  @override
+  String chatV2_messageSelectionMessage2(Object? unavailable) {
+    return '$unavailable deleted or not on this device; left out of the image';
+  }
+
+  @override
+  String chatV2_messageSelectionShow(Object? deleted) {
+    return 'Deleted $deleted';
+  }
+
+  @override
+  String chatV2_messageSelectionShow2(Object? failed) {
+    return '$failed couldn\'t be deleted';
+  }
+
+  @override
+  String chatV2_messageSelectionShow3(Object? unavailable) {
+    return '$unavailable no longer on this device; skipped';
+  }
+
+  @override
+  String chatV2_messageSelectionTitle(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete these $count messages?',
+      one: 'Delete this message?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatV2_modelsHost => 'Host';
+
+  @override
+  String get chatV2_modelsInviteSpeaker => 'Invite to speak';
+
+  @override
+  String get chatV2_modelsListener => 'Listener';
+
+  @override
+  String get chatV2_modelsRemoveSpeaker => 'Remove from stage';
+
+  @override
+  String get chatV2_modelsSpeaker => 'Speaker';
+
+  @override
+  String get chatV2_modelsSwitch =>
+      'Only members with anonymous mode on show as anonymous; discoverability doesn\'t affect this row.';
+
+  @override
+  String get chatV2_modelsSwitch10 =>
+      'The voice room is still being verified; this page won\'t start any voice connection until it passes.';
+
+  @override
+  String get chatV2_modelsSwitch11 =>
+      'Couldn\'t load the online count, so no number is shown.';
+
+  @override
+  String get chatV2_modelsSwitch12 =>
+      'Listening isn\'t open in this room yet. Refresh, or ask the host to reopen it.';
+
+  @override
+  String get chatV2_modelsSwitch13 =>
+      'This room hasn\'t confirmed listening is open, so you may not hear anything. Refresh, or ask the host to reopen it.';
+
+  @override
+  String get chatV2_modelsSwitch14 =>
+      'This voice room isn\'t set up on the provider yet, so you can\'t join.';
+
+  @override
+  String get chatV2_modelsSwitch15 =>
+      'Your raised hand is recorded; the host may see it a bit later.';
+
+  @override
+  String get chatV2_modelsSwitch16 =>
+      'The provider hasn\'t confirmed this mute yet.';
+
+  @override
+  String get chatV2_modelsSwitch17 =>
+      'Community AI isn\'t available yet, so this page is unavailable.';
+
+  @override
+  String get chatV2_modelsSwitch2 =>
+      'This community doesn\'t have an official group channel yet.';
+
+  @override
+  String get chatV2_modelsSwitch3 =>
+      'Your channel membership is syncing; you can join shortly.';
+
+  @override
+  String get chatV2_modelsSwitch4 =>
+      'The official group hit the provider\'s member limit, so you can\'t join right now. Your LOOP community membership isn\'t affected.';
+
+  @override
+  String get chatV2_modelsSwitch5 =>
+      'The official group failed to create or sync and needs ops to fix it before you can join.';
+
+  @override
+  String get chatV2_modelsSwitch6 =>
+      'Join this community first to enter its official group.';
+
+  @override
+  String get chatV2_modelsSwitch7 =>
+      'Chat isn\'t available right now. Try again later.';
+
+  @override
+  String get chatV2_modelsSwitch8 =>
+      'No live voice room in this community right now.';
+
+  @override
+  String get chatV2_modelsSwitch9 =>
+      'Chat isn\'t available in this environment yet.';
+
+  @override
+  String get chatV2_modelsUnmuteSelf => 'Unmute me';
+
+  @override
+  String get chatV2_searchChatSearchEmptyMessage =>
+      'Try another keyword or a wider scope.';
+
+  @override
+  String get chatV2_searchChatSearchEmptyTitle => 'No matching messages';
+
+  @override
+  String get chatV2_searchChatSearchErrorReason =>
+      'This search didn\'t finish; no results are shown.';
+
+  @override
+  String get chatV2_searchChatSearchIdleMessage =>
+      'Enter at least 2 characters. Results only come from conversations you\'ve joined.';
+
+  @override
+  String get chatV2_searchChatSearchIdleTitle => 'Enter a keyword to search';
+
+  @override
+  String get chatV2_searchChatSearchNotConnectedDetail =>
+      'Chat search isn\'t available right now; this page made no request.';
+
+  @override
+  String get chatV2_searchChatSearchNotConnectedMessage =>
+      'Chat search unavailable';
+
+  @override
+  String chatV2_searchChatSearchScreenSubtitle(Object? label) {
+    return '$label · Not searched yet';
+  }
+
+  @override
+  String chatV2_searchChatSearchScreenSubtitle2(num hits, Object? label) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hits,
+      locale: localeName,
+      other: '$hits results',
+      one: '1 result',
+    );
+    return '$label · $_temp0';
+  }
+
+  @override
+  String get chatV2_searchChatSearchScreenTitle => 'Search messages';
+
+  @override
+  String get chatV2_searchCurrentConversation => 'This conversation';
+
+  @override
+  String get chatV2_searchLoopOfflineState => 'Search messages';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopChannelPinnedUnavailableTitle =>
+      'Pinned notice';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopChatComposerHint =>
+      'Type or paste CA';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock =>
+      'Open conversation';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2 =>
+      'Send message';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage =>
+      'This conversation link isn\'t a channel address LOOP supports; no connection was made.';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage2 => 'Restoring chat session…';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage3 =>
+      'Device offline. Chat authorization wasn\'t restored and no message was sent.';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage4 =>
+      'Couldn\'t restore chat authorization; no message action was taken.';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage5 =>
+      'Confirming this channel and your membership…';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage6 =>
+      'Device offline. Channel membership wasn\'t confirmed and no message was sent.';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage7 => 'Conversation unavailable';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotConnected =>
+      'Couldn\'t reach the chat service. Check your network and retry.';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotConnectedMessage =>
+      'This conversation can\'t be opened right now. Try again later.';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotOpened =>
+      'Couldn\'t open this channel\'s conversation. Try again later.';
+
+  @override
+  String get chatV2_streamChannelSurfaceRefused =>
+      'You\'re not a member of this group yet; LOOP didn\'t open any conversation.';
+
+  @override
+  String get chatV2_streamChannelSurfaceSwitch =>
+      'This channel hasn\'t synced to your account yet; LOOP didn\'t open any conversation.';
+
+  @override
+  String get chatV2_voiceRoomQueueInvited => 'Invited';
+
+  @override
+  String get chatV2_voiceRoomQueueWaiting => 'Waiting for invite';
+
+  @override
+  String chatV2_voiceRoomRosterListenersCount(Object? count) {
+    return 'Listeners $count';
+  }
+
+  @override
+  String get chatV2_voiceRoomRosterListenersEmpty => 'No listeners right now';
+
+  @override
+  String chatV2_voiceRoomRosterSpeakersCount(Object? count) {
+    return 'Speakers $count';
+  }
+
+  @override
+  String get chatV2_voiceRoomRosterSpeakersEmpty => 'No speakers right now';
+
+  @override
+  String get chatV2_voiceRoomScreensBody =>
+      'Leaving exits this call and cancels your raised hand; to keep listening you\'ll need to rejoin.';
+
+  @override
+  String get chatV2_voiceRoomScreensBody2 =>
+      'Ending disconnects everyone in the room right away; the room can\'t be entered again and the hand-raise queue is discarded. Hosts don\'t have Leave: the host decides whether the room continues. To step away from this page, use Back; the room collapses to the top and you can return anytime. The community can start a new one.';
+
+  @override
+  String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand =>
+      'The server sends the actions available for each row; only the ones you can actually use are listed.';
+
+  @override
+  String get chatV2_voiceRoomScreensConfirmLabel => 'Leave';
+
+  @override
+  String get chatV2_voiceRoomScreensConfirmLabel2 => 'End room';
+
+  @override
+  String chatV2_voiceRoomScreensConnecting(Object? part) {
+    return '$part · Connecting voice';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensDetail =>
+      'No voice connection is started here. Refresh, or ask the host to reopen it.';
+
+  @override
+  String chatV2_voiceRoomScreensDisconnected(Object? part) {
+    return '$part · Voice disconnected';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensEmpty => 'No voice room right now';
+
+  @override
+  String get chatV2_voiceRoomScreensEmpty2 =>
+      'This community has no live voice room right now.';
+
+  @override
+  String get chatV2_voiceRoomScreensEmptyMessage =>
+      'No live voice room right now';
+
+  @override
+  String chatV2_voiceRoomScreensInviteSpeaker(Object? name) {
+    return 'Target: $name. Once invited, they become a speaker and can talk in this call.';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensKicker => 'Voice live';
+
+  @override
+  String get chatV2_voiceRoomScreensKicker2 => 'Voice lobby';
+
+  @override
+  String get chatV2_voiceRoomScreensLabel => 'Lower hand';
+
+  @override
+  String get chatV2_voiceRoomScreensLabel2 => 'Raise hand';
+
+  @override
+  String get chatV2_voiceRoomScreensLoading => 'Loading voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensLoading2 =>
+      'Loading this community\'s voice room.';
+
+  @override
+  String get chatV2_voiceRoomScreensLoopBadge => 'Speaking';
+
+  @override
+  String get chatV2_voiceRoomScreensLoopBadge2 => 'Hand raised';
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel(Object? handRaises) {
+    return 'Hand-raise queue $handRaises';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensLoopLabel2 => 'Host controls';
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel3(Object? speakerCount) {
+    return 'Speakers $speakerCount';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel4(Object? listening) {
+    return 'Listeners $listening';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensLoopTopbarBackLabel =>
+      'Minimize voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage => 'Couldn\'t open share';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage10 =>
+      'LOOP has no speakers recorded for this room yet. The host isn\'t in this list.';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage11 =>
+      'LOOP has no listeners recorded for this room yet. The host isn\'t in this list.';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage2 =>
+      'Listening isn\'t open in this room yet';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage3 => 'Left stage, back to listening';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage4 =>
+      'Leaving stage isn\'t available right now';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage5 =>
+      'Room ended · The host ended this voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage6 => 'Left voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage7 =>
+      'Left voice room; voice cleanup wasn\'t confirmed';
+
+  @override
+  String chatV2_voiceRoomScreensMessage8(Object? communityFailureReason) {
+    return 'Mic is on, but the mute flag on the list couldn\'t be cleared: $communityFailureReason';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensMessage9 =>
+      'Hand raised, waiting for the host to invite you';
+
+  @override
+  String chatV2_voiceRoomScreensMute(Object? name) {
+    return 'Target: $name. Mute is a LOOP-side intent; their device may still unmute itself. You can undo it on this row later.';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensMute2 => 'Mute requested';
+
+  @override
+  String chatV2_voiceRoomScreensName(Object? named) {
+    return 'Me · $named';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensPart(Object? count, Object? part) {
+    return '$part · $count joined';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensReconnecting(Object? part) {
+    return '$part · Voice reconnecting';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensRemoveSpeaker(Object? name) {
+    return 'Target: $name. After removal they go back to listening and stay in the room.';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensRemoveSpeaker2 => 'Removed from stage';
+
+  @override
+  String get chatV2_voiceRoomScreensRun => 'Mute all requested';
+
+  @override
+  String get chatV2_voiceRoomScreensRun2 => 'Invited to speak';
+
+  @override
+  String get chatV2_voiceRoomScreensRun3 => 'Joined, connecting voice';
+
+  @override
+  String get chatV2_voiceRoomScreensRun4 => 'Hand lowered';
+
+  @override
+  String get chatV2_voiceRoomScreensRun5 => 'Room ended';
+
+  @override
+  String get chatV2_voiceRoomScreensS => 'Hand-raise queue';
+
+  @override
+  String get chatV2_voiceRoomScreensS2 =>
+      'Room ended; voice cleanup wasn\'t confirmed';
+
+  @override
+  String chatV2_voiceRoomScreensS3(Object? count, Object? part) {
+    return '$part · $count in call';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensS4(Object? inRoom) {
+    return '$inRoom in the room';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle => 'Tap this row to unmute';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle2 => 'Muted by host in LOOP';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle3 => 'Can speak';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle4 =>
+      'Waiting for the host to invite';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle5 => 'Listening';
+
+  @override
+  String chatV2_voiceRoomScreensSubtitle6(Object? entries, Object? entries2) {
+    return '#$entries · $entries2';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle7 => 'Invite to speak';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch =>
+      'The voice room is recorded, but the call isn\'t set up yet. Tap Start voice room again to continue.';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch10 =>
+      'Back collapses the room to the top; tap it to return anytime.';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch11 =>
+      'Check the host, online count and recording notice before joining.';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch2 =>
+      'The voice room is set up but listening isn\'t open yet. Tap Start voice room again to retry.';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch3 =>
+      'The voice room isn\'t ready, so no one can join yet. Tap Start voice room again to retry.';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch4 =>
+      'LOOP submitted this change; the provider hasn\'t confirmed it yet. Refresh later for the latest status.';
+
+  @override
+  String chatV2_voiceRoomScreensSwitch5(Object? alias) {
+    return 'Me · $alias';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensSwitch6(Object? part) {
+    return '$part · Counting';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch7 =>
+      'Couldn\'t load voice room status';
+
+  @override
+  String chatV2_voiceRoomScreensSwitch8(Object? speaking) {
+    return '$speaking on mic';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch9 =>
+      'Couldn\'t load the voice room status this time; you can retry below.';
+
+  @override
+  String get chatV2_voiceRoomScreensText =>
+      'Leaving exits this call and cancels your raised hand.';
+
+  @override
+  String get chatV2_voiceRoomScreensTitle => 'Leave voice room?';
+
+  @override
+  String get chatV2_voiceRoomScreensTitle2 => 'End voice room?';
+
+  @override
+  String chatV2_voiceRoomScreensUnmute(Object? name) {
+    return 'Target: $name. This only withdraws the LOOP-side mute intent and won\'t turn on their mic; only their device can do that.';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensUnmute2 => 'Mute intent withdrawn';
+
+  @override
+  String get chatV2_voiceRoomScreensUnmuteSelf =>
+      'This is your own speaker row. It only clears the LOOP-side mute flag and won\'t turn on your mic; unmute yourself in the call.';
+
+  @override
+  String get chatV2_voiceRoomScreensUnmuteSelf2 => 'My mute flag cleared';
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomBannerTitle(Object? communityName) {
+    return 'In voice room · $communityName';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomLiveLine(
+    Object? inRoom,
+    Object? liveVoiceRoomElapsedLabel,
+  ) {
+    return '$inRoom listening · $liveVoiceRoomElapsedLabel';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomTopbarLine(
+    Object? listening,
+    Object? speaking,
+  ) {
+    return 'Live · Speaking $speaking · Listeners $listening';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel =>
+      'Leaving…';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel2 =>
+      'Confirm leave';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel => 'Reconnect';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel2 =>
+      'Return to room';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail =>
+      'This device couldn\'t load the voice room\'s availability. Check your network and retry.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail2 =>
+      'Couldn\'t load the voice room\'s availability yet. Try again later.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEndedBackLabel =>
+      'Back to community';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEndedMessage =>
+      'The host ended this voice room.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage =>
+      'Voice room unavailable';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail =>
+      'Couldn\'t load End room this time. Try again later. Back collapses the room to the top.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage =>
+      'Can\'t end the room right now';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel =>
+      'Room info, one item unconfirmed by the provider';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel2 => 'Room info';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyMessage =>
+      'Raised hands are listed here in order.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyTitle =>
+      'No raised hands to invite';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomJoinLabel => 'Join voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel =>
+      'Refreshing…';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableDetail =>
+      'This voice room can\'t be opened right now; no connection was made.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableMessage =>
+      'Voice connection unavailable';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMemberSheetBarrierLabel =>
+      'Close member actions';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMissingIdDetail =>
+      'Enter from a community page or its official group; this page won\'t guess which community\'s voice room to open.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMuteAllLabel => 'Mute all';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableDetail =>
+      'The provider hasn\'t confirmed this room is ready, so joining would be refused. Refresh and try again later.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableMessage =>
+      'This room can\'t be joined yet';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyMessage =>
+      'No one is waiting. Raised hands are listed here in order.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyTitle =>
+      'Hand-raise queue is empty';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyMessage =>
+      'Only the host can see the full queue. Your position shows here after you raise your hand.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyTitle =>
+      'You haven\'t raised your hand';
+
+  @override
+  String chatV2_voiceRoomScreensVoiceroomQueueSelfSubtitle(Object? sequence) {
+    return '#$sequence · Waiting for invite';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomShareLabel => 'Share voice room';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle =>
+      'Host · Speaking';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle2 =>
+      'Host · Mic on';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableDetail =>
+      'Only the host can change speakers. To leave the stage, ask the host or leave the room.';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableMessage =>
+      'Leaving stage yourself isn\'t available right now';
+
+  @override
+  String chatV2_voiceRoomShareLine(Object? communityName, Object? roomTitle) {
+    return 'Join the \"$communityName\" voice room on LOOP: $roomTitle';
+  }
+
+  @override
+  String chatV2_voiceRoomShareVoiceRoomTitle(Object? communityName) {
+    return '$communityName voice room';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageBarrierLabel => 'Close go-live sheet';
+
+  @override
+  String get chatV2_voiceRoomStageBuild => 'Speaking';
+
+  @override
+  String get chatV2_voiceRoomStageBuild2 => 'Mic on';
+
+  @override
+  String get chatV2_voiceRoomStageBuild3 =>
+      'The room is visible to community members right away and anyone can listen in. As host, you or other admins invite speakers, mute all and end the room; the mic is off by default.';
+
+  @override
+  String get chatV2_voiceRoomStageHintText =>
+      'Leave blank to show \"Community name voice room\"';
+
+  @override
+  String chatV2_voiceRoomStageLabel(num count, Object? onTap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more listeners',
+      one: '1 more listener',
+    );
+    return '$_temp0$onTap';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageLabel2 => 'Go live';
+
+  @override
+  String get chatV2_voiceRoomStageLabel3 => 'People';
+
+  @override
+  String get chatV2_voiceRoomStageLabel4 => 'My role';
+
+  @override
+  String get chatV2_voiceRoomStageLabelText => 'Room title (optional)';
+
+  @override
+  String get chatV2_voiceRoomStageLoopOfflineState => 'View speakers';
+
+  @override
+  String get chatV2_voiceRoomStageLoopOfflineState2 => 'View listeners';
+
+  @override
+  String chatV2_voiceRoomStageSemanticLabel(Object? badge, Object? label) {
+    return '$label, $badge hands raised';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageValue => 'Not joined';
+
+  @override
+  String get chatV2_voiceRoomStageViewFullList => ', view full list';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomBarMicLabel => 'Not connected';
+
+  @override
+  String chatV2_voiceRoomStageVoiceroomHostLabel(
+    Object? caption,
+    Object? name,
+  ) {
+    return 'Host $name$caption';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomHostTag => 'Host';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomInfoSheetBarrierLabel =>
+      'Close room info';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomInviteOpenLabel => 'Invite to speak';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersEmptyTitle =>
+      'No listeners yet';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersErrorTitle =>
+      'Couldn\'t load listeners';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersPermissionTitle =>
+      'No permission to view listeners';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage =>
+      'Listener list unavailable right now';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomProviderUnconfirmedTitle =>
+      'Unconfirmed by provider';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersEmptyTitle =>
+      'No one on stage yet';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle =>
+      'Couldn\'t load speakers';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle =>
+      'No permission to view speakers';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage =>
+      'Speaker list unavailable right now';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStartPending =>
+      'The last go-live didn\'t finish. Going live again finishes it and keeps the title you entered.';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStartSubmitLabel => 'Going live…';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStepDownLabel => 'Leave stage';
+
+  @override
+  String get chatWidgets_componentsBuild => 'Shared at 14:12 · Demo data';
+
+  @override
+  String get chatWidgets_componentsChange => '+8.4% · Demo data';
+
+  @override
+  String get chatWidgets_componentsChatSpotSnapshotSemanticsLabel =>
+      'ETH Spot market snapshot · Development preview';
+
+  @override
+  String get chatWidgets_componentsFact => 'LP unlocks in 3 days';
+
+  @override
+  String get chatWidgets_componentsFact2 => 'Top 10 holders own 61%';
+
+  @override
+  String get chatWidgets_componentsLabel => 'Voice';
+
+  @override
+  String get chatWidgets_componentsLoopTokenCardModel =>
+      'Development preview facts · Not a provider response · 14:06 UTC';
+
+  @override
+  String get chatWidgets_componentsLoopTokenCardModel2 =>
+      'Demo data can\'t trigger trades or watchlist changes.';
+
+  @override
+  String get chatWidgets_componentsSource => 'Development preview facts';
+
+  @override
+  String get chat_inboxRowActionsChatInboxRowSheetBarrierLabel =>
+      'Close conversation actions';
+
+  @override
+  String get chat_inboxRowActionsMarkRead => 'Mark as read';
+
+  @override
+  String get chat_inboxRowActionsPin => 'Pin';
+
+  @override
+  String get chat_inboxRowActionsUnpin => 'Unpin';
+
+  @override
+  String get chat_previewPagesEyebrow => 'Shared in chat · Development preview';
+
+  @override
+  String get chat_previewPagesMessage =>
+      'Demo prices and facts aren\'t provider responses. In production, cards without fresh facts don\'t show price, Buy or Watch.';
+
+  @override
+  String get chat_previewPagesMessage2 =>
+      'Reference price, 24h change, and volume are labelled Demo data. Opening Market loads a separate current public Spot snapshot.';
+
+  @override
+  String get chat_previewPagesSubtitle =>
+      'Development preview: messages only store the asset ID; current price and facts are re-verified when shown.';
+
+  @override
+  String get chat_secondaryPagesLoopSectionLabel =>
+      'Preferences · Development preview';
+
+  @override
+  String get chat_secondaryPagesS =>
+      'Removed from Development preview only. No sender interaction occurred.';
+
+  @override
+  String get chat_secondaryPagesShowRequestNotice =>
+      'Marked accepted in Development preview and removed locally. No Stream conversation was created.';
+
+  @override
+  String get chat_secondaryPagesShowRequestNotice2 =>
+      'Removed from Development preview. No report was submitted.';
+
+  @override
+  String get chat_secondaryPagesTitle =>
+      'Development Preview only · Development preview';
+
+  @override
+  String get chat_streamInboxBody =>
+      'The conversation is removed from the list and comes back when there\'s a new message. Chat history isn\'t cleared.';
+
+  @override
+  String chat_streamInboxChatVoiceRoomReturnEntrySemanticLabel(
+    Object? communityName,
+  ) {
+    return 'In voice room, $communityName, return to room';
+  }
+
+  @override
+  String chat_streamInboxChatVoiceRoomReturnEntryTitle(Object? communityName) {
+    return 'In voice room · $communityName';
+  }
+
+  @override
+  String get chat_streamInboxLabel => 'Loading conversations';
+
+  @override
+  String get chat_streamInboxMessage =>
+      'This build isn\'t connected to the chat service, so conversations won\'t show here.';
+
+  @override
+  String get chat_streamInboxMessage10 =>
+      'Before resolving a LOOP group, we need to confirm you\'re still a member of this group chat.';
+
+  @override
+  String get chat_streamInboxMessage11 =>
+      'LOOP is confirming you\'re a member of this group chat.';
+
+  @override
+  String get chat_streamInboxMessage12 =>
+      'Couldn\'t confirm your membership in this group chat. No group was resolved.';
+
+  @override
+  String get chat_streamInboxMessage13 =>
+      'LOOP is confirming this channel and your membership.';
+
+  @override
+  String get chat_streamInboxMessage14 =>
+      'Couldn\'t confirm your membership in this channel. No channel was created or opened.';
+
+  @override
+  String chat_streamInboxMessage15(Object? label) {
+    return '\"$label\" didn\'t finish. Try again later';
+  }
+
+  @override
+  String get chat_streamInboxMessage2 =>
+      'Couldn\'t restore the conversation. No message action was taken on this page.';
+
+  @override
+  String get chat_streamInboxMessage3 =>
+      'The chat service isn\'t connected yet. Try again later.';
+
+  @override
+  String get chat_streamInboxMessage4 =>
+      'This link doesn\'t point to a conversation LOOP supports. No channel was opened.';
+
+  @override
+  String get chat_streamInboxMessage5 =>
+      'LOOP is restoring the server-authorized chat connection.';
+
+  @override
+  String get chat_streamInboxMessage6 =>
+      'Couldn\'t restore chat authorization. No conversation was opened.';
+
+  @override
+  String get chat_streamInboxMessage7 =>
+      'Opening this conversation needs a server-confirmed chat identity and a short-lived token.';
+
+  @override
+  String get chat_streamInboxMessage8 =>
+      'This link doesn\'t point to a group chat LOOP supports. No group was resolved.';
+
+  @override
+  String get chat_streamInboxMessage9 =>
+      'Couldn\'t restore chat authorization. No group was resolved.';
+
+  @override
+  String get chat_streamInboxPlaceholder => 'Search chats';
+
+  @override
+  String get chat_streamInboxStreamChatEmptyActionLabel => 'Find friends';
+
+  @override
+  String get chat_streamInboxStreamChatEmptyMessage => 'No conversations yet';
+
+  @override
+  String get chat_streamInboxStreamChatListErrorMessage =>
+      'Couldn\'t load the conversation list on this page. Local history wasn\'t deleted.';
+
+  @override
+  String get chat_streamInboxStreamChatListErrorTitle =>
+      'Couldn\'t load conversations';
+
+  @override
+  String get chat_streamInboxStreamChatUnavailableTitle =>
+      'Conversations not connected yet';
+
+  @override
+  String get chat_streamInboxTitle => 'Invalid conversation link';
+
+  @override
+  String get chat_streamInboxTitle10 => 'Conversation unavailable';
+
+  @override
+  String get chat_streamInboxTitle11 => 'Conversation actions';
+
+  @override
+  String get chat_streamInboxTitle12 => 'Delete this conversation?';
+
+  @override
+  String get chat_streamInboxTitle2 => 'Restoring conversation';
+
+  @override
+  String get chat_streamInboxTitle3 => 'Chat isn\'t available right now';
+
+  @override
+  String get chat_streamInboxTitle4 => 'Chat service not connected yet';
+
+  @override
+  String get chat_streamInboxTitle5 => 'Invalid group chat link';
+
+  @override
+  String get chat_streamInboxTitle6 => 'Group identity unavailable';
+
+  @override
+  String get chat_streamInboxTitle7 => 'Confirming group chat';
+
+  @override
+  String get chat_streamInboxTitle8 => 'Group chat unavailable';
+
+  @override
+  String get chat_streamInboxTitle9 => 'Opening conversation';
+
+  @override
+  String get chat_voiceRoomLabel => 'Host';
+
+  @override
+  String get chat_voiceRoomText => 'Mock seat';
+
+  @override
   String get common_about => 'Notes';
 
   @override
@@ -12078,6 +14894,604 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get shell_tabSquare => 'Square';
+
+  @override
+  String get socialPublicProfile_controllerAlreadyFriends =>
+      'You\'re already friends.';
+
+  @override
+  String get socialPublicProfile_controllerCommand => 'Friend request sent';
+
+  @override
+  String get socialPublicProfile_controllerCommand2 => 'Friend removed';
+
+  @override
+  String get socialPublicProfile_controllerCommand3 => 'Blocked';
+
+  @override
+  String get socialPublicProfile_controllerCooldown =>
+      'Recently declined. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerIncomingRequestPending =>
+      'They\'ve sent you a request. Handle it in Friend requests.';
+
+  @override
+  String get socialPublicProfile_controllerNotFound => 'User not found.';
+
+  @override
+  String get socialPublicProfile_controllerOutcomeUnknown =>
+      'Result not confirmed. Refresh to check; don\'t resubmit.';
+
+  @override
+  String get socialPublicProfile_controllerOutgoingRequestPending =>
+      'Request already sent, waiting for them.';
+
+  @override
+  String get socialPublicProfile_controllerPermissionDenied =>
+      'They don\'t accept friend requests.';
+
+  @override
+  String get socialPublicProfile_controllerProfileRequired =>
+      'Activate your LOOP ID first.';
+
+  @override
+  String get socialPublicProfile_controllerRateLimited =>
+      'Too many attempts. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerS => 'Unfollowed';
+
+  @override
+  String get socialPublicProfile_controllerS2 => 'Unblocked';
+
+  @override
+  String get socialPublicProfile_controllerSwitch =>
+      'Friend request not sent. Try again later.';
+
+  @override
+  String get socialPublicProfile_controllerUnavailable =>
+      'The friend service isn\'t available right now; no request was sent.';
+
+  @override
+  String get socialPublicProfile_modelsTransferIn => 'Transfer in';
+
+  @override
+  String get socialPublicProfile_modelsTransferOut => 'Transfer out';
+
+  @override
+  String get socialPublicProfile_userBody =>
+      'After removing, you\'re no longer friends; direct message history is kept. You can send a request again later.';
+
+  @override
+  String get socialPublicProfile_userBody2 =>
+      'After blocking, they can\'t see your profile or send you messages or friend requests. You can unblock in Block list.';
+
+  @override
+  String get socialPublicProfile_userCountCommunities => 'Communities';
+
+  @override
+  String get socialPublicProfile_userCountFollowing => 'Following';
+
+  @override
+  String get socialPublicProfile_userDetail =>
+      'On-chain data isn\'t available right now; 0 isn\'t shown in its place.';
+
+  @override
+  String get socialPublicProfile_userFriends => 'Friends';
+
+  @override
+  String get socialPublicProfile_userHoldingsHidden => 'Holdings not public';
+
+  @override
+  String get socialPublicProfile_userHoldingsUnavailable =>
+      'Couldn\'t load holdings right now';
+
+  @override
+  String get socialPublicProfile_userLaunch2Row => 'Launch chain';
+
+  @override
+  String socialPublicProfile_userLoopRecordRow(Object? block) {
+    return 'Block #$block';
+  }
+
+  @override
+  String socialPublicProfile_userMembers(Object? formatDecimal) {
+    return '$formatDecimal members';
+  }
+
+  @override
+  String get socialPublicProfile_userNone => 'Add friend';
+
+  @override
+  String get socialPublicProfile_userOneMember => '1 member';
+
+  @override
+  String get socialPublicProfile_userPendingIn => 'Respond';
+
+  @override
+  String get socialPublicProfile_userPendingOut => 'Requested';
+
+  @override
+  String socialPublicProfile_userS(Object? launch2StageLabel) {
+    return 'Launch chain, $launch2StageLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userSwitch => 'Total holdings';
+
+  @override
+  String socialPublicProfile_userSwitch2(Object? localTimestampLabel) {
+    return 'Loaded $localTimestampLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle => 'Remove friend?';
+
+  @override
+  String socialPublicProfile_userTitle2(Object? displayName) {
+    return 'Block $displayName?';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle4 => 'No wallet yet';
+
+  @override
+  String get socialPublicProfile_userTradesHidden => 'Trades not public';
+
+  @override
+  String get socialPublicProfile_userTradesUnavailable =>
+      'Couldn\'t load trades right now';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel => 'Unblock';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel2 => 'Block';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedBody =>
+      'They can\'t send you messages or friend requests, and you can\'t see their holdings or trades.';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedTitle =>
+      'You blocked them';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesEmptyTitle =>
+      'No communities joined yet';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesHiddenTitle =>
+      'Community list not public';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableDetail =>
+      'The community service isn\'t available right now; an empty list isn\'t shown in its place.';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableMessage =>
+      'Couldn\'t load communities right now';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsEmptyTitle =>
+      'No holdings yet';
+
+  @override
+  String
+  get socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel =>
+      'MEME holdings unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsTotal => 'No quote';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetMessage =>
+      'Enter from a chat, search or member list.';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetTitle =>
+      'No user to open from this link';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSemanticLabel =>
+      'More actions';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSheetBarrierLabel =>
+      'Close more actions';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundMessage =>
+      'The account doesn\'t exist, or their profile isn\'t visible to you.';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundTitle =>
+      'User not found';
+
+  @override
+  String get socialPublicProfile_userUserProfileRemoveFriendLabel =>
+      'Remove friend';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportLabel =>
+      'Report and block';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportUnavailable =>
+      'Reporting isn\'t available yet; you can block for now.';
+
+  @override
+  String get socialPublicProfile_userUserProfileScreenTitle => 'User profile';
+
+  @override
+  String get socialPublicProfile_userUserProfileShareCardSemanticLabel =>
+      'Share card';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesEmptyTitle =>
+      'No trades yet';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel =>
+      'MEME records unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableDetail =>
+      'The profile service isn\'t available yet; this page didn\'t load anything.';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableMessage =>
+      'User profile unavailable';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnblockLabel => 'Unblock';
+
+  @override
+  String get socialQr_cardBarrierLabel => 'Close QR card';
+
+  @override
+  String get socialQr_cardCopy => 'Invite text copied';
+
+  @override
+  String get socialQr_cardDismissed =>
+      'Poster created, but no share destination was chosen';
+
+  @override
+  String get socialQr_cardFailed =>
+      'Couldn\'t create the poster; nothing left this device';
+
+  @override
+  String get socialQr_cardLoopCommunityQrCard => 'Community QR card';
+
+  @override
+  String get socialQr_cardLoopUserQrCard => 'My QR card';
+
+  @override
+  String socialQr_cardQrCardCodeSemanticLabel(Object? name) {
+    return '$name\'s QR code';
+  }
+
+  @override
+  String get socialQr_cardQrCardCopyInviteLabel => 'Copy invite text';
+
+  @override
+  String get socialQr_cardQrCardCopyLinkLabel => 'Copy link';
+
+  @override
+  String socialQr_cardQrCardPosterLabel(Object? name) {
+    return '$name\'s QR card';
+  }
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel => 'Creating…';
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel2 => 'Share poster';
+
+  @override
+  String get socialQr_cardQrCardUnavailableLabel => 'QR code unavailable';
+
+  @override
+  String socialQr_cardS(Object? link, Object? name) {
+    return 'Join \"$name\" on LOOP\n$link';
+  }
+
+  @override
+  String get socialQr_cardShared => 'Poster created. Choose where to share it';
+
+  @override
+  String socialQr_cardSwitch(Object? name) {
+    return 'Join \"$name\" on LOOP';
+  }
+
+  @override
+  String get socialQr_cardSwitch2 => 'Scan to add me';
+
+  @override
+  String socialQr_cardSwitch3(num memberCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      memberCount,
+      locale: localeName,
+      other: '$memberCount members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get socialQr_cardSwitch4 => 'Scan to join';
+
+  @override
+  String get socialQr_cardUnavailable =>
+      'System sharing isn\'t available in this run; no poster was created';
+
+  @override
+  String get social_blocklistBlocklistCapabilityUnavailableTitle =>
+      'Block list unavailable';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsDetail =>
+      'These two block types aren\'t available yet, so nothing is listed here.';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsMessage =>
+      'Contract and domain blocks aren\'t available yet';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeBody =>
+      'Blocking immediately removes follows both ways and hides them from search, follow lists and message requests. Unblocking doesn\'t restore follows; you\'ll need to follow again.';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeTitle =>
+      'What blocking does';
+
+  @override
+  String get social_blocklistBody =>
+      'After unblocking, they can show up in search and message requests again. Removed follows aren\'t restored automatically.';
+
+  @override
+  String get social_blocklistCaption =>
+      'Blocking overrides follows and direct messages. Unblocking doesn\'t restore follows.';
+
+  @override
+  String get social_blocklistConfirmLabel => 'Unblock';
+
+  @override
+  String get social_blocklistDetail =>
+      'Contract and domain blocks aren\'t available yet, so nothing is listed here.';
+
+  @override
+  String get social_blocklistDomain => 'Domain';
+
+  @override
+  String get social_blocklistEmptyMessage => 'No blocked accounts';
+
+  @override
+  String get social_blocklistEmptyReason =>
+      'Choosing Report on a message request blocks the sender automatically.';
+
+  @override
+  String social_blocklistHeading(num userCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      userCount,
+      locale: localeName,
+      other: '$userCount blocked accounts',
+      one: '1 blocked account',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String social_blocklistLabel(Object? userCount) {
+    return 'Users $userCount';
+  }
+
+  @override
+  String get social_blocklistLoopBadge => 'Unblock';
+
+  @override
+  String social_blocklistMessage(Object? segmentLabels) {
+    return '\"$segmentLabels\" blocks aren\'t available yet';
+  }
+
+  @override
+  String get social_blocklistMessage2 => 'Unblocked';
+
+  @override
+  String social_blocklistSemanticLabel(Object? blockReasonText, Object? title) {
+    return '$title, $blockReasonText, can unblock';
+  }
+
+  @override
+  String get social_blocklistStamp => 'Private';
+
+  @override
+  String social_blocklistTitle(Object? title) {
+    return 'Unblock $title?';
+  }
+
+  @override
+  String get social_connectionsBody =>
+      'After unfollowing, you won\'t see their public posts.';
+
+  @override
+  String get social_connectionsBody2 =>
+      'Following is one-way and doesn\'t need their approval. They need Discoverable on to be followed.';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage =>
+      'Not following anyone yet';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage2 =>
+      'No followers yet';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyReason =>
+      'Accounts you\'ve blocked don\'t appear here.';
+
+  @override
+  String get social_connectionsConnectionActionDmLabel => 'Open direct message';
+
+  @override
+  String get social_connectionsConnectionActionFollowLabel => 'Unfollow';
+
+  @override
+  String get social_connectionsConnectionActionsSheetBarrierLabel =>
+      'Close contact actions';
+
+  @override
+  String get social_connectionsConnectionsCapabilityUnavailableTitle =>
+      'Follows unavailable';
+
+  @override
+  String get social_connectionsConnectionsDiscoverableNotice =>
+      'Others can find you by nickname once Privacy Center · Discoverable is on; your LOOP ID can always be searched exactly.';
+
+  @override
+  String get social_connectionsConnectionsScreenTitle =>
+      'Following and followers';
+
+  @override
+  String social_connectionsConnectionsSegFollowersLabel(Object? followers) {
+    return 'Followers $followers';
+  }
+
+  @override
+  String social_connectionsConnectionsSegFollowingLabel(Object? following) {
+    return 'Following $following';
+  }
+
+  @override
+  String get social_connectionsMessage => 'Unfollowed';
+
+  @override
+  String get social_connectionsResource => 'Follows';
+
+  @override
+  String get social_connectionsTitle => 'Unfollow?';
+
+  @override
+  String get social_connectionsTitle2 => 'Follow this account?';
+
+  @override
+  String get social_dmRequestsAccept => 'Accept';
+
+  @override
+  String get social_dmRequestsAccept2 =>
+      'Accepting connects you. It can\'t connect if either of you has blocked the other.';
+
+  @override
+  String get social_dmRequestsAcceptTitle => 'Accept this request?';
+
+  @override
+  String get social_dmRequestsAccepted => 'Accepted';
+
+  @override
+  String get social_dmRequestsBarrierLabel => 'Close request actions';
+
+  @override
+  String get social_dmRequestsCommunityStateEmptyEmptyMessage =>
+      'No pending requests';
+
+  @override
+  String get social_dmRequestsDmRequestsActionFailureTitle =>
+      'The last decision didn\'t finish';
+
+  @override
+  String get social_dmRequestsDmRequestsCapabilityUnavailableTitle =>
+      'Message requests unavailable';
+
+  @override
+  String get social_dmRequestsEmpty => '0 pending';
+
+  @override
+  String get social_dmRequestsIgnore => 'Ignore';
+
+  @override
+  String get social_dmRequestsIgnore2 =>
+      'After ignoring, they can\'t send another request for 24 hours.';
+
+  @override
+  String get social_dmRequestsIgnoreTitle => 'Ignore this request?';
+
+  @override
+  String get social_dmRequestsIgnored => 'Ignored';
+
+  @override
+  String get social_dmRequestsMessage => 'Reported and blocked';
+
+  @override
+  String social_dmRequestsReady(Object? items) {
+    return '$items pending';
+  }
+
+  @override
+  String get social_dmRequestsReport => 'Report and block';
+
+  @override
+  String get social_dmRequestsReport2 =>
+      'Reporting declines the request, blocks the sender, writes an audit record and removes follows both ways.';
+
+  @override
+  String get social_dmRequestsReportTitle => 'Report and block this request?';
+
+  @override
+  String get social_idCopyLabel => 'Copy LOOP ID';
+
+  @override
+  String get social_idCopyMessage => 'LOOP ID copied';
+
+  @override
+  String social_idShareLine(Object? loopId) {
+    return 'Add me as a friend on LOOP: $loopId';
+  }
+
+  @override
+  String get social_modelsSwitch => 'Blocked by you';
+
+  @override
+  String get social_modelsSwitch2 =>
+      'Blocked automatically when reporting a message request';
+
+  @override
+  String get social_modelsSwitch3 => 'Block reason';
+
+  @override
+  String get social_profileFaceLinkLabel => 'View my profile';
+
+  @override
+  String social_profileFaceLinkLabel2(Object? name) {
+    return 'View $name\'s profile';
+  }
+
+  @override
+  String get social_publicProfileSheetBarrierLabel => 'Close public profile';
+
+  @override
+  String get social_publicProfileSheetPublicProfileDmHint =>
+      'If you\'re not connected yet, you\'ll send a message request first.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowState =>
+      'Not following';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowUnknownBody =>
+      'The current follow status can\'t be read here; the result after the action applies.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableDetail =>
+      'This account has no public profile; it can\'t be followed or acted on.';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableMessage =>
+      'This member has no public profile';
+
+  @override
+  String get social_publicProfileSheetPublicProfileOpenPageLabel =>
+      'View profile';
 
   @override
   String get square_communityListBarrierLabel => 'Close sorting rules';

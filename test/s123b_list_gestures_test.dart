@@ -468,11 +468,11 @@ void main() {
         find.byKey(const ValueKey<String>('chat-inbox-row-sheet')),
         findsOneWidget,
       );
-      expect(find.text('取消置顶'), findsOneWidget);
-      expect(find.text('取消静音'), findsOneWidget);
-      expect(find.text('标为已读'), findsNothing);
+      expect(find.text('Unpin'), findsOneWidget);
+      expect(find.text('Unmute'), findsOneWidget);
+      expect(find.text('Mark as read'), findsNothing);
 
-      await tester.tap(find.text('取消静音'));
+      await tester.tap(find.text('Unmute'));
       await tester.pumpAndSettle();
       expect(chosen, ChatInboxRowAction.unmute);
     });

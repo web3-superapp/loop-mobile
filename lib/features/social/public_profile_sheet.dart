@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/profile/presentation/profile_controller.dar
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_copy.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -162,7 +163,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
 }) {
   return showLoopSheet<T>(
     context,
-    barrierLabel: '关闭公开资料',
+    barrierLabel: context.l10n.social_publicProfileSheetBarrierLabel,
     builder: (sheetContext) => _PublicProfileSheet<T>(
       identity: identity,
       viewerFollows: viewerFollows,
@@ -310,32 +311,44 @@ class _PublicProfileSheetState<T extends Object>
               ),
               if (following != null)
                 LoopBadge(
-                  following ? '已关注' : '未关注',
+                  following
+                      ? context.l10n.common_following
+                      : context
+                            .l10n
+                            .social_publicProfileSheetPublicProfileFollowState,
                   key: const ValueKey<String>('public-profile-follow-state'),
                 ),
             ],
           ),
           const SizedBox(height: 16),
           if (!canFollow)
-            const LoopInlineUnavailable(
+            LoopInlineUnavailable(
               key: ValueKey<String>('public-profile-not-targetable'),
-              message: '这个成员没有可用的公开资料',
-              detail: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
+              message: context
+                  .l10n
+                  .social_publicProfileSheetPublicProfileNotTargetableMessage,
+              detail: context
+                  .l10n
+                  .social_publicProfileSheetPublicProfileNotTargetableDetail,
               maxLines: 2,
               detailMaxLines: 4,
               padding: EdgeInsets.zero,
             )
           else ...<Widget>[
             if (following == null)
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('public-profile-follow-unknown'),
                 icon: 'info',
-                body: '这里读不到当前的关注状态，以操作后的结果为准。',
+                body: context
+                    .l10n
+                    .social_publicProfileSheetPublicProfileFollowUnknownBody,
                 margin: EdgeInsets.only(bottom: 12),
               ),
             LoopButton(
               key: const ValueKey<String>('public-profile-follow'),
-              label: (following ?? false) ? '取消关注' : '关注',
+              label: (following ?? false)
+                  ? context.l10n.social_connectionsConnectionActionFollowLabel
+                  : context.l10n.common_follow,
               primary: !(following ?? false),
               block: true,
               onPressed: _busy ? null : () => unawaited(_toggleFollow()),
@@ -351,7 +364,7 @@ class _PublicProfileSheetState<T extends Object>
           if (offersDirectMessage) ...<Widget>[
             LoopButton(
               key: const ValueKey<String>('public-profile-open-dm'),
-              label: '打开私聊',
+              label: context.l10n.social_connectionsConnectionActionDmLabel,
               block: true,
               onPressed: _busy
                   ? null
@@ -362,7 +375,7 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 6),
             Text(
-              '还没有建立联系时，会先请你发送一条消息请求。',
+              context.l10n.social_publicProfileSheetPublicProfileDmHint,
               key: const ValueKey<String>('public-profile-dm-hint'),
               style: LoopType.captionSm,
             ),
@@ -373,7 +386,9 @@ class _PublicProfileSheetState<T extends Object>
             const SizedBox(height: 8),
             LoopButton(
               key: const ValueKey<String>('public-profile-open-page'),
-              label: '查看资料',
+              label: context
+                  .l10n
+                  .social_publicProfileSheetPublicProfileOpenPageLabel,
               block: true,
               onPressed: _busy
                   ? null
@@ -389,7 +404,7 @@ class _PublicProfileSheetState<T extends Object>
               key: const ValueKey<String>('public-profile-failure'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '上一次操作没有完成',
+              title: context.l10n.common_lastActionIncomplete,
               body: communityFailureReason(_failureKind),
               margin: EdgeInsets.zero,
             ),
@@ -408,7 +423,7 @@ class _PublicProfileSheetState<T extends Object>
           const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('public-profile-close'),
-            label: '关闭',
+            label: context.l10n.common_close,
             block: true,
             onPressed: () => Navigator.of(context).pop(),
           ),

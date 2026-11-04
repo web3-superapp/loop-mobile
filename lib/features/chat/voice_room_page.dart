@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class VoiceRoomPage extends ConsumerWidget {
@@ -130,7 +131,7 @@ class _PreviewVoiceRoomPageState extends ConsumerState<_PreviewVoiceRoomPage> {
                             children: <Widget>[
                               Expanded(
                                 child: Text(
-                                  '模拟座位',
+                                  context.l10n.chat_voiceRoomText,
                                   style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(letterSpacing: 1.1),
                                 ),
@@ -254,8 +255,8 @@ class _FeaturedSpeaker extends StatelessWidget {
               ),
               if (participant.isHost) ...<Widget>[
                 const SizedBox(width: 7),
-                const LoopStatusPill(
-                  label: '主持',
+                LoopStatusPill(
+                  label: context.l10n.chat_voiceRoomLabel,
                   tone: LoopTone.conversation,
                   icon: Icons.stars_rounded,
                 ),

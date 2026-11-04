@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart'
     show BuildContext, EdgeInsets, StatelessWidget, ValueKey, Widget;
 import 'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart';
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart'
     show LoopTokenCard, LoopTokenCardModel, LoopTokenCardState;
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
@@ -64,10 +65,13 @@ class LoopUnavailableTokenCard extends StatelessWidget {
     model: LoopTokenCardModel(
       symbol: reference.assetId,
       identifier: '${reference.chainId} · ${reference.compactContract}',
-      priceReason: '当前事实不可得',
+      priceReason:
+          context.l10n.chatAttachments_streamTokenCardBuilderPriceReason,
       footnotes: <String>[
-        'LOOP 还没有收到这张卡的实时价格与合约事实；消息只保存代币标识，所以不显示价格、风险结论、买入或自选。',
-        '引用快照 ${snapshotLabel(reference.snapshotAt)}',
+        context.l10n.chatAttachments_streamTokenCardBuilderLoopTokenCardModel,
+        context.l10n.chatAttachments_streamTokenCardBuilderLoopTokenCardModel2(
+          snapshotLabel(reference.snapshotAt),
+        ),
       ],
     ),
   );
@@ -81,14 +85,16 @@ class LoopMalformedTokenCard extends StatelessWidget {
   const LoopMalformedTokenCard({super.key});
 
   @override
-  Widget build(BuildContext context) => const LoopTokenCard(
+  Widget build(BuildContext context) => LoopTokenCard(
     key: ValueKey<String>('token-card-malformed'),
     state: LoopTokenCardState.partial,
     margin: EdgeInsets.zero,
     model: LoopTokenCardModel(
-      symbol: '无法识别的代币卡',
+      symbol: context.l10n.chatAttachments_streamTokenCardBuilderSymbol,
       identifier: 'token_card.v1',
-      footnotes: <String>['这条附件不符合 LOOP token_card.v1，没有显示任何代币事实或操作。'],
+      footnotes: <String>[
+        context.l10n.chatAttachments_streamTokenCardBuilderLoopTokenCardModel3,
+      ],
     ),
   );
 }

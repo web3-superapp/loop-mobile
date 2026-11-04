@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -58,14 +59,16 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
       child: LoopStreamPage(
         key: const ValueKey<String>('dm-requests-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '陌生人请求',
+        title: context.l10n.common_messageRequests,
         kicker: communityPreviewKicker(mode),
         onBack: widget.onBack,
         // Decision 0127: the count in the bar's grey line; the hero card and
         // its English eyebrow are gone.
         subtitle: switch (state.phase) {
-          CommunityViewPhase.ready => '${state.items.length} 个待处理',
-          CommunityViewPhase.empty => '0 个待处理',
+          CommunityViewPhase.ready => context.l10n.social_dmRequestsReady(
+            state.items.length,
+          ),
+          CommunityViewPhase.empty => context.l10n.social_dmRequestsEmpty,
           _ => null,
         },
         block: communityCapabilityBlocks(mode, capability)
@@ -74,7 +77,9 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                   'dm-requests-capability-unavailable',
                 ),
                 capability: capability,
-                title: '陌生人请求当前不可用',
+                title: context
+                    .l10n
+                    .social_dmRequestsDmRequestsCapabilityUnavailableTitle,
               )
             : null,
         onRefresh: controller.refresh,
@@ -86,18 +91,29 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
           physics: loopRefreshablePhysics(controller.refresh),
           padding: const EdgeInsets.only(bottom: 24),
           children: <Widget>[
-            CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),
+            CommunityPreviewNotice(
+              mode: mode,
+              resource: context.l10n.common_messageRequests,
+            ),
             if (state.phase != CommunityViewPhase.ready)
               CommunityStateBlock(
                 phase: state.phase,
                 failureKind: state.failureKind,
-                emptyMessage: '没有待处理的请求',
-                emptyReason: '被你屏蔽的账号不会出现在这里。',
-                empty: const LoopEmptyState(
+                emptyMessage: context
+                    .l10n
+                    .social_dmRequestsCommunityStateEmptyEmptyMessage,
+                emptyReason: context
+                    .l10n
+                    .social_connectionsCommunityStateEmptyEmptyReason,
+                empty: LoopEmptyState(
                   key: ValueKey<String>('community-state-empty'),
                   illustration: LoopIllustration.friends,
-                  title: '没有待处理的请求',
-                  message: '被你屏蔽的账号不会出现在这里。',
+                  title: context
+                      .l10n
+                      .social_dmRequestsCommunityStateEmptyEmptyMessage,
+                  message: context
+                      .l10n
+                      .social_connectionsCommunityStateEmptyEmptyReason,
                 ),
                 onRetry: () => unawaited(controller.reload()),
               )
@@ -107,7 +123,9 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                   key: const ValueKey<String>('dm-requests-action-failure'),
                   icon: 'warn',
                   tone: LoopNoticeTone.warn,
-                  title: '上一次决定没有完成',
+                  title: context
+                      .l10n
+                      .social_dmRequestsDmRequestsActionFailureTitle,
                   body: communityFailureReason(state.failureKind),
                   margin: const EdgeInsets.fromLTRB(
                     LoopSpacing.page,
@@ -145,17 +163,27 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
     MessageRequestsController controller,
   ) async {
     final label = switch (decision) {
-      MessageRequestDecision.accept => '接受',
-      MessageRequestDecision.ignore => '忽略',
-      MessageRequestDecision.report => '举报并屏蔽',
+      MessageRequestDecision.accept => LoopL10n.current.social_dmRequestsAccept,
+      MessageRequestDecision.ignore => LoopL10n.current.social_dmRequestsIgnore,
+      MessageRequestDecision.report => LoopL10n.current.social_dmRequestsReport,
     };
     final confirmed = await confirmCommunityAction(
       context,
-      title: '$label这个请求？',
+      title: switch (decision) {
+        MessageRequestDecision.accept =>
+          LoopL10n.current.social_dmRequestsAcceptTitle,
+        MessageRequestDecision.ignore =>
+          LoopL10n.current.social_dmRequestsIgnoreTitle,
+        MessageRequestDecision.report =>
+          LoopL10n.current.social_dmRequestsReportTitle,
+      },
       body: switch (decision) {
-        MessageRequestDecision.accept => '接受后会建立联系。如果任一方屏蔽了对方，则无法建立。',
-        MessageRequestDecision.ignore => '忽略后对方在 24 小时内不能再次发起请求。',
-        MessageRequestDecision.report => '举报会拒绝请求、屏蔽发起人并写入审计，同时断开双向关注。',
+        MessageRequestDecision.accept =>
+          LoopL10n.current.social_dmRequestsAccept2,
+        MessageRequestDecision.ignore =>
+          LoopL10n.current.social_dmRequestsIgnore2,
+        MessageRequestDecision.report =>
+          LoopL10n.current.social_dmRequestsReport2,
       },
       confirmLabel: label,
       sheetKey: 'dm-request-confirm-sheet',
@@ -179,7 +207,16 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
     // `blocked` comes from the response, never from the requested decision.
     LoopToast.show(
       context,
-      message: outcome.blocked ? '已举报并屏蔽' : '已$label',
+      message: outcome.blocked
+          ? LoopL10n.current.social_dmRequestsMessage
+          : switch (decision) {
+              MessageRequestDecision.accept =>
+                LoopL10n.current.social_dmRequestsAccepted,
+              MessageRequestDecision.ignore =>
+                LoopL10n.current.social_dmRequestsIgnored,
+              MessageRequestDecision.report =>
+                LoopL10n.current.social_dmRequestsMessage,
+            },
       kind: outcome.blocked ? LoopToastKind.warn : LoopToastKind.ok,
     );
   }
@@ -221,7 +258,7 @@ class _RequestRow extends StatelessWidget {
       subtitle: entry.profile.loopId,
       trailing: LoopPillAction(
         key: ValueKey<String>('dm-request-accept-$id'),
-        label: '接受',
+        label: context.l10n.social_dmRequestsAccept,
         onPressed: busy ? null : () => onDecide(MessageRequestDecision.accept),
       ),
       onTap: busy ? null : () => unawaited(_openMore(context)),
@@ -231,7 +268,7 @@ class _RequestRow extends StatelessWidget {
   Future<void> _openMore(BuildContext context) async {
     final choice = await showLoopSheet<MessageRequestDecision>(
       context,
-      barrierLabel: '关闭请求操作',
+      barrierLabel: context.l10n.social_dmRequestsBarrierLabel,
       builder: (sheetContext) => Padding(
         key: ValueKey<String>(
           'dm-request-actions-sheet-${entry.messageRequestId}',
@@ -251,7 +288,7 @@ class _RequestRow extends StatelessWidget {
               key: ValueKey<String>(
                 'dm-request-ignore-${entry.messageRequestId}',
               ),
-              label: '忽略',
+              label: context.l10n.social_dmRequestsIgnore,
               block: true,
               onPressed: () =>
                   Navigator.of(sheetContext).pop(MessageRequestDecision.ignore),
@@ -261,14 +298,14 @@ class _RequestRow extends StatelessWidget {
               key: ValueKey<String>(
                 'dm-request-report-${entry.messageRequestId}',
               ),
-              label: '举报并屏蔽',
+              label: context.l10n.social_dmRequestsReport,
               block: true,
               onPressed: () =>
                   Navigator.of(sheetContext).pop(MessageRequestDecision.report),
             ),
             const SizedBox(height: 8),
             LoopButton(
-              label: '取消',
+              label: context.l10n.common_cancel,
               block: true,
               onPressed: () => Navigator.of(sheetContext).pop(),
             ),

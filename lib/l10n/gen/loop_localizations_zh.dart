@@ -1397,6 +1397,2521 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get chain_widgetsTitle3 => '当前地区不能执行此操作';
 
   @override
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel =>
+      'LOOP 还没有收到这张卡的实时价格与合约事实；消息只保存代币标识，所以不显示价格、风险结论、买入或自选。';
+
+  @override
+  String chatAttachments_streamTokenCardBuilderLoopTokenCardModel2(
+    Object? snapshotLabel,
+  ) {
+    return '引用快照 $snapshotLabel';
+  }
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderLoopTokenCardModel3 =>
+      '这条附件不符合 LOOP token_card.v1，没有显示任何代币事实或操作。';
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderPriceReason => '当前事实不可得';
+
+  @override
+  String get chatAttachments_streamTokenCardBuilderSymbol => '无法识别的代币卡';
+
+  @override
+  String
+  get chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel =>
+      '群友买入';
+
+  @override
+  String chatCalls_audioRoomContractAudioRoomNotificationTitle(Object? name) {
+    return '正在语音房 · $name';
+  }
+
+  @override
+  String get chatCalls_audioRoomContractAudioRoomOutputLabel => '声音输出';
+
+  @override
+  String get chatCalls_audioRoomContractAudioRoomRestoredMicrophoneNote =>
+      '已重新连接，点麦克风继续发言';
+
+  @override
+  String get chatCalls_audioRoomContractDisconnected => '语音已断开，人数以重新连接后为准';
+
+  @override
+  String get chatCalls_audioRoomContractEarpiece => '听筒';
+
+  @override
+  String get chatCalls_audioRoomContractExternalOutputLabel => '耳机';
+
+  @override
+  String get chatCalls_audioRoomContractReconnecting => '语音正在重连，人数以重新连接后为准';
+
+  @override
+  String get chatCalls_audioRoomContractSpeaker => '扬声器';
+
+  @override
+  String get chatCalls_audioRoomContractText => '点按回到语音房';
+
+  @override
+  String get chatCalls_audioRoomContractTitle => '正在语音房';
+
+  @override
+  String get chatCalls_streamForegroundViewCallClosed =>
+      '这次通话已经不能再发言了，请退出后重新进入。';
+
+  @override
+  String get chatCalls_streamForegroundViewCanRequest => '此刻在通话里的人数正在统计';
+
+  @override
+  String get chatCalls_streamForegroundViewCommandError => '语音没能重新接上，请再试一次。';
+
+  @override
+  String get chatCalls_streamForegroundViewCommandError2 => '这次通话没能干净地退出，请重试。';
+
+  @override
+  String get chatCalls_streamForegroundViewIf =>
+      '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。';
+
+  @override
+  String get chatCalls_streamForegroundViewIf2 =>
+      '你的麦克风已打开，房间里的人能听到你。点「静音」随时关掉。';
+
+  @override
+  String get chatCalls_streamForegroundViewIf3 =>
+      '你已被移出发言席，现在只能收听。要再发言，请等主持人重新邀请。';
+
+  @override
+  String chatCalls_streamForegroundViewIf4(Object? speakAgainLabel) {
+    return '你已静音。要再次发言，点「$speakAgainLabel」把这次语音重新接一遍。';
+  }
+
+  @override
+  String chatCalls_streamForegroundViewIf5(Object? speakLabel) {
+    return '你以静音状态进入。准备好后点「$speakLabel」，系统麦克风权限只在开始采集时申请。';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewLabel => '重连失败';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel2 => '等待中';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel3 => '加入中';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel4 => '媒体连接中';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel5 => '已连接';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel6 => '重连中';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel7 => '切换连接';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel8 => '连接中';
+
+  @override
+  String get chatCalls_streamForegroundViewLabel9 => '通话不可用';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage =>
+      '这次通话掉线了，正在自动接回来。成员明细会在连上后重新读出。';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage2 =>
+      '这次通话已经断开，成员明细要重新连接语音之后才能读出。';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage3 => '还没有连上这次通话，成员明细会在连上后读出。';
+
+  @override
+  String get chatCalls_streamForegroundViewMessage4 => '这次通话刚连上，服务商还没有给出成员明细。';
+
+  @override
+  String get chatCalls_streamForegroundViewMicrophoneState => '正在发言';
+
+  @override
+  String get chatCalls_streamForegroundViewMicrophoneState2 => '麦克风已开';
+
+  @override
+  String get chatCalls_streamForegroundViewRoomPermission =>
+      '这个房间还没有让你发言，麦克风没有打开。';
+
+  @override
+  String chatCalls_streamForegroundViewS(num count) {
+    return '此刻在通话里 $count 人';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewS2 => '你在这个房间是只收听的角色。';
+
+  @override
+  String get chatCalls_streamForegroundViewS3 => '重新发言';
+
+  @override
+  String get chatCalls_streamForegroundViewS4 => '仅收听';
+
+  @override
+  String get chatCalls_streamForegroundViewS5 => '切换到听筒';
+
+  @override
+  String get chatCalls_streamForegroundViewSetState => '麦克风没能静音。请重试，或退出这个房间。';
+
+  @override
+  String get chatCalls_streamForegroundViewSpeakAgainLabel => '重新连接后发言';
+
+  @override
+  String get chatCalls_streamForegroundViewSpeakLabel => '发言';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel => '正在重连';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel2 => '切换中';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel3 => '正在退出';
+
+  @override
+  String get chatCalls_streamForegroundViewStreamBarMicrophoneLabel4 => '不能开麦';
+
+  @override
+  String get chatCalls_streamForegroundViewSwitch => '声音从已连接的设备输出';
+
+  @override
+  String get chatCalls_streamForegroundViewSwitch2 => '切换到扬声器';
+
+  @override
+  String get chatCalls_streamForegroundViewSystemPermission =>
+      '没有麦克风权限，去系统设置里允许 LOOP 使用麦克风后再试。';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle => '正在重新连接';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle2 => '语音已断开';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle3 => '正在连接语音';
+
+  @override
+  String get chatCalls_streamForegroundViewTitle4 => '正在读取通话成员';
+
+  @override
+  String get chatCalls_streamForegroundViewUnknown => '麦克风没能打开，请再试一次。';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaAudioSuspended =>
+      '系统已暂停音频';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage =>
+      '断开语音连接';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel =>
+      '正在切换麦克风';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel2 =>
+      '需要先重试退出';
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel3 =>
+      '这次通话不能再开麦';
+
+  @override
+  String chatCalls_streamForegroundViewVoiceroomMediaOutputLabel(
+    Object? label,
+  ) {
+    return '声音输出：$label';
+  }
+
+  @override
+  String get chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel =>
+      '正在重新连接语音';
+
+  @override
+  String get chatCalls_streamVoiceRoomAccountChanged =>
+      '登录状态在连接过程中发生了变化。请退出这一页再进来。';
+
+  @override
+  String get chatCalls_streamVoiceRoomClient => '语音连接没能在这台设备上建立。请重试一次。';
+
+  @override
+  String get chatCalls_streamVoiceRoomConnection => '这台设备没能连上语音服务。请检查网络后重试。';
+
+  @override
+  String get chatCalls_streamVoiceRoomCredential => '这次通话的语音凭证没有发下来。请检查网络后重试。';
+
+  @override
+  String chatCalls_streamVoiceRoomHost(Object? speakLabel) {
+    return '你是主持人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；语音没连上房间也不会结束，要结束请用下面的「结束房间」。';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomIdentity => '这台设备还没有拿到语音身份。请退出这一页再进来。';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf =>
+      '始终静音进入；系统麦克风权限只在你点「发言」时申请。切到后台或锁屏后语音继续，点「离开」才会断开。';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf2 => '静音进入 · 后台继续';
+
+  @override
+  String get chatCalls_streamVoiceRoomIf3 => '这里不展示演示成员、在线状态或房间动态。';
+
+  @override
+  String get chatCalls_streamVoiceRoomJoinError => '这个语音房没能准备好，请检查会话后重试。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage =>
+      '这次通话已经断开，正在把离开记到 LOOP 的房间记录里。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage10 =>
+      '正在向后端申请语音身份与短时令牌。期间不会加入任何通话。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage11 => '正在读取后端已授权的语音房。麦克风保持关闭。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage12 =>
+      '已授权的语音房读取失败，不会改连其他房间，也不会用演示数据顶替。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage13 =>
+      '这次会话还没有拿到已授权的语音房，请从社区的语音房入口进入。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage14 =>
+      '语音房已授权，但绑定当前账号的语音客户端已经失效，请重新授权会话。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage15 =>
+      '已拿到后端授权的语音房。始终静音进入，切到后台后语音继续。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage16 => '连接过程中不会发布任何本地音频。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage17 => '系统麦克风权限只在你点「发言」之后才申请。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage18 =>
+      '切到其他 App 或锁屏后语音继续，只有「离开」才会断开。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage2 =>
+      '网络恢复后会自动接回这个房间，你仍然在房间里。要退出请用下面的「离开」。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage3 =>
+      '正在重新读取这个房间并重新取得语音身份，然后再连接一次。';
+
+  @override
+  String chatCalls_streamVoiceRoomMessage4(Object? joinError) {
+    return '$joinError你仍然在这个房间里，没有被移出。';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage5 =>
+      '这次通话已经断开，你在 LOOP 记录里仍然是这个房间的成员。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage6 => '已经加入房间，正在建立语音连接。你以听众身份静音进入。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage7 =>
+      '语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage8 => '在确认上一次通话已关闭麦克风并退出之前，不能再次连接。';
+
+  @override
+  String get chatCalls_streamVoiceRoomMessage9 => '上一次通话没有确认退出。请先重试收尾，再连接语音。';
+
+  @override
+  String get chatCalls_streamVoiceRoomNetwork => '这次连接没有接通，请检查网络后重试。';
+
+  @override
+  String get chatCalls_streamVoiceRoomPermission => '这个房间还没有开放收听，请让主持人重新开启。';
+
+  @override
+  String get chatCalls_streamVoiceRoomRoomUnavailable =>
+      '这个房间已经不能加入了，请回到社区看它是否还在进行。';
+
+  @override
+  String get chatCalls_streamVoiceRoomSession => '这次的语音身份已经失效，请退出这一页再进来。';
+
+  @override
+  String chatCalls_streamVoiceRoomSpeaker(Object? speakLabel) {
+    return '你是发言人，进入时同样静音，点「$speakLabel」才会申请麦克风权限；语音没连上，你仍在房间里；要退出请点下面的「离开」。';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomSwitch => '这台设备没能建立语音会话。这里保持断开，不会创建任何通话。';
+
+  @override
+  String get chatCalls_streamVoiceRoomSwitch2 =>
+      '你以听众身份静音进入，不会申请麦克风权限；语音没连上，你仍在房间里；要退出请点下面的「离开」。';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle => '正在离开语音房…';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle10 => '正在读取语音房';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle11 => '语音房读不到';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle12 => '还没有拿到语音房';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle13 => '语音客户端不可用';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle14 => '连接失败';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle15 => '语音可以连接';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle16 => '进入即静音';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle17 => '按需申请权限';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle18 => '后台继续';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle2 => '语音连接中断，正在自动重连';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle3 => '已加入，语音连接失败';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle4 => '正在连接语音…';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle5 => '需要完成登录验证';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle6 => '正在确认上一次通话的收尾';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle7 => '上一次通话没有收尾';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle8 => '正在准备语音连接';
+
+  @override
+  String get chatCalls_streamVoiceRoomTitle9 => '语音会话暂时不可用';
+
+  @override
+  String get chatCalls_streamVoiceRoomUnknown => '没能连上这个语音房，请稍后重试。';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel => '正在静音连接';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel2 => '连接语音';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaReconnectLabel => '重新连接语音';
+
+  @override
+  String chatCalls_streamVoiceRoomVoiceroomMediaRestoredMessage(
+    Object? vVoiceMediaPresentation,
+  ) {
+    return '网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点「$vVoiceMediaPresentation」。';
+  }
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryCleanupLabel => '重试收尾';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetrySessionLabel => '重试会话';
+
+  @override
+  String get chatCalls_streamVoiceRoomVoiceroomMediaRetryTargetLabel =>
+      '重试读取语音房';
+
+  @override
+  String get chatFriends_createMenuButtonChatCreateMenuLabel => '发起';
+
+  @override
+  String get chatFriends_createMenuButtonChatCreateMenuLabel2 => '添加';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle => '按 LOOP ID 或昵称找人，发送消息请求';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle2 => '提交入驻申请，审核通过后上线';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle3 => '和好友建一个小群';
+
+  @override
+  String get chatFriends_createMenuButtonSubtitle4 => '扫名片、社区码或钱包地址';
+
+  @override
+  String get chatFriends_createMenuButtonTitle => '搜索 / 添加用户';
+
+  @override
+  String get chatFriends_createMenuButtonTitle2 => '创建社区';
+
+  @override
+  String get chatFriends_createMenuButtonTitle3 => '创建群聊';
+
+  @override
+  String get chatFriends_screensAlreadyDecided => '这条好友申请已经处理，请刷新列表。';
+
+  @override
+  String get chatFriends_screensAlreadyFriends => '你们已经是好友。';
+
+  @override
+  String chatFriends_screensBody(Object? name, num receipt) {
+    return '$name · $receipt 位成员。这个结果仅存在于本次运行，未创建 Stream 频道。';
+  }
+
+  @override
+  String chatFriends_screensBody2(Object? name, num receipt) {
+    return '$name · $receipt 位成员。频道已由 LOOP 后端创建并授权。';
+  }
+
+  @override
+  String get chatFriends_screensConflict => '好友关系已经变化，请刷新后再试。';
+
+  @override
+  String get chatFriends_screensCooldown => '该好友申请处于冷却期，请稍后再试。';
+
+  @override
+  String get chatFriends_screensCursorInvalid => '列表分页已过期，需要从第一页重新加载。';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateAnotherLabel => '再建一个';
+
+  @override
+  String chatFriends_screensFriendGroupCreateFailureBody(
+    Object? friendFailureMessage,
+  ) {
+    return '$friendFailureMessage 当前草稿已冻结，不会自动重复提交。';
+  }
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle => '群组创建需人工核对';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle2 => '群组创建结果待确认';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateFailureTitle3 => '群组未创建';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateScreenTitle => '创建群组';
+
+  @override
+  String get chatFriends_screensFriendGroupCreateSubmitLabel => '创建中…';
+
+  @override
+  String get chatFriends_screensFriendGroupFindFriendsLabel => '添加好友';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioCaption =>
+      '从已接受的好友里选人。群由 LOOP 后端创建，成功后才会出现在聊天里。';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioKicker => '好友建群';
+
+  @override
+  String get chatFriends_screensFriendGroupFolioStamp => '仅好友';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsEmptyMessage =>
+      '好友请求被对方接受后，才能邀请对方创建群组。';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsEmptyTitle => '没有可选择的好友';
+
+  @override
+  String get chatFriends_screensFriendGroupFriendsFailureTitle => '好友列表暂时无法加载';
+
+  @override
+  String get chatFriends_screensFriendGroupNameFieldFootnote => '最多 60 个字符';
+
+  @override
+  String get chatFriends_screensFriendGroupNameFieldLabel => '群组名称';
+
+  @override
+  String get chatFriends_screensFriendGroupOpenChannelLabel => '进入群聊';
+
+  @override
+  String get chatFriends_screensFriendGroupReconcileLabel => '查询结果';
+
+  @override
+  String get chatFriends_screensFriendGroupResumeEditingLabel => '修改草稿';
+
+  @override
+  String chatFriends_screensFriendGroupSelectionLabel(
+    Object? groupMaximumSelectedFriends,
+    Object? selectedFriendRefs,
+  ) {
+    return '选择好友 · $selectedFriendRefs/$groupMaximumSelectedFriends';
+  }
+
+  @override
+  String get chatFriends_screensFriendGroupSetAliasLabel => '设置群昵称';
+
+  @override
+  String get chatFriends_screensFriendGroupUnavailableMessage =>
+      '这里不会创建任何群或添加成员。';
+
+  @override
+  String get chatFriends_screensFriendGroupUnavailableTitle => '创建群聊还没有开放';
+
+  @override
+  String get chatFriends_screensFriendPreviewBannerBody =>
+      '好友、请求与新群组只保存在内存中，不会写入 LOOP 后端或 Stream。';
+
+  @override
+  String get chatFriends_screensFriendPreviewBannerTitle => '开发预览 · 仅本次运行';
+
+  @override
+  String get chatFriends_screensIncomingRequestPending =>
+      '对方已经向你发送申请，请在好友申请中处理。';
+
+  @override
+  String get chatFriends_screensInvalidData => '输入或服务返回的数据不符合当前安全约束。';
+
+  @override
+  String get chatFriends_screensLoopLabel => '结果';
+
+  @override
+  String get chatFriends_screensNotFound => '目标当前不可用。不可发现和不存在的账号不会被区分。';
+
+  @override
+  String get chatFriends_screensNotSelected => '未选择';
+
+  @override
+  String get chatFriends_screensOperatorRequired => '频道需要后台人工核对；不会自动创建第二个频道。';
+
+  @override
+  String get chatFriends_screensOutcomeUnknown => '请求可能已被接收，当前无法安全确认最终结果。';
+
+  @override
+  String get chatFriends_screensOutgoingRequestPending => '好友申请已经发送，正在等待对方处理。';
+
+  @override
+  String get chatFriends_screensPermissionDenied => '当前账号无权完成该操作，没有关系或群组被修改。';
+
+  @override
+  String get chatFriends_screensProfileRequired => '请先在 Profile 中设置 LOOP 主昵称。';
+
+  @override
+  String get chatFriends_screensRateLimited => '操作过于频繁，请稍后再试。';
+
+  @override
+  String get chatFriends_screensSelected => '已选择';
+
+  @override
+  String get chatFriends_screensSwitch => '操作暂时无法完成。';
+
+  @override
+  String chatFriends_screensText(num groupMinimumSelectedFriends) {
+    return '至少选择 $groupMinimumSelectedFriends 位好友';
+  }
+
+  @override
+  String get chatFriends_screensTitle => '开发预览群组已创建';
+
+  @override
+  String get chatFriends_screensTitle2 => '群组已创建';
+
+  @override
+  String get chatFriends_screensUnavailable => '好友服务当前不可用，没有关系或群组被修改。';
+
+  @override
+  String get chatFriends_screensUnexpected => '服务暂时无法完成请求；没有好友关系或群组被修改。';
+
+  @override
+  String get chatGroupAlias_neutralMember => '成员';
+
+  @override
+  String get chatGroupAlias_screenBody => '昵称已经为你保留，群里的显示还在同步。请用完全相同的昵称重试。';
+
+  @override
+  String get chatGroupAlias_screenBody2 =>
+      '这个昵称已在当前群永久保留，不能修改。它不会暴露公开 Profile 或 Stream 用户身份。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasBlockedTitle => '无法设置群内昵称';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasBoundaryBody =>
+      '群昵称只在这个群里显示，不会关联到你的公开资料或钱包地址。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasChannelInvalidMessage =>
+      '这个页面没有收到可解析的 Stream 群聊引用；没有发起网络请求。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasChannelInvalidTitle => '群聊引用无效';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFailureTitle => '群内昵称未保留';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFieldFootnote =>
+      '提交后不可改名；同一群内昵称必须唯一。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFieldLabel => '当前群昵称';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFolioCaption =>
+      '每个群可以使用不同昵称。首次保留后永久不可修改；前端不做跨群身份关联，但这不构成强匿名保证。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasFolioKicker => '群昵称';
+
+  @override
+  String chatGroupAlias_screenGroupAliasOutcomeUnknownBody(
+    Object? pendingAlias,
+  ) {
+    return '“$pendingAlias”可能已经永久保留。为避免锁定另一个值，当前只允许重试完全相同的昵称。';
+  }
+
+  @override
+  String get chatGroupAlias_screenGroupAliasOutcomeUnknownTitle => '保留结果待确认';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasPausedMessage =>
+      '群成员以自己的头像和用户名显示。这里没有发起任何请求。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasPausedTitle => '群内昵称暂未开放';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasReloadLabel => '重新读取';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasResolverRetryLabel => '重试确认';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRetryPendingLabel => '用相同昵称重试';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRetryProjectionLabel => '重试同步';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRouteInvalidMessage =>
+      '这个页面没有收到有效的 LOOP group_id；没有发起网络请求。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasRouteInvalidTitle => '群组引用无效';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchEmptyMessage =>
+      '还没同步完成的成员、已退群的成员和你自己不会出现在结果里。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchEmptyTitle => '没有找到匹配昵称';
+
+  @override
+  String chatGroupAlias_screenGroupAliasSearchFailureMessage(
+    Object? groupAliasFailureMessage,
+  ) {
+    return '无法完成群内搜索：$groupAliasFailureMessage';
+  }
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchFieldFootnote => '至少输入 2 个字符';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel => '查找中';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitLabel2 => '查找';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchSubmitSemanticLabel =>
+      '查找群内昵称';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedBody =>
+      '请继续输入更完整的昵称以缩小范围。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSearchTruncatedTitle => '结果已截断';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSubmitLabel => '保留中…';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasSubmitLabel2 => '永久保留这个昵称';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasTitle => '群内昵称';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasUnavailableMessage =>
+      '没有展示演示昵称，也没有把账号昵称或钱包地址当作群内身份。';
+
+  @override
+  String get chatGroupAlias_screenGroupAliasUnavailableTitle => '群内昵称服务不可用';
+
+  @override
+  String get chatGroupAlias_screenHint => '1–40 个字符';
+
+  @override
+  String get chatGroupAlias_screenHint2 => '输入要查找的昵称';
+
+  @override
+  String get chatGroupAlias_screenImmutable => '这个账号已在当前群永久保留了另一个昵称，不能修改。';
+
+  @override
+  String get chatGroupAlias_screenInvalidData => '这个昵称不可用，请换一个再试。';
+
+  @override
+  String get chatGroupAlias_screenLoopBadge => '同步中';
+
+  @override
+  String get chatGroupAlias_screenLoopLabel => '我的群昵称';
+
+  @override
+  String get chatGroupAlias_screenLoopLabel2 => '查找群成员昵称';
+
+  @override
+  String get chatGroupAlias_screenNotFound => '群组不可用';
+
+  @override
+  String get chatGroupAlias_screenNotFound2 =>
+      '这个频道不是可见群组，或当前账号已不是成员；没有开放群昵称操作。';
+
+  @override
+  String get chatGroupAlias_screenNotFound3 =>
+      '当前没有可见的群昵称；也可能已不再是这个 Stream 群的成员。';
+
+  @override
+  String get chatGroupAlias_screenOffline => '设备当前离线，没有读到群昵称，也没有提交任何昵称。';
+
+  @override
+  String get chatGroupAlias_screenOutcomeUnknown => '请求可能已经提交，只能用完全相同的昵称继续确认。';
+
+  @override
+  String get chatGroupAlias_screenPreview => '开发预览 · 仅本次运行';
+
+  @override
+  String get chatGroupAlias_screenProduction => '仅本群';
+
+  @override
+  String get chatGroupAlias_screenProduction2 => 'LOOP 群组身份边界';
+
+  @override
+  String get chatGroupAlias_screenResolved => '无法解析群组';
+
+  @override
+  String get chatGroupAlias_screenResolved2 => '这个群的信息暂时读不到，群昵称暂时不能修改。';
+
+  @override
+  String get chatGroupAlias_screenResolving => '正在确认群组';
+
+  @override
+  String get chatGroupAlias_screenResolving2 =>
+      'LOOP 正在确认当前账号仍是这个 Stream 群聊的成员。';
+
+  @override
+  String get chatGroupAlias_screenS => '已永久保留';
+
+  @override
+  String get chatGroupAlias_screenSubtitle => '已保留 · 群里的显示同步中';
+
+  @override
+  String get chatGroupAlias_screenSubtitle2 => '当前群内昵称';
+
+  @override
+  String get chatGroupAlias_screenSwitch => '群昵称当前不可用。';
+
+  @override
+  String get chatGroupAlias_screenTaken => '这个昵称已经被当前群的其他成员永久保留，请换一个。';
+
+  @override
+  String get chatGroupAlias_screenUnavailable => '群组服务暂不可用';
+
+  @override
+  String get chatGroupAlias_screenUnavailable2 => '暂时无法确认群组成员关系；没有开放群昵称操作。';
+
+  @override
+  String get chatGroupAlias_screenUnavailable3 => '未连接';
+
+  @override
+  String get chatGroupAlias_screenUnavailable4 => '生产连接不可用';
+
+  @override
+  String get chatGroupAlias_screenUnavailable5 => '群昵称服务当前不可用，没有昵称被显示为已保留。';
+
+  @override
+  String get chatGroupAlias_screenUnexpected => '群昵称操作暂时失败，没有结果被显示为已确认。';
+
+  @override
+  String chatGroupAlias_streamMessageIdentityBuild(num replyCount) {
+    return '$replyCount 条回复';
+  }
+
+  @override
+  String get chatGroupAlias_streamMessageIdentityLoopChannelQuietLabel =>
+      '还没有人说话';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectConversationNeutralInitial =>
+      '私';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerInitial =>
+      '注';
+
+  @override
+  String
+  get chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerLabel =>
+      '已注销用户';
+
+  @override
+  String chatGroupAlias_streamMessageIdentityS(num count) {
+    return '$count 位成员';
+  }
+
+  @override
+  String chatMemberBuy_cardBody(Object? loopMemberBuyPreviewLabel) {
+    return '$loopMemberBuyPreviewLabel · 动态数据不完整';
+  }
+
+  @override
+  String chatMemberBuy_cardLabel(Object? name) {
+    return '查看 $name 的资料';
+  }
+
+  @override
+  String get chatMemberBuy_cardLabel2 => '复制交易哈希';
+
+  @override
+  String get chatMemberBuy_cardMessage => '已复制交易哈希';
+
+  @override
+  String get chatMemberBuy_cardText => '买入 ';
+
+  @override
+  String chatMemberBuy_eventIf(Object? formatDecimal) {
+    return '$formatDecimal万';
+  }
+
+  @override
+  String chatMemberBuy_eventIf2(Object? formatDecimal) {
+    return '$formatDecimal亿';
+  }
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyNeutralBuyer => '群友';
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyNeutralInitial => '群';
+
+  @override
+  String get chatMemberBuy_eventLoopMemberBuyPreviewLabel => '群友买入';
+
+  @override
+  String chatTokenCard_cardChartRangeLabel(Object? loopSparklineWindow) {
+    return '1H · 最近 $loopSparklineWindow 根收盘价';
+  }
+
+  @override
+  String get chatTokenCard_cardDetail => '这个合约地址不在 LOOP 的资产目录里，没有可展示的行情。';
+
+  @override
+  String chatTokenCard_cardDetail2(Object? chatTokenShortAddress) {
+    return 'LOOP 响应超时 · $chatTokenShortAddress';
+  }
+
+  @override
+  String chatTokenCard_cardDetail3(Object? chatTokenShortAddress) {
+    return '没有读到这个合约 · $chatTokenShortAddress';
+  }
+
+  @override
+  String get chatTokenCard_cardLoopChatTokenCardFailedMessage => '加载失败，点按重试';
+
+  @override
+  String get chatTokenCard_cardLoopChatTokenCardKicker => '自动识别到代币';
+
+  @override
+  String get chatTokenCard_cardLoopTokenCardAction => '代币页';
+
+  @override
+  String get chatTokenCard_cardLoopTokenMetric => '未收录';
+
+  @override
+  String chatTokenCard_cardMarketCommunityBound(
+    Object? formatCompactFigure,
+    Object? name,
+  ) {
+    return 'LOOP 社区 $name · $formatCompactFigure 成员';
+  }
+
+  @override
+  String get chatTokenCard_cardMarketCommunityUnavailable => '暂无 LOOP 社区';
+
+  @override
+  String chatTokenCard_cardMessage(Object? chatTokenShortAddress) {
+    return '未收录的代币 · $chatTokenShortAddress';
+  }
+
+  @override
+  String get chatTokenCard_cardMessage2 => '设备离线，没有读这个合约';
+
+  @override
+  String get chatTokenCard_cardPriceReason => '没有读到报价';
+
+  @override
+  String chatTokenCard_cardReadCard(Object? label) {
+    return '资产目录状态 · $label';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard2(Object? riskFactCount) {
+    return '另有 $riskFactCount 条合约事实，在代币页';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard3(Object? tradeReason) {
+    return '买入与卖出现在不可用 · $tradeReason';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard4(Object? factSourceLabel) {
+    return '身份来自 $factSourceLabel';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard5(Object? relativeTime) {
+    return '观察于 $relativeTime';
+  }
+
+  @override
+  String chatTokenCard_cardReadCard6(Object? factProvenance) {
+    return '报价 $factProvenance';
+  }
+
+  @override
+  String get chatTokenCard_viewLoading => '识别中';
+
+  @override
+  String chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel(
+    Object? provenance,
+  ) {
+    return '$provenance，查看数据来源说明';
+  }
+
+  @override
+  String get chatTokenCard_viewPartial => '数据缺失';
+
+  @override
+  String get chatTokenCard_viewRisk => '风险事实';
+
+  @override
+  String get chatTokenCard_viewSwitch => '识别中…';
+
+  @override
+  String chatTokenCard_viewText(Object? observedLabel, Object? source) {
+    return ' —— 来源 $source，观察于 $observedLabel';
+  }
+
+  @override
+  String chatV2_channelHeadingNull(num memberCount) {
+    return '$memberCount 位成员';
+  }
+
+  @override
+  String get chatV2_communityCommunityChatNeutralTitle => '社区群聊';
+
+  @override
+  String get chatV2_communityCommunityChatOpenProfileLabel => '社区信息';
+
+  @override
+  String get chatV2_communityCommunityChatOpenSearchLabel => '搜索这个会话';
+
+  @override
+  String get chatV2_communityCommunityChatOpenVoiceLabel => '进入语音房';
+
+  @override
+  String get chatV2_communityCommunityChatPersonaSegment => '正在同步你的显示名';
+
+  @override
+  String chatV2_communityCommunityChatSyncingBody(
+    Object? communicationUnavailableReason,
+  ) {
+    return '${communicationUnavailableReason}LOOP 已经记录了你的成员身份，服务商侧还没跟上。稍后重试即可，不需要重新加入社区。';
+  }
+
+  @override
+  String get chatV2_communityCommunityChatSyncingRetryLabel => '重新检查';
+
+  @override
+  String get chatV2_communityCommunityChatSyncingTitle => '聊天权限同步中';
+
+  @override
+  String chatV2_communityCommunityOnlineCountObserved(Object? count) {
+    return '$count 在线';
+  }
+
+  @override
+  String get chatV2_communityEmptyMessage => '找不到这个社区';
+
+  @override
+  String get chatV2_communityEmptyReason => '它可能已被移除，或对当前账号不可见。';
+
+  @override
+  String get chatV2_communityMessage => '缺少社区标识';
+
+  @override
+  String get chatV2_communityMessage2 => '社区聊天当前不可用';
+
+  @override
+  String get chatV2_communityMessage3 => '官方群当前不可用';
+
+  @override
+  String get chatV2_communityReason => '请从社区列表或社区主页进入，本页不会猜测要打开哪个社区的官方群。';
+
+  @override
+  String get chatV2_communityReason2 => '尚未读取到能力清单，本页不请求任何频道。';
+
+  @override
+  String chatV2_communityS(Object? alias) {
+    return '你在这个社区显示为 $alias';
+  }
+
+  @override
+  String chatV2_communitySwitch(Object? communityCountLabel) {
+    return '$communityCountLabel 成员';
+  }
+
+  @override
+  String get chatV2_conversationLabelLoopCommunityConversationNeutralLabel =>
+      '社区官方群';
+
+  @override
+  String chatV2_conversationLabelNull(num memberCount) {
+    return '$memberCount 名成员';
+  }
+
+  @override
+  String get chatV2_directMessageCaption => '私聊默认展示最少身份信息，资产与签名请求会单独标识。';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredMessage =>
+      '消息请求已经发出。对方接受之前，这里不会出现会话。';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredMessage2 =>
+      '私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。先发送一条消息请求，对方接受后这个会话才会打开。这个结果不代表对方账号一定存在。';
+
+  @override
+  String get chatV2_directMessageDmFriendshipRequiredTitle => '还不能直接私聊';
+
+  @override
+  String get chatV2_directMessageDmMessageRequestFailedTitle => '消息请求没有送出';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredDetail =>
+      '这次请求已经收到，需要人工处理才能完成。这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredMessage => '需要人工处理';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredNoticeBody =>
+      '这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。';
+
+  @override
+  String get chatV2_directMessageDmOperatorRequiredNoticeTitle => '不要重复提交';
+
+  @override
+  String get chatV2_directMessageDmSendMessageRequestLabel => '发送消息请求';
+
+  @override
+  String get chatV2_directMessageDmSendMessageRequestLabel2 => '重新发送消息请求';
+
+  @override
+  String get chatV2_directMessageEmptyMessage => '还没有打开这个私聊';
+
+  @override
+  String get chatV2_directMessageEmptyReason => '这个会话暂时打不开。';
+
+  @override
+  String get chatV2_directMessageHeading => '一对一的私聊';
+
+  @override
+  String chatV2_directMessageHeading2(Object? displayName) {
+    return '和 $displayName 的私聊';
+  }
+
+  @override
+  String get chatV2_directMessageMessage => '私聊当前不可用';
+
+  @override
+  String get chatV2_directMessageMessage2 => '缺少会话标识';
+
+  @override
+  String get chatV2_directMessageMessage3 => '消息请求已发送';
+
+  @override
+  String get chatV2_directMessageNotFound => '对方没有开放被找到，或者这个账号不存在，消息请求没有送出。';
+
+  @override
+  String get chatV2_directMessageReason => '请从关注列表、陌生人请求或公开资料进入，本页不会猜测要打开谁的私聊。';
+
+  @override
+  String get chatV2_directMessageStamp => '私密';
+
+  @override
+  String get chatV2_forwardScreensBody =>
+      '选中的消息会作为新消息发出，并标注来自哪个会话。已删除或没有正文的消息会跳过。';
+
+  @override
+  String chatV2_forwardScreensCaption(Object? chatForwardSelectionLimit) {
+    return '一次最多转发 $chatForwardSelectionLimit 条，目标只能是你已加入的会话。已删除或没有正文的消息会被跳过并计数。';
+  }
+
+  @override
+  String chatV2_forwardScreensCaption2(Object? chatMergeAnonymousLabel) {
+    return '合并预览只输出「$chatMergeAnonymousLabel」、时间与正文，不含昵称、LOOP ID 或钱包地址。';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatForwardErrorReason =>
+      '没有读到这个会话的消息与可用目标，本页没有转发任何内容。';
+
+  @override
+  String get chatV2_forwardScreensChatForwardMissingSourceDetail =>
+      '请从会话页进入转发，本页不会猜测要转发哪个会话的消息。';
+
+  @override
+  String get chatV2_forwardScreensChatForwardMissingSourceMessage => '找不到原会话';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoMessagesMessage =>
+      '只有已同步到本机的文本消息可以被转发。';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoMessagesTitle => '这个会话还没有可转发的消息';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoTargetsMessage =>
+      '转发目标必须是你已加入的会话。';
+
+  @override
+  String get chatV2_forwardScreensChatForwardNoTargetsTitle => '没有可用的目标会话';
+
+  @override
+  String get chatV2_forwardScreensChatForwardOpenMergeLabel => '预览合并长图';
+
+  @override
+  String chatV2_forwardScreensChatForwardScreenSubtitle(Object? selectedCount) {
+    return '$selectedCount 条已选择 · 选择目标会话';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatForwardScreenTitle => '转发消息';
+
+  @override
+  String get chatV2_forwardScreensChatMergeAnonymousLabel => '匿名成员';
+
+  @override
+  String get chatV2_forwardScreensChatMergeBackLabel => '返回聊天';
+
+  @override
+  String chatV2_forwardScreensChatMergeEmptyMessage(
+    Object? chatMergeSelectionLimit,
+  ) {
+    return '回到转发页选择要合并的消息，最多 $chatMergeSelectionLimit 条。';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatMergeEmptyTitle => '还没有选择任何消息';
+
+  @override
+  String get chatV2_forwardScreensChatMergeExportLabel => '生成长图';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle => '显示发送者用户名';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenSubtitle2 => '默认匿名';
+
+  @override
+  String get chatV2_forwardScreensChatMergePreviewScreenTitle => '合并长图预览';
+
+  @override
+  String chatV2_forwardScreensChatMergeTruncatedBody(
+    Object? chatMergeSelectionLimit,
+  ) {
+    return '一次最多合并 $chatMergeSelectionLimit 条，多出的部分不会出现在预览里。';
+  }
+
+  @override
+  String get chatV2_forwardScreensChatMergeTruncatedTitle => '已截断';
+
+  @override
+  String get chatV2_forwardScreensEncode => '已选择的会话';
+
+  @override
+  String get chatV2_forwardScreensEncode2 => '社区信号摘要';
+
+  @override
+  String get chatV2_forwardScreensHeading => '0 条内容';
+
+  @override
+  String get chatV2_forwardScreensKicker => '已选消息';
+
+  @override
+  String get chatV2_forwardScreensLoopBadge => '已选';
+
+  @override
+  String chatV2_forwardScreensLoopFolioPrimary(Object? count, Object? source) {
+    return '$source · $count 条';
+  }
+
+  @override
+  String chatV2_forwardScreensLoopFolioPrimary2(Object? count) {
+    return '$count 条已选择';
+  }
+
+  @override
+  String get chatV2_forwardScreensLoopLabel => '选择消息';
+
+  @override
+  String chatV2_forwardScreensLoopLabel2(Object? chatForwardTargetPageSize) {
+    return '发送到 · 最近 $chatForwardTargetPageSize 个会话';
+  }
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState => '读取消息';
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState2 => '选择目标';
+
+  @override
+  String get chatV2_forwardScreensLoopOfflineState3 => '转发';
+
+  @override
+  String chatV2_forwardScreensMessage(Object? chatForwardSelectionLimit) {
+    return '一次最多选择 $chatForwardSelectionLimit 条';
+  }
+
+  @override
+  String get chatV2_forwardScreensMessage2 => '没有转发任何消息';
+
+  @override
+  String chatV2_forwardScreensMessage3(Object? sent) {
+    return '已转发 $sent 条';
+  }
+
+  @override
+  String chatV2_forwardScreensMessage4(Object? sent, Object? skipped) {
+    return '已转发 $sent 条，跳过 $skipped 条';
+  }
+
+  @override
+  String chatV2_forwardScreensS(Object? sourceLabel) {
+    return '$sourceLabel · 已选择的会话';
+  }
+
+  @override
+  String chatV2_forwardScreensStamp(Object? selectedCount) {
+    return '已选 $selectedCount';
+  }
+
+  @override
+  String get chatV2_forwardScreensStamp2 => '匿名';
+
+  @override
+  String get chatV2_forwardScreensSubtitle => '已删除或没有正文，转发时会被跳过。';
+
+  @override
+  String get chatV2_forwardScreensText => '将输出';
+
+  @override
+  String get chatV2_forwardScreensText2 => '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。';
+
+  @override
+  String get chatV2_forwardScreensTitle => '这条消息不能转发';
+
+  @override
+  String get chatV2_forwardScreensTitle2 => '转发到这个会话？';
+
+  @override
+  String get chatV2_forwardTargetSheetBarrierLabel => '关闭转发';
+
+  @override
+  String get chatV2_forwardTargetSheetChatForwardOutcomeMessage => '已转发';
+
+  @override
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage2(Object? skipped) {
+    return '跳过 $skipped 条';
+  }
+
+  @override
+  String chatV2_forwardTargetSheetChatForwardOutcomeMessage3(
+    Object? unavailable,
+  ) {
+    return '$unavailable 条已删除或不在本机，未转发';
+  }
+
+  @override
+  String chatV2_forwardTargetSheetContent(Object? chatForwardTargetPageSize) {
+    return '最近 $chatForwardTargetPageSize 个已加入的会话 · 转发后会标注来源会话';
+  }
+
+  @override
+  String get chatV2_forwardTargetSheetForwardTargetSheetErrorReason =>
+      '没有读到可转发的会话，本次没有转发任何内容。';
+
+  @override
+  String get chatV2_forwardTargetSheetLoopOfflineState => '读取会话';
+
+  @override
+  String get chatV2_forwardTargetSheetLoopSheetHeading => '转发到';
+
+  @override
+  String chatV2_forwardTargetSheetS(Object? count) {
+    return '逐条转发 $count 条到';
+  }
+
+  @override
+  String get chatV2_groupScreensBarrierLabel => '关闭群名称修改';
+
+  @override
+  String get chatV2_groupScreensBody => '退出后你不会再收到这个群的消息。群创建者不能退出。';
+
+  @override
+  String get chatV2_groupScreensCaption => '成员、通知与退出按风险从低到高排列。这里只显示已确认的信息。';
+
+  @override
+  String get chatV2_groupScreensErrorText => '群名称需要 1–40 个字符，且不能含控制字符';
+
+  @override
+  String get chatV2_groupScreensGroupInfoCapabilityUnavailableDetail =>
+      '尚未读取到能力清单，本页不请求任何群资源。';
+
+  @override
+  String get chatV2_groupScreensGroupInfoMembersUnavailableLabel => '成员与成员管理';
+
+  @override
+  String get chatV2_groupScreensGroupInfoMissingCidDetail =>
+      '请从群聊页进入，本页不会猜测要打开哪个群的信息。';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameSubtitle => '正在读取群名称';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameSubtitle2 => '群名称暂时读不到';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTitle => '群名称';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption => '修改';
+
+  @override
+  String get chatV2_groupScreensGroupInfoNameTrailingCaption2 => '仅群主可改';
+
+  @override
+  String get chatV2_groupScreensGroupInfoResolveFailedReason =>
+      '这个群的信息还没确认，暂时不能退出，也没有提交任何改动。';
+
+  @override
+  String get chatV2_groupScreensGroupInfoSettingsUnavailableLabel =>
+      '消息通知与置顶会话';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateEmptyMessage =>
+      '找不到这个群，或者你已经不是成员了。这不代表退出失败。';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateEmptyTitle => '没有可退出的群成员关系';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateUnavailableDetail =>
+      '群成员关系服务暂时不可用，本页没有提交任何变更。';
+
+  @override
+  String get chatV2_groupScreensGroupInfoStateUnavailableMessage => '退出操作当前不可用';
+
+  @override
+  String get chatV2_groupScreensGroupOpenInfoLabel => '群信息';
+
+  @override
+  String get chatV2_groupScreensGroupScopeNoteText =>
+      '普通群没有社区币、没有 Mining Weight，也没有 Community AI。带币社区在「社区」栏。';
+
+  @override
+  String get chatV2_groupScreensGroupScopeNoteTitle => '普通群与社区的区别';
+
+  @override
+  String get chatV2_groupScreensKicker => '群资料';
+
+  @override
+  String chatV2_groupScreensLabelText(Object? groupNameMaximumRunes) {
+    return '群名称（1–$groupNameMaximumRunes 个字符）';
+  }
+
+  @override
+  String get chatV2_groupScreensLoopOfflineState => '退出群聊';
+
+  @override
+  String get chatV2_groupScreensLoopSheetHeading => '修改群名称';
+
+  @override
+  String get chatV2_groupScreensMessage => '群聊当前不可用';
+
+  @override
+  String get chatV2_groupScreensMessage2 => '缺少群聊标识';
+
+  @override
+  String chatV2_groupScreensMessage3(Object? name) {
+    return '群名称已改为「$name」';
+  }
+
+  @override
+  String get chatV2_groupScreensMessage4 => '已退出群聊';
+
+  @override
+  String get chatV2_groupScreensNotFound => '群不存在或你已不在群里。';
+
+  @override
+  String get chatV2_groupScreensPermissionDenied => '只有群主可以修改群名称；这次没有改动。';
+
+  @override
+  String get chatV2_groupScreensReason => '请从会话列表或群信息进入，本页不会猜测要打开哪个群。';
+
+  @override
+  String get chatV2_groupScreensTitle => '退出这个群聊？';
+
+  @override
+  String get chatV2_groupScreensUnavailable => '改名暂时不可用，群名称没有改动。';
+
+  @override
+  String get chatV2_groupScreensValidationFailed => '群名称需要 1–40 个字符，且不能含控制字符。';
+
+  @override
+  String get chatV2_mergeExportDismissed => '已生成长图，但没有选择分享去处';
+
+  @override
+  String get chatV2_mergeExportFailed => '长图没有生成成功，没有任何内容离开这台设备';
+
+  @override
+  String get chatV2_mergeExportShared => '长图已生成，请在分享面板中选择去处';
+
+  @override
+  String get chatV2_mergeExportUnavailable => '本次运行没有装配系统分享，长图未生成';
+
+  @override
+  String get chatV2_messageSelectionBody => '删除后会话里的每个人都会看到「消息已删除」，无法撤回。';
+
+  @override
+  String get chatV2_messageSelectionLabel => '已选择这条消息';
+
+  @override
+  String get chatV2_messageSelectionLabel2 => '选择这条消息';
+
+  @override
+  String get chatV2_messageSelectionLoopMessageForwardActions => '多选';
+
+  @override
+  String get chatV2_messageSelectionLoopSelectionForwardEachLabel => '逐条转发';
+
+  @override
+  String get chatV2_messageSelectionLoopSelectionMergeLabel => '合并转发';
+
+  @override
+  String chatV2_messageSelectionLoopSelectionTopbarSubtitle(
+    Object? loopMessageSelectionLimit,
+  ) {
+    return '最多 $loopMessageSelectionLimit 条';
+  }
+
+  @override
+  String chatV2_messageSelectionLoopSelectionTopbarTitle(Object? count) {
+    return '已选 $count 条';
+  }
+
+  @override
+  String chatV2_messageSelectionMessage(Object? loopMessageSelectionLimit) {
+    return '一次最多选择 $loopMessageSelectionLimit 条';
+  }
+
+  @override
+  String chatV2_messageSelectionMessage2(Object? unavailable) {
+    return '$unavailable 条已删除或不在本机，没有放进长图';
+  }
+
+  @override
+  String chatV2_messageSelectionShow(Object? deleted) {
+    return '已删除 $deleted 条';
+  }
+
+  @override
+  String chatV2_messageSelectionShow2(Object? failed) {
+    return '$failed 条没有删除成功';
+  }
+
+  @override
+  String chatV2_messageSelectionShow3(Object? unavailable) {
+    return '$unavailable 条已不在本机，跳过';
+  }
+
+  @override
+  String chatV2_messageSelectionTitle(num count) {
+    return '删除这 $count 条消息？';
+  }
+
+  @override
+  String get chatV2_modelsHost => '主持人';
+
+  @override
+  String get chatV2_modelsInviteSpeaker => '邀请上麦';
+
+  @override
+  String get chatV2_modelsListener => '听众';
+
+  @override
+  String get chatV2_modelsRemoveSpeaker => '移出发言';
+
+  @override
+  String get chatV2_modelsSpeaker => '发言人';
+
+  @override
+  String get chatV2_modelsSwitch => '只有开启匿名模式的成员显示为匿名；是否可被发现不影响这一行。';
+
+  @override
+  String get chatV2_modelsSwitch10 => '语音房还在验证中，验证通过前这一页不会发起任何语音连接。';
+
+  @override
+  String get chatV2_modelsSwitch11 => '在线人数暂时读不到，因此不显示数字。';
+
+  @override
+  String get chatV2_modelsSwitch12 => '这个房间还没有开放收听。刷新一次，或让主持人重新开启。';
+
+  @override
+  String get chatV2_modelsSwitch13 => '这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。';
+
+  @override
+  String get chatV2_modelsSwitch14 => '这个语音房还没有在服务商那边建好，现在进不去。';
+
+  @override
+  String get chatV2_modelsSwitch15 => '举手已经记下了，主持人可能要稍后才看到。';
+
+  @override
+  String get chatV2_modelsSwitch16 => '这次静音还没有在服务商那边确认。';
+
+  @override
+  String get chatV2_modelsSwitch17 => 'Community AI 还没有开放，这一页暂时不可用。';
+
+  @override
+  String get chatV2_modelsSwitch2 => '该社区还没有官方群频道。';
+
+  @override
+  String get chatV2_modelsSwitch3 => '你的频道成员身份正在同步，稍后即可进入。';
+
+  @override
+  String get chatV2_modelsSwitch4 =>
+      '官方群已达到服务商的成员上限，暂时无法进入。你的 LOOP 社区成员资格不受影响。';
+
+  @override
+  String get chatV2_modelsSwitch5 => '官方群创建或同步失败，需要运维介入后才能进入。';
+
+  @override
+  String get chatV2_modelsSwitch6 => '需要先加入该社区，才能进入官方群。';
+
+  @override
+  String get chatV2_modelsSwitch7 => '聊天暂时不可用，稍后再试。';
+
+  @override
+  String get chatV2_modelsSwitch8 => '该社区当前没有进行中的语音房。';
+
+  @override
+  String get chatV2_modelsSwitch9 => '聊天在当前环境还没有开放。';
+
+  @override
+  String get chatV2_modelsUnmuteSelf => '取消我的静音';
+
+  @override
+  String get chatV2_searchChatSearchEmptyMessage => '换一个关键词，或切换到更大的范围再试。';
+
+  @override
+  String get chatV2_searchChatSearchEmptyTitle => '没有匹配的消息';
+
+  @override
+  String get chatV2_searchChatSearchErrorReason => '这次检索没有完成，本页没有展示任何结果。';
+
+  @override
+  String get chatV2_searchChatSearchIdleMessage => '至少输入 2 个字符。结果只来自你已加入的会话。';
+
+  @override
+  String get chatV2_searchChatSearchIdleTitle => '输入关键词开始搜索';
+
+  @override
+  String get chatV2_searchChatSearchNotConnectedDetail =>
+      '聊天搜索暂时不可用，这一页没有发起任何请求。';
+
+  @override
+  String get chatV2_searchChatSearchNotConnectedMessage => '聊天搜索当前不可用';
+
+  @override
+  String chatV2_searchChatSearchScreenSubtitle(Object? label) {
+    return '$label · 还没有检索';
+  }
+
+  @override
+  String chatV2_searchChatSearchScreenSubtitle2(num hits, Object? label) {
+    return '$label · $hits 条';
+  }
+
+  @override
+  String get chatV2_searchChatSearchScreenTitle => '搜消息';
+
+  @override
+  String get chatV2_searchCurrentConversation => '当前会话';
+
+  @override
+  String get chatV2_searchLoopOfflineState => '搜索消息';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopChannelPinnedUnavailableTitle =>
+      '置顶公告';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopChatComposerHint =>
+      '发消息 · 贴合约地址识别代币';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock => '打开会话';
+
+  @override
+  String get chatV2_streamChannelSurfaceLoopStreamChannelStateBlock2 => '发消息';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage =>
+      '这个会话链接不是 LOOP 支持的频道地址，本页没有发起任何连接。';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage2 => '正在恢复聊天会话…';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage3 =>
+      '设备当前离线，没有恢复聊天授权，也没有发送任何消息。';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage4 => '聊天授权没有恢复成功，本页没有发起任何消息操作。';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage5 => '正在确认这个频道以及你的成员身份…';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage6 =>
+      '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。';
+
+  @override
+  String get chatV2_streamChannelSurfaceMessage7 => '会话不可用';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotConnected => '没有连上聊天服务，请检查网络后重试。';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotConnectedMessage =>
+      '这个会话暂时打不开，稍后再试。';
+
+  @override
+  String get chatV2_streamChannelSurfaceNotOpened => '没能打开这个频道的会话，请稍后重试。';
+
+  @override
+  String get chatV2_streamChannelSurfaceRefused => '你还不是这个群的成员，LOOP 没有打开任何会话。';
+
+  @override
+  String get chatV2_streamChannelSurfaceSwitch =>
+      '这个频道还没有同步到你的账号，LOOP 没有打开任何会话。';
+
+  @override
+  String get chatV2_voiceRoomQueueInvited => '已邀请';
+
+  @override
+  String get chatV2_voiceRoomQueueWaiting => '等待邀请';
+
+  @override
+  String chatV2_voiceRoomRosterListenersCount(Object? count) {
+    return '听众 $count';
+  }
+
+  @override
+  String get chatV2_voiceRoomRosterListenersEmpty => '当前没有听众';
+
+  @override
+  String chatV2_voiceRoomRosterSpeakersCount(Object? count) {
+    return '发言人 $count';
+  }
+
+  @override
+  String get chatV2_voiceRoomRosterSpeakersEmpty => '当前没有发言人';
+
+  @override
+  String get chatV2_voiceRoomScreensBody => '离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。';
+
+  @override
+  String get chatV2_voiceRoomScreensBody2 =>
+      '结束后房间里的所有人都会立刻断开，这个房间不能再进入，举手队列也会作废。主持人没有「离开」：房间的存续由主持人决定。只是想暂时离开这一页，请用返回键，房间会收起在顶部，随时可以回来。社区可以再开一个新的。';
+
+  @override
+  String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand =>
+      '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。';
+
+  @override
+  String get chatV2_voiceRoomScreensConfirmLabel => '离开';
+
+  @override
+  String get chatV2_voiceRoomScreensConfirmLabel2 => '结束房间';
+
+  @override
+  String chatV2_voiceRoomScreensConnecting(Object? part) {
+    return '$part · 正在连接语音';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensDetail => '这里不会发起语音连接。刷新一次，或让主持人重新开启。';
+
+  @override
+  String chatV2_voiceRoomScreensDisconnected(Object? part) {
+    return '$part · 语音已断开';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensEmpty => '当前没有语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensEmpty2 => '这个社区现在没有进行中的语音房。';
+
+  @override
+  String get chatV2_voiceRoomScreensEmptyMessage => '当前没有进行中的语音房';
+
+  @override
+  String chatV2_voiceRoomScreensInviteSpeaker(Object? name) {
+    return '目标：$name。邀请后对方成为发言人，可以在这次通话里说话。';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensKicker => '语音进行中';
+
+  @override
+  String get chatV2_voiceRoomScreensKicker2 => '语音大厅';
+
+  @override
+  String get chatV2_voiceRoomScreensLabel => '取消举手';
+
+  @override
+  String get chatV2_voiceRoomScreensLabel2 => '举手';
+
+  @override
+  String get chatV2_voiceRoomScreensLoading => '正在读取语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensLoading2 => '正在读取这个社区的语音房。';
+
+  @override
+  String get chatV2_voiceRoomScreensLoopBadge => '发言中';
+
+  @override
+  String get chatV2_voiceRoomScreensLoopBadge2 => '已举手';
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel(Object? handRaises) {
+    return '举手队列 $handRaises';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensLoopLabel2 => '主持人控制';
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel3(Object? speakerCount) {
+    return '发言者 $speakerCount';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensLoopLabel4(Object? listening) {
+    return '听众 $listening';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensLoopTopbarBackLabel => '收起语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage => '无法打开分享';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage10 =>
+      'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage11 =>
+      'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage2 => '这个房间还没有开放收听';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage3 => '已下麦，回到听众';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage4 => '下麦暂不可用';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage5 => '房间已结束 · 主持人已经结束这个语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage6 => '已离开语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensMessage7 => '已离开语音房，语音连接的收尾没有确认';
+
+  @override
+  String chatV2_voiceRoomScreensMessage8(Object? communityFailureReason) {
+    return '麦克风已打开，但名单上的静音标记没能撤回：$communityFailureReason';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensMessage9 => '已举手，等待主持人邀请';
+
+  @override
+  String chatV2_voiceRoomScreensMute(Object? name) {
+    return '目标：$name。静音是 LOOP 侧的意图，对方的设备仍可能自行开麦；之后可以在这一行取消。';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensMute2 => '已请求静音';
+
+  @override
+  String chatV2_voiceRoomScreensName(Object? named) {
+    return '我 · $named';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensPart(Object? count, Object? part) {
+    return '$part · $count 人已加入';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensReconnecting(Object? part) {
+    return '$part · 语音正在重连';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensRemoveSpeaker(Object? name) {
+    return '目标：$name。移出后对方回到听众，仍然留在房间里。';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensRemoveSpeaker2 => '已移出发言';
+
+  @override
+  String get chatV2_voiceRoomScreensRun => '已请求全体静音';
+
+  @override
+  String get chatV2_voiceRoomScreensRun2 => '已邀请发言';
+
+  @override
+  String get chatV2_voiceRoomScreensRun3 => '已加入，正在连接语音';
+
+  @override
+  String get chatV2_voiceRoomScreensRun4 => '已取消举手';
+
+  @override
+  String get chatV2_voiceRoomScreensRun5 => '房间已结束';
+
+  @override
+  String get chatV2_voiceRoomScreensS => '举手队列';
+
+  @override
+  String get chatV2_voiceRoomScreensS2 => '房间已结束，语音连接的收尾没有确认';
+
+  @override
+  String chatV2_voiceRoomScreensS3(Object? count, Object? part) {
+    return '$part · $count 人在通话';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensS4(Object? inRoom) {
+    return '$inRoom 人在房间里';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle => '点这一行可以取消静音';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle2 => '主持人已在 LOOP 侧静音';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle3 => '可以发言';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle4 => '等待主持人邀请发言';
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle5 => '收听中';
+
+  @override
+  String chatV2_voiceRoomScreensSubtitle6(Object? entries, Object? entries2) {
+    return '第 $entries 位 · $entries2';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSubtitle7 => '邀请其发言';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch =>
+      '语音房记下了，但通话还没有建好。再点一次「开启语音房」可以接着建。';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch10 => '返回会把房间收起在顶部，随时点开回来。';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch11 => '进入前确认主持人、在线人数与录音说明。';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch2 =>
+      '语音房建好了，但还没有开放收听。再点一次「开启语音房」可以重试。';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch3 =>
+      '语音房还没有准备好，现在谁都进不去。再点一次「开启语音房」可以重试。';
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch4 =>
+      'LOOP 已经提交这次变更，服务商还没有确认结果。请稍后刷新查看最新状态。';
+
+  @override
+  String chatV2_voiceRoomScreensSwitch5(Object? alias) {
+    return '我 · $alias';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensSwitch6(Object? part) {
+    return '$part · 人数正在统计';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch7 => '语音房状态读不到';
+
+  @override
+  String chatV2_voiceRoomScreensSwitch8(Object? speaking) {
+    return '$speaking 人在麦上';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensSwitch9 => '这次没有读到语音房的状态，下面可以重试。';
+
+  @override
+  String get chatV2_voiceRoomScreensText => '离开后你会退出这次通话，举手也会一并取消。';
+
+  @override
+  String get chatV2_voiceRoomScreensTitle => '离开语音房？';
+
+  @override
+  String get chatV2_voiceRoomScreensTitle2 => '结束语音房？';
+
+  @override
+  String chatV2_voiceRoomScreensUnmute(Object? name) {
+    return '目标：$name。只撤回 LOOP 侧的静音意图，不会替对方打开麦克风——开麦只能由对方的设备完成。';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensUnmute2 => '已取消静音意图';
+
+  @override
+  String get chatV2_voiceRoomScreensUnmuteSelf =>
+      '这是你自己的发言人行。只撤回 LOOP 侧的静音标记，不会打开麦克风——请在通话里自己开麦。';
+
+  @override
+  String get chatV2_voiceRoomScreensUnmuteSelf2 => '已取消我的静音标记';
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomBannerTitle(Object? communityName) {
+    return '正在语音房 · $communityName';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomLiveLine(
+    Object? inRoom,
+    Object? liveVoiceRoomElapsedLabel,
+  ) {
+    return '$inRoom 在听 · $liveVoiceRoomElapsedLabel';
+  }
+
+  @override
+  String chatV2_voiceRoomScreensVoiceRoomTopbarLine(
+    Object? listening,
+    Object? speaking,
+  ) {
+    return '进行中 · 发言 $speaking · 听众 $listening';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel => '正在离开…';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel2 => '确认离开';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel => '重新连接';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomBannerOpenLabel2 => '返回房间';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail =>
+      '这台设备没能读到语音房的开放状态，请检查网络后重试。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail2 =>
+      '这次还没有读到语音房的开放状态，请稍后再试。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEndedBackLabel => '返回社区';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEndedMessage => '主持人已经结束这个语音房。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage =>
+      '语音房当前不可用';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail =>
+      '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage => '现在不能结束房间';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel => '房间说明，有一项服务商未确认';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInfoLabel2 => '房间说明';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyMessage =>
+      '有人举手后会按顺序列在这里。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomInviteEmptyTitle => '没有待邀请的举手';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomJoinLabel => '加入语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel =>
+      '正在刷新…';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableDetail =>
+      '这个语音房暂时打不开，没有发起任何连接。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMediaUnavailableMessage =>
+      '语音连接不可用';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMemberSheetBarrierLabel =>
+      '关闭成员操作弹层';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMissingIdDetail =>
+      '请从社区主页或社区官方群进入，本页不会猜测要打开哪个社区的语音房。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomMuteAllLabel => '全体静音';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableDetail =>
+      '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomNotJoinableMessage => '这个房间还不能加入';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyMessage =>
+      '没有成员在排队。有人举手后会按顺序列在这里。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueEmptyTitle => '举手队列为空';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyMessage =>
+      '完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyTitle => '你还没有举手';
+
+  @override
+  String chatV2_voiceRoomScreensVoiceroomQueueSelfSubtitle(Object? sequence) {
+    return '第 $sequence 位 · 等待邀请';
+  }
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomShareLabel => '分享语音房';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle => '主持人 · 发言中';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle2 =>
+      '主持人 · 麦克风已开';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableDetail =>
+      '后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。';
+
+  @override
+  String get chatV2_voiceRoomScreensVoiceroomStepDownUnavailableMessage =>
+      '自助下麦当前不可用';
+
+  @override
+  String chatV2_voiceRoomShareLine(Object? communityName, Object? roomTitle) {
+    return '来 LOOP 的『$communityName』语音房：$roomTitle';
+  }
+
+  @override
+  String chatV2_voiceRoomShareVoiceRoomTitle(Object? communityName) {
+    return '$communityName 语音房';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageBarrierLabel => '关闭开播弹层';
+
+  @override
+  String get chatV2_voiceRoomStageBuild => '正在发言';
+
+  @override
+  String get chatV2_voiceRoomStageBuild2 => '麦克风已开';
+
+  @override
+  String get chatV2_voiceRoomStageBuild3 =>
+      '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。';
+
+  @override
+  String get chatV2_voiceRoomStageHintText => '留空时显示「社区名 语音房」';
+
+  @override
+  String chatV2_voiceRoomStageLabel(num count, Object? onTap) {
+    return '还有 $count 位听众$onTap';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageLabel2 => '开播';
+
+  @override
+  String get chatV2_voiceRoomStageLabel3 => '人数';
+
+  @override
+  String get chatV2_voiceRoomStageLabel4 => '我的身份';
+
+  @override
+  String get chatV2_voiceRoomStageLabelText => '房间标题（可留空）';
+
+  @override
+  String get chatV2_voiceRoomStageLoopOfflineState => '查看发言人';
+
+  @override
+  String get chatV2_voiceRoomStageLoopOfflineState2 => '查看听众';
+
+  @override
+  String chatV2_voiceRoomStageSemanticLabel(Object? badge, Object? label) {
+    return '$label，$badge 人举手';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageValue => '还没有加入';
+
+  @override
+  String get chatV2_voiceRoomStageViewFullList => '，查看完整名单';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomBarMicLabel => '未连接';
+
+  @override
+  String chatV2_voiceRoomStageVoiceroomHostLabel(
+    Object? caption,
+    Object? name,
+  ) {
+    return '主持人 $name$caption';
+  }
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomHostTag => '主持';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomInfoSheetBarrierLabel => '关闭房间说明';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomInviteOpenLabel => '邀请发言';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersEmptyTitle => '还没有听众';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersErrorTitle => '听众名单读不到';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersPermissionTitle =>
+      '没有权限查看听众名单';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage =>
+      '听众名单当前不可用';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomProviderUnconfirmedTitle =>
+      '服务商侧未确认';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersEmptyTitle => '还没有人上麦';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle => '发言人名单读不到';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle =>
+      '没有权限查看发言人名单';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage =>
+      '发言人名单当前不可用';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStartPending =>
+      '上一次开播还没有完成，再开播会接着完成它，标题沿用当时填写的内容。';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStartSubmitLabel => '正在开播…';
+
+  @override
+  String get chatV2_voiceRoomStageVoiceroomStepDownLabel => '下麦';
+
+  @override
+  String get chatWidgets_componentsBuild => 'Shared at 14:12 · 演示数据';
+
+  @override
+  String get chatWidgets_componentsChange => '+8.4% · 演示数据';
+
+  @override
+  String get chatWidgets_componentsChatSpotSnapshotSemanticsLabel =>
+      'ETH Spot market snapshot · 开发预览';
+
+  @override
+  String get chatWidgets_componentsFact => 'LP 3 天后解锁';
+
+  @override
+  String get chatWidgets_componentsFact2 => '前十持有人占 61%';
+
+  @override
+  String get chatWidgets_componentsLabel => '语音';
+
+  @override
+  String get chatWidgets_componentsLoopTokenCardModel =>
+      '开发预览事实 · 非 provider 响应 · 14:06 UTC';
+
+  @override
+  String get chatWidgets_componentsLoopTokenCardModel2 => '演示数据不能触发交易或自选变更。';
+
+  @override
+  String get chatWidgets_componentsSource => '开发预览事实';
+
+  @override
+  String get chat_inboxRowActionsChatInboxRowSheetBarrierLabel => '关闭会话操作';
+
+  @override
+  String get chat_inboxRowActionsMarkRead => '标为已读';
+
+  @override
+  String get chat_inboxRowActionsPin => '置顶';
+
+  @override
+  String get chat_inboxRowActionsUnpin => '取消置顶';
+
+  @override
+  String get chat_previewPagesEyebrow => 'Shared in chat · 开发预览';
+
+  @override
+  String get chat_previewPagesMessage =>
+      '演示价格和事实不是 provider 响应。生产卡片缺少新鲜事实时不会显示价格、Buy 或 Watch。';
+
+  @override
+  String get chat_previewPagesMessage2 =>
+      'Reference price, 24h change, and volume are labelled 演示数据. Opening Market loads a separate current public Spot snapshot.';
+
+  @override
+  String get chat_previewPagesSubtitle => '开发预览：消息只保存资产标识；当前价格与事实必须在展示时重新验证。';
+
+  @override
+  String get chat_secondaryPagesLoopSectionLabel => 'Preferences · 开发预览';
+
+  @override
+  String get chat_secondaryPagesS =>
+      'Removed from 开发预览 only. No sender interaction occurred.';
+
+  @override
+  String get chat_secondaryPagesShowRequestNotice =>
+      'Marked accepted in 开发预览 and removed locally. No Stream conversation was created.';
+
+  @override
+  String get chat_secondaryPagesShowRequestNotice2 =>
+      'Removed from 开发预览. No report was submitted.';
+
+  @override
+  String get chat_secondaryPagesTitle => 'Development Preview only · 开发预览';
+
+  @override
+  String get chat_streamInboxBody => '会话会从列表移除，有新消息时会重新出现。聊天记录不会被清除。';
+
+  @override
+  String chat_streamInboxChatVoiceRoomReturnEntrySemanticLabel(
+    Object? communityName,
+  ) {
+    return '正在语音房，$communityName，返回房间';
+  }
+
+  @override
+  String chat_streamInboxChatVoiceRoomReturnEntryTitle(Object? communityName) {
+    return '正在语音房 · $communityName';
+  }
+
+  @override
+  String get chat_streamInboxLabel => '会话加载中';
+
+  @override
+  String get chat_streamInboxMessage => '这个版本没有连接聊天服务，会话不会显示在这里。';
+
+  @override
+  String get chat_streamInboxMessage10 => '解析 LOOP 群组前，需要先确认你当前仍是这个群聊的成员。';
+
+  @override
+  String get chat_streamInboxMessage11 => 'LOOP 正在确认你是这个群聊的成员。';
+
+  @override
+  String get chat_streamInboxMessage12 => '没有确认到你在这个群聊里的成员身份，没有解析任何群组。';
+
+  @override
+  String get chat_streamInboxMessage13 => 'LOOP 正在确认这个频道和你的成员身份。';
+
+  @override
+  String get chat_streamInboxMessage14 => '没有确认到你在这个频道里的成员身份，没有创建或打开任何频道。';
+
+  @override
+  String chat_streamInboxMessage15(Object? label) {
+    return '「$label」没有完成，稍后再试';
+  }
+
+  @override
+  String get chat_streamInboxMessage2 => '会话没有恢复成功，这一页没有执行任何消息操作。';
+
+  @override
+  String get chat_streamInboxMessage3 => '聊天服务还没有连接，稍后再试。';
+
+  @override
+  String get chat_streamInboxMessage4 => '这个链接没有指向 LOOP 支持的会话，没有打开任何频道。';
+
+  @override
+  String get chat_streamInboxMessage5 => 'LOOP 正在恢复由服务端授权的聊天连接。';
+
+  @override
+  String get chat_streamInboxMessage6 => '聊天授权没有恢复成功，没有打开任何会话。';
+
+  @override
+  String get chat_streamInboxMessage7 => '打开这个会话前，需要服务端确认的聊天身份和短期凭证。';
+
+  @override
+  String get chat_streamInboxMessage8 => '这个链接没有指向 LOOP 支持的群聊，没有解析任何群组。';
+
+  @override
+  String get chat_streamInboxMessage9 => '聊天授权没有恢复成功，没有解析任何群组。';
+
+  @override
+  String get chat_streamInboxPlaceholder => '搜索聊天';
+
+  @override
+  String get chat_streamInboxStreamChatEmptyActionLabel => '找朋友';
+
+  @override
+  String get chat_streamInboxStreamChatEmptyMessage => '还没有会话';
+
+  @override
+  String get chat_streamInboxStreamChatListErrorMessage =>
+      '这一页没有读到会话列表，本地已有的历史没有被删除。';
+
+  @override
+  String get chat_streamInboxStreamChatListErrorTitle => '会话列表读不到';
+
+  @override
+  String get chat_streamInboxStreamChatUnavailableTitle => '会话还没有连接';
+
+  @override
+  String get chat_streamInboxTitle => '会话链接无效';
+
+  @override
+  String get chat_streamInboxTitle10 => '会话不可用';
+
+  @override
+  String get chat_streamInboxTitle11 => '会话操作';
+
+  @override
+  String get chat_streamInboxTitle12 => '删除这个会话？';
+
+  @override
+  String get chat_streamInboxTitle2 => '正在恢复会话';
+
+  @override
+  String get chat_streamInboxTitle3 => '聊天暂不可用';
+
+  @override
+  String get chat_streamInboxTitle4 => '聊天服务还没有连接';
+
+  @override
+  String get chat_streamInboxTitle5 => '群聊链接无效';
+
+  @override
+  String get chat_streamInboxTitle6 => '群内身份暂不可用';
+
+  @override
+  String get chat_streamInboxTitle7 => '正在确认群聊';
+
+  @override
+  String get chat_streamInboxTitle8 => '群聊不可用';
+
+  @override
+  String get chat_streamInboxTitle9 => '正在打开会话';
+
+  @override
+  String get chat_voiceRoomLabel => '主持';
+
+  @override
+  String get chat_voiceRoomText => '模拟座位';
+
+  @override
   String get common_about => '说明';
 
   @override
@@ -11109,6 +13624,551 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get shell_tabSquare => '广场';
+
+  @override
+  String get socialPublicProfile_controllerAlreadyFriends => '你们已经是好友了。';
+
+  @override
+  String get socialPublicProfile_controllerCommand => '好友申请已发送';
+
+  @override
+  String get socialPublicProfile_controllerCommand2 => '已删除好友';
+
+  @override
+  String get socialPublicProfile_controllerCommand3 => '已拉黑';
+
+  @override
+  String get socialPublicProfile_controllerCooldown => '刚被拒绝过，过一段时间再试。';
+
+  @override
+  String get socialPublicProfile_controllerIncomingRequestPending =>
+      '对方已向你发出申请，去「好友申请」里处理。';
+
+  @override
+  String get socialPublicProfile_controllerNotFound => '找不到这个用户。';
+
+  @override
+  String get socialPublicProfile_controllerOutcomeUnknown =>
+      '结果未确认，请刷新后再看，不要重复提交。';
+
+  @override
+  String get socialPublicProfile_controllerOutgoingRequestPending =>
+      '已经发过申请，等对方处理。';
+
+  @override
+  String get socialPublicProfile_controllerPermissionDenied => '对方没有开放好友申请。';
+
+  @override
+  String get socialPublicProfile_controllerProfileRequired =>
+      '需要先完成 LOOP ID 激活。';
+
+  @override
+  String get socialPublicProfile_controllerRateLimited => '操作太频繁，请稍后再试。';
+
+  @override
+  String get socialPublicProfile_controllerS => '已取消关注';
+
+  @override
+  String get socialPublicProfile_controllerS2 => '已解除拉黑';
+
+  @override
+  String get socialPublicProfile_controllerSwitch => '好友申请没有发出，请稍后再试。';
+
+  @override
+  String get socialPublicProfile_controllerUnavailable => '好友服务暂不可用，没有发出申请。';
+
+  @override
+  String get socialPublicProfile_modelsTransferIn => '转入';
+
+  @override
+  String get socialPublicProfile_modelsTransferOut => '转出';
+
+  @override
+  String get socialPublicProfile_userBody => '删除后你们不再是好友，私聊记录保留。之后可以重新申请。';
+
+  @override
+  String get socialPublicProfile_userBody2 =>
+      '拉黑后对方看不到你的资料，也不能给你发消息或好友申请。可以在「屏蔽名单」里解除。';
+
+  @override
+  String get socialPublicProfile_userCountCommunities => '社区';
+
+  @override
+  String get socialPublicProfile_userCountFollowing => '关注';
+
+  @override
+  String get socialPublicProfile_userDetail => '链上数据暂不可用，这里不会显示 0 代替。';
+
+  @override
+  String get socialPublicProfile_userFriends => '已是好友';
+
+  @override
+  String get socialPublicProfile_userHoldingsHidden => '对方未公开持仓';
+
+  @override
+  String get socialPublicProfile_userHoldingsUnavailable => '持仓暂时读不到';
+
+  @override
+  String get socialPublicProfile_userLaunch2Row => 'Launch 链';
+
+  @override
+  String socialPublicProfile_userLoopRecordRow(Object? block) {
+    return '区块 #$block';
+  }
+
+  @override
+  String socialPublicProfile_userMembers(Object? formatDecimal) {
+    return '$formatDecimal 名成员';
+  }
+
+  @override
+  String get socialPublicProfile_userNone => '加好友';
+
+  @override
+  String get socialPublicProfile_userOneMember => '1 名成员';
+
+  @override
+  String get socialPublicProfile_userPendingIn => '处理申请';
+
+  @override
+  String get socialPublicProfile_userPendingOut => '已申请';
+
+  @override
+  String socialPublicProfile_userS(Object? launch2StageLabel) {
+    return 'Launch 链，$launch2StageLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userSwitch => '持仓总额';
+
+  @override
+  String socialPublicProfile_userSwitch2(Object? localTimestampLabel) {
+    return '读取于 $localTimestampLabel';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle => '删除好友？';
+
+  @override
+  String socialPublicProfile_userTitle2(Object? displayName) {
+    return '拉黑 $displayName？';
+  }
+
+  @override
+  String get socialPublicProfile_userTitle4 => '对方暂无钱包';
+
+  @override
+  String get socialPublicProfile_userTradesHidden => '对方未公开交易';
+
+  @override
+  String get socialPublicProfile_userTradesUnavailable => '交易暂时读不到';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel => '解除拉黑';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockLabel2 => '拉黑';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedBody =>
+      '对方不能给你发消息或好友申请，你也看不到对方的持仓与交易。';
+
+  @override
+  String get socialPublicProfile_userUserProfileBlockedTitle => '你已拉黑对方';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesEmptyTitle =>
+      '还没有加入社区';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesHiddenTitle =>
+      '对方未公开社区列表';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableDetail =>
+      '社区服务暂不可用，这里不会显示空列表代替。';
+
+  @override
+  String get socialPublicProfile_userUserProfileCommunitiesUnavailableMessage =>
+      '社区列表暂时读不到';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsEmptyTitle => '还没有持仓';
+
+  @override
+  String
+  get socialPublicProfile_userUserProfileHoldingsLaunch2UnavailableLabel =>
+      'MEME 持仓暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileHoldingsTotal => '暂无报价';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetMessage =>
+      '请从聊天、搜索或成员列表进入。';
+
+  @override
+  String get socialPublicProfile_userUserProfileInvalidTargetTitle =>
+      '链接里没有可打开的用户';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSemanticLabel => '更多操作';
+
+  @override
+  String get socialPublicProfile_userUserProfileMoreSheetBarrierLabel =>
+      '关闭更多操作';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundMessage =>
+      '账号不存在，或对方的资料对你不可见。';
+
+  @override
+  String get socialPublicProfile_userUserProfileNotFoundTitle => '找不到这个用户';
+
+  @override
+  String get socialPublicProfile_userUserProfileRemoveFriendLabel => '删除好友';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportLabel => '举报并屏蔽';
+
+  @override
+  String get socialPublicProfile_userUserProfileReportUnavailable =>
+      '举报通道暂未开放；需要时可以先拉黑。';
+
+  @override
+  String get socialPublicProfile_userUserProfileScreenTitle => '用户资料';
+
+  @override
+  String get socialPublicProfile_userUserProfileShareCardSemanticLabel =>
+      '分享名片';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesEmptyTitle => '还没有交易';
+
+  @override
+  String get socialPublicProfile_userUserProfileTradesLaunch2UnavailableLabel =>
+      'MEME 记录暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableDetail =>
+      '资料服务还没有开放，这一页没有读取任何内容。';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnavailableMessage =>
+      '用户资料暂不可用';
+
+  @override
+  String get socialPublicProfile_userUserProfileUnblockLabel => '解除';
+
+  @override
+  String get socialQr_cardBarrierLabel => '关闭二维码名片';
+
+  @override
+  String get socialQr_cardCopy => '已复制邀请文字';
+
+  @override
+  String get socialQr_cardDismissed => '海报已生成，但没有选择分享去处';
+
+  @override
+  String get socialQr_cardFailed => '海报没有生成成功，没有任何内容离开这台设备';
+
+  @override
+  String get socialQr_cardLoopCommunityQrCard => '社区二维码名片';
+
+  @override
+  String get socialQr_cardLoopUserQrCard => '我的二维码名片';
+
+  @override
+  String socialQr_cardQrCardCodeSemanticLabel(Object? name) {
+    return '$name 的二维码';
+  }
+
+  @override
+  String get socialQr_cardQrCardCopyInviteLabel => '复制邀请文字';
+
+  @override
+  String get socialQr_cardQrCardCopyLinkLabel => '复制链接';
+
+  @override
+  String socialQr_cardQrCardPosterLabel(Object? name) {
+    return '$name 的二维码名片';
+  }
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel => '正在生成…';
+
+  @override
+  String get socialQr_cardQrCardSharePosterLabel2 => '分享海报';
+
+  @override
+  String get socialQr_cardQrCardUnavailableLabel => '二维码不可用';
+
+  @override
+  String socialQr_cardS(Object? link, Object? name) {
+    return '来 LOOP 加入『$name』\n$link';
+  }
+
+  @override
+  String get socialQr_cardShared => '海报已生成，请在分享面板中选择去处';
+
+  @override
+  String socialQr_cardSwitch(Object? name) {
+    return '来 LOOP 加入『$name』';
+  }
+
+  @override
+  String get socialQr_cardSwitch2 => '扫码加我';
+
+  @override
+  String socialQr_cardSwitch3(num memberCount) {
+    return '$memberCount 位成员';
+  }
+
+  @override
+  String get socialQr_cardSwitch4 => '扫码加入';
+
+  @override
+  String get socialQr_cardUnavailable => '本次运行没有装配系统分享，海报未生成';
+
+  @override
+  String get social_blocklistBlocklistCapabilityUnavailableTitle => '屏蔽名单当前不可用';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsDetail =>
+      '这两类屏蔽还没有开放，这里不会列出任何条目。';
+
+  @override
+  String get social_blocklistBlocklistDeferredKindsMessage => '合约与域名屏蔽暂不可用';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeBody =>
+      '屏蔽会立即断开双向关注，并让对方从搜索、关注列表和陌生人请求中消失。解除屏蔽不会自动恢复关注，需要重新关注。';
+
+  @override
+  String get social_blocklistBlocklistPrecedenceNoticeTitle => '屏蔽的效果';
+
+  @override
+  String get social_blocklistBody => '解除后对方可以重新出现在搜索与陌生人请求里。已经断开的关注关系不会自动恢复。';
+
+  @override
+  String get social_blocklistCaption => '屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。';
+
+  @override
+  String get social_blocklistConfirmLabel => '解除屏蔽';
+
+  @override
+  String get social_blocklistDetail => '合约与域名屏蔽还没有开放，这里不会列出任何条目。';
+
+  @override
+  String get social_blocklistDomain => '域名';
+
+  @override
+  String get social_blocklistEmptyMessage => '没有屏蔽任何账号';
+
+  @override
+  String get social_blocklistEmptyReason => '在陌生人请求里选择\"举报\"会自动屏蔽发起人。';
+
+  @override
+  String social_blocklistHeading(num userCount) {
+    return '$userCount 个已屏蔽账号';
+  }
+
+  @override
+  String social_blocklistLabel(Object? userCount) {
+    return '用户 $userCount';
+  }
+
+  @override
+  String get social_blocklistLoopBadge => '解除';
+
+  @override
+  String social_blocklistMessage(Object? segmentLabels) {
+    return '\"$segmentLabels\" 屏蔽暂不可用';
+  }
+
+  @override
+  String get social_blocklistMessage2 => '已解除屏蔽';
+
+  @override
+  String social_blocklistSemanticLabel(Object? blockReasonText, Object? title) {
+    return '$title，$blockReasonText，可解除屏蔽';
+  }
+
+  @override
+  String get social_blocklistStamp => '私密';
+
+  @override
+  String social_blocklistTitle(Object? title) {
+    return '解除对 $title 的屏蔽？';
+  }
+
+  @override
+  String get social_connectionsBody => '取消关注后，你不会再看到对方的公开动态。';
+
+  @override
+  String get social_connectionsBody2 => '关注是单向的，不需要对方同意。对方需要开启\"可被发现\"才能被关注。';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage => '还没有关注任何人';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyMessage2 => '还没有粉丝';
+
+  @override
+  String get social_connectionsCommunityStateEmptyEmptyReason =>
+      '被你屏蔽的账号不会出现在这里。';
+
+  @override
+  String get social_connectionsConnectionActionDmLabel => '打开私聊';
+
+  @override
+  String get social_connectionsConnectionActionFollowLabel => '取消关注';
+
+  @override
+  String get social_connectionsConnectionActionsSheetBarrierLabel => '关闭联系人操作';
+
+  @override
+  String get social_connectionsConnectionsCapabilityUnavailableTitle =>
+      '关注关系当前不可用';
+
+  @override
+  String get social_connectionsConnectionsDiscoverableNotice =>
+      '在「隐私中心 · 可被发现」打开后，别人才能按昵称搜到你；LOOP ID 始终可被精确搜索。';
+
+  @override
+  String get social_connectionsConnectionsScreenTitle => '关注与粉丝';
+
+  @override
+  String social_connectionsConnectionsSegFollowersLabel(Object? followers) {
+    return '粉丝 $followers';
+  }
+
+  @override
+  String social_connectionsConnectionsSegFollowingLabel(Object? following) {
+    return '关注 $following';
+  }
+
+  @override
+  String get social_connectionsMessage => '已取消关注';
+
+  @override
+  String get social_connectionsResource => '关注关系';
+
+  @override
+  String get social_connectionsTitle => '取消关注？';
+
+  @override
+  String get social_connectionsTitle2 => '关注这个账号？';
+
+  @override
+  String get social_dmRequestsAccept => '接受';
+
+  @override
+  String get social_dmRequestsAccept2 => '接受后会建立联系。如果任一方屏蔽了对方，则无法建立。';
+
+  @override
+  String get social_dmRequestsAcceptTitle => '接受这个请求？';
+
+  @override
+  String get social_dmRequestsAccepted => '已接受';
+
+  @override
+  String get social_dmRequestsBarrierLabel => '关闭请求操作';
+
+  @override
+  String get social_dmRequestsCommunityStateEmptyEmptyMessage => '没有待处理的请求';
+
+  @override
+  String get social_dmRequestsDmRequestsActionFailureTitle => '上一次决定没有完成';
+
+  @override
+  String get social_dmRequestsDmRequestsCapabilityUnavailableTitle =>
+      '陌生人请求当前不可用';
+
+  @override
+  String get social_dmRequestsEmpty => '0 个待处理';
+
+  @override
+  String get social_dmRequestsIgnore => '忽略';
+
+  @override
+  String get social_dmRequestsIgnore2 => '忽略后对方在 24 小时内不能再次发起请求。';
+
+  @override
+  String get social_dmRequestsIgnoreTitle => '忽略这个请求？';
+
+  @override
+  String get social_dmRequestsIgnored => '已忽略';
+
+  @override
+  String get social_dmRequestsMessage => '已举报并屏蔽';
+
+  @override
+  String social_dmRequestsReady(Object? items) {
+    return '$items 个待处理';
+  }
+
+  @override
+  String get social_dmRequestsReport => '举报并屏蔽';
+
+  @override
+  String get social_dmRequestsReport2 => '举报会拒绝请求、屏蔽发起人并写入审计，同时断开双向关注。';
+
+  @override
+  String get social_dmRequestsReportTitle => '举报并屏蔽这个请求？';
+
+  @override
+  String get social_idCopyLabel => '复制 LOOP ID';
+
+  @override
+  String get social_idCopyMessage => '已复制 LOOP ID';
+
+  @override
+  String social_idShareLine(Object? loopId) {
+    return '在 LOOP 上加我为好友：$loopId';
+  }
+
+  @override
+  String get social_modelsSwitch => '由你手动屏蔽';
+
+  @override
+  String get social_modelsSwitch2 => '举报陌生人请求时自动屏蔽';
+
+  @override
+  String get social_modelsSwitch3 => '屏蔽原因';
+
+  @override
+  String get social_profileFaceLinkLabel => '查看我的主页';
+
+  @override
+  String social_profileFaceLinkLabel2(Object? name) {
+    return '查看 $name 的主页';
+  }
+
+  @override
+  String get social_publicProfileSheetBarrierLabel => '关闭公开资料';
+
+  @override
+  String get social_publicProfileSheetPublicProfileDmHint =>
+      '还没有建立联系时，会先请你发送一条消息请求。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowState => '未关注';
+
+  @override
+  String get social_publicProfileSheetPublicProfileFollowUnknownBody =>
+      '这里读不到当前的关注状态，以操作后的结果为准。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableDetail =>
+      '这个账号没有公开资料，不能关注，也不能进行其他操作。';
+
+  @override
+  String get social_publicProfileSheetPublicProfileNotTargetableMessage =>
+      '这个成员没有可用的公开资料';
+
+  @override
+  String get social_publicProfileSheetPublicProfileOpenPageLabel => '查看资料';
 
   @override
   String get square_communityListBarrierLabel => '关闭排序规则';

@@ -1,0 +1,454 @@
+{
+  "chatGroupAlias_neutralMember": {
+    "en": "Member",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:40",
+    "zh": "成员"
+  },
+  "chatGroupAlias_screenBody": {
+    "en": "Your nickname is reserved; the group display is still syncing. Retry with the exact same nickname.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:313",
+    "zh": "昵称已经为你保留，群里的显示还在同步。请用完全相同的昵称重试。"
+  },
+  "chatGroupAlias_screenBody2": {
+    "en": "This nickname is permanently reserved in this group and can't be changed. It doesn't reveal your public profile or Stream user identity.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:314",
+    "zh": "这个昵称已在当前群永久保留，不能修改。它不会暴露公开 Profile 或 Stream 用户身份。"
+  },
+  "chatGroupAlias_screenGroupAliasBlockedTitle": {
+    "en": "Can't set group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:420",
+    "zh": "无法设置群内昵称"
+  },
+  "chatGroupAlias_screenGroupAliasBoundaryBody": {
+    "en": "Your group nickname only shows in this group and isn't linked to your public profile or wallet address.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:591",
+    "zh": "群昵称只在这个群里显示，不会关联到你的公开资料或钱包地址。"
+  },
+  "chatGroupAlias_screenGroupAliasChannelInvalidMessage": {
+    "en": "This page didn't get a valid Stream group chat reference; no network request was made.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:120",
+    "zh": "这个页面没有收到可解析的 Stream 群聊引用；没有发起网络请求。"
+  },
+  "chatGroupAlias_screenGroupAliasChannelInvalidTitle": {
+    "en": "Invalid group chat reference",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:119",
+    "zh": "群聊引用无效"
+  },
+  "chatGroupAlias_screenGroupAliasFailureTitle": {
+    "en": "Group nickname not reserved",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:365",
+    "zh": "群内昵称未保留"
+  },
+  "chatGroupAlias_screenGroupAliasFieldFootnote": {
+    "en": "Can't be changed after submitting; nicknames must be unique in a group.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:390",
+    "zh": "提交后不可改名；同一群内昵称必须唯一。"
+  },
+  "chatGroupAlias_screenGroupAliasFieldLabel": {
+    "en": "Group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:389",
+    "zh": "当前群昵称"
+  },
+  "chatGroupAlias_screenGroupAliasFolioCaption": {
+    "en": "You can use a different nickname in each group. It's permanent once reserved; the app doesn't link identities across groups, but this isn't a guarantee of anonymity.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:239",
+    "zh": "每个群可以使用不同昵称。首次保留后永久不可修改；前端不做跨群身份关联，但这不构成强匿名保证。"
+  },
+  "chatGroupAlias_screenGroupAliasFolioKicker": {
+    "en": "Group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:237",
+    "zh": "群昵称"
+  },
+  "chatGroupAlias_screenGroupAliasOutcomeUnknownBody": {
+    "en": "\"{pendingAlias}\" may already be permanently reserved. To avoid locking a different value, you can only retry the exact same nickname.",
+    "placeholders": {
+      "pendingAlias": {
+        "example": "state.pendingAlias",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:343",
+    "zh": "“{pendingAlias}”可能已经永久保留。为避免锁定另一个值，当前只允许重试完全相同的昵称。"
+  },
+  "chatGroupAlias_screenGroupAliasOutcomeUnknownTitle": {
+    "en": "Reservation result pending",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:340",
+    "zh": "保留结果待确认"
+  },
+  "chatGroupAlias_screenGroupAliasPausedMessage": {
+    "en": "Group members show with their own avatar and username. No request was made here.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:90",
+    "zh": "群成员以自己的头像和用户名显示。这里没有发起任何请求。"
+  },
+  "chatGroupAlias_screenGroupAliasPausedTitle": {
+    "en": "Group nicknames aren't available yet",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:89",
+    "zh": "群内昵称暂未开放"
+  },
+  "chatGroupAlias_screenGroupAliasReloadLabel": {
+    "en": "Reload",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:374",
+    "zh": "重新读取"
+  },
+  "chatGroupAlias_screenGroupAliasResolverRetryLabel": {
+    "en": "Retry check",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:186",
+    "zh": "重试确认"
+  },
+  "chatGroupAlias_screenGroupAliasRetryPendingLabel": {
+    "en": "Retry with same nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:348",
+    "zh": "用相同昵称重试"
+  },
+  "chatGroupAlias_screenGroupAliasRetryProjectionLabel": {
+    "en": "Retry sync",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:320",
+    "zh": "重试同步"
+  },
+  "chatGroupAlias_screenGroupAliasRouteInvalidMessage": {
+    "en": "This page didn't get a valid LOOP group_id; no network request was made.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:70",
+    "zh": "这个页面没有收到有效的 LOOP group_id；没有发起网络请求。"
+  },
+  "chatGroupAlias_screenGroupAliasRouteInvalidTitle": {
+    "en": "Invalid group reference",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:69",
+    "zh": "群组引用无效"
+  },
+  "chatGroupAlias_screenGroupAliasSearchEmptyMessage": {
+    "en": "Members still syncing, members who left, and you won't appear in results.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:522",
+    "zh": "还没同步完成的成员、已退群的成员和你自己不会出现在结果里。"
+  },
+  "chatGroupAlias_screenGroupAliasSearchEmptyTitle": {
+    "en": "No matching nicknames",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:521",
+    "zh": "没有找到匹配昵称"
+  },
+  "chatGroupAlias_screenGroupAliasSearchFailureMessage": {
+    "en": "Couldn't search the group: {groupAliasFailureMessage}",
+    "placeholders": {
+      "groupAliasFailureMessage": {
+        "example": "_groupAliasFailureMessage(state.failureKind)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:555",
+    "zh": "无法完成群内搜索：{groupAliasFailureMessage}"
+  },
+  "chatGroupAlias_screenGroupAliasSearchFieldFootnote": {
+    "en": "Enter at least 2 characters",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:483",
+    "zh": "至少输入 2 个字符"
+  },
+  "chatGroupAlias_screenGroupAliasSearchSubmitLabel": {
+    "en": "Searching",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:486",
+    "zh": "查找中"
+  },
+  "chatGroupAlias_screenGroupAliasSearchSubmitLabel2": {
+    "en": "Search",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:486",
+    "zh": "查找"
+  },
+  "chatGroupAlias_screenGroupAliasSearchSubmitSemanticLabel": {
+    "en": "Search group nicknames",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:488",
+    "zh": "查找群内昵称"
+  },
+  "chatGroupAlias_screenGroupAliasSearchTruncatedBody": {
+    "en": "Keep typing a fuller nickname to narrow results.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:533",
+    "zh": "请继续输入更完整的昵称以缩小范围。"
+  },
+  "chatGroupAlias_screenGroupAliasSearchTruncatedTitle": {
+    "en": "Results truncated",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:532",
+    "zh": "结果已截断"
+  },
+  "chatGroupAlias_screenGroupAliasSubmitLabel": {
+    "en": "Reserving…",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:408",
+    "zh": "保留中…"
+  },
+  "chatGroupAlias_screenGroupAliasSubmitLabel2": {
+    "en": "Reserve this nickname permanently",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:408",
+    "zh": "永久保留这个昵称"
+  },
+  "chatGroupAlias_screenGroupAliasTitle": {
+    "en": "Group nicknames",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:21, lib/features/chat/group_alias/group_alias_screen.dart:482",
+    "zh": "群内昵称"
+  },
+  "chatGroupAlias_screenGroupAliasUnavailableMessage": {
+    "en": "No demo nickname is shown, and your account nickname or wallet address isn't used as your group identity.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:279",
+    "zh": "没有展示演示昵称，也没有把账号昵称或钱包地址当作群内身份。"
+  },
+  "chatGroupAlias_screenGroupAliasUnavailableTitle": {
+    "en": "Group nickname service unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:278",
+    "zh": "群内昵称服务不可用"
+  },
+  "chatGroupAlias_screenHint": {
+    "en": "1–40 characters",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:399",
+    "zh": "1–40 个字符"
+  },
+  "chatGroupAlias_screenHint2": {
+    "en": "Enter a nickname to search",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:501",
+    "zh": "输入要查找的昵称"
+  },
+  "chatGroupAlias_screenImmutable": {
+    "en": "This account already reserved a different nickname in this group; it can't be changed.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:602",
+    "zh": "这个账号已在当前群永久保留了另一个昵称，不能修改。"
+  },
+  "chatGroupAlias_screenInvalidData": {
+    "en": "This nickname isn't available. Try another.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:604",
+    "zh": "这个昵称不可用，请换一个再试。"
+  },
+  "chatGroupAlias_screenLoopBadge": {
+    "en": "Syncing",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:301",
+    "zh": "同步中"
+  },
+  "chatGroupAlias_screenLoopLabel": {
+    "en": "My group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:248",
+    "zh": "我的群昵称"
+  },
+  "chatGroupAlias_screenLoopLabel2": {
+    "en": "Find member nicknames",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:251",
+    "zh": "查找群成员昵称"
+  },
+  "chatGroupAlias_screenNotFound": {
+    "en": "Group unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:158",
+    "zh": "群组不可用"
+  },
+  "chatGroupAlias_screenNotFound2": {
+    "en": "This channel isn't a visible group, or this account is no longer a member; nickname actions aren't available.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:166",
+    "zh": "这个频道不是可见群组，或当前账号已不是成员；没有开放群昵称操作。"
+  },
+  "chatGroupAlias_screenNotFound3": {
+    "en": "No visible group nickname; you may no longer be a member of this Stream group.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:601",
+    "zh": "当前没有可见的群昵称；也可能已不再是这个 Stream 群的成员。"
+  },
+  "chatGroupAlias_screenOffline": {
+    "en": "Device offline. Group nicknames weren't loaded and nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:598",
+    "zh": "设备当前离线，没有读到群昵称，也没有提交任何昵称。"
+  },
+  "chatGroupAlias_screenOutcomeUnknown": {
+    "en": "The request may have been submitted; you can only confirm with the exact same nickname.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:605",
+    "zh": "请求可能已经提交，只能用完全相同的昵称继续确认。"
+  },
+  "chatGroupAlias_screenPreview": {
+    "en": "Development preview · This run only",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:587",
+    "zh": "开发预览 · 仅本次运行"
+  },
+  "chatGroupAlias_screenProduction": {
+    "en": "This group only",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:242",
+    "zh": "仅本群"
+  },
+  "chatGroupAlias_screenProduction2": {
+    "en": "LOOP group identity boundary",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:588",
+    "zh": "LOOP 群组身份边界"
+  },
+  "chatGroupAlias_screenResolved": {
+    "en": "Couldn't resolve group",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:161",
+    "zh": "无法解析群组"
+  },
+  "chatGroupAlias_screenResolved2": {
+    "en": "Couldn't load this group's info right now; the group nickname can't be changed yet.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:169",
+    "zh": "这个群的信息暂时读不到，群昵称暂时不能修改。"
+  },
+  "chatGroupAlias_screenResolving": {
+    "en": "Confirming group",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:157",
+    "zh": "正在确认群组"
+  },
+  "chatGroupAlias_screenResolving2": {
+    "en": "LOOP is confirming this account is still a member of this Stream group chat.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:165",
+    "zh": "LOOP 正在确认当前账号仍是这个 Stream 群聊的成员。"
+  },
+  "chatGroupAlias_screenS": {
+    "en": "Permanently reserved",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:301",
+    "zh": "已永久保留"
+  },
+  "chatGroupAlias_screenSubtitle": {
+    "en": "Reserved · Syncing in group",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:299",
+    "zh": "已保留 · 群里的显示同步中"
+  },
+  "chatGroupAlias_screenSubtitle2": {
+    "en": "Current group nickname",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:299, lib/features/chat/group_alias/group_alias_screen.dart:544",
+    "zh": "当前群内昵称"
+  },
+  "chatGroupAlias_screenSwitch": {
+    "en": "Group nicknames aren't available right now.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:607",
+    "zh": "群昵称当前不可用。"
+  },
+  "chatGroupAlias_screenTaken": {
+    "en": "Another member of this group has permanently reserved this nickname. Try another.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:603",
+    "zh": "这个昵称已经被当前群的其他成员永久保留，请换一个。"
+  },
+  "chatGroupAlias_screenUnavailable": {
+    "en": "Group service unavailable right now",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:159",
+    "zh": "群组服务暂不可用"
+  },
+  "chatGroupAlias_screenUnavailable2": {
+    "en": "Couldn't confirm group membership right now; nickname actions aren't available.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:167",
+    "zh": "暂时无法确认群组成员关系；没有开放群昵称操作。"
+  },
+  "chatGroupAlias_screenUnavailable3": {
+    "en": "Not connected",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:243",
+    "zh": "未连接"
+  },
+  "chatGroupAlias_screenUnavailable4": {
+    "en": "Production connection unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:589",
+    "zh": "生产连接不可用"
+  },
+  "chatGroupAlias_screenUnavailable5": {
+    "en": "The group nickname service isn't available right now; no nickname is shown as reserved.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:599",
+    "zh": "群昵称服务当前不可用，没有昵称被显示为已保留。"
+  },
+  "chatGroupAlias_screenUnexpected": {
+    "en": "The group nickname action failed; no result is shown as confirmed.",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_screen.dart:606",
+    "zh": "群昵称操作暂时失败，没有结果被显示为已确认。"
+  },
+  "chatGroupAlias_streamMessageIdentityBuild": {
+    "en": "{replyCount, plural, =1{1 reply} other{{replyCount} replies}}",
+    "placeholders": {
+      "replyCount": {
+        "example": "replyCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:1261",
+    "zh": "{replyCount} 条回复"
+  },
+  "chatGroupAlias_streamMessageIdentityLoopChannelQuietLabel": {
+    "en": "No one has spoken yet",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:670",
+    "zh": "还没有人说话"
+  },
+  "chatGroupAlias_streamMessageIdentityLoopDirectConversationNeutralInitial": {
+    "en": "D",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:64",
+    "zh": "私"
+  },
+  "chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerInitial": {
+    "en": "X",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:74",
+    "zh": "注"
+  },
+  "chatGroupAlias_streamMessageIdentityLoopDirectDeactivatedPeerLabel": {
+    "en": "Deleted account",
+    "placeholders": {},
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:71",
+    "zh": "已注销用户"
+  },
+  "chatGroupAlias_streamMessageIdentityS": {
+    "en": "{count, plural, =1{1 member} other{{count} members}}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/group_alias/group_alias_stream_message_identity.dart:1212",
+    "zh": "{count} 位成员"
+  }
+}

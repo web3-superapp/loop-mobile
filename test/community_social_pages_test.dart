@@ -312,8 +312,8 @@ void main() {
       // Decision 0127: the counts ride on the two chips; the hero card that
       // repeated them is gone.
       expect(find.text('24 关注 · 108 粉丝'), findsNothing);
-      expect(find.text('关注 24'), findsOneWidget);
-      expect(find.text('粉丝 108'), findsOneWidget);
+      expect(find.text('Following 24'), findsOneWidget);
+      expect(find.text('Followers 108'), findsOneWidget);
     });
 
     testWidgets('loading shows a skeleton and no count', (tester) async {
@@ -327,9 +327,9 @@ void main() {
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
       // The chips carry no figure the read has not returned.
-      expect(find.text('关注'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
       expect(find.text(communityMissingFigure), findsNothing);
-      expect(find.textContaining('关注 ·'), findsNothing);
+      expect(find.textContaining('Following ·'), findsNothing);
     });
 
     testWidgets('an empty list states the block rule instead of a zero', (
@@ -345,7 +345,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsOneWidget,
       );
-      expect(find.textContaining('被你屏蔽的账号'), findsWidgets);
+      expect(find.textContaining("Accounts you've blocked"), findsWidgets);
     });
 
     testWidgets('offline and error stay distinct states', (tester) async {
@@ -466,7 +466,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.commands, contains('follow:$testMemberId:false'));
-      expect(find.text('已取消关注'), findsOneWidget);
+      expect(find.text('Unfollowed'), findsOneWidget);
     });
 
     testWidgets('a refused follow shows no success toast', (tester) async {
@@ -503,7 +503,7 @@ void main() {
       final gateway = FakeSocialGateway(blocks: _blocks());
       await pumpCommunityPage(tester, const BlocklistScreen(), social: gateway);
 
-      expect(find.text('用户 1'), findsOneWidget);
+      expect(find.text('Users 1'), findsOneWidget);
       // The two deferred kinds are disabled segments with their reason stated
       // on the page: they cannot be selected and issue no request.
       for (final kind in <String>['contract', 'domain']) {
@@ -552,9 +552,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.commands, contains('block:user:$testMemberId:false'));
-      expect(find.text('已解除屏蔽'), findsOneWidget);
+      expect(find.text('Unblocked'), findsOneWidget);
       // Lifting a block never restores a follow edge; the page says so.
-      expect(find.textContaining('不会自动恢复'), findsWidgets);
+      expect(find.textContaining('restore'), findsWidgets);
     });
 
     testWidgets('the report reason is shown, never invented', (tester) async {
@@ -564,7 +564,10 @@ void main() {
         social: FakeSocialGateway(blocks: _blocks()),
       );
 
-      expect(find.text('举报陌生人请求时自动屏蔽'), findsOneWidget);
+      expect(
+        find.text('Blocked automatically when reporting a message request'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an empty list and a failure stay distinct', (tester) async {
@@ -659,7 +662,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.commands, contains('decision:$testRequestId:report'));
-      expect(find.text('已举报并屏蔽'), findsOneWidget);
+      expect(find.text('Reported and blocked'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsOneWidget,
@@ -688,7 +691,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('已接受'), findsNothing);
+      expect(find.text('Accepted'), findsNothing);
       expect(find.textContaining('状态已经改变'), findsWidgets);
     });
 
@@ -706,7 +709,7 @@ void main() {
       );
       // Zero requests is a count the read came back with; 暂无数值 said the
       // page had no figure at all.
-      expect(find.text('0 个待处理'), findsOneWidget);
+      expect(find.text('0 pending'), findsOneWidget);
       expect(find.text(communityMissingHeading), findsNothing);
 
       final pending = FakeSocialGateway()..pending = true;

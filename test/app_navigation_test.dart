@@ -363,7 +363,7 @@ void main() {
     router.go('/chat');
     await tester.pumpAndSettle();
 
-    expect(find.text('会话还没有连接'), findsOneWidget);
+    expect(find.text('Conversations not connected yet'), findsOneWidget);
     // The provider's name is not shown to the owner.
     expect(find.textContaining('Stream'), findsNothing);
     expect(find.textContaining('Offline preview'), findsNothing);
@@ -411,7 +411,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Offline preview'), findsOneWidget);
-    expect(find.text('模拟座位'), findsOneWidget);
+    expect(find.text('Mock seat'), findsOneWidget);
     expect(find.text('Close preview'), findsOneWidget);
   });
 }

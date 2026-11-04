@@ -153,7 +153,7 @@ void main() {
       expect(communityChatHeaderSegments(persona, realIdentity: true), isEmpty);
       expect(
         communityChatHeaderSegments(persona, realIdentity: false),
-        <String>['你在这个社区显示为 Harbor-4821'],
+        <String>['You appear as Harbor-4821 in this community'],
       );
     });
   });
@@ -295,7 +295,7 @@ void main() {
       );
       expect(find.text('frog_maxi'), findsOneWidget);
       expect(find.text(chatMergeAnonymousLabel), findsOneWidget);
-      expect(find.text('显示发送者用户名'), findsOneWidget);
+      expect(find.text('Show sender usernames'), findsOneWidget);
     });
   });
 

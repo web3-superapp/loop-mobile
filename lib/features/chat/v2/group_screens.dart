@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -95,13 +96,17 @@ class GroupChatScreen extends ConsumerWidget {
                         LoopIconButton(
                           key: const ValueKey<String>('group-open-search'),
                           icon: 'search',
-                          label: '搜索这个会话',
+                          label: context
+                              .l10n
+                              .chatV2_communityCommunityChatOpenSearchLabel,
                           onPressed: () => onOpenSearch?.call(cid),
                         ),
                         LoopIconButton(
                           key: const ValueKey<String>('group-open-info'),
                           icon: 'info',
-                          label: '群信息',
+                          label: context
+                              .l10n
+                              .chatV2_groupScreensGroupOpenInfoLabel,
                           onPressed: () => onOpenInfo?.call(cid),
                         ),
                       ],
@@ -113,15 +118,15 @@ class GroupChatScreen extends ConsumerWidget {
                 child: switch ((blocked, cid)) {
                   (true, _) => _Block(
                     blockKey: 'group-capability-unavailable',
-                    message: '群聊当前不可用',
+                    message: context.l10n.chatV2_groupScreensMessage,
                     reason: capability.reasonCode == null
-                        ? '尚未读取到能力清单，本页不请求任何频道。'
+                        ? context.l10n.chatV2_communityReason2
                         : communicationUnavailableReason(capability.reasonCode),
                   ),
-                  (false, null) => const _Block(
+                  (false, null) => _Block(
                     blockKey: 'group-missing-cid',
-                    message: '缺少群聊标识',
-                    reason: '请从会话列表或群信息进入，本页不会猜测要打开哪个群。',
+                    message: context.l10n.chatV2_groupScreensMessage2,
+                    reason: context.l10n.chatV2_groupScreensReason,
                   ),
                   (false, final String value) => LoopStreamChannelSurface(
                     key: ValueKey<String>('group-$value'),
@@ -133,18 +138,23 @@ class GroupChatScreen extends ConsumerWidget {
                     header: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        CommunityPreviewNotice(mode: mode, resource: '群聊'),
+                        CommunityPreviewNotice(
+                          mode: mode,
+                          resource: context.l10n.common_groupChat,
+                        ),
                         LoopChatHeaderFold(
                           collapsed: loopChatKeyboardIsUp(context),
                           // S278 · decision 0236: an explanation, behind (i).
-                          child: const LoopProvenanceFooter(
+                          child: LoopProvenanceFooter(
                             key: ValueKey<String>('group-scope-note'),
-                            label: '说明',
-                            title: '普通群与社区的区别',
+                            label: context.l10n.common_about,
+                            title: context
+                                .l10n
+                                .chatV2_groupScreensGroupScopeNoteTitle,
                             margin: EdgeInsets.fromLTRB(16, 0, 12, 0),
-                            text:
-                                '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
-                                '带币社区在「社区」栏。',
+                            text: context
+                                .l10n
+                                .chatV2_groupScreensGroupScopeNoteText,
                           ),
                         ),
                       ],
@@ -166,7 +176,7 @@ String groupChatTitle(LoopChannelHeading heading) =>
     heading.name ?? groupChatNeutralTitle;
 
 /// What the `group` header says when no name is known.
-const String groupChatNeutralTitle = '群聊';
+String get groupChatNeutralTitle => LoopL10n.current.common_groupChat;
 
 /// `group-info` · the group record and its one available action.
 ///
@@ -252,16 +262,23 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       if (renamed != null) _renamedTo = renamed.name;
     });
     if (renamed != null) {
-      LoopToast.show(context, message: '群名称已改为「${renamed.name}」');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.chatV2_groupScreensMessage3(renamed.name),
+      );
       return;
     }
     LoopToast.show(
       context,
       message: switch (failure!) {
-        CommunityFailureKind.permissionDenied => '只有群主可以修改群名称；这次没有改动。',
-        CommunityFailureKind.unavailable => '改名暂时不可用，群名称没有改动。',
-        CommunityFailureKind.notFound => '群不存在或你已不在群里。',
-        CommunityFailureKind.validationFailed => '群名称需要 1–40 个字符，且不能含控制字符。',
+        CommunityFailureKind.permissionDenied =>
+          LoopL10n.current.chatV2_groupScreensPermissionDenied,
+        CommunityFailureKind.unavailable =>
+          LoopL10n.current.chatV2_groupScreensUnavailable,
+        CommunityFailureKind.notFound =>
+          LoopL10n.current.chatV2_groupScreensNotFound,
+        CommunityFailureKind.validationFailed =>
+          LoopL10n.current.chatV2_groupScreensValidationFailed,
         final kind => communityFailureReason(kind),
       },
       kind: LoopToastKind.warn,
@@ -323,45 +340,52 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('group-info-screen'),
       archetype: LoopPageArchetype.record,
-      title: '群信息',
+      title: context.l10n.chatV2_groupScreensGroupOpenInfoLabel,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
+      primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: '群资料',
-        heading: '群信息',
-        caption: '成员、通知与退出按风险从低到高排列。这里只显示已确认的信息。',
-        stamp: '私密',
+        kicker: context.l10n.chatV2_groupScreensKicker,
+        heading: context.l10n.chatV2_groupScreensGroupOpenInfoLabel,
+        caption: context.l10n.chatV2_groupScreensCaption,
+        stamp: context.l10n.chatV2_directMessageStamp,
       ),
       sections: <Widget>[
-        CommunityPreviewNotice(mode: mode, resource: '群信息'),
+        CommunityPreviewNotice(
+          mode: mode,
+          resource: context.l10n.chatV2_groupScreensGroupOpenInfoLabel,
+        ),
         if (blocked)
           LoopInlineUnavailable(
             key: const ValueKey<String>('group-info-capability-unavailable'),
-            message: '群聊当前不可用',
+            message: context.l10n.chatV2_groupScreensMessage,
             detail: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何群资源。'
+                ? context
+                      .l10n
+                      .chatV2_groupScreensGroupInfoCapabilityUnavailableDetail
                 : communicationUnavailableReason(capability.reasonCode),
             maxLines: 2,
             detailMaxLines: 4,
           )
         else if (widget.channelCid == null)
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('group-info-missing-cid'),
-            message: '缺少群聊标识',
-            detail: '请从群聊页进入，本页不会猜测要打开哪个群的信息。',
+            message: context.l10n.chatV2_groupScreensMessage2,
+            detail: context.l10n.chatV2_groupScreensGroupInfoMissingCidDetail,
             maxLines: 2,
             detailMaxLines: 4,
           )
         else ...<Widget>[
-          const LoopLabel('成员'),
-          const CommunityUnavailableCard(
+          LoopLabel(context.l10n.common_members),
+          CommunityUnavailableCard(
             key: ValueKey<String>('group-info-members-unavailable'),
-            label: '成员与成员管理',
+            label: context
+                .l10n
+                .chatV2_groupScreensGroupInfoMembersUnavailableLabel,
             fact: _memberDirectoryDeferred,
           ),
-          const LoopLabel('群资料'),
+          LoopLabel(context.l10n.chatV2_groupScreensKicker),
           _GroupNameRow(
             name: _renamedTo ?? _facts?.name,
             read: _factsRead,
@@ -369,13 +393,15 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             busy: _renaming || _resolving || _groupId == null,
             onRename: () => unawaited(_rename()),
           ),
-          const LoopLabel('设置'),
-          const CommunityUnavailableCard(
+          LoopLabel(context.l10n.common_settings),
+          CommunityUnavailableCard(
             key: ValueKey<String>('group-info-settings-unavailable'),
-            label: '消息通知与置顶会话',
+            label: context
+                .l10n
+                .chatV2_groupScreensGroupInfoSettingsUnavailableLabel,
             fact: _groupSettingsDeferred,
           ),
-          const LoopLabel('退出'),
+          LoopLabel(context.l10n.common_exit),
           if (_resolving)
             const LoopSkeleton(
               key: ValueKey<String>('group-info-state-loading'),
@@ -386,29 +412,37 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             LoopOfflineState(
               key: const ValueKey<String>('group-info-state-offline'),
               onRetry: () => unawaited(_resolveGroup()),
-              pausedActions: const <String>['退出群聊'],
+              pausedActions: <String>[
+                context.l10n.chatV2_groupScreensLoopOfflineState,
+              ],
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.notFound)
-            const LoopEmptyState(
+            LoopEmptyState(
               showMessage: true,
               key: ValueKey<String>('group-info-state-empty'),
               illustration: LoopIllustration.members,
-              title: '没有可退出的群成员关系',
-              message: '找不到这个群，或者你已经不是成员了。这不代表退出失败。',
+              title: context.l10n.chatV2_groupScreensGroupInfoStateEmptyTitle,
+              message:
+                  context.l10n.chatV2_groupScreensGroupInfoStateEmptyMessage,
               compact: true,
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.unavailable)
-            const LoopInlineUnavailable(
+            LoopInlineUnavailable(
               key: ValueKey<String>('group-info-state-unavailable'),
-              message: '退出操作当前不可用',
-              detail: '群成员关系服务暂时不可用，本页没有提交任何变更。',
+              message: context
+                  .l10n
+                  .chatV2_groupScreensGroupInfoStateUnavailableMessage,
+              detail: context
+                  .l10n
+                  .chatV2_groupScreensGroupInfoStateUnavailableDetail,
               maxLines: 2,
               detailMaxLines: 4,
             )
           else if (_resolveFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('group-info-resolve-failed'),
-              reason: '这个群的信息还没确认，暂时不能退出，也没有提交任何改动。',
+              reason:
+                  context.l10n.chatV2_groupScreensGroupInfoResolveFailedReason,
               onRetry: () => unawaited(_resolveGroup()),
             )
           else
@@ -421,7 +455,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ),
               child: LoopButton(
                 key: const ValueKey<String>('group-info-leave'),
-                label: '退出群聊',
+                label: context.l10n.chatV2_groupScreensLoopOfflineState,
                 block: true,
                 icon: 'warn',
                 onPressed: canLeave ? () => unawaited(_leave()) : null,
@@ -438,9 +472,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     if (groupId == null) return;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '退出这个群聊？',
-      body: '退出后你不会再收到这个群的消息。群创建者不能退出。',
-      confirmLabel: '退出',
+      title: LoopL10n.current.chatV2_groupScreensTitle,
+      body: LoopL10n.current.chatV2_groupScreensBody,
+      confirmLabel: LoopL10n.current.common_exit,
       sheetKey: 'group-leave-confirm-sheet',
     );
     if (!confirmed || !mounted) return;
@@ -449,7 +483,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .leave(groupId.wireValue);
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: '已退出群聊');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.chatV2_groupScreensMessage4,
+      );
       widget.onLeft?.call();
       return;
     }
@@ -485,9 +522,13 @@ class _GroupNameRow extends StatelessWidget {
       rows: <LoopRecordRow>[
         LoopRecordRow(
           key: const ValueKey<String>('group-info-name'),
-          title: '群名称',
-          subtitle: !read ? '正在读取群名称' : shown ?? '群名称暂时读不到',
-          trailingCaption: mayRename ? '修改' : '仅群主可改',
+          title: context.l10n.chatV2_groupScreensGroupInfoNameTitle,
+          subtitle: !read
+              ? context.l10n.chatV2_groupScreensGroupInfoNameSubtitle
+              : shown ?? context.l10n.chatV2_groupScreensGroupInfoNameSubtitle2,
+          trailingCaption: mayRename
+              ? context.l10n.chatV2_groupScreensGroupInfoNameTrailingCaption
+              : context.l10n.chatV2_groupScreensGroupInfoNameTrailingCaption2,
           onTap: mayRename && !busy ? onRename : null,
         ),
       ],
@@ -502,7 +543,7 @@ Future<String?> showGroupRenameSheet(
   required String current,
 }) => showLoopSheet<String>(
   context,
-  barrierLabel: '关闭群名称修改',
+  barrierLabel: context.l10n.chatV2_groupScreensBarrierLabel,
   builder: (sheetContext) => _GroupRenameForm(current: current),
 );
 
@@ -542,7 +583,7 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const LoopSheetHeading('修改群名称'),
+      LoopSheetHeading(context.l10n.chatV2_groupScreensLoopSheetHeading),
       Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -563,8 +604,12 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
               },
               onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
-                labelText: '群名称（1–$groupNameMaximumRunes 个字符）',
-                errorText: _invalid ? '群名称需要 1–40 个字符，且不能含控制字符' : null,
+                labelText: context.l10n.chatV2_groupScreensLabelText(
+                  groupNameMaximumRunes,
+                ),
+                errorText: _invalid
+                    ? context.l10n.chatV2_groupScreensErrorText
+                    : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -573,13 +618,13 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
               children: <Widget>[
                 LoopButton(
                   key: const ValueKey<String>('group-rename-submit'),
-                  label: '保存',
+                  label: context.l10n.common_save,
                   primary: true,
                   onPressed: _submit,
                 ),
                 LoopButton(
                   key: const ValueKey<String>('group-rename-cancel'),
-                  label: '取消',
+                  label: context.l10n.common_cancel,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],

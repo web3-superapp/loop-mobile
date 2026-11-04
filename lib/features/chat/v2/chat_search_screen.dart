@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -25,15 +26,20 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// Every scope is only a channel filter on top of Stream's own membership
 /// enforcement: the server never returns a channel the account cannot read.
 enum ChatSearchScope {
-  currentConversation('当前会话'),
-  all('全部'),
-  community('社区'),
-  group('群聊'),
-  direct('私聊');
+  currentConversation,
+  all,
+  community,
+  group,
+  direct;
 
-  const ChatSearchScope(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    ChatSearchScope.currentConversation =>
+      LoopL10n.current.chatV2_searchCurrentConversation,
+    ChatSearchScope.all => LoopL10n.current.common_all,
+    ChatSearchScope.community => LoopL10n.current.common_community,
+    ChatSearchScope.group => LoopL10n.current.common_groupChat,
+    ChatSearchScope.direct => LoopL10n.current.common_directMessage,
+  };
 }
 
 /// The sender label one result may carry.
@@ -45,7 +51,7 @@ enum ChatSearchScope {
 String chatSearchSenderLabel(LoopChatSurface surface) => switch (surface) {
   LoopChatSurface.communityChat ||
   LoopChatSurface.group => loopGroupMemberNeutralLabel,
-  LoopChatSurface.direct => '私聊',
+  LoopChatSurface.direct => LoopL10n.current.common_directMessage,
 };
 
 /// The result line with every occurrence of [term] lifted into Lime.
@@ -233,9 +239,12 @@ final class _StreamChatSearchGateway implements ChatSearchGateway {
       // identity, which is the page the result opens.
       senderLabel: chatSearchSenderLabel(surface),
       channelLabel: switch (surface) {
-        LoopChatSurface.communityChat => '社区官方群',
-        LoopChatSurface.group => '群聊',
-        LoopChatSurface.direct => '私聊',
+        LoopChatSurface.communityChat =>
+          LoopL10n
+              .current
+              .chatV2_conversationLabelLoopCommunityConversationNeutralLabel,
+        LoopChatSurface.group => LoopL10n.current.common_groupChat,
+        LoopChatSurface.direct => LoopL10n.current.common_directMessage,
       },
       text: text,
       createdAt: message.createdAt,
@@ -394,7 +403,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     return LoopStreamPage(
       key: const ValueKey<String>('chat-search-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '搜消息',
+      title: context.l10n.chatV2_searchChatSearchScreenTitle,
       onBack: widget.onBack,
       framedTools: true,
       // `#scr-chat-search .topbar` *is* the field: back control, then a
@@ -413,7 +422,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         // M40 R26 a search field: body 14 (decision 0191).
         style: LoopType.body,
         decoration: InputDecoration(
-          hintText: '搜消息',
+          hintText: context.l10n.chatV2_searchChatSearchScreenTitle,
           isDense: true,
           filled: true,
           fillColor: LoopColors.card,
@@ -445,8 +454,11 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       // Decision 0131: a search page opens on its field and its scopes, not on
       // a hero card; the scope and the hit count are the bar's one line.
       subtitle: hits == null
-          ? '${_scope.label} · 还没有检索'
-          : '${_scope.label} · ${hits.length} 条',
+          ? context.l10n.chatV2_searchChatSearchScreenSubtitle(_scope.label)
+          : context.l10n.chatV2_forwardScreensLoopFolioPrimary(
+              hits.length,
+              _scope.label,
+            ),
       filters: Padding(
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -474,11 +486,11 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     required List<ChatSearchHit>? hits,
   }) {
     if (!connected) {
-      return const SingleChildScrollView(
+      return SingleChildScrollView(
         child: LoopInlineUnavailable(
           key: ValueKey<String>('chat-search-not-connected'),
-          message: '聊天搜索当前不可用',
-          detail: '聊天搜索暂时不可用，这一页没有发起任何请求。',
+          message: LoopL10n.current.chatV2_searchChatSearchNotConnectedMessage,
+          detail: LoopL10n.current.chatV2_searchChatSearchNotConnectedDetail,
           maxLines: 2,
           detailMaxLines: 4,
         ),
@@ -497,7 +509,9 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       return SingleChildScrollView(
         child: LoopOfflineState(
           key: const ValueKey<String>('chat-search-state-offline'),
-          pausedActions: const <String>['搜索消息'],
+          pausedActions: <String>[
+            LoopL10n.current.chatV2_searchLoopOfflineState,
+          ],
           onRetry: () => unawaited(_search()),
         ),
       );
@@ -506,29 +520,29 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       return SingleChildScrollView(
         child: LoopErrorState(
           key: const ValueKey<String>('chat-search-error'),
-          reason: '这次检索没有完成，本页没有展示任何结果。',
+          reason: LoopL10n.current.chatV2_searchChatSearchErrorReason,
           onRetry: () => unawaited(_search()),
         ),
       );
     }
     if (hits == null) {
-      return const SingleChildScrollView(
+      return SingleChildScrollView(
         child: LoopEmptyState(
           key: ValueKey<String>('chat-search-idle'),
           illustration: LoopIllustration.search,
-          title: '输入关键词开始搜索',
-          message: '至少输入 2 个字符。结果只来自你已加入的会话。',
+          title: LoopL10n.current.chatV2_searchChatSearchIdleTitle,
+          message: LoopL10n.current.chatV2_searchChatSearchIdleMessage,
           compact: true,
         ),
       );
     }
     if (hits.isEmpty) {
-      return const SingleChildScrollView(
+      return SingleChildScrollView(
         child: LoopEmptyState(
           key: ValueKey<String>('chat-search-empty'),
           illustration: LoopIllustration.search,
-          title: '没有匹配的消息',
-          message: '换一个关键词，或切换到更大的范围再试。',
+          title: LoopL10n.current.chatV2_searchChatSearchEmptyTitle,
+          message: LoopL10n.current.chatV2_searchChatSearchEmptyMessage,
           compact: true,
         ),
       );

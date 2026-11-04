@@ -803,7 +803,10 @@ void main() {
       expect(opened, <String>[testCommunityId]);
       // The reason is the AI row's own grey line, once (decision 0127); it
       // is no longer a copy that appears and takes itself away again.
-      expect(find.textContaining('Community AI 还没有开放'), findsOneWidget);
+      expect(
+        find.textContaining('Community AI isn\'t available yet'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an open Community AI is not announced as closed', (
@@ -821,14 +824,22 @@ void main() {
       // The capability document is the only thing that decides this line: an
       // available AI leaves nothing under the button, and the page no longer
       // contradicts the working page the button opens.
-      expect(find.textContaining('Community AI 还没有开放'), findsNothing);
+      expect(
+        find.textContaining('Community AI isn\'t available yet'),
+        findsNothing,
+      );
       // S336 · decision 0265: nothing stands under the keys; the chat key
       // says its reason on tap.
       expect(
         find.byKey(const ValueKey<String>('community-profile-action-reasons')),
         findsNothing,
       );
-      expect(find.textContaining('该社区还没有官方群频道。'), findsNothing);
+      expect(
+        find.textContaining(
+          'This community doesn\'t have an official group channel yet.',
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('a verified community without a label wears no mark', (
@@ -1318,10 +1329,20 @@ void main() {
         const ValueKey<String>('community-profile-open-chat'),
       );
       await scrollToCommunitySection(tester, chat);
-      expect(find.textContaining('该社区还没有官方群频道。'), findsNothing);
+      expect(
+        find.textContaining(
+          'This community doesn\'t have an official group channel yet.',
+        ),
+        findsNothing,
+      );
       await tester.tap(chat);
       await tester.pump();
-      expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'This community doesn\'t have an official group channel yet.',
+        ),
+        findsOneWidget,
+      );
       // The one code covers both a missing row and an unfinished one, so the
       // page states the fact and claims no cause for it.
       expect(find.textContaining('通过验证后'), findsNothing);
@@ -1585,7 +1606,7 @@ void main() {
       }
       // The blocks the record no longer carries: a second identity card, a
       // 聊天与语音 row group, an English eyebrow.
-      expect(find.text('社区官方群'), findsNothing);
+      expect(find.text('Community official group'), findsNothing);
       expect(find.text('在线'), findsNothing);
       expect(find.text('COMMUNITY RECORD'), findsNothing);
     });
@@ -1725,7 +1746,7 @@ void main() {
       );
       await tester.tap(end);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('结束房间').last);
+      await tester.tap(find.text('End room').last);
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -1769,7 +1790,7 @@ void main() {
         findsOneWidget,
       );
       // The sheet states the consequence before anything is created.
-      expect(find.textContaining('任何成员都能进来收听'), findsOneWidget);
+      expect(find.textContaining('anyone can listen in'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('voiceroom-start-cancel')),
       );
@@ -1916,8 +1937,8 @@ void main() {
       expect(entered, isEmpty);
       // The host's own two sentences: what is missing, and the one control
       // that finishes it.
-      expect(find.textContaining('还没有开放收听'), findsOneWidget);
-      expect(find.textContaining('再点一次「开启语音房」'), findsOneWidget);
+      expect(find.textContaining("listening isn't open yet"), findsOneWidget);
+      expect(find.textContaining('Tap Start voice room again'), findsOneWidget);
       // The control that repeats the unfinished half is still on the page.
       expect(createButton, findsOneWidget);
     });

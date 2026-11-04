@@ -1,0 +1,43 @@
+{
+  "chatAttachments_streamTokenCardBuilderLoopTokenCardModel": {
+    "en": "LOOP hasn't received a live price or contract facts for this card yet. The message only stores the token ID, so price, risk, Buy and Watch aren't shown.",
+    "placeholders": {},
+    "where": "lib/features/chat/attachments/stream_token_card_attachment_builder.dart:69",
+    "zh": "LOOP 还没有收到这张卡的实时价格与合约事实；消息只保存代币标识，所以不显示价格、风险结论、买入或自选。"
+  },
+  "chatAttachments_streamTokenCardBuilderLoopTokenCardModel2": {
+    "en": "Snapshot {snapshotLabel}",
+    "placeholders": {
+      "snapshotLabel": {
+        "example": "snapshotLabel(reference.snapshotAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/attachments/stream_token_card_attachment_builder.dart:70",
+    "zh": "引用快照 {snapshotLabel}"
+  },
+  "chatAttachments_streamTokenCardBuilderLoopTokenCardModel3": {
+    "en": "This attachment doesn't match LOOP token_card.v1, so no token facts or actions are shown.",
+    "placeholders": {},
+    "where": "lib/features/chat/attachments/stream_token_card_attachment_builder.dart:91",
+    "zh": "这条附件不符合 LOOP token_card.v1，没有显示任何代币事实或操作。"
+  },
+  "chatAttachments_streamTokenCardBuilderPriceReason": {
+    "en": "Current facts unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/attachments/stream_token_card_attachment_builder.dart:67",
+    "zh": "当前事实不可得"
+  },
+  "chatAttachments_streamTokenCardBuilderSymbol": {
+    "en": "Unrecognized token card",
+    "placeholders": {},
+    "where": "lib/features/chat/attachments/stream_token_card_attachment_builder.dart:89",
+    "zh": "无法识别的代币卡"
+  },
+  "chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel": {
+    "en": "Member bought",
+    "placeholders": {},
+    "where": "lib/features/chat/attachments/stream_token_card_message_preview_formatter.dart:148",
+    "zh": "群友买入"
+  }
+}

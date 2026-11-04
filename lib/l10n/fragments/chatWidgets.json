@@ -1,0 +1,56 @@
+{
+  "chatWidgets_componentsBuild": {
+    "en": "Shared at 14:12 · Demo data",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:884",
+    "zh": "Shared at 14:12 · 演示数据"
+  },
+  "chatWidgets_componentsChange": {
+    "en": "+8.4% · Demo data",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:825",
+    "zh": "+8.4% · 演示数据"
+  },
+  "chatWidgets_componentsChatSpotSnapshotSemanticsLabel": {
+    "en": "ETH Spot market snapshot · Development preview",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:860",
+    "zh": "ETH Spot market snapshot · 开发预览"
+  },
+  "chatWidgets_componentsFact": {
+    "en": "LP unlocks in 3 days",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:828",
+    "zh": "LP 3 天后解锁"
+  },
+  "chatWidgets_componentsFact2": {
+    "en": "Top 10 holders own 61%",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:833",
+    "zh": "前十持有人占 61%"
+  },
+  "chatWidgets_componentsLabel": {
+    "en": "Voice",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:403",
+    "zh": "语音"
+  },
+  "chatWidgets_componentsLoopTokenCardModel": {
+    "en": "Development preview facts · Not a provider response · 14:06 UTC",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:839",
+    "zh": "开发预览事实 · 非 provider 响应 · 14:06 UTC"
+  },
+  "chatWidgets_componentsLoopTokenCardModel2": {
+    "en": "Demo data can't trigger trades or watchlist changes.",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:840",
+    "zh": "演示数据不能触发交易或自选变更。"
+  },
+  "chatWidgets_componentsSource": {
+    "en": "Development preview facts",
+    "placeholders": {},
+    "where": "lib/features/chat/widgets/chat_components.dart:829, lib/features/chat/widgets/chat_components.dart:834",
+    "zh": "开发预览事实"
+  }
+}

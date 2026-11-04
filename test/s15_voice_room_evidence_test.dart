@@ -204,7 +204,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-evidence-pending')),
         findsNothing,
       );
-      expect(find.textContaining('语音房还在验证中'), findsNothing);
+      expect(find.textContaining('still being verified'), findsNothing);
       expect(voice.commands, contains('current:$testCommunityId'));
     });
 
@@ -242,7 +242,10 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsOneWidget,
       );
-      expect(find.text('该社区当前没有进行中的语音房。'), findsOneWidget);
+      expect(
+        find.text('This community has no live voice room right now.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an offline read keeps the offline state', (tester) async {

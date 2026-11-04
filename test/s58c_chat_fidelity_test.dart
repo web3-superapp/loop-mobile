@@ -63,13 +63,13 @@ void main() {
       );
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.ring, isFalse);
-      expect(folio.kicker, '私聊');
-      expect(folio.stamp, '私密');
+      expect(folio.kicker, 'Direct message');
+      expect(folio.stamp, 'Private');
       // The heading names the conversation; it is not the page's own title.
-      expect(folio.heading, '和 NightOwl 的私聊');
+      expect(folio.heading, 'Direct message with NightOwl');
       expect(folio.heading, isNot('私聊'));
       // A deep link carries no identity, and the hero then names the kind.
-      expect(directMessageFolio(null).heading, '一对一的私聊');
+      expect(directMessageFolio(null).heading, 'One-on-one direct message');
     });
 
     testWidgets('the LOOP ID is under the name, not above it', (tester) async {
@@ -181,7 +181,7 @@ void main() {
     });
 
     test('the composer promises one line of recognition', () {
-      expect(loopChatComposerHint, '发消息 · 贴合约地址识别代币');
+      expect(loopChatComposerHint, 'Type or paste CA');
     });
   });
 
@@ -194,7 +194,7 @@ void main() {
         memberCount: 311,
       );
       expect(label.title, 'DeFi 早读会');
-      expect(label.subtitle, '社区官方群 · 311 名成员');
+      expect(label.subtitle, 'Community official group · 311 members');
     });
 
     test('a channel with no usable name falls back to its kind', () {
@@ -211,7 +211,7 @@ void main() {
           surface: LoopChatSurface.group,
           extraData: <String, Object?>{'name': '  padded  '},
         ).title,
-        '群聊',
+        'Group chat',
       );
       expect(
         loopStoredConversationName(<String, Object?>{'name': 'x' * 61}),
@@ -264,7 +264,7 @@ void main() {
       // Decision 0131: a search page carries no folio card; the scope and
       // the hit count are the top bar's one line.
       expect(find.byType(LoopFolioPrimary), findsNothing);
-      expect(bar.subtitle, contains('还没有检索'));
+      expect(bar.subtitle, contains('Not searched yet'));
       expect(find.textContaining('首页'), findsNothing);
     });
 
@@ -340,18 +340,18 @@ void main() {
   group('B.8 / D-1 · the voice room heading is a figure', () {
     test('a live room with a count states the count', () {
       final snapshot = testVoiceRoomSnapshot();
-      expect(voiceRoomHeading(snapshot), '46 人在房间里');
+      expect(voiceRoomHeading(snapshot), '46 in the room');
       expect(voiceRoomStamp(snapshot), '46 LIVE');
       // S77d: 发言 counts the host, so the two figures under the title add
       // up to the one in the hero. They used to be the server's role figures
       // alone, and the host was in neither of them: 「1 人在房间里」 stood
       // over 「发言 0 · 听众 0」 on the review device.
-      expect(voiceRoomTopbarLine(snapshot), '进行中 · 发言 4 · 听众 42');
+      expect(voiceRoomTopbarLine(snapshot), 'Live · Speaking 4 · Listeners 42');
     });
 
     test('the session page counts the people who may be heard', () {
       final snapshot = testVoiceRoomSnapshot();
-      expect(voiceRoomHeading(snapshot, expanded: true), '4 人在麦上');
+      expect(voiceRoomHeading(snapshot, expanded: true), '4 on mic');
       expect(voiceRoomStamp(snapshot, expanded: true), 'ON AIR');
     });
 
@@ -360,18 +360,21 @@ void main() {
       () {
         final snapshot = testVoiceRoomSnapshot(joinedCount: null);
         // 1 host + 3 speakers + 42 listeners, which is what a live room is.
-        expect(voiceRoomHeading(snapshot), '46 人在房间里');
+        expect(voiceRoomHeading(snapshot), '46 in the room');
         expect(voiceRoomStamp(snapshot), '46 LIVE');
-        expect(voiceRoomTopbarLine(snapshot), '进行中 · 发言 4 · 听众 42');
+        expect(
+          voiceRoomTopbarLine(snapshot),
+          'Live · Speaking 4 · Listeners 42',
+        );
       },
     );
 
     test('an ended room is not a figure, and says so in words', () {
       final snapshot = testVoiceRoomSnapshot(state: VoiceRoomState.ended);
-      expect(voiceRoomHeading(snapshot), '已结束');
-      expect(voiceRoomStamp(snapshot), '已结束');
-      expect(voiceRoomTopbarLine(snapshot), '已结束');
-      expect(voiceRoomCaption(snapshot), '主持人已经结束这个语音房。');
+      expect(voiceRoomHeading(snapshot), 'Ended');
+      expect(voiceRoomStamp(snapshot), 'Ended');
+      expect(voiceRoomTopbarLine(snapshot), 'Ended');
+      expect(voiceRoomCaption(snapshot), 'The host ended this voice room.');
     });
 
     test('a page with no room says which of the three answers it got', () {
@@ -381,19 +384,19 @@ void main() {
       // The hero and the block under it are one answer, not two.
       expect(
         voiceRoomHeading(null, phase: CommunityViewPhase.empty),
-        '当前没有语音房',
+        'No voice room right now',
       );
       expect(
         voiceRoomCaption(null, phase: CommunityViewPhase.empty),
-        '这个社区现在没有进行中的语音房。',
+        'This community has no live voice room right now.',
       );
       expect(
         voiceRoomHeading(null, phase: CommunityViewPhase.error),
-        '语音房状态读不到',
+        'Couldn\'t load voice room status',
       );
       expect(
         voiceRoomHeading(null, phase: CommunityViewPhase.loading),
-        '正在读取语音房',
+        'Loading voice room',
       );
     });
   });

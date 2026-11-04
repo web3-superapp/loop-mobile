@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
@@ -26,10 +27,10 @@ class ChatPreviewRouteGuard extends ConsumerWidget {
     if (gateway.mode == CommunicationMode.preview) {
       return Semantics(
         container: true,
-        label: '开发预览',
+        label: context.l10n.common_devPreview,
         child: Banner(
           key: const ValueKey<String>('chat-preview-route-label'),
-          message: '开发预览',
+          message: context.l10n.common_devPreview,
           location: BannerLocation.topEnd,
           child: child,
         ),

@@ -17,7 +17,7 @@ import 'support/s5_page_harness.dart' show FakeMarketReadGateway, S5Answer;
 /// explanation — the voice key says why on tap, the bound token without a
 /// quote is its name, the power is a figure, 退出社区 is one line.
 void main() {
-  const notLive = '该社区当前没有进行中的语音房。';
+  const notLive = 'No live voice room in this community right now.';
   final voiceKey = find.byKey(
     const ValueKey<String>('community-profile-open-voice'),
   );
@@ -72,7 +72,8 @@ void main() {
 
     testWidgets('no channel: the 进群聊 key says so on tap, nothing stands '
         'under the row', (tester) async {
-      const noChannel = '该社区还没有官方群频道。';
+      const noChannel =
+          "This community doesn't have an official group channel yet.";
       final chatKey = find.byKey(
         const ValueKey<String>('community-profile-open-chat'),
       );
@@ -219,7 +220,7 @@ void main() {
       find.descendant(of: leave, matching: find.text('退出社区')),
       findsOneWidget,
     );
-    expect(find.textContaining('我的身份'), findsNothing);
+    expect(find.textContaining('My role'), findsNothing);
   });
 
   testWidgets('an owner\'s inert 退出社区 has no 身份 line either', (tester) async {
@@ -228,6 +229,6 @@ void main() {
       const ValueKey<String>('community-owner-cannot-leave'),
     );
     await scrollToCommunitySection(tester, row);
-    expect(find.textContaining('我的身份'), findsNothing);
+    expect(find.textContaining('My role'), findsNothing);
   });
 }

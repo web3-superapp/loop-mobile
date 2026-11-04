@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -46,10 +47,12 @@ LoopFolioPrimary directMessageFolio(LoopPublicProfile? identity) =>
       // A Chalk hero carries no `::after` ring in the prototype.
       ring: false,
       compact: true,
-      kicker: '私聊',
-      heading: identity == null ? '一对一的私聊' : '和 ${identity.displayName} 的私聊',
-      caption: '私聊默认展示最少身份信息，资产与签名请求会单独标识。',
-      stamp: '私密',
+      kicker: LoopL10n.current.common_directMessage,
+      heading: identity == null
+          ? LoopL10n.current.chatV2_directMessageHeading
+          : LoopL10n.current.chatV2_directMessageHeading2(identity.displayName),
+      caption: LoopL10n.current.chatV2_directMessageCaption,
+      stamp: LoopL10n.current.chatV2_directMessageStamp,
     );
 
 /// `dm` · one direct conversation.
@@ -110,7 +113,9 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
             children: <Widget>[
               LoopSelectionAwareTopbar(
                 child: LoopTopbar(
-                  title: identity?.displayName ?? '私聊',
+                  title:
+                      identity?.displayName ??
+                      context.l10n.common_directMessage,
                   // `#scr-dm .topbar` prints `NightOwl` at 15px and
                   // `LOOP-4D5E6F · 在线` at 11px *under* it. LOOP had the LOOP ID
                   // in the mono eyebrow above the name, which reads as a section
@@ -150,17 +155,17 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     if (blocked) {
       return _Block(
         blockKey: 'dm-capability-unavailable',
-        message: '私聊当前不可用',
+        message: LoopL10n.current.chatV2_directMessageMessage,
         reason: capabilityReason == null
-            ? '尚未读取到能力清单，本页不请求任何频道。'
+            ? LoopL10n.current.chatV2_communityReason2
             : communicationUnavailableReason(capabilityReason),
       );
     }
     if (cid == null && widget.target == null) {
-      return const _Block(
+      return _Block(
         blockKey: 'dm-missing-target',
-        message: '缺少会话标识',
-        reason: '请从关注列表、陌生人请求或公开资料进入，本页不会猜测要打开谁的私聊。',
+        message: LoopL10n.current.chatV2_directMessageMessage2,
+        reason: LoopL10n.current.chatV2_directMessageReason,
       );
     }
     if (cid == null) {
@@ -178,7 +183,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       // would start a second logical operation under a new key, so this state
       // gets its own explanation with no retry at all.
       if (state.block == DirectChannelBlock.operatorRequired) {
-        return const SingleChildScrollView(
+        return SingleChildScrollView(
           padding: EdgeInsets.symmetric(vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -186,10 +191,12 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
               LoopInlineUnavailable(
                 key: ValueKey<String>('dm-operator-required'),
                 icon: 'clock',
-                message: '需要人工处理',
-                detail:
-                    '这次请求已经收到，需要人工处理才能完成。'
-                    '这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。',
+                message: LoopL10n
+                    .current
+                    .chatV2_directMessageDmOperatorRequiredMessage,
+                detail: LoopL10n
+                    .current
+                    .chatV2_directMessageDmOperatorRequiredDetail,
                 maxLines: 2,
                 detailMaxLines: 4,
               ),
@@ -197,8 +204,12 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
                 key: ValueKey<String>('dm-operator-required-notice'),
                 icon: 'info',
                 tone: LoopNoticeTone.warn,
-                title: '不要重复提交',
-                body: '这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。',
+                title: LoopL10n
+                    .current
+                    .chatV2_directMessageDmOperatorRequiredNoticeTitle,
+                body: LoopL10n
+                    .current
+                    .chatV2_directMessageDmOperatorRequiredNoticeBody,
                 margin: EdgeInsets.fromLTRB(
                   LoopSpacing.page,
                   14,
@@ -216,8 +227,8 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           phase: state.phase,
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.list,
-          emptyMessage: '还没有打开这个私聊',
-          emptyReason: '这个会话暂时打不开。',
+          emptyMessage: LoopL10n.current.chatV2_directMessageEmptyMessage,
+          emptyReason: LoopL10n.current.chatV2_directMessageEmptyReason,
           onRetry: () => unawaited(controller.resolve()),
         ),
       );
@@ -239,7 +250,10 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CommunityPreviewNotice(mode: state.mode, resource: '私聊'),
+          CommunityPreviewNotice(
+            mode: state.mode,
+            resource: LoopL10n.current.common_directMessage,
+          ),
         ],
       ),
     );
@@ -276,7 +290,10 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     if (failure == null) {
       controller.markRequestSent();
       if (!mounted) return;
-      LoopToast.show(context, message: '消息请求已发送');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.chatV2_directMessageMessage3,
+      );
       return;
     }
     // The refusal is state, not an announcement: it stays under the control
@@ -299,7 +316,8 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
 /// the three it was. Every other kind keeps the shared refusal copy.
 String directMessageRequestFailureReason(CommunityFailureKind kind) =>
     switch (kind) {
-      CommunityFailureKind.notFound => '对方没有开放被找到，或者这个账号不存在，消息请求没有送出。',
+      CommunityFailureKind.notFound =>
+        LoopL10n.current.chatV2_directMessageNotFound,
       _ => communityFailureReason(kind),
     };
 
@@ -335,16 +353,14 @@ class _FriendshipRequired extends StatelessWidget {
         LoopEmptyState(
           key: const ValueKey<String>('dm-friendship-required'),
           illustration: LoopIllustration.friends,
-          title: '还不能直接私聊',
+          title: context.l10n.chatV2_directMessageDmFriendshipRequiredTitle,
           message: requestSent
-              ? '消息请求已经发出。对方接受之前，这里不会出现会话。'
+              ? context.l10n.chatV2_directMessageDmFriendshipRequiredMessage
               // The refusal does not enumerate: a missing friendship, a
               // closed 私聊 switch in the other account's privacy centre and
               // an account that does not exist all answer the same way
               // (decision 0070).
-              : '私聊需要双方成为好友，并且对方没有在隐私中心关掉私聊。'
-                    '先发送一条消息请求，对方接受后这个会话才会打开。'
-                    '这个结果不代表对方账号一定存在。',
+              : context.l10n.chatV2_directMessageDmFriendshipRequiredMessage2,
           compact: true,
         ),
         // A refused send is the page's own outcome and outlives the toast
@@ -356,7 +372,7 @@ class _FriendshipRequired extends StatelessWidget {
             key: const ValueKey<String>('dm-message-request-failed'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '消息请求没有送出',
+            title: context.l10n.chatV2_directMessageDmMessageRequestFailedTitle,
             body: directMessageRequestFailureReason(failure!),
             margin: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -375,7 +391,9 @@ class _FriendshipRequired extends StatelessWidget {
             ),
             child: LoopButton(
               key: const ValueKey<String>('dm-send-message-request'),
-              label: failure == null ? '发送消息请求' : '重新发送消息请求',
+              label: failure == null
+                  ? context.l10n.chatV2_directMessageDmSendMessageRequestLabel
+                  : context.l10n.chatV2_directMessageDmSendMessageRequestLabel2,
               block: true,
               primary: true,
               onPressed: busy ? null : () => unawaited(onSend()),

@@ -171,9 +171,6 @@ final class _Room {
         theme: LoopTheme.dark.copyWith(
           extensions: [...LoopTheme.dark.extensions.values, loopStreamTheme()],
         ),
-        // Decision 0281: chat is not migrated yet (S355); this case reads
-        // LOOP's Chinese Stream copy.
-        locale: LoopL10n.simplifiedChinese,
         supportedLocales: LoopL10n.supportedLocales,
         localizationsDelegates: loopLocalizationsDelegates,
         // As in `lib/app.dart`: above the navigator, so the long-press sheet
@@ -264,7 +261,7 @@ void main() {
           await tester.pumpAndSettle();
 
           await room.openActions(tester, '历史 2');
-          await tester.tap(find.text('回复'));
+          await tester.tap(find.text('Reply'));
           await tester.pumpAndSettle();
           await _raiseKeyboard(tester);
 
@@ -382,9 +379,9 @@ void main() {
       final room = _Room();
       await room.pump(tester, mayPin: false);
       await room.openActions(tester, '历史 2');
-      expect(find.text('回复'), findsOneWidget);
-      expect(find.text('置顶到会话'), findsNothing);
-      expect(find.text('取消置顶'), findsNothing);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Pin to Conversation'), findsNothing);
+      expect(find.text('Unpin from Conversation'), findsNothing);
       await room.dispose(tester);
     });
 
@@ -392,7 +389,7 @@ void main() {
       final room = _Room();
       await room.pump(tester, mayPin: true);
       await room.openActions(tester, '历史 2');
-      expect(find.text('置顶到会话'), findsOneWidget);
+      expect(find.text('Pin to Conversation'), findsOneWidget);
       await room.dispose(tester);
     });
 
@@ -401,11 +398,11 @@ void main() {
       final actions = <StreamContextMenuAction<MessageAction>>[
         StreamContextMenuAction(
           value: QuotedReply(message: message),
-          label: const Text('回复'),
+          label: const Text('Reply'),
         ),
         StreamContextMenuAction(
           value: PinMessage(message: message),
-          label: const Text('置顶到会话'),
+          label: const Text('Pin to Conversation'),
         ),
         StreamContextMenuAction(
           value: UnpinMessage(message: message),
@@ -434,7 +431,7 @@ void main() {
           roomTitle: voiceRoomTitle('DeFi 早读会'),
           link: link,
         ),
-        '来 LOOP 的『DeFi 早读会』语音房：DeFi 早读会 语音房\n$link',
+        'Join the "DeFi 早读会" voice room on LOOP: DeFi 早读会 voice room\n$link',
       );
       expect(voiceRoomShareLink('', 'x'), isNull);
     });
@@ -552,8 +549,8 @@ void main() {
       await tester.tap(button);
       await tester.pumpAndSettle();
       expect(shared, <String>[
-        '来 LOOP 的『$testVoiceRoomCommunityName』语音房：'
-            '$testVoiceRoomCommunityName 语音房\n'
+        'Join the "$testVoiceRoomCommunityName" voice room on LOOP: '
+            '$testVoiceRoomCommunityName voice room\n'
             'https://api-staging.quant-dinger.cc/c/$testCommunityId/room',
       ]);
     });

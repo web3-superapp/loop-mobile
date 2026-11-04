@@ -297,7 +297,7 @@ void main() {
         find.byKey(const ValueKey<String>('stream-chat-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('会话还没有连接'), findsOneWidget);
+      expect(find.text('Conversations not connected yet'), findsOneWidget);
       expect(
         tester.widget(
           find.byKey(const ValueKey<String>('stream-chat-unavailable')),
@@ -616,9 +616,10 @@ void main() {
     // empty state — not the English `Discuss / Chat` card.
     expect(tester.widget(state), isA<LoopEmptyState>());
     expect(find.byType(LoopStreamPage), findsOneWidget);
-    expect(find.text('聊天'), findsOneWidget);
-    expect(find.text('聊天服务还没有连接'), findsOneWidget);
-    expect(find.text('Chat'), findsNothing);
+    // Decision 0281: the title is now the English 「Chat」 itself, so the old
+    // card is ruled out by there being exactly one 「Chat」 on the page.
+    expect(find.text('Chat'), findsOneWidget);
+    expect(find.text('Chat service not connected yet'), findsOneWidget);
     expect(find.text('Discuss'), findsNothing);
     expect(find.textContaining('Stream not connected'), findsNothing);
     expect(find.byType(LoopStateCard), findsNothing);

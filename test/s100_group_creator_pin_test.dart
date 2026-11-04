@@ -113,9 +113,6 @@ final class _Group {
         theme: LoopTheme.dark.copyWith(
           extensions: [...LoopTheme.dark.extensions.values, loopStreamTheme()],
         ),
-        // Decision 0281: chat is not migrated yet (S355); this case reads
-        // LOOP's Chinese Stream copy.
-        locale: LoopL10n.simplifiedChinese,
         supportedLocales: LoopL10n.supportedLocales,
         localizationsDelegates: loopLocalizationsDelegates,
         builder: (context, child) => StreamChat(
@@ -189,8 +186,8 @@ void main() {
       final room = _Group(creator: _me);
       await room.pump(tester, mayPinFor: loopFriendGroupCreatorMayPin);
       await room.openActions(tester, '消息 2');
-      expect(find.text('回复'), findsOneWidget);
-      expect(find.text('置顶到会话'), findsOneWidget);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Pin to Conversation'), findsOneWidget);
       await room.dispose(tester);
     });
 
@@ -198,9 +195,9 @@ void main() {
       final room = _Group(creator: 'someone');
       await room.pump(tester, mayPinFor: loopFriendGroupCreatorMayPin);
       await room.openActions(tester, '消息 2');
-      expect(find.text('回复'), findsOneWidget);
-      expect(find.text('置顶到会话'), findsNothing);
-      expect(find.text('取消置顶'), findsNothing);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Pin to Conversation'), findsNothing);
+      expect(find.text('Unpin from Conversation'), findsNothing);
       await room.dispose(tester);
     });
 
@@ -208,7 +205,7 @@ void main() {
       final room = _Group(creator: null);
       await room.pump(tester, mayPinFor: loopFriendGroupCreatorMayPin);
       await room.openActions(tester, '消息 2');
-      expect(find.text('置顶到会话'), findsNothing);
+      expect(find.text('Pin to Conversation'), findsNothing);
       await room.dispose(tester);
     });
 
@@ -219,8 +216,8 @@ void main() {
       final room = _Group(creator: _me);
       await room.pump(tester, mayPin: false);
       await room.openActions(tester, '消息 2');
-      expect(find.text('回复'), findsOneWidget);
-      expect(find.text('置顶到会话'), findsNothing);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Pin to Conversation'), findsNothing);
       await room.dispose(tester);
     });
 
@@ -235,7 +232,7 @@ void main() {
         mayPinFor: loopFriendGroupCreatorMayPin,
       );
       await room.openActions(tester, '消息 2');
-      expect(find.text('置顶到会话'), findsNothing);
+      expect(find.text('Pin to Conversation'), findsNothing);
       await room.dispose(tester);
     });
   });

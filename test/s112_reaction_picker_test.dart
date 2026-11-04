@@ -172,9 +172,6 @@ final class _Group {
         theme: LoopTheme.dark.copyWith(
           extensions: [...LoopTheme.dark.extensions.values, loopStreamTheme()],
         ),
-        // Decision 0281: chat is not migrated yet (S355); this case reads
-        // LOOP's Chinese Stream copy.
-        locale: LoopL10n.simplifiedChinese,
         supportedLocales: LoopL10n.supportedLocales,
         localizationsDelegates: loopLocalizationsDelegates,
         builder: (context, child) => StreamChat(
@@ -235,7 +232,7 @@ void main() {
       await room.pump(tester, config: loopStreamChatConfiguration);
       await room.openActions(tester, '消息 2');
 
-      expect(find.text('回复'), findsOneWidget);
+      expect(find.text('Reply'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-reaction-bar')),
         findsOneWidget,

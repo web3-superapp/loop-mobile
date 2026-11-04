@@ -210,7 +210,7 @@ void main() {
       'Mention Owl',
       loopGroupMemberNeutralLabel,
     ]);
-    expect(display.text, 'hello @Mention Owl, @Mention Owl, and @成员');
+    expect(display.text, 'hello @Mention Owl, @Mention Owl, and @Member');
     expect(display.quotedMessage?.user?.name, 'Quote Owl');
     expect(display.latestReactions?.single.user?.name, 'Reaction Owl');
     expect(display.ownReactions?.single.user?.name, 'Sender Owl');
@@ -637,7 +637,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('每周一起读 DeFi'), findsOneWidget);
-      expect(find.text('还没有消息'), findsNothing);
+      expect(find.text('No messages yet'), findsNothing);
       await _disposeHarness(tester, harness);
     },
   );
@@ -919,7 +919,7 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('你: '), findsOneWidget);
+    expect(find.textContaining('You: '), findsOneWidget);
     expect(find.textContaining('晚点聊'), findsOneWidget);
     expect(find.textContaining('loop_'), findsNothing);
     await _disposeHarness(tester, harness);
@@ -1046,10 +1046,6 @@ Future<void> _pumpInChannel(
   await pumpWithLegacyChatIdentity(
     tester,
     MaterialApp(
-      // The product's own zh-CN Stream copy, so an assertion here reads the
-      // words the member reads instead of the SDK's English defaults.
-      // Decision 0281: chat is not migrated yet (S355).
-      locale: LoopL10n.simplifiedChinese,
       supportedLocales: LoopL10n.supportedLocales,
       localizationsDelegates: loopLocalizationsDelegates,
       home: StreamChat(

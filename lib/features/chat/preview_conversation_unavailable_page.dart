@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -8,7 +9,7 @@ class PreviewConversationUnavailablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: '开发预览',
+      eyebrow: context.l10n.common_devPreview,
       title: 'Preview conversation unavailable',
       subtitle: 'No local fixture matches this exact conversation identity.',
       children: <Widget>[

@@ -1,0 +1,151 @@
+{
+  "socialQr_cardBarrierLabel": {
+    "en": "Close QR card",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:119",
+    "zh": "关闭二维码名片"
+  },
+  "socialQr_cardCopy": {
+    "en": "Invite text copied",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:230",
+    "zh": "已复制邀请文字"
+  },
+  "socialQr_cardDismissed": {
+    "en": "Poster created, but no share destination was chosen",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:103",
+    "zh": "海报已生成，但没有选择分享去处"
+  },
+  "socialQr_cardFailed": {
+    "en": "Couldn't create the poster; nothing left this device",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:104",
+    "zh": "海报没有生成成功，没有任何内容离开这台设备"
+  },
+  "socialQr_cardLoopCommunityQrCard": {
+    "en": "Community QR card",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:157",
+    "zh": "社区二维码名片"
+  },
+  "socialQr_cardLoopUserQrCard": {
+    "en": "My QR card",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:156",
+    "zh": "我的二维码名片"
+  },
+  "socialQr_cardQrCardCodeSemanticLabel": {
+    "en": "{name}'s QR code",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/qr/loop_qr_card.dart:424",
+    "zh": "{name} 的二维码"
+  },
+  "socialQr_cardQrCardCopyInviteLabel": {
+    "en": "Copy invite text",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:228",
+    "zh": "复制邀请文字"
+  },
+  "socialQr_cardQrCardCopyLinkLabel": {
+    "en": "Copy link",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:208",
+    "zh": "复制链接"
+  },
+  "socialQr_cardQrCardPosterLabel": {
+    "en": "{name}'s QR card",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/qr/loop_qr_card.dart:350",
+    "zh": "{name} 的二维码名片"
+  },
+  "socialQr_cardQrCardSharePosterLabel": {
+    "en": "Creating…",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:220",
+    "zh": "正在生成…"
+  },
+  "socialQr_cardQrCardSharePosterLabel2": {
+    "en": "Share poster",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:220",
+    "zh": "分享海报"
+  },
+  "socialQr_cardQrCardUnavailableLabel": {
+    "en": "QR code unavailable",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:173",
+    "zh": "二维码不可用"
+  },
+  "socialQr_cardS": {
+    "en": "Join \"{name}\" on LOOP\n{link}",
+    "placeholders": {
+      "link": {
+        "example": "link",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/qr/loop_qr_card.dart:95",
+    "zh": "来 LOOP 加入『{name}』\n{link}"
+  },
+  "socialQr_cardShared": {
+    "en": "Poster created. Choose where to share it",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:102",
+    "zh": "海报已生成，请在分享面板中选择去处"
+  },
+  "socialQr_cardSwitch": {
+    "en": "Join \"{name}\" on LOOP",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/qr/loop_qr_card.dart:95",
+    "zh": "来 LOOP 加入『{name}』"
+  },
+  "socialQr_cardSwitch2": {
+    "en": "Scan to add me",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:318",
+    "zh": "扫码加我"
+  },
+  "socialQr_cardSwitch3": {
+    "en": "{memberCount, plural, =1{1 member} other{{memberCount} members}}",
+    "placeholders": {
+      "memberCount": {
+        "example": "memberCount",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/social/qr/loop_qr_card.dart:328",
+    "zh": "{memberCount} 位成员"
+  },
+  "socialQr_cardSwitch4": {
+    "en": "Scan to join",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:330",
+    "zh": "扫码加入"
+  },
+  "socialQr_cardUnavailable": {
+    "en": "System sharing isn't available in this run; no poster was created",
+    "placeholders": {},
+    "where": "lib/features/social/qr/loop_qr_card.dart:105",
+    "zh": "本次运行没有装配系统分享，海报未生成"
+  }
+}

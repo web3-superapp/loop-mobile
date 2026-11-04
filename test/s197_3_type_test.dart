@@ -218,7 +218,7 @@ void main() {
         reason: 'count',
       );
       _expectStep(
-        _painted(tester, '粉丝'),
+        _painted(tester, 'Followers'),
         LoopType.bodySm,
         color: LoopColors.text2,
         reason: 'count word',
@@ -263,7 +263,7 @@ void main() {
         find.descendant(of: row, matching: find.byType(LoopQuoteRow)),
         findsNothing,
       );
-      _expectStep(_painted(tester, '买入 BNB'), LoopType.title, reason: 'title');
+      _expectStep(_painted(tester, 'Buy BNB'), LoopType.title, reason: 'title');
       _expectStep(
         _paintedAt(
           tester,
@@ -407,7 +407,7 @@ void main() {
         tester,
         (context) => unawaited(showGroupRenameSheet(context, current: '蛙群')),
       );
-      _expectSheetHeading(tester, '修改群名称');
+      _expectSheetHeading(tester, 'Edit group name');
     });
 
     testWidgets('M10 inbox row actions', (tester) async {
@@ -439,7 +439,7 @@ void main() {
           ),
         ],
       );
-      _expectSheetHeading(tester, '我的二维码名片');
+      _expectSheetHeading(tester, 'My QR card');
     });
   });
 

@@ -1,0 +1,329 @@
+{
+  "chat_inboxRowActionsChatInboxRowSheetBarrierLabel": {
+    "en": "Close conversation actions",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_inbox_row_actions.dart:138",
+    "zh": "关闭会话操作"
+  },
+  "chat_inboxRowActionsMarkRead": {
+    "en": "Mark as read",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_inbox_row_actions.dart:20",
+    "zh": "标为已读"
+  },
+  "chat_inboxRowActionsPin": {
+    "en": "Pin",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_inbox_row_actions.dart:16",
+    "zh": "置顶"
+  },
+  "chat_inboxRowActionsUnpin": {
+    "en": "Unpin",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_inbox_row_actions.dart:17",
+    "zh": "取消置顶"
+  },
+  "chat_previewPagesEyebrow": {
+    "en": "Shared in chat · Development preview",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_preview_pages.dart:183",
+    "zh": "Shared in chat · 开发预览"
+  },
+  "chat_previewPagesMessage": {
+    "en": "Demo prices and facts aren't provider responses. In production, cards without fresh facts don't show price, Buy or Watch.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_preview_pages.dart:48",
+    "zh": "演示价格和事实不是 provider 响应。生产卡片缺少新鲜事实时不会显示价格、Buy 或 Watch。"
+  },
+  "chat_previewPagesMessage2": {
+    "en": "Reference price, 24h change, and volume are labelled Demo data. Opening Market loads a separate current public Spot snapshot.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_preview_pages.dart:193",
+    "zh": "Reference price, 24h change, and volume are labelled 演示数据. Opening Market loads a separate current public Spot snapshot."
+  },
+  "chat_previewPagesSubtitle": {
+    "en": "Development preview: messages only store the asset ID; current price and facts are re-verified when shown.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_preview_pages.dart:14",
+    "zh": "开发预览：消息只保存资产标识；当前价格与事实必须在展示时重新验证。"
+  },
+  "chat_secondaryPagesLoopSectionLabel": {
+    "en": "Preferences · Development preview",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_secondary_pages.dart:116",
+    "zh": "Preferences · 开发预览"
+  },
+  "chat_secondaryPagesS": {
+    "en": "Removed from Development preview only. No sender interaction occurred.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_secondary_pages.dart:313",
+    "zh": "Removed from 开发预览 only. No sender interaction occurred."
+  },
+  "chat_secondaryPagesShowRequestNotice": {
+    "en": "Marked accepted in Development preview and removed locally. No Stream conversation was created.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_secondary_pages.dart:312",
+    "zh": "Marked accepted in 开发预览 and removed locally. No Stream conversation was created."
+  },
+  "chat_secondaryPagesShowRequestNotice2": {
+    "en": "Removed from Development preview. No report was submitted.",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_secondary_pages.dart:380",
+    "zh": "Removed from 开发预览. No report was submitted."
+  },
+  "chat_secondaryPagesTitle": {
+    "en": "Development Preview only · Development preview",
+    "placeholders": {},
+    "where": "lib/features/chat/chat_secondary_pages.dart:246",
+    "zh": "Development Preview only · 开发预览"
+  },
+  "chat_streamInboxBody": {
+    "en": "The conversation is removed from the list and comes back when there's a new message. Chat history isn't cleared.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:1012",
+    "zh": "会话会从列表移除，有新消息时会重新出现。聊天记录不会被清除。"
+  },
+  "chat_streamInboxChatVoiceRoomReturnEntrySemanticLabel": {
+    "en": "In voice room, {communityName}, return to room",
+    "placeholders": {
+      "communityName": {
+        "example": "session.communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:404",
+    "zh": "正在语音房，{communityName}，返回房间"
+  },
+  "chat_streamInboxChatVoiceRoomReturnEntryTitle": {
+    "en": "In voice room · {communityName}",
+    "placeholders": {
+      "communityName": {
+        "example": "session.communityName",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:402",
+    "zh": "正在语音房 · {communityName}"
+  },
+  "chat_streamInboxLabel": {
+    "en": "Loading conversations",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:306",
+    "zh": "会话加载中"
+  },
+  "chat_streamInboxMessage": {
+    "en": "This build isn't connected to the chat service, so conversations won't show here.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:181",
+    "zh": "这个版本没有连接聊天服务，会话不会显示在这里。"
+  },
+  "chat_streamInboxMessage10": {
+    "en": "Before resolving a LOOP group, we need to confirm you're still a member of this group chat.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:515",
+    "zh": "解析 LOOP 群组前，需要先确认你当前仍是这个群聊的成员。"
+  },
+  "chat_streamInboxMessage11": {
+    "en": "LOOP is confirming you're a member of this group chat.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:582",
+    "zh": "LOOP 正在确认你是这个群聊的成员。"
+  },
+  "chat_streamInboxMessage12": {
+    "en": "Couldn't confirm your membership in this group chat. No group was resolved.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:589",
+    "zh": "没有确认到你在这个群聊里的成员身份，没有解析任何群组。"
+  },
+  "chat_streamInboxMessage13": {
+    "en": "LOOP is confirming this channel and your membership.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:649",
+    "zh": "LOOP 正在确认这个频道和你的成员身份。"
+  },
+  "chat_streamInboxMessage14": {
+    "en": "Couldn't confirm your membership in this channel. No channel was created or opened.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:656",
+    "zh": "没有确认到你在这个频道里的成员身份，没有创建或打开任何频道。"
+  },
+  "chat_streamInboxMessage15": {
+    "en": "\"{label}\" didn't finish. Try again later",
+    "placeholders": {
+      "label": {
+        "example": "action.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:1024",
+    "zh": "「{label}」没有完成，稍后再试"
+  },
+  "chat_streamInboxMessage2": {
+    "en": "Couldn't restore the conversation. No message action was taken on this page.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:265",
+    "zh": "会话没有恢复成功，这一页没有执行任何消息操作。"
+  },
+  "chat_streamInboxMessage3": {
+    "en": "The chat service isn't connected yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:274",
+    "zh": "聊天服务还没有连接，稍后再试。"
+  },
+  "chat_streamInboxMessage4": {
+    "en": "This link doesn't point to a conversation LOOP supports. No channel was opened.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:427",
+    "zh": "这个链接没有指向 LOOP 支持的会话，没有打开任何频道。"
+  },
+  "chat_streamInboxMessage5": {
+    "en": "LOOP is restoring the server-authorized chat connection.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:438, lib/features/chat/stream_chat_inbox_page.dart:500",
+    "zh": "LOOP 正在恢复由服务端授权的聊天连接。"
+  },
+  "chat_streamInboxMessage6": {
+    "en": "Couldn't restore chat authorization. No conversation was opened.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:443",
+    "zh": "聊天授权没有恢复成功，没有打开任何会话。"
+  },
+  "chat_streamInboxMessage7": {
+    "en": "Opening this conversation needs a server-confirmed chat identity and a short-lived token.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:451",
+    "zh": "打开这个会话前，需要服务端确认的聊天身份和短期凭证。"
+  },
+  "chat_streamInboxMessage8": {
+    "en": "This link doesn't point to a group chat LOOP supports. No group was resolved.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:489",
+    "zh": "这个链接没有指向 LOOP 支持的群聊，没有解析任何群组。"
+  },
+  "chat_streamInboxMessage9": {
+    "en": "Couldn't restore chat authorization. No group was resolved.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:505",
+    "zh": "聊天授权没有恢复成功，没有解析任何群组。"
+  },
+  "chat_streamInboxPlaceholder": {
+    "en": "Search chats",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:372",
+    "zh": "搜索聊天"
+  },
+  "chat_streamInboxStreamChatEmptyActionLabel": {
+    "en": "Find friends",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:952",
+    "zh": "找朋友"
+  },
+  "chat_streamInboxStreamChatEmptyMessage": {
+    "en": "No conversations yet",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:951",
+    "zh": "还没有会话"
+  },
+  "chat_streamInboxStreamChatListErrorMessage": {
+    "en": "Couldn't load the conversation list on this page. Local history wasn't deleted.",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:964",
+    "zh": "这一页没有读到会话列表，本地已有的历史没有被删除。"
+  },
+  "chat_streamInboxStreamChatListErrorTitle": {
+    "en": "Couldn't load conversations",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:963",
+    "zh": "会话列表读不到"
+  },
+  "chat_streamInboxStreamChatUnavailableTitle": {
+    "en": "Conversations not connected yet",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:1208",
+    "zh": "会话还没有连接"
+  },
+  "chat_streamInboxTitle": {
+    "en": "Invalid conversation link",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:426",
+    "zh": "会话链接无效"
+  },
+  "chat_streamInboxTitle10": {
+    "en": "Conversation unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:655",
+    "zh": "会话不可用"
+  },
+  "chat_streamInboxTitle11": {
+    "en": "Conversation actions",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:996",
+    "zh": "会话操作"
+  },
+  "chat_streamInboxTitle12": {
+    "en": "Delete this conversation?",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:1011",
+    "zh": "删除这个会话？"
+  },
+  "chat_streamInboxTitle2": {
+    "en": "Restoring conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:437, lib/features/chat/stream_chat_inbox_page.dart:499",
+    "zh": "正在恢复会话"
+  },
+  "chat_streamInboxTitle3": {
+    "en": "Chat isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:442",
+    "zh": "聊天暂不可用"
+  },
+  "chat_streamInboxTitle4": {
+    "en": "Chat service not connected yet",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:450, lib/features/chat/stream_chat_inbox_page.dart:514",
+    "zh": "聊天服务还没有连接"
+  },
+  "chat_streamInboxTitle5": {
+    "en": "Invalid group chat link",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:488",
+    "zh": "群聊链接无效"
+  },
+  "chat_streamInboxTitle6": {
+    "en": "Group identity unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:504",
+    "zh": "群内身份暂不可用"
+  },
+  "chat_streamInboxTitle7": {
+    "en": "Confirming group chat",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:581",
+    "zh": "正在确认群聊"
+  },
+  "chat_streamInboxTitle8": {
+    "en": "Group chat unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:588",
+    "zh": "群聊不可用"
+  },
+  "chat_streamInboxTitle9": {
+    "en": "Opening conversation",
+    "placeholders": {},
+    "where": "lib/features/chat/stream_chat_inbox_page.dart:648",
+    "zh": "正在打开会话"
+  },
+  "chat_voiceRoomLabel": {
+    "en": "Host",
+    "placeholders": {},
+    "where": "lib/features/chat/voice_room_page.dart:258",
+    "zh": "主持"
+  },
+  "chat_voiceRoomText": {
+    "en": "Mock seat",
+    "placeholders": {},
+    "where": "lib/features/chat/voice_room_page.dart:133",
+    "zh": "模拟座位"
+  }
+}

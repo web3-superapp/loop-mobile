@@ -118,7 +118,7 @@ void main() {
       const ValueKey<String>('chat-preview-route-label'),
     );
     expect(bannerFinder, findsOneWidget);
-    expect(tester.widget<Banner>(bannerFinder).message, '开发预览');
+    expect(tester.widget<Banner>(bannerFinder).message, 'Development preview');
     expect(
       find.byKey(const ValueKey<String>('chat-preview-route-blocked')),
       findsNothing,

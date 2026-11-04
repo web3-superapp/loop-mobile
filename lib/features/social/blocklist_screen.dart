@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -33,10 +34,10 @@ class BlocklistScreen extends ConsumerStatefulWidget {
 }
 
 class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
-  static const Map<BlockKind, String> _segmentLabels = <BlockKind, String>{
-    BlockKind.user: '用户',
-    BlockKind.contract: '合约',
-    BlockKind.domain: '域名',
+  static Map<BlockKind, String> get _segmentLabels => <BlockKind, String>{
+    BlockKind.user: LoopL10n.current.common_user,
+    BlockKind.contract: LoopL10n.current.common_contract,
+    BlockKind.domain: LoopL10n.current.social_blocklistDomain,
   };
 
   @override
@@ -61,18 +62,18 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
     return LoopStreamPage(
       key: const ValueKey<String>('blocklist-screen'),
       archetype: LoopPageArchetype.record,
-      title: '屏蔽名单',
+      title: context.l10n.common_blockList,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
-        kicker: '屏蔽名单',
+        kicker: context.l10n.common_blockList,
         heading: state.userCount == null
             ? communityMissingHeading
-            : '${state.userCount} 个已屏蔽账号',
-        caption: '屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。',
-        stamp: '私密',
+            : context.l10n.social_blocklistHeading(state.userCount!),
+        caption: context.l10n.social_blocklistCaption,
+        stamp: context.l10n.social_blocklistStamp,
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(
@@ -91,7 +92,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
                   child: LoopSeg(
                     key: ValueKey<String>('blocklist-seg-${kind.wireName}'),
                     label: kind == BlockKind.user && state.userCount != null
-                        ? '用户 ${state.userCount}'
+                        ? context.l10n.social_blocklistLabel(state.userCount)
                         : _segmentLabels[kind]!,
                     selected: state.kind == kind,
                     onSelected: kind.isSupported
@@ -107,7 +108,9 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
           ? CommunityCapabilityPageBlock(
               key: const ValueKey<String>('blocklist-capability-unavailable'),
               capability: capability,
-              title: '屏蔽名单当前不可用',
+              title: context
+                  .l10n
+                  .social_blocklistBlocklistCapabilityUnavailableTitle,
             )
           : null,
       onRefresh: refresh,
@@ -119,14 +122,19 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
         physics: loopRefreshablePhysics(refresh),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '屏蔽名单'),
+          CommunityPreviewNotice(
+            mode: mode,
+            resource: context.l10n.common_blockList,
+          ),
           if (!state.kind.isSupported)
             LoopInlineUnavailable(
               key: ValueKey<String>(
                 'blocklist-kind-unavailable-${state.kind.wireName}',
               ),
-              message: '"${_segmentLabels[state.kind]}" 屏蔽暂不可用',
-              detail: '合约与域名屏蔽还没有开放，这里不会列出任何条目。',
+              message: context.l10n.social_blocklistMessage(
+                _segmentLabels[state.kind],
+              ),
+              detail: context.l10n.social_blocklistDetail,
               maxLines: 2,
               detailMaxLines: 4,
             )
@@ -134,8 +142,8 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '没有屏蔽任何账号',
-              emptyReason: '在陌生人请求里选择"举报"会自动屏蔽发起人。',
+              emptyMessage: context.l10n.social_blocklistEmptyMessage,
+              emptyReason: context.l10n.social_blocklistEmptyReason,
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -144,7 +152,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
                 key: const ValueKey<String>('blocklist-action-failure'),
                 icon: 'warn',
                 tone: LoopNoticeTone.warn,
-                title: '上一次操作没有完成',
+                title: context.l10n.common_lastActionIncomplete,
                 body: communityFailureReason(state.failureKind),
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
@@ -176,10 +184,10 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
           ],
           // The two deferred kinds are disabled segments, so their reason is
           // stated here instead of only after a selection that cannot happen.
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('blocklist-deferred-kinds'),
-            message: '合约与域名屏蔽暂不可用',
-            detail: '这两类屏蔽还没有开放，这里不会列出任何条目。',
+            message: context.l10n.social_blocklistBlocklistDeferredKindsMessage,
+            detail: context.l10n.social_blocklistBlocklistDeferredKindsDetail,
             maxLines: 2,
             detailMaxLines: 4,
             padding: EdgeInsets.fromLTRB(
@@ -189,13 +197,11 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
               0,
             ),
           ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('blocklist-precedence-notice'),
             icon: 'shield',
-            title: '屏蔽的效果',
-            body:
-                '屏蔽会立即断开双向关注，并让对方从搜索、关注列表和陌生人请求中消失。'
-                '解除屏蔽不会自动恢复关注，需要重新关注。',
+            title: context.l10n.social_blocklistBlocklistPrecedenceNoticeTitle,
+            body: context.l10n.social_blocklistBlocklistPrecedenceNoticeBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               16,
@@ -224,11 +230,14 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
       leading: LoopRowIcon(monogram: loopMonogram(title)),
       title: title,
       subtitle: blockReasonText(entry.reasonCode),
-      trailingBadge: const LoopBadge('解除'),
+      trailingBadge: LoopBadge(LoopL10n.current.social_blocklistLoopBadge),
       position: communityRowPosition(index, length),
       chevron: false,
       onTap: state.busy ? null : () => unawaited(_unblock(entry, controller)),
-      semanticLabel: '$title，${blockReasonText(entry.reasonCode)}，可解除屏蔽',
+      semanticLabel: LoopL10n.current.social_blocklistSemanticLabel(
+        blockReasonText(entry.reasonCode),
+        title,
+      ),
     );
   }
 
@@ -239,16 +248,19 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
     final title = entry.profile?.displayName ?? entry.stableId;
     final confirmed = await confirmCommunityAction(
       context,
-      title: '解除对 $title 的屏蔽？',
-      body: '解除后对方可以重新出现在搜索与陌生人请求里。已经断开的关注关系不会自动恢复。',
-      confirmLabel: '解除屏蔽',
+      title: LoopL10n.current.social_blocklistTitle(title),
+      body: LoopL10n.current.social_blocklistBody,
+      confirmLabel: LoopL10n.current.social_blocklistConfirmLabel,
       sheetKey: 'blocklist-confirm-sheet',
     );
     if (!confirmed) return;
     final failure = await controller.unblock(entry);
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: '已解除屏蔽');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.social_blocklistMessage2,
+      );
       return;
     }
     LoopToast.show(

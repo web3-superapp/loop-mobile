@@ -154,7 +154,7 @@ void main() {
       expect(
         find.descendant(
           of: _inBar('voiceroom-bar-mic'),
-          matching: find.text('未连接'),
+          matching: find.text('Not connected'),
         ),
         findsOneWidget,
       );
@@ -164,7 +164,7 @@ void main() {
       await tester.tap(_inBar('voiceroom-step-down'));
       await tester.pumpAndSettle();
       expect(voice.commands, contains('step-down'));
-      expect(find.text('已下麦，回到听众'), findsOneWidget);
+      expect(find.text('Left stage, back to listening'), findsOneWidget);
       expect(_inBar('voiceroom-raise-hand'), findsOneWidget);
       expect(_inBar('voiceroom-step-down'), findsNothing);
       await tester.pump(const Duration(seconds: 4));
@@ -183,10 +183,13 @@ void main() {
       await tester.tap(_inBar('voiceroom-step-down'));
       await tester.pumpAndSettle();
       expect(voice.commands, contains('step-down'));
-      expect(find.text('下麦暂不可用'), findsOneWidget);
+      expect(
+        find.text('Leaving stage isn\'t available right now'),
+        findsOneWidget,
+      );
       // Still a speaker, and the control stays where it was.
       expect(_inBar('voiceroom-step-down'), findsOneWidget);
-      expect(find.text('已下麦，回到听众'), findsNothing);
+      expect(find.text('Left stage, back to listening'), findsNothing);
       await tester.pump(const Duration(seconds: 4));
     });
 
@@ -324,12 +327,12 @@ void main() {
         speakSpent: spent,
         retiring: retiring,
       );
-      expect(label(open: true), '静音');
-      expect(label(), '取消静音');
-      expect(label(speakAgain: true), '重新发言');
-      expect(label(canSend: false), '仅收听');
-      expect(label(spent: true), '不能开麦');
-      expect(label(retiring: true), '正在退出');
+      expect(label(open: true), 'Mute');
+      expect(label(), 'Unmute');
+      expect(label(speakAgain: true), 'Speak again');
+      expect(label(canSend: false), 'Listen only');
+      expect(label(spent: true), 'Can\'t unmute');
+      expect(label(retiring: true), 'Leaving');
     });
   });
 
@@ -412,8 +415,8 @@ void main() {
 
       final grid = find.byKey(const ValueKey<String>('voiceroom-speakers'));
       expect(grid, findsOneWidget);
-      expect(find.text('发言者 3'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('pepe_maxi，已静音')), findsOneWidget);
+      expect(find.text('Speakers 3'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('pepe_maxi, Muted')), findsOneWidget);
     });
 
     testWidgets('a roster that cannot be read says which way', (tester) async {
@@ -520,7 +523,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('voiceroom-host')),
-          matching: find.text('主持人'),
+          matching: find.text('Host'),
         ),
         findsWidgets,
       );
@@ -663,8 +666,8 @@ void main() {
           isSpeaking: true,
         ),
       ]);
-      expect(hostSays('正在发言'), findsNothing);
-      expect(hostSays('已静音'), findsNothing);
+      expect(hostSays('Speaking'), findsNothing);
+      expect(hostSays('Muted'), findsNothing);
     });
 
     testWidgets('the room\'s own host is named, and heard by that name', (
@@ -690,7 +693,7 @@ void main() {
           isSpeaking: true,
         ),
       ]);
-      expect(hostSays('正在发言'), findsOneWidget);
+      expect(hostSays('Speaking'), findsOneWidget);
     });
   });
 
@@ -705,12 +708,15 @@ void main() {
       expect(
         find.descendant(
           of: bar,
-          matching: find.text('$testVoiceRoomCommunityName 语音房'),
+          matching: find.text('$testVoiceRoomCommunityName voice room'),
         ),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: bar, matching: find.textContaining('46 在听 · ')),
+        find.descendant(
+          of: bar,
+          matching: find.textContaining('46 listening · '),
+        ),
         findsOneWidget,
       );
       expect(
@@ -736,7 +742,7 @@ void main() {
         find.descendant(
           of: bar,
           matching: find.textContaining(
-            '$testVoiceRoomCommunityName · 46 在听 · ',
+            '$testVoiceRoomCommunityName · 46 listening · ',
           ),
         ),
         findsOneWidget,
@@ -888,7 +894,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-start-submit')),
       );
       await tester.pump();
-      expect(find.text('正在开播…'), findsOneWidget);
+      expect(find.text('Going live…'), findsOneWidget);
       // The system back, a tap outside and a drag all leave it standing.
       await tester.binding.handlePopRoute();
       await tester.pump();
@@ -975,7 +981,7 @@ void main() {
       tester,
     ) async {
       await pumpCard(tester, _liveRoom());
-      expect(find.text('Builders Guild 语音房'), findsOneWidget);
+      expect(find.text('Builders Guild voice room'), findsOneWidget);
       expect(faces(), findsOneWidget);
       expect(find.text('Host frog_maxi'), findsOneWidget);
     });
@@ -1000,7 +1006,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('Host 匿名成员'), findsOneWidget);
+      expect(find.text('Host Anonymous member'), findsOneWidget);
       expect(faces(), findsOneWidget);
     });
   });

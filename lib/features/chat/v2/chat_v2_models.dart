@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Which persistent chat operation a `POST /v2/chat/...` call started.
 enum ChatOperationKind {
@@ -159,9 +160,9 @@ enum VoiceRoomRole {
   final String wireName;
 
   String get label => switch (this) {
-    VoiceRoomRole.host => '主持人',
-    VoiceRoomRole.speaker => '发言人',
-    VoiceRoomRole.listener => '听众',
+    VoiceRoomRole.host => LoopL10n.current.chatV2_modelsHost,
+    VoiceRoomRole.speaker => LoopL10n.current.chatV2_modelsSpeaker,
+    VoiceRoomRole.listener => LoopL10n.current.chatV2_modelsListener,
   };
 
   static VoiceRoomRole? tryParse(String value) {
@@ -350,8 +351,8 @@ enum VoiceRoomRosterView {
   final String wireName;
 
   String get label => switch (this) {
-    VoiceRoomRosterView.speaker => '发言人',
-    VoiceRoomRosterView.listener => '听众',
+    VoiceRoomRosterView.speaker => LoopL10n.current.chatV2_modelsSpeaker,
+    VoiceRoomRosterView.listener => LoopL10n.current.chatV2_modelsListener,
   };
 
   static VoiceRoomRosterView? tryParse(String value) {
@@ -450,11 +451,14 @@ enum VoiceRoomMemberCommand {
   final String wireName;
 
   String get label => switch (this) {
-    VoiceRoomMemberCommand.inviteSpeaker => '邀请上麦',
-    VoiceRoomMemberCommand.removeSpeaker => '移出发言',
-    VoiceRoomMemberCommand.mute => '静音',
-    VoiceRoomMemberCommand.unmute => '取消静音',
-    VoiceRoomMemberCommand.unmuteSelf => '取消我的静音',
+    VoiceRoomMemberCommand.inviteSpeaker =>
+      LoopL10n.current.chatV2_modelsInviteSpeaker,
+    VoiceRoomMemberCommand.removeSpeaker =>
+      LoopL10n.current.chatV2_modelsRemoveSpeaker,
+    VoiceRoomMemberCommand.mute => LoopL10n.current.common_mute,
+    VoiceRoomMemberCommand.unmute => LoopL10n.current.common_unmute,
+    VoiceRoomMemberCommand.unmuteSelf =>
+      LoopL10n.current.chatV2_modelsUnmuteSelf,
   };
 
   static VoiceRoomMemberCommand? tryParse(String value) {
@@ -668,47 +672,47 @@ final class VoiceRoomCurrent {
 /// zh-CN copy for one server-owned voice-room display key. An unknown key
 /// keeps a neutral word rather than inventing a name.
 String voiceRoomDisplayKeyText(String key) => switch (key) {
-  'voiceRoom.member.anonymousMember' => '匿名成员',
+  'voiceRoom.member.anonymousMember' =>
+    LoopL10n.current.chatV2_forwardScreensChatMergeAnonymousLabel,
   'voiceRoom.member.display.anonymousModeOnly' =>
-    '只有开启匿名模式的成员显示为匿名；是否可被发现不影响这一行。',
-  _ => '这一项暂时读不到。',
+    LoopL10n.current.chatV2_modelsSwitch,
+  _ => LoopL10n.current.common_itemUnavailable,
 };
 
 /// zh-CN copy for one communication `reasonCode`. An unknown code keeps a
 /// neutral sentence rather than inventing a cause.
-String communicationUnavailableReason(String? reasonCode) =>
-    switch (reasonCode) {
-      // One code covers two states — a community with no channel row at all,
-      // and one whose row was allocated but whose channel is not created yet
-      // — so the sentence states the fact both share and claims no cause. It
-      // used to blame a verification the reader could see was already done.
-      'COMMUNITY_CHANNEL_NOT_PROVISIONED' => '该社区还没有官方群频道。',
-      'COMMUNITY_CHANNEL_MEMBER_SYNCING' => '你的频道成员身份正在同步，稍后即可进入。',
-      'COMMUNITY_CHANNEL_CAPACITY_PENDING' =>
-        '官方群已达到服务商的成员上限，暂时无法进入。你的 LOOP 社区成员资格不受影响。',
-      'COMMUNITY_CHANNEL_PROVISION_FAILED' => '官方群创建或同步失败，需要运维介入后才能进入。',
-      'COMMUNITY_MEMBERSHIP_REQUIRED' => '需要先加入该社区，才能进入官方群。',
-      'VOICE_ROOM_RUNTIME_UNAVAILABLE' => '聊天暂时不可用，稍后再试。',
-      'COMMUNITY_VOICE_ROOM_NOT_LIVE' => '该社区当前没有进行中的语音房。',
-      'COMMUNICATION_RUNTIME_UNAVAILABLE' => '聊天暂时不可用，稍后再试。',
-      'V2_COMMUNICATION_RUNTIME_DEFERRED' => '聊天在当前环境还没有开放。',
-      'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING' =>
-        '语音房还在验证中，'
-            '验证通过前这一页不会发起任何语音连接。',
-      'STREAM_PARTICIPANT_COUNT_NOT_OBSERVED' => '在线人数暂时读不到，因此不显示数字。',
-      // The room exists in LOOP but is not open on the provider's side yet,
-      // so a device that joins is refused the audio. It is not a permission
-      // this account lacks, and it is not a room that ended.
-      'VOICE_ROOM_BACKSTAGE_NOT_LIVE' => '这个房间还没有开放收听。刷新一次，或让主持人重新开启。',
-      'STREAM_CALL_GO_LIVE_UNCONFIRMED' =>
-        '这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。',
-      // The room row exists and the provider call behind it does not, so
-      // nobody can be let in. Opening it again is what finishes it.
-      'STREAM_CALL_CREATE_UNCONFIRMED' => '这个语音房还没有在服务商那边建好，现在进不去。',
-      // The hand was recorded; the room was not told about it.
-      'STREAM_CALL_EVENT_UNCONFIRMED' => '举手已经记下了，主持人可能要稍后才看到。',
-      'STREAM_CALL_MUTE_UNCONFIRMED' => '这次静音还没有在服务商那边确认。',
-      'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 还没有开放，这一页暂时不可用。',
-      null => '这一项暂时读不到。',
-      _ => '这一项暂时读不到。',
-    };
+String communicationUnavailableReason(
+  String? reasonCode,
+) => switch (reasonCode) {
+  // One code covers two states — a community with no channel row at all,
+  // and one whose row was allocated but whose channel is not created yet
+  // — so the sentence states the fact both share and claims no cause. It
+  // used to blame a verification the reader could see was already done.
+  'COMMUNITY_CHANNEL_NOT_PROVISIONED' => LoopL10n.current.chatV2_modelsSwitch2,
+  'COMMUNITY_CHANNEL_MEMBER_SYNCING' => LoopL10n.current.chatV2_modelsSwitch3,
+  'COMMUNITY_CHANNEL_CAPACITY_PENDING' => LoopL10n.current.chatV2_modelsSwitch4,
+  'COMMUNITY_CHANNEL_PROVISION_FAILED' => LoopL10n.current.chatV2_modelsSwitch5,
+  'COMMUNITY_MEMBERSHIP_REQUIRED' => LoopL10n.current.chatV2_modelsSwitch6,
+  'VOICE_ROOM_RUNTIME_UNAVAILABLE' => LoopL10n.current.chatV2_modelsSwitch7,
+  'COMMUNITY_VOICE_ROOM_NOT_LIVE' => LoopL10n.current.chatV2_modelsSwitch8,
+  'COMMUNICATION_RUNTIME_UNAVAILABLE' => LoopL10n.current.chatV2_modelsSwitch7,
+  'V2_COMMUNICATION_RUNTIME_DEFERRED' => LoopL10n.current.chatV2_modelsSwitch9,
+  'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING' =>
+    LoopL10n.current.chatV2_modelsSwitch10,
+  'STREAM_PARTICIPANT_COUNT_NOT_OBSERVED' =>
+    LoopL10n.current.chatV2_modelsSwitch11,
+  // The room exists in LOOP but is not open on the provider's side yet,
+  // so a device that joins is refused the audio. It is not a permission
+  // this account lacks, and it is not a room that ended.
+  'VOICE_ROOM_BACKSTAGE_NOT_LIVE' => LoopL10n.current.chatV2_modelsSwitch12,
+  'STREAM_CALL_GO_LIVE_UNCONFIRMED' => LoopL10n.current.chatV2_modelsSwitch13,
+  // The room row exists and the provider call behind it does not, so
+  // nobody can be let in. Opening it again is what finishes it.
+  'STREAM_CALL_CREATE_UNCONFIRMED' => LoopL10n.current.chatV2_modelsSwitch14,
+  // The hand was recorded; the room was not told about it.
+  'STREAM_CALL_EVENT_UNCONFIRMED' => LoopL10n.current.chatV2_modelsSwitch15,
+  'STREAM_CALL_MUTE_UNCONFIRMED' => LoopL10n.current.chatV2_modelsSwitch16,
+  'COMMUNITY_AI_RUNTIME_DEFERRED' => LoopL10n.current.chatV2_modelsSwitch17,
+  null => LoopL10n.current.common_itemUnavailable,
+  _ => LoopL10n.current.common_itemUnavailable,
+};

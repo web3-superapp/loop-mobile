@@ -68,7 +68,7 @@ void main() {
         find.byKey(const ValueKey<String>('qr-card-sheet')),
         findsOneWidget,
       );
-      expect(find.text('我的二维码名片'), findsOneWidget);
+      expect(find.text('My QR card'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('qr-card-code')),
         findsOneWidget,
@@ -82,7 +82,7 @@ void main() {
             .data,
         _loopId,
       );
-      expect(find.text('LOOP · 扫码加我'), findsOneWidget);
+      expect(find.text('LOOP · Scan to add me'), findsOneWidget);
       const link = '$_stagingBase/u/$_loopId';
       expect(find.text(link), findsOneWidget);
 
@@ -91,7 +91,7 @@ void main() {
         find.byKey(const ValueKey<String>('qr-card-copy-link')),
       );
       expect(clipboard.text, link);
-      expect(find.text('已复制链接'), findsOneWidget);
+      expect(find.text('Link copied'), findsOneWidget);
     });
 
     testWidgets('a community: logo, name, member count and the /c/ link', (
@@ -106,13 +106,13 @@ void main() {
         ),
       );
 
-      expect(find.text('社区二维码名片'), findsOneWidget);
+      expect(find.text('Community QR card'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('qr-card-code')),
         findsOneWidget,
       );
-      expect(find.text('128 位成员'), findsOneWidget);
-      expect(find.text('LOOP · 扫码加入'), findsOneWidget);
+      expect(find.text('128 members'), findsOneWidget);
+      expect(find.text('LOOP · Scan to join'), findsOneWidget);
       expect(find.text('$_stagingBase/c/$testCommunityId'), findsOneWidget);
     });
 
@@ -174,7 +174,10 @@ void main() {
       expect(sink.shared, hasLength(1));
       expect(sink.fileNames, <String>['loop-card.png']);
       expect(sink.shared.single.take(4), <int>[0x89, 0x50, 0x4e, 0x47]);
-      expect(find.text('海报已生成，请在分享面板中选择去处'), findsOneWidget);
+      expect(
+        find.text('Poster created. Choose where to share it'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -1038,7 +1041,7 @@ void main() {
       final row = find.byKey(const ValueKey<String>('group-info-name'));
       await scrollToCommunitySection(tester, row);
       expect(find.text('老友记'), findsOneWidget);
-      expect(find.text('修改'), findsOneWidget);
+      expect(find.text('Edit'), findsOneWidget);
       await _tap(tester, row);
       await tester.enterText(
         find.byKey(const ValueKey<String>('group-rename-field')),
@@ -1050,7 +1053,7 @@ void main() {
       );
 
       expect(gateway.calls, <String>['$testResolvedGroupId:周末徒步']);
-      expect(find.text('群名称已改为「周末徒步」'), findsOneWidget);
+      expect(find.text('Group name changed to "周末徒步"'), findsOneWidget);
       expect(find.text('周末徒步'), findsOneWidget);
     });
 
@@ -1063,7 +1066,12 @@ void main() {
       await _pumpGroupInfo(tester, gateway: gateway, creator: true);
       await _rename(tester, '新名字');
       expect(gateway.calls, hasLength(1));
-      expect(find.text('只有群主可以修改群名称；这次没有改动。'), findsOneWidget);
+      expect(
+        find.text(
+          'Only the group owner can change the group name; nothing was changed.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('老友记'), findsOneWidget);
     });
 
@@ -1073,7 +1081,12 @@ void main() {
       );
       await _pumpGroupInfo(tester, gateway: gateway, creator: true);
       await _rename(tester, '新名字');
-      expect(find.text('改名暂时不可用，群名称没有改动。'), findsOneWidget);
+      expect(
+        find.text(
+          'Renaming isn\'t available right now; the group name wasn\'t changed.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('老友记'), findsOneWidget);
     });
 
@@ -1083,7 +1096,10 @@ void main() {
       );
       await _pumpGroupInfo(tester, gateway: gateway, creator: true);
       await _rename(tester, '新名字');
-      expect(find.text('群不存在或你已不在群里。'), findsOneWidget);
+      expect(
+        find.text('The group doesn\'t exist or you\'re no longer in it.'),
+        findsOneWidget,
+      );
       expect(find.text('老友记'), findsOneWidget);
     });
 
@@ -1093,7 +1109,7 @@ void main() {
       final gateway = _FakeGroupProfileGateway(confirmed: '周末徒步群');
       await _pumpGroupInfo(tester, gateway: gateway, creator: true);
       await _rename(tester, '周末徒步');
-      expect(find.text('群名称已改为「周末徒步群」'), findsOneWidget);
+      expect(find.text('Group name changed to "周末徒步群"'), findsOneWidget);
       expect(find.text('周末徒步群'), findsOneWidget);
     });
 
@@ -1104,7 +1120,7 @@ void main() {
       await _pumpGroupInfo(tester, gateway: gateway, creator: false);
       final row = find.byKey(const ValueKey<String>('group-info-name'));
       await scrollToCommunitySection(tester, row);
-      expect(find.text('仅群主可改'), findsOneWidget);
+      expect(find.text('Owner only'), findsOneWidget);
       await tester.tap(row);
       await tester.pumpAndSettle();
       expect(

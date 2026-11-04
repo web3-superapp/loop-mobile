@@ -49,7 +49,7 @@ void main() {
         audioRoomMicrophoneRefusalText(
           AudioRoomMicrophoneRefusal.systemPermission,
         ),
-        '没有麦克风权限，去系统设置里允许 LOOP 使用麦克风后再试。',
+        'No mic access. Allow LOOP to use the microphone in system settings, then try again.',
       );
       // The old sentence sent everyone to the system settings and then out of
       // the room. Neither belongs to a room role.

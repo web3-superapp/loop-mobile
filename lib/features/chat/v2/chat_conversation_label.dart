@@ -3,9 +3,12 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Neutral title for a community's official group LOOP could not name.
-const String loopCommunityConversationNeutralLabel = '社区官方群';
+String get loopCommunityConversationNeutralLabel => LoopL10n
+    .current
+    .chatV2_conversationLabelLoopCommunityConversationNeutralLabel;
 
 /// What one conversation is called, and what it is.
 ///
@@ -56,7 +59,9 @@ ChatConversationLabel resolveChatConversationLabel({
   LoopDirectChannelDirectory? directory,
 }) {
   final stored = loopStoredConversationName(extraData);
-  final members = memberCount == null ? null : '$memberCount 名成员';
+  final members = memberCount == null
+      ? null
+      : LoopL10n.current.chatV2_conversationLabelNull(memberCount);
   return switch (surface) {
     LoopChatSurface.communityChat => ChatConversationLabel(
       title: stored ?? loopCommunityConversationNeutralLabel,
@@ -75,7 +80,7 @@ ChatConversationLabel resolveChatConversationLabel({
     // this client does not trust.
     LoopChatSurface.direct => ChatConversationLabel(
       title: resolveLoopDirectRowIdentity(cid: cid, directory: directory).title,
-      subtitle: '私聊',
+      subtitle: LoopL10n.current.common_directMessage,
     ),
   };
 }

@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/features/chat/widgets/group_mosaic_avatar.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -113,7 +114,7 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
           icon: Icons.campaign_outlined,
           tone: LoopTone.conversation,
         ),
-        const LoopSectionLabel('Preferences · 开发预览'),
+        LoopSectionLabel(context.l10n.chat_secondaryPagesLoopSectionLabel),
         const LoopStateCard(
           title: 'Preview controls only',
           message: 'These switches change only this process-local page state. They do not read or write Stream notification settings.',
@@ -242,8 +243,8 @@ class _MessageRequestsPageState extends ConsumerState<MessageRequestsPage> {
       subtitle:
           'Process-local simulated requests for this Development Preview.',
       children: <Widget>[
-        const LoopStateCard(
-          title: 'Development Preview only · 开发预览',
+        LoopStateCard(
+          title: context.l10n.chat_secondaryPagesTitle,
           message: 'These actions only update process-local Preview state. Accept does not create a Stream conversation, Ignore does not notify the sender, and Report does not submit a moderation report.',
           icon: Icons.mark_email_unread_outlined,
           tone: LoopTone.conversation,
@@ -309,8 +310,8 @@ class _MessageRequestsPageState extends ConsumerState<MessageRequestsPage> {
         ref.invalidate(messageRequestsProvider);
         _showRequestNotice(
           accept
-              ? 'Marked accepted in 开发预览 and removed locally. No Stream conversation was created.'
-              : 'Removed from 开发预览 only. No sender interaction occurred.',
+              ? LoopL10n.current.chat_secondaryPagesShowRequestNotice
+              : LoopL10n.current.chat_secondaryPagesS,
         );
       } else {
         _showRequestNotice(
@@ -377,7 +378,9 @@ class _MessageRequestsPageState extends ConsumerState<MessageRequestsPage> {
       if (!mounted) return;
       if (result.isSuccess) {
         ref.invalidate(messageRequestsProvider);
-        _showRequestNotice('Removed from 开发预览. No report was submitted.');
+        _showRequestNotice(
+          LoopL10n.current.chat_secondaryPagesShowRequestNotice2,
+        );
       } else {
         _showRequestNotice(
           'Preview request was not updated. No report was submitted.',

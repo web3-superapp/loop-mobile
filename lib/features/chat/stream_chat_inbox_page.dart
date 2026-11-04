@@ -29,6 +29,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_providers.dar
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_deleted_message_reconciler.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -177,8 +178,8 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
     if (preview) {
       // The Preview build has no Stream session. Its fixture conversations
       // stay on their own guarded pages and never enter this list.
-      content = const _StreamUnavailableCard(
-        message: '这个版本没有连接聊天服务，会话不会显示在这里。',
+      content = _StreamUnavailableCard(
+        message: context.l10n.chat_streamInboxMessage,
       );
     } else {
       final authorization = ref.watch(streamChatAuthorizationProvider);
@@ -202,7 +203,7 @@ class _StreamChatInboxPageState extends ConsumerState<StreamChatInboxPage> {
     final page = LoopStreamPage(
       key: const ValueKey<String>('chat-tab-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '聊天',
+      title: context.l10n.common_chat,
       tabPage: true,
       // Decision 0221: the wall under 聊天 — Purple fog top right, Yellow
       // bottom left — and the faded crown behind the bar's field.
@@ -262,7 +263,7 @@ extension on _StreamChatInboxPageState {
         );
       },
       error: (error, stackTrace) => _StreamUnavailableCard(
-        message: '会话没有恢复成功，这一页没有执行任何消息操作。',
+        message: LoopL10n.current.chat_streamInboxMessage2,
         onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
       ),
       data: (authorization) {
@@ -271,7 +272,7 @@ extension on _StreamChatInboxPageState {
             session == null ||
             currentUser == null) {
           return _StreamUnavailableCard(
-            message: '聊天服务还没有连接，稍后再试。',
+            message: LoopL10n.current.chat_streamInboxMessage3,
             onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
           );
         }
@@ -303,7 +304,7 @@ class ChatInboxRowsSkeleton extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: '会话加载中',
+      label: context.l10n.chat_streamInboxLabel,
       child: ExcludeSemantics(
         child: SingleChildScrollView(
           physics: const NeverScrollableScrollPhysics(),
@@ -369,7 +370,7 @@ class _ChatSearchEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LoopSearchEntry(
     // Decision 0277: the Figma's 44 search field.
-    placeholder: '搜索聊天',
+    placeholder: context.l10n.chat_streamInboxPlaceholder,
     inkKey: const ValueKey<String>('chat-search-entry'),
     onTap: () => unawaited(context.push<void>('/chat/search')),
   );
@@ -399,9 +400,14 @@ class _VoiceRoomReturnEntry extends ConsumerWidget {
               identity: session.communityId,
               name: session.communityName,
             ),
-            title: '正在语音房 · ${session.communityName}',
-            trailing: '返回',
-            semanticLabel: '正在语音房，${session.communityName}，返回房间',
+            title: context.l10n.chat_streamInboxChatVoiceRoomReturnEntryTitle(
+              session.communityName,
+            ),
+            trailing: context.l10n.common_back,
+            semanticLabel: context.l10n
+                .chat_streamInboxChatVoiceRoomReturnEntrySemanticLabel(
+                  session.communityName,
+                ),
             onTap: open == null ? null : () => open(session.communityId),
           ),
         ],
@@ -422,9 +428,9 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final address = parseLoopStreamChannelCid(cid);
     if (address == null) {
-      return const _StreamChannelUnavailablePage(
-        title: '会话链接无效',
-        message: '这个链接没有指向 LOOP 支持的会话，没有打开任何频道。',
+      return _StreamChannelUnavailablePage(
+        title: context.l10n.chat_streamInboxTitle,
+        message: context.l10n.chat_streamInboxMessage4,
       );
     }
 
@@ -433,22 +439,22 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
         .when(
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
-          loading: () => const _StreamChannelUnavailablePage(
-            title: '正在恢复会话',
-            message: 'LOOP 正在恢复由服务端授权的聊天连接。',
+          loading: () => _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle2,
+            message: context.l10n.chat_streamInboxMessage5,
             loading: true,
           ),
-          error: (error, stackTrace) => const _StreamChannelUnavailablePage(
-            title: '聊天暂不可用',
-            message: '聊天授权没有恢复成功，没有打开任何会话。',
+          error: (error, stackTrace) => _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle3,
+            message: context.l10n.chat_streamInboxMessage6,
           ),
           data: (authorization) {
             final session = ref.watch(streamChatSdkSessionProvider);
             if (authorization != StreamSessionAuthorization.authorized ||
                 session?.client.state.currentUser == null) {
-              return const _StreamChannelUnavailablePage(
-                title: '聊天服务还没有连接',
-                message: '打开这个会话前，需要服务端确认的聊天身份和短期凭证。',
+              return _StreamChannelUnavailablePage(
+                title: context.l10n.chat_streamInboxTitle4,
+                message: context.l10n.chat_streamInboxMessage7,
               );
             }
             return _ExistingMemberStreamChannelPage(
@@ -484,9 +490,9 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
     try {
       GroupAliasStreamChannelId.fromCid(cid);
     } on InvalidGroupAliasContractException {
-      return const _StreamChannelUnavailablePage(
-        title: '群聊链接无效',
-        message: '这个链接没有指向 LOOP 支持的群聊，没有解析任何群组。',
+      return _StreamChannelUnavailablePage(
+        title: context.l10n.chat_streamInboxTitle5,
+        message: context.l10n.chat_streamInboxMessage8,
       );
     }
 
@@ -495,14 +501,14 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
         .when(
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
-          loading: () => const _StreamChannelUnavailablePage(
-            title: '正在恢复会话',
-            message: 'LOOP 正在恢复由服务端授权的聊天连接。',
+          loading: () => _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle2,
+            message: context.l10n.chat_streamInboxMessage5,
             loading: true,
           ),
-          error: (error, stackTrace) => const _StreamChannelUnavailablePage(
-            title: '群内身份暂不可用',
-            message: '聊天授权没有恢复成功，没有解析任何群组。',
+          error: (error, stackTrace) => _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle6,
+            message: context.l10n.chat_streamInboxMessage9,
           ),
           data: (authorization) {
             final session = ref.watch(streamChatSdkSessionProvider);
@@ -510,9 +516,9 @@ class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
             if (authorization != StreamSessionAuthorization.authorized ||
                 session == null ||
                 currentUser == null) {
-              return const _StreamChannelUnavailablePage(
-                title: '聊天服务还没有连接',
-                message: '解析 LOOP 群组前，需要先确认你当前仍是这个群聊的成员。',
+              return _StreamChannelUnavailablePage(
+                title: context.l10n.chat_streamInboxTitle4,
+                message: context.l10n.chat_streamInboxMessage10,
               );
             }
             return _ExistingMemberGroupAliasPage(
@@ -577,16 +583,16 @@ class _ExistingMemberGroupAliasPageState
       future: _channel,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const _StreamChannelUnavailablePage(
-            title: '正在确认群聊',
-            message: 'LOOP 正在确认你是这个群聊的成员。',
+          return _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle7,
+            message: context.l10n.chat_streamInboxMessage11,
             loading: true,
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const _StreamChannelUnavailablePage(
-            title: '群聊不可用',
-            message: '没有确认到你在这个群聊里的成员身份，没有解析任何群组。',
+          return _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle8,
+            message: context.l10n.chat_streamInboxMessage12,
           );
         }
         return GroupAliasChannelRoutePage(routeCid: widget.cid);
@@ -644,16 +650,16 @@ class _ExistingMemberStreamChannelPageState
       future: _channel,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const _StreamChannelUnavailablePage(
-            title: '正在打开会话',
-            message: 'LOOP 正在确认这个频道和你的成员身份。',
+          return _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle9,
+            message: context.l10n.chat_streamInboxMessage13,
             loading: true,
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const _StreamChannelUnavailablePage(
-            title: '会话不可用',
-            message: '没有确认到你在这个频道里的成员身份，没有创建或打开任何频道。',
+          return _StreamChannelUnavailablePage(
+            title: context.l10n.chat_streamInboxTitle10,
+            message: context.l10n.chat_streamInboxMessage14,
           );
         }
         GroupAliasStreamChannelId? groupAliasChannelId;
@@ -948,8 +954,10 @@ class _StreamChannelListBodyState
                     key: const ValueKey<String>('stream-chat-empty'),
                     crownKey: const ValueKey<String>('stream-chat-empty-crown'),
                     // Decision 0248: one fact, no how-to.
-                    message: '还没有会话',
-                    actionLabel: '找朋友',
+                    message:
+                        context.l10n.chat_streamInboxStreamChatEmptyMessage,
+                    actionLabel:
+                        context.l10n.chat_streamInboxStreamChatEmptyActionLabel,
                     actionKey: const ValueKey<String>(
                       'stream-chat-empty-find-friends',
                     ),
@@ -960,11 +968,13 @@ class _StreamChannelListBodyState
                   child: LoopEmptyState(
                     key: const ValueKey<String>('stream-chat-list-error'),
                     illustration: LoopIllustration.chat,
-                    title: '会话列表读不到',
-                    message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+                    title:
+                        context.l10n.chat_streamInboxStreamChatListErrorTitle,
+                    message:
+                        context.l10n.chat_streamInboxStreamChatListErrorMessage,
                     action: LoopButton(
                       key: const ValueKey<String>('stream-chat-list-retry'),
-                      label: '重试',
+                      label: context.l10n.common_retry,
                       icon: 'refresh',
                       onPressed: () => controller.refresh(),
                     ),
@@ -993,7 +1003,7 @@ class _StreamChannelListBodyState
     if (actions.isEmpty) return;
     final choice = await showChatInboxRowActionSheet(
       context,
-      title: '会话操作',
+      title: LoopL10n.current.chat_streamInboxTitle11,
       actions: actions,
     );
     if (choice == null || !mounted) return;
@@ -1008,9 +1018,9 @@ class _StreamChannelListBodyState
     if (action.destructive) {
       final confirmed = await confirmCommunityAction(
         context,
-        title: '删除这个会话？',
-        body: '会话会从列表移除，有新消息时会重新出现。聊天记录不会被清除。',
-        confirmLabel: '删除',
+        title: LoopL10n.current.chat_streamInboxTitle12,
+        body: LoopL10n.current.chat_streamInboxBody,
+        confirmLabel: LoopL10n.current.common_delete,
         sheetKey: 'chat-inbox-delete-confirm',
       );
       if (!confirmed || !mounted) return;
@@ -1021,7 +1031,7 @@ class _StreamChannelListBodyState
       if (!mounted) return;
       LoopToast.show(
         context,
-        message: '「${action.label}」没有完成，稍后再试',
+        message: LoopL10n.current.chat_streamInboxMessage15(action.label),
         kind: LoopToastKind.err,
       );
       return;
@@ -1174,7 +1184,7 @@ class _StreamChannelUnavailablePage extends StatelessWidget {
     final navigator = Navigator.of(context);
     return LoopStreamPage(
       archetype: LoopPageArchetype.state,
-      title: '聊天',
+      title: context.l10n.common_chat,
       updating: loading,
       onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
       collection: const SizedBox.shrink(),
@@ -1205,13 +1215,13 @@ class _StreamUnavailableCard extends StatelessWidget {
       child: LoopEmptyState(
         key: const ValueKey<String>('stream-chat-unavailable'),
         illustration: LoopIllustration.chat,
-        title: '会话还没有连接',
+        title: context.l10n.chat_streamInboxStreamChatUnavailableTitle,
         message: message,
         action: onRetry == null
             ? null
             : LoopButton(
                 key: const ValueKey<String>('stream-chat-unavailable-retry'),
-                label: '重试',
+                label: context.l10n.common_retry,
                 icon: 'refresh',
                 onPressed: onRetry,
               ),

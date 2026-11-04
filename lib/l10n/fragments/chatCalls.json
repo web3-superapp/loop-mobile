@@ -1,0 +1,785 @@
+{
+  "chatCalls_audioRoomContractAudioRoomNotificationTitle": {
+    "en": "In voice room · {name}",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/audio_room_contract.dart:601",
+    "zh": "正在语音房 · {name}"
+  },
+  "chatCalls_audioRoomContractAudioRoomOutputLabel": {
+    "en": "Audio output",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:445",
+    "zh": "声音输出"
+  },
+  "chatCalls_audioRoomContractAudioRoomRestoredMicrophoneNote": {
+    "en": "Reconnected. Tap the mic to keep speaking",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:547",
+    "zh": "已重新连接，点麦克风继续发言"
+  },
+  "chatCalls_audioRoomContractDisconnected": {
+    "en": "Voice disconnected; count updates after reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:222",
+    "zh": "语音已断开，人数以重新连接后为准"
+  },
+  "chatCalls_audioRoomContractEarpiece": {
+    "en": "Earpiece",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:448",
+    "zh": "听筒"
+  },
+  "chatCalls_audioRoomContractExternalOutputLabel": {
+    "en": "Headphones",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:455",
+    "zh": "耳机"
+  },
+  "chatCalls_audioRoomContractReconnecting": {
+    "en": "Voice reconnecting; count updates after reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:221",
+    "zh": "语音正在重连，人数以重新连接后为准"
+  },
+  "chatCalls_audioRoomContractSpeaker": {
+    "en": "Speaker",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:447",
+    "zh": "扬声器"
+  },
+  "chatCalls_audioRoomContractText": {
+    "en": "Tap to return to the voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:573",
+    "zh": "点按回到语音房"
+  },
+  "chatCalls_audioRoomContractTitle": {
+    "en": "In voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/audio_room_contract.dart:572, lib/features/chat/calls/audio_room_contract.dart:600",
+    "zh": "正在语音房"
+  },
+  "chatCalls_streamForegroundViewCallClosed": {
+    "en": "You can't speak in this call anymore. Leave and join again.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:427",
+    "zh": "这次通话已经不能再发言了，请退出后重新进入。"
+  },
+  "chatCalls_streamForegroundViewCanRequest": {
+    "en": "Counting people in the call",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:221, lib/features/chat/calls/stream_foreground_call_view.dart:236",
+    "zh": "此刻在通话里的人数正在统计"
+  },
+  "chatCalls_streamForegroundViewCommandError": {
+    "en": "Couldn't reconnect voice. Try again.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:981",
+    "zh": "语音没能重新接上，请再试一次。"
+  },
+  "chatCalls_streamForegroundViewCommandError2": {
+    "en": "Couldn't leave this call cleanly. Retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1035",
+    "zh": "这次通话没能干净地退出，请重试。"
+  },
+  "chatCalls_streamForegroundViewIf": {
+    "en": "Leaving this call. The mic won't start again; mute first if needed, then retry leaving.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:379",
+    "zh": "正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。"
+  },
+  "chatCalls_streamForegroundViewIf2": {
+    "en": "Your mic is on and people in the room can hear you. Tap Mute to turn it off anytime.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:381",
+    "zh": "你的麦克风已打开，房间里的人能听到你。点「静音」随时关掉。"
+  },
+  "chatCalls_streamForegroundViewIf3": {
+    "en": "You were moved off stage and can only listen now. Wait for the host to invite you again to speak.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:384",
+    "zh": "你已被移出发言席，现在只能收听。要再发言，请等主持人重新邀请。"
+  },
+  "chatCalls_streamForegroundViewIf4": {
+    "en": "You're muted. To speak again, tap {speakAgainLabel} to reconnect voice.",
+    "placeholders": {
+      "speakAgainLabel": {
+        "example": "speakAgainLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:387",
+    "zh": "你已静音。要再次发言，点「{speakAgainLabel}」把这次语音重新接一遍。"
+  },
+  "chatCalls_streamForegroundViewIf5": {
+    "en": "You joined muted. Tap {speakLabel} when you're ready; mic access is only requested when capture starts.",
+    "placeholders": {
+      "speakLabel": {
+        "example": "speakLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:388",
+    "zh": "你以静音状态进入。准备好后点「{speakLabel}」，系统麦克风权限只在开始采集时申请。"
+  },
+  "chatCalls_streamForegroundViewLabel": {
+    "en": "Reconnect failed",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:78",
+    "zh": "重连失败"
+  },
+  "chatCalls_streamForegroundViewLabel2": {
+    "en": "Waiting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:79",
+    "zh": "等待中"
+  },
+  "chatCalls_streamForegroundViewLabel3": {
+    "en": "Joining",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:80",
+    "zh": "加入中"
+  },
+  "chatCalls_streamForegroundViewLabel4": {
+    "en": "Connecting media",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:81",
+    "zh": "媒体连接中"
+  },
+  "chatCalls_streamForegroundViewLabel5": {
+    "en": "Connected",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:82",
+    "zh": "已连接"
+  },
+  "chatCalls_streamForegroundViewLabel6": {
+    "en": "Reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:83",
+    "zh": "重连中"
+  },
+  "chatCalls_streamForegroundViewLabel7": {
+    "en": "Switching connection",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:84",
+    "zh": "切换连接"
+  },
+  "chatCalls_streamForegroundViewLabel8": {
+    "en": "Connecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:85",
+    "zh": "连接中"
+  },
+  "chatCalls_streamForegroundViewLabel9": {
+    "en": "Call unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:87",
+    "zh": "通话不可用"
+  },
+  "chatCalls_streamForegroundViewMessage": {
+    "en": "This call dropped and is reconnecting. Member details reload once connected.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1116",
+    "zh": "这次通话掉线了，正在自动接回来。成员明细会在连上后重新读出。"
+  },
+  "chatCalls_streamForegroundViewMessage2": {
+    "en": "This call disconnected. Member details load after voice reconnects.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1121",
+    "zh": "这次通话已经断开，成员明细要重新连接语音之后才能读出。"
+  },
+  "chatCalls_streamForegroundViewMessage3": {
+    "en": "Not connected to this call yet. Member details load once connected.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1126",
+    "zh": "还没有连上这次通话，成员明细会在连上后读出。"
+  },
+  "chatCalls_streamForegroundViewMessage4": {
+    "en": "This call just connected; the provider hasn't sent member details yet.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1134",
+    "zh": "这次通话刚连上，服务商还没有给出成员明细。"
+  },
+  "chatCalls_streamForegroundViewMicrophoneState": {
+    "en": "Speaking",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:332",
+    "zh": "正在发言"
+  },
+  "chatCalls_streamForegroundViewMicrophoneState2": {
+    "en": "Mic on",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:333",
+    "zh": "麦克风已开"
+  },
+  "chatCalls_streamForegroundViewRoomPermission": {
+    "en": "This room hasn't let you speak yet; your mic is off.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:426",
+    "zh": "这个房间还没有让你发言，麦克风没有打开。"
+  },
+  "chatCalls_streamForegroundViewS": {
+    "en": "{count, plural, =1{1 person in the call now} other{{count} people in the call now}}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:221",
+    "zh": "此刻在通话里 {count} 人"
+  },
+  "chatCalls_streamForegroundViewS2": {
+    "en": "You're a listener in this room.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:385",
+    "zh": "你在这个房间是只收听的角色。"
+  },
+  "chatCalls_streamForegroundViewS3": {
+    "en": "Speak again",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:403, lib/features/chat/calls/stream_foreground_call_view.dart:776",
+    "zh": "重新发言"
+  },
+  "chatCalls_streamForegroundViewS4": {
+    "en": "Listen only",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:408, lib/features/chat/calls/stream_foreground_call_view.dart:930",
+    "zh": "仅收听"
+  },
+  "chatCalls_streamForegroundViewS5": {
+    "en": "Switch to earpiece",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1080",
+    "zh": "切换到听筒"
+  },
+  "chatCalls_streamForegroundViewSetState": {
+    "en": "Couldn't mute the mic. Retry, or leave this room.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1018",
+    "zh": "麦克风没能静音。请重试，或退出这个房间。"
+  },
+  "chatCalls_streamForegroundViewSpeakAgainLabel": {
+    "en": "Reconnect to speak",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:401",
+    "zh": "重新连接后发言"
+  },
+  "chatCalls_streamForegroundViewSpeakLabel": {
+    "en": "Speak",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:400, lib/features/chat/calls/stream_voice_room_page.dart:547, lib/features/chat/calls/stream_voice_room_page.dart:1599",
+    "zh": "发言"
+  },
+  "chatCalls_streamForegroundViewStreamBarMicrophoneLabel": {
+    "en": "Reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:403",
+    "zh": "正在重连"
+  },
+  "chatCalls_streamForegroundViewStreamBarMicrophoneLabel2": {
+    "en": "Switching",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:404",
+    "zh": "切换中"
+  },
+  "chatCalls_streamForegroundViewStreamBarMicrophoneLabel3": {
+    "en": "Leaving",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:407",
+    "zh": "正在退出"
+  },
+  "chatCalls_streamForegroundViewStreamBarMicrophoneLabel4": {
+    "en": "Can't unmute",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:408",
+    "zh": "不能开麦"
+  },
+  "chatCalls_streamForegroundViewSwitch": {
+    "en": "Audio plays from the connected device",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1077",
+    "zh": "声音从已连接的设备输出"
+  },
+  "chatCalls_streamForegroundViewSwitch2": {
+    "en": "Switch to speaker",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1079",
+    "zh": "切换到扬声器"
+  },
+  "chatCalls_streamForegroundViewSystemPermission": {
+    "en": "No mic access. Allow LOOP to use the microphone in system settings, then try again.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:425",
+    "zh": "没有麦克风权限，去系统设置里允许 LOOP 使用麦克风后再试。"
+  },
+  "chatCalls_streamForegroundViewTitle": {
+    "en": "Reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1115",
+    "zh": "正在重新连接"
+  },
+  "chatCalls_streamForegroundViewTitle2": {
+    "en": "Voice disconnected",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1120, lib/features/chat/calls/stream_voice_room_page.dart:1394",
+    "zh": "语音已断开"
+  },
+  "chatCalls_streamForegroundViewTitle3": {
+    "en": "Connecting voice",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1125",
+    "zh": "正在连接语音"
+  },
+  "chatCalls_streamForegroundViewTitle4": {
+    "en": "Loading call members",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1133",
+    "zh": "正在读取通话成员"
+  },
+  "chatCalls_streamForegroundViewUnknown": {
+    "en": "Couldn't turn on the mic. Try again.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:428",
+    "zh": "麦克风没能打开，请再试一次。"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaAudioSuspended": {
+    "en": "Audio paused by the system",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:756",
+    "zh": "系统已暂停音频"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaDisconnectMessage": {
+    "en": "Disconnect voice",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:949, lib/features/chat/calls/stream_foreground_call_view.dart:957",
+    "zh": "断开语音连接"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel": {
+    "en": "Switching mic",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:919",
+    "zh": "正在切换麦克风"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel2": {
+    "en": "Retry leaving first",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:927",
+    "zh": "需要先重试退出"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaMicrophoneLabel3": {
+    "en": "Can't unmute in this call",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:929",
+    "zh": "这次通话不能再开麦"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaOutputLabel": {
+    "en": "Audio output: {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:1083",
+    "zh": "声音输出：{label}"
+  },
+  "chatCalls_streamForegroundViewVoiceroomMediaSpeakAgainLabel": {
+    "en": "Reconnecting voice",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_foreground_call_view.dart:894, lib/features/chat/calls/stream_voice_room_page.dart:1363",
+    "zh": "正在重新连接语音"
+  },
+  "chatCalls_streamVoiceRoomAccountChanged": {
+    "en": "Your sign-in changed while connecting. Leave this page and come back.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1540",
+    "zh": "登录状态在连接过程中发生了变化。请退出这一页再进来。"
+  },
+  "chatCalls_streamVoiceRoomClient": {
+    "en": "Couldn't set up voice on this device. Try again.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1538",
+    "zh": "语音连接没能在这台设备上建立。请重试一次。"
+  },
+  "chatCalls_streamVoiceRoomConnection": {
+    "en": "This device couldn't reach the voice service. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1539",
+    "zh": "这台设备没能连上语音服务。请检查网络后重试。"
+  },
+  "chatCalls_streamVoiceRoomCredential": {
+    "en": "The voice credential for this call wasn't issued. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1537",
+    "zh": "这次通话的语音凭证没有发下来。请检查网络后重试。"
+  },
+  "chatCalls_streamVoiceRoomHost": {
+    "en": "You're the host and also join muted; mic access is only requested when you tap {speakLabel}. The room doesn't end if voice can't connect; use End room below to end it.",
+    "placeholders": {
+      "speakLabel": {
+        "example": "speakLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1574",
+    "zh": "你是主持人，进入时同样静音，点「{speakLabel}」才会申请麦克风权限；语音没连上房间也不会结束，要结束请用下面的「结束房间」。"
+  },
+  "chatCalls_streamVoiceRoomIdentity": {
+    "en": "This device doesn't have a voice identity yet. Leave this page and come back.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1536",
+    "zh": "这台设备还没有拿到语音身份。请退出这一页再进来。"
+  },
+  "chatCalls_streamVoiceRoomIf": {
+    "en": "You always join muted; mic access is only requested when you tap Speak. Voice continues in the background or when locked; only Leave disconnects.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:733",
+    "zh": "始终静音进入；系统麦克风权限只在你点「发言」时申请。切到后台或锁屏后语音继续，点「离开」才会断开。"
+  },
+  "chatCalls_streamVoiceRoomIf2": {
+    "en": "Join muted · Continues in background",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:777",
+    "zh": "静音进入 · 后台继续"
+  },
+  "chatCalls_streamVoiceRoomIf3": {
+    "en": "No demo members, presence or room activity are shown here.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:789",
+    "zh": "这里不展示演示成员、在线状态或房间动态。"
+  },
+  "chatCalls_streamVoiceRoomJoinError": {
+    "en": "Couldn't get this voice room ready. Check the conversation and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1014",
+    "zh": "这个语音房没能准备好，请检查会话后重试。"
+  },
+  "chatCalls_streamVoiceRoomMessage": {
+    "en": "This call disconnected. Recording your exit in the LOOP room record.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1344",
+    "zh": "这次通话已经断开，正在把离开记到 LOOP 的房间记录里。"
+  },
+  "chatCalls_streamVoiceRoomMessage10": {
+    "en": "Requesting a voice identity and short-lived token. No call is joined meanwhile.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1456",
+    "zh": "正在向后端申请语音身份与短时令牌。期间不会加入任何通话。"
+  },
+  "chatCalls_streamVoiceRoomMessage11": {
+    "en": "Loading the authorized voice room. Your mic stays off.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1476",
+    "zh": "正在读取后端已授权的语音房。麦克风保持关闭。"
+  },
+  "chatCalls_streamVoiceRoomMessage12": {
+    "en": "Couldn't load the authorized voice room. No other room is joined and no demo data is shown instead.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1484",
+    "zh": "已授权的语音房读取失败，不会改连其他房间，也不会用演示数据顶替。"
+  },
+  "chatCalls_streamVoiceRoomMessage13": {
+    "en": "This session doesn't have an authorized voice room yet. Enter from a community's voice room.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1493",
+    "zh": "这次会话还没有拿到已授权的语音房，请从社区的语音房入口进入。"
+  },
+  "chatCalls_streamVoiceRoomMessage14": {
+    "en": "The voice room is authorized, but the voice client for this account has expired. Re-authorize the session.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1502",
+    "zh": "语音房已授权，但绑定当前账号的语音客户端已经失效，请重新授权会话。"
+  },
+  "chatCalls_streamVoiceRoomMessage15": {
+    "en": "Voice room authorized. You always join muted, and voice continues in the background.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1519",
+    "zh": "已拿到后端授权的语音房。始终静音进入，切到后台后语音继续。"
+  },
+  "chatCalls_streamVoiceRoomMessage16": {
+    "en": "No local audio is published while connecting.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1600",
+    "zh": "连接过程中不会发布任何本地音频。"
+  },
+  "chatCalls_streamVoiceRoomMessage17": {
+    "en": "Mic access is only requested after you tap Speak.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1606",
+    "zh": "系统麦克风权限只在你点「发言」之后才申请。"
+  },
+  "chatCalls_streamVoiceRoomMessage18": {
+    "en": "Voice continues when you switch apps or lock the screen; only Leave disconnects.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1612",
+    "zh": "切到其他 App 或锁屏后语音继续，只有「离开」才会断开。"
+  },
+  "chatCalls_streamVoiceRoomMessage2": {
+    "en": "You're still in the room and will reconnect automatically when the network is back. Use Leave below to exit.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1355",
+    "zh": "网络恢复后会自动接回这个房间，你仍然在房间里。要退出请用下面的「离开」。"
+  },
+  "chatCalls_streamVoiceRoomMessage3": {
+    "en": "Reloading this room and getting a new voice identity, then reconnecting.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1364",
+    "zh": "正在重新读取这个房间并重新取得语音身份，然后再连接一次。"
+  },
+  "chatCalls_streamVoiceRoomMessage4": {
+    "en": "{joinError}You're still in this room and haven't been removed.",
+    "placeholders": {
+      "joinError": {
+        "example": "joinError",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1385",
+    "zh": "{joinError}你仍然在这个房间里，没有被移出。"
+  },
+  "chatCalls_streamVoiceRoomMessage5": {
+    "en": "This call disconnected. LOOP still lists you as a member of this room.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1395",
+    "zh": "这次通话已经断开，你在 LOOP 记录里仍然是这个房间的成员。"
+  },
+  "chatCalls_streamVoiceRoomMessage6": {
+    "en": "Joined the room, connecting voice. You joined muted as a listener.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1404",
+    "zh": "已经加入房间，正在建立语音连接。你以听众身份静音进入。"
+  },
+  "chatCalls_streamVoiceRoomMessage7": {
+    "en": "Voice only starts in a verified sign-in session; offline or unverified sessions don't connect.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1431",
+    "zh": "语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。"
+  },
+  "chatCalls_streamVoiceRoomMessage8": {
+    "en": "Can't connect again until the last call has turned off the mic and left.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1438",
+    "zh": "在确认上一次通话已关闭麦克风并退出之前，不能再次连接。"
+  },
+  "chatCalls_streamVoiceRoomMessage9": {
+    "en": "The last call didn't confirm leaving. Retry cleanup first, then connect voice.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1447",
+    "zh": "上一次通话没有确认退出。请先重试收尾，再连接语音。"
+  },
+  "chatCalls_streamVoiceRoomNetwork": {
+    "en": "This connection didn't go through. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1554",
+    "zh": "这次连接没有接通，请检查网络后重试。"
+  },
+  "chatCalls_streamVoiceRoomPermission": {
+    "en": "Listening isn't open in this room yet. Ask the host to reopen it.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1552",
+    "zh": "这个房间还没有开放收听，请让主持人重新开启。"
+  },
+  "chatCalls_streamVoiceRoomRoomUnavailable": {
+    "en": "This room can't be joined anymore. Check the community to see if it's still live.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1553",
+    "zh": "这个房间已经不能加入了，请回到社区看它是否还在进行。"
+  },
+  "chatCalls_streamVoiceRoomSession": {
+    "en": "This voice identity has expired. Leave this page and come back.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1555",
+    "zh": "这次的语音身份已经失效，请退出这一页再进来。"
+  },
+  "chatCalls_streamVoiceRoomSpeaker": {
+    "en": "You're a speaker and also join muted; mic access is only requested when you tap {speakLabel}. Voice isn't connected but you're still in the room; tap Leave below to exit.",
+    "placeholders": {
+      "speakLabel": {
+        "example": "speakLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1577",
+    "zh": "你是发言人，进入时同样静音，点「{speakLabel}」才会申请麦克风权限；语音没连上，你仍在房间里；要退出请点下面的「离开」。"
+  },
+  "chatCalls_streamVoiceRoomSwitch": {
+    "en": "This device couldn't set up a voice session. It stays disconnected and no call is created.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1541",
+    "zh": "这台设备没能建立语音会话。这里保持断开，不会创建任何通话。"
+  },
+  "chatCalls_streamVoiceRoomSwitch2": {
+    "en": "You joined muted as a listener and mic access isn't requested. Voice isn't connected but you're still in the room; tap Leave below to exit.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1580",
+    "zh": "你以听众身份静音进入，不会申请麦克风权限；语音没连上，你仍在房间里；要退出请点下面的「离开」。"
+  },
+  "chatCalls_streamVoiceRoomTitle": {
+    "en": "Leaving voice room…",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1343",
+    "zh": "正在离开语音房…"
+  },
+  "chatCalls_streamVoiceRoomTitle10": {
+    "en": "Loading voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1475",
+    "zh": "正在读取语音房"
+  },
+  "chatCalls_streamVoiceRoomTitle11": {
+    "en": "Couldn't load voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1483",
+    "zh": "语音房读不到"
+  },
+  "chatCalls_streamVoiceRoomTitle12": {
+    "en": "No voice room yet",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1492",
+    "zh": "还没有拿到语音房"
+  },
+  "chatCalls_streamVoiceRoomTitle13": {
+    "en": "Voice client unavailable",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1501",
+    "zh": "语音客户端不可用"
+  },
+  "chatCalls_streamVoiceRoomTitle14": {
+    "en": "Connection failed",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1510",
+    "zh": "连接失败"
+  },
+  "chatCalls_streamVoiceRoomTitle15": {
+    "en": "Voice ready to connect",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1518",
+    "zh": "语音可以连接"
+  },
+  "chatCalls_streamVoiceRoomTitle16": {
+    "en": "Muted on entry",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1599",
+    "zh": "进入即静音"
+  },
+  "chatCalls_streamVoiceRoomTitle17": {
+    "en": "Mic access on demand",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1605",
+    "zh": "按需申请权限"
+  },
+  "chatCalls_streamVoiceRoomTitle18": {
+    "en": "Continues in background",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1611",
+    "zh": "后台继续"
+  },
+  "chatCalls_streamVoiceRoomTitle2": {
+    "en": "Voice dropped, reconnecting",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1354",
+    "zh": "语音连接中断，正在自动重连"
+  },
+  "chatCalls_streamVoiceRoomTitle3": {
+    "en": "Joined, voice connection failed",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1384, lib/features/chat/calls/stream_voice_room_page.dart:1413",
+    "zh": "已加入，语音连接失败"
+  },
+  "chatCalls_streamVoiceRoomTitle4": {
+    "en": "Connecting voice…",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1403",
+    "zh": "正在连接语音…"
+  },
+  "chatCalls_streamVoiceRoomTitle5": {
+    "en": "Sign-in verification required",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1430",
+    "zh": "需要完成登录验证"
+  },
+  "chatCalls_streamVoiceRoomTitle6": {
+    "en": "Confirming the last call ended",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1437",
+    "zh": "正在确认上一次通话的收尾"
+  },
+  "chatCalls_streamVoiceRoomTitle7": {
+    "en": "The last call didn't end cleanly",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1446",
+    "zh": "上一次通话没有收尾"
+  },
+  "chatCalls_streamVoiceRoomTitle8": {
+    "en": "Preparing voice connection",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1455",
+    "zh": "正在准备语音连接"
+  },
+  "chatCalls_streamVoiceRoomTitle9": {
+    "en": "Voice session unavailable right now",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1464",
+    "zh": "语音会话暂时不可用"
+  },
+  "chatCalls_streamVoiceRoomUnknown": {
+    "en": "Couldn't connect to this voice room. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:1556",
+    "zh": "没能连上这个语音房，请稍后重试。"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel": {
+    "en": "Connecting muted",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:680",
+    "zh": "正在静音连接"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaJoinLabel2": {
+    "en": "Connect voice",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:680",
+    "zh": "连接语音"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaReconnectLabel": {
+    "en": "Reconnect voice",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:702",
+    "zh": "重新连接语音"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaRestoredMessage": {
+    "en": "Your mic was on when the network dropped. It stays muted after reconnecting; tap {vVoiceMediaPresentation} when you need it.",
+    "placeholders": {
+      "vVoiceMediaPresentation": {
+        "example": "VoiceMediaPresentation.maybeOf(context)?.microphone == null ? '发言' : '取消静音'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:544",
+    "zh": "网络断开时你的麦克风是开着的。重新连接后保持静音，需要时再点「{vVoiceMediaPresentation}」。"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaRetryCleanupLabel": {
+    "en": "Retry cleanup",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:667",
+    "zh": "重试收尾"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaRetrySessionLabel": {
+    "en": "Retry session",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:651",
+    "zh": "重试会话"
+  },
+  "chatCalls_streamVoiceRoomVoiceroomMediaRetryTargetLabel": {
+    "en": "Reload voice room",
+    "placeholders": {},
+    "where": "lib/features/chat/calls/stream_voice_room_page.dart:660",
+    "zh": "重试读取语音房"
+  }
+}

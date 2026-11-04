@@ -342,7 +342,7 @@ void main() {
         findsNothing,
       );
       expect(_key('voiceroom-info'), findsOneWidget);
-      expect(find.textContaining(' 在听 · '), findsOneWidget);
+      expect(find.textContaining(' listening · '), findsOneWidget);
       _expectCleanCopy(tester);
     });
 
@@ -371,7 +371,7 @@ void main() {
           openedAt: opened,
           now: opened.add(const Duration(minutes: 23)),
         ),
-        '12 在听 · Live 23m',
+        '12 listening · Live 23m',
       );
       expect(
         voiceRoomLiveLine(
@@ -379,7 +379,7 @@ void main() {
           openedAt: opened,
           now: opened.subtract(const Duration(minutes: 1)),
         ),
-        '3 在听 · Just started',
+        '3 listening · Just started',
       );
     });
   });
@@ -414,7 +414,7 @@ void main() {
       final row = _key('connection-row-$testMemberId');
       expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
       final follow = _key('connection-follow-$testMemberId');
-      expect(tester.widget<LoopPillAction>(follow).label, '关注');
+      expect(tester.widget<LoopPillAction>(follow).label, 'Follow');
       expect(tester.widget<LoopPillAction>(follow).primary, isTrue);
       await tester.tap(follow);
       await tester.pumpAndSettle();
@@ -462,7 +462,7 @@ void main() {
       );
 
       final accept = _key('dm-request-accept-$testRequestId');
-      expect(tester.widget<LoopPillAction>(accept).label, '接受');
+      expect(tester.widget<LoopPillAction>(accept).label, 'Accept');
       await tester.tap(accept);
       await tester.pumpAndSettle();
       await tester.tap(_key('community-confirm-accept'));

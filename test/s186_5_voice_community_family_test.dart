@@ -236,7 +236,7 @@ void main() {
     ) async {
       await pumpLobby(tester, StreamVideoSessionAuthorization.unavailable);
 
-      expect(find.text('语音会话暂时不可用'), findsOneWidget);
+      expect(find.text('Voice session unavailable right now'), findsOneWidget);
       expect(find.byType(Icon), findsNothing);
       expect(find.byType(FilledButton), findsNothing);
       expect(find.byType(OutlinedButton), findsNothing);

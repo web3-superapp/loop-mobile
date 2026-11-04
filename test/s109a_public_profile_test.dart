@@ -576,7 +576,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('找不到这个用户'), findsOneWidget);
+      expect(find.text('User not found'), findsOneWidget);
     });
 
     testWidgets('unavailable (404/503) never draws a fixture', (tester) async {
@@ -659,7 +659,7 @@ void main() {
       // 持仓 is the first section: the total and both rows.
       expect(find.text('\$1,284.52'), findsOneWidget);
       expect(find.text('BNB'), findsWidgets);
-      expect(find.text('暂无报价'), findsOneWidget);
+      expect(find.text('No quote'), findsOneWidget);
     });
 
     testWidgets('a hidden section asks nothing and says 对方未公开', (tester) async {
@@ -720,7 +720,7 @@ void main() {
         find.byKey(const ValueKey<String>('user-profile-holdings-no-wallet')),
         findsOneWidget,
       );
-      expect(find.text('对方暂无钱包'), findsOneWidget);
+      expect(find.text('No wallet yet'), findsOneWidget);
       expect(find.textContaining('\$0'), findsNothing);
     });
 
@@ -773,7 +773,7 @@ void main() {
       await tester.tap(find.text('交易'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('卖出 BNB'),
+        find.text('Sell BNB'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
@@ -782,8 +782,8 @@ void main() {
         profiles.calls,
         containsAllInOrder(<String>['trades:null', 'trades:abc.def']),
       );
-      expect(find.text('买入 BNB'), findsOneWidget);
-      expect(find.text('卖出 BNB'), findsOneWidget);
+      expect(find.text('Buy BNB'), findsOneWidget);
+      expect(find.text('Sell BNB'), findsOneWidget);
       // The end of the list draws nothing (decision 0127).
       expect(
         find.byKey(const ValueKey<String>('user-profile-trades-end')),
@@ -841,7 +841,12 @@ void main() {
         matching: find.byType(LoopRoundKey),
       );
       expect(keys, findsNWidgets(4));
-      for (final label in <String>['加好友', '私聊', '分享', '更多']) {
+      for (final label in <String>[
+        'Add friend',
+        'Direct message',
+        'Share',
+        'More',
+      ]) {
         expect(
           find.descendant(of: keys, matching: find.text(label)),
           findsOneWidget,
@@ -855,7 +860,7 @@ void main() {
               find.byKey(const ValueKey<String>('user-profile-follow')),
             )
             .label,
-        '关注',
+        'Follow',
       );
       // Holdings are OKX quote rows.
       expect(find.byType(LoopQuoteRow), findsWidgets);
@@ -876,7 +881,7 @@ void main() {
       );
       expect(keys, findsNWidgets(3));
       expect(
-        find.descendant(of: keys, matching: find.text('聊天')),
+        find.descendant(of: keys, matching: find.text('Chat')),
         findsOneWidget,
       );
     });
@@ -919,7 +924,7 @@ void main() {
         find.byKey(const ValueKey<String>('user-profile-friend-pending_out')),
         findsOneWidget,
       );
-      expect(find.text('好友申请已发送'), findsOneWidget);
+      expect(find.text('Friend request sent'), findsOneWidget);
     });
 
     testWidgets(
@@ -943,7 +948,7 @@ void main() {
           find.byKey(const ValueKey<String>('user-profile-friend-pending_out')),
           findsOneWidget,
         );
-        expect(find.text('好友申请已发送'), findsOneWidget);
+        expect(find.text('Friend request sent'), findsOneWidget);
       },
     );
 
@@ -959,7 +964,7 @@ void main() {
         friends: _Friends(failure: FriendGatewayFailureKind.permissionDenied),
       );
       await _tap(tester, 'user-profile-friend-none');
-      expect(find.text('对方没有开放好友申请。'), findsOneWidget);
+      expect(find.text('They don\'t accept friend requests.'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('user-profile-friend-none')),
         findsOneWidget,
@@ -1019,8 +1024,8 @@ void main() {
       await _pump(tester, profiles: profiles);
       await _tap(tester, 'user-profile-more');
       await _tap(tester, 'user-profile-remove-friend');
-      expect(find.text('删除好友？'), findsOneWidget);
-      await tester.tap(find.text('删除').last);
+      expect(find.text('Remove friend?'), findsOneWidget);
+      await tester.tap(find.text('Delete').last);
       await tester.pumpAndSettle();
       expect(profiles.calls, contains('unfriend'));
       expect(
@@ -1045,7 +1050,7 @@ void main() {
       );
       profiles.record = _record(blocked: true);
       await _tap(tester, 'user-profile-block');
-      await tester.tap(find.text('拉黑').last);
+      await tester.tap(find.text('Block').last);
       await tester.pumpAndSettle();
       expect(social.commands, contains('block:user:$_id:true'));
       expect(

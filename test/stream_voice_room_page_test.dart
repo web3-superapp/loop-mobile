@@ -35,7 +35,7 @@ void main() {
       ),
     );
 
-    expect(find.text('需要完成登录验证'), findsOneWidget);
+    expect(find.text('Sign-in verification required'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.textContaining('participant'), findsNothing);
     expect(find.text('Ringing'), findsNothing);
@@ -59,12 +59,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('语音会话暂时不可用'), findsOneWidget);
-    expect(find.text('连接语音'), findsOneWidget);
+    expect(find.text('Voice session unavailable right now'), findsOneWidget);
+    expect(find.text('Connect voice'), findsOneWidget);
     final button = tester.widget<LoopButton>(
       find.byKey(const ValueKey<String>('voiceroom-media-join')),
     );
-    expect(button.label, '连接语音');
+    expect(button.label, 'Connect voice');
     expect(button.primary, isTrue);
     expect(button.onPressed, isNull);
   });
@@ -88,13 +88,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('还没有拿到语音房'), findsOneWidget);
+    expect(find.text('No voice room yet'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.text('Connected'), findsNothing);
     final button = tester.widget<LoopButton>(
       find.byKey(const ValueKey<String>('voiceroom-media-join')),
     );
-    expect(button.label, '连接语音');
+    expect(button.label, 'Connect voice');
     expect(button.primary, isTrue);
     expect(button.onPressed, isNull);
   });
@@ -114,30 +114,30 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('语音可以连接'), findsOneWidget);
-    expect(find.text('进入即静音'), findsOneWidget);
-    expect(find.text('按需申请权限'), findsOneWidget);
+    expect(find.text('Voice ready to connect'), findsOneWidget);
+    expect(find.text('Muted on entry'), findsOneWidget);
+    expect(find.text('Mic access on demand'), findsOneWidget);
 
-    await tester.tap(find.text('连接语音'));
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pump();
 
     expect(find.text('Official CallState view'), findsOneWidget);
     expect(factory.createCalls, 1);
     expect(handle.joinCalls, 1);
-    expect(find.text('连接语音'), findsNothing);
+    expect(find.text('Connect voice'), findsNothing);
 
     joinGate.complete();
     await tester.pumpAndSettle();
 
     expect(find.text('Official CallState view'), findsOneWidget);
-    expect(find.text('语音可以连接'), findsNothing);
+    expect(find.text('Voice ready to connect'), findsNothing);
 
     await tester.tap(find.byKey(const Key('fake-leave-room')));
     await tester.pumpAndSettle();
 
     expect(handle.leaveCalls, 1);
-    expect(find.text('语音可以连接'), findsOneWidget);
+    expect(find.text('Voice ready to connect'), findsOneWidget);
   });
 
   testWidgets('join failure is sanitized and retires the failed Call', (
@@ -153,13 +153,16 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pumpAndSettle();
 
-    expect(find.text('连接失败'), findsOneWidget);
+    expect(find.text('Connection failed'), findsOneWidget);
     // An error the provider did not classify keeps the neutral sentence; the
     // provider's own words never reach the screen.
-    expect(find.text('没能连上这个语音房，请稍后重试。'), findsOneWidget);
+    expect(
+      find.text('Couldn\'t connect to this voice room. Try again later.'),
+      findsOneWidget,
+    );
     expect(find.textContaining('provider-secret-detail'), findsNothing);
     expect(handle.leaveCalls, 1);
     expect(find.text('Official CallState view'), findsNothing);
@@ -182,15 +185,23 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pumpAndSettle();
 
-    expect(find.text('这个房间还没有开放收听，请让主持人重新开启。'), findsOneWidget);
+    expect(
+      find.text(
+        'Listening isn\'t open in this room yet. Ask the host to reopen it.',
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('join-backstage'), findsNothing);
     expect(find.textContaining('permission'), findsNothing);
     // The neutral sentence is not stacked on top of the one that says what
     // happened.
-    expect(find.text('没能连上这个语音房，请稍后重试。'), findsNothing);
+    expect(
+      find.text('Couldn\'t connect to this voice room. Try again later.'),
+      findsNothing,
+    );
   });
 
   testWidgets('a connection that never arrived is not a refused room', (
@@ -210,11 +221,21 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pumpAndSettle();
 
-    expect(find.text('这次连接没有接通，请检查网络后重试。'), findsOneWidget);
-    expect(find.text('这个房间还没有开放收听，请让主持人重新开启。'), findsNothing);
+    expect(
+      find.text(
+        'This connection didn\'t go through. Check your network and retry.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Listening isn\'t open in this room yet. Ask the host to reopen it.',
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('the second attempt reads the room again and makes a new call', (
@@ -243,7 +264,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(find.text('Joined, voice connection failed'), findsOneWidget);
     expect(factory.createCalls, 1);
 
     await tester.tap(
@@ -309,8 +330,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('已加入，语音连接失败'), findsOneWidget);
-    expect(find.text('重试会话'), findsOneWidget);
+    expect(find.text('Joined, voice connection failed'), findsOneWidget);
+    expect(find.text('Retry session'), findsOneWidget);
     expect(source.tokenCalls, 1);
     expect(clients.createCalls, 1);
     expect(calls.createCalls, 0);
@@ -329,7 +350,7 @@ void main() {
     expect(calls.createCalls, 1);
     expect(handle.joinCalls, 1);
     expect(find.text('Official CallState view'), findsOneWidget);
-    expect(find.text('重试会话'), findsNothing);
+    expect(find.text('Retry session'), findsNothing);
   });
 
   testWidgets(
@@ -376,7 +397,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('已加入，语音连接失败'), findsOneWidget);
+      expect(find.text('Joined, voice connection failed'), findsOneWidget);
       expect(calls.createCalls, 0);
 
       await tester.tap(
@@ -555,7 +576,7 @@ void main() {
       expect(authorizations, 2);
       expect(handle.joinCalls, 1);
       expect(find.text('Official CallState view'), findsOneWidget);
-      expect(find.text('语音会话暂时不可用'), findsNothing);
+      expect(find.text('Voice session unavailable right now'), findsNothing);
     },
   );
 
@@ -590,12 +611,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(authorizations, 2);
-    expect(find.text('已加入，语音连接失败'), findsOneWidget);
-    expect(find.text('重试会话'), findsOneWidget);
+    expect(find.text('Joined, voice connection failed'), findsOneWidget);
+    expect(find.text('Retry session'), findsOneWidget);
     // A session that named no step keeps the one sentence that claims
     // nothing. It no longer guesses two causes aloud: on the review device
     // the token it named had already been granted.
-    expect(find.textContaining('这台设备没能建立语音会话'), findsOneWidget);
+    expect(
+      find.textContaining('This device couldn\'t set up a voice session'),
+      findsOneWidget,
+    );
     expect(find.textContaining('可能是语音令牌没取到'), findsNothing);
   });
 
@@ -606,11 +630,26 @@ void main() {
     // retrying where the reader stands. The lobby is the screen the reader
     // is left on, so it names the step rather than the two it could guess.
     for (final (refusal, sentence) in <(StreamVideoSessionRefusal, String)>[
-      (StreamVideoSessionRefusal.identity, '这台设备还没有拿到语音身份'),
-      (StreamVideoSessionRefusal.credential, '这次通话的语音凭证没有发下来'),
-      (StreamVideoSessionRefusal.client, '语音连接没能在这台设备上建立'),
-      (StreamVideoSessionRefusal.connection, '这台设备没能连上语音服务'),
-      (StreamVideoSessionRefusal.accountChanged, '登录状态在连接过程中发生了变化'),
+      (
+        StreamVideoSessionRefusal.identity,
+        "This device doesn't have a voice identity yet",
+      ),
+      (
+        StreamVideoSessionRefusal.credential,
+        "The voice credential for this call wasn't issued",
+      ),
+      (
+        StreamVideoSessionRefusal.client,
+        "Couldn't set up voice on this device",
+      ),
+      (
+        StreamVideoSessionRefusal.connection,
+        "This device couldn't reach the voice service",
+      ),
+      (
+        StreamVideoSessionRefusal.accountChanged,
+        "Your sign-in changed while connecting",
+      ),
     ]) {
       // A fresh tree per step: the surface keeps its own state across a pump
       // of the same shape, and this test is about five different sessions.
@@ -662,8 +701,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.textContaining('你是主持人'), findsOneWidget);
-    expect(find.textContaining('结束房间'), findsOneWidget);
+    expect(find.textContaining('You\'re the host'), findsOneWidget);
+    expect(find.textContaining('End room'), findsOneWidget);
     expect(find.textContaining('你以听众身份静音进入'), findsNothing);
   });
 
@@ -708,12 +747,15 @@ void main() {
     expect(sentences.length, AudioRoomJoinRefusal.values.length);
     // Each of the three parts gets its own note, and only the host's names
     // the control a host actually has.
-    expect(audioRoomConnectionNote(AudioRoomViewerRole.host), contains('结束房间'));
+    expect(
+      audioRoomConnectionNote(AudioRoomViewerRole.host),
+      contains('End room'),
+    );
     expect(
       audioRoomConnectionNote(AudioRoomViewerRole.speaker),
-      contains('你是发言人'),
+      contains('You\'re a speaker'),
     );
-    expect(audioRoomConnectionNote(null), contains('听众'));
+    expect(audioRoomConnectionNote(null), contains('listener'));
   });
 
   testWidgets('disposing during join retires late Call results', (
@@ -730,7 +772,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pump();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -759,7 +801,7 @@ void main() {
         _readyPage(factory: factory, target: _target('loop-daily')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('连接语音'));
+      await tester.tap(find.text('Connect voice'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('fake-leave-room')));
       await tester.tap(find.byKey(const Key('fake-leave-room')));
@@ -769,14 +811,14 @@ void main() {
       expect(handle.suspendAudioCalls, 1);
       expect(handle.backgroundMicrophoneDisableCalls, 1);
       expect(find.text('Official CallState view'), findsOneWidget);
-      expect(find.text('语音可以连接'), findsNothing);
+      expect(find.text('Voice ready to connect'), findsNothing);
 
       leaveGate.complete();
       await tester.pumpAndSettle();
 
       expect(handle.leaveCalls, 1);
       expect(handle.backgroundMicrophoneDisableCalls, 2);
-      expect(find.text('语音可以连接'), findsOneWidget);
+      expect(find.text('Voice ready to connect'), findsOneWidget);
     },
   );
 
@@ -798,7 +840,7 @@ void main() {
         _readyPage(factory: factory, target: _target('loop-daily')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('连接语音'));
+      await tester.tap(find.text('Connect voice'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('fake-speak')));
       await tester.pump();
@@ -840,7 +882,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pumpAndSettle();
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -865,7 +907,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('Connect voice'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('fake-speak')), findsOneWidget);
@@ -900,7 +942,7 @@ void main() {
 
     // The member was already let in: hearing the room is not a second
     // decision, so there is no button asking for one.
-    expect(find.text('连接语音'), findsNothing);
+    expect(find.text('Connect voice'), findsNothing);
     expect(factory.createCalls, 1);
     expect(handle.joinCalls, 1);
     expect(find.text('Official CallState view'), findsOneWidget);
@@ -925,13 +967,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(find.text('Joined, voice connection failed'), findsOneWidget);
     expect(find.textContaining('provider-secret-detail'), findsNothing);
     // A room that is ready again must not retry on its own: that would be an
     // unbounded reconnect loop behind a reader who is told it failed.
     expect(handle.joinCalls, 1);
     expect(handle.leaveCalls, 1);
-    expect(find.text('重新连接语音'), findsOneWidget);
+    expect(find.text('Reconnect voice'), findsOneWidget);
     expect(find.text('Official CallState view'), findsNothing);
   });
 
@@ -964,9 +1006,9 @@ void main() {
     expect(handle.joinCalls, 1);
     // R7-1: and what the window says is the reader's own decision, not a
     // dropped connection with a button that undoes it.
-    expect(find.text('正在离开语音房…'), findsOneWidget);
-    expect(find.text('语音已断开'), findsNothing);
-    expect(find.text('重新连接语音'), findsNothing);
+    expect(find.text('Leaving voice room…'), findsOneWidget);
+    expect(find.text('Voice disconnected'), findsNothing);
+    expect(find.text('Reconnect voice'), findsNothing);
 
     // The page reports the LOOP half back. On a leave that went through this
     // surface is already gone; what this stands for is the one LOOP refused,
@@ -974,9 +1016,9 @@ void main() {
     link.exitSettled();
     await tester.pumpAndSettle();
     expect(handle.joinCalls, 1);
-    expect(find.text('正在离开语音房…'), findsNothing);
-    expect(find.text('语音已断开'), findsOneWidget);
-    expect(find.text('重新连接语音'), findsOneWidget);
+    expect(find.text('Leaving voice room…'), findsNothing);
+    expect(find.text('Voice disconnected'), findsOneWidget);
+    expect(find.text('Reconnect voice'), findsOneWidget);
   });
 
   testWidgets('speaking again takes this call down and makes another', (

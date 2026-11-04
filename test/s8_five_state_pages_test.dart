@@ -620,7 +620,10 @@ void main() {
           find.byKey(const ValueKey<String>('group-info-resolve-failed')),
           findsNothing,
         );
-        expect(find.textContaining('这不代表退出失败'), findsOneWidget);
+        expect(
+          find.textContaining('This doesn\'t mean leaving failed'),
+          findsOneWidget,
+        );
       },
     );
 
@@ -697,11 +700,11 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey<String>('group-info-leave')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('退出').last);
+      await tester.tap(find.text('Exit').last);
       await tester.pumpAndSettle();
 
       expect(chat.commands, contains('leave-group:$testResolvedGroupId'));
-      expect(find.text('已退出群聊'), findsNothing);
+      expect(find.text('Left group chat'), findsNothing);
       expect(find.textContaining('当前账号没有执行这个操作的权限'), findsOneWidget);
       // The page never asks the device for a permission of its own.
       expect(find.textContaining('去系统设置'), findsNothing);

@@ -9,6 +9,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
         MessageState,
         StreamMessagePreviewFormatter,
         User;
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Removes untrusted Token Card fields from every compact Stream preview.
 ///
@@ -145,7 +146,9 @@ final class LoopStreamTokenCardMessagePreviewFormatter
   static const String memberBuySymbolField = 'symbol';
   static const String feedBotUserId = 'loop_feed_bot';
   static const String feedBotFlagField = 'loop_bot';
-  static const String memberBuyLabel = '群友买入';
+  static String get memberBuyLabel => LoopL10n
+      .current
+      .chatAttachments_streamTokenCardMessagePreviewFormatterMemberBuyLabel;
   static const int memberBuySymbolMaxLength = 20;
   static final RegExp _memberBuySymbolCharacters = RegExp(
     r'^[\p{L}\p{N}\p{M}$._-]+$',

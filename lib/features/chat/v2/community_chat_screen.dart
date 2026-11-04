@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
@@ -138,7 +139,9 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                           'community-chat-open-search',
                         ),
                         icon: 'search',
-                        label: '搜索这个会话',
+                        label: context
+                            .l10n
+                            .chatV2_communityCommunityChatOpenSearchLabel,
                         framed: true,
                         onPressed: () => widget.onOpenSearch?.call(cid),
                       ),
@@ -149,7 +152,9 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                           'community-chat-open-voice',
                         ),
                         icon: 'voice',
-                        label: '进入语音房',
+                        label: context
+                            .l10n
+                            .chatV2_communityCommunityChatOpenVoiceLabel,
                         framed: true,
                         onPressed: () => widget.onOpenVoiceRoom?.call(
                           detail.community.communityId,
@@ -160,7 +165,9 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                           'community-chat-open-profile',
                         ),
                         icon: 'info',
-                        label: '社区信息',
+                        label: context
+                            .l10n
+                            .chatV2_communityCommunityChatOpenProfileLabel,
                         framed: true,
                         onPressed: () => widget.onOpenProfile?.call(
                           detail.community.communityId,
@@ -209,18 +216,18 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       loopCapabilityProvider(LoopV2CapabilityId.communityChat),
     );
     if (id == null) {
-      return const _ChatBlock(
+      return _ChatBlock(
         blockKey: 'community-chat-missing-id',
-        message: '缺少社区标识',
-        reason: '请从社区列表或社区主页进入，本页不会猜测要打开哪个社区的官方群。',
+        message: LoopL10n.current.chatV2_communityMessage,
+        reason: LoopL10n.current.chatV2_communityReason,
       );
     }
     if (blocked) {
       return _ChatBlock(
         blockKey: 'community-chat-capability-unavailable',
-        message: '社区聊天当前不可用',
+        message: LoopL10n.current.chatV2_communityMessage2,
         reason: capability.reasonCode == null
-            ? '尚未读取到能力清单，本页不请求任何频道。'
+            ? LoopL10n.current.chatV2_communityReason2
             : communicationUnavailableReason(capability.reasonCode),
       );
     }
@@ -235,8 +242,8 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
           phase: state.phase,
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.list,
-          emptyMessage: '找不到这个社区',
-          emptyReason: '它可能已被移除，或对当前账号不可见。',
+          emptyMessage: LoopL10n.current.chatV2_communityEmptyMessage,
+          emptyReason: LoopL10n.current.chatV2_communityEmptyReason,
           onRetry: () => unawaited(controller.reload()),
         ),
       );
@@ -252,7 +259,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     if (!chat.isAvailable) {
       return _ChatBlock(
         blockKey: 'community-chat-unavailable',
-        message: '官方群当前不可用',
+        message: LoopL10n.current.chatV2_communityMessage3,
         reason: communicationUnavailableReason(chat.reasonCode),
         onRetry: () => unawaited(controller.reload()),
       );
@@ -307,7 +314,12 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CommunityPreviewNotice(mode: mode, resource: '社区官方群'),
+          CommunityPreviewNotice(
+            mode: mode,
+            resource: LoopL10n
+                .current
+                .chatV2_conversationLabelLoopCommunityConversationNeutralLabel,
+          ),
           LoopChatHeaderStrip(
             key: const ValueKey<String>('community-chat-header-strip'),
             // The one identity fact LOOP may state about the reader in this
@@ -381,7 +393,8 @@ String communityChatTitle({
     communityChatNeutralTitle;
 
 /// What the header says when no name is known yet.
-const String communityChatNeutralTitle = '社区群聊';
+String get communityChatNeutralTitle =>
+    LoopL10n.current.chatV2_communityCommunityChatNeutralTitle;
 
 /// The room's presence line, or `null` when the server stated none.
 ///
@@ -395,10 +408,13 @@ String? communityChatPresenceLine(CommunityDetail? detail) {
   if (detail == null) return null;
   final members = detail.community.memberCount;
   final online = switch (detail.onlineCount) {
-    CommunityOnlineCountObserved(:final count) => '$count 在线',
+    CommunityOnlineCountObserved(:final count) =>
+      LoopL10n.current.chatV2_communityCommunityOnlineCountObserved(count),
     _ => null,
   };
-  final size = members > 0 ? '${communityCountLabel(members)} 成员' : null;
+  final size = members > 0
+      ? LoopL10n.current.chatV2_communitySwitch(communityCountLabel(members))
+      : null;
   final parts = <String>[?size, ?online];
   return parts.isEmpty ? null : parts.join(' · ');
 }
@@ -433,7 +449,9 @@ List<String> communityChatHeaderSegments(
 
 String? communityChatPersonaSegment(CommunityChatPersona? persona) {
   if (persona == null) return null;
-  return persona.isPending ? '正在同步你的显示名' : '你在这个社区显示为 ${persona.alias}';
+  return persona.isPending
+      ? LoopL10n.current.chatV2_communityCommunityChatPersonaSegment
+      : LoopL10n.current.chatV2_communityS(persona.alias);
 }
 
 class _SyncingBlock extends StatelessWidget {
@@ -451,10 +469,10 @@ class _SyncingBlock extends StatelessWidget {
         LoopNotice(
           key: const ValueKey<String>('community-chat-syncing'),
           icon: 'clock',
-          title: '聊天权限同步中',
-          body:
-              '${communicationUnavailableReason(reasonCode)}'
-              'LOOP 已经记录了你的成员身份，服务商侧还没跟上。稍后重试即可，不需要重新加入社区。',
+          title: context.l10n.chatV2_communityCommunityChatSyncingTitle,
+          body: context.l10n.chatV2_communityCommunityChatSyncingBody(
+            communicationUnavailableReason(reasonCode),
+          ),
           margin: const EdgeInsets.fromLTRB(
             LoopSpacing.page,
             14,
@@ -471,7 +489,7 @@ class _SyncingBlock extends StatelessWidget {
           ),
           child: LoopButton(
             key: const ValueKey<String>('community-chat-syncing-retry'),
-            label: '重新检查',
+            label: context.l10n.chatV2_communityCommunityChatSyncingRetryLabel,
             block: true,
             onPressed: onRetry,
           ),
@@ -517,7 +535,7 @@ class _ChatBlock extends StatelessWidget {
             ),
             child: LoopButton(
               key: ValueKey<String>('$blockKey-retry'),
-              label: '重试',
+              label: context.l10n.common_retry,
               block: true,
               onPressed: onRetry,
             ),

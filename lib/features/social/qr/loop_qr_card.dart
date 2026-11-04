@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_link.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
@@ -92,17 +93,21 @@ String loopQrCardInviteText(LoopQrCardSubject subject, String backendBaseUrl) {
       backendBaseUrl: backendBaseUrl,
     ),
     LoopCommunityQrCard(:final name) =>
-      link == null ? '来 LOOP 加入『$name』' : '来 LOOP 加入『$name』\n$link',
+      link == null
+          ? LoopL10n.current.socialQr_cardSwitch(name)
+          : LoopL10n.current.socialQr_cardS(link, name),
   };
 }
 
 /// zh-CN copy for one poster export. It states only what happened.
 String loopPosterExportMessage(ChatMergeExportOutcome outcome) =>
     switch (outcome) {
-      ChatMergeExportOutcome.shared => '海报已生成，请在分享面板中选择去处',
-      ChatMergeExportOutcome.dismissed => '海报已生成，但没有选择分享去处',
-      ChatMergeExportOutcome.failed => '海报没有生成成功，没有任何内容离开这台设备',
-      ChatMergeExportOutcome.unavailable => '本次运行没有装配系统分享，海报未生成',
+      ChatMergeExportOutcome.shared => LoopL10n.current.socialQr_cardShared,
+      ChatMergeExportOutcome.dismissed =>
+        LoopL10n.current.socialQr_cardDismissed,
+      ChatMergeExportOutcome.failed => LoopL10n.current.socialQr_cardFailed,
+      ChatMergeExportOutcome.unavailable =>
+        LoopL10n.current.socialQr_cardUnavailable,
     };
 
 /// Opens the QR card sheet for [subject].
@@ -116,7 +121,7 @@ Future<void> showLoopQrCardSheet(
   LoopQrCardSubject subject,
 ) => showLoopSheet<void>(
   context,
-  barrierLabel: '关闭二维码名片',
+  barrierLabel: context.l10n.socialQr_cardBarrierLabel,
   useRootNavigator: true,
   builder: (sheetContext) => LoopQrCardSheet(subject: subject),
 );
@@ -153,8 +158,9 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
       children: <Widget>[
         // R2 the one sheet-title step (decision 0191 M8).
         LoopSheetHeading(switch (subject) {
-          LoopUserQrCard() => '我的二维码名片',
-          LoopCommunityQrCard() => '社区二维码名片',
+          LoopUserQrCard() => context.l10n.socialQr_cardLoopUserQrCard,
+          LoopCommunityQrCard() =>
+            context.l10n.socialQr_cardLoopCommunityQrCard,
         }),
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -168,9 +174,9 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               if (code == null)
-                const LoopUnavailableLine(
+                LoopUnavailableLine(
                   key: ValueKey<String>('qr-card-unavailable'),
-                  label: '二维码不可用',
+                  label: context.l10n.socialQr_cardQrCardUnavailableLabel,
                   reasonCode: 'QR_CARD_LINK_UNAVAILABLE',
                   margin: EdgeInsets.zero,
                 )
@@ -205,8 +211,10 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
                     LoopIconButton(
                       key: const ValueKey<String>('qr-card-copy-link'),
                       icon: 'copy',
-                      label: '复制链接',
-                      onPressed: () => unawaited(_copy(link, '已复制链接')),
+                      label: context.l10n.socialQr_cardQrCardCopyLinkLabel,
+                      onPressed: () => unawaited(
+                        _copy(link, context.l10n.common_linkCopied),
+                      ),
                     ),
                   ],
                 ),
@@ -217,7 +225,9 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
                 children: <Widget>[
                   LoopButton(
                     key: const ValueKey<String>('qr-card-share-poster'),
-                    label: _exporting ? '正在生成…' : '分享海报',
+                    label: _exporting
+                        ? context.l10n.socialQr_cardQrCardSharePosterLabel
+                        : context.l10n.socialQr_cardQrCardSharePosterLabel2,
                     primary: true,
                     onPressed: code == null || _exporting
                         ? null
@@ -225,9 +235,12 @@ class _LoopQrCardSheetState extends ConsumerState<LoopQrCardSheet> {
                   ),
                   LoopButton(
                     key: const ValueKey<String>('qr-card-copy-invite'),
-                    label: '复制邀请文字',
+                    label: context.l10n.socialQr_cardQrCardCopyInviteLabel,
                     onPressed: () => unawaited(
-                      _copy(loopQrCardInviteText(subject, base), '已复制邀请文字'),
+                      _copy(
+                        loopQrCardInviteText(subject, base),
+                        context.l10n.socialQr_cardCopy,
+                      ),
                     ),
                   ),
                 ],
@@ -315,7 +328,7 @@ class LoopSharePoster extends StatelessWidget {
       LoopUserQrCard(:final displayName, :final loopId) => (
         displayName,
         loopId,
-        '扫码加我',
+        context.l10n.socialQr_cardSwitch2,
       ),
       LoopCommunityQrCard(
         :final name,
@@ -325,9 +338,9 @@ class LoopSharePoster extends StatelessWidget {
         (
           name,
           description == null || description.trim().isEmpty
-              ? '$memberCount 位成员'
+              ? context.l10n.socialQr_cardSwitch3(memberCount)
               : description.trim(),
-          '扫码加入',
+          context.l10n.socialQr_cardSwitch4,
         ),
     };
     final face = switch (subject) {
@@ -347,7 +360,7 @@ class LoopSharePoster extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('qr-card-poster'),
       container: true,
-      label: '$name 的二维码名片',
+      label: context.l10n.socialQr_cardQrCardPosterLabel(name),
       child: DefaultTextStyle(
         style: LoopType.body,
         // The quiet ledger ground (decision 0172): Ink, the shell radius, a
@@ -421,7 +434,8 @@ class LoopSharePoster extends StatelessWidget {
                       child: LoopQrView(
                         key: const ValueKey<String>('qr-card-code'),
                         code: code,
-                        semanticLabel: '$name 的二维码',
+                        semanticLabel: context.l10n
+                            .socialQr_cardQrCardCodeSemanticLabel(name),
                       ),
                     ),
                   ),

@@ -288,7 +288,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(social.commands, contains('follow:$testMemberId:true'));
-      expect(find.text('已关注'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('a refused follow keeps the state and explains', (

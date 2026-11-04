@@ -38,7 +38,10 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('你在这个社区显示为 Harbor-4821'), findsOneWidget);
+      expect(
+        find.text('You appear as Harbor-4821 in this community'),
+        findsOneWidget,
+      );
     });
   });
 }

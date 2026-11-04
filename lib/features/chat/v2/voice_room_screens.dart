@@ -29,6 +29,7 @@ import 'package:loop_mobile/features/square/live_voice_rooms.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -298,7 +299,11 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     );
     final shared = await ref.read(loopTextShareProvider)(text, subject: title);
     if (shared || !context.mounted) return;
-    LoopToast.show(context, message: '无法打开分享', kind: LoopToastKind.warn);
+    LoopToast.show(
+      context,
+      message: context.l10n.chatV2_voiceRoomScreensMessage,
+      kind: LoopToastKind.warn,
+    );
   }
 
   Widget _buildPage(
@@ -343,7 +348,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       // The room resource names its own community (decision 0052), so the
       // title says which room this is instead of the word for all of them.
       title: snapshot == null
-          ? '语音房'
+          ? context.l10n.common_voiceRooms
           : voiceRoomTitle(
               snapshot.room.communityName,
               title: snapshot.room.title,
@@ -362,7 +367,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           LoopIconButton(
             key: const ValueKey<String>('voiceroom-share'),
             icon: 'share',
-            label: '分享语音房',
+            label: context.l10n.chatV2_voiceRoomScreensVoiceroomShareLabel,
             onPressed: () => unawaited(_share(context, snapshot.room)),
           ),
         // Decision 0115: every note about the provider is in (i).
@@ -375,7 +380,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.listing,
         ring: false,
-        kicker: widget.expanded ? '语音进行中' : '语音大厅',
+        kicker: widget.expanded
+            ? context.l10n.chatV2_voiceRoomScreensKicker
+            : context.l10n.chatV2_voiceRoomScreensKicker2,
         heading: voiceRoomHeading(
           snapshot,
           phase: state.phase,
@@ -390,12 +397,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         stamp: voiceRoomStamp(snapshot, expanded: widget.expanded),
       ),
       sections: <Widget>[
-        CommunityPreviewNotice(mode: mode, resource: '语音房'),
+        CommunityPreviewNotice(
+          mode: mode,
+          resource: context.l10n.common_voiceRooms,
+        ),
         if (evidencePending)
           LoopInlineUnavailable(
             key: const ValueKey<String>('voiceroom-evidence-pending'),
             icon: 'shield',
-            message: '语音房当前不可用',
+            message: context
+                .l10n
+                .chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage,
             detail: communicationUnavailableReason(
               capability.evidenceReasonCode ??
                   'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
@@ -406,7 +418,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         else if (communityCapabilityBlocks(mode, capability))
           LoopInlineUnavailable(
             key: const ValueKey<String>('voiceroom-capability-unavailable'),
-            message: '语音房当前不可用',
+            message: context
+                .l10n
+                .chatV2_voiceRoomScreensVoiceroomEvidencePendingMessage,
             // Three different answers used to share one sentence about a
             // list this page never named: LOOP closed the room type, LOOP
             // was never asked, and the ask did not get through. Only the
@@ -414,18 +428,23 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // host who has just opened a room lands here often enough that
             // it has to say which of the three it is.
             detail: capability.unreachable
-                ? '这台设备没能读到语音房的开放状态，请检查网络后重试。'
+                ? context
+                      .l10n
+                      .chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail
                 : capability.reasonCode == null
-                ? '这次还没有读到语音房的开放状态，请稍后再试。'
+                ? context
+                      .l10n
+                      .chatV2_voiceRoomScreensVoiceroomCapabilityUnavailableDetail2
                 : communicationUnavailableReason(capability.reasonCode),
             maxLines: 2,
             detailMaxLines: 4,
           )
         else if (id == null)
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('voiceroom-missing-id'),
-            message: '缺少社区标识',
-            detail: '请从社区主页或社区官方群进入，本页不会猜测要打开哪个社区的语音房。',
+            message: context.l10n.chatV2_communityMessage,
+            detail:
+                context.l10n.chatV2_voiceRoomScreensVoiceroomMissingIdDetail,
             maxLines: 2,
             detailMaxLines: 4,
           )
@@ -433,7 +452,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           CommunityStateBlock(
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '当前没有进行中的语音房',
+            emptyMessage: context.l10n.chatV2_voiceRoomScreensEmptyMessage,
             emptyReason: communicationUnavailableReason(
               state.notLiveReasonCode,
             ),
@@ -453,12 +472,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   LoopInlineUnavailable(
-                    message: '这个房间还没有开放收听',
+                    message: context.l10n.chatV2_voiceRoomScreensMessage2,
                     // One fact, one next step. The fact is the server's own when
                     // it named which write is unconfirmed, and the next step is
                     // the button below — so it is not said twice.
                     detail: snapshot.providerSync.confirmed
-                        ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                        ? context.l10n.chatV2_voiceRoomScreensDetail
                         : communicationUnavailableReason(
                             snapshot.providerSync.reason,
                           ),
@@ -471,7 +490,11 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                       key: const ValueKey<String>(
                         'voiceroom-media-backstage-retry',
                       ),
-                      label: state.busy ? '正在刷新…' : '刷新',
+                      label: state.busy
+                          ? context
+                                .l10n
+                                .chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel
+                          : context.l10n.common_refresh,
                       onPressed: state.busy
                           ? null
                           : () => unawaited(controller.refreshRoom()),
@@ -530,8 +553,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // 「举手队列 0」 over 「第 2 位」 would be one more contradiction.
             LoopLabel(
               snapshot.viewer.isHost
-                  ? '举手队列 ${state.handRaises.length}'
-                  : '举手队列',
+                  ? context.l10n.chatV2_voiceRoomScreensLoopLabel(
+                      state.handRaises.length,
+                    )
+                  : context.l10n.chatV2_voiceRoomScreensS,
             ),
             _HandRaiseQueue(state: state),
             // A host whose only published control is 结束房间 gets no section
@@ -539,12 +564,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             if (snapshot.viewer.showsHostControls &&
                 (snapshot.viewer.canInviteSpeakers ||
                     snapshot.viewer.canMuteAll)) ...<Widget>[
-              const LoopLabel('主持人控制'),
+              LoopLabel(context.l10n.chatV2_voiceRoomScreensLoopLabel2),
               _HostControls(
                 state: state,
-                onMuteAll: () => _run(controller.muteAll, '已请求全体静音'),
-                onInvite: (profileId) =>
-                    _run(() => controller.inviteSpeaker(profileId), '已邀请发言'),
+                onMuteAll: () => _run(
+                  controller.muteAll,
+                  context.l10n.chatV2_voiceRoomScreensRun,
+                ),
+                onInvite: (profileId) => _run(
+                  () => controller.inviteSpeaker(profileId),
+                  context.l10n.chatV2_voiceRoomScreensRun2,
+                ),
               ),
             ],
             _RosterSection(
@@ -564,10 +594,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // One command: the LOOP grant, and then the connection it
             // authorizes. The media section below mounts itself the moment
             // the membership exists and connects without a second tap.
-            onJoin: () => _run(controller.join, '已加入，正在连接语音'),
+            onJoin: () =>
+                _run(controller.join, context.l10n.chatV2_voiceRoomScreensRun3),
             onLeave: () => _leave(controller),
             onRaise: () => _raiseHand(controller),
-            onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
+            onCancel: () => _run(
+              controller.cancelHandRaise,
+              context.l10n.chatV2_voiceRoomScreensRun4,
+            ),
             onEnd: () => _endRoom(controller),
             onBack: back,
           ),
@@ -576,7 +610,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               key: const ValueKey<String>('voiceroom-action-failure'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '上一次操作没有完成',
+              title: context.l10n.common_lastActionIncomplete,
               body: voiceRoomFailureText(
                 state.failureKind,
                 state.failureReasonCode,
@@ -633,7 +667,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       openMember = (member) => unawaited(_openMember(controller, member));
     }
     final sections = <Widget>[
-      CommunityPreviewNotice(mode: mode, resource: '语音房'),
+      CommunityPreviewNotice(
+        mode: mode,
+        resource: context.l10n.common_voiceRooms,
+      ),
       VoiceRoomHostStage(
         name: host.name,
         avatarRef: host.avatarRef,
@@ -648,9 +685,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               LoopInlineUnavailable(
-                message: '这个房间还没有开放收听',
+                message: context.l10n.chatV2_voiceRoomScreensMessage2,
                 detail: snapshot.providerSync.confirmed
-                    ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                    ? context.l10n.chatV2_voiceRoomScreensDetail
                     : communicationUnavailableReason(
                         snapshot.providerSync.reason,
                       ),
@@ -663,7 +700,11 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                   key: const ValueKey<String>(
                     'voiceroom-media-backstage-retry',
                   ),
-                  label: state.busy ? '正在刷新…' : '刷新',
+                  label: state.busy
+                      ? context
+                            .l10n
+                            .chatV2_voiceRoomScreensVoiceroomMediaBackstageRetryLabel
+                      : context.l10n.common_refresh,
                   onPressed: state.busy
                       ? null
                       : () => unawaited(controller.refreshRoom()),
@@ -684,14 +725,20 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onCallStopped: controller.refreshRoom,
           ),
       if (!viewer.hasJoined && !room.isJoinable)
-        const LoopInlineUnavailable(
+        LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-not-joinable'),
-          message: '这个房间还不能加入',
-          detail: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          message:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomNotJoinableMessage,
+          detail:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomNotJoinableDetail,
           maxLines: 2,
           detailMaxLines: 4,
         ),
-      LoopLabel('发言者 ${snapshot.participants.speakerCount}'),
+      LoopLabel(
+        context.l10n.chatV2_voiceRoomScreensLoopLabel3(
+          snapshot.participants.speakerCount,
+        ),
+      ),
       VoiceRoomSpeakerGrid(
         roster: speakers,
         live: live,
@@ -699,7 +746,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
         onOpenMember: openMember,
       ),
-      LoopLabel('听众 ${headcount.listening}'),
+      LoopLabel(
+        context.l10n.chatV2_voiceRoomScreensLoopLabel4(headcount.listening),
+      ),
       VoiceRoomListenerGrid(
         roster: listeners,
         total: headcount.listening,
@@ -709,10 +758,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         onOpenMember: openMember,
       ),
       if (viewer.isHost && !viewer.canEndRoom)
-        const LoopInlineUnavailable(
+        LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-host-no-leave'),
-          message: '现在不能结束房间',
-          detail: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          message:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage,
+          detail:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail,
           maxLines: 2,
           detailMaxLines: 4,
         ),
@@ -721,7 +772,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           key: const ValueKey<String>('voiceroom-action-failure'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '上一次操作没有完成',
+          title: context.l10n.common_lastActionIncomplete,
           body: voiceRoomFailureText(
             state.failureKind,
             state.failureReasonCode,
@@ -743,13 +794,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             pendingHands: state.handRaises
                 .where((entry) => entry.handRaise.isPending)
                 .length,
-            onJoin: () => unawaited(_run(controller.join, '已加入，正在连接语音')),
+            onJoin: () => unawaited(
+              _run(controller.join, context.l10n.chatV2_voiceRoomScreensRun3),
+            ),
             onLeave: () => unawaited(_leave(controller)),
             onRaise: () => unawaited(_raiseHand(controller)),
-            onCancel: () =>
-                unawaited(_run(controller.cancelHandRaise, '已取消举手')),
+            onCancel: () => unawaited(
+              _run(
+                controller.cancelHandRaise,
+                context.l10n.chatV2_voiceRoomScreensRun4,
+              ),
+            ),
             onEnd: () => unawaited(_endRoom(controller)),
-            onMuteAll: () => unawaited(_run(controller.muteAll, '已请求全体静音')),
+            onMuteAll: () => unawaited(
+              _run(controller.muteAll, context.l10n.chatV2_voiceRoomScreensRun),
+            ),
             onStepDown: () => unawaited(_stepDown(controller)),
             onInvite: openExpanded == null
                 ? null
@@ -781,7 +840,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                       icon: 'back',
                       // Going back keeps the account in the room; the strip
                       // at the top brings it back.
-                      label: '收起语音房',
+                      label: context
+                          .l10n
+                          .chatV2_voiceRoomScreensLoopTopbarBackLabel,
                       onPressed: back,
                       framed: true,
                     ),
@@ -801,7 +862,8 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 LoopIconButton(
                   key: const ValueKey<String>('voiceroom-share'),
                   icon: 'share',
-                  label: '分享语音房',
+                  label:
+                      context.l10n.chatV2_voiceRoomScreensVoiceroomShareLabel,
                   framed: true,
                   onPressed: () => unawaited(_share(context, room)),
                 ),
@@ -839,7 +901,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     return LoopIconButton(
       key: const ValueKey<String>('voiceroom-info'),
       icon: 'info',
-      label: unconfirmed ? '房间说明，有一项服务商未确认' : '房间说明',
+      label: unconfirmed
+          ? context.l10n.chatV2_voiceRoomScreensVoiceroomInfoLabel
+          : context.l10n.chatV2_voiceRoomScreensVoiceroomInfoLabel2,
       color: unconfirmed ? LoopColors.lime : null,
       framed: framed,
       onPressed: () => unawaited(
@@ -916,12 +980,20 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     }
     if (snapshot.viewer.isHost) {
       return (
-        name: named == null ? '我' : '我 · $named',
+        name: named == null
+            ? LoopL10n.current.common_me
+            : LoopL10n.current.chatV2_voiceRoomScreensName(named),
         avatarRef: avatarRef,
         knownName: named,
       );
     }
-    if (!known) return (name: '主持人', avatarRef: null, knownName: null);
+    if (!known) {
+      return (
+        name: LoopL10n.current.chatV2_modelsHost,
+        avatarRef: null,
+        knownName: null,
+      );
+    }
     return (
       name:
           named ?? voiceRoomDisplayKeyText('voiceRoom.member.anonymousMember'),
@@ -994,7 +1066,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     final failure = await controller.stepDown();
     if (!mounted) return;
     if (failure == null) {
-      LoopToast.show(context, message: '已下麦，回到听众');
+      LoopToast.show(
+        context,
+        message: LoopL10n.current.chatV2_voiceRoomScreensMessage3,
+      );
       for (final view in VoiceRoomRosterView.values) {
         unawaited(controller.loadRoster(view));
       }
@@ -1005,7 +1080,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       message:
           failure == CommunityFailureKind.notFound ||
               failure == CommunityFailureKind.unavailable
-          ? '下麦暂不可用'
+          ? LoopL10n.current.chatV2_voiceRoomScreensMessage4
           : voiceRoomFailureText(
               failure,
               ref.read(voiceRoomControllerProvider).failureReasonCode,
@@ -1026,7 +1101,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   LoopRecordRow? _hostSpeakerRow(VoiceRoomSnapshot snapshot) {
     if (!snapshot.room.isLive) return null;
     final isSelf = snapshot.viewer.isHost;
-    final name = isSelf ? '我' : '主持人';
+    final name = isSelf
+        ? LoopL10n.current.common_me
+        : LoopL10n.current.chatV2_modelsHost;
     // Whether the host's microphone is open is the call's answer, and this
     // device only holds the call when the reader is the host.
     var speaking = false;
@@ -1042,12 +1119,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       leading: LoopInitialsAvatar(label: name),
       title: name,
       subtitle: speaking
-          ? '主持人 · 发言中'
+          ? LoopL10n.current.chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle
           : open
-          ? '主持人 · 麦克风已开'
-          : '主持人',
+          ? LoopL10n
+                .current
+                .chatV2_voiceRoomScreensVoiceroomSpeakerHostSubtitle2
+          : LoopL10n.current.chatV2_modelsHost,
       trailingBadge: speaking
-          ? const LoopBadge('发言中', kind: LoopBadgeKind.up)
+          ? LoopBadge(
+              LoopL10n.current.chatV2_voiceRoomScreensLoopBadge,
+              kind: LoopBadgeKind.up,
+            )
           : null,
       chevron: false,
       position: LoopRowPosition.first,
@@ -1115,9 +1197,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   Future<void> _leave(VoiceRoomController controller) async {
     final confirmed = await confirmCommunityAction(
       context,
-      title: '离开语音房？',
-      body: '离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。',
-      confirmLabel: '离开',
+      title: LoopL10n.current.chatV2_voiceRoomScreensTitle,
+      body: LoopL10n.current.chatV2_voiceRoomScreensBody,
+      confirmLabel: LoopL10n.current.chatV2_voiceRoomScreensConfirmLabel,
       sheetKey: 'voiceroom-leave-sheet',
     );
     if (!confirmed || !mounted) return;
@@ -1148,7 +1230,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       }
       LoopToast.show(
         context,
-        message: '房间已结束 · 主持人已经结束这个语音房',
+        message: LoopL10n.current.chatV2_voiceRoomScreensMessage5,
         kind: LoopToastKind.warn,
       );
       _refreshCommunityProfile();
@@ -1163,8 +1245,8 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               ref.read(voiceRoomControllerProvider).failureReasonCode,
             )
           : disconnected
-          ? '已离开语音房'
-          : '已离开语音房，语音连接的收尾没有确认',
+          ? LoopL10n.current.chatV2_voiceRoomScreensMessage6
+          : LoopL10n.current.chatV2_voiceRoomScreensMessage7,
       kind: failure != null ? LoopToastKind.warn : LoopToastKind.ok,
     );
     _refreshCommunityProfile();
@@ -1202,17 +1284,15 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       title: '${command.label}？',
       body: switch (command) {
         VoiceRoomMemberCommand.inviteSpeaker =>
-          '目标：$name。邀请后对方成为发言人，可以在这次通话里说话。',
-        VoiceRoomMemberCommand.removeSpeaker => '目标：$name。移出后对方回到听众，仍然留在房间里。',
+          LoopL10n.current.chatV2_voiceRoomScreensInviteSpeaker(name),
+        VoiceRoomMemberCommand.removeSpeaker =>
+          LoopL10n.current.chatV2_voiceRoomScreensRemoveSpeaker(name),
         VoiceRoomMemberCommand.mute =>
-          '目标：$name。静音是 LOOP 侧的意图，'
-              '对方的设备仍可能自行开麦；之后可以在这一行取消。',
+          LoopL10n.current.chatV2_voiceRoomScreensMute(name),
         VoiceRoomMemberCommand.unmute =>
-          '目标：$name。只撤回 LOOP 侧的静音意图，'
-              '不会替对方打开麦克风——开麦只能由对方的设备完成。',
+          LoopL10n.current.chatV2_voiceRoomScreensUnmute(name),
         VoiceRoomMemberCommand.unmuteSelf =>
-          '这是你自己的发言人行。只撤回 LOOP 侧的静音标记，'
-              '不会打开麦克风——请在通话里自己开麦。',
+          LoopL10n.current.chatV2_voiceRoomScreensUnmuteSelf,
       },
       confirmLabel: command.label,
       sheetKey: 'voiceroom-member-confirm-sheet',
@@ -1224,11 +1304,16 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         publicProfileId: target,
       ),
       switch (command) {
-        VoiceRoomMemberCommand.inviteSpeaker => '已邀请发言',
-        VoiceRoomMemberCommand.removeSpeaker => '已移出发言',
-        VoiceRoomMemberCommand.mute => '已请求静音',
-        VoiceRoomMemberCommand.unmute => '已取消静音意图',
-        VoiceRoomMemberCommand.unmuteSelf => '已取消我的静音标记',
+        VoiceRoomMemberCommand.inviteSpeaker =>
+          LoopL10n.current.chatV2_voiceRoomScreensRun2,
+        VoiceRoomMemberCommand.removeSpeaker =>
+          LoopL10n.current.chatV2_voiceRoomScreensRemoveSpeaker2,
+        VoiceRoomMemberCommand.mute =>
+          LoopL10n.current.chatV2_voiceRoomScreensMute2,
+        VoiceRoomMemberCommand.unmute =>
+          LoopL10n.current.chatV2_voiceRoomScreensUnmute2,
+        VoiceRoomMemberCommand.unmuteSelf =>
+          LoopL10n.current.chatV2_voiceRoomScreensUnmuteSelf2,
       },
     );
   }
@@ -1245,9 +1330,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     if (!mounted || failure == null) return;
     LoopToast.show(
       context,
-      message:
-          '麦克风已打开，但名单上的静音标记没能撤回：'
-          '${communityFailureReason(failure)}',
+      message: LoopL10n.current.chatV2_voiceRoomScreensMessage8(
+        communityFailureReason(failure),
+      ),
       kind: LoopToastKind.warn,
     );
   }
@@ -1259,13 +1344,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   Future<void> _endRoom(VoiceRoomController controller) async {
     final confirmed = await confirmCommunityAction(
       context,
-      title: '结束语音房？',
-      body:
-          '结束后房间里的所有人都会立刻断开，这个房间不能再进入，举手队列也会作废。'
-          '主持人没有「离开」：房间的存续由主持人决定。'
-          '只是想暂时离开这一页，请用返回键，房间会收起在顶部，随时可以回来。'
-          '社区可以再开一个新的。',
-      confirmLabel: '结束房间',
+      title: LoopL10n.current.chatV2_voiceRoomScreensTitle2,
+      body: LoopL10n.current.chatV2_voiceRoomScreensBody2,
+      confirmLabel: LoopL10n.current.chatV2_voiceRoomScreensConfirmLabel2,
       sheetKey: 'voiceroom-end-sheet',
     );
     if (!confirmed || !mounted) return;
@@ -1276,7 +1357,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     try {
       await _run(
         controller.endRoom,
-        disconnected ? '房间已结束' : '房间已结束，语音连接的收尾没有确认',
+        disconnected
+            ? LoopL10n.current.chatV2_voiceRoomScreensRun5
+            : LoopL10n.current.chatV2_voiceRoomScreensS2,
       );
     } finally {
       _mediaLink.exitSettled();
@@ -1314,7 +1397,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       );
       return;
     }
-    LoopToast.show(context, message: '已举手，等待主持人邀请');
+    LoopToast.show(
+      context,
+      message: LoopL10n.current.chatV2_voiceRoomScreensMessage9,
+    );
   }
 
   Future<void> _run(
@@ -1390,10 +1476,13 @@ class _MediaSection extends StatelessWidget {
             roomId: id,
           );
     if (target == null) {
-      return const LoopInlineUnavailable(
+      return LoopInlineUnavailable(
         key: ValueKey<String>('voiceroom-media-unavailable'),
-        message: '语音连接不可用',
-        detail: '这个语音房暂时打不开，没有发起任何连接。',
+        message: context
+            .l10n
+            .chatV2_voiceRoomScreensVoiceroomMediaUnavailableMessage,
+        detail:
+            context.l10n.chatV2_voiceRoomScreensVoiceroomMediaUnavailableDetail,
         maxLines: 2,
         detailMaxLines: 4,
       );
@@ -1461,9 +1550,11 @@ String voiceRoomFailureText(CommunityFailureKind? kind, String? reasonCode) =>
 /// is looking at a room — 「刷新一次，或让主持人重新开启」 tells the host to ask
 /// themselves — so the host's own moment has its own words.
 String voiceRoomOpenUnfinishedText(String? reasonCode) => switch (reasonCode) {
-  'STREAM_CALL_CREATE_UNCONFIRMED' => '语音房记下了，但通话还没有建好。再点一次「开启语音房」可以接着建。',
-  'STREAM_CALL_GO_LIVE_UNCONFIRMED' => '语音房建好了，但还没有开放收听。再点一次「开启语音房」可以重试。',
-  _ => '语音房还没有准备好，现在谁都进不去。再点一次「开启语音房」可以重试。',
+  'STREAM_CALL_CREATE_UNCONFIRMED' =>
+    LoopL10n.current.chatV2_voiceRoomScreensSwitch,
+  'STREAM_CALL_GO_LIVE_UNCONFIRMED' =>
+    LoopL10n.current.chatV2_voiceRoomScreensSwitch2,
+  _ => LoopL10n.current.chatV2_voiceRoomScreensSwitch3,
 };
 
 /// What an unconfirmed provider write means for the reader.
@@ -1472,7 +1563,7 @@ String voiceRoomProviderSyncText(String? reasonCode) =>
         (_voiceRoomNamedRefusals.contains(reasonCode) ||
             reasonCode == 'STREAM_CALL_MUTE_UNCONFIRMED')
     ? communicationUnavailableReason(reasonCode)
-    : 'LOOP 已经提交这次变更，服务商还没有确认结果。请稍后刷新查看最新状态。';
+    : LoopL10n.current.chatV2_voiceRoomScreensSwitch4;
 
 /// The part this account plays, as the media surface needs to hear it.
 ///
@@ -1498,7 +1589,8 @@ String voiceRoomMemberName(VoiceRoomMember member) =>
 /// member exactly the way the roster does.
 String voiceRoomDisplayName(VoiceRoomMemberName name, {required bool isSelf}) =>
     switch (name) {
-      VoiceRoomMemberAlias(alias: final alias) => isSelf ? '我 · $alias' : alias,
+      VoiceRoomMemberAlias(alias: final alias) =>
+        isSelf ? LoopL10n.current.chatV2_voiceRoomScreensName(alias) : alias,
       VoiceRoomMemberAnonymousName(labelKey: final key) =>
         voiceRoomDisplayKeyText(key),
     };
@@ -1544,7 +1636,11 @@ class _RosterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopLabel('${view.label} $count'),
+        LoopLabel(
+          view == VoiceRoomRosterView.speaker
+              ? context.l10n.chatV2_voiceRoomRosterSpeakersCount(count)
+              : context.l10n.chatV2_voiceRoomRosterListenersCount(count),
+        ),
         if (extra != null && roster.phase == CommunityViewPhase.empty)
           LoopRecordGroup(
             rows: <LoopRecordRow>[_positioned(extra, LoopRowPosition.single)],
@@ -1561,33 +1657,58 @@ class _RosterSection extends StatelessWidget {
             CommunityViewPhase.empty => LoopEmptyState(
               key: ValueKey<String>('voiceroom-roster-$slug-empty'),
               illustration: LoopIllustration.members,
-              title: '当前没有${view.label}',
+              title: view == VoiceRoomRosterView.speaker
+                  ? context.l10n.chatV2_voiceRoomRosterSpeakersEmpty
+                  : context.l10n.chatV2_voiceRoomRosterListenersEmpty,
               message: view == VoiceRoomRosterView.speaker
-                  ? 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。'
-                  : 'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。',
+                  ? context.l10n.chatV2_voiceRoomScreensMessage10
+                  : context.l10n.chatV2_voiceRoomScreensMessage11,
               compact: true,
             ),
             CommunityViewPhase.offline => LoopOfflineState(
               key: ValueKey<String>('voiceroom-roster-$slug-offline'),
-              pausedActions: const <String>['邀请上麦', '移出发言', '静音', '取消静音'],
+              pausedActions: <String>[
+                context.l10n.chatV2_modelsInviteSpeaker,
+                context.l10n.chatV2_modelsRemoveSpeaker,
+                context.l10n.common_mute,
+                context.l10n.common_unmute,
+              ],
               onRetry: onRetry,
             ),
             CommunityViewPhase.permission => LoopPermissionState(
               key: ValueKey<String>('voiceroom-roster-$slug-permission'),
               icon: 'shield',
-              title: '没有权限查看${view.label}名单',
+              title: view == VoiceRoomRosterView.speaker
+                  ? context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomSpeakersPermissionTitle
+                  : context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomListenersPermissionTitle,
               purpose: communityFailureReason(roster.failureKind),
             ),
             CommunityViewPhase.unavailable => LoopInlineUnavailable(
               key: ValueKey<String>('voiceroom-roster-$slug-unavailable'),
-              message: '${view.label}名单当前不可用',
+              message: view == VoiceRoomRosterView.speaker
+                  ? context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomSpeakersUnavailableMessage
+                  : context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomListenersUnavailableMessage,
               detail: communityFailureReason(roster.failureKind),
               maxLines: 2,
               detailMaxLines: 4,
             ),
             CommunityViewPhase.error => LoopErrorState(
               key: ValueKey<String>('voiceroom-roster-$slug-error'),
-              title: '${view.label}名单读不到',
+              title: view == VoiceRoomRosterView.speaker
+                  ? context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomSpeakersErrorTitle
+                  : context
+                        .l10n
+                        .chatV2_voiceRoomStageVoiceroomListenersErrorTitle,
               reason: communityFailureReason(roster.failureKind),
               onRetry: onRetry,
             ),
@@ -1672,10 +1793,13 @@ class _RosterSection extends StatelessWidget {
     // state that means something in it.
     final badge = speaking
         ? (member.muted
-              ? const LoopBadge('已静音', kind: LoopBadgeKind.mute)
+              ? LoopBadge(context.l10n.common_muted, kind: LoopBadgeKind.mute)
               : null)
         : (member.handRaised
-              ? const LoopBadge('已举手', kind: LoopBadgeKind.mining)
+              ? LoopBadge(
+                  context.l10n.chatV2_voiceRoomScreensLoopBadge2,
+                  kind: LoopBadgeKind.mining,
+                )
               : null);
     final name = voiceRoomMemberName(member);
     return LoopRecordRow(
@@ -1688,9 +1812,13 @@ class _RosterSection extends StatelessWidget {
       // badge cannot: the way out of a mute this reader can undo.
       subtitle: speaking
           ? (member.muted
-                ? (canUnmute ? '点这一行可以取消静音' : '主持人已在 LOOP 侧静音')
-                : '可以发言')
-          : (member.handRaised ? '等待主持人邀请发言' : '收听中'),
+                ? (canUnmute
+                      ? context.l10n.chatV2_voiceRoomScreensSubtitle
+                      : context.l10n.chatV2_voiceRoomScreensSubtitle2)
+                : context.l10n.chatV2_voiceRoomScreensSubtitle3)
+          : (member.handRaised
+                ? context.l10n.chatV2_voiceRoomScreensSubtitle4
+                : context.l10n.chatV2_voiceRoomScreensSubtitle5),
       trailingBadge: badge,
       // Exactly the server's commands for this row: a row with none is not
       // tappable, which is what a non-host viewer sees on every row.
@@ -1718,7 +1846,8 @@ Future<VoiceRoomMemberCommand?> chooseVoiceRoomMemberCommand(
 ) {
   return showLoopSheet<VoiceRoomMemberCommand>(
     context,
-    barrierLabel: '关闭成员操作弹层',
+    barrierLabel:
+        context.l10n.chatV2_voiceRoomScreensVoiceroomMemberSheetBarrierLabel,
     builder: (sheetContext) => Column(
       key: const ValueKey<String>('voiceroom-member-sheet'),
       mainAxisSize: MainAxisSize.min,
@@ -1732,7 +1861,9 @@ Future<VoiceRoomMemberCommand?> chooseVoiceRoomMemberCommand(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。',
+                context
+                    .l10n
+                    .chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand,
                 // R19 sheet support copy in text2 (decision 0191 L1).
                 style: LoopType.bodySm,
               ),
@@ -1751,7 +1882,7 @@ Future<VoiceRoomMemberCommand?> chooseVoiceRoomMemberCommand(
                 ),
               LoopButton(
                 key: const ValueKey<String>('voiceroom-member-command-cancel'),
-                label: '取消',
+                label: context.l10n.common_cancel,
                 block: true,
                 onPressed: () => Navigator.of(sheetContext).pop(),
               ),
@@ -1777,11 +1908,13 @@ class _HandRaiseQueue extends StatelessWidget {
     if (!viewer.isHost) {
       final own = viewer.handRaise;
       if (own == null || !own.isPending) {
-        return const LoopEmptyState(
+        return LoopEmptyState(
           key: ValueKey<String>('voiceroom-queue-self-only'),
           illustration: LoopIllustration.members,
-          title: '你还没有举手',
-          message: '完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。',
+          title:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyTitle,
+          message:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomQueueSelfOnlyMessage,
           compact: true,
         );
       }
@@ -1789,9 +1922,12 @@ class _HandRaiseQueue extends StatelessWidget {
         rows: <LoopRecordRow>[
           LoopRecordRow(
             key: const ValueKey<String>('voiceroom-queue-self'),
-            leading: const LoopInitialsAvatar(label: '我'),
-            title: '我',
-            subtitle: '第 ${own.sequence} 位 · 等待邀请',
+            leading: LoopInitialsAvatar(label: context.l10n.common_me),
+            title: context.l10n.common_me,
+            subtitle: context.l10n
+                .chatV2_voiceRoomScreensVoiceroomQueueSelfSubtitle(
+                  own.sequence,
+                ),
             trailingBadge: LoopBadge(own.sequence, kind: LoopBadgeKind.mining),
             position: LoopRowPosition.single,
           ),
@@ -1800,11 +1936,11 @@ class _HandRaiseQueue extends StatelessWidget {
     }
     final entries = state.handRaises;
     if (entries.isEmpty) {
-      return const LoopEmptyState(
+      return LoopEmptyState(
         key: ValueKey<String>('voiceroom-queue-empty'),
         illustration: LoopIllustration.members,
-        title: '举手队列为空',
-        message: '没有成员在排队。有人举手后会按顺序列在这里。',
+        title: context.l10n.chatV2_voiceRoomScreensVoiceroomQueueEmptyTitle,
+        message: context.l10n.chatV2_voiceRoomScreensVoiceroomQueueEmptyMessage,
         compact: true,
       );
     }
@@ -1826,9 +1962,12 @@ class _HandRaiseQueue extends StatelessWidget {
               isSelf: entries[index].isSelf,
             ),
             // `#scr-voiceroom-full` 的队列行：序号在前，状态在后.
-            subtitle:
-                '第 ${entries[index].handRaise.sequence} 位 · '
-                '${entries[index].handRaise.isPending ? '等待邀请' : '已邀请'}',
+            subtitle: context.l10n.chatV2_voiceRoomScreensSubtitle6(
+              entries[index].handRaise.sequence,
+              entries[index].handRaise.isPending
+                  ? context.l10n.chatV2_voiceRoomQueueWaiting
+                  : context.l10n.chatV2_voiceRoomQueueInvited,
+            ),
             trailingBadge: LoopBadge(
               entries[index].handRaise.sequence,
               kind: entries[index].handRaise.isPending
@@ -1875,11 +2014,13 @@ class _HostControls extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (snapshot.viewer.canInviteSpeakers && pending.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('voiceroom-invite-empty'),
             illustration: LoopIllustration.members,
-            title: '没有待邀请的举手',
-            message: '有人举手后会按顺序列在这里。',
+            title:
+                context.l10n.chatV2_voiceRoomScreensVoiceroomInviteEmptyTitle,
+            message:
+                context.l10n.chatV2_voiceRoomScreensVoiceroomInviteEmptyMessage,
             compact: true,
           )
         else if (pending.isNotEmpty)
@@ -1894,7 +2035,7 @@ class _HostControls extends StatelessWidget {
                     pending[index].name,
                     isSelf: pending[index].isSelf,
                   ),
-                  subtitle: '邀请其发言',
+                  subtitle: context.l10n.chatV2_voiceRoomScreensSubtitle7,
                   position: index == 0
                       ? LoopRowPosition.first
                       : index == pending.length - 1
@@ -1919,7 +2060,8 @@ class _HostControls extends StatelessWidget {
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('voiceroom-mute-all'),
-                label: '全体静音',
+                label:
+                    context.l10n.chatV2_voiceRoomScreensVoiceroomMuteAllLabel,
                 icon: 'voice-off',
                 onPressed: busy ? null : () => unawaited(onMuteAll()),
               ),
@@ -1970,13 +2112,14 @@ class _ViewerActions extends StatelessWidget {
         showMessage: true,
         key: const ValueKey<String>('voiceroom-ended'),
         illustration: LoopIllustration.voiceRoom,
-        title: '房间已结束',
-        message: '主持人已经结束这个语音房。',
+        title: context.l10n.chatV2_voiceRoomScreensRun5,
+        message: context.l10n.chatV2_voiceRoomScreensVoiceroomEndedMessage,
         action: onBack == null
             ? null
             : LoopButton(
                 key: const ValueKey<String>('voiceroom-ended-back'),
-                label: '返回社区',
+                label:
+                    context.l10n.chatV2_voiceRoomScreensVoiceroomEndedBackLabel,
                 onPressed: onBack,
               ),
         compact: true,
@@ -1987,10 +2130,12 @@ class _ViewerActions extends StatelessWidget {
       // refusal is stated: a disabled button with no sentence beside it is
       // read as a tap that did nothing.
       if (!snapshot.room.isJoinable) {
-        return const LoopInlineUnavailable(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-not-joinable'),
-          message: '这个房间还不能加入',
-          detail: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+          message:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomNotJoinableMessage,
+          detail:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomNotJoinableDetail,
           maxLines: 2,
           detailMaxLines: 4,
         );
@@ -1999,7 +2144,9 @@ class _ViewerActions extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
         child: LoopButton(
           key: const ValueKey<String>('voiceroom-join'),
-          label: state.busy ? '正在加入…' : '加入语音房',
+          label: state.busy
+              ? context.l10n.common_joining
+              : context.l10n.chatV2_voiceRoomScreensVoiceroomJoinLabel,
           block: true,
           primary: true,
           icon: 'voice',
@@ -2013,10 +2160,12 @@ class _ViewerActions extends StatelessWidget {
       // prototype's control bar is 结束房间. Two paragraphs used to stand
       // here saying that the button the host was looking for did not exist.
       if (!viewer.canEndRoom) {
-        return const LoopInlineUnavailable(
+        return LoopInlineUnavailable(
           key: ValueKey<String>('voiceroom-host-no-leave'),
-          message: '现在不能结束房间',
-          detail: '「结束房间」这次读不到，请稍后再试。返回会把房间收起在顶部。',
+          message:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomHostNoLeaveMessage,
+          detail:
+              context.l10n.chatV2_voiceRoomScreensVoiceroomHostNoLeaveDetail,
           maxLines: 2,
           detailMaxLines: 4,
         );
@@ -2025,7 +2174,7 @@ class _ViewerActions extends StatelessWidget {
         children: <Widget>[
           LoopButton(
             key: const ValueKey<String>('voiceroom-end'),
-            label: '结束房间',
+            label: context.l10n.chatV2_voiceRoomScreensConfirmLabel2,
             icon: 'warn',
             onPressed: busy ? null : () => unawaited(onEnd()),
           ),
@@ -2044,10 +2193,14 @@ class _ViewerActions extends StatelessWidget {
           // `DELETE /v2/voice-rooms/{id}/speakers/{profile}` refuses the
           // caller's own account, so LOOP has no self-demotion command to
           // offer. The fact is stated instead of a button that would fail.
-          const LoopInlineUnavailable(
+          LoopInlineUnavailable(
             key: ValueKey<String>('voiceroom-step-down-unavailable'),
-            message: '自助下麦当前不可用',
-            detail: '后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。',
+            message: context
+                .l10n
+                .chatV2_voiceRoomScreensVoiceroomStepDownUnavailableMessage,
+            detail: context
+                .l10n
+                .chatV2_voiceRoomScreensVoiceroomStepDownUnavailableDetail,
             maxLines: 2,
             detailMaxLines: 4,
           ),
@@ -2058,7 +2211,9 @@ class _ViewerActions extends StatelessWidget {
                 key: ValueKey<String>(
                   raised ? 'voiceroom-cancel-hand' : 'voiceroom-raise-hand',
                 ),
-                label: raised ? '取消举手' : '举手',
+                label: raised
+                    ? context.l10n.chatV2_voiceRoomScreensLabel
+                    : context.l10n.chatV2_voiceRoomScreensLabel2,
                 icon: 'hand',
                 onPressed: busy
                     ? null
@@ -2066,7 +2221,7 @@ class _ViewerActions extends StatelessWidget {
               ),
             LoopButton(
               key: const ValueKey<String>('voiceroom-leave'),
-              label: '离开',
+              label: context.l10n.chatV2_voiceRoomScreensConfirmLabel,
               onPressed: busy ? null : () => unawaited(onLeave()),
             ),
           ],
@@ -2118,7 +2273,8 @@ String voiceRoomBannerLabel({
 /// reader could not tell a call that stands from one that stopped. The name
 /// is the part a reader can do without, so it is the part that truncates,
 /// and it sits alone on the first line.
-String voiceRoomBannerTitle(String communityName) => '正在语音房 · $communityName';
+String voiceRoomBannerTitle(String communityName) => LoopL10n.current
+    .chat_streamInboxChatVoiceRoomReturnEntryTitle(communityName);
 
 /// The half that is never given up: what part this account plays, and what
 /// the call is doing or how many are in it.
@@ -2138,13 +2294,21 @@ String voiceRoomBannerStatus({
     // Connected without a count yet: the strip says the connection stands and
     // that the number is still coming, never 0.
     AudioRoomLivePhase.connected =>
-      count == null ? '$part · 人数正在统计' : '$part · $count 人在通话',
-    AudioRoomLivePhase.connecting => '$part · 正在连接语音',
-    AudioRoomLivePhase.reconnecting => '$part · 语音正在重连',
-    AudioRoomLivePhase.disconnected => '$part · 语音已断开',
+      count == null
+          ? LoopL10n.current.chatV2_voiceRoomScreensSwitch6(part)
+          : LoopL10n.current.chatV2_voiceRoomScreensS3(count, part),
+    AudioRoomLivePhase.connecting =>
+      LoopL10n.current.chatV2_voiceRoomScreensConnecting(part),
+    AudioRoomLivePhase.reconnecting =>
+      LoopL10n.current.chatV2_voiceRoomScreensReconnecting(part),
+    AudioRoomLivePhase.disconnected =>
+      LoopL10n.current.chatV2_voiceRoomScreensDisconnected(part),
     // No call of this device's own: the only figure there is counts
     // memberships, not connections, and it is named for that.
-    AudioRoomLivePhase.idle => count == null ? part : '$part · $count 人已加入',
+    AudioRoomLivePhase.idle =>
+      count == null
+          ? part
+          : LoopL10n.current.chatV2_voiceRoomScreensPart(count, part),
   };
 }
 
@@ -2245,7 +2409,7 @@ class _VoiceRoomMinimizedBannerState
       if (next == null || next == previous) return;
       LoopToast.show(
         context,
-        message: '房间已结束 · 主持人已经结束这个语音房',
+        message: context.l10n.chatV2_voiceRoomScreensMessage5,
         kind: LoopToastKind.warn,
         clearsTabBar: _clearsTabBar(context),
       );
@@ -2339,7 +2503,8 @@ class _VoiceRoomMinimizedBannerState
                       if (canLeave && !_confirmingExit)
                         _BannerAction(
                           key: const ValueKey<String>('voiceroom-banner-leave'),
-                          label: '离开',
+                          label:
+                              context.l10n.chatV2_voiceRoomScreensConfirmLabel,
                           onPressed: () =>
                               setState(() => _confirmingExit = true),
                         ),
@@ -2348,8 +2513,12 @@ class _VoiceRoomMinimizedBannerState
                         // A stopped call is put back by going into the room,
                         // which connects again on its own.
                         label: phase == AudioRoomLivePhase.disconnected
-                            ? '重新连接'
-                            : '返回房间',
+                            ? context
+                                  .l10n
+                                  .chatV2_voiceRoomScreensVoiceroomBannerOpenLabel
+                            : context
+                                  .l10n
+                                  .chatV2_voiceRoomScreensVoiceroomBannerOpenLabel2,
                         onPressed: _leaving
                             ? null
                             : () => widget.onOpen(session.communityId),
@@ -2369,7 +2538,7 @@ class _VoiceRoomMinimizedBannerState
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        '离开后你会退出这次通话，举手也会一并取消。',
+                        context.l10n.chatV2_voiceRoomScreensText,
                         maxLines: 2,
                         style: LoopType.caption.copyWith(
                           color: LoopColors.chalk,
@@ -2381,7 +2550,7 @@ class _VoiceRoomMinimizedBannerState
                       key: const ValueKey<String>(
                         'voiceroom-banner-leave-cancel',
                       ),
-                      label: '取消',
+                      label: context.l10n.common_cancel,
                       onPressed: _leaving
                           ? null
                           : () => setState(() => _confirmingExit = false),
@@ -2390,7 +2559,13 @@ class _VoiceRoomMinimizedBannerState
                       key: const ValueKey<String>(
                         'voiceroom-banner-leave-confirm',
                       ),
-                      label: _leaving ? '正在离开…' : '确认离开',
+                      label: _leaving
+                          ? context
+                                .l10n
+                                .chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel
+                          : context
+                                .l10n
+                                .chatV2_voiceRoomScreensVoiceroomBannerLeaveConfirmLabel2,
                       onPressed: _leaving
                           ? null
                           : () => unawaited(_leave(session)),
@@ -2462,7 +2637,7 @@ class _VoiceRoomMinimizedBannerState
       ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
       LoopToast.show(
         context,
-        message: '房间已结束 · 主持人已经结束这个语音房',
+        message: LoopL10n.current.chatV2_voiceRoomScreensMessage5,
         kind: LoopToastKind.warn,
         clearsTabBar: _clearsTabBar(context),
       );
@@ -2477,7 +2652,9 @@ class _VoiceRoomMinimizedBannerState
     }
     LoopToast.show(
       context,
-      message: disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+      message: disconnected
+          ? LoopL10n.current.chatV2_voiceRoomScreensMessage6
+          : LoopL10n.current.chatV2_voiceRoomScreensMessage7,
       clearsTabBar: _clearsTabBar(context),
     );
   }
@@ -2592,14 +2769,17 @@ String voiceRoomHeading(
 }) {
   if (snapshot == null) {
     return switch (phase) {
-      CommunityViewPhase.loading => '正在读取语音房',
-      CommunityViewPhase.empty => '当前没有语音房',
-      _ => '语音房状态读不到',
+      CommunityViewPhase.loading =>
+        LoopL10n.current.chatCalls_streamVoiceRoomTitle10,
+      CommunityViewPhase.empty => LoopL10n.current.chatV2_voiceRoomScreensEmpty,
+      _ => LoopL10n.current.chatV2_voiceRoomScreensSwitch7,
     };
   }
-  if (!snapshot.room.isLive) return '已结束';
+  if (!snapshot.room.isLive) return LoopL10n.current.common_ended;
   final headcount = VoiceRoomHeadcount.of(snapshot);
-  return expanded ? '${headcount.speaking} 人在麦上' : '${headcount.inRoom} 人在房间里';
+  return expanded
+      ? LoopL10n.current.chatV2_voiceRoomScreensSwitch8(headcount.speaking)
+      : LoopL10n.current.chatV2_voiceRoomScreensS4(headcount.inRoom);
 }
 
 /// The `.folio-caption`, which answers the same question as the heading.
@@ -2609,17 +2789,23 @@ String voiceRoomCaption(
 }) {
   if (snapshot == null) {
     return switch (phase) {
-      CommunityViewPhase.loading => '正在读取这个社区的语音房。',
-      CommunityViewPhase.empty => '这个社区现在没有进行中的语音房。',
-      _ => '这次没有读到语音房的状态，下面可以重试。',
+      CommunityViewPhase.loading =>
+        LoopL10n.current.chatV2_voiceRoomScreensLoading2,
+      CommunityViewPhase.empty =>
+        LoopL10n.current.chatV2_voiceRoomScreensEmpty2,
+      _ => LoopL10n.current.chatV2_voiceRoomScreensSwitch9,
     };
   }
-  if (!snapshot.room.isLive) return '主持人已经结束这个语音房。';
+  if (!snapshot.room.isLive) {
+    return LoopL10n.current.chatV2_voiceRoomScreensVoiceroomEndedMessage;
+  }
   // 「返回不等于离开」 was a whole notice at the foot of the page, and the
   // host's copy of it a second one. It is one line, and it belongs where the
   // reader looks first.
-  if (snapshot.viewer.hasJoined) return '返回会把房间收起在顶部，随时点开回来。';
-  return '进入前确认主持人、在线人数与录音说明。';
+  if (snapshot.viewer.hasJoined) {
+    return LoopL10n.current.chatV2_voiceRoomScreensSwitch10;
+  }
+  return LoopL10n.current.chatV2_voiceRoomScreensSwitch11;
 }
 
 /// The `.folio-stamp`: `13 LIVE` on the lobby, `ON AIR` on the session page.
@@ -2627,7 +2813,7 @@ String? voiceRoomStamp(VoiceRoomSnapshot? snapshot, {bool expanded = false}) {
   if (snapshot == null) return null;
   // 「ENDED」 was the one bare English word on the page that stood for a state
   // rather than for a section's name (walkthrough 2026-09-23 · 已结束态).
-  if (!snapshot.room.isLive) return '已结束';
+  if (!snapshot.room.isLive) return LoopL10n.current.common_ended;
   if (expanded) return 'ON AIR';
   return '${VoiceRoomHeadcount.of(snapshot).inRoom} LIVE';
 }
@@ -2638,9 +2824,12 @@ String? voiceRoomStamp(VoiceRoomSnapshot? snapshot, {bool expanded = false}) {
 /// Both figures count the host the same way the hero does.
 String? voiceRoomTopbarLine(VoiceRoomSnapshot? snapshot) {
   if (snapshot == null) return null;
-  if (!snapshot.room.isLive) return '已结束';
+  if (!snapshot.room.isLive) return LoopL10n.current.common_ended;
   final headcount = VoiceRoomHeadcount.of(snapshot);
-  return '进行中 · 发言 ${headcount.speaking} · 听众 ${headcount.listening}';
+  return LoopL10n.current.chatV2_voiceRoomScreensVoiceRoomTopbarLine(
+    headcount.listening,
+    headcount.speaking,
+  );
 }
 
 /// 「N 在听 · 开播 x 分钟」 (decision 0127): everybody in the room and how
@@ -2649,4 +2838,7 @@ String voiceRoomLiveLine({
   required int inRoom,
   required DateTime openedAt,
   required DateTime now,
-}) => '$inRoom 在听 · ${liveVoiceRoomElapsedLabel(openedAt, now)}';
+}) => LoopL10n.current.chatV2_voiceRoomScreensVoiceRoomLiveLine(
+  inRoom,
+  liveVoiceRoomElapsedLabel(openedAt, now),
+);
