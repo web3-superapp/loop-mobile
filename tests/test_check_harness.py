@@ -72,12 +72,23 @@ V2_SESSION_FIXTURE_FILES = (
 )
 
 
+def copy_arb_tables(root: Path) -> None:
+    """Decision 0281: copy a rule requires now reads through ARB keys, so a
+    fixture that carries the pages carries the ARB files too."""
+
+    for name in ("app_zh.arb", "app_en.arb"):
+        target = root / "lib/l10n" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((REPOSITORY_ROOT / "lib/l10n" / name).read_bytes())
+
+
 def write_v2_navigation_fixture(root: Path) -> None:
     for relative in V2_NAVIGATION_FIXTURE_FILES:
         source = REPOSITORY_ROOT / relative
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    copy_arb_tables(root)
 
 
 def write_v2_session_fixture(root: Path) -> None:
@@ -175,6 +186,8 @@ REOWN_IDENTITY_FIXTURE_FILES = (
 
 FRIEND_FRONTEND_FIXTURE_FILES = (
     "README.md",
+    "lib/features/profile/me_attention.dart",
+    "lib/features/profile/profile_destinations.dart",
     "docs/product-decisions.md",
     "docs/product/implementation-constraints.md",
     "docs/harness/adoption-report.md",
@@ -255,6 +268,7 @@ def write_chat_camera_fixture(root: Path) -> None:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
+    copy_arb_tables(root)
 
 
 def write_reown_identity_fixture(root: Path) -> None:
@@ -271,6 +285,7 @@ def write_friend_frontend_fixture(root: Path) -> None:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
+    copy_arb_tables(root)
 
 
 CHAT_TOKEN_CARD_FIXTURE_FILES = (
@@ -287,6 +302,9 @@ CHAT_TOKEN_CARD_FIXTURE_FILES = (
     "lib/features/market/market_read_models.dart",
     "lib/integrations/backend/v2/market/loop_v2_market_api.dart",
     "test/s52_chat_token_card_test.dart",
+    # Decision 0281: the composer hint is ARB copy.
+    "lib/l10n/app_zh.arb",
+    "lib/l10n/app_en.arb",
 )
 
 
@@ -1326,10 +1344,10 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "_LoopDestination('广场', '/square', 'compass'),\n"
-                "    _LoopDestination('MEME', '/meme', 'launch'),",
-                "_LoopDestination('MEME', '/meme', 'launch'),\n"
-                "    _LoopDestination('广场', '/square', 'compass'),",
+                "_LoopDestination('/square', 'compass'),\n"
+                "    _LoopDestination('/meme', 'launch'),",
+                "_LoopDestination('/meme', 'launch'),\n"
+                "    _LoopDestination('/square', 'compass'),",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -1370,8 +1388,8 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "'聊天', '/chat'",
-                    "'Home', '/home'",
+                    "_LoopDestination(chatPath, 'chat'),",
+                    "_LoopDestination('/home', 'Home'),",
                     1,
                 ),
                 encoding="utf-8",
@@ -1860,19 +1878,19 @@ class HarnessTests(unittest.TestCase):
                 ),
                 "siweConfig: null": "siweConfig: unsafeSiweConfig",
                 "email: false": "email: true",
-                "socials: const <AppKitSocialOption>[]": (
-                    "socials: const <AppKitSocialOption>[AppKitSocialOption.google]"
+                "socials: <AppKitSocialOption>[]": (
+                    "socials: <AppKitSocialOption>[AppKitSocialOption.google]"
                 ),
                 "enableAnalytics: false": "enableAnalytics: true",
                 "linkMode: false": "linkMode: true",
-                "methods: const <String>['personal_sign']": (
-                    "methods: const <String>['personal_sign', 'eth_sendTransaction']"
+                "methods: <String>['personal_sign']": (
+                    "methods: <String>['personal_sign', 'eth_sendTransaction']"
                 ),
                 "method: 'personal_sign'": "method: 'eth_sendTransaction'",
                 (
                     "a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393"
                 ): "0" * 64,
-                "        _phantomWalletId,\n": "",
+                "    _phantomWalletId,\n": "",
             }
             for old, new in replacements.items():
                 self.assertIn(old, source)
@@ -1884,7 +1902,7 @@ class HarnessTests(unittest.TestCase):
         for marker in (
             "siweConfig: null",
             "email: false",
-            "socials: const <AppKitSocialOption>[]",
+            "socials: <AppKitSocialOption>[]",
             "enableAnalytics: false",
             "linkMode: false",
             "exactly `personal_sign`",
@@ -3273,9 +3291,11 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
+                # Decision 0281: the notice is an ARB key; write the claim in
+                # its place.
                 source.replace(
-                    "Marked accepted in 开发预览 and removed locally. No Stream conversation was created.",
-                    "Request accepted. You can now reply to onchain.mia.",
+                    "? LoopL10n.current.chat_secondaryPagesShowRequestNotice\n",
+                    "? 'Request accepted. You can now reply to onchain.mia.'\n",
                     1,
                 ),
                 encoding="utf-8",
@@ -3297,8 +3317,8 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "Removed from 开发预览. No report was submitted.",
-                    "Report submitted and request removed.",
+                    "LoopL10n.current.chat_secondaryPagesShowRequestNotice2,",
+                    "'Report submitted and request removed.',",
                     1,
                 ),
                 encoding="utf-8",
@@ -4085,6 +4105,7 @@ class HarnessTests(unittest.TestCase):
         "lib/features/community/community_logo.dart",
         "assets/communities/loop-community-atlas.webp",
         *check_harness.COMMUNITY_LOGO_CALL_SITES,
+        check_harness.COMMUNITY_LOGO_FORWARD_PATH,
         "test/community_logo_test.dart",
     )
 
@@ -5014,7 +5035,9 @@ class HarnessTests(unittest.TestCase):
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace("没有嵌入式钱包", "Daily wallet", 1),
+                # Decision 0281 moved the page copy to ARB; plant the
+                # fixture identity as a literal.
+                source + "\nconst _fixtureWallet = 'Daily wallet';\n",
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_identity_readiness_contract(root)
@@ -5343,8 +5366,8 @@ class HarnessTests(unittest.TestCase):
                 # §A.13): the guard fires on a badge under it, which is what a
                 # restored step row would look like.
                 source.replace(
-                    "        const LoopLabel('\u6b65\u9aa4'),",
-                    "        const LoopLabel('\u6b65\u9aa4'),"
+                    "        LoopLabel(context.l10n.wallet_deferredScreensLoopLabel),",
+                    "        LoopLabel(context.l10n.wallet_deferredScreensLoopLabel),"
                     "LoopBadge('\u7b49\u5f85'),",
                 ),
                 encoding="utf-8",
@@ -5853,7 +5876,7 @@ class HarnessTests(unittest.TestCase):
                     target = root / "lib/features/launch/launch_screen.dart"
                     target.write_text(
                         target.read_text(encoding="utf-8").replace(
-                            "kicker: '发射台',",
+                            "kicker: context.l10n.common_launchpad,",
                             f"kicker: '{retired}',",
                             1,
                         ),
@@ -6950,7 +6973,11 @@ class HarnessTests(unittest.TestCase):
             # decision 0067 the channel has two states, so the sentence is
             # conditional — but when the server does say it is unavailable,
             # this is still the page's only way of passing that on.
-            ("推送尚不可用", "推送已就绪"),
+            # Decision 0281: 「推送尚不可用」 is ARB copy read by key.
+            (
+                "profileNotificationPreferences_screenNotificationPushUnavailableLabel",
+                "common_close",
+            ),
         )
         for original, replacement in mutations:
             with self.subTest(mutation=original):
@@ -6958,6 +6985,10 @@ class HarnessTests(unittest.TestCase):
                     root = Path(temporary)
                     surface = root / relative
                     surface.parent.mkdir(parents=True)
+                    for name in ("app_zh.arb", "app_en.arb"):
+                        arb = root / "lib/l10n" / name
+                        arb.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy(REPOSITORY_ROOT / "lib/l10n" / name, arb)
                     self.assertIn(original, source)
                     surface.write_text(
                         source.replace(original, replacement, 1),
@@ -8481,12 +8512,16 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("const walletAutomaticRecoveryEvidence =")
-            end = source.index(";", start)
+            # Decision 0281: the sentence is an ARB key; point the getter at a
+            # key whose zh does not name Privy.
+            for name in ("app_zh.arb", "app_en.arb"):
+                arb = root / "lib/l10n" / name
+                arb.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(REPOSITORY_ROOT / "lib/l10n" / name, arb)
+            reviewed = "LoopL10n.current.account_screensWalletAutomaticRecoveryEvidence;"
+            self.assertIn(reviewed, source)
             path.write_text(
-                source[:start]
-                + "const walletAutomaticRecoveryEvidence = '换设备后还能拿回来'"
-                + source[end:],
+                source.replace(reviewed, "LoopL10n.current.common_close;", 1),
                 encoding="utf-8",
             )
 
@@ -8527,14 +8562,14 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            # Decision 0281 moved the step copy to ARB; the claim is written
+            # into the reviewed slice itself.
+            start = source.index("class SecuritySetupScreen")
+            brace = source.index("{", start)
             path.write_text(
-                source.replace(
-                    # Decision 0121 moved the fallback line into a constant
-                    # outside the class; the step copy is inside it.
-                    "应用锁由这台设备把关，交易验证由登录服务决定。",
-                    "Fallback protection stored by the app",
-                    1,
-                ),
+                source[: brace + 1]
+                + "\n  static const _claim = 'Fallback protection stored by the app';"
+                + source[brace + 1 :],
                 encoding="utf-8",
             )
 
@@ -8581,8 +8616,8 @@ class HarnessTests(unittest.TestCase):
                 # reads the whole Security Center slice, so the claim is
                 # planted on the page title instead.
                 source.replace(
-                    "title: '安全中心',",
-                    "title: '安全中心',\n        subtitle: 'Core protections ready',",
+                    "title: context.l10n.common_securityCenter,",
+                    "title: context.l10n.common_securityCenter,\n        subtitle: 'Core protections ready',",
                     1,
                 ),
                 encoding="utf-8",
@@ -8606,8 +8641,8 @@ class HarnessTests(unittest.TestCase):
                 # S278 · decision 0236: the deferred badge sits beside the
                 # row's (i) now.
                 source.replace(
-                    "trailing: const LoopBadge(_securityMethodDeferredLabel),",
-                    "trailing: const LoopBadge('\u5df2\u5f00\u542f'),",
+                    "trailing: LoopBadge(_securityMethodDeferredLabel),",
+                    "trailing: LoopBadge('\u5df2\u5f00\u542f'),",
                     1,
                 ),
                 encoding="utf-8",
@@ -8909,9 +8944,11 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
+                # Decision 0281 made `settings-language` the language picker;
+                # the theme stays a fixed value.
                 source.replace(
-                    "key: const ValueKey<String>('settings-language'),",
-                    "key: const ValueKey<String>('settings-language'),\n"
+                    "key: const ValueKey<String>('settings-theme'),",
+                    "key: const ValueKey<String>('settings-theme'),\n"
                     "                onTap: () {},",
                     1,
                 ),
@@ -8920,7 +8957,7 @@ class HarnessTests(unittest.TestCase):
 
             result = check_harness.check_local_display_preferences_contract(root)
 
-        self.assertIn("H12 `settings-language` must remain read-only", result)
+        self.assertIn("H12 `settings-theme` must remain read-only", result)
 
     def test_general_settings_cannot_restore_the_data_usage_row(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -8931,7 +8968,7 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "title: '\u4e3b\u9898',",
+                    "title: context.l10n.profileSettings_theme,",
                     "title: '\u6570\u636e\u7528\u91cf',",
                     1,
                 ),
@@ -9020,8 +9057,8 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
-                    "LoopDioFactory.createCredentialFreePublic(origin: endpoint.uri)",
+                    "LoopDioFactory.createLoopBackend(\n    origin: endpoint.uri,",
+                    "LoopDioFactory.createCredentialFreePublic(\n    origin: endpoint.uri,",
                 ),
                 encoding="utf-8",
             )
@@ -9258,7 +9295,9 @@ class HarnessTests(unittest.TestCase):
 class ChatTokenCardContractTests(unittest.TestCase):
     """S52 · the probe that watches the card a pasted address opens."""
 
-    def _mutate(self, relative: str, old: str, new: str) -> list[str]:
+    def _mutate(
+        self, relative: str, old: str, new: str, count: int = 1
+    ) -> list[str]:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             write_chat_token_card_fixture(root)
@@ -9267,7 +9306,7 @@ class ChatTokenCardContractTests(unittest.TestCase):
             self.assertIn(
                 old, source, msg=f"{relative} no longer contains the anchor"
             )
-            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+            path.write_text(source.replace(old, new, count), encoding="utf-8")
             return check_harness.check_chat_token_card_contract(root)
 
     def test_the_reviewed_slice_passes(self) -> None:
@@ -9343,8 +9382,10 @@ class ChatTokenCardContractTests(unittest.TestCase):
     def test_a_pressable_buy_action_is_rejected(self) -> None:
         result = self._mutate(
             "lib/features/chat/token_card/chat_token_card.dart",
-            "const LoopTokenCardAction('\u4e70\u5165', buy: true)",
-            "LoopTokenCardAction('\u4e70\u5165', buy: true, onTap: () {})",
+            "LoopTokenCardAction(context.l10n.common_buy, buy: true)",
+            "LoopTokenCardAction(context.l10n.common_buy, buy: true, onTap: () {})",
+            # Both the full card and the compact one carry the action.
+            count=-1,
         )
 
         self.assertTrue(
@@ -9378,7 +9419,8 @@ class ChatTokenCardContractTests(unittest.TestCase):
 
     def test_a_composer_that_promises_an_assistant_is_rejected(self) -> None:
         result = self._mutate(
-            "lib/features/chat/v2/loop_stream_channel_surface.dart",
+            # Decision 0281: the hint's zh lives in ARB.
+            "lib/l10n/app_zh.arb",
             "\u53d1\u6d88\u606f \u00b7 \u8d34\u5408\u7ea6\u5730\u5740\u8bc6\u522b\u4ee3\u5e01",
             "\u53d1\u6d88\u606f \u00b7 @AI \u63d0\u95ee",
         )
@@ -9875,8 +9917,10 @@ class IaCleanupContractTests(unittest.TestCase):
             relative = "lib/features/profile/settings/settings_screen.dart"
             source = self._copy(root, relative)
             mutated = source.replace(
-                "trailing: '深色',\n                readOnly: true,",
-                "trailing: '深色',\n                onTap: () {},",
+                "trailing: context.l10n.profileSettings_themeDark,\n"
+                "                readOnly: true,",
+                "trailing: context.l10n.profileSettings_themeDark,\n"
+                "                onTap: () {},",
             )
             self.assertNotEqual(source, mutated)
             self._write(root, relative, mutated)

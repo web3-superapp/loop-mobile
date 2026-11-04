@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 
+import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 
@@ -109,6 +110,7 @@ LoopSparklinePainter _painter(WidgetTester tester) =>
         as LoopSparklinePainter;
 
 void main() {
+  loopWatchGround();
   group('codec · optional sparkline24h (decision 0247)', () {
     test('a numeric array of 2–24 points is the series, oldest first', () {
       final row = _decodeOne(<Object?>[1, 1.5, '2.25', 0.000001]);

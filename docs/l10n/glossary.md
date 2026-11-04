@@ -54,7 +54,7 @@
 | 陌生人请求 | Message requests | |
 | 置顶 | Pinned | 动作：Pin / Unpin |
 | 观点 | Opinion | |
-| 讨论 | Discussions | |
+| 讨论 | Discuss | 2026-11-04 按 ARB 改（原写 Discussions） |
 | 关注 / 已关注 | Follow / Following | |
 | 粉丝 | Followers | |
 | 加入 / 已加入 | Join / Joined | |
@@ -102,10 +102,12 @@
 | 全网总算力 | Network power | |
 | 我的算力 | My power | |
 | 名次 / 第 N 名 | Rank #N | `Rank #{rank}` |
-| 领奖台 | Podium | 稿 |
+| 前三名（领奖台） | Podium | 稿；ARB 中文写「前三名」 |
 | 排行榜 | Leaderboard | 稿 |
 | 快照 | Snapshot | 「快照区块」Snapshot block |
-| 实时更新 | Live | |
+| 实时（K 线 / 氛围层） | Live | launch2 |
+| 直播中（语音房） | Live | square、community |
+| 发射中（Launch 状态） | Live | launch |
 | 产生算力 | Earns power | 行内标签 |
 | 行情 | Market | 稿：Market Tabs |
 | 邀请中心 | Invite Center | 专名 |
@@ -139,7 +141,7 @@
 | 网络 | Network | |
 | 管理 / 钱包管理 | Manage / Wallet management | |
 | 内测反馈 / 意见反馈 | Beta feedback / Feedback | |
-| 大额验证 | Large-amount verification | |
+| 大额交易二次验证 | Large-amount verification | securityStepUp；阈值「大额交易验证金额」= Large-amount verification threshold |
 | 二次验证 | Two-step verification | |
 | 应用锁 | App lock | |
 | 减少动效 | Reduce motion | |
@@ -148,7 +150,7 @@
 | 安全中心 / 隐私中心 | Security Center / Privacy Center | 专名 |
 | 签名 / 待签名 | Sign / Awaiting signature | |
 | 已广播 / 已确认 / 已回滚 | Broadcast / Confirmed / Reverted | |
-| 提交状态未知 | Submission status unknown | |
+| 提交结果未知 | Submission status unknown | 资金页 submissionUnknown |
 | 演示数据 / 开发预览 | Demo data / Development preview | |
 
 ### 通用
@@ -232,7 +234,7 @@
 | Type or paste CA | 发消息 · 贴合约地址识别代币 | chatV2 输入框提示 |
 | Following / Communities（计数） | 关注 / 社区 | socialPublicProfile |
 | Mcap {cap}（市值紧凑行，独立 key） | 市值 {cap} | square `square_feedViewMarketCapCompact` |
-| Tax {bps} / {bps} + dyn. tax（外盘面板税率） | 外盘税 {bps} / 外盘税 {bps} + 卖出动态税 | launch2 `launch2_poolPanelTax`、`launch2_launch2PoolViewModelTaxLabel`（英文丢了「外盘 / 卖出」，a 批标为待复核） |
+| Tax {bps} / {bps} + dyn. tax（外盘面板税率，面板标题 DEX pool trade） | 外盘税 {bps} / 外盘税 {bps} + 卖出动态税 | launch2 `launch2_poolPanelTax`、`launch2_launch2PoolViewModelTaxLabel`（「卖出」待面板行可收缩后补回） |
 | 24h vol {usd1} | 24h 成交 {usd1} | launch2 |
 
 ## 五、S355 各批新词（2026-11-04 补录）
@@ -503,14 +505,6 @@ S355a–g 与 S357 各批汇报「新词待补」的词，按批次 / feature �
 | QR card | 二维码名片 | socialQr（`socialQr_cardLoopUserQrCard` 等） |
 | Token detected | 自动识别到代币 | chatTokenCard |
 
-### §二 对照表与 ARB 实际用词不一致（只列不改，待主代理定）
+### §二 对照表与 ARB 实际用词（2026-11-04 主代理裁决：以 ARB 为准）
 
-| §二 写法 | ARB 实际 | 涉及 |
-|---|---|---|
-| 讨论 = Discussions | 讨论 = Discuss | 唯一一条 zh 恰为「讨论」的条目 |
-| 领奖台 = Podium | Podium = 前三名 | intel 算力榜 |
-| 实时更新 = Live | Live = 实时 / 直播中 / 发射中 | 多处 |
-| 大额验证 = Large-amount verification | Large-amount verification = 大额交易二次验证 | securityStepUp |
-| 提交状态未知 = Submission status unknown | Submission status unknown = 提交结果未知 | 资金页 submissionUnknown |
-| 外盘 = DEX pool（「外盘税」） | 外盘税 {bps} = Tax {bps}（无 DEX pool） | launch2 面板税率 |
-| 算力 = Power | NFT 算力 = NFT、资产算力 = Assets | miningRewards 表头（已接受的缩写） |
+§二 已按 ARB 改：讨论 = Discuss、Podium = 前三名、Live 按场景三行（实时 / 直播中 / 发射中）、Large-amount verification = 大额交易二次验证、Submission status unknown = 提交结果未知。外盘税例外：面板标题已是「DEX pool trade」，`launch2_poolPanelTax` 保持 `Tax {bps}`；含「卖出动态税」的 `launch2_launch2PoolViewModelTaxLabel` 应补成 `Tax {bps} + sell dyn. tax`，但面板标题行不可收缩，加长后 s168 溢出 74px，S358b 暂保持 `{bps} + dyn. tax`，待 S353b 让该行可收缩后再改。另：NFT 算力 = NFT、资产算力 = Assets 是已接受的表头缩写。

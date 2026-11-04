@@ -3083,8 +3083,10 @@ def check_chat_preview_message_request_contract(root: Path) -> list[str]:
                 "Report submitted and request removed",
                 "New requests from people you do not know will appear here",
             )
+            # Decision 0281: the page's notices are ARB copy.
+            request_copy = L10N_RULES.copy_read(root, request_page, ("zh", "en"))
             for claim in forbidden_claims:
-                if claim in request_page:
+                if claim in request_page or any(claim in v for v in request_copy):
                     errors.append(
                         f"Chat Message Requests cannot claim unsupported provider effect: `{claim}`"
                     )
@@ -4080,7 +4082,11 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 "保存保护设置",
                 "由 App 保存",
             ):
-                if marker in setup:
+                # Decision 0281: the slice's copy is read through ARB keys.
+                if marker in setup or any(
+                    marker in value
+                    for value in L10N_RULES.copy_read(root, setup, ("zh", "en"))
+                ):
                     errors.append(
                         "A11 must not claim providerless protection persistence or save: "
                         + marker
@@ -4246,12 +4252,13 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             errors.append("H5 Security Center must retain one bounded reviewed slice")
         else:
             security = source[start:end]
+            security_copy = L10N_RULES.copy_read(root, security, ("zh", "en"))
             for marker in (
                 "Core protections ready",
                 "Add another protection",
                 "\u9879\u4fdd\u62a4\u5df2\u5f00\u542f",
             ):
-                if marker in security:
+                if marker in security or any(marker in v for v in security_copy):
                     errors.append(
                         "H5 must not infer configured protection from capability "
                         "availability: " + marker
@@ -4278,8 +4285,15 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
         row_end = source.find("class SecurityCenterScreen", row_start + 1)
         if row_start >= 0 and row_end > row_start:
             row = source[row_start:row_end]
+            enabled_words = ("\u5df2\u5f00\u542f", "\u5df2\u542f\u7528", "\u5df2\u8bbe\u7f6e")
+            badge_keys = re.findall(
+                r"LoopBadge\(\s*(?:context\.l10n|LoopL10n\.current)\s*\.\s*(\w+)", row
+            )
             if re.search(
                 r"LoopBadge\(\s*'(?:\u5df2\u5f00\u542f|\u5df2\u542f\u7528|\u5df2\u8bbe\u7f6e)'", row
+            ) or any(
+                L10N_RULES.arb_tables(root)[0].get(key) in enabled_words
+                for key in badge_keys
             ):
                 errors.append(
                     "H5 must not present a capability as an enabled protection"
@@ -4684,7 +4698,10 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
             # The prototype's data-usage figure has no source, so the row is
             # absent rather than filled with an invented number.
             data_usage = "\u6570\u636e\u7528\u91cf"
-            if data_usage in settings.replace('\u6ca1\u6709"' + data_usage + '"', ""):
+            # Decision 0281: a row title read through an ARB key counts too.
+            if L10N_RULES.copy_mentions(
+                root, settings.replace('\u6ca1\u6709"' + data_usage + '"', ""), data_usage
+            ):
                 errors.append("H12 must not restore the sourceless data-usage row")
 
     errors.extend(
@@ -7013,8 +7030,9 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
         # The Preview clipboard flow — and its ban on SelectableText — retired
         # with `wallet_overview_screens.dart`: the receive address is now a
         # server fact bound to the opaque walletId, not a fabricated identity.
+        wallet_copy = L10N_RULES.copy_read(root, source, ("zh", "en"))
         for marker in ("Daily wallet", "Trading wallet", "0x71E4", "0x88C2"):
-            if marker in source:
+            if marker in source or any(marker in v for v in wallet_copy):
                 errors.append(
                     "Mounted Wallet must not mix fixture identities with the "
                     f"server's wallet directory: {marker}"
@@ -7334,9 +7352,16 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                     f"amount or an observed step: {marker}"
                 )
         status_probe_start = bridge_source.find("class BridgeStatusScreen")
-        if (
-            status_probe_start >= 0
-            and "LoopBadge('等待')" in bridge_source[status_probe_start:]
+        status_probe = (
+            bridge_source[status_probe_start:] if status_probe_start >= 0 else ""
+        )
+        # Decision 0281: a badge reads its copy through an ARB key.
+        badge_keys = re.findall(
+            r"LoopBadge\(\s*(?:context\.l10n|LoopL10n\.current)\s*\.\s*(\w+)",
+            status_probe,
+        )
+        if "LoopBadge('等待')" in status_probe or any(
+            L10N_RULES.arb_tables(root)[0].get(key) == "等待" for key in badge_keys
         ):
             errors.append(
                 "Bridge progress has no observer, so it may not draw a step in "
@@ -7575,19 +7600,22 @@ def check_reown_identity_contract(root: Path) -> list[str]:
         "native: '${AppConfig.reownWalletScheme}://'",
         "siweConfig: null",
         "email: false",
-        "socials: const <AppKitSocialOption>[]",
+        "socials: <AppKitSocialOption>[]",
         "enableAnalytics: false",
         "linkMode: false",
     )
+    # Decision 0245 (S305): AppKit mutates the collections it is given, so the
+    # connector passes growable literals; `const` is optional in the match.
+    connector_plain = re.sub(r"\bconst\s+(?=<)", "", connector)
     for fragment in required_connector_fragments:
-        if fragment not in connector:
+        if fragment not in connector_plain:
             errors.append(
                 "Reown must remain EVM-only with provider auth, analytics, "
                 f"SIWE and Link Mode disabled (`{fragment}`)"
             )
 
     method_blocks = re.findall(
-        r"\bmethods:\s*const\s*<String>\s*\[(?P<body>.*?)\]",
+        r"\bmethods:\s*(?:const\s*)?<String>\s*\[(?P<body>.*?)\]",
         connector,
         re.DOTALL,
     )
@@ -7631,6 +7659,15 @@ def check_reown_identity_contract(root: Path) -> list[str]:
         connector,
         re.DOTALL,
     )
+    if excluded is None and re.search(
+        r"excludedWalletIds:\s*excludedWalletIds\(\)", connector
+    ):
+        # Decision 0245: a fresh growable set from one reviewed function.
+        excluded = re.search(
+            r"Set<String>\s+excludedWalletIds\(\)\s*=>\s*<String>\s*\{(?P<body>.*?)\}",
+            connector,
+            re.DOTALL,
+        )
     excluded_body = excluded.group("body") if excluded else ""
     for wallet_id, expected_value in REOWN_EXCLUDED_WALLET_IDS.items():
         if wallet_id not in excluded_body:
@@ -8669,7 +8706,18 @@ def check_route_manifest_contract(root: Path) -> list[str]:
         shell_source = strip_dart_comments(read_text(shell_path))
         start = shell_source.find("static const _destinations")
         end = shell_source.find("  ];", start)
-        shell_paths = re.findall(r"'(/[a-z]+)'", shell_source[start:end])
+        # A destination may name its path through a String constant of the
+        # shell (`chatPath`, decision 0123); read it as its value.
+        path_constants = dict(
+            re.findall(r"static const String (\w+) = '(/[a-z]+)';", shell_source)
+        )
+        shell_paths = [
+            literal or path_constants.get(name, "")
+            for literal, name in re.findall(
+                r"_LoopDestination\(\s*(?:'(/[a-z]+)'|(\w+))",
+                shell_source[start:end],
+            )
+        ]
         if shell_paths != ["/" + slug for slug in manifest.get("tabs", [])]:
             errors.append("LoopShell destinations must follow the manifest tab order")
     return errors
@@ -8899,6 +8947,7 @@ def check_community_ai_contract(root: Path) -> list[str]:
     return errors
 
 
+COMMUNITY_LOGO_FORWARD_PATH = "lib/features/chat/v2/chat_forward_screens.dart"
 COMMUNITY_LOGO_CALL_SITES = (
     # The Community home's joined list — the one surface that already drew a
     # preset, and the only one, which is what the device reported.
@@ -8912,8 +8961,9 @@ COMMUNITY_LOGO_CALL_SITES = (
     "lib/features/community/community_members_screen.dart",
     # Global search results.
     "lib/features/community/search_screen.dart",
-    # Forward targets: a community's official channel is that community.
-    "lib/features/chat/v2/chat_forward_screens.dart",
+    # The shared group face: a community's official channel draws its logo
+    # there (decision 0122); list rows draw the members' mosaic (0260).
+    "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
     # The mining community board and one community's mining panel.
     "lib/features/mining/mining_secondary_screens.dart",
 )
@@ -8975,6 +9025,9 @@ def check_community_identity_contract(root: Path) -> list[str]:
                 relative: ("CommunityLogo(",)
                 for relative in COMMUNITY_LOGO_CALL_SITES
             },
+            # Forward targets: a community's official channel is that
+            # community, drawn through the shared group face (decision 0260).
+            COMMUNITY_LOGO_FORWARD_PATH: ("loopGroupChannelFace(",),
         },
     )
 
@@ -13926,10 +13979,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 # label's initials on `--card2`, never a provider avatar and
                 # never the scheme's primary as a solid disc. Decision 0122:
                 # a community's official channel draws the community's own
-                # `CommunityLogo`, keyed by the id its CID carries.
-                "LoopInitialsAvatar(",
+                # `CommunityLogo`, keyed by the id its CID carries. Decision
+                # 0258 (S328): the neutral tile became the members' mosaic.
+                "GroupMosaicAvatar(",
                 "label: label,",
-                "'loop-group-channel-neutral-avatar'",
+                "'loop-group-channel-mosaic'",
                 "loopCommunityIdForChannelCid(cid)",
                 "CommunityLogo(",
                 "StreamMessagePreviewText(",
@@ -14677,14 +14731,18 @@ def check_ia_cleanup_contract(root: Path) -> list[str]:
                 "兑换's routing and power notes belong in the (i) sheet "
                 "(`LoopInfoNote`), not on the page (decision 0133)"
             )
-        if re.search(
+        # Decision 0257 (UX-016) superseded 0133's inline line: the
+        # pending-evidence limit is the shared warning card. It is a real
+        # limit, so it stays on the page as exactly that.
+        if not re.search(
             r"LoopNotice\(\s*key:\s*(?:const\s+)?ValueKey<String>\("
-            r"'swap-evidence-pending'\)",
+            r"'swap-evidence-pending'\),\s*tone:\s*LoopNoticeTone\.warn,",
             swap,
         ):
             errors.append(
-                "兑换's pending-evidence limit is one inline line "
-                "(`LoopInlineUnavailable`), not a banner (decision 0133)"
+                "兑换's pending-evidence limit is the shared warning card "
+                "(`LoopNotice` warn, key `swap-evidence-pending`) on the page "
+                "(decisions 0133, 0257)"
             )
 
     scan = source_of("lib/features/scan/scan_screen.dart", strings=False)
