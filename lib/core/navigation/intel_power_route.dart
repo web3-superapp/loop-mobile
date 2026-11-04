@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// 情报 · 算力 (decision 0272, S344): where the retired 挖矿 / 算力明细 /
 /// 邀请中心 locations land, and the deep links into it.
@@ -47,14 +48,19 @@ abstract final class IntelPowerRoute {
 /// The three tabs under 我的总算力, in the order they are drawn.
 enum IntelPowerTab {
   // S350b · decision 0275: 代币 first, the tab most accounts hold power in.
-  token('token', '代币'),
-  nft('nft', 'NFT'),
-  invite('invite', '邀请');
+  token('token'),
+  nft('nft'),
+  invite('invite');
 
-  const IntelPowerTab(this.wireName, this.label);
+  const IntelPowerTab(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    IntelPowerTab.token => LoopL10n.current.common_token,
+    IntelPowerTab.nft => 'NFT',
+    IntelPowerTab.invite =>
+      LoopL10n.current.coreNavigation_intelPowerRouteInvite,
+  };
 
   static IntelPowerTab? tryParse(String? value) {
     for (final tab in values) {

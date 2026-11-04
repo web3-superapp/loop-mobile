@@ -1,0 +1,437 @@
+{
+  "coreText_errorMessage": {
+    "en": "The service didn't return a recognizable result. Try again later; if you already submitted a funds action, check the latest status first.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:34",
+    "zh": "服务没有返回可识别的结果。请稍后重试；如果已经提交过资金动作，请先查看最新状态。"
+  },
+  "coreText_errorMessage10": {
+    "en": "This page's data is out of date. Refresh before continuing.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:99",
+    "zh": "页面数据已不是最新，请刷新后再操作。"
+  },
+  "coreText_errorMessage11": {
+    "en": "The same action was already submitted with different content. Check the latest status, then try again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:106",
+    "zh": "同一操作已被提交过且内容不同，请检查最新状态后再试。"
+  },
+  "coreText_errorMessage12": {
+    "en": "The indexer hasn't caught up with the latest block; data may lag. Try again later.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:113",
+    "zh": "索引尚未追上最新区块，数据可能滞后，稍后可以再试。"
+  },
+  "coreText_errorMessage13": {
+    "en": "Not enough available balance for this action (including fees).",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:120",
+    "zh": "可用余额不足以完成此操作（含手续费）。"
+  },
+  "coreText_errorMessage14": {
+    "en": "Something went wrong and the result is unconfirmed. Check the latest status before deciding whether to retry.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:127",
+    "zh": "出了点问题，结果未确认。请查看最新状态后再决定是否重试。"
+  },
+  "coreText_errorMessage15": {
+    "en": "The request is malformed. Update the app or try again later.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:134",
+    "zh": "请求格式不正确，请更新 App 或稍后再试。"
+  },
+  "coreText_errorMessage16": {
+    "en": "A related service is under maintenance. Try again later.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:141",
+    "zh": "相关服务正在维护，稍后可以再试。"
+  },
+  "coreText_errorMessage17": {
+    "en": "The requested item doesn't exist or was removed.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:148",
+    "zh": "请求的对象不存在或已被移除。"
+  },
+  "coreText_errorMessage18": {
+    "en": "This account doesn't have permission for this action.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:155",
+    "zh": "当前账号无权执行此操作。"
+  },
+  "coreText_errorMessage19": {
+    "en": "This action was blocked by a policy in effect. The feature that started it explains the rule.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:162",
+    "zh": "此操作被当前生效的策略拦截。具体规则由发起该操作的功能说明。"
+  },
+  "coreText_errorMessage2": {
+    "en": "Finish setting up your LOOP account to continue.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:43",
+    "zh": "需要先完成 LOOP 账号引导才能继续。"
+  },
+  "coreText_errorMessage20": {
+    "en": "Community and social actions need an activated LOOP ID. Activate it, then try again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:169",
+    "zh": "社区与社交操作需要已激活的 LOOP ID。完成激活后可以重试。"
+  },
+  "coreText_errorMessage21": {
+    "en": "A required external service isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:176",
+    "zh": "所需的外部服务暂时不可用，稍后可以再试。"
+  },
+  "coreText_errorMessage22": {
+    "en": "The price changed. Refresh the quote before confirming.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:183",
+    "zh": "价格已变动，请刷新报价后再确认。"
+  },
+  "coreText_errorMessage23": {
+    "en": "Wait a moment and try again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:190",
+    "zh": "请稍等片刻再试。"
+  },
+  "coreText_errorMessage24": {
+    "en": "This feature isn't available in your region.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:197",
+    "zh": "此功能在当前地区不可用。"
+  },
+  "coreText_errorMessage25": {
+    "en": "The service didn't respond in time. A timeout doesn't mean failure; for funds actions, check the latest status first.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:204",
+    "zh": "服务没有及时响应。超时不代表失败，资金动作请先查看最新状态。"
+  },
+  "coreText_errorMessage26": {
+    "en": "That ID already belongs to something else. Use another one.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:211",
+    "zh": "该标识已经属于另一个对象，请换一个再提交。"
+  },
+  "coreText_errorMessage27": {
+    "en": "The device session expired. Sign in again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:218",
+    "zh": "设备会话已失效，请重新登录。"
+  },
+  "coreText_errorMessage28": {
+    "en": "The transaction simulation didn't return a verifiable result. Can't confirm right now.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:225",
+    "zh": "交易预演没有返回可验证结果，当前不能确认。"
+  },
+  "coreText_errorMessage29": {
+    "en": "The request may have been accepted. Don't submit again; wait for reconciliation.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:232",
+    "zh": "请求可能已被接受。请勿重复提交，等待对账结果。"
+  },
+  "coreText_errorMessage3": {
+    "en": "That name is on the current operator list. Try another.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:50",
+    "zh": "该名称在当前的运营名单内，请换一个再试。"
+  },
+  "coreText_errorMessage30": {
+    "en": "The input doesn't meet the requirements. Check it and try again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:239",
+    "zh": "输入内容不符合要求，请检查后重试。"
+  },
+  "coreText_errorMessage31": {
+    "en": "The data was changed on another device. Reload before saving.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:246",
+    "zh": "数据已被其他设备修改，请重新加载后再保存。"
+  },
+  "coreText_errorMessage4": {
+    "en": "That name is reserved by LOOP (such as official, support, admin). Try another.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:57",
+    "zh": "该名称属于 LOOP 保留词（如官方、支持、管理），请换一个再试。"
+  },
+  "coreText_errorMessage5": {
+    "en": "Your sign-in expired. Sign in again.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:64",
+    "zh": "登录状态已失效，请重新登录。"
+  },
+  "coreText_errorMessage6": {
+    "en": "This action needs a signed-in account.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:71",
+    "zh": "此操作需要已登录的账号。"
+  },
+  "coreText_errorMessage7": {
+    "en": "You're signed in, but this action needs extra verification.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:78",
+    "zh": "当前登录有效，但此操作需要额外的身份验证。"
+  },
+  "coreText_errorMessage8": {
+    "en": "This feature isn't available right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:85",
+    "zh": "这个功能暂时不可用，稍后再试。"
+  },
+  "coreText_errorMessage9": {
+    "en": "The requested network doesn't match the asset's or wallet's chain.",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:92",
+    "zh": "请求的网络与资产或钱包所在链不一致。"
+  },
+  "coreText_errorTitle": {
+    "en": "Can't finish right now",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:33",
+    "zh": "暂时无法完成"
+  },
+  "coreText_errorTitle10": {
+    "en": "Data out of date",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:98",
+    "zh": "数据已过期"
+  },
+  "coreText_errorTitle11": {
+    "en": "Duplicate request conflict",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:105",
+    "zh": "重复请求冲突"
+  },
+  "coreText_errorTitle12": {
+    "en": "On-chain data delayed",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:112",
+    "zh": "链上数据延迟"
+  },
+  "coreText_errorTitle13": {
+    "en": "Insufficient balance",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:119",
+    "zh": "余额不足"
+  },
+  "coreText_errorTitle14": {
+    "en": "Internal service error",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:126",
+    "zh": "服务内部错误"
+  },
+  "coreText_errorTitle15": {
+    "en": "Invalid request",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:133",
+    "zh": "请求无效"
+  },
+  "coreText_errorTitle16": {
+    "en": "Under maintenance",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:140",
+    "zh": "系统维护中"
+  },
+  "coreText_errorTitle17": {
+    "en": "Not found",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:147",
+    "zh": "未找到"
+  },
+  "coreText_errorTitle18": {
+    "en": "No permission",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:154",
+    "zh": "没有权限"
+  },
+  "coreText_errorTitle19": {
+    "en": "Blocked by policy",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:161",
+    "zh": "被策略拦截"
+  },
+  "coreText_errorTitle2": {
+    "en": "Account not set up",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:42",
+    "zh": "账号尚未初始化"
+  },
+  "coreText_errorTitle20": {
+    "en": "Activate your LOOP ID first",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:168",
+    "zh": "需要先激活 LOOP ID"
+  },
+  "coreText_errorTitle21": {
+    "en": "Provider not connected",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:175",
+    "zh": "服务提供方未连接"
+  },
+  "coreText_errorTitle22": {
+    "en": "Quote expired",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:182",
+    "zh": "报价已过期"
+  },
+  "coreText_errorTitle23": {
+    "en": "Too many requests",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:189",
+    "zh": "操作过于频繁"
+  },
+  "coreText_errorTitle24": {
+    "en": "Region restriction",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:196",
+    "zh": "地区限制"
+  },
+  "coreText_errorTitle25": {
+    "en": "Request timed out",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:203",
+    "zh": "请求超时"
+  },
+  "coreText_errorTitle26": {
+    "en": "ID already taken",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:210",
+    "zh": "标识已被占用"
+  },
+  "coreText_errorTitle27": {
+    "en": "Session not found",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:217",
+    "zh": "会话不存在"
+  },
+  "coreText_errorTitle28": {
+    "en": "Simulation failed",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:224",
+    "zh": "模拟失败"
+  },
+  "coreText_errorTitle29": {
+    "en": "Submission status unknown",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:231",
+    "zh": "提交结果未知"
+  },
+  "coreText_errorTitle3": {
+    "en": "That name isn't available",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:49",
+    "zh": "这个名称不可用"
+  },
+  "coreText_errorTitle30": {
+    "en": "Validation failed",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:238",
+    "zh": "校验未通过"
+  },
+  "coreText_errorTitle31": {
+    "en": "Version conflict",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:245",
+    "zh": "版本冲突"
+  },
+  "coreText_errorTitle4": {
+    "en": "That name is reserved",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:56",
+    "zh": "这个名称已被保留"
+  },
+  "coreText_errorTitle5": {
+    "en": "Invalid sign-in credentials",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:63",
+    "zh": "登录凭证无效"
+  },
+  "coreText_errorTitle6": {
+    "en": "Sign-in required",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:70",
+    "zh": "需要登录"
+  },
+  "coreText_errorTitle7": {
+    "en": "Higher verification required",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:77",
+    "zh": "需要更高等级的验证"
+  },
+  "coreText_errorTitle8": {
+    "en": "Feature unavailable",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:84",
+    "zh": "功能暂不可用"
+  },
+  "coreText_errorTitle9": {
+    "en": "Chain mismatch",
+    "placeholders": {},
+    "where": "lib/core/text/loop_error_text.dart:91",
+    "zh": "链不匹配"
+  },
+  "coreText_tokenLoopTokenDescriptionError": {
+    "en": "Description can be up to {loopTokenDescriptionMaxCharacters} characters",
+    "placeholders": {
+      "loopTokenDescriptionMaxCharacters": {
+        "example": "loopTokenDescriptionMaxCharacters",
+        "type": "Object"
+      }
+    },
+    "where": "lib/core/text/loop_token_text.dart:110",
+    "zh": "简介最多 {loopTokenDescriptionMaxCharacters} 个字"
+  },
+  "coreText_tokenLoopTokenDescriptionError2": {
+    "en": "Description can't contain control or invisible characters",
+    "placeholders": {},
+    "where": "lib/core/text/loop_token_text.dart:114",
+    "zh": "简介不能包含控制符或不可见字符"
+  },
+  "coreText_tokenLoopTokenNameLengthMessage": {
+    "en": "Name can be up to 20 characters (emoji count as 2)",
+    "placeholders": {},
+    "where": "lib/core/text/loop_token_text.dart:21",
+    "zh": "名称最多 20 个字（emoji 算 2 个字）"
+  },
+  "coreText_tokenLoopTokenTextRule": {
+    "en": "Name and ticker 1–20 characters each; Chinese, letters, numbers and emoji allowed",
+    "placeholders": {},
+    "where": "lib/core/text/loop_token_text.dart:18",
+    "zh": "名称和代码各 1–20 个字，可用中文、字母、数字、emoji"
+  },
+  "coreText_tokenLoopTokenTickerLengthMessage": {
+    "en": "Ticker can be up to 20 characters (emoji count as 2)",
+    "placeholders": {},
+    "where": "lib/core/text/loop_token_text.dart:22",
+    "zh": "代码最多 20 个字（emoji 算 2 个字）"
+  },
+  "coreText_tokenTokenTextError": {
+    "en": "{label} is required",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/core/text/loop_token_text.dart:90",
+    "zh": "请填写{label}"
+  },
+  "coreText_tokenTokenTextError2": {
+    "en": "{label} can't contain line breaks, control or invisible characters",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/core/text/loop_token_text.dart:93",
+    "zh": "{label}不能包含换行、控制符或不可见字符"
+  },
+  "coreText_tokenTokenTextError3": {
+    "en": "Ticker",
+    "placeholders": {},
+    "where": "lib/core/text/loop_token_text.dart:104",
+    "zh": "代码"
+  }
+}

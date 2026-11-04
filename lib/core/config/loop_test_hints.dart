@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 bool? _debugOverride;
 
@@ -25,39 +26,43 @@ bool get loopTestHintsVisible =>
 void debugSetLoopTestHintsVisible(bool? value) => _debugOverride = value;
 
 /// The Launch slot's network name while it is the BSC testnet, switch on.
-const String loopTestnetChainLabel = 'BSC 测试网';
+String get loopTestnetChainLabel =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetChainLabel;
 
 /// The badge text for the Launch testnet slot, switch on.
-const String loopTestnetBadgeText = loopTestnetChainLabel;
+String get loopTestnetBadgeText => loopTestnetChainLabel;
 
 /// The upper-case stamp on an asset hero, switch on.
 const String loopTestnetStampText = 'BSC TESTNET';
 
 /// The testnet explanation's title, switch on.
-const String loopTestnetNoticeTitleText = 'Launch 当前运行在 BSC 测试网';
+String get loopTestnetNoticeTitleText =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetNoticeTitleText;
 
 /// The testnet explanation's body, switch on. [chainId] is the Launch
 /// slot's CAIP id.
 String loopTestnetNoticeBodyText(String chainId) =>
-    'Launch 目录、详情与签名单当前指向 BSC 测试网（$chainId），'
-    '测试网上的代币没有真实价值。钱包余额、行情、兑换与授权仍然只走 BNB Smart Chain 主网，'
-    '不受影响。这条说明可以关闭，不会阻断任何操作。';
+    LoopL10n.current.coreConfig_testHintsLoopTestnetNoticeBodyText(chainId);
 
 /// The wallet's Launch-chain block note (decision 0203), switch on.
-const String loopTestnetWalletTotalNoteText =
-    'Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
+String get loopTestnetWalletTotalNoteText =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetWalletTotalNoteText;
 
 /// The label of the wallet (i) that opens the testnet explanation.
-const String loopTestnetInfoButtonText = '关于 Launch 测试网';
+String get loopTestnetInfoButtonText =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetInfoButtonText;
 
 /// The dismiss label of the testnet notice.
-const String loopTestnetNoticeDismissText = '关闭测试网说明';
+String get loopTestnetNoticeDismissText =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetNoticeDismissText;
 
 /// The network-settings row for the Launch testnet, switch on.
-const String loopTestnetNetworkRowTitle = '测试网';
+String get loopTestnetNetworkRowTitle =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetNetworkRowTitle;
 
 /// The network-settings row when no testnet is published, switch on.
-const String loopTestnetNetworkRowAbsent = '没有已发布的测试网';
+String get loopTestnetNetworkRowAbsent =>
+    LoopL10n.current.coreConfig_testHintsLoopTestnetNetworkRowAbsent;
 
 /// The Launch slot's native symbol as the server names it on the testnet.
 const String loopTestnetNativeSymbol = 'tBNB';

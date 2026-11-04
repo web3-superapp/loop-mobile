@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Local, offline review of a URL typed into the DApp surface (D21).
 ///
@@ -8,45 +9,79 @@ import 'package:flutter/foundation.dart';
 /// permission — connecting and signing stay unavailable regardless.
 enum LoopUrlFinding {
   /// Nothing was typed.
-  empty('输入为空'),
+  empty(),
 
   /// Control, bidirectional or separator code points inside the input.
-  unsafeCharacters('输入里含有控制字符或不可见字符'),
+  unsafeCharacters(),
 
   /// No scheme was typed, so `https` was assumed. Not blocking on its own.
-  schemeAssumed('没有写协议，已按 HTTPS 解析'),
+  schemeAssumed(),
 
   /// A scheme other than `https`.
-  notHttps('只允许 HTTPS，明文或自定义协议一律阻止'),
+  notHttps(),
 
   /// The address has no host at all.
-  missingHost('地址里没有域名'),
+  missingHost(),
 
   /// `user:password@host` — a classic phishing disguise.
-  credentialsInUrl('地址里带有用户名或密码，这是常见的伪装手法'),
+  credentialsInUrl(),
 
   /// A raw IPv4/IPv6 literal instead of a domain name.
-  ipLiteralHost('地址是 IP，不是域名，无法核对归属'),
+  ipLiteralHost(),
 
   /// A port other than 443.
-  nonStandardPort('使用了非 443 端口'),
+  nonStandardPort(),
 
   /// An already-encoded IDN label. The Unicode form cannot be recovered here.
-  punycodeLabel('域名含有 IDN 编码（xn--）标签，无法在本地还原成可读形式'),
+  punycodeLabel(),
 
   /// A label mixing Latin with another script — the classic homograph shape.
-  mixedScriptLabel('域名的同一段里混用了拉丁字母与其他文字'),
+  mixedScriptLabel(),
 
   /// A code point that looks like an ASCII letter but is not one.
-  confusableCharacters('域名里含有与拉丁字母同形的字符'),
+  confusableCharacters(),
 
   /// A non-ASCII host with no confusables. The ASCII (punycode) form cannot be
   /// computed on device, so the two forms cannot be compared.
-  nonAsciiHost('域名含有非 ASCII 字符，本地无法计算它的 ASCII 形式');
+  nonAsciiHost();
 
-  const LoopUrlFinding(this.explanation);
+  const LoopUrlFinding();
 
-  final String explanation;
+  String get explanation => switch (this) {
+    LoopUrlFinding.empty => LoopL10n.current.coreSecurity_urlReviewEmpty,
+
+    LoopUrlFinding.unsafeCharacters =>
+      LoopL10n.current.coreSecurity_urlReviewUnsafeCharacters,
+
+    LoopUrlFinding.schemeAssumed =>
+      LoopL10n.current.coreSecurity_urlReviewSchemeAssumed,
+
+    LoopUrlFinding.notHttps => LoopL10n.current.coreSecurity_urlReviewNotHttps,
+
+    LoopUrlFinding.missingHost =>
+      LoopL10n.current.coreSecurity_urlReviewMissingHost,
+
+    LoopUrlFinding.credentialsInUrl =>
+      LoopL10n.current.coreSecurity_urlReviewCredentialsInUrl,
+
+    LoopUrlFinding.ipLiteralHost =>
+      LoopL10n.current.coreSecurity_urlReviewIpLiteralHost,
+
+    LoopUrlFinding.nonStandardPort =>
+      LoopL10n.current.coreSecurity_urlReviewNonStandardPort,
+
+    LoopUrlFinding.punycodeLabel =>
+      LoopL10n.current.coreSecurity_urlReviewPunycodeLabel,
+
+    LoopUrlFinding.mixedScriptLabel =>
+      LoopL10n.current.coreSecurity_urlReviewMixedScriptLabel,
+
+    LoopUrlFinding.confusableCharacters =>
+      LoopL10n.current.coreSecurity_urlReviewConfusableCharacters,
+
+    LoopUrlFinding.nonAsciiHost =>
+      LoopL10n.current.coreSecurity_urlReviewNonAsciiHost,
+  };
 
   /// Whether this finding alone makes the address unusable.
   bool get isBlocking => switch (this) {

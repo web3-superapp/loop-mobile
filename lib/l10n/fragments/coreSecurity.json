@@ -1,0 +1,74 @@
+{
+  "coreSecurity_urlReviewConfusableCharacters": {
+    "en": "The domain has characters that look like Latin letters",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:41",
+    "zh": "域名里含有与拉丁字母同形的字符"
+  },
+  "coreSecurity_urlReviewCredentialsInUrl": {
+    "en": "The address contains a username or password, a common disguise",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:26",
+    "zh": "地址里带有用户名或密码，这是常见的伪装手法"
+  },
+  "coreSecurity_urlReviewEmpty": {
+    "en": "Input is empty",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:11",
+    "zh": "输入为空"
+  },
+  "coreSecurity_urlReviewIpLiteralHost": {
+    "en": "The address is an IP, not a domain; ownership can't be checked",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:29",
+    "zh": "地址是 IP，不是域名，无法核对归属"
+  },
+  "coreSecurity_urlReviewMissingHost": {
+    "en": "The address has no domain",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:23",
+    "zh": "地址里没有域名"
+  },
+  "coreSecurity_urlReviewMixedScriptLabel": {
+    "en": "One part of the domain mixes Latin letters with other scripts",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:38",
+    "zh": "域名的同一段里混用了拉丁字母与其他文字"
+  },
+  "coreSecurity_urlReviewNonAsciiHost": {
+    "en": "The domain has non-ASCII characters; its ASCII form can't be computed locally",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:45",
+    "zh": "域名含有非 ASCII 字符，本地无法计算它的 ASCII 形式"
+  },
+  "coreSecurity_urlReviewNonStandardPort": {
+    "en": "Uses a port other than 443",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:32",
+    "zh": "使用了非 443 端口"
+  },
+  "coreSecurity_urlReviewNotHttps": {
+    "en": "Only HTTPS is allowed; plain-text or custom schemes are blocked",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:20",
+    "zh": "只允许 HTTPS，明文或自定义协议一律阻止"
+  },
+  "coreSecurity_urlReviewPunycodeLabel": {
+    "en": "The domain has an IDN-encoded (xn--) label that can't be turned back into readable form locally",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:35",
+    "zh": "域名含有 IDN 编码（xn--）标签，无法在本地还原成可读形式"
+  },
+  "coreSecurity_urlReviewSchemeAssumed": {
+    "en": "No scheme given; read as HTTPS",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:17",
+    "zh": "没有写协议，已按 HTTPS 解析"
+  },
+  "coreSecurity_urlReviewUnsafeCharacters": {
+    "en": "The input has control or invisible characters",
+    "placeholders": {},
+    "where": "lib/core/security/loop_url_review.dart:14",
+    "zh": "输入里含有控制字符或不可见字符"
+  }
+}
