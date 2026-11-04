@@ -176,8 +176,8 @@ void main() {
       );
       await scrollToS7Section(tester, composition);
       expect(composition, findsOneWidget);
-      // Decision 0146 / 0149: the row reads 持有量 × 权重, no price.
-      expect(find.textContaining('× 权重 '), findsWidgets);
+      // Decision 0146 / 0149: the row reads holdings × weight, no price (ARB mining_widgetsMiningCompositionExpression).
+      expect(find.textContaining('× weight '), findsWidgets);
     });
   });
 }
