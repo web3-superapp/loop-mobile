@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
@@ -56,7 +57,10 @@ LoopRecordRow walletBalanceRow(
       trailing = null;
       caption = null;
       // "read failed" is not "holds none": the row states it, never `0`.
-      badge = const LoopBadge('读不到', kind: LoopBadgeKind.down);
+      badge = LoopBadge(
+        LoopL10n.current.wallet_approvalScreensLoopBadge,
+        kind: LoopBadgeKind.down,
+      );
     case LoopBalanceAvailable(displayBalance: final displayBalance):
       trailing = loopFormatDecimal(displayBalance);
       caption = switch (valuation) {
@@ -66,7 +70,9 @@ LoopRecordRow walletBalanceRow(
         LoopValuationUnavailable() => null,
       };
       if (valuation is LoopValuationAvailable && valuation.isProxied) {
-        badge = const LoopBadge('以 WBNB 计价');
+        badge = LoopBadge(
+          LoopL10n.current.wallet_readScreensWalletAssetProxied,
+        );
       }
   }
 
@@ -78,15 +84,17 @@ LoopRecordRow walletBalanceRow(
       // The tray under the row carries it (see [walletBalanceTray]).
       LoopBalanceAvailable() when factsInTray => '',
       LoopBalanceAvailable(spendableBalance: final spendable) =>
-        '可动用 ${loopFormatDecimal(spendable)}',
+        LoopL10n.current.wallet_readBuild(loopFormatDecimal(spendable)),
     },
     switch (row.pending) {
       LoopPendingUnavailable(reasonCode: final reasonCode) =>
         loopReasonCodeText(reasonCode),
       LoopPendingAvailable(value: final value) =>
-        value == Decimal.zero ? '' : '待确认 ${loopFormatDecimal(value)}',
+        value == Decimal.zero
+            ? ''
+            : LoopL10n.current.wallet_homeIf(loopFormatDecimal(value)),
     },
-    if (row.crossCheck.isMisaligned) '数据源尚未对齐',
+    if (row.crossCheck.isMisaligned) LoopL10n.current.wallet_homeIf2,
     // The prototype's asset row carries the holding's mining power beside the
     // balance; the caller hands whatever the snapshot said, including its own
     // dash. This row never derives it.
@@ -108,10 +116,13 @@ LoopRecordRow walletBalanceRow(
     trailing: trailing,
     trailingCaption: caption,
     trailingBadge: badge,
-    semanticLabel:
-        '${row.symbol}，'
-        '${trailing == null ? '余额读不到' : '余额 $trailing'}'
-        '${caption == null ? '' : '，估值 $caption'}',
+    semanticLabel: <String>[
+      row.symbol,
+      trailing == null
+          ? LoopL10n.current.wallet_readRowBalanceMissing
+          : LoopL10n.current.wallet_readRowBalance(trailing),
+      ?(caption == null ? null : LoopL10n.current.wallet_homeSwitch(caption)),
+    ].join(LoopL10n.current.common_listSeparator),
   );
 }
 
@@ -125,18 +136,22 @@ List<String> walletBalanceTrayFacts(
 }) => <String>[
   switch (row.balance) {
     LoopBalanceUnavailable(reasonCode: final reasonCode) =>
-      '可动用 ${loopReasonCodeText(reasonCode)}',
+      LoopL10n.current.wallet_readBuild(loopReasonCodeText(reasonCode)),
     LoopBalanceAvailable(spendableBalance: final spendable) =>
-      '可动用 ${loopFormatDecimal(spendable)}',
+      LoopL10n.current.wallet_readBuild(loopFormatDecimal(spendable)),
   },
   // The caller's own sentence for the holding's power, dash included; the
   // tray never derives one and leaves the line out when handed none.
   ?miningText,
   switch (row.balance) {
     LoopBalanceUnavailable(reasonCode: final reasonCode) =>
-      '手续费保留 ${loopReasonCodeText(reasonCode)}',
+      LoopL10n.current.wallet_readLoopBalanceAvailable2(
+        loopReasonCodeText(reasonCode),
+      ),
     LoopBalanceAvailable(gasReserve: final reserve) =>
-      '手续费保留 ${loopFormatDecimal(reserve)}',
+      LoopL10n.current.wallet_readLoopBalanceAvailable2(
+        loopFormatDecimal(reserve),
+      ),
   },
 ];
 
@@ -160,7 +175,7 @@ Widget walletBalanceTray(
   return LoopTrayDisclosure(
     key: ValueKey<String>('wallet-balance-tray-${row.assetId}'),
     trayInset: LoopSpacing.page + LoopTrayDisclosure.defaultTrayInset,
-    semanticLabel: '${row.symbol} 的可动用、算力与手续费保留',
+    semanticLabel: LoopL10n.current.wallet_readSemanticLabel(row.symbol),
     margin: const EdgeInsets.only(bottom: 8),
     card: walletBalanceRow(
       row,
@@ -222,13 +237,18 @@ LoopRecordRow walletActivityRow(
     ),
     title:
         '${switch (entry.direction) {
-          LoopTransferDirection.incoming => '收到',
-          LoopTransferDirection.outgoing => '发出',
-          LoopTransferDirection.self => '自转',
+          LoopTransferDirection.incoming => LoopL10n.current.wallet_activityExportIncoming,
+          LoopTransferDirection.outgoing => LoopL10n.current.wallet_activityExportOutgoing,
+          LoopTransferDirection.self => LoopL10n.current.wallet_activityExportSelf,
         }} ${loopDisplaySymbol(entry.symbol)}',
     subtitle: <String>[
-      '${entry.direction == LoopTransferDirection.incoming ? '来自' : '发往'} '
-          '${loopTruncatedAddress(entry.counterpartyAddress)}',
+      entry.direction == LoopTransferDirection.incoming
+          ? LoopL10n.current.wallet_readTransferFrom(
+              loopTruncatedAddress(entry.counterpartyAddress),
+            )
+          : LoopL10n.current.wallet_readTransferTo(
+              loopTruncatedAddress(entry.counterpartyAddress),
+            ),
       if (!settled) loopConfirmationLabel(entry.status),
     ].join(' · '),
     trailing: '$sign${loopFormatDecimal(entry.displayValue)}',
@@ -240,7 +260,7 @@ LoopRecordRow walletActivityRow(
     },
     trailingCaption: loopRelativeTime(entry.observedAt, now: now),
     trailingBadge: entry.status == LoopConfirmationStatus.reorged
-        ? const LoopBadge('已回滚', kind: LoopBadgeKind.down)
+        ? LoopBadge(LoopL10n.current.common_reverted, kind: LoopBadgeKind.down)
         : null,
   );
 }
@@ -255,12 +275,17 @@ String walletLaunch2ActivityTitle(LoopWalletLaunch2ActivityEntry entry) {
   final ticker = loopDisplaySymbol(entry.ticker);
   return switch (entry.kind) {
     LoopWalletLaunch2ActivityKind.curveBuy ||
-    LoopWalletLaunch2ActivityKind.poolBuy => '买入 $ticker',
+    LoopWalletLaunch2ActivityKind.poolBuy =>
+      LoopL10n.current.wallet_readPoolBuy(ticker),
     LoopWalletLaunch2ActivityKind.curveSell ||
-    LoopWalletLaunch2ActivityKind.poolSell => '卖出 $ticker',
-    LoopWalletLaunch2ActivityKind.nftMint => '铸造勋章 · $ticker',
-    LoopWalletLaunch2ActivityKind.rewardClaim => '领取奖励 · $ticker',
-    LoopWalletLaunch2ActivityKind.buyback => '回购 · $ticker',
+    LoopWalletLaunch2ActivityKind.poolSell =>
+      LoopL10n.current.wallet_readPoolSell(ticker),
+    LoopWalletLaunch2ActivityKind.nftMint =>
+      LoopL10n.current.wallet_readNftMint(ticker),
+    LoopWalletLaunch2ActivityKind.rewardClaim =>
+      LoopL10n.current.wallet_readRewardClaim(ticker),
+    LoopWalletLaunch2ActivityKind.buyback =>
+      LoopL10n.current.wallet_readBuyback(ticker),
   };
 }
 
@@ -309,7 +334,9 @@ String walletLaunch2ActivityTitle(LoopWalletLaunch2ActivityEntry entry) {
     LoopWalletLaunch2ActivityKind.buyback => (
       value: meme('+'),
       caption: switch (entry.amountUsd1) {
-        final Decimal amount => '花费 ${launch2Usd1Label(amount)}',
+        final Decimal amount => LoopL10n.current.wallet_readSwitch(
+          launch2Usd1Label(amount),
+        ),
         null => null,
       },
       color: null,
@@ -331,9 +358,10 @@ LoopRecordRow walletLaunch2ActivityRow(
   // docs/42 附C §2: no 「A · B · C」 run in a secondary line.
   final subtitle = <String>[
     loopRelativeTime(entry.occurredAt, now: now),
-    'Launch 链',
-    if (entry.confirmations == null) '确认中',
-  ].join('，');
+    LoopL10n.current.wallet_readWalletLaunch2ActivityRow,
+    if (entry.confirmations == null)
+      LoopL10n.current.wallet_readWalletLaunch2ActivityRow2,
+  ].join(LoopL10n.current.common_listSeparator);
   return LoopRecordRow(
     key: ValueKey<String>('tx-entry-${entry.entryId}'),
     onTap: onTap,
@@ -363,7 +391,7 @@ LoopRecordRow walletLaunch2ActivityRow(
       subtitle,
       ?figures.value,
       ?figures.caption,
-    ].join('，'),
+    ].join(LoopL10n.current.common_listSeparator),
   );
 }
 
@@ -377,10 +405,19 @@ String walletActivityDayLabel(DateTime at, {DateTime? now}) {
   final day = DateTime.utc(local.year, local.month, local.day);
   final reference = DateTime.utc(today.year, today.month, today.day);
   final days = reference.difference(day).inDays;
-  if (days == 0) return '今天';
-  if (days == 1) return '昨天';
-  if (local.year == today.year) return '${local.month}月${local.day}日';
-  return '${local.year}年${local.month}月${local.day}日';
+  if (days == 0) return LoopL10n.current.common_today;
+  if (days == 1) return LoopL10n.current.wallet_readWalletActivityDayLabel;
+  if (local.year == today.year) {
+    return LoopL10n.current.wallet_readWalletActivityDayLabel2(
+      local.day,
+      loopMonthLabel(local.month),
+    );
+  }
+  return LoopL10n.current.wallet_readWalletActivityDayLabel3(
+    local.day,
+    loopMonthLabel(local.month),
+    local.year,
+  );
 }
 
 /// The local calendar day [at] falls on, as `yyyy-mm-dd` (a stable key).
@@ -437,10 +474,11 @@ class WalletSnapshotFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopProvenanceFooter(
       key: const ValueKey<String>('wallet-snapshot-footer'),
-      text:
-          '区块 ${loopGroupedFigure(snapshot.blockNumber.toString())} · '
-          '${loopGroupedFigure(snapshot.confirmations.toString())} 确认 · '
-          '观察于 ${loopRelativeTime(snapshot.observedAt, now: now)}',
+      text: context.l10n.wallet_readWalletSnapshotFooterText(
+        loopGroupedFigure(snapshot.blockNumber.toString()),
+        loopGroupedFigure(snapshot.confirmations.toString()),
+        loopRelativeTime(snapshot.observedAt, now: now),
+      ),
     );
   }
 }
@@ -472,7 +510,7 @@ class WalletNetWorthCard extends StatelessWidget {
       case LoopNetWorthUnavailable(reasonCode: final reasonCode):
         return LoopUnavailableLine(
           key: const ValueKey<String>('wallet-networth-unavailable'),
-          label: '净值不可用',
+          label: context.l10n.wallet_readWalletNetworthUnavailableLabel,
           reasonCode: reasonCode,
         );
       case final LoopNetWorthValued valued:
@@ -493,13 +531,15 @@ class WalletNetWorthCard extends StatelessWidget {
                   children: <Widget>[
                     if (valued.partial)
                       LoopBadge(
-                        '部分估值 · ${valued.unavailableCount} 项无价格',
+                        context.l10n.wallet_readWalletNetworthPartial(
+                          valued.unavailableCount,
+                        ),
                         key: const ValueKey<String>('wallet-networth-partial'),
                         kind: LoopBadgeKind.down,
                       ),
                     if (marker != null) LoopBadge(marker),
-                    const LoopBadge(
-                      '不是可用余额',
+                    LoopBadge(
+                      context.l10n.wallet_readWalletNetworthNotSpendable,
                       key: ValueKey<String>('wallet-networth-not-spendable'),
                     ),
                   ],
@@ -507,9 +547,13 @@ class WalletNetWorthCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   <String>[
-                    '来源 ${loopFactSourceLabel(valued.priceSource)}',
-                    '观察于 ${loopRelativeTime(valued.asOf, now: now)}',
-                    if (valued.partial) '只是已估值资产的合计，不是总资产',
+                    context.l10n.wallet_readScreensSwitch2(
+                      loopFactSourceLabel(valued.priceSource),
+                    ),
+                    context.l10n.wallet_readScreensSwitch3(
+                      loopRelativeTime(valued.asOf, now: now),
+                    ),
+                    if (valued.partial) context.l10n.wallet_readIf,
                   ].join(' · '),
                   // R21 (decision 0190 M30).
                   style: LoopType.captionSm.copyWith(color: LoopColors.text3),
@@ -529,7 +573,10 @@ class WalletNetWorthCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('净值（${valued.valuationCurrency}）', style: LoopType.eyebrow),
+              Text(
+                context.l10n.wallet_readIf2(valued.valuationCurrency),
+                style: LoopType.eyebrow,
+              ),
               const SizedBox(height: 6),
               Text(loopFormatUsd(valued.valueUsd), style: LoopType.figureXl),
               const SizedBox(height: 8),
@@ -539,14 +586,16 @@ class WalletNetWorthCard extends StatelessWidget {
                 children: <Widget>[
                   if (valued.partial)
                     LoopBadge(
-                      '部分估值 · ${valued.unavailableCount} 项无价格',
+                      context.l10n.wallet_readWalletNetworthPartial(
+                        valued.unavailableCount,
+                      ),
                       key: const ValueKey<String>('wallet-networth-partial'),
                       kind: LoopBadgeKind.down,
                     ),
                   if (marker != null) LoopBadge(marker),
                   // The wire pins `isSpendable` to false; the copy says so.
-                  const LoopBadge(
-                    '不是可用余额',
+                  LoopBadge(
+                    context.l10n.wallet_readWalletNetworthNotSpendable,
                     key: ValueKey<String>('wallet-networth-not-spendable'),
                   ),
                 ],
@@ -554,9 +603,13 @@ class WalletNetWorthCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 <String>[
-                  '来源 ${loopFactSourceLabel(valued.priceSource)}',
-                  '观察于 ${loopRelativeTime(valued.asOf, now: now)}',
-                  if (valued.partial) '只是已估值资产的合计，不是总资产',
+                  context.l10n.wallet_readScreensSwitch2(
+                    loopFactSourceLabel(valued.priceSource),
+                  ),
+                  context.l10n.wallet_readScreensSwitch3(
+                    loopRelativeTime(valued.asOf, now: now),
+                  ),
+                  if (valued.partial) context.l10n.wallet_readIf,
                 ].join(' · '),
                 // R21 (decision 0190 M30).
                 style: LoopType.captionSm.copyWith(color: LoopColors.text3),
@@ -624,13 +677,16 @@ class WalletLaunchChainCard extends StatelessWidget {
 
 /// The grey line every Launch chain row of the wallet carries (S259 ·
 /// decision 0217): the rows sit in the 「代币」 list among the main chain's.
-const String walletLaunchChainLabel = 'Launch 链';
+String get walletLaunchChainLabel =>
+    LoopL10n.current.wallet_readWalletLaunch2ActivityRow;
 
 /// The Launch chain's native balance could not be read.
 Widget walletLaunchUnavailableLine(LoopLaunchChainBalance launchChain) =>
     LoopUnavailableLine(
       key: const ValueKey<String>('wallet-launch-chain-unavailable'),
-      label: '${launchChain.name}余额不可用',
+      label: LoopL10n.current.wallet_readWalletLaunchChainUnavailableLabel(
+        launchChain.name,
+      ),
       reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
     );
 
@@ -651,10 +707,14 @@ Widget walletLaunchNativeRow(
   title: loopDisplaySymbol(native.symbol),
   titleTrailing: launchChain.isTestnet ? const LoopTestnetBadge() : null,
   subtitle: walletLaunchChainLabel,
-  subtitleMark: '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
+  subtitleMark: LoopL10n.current.wallet_readLoopBalanceAvailable2(
+    loopFormatDecimal(native.gasReserve),
+  ),
   value: hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance),
   valueCaption: Text(
-    '可动用 ${hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance)}',
+    LoopL10n.current.wallet_readBuild(
+      hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance),
+    ),
   ),
   semanticLabel:
       '$walletLaunchChainLabel ${loopDisplaySymbol(native.symbol)} '
@@ -698,7 +758,7 @@ Widget walletLaunchUsd1Row(
     semanticLabel: <String>[
       '$walletLaunchChainLabel $usd1Symbol $usd1Figure',
       ?usd1Reason,
-    ].join('，'),
+    ].join(LoopL10n.current.common_listSeparator),
   );
 }
 
@@ -765,8 +825,10 @@ const String walletLaunchUsd1Missing = '—';
 /// read but the server published no USD1 pair. There is no 读取中 here: the
 /// card exists only once the balances answered, and before that the page
 /// draws its own loading state.
-const String walletLaunchUsd1Failed = '读取失败';
-const String walletLaunchUsd1Unavailable = '暂不可用';
+String get walletLaunchUsd1Failed =>
+    LoopL10n.current.wallet_readWalletLaunchUsd1Failed;
+String get walletLaunchUsd1Unavailable =>
+    LoopL10n.current.wallet_homeUnreadText;
 
 /// Why the Launch chain USD1 row has no figure, or `null` when it has one.
 String? walletLaunchUsd1Reason(LoopLaunchChainBalance launchChain) {
@@ -811,31 +873,33 @@ class WalletCreationBlock extends ConsumerWidget {
         showMessage: true,
         key: ValueKey<String>('$keyPrefix-no-wallet'),
         illustration: LoopIllustration.profile,
-        title: '这个账号还没有钱包',
+        title: context.l10n.wallet_readTitle,
         message: session.isPreview
-            ? '开发预览不会创建真实钱包，也不会调用 Privy。'
-            : '当前会话未完成验证，暂时不能创建钱包。重新登录后可以再试。',
+            ? context.l10n.wallet_readMessage
+            : context.l10n.wallet_readMessage2,
         compact: true,
       );
     }
 
     final reason = switch (provisioning.stage) {
-      LoopWalletProvisioningStage.creating => '正在向 Privy 申请嵌入式钱包，完成后清单会自动刷新。',
-      LoopWalletProvisioningStage.failed =>
-        '上一次创建没有完成：${provisioning.errorMessage ?? '原因未知'}'
-            ' 登录状态没有变化，可以再试一次。',
-      _ => 'LOOP 会为这个账号创建一个 Privy 嵌入式钱包。地址是公开的链上事实，不是账号标识。',
+      LoopWalletProvisioningStage.creating => context.l10n.wallet_readCreating,
+      LoopWalletProvisioningStage.failed => context.l10n.wallet_readFailed(
+        provisioning.errorMessage ?? context.l10n.wallet_readWalletReadFailed,
+      ),
+      _ => context.l10n.wallet_readSwitch2,
     };
 
     return LoopEmptyState(
       showMessage: true,
       key: ValueKey<String>('$keyPrefix-no-wallet'),
       illustration: LoopIllustration.profile,
-      title: '这个账号还没有钱包',
+      title: context.l10n.wallet_readTitle,
       message: reason,
       action: LoopButton(
         key: ValueKey<String>('$keyPrefix-create-wallet'),
-        label: provisioning.isCreating ? '创建中…' : '创建钱包',
+        label: provisioning.isCreating
+            ? context.l10n.wallet_readLabel
+            : context.l10n.wallet_readLabel2,
         primary: true,
         onPressed: provisioning.isCreating
             ? null
@@ -850,7 +914,11 @@ class WalletCreationBlock extends ConsumerWidget {
         .read(loopWalletProvisioningProvider.notifier)
         .createWallet();
     if (!context.mounted || !created) return;
-    LoopToast.show(context, message: '钱包已创建', kind: LoopToastKind.ok);
+    LoopToast.show(
+      context,
+      message: context.l10n.wallet_readMessage3,
+      kind: LoopToastKind.ok,
+    );
   }
 }
 
@@ -875,7 +943,7 @@ class WalletActivitySkeleton extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: '列表加载中',
+      label: context.l10n.wallet_readLabel3,
       child: ExcludeSemantics(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -958,7 +1026,7 @@ class WalletReceiveSkeleton extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: '收款地址加载中',
+      label: context.l10n.wallet_readLabel4,
       child: const ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

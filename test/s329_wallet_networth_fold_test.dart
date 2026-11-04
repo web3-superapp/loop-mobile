@@ -92,7 +92,7 @@ void main() {
     expect(_key('wallet-networth-ranges'), findsNothing);
     expect(_key('wallet-networth-spark'), findsNothing);
     expect(_key('wallet-networth-expand'), findsOneWidget);
-    expect(find.text('净值走势'), findsOneWidget);
+    expect(find.text('Net value trend'), findsOneWidget);
     expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
 
     await tester.tap(_key('wallet-networth-expand'));
@@ -100,7 +100,7 @@ void main() {
     expect(_key('wallet-networth-chart'), findsOneWidget);
     expect(_key('wallet-networth-ranges'), findsOneWidget);
     expect(_key('wallet-networth-collapse'), findsOneWidget);
-    expect(find.text('收起'), findsOneWidget);
+    expect(find.text('Collapse'), findsOneWidget);
 
     await tester.tap(_key('wallet-networth-collapse'));
     await tester.pumpAndSettle();

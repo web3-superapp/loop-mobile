@@ -646,10 +646,10 @@ void main() {
       expect(key('wallet-faucet-entry'), findsNothing);
       await _openSheet(tester, faucet, wallet: wallet);
       expect(key('testnet-faucet-sheet'), findsOneWidget);
-      expect(find.text('获取资金'), findsOneWidget);
+      expect(find.text('Get funds'), findsOneWidget);
       expect(faucet.statusReads, <String>[s5WalletId]);
       expect(find.text('0xabcd…1234'), findsOneWidget);
-      expect(find.textContaining('0.02 BNB 和 500 USD1'), findsOneWidget);
+      expect(find.textContaining('0.02 BNB and 500 USD1'), findsOneWidget);
       final readsBefore = wallet.balanceReads;
 
       await tester.tap(key('testnet-faucet-claim'));
@@ -673,7 +673,7 @@ void main() {
       // The button is off until the server's next time.
       final next = faucet.claimResult! as TestnetFaucetGranted;
       expect(
-        find.text('下次可领 ${testnetFaucetNextLabel(next.nextAvailableAt)}'),
+        find.text('Next claim ${testnetFaucetNextLabel(next.nextAvailableAt)}'),
         findsOneWidget,
       );
       expect(
@@ -696,7 +696,7 @@ void main() {
           ),
         ),
       );
-      final label = '下次可领 ${testnetFaucetNextLabel(next)}';
+      final label = 'Next claim ${testnetFaucetNextLabel(next)}';
       expect(find.text(label), findsOneWidget);
       expect(RegExp(r'\d\d:\d\d$').hasMatch(label), isTrue);
       expect(
@@ -717,9 +717,9 @@ void main() {
       final time = testnetFaucetNextLabel(next);
       expect(
         lineText(tester, 'testnet-faucet-cooldown'),
-        '这个钱包 24 小时内已经领过，下次可领 $time',
+        'This wallet already claimed in the last 24 hours. Next claim $time',
       );
-      expect(find.text('下次可领 $time'), findsOneWidget);
+      expect(find.text('Next claim $time'), findsOneWidget);
       // The line is the shared warn notice, never the v1 warning yellow.
       final notice = tester.widget<LoopNotice>(key('testnet-faucet-cooldown'));
       expect(notice.tone, LoopNoticeTone.warn);
@@ -744,20 +744,20 @@ void main() {
       await _openSheet(tester, faucet);
       expect(
         tester.widget<Text>(key('testnet-faucet-intro')).data,
-        contains('每 1 小时可以领一次'),
+        contains('claim once every 1 hour'),
       );
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
       expect(
         lineText(tester, 'testnet-faucet-cooldown'),
-        '这个钱包 1 小时内已经领过，下次可领 ${testnetFaucetNextLabel(next)}',
+        'This wallet already claimed in the last 1 hour. Next claim ${testnetFaucetNextLabel(next)}',
       );
       // The sheet never says 24 hours (the balance rows' own 「24 小时」 move
       // line under the sheet is decision 0188's, not the faucet's period).
       expect(
         find.descendant(
           of: find.byType(BottomSheet),
-          matching: find.textContaining('24 小时'),
+          matching: find.textContaining('24 hours'),
         ),
         findsNothing,
       );
@@ -806,7 +806,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'BNB 已到账，USD1 这次没成功，24 小时后可再领',
+        "BNB arrived; USD1 didn't go through this time. You can claim again in 24 hours",
       );
       expect(key('testnet-faucet-tx-BNB'), findsOneWidget);
       expect(key('testnet-faucet-tx-USD1'), findsNothing);
@@ -927,9 +927,9 @@ void main() {
       // that it arrived.
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'BNB 已发出，USD1 这次没发；24 小时后可再领',
+        "BNB was sent; USD1 wasn't sent this time. You can claim again in 24 hours",
       );
-      expect(find.textContaining('已到账'), findsNothing);
+      expect(find.textContaining('arrived'), findsNothing);
     });
 
     testWidgets('503 request timeout twice without a grant: 发放还在进行', (
@@ -973,7 +973,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         lineText(tester, 'testnet-faucet-partial'),
-        'BNB 已发出但还没确认，USD1 这次没发；24 小时后可再领',
+        "BNB was sent but isn't confirmed yet; USD1 wasn't sent this time. You can claim again in 24 hours",
       );
       expect(key('testnet-faucet-tx-BNB'), findsOneWidget);
     });
@@ -991,7 +991,10 @@ void main() {
       await _openSheet(tester, faucet);
       await tester.tap(key('testnet-faucet-claim'));
       await tester.pumpAndSettle();
-      expect(lineText(tester, 'testnet-faucet-failure'), '这次没有发出，可以重试');
+      expect(
+        lineText(tester, 'testnet-faucet-failure'),
+        'Nothing was sent this time. You can retry',
+      );
       expect(
         tester.widget<LoopButton>(key('testnet-faucet-claim')).onPressed,
         isNotNull,
@@ -1036,7 +1039,7 @@ void main() {
         );
         expect(
           testnetFaucetNextLabel(DateTime(2026, 10, 13, 7, 30), now: now),
-          '明天 07:30',
+          'Tomorrow 07:30',
         );
       },
     );
@@ -1050,12 +1053,27 @@ void main() {
         'TESTNET_FAUCET_RPC_NOT_CONFIGURED',
         'TESTNET_FAUCET_RUNTIME_UNAVAILABLE',
       ]) {
-        expect(text(code), '领取暂时不可用，稍后再试');
+        expect(
+          text(code),
+          'Claiming isn\'t available right now. Try again later',
+        );
       }
-      expect(text('TESTNET_FAUCET_USD1_UNAVAILABLE'), 'USD1 合约暂时不可用，稍后再试');
-      expect(text('TESTNET_FAUCET_CHAIN_READ_FAILED'), '链上读数暂时取不到，稍后再试');
-      expect(text('TESTNET_FAUCET_BUSY'), '正在给别人发放，几秒后再试');
-      expect(text('TESTNET_FAUCET_TRANSFER_FAILED'), '这次没有发出，可以重试');
+      expect(
+        text('TESTNET_FAUCET_USD1_UNAVAILABLE'),
+        "The USD1 contract isn't available right now. Try again later",
+      );
+      expect(
+        text('TESTNET_FAUCET_CHAIN_READ_FAILED'),
+        'On-chain figures can\'t be fetched right now. Try again later',
+      );
+      expect(
+        text('TESTNET_FAUCET_BUSY'),
+        'Sending to someone else. Try again in a few seconds',
+      );
+      expect(
+        text('TESTNET_FAUCET_TRANSFER_FAILED'),
+        'Nothing was sent this time. You can retry',
+      );
     });
 
     test('a partial grant is said by what did arrive', () {
@@ -1064,14 +1082,14 @@ void main() {
           const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
           cooldownSeconds: 86400,
         ),
-        'USD1 已到账，BNB 这次没成功，24 小时后可再领',
+        "USD1 arrived; BNB didn't go through this time. You can claim again in 24 hours",
       );
       // Decision 0158: without the server's cooldown no period is named.
       expect(
         testnetFaucetPartialText(
           const TestnetFaucetPartial(usd1TransactionHash: faucetUsd1Hash),
         ),
-        'USD1 已到账，BNB 这次没成功，稍后可再领',
+        "USD1 arrived; BNB didn't go through this time. You can claim again later",
       );
       expect(
         testnetFaucetPartialText(
@@ -1081,19 +1099,22 @@ void main() {
           ),
           cooldownSeconds: 86400,
         ),
-        'BNB 已发出，USD1 这次没发；24 小时后可再领',
+        "BNB was sent; USD1 wasn't sent this time. You can claim again in 24 hours",
       );
     });
 
     // Decision 0158 · the cooldown is the server's `cooldownSeconds`.
     test('the cooldown period is read from the server', () {
-      expect(testnetFaucetCooldownText(86400), '24 小时');
-      expect(testnetFaucetCooldownText(3 * 86400), '3 天');
-      expect(testnetFaucetCooldownText(12 * 3600), '12 小时');
-      expect(testnetFaucetCooldownText(1800), '30 分钟');
-      expect(testnetFaucetCooldownText(45), '45 秒');
-      expect(testnetFaucetClaimedText(3600), '这个钱包 1 小时内已经领过');
-      expect(testnetFaucetClaimedText(null), '这个钱包最近已经领过');
+      expect(testnetFaucetCooldownText(86400), '24 hours');
+      expect(testnetFaucetCooldownText(3 * 86400), '3 days');
+      expect(testnetFaucetCooldownText(12 * 3600), '12 hours');
+      expect(testnetFaucetCooldownText(1800), '30 minutes');
+      expect(testnetFaucetCooldownText(45), '45 seconds');
+      expect(
+        testnetFaucetClaimedText(3600),
+        'This wallet already claimed in the last 1 hour',
+      );
+      expect(testnetFaucetClaimedText(null), 'This wallet claimed recently');
       expect(
         testnetFaucetFailureText(
           const LoopChainException(
@@ -1102,7 +1123,7 @@ void main() {
           ),
           cooldownSeconds: 12 * 3600,
         ),
-        '这个钱包 12 小时内已经领过，稍后再来',
+        'This wallet already claimed in the last 12 hours. Come back later',
       );
     });
   });

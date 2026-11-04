@@ -82,7 +82,7 @@ void main() {
       final dots = tester.widget<SendStepBar>(find.byType(SendStepBar));
       expect(dots.step, 1);
       expect(dots.total, 3);
-      expect(dots.label, '收款地址');
+      expect(dots.label, 'Recipient address');
       expect(_key('send-recipient-paste'), findsOneWidget);
       expect(_key('send-recipient-scan'), findsOneWidget);
       // No 校验地址 button exists any more.
@@ -104,7 +104,7 @@ void main() {
       await tester.tap(_key('send-recipient-paste'));
       await tester.pumpAndSettle();
       expect(_key('send-recipient-checks'), findsOneWidget);
-      expect(find.text('地址已校验 · BNB Smart Chain'), findsOneWidget);
+      expect(find.text('Address checked · BNB Smart Chain'), findsOneWidget);
       expect(_button(tester, 'send-address-next').onPressed, isNotNull);
     });
 
@@ -135,10 +135,16 @@ void main() {
       );
       await tester.enterText(_key('send-recipient-field'), '0x12');
       await tester.pumpAndSettle();
-      expect(find.text('地址格式不对：0x 开头，共 42 位'), findsNothing);
+      expect(
+        find.text('Invalid address format: starts with 0x, 42 characters'),
+        findsNothing,
+      );
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-      expect(find.text('地址格式不对：0x 开头，共 42 位'), findsOneWidget);
+      expect(
+        find.text('Invalid address format: starts with 0x, 42 characters'),
+        findsOneWidget,
+      );
       expect(_button(tester, 'send-address-next').onPressed, isNull);
     });
 
@@ -181,7 +187,7 @@ void main() {
       expect(dots.step, 2);
       expect(find.byType(LoopFolioPrimary), findsNothing);
       // The only asset with something to send is chosen without asking.
-      expect(find.textContaining('可动用 6.995 BNB'), findsOneWidget);
+      expect(find.textContaining('Usable 6.995 BNB'), findsOneWidget);
       await tester.tap(_key('send-amount-max'));
       await tester.pumpAndSettle();
       final field = tester.widget<TextField>(_key('send-amount-field'));
@@ -206,7 +212,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(LoopSheet), findsOneWidget);
       expect(_key('send-asset-zero'), findsOneWidget);
-      expect(find.textContaining('余额为 0 的资产 · 1 个'), findsOneWidget);
+      expect(find.textContaining('Zero-balance assets · 1'), findsOneWidget);
       expect(_key('send-asset-$s5WbnbAssetId'), findsNothing);
       // The chosen row carries the check, not a chevron.
       final chosen = tester.widget<LoopRecordRow>(

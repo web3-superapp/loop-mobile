@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The result of one wallet-activity export.
 enum WalletExportOutcome {
@@ -52,27 +53,29 @@ final walletActivityExportSinkProvider = Provider<WalletActivityExportSink>(
 
 /// zh-CN copy for one export outcome. It states only what happened.
 String walletExportMessage(WalletExportOutcome outcome) => switch (outcome) {
-  WalletExportOutcome.shared => '记录已导出，请在分享面板中选择去处',
-  WalletExportOutcome.dismissed => '已生成 CSV，但没有选择分享去处',
-  WalletExportOutcome.failed => '导出没有完成，没有任何内容离开这台设备',
-  WalletExportOutcome.unavailable => '本次运行没有装配系统分享，没有导出任何内容',
-  WalletExportOutcome.empty => '这一段没有记录可以导出',
+  WalletExportOutcome.shared => LoopL10n.current.wallet_activityExportShared,
+  WalletExportOutcome.dismissed =>
+    LoopL10n.current.wallet_activityExportDismissed,
+  WalletExportOutcome.failed => LoopL10n.current.wallet_activityExportFailed,
+  WalletExportOutcome.unavailable =>
+    LoopL10n.current.wallet_activityExportUnavailable,
+  WalletExportOutcome.empty => LoopL10n.current.wallet_activityExportEmpty,
 };
 
 /// The header row, in the order [walletActivityCsv] writes its columns.
-const List<String> walletActivityCsvHeader = <String>[
-  '时间(UTC)',
-  '方向',
-  '资产',
-  '资产标识',
-  '数量',
-  '最小单位数量',
-  '对方地址',
-  '交易哈希',
-  '日志序号',
-  '区块',
-  '确认数',
-  '状态',
+List<String> get walletActivityCsvHeader => <String>[
+  LoopL10n.current.wallet_activityExportSwitch,
+  LoopL10n.current.wallet_activityExportSwitch2,
+  LoopL10n.current.common_assets,
+  LoopL10n.current.wallet_activityExportSwitch3,
+  LoopL10n.current.common_amount,
+  LoopL10n.current.wallet_activityExportSwitch4,
+  LoopL10n.current.wallet_activityExportSwitch5,
+  LoopL10n.current.wallet_txResultTxResultHashLabel,
+  LoopL10n.current.wallet_activityExportSwitch6,
+  LoopL10n.current.wallet_activityExportSwitch7,
+  LoopL10n.current.wallet_txResultTxResultConfirmationsLabel,
+  LoopL10n.current.wallet_activityExportSwitch8,
 ];
 
 /// Encodes the rows this page is currently listing as RFC 4180 CSV.
@@ -94,9 +97,12 @@ String walletActivityCsv(List<LoopWalletActivityEntry> entries) {
       <String>[
         entry.observedAt.toUtc().toIso8601String(),
         switch (entry.direction) {
-          LoopTransferDirection.incoming => '收到',
-          LoopTransferDirection.outgoing => '发出',
-          LoopTransferDirection.self => '自转',
+          LoopTransferDirection.incoming =>
+            LoopL10n.current.wallet_activityExportIncoming,
+          LoopTransferDirection.outgoing =>
+            LoopL10n.current.wallet_activityExportOutgoing,
+          LoopTransferDirection.self =>
+            LoopL10n.current.wallet_activityExportSelf,
         },
         entry.symbol,
         entry.assetId,

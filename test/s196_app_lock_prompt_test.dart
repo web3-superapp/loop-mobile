@@ -21,29 +21,29 @@ void main() {
       final host = await _pumpHost(tester, prompts: prompts);
 
       expect(await _offer(tester, host), isTrue);
-      expect(find.text('开启应用锁'), findsOneWidget);
+      expect(find.text('Turn on App lock'), findsOneWidget);
       expect(find.text(loopAppLockPromptBody), findsOneWidget);
-      expect(find.text('开启'), findsOneWidget);
-      expect(find.text('以后再说'), findsOneWidget);
+      expect(find.text('Turn on'), findsOneWidget);
+      expect(find.text('Not now'), findsOneWidget);
       // One Lime body on screen: 开启. 以后再说 is the plain button.
       final primaries = tester
           .widgetList<LoopButton>(find.byType(LoopButton))
           .where((button) => button.primary);
       expect(primaries, hasLength(1));
-      expect(primaries.single.label, '开启');
+      expect(primaries.single.label, 'Turn on');
 
-      await tester.tap(find.text('以后再说'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
       expect(prompts.prompted, isTrue);
 
       // The same run never asks again, and neither does the next one.
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
 
       final next = await _pumpHost(tester, prompts: prompts);
       expect(await _offer(tester, next), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
     });
 
     testWidgets('an enabled lock is not offered', (tester) async {
@@ -55,7 +55,7 @@ void main() {
       );
 
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
       expect(prompts.prompted, isNull);
     });
 
@@ -74,7 +74,7 @@ void main() {
       );
 
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
       expect(prompts.prompted, isNull);
     });
 
@@ -87,7 +87,7 @@ void main() {
       );
 
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
       expect(prompts.prompted, isNull);
     });
 
@@ -100,7 +100,7 @@ void main() {
       );
 
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
     });
 
     testWidgets('a failed read is not asked yet but still once per run', (
@@ -110,13 +110,13 @@ void main() {
       final host = await _pumpHost(tester, prompts: prompts);
 
       expect(await _offer(tester, host), isTrue);
-      expect(find.text('开启应用锁'), findsOneWidget);
-      await tester.tap(find.text('以后再说'));
+      expect(find.text('Turn on App lock'), findsOneWidget);
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(prompts.writes, 1);
 
       expect(await _offer(tester, host), isFalse);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
     });
 
     testWidgets('a read that never answers is not asked yet', (tester) async {
@@ -126,7 +126,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       expect(await offered, isTrue);
-      expect(find.text('开启应用锁'), findsOneWidget);
+      expect(find.text('Turn on App lock'), findsOneWidget);
     });
   });
 
@@ -143,14 +143,16 @@ void main() {
       );
 
       expect(await _offer(tester, host), isTrue);
-      await tester.tap(find.text('开启'));
+      await tester.tap(find.text('Turn on'));
       await tester.pumpAndSettle();
 
-      expect(authenticator.reasons, <String>['验证身份以开启应用锁']);
+      expect(authenticator.reasons, <String>[
+        'Verify your identity to turn on App lock',
+      ]);
       expect(host.container.read(loopAppLockProvider).enabled, isTrue);
       expect(await lockStore.read(), isTrue);
       expect(prompts.prompted, isTrue);
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
     });
 
     testWidgets('a refused prompt keeps the sheet and says so', (tester) async {
@@ -165,18 +167,18 @@ void main() {
       );
 
       expect(await _offer(tester, host), isTrue);
-      await tester.tap(find.text('开启'));
+      await tester.tap(find.text('Turn on'));
       await tester.pumpAndSettle();
 
       expect(host.container.read(loopAppLockProvider).enabled, isFalse);
-      expect(find.text('开启应用锁'), findsOneWidget);
-      expect(find.text('你取消了这次验证。'), findsOneWidget);
+      expect(find.text('Turn on App lock'), findsOneWidget);
+      expect(find.text('You cancelled this verification.'), findsOneWidget);
       // Asking was the answer to "was this installation offered it".
       expect(prompts.prompted, isTrue);
 
-      await tester.tap(find.text('以后再说'));
+      await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
-      expect(find.text('开启应用锁'), findsNothing);
+      expect(find.text('Turn on App lock'), findsNothing);
     });
   });
 

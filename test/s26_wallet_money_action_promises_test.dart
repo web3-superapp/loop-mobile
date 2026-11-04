@@ -41,12 +41,12 @@ void main() {
         of: find.byKey(const ValueKey<String>('wallet-quick-actions')),
         matching: find.text(label),
       );
-      expect(inKeys('发送'), findsOneWidget);
-      expect(inKeys('扫码'), findsOneWidget);
-      expect(inKeys('接收'), findsOneWidget);
-      expect(inKeys('兑换'), findsOneWidget);
+      expect(inKeys('Send'), findsOneWidget);
+      expect(inKeys('Scan'), findsOneWidget);
+      expect(inKeys('Receive'), findsOneWidget);
+      expect(inKeys('Swap'), findsOneWidget);
       // S343 · decision 0271: 跨链 has no entry on 我的.
-      expect(find.text('跨链'), findsNothing);
+      expect(find.text('Bridge'), findsNothing);
       // The promise the page cannot keep is gone, and so is the row that
       // carried it.
       expect(find.textContaining('在本机签名并广播'), findsNothing);
@@ -64,7 +64,7 @@ void main() {
       await tester.tap(send);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
-      expect(find.textContaining('链上操作'), findsWidgets);
+      expect(find.textContaining('On-chain actions'), findsWidgets);
     });
 
     testWidgets('an open write gate runs the action', (tester) async {

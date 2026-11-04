@@ -1,0 +1,319 @@
+{
+  "securityMfa_controllerConfirmOwnerPresent": {
+    "en": "Verify your identity once before unlinking the passkey",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_controller.dart:349",
+    "zh": "解绑 Passkey 前先验证一次身份"
+  },
+  "securityMfa_modelsSms": {
+    "en": "SMS",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_models.dart:10",
+    "zh": "短信"
+  },
+  "securityMfa_modelsTotp": {
+    "en": "Authenticator app",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_models.dart:9, lib/features/security/mfa/mfa_sheet.dart:101",
+    "zh": "验证器 App"
+  },
+  "securityMfa_passkeySheetBuild": {
+    "en": "The passkey is kept by this device's system; the login service only records its public key. On a new phone, a passkey synced through the same system account gets you back in.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:70",
+    "zh": "Passkey 由这台设备的系统保管，登录服务只记下它的公钥。换手机后，用同一个系统账号同步过去的 Passkey 就能再次进入。"
+  },
+  "securityMfa_passkeySheetCancelled": {
+    "en": "This didn't finish",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:85",
+    "zh": "这次没有完成"
+  },
+  "securityMfa_passkeySheetLoopLabel": {
+    "en": "Linked",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:151",
+    "zh": "已绑定"
+  },
+  "securityMfa_passkeySheetPasskeySheetConfirmBody": {
+    "en": "The device verifies your identity once before unlinking. The passkey stored in the system is managed by the system; LOOP can't delete it, the login service just stops accepting it.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:186",
+    "zh": "解绑前设备会先验证一次身份。系统里的那份 Passkey 由系统管理，LOOP 删不掉它，只是登录服务不再认它。"
+  },
+  "securityMfa_passkeySheetPasskeySheetConfirmTitle": {
+    "en": "After unlinking, this way back is gone",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:185",
+    "zh": "解绑后这条路就没有了"
+  },
+  "securityMfa_passkeySheetPasskeySheetEmptyMessage": {
+    "en": "Once linked, this device's face or fingerprint is a separate way back in.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:147",
+    "zh": "绑定后，这台设备的面容或指纹就是一条独立的回来路。"
+  },
+  "securityMfa_passkeySheetPasskeySheetEmptyTitle": {
+    "en": "This account has no passkey yet",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:146",
+    "zh": "这个账号还没有 Passkey"
+  },
+  "securityMfa_passkeySheetPasskeySheetLinkLabel": {
+    "en": "Link passkey",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:208",
+    "zh": "绑定 Passkey"
+  },
+  "securityMfa_passkeySheetPasskeySheetLinkLabel2": {
+    "en": "Link another passkey",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:209",
+    "zh": "再绑定一个 Passkey"
+  },
+  "securityMfa_passkeySheetPasskeySheetUnknownTitle": {
+    "en": "No response from the login service yet",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:135",
+    "zh": "还没有读到登录服务的回答"
+  },
+  "securityMfa_passkeySheetPasskeySheetUnlinkLabel": {
+    "en": "Unlinking…",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:191",
+    "zh": "正在解绑…"
+  },
+  "securityMfa_passkeySheetPasskeySheetUnlinkLabel2": {
+    "en": "Confirm unlink",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:191",
+    "zh": "确认解绑"
+  },
+  "securityMfa_passkeySheetSemanticLabel": {
+    "en": "{passkey}, set up, tap to unlink",
+    "placeholders": {
+      "passkey": {
+        "example": "passkey.label ?? 'Passkey'",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/security/mfa/passkey_sheet.dart:174",
+    "zh": "{passkey}，已设置，点按后可以解绑"
+  },
+  "securityMfa_passkeySheetSubtitle": {
+    "en": "Also used for two-step verification",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:158",
+    "zh": "也用作二次验证"
+  },
+  "securityMfa_passkeySheetSubtitle2": {
+    "en": "Used for sign-in and recovery",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:158",
+    "zh": "用于登录与恢复"
+  },
+  "securityMfa_passkeySheetText": {
+    "en": "The login service hasn't responded during this session yet.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:221",
+    "zh": "这次运行还没有得到登录服务的回答。"
+  },
+  "securityMfa_passkeySheetTitle": {
+    "en": "Passkeys on this account",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:157",
+    "zh": "这个账号的 Passkey"
+  },
+  "securityMfa_passkeySheetTrailing": {
+    "en": "Set up",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/passkey_sheet.dart:159",
+    "zh": "已设置"
+  },
+  "securityMfa_sheetBuild": {
+    "en": "Both methods are kept by the login service. LOOP doesn't store the secret key or the passkey.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:85",
+    "zh": "两种方式都由登录服务保管，LOOP 不保存密钥，也不保存 Passkey。"
+  },
+  "securityMfa_sheetBuild2": {
+    "en": "Once turned off, the login service won't ask you for a code when it requires two-step verification.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:104",
+    "zh": "关闭后，登录服务在要求二次验证时不会再问你验证码。"
+  },
+  "securityMfa_sheetCancelled": {
+    "en": "System verification didn't finish. Nothing was changed.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:24",
+    "zh": "系统的验证没有完成，这次什么都没有改变。"
+  },
+  "securityMfa_sheetDeviceUnsupported": {
+    "en": "This device has no passkey available; the system offers no place to create one.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:25",
+    "zh": "这台设备没有可用的 Passkey，系统没有提供可以创建的地方。"
+  },
+  "securityMfa_sheetInvalidCode": {
+    "en": "The code is wrong or has expired. Enter it again.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:28",
+    "zh": "验证码不对或者已经过期，重新输入一次。"
+  },
+  "securityMfa_sheetLoopLabel": {
+    "en": "Manual entry key",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:166",
+    "zh": "手动输入的密钥"
+  },
+  "securityMfa_sheetLoopLabel2": {
+    "en": "6-digit code from your authenticator",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:186",
+    "zh": "验证器给出的 6 位码"
+  },
+  "securityMfa_sheetLoopPasskeyDomainPending": {
+    "en": "LOOP needs domain credentials for passkeys first; this version doesn't have them yet",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:42",
+    "zh": "还要先给 LOOP 配好 Passkey 用的域名凭据，当前版本还没有"
+  },
+  "securityMfa_sheetMessage": {
+    "en": "Key copied",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:136",
+    "zh": "已复制密钥"
+  },
+  "securityMfa_sheetMfaSheetBeginLabel": {
+    "en": "Get key",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:154",
+    "zh": "获取密钥"
+  },
+  "securityMfa_sheetMfaSheetFailureTitle": {
+    "en": "The login service hasn't enabled MFA yet",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:95",
+    "zh": "登录服务尚未开启 MFA"
+  },
+  "securityMfa_sheetMfaSheetFailureTitle2": {
+    "en": "This step didn't finish",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:96, lib/features/security/mfa/passkey_sheet.dart:86",
+    "zh": "这一步没有完成"
+  },
+  "securityMfa_sheetMfaSheetPasskeyLabel": {
+    "en": "Waiting for system verification…",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:250, lib/features/security/mfa/passkey_sheet.dart:206",
+    "zh": "正在等待系统验证…"
+  },
+  "securityMfa_sheetMfaSheetPasskeyLabel2": {
+    "en": "Turn off passkey verification",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:252",
+    "zh": "关闭 Passkey 验证"
+  },
+  "securityMfa_sheetMfaSheetPasskeyLabel3": {
+    "en": "Use passkey for two-step verification",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:253",
+    "zh": "Passkey 开启二次验证"
+  },
+  "securityMfa_sheetMfaSheetPasskeyStatus": {
+    "en": "On · Passkey. When the login service requires two-step verification, the system shows a passkey prompt.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:239",
+    "zh": "已开启 · Passkey。登录服务要求二次验证时，会让系统弹出 Passkey 验证。"
+  },
+  "securityMfa_sheetMfaSheetPasskeyStatus2": {
+    "en": "This account already has a passkey; you can also use it for two-step verification.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:241",
+    "zh": "这个账号已经有 Passkey，可以直接把它也用作二次验证。"
+  },
+  "securityMfa_sheetMfaSheetPasskeyStatus3": {
+    "en": "Create a passkey on this device and use it as your two-step verification method.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:242",
+    "zh": "用这台设备创建一个 Passkey，并把它作为二次验证方式。"
+  },
+  "securityMfa_sheetMfaSheetPasskeyUnavailableTitle": {
+    "en": "Passkey not available right now",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:228, lib/features/security/mfa/passkey_sheet.dart:84, lib/features/security/mfa/passkey_sheet.dart:111",
+    "zh": "Passkey 暂不可用"
+  },
+  "securityMfa_sheetMfaSheetRemoveLabel": {
+    "en": "Turning off…",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:271",
+    "zh": "正在关闭…"
+  },
+  "securityMfa_sheetMfaSheetRemoveLabel2": {
+    "en": "Turn off MFA",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:271",
+    "zh": "关闭 MFA"
+  },
+  "securityMfa_sheetMfaSheetSubmitLabel": {
+    "en": "Verifying…",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:204",
+    "zh": "正在验证…"
+  },
+  "securityMfa_sheetMfaSheetSubmitLabel2": {
+    "en": "Verify and turn on",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:205",
+    "zh": "验证并开启"
+  },
+  "securityMfa_sheetMfaSheetTitle": {
+    "en": "Two-step verification",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:80",
+    "zh": "二次验证"
+  },
+  "securityMfa_sheetNotAuthenticated": {
+    "en": "Your sign-in has expired. Sign in again and retry.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:27",
+    "zh": "登录状态已经失效，重新登录后再试。"
+  },
+  "securityMfa_sheetNotEnabled": {
+    "en": "The login service hasn't enabled MFA yet. This isn't a problem with this device or your account.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:26",
+    "zh": "登录服务尚未开启 MFA。这不是这台设备的问题，也不是你账号的问题。"
+  },
+  "securityMfa_sheetPasskeyDomainUnconfigured": {
+    "en": "LOOP needs domain credentials for passkeys first; this version doesn't have them yet.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:24",
+    "zh": "还要先给 LOOP 配好 Passkey 用的域名凭据，当前版本还没有。"
+  },
+  "securityMfa_sheetRejected": {
+    "en": "This didn't finish.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:29",
+    "zh": "这次没有完成。"
+  },
+  "securityMfa_sheetS": {
+    "en": "An authenticator app generates 6-digit codes on your phone, such as Google Authenticator, Microsoft Authenticator or 1Password. Scan the code or enter the key with it. The key is issued by the login service; LOOP doesn't store it.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:105",
+    "zh": "验证器 App 是手机上生成 6 位验证码的应用，例如 Google Authenticator、Microsoft Authenticator、1Password。用它扫码或输入密钥即可。密钥由登录服务签发，LOOP 不保存它。"
+  },
+  "securityMfa_sheetUnavailable": {
+    "en": "Can't reach the login service right now.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:30",
+    "zh": "暂时联系不上登录服务。"
+  },
+  "securityMfa_sheetUnknown": {
+    "en": "Didn't finish; the login service gave no reason.",
+    "placeholders": {},
+    "where": "lib/features/security/mfa/mfa_sheet.dart:31",
+    "zh": "没有完成，登录服务没有说明原因。"
+  }
+}

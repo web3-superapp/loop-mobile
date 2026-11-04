@@ -178,9 +178,15 @@ void main() {
 
     test('a quality marker exists for every non-fresh quality', () {
       expect(loopFactQualityMarker(LoopFactQuality.fresh), isNull);
-      expect(loopFactQualityMarker(LoopFactQuality.stale), '数据可能过期');
-      expect(loopFactQualityMarker(LoopFactQuality.derived), '按成交价折算');
-      expect(loopFactQualityMarker(LoopFactQuality.proxied), '以 WBNB 计价');
+      expect(
+        loopFactQualityMarker(LoopFactQuality.stale),
+        'Data may be out of date',
+      );
+      expect(
+        loopFactQualityMarker(LoopFactQuality.derived),
+        'Converted at trade price',
+      );
+      expect(loopFactQualityMarker(LoopFactQuality.proxied), 'Priced in WBNB');
     });
 
     test('a summary figure switches to K/M/B/T at 100,000', () {
@@ -321,28 +327,31 @@ void main() {
       // Two phrases only: one for a value still on its way, one for the rest.
       expect(
         loopReasonCodeSummaryText('BSC_CHAIN_VERIFICATION_PENDING'),
-        '等待数据',
+        'Waiting for data',
       );
-      expect(loopReasonCodeSummaryText('INDEXING_DELAYED'), '等待数据');
-      expect(loopReasonCodeSummaryText('MARKET_FACT_NOT_REPORTED'), '未报告');
+      expect(loopReasonCodeSummaryText('INDEXING_DELAYED'), 'Waiting for data');
+      expect(loopReasonCodeSummaryText('MARKET_FACT_NOT_REPORTED'), 'No data');
       expect(
         loopReasonCodeSummaryText('MARKET_PROVIDER_RATE_LIMITED'),
-        '数据不可得',
+        'Data unavailable',
       );
-      expect(loopReasonCodeSummaryText('SOMETHING_NEW'), '数据不可得');
-      expect(loopReasonCodeSummaryText(null), '数据不可得');
+      expect(loopReasonCodeSummaryText('SOMETHING_NEW'), 'Data unavailable');
+      expect(loopReasonCodeSummaryText(null), 'Data unavailable');
       // Every code a market fact can carry lands on the second phrase; the
       // first one is not reached from a Token Card at all.
       expect(
         loopReasonCodeSummaryText('MARKET_PROVIDER_REQUEST_REJECTED'),
-        '数据不可得',
+        'Data unavailable',
       );
       expect(
         loopReasonCodeSummaryText('MARKET_FACT_CACHE_UNAVAILABLE'),
-        '数据不可得',
+        'Data unavailable',
       );
       // The full sentence is unchanged; only the summary slot is short.
-      expect(loopReasonCodeText('MARKET_FACT_NOT_REPORTED'), '数据源没有报告这一项。');
+      expect(
+        loopReasonCodeText('MARKET_FACT_NOT_REPORTED'),
+        'The data source didn\'t report this item.',
+      );
     });
 
     test('the summary formatter is confined to the Token Card', () {
@@ -396,21 +405,24 @@ void main() {
     });
 
     test('an unknown reason code keeps a neutral sentence', () {
-      expect(loopReasonCodeText('SOMETHING_NEW'), '这一项暂时读不到。');
-      expect(loopReasonCodeText(null), '这一项暂时读不到。');
+      expect(
+        loopReasonCodeText('SOMETHING_NEW'),
+        "This item can't be loaded right now.",
+      );
+      expect(loopReasonCodeText(null), "This item can't be loaded right now.");
       expect(
         loopReasonCodeText('BSC_CHAIN_ID_MISMATCH'),
-        contains('不是 BNB Smart Chain'),
+        contains('BNB Smart Chain'),
       );
       // Two codes the market service emits that the table used to miss, so
       // the fact list fell back to the neutral sentence for both.
       expect(
         loopReasonCodeText('MARKET_PROVIDER_REQUEST_REJECTED'),
-        '数据服务拒绝了这次请求，与你的网络无关，稍后再看。',
+        'The data service rejected this request. It isn\'t your network. Check back later.',
       );
       expect(
         loopReasonCodeText('MARKET_FACT_CACHE_UNAVAILABLE'),
-        '行情数据暂时读不到，这一项没有数值，稍后再看。',
+        'Market data can\'t be loaded right now, so this item has no value. Check back later.',
       );
     });
   });

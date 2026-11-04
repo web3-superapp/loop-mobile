@@ -95,7 +95,10 @@ void main() {
         MaterialApp(
           theme: LoopTheme.dark,
           home: const Scaffold(
-            body: LoopUnavailableLine(label: '跨链与挖矿领取记录不可用', reasonCode: null),
+            body: LoopUnavailableLine(
+              label: 'Bridge and mining claim history unavailable',
+              reasonCode: null,
+            ),
           ),
         ),
       );
@@ -118,7 +121,10 @@ void main() {
       expect(decoration.color, LoopAlertCard.ground);
       expect((decoration.border! as Border).top.color, LoopAlertCard.edge);
       expect(decoration.borderRadius, LoopRadius.control);
-      expect(find.text('跨链与挖矿领取记录不可用'), findsOneWidget);
+      expect(
+        find.text('Bridge and mining claim history unavailable'),
+        findsOneWidget,
+      );
     });
   });
 

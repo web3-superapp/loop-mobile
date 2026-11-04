@@ -274,7 +274,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.textContaining('不是可用余额'), findsNothing);
+      expect(find.textContaining('Not an available balance'), findsNothing);
       // S343 · decision 0271: 我的 has no (i) beside 总资产.
       expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);
     });
@@ -310,7 +310,7 @@ void main() {
         '/wallet/swap',
         '/scan',
       ]);
-      expect(find.text('扫码'), findsOneWidget);
+      expect(find.text('Scan'), findsOneWidget);
       // S343 · decision 0271: 跨链 has no entry on 我的.
       expect(key('wallet-bridge-entry'), findsNothing);
     });
@@ -332,12 +332,12 @@ void main() {
           (tester.widget<Container>(key('wallet-quick-disc-$label')).decoration!
                   as BoxDecoration)
               .color;
-      for (final label in const <String>['兑换', '接收', '发送', '扫码']) {
+      for (final label in const <String>['swap', 'receive', 'send', 'pay']) {
         expect(disc(label), LoopColors.card2, reason: label);
       }
       final glyph = tester.widget<LoopIcon>(
         find.descendant(
-          of: key('wallet-quick-disc-接收'),
+          of: key('wallet-quick-disc-receive'),
           matching: find.byType(LoopIcon),
         ),
       );
@@ -358,7 +358,7 @@ void main() {
           matching: find.byType(LoopBadge),
         ),
       );
-      expect(badge.text, '产生算力');
+      expect(badge.text, 'Earns power');
       expect(badge.kind, LoopBadgeKind.mute);
       expect(
         find.descendant(
@@ -383,7 +383,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
       expect(opened, isEmpty);
-      expect(find.textContaining('链上操作'), findsWidgets);
+      expect(find.textContaining('On-chain actions'), findsWidgets);
     });
   });
 

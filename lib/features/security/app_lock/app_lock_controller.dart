@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// How long LOOP may be in the background before the lock closes again.
 ///
@@ -174,7 +175,9 @@ final class LoopAppLockController extends Notifier<LoopAppLockState> {
   Future<bool> _switch(bool enabled) async {
     if (state.busy || state.enabled == enabled) return state.enabled == enabled;
     return _authenticated(
-      reason: enabled ? '验证身份以开启应用锁' : '验证身份以关闭应用锁',
+      reason: enabled
+          ? LoopL10n.current.securityAppLock_controllerReason
+          : LoopL10n.current.securityAppLock_controllerReason2,
       onSuccess: (result) async {
         var persisted = true;
         try {
@@ -199,7 +202,7 @@ final class LoopAppLockController extends Notifier<LoopAppLockState> {
   Future<bool> unlock() async {
     if (state.busy || !state.locked) return !state.locked;
     return _authenticated(
-      reason: '验证身份以进入 LOOP',
+      reason: LoopL10n.current.securityAppLock_controllerReason3,
       onSuccess: (result) async {
         if (!ref.mounted) return;
         state = state.copyWith(

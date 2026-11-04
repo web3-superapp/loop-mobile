@@ -73,7 +73,7 @@ void main() {
       final mark = tester.widget<Text>(
         key('wallet-balance-mark-$s5NativeAssetId'),
       );
-      expect(mark.data, '以 WBNB 计价');
+      expect(mark.data, 'Priced in WBNB');
       // Decision 0277: the caption step, 12.
       expect(mark.style!.fontSize, LoopType.captionSm.fontSize);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
@@ -130,9 +130,9 @@ void main() {
       expect(tester.widget(row), isA<LoopQuoteRow>());
       expect(find.text('tBNB'), findsOneWidget);
       expect(find.text('2.5'), findsOneWidget);
-      expect(find.text('可动用 2.495'), findsOneWidget);
+      expect(find.text('Usable 2.495'), findsOneWidget);
       expect(
-        find.descendant(of: row, matching: find.text('手续费保留 0.005')),
+        find.descendant(of: row, matching: find.text('Fee reserve 0.005')),
         findsOneWidget,
       );
     });

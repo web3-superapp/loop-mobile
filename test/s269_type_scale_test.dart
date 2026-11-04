@@ -222,7 +222,7 @@ void main() {
         tester,
         find.descendant(
           of: find.byType(LoopAtmoTitle),
-          matching: find.text('我的'),
+          matching: find.text('Me'),
         ),
       ),
       28,

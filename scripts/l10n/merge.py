@@ -64,7 +64,8 @@ def build() -> tuple[dict, dict, list[str]]:
         meta: dict = {"description": str(entry.get("where", ""))}
         if names_zh:
             meta["placeholders"] = {
-                name: {"type": "Object?"} for name in sorted(names_zh)
+                name: {"type": "num" if re.search(r"\{" + name + r",\s*plural,", en_text) else "Object?"}
+                for name in sorted(names_zh)
             }
         en[key] = en_text
         en["@" + key] = meta

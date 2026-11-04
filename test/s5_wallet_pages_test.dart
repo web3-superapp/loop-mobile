@@ -44,11 +44,11 @@ void main() {
 
       // Decision 0119: one provenance line under the list; the
       // confirmations sit in the statement it opens.
-      expect(findProvenanceContaining('区块 120,628,164'), findsOneWidget);
+      expect(findProvenanceContaining('Block 120,628,164'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
       // S343 · decision 0271: 我的's bar has no (i); the statement is still
       // the line's own.
-      expect(_provenanceNote('15 确认'), findsOneWidget);
+      expect(_provenanceNote('15 confirmations'), findsOneWidget);
     });
 
     testWidgets('the assets are unboxed rows: amount over value and 24h', (
@@ -170,8 +170,13 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('余额读不到'), findsWidgets);
-      expect(find.textContaining('链上节点暂时连不上，与你的网络无关'), findsWidgets);
+      expect(find.textContaining("Balance can't be loaded"), findsWidgets);
+      expect(
+        find.textContaining(
+          "Can't reach the on-chain node right now. It isn't your network",
+        ),
+        findsWidgets,
+      );
       expect(find.text('0'), findsNothing);
     });
 
@@ -182,7 +187,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.textContaining('以 WBNB 计价'), findsWidgets);
+      expect(find.textContaining('Priced in WBNB'), findsWidgets);
     });
 
     testWidgets('the foot of 我的 states nothing it did not read', (
@@ -205,7 +210,7 @@ void main() {
       expect(find.text('代币授权'), findsNothing);
       expect(find.text('网络'), findsNothing);
       expect(find.text('DApp'), findsOneWidget);
-      expect(find.text('我的钱包'), findsNothing);
+      expect(find.text('My wallets'), findsNothing);
       expect(find.text('授权与网络'), findsNothing);
       expect(find.text('安全中心'), findsNothing);
       expect(find.textContaining('approve('), findsNothing);
@@ -386,8 +391,8 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('请稍后再试'), findsOneWidget);
-      expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(find.textContaining('Try again later'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsNothing,
@@ -404,9 +409,9 @@ void main() {
         privy: WalletCreatingTestPrivyGateway(),
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
       expect(find.textContaining('尚未读取成功'), findsNothing);
-      expect(find.text('还没有钱包'), findsOneWidget);
+      expect(find.text('No wallet yet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsOneWidget,
@@ -435,7 +440,7 @@ void main() {
         // The server projects `/v2/wallets` from Privy, so the list this page
         // rendered predates the wallet and is read again.
         expect(wallet.directoryReads, 2);
-        expect(find.text('钱包已创建'), findsOneWidget);
+        expect(find.text('Wallet created'), findsOneWidget);
       },
     );
 
@@ -458,8 +463,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Privy 暂时不能创建钱包。'), findsOneWidget);
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
-      expect(find.text('钱包已创建'), findsNothing);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
+      expect(find.text('Wallet created'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsOneWidget,
@@ -483,7 +488,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('创建中…'), findsOneWidget);
+      expect(find.text('Creating…'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
       );
@@ -509,8 +514,11 @@ void main() {
         wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
-      expect(find.textContaining('当前会话未完成验证'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
+      expect(
+        find.textContaining("This session isn't verified"),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsNothing,
@@ -530,8 +538,11 @@ void main() {
         privy: privy,
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
-      expect(find.textContaining('当前会话未完成验证'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
+      expect(
+        find.textContaining("This session isn't verified"),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsNothing,
@@ -553,8 +564,8 @@ void main() {
         privy: WalletCreatingTestPrivyGateway(),
       );
 
-      expect(find.text('还没有选定当前钱包'), findsOneWidget);
-      expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(find.text('No current wallet selected yet'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsNothing);
       expect(find.textContaining('尚未读取成功'), findsNothing);
     });
   });
@@ -603,8 +614,11 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('2 项资产暂无价格，未计入'), findsOneWidget);
-      expect(find.textContaining('数据可能过期'), findsWidgets);
+      expect(
+        find.textContaining('2 assets have no price yet, not included'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Data may be out of date'), findsWidgets);
       // Decision 0188: 今日盈亏 comes from the net-worth history, which this
       // composition does not mount, so the line is not drawn at all.
       expect(find.byKey(const ValueKey<String>('wallet-pnl')), findsNothing);
@@ -625,8 +639,11 @@ void main() {
         ),
       );
 
-      expect(find.text('暂不可用'), findsWidgets);
-      expect(find.textContaining('暂时读不到价格'), findsWidgets);
+      expect(find.text('Not available right now'), findsWidgets);
+      expect(
+        find.textContaining("Price can't be loaded right now"),
+        findsWidgets,
+      );
       expect(
         find.byKey(const ValueKey<String>('wallet-change24h')),
         findsNothing,
@@ -730,15 +747,18 @@ void main() {
       );
       await openAssetFacts(tester);
 
-      expect(find.text('链上余额'), findsWidgets);
-      expect(find.text('可用'), findsOneWidget);
-      expect(find.text('可动用（扣除手续费保留）'), findsOneWidget);
-      expect(find.text('手续费保留'), findsOneWidget);
+      expect(find.text('On-chain balance'), findsWidgets);
+      expect(find.text('Available'), findsOneWidget);
+      expect(find.text('Usable (after fee reserve)'), findsOneWidget);
+      expect(find.text('Fee reserve'), findsOneWidget);
       // The minor-unit integer is a contract fact, not one of the balance
       // meanings, and it never prints as an unreadable digit run.
       expect(find.text('最小单位'), findsNothing);
       expect(find.text('7000000000000000000'), findsNothing);
-      expect(find.text('最小单位余额（18 位精度的整数）'), findsOneWidget);
+      expect(
+        find.text('Balance in base units (integer, 18 decimals)'),
+        findsOneWidget,
+      );
       expect(find.text('7,000,000,000,000,000,000'), findsOneWidget);
     });
 
@@ -757,7 +777,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('wallet-asset-proxied')),
       );
-      expect(find.textContaining('代理资产'), findsOneWidget);
+      expect(find.textContaining('Proxy asset'), findsOneWidget);
     });
 
     testWidgets('a misaligned cross-check never changes the chain figure', (
@@ -790,7 +810,10 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('wallet-asset-crosscheck')),
       );
-      expect(find.textContaining('交叉核对不会改变它'), findsOneWidget);
+      expect(
+        find.textContaining("the cross-check doesn't change it"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a malformed asset identity fails closed', (tester) async {
@@ -826,7 +849,10 @@ void main() {
         find.byKey(const ValueKey<String>('receive-address-capsule')),
         findsOneWidget,
       );
-      expect(find.textContaining('只接收 BNB Smart Chain'), findsOneWidget);
+      expect(
+        find.textContaining('Only receives assets on the BNB Smart Chain'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('no other network is listed, not even as a placeholder', (
@@ -879,7 +905,7 @@ void main() {
         (writes.single.arguments as Map<Object?, Object?>)['text'],
         s5Address,
       );
-      expect(find.text('地址已复制'), findsOneWidget);
+      expect(find.text('Address copied'), findsOneWidget);
 
       // The capsule's own copy glyph copies the same full address.
       await tester.tap(
@@ -904,7 +930,7 @@ void main() {
         privy: WalletCreatingTestPrivyGateway(),
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('receive-create-wallet')),
         findsOneWidget,
@@ -926,7 +952,7 @@ void main() {
       );
 
       expect(find.byKey(const ValueKey<String>('receive-qr')), findsNothing);
-      expect(find.textContaining('请稍后再试'), findsOneWidget);
+      expect(find.textContaining('Try again later'), findsOneWidget);
     });
   });
 
@@ -940,11 +966,11 @@ void main() {
 
       // Decision 0126: two flat sections in the page's own words, and the
       // address heads its row (the folio that repeated it is gone).
-      expect(find.text('嵌入式钱包'), findsOneWidget);
-      expect(find.text('外部钱包'), findsOneWidget);
+      expect(find.text('Embedded wallet'), findsOneWidget);
+      expect(find.text('External wallets'), findsOneWidget);
       expect(find.text('0x0000…00a1'), findsOneWidget);
       expect(find.text(s5Address), findsNothing);
-      expect(find.text('使用中'), findsOneWidget);
+      expect(find.text('In use'), findsOneWidget);
     });
 
     testWidgets('switching confirms first and sends the expected active id', (
@@ -966,7 +992,7 @@ void main() {
 
       expect(wallet.switched, <String>[s5OtherWalletId]);
       expect(wallet.expectedActive, <String?>[s5WalletId]);
-      expect(find.text('已切换活跃钱包'), findsOneWidget);
+      expect(find.text('Active wallet switched'), findsOneWidget);
     });
 
     testWidgets('a concurrent switch reports the conflict', (tester) async {
@@ -984,9 +1010,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('活跃钱包没有切换'), findsOneWidget);
-      expect(find.textContaining('本次没有覆盖任何内容'), findsOneWidget);
-      expect(find.text('已切换活跃钱包'), findsNothing);
+      expect(find.text('Active wallet wasn\'t switched'), findsOneWidget);
+      expect(
+        find.textContaining('nothing was overwritten this time'),
+        findsOneWidget,
+      );
+      expect(find.text('Active wallet switched'), findsNothing);
     });
 
     testWidgets('an archived wallet cannot be activated', (tester) async {
@@ -1011,7 +1040,7 @@ void main() {
       );
       await pumpS5Page(tester, const WalletManagerScreen(), wallet: wallet);
 
-      expect(find.text('已归档'), findsOneWidget);
+      expect(find.text('Archived'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('wallet-row-$s5OtherWalletId')),
       );
@@ -1030,7 +1059,7 @@ void main() {
         privy: privy,
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
       expect(find.textContaining('还没有读到'), findsNothing);
 
       await tester.tap(
@@ -1054,7 +1083,7 @@ void main() {
         privy: WalletCreatingTestPrivyGateway(),
       );
 
-      expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(find.text('This account has no wallet yet'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('wallets-create-wallet')),
         findsNothing,
@@ -1075,17 +1104,23 @@ void main() {
       // Decision 0126 (OKX record row): kind and the other side on the
       // left, the signed amount and its time on the right; the block and
       // the confirmations are one tap away, in the detail sheet.
-      expect(find.text('收到 WBNB'), findsOneWidget);
-      expect(find.textContaining('来自 0x'), findsOneWidget);
+      expect(find.text('Received WBNB'), findsOneWidget);
+      expect(find.textContaining('From 0x'), findsOneWidget);
       expect(find.text('+1.5'), findsOneWidget);
-      expect(find.textContaining('区块 120,628,064'), findsNothing);
-      expect(findProvenanceContaining('数据落后 33 块'), findsOneWidget);
+      expect(find.textContaining('Block 120,628,064'), findsNothing);
+      expect(findProvenanceContaining('Data 33 blocks behind'), findsOneWidget);
       // One screen, one way of writing a number: the block number grouped and
       // the indexer height two lines under it did not.
-      expect(findProvenanceContaining('索引高度 120,628,771'), findsOneWidget);
-      expect(findProvenanceContaining('索引高度 120628771'), findsNothing);
+      expect(
+        findProvenanceContaining('Indexed height 120,628,771'),
+        findsOneWidget,
+      );
+      expect(
+        findProvenanceContaining('Indexed height 120628771'),
+        findsNothing,
+      );
 
-      await tester.tap(find.text('收到 WBNB'));
+      await tester.tap(find.text('Received WBNB'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey<String>('tx-entry-sheet')), findsOne);
       expect(find.text('120,628,064'), findsOneWidget);
@@ -1121,7 +1156,7 @@ void main() {
         ),
       );
 
-      expect(find.text('已回滚'), findsWidgets);
+      expect(find.text('Reverted'), findsWidgets);
     });
 
     testWidgets('the native and cross-chain segments are unavailable', (
@@ -1133,9 +1168,17 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
+      // The segment row scrolls sideways (decision 0229).
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('tx-history-seg-3')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-3')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('BNB 转账记录暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining("BNB transfer history can't be loaded"),
+        findsOneWidget,
+      );
 
       // The segment row scrolls sideways at the v3 word size (decision 0229).
       await tester.ensureVisible(
@@ -1144,7 +1187,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-4')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('跨链与挖矿领取记录暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining("Bridge and mining claim history can't be loaded"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an indexer that never ran is unavailable, not empty', (
@@ -1160,8 +1206,11 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('不是没有记录'), findsOneWidget);
-      expect(find.text('还没有链上活动'), findsNothing);
+      expect(
+        find.textContaining("that doesn't mean there are none"),
+        findsOneWidget,
+      );
+      expect(find.text('No on-chain activity yet'), findsNothing);
     });
 
     testWidgets('a next page is requested with the opaque cursor', (
@@ -1181,7 +1230,7 @@ void main() {
       // Decision 0119 (v3 需求 6.2 · 4): there is no 加载更多 button. The end
       // of the tape coming into view asks for the next cursor by itself, and
       // the same cursor answered again is never asked twice.
-      expect(find.text('加载更多'), findsNothing);
+      expect(find.text('Load more'), findsNothing);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('tx-history-load-more')),
@@ -1190,7 +1239,7 @@ void main() {
 
       expect(wallet.activityCursors, <String?>[null, s5Cursor]);
       // The repeated row is not appended twice.
-      expect(find.text('收到 WBNB'), findsOneWidget);
+      expect(find.text('Received WBNB'), findsOneWidget);
     });
 
     testWidgets('a walletless account is offered a wallet, not a skeleton', (
@@ -1204,7 +1253,7 @@ void main() {
         privy: WalletCreatingTestPrivyGateway(),
       );
 
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('tx-history-create-wallet')),
         findsOneWidget,
@@ -1238,17 +1287,19 @@ void main() {
         expect(find.text('rpc-2bd52ca6d267'), findsNothing);
         expect(find.textContaining('rpc-'), findsNothing);
         expect(find.text('bsc-rpc.publicnode.com'), findsOneWidget);
-        expect(find.textContaining('端点 1'), findsOneWidget);
+        expect(find.textContaining('Endpoint 1'), findsOneWidget);
         // Still no URL: no scheme, no path, no key.
         expect(find.textContaining('https://'), findsNothing);
         // The chain row states the best latency any endpoint answered with,
         // and the endpoint row states its own; both are 515ms here.
-        expect(find.textContaining('延迟 515ms'), findsNWidgets(2));
-        expect(find.textContaining('落后 0 块'), findsOneWidget);
-        expect(find.text('1 / 1 正常'), findsOneWidget);
+        expect(find.textContaining('Latency 515ms'), findsNWidgets(2));
+        expect(find.textContaining('0 blocks behind'), findsOneWidget);
+        expect(find.text('1 / 1 healthy'), findsOneWidget);
         // The check result is a display name, never the wire value.
         expect(
-          find.textContaining('校验${LoopChainVerification.verified.label}'),
+          find.textContaining(
+            'Checked ${LoopChainVerification.verified.label}',
+          ),
           findsOneWidget,
         );
         for (final verification in LoopChainVerification.values) {
@@ -1281,9 +1332,14 @@ void main() {
 
       final block = find.byKey(const ValueKey<String>('networks-state-error'));
       expect(block, findsOneWidget);
-      expect(find.textContaining('不要重复提交'), findsNothing);
-      expect(find.textContaining('结果未确认'), findsNothing);
-      expect(find.text('返回的数据不完整，这一页没有采用任何内容。'), findsOneWidget);
+      expect(find.textContaining("don't submit again"), findsNothing);
+      expect(find.textContaining("the result isn't confirmed"), findsNothing);
+      expect(
+        find.text(
+          'The returned data was incomplete. Nothing on this page was used.',
+        ),
+        findsOneWidget,
+      );
       // One read, one failure: the page did not quietly stop asking.
       expect(chain.status.resolves, 1);
 
@@ -1297,7 +1353,7 @@ void main() {
         const ValueKey<String>('networks-operator-disclosure'),
       );
       expect(find.text('bsc-rpc.publicnode.com'), findsOneWidget);
-      expect(find.text('1 / 1 正常'), findsOneWidget);
+      expect(find.text('1 / 1 healthy'), findsOneWidget);
     });
 
     testWidgets('a read that failed with no server answer says so', (
@@ -1319,14 +1375,19 @@ void main() {
         findsOneWidget,
       );
       expect(chain.status.resolves, 2);
-      expect(find.text('这一页暂时读不到，没有提交任何内容。请稍后重试。'), findsOneWidget);
-      expect(find.textContaining('不要重复提交'), findsNothing);
-      expect(find.textContaining('操作没有完成'), findsNothing);
+      expect(
+        find.text(
+          'This page can\'t be loaded right now. Nothing was submitted. Try again later.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining("don't submit again"), findsNothing);
+      expect(find.textContaining("The action didn't finish"), findsNothing);
 
       await tester.tap(find.text('重试'));
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 3);
-      expect(find.text('1 / 1 正常'), findsOneWidget);
+      expect(find.text('1 / 1 healthy'), findsOneWidget);
     });
 
     testWidgets('a rate-limited read holds its retry for the cool-down', (
@@ -1345,13 +1406,16 @@ void main() {
         find.byKey(const ValueKey<String>('networks-state-error')),
         findsOneWidget,
       );
-      expect(find.text('请求过于频繁，请稍等片刻再试。'), findsOneWidget);
-      expect(find.textContaining('不要重复提交'), findsNothing);
+      expect(
+        find.text('Too many requests. Wait a moment and try again.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining("don't submit again"), findsNothing);
       expect(chain.status.resolves, 1);
 
       // The button is on screen and cannot be taken: another tap inside the
       // window is another ask, and another 429.
-      final retry = find.text('稍后重试');
+      final retry = find.text('Try again later');
       expect(retry, findsOneWidget);
       await tester.tap(retry);
       await tester.pump();
@@ -1359,11 +1423,11 @@ void main() {
 
       await tester.pump(LoopChainStateBlock.rateLimitCooldown);
       await tester.pumpAndSettle();
-      expect(find.text('稍后重试'), findsNothing);
-      await tester.tap(find.text('重试'));
+      expect(find.text('Try again later'), findsNothing);
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 2);
-      expect(find.text('1 / 1 正常'), findsOneWidget);
+      expect(find.text('1 / 1 healthy'), findsOneWidget);
     });
 
     testWidgets('a degraded endpoint carries the 异常 badge', (tester) async {
@@ -1381,7 +1445,7 @@ void main() {
         tester,
         const ValueKey<String>('networks-operator-disclosure'),
       );
-      expect(find.text('异常'), findsWidgets);
+      expect(find.text('Error'), findsWidgets);
     });
 
     testWidgets('a mixed endpoint reading is not painted as success', (
@@ -1399,7 +1463,7 @@ void main() {
         ),
       );
       expect(
-        tester.widget<Text>(find.text('0 / 1 正常')).style?.color,
+        tester.widget<Text>(find.text('0 / 1 healthy')).style?.color,
         LoopColors.chalk,
       );
     });
@@ -1411,7 +1475,7 @@ void main() {
         chain: FakeChainGateway(),
       );
       expect(
-        tester.widget<Text>(find.text('1 / 1 正常')).style?.color,
+        tester.widget<Text>(find.text('1 / 1 healthy')).style?.color,
         LoopColors.lime,
       );
     });
@@ -1451,8 +1515,8 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('lane-erc20_transfer')),
       );
-      expect(find.text('ERC-20 转账索引'), findsOneWidget);
-      expect(find.text('未运行'), findsOneWidget);
+      expect(find.text('ERC-20 transfer index'), findsOneWidget);
+      expect(find.text('Not running'), findsOneWidget);
     });
 
     testWidgets('custom RPC and testnets are unavailable, not toggles', (
@@ -1468,7 +1532,10 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('networks-custom-rpc')),
       );
-      expect(find.textContaining('自定义网络还没有开放'), findsOneWidget);
+      expect(
+        find.textContaining("Custom networks aren't available yet"),
+        findsOneWidget,
+      );
     });
   });
 }

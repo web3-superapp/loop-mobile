@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Where the account's second factor stands, as LOOP last heard it.
 enum LoopMfaPhase {
@@ -346,7 +347,9 @@ final class LoopMfaController extends Notifier<LoopMfaState> {
   /// because that would trap an owner who wants their credential gone.
   Future<bool> unlinkPasskey(String credentialId) async {
     if (state.isBusy) return false;
-    final authenticated = await _confirmOwnerPresent('解绑 Passkey 前先验证一次身份');
+    final authenticated = await _confirmOwnerPresent(
+      LoopL10n.current.securityMfa_controllerConfirmOwnerPresent,
+    );
     if (!authenticated) return false;
     return _passkeyCall((gateway) => gateway.unlinkPasskey(credentialId));
   }

@@ -235,7 +235,7 @@ void main() {
 
       expect(find.text('tBNB'), findsOneWidget);
       expect(find.text('2.5'), findsOneWidget);
-      expect(find.textContaining('可动用 2.495'), findsOneWidget);
+      expect(find.textContaining('Usable 2.495'), findsOneWidget);
       // Decision 0208: the USD1 row under it is always drawn (「—」 with a
       // reason when unread) and carries its own badge.
       expect(
@@ -354,7 +354,7 @@ void main() {
         find.byKey(const ValueKey<String>('networks-launch-chain-row')),
       );
 
-      expect(find.text('BSC 测试网（Launch）'), findsOneWidget);
+      expect(find.text('BSC 测试网 (Launch)'), findsOneWidget);
       expect(find.textContaining('eip155:97'), findsOneWidget);
     });
 
@@ -420,12 +420,12 @@ void main() {
       );
 
       // "Not proven yet" is neither a fault nor a proof.
-      expect(find.text('待校验'), findsOneWidget);
-      expect(find.text('异常'), findsNothing);
+      expect(find.text('Pending check'), findsOneWidget);
+      expect(find.text('Error'), findsNothing);
       // The primary chain row is untouched by the Launch slot's pending
       // verification. Decision 0126: its health is the row's own value
       // (「1 / 1 正常」); the endpoint badge stays behind the disclosure.
-      expect(find.text('1 / 1 正常'), findsOneWidget);
+      expect(find.text('1 / 1 healthy'), findsOneWidget);
     });
 
     testWidgets('an unreachable or mismatched slot stays 异常', (tester) async {
@@ -455,8 +455,8 @@ void main() {
           find.byKey(const ValueKey<String>('networks-launch-chain-row')),
         );
 
-        expect(find.text('异常'), findsOneWidget, reason: reasonCode);
-        expect(find.text('待校验'), findsNothing, reason: reasonCode);
+        expect(find.text('Error'), findsOneWidget, reason: reasonCode);
+        expect(find.text('Pending check'), findsNothing, reason: reasonCode);
       }
     });
   });

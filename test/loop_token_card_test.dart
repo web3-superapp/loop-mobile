@@ -372,9 +372,9 @@ void main() {
           symbol: 'UNKNOWN',
           identifier: '0x9c4b…7f82',
           metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', phrase),
-            LoopTokenMetric('流动性', phrase),
-            LoopTokenMetric('持有人', phrase),
+            LoopTokenMetric('Market cap', phrase),
+            LoopTokenMetric('Liquidity', phrase),
+            LoopTokenMetric('Holders', phrase),
           ],
         ),
       ),
@@ -382,10 +382,10 @@ void main() {
 
     // 未报告 is the same event the fact list one screen below names; the two
     // used to disagree about what happened.
-    expect(find.text('未报告'), findsNWidgets(3));
+    expect(find.text('No data'), findsNWidgets(3));
     // The full sentence belongs to the fact list, not to a third of a card.
     expect(find.text(loopReasonCodeText(reasonCode)), findsNothing);
-    expect(find.textContaining('数据源没有报告'), findsNothing);
+    expect(find.textContaining("The data source didn't report"), findsNothing);
     final cell = tester.renderObject<RenderParagraph>(find.text(phrase).first);
     expect(cell.didExceedMaxLines, isFalse);
   });

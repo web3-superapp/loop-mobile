@@ -179,7 +179,7 @@ void main() {
 
       final mfa = rowOf(tester, 'mfa');
       expect(mfa.badgeText, '已开启');
-      expect(mfa.subtitle, '验证器 App');
+      expect(mfa.subtitle, 'Authenticator app');
       expect(mfa.onTap, isNotNull);
 
       final passkey = rowOf(tester, 'passkey');

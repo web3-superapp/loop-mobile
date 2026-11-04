@@ -230,7 +230,7 @@ void main() {
       // The full 0x address is copied, never the truncated line on screen.
       expect(copied, hasLength(42));
       expect(copied, isNot(tester.widget<Text>(key('wallet-address')).data));
-      expect(find.text('钱包地址已复制'), findsOneWidget);
+      expect(find.text('Wallet address copied'), findsOneWidget);
     },
   );
 
@@ -413,7 +413,7 @@ void main() {
           },
         ),
       );
-      expect(tester.widget<Text>(key('wallet-pnl-value')).data, '暂无');
+      expect(tester.widget<Text>(key('wallet-pnl-value')).data, 'None');
       expect(find.textContaining('(+0%)'), findsNothing);
     });
 
@@ -482,7 +482,10 @@ void main() {
         final empty = tester.widget<LoopInlineUnavailable>(
           key('wallet-networth-chart-empty'),
         );
-        expect(empty.message, '这个区间还没有净值记录 · 每小时记一次，有资产后开始画线');
+        expect(
+          empty.message,
+          'No net value records in this range yet · recorded hourly; the line starts once you have assets',
+        );
         expect(key('wallet-networth-ranges'), findsOneWidget);
       });
     }
@@ -634,14 +637,14 @@ void main() {
       expect(key('wallet-networth-chart'), findsOneWidget);
       expect(
         tester.widget<Text>(key('wallet-networth-chevron-label')).data,
-        '收起',
+        'Collapse',
       );
       await tester.tap(key('wallet-pnl'));
       await tester.pumpAndSettle();
       expect(key('wallet-networth-panel'), findsNothing);
       expect(
         tester.widget<Text>(key('wallet-networth-chevron-label')).data,
-        '净值走势',
+        'Net value trend',
       );
       // Folding asks for nothing beyond the week 今日盈亏 reads.
       expect(history.requested, <LoopNetWorthRange>[LoopNetWorthRange.week]);
@@ -793,7 +796,7 @@ void main() {
         ),
       )!;
       expect(folded, hasLength(4));
-      expect(folded.last.label, '其它');
+      expect(folded.last.label, 'Other');
       final total = folded.fold<Decimal>(
         Decimal.zero,
         (sum, share) => sum + share.percent,
@@ -880,7 +883,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
       expect(opened, isEmpty);
-      expect(find.textContaining('链上操作'), findsWidgets);
+      expect(find.textContaining('On-chain actions'), findsWidgets);
       await tester.pumpAndSettle(const Duration(seconds: 5));
     });
 
@@ -1048,14 +1051,14 @@ void main() {
         final seen = DateTime(2026, 10, 16, 11, 20);
         expect(
           walletFxProvenanceText(fx(fetchedAt: seen), now: now),
-          '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算',
+          'CNY converted at ECB reference rate 1 USD = 6.6921 CNY (published 10-15, observed 11:20)',
         );
         expect(
           walletFxProvenanceText(
             fx(fetchedAt: seen, quality: LoopFactQuality.stale),
             now: now,
           ),
-          '人民币按欧洲央行参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算，数据可能过期',
+          'CNY converted at ECB reference rate 1 USD = 6.6921 CNY (published 10-15, observed 11:20), Data may be out of date',
         );
         // An unknown publisher is 「参考汇率」, never its identifier.
         expect(
@@ -1063,7 +1066,7 @@ void main() {
             fx(source: 'boc', fetchedAt: seen),
             now: now,
           ),
-          '人民币按参考汇率 1 USD = 6.6921 CNY（10-15 发布，观察于 11:20）折算',
+          'CNY converted at Reference rate 1 USD = 6.6921 CNY (published 10-15, observed 11:20)',
         );
         // Observed on an earlier day: the date comes with the clock.
         expect(
@@ -1071,7 +1074,7 @@ void main() {
             fx(fetchedAt: seen),
             now: DateTime(2026, 10, 17, 9),
           ),
-          contains('观察于 10-16 11:20）'),
+          contains('observed 10-16 11:20)'),
         );
       },
     );
@@ -1100,7 +1103,7 @@ void main() {
       final plain = subline.textSpan!.toPlainText(includePlaceholders: false);
       expect(plain, '≈ ¥913.27');
       final badge = tester.widget<LoopBadge>(key('wallet-total-fiat-stale'));
-      expect(badge.text, '数据可能过期');
+      expect(badge.text, 'Data may be out of date');
       expect(badge.kind, LoopBadgeKind.down);
 
       // S343 · decision 0271: 我的 has no (i) beside 总资产.
@@ -1155,7 +1158,7 @@ void main() {
       await pumpWallet(tester, history: port(fiat));
       expect(key('wallet-networth-provenance'), findsNothing);
       expect(key('wallet-networth-fx-provenance'), findsNothing);
-      expect(find.textContaining('净值快照'), findsNothing);
+      expect(find.textContaining('net value snapshot'), findsNothing);
       expect(find.textContaining('人民币按'), findsNothing);
       // S343 · decision 0271: 我的 has no (i) beside 总资产.
       expect(find.byKey(const ValueKey<String>('wallet-info')), findsNothing);

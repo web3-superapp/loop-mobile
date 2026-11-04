@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the S5 ports
 /// (`chain`, `wallet`, `market`, `watchlist`, `alerts`, `notifications`).
@@ -203,9 +204,10 @@ String loopFactSourceLabel(LoopFactSource source) => switch (source) {
   LoopFactSource.dexscreener => 'DexScreener',
   LoopFactSource.goplus => 'GoPlus',
   LoopFactSource.geckoterminal => 'GeckoTerminal',
-  LoopFactSource.loopIndexer => 'LOOP 链上索引',
-  LoopFactSource.loopCurve => 'LOOP 曲线',
-  LoopFactSource.poolSlot0 => '池子推算',
+  LoopFactSource.loopIndexer =>
+    LoopL10n.current.wallet_readScreensLoopProvenanceLine,
+  LoopFactSource.loopCurve => LoopL10n.current.chain_contractLoopCurve,
+  LoopFactSource.poolSlot0 => LoopL10n.current.chain_contractPoolSlot0,
 };
 
 /// How much a rendered number can be trusted right now.
@@ -285,46 +287,59 @@ final class LoopFact {
 /// zh-CN marker for a fact's quality. `fresh` needs no marker.
 String? loopFactQualityMarker(LoopFactQuality quality) => switch (quality) {
   LoopFactQuality.fresh => null,
-  LoopFactQuality.stale => '数据可能过期',
-  LoopFactQuality.derived => '按成交价折算',
-  LoopFactQuality.proxied => '以 WBNB 计价',
+  LoopFactQuality.stale => LoopL10n.current.wallet_readScreensLoopBadge,
+  LoopFactQuality.derived => LoopL10n.current.chain_contractDerived,
+  LoopFactQuality.proxied =>
+    LoopL10n.current.wallet_readScreensWalletAssetProxied,
   LoopFactQuality.unavailable => null,
 };
 
 /// zh-CN copy for a failed S5 operation. It states what did not happen; it
 /// never claims a result the server did not confirm.
 String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
-  LoopChainFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
-  LoopChainFailureKind.timedOut => 'LOOP 响应超时，这一页没有读到数据，也没有提交任何操作。',
-  LoopChainFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
-  LoopChainFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
-  LoopChainFailureKind.unavailable => '暂时读不到链上数据，请稍后再试。',
-  LoopChainFailureKind.indexingDelayed => '链上记录还在同步，这里是暂时读不到，不是没有记录。',
-  LoopChainFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
+  LoopChainFailureKind.offline => LoopL10n.current.chain_contractOffline,
+  LoopChainFailureKind.timedOut => LoopL10n.current.chain_contractTimedOut,
+  LoopChainFailureKind.cancelled => LoopL10n.current.chain_contractCancelled,
+  LoopChainFailureKind.outcomeUnknown =>
+    LoopL10n.current.chain_contractOutcomeUnknown,
+  LoopChainFailureKind.unavailable =>
+    LoopL10n.current.chain_contractUnavailable,
+  LoopChainFailureKind.indexingDelayed =>
+    LoopL10n.current.chain_contractIndexingDelayed,
+  LoopChainFailureKind.permissionDenied =>
+    LoopL10n.current.chain_contractPermissionDenied,
   LoopChainFailureKind.regionBlocked =>
-    '你所在的地区暂时不支持这个操作，没有发生任何变化。'
-        '这与账号或资产无关，换一个也不会改变结果。',
-  LoopChainFailureKind.stepUpRequired => '这一步需要二次验证，二次验证还没有开放，没有发生任何变化。',
-  LoopChainFailureKind.stepUpCancelled => '已取消，没有发生任何变化。',
-  LoopChainFailureKind.notFound => '目标不存在、未登记，或对当前账号不可见。',
-  LoopChainFailureKind.versionConflict => '数据已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
-  LoopChainFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
-  LoopChainFailureKind.validationFailed => '输入内容不符合要求（例如资产未登记或阈值非法），请修改后重试。',
+    LoopL10n.current.chain_contractRegionBlocked,
+  LoopChainFailureKind.stepUpRequired =>
+    LoopL10n.current.chain_contractStepUpRequired,
+  LoopChainFailureKind.stepUpCancelled =>
+    LoopL10n.current.chain_contractStepUpCancelled,
+  LoopChainFailureKind.notFound => LoopL10n.current.chain_contractNotFound,
+  LoopChainFailureKind.versionConflict =>
+    LoopL10n.current.chain_contractVersionConflict,
+  LoopChainFailureKind.bootstrapRequired =>
+    LoopL10n.current.chain_contractBootstrapRequired,
+  LoopChainFailureKind.validationFailed =>
+    LoopL10n.current.chain_contractValidationFailed,
   LoopChainFailureKind.chainMismatch =>
-    '这条链现在不支持：钱包、行情、兑换与授权都在 BNB Smart Chain 上，'
-        'Launch 在 LOOP 发布的 Launch 链上。',
-  LoopChainFailureKind.rateLimited => '请求过于频繁，请稍等片刻再试。',
-  LoopChainFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
+    LoopL10n.current.chain_contractChainMismatch,
+  LoopChainFailureKind.rateLimited =>
+    LoopL10n.current.chain_contractRateLimited,
+  LoopChainFailureKind.idempotencyConflict =>
+    LoopL10n.current.chain_contractIdempotencyConflict,
   LoopChainFailureKind.insufficientBalance =>
-    '余额不足以覆盖这笔金额、最高网络费或手续费保留，没有提交任何交易。',
-  LoopChainFailureKind.simulationFailed => '这笔交易试算没有通过，不能签名。请返回确认页重新准备一次。',
-  LoopChainFailureKind.quoteExpired => '报价已过期，没有提交任何兑换。请重新报价后再确认。',
+    LoopL10n.current.chain_contractInsufficientBalance,
+  LoopChainFailureKind.simulationFailed =>
+    LoopL10n.current.chain_contractSimulationFailed,
+  LoopChainFailureKind.quoteExpired =>
+    LoopL10n.current.chain_contractQuoteExpired,
   LoopChainFailureKind.submissionUnknown =>
-    '这笔操作已经提交过一次且结果未知，已锁定。请只查看最新状态，不要重复提交。',
-  LoopChainFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
-  LoopChainFailureKind.readFailed => '这一页暂时读不到，没有提交任何内容。请稍后重试。',
-  LoopChainFailureKind.unexpected => '操作没有完成，请稍后再试。',
-  null => '操作没有完成。',
+    LoopL10n.current.chain_contractSubmissionUnknown,
+  LoopChainFailureKind.invalidData =>
+    LoopL10n.current.chain_contractInvalidData,
+  LoopChainFailureKind.readFailed => LoopL10n.current.chain_contractReadFailed,
+  LoopChainFailureKind.unexpected => LoopL10n.current.chain_contractUnexpected,
+  null => LoopL10n.current.common_actionIncomplete,
 };
 
 /// Whether a failure puts a page on its offline card: no answer from LOOP,
@@ -350,120 +365,135 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // read, not this device's connection: swapping WiFi cannot move it, so
   // these sentences say whose side the gap is on instead of sending the
   // owner to debug a network that is already working.
-  'BSC_RPC_NOT_CONFIGURED' => '链上数据暂时读不到。',
-  'BSC_CHAIN_RUNTIME_UNAVAILABLE' => '链上数据暂时不可用，稍后再试。',
-  'BSC_CHAIN_VERIFICATION_PENDING' => '正在校验链上连接，暂时不显示链上数字。',
-  'BSC_RPC_UNREACHABLE' => '链上节点暂时连不上，与你的网络无关，稍后再看。',
-  'BSC_CHAIN_ID_MISMATCH' => '连接到的不是 BNB Smart Chain，这一页不可用。',
+  'BSC_RPC_NOT_CONFIGURED' => LoopL10n.current.chain_contractSwitch,
+  'BSC_CHAIN_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch2,
+  'BSC_CHAIN_VERIFICATION_PENDING' => LoopL10n.current.chain_contractSwitch3,
+  'BSC_RPC_UNREACHABLE' => LoopL10n.current.chain_contractSwitch4,
+  'BSC_CHAIN_ID_MISMATCH' => LoopL10n.current.chain_contractSwitch5,
   // launch chain slot (decision 0038) — only ever about the testnet slot
   // S237 · decision 0204: no 测试网 in the sentence; the slot is named Launch.
-  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 链上数据暂时读不到。',
-  'LAUNCH_CHAIN_VERIFICATION_PENDING' => '正在校验 Launch 链连接，暂时不显示链上数字。',
-  'LAUNCH_CHAIN_RPC_UNREACHABLE' => 'Launch 链节点暂时连不上，与你的网络无关，稍后再看。',
-  'LAUNCH_CHAIN_ID_MISMATCH' => '连接到的不是 Launch 链，Launch 相关内容不可用。',
-  'BSC_BALANCE_CALL_FAILED' => '这次余额没有读到，因此不显示数字。',
-  'BSC_INDEXER_NOT_STARTED' => '转账记录暂时读不到。',
-  'BSC_POOL_INDEXER_NOT_STARTED' => '成交与 K 线暂时读不到。',
-  'NATIVE_TRANSFER_SCAN_NOT_SUPPORTED' => 'BNB 转账记录暂时读不到。',
-  'CROSS_CHAIN_ACTIVITY_NOT_SUPPORTED' => '跨链与挖矿领取记录暂时读不到。',
+  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => LoopL10n.current.chain_contractSwitch6,
+  'LAUNCH_CHAIN_VERIFICATION_PENDING' => LoopL10n.current.chain_contractSwitch7,
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => LoopL10n.current.chain_contractSwitch8,
+  'LAUNCH_CHAIN_ID_MISMATCH' => LoopL10n.current.chain_contractSwitch9,
+  'BSC_BALANCE_CALL_FAILED' => LoopL10n.current.chain_contractSwitch10,
+  'BSC_INDEXER_NOT_STARTED' => LoopL10n.current.chain_contractSwitch11,
+  'BSC_POOL_INDEXER_NOT_STARTED' => LoopL10n.current.chain_contractSwitch12,
+  'NATIVE_TRANSFER_SCAN_NOT_SUPPORTED' =>
+    LoopL10n.current.chain_contractSwitch13,
+  'CROSS_CHAIN_ACTIVITY_NOT_SUPPORTED' =>
+    LoopL10n.current.chain_contractSwitch14,
   // Decision 0213 (loop-api 0167): the activity page's Launch-chain leg.
-  'LAUNCH2_INDEXER_NOT_STARTED' => 'Launch 链的 MEME 记录还没有开始同步，下面只列出转账。',
-  'LAUNCH2_ACTIVITY_READ_FAILED' => 'MEME 记录这次没有读到，下面只列出转账，稍后再看。',
-  'PRIVY_ASSET_MAPPING_UNAVAILABLE' => '这个资产无法与钱包记录核对。',
-  'PRIVY_WALLET_ID_UNAVAILABLE' => '外部钱包无法与钱包记录核对。',
-  'PRIVY_BALANCE_CROSS_CHECK_FAILED' => '余额核对没有成功，链上数字不受影响。',
+  'LAUNCH2_INDEXER_NOT_STARTED' => LoopL10n.current.chain_contractSwitch15,
+  'LAUNCH2_ACTIVITY_READ_FAILED' => LoopL10n.current.chain_contractSwitch16,
+  'PRIVY_ASSET_MAPPING_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch17,
+  'PRIVY_WALLET_ID_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch18,
+  'PRIVY_BALANCE_CROSS_CHECK_FAILED' => LoopL10n.current.chain_contractSwitch19,
   // asset capability
-  'SWAP_MODULE_NOT_DELIVERED' => '兑换还没有开放，这一页没有买卖入口。',
-  'ASSET_NOT_READABLE' => '这个资产已经读不到，保留这一行方便你移除。',
+  'SWAP_MODULE_NOT_DELIVERED' => LoopL10n.current.chain_contractSwitch20,
+  'ASSET_NOT_READABLE' => LoopL10n.current.chain_contractSwitch21,
   // The address was described by a market provider, not by the registry. It
   // is a statement about where the facts came from, not a warning.
-  'ASSET_NOT_REGISTERED' => '这个地址不在 LOOP 资产目录里，下面的数据来自行情数据源，不能买卖。',
-  'ASSET_BLOCKED' => '这个资产已被屏蔽。',
+  'ASSET_NOT_REGISTERED' => LoopL10n.current.chain_contractSwitch22,
+  'ASSET_BLOCKED' => LoopL10n.current.chain_contractSwitch23,
   // market providers
-  'MARKET_RUNTIME_UNAVAILABLE' => '行情暂时不可用，稍后再试。',
-  'MARKET_PRICE_PROVIDER_NOT_CONFIGURED' => '暂时读不到价格，不显示估值。',
-  'MARKET_PROVIDER_DEXSCREENER_DISABLED' => 'DexScreener 数据当前已关闭。',
-  'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED' => '安全信息与持有人数暂时读不到。',
-  'MARKET_PROVIDER_GECKOTERMINAL_DISABLED' => '新币发现与相关行情暂时读不到。',
-  'MARKET_PROVIDER_RATE_LIMITED' => '数据服务限流中，暂时没有新数值。',
-  'MARKET_PROVIDER_REQUEST_REJECTED' => '数据服务拒绝了这次请求，与你的网络无关，稍后再看。',
-  'MARKET_FACT_CACHE_UNAVAILABLE' => '行情数据暂时读不到，这一项没有数值，稍后再看。',
-  'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到，与你的网络无关，稍后再看。',
-  'MARKET_PROVIDER_RESPONSE_MALFORMED' => '返回的数据不完整，已整体丢弃。',
-  'MARKET_PAIR_NOT_FOUND' => '没有找到这个资产的交易对。',
-  'MARKET_FACT_NOT_REPORTED' => '数据源没有报告这一项。',
-  'MARKET_NATIVE_ASSET_NOT_SUPPORTED' => '原生 BNB 没有合约地址，这一项不适用。',
-  'MARKET_POOL_NOT_REGISTERED' => '这个资产还没有 PancakeSwap V3 交易池。',
-  'MARKET_NO_SWAPS_IN_RANGE' => '所选区间内没有成交。',
-  'BALANCE_UNAVAILABLE' => '这一行余额读不到，无法估值。',
+  'MARKET_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch24,
+  'MARKET_PRICE_PROVIDER_NOT_CONFIGURED' =>
+    LoopL10n.current.chain_contractSwitch25,
+  'MARKET_PROVIDER_DEXSCREENER_DISABLED' =>
+    LoopL10n.current.chain_contractSwitch26,
+  'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED' =>
+    LoopL10n.current.chain_contractSwitch27,
+  'MARKET_PROVIDER_GECKOTERMINAL_DISABLED' =>
+    LoopL10n.current.chain_contractSwitch28,
+  'MARKET_PROVIDER_RATE_LIMITED' => LoopL10n.current.chain_contractSwitch29,
+  'MARKET_PROVIDER_REQUEST_REJECTED' => LoopL10n.current.chain_contractSwitch30,
+  'MARKET_FACT_CACHE_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch31,
+  'MARKET_PROVIDER_UNREACHABLE' => LoopL10n.current.chain_contractSwitch32,
+  'MARKET_PROVIDER_RESPONSE_MALFORMED' =>
+    LoopL10n.current.chain_contractSwitch33,
+  'MARKET_PAIR_NOT_FOUND' => LoopL10n.current.chain_contractSwitch34,
+  'MARKET_FACT_NOT_REPORTED' => LoopL10n.current.chain_contractSwitch35,
+  'MARKET_NATIVE_ASSET_NOT_SUPPORTED' =>
+    LoopL10n.current.chain_contractSwitch36,
+  'MARKET_POOL_NOT_REGISTERED' => LoopL10n.current.chain_contractSwitch37,
+  'MARKET_NO_SWAPS_IN_RANGE' => LoopL10n.current.chain_contractSwitch38,
+  'BALANCE_UNAVAILABLE' => LoopL10n.current.chain_contractSwitch39,
   // deferred product areas
-  'HOLDER_DISTRIBUTION_NOT_SUPPORTED' => '持有人分布暂时读不到。',
-  'SMART_MONEY_RUNTIME_DEFERRED' => '聪明钱追踪还没有开放。',
-  'PUSH_RUNTIME_DEFERRED' => '推送还没有开放，提醒只出现在应用内的通知列表里。',
-  'COMMUNITY_NOT_BOUND' => '还没有社区绑定这个资产。',
-  'MINING_RUNTIME_DEFERRED' => '按资产拆分的挖矿数字暂未开放；算力与明细在挖矿页。',
-  'MARKET_CHART_TOOLS_DEFERRED' => '指标与画线工具还没有开放。',
-  'WALLET_NETWORTH_TREND_DEFERRED' => '净值走势与 24h 涨跌暂时读不到。',
-  'WALLET_CUSTOM_RPC_DEFERRED' => '自定义网络还没有开放，这里只显示 LOOP 支持的网络。',
-  'WALLET_SECURITY_FACTS_DEFERRED' => '安全中心与 DApp 状态还没有开放。',
+  'HOLDER_DISTRIBUTION_NOT_SUPPORTED' => LoopL10n.current.chain_contractText,
+  'SMART_MONEY_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText2,
+  'PUSH_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText3,
+  'COMMUNITY_NOT_BOUND' => LoopL10n.current.chain_contractText4,
+  'MINING_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText5,
+  'MARKET_CHART_TOOLS_DEFERRED' => LoopL10n.current.chain_contractText6,
+  'WALLET_NETWORTH_TREND_DEFERRED' => LoopL10n.current.chain_contractText7,
+  'WALLET_CUSTOM_RPC_DEFERRED' => LoopL10n.current.chain_contractText8,
+  'WALLET_SECURITY_FACTS_DEFERRED' => LoopL10n.current.chain_contractText9,
   // S6 · money actions (write switch, canary, intent lifecycle)
-  'WALLET_INTENT_RUNTIME_UNAVAILABLE' => '资金操作暂时不可用，稍后再试。',
-  'BSC_WRITES_DISABLED' => '链上操作当前已关闭，现在只能查看。',
-  'PRIVY_NOT_CONFIGURED' => '兑换暂时不可用，稍后再试。',
-  'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING' => '兑换还在验证中，可以查看报价，但不能执行。',
-  'SWAP_SIMULATION_PROVIDER_PENDING' => '兑换暂时无法试算，因此不能执行。',
-  'GOPLUS_ADDRESS_SCREENING_NOT_CONFIGURED' => '暂时无法核对这个地址是否在已知诈骗名单里。这不代表它安全。',
-  'GOPLUS_APPROVAL_FACTS_NOT_CONFIGURED' => '授权风险信息暂时读不到。',
-  'ALLOWANCE_READ_FAILED' => '这一行的授权额度读不到，因此不显示数字。',
-  'BSC_CALL_REVERTED' => '这笔交易试算时被链上拒绝，不能签名。',
-  'SIMULATION_UNAVAILABLE' => '试算没有返回可核对的结果，不能签名。',
-  'GAS_ESTIMATE_UNAVAILABLE' => '无法估算网络费，因此不能构造可签名的交易。',
-  'INTENT_EXPIRED' => '这次操作已过期，请重新准备一次。',
-  'INTENT_SUPERSEDED' => '这个钱包已经准备了新的操作，这一笔被取代，没有提交。',
-  'USER_CANCELLED' => '这次操作已由你取消，没有提交任何交易。',
-  'TX_PENDING_VERIFICATION' => '交易已提交，链上还没有查到，LOOP 会继续核对。',
-  'TX_PAYLOAD_MISMATCH' => '提交的交易与准备好的内容不一致，已拒绝。',
-  'TX_REVERTED' => '交易已上链但执行失败，网络费已消耗。',
-  'RECEIPT_LOST' => '交易回执暂时读不到，结果待确认。',
-  'PRIVY_SWAP_REJECTED' => '钱包拒绝了这次兑换，没有提交到链上。',
-  'PROVIDER_RESULT_AMBIGUOUS' => '这次操作的结果还不确定，请等待确认，不要重复提交。',
-  'PRICE_IMPACT_ABOVE_HARD_LIMIT' => '价格影响超过 5%，已阻止这笔兑换。',
-  'PRICE_IMPACT_UNAVAILABLE' => '无法计算这笔兑换的价格影响，已阻止。',
-  'SIGNING_PAYLOAD_UNAVAILABLE' => '这笔操作暂时无法进入钱包签名。',
-  'INTENT_CHAIN_NOT_PERMITTED' => '这条链不支持这个操作：发送、授权、回收与兑换只能在主网进行。',
+  'WALLET_INTENT_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText10,
+  'BSC_WRITES_DISABLED' => LoopL10n.current.chain_contractText11,
+  'PRIVY_NOT_CONFIGURED' => LoopL10n.current.chain_contractText12,
+  'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING' =>
+    LoopL10n.current.chain_contractText13,
+  'SWAP_SIMULATION_PROVIDER_PENDING' => LoopL10n.current.chain_contractText14,
+  'GOPLUS_ADDRESS_SCREENING_NOT_CONFIGURED' =>
+    LoopL10n.current.chain_contractText15,
+  'GOPLUS_APPROVAL_FACTS_NOT_CONFIGURED' =>
+    LoopL10n.current.chain_contractText16,
+  'ALLOWANCE_READ_FAILED' => LoopL10n.current.chain_contractText17,
+  'BSC_CALL_REVERTED' => LoopL10n.current.chain_contractText18,
+  'SIMULATION_UNAVAILABLE' => LoopL10n.current.chain_contractText19,
+  'GAS_ESTIMATE_UNAVAILABLE' => LoopL10n.current.chain_contractText20,
+  'INTENT_EXPIRED' => LoopL10n.current.chain_contractText21,
+  'INTENT_SUPERSEDED' => LoopL10n.current.chain_contractText22,
+  'USER_CANCELLED' => LoopL10n.current.chain_contractText23,
+  'TX_PENDING_VERIFICATION' => LoopL10n.current.chain_contractText24,
+  'TX_PAYLOAD_MISMATCH' => LoopL10n.current.chain_contractText25,
+  'TX_REVERTED' => LoopL10n.current.chain_contractText26,
+  'RECEIPT_LOST' => LoopL10n.current.chain_contractText27,
+  'PRIVY_SWAP_REJECTED' => LoopL10n.current.chain_contractText28,
+  'PROVIDER_RESULT_AMBIGUOUS' => LoopL10n.current.chain_contractText29,
+  'PRICE_IMPACT_ABOVE_HARD_LIMIT' => LoopL10n.current.chain_contractText30,
+  'PRICE_IMPACT_UNAVAILABLE' => LoopL10n.current.chain_contractText31,
+  'SIGNING_PAYLOAD_UNAVAILABLE' => LoopL10n.current.chain_contractText32,
+  'INTENT_CHAIN_NOT_PERMITTED' => LoopL10n.current.chain_contractText33,
   // D20 security / settings / support (decision 0037)
-  'V2_SECURITY_RUNTIME_DEFERRED' => '安全设置还没有开放。',
-  'SECURITY_RUNTIME_UNAVAILABLE' => '安全设置暂时不可用，稍后再试。',
-  'V2_SETTINGS_RUNTIME_DEFERRED' => '账号设置还没有开放。',
-  'SETTINGS_RUNTIME_UNAVAILABLE' => '设置暂时不可用，稍后再试。',
-  'V2_SUPPORT_RUNTIME_DEFERRED' => '客服还没有开放。',
-  'SUPPORT_RUNTIME_UNAVAILABLE' => '客服暂时不可用，稍后再试。',
-  'ACCOUNT_SESSION_RUNTIME_UNAVAILABLE' => '设备列表暂时读不到。',
-  'NOTIFICATIONS_RUNTIME_UNAVAILABLE' => '最近的安全事件暂时读不到。',
-  'AUTH_STEP_UP_REQUIRED' => '需要二次验证，二次验证还没有开放。',
-  'SUPPORT_ATTACHMENTS_UNAVAILABLE' => '工单暂时不能上传附件。',
-  'TERMS_POLICY_UNAVAILABLE' => '法律文件链接暂时打不开。',
-  'POLICY_NOT_YET_EFFECTIVE' => '新版协议还没有生效。',
-  'CLIENT_BUILD_IS_DEVICE_LOCAL' => '版本与构建号来自这台设备。',
-  'WALLET_NOT_SELECTED' => '还没有选择钱包。',
-  'WALLET_RUNTIME_UNAVAILABLE' => '授权列表暂时读不到。',
-  'SEND_APPROVALS_RUNTIME_DEFERRED' => '授权列表还没有开放。',
-  'INDEXING_DELAYED' => '链上记录还在同步，授权列表暂时读不到。',
-  'CAPABILITY_UNAVAILABLE' => '这个功能当前不可用。',
+  'V2_SECURITY_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText34,
+  'SECURITY_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText35,
+  'V2_SETTINGS_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText36,
+  'SETTINGS_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText37,
+  'V2_SUPPORT_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText38,
+  'SUPPORT_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText39,
+  'ACCOUNT_SESSION_RUNTIME_UNAVAILABLE' =>
+    LoopL10n.current.chain_contractText40,
+  'NOTIFICATIONS_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText41,
+  'AUTH_STEP_UP_REQUIRED' => LoopL10n.current.chain_contractText42,
+  'SUPPORT_ATTACHMENTS_UNAVAILABLE' => LoopL10n.current.chain_contractText43,
+  'TERMS_POLICY_UNAVAILABLE' => LoopL10n.current.chain_contractText44,
+  'POLICY_NOT_YET_EFFECTIVE' => LoopL10n.current.chain_contractText45,
+  'CLIENT_BUILD_IS_DEVICE_LOCAL' => LoopL10n.current.chain_contractText46,
+  'WALLET_NOT_SELECTED' => LoopL10n.current.chain_contractText47,
+  'WALLET_RUNTIME_UNAVAILABLE' => LoopL10n.current.chain_contractText48,
+  'SEND_APPROVALS_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText49,
+  'INDEXING_DELAYED' => LoopL10n.current.chain_contractText50,
+  'CAPABILITY_UNAVAILABLE' => LoopL10n.current.chain_contractText51,
   // Privy security methods: six permanently pending evidence items (§5.2)
-  'PRIVY_MFA_EVIDENCE_PENDING' => '多因素验证还没有开放。',
-  'PRIVY_PASSKEY_EVIDENCE_PENDING' => 'Passkey 还没有开放。',
-  'PRIVY_RECOVERY_PASSWORD_EVIDENCE_PENDING' => '恢复密码还没有开放。',
-  'PRIVY_AUTO_RECOVERY_EVIDENCE_PENDING' => '自动恢复还没有开放。',
-  'PRIVY_SOCIAL_RECOVERY_EVIDENCE_PENDING' => '社交恢复还没有开放。',
-  'PRIVY_KEY_EXPORT_EVIDENCE_PENDING' => '私钥导出还没有开放。',
+  'PRIVY_MFA_EVIDENCE_PENDING' => LoopL10n.current.chain_contractText52,
+  'PRIVY_PASSKEY_EVIDENCE_PENDING' => LoopL10n.current.chain_contractText53,
+  'PRIVY_RECOVERY_PASSWORD_EVIDENCE_PENDING' =>
+    LoopL10n.current.chain_contractText54,
+  'PRIVY_AUTO_RECOVERY_EVIDENCE_PENDING' =>
+    LoopL10n.current.chain_contractText55,
+  'PRIVY_SOCIAL_RECOVERY_EVIDENCE_PENDING' =>
+    LoopL10n.current.chain_contractText56,
+  'PRIVY_KEY_EXPORT_EVIDENCE_PENDING' => LoopL10n.current.chain_contractText57,
   // D21 surfaces that exist as entry points only
-  'PAY_RUNTIME_DEFERRED' => '扫码支付还没有开放，这里不会打开相机或生成收款码。',
-  'BRIDGE_RUNTIME_DEFERRED' => '跨链还没有开放，这里不会发起任何跨链操作。',
-  'DAPP_EXECUTION_RUNTIME_DEFERRED' => 'DApp 连接与签名还没有开放，这一页只做本地检查。',
-  'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 还没有开放。',
-  null => '这一项暂时读不到。',
-  _ => '这一项暂时读不到。',
+  'PAY_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText58,
+  'BRIDGE_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText59,
+  'DAPP_EXECUTION_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText60,
+  'COMMUNITY_AI_RUNTIME_DEFERRED' => LoopL10n.current.chain_contractText61,
+  null => LoopL10n.current.common_itemUnavailable,
+  _ => LoopL10n.current.common_itemUnavailable,
 };
 
 /// The phrase a **summary slot** renders in place of a figure it has no value
@@ -492,12 +522,12 @@ String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
   'BSC_CHAIN_VERIFICATION_PENDING' ||
   'LAUNCH_CHAIN_VERIFICATION_PENDING' ||
   'INDEXING_DELAYED' ||
-  'TX_PENDING_VERIFICATION' => '等待数据',
+  'TX_PENDING_VERIFICATION' => LoopL10n.current.common_waitingForData,
   // A figure the provider answered but did not report is not a figure LOOP
   // failed to read. The card cell and the fact list one screen below now name
   // the same event, instead of one saying 数据不可得 and the other 没有数值.
-  'MARKET_FACT_NOT_REPORTED' => '未报告',
-  _ => '数据不可得',
+  'MARKET_FACT_NOT_REPORTED' => LoopL10n.current.chain_contractSwitch40,
+  _ => LoopL10n.current.common_dataUnavailable,
 };
 
 /// The badge every Launch surface and every sign sheet shows while the Launch

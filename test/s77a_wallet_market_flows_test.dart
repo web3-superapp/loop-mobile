@@ -136,7 +136,10 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(find.textContaining('填写完整的收款地址'), findsOneWidget);
+      expect(
+        find.textContaining('enter the full recipient address'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a checked address says the amount is what is missing', (
@@ -164,7 +167,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-amount-missing')),
         findsOneWidget,
       );
-      expect(find.textContaining('填写发送数量'), findsOneWidget);
+      expect(find.textContaining('enter the amount to send'), findsOneWidget);
     });
 
     testWidgets('the checks fold into one line and name no database table', (
@@ -191,7 +194,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-checks')),
         findsOneWidget,
       );
-      expect(find.textContaining('2 项待确认'), findsOneWidget);
+      expect(find.textContaining('2 to confirm'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('send-recipient-first-time')),
         findsNothing,
@@ -207,7 +210,10 @@ void main() {
       );
       // The basis names the records, never the table they live in.
       expect(find.textContaining('indexed_erc20_transfers'), findsNothing);
-      expect(findProvenanceContaining('已索引的 ERC-20 转账记录'), findsOneWidget);
+      expect(
+        findProvenanceContaining('ERC-20 transfer history indexed in LOOP'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a contract recipient is never folded away', (tester) async {
@@ -302,15 +308,18 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('send-confirm-arrival')),
       );
-      expect(find.textContaining('不预估'), findsWidgets);
+      expect(find.textContaining('Not estimated'), findsWidgets);
       // The draft card steps aside once the server's own review is in.
       expect(
         find.byKey(const ValueKey<String>('send-confirm-draft-facts')),
         findsNothing,
       );
-      expect(find.byKey(const ValueKey<String>('money-review-收款方')), findsOne);
       expect(
-        find.byKey(const ValueKey<String>('money-review-最高网络费')),
+        find.byKey(const ValueKey<String>('money-review-recipient')),
+        findsOne,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('money-review-max-fee')),
         findsOne,
       );
     });
@@ -336,8 +345,8 @@ void main() {
 
     test('the recipient allowlist is named as a recipient rule', () {
       final text = textFor(MoneyPolicyRule.counterpartyNotInAllowlist);
-      expect(text, contains('收款地址'));
-      expect(text, contains('没有提交任何交易'));
+      expect(text, contains('recipient address'));
+      expect(text, contains('no transaction was submitted'));
       expect(text, isNot(contains('自定义上限')));
     });
 
@@ -347,7 +356,7 @@ void main() {
         exposureUsd: '5.99',
         ceilingUsd: '5',
       );
-      expect(text, contains('单笔金额上限'));
+      expect(text, contains('per-transaction limit'));
       expect(text, contains('5.99'));
       expect(text, contains(r'$5'));
     });
@@ -358,7 +367,7 @@ void main() {
         exposureUsd: '27.5',
         ceilingUsd: '25',
       );
-      expect(text, contains('24 小时'));
+      expect(text, contains('24-hour'));
       expect(text, contains('27.5'));
     });
 
@@ -370,8 +379,8 @@ void main() {
         spentUsd: '20',
         remainingUsd: '5',
       );
-      expect(text, contains(r'已用 $20'));
-      expect(text, contains(r'还剩 $5'));
+      expect(text, contains(r'Used $20'));
+      expect(text, contains(r'$5 left'));
     });
 
     test('half a budget is not a budget', () {
@@ -381,8 +390,8 @@ void main() {
         ceilingUsd: '25',
         spentUsd: '20',
       );
-      expect(text, isNot(contains('已用')));
-      expect(text, isNot(contains('还剩')));
+      expect(text, isNot(contains('Used')));
+      expect(text, isNot(contains(' left')));
     });
 
     test('only the daily rule prints a budget', () {
@@ -393,20 +402,20 @@ void main() {
         spentUsd: '20',
         remainingUsd: '5',
       );
-      expect(text, isNot(contains('已用')));
+      expect(text, isNot(contains('Used')));
     });
 
     test('the asset allowlist is about the asset', () {
       expect(
         textFor(MoneyPolicyRule.assetNotInAllowlist),
-        contains('可操作的资产范围'),
+        contains('range of supported assets'),
       );
     });
 
     test('a rule this build cannot read is answered neutrally', () {
       final text = textFor('SOME_RULE_S77B_HAS_NOT_SHIPPED_YET');
-      expect(text, contains('没有提交任何交易'));
-      expect(text, contains('这里不猜是哪一条'));
+      expect(text, contains('No transaction was submitted'));
+      expect(text, contains("We won't guess which rule applies"));
       expect(text, isNot(contains('上限')));
     });
 
@@ -454,7 +463,7 @@ void main() {
               find.byKey(const ValueKey<String>('swap-source-balance')),
             )
             .data,
-        '先选择要支付的资产，这里会显示它的可动用余额。',
+        'Choose the asset to pay with first; its usable balance shows here.',
       );
     });
 
@@ -482,7 +491,7 @@ void main() {
               find.byKey(const ValueKey<String>('swap-source-balance')),
             )
             .data,
-        '可动用 6.995 BNB',
+        'Usable 6.995 BNB',
       );
     });
 
@@ -526,8 +535,11 @@ void main() {
       final notice = tester.widget<LoopNotice>(
         find.byKey(const ValueKey<String>('swap-evidence-pending')),
       );
-      expect(notice.body, contains('可以查看报价'));
-      expect(find.textContaining('兑换还在验证中'), findsOneWidget);
+      expect(notice.body, contains('You can view quotes'));
+      expect(
+        find.textContaining('Swap is still being verified'),
+        findsOneWidget,
+      );
     });
 
     test('a slippage ceiling converts exactly, with no trailing zeros', () {
@@ -570,7 +582,7 @@ void main() {
         find.byKey(const ValueKey<String>('wallets-add-sheet')),
         findsOneWidget,
       );
-      expect(find.text('连接外部钱包'), findsOneWidget);
+      expect(find.text('Connect external wallet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('wallets-add-sheet-reason')),
         findsOneWidget,
@@ -597,7 +609,10 @@ void main() {
       expect(sink.calls.single.csv, contains(s5TxHash));
       expect(sink.calls.single.csv, contains('WBNB'));
       expect(sink.calls.single.fileName, endsWith('.csv'));
-      expect(find.text('记录已导出，请在分享面板中选择去处'), findsOneWidget);
+      expect(
+        find.text('Records exported. Choose a destination in the share sheet'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a segment with no rows exports nothing at all', (
@@ -620,7 +635,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(sink.calls, isEmpty);
-      expect(find.text('这一段没有记录可以导出'), findsOneWidget);
+      expect(find.text('No records in this range to export'), findsOneWidget);
     });
 
     testWidgets('a row opens the full hash and the explorer address', (
@@ -669,7 +684,7 @@ void main() {
       final csv = walletActivityCsv(s5Activity().items);
       final lines = csv.trimRight().split('\n');
       expect(lines, hasLength(2));
-      expect(lines.first, startsWith('时间(UTC),方向,资产'));
+      expect(lines.first, startsWith('Time (UTC),Direction,Assets'));
       // Exact wire figures, never a grouped or rounded display form.
       expect(lines[1], contains('1.5'));
       expect(lines[1], contains('1500000000000000000'));

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -50,8 +51,8 @@ Widget _deferredInfo(
   entry: LoopProvenanceEntry(heading: title, notes: notes),
   fallback: LoopInfoTrigger(
     key: ValueKey<String>('$keyName-info'),
-    label: '说明',
-    semanticsLabel: '查看$title',
+    label: context.l10n.common_about,
+    semanticsLabel: context.l10n.wallet_deferredScreensSemanticsLabel(title),
     onTap: () => unawaited(
       showLoopInfoSheet(
         context,
@@ -90,24 +91,24 @@ class PayScreen extends ConsumerWidget {
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.listing,
-        kicker: '扫一扫',
-        heading: '扫码支付',
+        kicker: context.l10n.common_scan,
+        heading: context.l10n.wallet_deferredScreensPayFolioHeading,
         // S278 · decision 0236: the caption and the 「为什么现在不做」 card
         // are this (i).
         kickerTrailing: _deferredInfo(
           context,
           keyName: 'pay',
-          title: '关于扫码支付',
-          notes: const <LoopInfoNote>[
-            LoopInfoNote(body: '识别结果不会直接发起签名；金额、网络与收款方会再次展示。'),
+          title: context.l10n.wallet_deferredScreensPayWhyNoticeTitle,
+          notes: <LoopInfoNote>[
+            LoopInfoNote(body: context.l10n.wallet_deferredScreensBody),
             LoopInfoNote(
               key: ValueKey<String>('pay-why-notice'),
-              title: '为什么现在不做',
-              body: '支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。',
+              title: context.l10n.wallet_deferredScreensPayWhyNoticeTitle2,
+              body: context.l10n.wallet_deferredScreensPayWhyNoticeBody,
             ),
           ],
         ),
-        stamp: '相机',
+        stamp: context.l10n.wallet_deferredScreensPayFolioStamp,
       ),
       sections: <Widget>[
         // The prototype keeps the viewfinder's room, with the reason in it.
@@ -141,52 +142,50 @@ class BridgeScreen extends ConsumerWidget {
     return LoopDashboardPage(
       key: const ValueKey<String>('bridge-screen'),
       archetype: LoopPageArchetype.action,
-      title: '跨链',
+      title: context.l10n.common_bridge,
       onBack: onBack,
       primary: LoopFolioPrimary(
         ring: false,
         key: const ValueKey<String>('bridge-folio'),
         archetype: LoopFolioArchetype.action,
-        kicker: '跨链意图',
-        heading: '跨链尚未开放',
+        kicker: context.l10n.wallet_deferredScreensBridgeFolioKicker,
+        heading: context.l10n.wallet_deferredScreensBridgeFolioHeading,
         // S278 · decision 0236 (需求方第 11 条): the caption and the
         // 「这里不会出现预估数字」 card are this (i).
         kickerTrailing: _deferredInfo(
           context,
           keyName: 'bridge',
-          title: '关于跨链',
-          notes: const <LoopInfoNote>[
-            LoopInfoNote(body: '先选来源链、目标链与数量，再显示预计费用和到账时间。'),
+          title: context.l10n.wallet_deferredScreensBridgeScopeNoticeTitle,
+          notes: <LoopInfoNote>[
+            LoopInfoNote(body: context.l10n.wallet_deferredScreensBody2),
             LoopInfoNote(
               key: ValueKey<String>('bridge-scope-notice'),
-              title: '这里不会出现预估数字',
-              body:
-                  '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
-                  '这一页不会用示例数据代替它们。',
+              title: context.l10n.wallet_deferredScreensBridgeScopeNoticeTitle2,
+              body: context.l10n.wallet_deferredScreensBridgeScopeNoticeBody,
             ),
           ],
         ),
-        stamp: '核对',
+        stamp: context.l10n.wallet_deferredScreensBridgeFolioStamp,
       ),
       sections: <Widget>[
         // The prototype's 从 / 到 boxes keep their room. Each figure is a
         // dash: a bridge fee, a receive amount and an ETA can only come from a
         // real route, and there is none.
-        const LoopFigureBox(
+        LoopFigureBox(
           key: ValueKey<String>('bridge-from'),
-          caption: '从',
+          caption: context.l10n.wallet_deferredScreensBridgeFromCaption,
           figure: loopFigureDash,
         ),
-        const LoopFigureBox(
+        LoopFigureBox(
           key: ValueKey<String>('bridge-to'),
-          caption: '到',
+          caption: context.l10n.wallet_deferredScreensBridgeToCaption,
           figure: loopFigureDash,
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
           child: LoopButton(
             key: const ValueKey<String>('bridge-start'),
-            label: '开始跨链',
+            label: context.l10n.wallet_deferredScreensBridgeStartLabel,
             primary: true,
             block: true,
             // Disabled, with the shape the prototype gives the action.
@@ -198,7 +197,7 @@ class BridgeScreen extends ConsumerWidget {
         if (_reasonAddsToHeading(capability, deferredReasonCode))
           LoopUnavailableLine(
             key: const ValueKey<String>('bridge-unavailable'),
-            label: '跨链尚未开放',
+            label: context.l10n.wallet_deferredScreensBridgeFolioHeading,
             reasonCode: _reasonFor(capability, deferredReasonCode),
           ),
         if (onOpenStatus != null)
@@ -206,7 +205,7 @@ class BridgeScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('bridge-open-status'),
-              label: '查看跨链进度',
+              label: context.l10n.wallet_deferredScreensBridgeOpenStatusLabel,
               block: true,
               onPressed: onOpenStatus,
             ),
@@ -242,7 +241,7 @@ class BridgeStatusScreen extends ConsumerWidget {
     return LoopDashboardPage(
       key: const ValueKey<String>('bridge-status-screen'),
       archetype: LoopPageArchetype.state,
-      title: '跨链进度',
+      title: context.l10n.wallet_deferredScreensBridgeStatusScreenTitle,
       onBack: onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('bridge-status-folio'),
@@ -251,35 +250,41 @@ class BridgeStatusScreen extends ConsumerWidget {
         headingTone: LoopFolioHeadingTone.neutral,
         ring: false,
         archetype: LoopFolioArchetype.state,
-        kicker: '跨链进度',
-        heading: '跨链进度尚未开放',
+        kicker: context.l10n.wallet_deferredScreensBridgeStatusScreenTitle,
+        heading: context.l10n.wallet_deferredScreensBridgeStatusFolioHeading,
         // S278 · decision 0236: the caption and the 「可以离开此页」 card.
         kickerTrailing: _deferredInfo(
           context,
           keyName: 'bridge-status',
-          title: '关于跨链进度',
-          notes: const <LoopInfoNote>[
-            LoopInfoNote(body: '源链确认、桥接中和目标链到账是三个独立状态。'),
+          title:
+              context.l10n.wallet_deferredScreensBridgeStatusLeaveNoticeTitle,
+          notes: <LoopInfoNote>[
+            LoopInfoNote(body: context.l10n.wallet_deferredScreensBody3),
             LoopInfoNote(
               key: ValueKey<String>('bridge-status-leave-notice'),
-              title: '可以离开此页',
-              body: '跨链开放后会在后台继续，完成后推送通知，也可以从交易历史查看。',
+              title: context
+                  .l10n
+                  .wallet_deferredScreensBridgeStatusLeaveNoticeTitle2,
+              body: context
+                  .l10n
+                  .wallet_deferredScreensBridgeStatusLeaveNoticeBody,
             ),
           ],
         ),
-        stamp: '未开放',
+        stamp: context.l10n.common_notOpenYet,
       ),
       sections: <Widget>[
         // The prototype's 步骤 group keeps its heading. Its three rows do not
         // appear: nothing is in flight, so 完成 / 进行中 / 等待 would be three
         // states this page invented for a transfer that does not exist. The
         // group states the one fact there is.
-        const LoopLabel('步骤'),
+        LoopLabel(context.l10n.wallet_deferredScreensLoopLabel),
         LoopInlineUnavailable(
           key: const ValueKey<String>('bridge-status-page-block'),
           // 读不到 would say LOOP tried and failed. Nothing was tried,
           // because bridging has not been built.
-          message: '还没有可跟踪的跨链',
+          message:
+              context.l10n.wallet_deferredScreensBridgeStatusPageBlockMessage,
           // The heading says the progress is not open; the server's reason
           // is printed only when it says something else.
           detail: _reasonAddsToHeading(capability, deferredReasonCode)
@@ -293,7 +298,9 @@ class BridgeStatusScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
             child: LoopButton(
               key: const ValueKey<String>('bridge-status-back-to-wallet'),
-              label: '返回钱包',
+              label: context
+                  .l10n
+                  .wallet_deferredScreensBridgeStatusBackToWalletLabel,
               block: true,
               onPressed: onOpenWallet,
             ),
@@ -342,7 +349,7 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('dapp-screen'),
       archetype: LoopPageArchetype.action,
-      title: 'DApp 核对',
+      title: context.l10n.wallet_deferredScreensDappScreenTitle,
       onBack: widget.onBack,
       // The prototype puts the address bar at the top of the page, where a
       // browser puts it, and the Chalk review card under it (audit §A.9).
@@ -354,7 +361,7 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             key: const ValueKey<String>('dapp-omnibox'),
             fieldKey: const ValueKey<String>('dapp-address-field'),
             controller: _address,
-            hintText: '搜索资产 / 社区 / 用户 / Launch / DApp / 网址',
+            hintText: context.l10n.wallet_deferredScreensDappOmniboxHintText,
             trailingKey: 'GLOBAL',
             onChanged: _onChanged,
           ),
@@ -365,32 +372,35 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             headingTone: LoopFolioHeadingTone.neutral,
             ring: false,
             archetype: LoopFolioArchetype.action,
-            kicker: 'DApp 检查 · 只读',
+            kicker: context.l10n.wallet_deferredScreensDappFolioKicker,
             heading: switch (review.verdict) {
               LoopUrlVerdict.normalized => review.host!,
               LoopUrlVerdict.flagged => review.host!,
               LoopUrlVerdict.blocked =>
-                typed.isEmpty ? '还没有可核对的网址' : '这个网址不能使用',
+                typed.isEmpty
+                    ? context.l10n.wallet_deferredScreensLoopFolioPrimary
+                    : context.l10n.wallet_deferredScreensS,
             },
             // S278 · decision 0236: the caption and the 「这一页不会打开网址」
             // disclosure are this (i).
             kickerTrailing: _deferredInfo(
               context,
               keyName: 'dapp',
-              title: '这一页不会打开网址',
-              notes: const <LoopInfoNote>[
-                LoopInfoNote(body: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。'),
+              title: context.l10n.wallet_deferredScreensDappNoFetchNoticeTitle,
+              notes: <LoopInfoNote>[
+                LoopInfoNote(body: context.l10n.wallet_deferredScreensBody4),
                 LoopInfoNote(
                   key: ValueKey<String>('dapp-no-fetch-notice'),
                   body:
-                      '核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，'
-                      '所以你看到的域名一定是你输入的那个。',
+                      context.l10n.wallet_deferredScreensDappNoFetchNoticeBody,
                 ),
               ],
             ),
             stamp: switch (review.verdict) {
-              LoopUrlVerdict.normalized => '来源一致',
-              LoopUrlVerdict.flagged => '核对来源',
+              LoopUrlVerdict.normalized =>
+                context.l10n.wallet_deferredScreensNormalized,
+              LoopUrlVerdict.flagged =>
+                context.l10n.wallet_deferredScreensFlagged,
               LoopUrlVerdict.blocked => typed.isEmpty ? null : 'BLOCKED',
             },
           ),
@@ -409,9 +419,12 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               LoopBadge(loopChainName(loopPrimaryChainId)),
               LoopBadge(
                 switch (review.verdict) {
-                  LoopUrlVerdict.normalized => '规范化完成',
-                  LoopUrlVerdict.flagged => '需注意',
-                  LoopUrlVerdict.blocked => '已阻止',
+                  LoopUrlVerdict.normalized =>
+                    context.l10n.wallet_deferredScreensNormalized2,
+                  LoopUrlVerdict.flagged =>
+                    context.l10n.wallet_deferredScreensFlagged2,
+                  LoopUrlVerdict.blocked =>
+                    context.l10n.wallet_deferredScreensBlocked,
                 },
                 kind: switch (review.verdict) {
                   LoopUrlVerdict.normalized => LoopBadgeKind.up,
@@ -421,13 +434,13 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               ),
             ],
           ),
-        const LoopLabel('本地核对'),
+        LoopLabel(context.l10n.wallet_deferredScreensLoopLabel2),
         if (typed.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('dapp-review-empty'),
             illustration: LoopIllustration.search,
-            title: '还没有可核对的网址',
-            message: '输入网址后，这里会显示规范化结果与发现的问题。',
+            title: context.l10n.wallet_deferredScreensLoopFolioPrimary,
+            message: context.l10n.wallet_deferredScreensDappReviewEmptyMessage,
             compact: true,
           )
         else ...<Widget>[
@@ -435,19 +448,27 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('dapp-review-typed'),
-                title: '你输入的',
+                title: context.l10n.wallet_deferredScreensDappReviewTypedTitle,
                 subtitle: review.input,
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('dapp-review-canonical'),
-                title: '规范化结果',
-                subtitle: review.canonical?.toString() ?? '无法规范化，已阻止',
+                title:
+                    context.l10n.wallet_deferredScreensDappReviewCanonicalTitle,
+                subtitle:
+                    review.canonical?.toString() ??
+                    context
+                        .l10n
+                        .wallet_deferredScreensDappReviewCanonicalSubtitle,
                 trailingBadge: LoopBadge(
                   switch (review.verdict) {
-                    LoopUrlVerdict.normalized => '可读',
-                    LoopUrlVerdict.flagged => '需注意',
-                    LoopUrlVerdict.blocked => '已阻止',
+                    LoopUrlVerdict.normalized =>
+                      context.l10n.wallet_deferredScreensNormalized3,
+                    LoopUrlVerdict.flagged =>
+                      context.l10n.wallet_deferredScreensFlagged2,
+                    LoopUrlVerdict.blocked =>
+                      context.l10n.wallet_deferredScreensBlocked,
                   },
                   kind: switch (review.verdict) {
                     LoopUrlVerdict.normalized => LoopBadgeKind.up,
@@ -464,10 +485,11 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               key: const ValueKey<String>('dapp-confusable-notice'),
               icon: 'phishing',
               tone: LoopNoticeTone.danger,
-              title: '这个域名在冒充另一个域名',
-              body:
-                  '它看起来像 ${review.confusableReading}，但其中有不是拉丁字母的同形字符。'
-                  '这是最常见的钓鱼手法，已阻止。',
+              title:
+                  context.l10n.wallet_deferredScreensDappConfusableNoticeTitle,
+              body: context.l10n.wallet_deferredScreensDappConfusableNoticeBody(
+                review.confusableReading,
+              ),
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
                 12,
@@ -475,13 +497,14 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
                 0,
               ),
             ),
-          const LoopLabel('发现'),
+          LoopLabel(context.l10n.wallet_deferredScreensLoopLabel3),
           if (review.findings.isEmpty)
-            const LoopEmptyState(
+            LoopEmptyState(
               key: ValueKey<String>('dapp-findings-empty'),
               illustration: LoopIllustration.search,
-              title: '没有发现问题',
-              message: '这只说明地址本身规范；它不代表这个站点可信。',
+              title: context.l10n.wallet_deferredScreensDappFindingsEmptyTitle,
+              message:
+                  context.l10n.wallet_deferredScreensDappFindingsEmptyMessage,
               compact: true,
             )
           else
@@ -491,9 +514,13 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
                   LoopRecordRow(
                     key: ValueKey<String>('dapp-finding-${finding.name}'),
                     title: finding.explanation,
-                    subtitle: finding.isBlocking ? '阻止' : '提示',
+                    subtitle: finding.isBlocking
+                        ? context.l10n.wallet_deferredScreensSubtitle
+                        : context.l10n.wallet_deferredScreensSubtitle2,
                     trailingBadge: LoopBadge(
-                      finding.isBlocking ? '阻止' : '提示',
+                      finding.isBlocking
+                          ? context.l10n.wallet_deferredScreensSubtitle
+                          : context.l10n.wallet_deferredScreensSubtitle2,
                       kind: finding.isBlocking
                           ? LoopBadgeKind.mute
                           : LoopBadgeKind.mining,
@@ -508,17 +535,20 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
         // already found full of them (item 5). The reputation group exists
         // once there is a domain to have one.
         if (typed.isNotEmpty) ...<Widget>[
-          const LoopLabel('域名信誉'),
-          const LoopUnavailableLine(
+          LoopLabel(context.l10n.wallet_deferredScreensLoopLabel4),
+          LoopUnavailableLine(
             key: ValueKey<String>('dapp-reputation-unavailable'),
-            label: '读不到域名信誉',
+            label: context
+                .l10n
+                .wallet_deferredScreensDappReputationUnavailableLabel,
             reasonCode: DappReviewScreen.reputationReasonCode,
           ),
         ],
-        const LoopLabel('连接与签名'),
+        LoopLabel(context.l10n.wallet_deferredScreensLoopLabel5),
         LoopUnavailableLine(
           key: const ValueKey<String>('dapp-execution-unavailable'),
-          label: '连接钱包与签名尚未开放',
+          label:
+              context.l10n.wallet_deferredScreensDappExecutionUnavailableLabel,
           reasonCode: _reasonFor(
             capability,
             DappReviewScreen.deferredReasonCode,

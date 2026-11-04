@@ -53,8 +53,8 @@ void main() {
       // A declared Privy capability is never reported as an enabled
       // protection, and with no device lock composed the rows that can be
       // on say 不可用 like MFA: 应用锁 and 大额交易二次验证 (decision 0152).
-      expect(find.text('可用'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(3));
+      expect(find.text('Available'), findsNothing);
+      expect(_unavailableBadges, findsNWidgets(3));
       expect(find.textContaining('即将推出'), findsNothing);
 
       await _tap(
@@ -196,11 +196,11 @@ void main() {
       find.byKey(const ValueKey<String>('protection-setup-unavailable')),
       findsNothing,
     );
-    expect(find.text('可用'), findsNothing);
+    expect(find.text('Available'), findsNothing);
     // 应用锁, 大额交易二次验证 and MFA. In a widget test the device answers
     // that it can authenticate nobody, so even the protections that can be
     // on are offered as unavailable (decision 0152).
-    expect(find.text('不可用'), findsNWidgets(3));
+    expect(_unavailableBadges, findsNWidgets(3));
     expect(find.text('已开启'), findsNothing);
     expect(find.byType(Switch), findsNothing);
   });
@@ -274,3 +274,11 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
+
+/// 不可用 in either language (S355d · decision 0281): the step-up row is
+/// migrated before 应用锁 and MFA, so the three badges may be mixed while the
+/// batches land.
+final Finder _unavailableBadges = find.byWidgetPredicate(
+  (widget) =>
+      widget is Text && (widget.data == 'Unavailable' || widget.data == '不可用'),
+);

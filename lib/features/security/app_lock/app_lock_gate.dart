@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/account/account_screens.dart'
     show LoopLaunchFrame;
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// What the last attempt means, in the owner's words.
@@ -18,27 +19,35 @@ String loopAppLockAttemptText(
   LoopDeviceAuthOutcome outcome,
   String? systemMessage,
 ) => switch (outcome) {
-  LoopDeviceAuthOutcome.succeeded => '验证通过。',
-  LoopDeviceAuthOutcome.failed => '没有通过验证，可以再试一次。',
-  LoopDeviceAuthOutcome.canceled => '你取消了这次验证。',
-  LoopDeviceAuthOutcome.lockedOut => '系统暂时停用了验证，等一会儿再试，或改用设备密码。',
-  LoopDeviceAuthOutcome.unavailable => '这台设备现在没有可用的锁屏验证。',
+  LoopDeviceAuthOutcome.succeeded =>
+    LoopL10n.current.securityAppLock_gateSucceeded,
+  LoopDeviceAuthOutcome.failed => LoopL10n.current.securityAppLock_gateFailed,
+  LoopDeviceAuthOutcome.canceled =>
+    LoopL10n.current.securityAppLock_gateCanceled,
+  LoopDeviceAuthOutcome.lockedOut =>
+    LoopL10n.current.securityAppLock_gateLockedOut,
+  LoopDeviceAuthOutcome.unavailable =>
+    LoopL10n.current.securityAppLock_gateUnavailable,
   LoopDeviceAuthOutcome.error =>
     systemMessage == null || systemMessage.trim().isEmpty
-        ? '验证没有完成。'
-        : '验证没有完成 · 系统提示：${systemMessage.trim()}',
+        ? LoopL10n.current.securityAppLock_gateSwitch
+        : LoopL10n.current.securityAppLock_gateS(systemMessage.trim()),
 };
 
 /// What the device offers, said once, where the owner decides.
 String loopAppLockFactorText(LoopDeviceAuthCapability capability) =>
     switch (capability.factor) {
-      LoopDeviceAuthFactor.biometric => '用这台设备的生物识别解锁；识别不了时会退回设备密码',
-      LoopDeviceAuthFactor.deviceCredential => '用这台设备的锁屏密码解锁',
+      LoopDeviceAuthFactor.biometric =>
+        LoopL10n.current.securityAppLock_gateBiometric,
+      LoopDeviceAuthFactor.deviceCredential =>
+        LoopL10n.current.securityAppLock_gateDeviceCredential,
       null => switch (capability.unavailableReason) {
         LoopDeviceAuthUnavailableReason.noCredentialSet =>
-          '这台设备还没有设置锁屏密码或生物识别，先在系统设置里加上',
-        LoopDeviceAuthUnavailableReason.unsupportedPlatform => '这台设备不支持锁屏验证',
-        LoopDeviceAuthUnavailableReason.unknown || null => '还没有读到这台设备的锁屏能力',
+          LoopL10n.current.securityAppLock_gateNoCredentialSet,
+        LoopDeviceAuthUnavailableReason.unsupportedPlatform =>
+          LoopL10n.current.securityAppLock_gateUnsupportedPlatform,
+        LoopDeviceAuthUnavailableReason.unknown ||
+        null => LoopL10n.current.securityAppLock_gateSwitch2,
       },
     };
 
@@ -97,10 +106,11 @@ class _LoopAppLockCurtain extends ConsumerWidget {
       key: const ValueKey<String>('loop-app-lock-curtain'),
       color: LoopColors.ink,
       child: LoopLaunchFrame(
-        semanticLabel: 'LOOP 已锁定',
+        semanticLabel:
+            context.l10n.securityAppLock_gateLoopAppLockUnlockSemanticLabel,
         showRail: false,
         waiting: false,
-        status: 'LOOP 已锁定',
+        status: context.l10n.securityAppLock_gateLoopAppLockUnlockSemanticLabel,
         statusKey: const ValueKey<String>('loop-app-lock-title'),
         statusStyle: LoopType.titleLg,
         detail: outcome != null && outcome != LoopDeviceAuthOutcome.succeeded
@@ -109,7 +119,9 @@ class _LoopAppLockCurtain extends ConsumerWidget {
         detailKey: const ValueKey<String>('loop-app-lock-attempt'),
         action: LoopButton(
           key: const ValueKey<String>('loop-app-lock-unlock'),
-          label: state.busy ? '正在验证…' : '验证身份',
+          label: state.busy
+              ? context.l10n.securityAppLock_gateLoopAppLockUnlockLabel
+              : context.l10n.securityAppLock_gateLoopAppLockUnlockLabel2,
           primary: true,
           block: true,
           onPressed: state.busy

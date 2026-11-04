@@ -530,7 +530,7 @@ void main() {
       final error = find.byKey(const ValueKey<String>('support-command-error'));
       await scrollToS8Section(tester, error);
       expect(error, findsOneWidget);
-      expect(find.textContaining('请求过于频繁'), findsOneWidget);
+      expect(find.textContaining('Too many requests'), findsOneWidget);
     });
 
     testWidgets('attachments stay unavailable and the reply is quoted', (

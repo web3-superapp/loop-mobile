@@ -94,7 +94,7 @@ void main() {
       );
       expect(tester.getSize(tag).height, LoopEnvironmentTag.height);
       // Same line as 「总资产」 (decision 0119), at its right end.
-      final kicker = find.text('总资产');
+      final kicker = find.text('Total assets');
       expect(
         (tester.getCenter(tag).dy - tester.getCenter(kicker).dy).abs(),
         lessThan(2),
@@ -117,7 +117,7 @@ void main() {
         findsNothing,
       );
       expect(find.byType(LoopEnvironmentTag), findsNothing);
-      expect(find.text('总资产'), findsOneWidget);
+      expect(find.text('Total assets'), findsOneWidget);
     });
   });
 

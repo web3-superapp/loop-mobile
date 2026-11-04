@@ -24,9 +24,9 @@ void main() {
       find.byKey(const ValueKey<String>('pay-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('扫码支付'), findsOneWidget);
+    expect(find.text('Scan to pay'), findsOneWidget);
     expect(find.text('Coming soon'), findsOneWidget);
-    expect(find.textContaining('还没有开放'), findsWidgets);
+    expect(find.textContaining("isn't available yet"), findsWidgets);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(LoopButton), findsNothing);
   });
@@ -37,13 +37,16 @@ void main() {
     // S278 · decision 0236 (需求方第 11 条): the heading says 跨链尚未开放;
     // the default deferral prints no second sentence, and the page's
     // explanations are behind the folio's (i).
-    expect(find.text('跨链尚未开放'), findsOneWidget);
+    expect(find.text('Bridge isn\'t available yet'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('bridge-unavailable')),
       findsNothing,
     );
-    expect(find.textContaining('这里不会发起任何跨链操作'), findsNothing);
-    expect(find.textContaining('先选来源链'), findsNothing);
+    expect(
+      find.textContaining('no bridge action is started here'),
+      findsNothing,
+    );
+    expect(find.textContaining('Choose the source chain'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('bridge-scope-notice')),
       findsNothing,
@@ -55,7 +58,7 @@ void main() {
       find.byKey(const ValueKey<String>('bridge-scope-notice')),
       findsOneWidget,
     );
-    expect(find.textContaining('先选来源链'), findsOneWidget);
+    expect(find.textContaining('Choose the source chain'), findsOneWidget);
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
@@ -80,7 +83,7 @@ void main() {
       find.byKey(const ValueKey<String>('bridge-status-folio')),
       findsOneWidget,
     );
-    expect(find.text('步骤'), findsOneWidget);
+    expect(find.text('Steps'), findsOneWidget);
     // No step is presented in any state: nothing is transferring, so 等待 was
     // a run this page invented, and 完成 / 进行中 never existed.
     for (var index = 1; index <= 3; index += 1) {
@@ -90,12 +93,12 @@ void main() {
         reason: 'step $index',
       );
     }
-    for (final state in <String>['等待', '完成', '进行中']) {
+    for (final state in <String>['等待', 'Done', 'In progress']) {
       expect(find.text(state), findsNothing, reason: state);
     }
     // 读不到 would say LOOP tried; nothing was tried.
     expect(find.textContaining('读不到跨链进度'), findsNothing);
-    expect(find.text('跨链进度尚未开放'), findsOneWidget);
+    expect(find.text('Bridge progress isn\'t available yet'), findsOneWidget);
   });
 
   testWidgets('bridge-status keeps the one step that leads anywhere', (
@@ -134,7 +137,7 @@ void main() {
       // Nothing was typed, so nothing was looked up and the reputation group
       // does not exist yet: a second empty group saying so was one more
       // placeholder on a page the audit already found full of them.
-      expect(find.text('域名信誉'), findsNothing);
+      expect(find.text('Domain reputation'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('dapp-reputation-unavailable')),
         findsNothing,
@@ -184,7 +187,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('这个网址不能使用'), findsOneWidget);
+      expect(find.text('This URL can\'t be used'), findsOneWidget);
       final finding = find.byKey(
         const ValueKey<String>('dapp-finding-notHttps'),
       );
@@ -193,7 +196,10 @@ void main() {
       final canonical = find.byKey(
         const ValueKey<String>('dapp-review-canonical'),
       );
-      expect(tester.widget<LoopRecordRow>(canonical).subtitle, '无法规范化，已阻止');
+      expect(
+        tester.widget<LoopRecordRow>(canonical).subtitle,
+        'Couldn\'t normalize; blocked',
+      );
     });
 
     testWidgets('an IDN homograph is blocked and its Latin reading named', (
@@ -212,7 +218,7 @@ void main() {
       );
       await scrollToS8Section(tester, notice);
       expect(notice, findsOneWidget);
-      expect(find.textContaining('看起来像 apple.com'), findsOneWidget);
+      expect(find.textContaining('It looks like apple.com'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('dapp-finding-confusableCharacters')),
         findsOneWidget,
@@ -226,13 +232,13 @@ void main() {
 
       // S278 · decision 0236: the sentence is behind the folio's (i); it is
       // still exactly one tap away and still says the same thing.
-      expect(find.textContaining('不会跟随任何跳转'), findsNothing);
+      expect(find.textContaining('no redirects'), findsNothing);
       // S325 · decision 0255: the page's one (i), in its bar.
       await openPageInfo(tester);
       await tester.pumpAndSettle();
       final notice = find.byKey(const ValueKey<String>('dapp-no-fetch-notice'));
       expect(notice, findsOneWidget);
-      expect(find.textContaining('不会跟随任何跳转'), findsOneWidget);
+      expect(find.textContaining('no redirects'), findsOneWidget);
       // The prototype's connected DApp card, allowance count and reputation
       // sentence all had no source and are absent.
       expect(find.textContaining('已连接'), findsNothing);

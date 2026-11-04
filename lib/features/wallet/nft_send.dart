@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // S339 · decision 0267 · 发送 LOOP 项目 NFT (docs/53)
@@ -93,7 +94,8 @@ final class SendNftTarget {
 
 /// The toast an NFT send entry shows while the server's switch is off
 /// (`503 NFT_SEND_DISABLED`).
-const String nftSendDisabledText = '暂不支持发送 NFT';
+String get nftSendDisabledText =>
+    LoopL10n.current.wallet_nftSendNftSendDisabledText;
 
 /// The server's reason codes for a refused NFT send (docs/53 §二).
 abstract final class NftSendReason {
@@ -113,22 +115,26 @@ bool nftSendIsDisabled(LoopChainException? failure) =>
 String? nftSendFailureText(LoopChainException failure) {
   switch (failure.reasonCode) {
     case NftSendReason.notOwned:
-      return '这枚 NFT 已不在钱包，请返回重新选择';
+      return LoopL10n.current.wallet_nftSendNotOwned;
     case NftSendReason.contractUnsupported:
-      return '暂不支持发送这个 NFT';
+      return LoopL10n.current.wallet_nftSendContractUnsupported;
     case NftSendReason.recipientRejects:
-      return '收款地址不接收这枚 NFT';
+      return LoopL10n.current.wallet_nftSendRecipientRejects;
     case NftSendReason.recipientSelf:
-      return '不能发送给自己';
+      return LoopL10n.current.wallet_nftSendRecipientSelf;
     case NftSendReason.disabled:
       return nftSendDisabledText;
   }
   return switch (failure.kind) {
     LoopChainFailureKind.insufficientBalance =>
-      '$loopLaunchNativeSymbolText 手续费不足，充值后再试',
-    LoopChainFailureKind.idempotencyConflict => '这笔发送已提交过，请查看最新状态',
+      LoopL10n.current.wallet_nftSendInsufficientBalance(
+        loopLaunchNativeSymbolText,
+      ),
+    LoopChainFailureKind.idempotencyConflict =>
+      LoopL10n.current.wallet_nftSendIdempotencyConflict,
     // 409 SIMULATION_FAILED: the transfer reverted in the pre-execution.
-    LoopChainFailureKind.simulationFailed => '这笔发送预执行没有通过，请稍后再试',
+    LoopChainFailureKind.simulationFailed =>
+      LoopL10n.current.wallet_nftSendSimulationFailed,
     _ => null,
   };
 }

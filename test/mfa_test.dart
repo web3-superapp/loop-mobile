@@ -88,7 +88,7 @@ void main() {
       );
       expect(
         loopMfaFailureText(LoopMfaFailureKind.notEnabled),
-        contains('登录服务尚未开启 MFA'),
+        contains('The login service hasn\'t enabled MFA yet'),
       );
     });
   });
@@ -256,7 +256,7 @@ void main() {
         find.byKey(const ValueKey<String>('security-mfa')),
       );
       expect(row.trailing, '已开启');
-      expect(row.subtitle, contains('验证器 App'));
+      expect(row.subtitle, contains('Authenticator app'));
       expect(row.semanticLabel, contains('已开启'));
     });
 
@@ -271,10 +271,10 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-大额交易二次验证')),
       );
-      expect(row.trailing, '不可用');
+      expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);
       // S278 · decision 0236: the threshold sentence is behind the row's (i).
-      expect(row.subtitle, '这次运行没有可用的设备验证');
+      expect(row.subtitle, 'No device verification available in this session');
       expect(
         tester
             .widget<LoopInfoButton>(
@@ -283,7 +283,7 @@ void main() {
             .notes
             .single
             .body,
-        startsWith('达到 1,000 USD1 时再验一次身份'),
+        startsWith('Verify again at 1,000 USD1 or more'),
       );
     });
   });
@@ -312,7 +312,7 @@ void main() {
         expect(container.read(loopMfaProvider).hasPasskey, isFalse);
         expect(
           loopMfaFailureText(LoopMfaFailureKind.passkeyDomainUnconfigured),
-          contains('域名凭据'),
+          contains('domain credentials'),
         );
       },
     );
@@ -571,7 +571,7 @@ void main() {
               find.byKey(const ValueKey<String>('mfa-sheet-passkey')),
             )
             .label,
-        '关闭 Passkey 验证',
+        'Turn off passkey verification',
       );
     });
 
@@ -813,7 +813,10 @@ void main() {
         find.byKey(const ValueKey<String>('mfa-sheet-failure')),
         findsOneWidget,
       );
-      expect(find.text('登录服务尚未开启 MFA'), findsOneWidget);
+      expect(
+        find.text('The login service hasn\'t enabled MFA yet'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('mfa-sheet-code')),
         findsNothing,
@@ -853,7 +856,7 @@ void main() {
       );
       await tester.pump();
       expect(copied, <String>['JBSWY3DPEHPK3PXP']);
-      expect(find.text('已复制密钥'), findsOneWidget);
+      expect(find.text('Key copied'), findsOneWidget);
       // The explanation names the kind of app the reader needs.
       expect(find.textContaining('Google Authenticator'), findsOneWidget);
     });
@@ -922,7 +925,7 @@ void main() {
 
       expect(container.read(loopMfaProvider).hasTotp, isTrue);
       // The sheet turns into the removal it now has something to remove.
-      expect(find.text('关闭 MFA'), findsWidgets);
+      expect(find.text('Turn off MFA'), findsWidgets);
     });
   });
 }

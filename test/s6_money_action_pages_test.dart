@@ -57,7 +57,10 @@ void main() {
         find.byKey(const ValueKey<String>('send-capability-block')),
         findsOneWidget,
       );
-      expect(find.textContaining('链上操作当前已关闭'), findsOneWidget);
+      expect(
+        find.textContaining('On-chain actions are currently turned off'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('loading shows a skeleton and no balance', (tester) async {
@@ -141,7 +144,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('读不到'), findsOneWidget);
+      expect(find.text("Can't load"), findsOneWidget);
       expect(find.text('0'), findsNothing);
       final row = tester.widget<LoopRecordRow>(
         find.byKey(ValueKey<String>('send-asset-$s5NativeAssetId')),
@@ -160,7 +163,10 @@ void main() {
       );
       await sendToAmountStep(tester);
 
-      expect(find.textContaining('具体数值暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining("The exact figure can't be loaded"),
+        findsOneWidget,
+      );
     });
   });
 
@@ -192,7 +198,12 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-contract')),
         findsOneWidget,
       );
-      expect(find.textContaining('暂时无法核对这个地址是否在已知诈骗名单里'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "Can't check whether this address is on known scam lists",
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unchecked recipient cannot continue', (tester) async {
@@ -255,7 +266,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('超过可动用余额'), findsOneWidget);
+      expect(find.text('Exceeds usable balance'), findsOneWidget);
       final next = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('send-amount-next')),
       );
@@ -297,7 +308,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-confirm-expired')),
         findsOneWidget,
       );
-      expect(find.textContaining('事实已过期'), findsWidgets);
+      expect(find.textContaining('Facts expired'), findsWidgets);
     });
 
     testWidgets('a failed pre-execution can never be signed', (tester) async {
@@ -397,7 +408,7 @@ void main() {
         find.byKey(const ValueKey<String>('swap-evidence-pending')),
         findsOneWidget,
       );
-      expect(find.textContaining('兑换还在验证中'), findsWidgets);
+      expect(find.textContaining('Swap is still being verified'), findsWidgets);
     });
 
     testWidgets('a quote is only requested once both assets are chosen', (
@@ -460,9 +471,9 @@ void main() {
 
       await _quote(tester);
 
-      expect(find.text('滑点上限'), findsWidgets);
-      expect(find.text('价格影响'), findsOneWidget);
-      expect(find.textContaining('未设置'), findsOneWidget);
+      expect(find.text('Slippage limit'), findsWidgets);
+      expect(find.text('Price impact'), findsOneWidget);
+      expect(find.textContaining('Not set'), findsOneWidget);
     });
 
     testWidgets('an unreachable provider is an error, not an empty quote', (
@@ -503,11 +514,11 @@ void main() {
       );
       // S278 · decision 0236: the source and 「只展示最终报价」 are behind
       // the block's (i).
-      expect(find.textContaining('报价方 privy'), findsNothing);
+      expect(find.textContaining('Quoted by privy'), findsNothing);
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('报价方 privy'), findsOneWidget);
-      expect(find.textContaining('逐跳明细'), findsOneWidget);
+      expect(find.textContaining('Quoted by privy'), findsOneWidget);
+      expect(find.textContaining('per-hop details'), findsOneWidget);
     });
   });
 
@@ -618,7 +629,10 @@ void main() {
       // A refusal with no rule name is the one case the client cannot
       // explain. It states exactly what did not happen and guesses at
       // nothing — in particular it does not blame a limit nobody set (S77a).
-      expect(find.textContaining('这里不猜是哪一条'), findsOneWidget);
+      expect(
+        find.textContaining("We won't guess which rule applies"),
+        findsOneWidget,
+      );
       expect(find.textContaining('自定义上限'), findsNothing);
     });
 
@@ -658,7 +672,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(s6SpenderChecksum), findsNothing);
-      expect(find.textContaining('区块 120,695,250'), findsOneWidget);
+      expect(find.textContaining('block 120,695,250'), findsOneWidget);
     });
 
     testWidgets('a missing indexer checkpoint is unknown, not zero', (
@@ -683,7 +697,7 @@ void main() {
         findsOneWidget,
       );
       // Decision 0126: no folio; the page keeps its section heading.
-      expect(find.text('按额度排序'), findsOneWidget);
+      expect(find.text('Sorted by amount'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('approvals-state-unavailable')),
         findsNothing,
@@ -710,8 +724,8 @@ void main() {
         ),
       );
 
-      expect(find.text('读不到'), findsOneWidget);
-      expect(find.textContaining('额度 0'), findsNothing);
+      expect(find.text("Can't load"), findsOneWidget);
+      expect(find.textContaining('Allowance 0'), findsNothing);
     });
 
     testWidgets('an unlimited row is marked and offers recovery', (
@@ -730,7 +744,7 @@ void main() {
         ),
       );
 
-      expect(find.text('无限'), findsOneWidget);
+      expect(find.text('Unlimited'), findsOneWidget);
 
       await tester.tap(
         find.byKey(ValueKey<String>('approval-$s5UsdtAssetId-$s6Spender')),
@@ -782,7 +796,12 @@ void main() {
         find.byKey(const ValueKey<String>('tx-result-pending')),
         findsOneWidget,
       );
-      expect(find.textContaining('提交成功不代表链上已完成'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "A successful submission doesn't mean it's done on-chain",
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(LoopToastView), findsNothing);
     });
 
@@ -814,7 +833,7 @@ void main() {
         ),
       );
 
-      expect(find.text('交易已确认'), findsOneWidget);
+      expect(find.text('Transaction confirmed'), findsOneWidget);
       expect(find.textContaining('0x4f2a'), findsOneWidget);
       expect(find.text('18'), findsOneWidget);
     });
@@ -848,7 +867,7 @@ void main() {
         find.byKey(const ValueKey<String>('tx-result-unknown-lock')),
         findsOneWidget,
       );
-      expect(find.textContaining('不会重复提交'), findsOneWidget);
+      expect(find.textContaining("won't submit again"), findsOneWidget);
       expect(intents.reportCalls, 0);
       expect(intents.executeCalls, 0);
       expect(intents.intentReads, greaterThan(1));
@@ -874,7 +893,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('网络费已消耗'), findsOneWidget);
+      expect(find.textContaining('the network fee was spent'), findsOneWidget);
     });
 
     testWidgets('a failed read is an error, not a failed transaction', (
@@ -921,7 +940,7 @@ void main() {
 
       expect(find.text('0.01 WBNB'), findsOneWidget);
       expect(find.text(s6RecipientChecksum), findsOneWidget);
-      expect(find.text('试算通过'), findsOneWidget);
+      expect(find.text('Simulation passed'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-sign-sheet-pending')),
         findsOneWidget,
@@ -937,7 +956,10 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-sheet-simulationFailed')),
         findsOneWidget,
       );
-      expect(find.textContaining('试算没有返回可核对的结果'), findsOneWidget);
+      expect(
+        find.textContaining('Simulation returned no verifiable result'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('one confirmation submits once and then completes', (
@@ -956,7 +978,12 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-sheet-complete')),
         findsOneWidget,
       );
-      expect(find.textContaining('成功提示不代表链上已完成'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "A success message doesn't mean it's done on-chain",
+        ),
+        findsOneWidget,
+      );
       expect(wallet.handoffs, hasLength(1));
       expect(intents.reportCalls, 1);
     });
@@ -985,7 +1012,7 @@ void main() {
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('已锁定'), findsOneWidget);
+      expect(find.textContaining('locked'), findsOneWidget);
       expect(find.text('确认签名'), findsNothing);
       expect(intents.reportCalls, 1);
     });
@@ -1006,7 +1033,10 @@ void main() {
       // indexing coverage are behind one (i); still exactly one tap away.
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
+      expect(
+        find.textContaining('Approvals since block 120,600,000'),
+        findsOneWidget,
+      );
       expect(find.textContaining('更早授予的授权不会出现在这里'), findsNothing);
     });
 
@@ -1096,8 +1126,8 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-sheet-complete')),
         findsOneWidget,
       );
-      expect(find.textContaining('可能已经上链'), findsOneWidget);
-      expect(find.textContaining('没有提交任何交易'), findsNothing);
+      expect(find.textContaining('may already be on-chain'), findsOneWidget);
+      expect(find.textContaining('No transaction was submitted'), findsNothing);
       // The confirmation is gone: signing again would risk a second broadcast.
       expect(find.text('确认签名'), findsNothing);
       expect(wallet.handoffs, hasLength(1));
@@ -1118,14 +1148,14 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      expect(find.text('交易已确认'), findsOneWidget);
+      expect(find.text('Transaction confirmed'), findsOneWidget);
 
       // The toast expires; further reads of the same state must not fire it
       // again.
       await tester.pump(const Duration(seconds: 5));
-      expect(find.text('交易已确认'), findsNothing);
+      expect(find.text('Transaction confirmed'), findsNothing);
       await tester.pump(const Duration(milliseconds: 120));
-      expect(find.text('交易已确认'), findsNothing);
+      expect(find.text('Transaction confirmed'), findsNothing);
     });
 
     testWidgets('polling gives up after repeated failures', (tester) async {

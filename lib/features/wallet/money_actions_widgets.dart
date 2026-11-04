@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -29,7 +30,8 @@ bool moneyActionBlocks(
 
 /// The primary action's label while the capability document is re-read in
 /// front of a signing exit (S88d). The action is not pressable meanwhile.
-const String moneyCapabilityCheckingLabel = '正在核对可用性';
+String get moneyCapabilityCheckingLabel =>
+    LoopL10n.current.wallet_moneyActionsMoneyCapabilityCheckingLabel;
 
 /// Whether a money-action *read* must stop.
 ///
@@ -42,15 +44,16 @@ bool moneyReadBlocks(LoopChainGatewayMode mode) =>
 
 /// zh-CN label for one intent state.
 String moneyIntentStateLabel(LoopIntentState state) => switch (state) {
-  LoopIntentState.prepared => '待确认',
-  LoopIntentState.awaitingSignature => '待签名',
-  LoopIntentState.submitted => '已提交',
-  LoopIntentState.confirmed => '已确认',
-  LoopIntentState.reverted => '已回滚',
-  LoopIntentState.failed => '失败',
-  LoopIntentState.unknown => '未知（已锁定）',
-  LoopIntentState.cancelled => '已取消',
-  LoopIntentState.expired => '已过期',
+  LoopIntentState.prepared => LoopL10n.current.common_pendingConfirmation,
+  LoopIntentState.awaitingSignature =>
+    LoopL10n.current.common_awaitingSignature,
+  LoopIntentState.submitted => LoopL10n.current.common_submitted,
+  LoopIntentState.confirmed => LoopL10n.current.common_confirmed,
+  LoopIntentState.reverted => LoopL10n.current.common_reverted,
+  LoopIntentState.failed => LoopL10n.current.common_failed,
+  LoopIntentState.unknown => LoopL10n.current.wallet_moneyActionsUnknown,
+  LoopIntentState.cancelled => LoopL10n.current.common_cancelled,
+  LoopIntentState.expired => LoopL10n.current.common_expired,
 };
 
 /// `mm:ss` for a countdown. Zero renders as `00:00`, never as an em dash.
@@ -128,14 +131,17 @@ class MoneyFactsFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balance = intent.review.balance;
-    final observed =
-        '事实观察于 ${loopRelativeTime(intent.factsObservedAt, now: now)}';
+    final observed = LoopL10n.current.wallet_moneyActionsObserved(
+      loopRelativeTime(intent.factsObservedAt, now: now),
+    );
     return LoopProvenanceFooter(
       key: const ValueKey<String>('money-facts-footer'),
       text: balance == null
           ? observed
-          : '区块 ${loopGroupedFigure(balance.blockNumber.toString())} · '
-                '$observed',
+          : context.l10n.wallet_moneyActionsMoneyFactsFooterText(
+              loopGroupedFigure(balance.blockNumber.toString()),
+              observed,
+            ),
     );
   }
 }
@@ -282,19 +288,17 @@ class _MoneySignSheetState extends State<MoneySignSheet>
       switch (outcome.status) {
         case MoneySignStatus.submitted:
           _state = LoopSignSheetState.complete;
-          _reason = '已提交，等待链上回执。成功提示不代表链上已完成。';
+          _reason = LoopL10n.current.wallet_moneyActionsReason;
         case MoneySignStatus.locked:
           _state = LoopSignSheetState.complete;
-          _reason = '这笔操作已提交且结果未知，已锁定。请在结果页查看，不要重复提交。';
+          _reason = LoopL10n.current.wallet_moneyActionsReason2;
         case MoneySignStatus.reportRefused:
           // The wallet already produced a result: this is not "nothing was
           // submitted", and the confirmation stays closed.
           _state = LoopSignSheetState.complete;
           _reason = outcome.txHash == null
-              ? '钱包已经签名，但这次提交还没有记录到。请到结果页查看状态，不要重复签名。'
-              : '钱包已经广播（${outcome.txHash}），但这次上报没有被接受。'
-                    '这笔交易可能已经上链，请在结果页查看并稍后重新上报，'
-                    '不要重复签名。';
+              ? LoopL10n.current.wallet_moneyActionsSetState
+              : LoopL10n.current.wallet_moneyActionsS(outcome.txHash);
         case MoneySignStatus.refused:
           _state = LoopSignSheetState.simulationFailed;
           _reason = loopReasonCodeText(outcome.reasonCode);
@@ -304,7 +308,8 @@ class _MoneySignSheetState extends State<MoneySignSheet>
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;
           _reason =
-              loopStepUpReasonText(outcome.reasonCode) ?? '钱包没有完成签名，没有提交任何交易。';
+              loopStepUpReasonText(outcome.reasonCode) ??
+              LoopL10n.current.wallet_moneyActionsSetState2;
           _submitted = false;
       }
     });
@@ -319,7 +324,7 @@ class _MoneySignSheetState extends State<MoneySignSheet>
       // gesture must not leave a signature in flight with nothing watching it.
       canPop: _state != LoopSignSheetState.signing,
       child: withStepUpStrip(
-        signLabel: '签名',
+        signLabel: context.l10n.common_sign,
         signStatus: stepUpSignStatus(
           _state,
           locked: _outcome?.isLocked ?? false,
@@ -339,7 +344,7 @@ class _MoneySignSheetState extends State<MoneySignSheet>
                 field.label,
                 field.value,
                 down:
-                    field.label == '模拟结果' &&
+                    moneyFieldId(field.label) == 'simulation' &&
                     widget.intent.simulation.status !=
                         LoopSimulationStatus.passed,
               ),
@@ -377,23 +382,31 @@ class MoneyIntentReviewCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                '${moneyActionTitle(intent.kind).replaceFirst('确认', '')} · '
-                '最终确认',
+                context.l10n.wallet_moneyActionsBuild(
+                  moneyActionName(intent.kind),
+                ),
                 style: LoopType.eyebrow,
               ),
               const SizedBox(height: 10),
               Text(
                 review.amount.isUnlimited
-                    ? '无限 ${review.asset.symbol}'
+                    ? context.l10n.wallet_moneyActionsBuild2(
+                        review.asset.symbol,
+                      )
                     : '${review.amount.display} ${review.asset.symbol}',
                 style: LoopType.figureXl,
               ),
               const SizedBox(height: 8),
               Text(
                 intent.policy.valueUsd == null
-                    ? '本次没有可用的新鲜行情，因此不展示估值。'
-                    : '预估价值 ${loopFormatUsd(intent.policy.valueUsd!)} · '
-                          '来源 ${intent.policy.priceSource ?? '未标注'}',
+                    ? context.l10n.wallet_moneyActionsBuild3
+                    : context.l10n.wallet_moneyActionsS2(
+                        loopFormatUsd(intent.policy.valueUsd!),
+                        intent.policy.priceSource ??
+                            context
+                                .l10n
+                                .wallet_moneyActionsWalletMoneyActionsS2,
+                      ),
                 style: LoopType.caption,
               ),
             ],
@@ -407,11 +420,13 @@ class MoneyIntentReviewCard extends StatelessWidget {
               children: <Widget>[
                 for (final field in fields.skip(1))
                   LoopKeyValue(
-                    key: ValueKey<String>('money-review-${field.label}'),
+                    key: ValueKey<String>(
+                      'money-review-${moneyFieldId(field.label)}',
+                    ),
                     label: field.label,
                     value: field.value,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    valueUp: field.label == '模拟结果'
+                    valueUp: moneyFieldId(field.label) == 'simulation'
                         ? intent.simulation.passed
                         : null,
                   ),
@@ -471,37 +486,44 @@ String moneyPolicyRefusalText(LoopChainException failure) {
   // when the server sent both.
   final figures =
       MoneyPolicyRule.comparesFigures(rule) && failure.hasCeilingFigures
-      ? '本次 \$${failure.exposureUsd} · 上限 \$${failure.ceilingUsd}。'
+      ? LoopL10n.current.wallet_moneyActionsMoneyPolicyRefusalText(
+          failure.ceilingUsd,
+          failure.exposureUsd,
+        )
       : '';
   // Only the rolling-day rule reports a budget, and only when the server sent
   // both halves of it. 「已用」 without 「还剩」 is not a budget.
   final budget =
       rule == MoneyPolicyRule.canaryDailyCeilingExceeded &&
           failure.hasDailyBudgetFigures
-      ? '24 小时内已用 \$${failure.spentUsd} · 还剩 \$${failure.remainingUsd}。'
+      ? LoopL10n.current.wallet_moneyActionsMoneyPolicyRefusalText2(
+          failure.remainingUsd,
+          failure.spentUsd,
+        )
       : '';
   return switch (rule) {
     MoneyPolicyRule.assetNotInAllowlist =>
-      '这个资产不在当前可操作的资产范围里，这笔操作没有通过。'
-          '范围由 LOOP 维护，不能在应用里调整；请换一个在范围内的资产。',
+      LoopL10n.current.wallet_moneyActionsAssetNotInAllowlist,
     MoneyPolicyRule.counterpartyNotInAllowlist =>
-      '这个收款地址不在当前允许的收款名单里，这笔操作没有通过，也没有提交任何交易。'
-          '名单由 LOOP 维护，不能在应用里调整；请换一个名单内的地址。',
+      LoopL10n.current.wallet_moneyActionsCounterpartyNotInAllowlist,
     MoneyPolicyRule.canaryCeilingExceeded =>
-      '$figures这笔操作超过了单笔金额上限，没有提交任何交易。'
-          '上限由 LOOP 设定，请降低本次金额后再试。',
+      LoopL10n.current.wallet_moneyActionsCanaryCeilingExceeded(figures),
     MoneyPolicyRule.canaryDailyCeilingExceeded =>
-      '$figures$budget这笔操作会超过 24 小时内的累计金额上限，没有提交任何交易。'
-          '上限由 LOOP 设定，请降低金额，或等累计额度滚过这 24 小时。',
+      LoopL10n.current.wallet_moneyActionsCanaryDailyCeilingExceeded(
+        budget,
+        figures,
+      ),
     MoneyPolicyRule.unlimitedExposureExceedsCeiling =>
-      '$figures无限授权按当前余额计算敞口，已超过单笔上限。'
-          '请改用限额授权，或先降低这个资产的余额。',
-    MoneyPolicyRule.assetBlocked => '这个资产已被屏蔽，不能进行任何资金操作。',
-    MoneyPolicyRule.priceImpactBlocked => '这笔兑换的价格影响过大，已被阻止。请减小金额或稍后再试。',
+      LoopL10n.current.wallet_moneyActionsUnlimitedExposureExceedsCeiling(
+        figures,
+      ),
+    MoneyPolicyRule.assetBlocked =>
+      LoopL10n.current.wallet_moneyActionsAssetBlocked,
+    MoneyPolicyRule.priceImpactBlocked =>
+      LoopL10n.current.wallet_moneyActionsPriceImpactBlocked,
     MoneyPolicyRule.nativeAssetNotApprovable =>
-      '原生 BNB 没有授权面：它不是 ERC-20，没有 allowance 可以授权或回收。'
-          '这一步不适用于原生资产。',
-    _ => '当前策略不允许这笔操作，没有提交任何交易。这里不猜是哪一条。',
+      LoopL10n.current.wallet_moneyActionsNativeAssetNotApprovable,
+    _ => LoopL10n.current.wallet_moneyActionsSwitch,
   };
 }
 
@@ -546,20 +568,18 @@ class MoneyPolicyNotice extends StatelessWidget {
       icon: 'shield',
       denied: true,
       title: stepUp
-          ? '这一步需要二次验证，没有提交任何交易'
+          ? context.l10n.wallet_moneyActionsTitle
           : failure.kind == LoopChainFailureKind.regionBlocked
-          ? '当前地区不能执行此操作，没有提交任何交易'
+          ? context.l10n.wallet_moneyActionsTitle2
           : failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable
-          ? '原生资产不能授权'
-          : '被策略拒绝，没有提交任何交易',
+          ? context.l10n.wallet_moneyActionsTitle3
+          : context.l10n.wallet_moneyActionsTitle4,
       purpose: stepUp
-          ? '这一步需要二次验证，二次验证还没有开放，'
-                '没有签名、没有广播，也没有提交任何交易。'
-                '请到安全中心查看当前可用的验证方式。'
+          ? context.l10n.wallet_moneyActionsPurpose
           : failure.kind == LoopChainFailureKind.regionBlocked
           ? loopChainPermissionPurpose(failure.kind)
           : moneyPolicyRefusalText(failure),
-      settingsLabel: '前往安全中心',
+      settingsLabel: context.l10n.common_openSecurityCenter,
       onOpenSettings: stepUp ? onOpenSecurity : null,
     );
   }

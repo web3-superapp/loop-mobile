@@ -626,7 +626,7 @@ void main() {
       expect(field.controller?.text, _address);
       // A prefill is text in a field: the server's preflight still checks
       // it — by itself since decision 0131 — and nothing is decided before.
-      expect(find.text('正在校验地址…'), findsOneWidget);
+      expect(find.text('Checking address…'), findsOneWidget);
       final next = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('send-address-next')),
       );

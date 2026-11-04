@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // wallets · GET /v2/wallets, PUT /v2/wallets/active
@@ -828,9 +829,8 @@ final class LoopWalletReceive {
 
 /// zh-CN copy for a receive warning key. Unknown keys keep a neutral warning.
 String loopReceiveWarningText(String warningKey) => switch (warningKey) {
-  'wallet.receive.bscOnly' =>
-    '只接收 BNB Smart Chain（BSC）网络的资产。把其他网络的资产发到这个地址可能永久丢失。',
-  _ => '请先确认发送方使用的网络与这里显示的一致。',
+  'wallet.receive.bscOnly' => LoopL10n.current.wallet_readModelsSwitch,
+  _ => LoopL10n.current.wallet_readModelsSwitch2,
 };
 
 // ---------------------------------------------------------------------------
@@ -839,16 +839,22 @@ String loopReceiveWarningText(String warningKey) => switch (warningKey) {
 
 /// The five windows 钱包 C offers over the net-worth history.
 enum LoopNetWorthRange {
-  day('1d', '1 天'),
-  week('7d', '7 天'),
-  month('30d', '30 天'),
-  halfYear('180d', '180 天'),
-  year('360d', '360 天');
+  day('1d'),
+  week('7d'),
+  month('30d'),
+  halfYear('180d'),
+  year('360d');
 
-  const LoopNetWorthRange(this.wireName, this.label);
+  const LoopNetWorthRange(this.wireName);
 
   final String wireName;
-  final String label;
+  String get label => switch (this) {
+    LoopNetWorthRange.day => LoopL10n.current.wallet_readModelsDay,
+    LoopNetWorthRange.week => LoopL10n.current.wallet_readModelsWeek,
+    LoopNetWorthRange.month => LoopL10n.current.wallet_readModelsMonth,
+    LoopNetWorthRange.halfYear => LoopL10n.current.wallet_readModelsHalfYear,
+    LoopNetWorthRange.year => LoopL10n.current.wallet_readModelsYear,
+  };
 
   static LoopNetWorthRange? tryParse(String value) {
     for (final range in values) {

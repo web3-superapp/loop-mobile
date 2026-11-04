@@ -752,7 +752,7 @@ void main() {
       final profiles = _Profiles(tradesAnswer: page);
       final opened = await _pump(tester, profiles);
       await _section(tester, '交易');
-      expect(find.text('买入 STAR'), findsOneWidget);
+      expect(find.text('Buy STAR'), findsOneWidget);
       expect(find.text('买入 BNB'), findsOneWidget);
       expect(
         find.byKey(ValueKey<String>('tx-entry-${entry.entryId}')),

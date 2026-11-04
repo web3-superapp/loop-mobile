@@ -242,8 +242,8 @@ void main() {
         quotes: FakeSwapQuoteGateway(),
       );
 
-      expect(find.text('路由由供应商选择'), findsNothing);
-      expect(find.text('算力影响不可用'), findsNothing);
+      expect(find.text('The provider chooses the route'), findsNothing);
+      expect(find.text('Power impact unavailable'), findsNothing);
       // The real limit stays, as the shared warning card (UX-016), and it
       // is the only notice on the form.
       expect(
@@ -268,8 +268,14 @@ void main() {
         find.byKey(const ValueKey<String>('swap-power-notice')),
         findsOneWidget,
       );
-      expect(find.textContaining('LOOP 不自建路由'), findsOneWidget);
-      expect(find.textContaining('买入后的算力变化暂时读不到'), findsOneWidget);
+      expect(
+        find.textContaining("LOOP doesn't build its own routes"),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining("The power change after buying can't be loaded"),
+        findsOneWidget,
+      );
     });
   });
 
@@ -279,16 +285,19 @@ void main() {
     test('a day reads as 今天, 昨天, a date, or a dated year', () {
       expect(
         walletActivityDayLabel(DateTime(2026, 10, 9, 0, 5), now: now),
-        '今天',
+        'Today',
       );
-      expect(walletActivityDayLabel(DateTime(2026, 10, 8, 23), now: now), '昨天');
+      expect(
+        walletActivityDayLabel(DateTime(2026, 10, 8, 23), now: now),
+        'Yesterday',
+      );
       expect(
         walletActivityDayLabel(DateTime(2026, 9, 16, 8), now: now),
-        '9月16日',
+        'Sep 16',
       );
       expect(
         walletActivityDayLabel(DateTime(2025, 12, 31, 8), now: now),
-        '2025年12月31日',
+        'Dec 31, 2025',
       );
     });
 
@@ -299,7 +308,11 @@ void main() {
         _entry('c', DateTime(2026, 10, 8, 20)),
         _entry('d', DateTime(2026, 9, 1, 20)),
       ], now: now);
-      expect(days.map((day) => day.label), <String>['今天', '昨天', '9月1日']);
+      expect(days.map((day) => day.label), <String>[
+        'Today',
+        'Yesterday',
+        'Sep 1',
+      ]);
       expect(days.first.entries.map((entry) => entry.logIndex), <int>[1, 2]);
     });
 

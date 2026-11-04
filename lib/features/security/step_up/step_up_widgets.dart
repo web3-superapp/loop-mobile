@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_controller.dart';
 import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -34,30 +35,35 @@ final class LoopStepUpStep {
   final LoopStepUpVerdict? verdict;
 
   String get caption => switch (status) {
-    LoopSignStepStatus.waiting => '待验证',
-    LoopSignStepStatus.active || LoopSignStepStatus.refreshing => '验证中',
-    LoopSignStepStatus.done => '已验证',
+    LoopSignStepStatus.waiting =>
+      LoopL10n.current.securityStepUp_widgetsWaiting,
+    LoopSignStepStatus.active || LoopSignStepStatus.refreshing =>
+      LoopL10n.current.securityStepUp_widgetsRefreshing,
+    LoopSignStepStatus.done => LoopL10n.current.securityStepUp_widgetsDone,
     LoopSignStepStatus.failed || LoopSignStepStatus.unknown =>
-      verdict == LoopStepUpVerdict.cancelled ? '已取消' : '未通过',
+      verdict == LoopStepUpVerdict.cancelled
+          ? LoopL10n.current.common_cancelled
+          : LoopL10n.current.common_rejected,
   };
 
   LoopSignStep get step => LoopSignStep(
     id: 'verify',
-    label: '验证身份',
+    label: LoopL10n.current.securityAppLock_gateLoopAppLockUnlockLabel2,
     status: status,
     caption: caption,
-    waitingCaption: '待验证',
+    waitingCaption: LoopL10n.current.securityStepUp_widgetsWaiting,
   );
 }
 
 /// The caption of a single-transaction signing step.
 String loopSignStepCaption(LoopSignStepStatus status) => switch (status) {
-  LoopSignStepStatus.waiting => '待签名',
-  LoopSignStepStatus.active => '请在钱包确认',
-  LoopSignStepStatus.refreshing => '正在刷新报价',
-  LoopSignStepStatus.done => '已广播',
-  LoopSignStepStatus.failed => '未完成',
-  LoopSignStepStatus.unknown => '结果未知',
+  LoopSignStepStatus.waiting => LoopL10n.current.common_awaitingSignature,
+  LoopSignStepStatus.active => LoopL10n.current.securityStepUp_widgetsActive,
+  LoopSignStepStatus.refreshing =>
+    LoopL10n.current.securityStepUp_widgetsRefreshing2,
+  LoopSignStepStatus.done => LoopL10n.current.common_broadcast,
+  LoopSignStepStatus.failed => LoopL10n.current.securityStepUp_widgetsFailed,
+  LoopSignStepStatus.unknown => LoopL10n.current.securityStepUp_widgetsUnknown,
 };
 
 /// The large-amount step-up inside one signing sheet.
@@ -94,7 +100,9 @@ mixin LoopStepUpSheetMixin<T extends StatefulWidget> on State<T> {
       : null;
 
   /// What the busy body says right now.
-  String get stepUpSigningTitle => stepUpVerifying ? '正在验证身份' : '正在签名并广播';
+  String get stepUpSigningTitle => stepUpVerifying
+      ? LoopL10n.current.securityStepUp_widgetsStepUpSigningTitle
+      : LoopL10n.current.securityStepUp_widgetsS;
 
   /// Reads whether the step-up will run, so the strip is drawn before the
   /// owner confirms.
@@ -209,7 +217,7 @@ mixin LoopStepUpSheetMixin<T extends StatefulWidget> on State<T> {
 // The setting (security-setup and 安全中心)
 // ---------------------------------------------------------------------------
 
-const String _stepUpTitle = '大额交易二次验证';
+String get _stepUpTitle => LoopL10n.current.securityStepUp_widgetsStepUpTitle;
 
 /// The 大额交易二次验证 row: a switch, the threshold under the title, and a
 /// tap that opens the threshold sheet.
@@ -241,12 +249,14 @@ class LoopStepUpSettingRow extends StatelessWidget {
       final row = LoopRecordRow(
         key: rowKey,
         title: _stepUpTitle,
-        subtitle: '这次运行没有可用的设备验证',
+        subtitle: context.l10n.securityStepUp_widgetsSubtitle,
         subtitleMaxLines: 2,
         trailingBadge: loopStepUpInfoButton(loopStepUpDefaultThresholdUsd1),
-        trailing: '不可用',
+        trailing: context.l10n.common_unavailable,
         position: position,
-        semanticLabel: '$_stepUpTitle，不可用：这次运行没有可用的设备验证',
+        semanticLabel: context.l10n.securityStepUp_widgetsSemanticLabel(
+          _stepUpTitle,
+        ),
       );
       return rowBuilder?.call(row) ?? row;
     }
@@ -300,7 +310,7 @@ class _LoopStepUpSettingConsumerState
         : !available
         ? loopAppLockFactorText(capability)
         : !state.persisted
-        ? '这次有效，重开 App 后不会记得'
+        ? context.l10n.securityStepUp_widgetsBuild
         : null;
     void toggle() => unawaited(controller.setEnabled(!on));
     final row = LoopRecordRow(
@@ -323,10 +333,10 @@ class _LoopStepUpSettingConsumerState
           else
             LoopBadge(
               state.busy
-                  ? '验证中…'
+                  ? context.l10n.common_verifying
                   : !state.loaded
-                  ? '读取中…'
-                  : '不可用',
+                  ? context.l10n.securityStepUp_widgetsLoopBadge
+                  : context.l10n.common_unavailable,
               kind: LoopBadgeKind.mute,
             ),
         ],
@@ -336,8 +346,21 @@ class _LoopStepUpSettingConsumerState
           : null,
       position: widget.position,
       semanticLabel: !available
-          ? '$_stepUpTitle，不可用：${capability == null ? '还没有读到这台设备的锁屏能力' : loopAppLockFactorText(capability)}'
-          : '$_stepUpTitle，${on ? '已开启' : '已关闭'}，$base，点按修改金额',
+          ? context.l10n
+                .securityStepUp_widgetsSecurityStepUpSwitchSemanticLabel(
+                  capability == null
+                      ? context.l10n.securityAppLock_gateSwitch2
+                      : loopAppLockFactorText(capability),
+                  _stepUpTitle,
+                )
+          : context.l10n
+                .securityStepUp_widgetsSecurityStepUpSwitchSemanticLabel2(
+                  base,
+                  on
+                      ? context.l10n.common_on
+                      : context.l10n.wallet_readScreensLoopBadge4,
+                  _stepUpTitle,
+                ),
     );
     return widget.rowBuilder?.call(row) ?? row;
   }
@@ -352,7 +375,9 @@ Widget loopStepUpInfoButton(int threshold) => LoopInfoButton(
   notes: <LoopInfoNote>[
     LoopInfoNote(
       key: const ValueKey<String>('security-step-up-info-body'),
-      body: '${loopStepUpSubtitle(threshold)}。点按这一行可以修改金额。',
+      body: LoopL10n.current.securityStepUp_widgetsSecurityStepUpInfoBodyBody(
+        loopStepUpSubtitle(threshold),
+      ),
     ),
   ],
 );
@@ -419,7 +444,7 @@ class _LoopStepUpThresholdSheetState
     }
     setState(() {
       _saving = false;
-      _error = '没有通过验证，金额没有改。';
+      _error = LoopL10n.current.securityStepUp_widgetsError;
     });
   }
 
@@ -431,14 +456,19 @@ class _LoopStepUpThresholdSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopSheetHeading('大额交易验证金额'),
+        LoopSheetHeading(context.l10n.securityStepUp_widgetsLoopSheetHeading),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Text('签名的金额达到或超过这个数时，会先用这台设备验证身份。', style: LoopType.bodySm),
+          child: Text(
+            context.l10n.securityStepUp_widgetsBuild2,
+            style: LoopType.bodySm,
+          ),
         ),
         LoopFlatField(
-          label: '金额（USD1）',
-          footnote: _error ?? '整数，1 到 1,000,000',
+          label: context.l10n.securityStepUp_widgetsStepUpThresholdFieldLabel,
+          footnote:
+              _error ??
+              context.l10n.securityStepUp_widgetsStepUpThresholdFieldFootnote,
           error: _error != null,
           child: TextField(
             key: const ValueKey<String>('step-up-threshold-field'),
@@ -451,7 +481,9 @@ class _LoopStepUpThresholdSheetState
               LengthLimitingTextInputFormatter(7),
             ],
             style: LoopType.figureLg,
-            decoration: loopFormFieldDecoration(hint: '例如 1000'),
+            decoration: loopFormFieldDecoration(
+              hint: context.l10n.securityStepUp_widgetsHint,
+            ),
             onChanged: (_) => setState(() => _error = null),
           ),
         ),
@@ -478,7 +510,9 @@ class _LoopStepUpThresholdSheetState
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: LoopButton(
             key: const ValueKey<String>('step-up-threshold-save'),
-            label: _saving ? '验证中…' : '保存',
+            label: _saving
+                ? context.l10n.common_verifying
+                : context.l10n.common_save,
             primary: true,
             block: true,
             onPressed: _saving ? null : () => unawaited(_save()),

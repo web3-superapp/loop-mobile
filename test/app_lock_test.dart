@@ -92,7 +92,10 @@ void main() {
       expect(container.read(loopAppLockProvider).enabled, isTrue);
       expect(container.read(loopAppLockProvider).persisted, isTrue);
       expect(await store.read(), isTrue);
-      expect(authenticator.reasons.single, '验证身份以开启应用锁');
+      expect(
+        authenticator.reasons.single,
+        'Verify your identity to turn on App lock',
+      );
     });
 
     test('a refused prompt turns nothing on and stores nothing', () async {
@@ -137,7 +140,10 @@ void main() {
 
       expect(container.read(loopAppLockProvider).enabled, isTrue);
       expect(await store.read(), isTrue);
-      expect(authenticator.reasons.last, '验证身份以关闭应用锁');
+      expect(
+        authenticator.reasons.last,
+        'Verify your identity to turn off App lock',
+      );
     });
 
     test(
@@ -327,7 +333,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-app-lock-curtain')),
         findsOneWidget,
       );
-      expect(find.text('LOOP 已锁定'), findsOneWidget);
+      expect(find.text('LOOP is locked'), findsOneWidget);
       // The page under it is still in the tree — unlocking returns the owner
       // to it — and cannot be read or reached.
       expect(find.text('账户余额'), findsOneWidget);
@@ -342,7 +348,7 @@ void main() {
 
       // The automatic prompt was cancelled: the curtain stays and says so.
       await tester.pumpAndSettle();
-      expect(find.text('你取消了这次验证。'), findsOneWidget);
+      expect(find.text('You cancelled this verification.'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('loop-app-lock-unlock')),
@@ -390,7 +396,10 @@ void main() {
 
       // Turning it off went through the system's prompt, and the device's
       // answer is what changed the state.
-      expect(authenticator.reasons.last, '验证身份以关闭应用锁');
+      expect(
+        authenticator.reasons.last,
+        'Verify your identity to turn off App lock',
+      );
       expect(container.read(loopAppLockProvider).enabled, isFalse);
       expect(await store.read(), isFalse);
     });
@@ -418,8 +427,8 @@ void main() {
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
       expect(row.trailing, '未开启');
-      expect(row.subtitle, contains('生物识别'));
-      expect(row.subtitle, contains('设备密码'));
+      expect(row.subtitle, contains('biometrics'));
+      expect(row.subtitle, contains('device passcode'));
 
       await tester.tap(find.byKey(const ValueKey<String>('security-app-lock')));
       await tester.pumpAndSettle();
@@ -449,7 +458,7 @@ void main() {
         find.byKey(const ValueKey<String>('security-app-lock')),
       );
       expect(row.trailing, '已开启');
-      expect(row.subtitle, contains('锁屏密码'));
+      expect(row.subtitle, contains('screen lock passcode'));
 
       await tester.tap(
         find.byKey(const ValueKey<String>('security-setup-continue')),
@@ -478,7 +487,7 @@ void main() {
       );
       expect(row.trailing, '不可用');
       expect(row.onTap, isNull);
-      expect(row.subtitle, contains('先在系统设置里加上'));
+      expect(row.subtitle, contains('Add one in system Settings first'));
     });
 
     testWidgets('a page with no lock composed claims none', (tester) async {

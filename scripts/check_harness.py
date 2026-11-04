@@ -3478,7 +3478,7 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"ValueKey<String>\s*\(",
             # Decision 0152: 应用锁, 大额交易二次验证 and MFA say 不可用
             # (0121's 即将推出 is gone: the amount rule is real).
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            r"\b(?:find\.text\s*\([\s\S]*?\)|_unavailableBadges)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "H5 states each protection method is off, with its reason": (
@@ -3500,7 +3500,7 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             # Every reviewed A11 method stays unavailable in production: MFA,
             # and the device lock and the amount rule a widget test has no
             # device to open (decision 0152).
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            r"\b(?:find\.text\s*\([\s\S]*?\)|_unavailableBadges)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
         "production LoopApp H5 fails closed with no adapter": (
@@ -3802,7 +3802,7 @@ def check_account_mfa_contract(root: Path) -> list[str]:
                 "mfa-sheet-secret",
                 "mfa-sheet-code",
                 "mfa-sheet-submit",
-                "const loopPasskeyDomainPending",
+                "String get loopPasskeyDomainPending",
                 "mfa-sheet-passkey",
                 "mfa-sheet-passkey-unavailable",
             ),
@@ -12117,7 +12117,7 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
                 "the Swap confirmation must be gated on capability.isUsable, "
                 "which folds in the pending device evidence"
             )
-        if "兑换还在验证中" not in source:
+        if not L10N_RULES.copy_present(root, source, "兑换还在验证中"):
             errors.append(
                 "the Swap confirmation must name the pending device evidence"
             )

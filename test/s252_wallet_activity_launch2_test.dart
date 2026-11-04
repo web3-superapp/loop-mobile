@@ -364,30 +364,30 @@ void main() {
       );
 
       // The transfer row is unchanged.
-      expect(find.text('收到 WBNB'), findsOneWidget);
+      expect(find.text('Received WBNB'), findsOneWidget);
       expect(find.text('+1.5'), findsOneWidget);
 
       // A buy: paid USD1 in rise, MEME received under it.
-      expect(find.text('买入 星夜'), findsOneWidget);
+      expect(find.text('Buy 星夜'), findsOneWidget);
       final buyValue = tester.widget<Text>(find.text('-20 USD1'));
       expect(buyValue.style?.color, LoopColors.rise);
       expect(find.text('+1,000 星夜'), findsOneWidget);
 
       // A sell: received USD1 in fall; its head was unreadable.
-      expect(find.text('卖出 星夜'), findsOneWidget);
+      expect(find.text('Sell 星夜'), findsOneWidget);
       final sellValue = tester.widget<Text>(find.text('+7.01 USD1'));
       expect(sellValue.style?.color, LoopColors.fall);
       expect(find.text('-500 星夜'), findsOneWidget);
-      expect(find.textContaining('确认中'), findsOneWidget);
-      expect(find.textContaining('Launch 链'), findsNWidgets(3));
+      expect(find.textContaining('Confirming'), findsOneWidget);
+      expect(find.textContaining('Launch chain'), findsNWidgets(3));
 
-      expect(find.text('铸造勋章 · 星夜'), findsOneWidget);
+      expect(find.text('Mint badge · 星夜'), findsOneWidget);
       expect(find.text('-5 USD1'), findsOneWidget);
 
       // Server order is kept: buy, transfer, sell, mint.
-      final buyY = tester.getTopLeft(find.text('买入 星夜')).dy;
-      final transferY = tester.getTopLeft(find.text('收到 WBNB')).dy;
-      final sellY = tester.getTopLeft(find.text('卖出 星夜')).dy;
+      final buyY = tester.getTopLeft(find.text('Buy 星夜')).dy;
+      final transferY = tester.getTopLeft(find.text('Received WBNB')).dy;
+      final sellY = tester.getTopLeft(find.text('Sell 星夜')).dy;
       expect(buyY, lessThan(transferY));
       expect(transferY, lessThan(sellY));
 
@@ -408,15 +408,15 @@ void main() {
       );
 
       // A MEME row opens its project.
-      await tester.tap(find.text('买入 星夜'));
+      await tester.tap(find.text('Buy 星夜'));
       await tester.pumpAndSettle();
       expect(opened, <String>[Launch2Route.instance(_instanceA)]);
 
       // 收到 lists transfers only.
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-1')));
       await tester.pumpAndSettle();
-      expect(find.text('收到 WBNB'), findsOneWidget);
-      expect(find.text('买入 星夜'), findsNothing);
+      expect(find.text('Received WBNB'), findsOneWidget);
+      expect(find.text('Buy 星夜'), findsNothing);
     });
 
     testWidgets('an unmerged leg is a stated gap, not an empty list', (
@@ -450,11 +450,16 @@ void main() {
         find.byKey(const ValueKey<String>('tx-history-launch2-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('MEME 记录暂不可用'), findsOneWidget);
-      expect(find.textContaining('MEME 记录这次没有读到'), findsOneWidget);
-      expect(find.text('收到 WBNB'), findsOneWidget);
-      final lineY = tester.getTopLeft(find.text('MEME 记录暂不可用')).dy;
-      expect(lineY, lessThan(tester.getTopLeft(find.text('收到 WBNB')).dy));
+      expect(find.text('MEME records not available right now'), findsOneWidget);
+      expect(
+        find.textContaining("MEME records weren't loaded this time"),
+        findsOneWidget,
+      );
+      expect(find.text('Received WBNB'), findsOneWidget);
+      final lineY = tester
+          .getTopLeft(find.text('MEME records not available right now'))
+          .dy;
+      expect(lineY, lessThan(tester.getTopLeft(find.text('Received WBNB')).dy));
     });
 
     for (final (failure, key) in <(LoopChainFailureKind, String)>[
@@ -474,7 +479,7 @@ void main() {
           ),
         );
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
-        expect(find.text('买入 星夜'), findsNothing);
+        expect(find.text('Buy 星夜'), findsNothing);
       });
     }
 

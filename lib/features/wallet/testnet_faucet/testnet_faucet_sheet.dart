@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_gatewa
 import 'package:loop_mobile/features/wallet/testnet_faucet/testnet_faucet_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -44,13 +45,19 @@ bool testnetFaucetVisible(WidgetRef ref) {
 // S237 · decision 0204: the sheet never says 测试 / 水龙头 / 没有价值. It is
 // 「获取资金」, opened from 充值 and from the MEME v2 insufficient-balance
 // link; symbols go through [loopDisplaySymbol].
-const String testnetFaucetTitle = '获取资金';
+String get testnetFaucetTitle =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetTitle;
 
-const String testnetFaucetBusyLabel = '正在发放…（约 30 秒）';
-const String testnetFaucetOperatorLowText = '资金池暂时不足，请稍后再试';
-const String testnetFaucetNotOwnedText = '只能给当前登录的内置钱包领取';
-const String testnetFaucetInFlightLaterText = '结果稍后在这里查看';
-const String testnetFaucetTimedOutLaterText = '发放还在进行，稍后再进来看';
+String get testnetFaucetBusyLabel =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetBusyLabel;
+String get testnetFaucetOperatorLowText =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetOperatorLowText;
+String get testnetFaucetNotOwnedText =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetNotOwnedText;
+String get testnetFaucetInFlightLaterText =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetInFlightLaterText;
+String get testnetFaucetTimedOutLaterText =>
+    LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetTimedOutLaterText;
 
 /// 「HH:mm」 in the device's own time zone, with the day in front when it is
 /// not today.
@@ -63,32 +70,60 @@ String testnetFaucetNextLabel(DateTime next, {DateTime? now}) {
   final base = DateTime(today.year, today.month, today.day);
   final days = day.difference(base).inDays;
   if (days == 0) return time;
-  if (days == 1) return '明天 $time';
-  return '${local.month}月${local.day}日 $time';
+  if (days == 1) {
+    return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetNextLabel(
+      time,
+    );
+  }
+  return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetNextLabel2(
+    local.day,
+    loopMonthLabel(local.month),
+    time,
+  );
 }
 
 /// The server's `cooldownSeconds` as a period: 「24 小时」, 「3 天」,
 /// 「30 分钟」. Whole days other than one are days, whole hours are hours,
 /// whole minutes are minutes, anything else is seconds.
 String testnetFaucetCooldownText(int seconds) {
-  if (seconds == 86400) return '24 小时';
-  if (seconds % 86400 == 0) return '${seconds ~/ 86400} 天';
-  if (seconds % 3600 == 0) return '${seconds ~/ 3600} 小时';
-  if (seconds % 60 == 0) return '${seconds ~/ 60} 分钟';
-  return '$seconds 秒';
+  if (seconds == 86400) {
+    return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText;
+  }
+  if (seconds % 86400 == 0) {
+    return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText2(
+      seconds ~/ 86400,
+    );
+  }
+  if (seconds % 3600 == 0) {
+    return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText3(
+      seconds ~/ 3600,
+    );
+  }
+  if (seconds % 60 == 0) {
+    return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText4(
+      seconds ~/ 60,
+    );
+  }
+  return LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText5(
+    seconds,
+  );
 }
 
 /// 「24 小时后可再领」 from the server's cooldown, or 「稍后可再领」 while
 /// it is not read.
 String _againText(int? cooldownSeconds) => cooldownSeconds == null
-    ? '稍后可再领'
-    : '${testnetFaucetCooldownText(cooldownSeconds)}后可再领';
+    ? LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText6
+    : LoopL10n.current.walletTestnetFaucet_sheetS(
+        testnetFaucetCooldownText(cooldownSeconds),
+      );
 
 /// 「这个钱包 24 小时内已经领过」 from the server's cooldown, or 「最近」 while
 /// it is not read.
 String testnetFaucetClaimedText(int? cooldownSeconds) => cooldownSeconds == null
-    ? '这个钱包最近已经领过'
-    : '这个钱包 ${testnetFaucetCooldownText(cooldownSeconds)}内已经领过';
+    ? LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetCooldownText7
+    : LoopL10n.current.walletTestnetFaucet_sheetS2(
+        testnetFaucetCooldownText(cooldownSeconds),
+      );
 
 /// The partial grant, said by what did arrive.
 String testnetFaucetPartialText(
@@ -97,20 +132,38 @@ String testnetFaucetPartialText(
 }) {
   final again = _againText(cooldownSeconds);
   if (partial.unconfirmed) {
-    return '$loopLaunchNativeSymbolText 已发出但还没确认，$loopLaunchUsd1SymbolText 这次没发；$again';
+    return LoopL10n.current.walletTestnetFaucet_sheetIf(
+      again,
+      loopLaunchNativeSymbolText,
+      loopLaunchUsd1SymbolText,
+    );
   }
   final bnb = partial.bnbTransactionHash != null;
   final usd1 = partial.usd1TransactionHash != null;
   if (partial.readBack && bnb && !usd1) {
     // A record read back proves the native transfer was sent, not that it
     // arrived (decision 0158).
-    return '$loopLaunchNativeSymbolText 已发出，$loopLaunchUsd1SymbolText 这次没发；$again';
+    return LoopL10n.current.walletTestnetFaucet_sheetIf2(
+      again,
+      loopLaunchNativeSymbolText,
+      loopLaunchUsd1SymbolText,
+    );
   }
   if (usd1 && !bnb) {
-    return '$loopLaunchUsd1SymbolText 已到账，$loopLaunchNativeSymbolText 这次没成功，$again';
+    return LoopL10n.current.walletTestnetFaucet_sheetIf3(
+      again,
+      loopLaunchNativeSymbolText,
+      loopLaunchUsd1SymbolText,
+    );
   }
-  if (!bnb && !usd1) return '这次只发出了一部分，$again';
-  return '$loopLaunchNativeSymbolText 已到账，$loopLaunchUsd1SymbolText 这次没成功，$again';
+  if (!bnb && !usd1) {
+    return LoopL10n.current.walletTestnetFaucet_sheetIf4(again);
+  }
+  return LoopL10n.current.walletTestnetFaucet_sheetIf3(
+    again,
+    loopLaunchUsd1SymbolText,
+    loopLaunchNativeSymbolText,
+  );
 }
 
 /// One refusal or failure, in the owner's words.
@@ -124,25 +177,29 @@ String testnetFaucetFailureText(
     case TestnetFaucetReason.walletNotOwned:
       return testnetFaucetNotOwnedText;
     case TestnetFaucetReason.disabled:
-      return '领取已关闭';
+      return LoopL10n.current.walletTestnetFaucet_sheetDisabled;
     case TestnetFaucetReason.wrongChain:
-      return '当前网络不支持领取';
+      return LoopL10n.current.walletTestnetFaucet_sheetWrongChain;
     case TestnetFaucetReason.operatorNotConfigured:
     case TestnetFaucetReason.capabilityAbsent:
     case TestnetFaucetReason.usd1NotConfigured:
     case TestnetFaucetReason.rpcNotConfigured:
     case TestnetFaucetReason.runtimeUnavailable:
-      return '领取暂时不可用，稍后再试';
+      return LoopL10n.current.walletTestnetFaucet_sheetRuntimeUnavailable;
     case TestnetFaucetReason.usd1Unavailable:
-      return '$loopLaunchUsd1SymbolText 合约暂时不可用，稍后再试';
+      return LoopL10n.current.walletTestnetFaucet_sheetUsd1Unavailable(
+        loopLaunchUsd1SymbolText,
+      );
     case TestnetFaucetReason.chainReadFailed:
-      return '链上读数暂时取不到，稍后再试';
+      return LoopL10n.current.walletTestnetFaucet_sheetChainReadFailed;
     case TestnetFaucetReason.busy:
-      return '正在给别人发放，几秒后再试';
+      return LoopL10n.current.walletTestnetFaucet_sheetBusy;
     case TestnetFaucetReason.transferFailed:
-      return '这次没有发出，可以重试';
+      return LoopL10n.current.walletTestnetFaucet_sheetTransferFailed;
     case TestnetFaucetReason.cooldown:
-      return '${testnetFaucetClaimedText(cooldownSeconds)}，稍后再来';
+      return LoopL10n.current.walletTestnetFaucet_sheetCooldown(
+        testnetFaucetClaimedText(cooldownSeconds),
+      );
   }
   if (failure.kind == LoopChainFailureKind.permissionDenied) {
     return testnetFaucetNotOwnedText;
@@ -161,7 +218,7 @@ Future<void> showTestnetFaucetSheet(
   VoidCallback? onGranted,
 }) => showLoopSheet<void>(
   context,
-  barrierLabel: '关闭获取资金',
+  barrierLabel: context.l10n.walletTestnetFaucet_sheetBarrierLabel,
   builder: (_) => TestnetFaucetSheet(
     walletId: walletId,
     address: address,
@@ -410,17 +467,22 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const LoopSheetHeading(testnetFaucetTitle),
+          LoopSheetHeading(testnetFaucetTitle),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               status == null
-                  ? '领取 $loopLaunchNativeSymbolText 与 $loopLaunchUsd1SymbolText 到当前钱包，'
-                        '用来支付手续费和买卖，每 24 小时一次。'
-                  : '这次会发 ${loopFormatDecimal(status.bnbAmount)} $loopLaunchNativeSymbolText 和 '
-                        '${loopFormatDecimal(status.usd1Amount)} $loopLaunchUsd1SymbolText 到当前钱包，'
-                        '每 ${testnetFaucetCooldownText(status.cooldownSeconds)}'
-                        '可以领一次。',
+                  ? context.l10n.walletTestnetFaucet_sheetTestnetFaucetIntro(
+                      loopLaunchNativeSymbolText,
+                      loopLaunchUsd1SymbolText,
+                    )
+                  : context.l10n.walletTestnetFaucet_sheetTestnetFaucetIntro2(
+                      loopFormatDecimal(status.bnbAmount),
+                      loopFormatDecimal(status.usd1Amount),
+                      loopLaunchNativeSymbolText,
+                      loopLaunchUsd1SymbolText,
+                      testnetFaucetCooldownText(status.cooldownSeconds),
+                    ),
               key: const ValueKey<String>('testnet-faucet-intro'),
               style: LoopType.bodySm.copyWith(color: secondary),
             ),
@@ -429,7 +491,9 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           if (address != null)
             LoopKeyValue(
               key: const ValueKey<String>('testnet-faucet-address'),
-              label: '收币钱包',
+              label: context
+                  .l10n
+                  .walletTestnetFaucet_sheetTestnetFaucetAddressLabel,
               value: loopTruncatedAddress(address),
             ),
           ..._body(context),
@@ -447,7 +511,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           child: Semantics(
             liveRegion: true,
             child: Text(
-              '正在读取领取状态…',
+              context.l10n.walletTestnetFaucet_sheetIf6,
               style: LoopType.bodySm.copyWith(
                 color: LoopGround.secondaryOf(context),
               ),
@@ -472,7 +536,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           ),
           icon: offline ? 'offline' : 'warn',
           tone: LoopNoticeTone.warn,
-          title: '领取状态暂时读不到',
+          title: context.l10n.walletTestnetFaucet_sheetTitle,
           body: testnetFaucetFailureText(
             statusFailure,
             cooldownSeconds: _cooldownSeconds,
@@ -488,7 +552,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: LoopButton(
             key: const ValueKey<String>('testnet-faucet-retry'),
-            label: '重试',
+            label: context.l10n.common_retry,
             block: true,
             onPressed: () => unawaited(_load()),
           ),
@@ -507,9 +571,13 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
         _line(
           key: 'testnet-faucet-cooldown',
           text: next == null
-              ? '${testnetFaucetClaimedText(_cooldownSeconds)}，稍后再来'
-              : '${testnetFaucetClaimedText(_cooldownSeconds)}，'
-                    '下次可领 ${testnetFaucetNextLabel(next)}',
+              ? context.l10n.walletTestnetFaucet_sheetCooldown(
+                  testnetFaucetClaimedText(_cooldownSeconds),
+                )
+              : context.l10n.walletTestnetFaucet_sheetText(
+                  testnetFaucetClaimedText(_cooldownSeconds),
+                  testnetFaucetNextLabel(next),
+                ),
         ),
       if (_pendingNote case final String note)
         _line(key: 'testnet-faucet-pending', text: note),
@@ -531,10 +599,14 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
               : cooling
               ? (next == null
                     ? (_cooldownSeconds == null
-                          ? '最近已领过'
-                          : '${testnetFaucetCooldownText(_cooldownSeconds!)}内已领过')
-                    : '下次可领 ${testnetFaucetNextLabel(next)}')
-              : '领取',
+                          ? context.l10n.walletTestnetFaucet_sheetLabel
+                          : context.l10n.walletTestnetFaucet_sheetLabel2(
+                              testnetFaucetCooldownText(_cooldownSeconds!),
+                            ))
+                    : context.l10n.walletTestnetFaucet_sheetLabel3(
+                        testnetFaucetNextLabel(next),
+                      ))
+              : context.l10n.common_claim,
           primary: true,
           block: true,
           onPressed: _claiming || cooling ? null : () => unawaited(_claim()),
@@ -569,8 +641,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       child: Semantics(
         liveRegion: true,
         child: Text(
-          '已发出 ${loopFormatDecimal(granted.bnb.amount)} $loopLaunchNativeSymbolText 和 '
-          '${loopFormatDecimal(granted.usd1.amount)} $loopLaunchUsd1SymbolText，到账以链上确认为准，余额会自动刷新。',
+          LoopL10n.current.walletTestnetFaucet_sheetTestnetFaucetGranted(
+            loopFormatDecimal(granted.bnb.amount),
+            loopFormatDecimal(granted.usd1.amount),
+            loopLaunchNativeSymbolText,
+            loopLaunchUsd1SymbolText,
+          ),
           key: const ValueKey<String>('testnet-faucet-granted'),
           style: LoopType.bodySm,
         ),
@@ -636,16 +712,25 @@ class TestnetFaucetTxRow extends StatelessWidget {
           LoopIconButton(
             key: ValueKey<String>('testnet-faucet-copy-hash-$label'),
             icon: 'copy',
-            label: '复制 $label 交易哈希',
-            onPressed: () =>
-                unawaited(LoopCopy.text(context, hash, message: '交易哈希已复制')),
+            label: context.l10n.walletTestnetFaucet_sheetLabel4(label),
+            onPressed: () => unawaited(
+              LoopCopy.text(
+                context,
+                hash,
+                message: context.l10n.walletTestnetFaucet_sheetMessage,
+              ),
+            ),
           ),
           LoopIconButton(
             key: ValueKey<String>('testnet-faucet-copy-link-$label'),
             icon: 'link',
-            label: '复制 $label 的 BscScan 链接',
+            label: context.l10n.walletTestnetFaucet_sheetLabel5(label),
             onPressed: () => unawaited(
-              LoopCopy.text(context, url, message: 'BscScan 链接已复制'),
+              LoopCopy.text(
+                context,
+                url,
+                message: context.l10n.walletTestnetFaucet_sheetMessage2,
+              ),
             ),
           ),
         ],

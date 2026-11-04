@@ -106,7 +106,7 @@ void main() {
         expect(_key(gone), findsNothing, reason: '$section · $gone');
       }
       expect(find.text('邀请好友'), findsNothing);
-      expect(find.text('我的钱包'), findsNothing);
+      expect(find.text('My wallets'), findsNothing);
     }
   });
 
@@ -118,7 +118,7 @@ void main() {
       find.descendant(of: _key('wallet-total-plate'), matching: button),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('钱包管理'), findsOneWidget);
+    expect(find.bySemanticsLabel('Wallet management'), findsOneWidget);
     // On the address line, right after the address and its copy glyph.
     final address = tester.getRect(_key('wallet-address-copy'));
     final pill = tester.getRect(button);
@@ -126,7 +126,7 @@ void main() {
     expect(pill.left, greaterThan(address.right));
     expect(pill.left - address.right, lessThan(16));
     expect(
-      find.descendant(of: button, matching: find.text('管理')),
+      find.descendant(of: button, matching: find.text('Manage')),
       findsOneWidget,
     );
     await tester.tap(button);
@@ -147,10 +147,10 @@ void main() {
       ),
     );
     final keys = <(String, String, String)>[
-      ('wallet-receive-entry', '接收', WalletRoute.receive(s5WalletId)),
-      ('wallet-send-entry', '发送', '/wallet/send'),
-      ('wallet-swap-entry', '兑换', '/wallet/swap'),
-      ('wallet-pay-entry', '扫码', '/scan'),
+      ('wallet-receive-entry', 'Receive', WalletRoute.receive(s5WalletId)),
+      ('wallet-send-entry', 'Send', '/wallet/send'),
+      ('wallet-swap-entry', 'Swap', '/wallet/swap'),
+      ('wallet-pay-entry', 'Scan', '/scan'),
       ('wallet-dapp-entry', 'DApp', '/wallet/dapp'),
     ];
     double? last;
@@ -218,7 +218,7 @@ void main() {
     );
     await _section(tester, '交易');
     expect(_key('me-trades-empty'), findsOneWidget);
-    expect(find.text('这一段没有记录'), findsOneWidget);
+    expect(find.text('No records in this range'), findsOneWidget);
   });
 
   testWidgets('社区: joined and created, with the review state', (tester) async {

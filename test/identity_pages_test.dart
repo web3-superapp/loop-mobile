@@ -387,9 +387,18 @@ void main() {
       // Nothing is on: this tree composed no device lock, and a Privy
       // capability is never an enabled protection.
       expect(find.textContaining('已开启'), findsNothing);
-      expect(find.text('可用'), findsNothing);
+      expect(find.text('Available'), findsNothing);
       // 应用锁, 大额交易二次验证 (decision 0152) and MFA.
-      expect(find.text('不可用'), findsNWidgets(3));
+      // 不可用 in either language: the step-up row (S355d · decision 0281)
+      // may be migrated before 应用锁 and MFA.
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == 'Unavailable' || widget.data == '不可用'),
+        ),
+        findsNWidgets(3),
+      );
 
       await _tap(tester, 'security-setup-continue');
       expect(destinations, <String>['loop-id-setup']);

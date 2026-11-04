@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/qr/loop_qr_code.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -20,15 +21,20 @@ String loopMfaFailureText(LoopMfaFailureKind kind) => switch (kind) {
   // Not a fault of the owner's, of their device, or of the login service:
   // a passkey belongs to a domain, and LOOP has not finished giving this
   // build one. It says what is missing rather than what failed.
-  LoopMfaFailureKind.passkeyDomainUnconfigured => '$loopPasskeyDomainPending。',
-  LoopMfaFailureKind.cancelled => '系统的验证没有完成，这次什么都没有改变。',
-  LoopMfaFailureKind.deviceUnsupported => '这台设备没有可用的 Passkey，系统没有提供可以创建的地方。',
-  LoopMfaFailureKind.notEnabled => '登录服务尚未开启 MFA。这不是这台设备的问题，也不是你账号的问题。',
-  LoopMfaFailureKind.notAuthenticated => '登录状态已经失效，重新登录后再试。',
-  LoopMfaFailureKind.invalidCode => '验证码不对或者已经过期，重新输入一次。',
-  LoopMfaFailureKind.rejected => '这次没有完成。',
-  LoopMfaFailureKind.unavailable => '暂时联系不上登录服务。',
-  LoopMfaFailureKind.unknown => '没有完成，登录服务没有说明原因。',
+  LoopMfaFailureKind.passkeyDomainUnconfigured =>
+    LoopL10n.current.securityMfa_sheetPasskeyDomainUnconfigured,
+  LoopMfaFailureKind.cancelled => LoopL10n.current.securityMfa_sheetCancelled,
+  LoopMfaFailureKind.deviceUnsupported =>
+    LoopL10n.current.securityMfa_sheetDeviceUnsupported,
+  LoopMfaFailureKind.notEnabled => LoopL10n.current.securityMfa_sheetNotEnabled,
+  LoopMfaFailureKind.notAuthenticated =>
+    LoopL10n.current.securityMfa_sheetNotAuthenticated,
+  LoopMfaFailureKind.invalidCode =>
+    LoopL10n.current.securityMfa_sheetInvalidCode,
+  LoopMfaFailureKind.rejected => LoopL10n.current.securityMfa_sheetRejected,
+  LoopMfaFailureKind.unavailable =>
+    LoopL10n.current.securityMfa_sheetUnavailable,
+  LoopMfaFailureKind.unknown => LoopL10n.current.securityMfa_sheetUnknown,
 };
 
 /// Why a passkey is not offered, said once and read everywhere.
@@ -39,7 +45,8 @@ String loopMfaFailureText(LoopMfaFailureKind kind) => switch (kind) {
 /// relying party at the provider. Calling the platform without one fails on
 /// the device every time, so the product says what is actually missing
 /// instead of offering a button that cannot work.
-const loopPasskeyDomainPending = '还要先给 LOOP 配好 Passkey 用的域名凭据，当前版本还没有';
+String get loopPasskeyDomainPending =>
+    LoopL10n.current.securityMfa_sheetLoopPasskeyDomainPending;
 
 /// Opens the second-factor sheet for this account.
 ///
@@ -77,12 +84,12 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            '二次验证',
+            context.l10n.securityMfa_sheetMfaSheetTitle,
             key: const ValueKey<String>('mfa-sheet-title'),
             style: LoopType.heading,
           ),
           const SizedBox(height: 8),
-          Text('两种方式都由登录服务保管，LOOP 不保存密钥，也不保存 Passkey。', style: LoopType.bodySm),
+          Text(context.l10n.securityMfa_sheetBuild, style: LoopType.bodySm),
           if (failure != null) ...<Widget>[
             const SizedBox(height: 12),
             LoopNotice(
@@ -92,19 +99,17 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
                   ? LoopNoticeTone.warn
                   : LoopNoticeTone.danger,
               title: failure == LoopMfaFailureKind.notEnabled
-                  ? '登录服务尚未开启 MFA'
-                  : '这一步没有完成',
+                  ? context.l10n.securityMfa_sheetMfaSheetFailureTitle
+                  : context.l10n.securityMfa_sheetMfaSheetFailureTitle2,
               body: loopMfaFailureText(failure),
             ),
           ],
           const SizedBox(height: 16),
-          const LoopLabel('验证器 App', tight: true),
+          LoopLabel(context.l10n.securityMfa_modelsTotp, tight: true),
           Text(
             state.hasTotp
-                ? '关闭后，登录服务在要求二次验证时不会再问你验证码。'
-                : '验证器 App 是手机上生成 6 位验证码的应用，例如 Google Authenticator、'
-                      'Microsoft Authenticator、1Password。用它扫码或输入密钥即可。'
-                      '密钥由登录服务签发，LOOP 不保存它。',
+                ? context.l10n.securityMfa_sheetBuild2
+                : context.l10n.securityMfa_sheetS,
             style: LoopType.bodySm,
           ),
           const SizedBox(height: 12),
@@ -118,7 +123,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
           const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('mfa-sheet-close'),
-            label: '关闭',
+            label: context.l10n.common_close,
             block: true,
             onPressed: () {
               controller.cancelTotp();
@@ -133,7 +138,11 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
   /// The secret goes to the clipboard as typed, for the authenticator that
   /// cannot scan; nothing else about it is kept or logged.
   Future<void> _copySecret(String secret) async {
-    await LoopCopy.text(context, secret, message: '已复制密钥');
+    await LoopCopy.text(
+      context,
+      secret,
+      message: LoopL10n.current.securityMfa_sheetMessage,
+    );
   }
 
   List<Widget> _enrolment(LoopMfaController controller, LoopMfaState state) {
@@ -151,7 +160,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
       return <Widget>[
         LoopButton(
           key: const ValueKey<String>('mfa-sheet-begin'),
-          label: '获取密钥',
+          label: LoopL10n.current.securityMfa_sheetMfaSheetBeginLabel,
           primary: true,
           block: true,
           onPressed: state.isBusy
@@ -163,7 +172,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
     return <Widget>[
       _LoopTotpSquare(data: secret.authUrl),
       const SizedBox(height: 12),
-      const LoopLabel('手动输入的密钥', tight: true),
+      LoopLabel(LoopL10n.current.securityMfa_sheetLoopLabel, tight: true),
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
@@ -177,13 +186,13 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
           const SizedBox(width: 12),
           LoopButton(
             key: const ValueKey<String>('mfa-sheet-secret-copy'),
-            label: '复制',
+            label: LoopL10n.current.common_copy,
             onPressed: () => unawaited(_copySecret(secret.secret)),
           ),
         ],
       ),
       const SizedBox(height: 14),
-      const LoopLabel('验证器给出的 6 位码', tight: true),
+      LoopLabel(LoopL10n.current.securityMfa_sheetLoopLabel2, tight: true),
       TextField(
         key: const ValueKey<String>('mfa-sheet-code'),
         controller: _code,
@@ -201,8 +210,8 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
       LoopButton(
         key: const ValueKey<String>('mfa-sheet-submit'),
         label: state.step == LoopMfaEnrollmentStep.submitting
-            ? '正在验证…'
-            : '验证并开启',
+            ? LoopL10n.current.securityAppLock_gateLoopAppLockUnlockLabel
+            : LoopL10n.current.securityMfa_sheetMfaSheetSubmitLabel2,
         primary: true,
         block: true,
         onPressed: _code.text.length == 6 && !state.isBusy
@@ -225,7 +234,8 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         LoopNotice(
           key: const ValueKey<String>('mfa-sheet-passkey-unavailable'),
           icon: 'info',
-          title: 'Passkey 暂不可用',
+          title:
+              LoopL10n.current.securityMfa_sheetMfaSheetPasskeyUnavailableTitle,
           body: loopMfaFailureText(
             LoopMfaFailureKind.passkeyDomainUnconfigured,
           ),
@@ -236,10 +246,10 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
     return <Widget>[
       Text(
         enrolled
-            ? '已开启 · Passkey。登录服务要求二次验证时，会让系统弹出 Passkey 验证。'
+            ? LoopL10n.current.securityMfa_sheetMfaSheetPasskeyStatus
             : state.hasPasskey
-            ? '这个账号已经有 Passkey，可以直接把它也用作二次验证。'
-            : '用这台设备创建一个 Passkey，并把它作为二次验证方式。',
+            ? LoopL10n.current.securityMfa_sheetMfaSheetPasskeyStatus2
+            : LoopL10n.current.securityMfa_sheetMfaSheetPasskeyStatus3,
         key: const ValueKey<String>('mfa-sheet-passkey-status'),
         style: LoopType.bodySm,
       ),
@@ -247,10 +257,10 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
       LoopButton(
         key: const ValueKey<String>('mfa-sheet-passkey'),
         label: state.passkeyWorking
-            ? '正在等待系统验证…'
+            ? LoopL10n.current.securityMfa_sheetMfaSheetPasskeyLabel
             : enrolled
-            ? '关闭 Passkey 验证'
-            : 'Passkey 开启二次验证',
+            ? LoopL10n.current.securityMfa_sheetMfaSheetPasskeyLabel2
+            : LoopL10n.current.securityMfa_sheetMfaSheetPasskeyLabel3,
         primary: !enrolled,
         block: true,
         onPressed: state.isBusy
@@ -268,7 +278,9 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
     return <Widget>[
       LoopButton(
         key: const ValueKey<String>('mfa-sheet-remove'),
-        label: state.removing ? '正在关闭…' : '关闭 MFA',
+        label: state.removing
+            ? LoopL10n.current.securityMfa_sheetMfaSheetRemoveLabel
+            : LoopL10n.current.securityMfa_sheetMfaSheetRemoveLabel2,
         block: true,
         onPressed: state.isBusy
             ? null

@@ -259,12 +259,12 @@ void main() {
       expect(find.text(loopChatTokenShortAddress(_address)), findsOneWidget);
       expect(find.text(r'$747.39'), findsOneWidget);
       // 市值 was not reported; the cell says so instead of printing 0.
-      expect(find.text('未报告'), findsOneWidget);
+      expect(find.text('No data'), findsOneWidget);
       expect(find.textContaining('LOOP 社区 PEPE 社区'), findsOneWidget);
       expect(find.textContaining('检测到 mint 函数'), findsOneWidget);
       // A fact the provider answered "false" for is not a card line.
       expect(find.textContaining('合约已验证开源'), findsNothing);
-      expect(findProvenanceContaining('报价 来源 DexScreener'), findsOneWidget);
+      expect(findProvenanceContaining('报价 Source DexScreener'), findsOneWidget);
       // The opaque identity never reaches the screen; the address does.
       expect(find.textContaining('eip155'), findsNothing);
 
@@ -347,7 +347,7 @@ void main() {
       expect(find.text(r'$2,575.14'), findsOneWidget);
       // S278 · decision 0236: the status stays printed; where the identity
       // came from is behind the strip's (i).
-      expect(find.textContaining('资产目录状态 · 未登记'), findsOneWidget);
+      expect(find.textContaining('资产目录状态 · Unregistered'), findsOneWidget);
       expect(findProvenanceContaining('身份来自 GeckoTerminal'), findsOneWidget);
       // There is no holder page for an address outside the registry, and the
       // cell says which gap it is.

@@ -919,9 +919,12 @@ void main() {
     });
 
     for (final (failure, phrase) in <(LoopChainFailureKind, String)>[
-      (LoopChainFailureKind.readFailed, '这一页暂时读不到'),
-      (LoopChainFailureKind.offline, '设备已离线'),
-      (LoopChainFailureKind.permissionDenied, '没有执行这个操作的权限'),
+      (LoopChainFailureKind.readFailed, "This page can't be loaded right now"),
+      (LoopChainFailureKind.offline, 'This device is offline'),
+      (
+        LoopChainFailureKind.permissionDenied,
+        "doesn't have permission for this action",
+      ),
     ]) {
       testWidgets('${failure.name} · the read failure is stated, never zero', (
         tester,
@@ -1136,7 +1139,7 @@ void main() {
       );
       expect(
         _noticeBody(tester, 'launch-trade-allowance-notice'),
-        contains('单笔金额上限'),
+        contains('per-transaction limit'),
       );
       // A refusal submitted nothing, so the approval may be asked again.
       expect(_pressed(tester, 'launch-trade-approve'), isNotNull);

@@ -21,6 +21,7 @@ import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -142,7 +143,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('swap-screen'),
       archetype: LoopPageArchetype.action,
-      title: '兑换',
+      title: context.l10n.common_swap,
       onBack: widget.onBack,
       folioCollapsed: typing,
       keyboardAccessory: true,
@@ -156,14 +157,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         LoopIconButton(
           key: const ValueKey<String>('swap-info-action'),
           icon: 'info',
-          label: '关于兑换',
+          label: context.l10n.wallet_swapScreensSwapInfoActionLabel,
           onPressed: () => unawaited(showSwapInfoSheet(context)),
         ),
         if (quote != null)
           LoopIconButton(
             key: const ValueKey<String>('swap-route-action'),
             icon: 'chevron',
-            label: '报价与费用明细',
+            label: context.l10n.wallet_swapScreensSwapRouteActionLabel,
             onPressed: () => _open('/wallet/swap/route', extra: quote),
           ),
       ],
@@ -174,19 +175,20 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         // dash, and the gate's own sentence stands where the quote would be
         // (audit item 4).
         if (blocked) ...<Widget>[
-          const LoopFigureBox(
+          LoopFigureBox(
             key: ValueKey<String>('swap-source-blocked'),
-            caption: '支付',
+            caption: context.l10n.common_pay,
             figure: loopFigureDash,
           ),
-          const LoopFigureBox(
+          LoopFigureBox(
             key: ValueKey<String>('swap-destination-blocked'),
-            caption: '获得',
+            caption:
+                context.l10n.wallet_swapScreensSwapDestinationBlockedCaption,
             figure: loopFigureDash,
           ),
           LoopCapabilityBlockCard(
             key: const ValueKey<String>('swap-capability-block'),
-            label: '兑换当前不可用',
+            label: context.l10n.wallet_swapScreensSwapCapabilityBlockLabel,
             capability: capability,
             fallbackReasonCode: 'PRIVY_NOT_CONFIGURED',
           ),
@@ -197,7 +199,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             failureKind: ref
                 .watch(walletDirectoryControllerProvider)
                 .failureKind,
-            emptyMessage: '这个账号还没有可兑换的钱包',
+            emptyMessage: context.l10n.wallet_swapScreensEmptyMessage,
             onRetry: () => unawaited(
               ref.read(walletDirectoryControllerProvider.notifier).reload(),
             ),
@@ -207,7 +209,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             keyPrefix: 'swap-balances',
             phase: balancesState.phase,
             failureKind: balancesState.failureKind,
-            emptyMessage: '这个钱包还没有可读资产',
+            emptyMessage: context.l10n.wallet_moneyAssetPickerTitle2,
             onRetry: () => unawaited(
               ref
                   .read(walletBalancesControllerProvider(walletId).notifier)
@@ -251,7 +253,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 children: <Widget>[
                   _AssetField(
                     keyPrefix: 'swap-source',
-                    label: '支付',
+                    label: context.l10n.common_pay,
                     symbol: _symbolFor(balances, _sourceAssetId),
                     balanceLine: _balanceLineFor(balances, _sourceAssetId),
                     controller: _amount,
@@ -280,7 +282,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                           child: LoopIconButton(
                             key: const ValueKey<String>('swap-flip'),
                             icon: 'swap-vert',
-                            label: '互换支付与获得',
+                            label: context.l10n.wallet_swapScreensSwapFlipLabel,
                             onPressed:
                                 _sourceAssetId == null &&
                                     _destinationAssetId == null
@@ -319,7 +321,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    '滑点上限',
+                    context.l10n.common_slippageLimit,
                     style: LoopTypography.withWeight(
                       LoopType.body,
                       FontWeight.w600,
@@ -328,7 +330,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 ),
                 WalletSegmentedControl<int>(
                   key: const ValueKey<String>('swap-slippage'),
-                  semanticLabel: '滑点上限',
+                  semanticLabel: context.l10n.common_slippageLimit,
                   expand: false,
                   options: _slippageChoices,
                   labelOf: moneySlippageLabel,
@@ -354,13 +356,17 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             MoneyOfflinePause(
               blockKey: 'swap-quote-offline',
               failureKind: _failure?.kind,
-              pausedActions: const <String>['报价', '兑换', '签名'],
+              pausedActions: <String>[
+                context.l10n.wallet_swapScreensMoneyOfflinePause,
+                context.l10n.common_swap,
+                context.l10n.common_sign,
+              ],
               onRetry: () => unawaited(_requestQuote(walletId)),
             )
           else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('swap-quote-error'),
-              title: '没有取到报价',
+              title: context.l10n.wallet_swapScreensSwapQuoteErrorTitle,
               reason: loopChainFailureReason(_failure!.kind),
               onRetry: () => unawaited(_requestQuote(walletId)),
             ),
@@ -377,12 +383,12 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                       setState(() => _confirmPriceImpact = value ?? false),
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('我已知晓价格影响在 1%–5% 之间，仍要继续'),
+                  title: Text(context.l10n.wallet_swapScreensText),
                 ),
               ),
             LoopButton(
               key: const ValueKey<String>('swap-route-entry'),
-              label: '报价明细与费用',
+              label: context.l10n.wallet_swapScreensSwapRouteEntryLabel,
               block: true,
               onPressed: () => _open('/wallet/swap/route', extra: quote),
             ),
@@ -407,14 +413,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       return LoopButton(
         key: const ValueKey<String>('swap-quote-action'),
         label: _busy
-            ? '报价中…'
+            ? LoopL10n.current.wallet_swapScreensSwapQuoteActionLabel
             : _sourceAssetId == null || _destinationAssetId == null
-            ? '选择支付与获得的资产'
+            ? LoopL10n.current.wallet_swapScreensSwapQuoteActionLabel2
             : !amountReady
-            ? '输入数量后自动报价'
+            ? LoopL10n.current.wallet_swapScreensSwapQuoteActionLabel3
             : _failure != null
-            ? '重新报价'
-            : '报价中…',
+            ? LoopL10n.current.wallet_swapScreensSwapQuoteActionLabel4
+            : LoopL10n.current.wallet_swapScreensSwapQuoteActionLabel,
         primary: true,
         block: true,
         onPressed: !_busy && amountReady && _failure != null && walletId != null
@@ -439,10 +445,12 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           label: _checkingCapability
               ? moneyCapabilityCheckingLabel
               : expired
-              ? '报价已过期 · 重新报价'
+              ? context.l10n.wallet_swapScreensSwapConfirmActionLabel
               : capability.evidencePending
-              ? '兑换还在验证中'
-              : '兑换（${moneyCountdownLabel(remaining)}）',
+              ? context.l10n.wallet_swapScreensSwapConfirmActionLabel2
+              : context.l10n.wallet_swapScreensSwapConfirmActionLabel3(
+                  moneyCountdownLabel(remaining),
+                ),
           primary: true,
           block: true,
           onPressed: expired && !_busy
@@ -468,13 +476,20 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   /// balance could not be read — and when the chain read for the chosen asset
   /// did fail, the server's own reason is what belongs here.
   String _balanceLineFor(LoopWalletBalances? balances, String? assetId) {
-    if (assetId == null) return '先选择要支付的资产，这里会显示它的可动用余额。';
-    if (balances == null) return '余额还没有读到。';
+    if (assetId == null) {
+      return LoopL10n.current.wallet_swapScreensBalanceLineFor;
+    }
+    if (balances == null) {
+      return LoopL10n.current.wallet_swapScreensBalanceLineFor2;
+    }
     final row = balances.rowFor(assetId);
-    if (row == null) return '这个钱包没有这一行，读不到它的余额。';
+    if (row == null) return LoopL10n.current.wallet_swapScreensBalanceLineFor3;
     return switch (row.balance) {
       LoopBalanceAvailable(spendableBalance: final spendable) =>
-        '可动用 ${loopFormatDecimal(spendable)} ${row.symbol}',
+        LoopL10n.current.wallet_swapScreensLoopBalanceAvailable(
+          loopFormatDecimal(spendable),
+          row.symbol,
+        ),
       LoopBalanceUnavailable(reasonCode: final reasonCode) =>
         loopReasonCodeText(reasonCode),
     };
@@ -493,7 +508,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       // The side that pays needs something to pay with; the side that
       // receives can be an asset this wallet does not hold yet.
       requireBalance: source,
-      title: source ? '选择支付资产' : '选择获得资产',
+      title: source
+          ? LoopL10n.current.wallet_swapScreensTitle
+          : LoopL10n.current.wallet_swapScreensTitle2,
     );
     if (picked == null || !mounted) return;
     final other = source ? _destinationAssetId : _sourceAssetId;
@@ -698,8 +715,8 @@ class _AssetField extends StatelessWidget {
                 maxLength: TransferAmount.maxWireLength,
                 maxLengthEnforcement: MaxLengthEnforcement.enforced,
                 onChanged: (_) => onAmountChanged(),
-                decoration: const InputDecoration(
-                  hintText: '数量',
+                decoration: InputDecoration(
+                  hintText: context.l10n.common_amount,
                   counterText: '',
                 ),
               ),
@@ -707,7 +724,7 @@ class _AssetField extends StatelessWidget {
             const SizedBox(width: 8),
             SwapAssetPickButton(
               key: ValueKey<String>('$keyPrefix-pick'),
-              label: symbol ?? '选择资产',
+              label: symbol ?? context.l10n.wallet_moneyAssetPickerTitle,
               onPressed: onPick,
             ),
           ],
@@ -791,7 +808,10 @@ class _ReceiveField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text('获得', style: LoopType.eyebrow),
+        Text(
+          context.l10n.wallet_swapScreensSwapDestinationBlockedCaption,
+          style: LoopType.eyebrow,
+        ),
         const SizedBox(height: 6),
         Row(
           children: <Widget>[
@@ -799,7 +819,9 @@ class _ReceiveField extends StatelessWidget {
               child: Text(
                 key: const ValueKey<String>('swap-receive-amount'),
                 quote == null
-                    ? (quoting ? '报价中…' : '报价后显示')
+                    ? (quoting
+                          ? context.l10n.wallet_swapScreensSwapQuoteActionLabel
+                          : context.l10n.wallet_swapScreensS)
                     : quote!.quote.estimatedOutputAmount.display,
                 // A quoted amount is the figure (R24); 「报价中…」 and
                 // 「报价后显示」 are words, the note step (R20, decision
@@ -812,7 +834,7 @@ class _ReceiveField extends StatelessWidget {
             const SizedBox(width: 8),
             SwapAssetPickButton(
               key: const ValueKey<String>('swap-destination-pick'),
-              label: symbol ?? '选择资产',
+              label: symbol ?? context.l10n.wallet_moneyAssetPickerTitle,
               onPressed: onPick,
             ),
           ],
@@ -842,19 +864,19 @@ class _QuoteFacts extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 LoopKeyValue(
-                  label: '最少获得',
+                  label: context.l10n.common_minimumReceive,
                   value:
                       '${value.minimumOutputAmount.display} '
                       '${quote.destinationAsset.symbol}',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '滑点上限',
+                  label: context.l10n.common_slippageLimit,
                   value: moneySlippageLabel(value.slippageBps),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '价格影响',
+                  label: context.l10n.wallet_swapScreensLabel,
                   value: swapPriceImpactLabel(value.priceImpact),
                   valueUp:
                       value.priceImpact.decision ==
@@ -862,14 +884,14 @@ class _QuoteFacts extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '平台费',
+                  label: context.l10n.wallet_swapScreensLabel2,
                   value: value.platformFeeBps == null
-                      ? '未设置'
+                      ? context.l10n.wallet_swapScreensValue
                       : '${value.platformFeeBps} bps',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '单笔上限',
+                  label: context.l10n.wallet_swapScreensLabel3,
                   value:
                       '${loopFormatUsd(quote.canary.inputValueUsd)} / '
                       '${loopFormatUsd(quote.canary.canaryMaxUsd)}',
@@ -881,10 +903,15 @@ class _QuoteFacts extends StatelessWidget {
         ),
         LoopProvenanceFooter(
           key: const ValueKey<String>('swap-quote-provenance'),
-          text:
-              '报价方 ${value.provider} · 报价于 '
-              '${loopRelativeTime(value.quotedAt, now: clock?.call())}'
-              '${quote.policy.isPendingProductConfirmation ? ' · 待产品确认' : ''}',
+          text: context.l10n.wallet_swapScreensSwapQuoteProvenanceText(
+            value.provider,
+            quote.policy.isPendingProductConfirmation
+                ? context
+                      .l10n
+                      .wallet_swapScreensWalletSwapScreensSwapQuoteProvenanceText
+                : '',
+            loopRelativeTime(value.quotedAt, now: clock?.call()),
+          ),
         ),
       ],
     );
@@ -901,20 +928,18 @@ class _PriceImpactNotice extends StatelessWidget {
     final impact = quote.quote.priceImpact;
     return switch (impact.decision) {
       LoopPriceImpactDecision.allowed => const SizedBox.shrink(),
-      LoopPriceImpactDecision.confirm => const LoopNotice(
+      LoopPriceImpactDecision.confirm => LoopNotice(
         key: ValueKey<String>('swap-impact-confirm'),
         icon: 'warn',
         tone: LoopNoticeTone.warn,
-        title: '价格影响在 1%–5% 之间',
-        body:
-            '这笔兑换会明显推动价格。滑点与价格影响是两件事：滑点是你设定的上限，'
-            '价格影响是这笔成交本身造成的偏移。',
+        title: context.l10n.wallet_swapScreensSwapImpactConfirmTitle,
+        body: context.l10n.wallet_swapScreensSwapImpactConfirmBody,
       ),
       LoopPriceImpactDecision.blocked => LoopNotice(
         key: const ValueKey<String>('swap-impact-blocked'),
         icon: 'warn',
         tone: LoopNoticeTone.danger,
-        title: '价格影响超过硬阻断线',
+        title: context.l10n.wallet_swapScreensSwapImpactBlockedTitle,
         body: loopReasonCodeText(impact.reasonCode),
       ),
     };
@@ -925,7 +950,7 @@ class _PriceImpactNotice extends StatelessWidget {
 String swapPriceImpactLabel(LoopSwapPriceImpact impact) {
   final value = impact.value;
   if (!impact.available || value == null) {
-    return '无法定价';
+    return LoopL10n.current.wallet_swapScreensIf;
   }
   return loopFormatPercent(value * Decimal.fromInt(100));
 }
@@ -950,11 +975,11 @@ class SwapRouteScreen extends StatelessWidget {
     return LoopFocusPage(
       key: const ValueKey<String>('swap-route-screen'),
       archetype: LoopPageArchetype.record,
-      title: '报价与费用',
+      title: context.l10n.wallet_swapScreensSwapRouteScreenTitle,
       onBack: onBack,
       primaryAction: LoopButton(
         key: const ValueKey<String>('swap-route-back'),
-        label: '返回兑换并确认',
+        label: context.l10n.wallet_swapScreensSwapRouteBackLabel,
         primary: true,
         block: true,
         onPressed: onBack ?? () => Navigator.of(context).pop(),
@@ -968,31 +993,32 @@ class SwapRouteScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 LoopKeyValue(
-                  label: '支付',
+                  label: context.l10n.common_pay,
                   value:
                       '${value.inputAmount.display} ${quote.sourceAsset.symbol}',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '预计获得',
+                  label: context.l10n.common_estimatedReceive,
                   value:
                       '${value.estimatedOutputAmount.display} '
                       '${quote.destinationAsset.symbol}',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '最少获得',
-                  value:
-                      '${value.minimumOutputAmount.display} '
-                      '${quote.destinationAsset.symbol}'
-                      '（滑点 ${moneySlippageLabel(value.slippageBps)}）',
+                  label: context.l10n.common_minimumReceive,
+                  value: context.l10n.wallet_swapScreensValue2(
+                    value.minimumOutputAmount.display,
+                    moneySlippageLabel(value.slippageBps),
+                    quote.destinationAsset.symbol,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
               ],
             ),
           ),
         ),
-        const LoopLabel('费用构成'),
+        LoopLabel(context.l10n.wallet_swapScreensLoopLabel),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: LoopSurfaceCard(
@@ -1001,26 +1027,26 @@ class SwapRouteScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 LoopKeyValue(
-                  label: '网络费估算',
+                  label: context.l10n.wallet_swapScreensLabel4,
                   value: '${loopGroupedFigure(value.gasEstimateRaw)} gas',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: 'LOOP 服务费',
+                  label: context.l10n.wallet_swapScreensLabel5,
                   value: value.platformFeeBps == null
-                      ? '未设置'
+                      ? context.l10n.wallet_swapScreensValue
                       : '${value.platformFeeBps} bps',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '价格影响',
+                  label: context.l10n.wallet_swapScreensLabel,
                   value: swapPriceImpactLabel(value.priceImpact),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 LoopKeyValue(
-                  label: '市场估值',
+                  label: context.l10n.wallet_swapScreensLabel6,
                   value: value.priceImpact.marketValueUsd == null
-                      ? '无法定价'
+                      ? context.l10n.wallet_swapScreensIf
                       : loopFormatUsd(value.priceImpact.marketValueUsd!),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
@@ -1030,12 +1056,14 @@ class SwapRouteScreen extends StatelessWidget {
         ),
         LoopProvenanceFooter(
           key: const ValueKey<String>('swap-route-provenance'),
-          text:
-              '报价方 ${value.provider} · 定价出处 '
-              '${value.priceImpact.priceSource ?? '未标注'} · '
-              '有效期 ${quote.policy.quoteTtlSeconds} 秒',
+          text: context.l10n.wallet_swapScreensSwapRouteProvenanceText(
+            value.priceImpact.priceSource ??
+                context.l10n.wallet_moneyActionsWalletMoneyActionsS2,
+            value.provider,
+            quote.policy.quoteTtlSeconds,
+          ),
           // S278 · decision 0236: the 「只展示最终报价」 card.
-          notes: const <String>['只展示最终报价：只有报价方提供路径时才会显示逐跳明细，这次没有提供。'],
+          notes: <String>[context.l10n.wallet_swapScreensLoopProvenanceFooter],
         ),
       ],
     );
@@ -1046,20 +1074,18 @@ class SwapRouteScreen extends StatelessWidget {
 /// used to stand under the form as cards, word for word.
 Future<void> showSwapInfoSheet(BuildContext context) => showLoopInfoSheet(
   context,
-  title: '关于兑换',
+  title: context.l10n.wallet_swapScreensSwapInfoActionLabel,
   sheetKey: 'swap-info-sheet',
-  notes: const <LoopInfoNote>[
+  notes: <LoopInfoNote>[
     LoopInfoNote(
       key: ValueKey<String>('swap-routing-notice'),
-      title: '路由由供应商选择',
-      body:
-          'LOOP 不自建路由，也不做逐跳拆解。这里只展示 Privy 返回的最终报价；'
-          '兑换所得资产直接进入本钱包。',
+      title: context.l10n.wallet_swapScreensSwapRoutingNoticeTitle,
+      body: context.l10n.wallet_swapScreensSwapRoutingNoticeBody,
     ),
     LoopInfoNote(
       key: ValueKey<String>('swap-power-notice'),
-      title: '算力影响不可用',
-      body: '买入后的算力变化暂时读不到，这里不做估算。',
+      title: context.l10n.wallet_swapScreensSwapPowerNoticeTitle,
+      body: context.l10n.wallet_swapScreensSwapPowerNoticeBody,
     ),
   ],
 );

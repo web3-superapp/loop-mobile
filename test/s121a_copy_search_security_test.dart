@@ -151,7 +151,7 @@ void main() {
       // Decision 0152: a real rule now; this tree composed no device
       // authentication, so it says so instead of offering a switch.
       // S278 · decision 0236: the threshold sentence is behind the row's (i).
-      expect(row.subtitle, '这次运行没有可用的设备验证');
+      expect(row.subtitle, 'No device verification available in this session');
       expect(
         tester
             .widget<LoopInfoButton>(
@@ -160,7 +160,7 @@ void main() {
             .notes
             .single
             .body,
-        startsWith('达到 1,000 USD1 时再验一次身份'),
+        startsWith('Verify again at 1,000 USD1 or more'),
       );
       expect(row.onTap, isNull);
 

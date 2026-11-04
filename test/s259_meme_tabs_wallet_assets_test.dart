@@ -177,9 +177,9 @@ void main() {
       }
       expect(_key('wallet-balance-open-$s5WbnbAssetId'), findsNothing);
       expect(_key('wallet-launch-chain'), findsNothing);
-      expect(find.text('Launch 链'), findsNWidgets(2));
-      expect(find.text('手续费保留 0.005'), findsWidgets);
-      expect(find.text('可动用 2.5'), findsOneWidget);
+      expect(find.text('Launch chain'), findsNWidgets(2));
+      expect(find.text('Fee reserve 0.005'), findsWidgets);
+      expect(find.text('Usable 2.5'), findsOneWidget);
       expect(_key('wallet-zero-toggle'), findsNothing);
       expect(find.textContaining('零余额'), findsNothing);
       // The valued main row leads; the unvalued Launch rows follow by amount.

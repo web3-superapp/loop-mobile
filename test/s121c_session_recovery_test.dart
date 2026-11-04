@@ -244,9 +244,12 @@ void main() {
         ],
       );
 
-      expect(find.textContaining('该内容当前不可用'), findsNothing);
-      expect(find.text('暂不可用'), findsNothing);
-      expect(find.text('离线'), findsOneWidget);
+      expect(
+        find.textContaining('This content isn\'t available right now'),
+        findsNothing,
+      );
+      expect(find.text('Not available right now'), findsNothing);
+      expect(find.text('Offline'), findsOneWidget);
       expect(
         find.byWidgetPredicate(
           (widget) =>

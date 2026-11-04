@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
@@ -553,20 +554,22 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     final text = _address.text.trim();
     final wellFormed = _addressPattern.hasMatch(text);
     final String? status = _checking
-        ? '正在校验地址…'
+        ? context.l10n.wallet_sendScreensRecipientStep
         : preflight != null
-        ? '地址已校验 · $_chainName'
+        ? context.l10n.wallet_sendScreensRecipientStep2(_chainName)
         : text.isEmpty
         ? null
         : !wellFormed && _addressTouched
-        ? '地址格式不对：0x 开头，共 42 位'
+        ? context.l10n.wallet_sendScreensRecipientStep3
         : null;
     final ready = !blocked && walletId != null && preflight != null;
     final nft = _nft;
     return LoopFocusPage(
       key: const ValueKey<String>('send-address-screen'),
       archetype: LoopPageArchetype.action,
-      title: nft == null ? '发送' : '发送 NFT',
+      title: nft == null
+          ? context.l10n.common_send
+          : context.l10n.wallet_sendScreensSendAddressScreenTitle,
       onBack: _back,
       primaryAction: blocked
           ? null
@@ -574,12 +577,14 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               missing: walletId == null || ready || _checking
                   ? null
                   : wellFormed
-                  ? (_preflightFailure == null ? '还差一步：等待地址校验。' : null)
-                  : '还差一步：填写完整的收款地址（0x 开头，42 位）。',
+                  ? (_preflightFailure == null
+                        ? context.l10n.wallet_sendScreensMissing
+                        : null)
+                  : context.l10n.wallet_sendScreensSendAddressNextMissing,
               missingKey: 'send-recipient-missing',
               button: LoopButton(
                 key: const ValueKey<String>('send-address-next'),
-                label: '下一步',
+                label: context.l10n.common_next,
                 primary: true,
                 block: true,
                 onPressed: !ready
@@ -599,14 +604,18 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
           ? sendCapabilityPageBlock(
               ref,
               key: const ValueKey<String>('send-capability-block'),
-              title: '发送当前不可用',
+              title: context.l10n.wallet_sendScreensSendCapabilityBlockTitle,
               capability: nft == null
                   ? LoopV2CapabilityId.sendApprovals
                   : LoopV2CapabilityId.nftSend,
             )
           : null,
       body: <Widget>[
-        SendStepBar(step: 1, total: _stepCount, label: '收款地址'),
+        SendStepBar(
+          step: 1,
+          total: _stepCount,
+          label: context.l10n.wallet_sendScreensLabel,
+        ),
         const SizedBox(height: 12),
         if (nft != null) SendNftSummary(target: nft),
         if (walletId == null)
@@ -614,8 +623,8 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             keyPrefix: 'send-directory',
             phase: directory.phase,
             failureKind: directory.failureKind,
-            emptyMessage: '这个账号还没有可用于发送的钱包',
-            emptyReason: '只有 Privy 嵌入式钱包可以从本机签名并广播。',
+            emptyMessage: context.l10n.wallet_sendScreensEmptyMessage,
+            emptyReason: context.l10n.wallet_sendScreensEmptyReason,
             onRetry: () => unawaited(
               ref.read(walletDirectoryControllerProvider.notifier).reload(),
             ),
@@ -623,8 +632,8 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
         else ...<Widget>[
           // UX-016 (decision 0257): the field's name above it, and the
           // field itself one layer — no card around the input.
-          const SendFieldTitle(
-            '收款地址',
+          SendFieldTitle(
+            context.l10n.wallet_sendScreensLabel,
             key: ValueKey<String>('send-recipient-title'),
           ),
           Padding(
@@ -650,7 +659,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                 unawaited(_check());
               },
               decoration: InputDecoration(
-                hintText: '0x…（$_chainName）',
+                hintText: context.l10n.wallet_sendScreensRecipientHint(
+                  _chainName,
+                ),
                 counterText: '',
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -658,13 +669,16 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                     LoopIconButton(
                       key: const ValueKey<String>('send-recipient-paste'),
                       icon: 'copy',
-                      label: '粘贴',
+                      label: context
+                          .l10n
+                          .wallet_sendScreensSendRecipientPasteLabel,
                       onPressed: () => unawaited(_paste()),
                     ),
                     LoopIconButton(
                       key: const ValueKey<String>('send-recipient-scan'),
                       icon: 'camera',
-                      label: '扫码',
+                      label:
+                          context.l10n.wallet_sendScreensSendRecipientScanLabel,
                       onPressed: () => unawaited(_scan()),
                     ),
                   ],
@@ -706,7 +720,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
               child: Text(
-                '收款地址来自扫码，已自动校验',
+                context.l10n.wallet_sendScreensSendRecipientPrefill,
                 key: const ValueKey<String>('send-recipient-prefill'),
                 style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
@@ -718,7 +732,11 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             MoneyOfflinePause(
               blockKey: 'send-recipient-preflight-offline',
               failureKind: _preflightFailure?.kind,
-              pausedActions: const <String>['校验地址', '下一步', '签名'],
+              pausedActions: <String>[
+                context.l10n.wallet_sendScreensMoneyOfflinePause,
+                context.l10n.common_next,
+                context.l10n.common_sign,
+              ],
               onRetry: _retryCheck,
             )
           // The server read the address and refused to answer for it. It is
@@ -732,7 +750,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
           else if (_preflightFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('send-recipient-preflight-error'),
-              title: '地址没有校验成功',
+              title: context
+                  .l10n
+                  .wallet_sendScreensSendRecipientPreflightErrorTitle,
               // S339: an NFT send names its own refusals (发给自己 …).
               reason:
                   (nft == null
@@ -782,7 +802,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('send-amount-screen'),
       archetype: LoopPageArchetype.action,
-      title: '发送',
+      title: context.l10n.common_send,
       onBack: _back,
       keyboardAccessory: true,
       primaryAction: blocked
@@ -791,16 +811,16 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               missing: balances == null || !balancesState.isReady
                   ? null
                   : _assetId == null
-                  ? '还差一步：选择要发送的资产。'
+                  ? context.l10n.wallet_sendScreensSendAmountNextMissing
                   : amount == null
-                  ? '还差一步：填写发送数量。'
+                  ? context.l10n.wallet_sendScreensSendAmountNextMissing2
                   : overSpendable
-                  ? '发送数量超过了可动用余额，请改小。'
+                  ? context.l10n.wallet_sendScreensSendAmountNextMissing3
                   : null,
               missingKey: 'send-amount-missing',
               button: LoopButton(
                 key: const ValueKey<String>('send-amount-next'),
-                label: '下一步',
+                label: context.l10n.common_next,
                 primary: true,
                 block: true,
                 onPressed: ready
@@ -821,11 +841,15 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
           ? sendCapabilityPageBlock(
               ref,
               key: const ValueKey<String>('send-amount-capability-block'),
-              title: '发送当前不可用',
+              title: context.l10n.wallet_sendScreensSendCapabilityBlockTitle,
             )
           : null,
       body: <Widget>[
-        const SendStepBar(step: 2, total: sendStepCount, label: '金额与资产'),
+        SendStepBar(
+          step: 2,
+          total: sendStepCount,
+          label: context.l10n.wallet_sendScreensLabel2,
+        ),
         const SizedBox(height: 12),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -833,8 +857,11 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               key: const ValueKey<String>('send-amount-recipient'),
               leading: const LoopRowIcon(icon: 'wallet'),
               title: loopTruncatedAddress(preflight.recipient.checksumAddress),
-              subtitle: '收款地址 · 已校验',
-              trailingCaption: '修改',
+              subtitle:
+                  context.l10n.wallet_sendScreensSendAmountRecipientSubtitle,
+              trailingCaption: context
+                  .l10n
+                  .wallet_sendScreensSendAmountRecipientTrailingCaption,
               chevron: false,
               onTap: () => _toStep(1),
             ),
@@ -845,7 +872,7 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             keyPrefix: 'send-balances',
             phase: balancesState.phase,
             failureKind: balancesState.failureKind,
-            emptyMessage: '这个钱包还没有可读资产',
+            emptyMessage: context.l10n.wallet_moneyAssetPickerTitle2,
             onRetry: () => unawaited(
               ref
                   .read(walletBalancesControllerProvider(walletId).notifier)
@@ -853,11 +880,11 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             ),
           )
         else if (balances.balances.isEmpty)
-          const LoopEmptyState(
+          LoopEmptyState(
             key: ValueKey<String>('send-assets-empty'),
             illustration: LoopIllustration.history,
-            title: '还没有可读取的资产',
-            message: '登记资产后，这里会为每一个资产恒定保留一行。',
+            title: context.l10n.wallet_sendScreensSendAssetsEmptyTitle,
+            message: context.l10n.wallet_sendScreensSendAssetsEmptyMessage,
             compact: true,
           )
         else ...<Widget>[
@@ -872,15 +899,20 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
                         logoUrl: row.logoUrl,
                         fallbackMonogram: row.symbol,
                       ),
-                title: row?.symbol ?? '选择资产',
+                title: row?.symbol ?? context.l10n.wallet_moneyAssetPickerTitle,
                 subtitle: row == null
                     ? candidates.isEmpty
-                          ? '没有可动用余额的资产'
-                          : '${candidates.length} 个资产可发送'
+                          ? context.l10n.wallet_moneyAssetPickerTitle4
+                          : context.l10n
+                                .wallet_sendScreensSendAssetSelectorSubtitle(
+                                  candidates.length,
+                                )
                     : switch (row.balance) {
                         LoopBalanceAvailable(spendableBalance: final s) =>
-                          '可动用 ${loopFormatDecimal(s)} ${row.symbol}'
-                              '（已扣除手续费保留）',
+                          context.l10n.wallet_sendScreensLoopBalanceAvailable(
+                            loopFormatDecimal(s),
+                            row.symbol,
+                          ),
                         LoopBalanceUnavailable(reasonCode: final reasonCode) =>
                           loopReasonCodeText(reasonCode),
                       },
@@ -889,7 +921,9 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
             ],
           ),
           SendFieldTitle(
-            symbol == null ? '发送数量' : '发送数量（$symbol）',
+            symbol == null
+                ? context.l10n.wallet_sendScreensSendAmountTitle
+                : context.l10n.wallet_sendScreensSendAmountTitle2(symbol),
             key: const ValueKey<String>('send-amount-title'),
           ),
           Padding(
@@ -914,27 +948,29 @@ class _SendFlowScreenState extends ConsumerState<SendFlowScreen> {
               maxLengthEnforcement: MaxLengthEnforcement.enforced,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: '输入数量',
+                hintText: context.l10n.wallet_sendScreensSendAmountMaxHintText,
                 counterText: '',
-                errorText: overSpendable ? '超过可动用余额' : null,
+                errorText: overSpendable
+                    ? context.l10n.wallet_sendScreensSendAmountMaxErrorText
+                    : null,
                 suffixIcon: TextButton(
                   key: const ValueKey<String>('send-amount-max'),
                   onPressed: spendable != null && spendable > Decimal.zero
                       ? () =>
                             setState(() => _amount.text = spendable.toString())
                       : null,
-                  child: const Text('全部'),
+                  child: Text(context.l10n.common_all),
                 ),
               ),
             ),
           ),
           WalletSnapshotFooter(snapshot: balances.snapshot),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('send-power-notice'),
             icon: 'mine',
             tone: LoopNoticeTone.warn,
-            title: '发送会降低算力',
-            body: '转出有权重的社区币后，算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
+            title: context.l10n.wallet_sendScreensSendPowerNoticeTitle,
+            body: context.l10n.wallet_sendScreensSendPowerNoticeBody,
           ),
         ],
       ],
@@ -998,7 +1034,7 @@ class SendStepBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('send-step-bar'),
-    label: '第 $step 步，共 $total 步，$label',
+    label: context.l10n.wallet_sendScreensSendStepBarLabel(label, step, total),
     excludeSemantics: true,
     child: Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1075,15 +1111,18 @@ class _RecipientChecks extends StatelessWidget {
       LoopSendPreflight.contractWarning,
     );
     final headlines = <String>[
-      if (firstTime) '首次向该地址转账',
-      if (contract) '收款方是合约地址',
-      '恶意地址筛查不可用',
+      if (firstTime) context.l10n.wallet_sendScreensBuild,
+      if (contract) context.l10n.wallet_sendScreensBuild2,
+      context.l10n.wallet_sendScreensBuild3,
     ];
     return LoopDisclosure(
       key: const ValueKey<String>('send-recipient-checks'),
       // The count is the point of the closed line: 「地址核对结果」 alone
       // would not say that something needs reading.
-      summary: '地址核对 · ${headlines.length} 项待确认 · ${headlines.first}',
+      summary: context.l10n.wallet_sendScreensSendRecipientChecksSummary(
+        headlines.first,
+        headlines.length,
+      ),
       // A contract recipient can cost the whole transfer, so that one is
       // never folded away by default.
       initiallyOpen: contract,
@@ -1091,36 +1130,36 @@ class _RecipientChecks extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           if (firstTime)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('send-recipient-first-time'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '首次向该地址转账',
-              body: '这个地址不在你自己的已索引转账历史中。请逐字核对完整地址后再继续。',
+              title: context.l10n.wallet_sendScreensBuild,
+              body: context.l10n.wallet_sendScreensSendRecipientFirstTimeBody,
             ),
           if (contract)
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('send-recipient-contract'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '收款方是合约地址',
-              body: '向合约地址直接转账可能永久失去这笔资产。请确认这个合约确实接受直接转账。',
+              title: context.l10n.wallet_sendScreensBuild2,
+              body: context.l10n.wallet_sendScreensSendRecipientContractBody,
             ),
           LoopNotice(
             key: const ValueKey<String>('send-recipient-screening'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: '恶意地址筛查不可用',
+            title: context.l10n.wallet_sendScreensBuild3,
             body: loopReasonCodeText(recipient.screening.reasonCode),
           ),
           // The basis names the records that were searched, not the table
           // they live in: 「indexed_erc20_transfers」 was a schema name
           // printed to the person sending money.
-          const LoopProvenanceFooter(
+          LoopProvenanceFooter(
             key: ValueKey<String>('send-recipient-basis'),
-            label: '说明',
-            title: '判断依据',
-            text: '首次收款方的判断依据：你自己在 LOOP 已索引的 ERC-20 转账记录',
+            label: context.l10n.common_about,
+            title: context.l10n.wallet_sendScreensSendRecipientBasisTitle,
+            text: context.l10n.wallet_sendScreensSendRecipientBasisText,
           ),
         ],
       ),
@@ -1198,7 +1237,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     return LoopFocusPage(
       key: const ValueKey<String>('send-confirm-screen'),
       archetype: LoopPageArchetype.action,
-      title: nft == null ? '确认发送' : '确认发送 NFT',
+      title: nft == null
+          ? context.l10n.wallet_moneyActionsSigningSend
+          : context.l10n.wallet_moneyActionsSigningSendNft,
       onBack: widget.onBack,
       primaryAction: intent == null
           ? null
@@ -1210,8 +1251,10 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                 label: _checkingCapability
                     ? moneyCapabilityCheckingLabel
                     : remaining == Duration.zero
-                    ? '事实已过期 · 重新准备'
-                    : '确认发送（${moneyCountdownLabel(remaining)}）',
+                    ? context.l10n.wallet_approvalScreensApprovalGuardSignLabel
+                    : context.l10n.wallet_sendScreensSendConfirmSignLabel(
+                        moneyCountdownLabel(remaining),
+                      ),
                 primary: true,
                 block: true,
                 onPressed: _busy
@@ -1227,7 +1270,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
           ? sendCapabilityPageBlock(
               ref,
               key: const ValueKey<String>('send-confirm-capability-block'),
-              title: '发送当前不可用',
+              title: context.l10n.wallet_sendScreensSendCapabilityBlockTitle,
               capability: nft == null
                   ? LoopV2CapabilityId.sendApprovals
                   : LoopV2CapabilityId.nftSend,
@@ -1241,12 +1284,16 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         // (which is what a 403 on prepare left behind) confirms nothing. The
         // draft's own two lines stand until the intent replaces them.
         if (nft == null)
-          const SendStepBar(step: 3, total: sendStepCount, label: '确认并签名')
+          SendStepBar(
+            step: 3,
+            total: sendStepCount,
+            label: context.l10n.wallet_sendScreensLabel3,
+          )
         else
-          const SendStepBar(
+          SendStepBar(
             step: sendNftStepCount,
             total: sendNftStepCount,
-            label: '确认并签名',
+            label: context.l10n.wallet_sendScreensLabel3,
           ),
         const SizedBox(height: 12),
         if (intent == null && nft == null) _SendDraftFacts(draft: widget.draft),
@@ -1302,19 +1349,22 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
               key: const ValueKey<String>('send-confirm-simulation-failed'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '试算没有通过，不能签名',
+              title: context
+                  .l10n
+                  .wallet_sendScreensSendConfirmSimulationFailedTitle,
               body: loopReasonCodeText(intent.simulation.reasonCode),
             ),
           MoneyCountdown(
             expiresAt: intent.expiresAt,
             clock: widget.clock,
             builder: (context, remaining) => remaining == Duration.zero
-                ? const LoopNotice(
+                ? LoopNotice(
                     key: ValueKey<String>('send-confirm-expired'),
                     icon: 'clock',
                     tone: LoopNoticeTone.warn,
-                    title: '事实已过期',
-                    body: '请重新准备一次再签名。',
+                    title:
+                        context.l10n.wallet_sendScreensSendConfirmExpiredTitle,
+                    body: context.l10n.wallet_sendScreensSendConfirmExpiredBody,
                   )
                 : const SizedBox.shrink(),
           ),
@@ -1327,37 +1377,39 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
               key: const ValueKey<String>('send-confirm-simulation-failed'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '试算没有通过，不能签名',
+              title: context
+                  .l10n
+                  .wallet_sendScreensSendConfirmSimulationFailedTitle,
               body: loopReasonCodeText(intent.simulation.reasonCode),
             ),
           MoneyCountdown(
             expiresAt: intent.expiresAt,
             clock: widget.clock,
             builder: (context, remaining) => remaining == Duration.zero
-                ? const LoopNotice(
+                ? LoopNotice(
                     key: ValueKey<String>('send-confirm-expired'),
                     icon: 'clock',
                     tone: LoopNoticeTone.warn,
-                    title: '事实已过期',
-                    body: '余额、费用与试算结果都取自同一时刻。请重新准备一次再签名。',
+                    title:
+                        context.l10n.wallet_sendScreensSendConfirmExpiredTitle,
+                    body:
+                        context.l10n.wallet_sendScreensSendConfirmExpiredBody2,
                   )
                 : const SizedBox.shrink(),
           ),
           // S278 · decision 0236: an explanation, behind (i).
-          const LoopProvenanceFooter(
+          LoopProvenanceFooter(
             key: ValueKey<String>('send-confirm-signing-exit'),
-            label: '说明',
-            title: '统一签名出口',
-            text:
-                '签名由 Privy 嵌入式钱包在本机执行；所有资金操作都汇聚到同一个签名弹层，'
-                '这是全产品唯一的签名出口。',
+            label: context.l10n.common_about,
+            title: context.l10n.wallet_sendScreensSendConfirmSigningExitTitle,
+            text: context.l10n.wallet_sendScreensSendConfirmSigningExitText,
           ),
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('send-confirm-power'),
             icon: 'mine',
             tone: LoopNoticeTone.warn,
-            title: '算力会随持仓下降',
-            body: '转出后算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
+            title: context.l10n.wallet_sendScreensSendConfirmPowerTitle,
+            body: context.l10n.wallet_sendScreensSendConfirmPowerBody,
           ),
         ],
       ],
@@ -1592,13 +1644,20 @@ class SendNftReviewCard extends StatelessWidget {
     final tokenId = intent?.review.nft?.tokenId ?? target.tokenIdText;
     final rows = intent == null
         ? <(String, String)>[
-            ('收款方', recipient ?? '还没有填写'),
-            ('网络', loopChainName(target.chainId)),
-            ('最高网络费', '还没有读到'),
+            (
+              context.l10n.wallet_moneyActionsSigningLabel,
+              recipient ?? context.l10n.wallet_sendScreensBuild4,
+            ),
+            (context.l10n.common_network, loopChainName(target.chainId)),
+            (
+              context.l10n.wallet_moneyActionsSigningLabel3,
+              context.l10n.wallet_sendScreensBuild5,
+            ),
           ]
         : <(String, String)>[
             for (final field in moneyActionFields(intent).skip(1))
-              if (field.label != 'NFT') (field.label, field.value),
+              if (moneyFieldId(field.label) != 'nft')
+                (field.label, field.value),
           ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1650,11 +1709,15 @@ class SendNftReviewCard extends StatelessWidget {
               children: <Widget>[
                 for (final (label, value) in rows)
                   LoopKeyValue(
-                    key: ValueKey<String>('send-nft-review-$label'),
+                    key: ValueKey<String>(
+                      'send-nft-review-${moneyFieldId(label)}',
+                    ),
                     label: label,
                     value: value,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    valueUp: label == '模拟结果' ? intent?.simulation.passed : null,
+                    valueUp: moneyFieldId(label) == 'simulation'
+                        ? intent?.simulation.passed
+                        : null,
                   ),
               ],
             ),
@@ -1691,22 +1754,22 @@ class _PendingIntentBlock extends StatelessWidget {
         LoopNotice(
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '这个钱包还有一笔未完成的操作',
-          body:
-              '${moneyActionTitle(intent.kind)} · '
-              '${moneyIntentStateLabel(intent.state)}。'
-              '再准备一笔新的会让它失效；如果它已经签名并广播，请先上报或取消。',
+          title: context.l10n.wallet_sendScreensTitle,
+          body: context.l10n.wallet_sendScreensBody(
+            moneyActionTitle(intent.kind),
+            moneyIntentStateLabel(intent.state),
+          ),
         ),
         LoopButtonPair(
           children: <Widget>[
             LoopButton(
               key: const ValueKey<String>('money-pending-open'),
-              label: '查看那一笔',
+              label: context.l10n.wallet_sendScreensMoneyPendingOpenLabel,
               onPressed: busy ? null : onReport,
             ),
             LoopButton(
               key: const ValueKey<String>('money-pending-cancel'),
-              label: '取消并重新准备',
+              label: context.l10n.wallet_sendScreensMoneyPendingCancelLabel,
               primary: true,
               onPressed: busy ? null : onCancel,
             ),
@@ -1740,34 +1803,37 @@ class _SendDraftFacts extends StatelessWidget {
           children: <Widget>[
             LoopKeyValue(
               key: const ValueKey<String>('send-confirm-draft-recipient'),
-              label: '收款方',
-              value: draft.recipientAddress ?? '还没有填写',
+              label: context.l10n.wallet_moneyActionsSigningLabel,
+              value:
+                  draft.recipientAddress ??
+                  context.l10n.wallet_sendScreensBuild4,
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(
               key: const ValueKey<String>('send-confirm-draft-amount'),
-              label: '数量',
+              label: context.l10n.common_amount,
               value: draft.amount == null
-                  ? '还没有填写'
+                  ? context.l10n.wallet_sendScreensBuild4
                   : '${loopGroupedFigure(draft.amount!)} ${draft.symbol}',
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(
               key: const ValueKey<String>('send-confirm-draft-fee'),
-              label: '网络费',
-              value: '还没有读到',
+              label: context.l10n.wallet_sendScreensSendConfirmDraftFeeLabel,
+              value: context.l10n.wallet_sendScreensBuild5,
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(
               key: const ValueKey<String>('send-confirm-draft-arrival'),
-              label: '预估到账',
-              value: '不预估',
+              label:
+                  context.l10n.wallet_sendScreensSendConfirmDraftArrivalLabel,
+              value:
+                  context.l10n.wallet_sendScreensSendConfirmDraftArrivalValue,
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             const SizedBox(height: 6),
             Text(
-              '这两行是你在上一步填的内容，还不是服务端的事实。'
-              '网络费、余额与试算会在准备好这一笔之后一起显示。',
+              context.l10n.wallet_sendScreensBuild6,
               style: LoopType.caption,
             ),
           ],
@@ -1795,14 +1861,15 @@ class _SendArrivalEstimate extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const LoopKeyValue(
-              label: '预估到账',
-              value: '不预估',
+            LoopKeyValue(
+              label:
+                  context.l10n.wallet_sendScreensSendConfirmDraftArrivalLabel,
+              value:
+                  context.l10n.wallet_sendScreensSendConfirmDraftArrivalValue,
               padding: EdgeInsets.symmetric(vertical: 8),
             ),
             Text(
-              '没有到账时间的来源，这里不给一个编出来的秒数。'
-              '提交之后在结果页按确认数跟踪，那是唯一的进度。',
+              context.l10n.wallet_sendScreensBuild7,
               style: LoopType.caption,
             ),
           ],

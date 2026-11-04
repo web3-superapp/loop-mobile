@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// The two chain slots are a cross-cutting identity, not a chain-module fact:
 /// signing, Launch and the wallet page all read them.
@@ -39,16 +40,16 @@ String loopTruncatedAssetId(String assetId) {
 /// internal — an owner reading 「登记状态 verified」 learns nothing about their
 /// own asset.
 enum LoopAssetStatus {
-  pending('pending', '待核验'),
-  verified('verified', '已核验'),
-  blocked('blocked', '已屏蔽'),
+  pending('pending'),
+  verified('verified'),
+  blocked('blocked'),
 
   /// The registry has no row for this contract, and the facts alongside it
   /// were read from the chain and the market providers for this request
   /// alone. It is how a contract pasted into a conversation can be answered
   /// at all; it is not a lesser kind of verification, and it never means the
   /// asset was checked and found wanting.
-  unregistered('unregistered', '未登记'),
+  unregistered('unregistered'),
 
   /// The registry has no row for this contract and no provider could
   /// describe it at this moment. Identity is missing, not absent: the address
@@ -59,9 +60,9 @@ enum LoopAssetStatus {
   /// decodes it into `MarketAssetIdentityUnavailable` rather than into an
   /// asset whose every field is null. This value stays for the endpoints that
   /// do report a full block.
-  unavailable('unavailable', '暂时读不到');
+  unavailable('unavailable');
 
-  const LoopAssetStatus(this.wireName, this.label);
+  const LoopAssetStatus(this.wireName);
 
   final String wireName;
 
@@ -69,7 +70,13 @@ enum LoopAssetStatus {
   /// symbol and decimals having been read from the chain — it is not the
   /// endpoint check [LoopChainVerification] reports, and it never means the
   /// asset is safe.
-  final String label;
+  String get label => switch (this) {
+    LoopAssetStatus.pending => LoopL10n.current.chain_modelsPending,
+    LoopAssetStatus.verified => LoopL10n.current.chain_modelsVerified,
+    LoopAssetStatus.blocked => LoopL10n.current.chain_modelsBlocked,
+    LoopAssetStatus.unregistered => LoopL10n.current.chain_modelsUnregistered,
+    LoopAssetStatus.unavailable => LoopL10n.current.chain_modelsUnavailable,
+  };
 
   static LoopAssetStatus? tryParse(String value) {
     for (final status in values) {
@@ -285,12 +292,12 @@ final class LoopChainInfo {
 
 /// Whether an RPC endpoint proved it is speaking for the expected chain.
 enum LoopChainVerification {
-  verified('verified', '通过'),
-  mismatched('mismatched', '不一致'),
-  unreachable('unreachable', '连不上'),
-  unknown('unknown', '未知');
+  verified('verified'),
+  mismatched('mismatched'),
+  unreachable('unreachable'),
+  unknown('unknown');
 
-  const LoopChainVerification(this.wireName, this.label);
+  const LoopChainVerification(this.wireName);
 
   final String wireName;
 
@@ -298,7 +305,13 @@ enum LoopChainVerification {
   /// chain check on one endpoint and nothing else: it is not an asset's
   /// registry state, and 通过 says the endpoint answered for the right chain,
   /// never that anything on it was audited.
-  final String label;
+  String get label => switch (this) {
+    LoopChainVerification.verified => LoopL10n.current.chain_modelsVerified2,
+    LoopChainVerification.mismatched => LoopL10n.current.chain_modelsMismatched,
+    LoopChainVerification.unreachable =>
+      LoopL10n.current.chain_modelsUnreachable,
+    LoopChainVerification.unknown => LoopL10n.current.common_unknown,
+  };
 
   static LoopChainVerification? tryParse(String value) {
     for (final verification in values) {
@@ -408,8 +421,8 @@ enum LoopIndexerLane {
 }
 
 String loopIndexerLaneLabel(LoopIndexerLane lane) => switch (lane) {
-  LoopIndexerLane.erc20Transfer => 'ERC-20 转账索引',
-  LoopIndexerLane.poolEvent => '池事件索引',
+  LoopIndexerLane.erc20Transfer => LoopL10n.current.chain_modelsErc20Transfer,
+  LoopIndexerLane.poolEvent => LoopL10n.current.chain_modelsPoolEvent,
 };
 
 @immutable
@@ -553,9 +566,9 @@ enum LoopConfirmationStatus {
 }
 
 String loopConfirmationLabel(LoopConfirmationStatus status) => switch (status) {
-  LoopConfirmationStatus.confirmed => '已确认',
-  LoopConfirmationStatus.pending => '待确认',
-  LoopConfirmationStatus.reorged => '已回滚',
+  LoopConfirmationStatus.confirmed => LoopL10n.current.common_confirmed,
+  LoopConfirmationStatus.pending => LoopL10n.current.common_pendingConfirmation,
+  LoopConfirmationStatus.reorged => LoopL10n.current.common_reverted,
 };
 
 /// A block observation label: the height plus the wall-clock observation.
@@ -572,8 +585,11 @@ String loopProvenanceLabel({
   required DateTime? observedAt,
 }) {
   final sourceLabel = source == null
-      ? '来源未知'
-      : '来源 ${loopFactSourceLabel(source)}';
+      ? LoopL10n.current.chain_modelsLoopProvenanceLabel
+      : LoopL10n.current.wallet_readScreensSwitch2(loopFactSourceLabel(source));
   if (observedAt == null) return sourceLabel;
-  return '$sourceLabel · 观察于 ${loopObservedAtLabel(observedAt)}';
+  return LoopL10n.current.chain_modelsLoopProvenanceLabel2(
+    loopObservedAtLabel(observedAt),
+    sourceLabel,
+  );
 }

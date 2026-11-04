@@ -508,7 +508,7 @@ void main() {
       // S348: what the snapshot did not count is not drawn.
       expect(_key('mining-composition-excluded'), findsNothing);
       expect(find.textContaining('参考价'), findsNothing);
-      expect(find.text('未计入'), findsNothing);
+      expect(find.text('Not included'), findsNothing);
 
       await _tab(tester, 'NFT');
       expect(_key('mining-power-tab-nft'), findsOneWidget);

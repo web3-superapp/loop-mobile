@@ -203,7 +203,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('可动用 $walletMaskedFigure'), findsOneWidget);
+      expect(find.text('Usable $walletMaskedFigure'), findsOneWidget);
       expect(
         find.text('Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。'),
         findsOneWidget,

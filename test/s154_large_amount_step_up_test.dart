@@ -187,7 +187,7 @@ void main() {
       const settings = LoopStepUpSettings();
       expect(settings.enabled, isTrue);
       expect(settings.thresholdUsd1, 1000);
-      expect(loopStepUpSubtitle(1000), '达到 1,000 USD1 时再验一次身份');
+      expect(loopStepUpSubtitle(1000), 'Verify again at 1,000 USD1 or more');
     });
 
     test('accepts whole USD1 from 1 to 1,000,000 only', () {
@@ -198,9 +198,15 @@ void main() {
       expect(loopStepUpParseThreshold(''), isNull);
       expect(loopStepUpThresholdError(1), isNull);
       expect(loopStepUpThresholdError(1000000), isNull);
-      expect(loopStepUpThresholdError(0), '金额需在 1 到 1,000,000 USD1 之间');
-      expect(loopStepUpThresholdError(1000001), '金额需在 1 到 1,000,000 USD1 之间');
-      expect(loopStepUpThresholdError(null), '请输入整数金额');
+      expect(
+        loopStepUpThresholdError(0),
+        'Amount must be between 1 and 1,000,000 USD1',
+      );
+      expect(
+        loopStepUpThresholdError(1000001),
+        'Amount must be between 1 and 1,000,000 USD1',
+      );
+      expect(loopStepUpThresholdError(null), 'Enter a whole number');
     });
 
     test('the stored form round-trips and anything else is the default', () {
@@ -309,7 +315,10 @@ void main() {
         );
 
         expect(result.accepted, isTrue);
-        expect(device.reasons.single, '验证身份以签名这笔大额交易');
+        expect(
+          device.reasons.single,
+          'Verify your identity to sign this large transaction',
+        );
       },
     );
 
@@ -431,7 +440,10 @@ void main() {
 
         expect(result.accepted, isTrue);
         expect(events, <String>['auth', 'wallet']);
-        expect(device.reasons.single, '验证身份以签名这笔大额交易');
+        expect(
+          device.reasons.single,
+          'Verify your identity to sign this large transaction',
+        );
       },
     );
 
@@ -456,9 +468,12 @@ void main() {
       );
       expect(
         loopChainFailureReason(LoopChainFailureKind.stepUpCancelled),
-        '已取消，没有发生任何变化。',
+        'Cancelled. Nothing was changed.',
       );
-      expect(loopStepUpReasonText(result.code), '已取消，没有发生任何变化。');
+      expect(
+        loopStepUpReasonText(result.code),
+        'Cancelled. Nothing was changed.',
+      );
     });
 
     test('a failed prompt signs nothing either', () async {
@@ -641,9 +656,15 @@ void main() {
       expect(store.values, isEmpty);
 
       expect(await controller.setEnabled(false), isTrue);
-      expect(device.reasons.last, '验证身份以关闭大额交易二次验证');
+      expect(
+        device.reasons.last,
+        'Verify your identity to turn off large-amount verification',
+      );
       expect(await controller.setEnabled(true), isTrue);
-      expect(device.reasons.last, '验证身份以开启大额交易二次验证');
+      expect(
+        device.reasons.last,
+        'Verify your identity to turn on large-amount verification',
+      );
     });
 
     test('raising the threshold asks first, lowering does not', () async {
@@ -654,7 +675,10 @@ void main() {
       expect(await controller.setThreshold(500), isTrue);
       expect(device.reasons, isEmpty);
       expect(await controller.setThreshold(5000), isTrue);
-      expect(device.reasons.single, '验证身份以提高大额交易的验证金额');
+      expect(
+        device.reasons.single,
+        'Verify your identity to raise the large-amount verification threshold',
+      );
       expect(await controller.setThreshold(0), isFalse);
       expect(container.read(loopStepUpProvider).settings.thresholdUsd1, 5000);
     });
@@ -748,14 +772,20 @@ void main() {
 
       // S278 · decision 0236: the threshold sentence is behind the row's (i).
       expect(row(tester).subtitle, isNull);
-      expect(stepUpInfo(tester), startsWith('达到 1,000 USD1 时再验一次身份'));
+      expect(
+        stepUpInfo(tester),
+        startsWith('Verify again at 1,000 USD1 or more'),
+      );
       expect(find.textContaining('即将推出'), findsNothing);
       final toggle = tester.widget<Switch>(find.byType(Switch));
       expect(toggle.value, isTrue);
 
       await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
-      expect(device.reasons.single, '验证身份以关闭大额交易二次验证');
+      expect(
+        device.reasons.single,
+        'Verify your identity to turn off large-amount verification',
+      );
       expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
     });
 
@@ -766,7 +796,7 @@ void main() {
       final store = InMemoryLoopStepUpSettingsStore();
       await pumpRow(tester, device: device, store: store);
 
-      await tester.tap(find.text('大额交易二次验证'));
+      await tester.tap(find.text('Large-amount verification'));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('step-up-threshold-sheet')),
@@ -781,7 +811,10 @@ void main() {
         find.byKey(const ValueKey<String>('step-up-threshold-save')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('金额需在 1 到 1,000,000 USD1 之间'), findsOneWidget);
+      expect(
+        find.text('Amount must be between 1 and 1,000,000 USD1'),
+        findsOneWidget,
+      );
       expect(store.values, isEmpty);
 
       await tester.tap(
@@ -797,9 +830,15 @@ void main() {
         find.byKey(const ValueKey<String>('step-up-threshold-sheet')),
         findsNothing,
       );
-      expect(device.reasons.single, '验证身份以提高大额交易的验证金额');
+      expect(
+        device.reasons.single,
+        'Verify your identity to raise the large-amount verification threshold',
+      );
       expect(store.values[_principal]?.thresholdUsd1, 5000);
-      expect(stepUpInfo(tester), startsWith('达到 5,000 USD1 时再验一次身份'));
+      expect(
+        stepUpInfo(tester),
+        startsWith('Verify again at 5,000 USD1 or more'),
+      );
     });
 
     testWidgets('a device with no screen lock offers no switch, and says why', (
@@ -813,9 +852,15 @@ void main() {
       await pumpRow(tester, device: device);
 
       expect(find.byType(Switch), findsNothing);
-      expect(find.text('不可用'), findsOneWidget);
-      expect(row(tester).subtitle, '这台设备还没有设置锁屏密码或生物识别，先在系统设置里加上');
-      expect(stepUpInfo(tester), startsWith('达到 1,000 USD1 时再验一次身份'));
+      expect(find.text('Unavailable'), findsOneWidget);
+      expect(
+        row(tester).subtitle,
+        'This device has no screen lock passcode or biometrics yet. Add one in system Settings first',
+      );
+      expect(
+        stepUpInfo(tester),
+        startsWith('Verify again at 1,000 USD1 or more'),
+      );
       expect(row(tester).onTap, isNull);
     });
   });
@@ -873,7 +918,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-step-verify-waiting')),
         findsOneWidget,
       );
-      expect(find.text('下一步，待验证'), findsOneWidget);
+      expect(find.text('下一步，Pending verification'), findsOneWidget);
 
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
@@ -903,12 +948,12 @@ void main() {
 
       expect(device.reasons, hasLength(1));
       expect(wallet.handed, isEmpty);
-      expect(find.text('已取消，没有发生任何变化。'), findsOneWidget);
+      expect(find.text('Cancelled. Nothing was changed.'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-sign-step-verify-failed')),
         findsOneWidget,
       );
-      expect(find.text('已取消'), findsOneWidget);
+      expect(find.text('Cancelled'), findsOneWidget);
       // Nothing was opened: the confirmation is live again.
       final confirm = tester.widget<LoopButton>(
         find.widgetWithText(LoopButton, '确认签名'),
@@ -936,7 +981,7 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
-      expect(find.text('下一步，待验证'), findsOneWidget);
+      expect(find.text('下一步，Pending verification'), findsOneWidget);
       expect(find.text('下一步，待签名'), findsNothing);
     });
 

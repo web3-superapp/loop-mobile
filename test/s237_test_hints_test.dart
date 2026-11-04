@@ -113,7 +113,7 @@ void main() {
       expect(_key('wallet-screen'), findsOneWidget);
       expect(_key('wallet-faucet-entry'), findsNothing);
       expect(find.textContaining('领取测试币'), findsNothing);
-      expect(find.textContaining('获取资金'), findsNothing);
+      expect(find.textContaining('Get funds'), findsNothing);
       // The DEV / STAGING tag beside 总资产.
       expect(find.text('STAGING'), findsNothing);
       await scrollToS5Section(tester, _key('wallet-launch-chain-usd1-row'));
@@ -122,14 +122,14 @@ void main() {
       expect(
         find.descendant(
           of: _key('wallet-launch-chain-row'),
-          matching: find.text('Launch 链'),
+          matching: find.text('Launch chain'),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: _key('wallet-launch-chain-usd1-row'),
-          matching: find.text('Launch 链'),
+          matching: find.text('Launch chain'),
         ),
         findsOneWidget,
       );

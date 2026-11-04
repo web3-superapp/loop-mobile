@@ -835,18 +835,20 @@ void main() {
       // `_WalletList` is rendered twice, so "no connected external wallet" is
       // its own statement rather than a blank below the embedded list.
       expect(
-        find.byKey(const ValueKey<String>('wallets-empty-没有已连接的外部钱包')),
+        find.byKey(
+          const ValueKey<String>('wallets-empty-No connected external wallets'),
+        ),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('wallets-empty-没有嵌入式钱包')),
+        find.byKey(const ValueKey<String>('wallets-empty-No embedded wallet')),
         findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('wallets-state-empty')),
         findsNothing,
       );
-      expect(find.text('使用中'), findsNothing);
+      expect(find.text('In use'), findsNothing);
     });
 
     testWidgets('a directory with no wallet at all is the creation state', (
@@ -872,13 +874,13 @@ void main() {
         find.byKey(const ValueKey<String>('wallets-no-wallet')),
         findsOneWidget,
       );
-      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('This account has no wallet yet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('wallets-state-empty')),
         findsNothing,
       );
       expect(
-        find.byKey(const ValueKey<String>('wallets-empty-没有嵌入式钱包')),
+        find.byKey(const ValueKey<String>('wallets-empty-No embedded wallet')),
         findsNothing,
       );
     });
@@ -948,9 +950,9 @@ void main() {
           reason:
               'a switch that reached nobody is a pause, not a failed switch',
         );
-        expect(find.text('已切换活跃钱包'), findsNothing);
+        expect(find.text('Active wallet switched'), findsNothing);
         // The active wallet below is still the server's own answer.
-        expect(find.text('使用中'), findsOneWidget);
+        expect(find.text('In use'), findsOneWidget);
       },
     );
   });
