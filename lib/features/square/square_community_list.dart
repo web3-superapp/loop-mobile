@@ -194,7 +194,6 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           key: const ValueKey<String>('square-community-joined-empty'),
           illustration: LoopIllustration.holders,
           title: '还没有加入社区',
-          message: '加入后，社区群聊会出现在聊天里',
           action: LoopButton(
             key: const ValueKey<String>('square-community-joined-empty-all'),
             label: '去看看全部',
@@ -212,8 +211,8 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.record,
           rows: 5,
+          // Decision 0248: one fact, no reason line.
           emptyMessage: '没有符合条件的社区',
-          emptyReason: '这个排序下没有社区。',
           onRetry: () => unawaited(controller.reload()),
         )
       else ...<Widget>[
@@ -292,23 +291,33 @@ class _SquareCommunityListState extends ConsumerState<SquareCommunityList> {
         key: const ValueKey<String>('square-community-scroll'),
         slivers: <Widget>[
           SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _SquareHeaderLine(
-                  onRules: () => unawaited(_showRules(state.recommendation)),
-                ),
-                _SquareSearchEntry(onTap: _openSearch),
-              ],
+            child: _SquareHeaderLine(
+              onRules: () => unawaited(_showRules(state.recommendation)),
             ),
           ),
+          // S350a · decision 0274: the search field and 全部 / 我加入的 share
+          // one pinned line, so the cards start one control row higher.
           SliverPersistentHeader(
             pinned: true,
             delegate: _PinnedChips(
-              child: _SquareMainTabs(
-                membership: state.membership,
-                onMembership: (filter) =>
-                    unawaited(controller.selectMembership(filter)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  squareCommunityCardInset,
+                  _PinnedChips.inset,
+                  squareCommunityCardInset,
+                  _PinnedChips.inset,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(child: _SquareSearchEntry(onTap: _openSearch)),
+                    const SizedBox(width: 8),
+                    _SquareMainTabs(
+                      membership: state.membership,
+                      onMembership: (filter) =>
+                          unawaited(controller.selectMembership(filter)),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -520,43 +529,41 @@ class _SquareSearchEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        4,
-        LoopSpacing.page,
-        LoopSpacing.rowGap,
-      ),
-      child: Semantics(
-        button: true,
-        label: '搜索社区',
-        excludeSemantics: true,
-        child: Material(
-          color: LoopColors.card,
+    return Semantics(
+      button: true,
+      label: '搜索社区',
+      excludeSemantics: true,
+      child: Material(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.control,
+        child: InkWell(
+          key: const ValueKey<String>('square-community-search'),
+          onTap: onTap,
           borderRadius: LoopRadius.control,
-          child: InkWell(
-            key: const ValueKey<String>('square-community-search'),
-            onTap: onTap,
-            borderRadius: LoopRadius.control,
-            child: Container(
-              // v3 (decision 0229): the OKX search field, 52 high.
-              constraints: const BoxConstraints(minHeight: 52),
-              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
-              decoration: const BoxDecoration(
-                color: LoopColors.input,
-                borderRadius: LoopRadius.control,
-              ),
-              child: Row(
-                children: <Widget>[
-                  const LoopIcon('search', size: 19, color: LoopColors.text3),
-                  const SizedBox(width: 10),
-                  Text(
+          child: Container(
+            // v3 (decision 0229): the OKX search field, 52 high.
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
+            decoration: const BoxDecoration(
+              color: LoopColors.input,
+              borderRadius: LoopRadius.control,
+            ),
+            child: Row(
+              children: <Widget>[
+                const LoopIcon('search', size: 19, color: LoopColors.text3),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
                     '搜索社区',
-                    // R26 a search placeholder: body2 15 text3 (decision 0229).
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
+                    // R26 a search placeholder: body2 15 text3 (decision
+                    // 0229).
                     style: LoopType.body.copyWith(color: LoopColors.text3),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -570,7 +577,11 @@ class _PinnedChips extends SliverPersistentHeaderDelegate {
 
   final Widget child;
 
-  static const double height = 52;
+  /// Above and below the line of controls.
+  static const double inset = 6;
+
+  /// The 52 search field (decision 0229) and its insets.
+  static const double height = squareCommunityControlHeight + inset * 2;
 
   @override
   double get minExtent => height;
@@ -608,34 +619,30 @@ class _SquareMainTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    // S350a · decision 0274: a compact two-word track beside the search
+    // field, as tall as the field, the chosen word the solid Purple choice.
+    // Each word is as wide as itself, so 「我加入的」 is never cut.
+    return Container(
       key: const ValueKey<String>('square-community-chips'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        4,
-        LoopSpacing.page,
-        4,
+      height: squareCommunityControlHeight,
+      padding: const EdgeInsets.all(4),
+      decoration: const BoxDecoration(
+        // The search field's own ground, so the line reads as one.
+        color: LoopColors.input,
+        borderRadius: LoopRadius.pill,
       ),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: LoopRadius.pill,
-        ),
-        child: Row(
-          children: <Widget>[
-            for (final filter in CommunityMembershipFilter.values)
-              Expanded(
-                child: LoopSeg(
-                  key: ValueKey<String>('square-filter-${filter.wireName}'),
-                  label: _membershipLabels[filter]!,
-                  quiet: true,
-                  block: true,
-                  selected: filter == membership,
-                  onSelected: () => onMembership(filter),
-                ),
-              ),
-          ],
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final filter in CommunityMembershipFilter.values)
+            LoopSeg(
+              key: ValueKey<String>('square-filter-${filter.wireName}'),
+              label: _membershipLabels[filter]!,
+              quiet: true,
+              selected: filter == membership,
+              onSelected: () => onMembership(filter),
+            ),
+        ],
       ),
     );
   }
@@ -696,6 +703,10 @@ String? squareCommunityRankedFact(
 /// board): a card per community, 16 in from the screen edge, 12 apart, 16
 /// inside, a 60 logo at a 14 corner; the facts line's chips 20 high.
 const double squareCommunityCardInset = 16;
+
+/// The pinned line's controls (S350a · decision 0274): the 52 search field
+/// and, beside it, the 全部 / 我加入的 track, as tall as the field.
+const double squareCommunityControlHeight = 52;
 const double squareCommunityCardGap = 12;
 const double squareCommunityCardPadding = 16;
 const double squareCommunityLogoSize = 60;
@@ -893,14 +904,14 @@ class _SquareCommunityMeta extends StatelessWidget {
       height: squareCommunityChipHeight,
       child: Row(
         children: <Widget>[
-          const LoopIcon('users', size: 14, color: LoopColors.text3),
+          const LoopIcon('users', size: 14, color: LoopColors.muted),
           const SizedBox(width: 4),
           Text(
             members,
             key: ValueKey<String>('square-community-members-$id'),
             maxLines: 1,
             softWrap: false,
-            style: LoopType.meta,
+            style: _squareMetaFacts,
           ),
           if (ranked case final String fact) ...<Widget>[
             const SizedBox(width: squareCommunityMetaGap),
@@ -911,7 +922,7 @@ class _SquareCommunityMeta extends StatelessWidget {
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
-                style: LoopType.meta,
+                style: _squareMetaFacts,
               ),
             ),
           ],
@@ -983,6 +994,13 @@ class _SquareCommunityMeta extends StatelessWidget {
     );
   }
 }
+
+/// The facts line's words (S350a · decision 0274): meta 13 one grey step
+/// under the description's Text2 — Muted, not Text3, which sits within a
+/// shade of Text2 — so name, description and facts read as three levels.
+final TextStyle _squareMetaFacts = LoopType.meta.copyWith(
+  color: LoopColors.muted,
+);
 
 /// The narrowest a label chip may be drawn: its first four characters (and
 /// an ellipsis when there is more) plus the chip's own padding and edge.

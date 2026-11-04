@@ -150,7 +150,8 @@ void main() {
       );
       expect(members.data, '28 成员');
       expect(members.style?.fontSize, 13);
-      expect(members.style?.color, LoopColors.text3);
+      // S350a · decision 0274: one grey step under the description.
+      expect(members.style?.color, LoopColors.muted);
 
       // The label left the name's side for the end of the facts line.
       final meta = _key('square-community-meta-${_id(0)}');

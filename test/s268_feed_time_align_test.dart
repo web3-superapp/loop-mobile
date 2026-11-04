@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/square/square_feed.dart';
 import 'package:loop_mobile/features/square/square_feed_view.dart';
 
@@ -12,7 +11,10 @@ import 'package:loop_mobile/features/square/square_feed_view.dart';
 final DateTime _now = DateTime.utc(2026, 10, 21, 12);
 
 const double _rowWidth = 390;
-const double _page = LoopSpacing.page;
+
+/// The age's trailing edge: the post card's content edge (S350a · decision
+/// 0274 — 16 from the screen, 16 inside the card).
+const double _page = squareFeedCardInset + squareFeedCardPadding;
 
 SquareFeedPost _post(
   int n, {

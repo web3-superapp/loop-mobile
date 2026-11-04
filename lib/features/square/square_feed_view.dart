@@ -178,10 +178,8 @@ class _SquareFeedSegmentState extends ConsumerState<SquareFeedSegment> {
             LoopEmptyState(
               key: const ValueKey<String>('square-feed-empty'),
               illustration: LoopIllustration.chat,
+              // Decision 0248: one fact, no how-to.
               title: '还没有动态',
-              message: scope == SquareFeedScope.following
-                  ? '你关注的人发帖、买入或领奖时会出现在这里'
-                  : '有人发帖、买入、领奖或代币毕业时会出现在这里',
             )
           else ...<Widget>[
             LoopFreshnessStrip(
@@ -263,10 +261,11 @@ class _FeedTabs extends StatelessWidget {
   final VoidCallback onCompose;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: LoopColors.line)),
-    ),
+  // S350a · decision 0274: no hairline under the row — the cards below
+  // start a segment gap (16) under it — and 「发帖」 is the compact control
+  // beside the two words, not a page-size button.
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: LoopSpacing.segmentGap),
     child: IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -289,6 +288,7 @@ class _FeedTabs extends StatelessWidget {
                 key: const ValueKey<String>('square-feed-compose'),
                 label: '发帖',
                 icon: 'plus',
+                size: LoopButtonSize.compact,
                 onPressed: onCompose,
               ),
             ),
@@ -327,6 +327,12 @@ class _FeedStateBlock extends StatelessWidget {
   }
 }
 
+/// A post card's measures (S350a · decision 0274): the 社区 segment's card
+/// grid, so the two segments of 广场 line up.
+const double squareFeedCardInset = 16;
+const double squareFeedCardGap = 12;
+const double squareFeedCardPadding = 16;
+
 /// `.feed-post` (decision 0187, docs/35 body4 「动态 A」): a 32 avatar, the
 /// name, the kind badge and the age on one line; the text (or, for an event,
 /// the sentence [squareFeedPostSentence] writes); the token's quote capsule;
@@ -349,9 +355,13 @@ class SquareFeedPostRow extends StatelessWidget {
   /// Offered on the viewer's own posts only: asks to delete.
   final VoidCallback? onLongPress;
 
-  /// The avatar column; the rows under the head are indented past it.
+  /// The avatar beside the name.
   static const double avatarSize = 32;
-  static const double indent = avatarSize + 8;
+
+  /// S350a · decision 0274: on its own card the text, the quote and ♡ use
+  /// the card's whole width, flush with the avatar's left edge, instead of
+  /// hanging past the avatar column.
+  static const double indent = 0;
 
   /// `.feed-token`: the quote capsule's fixed height.
   static const double capsuleHeight = 40;
@@ -363,15 +373,26 @@ class SquareFeedPostRow extends StatelessWidget {
     final token = post.token;
     final badge = squareFeedBadge(post);
     final sentence = squareFeedPostSentence(post);
+    // S350a · decision 0274: one post, one card — the 社区 segment's card
+    // (16 from the screen edge, 12 apart, 16 inside, 20 corner) in place of
+    // the full-bleed hairline, so a post reads as one block on the wall.
     final content = Container(
+      key: const ValueKey<String>('square-post-card'),
+      margin: const EdgeInsets.fromLTRB(
+        squareFeedCardInset,
+        0,
+        squareFeedCardInset,
+        squareFeedCardGap,
+      ),
       padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        12,
-        LoopSpacing.page,
-        4,
+        squareFeedCardPadding,
+        squareFeedCardPadding,
+        squareFeedCardPadding,
+        8,
       ),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: LoopColors.line)),
+        color: LoopColors.card,
+        borderRadius: LoopRadius.shell,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -447,7 +468,7 @@ class SquareFeedPostRow extends StatelessWidget {
           ),
           if (sentence != null)
             Padding(
-              padding: const EdgeInsets.only(left: indent, top: 6),
+              padding: const EdgeInsets.only(left: indent, top: 10),
               child: post.kind == SquareFeedPostKind.system
                   ? _OfficialRecap(text: sentence)
                   : SquareFeedText(
@@ -458,7 +479,7 @@ class SquareFeedPostRow extends StatelessWidget {
             ),
           if (token != null)
             Padding(
-              padding: const EdgeInsets.only(left: indent, top: 8),
+              padding: const EdgeInsets.only(left: indent, top: 10),
               child: SquareFeedQuoteCapsule(
                 token: token,
                 onTap: () {
@@ -468,10 +489,15 @@ class SquareFeedPostRow extends StatelessWidget {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(left: indent - 8, top: 2),
+            padding: const EdgeInsets.only(top: 2),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _LikeButton(post: post, onTap: onLike),
+              // ♡ lines up with the text; its 8 of tap padding sits in the
+              // card's own 16.
+              child: Transform.translate(
+                offset: const Offset(-8, 0),
+                child: _LikeButton(post: post, onTap: onLike),
+              ),
             ),
           ),
         ],
@@ -537,37 +563,64 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Row(
-                        children: <Widget>[
-                          Flexible(
-                            child: Text(
-                              token.symbol,
-                              key: const ValueKey<String>('square-post-symbol'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              // L14 capsule words at caption 12, figures at
-                              // figure 13 / figureXs 11 (decision 0191).
-                              style: LoopTypography.withWeight(
-                                LoopType.caption,
-                                FontWeight.w600,
-                              ).copyWith(color: LoopColors.chalk),
-                            ),
-                          ),
-                          if (cap != null) ...<Widget>[
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                '市值 ${memeCapLabel(cap)}',
-                                key: const ValueKey<String>('square-post-cap'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: LoopType.caption.copyWith(
-                                  color: LoopColors.text2,
+                      child: LayoutBuilder(
+                        builder: (context, words) {
+                          // L14 capsule words at caption 12, figures at
+                          // figure 13 / figureXs 11 (decision 0191).
+                          final symbolStyle = LoopTypography.withWeight(
+                            LoopType.caption,
+                            FontWeight.w600,
+                          ).copyWith(color: LoopColors.chalk);
+                          final capStyle = LoopType.caption.copyWith(
+                            color: LoopColors.text3,
+                          );
+                          final capText = cap == null
+                              ? null
+                              : '市值 ${memeCapLabel(cap)}';
+                          // S350a · decision 0274: the market cap is drawn
+                          // whole or not at all — never 「市值 …」.
+                          final showCap =
+                              capText != null &&
+                              _squareQuoteWidth(
+                                        context,
+                                        token.symbol,
+                                        symbolStyle,
+                                      ) +
+                                      8 +
+                                      _squareQuoteWidth(
+                                        context,
+                                        capText,
+                                        capStyle,
+                                      ) <=
+                                  words.maxWidth;
+                          return Row(
+                            children: <Widget>[
+                              Flexible(
+                                child: Text(
+                                  token.symbol,
+                                  key: const ValueKey<String>(
+                                    'square-post-symbol',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: symbolStyle,
                                 ),
                               ),
-                            ),
-                          ],
-                        ],
+                              if (showCap) ...<Widget>[
+                                const SizedBox(width: 8),
+                                Text(
+                                  capText,
+                                  key: const ValueKey<String>(
+                                    'square-post-cap',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: capStyle,
+                                ),
+                              ],
+                            ],
+                          );
+                        },
                       ),
                     ),
                     if (price != null || move != null)
@@ -623,6 +676,19 @@ class SquareFeedQuoteCapsule extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The laid-out width of one line of [text] in [style].
+double _squareQuoteWidth(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
 }
 
 /// The capsule's price: the list row's figure with a long zero run folded
@@ -791,10 +857,15 @@ class _OfficialRecapState extends State<_OfficialRecap> {
     final title = lines.length > 1 ? lines.first.trim() : null;
     final body = title == null ? widget.text : lines.skip(1).join('\n').trim();
     final style = LoopType.caption.copyWith(color: LoopColors.text2);
-    return LoopRecordCard(
+    // S350a · decision 0274: the post is already a card, so the recap is
+    // the quote capsule's raised Card2 block inside it.
+    return Container(
       key: const ValueKey<String>('square-post-recap'),
-      margin: EdgeInsets.zero,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: const BoxDecoration(
+        color: LoopColors.card2,
+        borderRadius: LoopRadius.control,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

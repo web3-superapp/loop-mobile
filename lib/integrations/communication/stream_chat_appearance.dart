@@ -295,6 +295,10 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     titleStyle: LoopType.body1,
     subtitleStyle: LoopType.bodySm,
     timestampStyle: LoopType.caption,
+    // S350a · decision 0274: the pin and mute marks sit at the end of the
+    // preview line, so the name line carries only the name, the time and
+    // the unread count.
+    attributePosition: AttributePosition.trailingBottom,
   ),
 );
 
