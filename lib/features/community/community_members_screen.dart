@@ -343,6 +343,7 @@ class _CommunityMembersScreenState
                   message: searching
                       ? '别名要从开头对上才算匹配，换个开头再试。'
                       : _emptyFilterReason(state.filter),
+                  showMessage: true,
                 ),
                 onRetry: () => unawaited(controller.reload()),
               )

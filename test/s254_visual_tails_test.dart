@@ -89,8 +89,9 @@ void main() {
                       .decoration
                   as BoxDecoration)
               .color;
+      // Decision 0277: chosen white 10 %, the others white 4 %.
       expect(ground(0), LoopColors.purpleSelected);
-      expect(ground(1), Colors.transparent);
+      expect(ground(1), LoopColors.chipIdle);
 
       // A finger held in the room under a capsule presses that capsule.
       final third = tester.getRect(chips.at(2));
@@ -98,10 +99,10 @@ void main() {
         Offset(third.center.dx, third.bottom - 2),
       );
       await tester.pump(const Duration(milliseconds: 200));
-      expect(ground(2), isNot(Colors.transparent));
+      expect(ground(2), isNot(LoopColors.chipIdle));
       await gesture.up();
       await tester.pump();
-      expect(ground(2), Colors.transparent);
+      expect(ground(2), LoopColors.chipIdle);
       expect(chosen, 2);
 
       // A tap in the room above a capsule still chooses that chip.
@@ -133,7 +134,9 @@ void main() {
       final capsule = tester.getRect(
         find.descendant(of: find.byType(LoopSeg).first, matching: _capsule),
       );
-      expect(bar.bottom - capsule.bottom, 14);
+      // Decision 0277: a 32 chip in the 48 target leaves 8 of room under it,
+      // over the bar's own 8.
+      expect(bar.bottom - capsule.bottom, 16);
     });
 
     testWidgets('a chip outside the bar keeps its 44 capsule', (tester) async {

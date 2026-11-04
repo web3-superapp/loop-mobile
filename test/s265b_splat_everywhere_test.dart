@@ -48,7 +48,9 @@ void _onTopLeft(WidgetTester tester, Finder chosen) {
 }
 
 void main() {
-  testWidgets('LoopSegBar: the chosen capsule wears the splat by default', (
+  // Decision 0277: the Figma's filter chip has no splat, so a LoopSeg /
+  // LoopSegBar no longer wears it by default; `splat: true` is the way in.
+  testWidgets('LoopSegBar: the chosen chip wears no splat by default', (
     tester,
   ) async {
     await _pump(
@@ -62,13 +64,24 @@ void main() {
     final chips = find.byType(LoopSeg);
     expect(chips, findsNWidgets(3));
     expect(find.descendant(of: chips.at(0), matching: _splat), findsNothing);
-    expect(find.descendant(of: chips.at(1), matching: _splat), findsOneWidget);
+    expect(find.descendant(of: chips.at(1), matching: _splat), findsNothing);
     expect(find.descendant(of: chips.at(2), matching: _splat), findsNothing);
-    _onTopLeft(tester, chips.at(1));
+    await _pump(
+      tester,
+      LoopSegBar(
+        labels: const <String>['全部', '社区', '好友'],
+        selectedIndex: 1,
+        splat: true,
+        onSelected: (_) {},
+      ),
+    );
+    final opted = find.byType(LoopSeg);
+    expect(find.descendant(of: opted.at(1), matching: _splat), findsOneWidget);
+    _onTopLeft(tester, opted.at(1));
   });
 
-  testWidgets('LoopSeg without a capsule height wears it too; `splat: false` '
-      'is the one way out', (tester) async {
+  testWidgets('LoopSeg without a capsule height wears none either; '
+      '`splat: true` is the one way in', (tester) async {
     await _pump(
       tester,
       Row(
@@ -88,20 +101,20 @@ void main() {
             onSelected: () {},
           ),
           LoopSeg(
-            key: const ValueKey<String>('opted-out'),
+            key: const ValueKey<String>('opted-in'),
             label: '新建',
             selected: true,
-            splat: false,
+            splat: true,
             onSelected: () {},
           ),
         ],
       ),
     );
-    expect(find.descendant(of: _key('on'), matching: _splat), findsOneWidget);
+    expect(find.descendant(of: _key('on'), matching: _splat), findsNothing);
     expect(find.descendant(of: _key('off'), matching: _splat), findsNothing);
     expect(
-      find.descendant(of: _key('opted-out'), matching: _splat),
-      findsNothing,
+      find.descendant(of: _key('opted-in'), matching: _splat),
+      findsOneWidget,
     );
   });
 
@@ -172,7 +185,7 @@ void main() {
     expect(chosen, findsWidgets);
   });
 
-  testWidgets('钱包 代币 / NFT: the chosen tab wears it, with no flag passed', (
+  testWidgets('钱包 代币 / NFT: the Figma chips wear no splat (0277)', (
     tester,
   ) async {
     await _pump(
@@ -181,7 +194,7 @@ void main() {
     );
     expect(
       find.descendant(of: _key('wallet-asset-tab-nft'), matching: _splat),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.descendant(of: _key('wallet-asset-tab-tokens'), matching: _splat),

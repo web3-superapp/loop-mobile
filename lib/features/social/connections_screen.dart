@@ -131,6 +131,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                     : '还没有粉丝',
                 emptyReason: '被你屏蔽的账号不会出现在这里。',
                 empty: LoopEmptyState(
+                  showMessage: true,
                   key: const ValueKey<String>('community-state-empty'),
                   illustration: LoopIllustration.friends,
                   title: state.direction == ConnectionDirection.following

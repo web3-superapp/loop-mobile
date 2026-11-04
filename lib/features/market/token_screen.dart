@@ -1029,6 +1029,7 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                 height: widget.height,
                 child: const Center(
                   child: LoopEmptyState(
+                    showMessage: true,
                     key: ValueKey<String>('candles-empty'),
                     illustration: LoopIllustration.chartEmpty,
                     title: '这个区间没有成交',

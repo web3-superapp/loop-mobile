@@ -662,7 +662,7 @@ class IntelRankLedger extends StatelessWidget {
       ].join('，'),
       excludeSemantics: true,
       // Decisions 0221, 0224: 「我的名次」 is a chrome plate — a bevelled
-      // chrome edge around a brushed dark face — with the place in Anton 40
+      // chrome edge around a brushed dark face — with the place in Inter Bold 40
       // Yellow and the faded crown in its corner.
       child: LoopChromePlate(
         key: const ValueKey<String>('intel-rank-me-plate'),
@@ -841,8 +841,8 @@ class _IntelRankHeading extends StatelessWidget {
       style: LoopType.caption.copyWith(color: LoopColors.text2),
     );
     final unit = LoopType.body.copyWith(color: LoopColors.text2);
-    // 「第 12 名」: the place is the plate's figure (decision 0224) — Anton 40
-    // Yellow between two Arimo 14 Text2 words.
+    // 「第 12 名」: the place is the plate's figure (decision 0224) — Inter Bold 40
+    // Yellow between two Inter 14 Text2 words.
     final place = rest == null
         ? null
         : RegExp(r'^第 (\d+) 名$').firstMatch(rest)?.group(1);
@@ -965,7 +965,7 @@ final class IntelRankEntry {
 /// 90 % under a Purple fog at 55 %, as on the banner. The winner stands in
 /// the middle — a 72 face in a 2 px chrome ring under the Yellow drip crown
 /// — second and third at the sides with 56 faces under grey crowns. Each
-/// place reads 「01 / 02 / 03」 in the section index's Anton Yellow with its
+/// place reads 「01 / 02 / 03」 in the section index's Inter Bold Yellow with its
 /// splat; a face with no picture is the chrome medal. Fewer than three
 /// places leave the empty ones as 「虚位以待」 under a grey crown line.
 class IntelRankPodium extends StatelessWidget {
@@ -1070,7 +1070,7 @@ class _PodiumGround extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <Color>[Color(0x0009090B), Color(0x9909090B)],
+            colors: <Color>[Color(0x00070809), Color(0x99070809)],
           ),
         ),
       ),
@@ -1375,10 +1375,10 @@ class IntelRankRow extends StatelessWidget {
                   ? LoopType.caption
                   // S350b: the place is a quiet column beside the face, a
                   // step under the name and the figure.
-                  : LoopTypography.withWeight(
-                      LoopType.figureSm,
-                      FontWeight.w600,
-                    ).copyWith(color: accent ?? LoopColors.text3),
+                  // Decision 0277: the Figma's place, figureXs 13 / 600.
+                  : LoopType.figureXs.copyWith(
+                      color: accent ?? LoopColors.text3,
+                    ),
             ),
           ),
           const SizedBox(width: 12),

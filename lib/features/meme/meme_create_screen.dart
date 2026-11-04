@@ -435,6 +435,7 @@ class _MemeCreateScreenState extends ConsumerState<MemeCreateScreen> {
       onBack: widget.onBack,
       body: <Widget>[
         LoopEmptyState(
+          showMessage: true,
           illustration: LoopIllustration.launchpad,
           title: '经典发射已停用',
           message: '请使用 Loop Hook 发射（v2 发射）创建新代币。',

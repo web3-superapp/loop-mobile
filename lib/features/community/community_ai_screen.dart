@@ -486,7 +486,7 @@ class _CommunityAiQuestionBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: LoopColors.purpleSelected,
+                color: LoopColors.purple,
                 borderRadius: const BorderRadiusDirectional.only(
                   topStart: Radius.circular(LoopRadius.bubbleValue),
                   topEnd: LoopRadius.bubbleTail,

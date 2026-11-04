@@ -119,8 +119,8 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final style = tester.widget<Text>(find.text('星航员')).style!;
-      // Decision 0229: the caption step, 14 (was 11).
-      expect(style.fontSize, 14);
+      // Decision 0277: the caption step, 12 (0229 had 14).
+      expect(style.fontSize, LoopType.caption.fontSize);
       expect(style.color, LoopColors.text3);
 
       await _disposeHarness(tester, harness);

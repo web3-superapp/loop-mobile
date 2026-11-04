@@ -83,7 +83,8 @@ void main() {
         );
         expect(_key('loop-empty-illustration-voice-room'), findsOneWidget);
         expect(find.text('还没有人开播'), findsOneWidget);
-        expect(find.text('社区开播时会出现在这里'), findsOneWidget);
+        // Decision 0277 with 0248: the sentence is not drawn.
+        expect(find.text('社区开播时会出现在这里'), findsNothing);
         // Centred: the title's centre is the screen's centre.
         expect(
           tester.getCenter(find.text('还没有人开播')).dx,
@@ -94,9 +95,9 @@ void main() {
       },
     );
 
-    // S325 · decision 0255: the drawing is the grey crown, 56 wide in a
-    // block, at the crown's own aspect.
-    testWidgets('compact draws the crown at 56', (tester) async {
+    // Decision 0277: the drawing is the Figma's colour crown, 72 wide in a
+    // block (106 on a page), at the crown's own aspect.
+    testWidgets('compact draws the crown at 72', (tester) async {
       await _pump(
         tester,
         const LoopEmptyState(
@@ -107,7 +108,7 @@ void main() {
       );
       expect(
         tester.getSize(_key('loop-empty-illustration-holders')),
-        const Size(56, 56 / LoopEmptyArt.aspect),
+        const Size(72, 72 / LoopEmptyArt.aspect),
       );
     });
 

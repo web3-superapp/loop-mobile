@@ -173,10 +173,11 @@ void main() {
         tester.widget<Text>(find.text('Voyager_7')).style?.fontSize,
         LoopType.displaySm.fontSize,
       );
-      // Decision 0229: the caption step.
+      // Decision 0277: the inline LOOP ID is the figureSm step (14); the
+      // caption step is 12 now and no longer the same size.
       expect(
         tester.widget<Text>(find.text(_loopId)).style?.fontSize,
-        LoopType.caption.fontSize,
+        LoopType.figureSm.fontSize,
       );
       expect(
         find.byKey(const ValueKey<String>('profile-open-edit')),
@@ -227,7 +228,7 @@ void main() {
       final versionText = tester.widget<Text>(
         find.descendant(of: version, matching: find.byType(Text)),
       );
-      expect(versionText.style?.fontSize, 14);
+      expect(versionText.style?.fontSize, LoopType.caption.fontSize);
       expect(versionText.data, startsWith('LOOP'));
 
       await tester.scrollUntilVisible(

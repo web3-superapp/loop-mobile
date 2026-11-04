@@ -471,7 +471,7 @@ class _DeskDots extends StatelessWidget {
               color: i == current
                   ? LoopColors.purple
                   : LoopColors.chalk.withValues(alpha: 0.28),
-              borderRadius: LoopRadius.pill,
+              borderRadius: LoopRadius.round,
             ),
           ),
       ],
@@ -740,9 +740,9 @@ class Launch2BannerBackdrop extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: <Color>[
-                      Color(0xD109090B),
-                      Color(0x8C09090B),
-                      Color(0x0009090B),
+                      Color(0xD1070809),
+                      Color(0x8C070809),
+                      Color(0x00070809),
                     ],
                     stops: <double>[0, 0.52, 0.75],
                   ),

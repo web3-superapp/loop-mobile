@@ -432,12 +432,13 @@ void main() {
         ((face.decoration as BoxDecoration).gradient! as LinearGradient).colors,
         LoopChromePlate.faceColors,
       );
+      // Decision 0277: the Figma's filter chips wear no splat.
       expect(
         find.descendant(
           of: _key('wallet-asset-tab-tokens'),
           matching: _key('loop-seg-splat'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.descendant(

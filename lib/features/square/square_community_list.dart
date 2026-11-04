@@ -15,6 +15,8 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart' show loopTabBarEdge;
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
@@ -528,48 +530,13 @@ class _SquareSearchEntry extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '搜索社区',
-      excludeSemantics: true,
-      child: Material(
-        color: LoopColors.card,
-        borderRadius: LoopRadius.control,
-        child: InkWell(
-          key: const ValueKey<String>('square-community-search'),
-          onTap: onTap,
-          borderRadius: LoopRadius.control,
-          child: Container(
-            // v3 (decision 0229): the OKX search field, 52 high.
-            constraints: const BoxConstraints(minHeight: 52),
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.card),
-            decoration: const BoxDecoration(
-              color: LoopColors.input,
-              borderRadius: LoopRadius.control,
-            ),
-            child: Row(
-              children: <Widget>[
-                const LoopIcon('search', size: 19, color: LoopColors.text3),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    '搜索社区',
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.fade,
-                    // R26 a search placeholder: body2 15 text3 (decision
-                    // 0229).
-                    style: LoopType.body.copyWith(color: LoopColors.text3),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => LoopSearchEntry(
+    // Decision 0277: the Figma's 44 search field, the 广场 placeholder.
+    placeholder: '搜索社区',
+    tone: LoopSearchTone.square,
+    inkKey: const ValueKey<String>('square-community-search'),
+    onTap: onTap,
+  );
 }
 
 class _PinnedChips extends SliverPersistentHeaderDelegate {
@@ -622,26 +589,24 @@ class _SquareMainTabs extends StatelessWidget {
     // S350a · decision 0274: a compact two-word track beside the search
     // field, as tall as the field, the chosen word the solid Purple choice.
     // Each word is as wide as itself, so 「我加入的」 is never cut.
-    return Container(
+    // Decision 0277: two Figma filter chips (54 × 32 in a 44 target) beside
+    // the 44 field, 8 apart; no track.
+    return SizedBox(
       key: const ValueKey<String>('square-community-chips'),
       height: squareCommunityControlHeight,
-      padding: const EdgeInsets.all(4),
-      decoration: const BoxDecoration(
-        // The search field's own ground, so the line reads as one.
-        color: LoopColors.input,
-        borderRadius: LoopRadius.pill,
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          for (final filter in CommunityMembershipFilter.values)
-            LoopSeg(
+          for (final filter in CommunityMembershipFilter.values) ...<Widget>[
+            if (filter.index > 0)
+              const SizedBox(width: LoopSpacing.chipSpacing),
+            LoopFilterChip(
               key: ValueKey<String>('square-filter-${filter.wireName}'),
               label: _membershipLabels[filter]!,
-              quiet: true,
               selected: filter == membership,
               onSelected: () => onMembership(filter),
             ),
+          ],
         ],
       ),
     );
@@ -704,9 +669,10 @@ String? squareCommunityRankedFact(
 /// inside, a 60 logo at a 14 corner; the facts line's chips 20 high.
 const double squareCommunityCardInset = 16;
 
-/// The pinned line's controls (S350a · decision 0274): the 52 search field
-/// and, beside it, the 全部 / 我加入的 track, as tall as the field.
-const double squareCommunityControlHeight = 52;
+/// The pinned line's controls (S350a · decision 0274): the search field
+/// and, beside it, the 全部 / 我加入的 track, as tall as the field — 44
+/// since decision 0277 (the Figma's search field).
+const double squareCommunityControlHeight = LoopTouch.searchField;
 const double squareCommunityCardGap = 12;
 const double squareCommunityCardPadding = 16;
 const double squareCommunityLogoSize = 60;

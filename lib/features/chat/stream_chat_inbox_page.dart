@@ -29,7 +29,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_providers.dar
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_deleted_message_reconciler.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -367,36 +367,11 @@ class _ChatSearchEntry extends StatelessWidget {
   const _ChatSearchEntry();
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '搜索聊天',
-    excludeSemantics: true,
-    child: Material(
-      color: LoopColors.input,
-      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.control),
-      child: InkWell(
-        key: const ValueKey<String>('chat-search-entry'),
-        customBorder: const RoundedRectangleBorder(
-          borderRadius: LoopRadius.control,
-        ),
-        onTap: () => unawaited(context.push<void>('/chat/search')),
-        child: SizedBox(
-          height: LoopTouch.minimum,
-          child: Row(
-            children: <Widget>[
-              const SizedBox(width: 14),
-              // S350a: the same quiet glyph as 广场's search field.
-              const LoopIcon('search', size: 18, color: LoopColors.text3),
-              const SizedBox(width: 8),
-              Text(
-                '搜索聊天',
-                style: LoopType.body.copyWith(color: LoopColors.text3),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
+  Widget build(BuildContext context) => LoopSearchEntry(
+    // Decision 0277: the Figma's 44 search field.
+    placeholder: '搜索聊天',
+    inkKey: const ValueKey<String>('chat-search-entry'),
+    onTap: () => unawaited(context.push<void>('/chat/search')),
   );
 }
 

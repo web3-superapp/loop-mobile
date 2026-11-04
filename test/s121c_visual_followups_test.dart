@@ -74,7 +74,8 @@ void main() {
         key('wallet-balance-mark-$s5NativeAssetId'),
       );
       expect(mark.data, '以 WBNB 计价');
-      expect(mark.style!.fontSize, 14);
+      // Decision 0277: the caption step, 12.
+      expect(mark.style!.fontSize, LoopType.captionSm.fontSize);
       expect(key('wallet-balance-change-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-send-$s5NativeAssetId'), findsOneWidget);
       expect(key('wallet-balance-swap-$s5NativeAssetId'), findsOneWidget);

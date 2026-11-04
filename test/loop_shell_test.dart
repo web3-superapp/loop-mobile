@@ -5,10 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 
 void main() {
-  testWidgets('Chalk bar reserves 90 + safe area and floats 8 + safe area', (
+  testWidgets('the bar reserves 92 + safe area and floats 24 + safe area', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -39,12 +38,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(MediaQuery.paddingOf(bodyContext).bottom, 90 + 34);
+    // Decision 0277: the 68 bar on its 24 inset.
+    expect(MediaQuery.paddingOf(bodyContext).bottom, 92 + 34);
 
     final barBox = tester.getRect(
       find.byKey(const ValueKey<String>('loop-tab-bar')),
     );
-    expect(barBox.height, 90 + 34);
+    expect(barBox.height, 92 + 34);
 
     final chalk = tester.widget<Container>(
       find.descendant(
@@ -60,19 +60,22 @@ void main() {
     );
     final chalkRect = tester.getRect(find.byWidget(chalk));
     expect(chalkRect.height, LoopTouch.tabBarHeight);
-    expect(chalkRect.left, LoopLayout.tabBarInset);
-    expect(chalkRect.right, 390 - LoopLayout.tabBarInset);
+    expect(chalkRect.left, LoopLayout.tabBarSideInset);
+    expect(chalkRect.right, 390 - LoopLayout.tabBarSideInset);
     expect(844 - chalkRect.bottom, 34);
     final decoration = chalk.decoration! as BoxDecoration;
     expect(decoration.borderRadius, LoopRadius.tabBar);
-    // Decision 0212: no lift, no block; a 20 radius card bar. S264 (decision
-    // 0220): one 1 px chrome line along its top edge.
+    // Decision 0277: a 12 corner; the Figma's shadow sits on the float
+    // around it, and S264's chrome top line is gone.
+    expect(LoopRadius.tabBarValue, 12);
     expect(decoration.boxShadow, isNull);
-    expect(chalk.foregroundDecoration, isNotNull);
+    expect(chalk.foregroundDecoration, isNull);
   });
 
-  testWidgets('S264: the chosen tab is an Ink glyph on a Yellow spray, its '
-      'word Yellow; the others stay Text3 with no spray', (tester) async {
+  testWidgets('0277: the chosen tab is the Figma glyph on the Yellow halo, '
+      'its word Yellow; the others stay textSecondary with no halo', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -85,21 +88,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const ValueKey<String>('loop-tab-spray-meme')),
+      find.byKey(const ValueKey<String>('loop-tab-halo-meme')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('loop-tab-spray-chat')),
+      find.byKey(const ValueKey<String>('loop-tab-halo-chat')),
       findsNothing,
     );
-    Color? glyphOf(String slug) => tester
-        .widget<LoopIcon>(
-          find.descendant(
-            of: find.byKey(ValueKey<String>('loop-tab-$slug')),
-            matching: find.byType(LoopIcon),
-          ),
-        )
-        .color;
+    bool lit(String slug) => find
+        .byKey(ValueKey<String>('loop-tab-glyph-$slug-on'))
+        .evaluate()
+        .isNotEmpty;
     Color? wordOf(String slug) => tester
         .widget<Text>(
           find.descendant(
@@ -109,10 +108,10 @@ void main() {
         )
         .style
         ?.color;
-    expect(glyphOf('meme'), LoopColors.ink);
+    expect(lit('meme'), isTrue);
     expect(wordOf('meme'), LoopColors.yellow);
-    expect(glyphOf('chat'), LoopColors.text3);
-    expect(wordOf('chat'), LoopColors.text3);
+    expect(lit('chat'), isFalse);
+    expect(wordOf('chat'), LoopColors.textSecondary);
   });
 
   testWidgets('one Lime indicator marks the selection; the cells stay bare', (
@@ -198,7 +197,7 @@ void main() {
         .style!
         .color!;
     expect(labelColor('Intel'), LoopColors.yellow);
-    expect(labelColor('Me'), LoopColors.text3);
+    expect(labelColor('Me'), LoopColors.textSecondary);
 
     expect(
       tester.getSize(find.widgetWithText(LoopTabItem, 'Me')).height,
@@ -236,7 +235,7 @@ void main() {
     );
     expect(travelling, lessThan(tester.getCenter(indicator).dx));
     expect(labelColor('Me'), LoopColors.yellow);
-    expect(labelColor('Intel'), LoopColors.text3);
+    expect(labelColor('Intel'), LoopColors.textSecondary);
     semantics.dispose();
   });
 

@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 // ---------------------------------------------------------------------------
 // 氛围层 · shared pieces (S264 → S265, decisions 0220 / 0221)
@@ -414,9 +415,9 @@ class LoopWallBackdrop extends StatelessWidget {
                   // so the foot of the page — behind the floating tab bar —
                   // is wall, not a black band (it went to Ink 70 %).
                   colors: <Color>[
-                    Color(0x2609090B),
-                    Color(0x7309090B),
-                    Color(0x7309090B),
+                    Color(0x26070809),
+                    Color(0x73070809),
+                    Color(0x73070809),
                   ],
                   stops: <double>[0, 0.55, 1],
                 ),
@@ -670,10 +671,10 @@ class LoopAtmoTitle extends StatelessWidget {
     alignment: Alignment.centerLeft,
     child: LoopTitleCrown(
       crownKey: crownKey,
-      child: Text(
+      // Decision 0277 (docs/58 §5.1): the title stands over the Purple
+      // doodle.
+      child: LoopDoodleTitle(
         title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.headlineLarge,
       ),
     ),
@@ -716,7 +717,7 @@ Widget loopSplatted(Widget chosen, {Key? key}) => Stack(
   ],
 );
 
-/// A section heading: with an [index] the Anton number in Yellow with a
+/// A section heading: with an [index] the Inter Bold number in Yellow with a
 /// small splat at its top right (only for an order or a ranking), without
 /// one the 18 / 700 [LoopType.headline] with the splat after it. A Yellow 「全部」 when the
 /// section has somewhere to go.
@@ -896,10 +897,10 @@ class LoopAtmoBoard extends StatelessWidget {
 /// as a light grey slab beside every other block). One fill, not two
 /// layers: a row slides over its swipe actions, and two translucent layers
 /// would double where they meet.
-const Color loopChatBoardFill = Color(0xEB1A1920);
+const Color loopChatBoardFill = Color(0xEB121318);
 
 /// The hairline between two rows on [loopChatBoardFill]: Chalk 8 %.
-const Color loopChatBoardHairline = Color(0x14F2F2F4);
+const Color loopChatBoardHairline = Color(0x14F4F5F7);
 
 /// The greyscale matrix the empty-state crown and the 2nd / 3rd crowns use.
 const List<double> loopGreyMatrix = <double>[
@@ -917,51 +918,43 @@ const List<double> loopGreyMatrix = <double>[
 /// the drips end the way paint does. The box keeps the drawing's own aspect,
 /// so nothing around it can crop it either.
 class LoopEmptyArt extends StatelessWidget {
-  const LoopEmptyArt({super.key, this.width = 64, this.crownKey});
+  const LoopEmptyArt({super.key, this.width = 106, this.crownKey});
 
   final double width;
 
   /// The key of the crown image itself (tests pin it).
   final Key? crownKey;
 
-  /// The crown PNG's own aspect (115 × 109).
-  static const double aspect = 115 / 109;
+  /// The Figma crown bitmap's own aspect (1024 × 683).
+  static const double aspect = 1024 / 683;
 
+  /// Decision 0277 (docs/58 §5.19): the Figma's colour crown, not 0255's
+  /// grey spray crown.
   @override
   Widget build(BuildContext context) => SizedBox(
     key: const ValueKey<String>('loop-empty-art'),
     width: width,
     height: width / aspect,
-    child: Opacity(
-      opacity: 0.45,
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color(0xFFFFFFFF), Color(0x00FFFFFF)],
-          stops: <double>[0.78, 1],
-        ).createShader(bounds),
-        child: ColorFiltered(
-          colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-          child: loopAtmoArt(
-            LoopAtmoAssets.crownFlat,
-            key: crownKey,
-            width: width,
-            height: width / aspect,
-          ),
-        ),
-      ),
+    child: Image.asset(
+      LoopFigmaAssets.crownEmpty,
+      key: crownKey,
+      width: width,
+      height: width / aspect,
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
     ),
   );
 }
 
-/// An empty state on the wall (decision 0220 §9): a board with the grey
-/// crown, a title, one sentence and, when there is one, a Yellow action.
+/// An empty state on the wall (decision 0220 §9): a board with the crown, a
+/// title and, when there is one, a Yellow action.
 ///
-/// S325 · decision 0255 (UX-003): the same 「主标题 + 一句描述」 as
-/// [LoopEmptyState]. A caller that gives only [message] has a title and no
-/// sentence: the one line is drawn as the title.
+/// Decision 0277 with 0248: the same crown and [LoopType.emptyTitle] as
+/// [LoopEmptyState], and no sentence under it — [message] is read to
+/// assistive technology after the title. A caller that gives only [message]
+/// has it drawn as the title.
 class LoopAtmoEmpty extends StatelessWidget {
   const LoopAtmoEmpty({
     required this.message,
@@ -986,7 +979,6 @@ class LoopAtmoEmpty extends StatelessWidget {
     final action = onAction;
     final label = actionLabel;
     final heading = title ?? message;
-    final description = title == null ? null : message;
     return LoopAtmoBoard(
       children: <Widget>[
         Padding(
@@ -996,21 +988,18 @@ class LoopAtmoEmpty extends StatelessWidget {
             children: <Widget>[
               LoopEmptyArt(crownKey: crownKey),
               const SizedBox(height: 12),
-              Text(
-                heading,
-                key: const ValueKey<String>('loop-empty-title'),
-                textAlign: TextAlign.center,
-                style: LoopType.title,
-              ),
-              if (description case final String line) ...<Widget>[
-                const SizedBox(height: 6),
-                Text(
-                  line,
-                  key: const ValueKey<String>('loop-empty-message'),
+              Semantics(
+                label: title == null ? heading : '$heading，$message',
+                excludeSemantics: true,
+                child: Text(
+                  heading,
+                  key: const ValueKey<String>('loop-empty-title'),
                   textAlign: TextAlign.center,
-                  style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+                  style: LoopType.emptyTitle,
                 ),
-              ],
+              ),
+              // Decision 0277 with 0248: the Figma's crown and title, and no
+              // explanatory sentence under them.
               if (action != null && label != null) ...<Widget>[
                 const SizedBox(height: 14),
                 LoopYellowButton(
@@ -1251,7 +1240,7 @@ class LoopChromePlate extends StatelessWidget {
           child: DecoratedBox(
             key: const ValueKey<String>('loop-chrome-plate-inner'),
             decoration: BoxDecoration(
-              color: const Color(0x4D09090B),
+              color: const Color(0x4D070809),
               borderRadius: BorderRadius.circular(LoopRadius.cardValue - edge),
             ),
             child: Padding(
@@ -1286,7 +1275,7 @@ class LoopChromePlate extends StatelessWidget {
   }
 }
 
-/// The Anton index 「01」 in Yellow with a small splat at its top right — the
+/// The Inter Bold index 「01」 in Yellow with a small splat at its top right — the
 /// section heading's number (decision 0220 §7), also the podium's place
 /// (decision 0224).
 class LoopSprayIndex extends StatelessWidget {
@@ -1438,7 +1427,7 @@ class LoopDripBar extends StatelessWidget {
               decoration: BoxDecoration(
                 // The track is the raised ground: the bar sits in a block.
                 color: LoopColors.card2,
-                borderRadius: LoopRadius.pill,
+                borderRadius: LoopRadius.round,
               ),
             ),
           ),
@@ -1450,12 +1439,12 @@ class LoopDripBar extends StatelessWidget {
               width: fill,
               child: const DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: LoopRadius.pill,
+                  borderRadius: LoopRadius.round,
                   gradient: LinearGradient(
                     colors: <Color>[Color(0xFFE6BE00), LoopColors.yellow],
                   ),
                   boxShadow: <BoxShadow>[
-                    BoxShadow(color: Color(0x73FFD600), blurRadius: 6),
+                    BoxShadow(color: Color(0x73FFD21C), blurRadius: 6),
                   ],
                 ),
               ),

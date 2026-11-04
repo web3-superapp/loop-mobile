@@ -83,7 +83,7 @@ class LoopStepTrack extends StatelessWidget {
           height: dotSize,
           decoration: BoxDecoration(
             color: i <= current ? LoopColors.lime : LoopColors.line2,
-            borderRadius: LoopRadius.pill,
+            borderRadius: LoopRadius.round,
           ),
         ),
         const SizedBox(width: 6),

@@ -165,7 +165,8 @@ class LoopTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: lime ? LoopColors.limeSoft : LoopColors.card2,
-        borderRadius: LoopRadius.pill,
+        // Decision 0277: the Figma's tag corner.
+        borderRadius: LoopRadius.tag,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -301,6 +301,7 @@ class LoopChainStateBlock extends StatelessWidget {
       case LoopChainViewPhase.empty:
         return empty ??
             LoopEmptyState(
+              showMessage: true,
               key: ValueKey<String>('$keyPrefix-state-empty'),
               illustration: emptyIllustration,
               title: emptyMessage,

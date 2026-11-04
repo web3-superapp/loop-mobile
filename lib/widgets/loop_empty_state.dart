@@ -10,11 +10,14 @@ import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 /// lines of 11px grey in the top-left corner — everywhere; the strip itself
 /// was deleted by decision 0183.
 ///
-/// S325 · decision 0255 (UX-003): every empty state draws the same grey
-/// spray-paint crown ([LoopEmptyArt]) — the line drawings in Yellow and
-/// white read as a different product from the wall pages around them. A
-/// page that needs its own drawing passes [art]; [illustration] is what the
-/// collection is (kept for callers and their tests), no longer a drawing.
+/// S325 · decision 0255 (UX-003): every empty state draws the same crown
+/// ([LoopEmptyArt]) — since decision 0277 the Figma's colour crown bitmap
+/// over a [LoopType.emptyTitle] 17 / 700 title (docs/58 §5.19). A page that
+/// needs its own drawing passes [art]; [illustration] is what the collection
+/// is (kept for callers and their tests), no longer a drawing.
+///
+/// Decision 0248 outranks the Figma: no explanatory sentence is drawn under
+/// the title. [message] is kept for callers and their spoken label only.
 ///
 /// A page-level state takes roughly half the viewport and centres itself in
 /// it, so it sits in the middle of the content area under the page's own
@@ -29,6 +32,7 @@ class LoopEmptyState extends StatelessWidget {
     this.message,
     this.action,
     this.compact = false,
+    this.showMessage = false,
   });
 
   /// What the empty collection is. Not drawn since decision 0255.
@@ -38,17 +42,24 @@ class LoopEmptyState extends StatelessWidget {
   final Widget? art;
   final String title;
 
-  /// The one sentence under the title: what will appear here, never how to
-  /// use the page.
+  /// What will appear here. Not drawn (decisions 0248 / 0277) unless
+  /// [showMessage]; it is always read to assistive technology after the
+  /// title.
   final String? message;
+
+  /// Draws [message] under the title, at the Figma's 12 / 400 secondary
+  /// line (docs/58 §5.19). Only for a sentence that states a fact of the
+  /// state — a refusal's reason, the rule that decides what is listed, where
+  /// a figure came from — never for an explanation of the page (0248).
+  final bool showMessage;
 
   /// The one next step, usually a primary [LoopButton].
   final Widget? action;
   final bool compact;
 
   /// The crown's width on a page and inside a block.
-  static const double illustrationSize = 72;
-  static const double compactIllustrationSize = 56;
+  static const double illustrationSize = 106;
+  static const double compactIllustrationSize = 72;
 
   @override
   Widget build(BuildContext context) {
@@ -68,19 +79,28 @@ class LoopEmptyState extends StatelessWidget {
           child: art ?? LoopEmptyArt(width: size),
         ),
         SizedBox(height: compact ? 12 : 16),
-        Text(
-          title,
-          key: const ValueKey<String>('loop-empty-title'),
-          textAlign: TextAlign.center,
-          style: compact ? LoopType.title : LoopType.titleLg,
-        ),
-        if (message case final String line) ...<Widget>[
-          const SizedBox(height: 6),
-          Text(
-            line,
-            key: const ValueKey<String>('loop-empty-message'),
+        Semantics(
+          label: switch (message) {
+            final String line => '$title，$line',
+            null => title,
+          },
+          excludeSemantics: true,
+          child: Text(
+            title,
+            key: const ValueKey<String>('loop-empty-title'),
             textAlign: TextAlign.center,
-            style: LoopType.bodySm.copyWith(color: LoopColors.text2),
+            style: LoopType.emptyTitle,
+          ),
+        ),
+        if (showMessage && message != null) ...<Widget>[
+          const SizedBox(height: 6),
+          ExcludeSemantics(
+            child: Text(
+              message!,
+              key: const ValueKey<String>('loop-empty-message'),
+              textAlign: TextAlign.center,
+              style: LoopType.emptyMessage,
+            ),
           ),
         ],
         if (action case final Widget next) ...<Widget>[

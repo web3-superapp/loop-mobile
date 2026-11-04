@@ -376,7 +376,7 @@ void main() {
       await tester.pumpAndSettle();
       final on = labelOf(tester);
       expect(on.ground, LoopColors.lime);
-      expect(on.colour, LoopColors.ink);
+      expect(on.colour, LoopColors.onYellow);
       expect(loopVanishedPaint(_probe(tester)), isEmpty);
     });
 
@@ -389,7 +389,7 @@ void main() {
       // at. The label has to be read from the same end of the transition.
       await tester.pump();
       expect(labelOf(tester).ground, LoopColors.lime);
-      expect(labelOf(tester).colour, LoopColors.ink);
+      expect(labelOf(tester).colour, LoopColors.onYellow);
       expect(loopVanishedPaint(_probe(tester)), isEmpty);
 
       await tester.pump(const Duration(milliseconds: 100));

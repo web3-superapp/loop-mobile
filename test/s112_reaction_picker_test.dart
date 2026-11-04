@@ -385,8 +385,8 @@ void main() {
       final count = tester.widget<Text>(
         find.descendant(of: capsule, matching: find.text('1')),
       );
-      // Decision 0229: the caption step, 14.
-      expect(count.style?.fontSize, 14);
+      // Decision 0277: the caption step, 12.
+      expect(count.style?.fontSize, LoopType.caption.fontSize);
       await room.dispose(tester);
     });
 

@@ -6,6 +6,7 @@ import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 /// Which segment each v3 tab page was last showing (decision 0110).
 ///
@@ -31,8 +32,9 @@ final loopTabSegmentMemoryProvider =
 /// (广场：社区 | 语音房, MEME：发射台 | 行情, 情报：算力榜 | 行情).
 ///
 /// The segments are the page's own title row, not a filter strip: the
-/// selected one reads as the page heading and carries the Lime rule, the
-/// others sit beside it in the auxiliary ink. Filters, where a segment has
+/// selected one reads as the page heading — [LoopType.title1] over the
+/// Purple doodle (decision 0277, docs/58 §5.1) — and the others sit beside it
+/// at [LoopType.segmentTitleIdle], 24 / 600 in the tertiary ink. Filters, where a segment has
 /// any, stay inside the segment's own body, so a page never shows two rows
 /// of controls that look alike.
 ///
@@ -127,10 +129,9 @@ class LoopSegmentedTabPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Padding(
-                  // The first word stands on the page line: a segment carries
-                  // 8 of its own padding.
+                  // The first word stands on the page line.
                   padding: const EdgeInsets.fromLTRB(
-                    LoopSpacing.page - 8,
+                    LoopSpacing.page,
                     6,
                     LoopSpacing.page,
                     0,
@@ -152,13 +153,19 @@ class LoopSegmentedTabPage extends ConsumerWidget {
                                   : Clip.none,
                               child: _crowned(
                                 Row(
+                                  // The words share a baseline, so the 24
+                                  // idle segments sit on the 28 title's line.
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
                                   children: <Widget>[
                                     for (
                                       var index = 0;
                                       index < segments.length;
                                       index += 1
                                     ) ...<Widget>[
-                                      if (index > 0) const SizedBox(width: 6),
+                                      if (index > 0)
+                                        const SizedBox(width: _SegmentTab.gap),
                                       _SegmentTab(
                                         key: ValueKey<String>(
                                           '$tabKey-segment-$index',
@@ -256,21 +263,23 @@ class _SegmentTab extends StatelessWidget {
     super.key,
   });
 
+  /// Between two segment words (the Figma's 动态 → 社区 reads about 14).
+  static const double gap = 14;
+
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0212 (docs/42 附C §4): a top tab is a bold word — Chalk when
-    // chosen, Text3 otherwise — with a 3px Yellow dash, 24 wide, under the
-    // chosen one. No capsule, no Purple. v3 (decision 0229): the segments
-    // are the page's title, so they take title1 (28).
-    final style = LoopType.title1.copyWith(
-      color: selected
-          ? LoopGround.inkOf(context)
-          : LoopGround.auxiliaryOf(context),
-    );
+    // Decision 0277 (docs/58 §5.1): the chosen segment is the page title,
+    // title1 28 / 700, over the Purple doodle; an unchosen one is 24 / 600
+    // in the tertiary ink. The doodle replaces 0212's 3 × 24 Yellow dash.
+    final style = selected
+        ? LoopType.title1.copyWith(color: LoopGround.inkOf(context))
+        : LoopType.segmentTitleIdle.copyWith(
+            color: LoopGround.auxiliaryOf(context),
+          );
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       button: true,
@@ -287,29 +296,38 @@ class _SegmentTab extends StatelessWidget {
             minHeight: LoopTouch.minimum,
             minWidth: LoopTouch.minimum,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(height: 6),
-                Text(label, style: style),
-                const SizedBox(height: 6),
-                AnimatedContainer(
-                  key: ValueKey<String>('loop-segment-pill-$selected'),
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  width: 24,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: selected ? LoopColors.yellow : Colors.transparent,
-                    borderRadius: LoopRadius.pill,
+          child: Align(
+            widthFactor: 1,
+            alignment: Alignment.centerLeft,
+            // The word keeps the doodle's room under it, so the scrolling
+            // row never clips the doodle.
+            child: Padding(
+              padding: const EdgeInsets.only(
+                bottom: LoopTitleDoodle.height + 1,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  Text(label, style: style),
+                  // The doodle is painted under the chosen word, in the row's
+                  // own room (see `LoopTitleDoodle.under`).
+                  Positioned(
+                    left: 0,
+                    bottom: -(LoopTitleDoodle.height + 1),
+                    child: AnimatedOpacity(
+                      key: ValueKey<String>('loop-segment-pill-$selected'),
+                      opacity: selected ? 1 : 0,
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: selected
+                          ? const LoopTitleDoodle()
+                          : const SizedBox(height: LoopTitleDoodle.height),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

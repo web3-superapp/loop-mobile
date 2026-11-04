@@ -58,6 +58,7 @@ class LaunchStateBlock extends StatelessWidget {
         );
       case LaunchViewPhase.empty:
         return LoopEmptyState(
+          showMessage: true,
           key: ValueKey<String>('$prefix-state-empty'),
           illustration: LoopIllustration.launchpad,
           title: emptyMessage,

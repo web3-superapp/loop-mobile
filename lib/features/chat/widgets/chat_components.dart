@@ -771,7 +771,7 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: message.isMine ? LoopColors.purpleSelected : LoopColors.elevated,
+        color: message.isMine ? LoopColors.purple : LoopColors.elevated,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(LoopRadius.bubbleValue),
           topRight: const Radius.circular(LoopRadius.bubbleValue),

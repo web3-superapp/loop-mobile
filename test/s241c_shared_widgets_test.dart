@@ -182,7 +182,8 @@ void main() {
         (materialOf('quiet-on').shape! as RoundedRectangleBorder).borderRadius,
         LoopRadius.pill,
       );
-      expect(materialOf('framed-off').color, LoopColors.card2);
+      // Decision 0277: an unchosen chip is the Figma's white 4 %.
+      expect(materialOf('framed-off').color, LoopColors.chipIdle);
       expect(
         tester.widget<Text>(find.text('A')).style?.color,
         LoopColors.onPurple,

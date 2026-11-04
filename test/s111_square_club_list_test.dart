@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -101,7 +102,12 @@ Future<void> _tapChip(WidgetTester tester, String key) async {
 }
 
 bool _selected(WidgetTester tester, String key) =>
-    tester.widget<LoopSeg>(find.byKey(ValueKey<String>(key))).selected;
+    switch (tester.widget(find.byKey(ValueKey<String>(key)))) {
+      final LoopSeg seg => seg.selected,
+      // Decision 0277: 全部 / 我加入的 are the Figma filter chips.
+      final LoopFilterChip chip => chip.selected,
+      final Widget other => throw StateError('$key is a ${other.runtimeType}'),
+    };
 
 /// UX-013: the order is 「全部社区」's own dropdown, read from its label.
 String _sortLabel(WidgetTester tester) => tester

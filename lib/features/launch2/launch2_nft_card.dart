@@ -317,9 +317,9 @@ class Launch2NftArtBackdrop extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: <Color>[
-                Color(0xB309090B),
-                Color(0x6609090B),
-                Color(0x0009090B),
+                Color(0xB3070809),
+                Color(0x66070809),
+                Color(0x00070809),
               ],
               stops: <double>[0, 0.45, 0.8],
             ),

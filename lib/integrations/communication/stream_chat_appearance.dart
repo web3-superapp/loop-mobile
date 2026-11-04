@@ -22,7 +22,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// the pairing — solid Purple ground, white text — at every rung a message,
 /// a quote, a reply preview or a link card can land on.
 const StreamColorSwatch loopStreamBrandSwatch = StreamColorSwatch(
-  0xFF9C36FF,
+  0xFFA62EFF,
   <int, Color>{
     0: LoopColors.ink,
     50: LoopColors.purpleTint,
@@ -804,7 +804,7 @@ class LoopOutgoingQuotedMessage extends StatelessWidget {
                       width: barWidth,
                       decoration: const BoxDecoration(
                         color: foreground,
-                        borderRadius: LoopRadius.pill,
+                        borderRadius: LoopRadius.round,
                       ),
                     ),
                     const SizedBox(width: 8),

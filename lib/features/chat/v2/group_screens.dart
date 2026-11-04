@@ -390,6 +390,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.notFound)
             const LoopEmptyState(
+              showMessage: true,
               key: ValueKey<String>('group-info-state-empty'),
               illustration: LoopIllustration.members,
               title: '没有可退出的群成员关系',

@@ -952,6 +952,7 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     ],
     Launch2Stage.snapshotPending => <Widget>[
       LoopEmptyState(
+        showMessage: true,
         key: const ValueKey<String>('launch2-snapshot-pending'),
         illustration: LoopIllustration.holders,
         title: launch2SnapshotPendingTitle(detail.snapshot),
@@ -1150,6 +1151,7 @@ class _ClosedBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           const LoopEmptyState(
+            showMessage: true,
             illustration: LoopIllustration.holders,
             title: launch2ClosedNoHoldersText,
             message:

@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/wallet/wallet_networth_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -298,8 +299,8 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
             key: ValueKey<String>('$keyPrefix-total-figure'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            // Decision 0224: the chrome plate's figure — Anton 40 in
-            // Yellow (docs/42 §2 keeps Anton for big figures).
+            // Decision 0224: the chrome plate's figure — Inter Bold 40 in
+            // Yellow (docs/42 §2 keeps Inter Bold for big figures).
             style: figureIsAmount
                 ? LoopType.plateFigure.copyWith(color: LoopColors.yellow)
                 : LoopType.headingSm.copyWith(color: secondary),
@@ -1158,8 +1159,9 @@ class WalletAssetTabs extends StatelessWidget {
   static const int nft = 1;
   static const List<String> _keys = <String>['tokens', 'nft'];
 
-  /// The drawn height of a filter capsule under the profile tabs (S350c).
-  static const double filterHeight = 32;
+  /// The drawn height of a filter chip under the profile tabs (S350c;
+  /// decision 0277: the Figma's 54 × 32 chip, [LoopFilterChips]).
+  static const double filterHeight = LoopTouch.chipHeight;
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
@@ -1169,28 +1171,21 @@ class WalletAssetTabs extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     key: const ValueKey<String>('wallet-asset-tabs'),
     // S350c: 16 under the profile tabs — the chip's own room above its
-    // capsule makes up the rest — and the rows keep their own 14 under.
+    // face makes up the rest — and the rows keep their own 14 under.
     padding: EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      LoopSpacing.segmentGap - (LoopSeg.segmentTarget - filterHeight) / 2,
-      LoopSpacing.page,
+      0,
+      LoopSpacing.segmentGap - (LoopTouch.minimum - filterHeight) / 2,
+      0,
       4,
     ),
-    child: Row(
-      children: <Widget>[
-        for (var index = 0; index < labels.length; index += 1) ...<Widget>[
-          if (index > 0) const SizedBox(width: LoopSpacing.tight),
-          LoopSeg(
-            key: ValueKey<String>('wallet-asset-tab-${_keys[index]}'),
-            label: labels[index],
-            selected: index == selectedIndex,
-            capsuleHeight: filterHeight,
-            onSelected: () => onSelected(index),
-          ),
-        ],
-        const Spacer(),
-        ?trailing,
+    child: LoopFilterChips(
+      labels: labels,
+      keys: <Key>[
+        for (final key in _keys) ValueKey<String>('wallet-asset-tab-$key'),
       ],
+      selectedIndex: selectedIndex,
+      onSelected: onSelected,
+      trailing: trailing,
     ),
   );
 }

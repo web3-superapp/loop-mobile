@@ -98,7 +98,9 @@ void main() {
       expect(ink('辅'), LoopColors.text2);
     });
 
-    testWidgets('a compact button is a 32 face in a 44 target', (tester) async {
+    testWidgets('a compact button is a 30 face in a 44 target (0277)', (
+      tester,
+    ) async {
       var taps = 0;
       await _host(
         tester,
@@ -112,16 +114,17 @@ void main() {
         ),
       );
       final face = _key('loop-button-primary');
-      expect(tester.getSize(face).height, LoopTouch.compactButton);
+      // Decision 0277: the Figma's 发射 face, 30 at a 6 corner.
+      expect(tester.getSize(face).height, LoopTouch.buttonCompact);
       final target = find.ancestor(
         of: face,
         matching: find.byType(GestureDetector),
       );
       expect(tester.getSize(target.first).height, greaterThanOrEqualTo(44));
-      // The word sits 12 from each side.
+      // The word sits 8 from each side (the Figma's 发射).
       final word = tester.getRect(find.text('开启'));
       final rect = tester.getRect(face);
-      expect(word.left - rect.left, closeTo(12, 0.5));
+      expect(word.left - rect.left, closeTo(8, 0.5));
       await tester.tap(face);
       expect(taps, 1);
     });
@@ -139,7 +142,7 @@ void main() {
       );
       expect(
         tester.getSize(_key('loop-button-primary')).height,
-        LoopTouch.compactButton,
+        LoopTouch.buttonCompact,
       );
     });
 
@@ -242,7 +245,11 @@ void main() {
   });
 
   group('UX-003 · empty states', () {
-    testWidgets('the grey crown, a title and one sentence', (tester) async {
+    // Decision 0277 with 0248: the Figma's colour crown and a 17 / 700
+    // title; the sentence is not drawn unless it states a fact of the state.
+    testWidgets('the crown and a title; the sentence only on request', (
+      tester,
+    ) async {
       await _host(
         tester,
         const LoopEmptyState(
@@ -254,20 +261,33 @@ void main() {
       expect(_key('loop-empty-art'), findsOneWidget);
       expect(find.byType(SvgPicture), findsNothing);
       expect(tester.widget<Text>(_key('loop-empty-title')).data, '还没有通知');
+      expect(_key('loop-empty-message'), findsNothing);
       expect(
-        tester.widget<Text>(_key('loop-empty-message')).data,
-        '代币毕业和好友申请会出现在这里。',
+        tester.widget<Text>(_key('loop-empty-title')).style?.fontSize,
+        LoopType.emptyTitle.fontSize,
       );
-      // The crown keeps its own aspect, so nothing around it crops it, and
-      // its cut-off foot fades out.
+      // The crown keeps its own aspect, so nothing around it crops it.
       final art = tester.getSize(_key('loop-empty-art'));
       expect(art.width / art.height, closeTo(LoopEmptyArt.aspect, 0.01));
       expect(
         find.descendant(
           of: _key('loop-empty-art'),
-          matching: find.byType(ShaderMask),
+          matching: find.byType(Image),
         ),
         findsOneWidget,
+      );
+      await _host(
+        tester,
+        const LoopEmptyState(
+          title: '还没有通知',
+          message: '代币毕业和好友申请会出现在这里。',
+          compact: true,
+          showMessage: true,
+        ),
+      );
+      expect(
+        tester.widget<Text>(_key('loop-empty-message')).data,
+        '代币毕业和好友申请会出现在这里。',
       );
     });
 
@@ -288,17 +308,17 @@ void main() {
       expect(_key('loop-empty-art'), findsNothing);
     });
 
-    testWidgets('the wall empty state has the same two lines', (tester) async {
+    testWidgets('the wall empty state has the same crown and title', (
+      tester,
+    ) async {
       await _host(
         tester,
         const LoopAtmoEmpty(title: '还没有好友会话', message: '添加好友后会出现在这里。'),
       );
       expect(_key('loop-empty-art'), findsOneWidget);
       expect(tester.widget<Text>(_key('loop-empty-title')).data, '还没有好友会话');
-      expect(
-        tester.widget<Text>(_key('loop-empty-message')).data,
-        '添加好友后会出现在这里。',
-      );
+      expect(_key('loop-empty-message'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('添加好友后会出现在这里')), findsOneWidget);
     });
   });
 

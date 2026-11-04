@@ -26,7 +26,7 @@ class LoopSheetHeading extends StatelessWidget {
           LoopSpacing.page,
           12,
         ),
-        // R2: the only sheet-title step (decision 0189), Anton since
+        // R2: the only sheet-title step (decision 0189), Inter Bold since
         // decision 0210.
         child: Text(title, style: LoopType.heading),
       ),

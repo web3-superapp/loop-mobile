@@ -388,6 +388,25 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected the theme to be held to the platform sans: {result}",
         )
 
+    def test_typography_guard_takes_a_family_only_through_loop_fonts(self) -> None:
+        # Decision 0277: `fontFamily: LoopFonts.*` passes, a named family fails.
+        for source, refused in (
+            ("final s = TextStyle(fontFamily: LoopFonts.sans);\n", False),
+            ("final s = TextStyle(fontFamily: 'Inter');\n", True),
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    widgets = root / "lib" / "widgets"
+                    widgets.mkdir(parents=True)
+                    (widgets / "x.dart").write_text(source, encoding="utf-8")
+                    result = [
+                        error
+                        for error in check_harness.check_typography_band_contract(root)
+                        if "fontFamily" in error
+                    ]
+                self.assertEqual(refused, bool(result), result)
+
     def test_typography_guard_requires_tabular_figures(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -402,12 +421,19 @@ class HarnessTests(unittest.TestCase):
                 "IBMPlexMono-Medium.ttf",
                 "IBMPlexMono-SemiBold.ttf",
                 "OFL-IBMPlexMono.txt",
+                *check_harness.TYPOGRAPHY_INTER_FONT_ASSETS,
             ):
                 (fonts / asset).write_text("x", encoding="utf-8")
             (root / "pubspec.yaml").write_text(
                 "flutter:\n"
                 "  fonts:\n"
-                "    - family: Noto Sans SC\n"
+                "    - family: Inter\n"
+                + "".join(
+                    f"        - asset: assets/fonts/{asset}\n"
+                    for asset in check_harness.TYPOGRAPHY_INTER_FONT_ASSETS
+                    if asset.endswith(".ttf")
+                )
+                + "    - family: Noto Sans SC\n"
                 "        - asset: assets/fonts/NotoSansSC-Regular.ttf\n"
                 "        - asset: assets/fonts/NotoSansSC-Medium.ttf\n"
                 "        - asset: assets/fonts/NotoSansSC-Bold.ttf\n"
@@ -10656,12 +10682,12 @@ class TypeLadderContractTests(unittest.TestCase):
         self.assertEqual(1, len(result), result)
         self.assertIn("no longer needed", result[0])
 
-    # G2 · the 11px floor.
+    # G2 · the 10px floor (decision 0277).
     def test_sub_floor_size_anywhere_in_lib_fails(self) -> None:
         for relative, source in (
             ("lib/features/mining/x.dart", "final s = LoopTypography.eyebrow(9);\n"),
-            ("lib/widgets/x.dart", "final s = LoopTypography.figure(10, height: 1);\n"),
-            ("lib/integrations/x.dart", "final s = TextStyle(fontSize: 10.5);\n"),
+            ("lib/widgets/x.dart", "final s = LoopTypography.figure(9, height: 1);\n"),
+            ("lib/integrations/x.dart", "final s = TextStyle(fontSize: 9.5);\n"),
         ):
             with self.subTest(relative=relative):
                 with tempfile.TemporaryDirectory() as temporary:
@@ -10695,7 +10721,7 @@ class TypeLadderContractTests(unittest.TestCase):
 
     def test_floor_allowlist_only_shrinks(self) -> None:
         rel = "lib/features/mining/x.dart"
-        source = "final a = LoopTypography.caption(9);\nfinal b = LoopTypography.caption(10);\n"
+        source = "final a = LoopTypography.caption(9);\nfinal b = LoopTypography.caption(8);\n"
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self._write(root, rel, source)

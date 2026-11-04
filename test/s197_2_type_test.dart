@@ -172,7 +172,8 @@ void main() {
       );
       _expectStep(
         _painted(tester, _key('wallet-balance-value-${healthy.assetId}')),
-        LoopType.figureXs,
+        // Decision 0277: figureXs (13) and figureSm (14) are two steps now.
+        LoopType.figureSm,
       );
       expect(tester.takeException(), isNull);
     });

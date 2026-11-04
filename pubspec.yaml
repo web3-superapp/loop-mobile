@@ -68,31 +68,33 @@ flutter:
     - assets/icons/
     # Empty-state line illustrations (decision 0122), drawn for LOOP.
     - assets/illustrations/
-  # Decision 0210 (supersedes 0080's platform sans): the looplabs.meme voice.
-  # Anton (SIL OFL 1.1) stands in for Impact on every heading band and Arimo
-  # (SIL OFL 1.1, Arial-metric compatible; static 400/700 instanced from the
-  # upstream variable file) for Arial on every other proportional band —
-  # Impact and Arial are Monotype commercial faces and are not embedded.
-  # `Noto Sans SC Display` registers the bundled Bold file alone, so a
-  # Chinese run inside an Anton heading lands on bold Han. IBM Plex Mono stays
-  # for addresses, hashes and code. Noto Sans SC ships as three static
+    # The requester's Figma assets (decision 0277): the title doodle, the
+    # crowns, the tab bar's glyphs and halo, the wallet glyphs.
+    - assets/figma/
+  # Decision 0277 (supersedes 0210's Anton / Arimo): the requester's Figma
+  # system. Inter (SIL OFL 1.1, rsms/inter v4.1 static instances 300 / 400 /
+  # 500 / 600 / 700 and Black Italic 900 for the 「第 N 名」 place) carries
+  # every Latin letter and figure; Inter has no Han, so a Chinese run falls
+  # through `fontFamilyFallback` to the bundled Noto Sans SC — three static
   # instances subset to the GB2312 repertoire plus CJK and fullwidth
-  # punctuation (decision 0069).
+  # punctuation (decision 0069). IBM Plex Mono stays registered for a real
+  # code block; addresses and links are Inter since 0277.
   fonts:
-    - family: Anton
+    - family: Inter
       fonts:
-        - asset: assets/fonts/Anton-Regular.ttf
+        - asset: assets/fonts/Inter-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Inter-Regular.ttf
           weight: 400
-    - family: Arimo
-      fonts:
-        - asset: assets/fonts/Arimo-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Arimo-Bold.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
-    - family: Noto Sans SC Display
-      fonts:
-        - asset: assets/fonts/NotoSansSC-Bold.ttf
-          weight: 700
+        - asset: assets/fonts/Inter-BlackItalic.ttf
+          weight: 900
+          style: italic
     - family: Noto Sans SC
       fonts:
         - asset: assets/fonts/NotoSansSC-Regular.ttf

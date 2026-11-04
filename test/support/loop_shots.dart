@@ -11,14 +11,17 @@ Future<void> _loadFonts() async {
   if (_loaded) return;
   _loaded = true;
   const families = <String, List<String>>{
-    'Anton': <String>['assets/fonts/Anton-Regular.ttf'],
-    'Arimo': <String>[
-      'assets/fonts/Arimo-Regular.ttf',
-      'assets/fonts/Arimo-Bold.ttf',
+    'Inter': <String>[
+      'assets/fonts/Inter-Light.ttf',
+      'assets/fonts/Inter-Regular.ttf',
+      'assets/fonts/Inter-Medium.ttf',
+      'assets/fonts/Inter-SemiBold.ttf',
+      'assets/fonts/Inter-Bold.ttf',
+      'assets/fonts/Inter-BlackItalic.ttf',
     ],
-    'Noto Sans SC Display': <String>['assets/fonts/NotoSansSC-Bold.ttf'],
     'Noto Sans SC': <String>[
       'assets/fonts/NotoSansSC-Regular.ttf',
+      'assets/fonts/NotoSansSC-Medium.ttf',
       'assets/fonts/NotoSansSC-Bold.ttf',
     ],
     'IBM Plex Mono': <String>[
@@ -73,7 +76,8 @@ Future<void> loopShot(
       );
       final bytes = await part.toByteData(format: ui.ImageByteFormat.png);
       final suffix = h <= slice ? '' : '-${index + 1}';
-      File('${Directory.current.path}/$dir/$name$suffix.png')
+      final root = dir.startsWith('/') ? dir : '${Directory.current.path}/$dir';
+      File('$root/$name$suffix.png')
         ..parent.createSync(recursive: true)
         ..writeAsBytesSync(bytes!.buffer.asUint8List());
       index += 1;
