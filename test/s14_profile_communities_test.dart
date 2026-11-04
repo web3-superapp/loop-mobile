@@ -100,7 +100,7 @@ void main() {
           _key('me-joined-${entry.community.communityId}'),
         );
         expect(row.title, entry.community.name);
-        expect(row.subtitle, '128 名成员');
+        expect(row.subtitle, '128 members');
       }
       // The retired copy must not survive anywhere on the page.
       expect(find.text('社区成员关系尚未接入'), findsNothing);
@@ -139,7 +139,7 @@ void main() {
       );
 
       expect(_key('me-communities-empty'), findsOneWidget);
-      expect(find.text('还没有加入社区'), findsOneWidget);
+      expect(find.text('No communities joined yet'), findsOneWidget);
     });
 
     testWidgets('an unread aggregate shows no list while it loads', (

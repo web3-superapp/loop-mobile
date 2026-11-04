@@ -268,7 +268,7 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      expect(find.text('全屏 K 线'), findsNothing);
+      expect(find.text('Full-screen chart'), findsNothing);
       expect(find.text('WBNB'), findsWidgets);
       expect(find.text('\$747.39 ▲ 0.27%'), findsOneWidget);
     });

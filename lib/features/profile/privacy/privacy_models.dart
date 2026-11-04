@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 const int privacyMaximumVersion = 2147483647;
 
@@ -33,15 +34,24 @@ enum PrivacyAudience {
 /// The four V2 visibility facets. Copy-trade visibility is deliberately absent:
 /// copytrade is retired and must not return.
 enum PrivacyVisibilityFacet {
-  totalAssets('totalAssets', '总资产'),
-  miningPower('miningPower', '挖矿算力'),
-  communities('communities', '加入的社区'),
-  tradeHistory('tradeHistory', '交易记录');
+  totalAssets('totalAssets'),
+  miningPower('miningPower'),
+  communities('communities'),
+  tradeHistory('tradeHistory');
 
-  const PrivacyVisibilityFacet(this.wireValue, this.label);
+  const PrivacyVisibilityFacet(this.wireValue);
 
   final String wireValue;
-  final String label;
+  String get label => switch (this) {
+    PrivacyVisibilityFacet.totalAssets =>
+      LoopL10n.current.profilePrivacy_modelsTotalAssets,
+    PrivacyVisibilityFacet.miningPower =>
+      LoopL10n.current.profilePrivacy_modelsMiningPower,
+    PrivacyVisibilityFacet.communities =>
+      LoopL10n.current.profilePrivacy_modelsCommunities,
+    PrivacyVisibilityFacet.tradeHistory =>
+      LoopL10n.current.profilePrivacy_modelsTradeHistory,
+  };
 }
 
 @immutable
@@ -122,17 +132,24 @@ final class PrivacyVisibility {
 /// (`enabled` for friend requests, `friends` for the two friend-scoped ones);
 /// the closed value is `disabled` for all three.
 enum PrivacySocialGate {
-  friendRequests('friendRequests', 'enabled', '允许陌生人发好友申请'),
-  directMessages('directMessages', 'friends', '允许好友发起私聊'),
-  groupInvites('groupInvites', 'friends', '允许好友拉我进群');
+  friendRequests('friendRequests', 'enabled'),
+  directMessages('directMessages', 'friends'),
+  groupInvites('groupInvites', 'friends');
 
-  const PrivacySocialGate(this.wireValue, this.openWireValue, this.label);
+  const PrivacySocialGate(this.wireValue, this.openWireValue);
 
   /// The field name inside the `privacy` object.
   final String wireValue;
 
   final String openWireValue;
-  final String label;
+  String get label => switch (this) {
+    PrivacySocialGate.friendRequests =>
+      LoopL10n.current.profilePrivacy_modelsFriendRequests,
+    PrivacySocialGate.directMessages =>
+      LoopL10n.current.profilePrivacy_modelsDirectMessages,
+    PrivacySocialGate.groupInvites =>
+      LoopL10n.current.profilePrivacy_modelsGroupInvites,
+  };
 
   static const String closedWireValue = 'disabled';
 

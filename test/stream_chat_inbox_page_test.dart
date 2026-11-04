@@ -459,7 +459,7 @@ void main() {
       const ValueKey<String>('stream-chat-message-requests-entry'),
     );
     expect(entry, findsOneWidget);
-    expect(find.text('1 条待处理'), findsOneWidget);
+    expect(find.text('1 pending'), findsOneWidget);
 
     await tester.tap(entry);
     await tester.pumpAndSettle();

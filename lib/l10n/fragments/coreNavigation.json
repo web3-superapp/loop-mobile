@@ -1,0 +1,644 @@
+{
+  "coreNavigation_intelPowerRouteInvite": {
+    "en": "Invitation",
+    "placeholders": {},
+    "where": "lib/core/navigation/intel_power_route.dart:52",
+    "zh": "邀请"
+  },
+  "coreNavigation_routeAbout": {
+    "en": "About and legal",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "关于与法务"
+  },
+  "coreNavigation_routeApprovalGuard": {
+    "en": "Approval guard",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "授权拦截"
+  },
+  "coreNavigation_routeAsset": {
+    "en": "Asset details",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "资产详情"
+  },
+  "coreNavigation_routeAuth": {
+    "en": "Privy sign-in",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Privy 登录"
+  },
+  "coreNavigation_routeAuthEmail": {
+    "en": "Email sign-in",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "邮箱登录"
+  },
+  "coreNavigation_routeAuthOtp": {
+    "en": "Email code",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "邮箱验证码"
+  },
+  "coreNavigation_routeAuthWallet": {
+    "en": "Connect external wallet",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "连接外部钱包"
+  },
+  "coreNavigation_routeBetaFeedback": {
+    "en": "Feedback",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "意见反馈"
+  },
+  "coreNavigation_routeBetaFeedbackMine": {
+    "en": "My feedback",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "我的反馈"
+  },
+  "coreNavigation_routeBridgeStatus": {
+    "en": "Bridge progress",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "跨链进度"
+  },
+  "coreNavigation_routeChartFull": {
+    "en": "Full-screen chart",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "全屏 K 线"
+  },
+  "coreNavigation_routeChat": {
+    "en": "Chat Tab",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "聊天 Tab"
+  },
+  "coreNavigation_routeChatForward": {
+    "en": "Forward message",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "转发消息"
+  },
+  "coreNavigation_routeChatMergePreview": {
+    "en": "Forward as one preview",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "合并转发预览"
+  },
+  "coreNavigation_routeChatSearch": {
+    "en": "Message search",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "消息搜索"
+  },
+  "coreNavigation_routeCommunity": {
+    "en": "Community Tab",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社区 Tab"
+  },
+  "coreNavigation_routeCommunityChat": {
+    "en": "Community group",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社区大群"
+  },
+  "coreNavigation_routeCommunityDiscover": {
+    "en": "Discover communities",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "发现社区"
+  },
+  "coreNavigation_routeCommunityManage": {
+    "en": "Community management",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社区管理"
+  },
+  "coreNavigation_routeCommunityMembers": {
+    "en": "Members and roles",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "成员与权限"
+  },
+  "coreNavigation_routeCommunityProfile": {
+    "en": "Community home",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社区主页"
+  },
+  "coreNavigation_routeConnections": {
+    "en": "Following and followers",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "关注与粉丝"
+  },
+  "coreNavigation_routeDapp": {
+    "en": "DApp browser",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "DApp 浏览器"
+  },
+  "coreNavigation_routeDappWeb": {
+    "en": "DApp page",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "DApp 页面"
+  },
+  "coreNavigation_routeDevices": {
+    "en": "Device management",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "设备管理"
+  },
+  "coreNavigation_routeForceUpdate": {
+    "en": "Force update",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "强制更新"
+  },
+  "coreNavigation_routeGroup": {
+    "en": "Group chat",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "普通群聊"
+  },
+  "coreNavigation_routeGroupInfo": {
+    "en": "Group info",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "群信息"
+  },
+  "coreNavigation_routeIntel": {
+    "en": "Intel Tab",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "情报 Tab"
+  },
+  "coreNavigation_routeKeyExport": {
+    "en": "Private key export",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "私钥导出"
+  },
+  "coreNavigation_routeLaunch": {
+    "en": "Launch list",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Launch 列表"
+  },
+  "coreNavigation_routeLaunch2Create": {
+    "en": "Start a v2 launch",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "发起 v2 发射"
+  },
+  "coreNavigation_routeLaunch2DynamicRewards": {
+    "en": "DEX pool rewards",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "外盘奖励"
+  },
+  "coreNavigation_routeLaunch2Instance": {
+    "en": "MEME v2 project",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "MEME v2 项目"
+  },
+  "coreNavigation_routeLaunch2Nft": {
+    "en": "Consensus badge",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "共识勋章"
+  },
+  "coreNavigation_routeLaunch2Project": {
+    "en": "Project status",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "项目状态"
+  },
+  "coreNavigation_routeLaunch2ProjectDeployment": {
+    "en": "Deployment progress",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "部署进度"
+  },
+  "coreNavigation_routeLaunch2ProjectSign": {
+    "en": "Sign deployment",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "签名部署"
+  },
+  "coreNavigation_routeLaunch2Projects": {
+    "en": "My projects",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "我的项目"
+  },
+  "coreNavigation_routeLaunchApply": {
+    "en": "Apply to launch",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "申请发射"
+  },
+  "coreNavigation_routeLaunchDetail": {
+    "en": "Project details",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "项目详情"
+  },
+  "coreNavigation_routeLaunchGraduation": {
+    "en": "Graduation and migration",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "毕业与迁移"
+  },
+  "coreNavigation_routeLaunchHistory": {
+    "en": "Participation history",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "参与记录"
+  },
+  "coreNavigation_routeLaunchHolders": {
+    "en": "Bonding pool holders",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "内盘持有人"
+  },
+  "coreNavigation_routeLaunchRounds": {
+    "en": "Sale round rules",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "销售轮次规则"
+  },
+  "coreNavigation_routeLaunchTier": {
+    "en": "My eligibility",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "我的资格"
+  },
+  "coreNavigation_routeLaunchTrade": {
+    "en": "Launch subscription",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Launch 认购"
+  },
+  "coreNavigation_routeLoopEconomy": {
+    "en": "Ecosystem economics",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "生态经济面板"
+  },
+  "coreNavigation_routeLoopIdSetup": {
+    "en": "Create LOOP ID",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "生成 LOOP ID"
+  },
+  "coreNavigation_routeLoopStake": {
+    "en": "LOOP staking",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "LOOP 质押"
+  },
+  "coreNavigation_routeMaintenance": {
+    "en": "System maintenance",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "系统维护"
+  },
+  "coreNavigation_routeManifestGlobalAccount": {
+    "en": "Global and account",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart:36",
+    "zh": "全局与账户"
+  },
+  "coreNavigation_routeManifestSystem": {
+    "en": "System states and components",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart:43",
+    "zh": "系统态与组件"
+  },
+  "coreNavigation_routeMarket": {
+    "en": "Market list",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "行情列表"
+  },
+  "coreNavigation_routeMemeCreate": {
+    "en": "Create token",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "创建代币"
+  },
+  "coreNavigation_routeMemeToken": {
+    "en": "MEME token",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "MEME 代币"
+  },
+  "coreNavigation_routeMemeTokenHolders": {
+    "en": "MEME holders",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "MEME 持有者"
+  },
+  "coreNavigation_routeMemeTokenTrades": {
+    "en": "MEME activity",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "MEME 动态"
+  },
+  "coreNavigation_routeMining": {
+    "en": "My mining",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "我的挖矿"
+  },
+  "coreNavigation_routeMiningAssets": {
+    "en": "Power breakdown",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "算力明细"
+  },
+  "coreNavigation_routeMiningCommunity": {
+    "en": "Community mining panel",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社区挖矿面板"
+  },
+  "coreNavigation_routeMiningRank": {
+    "en": "Leaderboard",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "排行榜"
+  },
+  "coreNavigation_routeMiningRewards": {
+    "en": "Rewards and claims",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "奖励与领取"
+  },
+  "coreNavigation_routeMiningRules": {
+    "en": "Weight and power rules",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "权重与算力规则"
+  },
+  "coreNavigation_routeNetworks": {
+    "en": "Networks and RPC",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "网络与 RPC"
+  },
+  "coreNavigation_routeNetworth": {
+    "en": "Net worth details",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "净值明细"
+  },
+  "coreNavigation_routeNewPairs": {
+    "en": "New pairs",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "新币发现"
+  },
+  "coreNavigation_routeNotifications": {
+    "en": "Notification center",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "通知中心"
+  },
+  "coreNavigation_routeOffline": {
+    "en": "No network",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "无网络"
+  },
+  "coreNavigation_routeOnboardingCommunities": {
+    "en": "Recommended communities",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "推荐社区"
+  },
+  "coreNavigation_routePay": {
+    "en": "Pay entry",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Pay 入口"
+  },
+  "coreNavigation_routePermissionNotice": {
+    "en": "Permission notes",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "权限申请说明"
+  },
+  "coreNavigation_routePrivacy": {
+    "en": "Privacy Center",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "隐私中心"
+  },
+  "coreNavigation_routeProfile": {
+    "en": "LOOP ID home",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "LOOP ID 主页"
+  },
+  "coreNavigation_routeProfileEdit": {
+    "en": "Edit profile",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "编辑资料"
+  },
+  "coreNavigation_routeReferral": {
+    "en": "Invitations and boost",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "邀请关系与加成"
+  },
+  "coreNavigation_routeRegionBlocked": {
+    "en": "Region restriction",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "地区限制"
+  },
+  "coreNavigation_routeSearch": {
+    "en": "Global search",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "全局搜索"
+  },
+  "coreNavigation_routeSecuritySetup": {
+    "en": "MFA and app lock",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "MFA 与应用锁"
+  },
+  "coreNavigation_routeSend": {
+    "en": "Send: choose asset",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "发送-选资产"
+  },
+  "coreNavigation_routeSendConfirm": {
+    "en": "Send: confirm",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "发送-确认"
+  },
+  "coreNavigation_routeSendTo": {
+    "en": "Send: recipient",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "发送-收款方"
+  },
+  "coreNavigation_routeServerError": {
+    "en": "Server error",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "服务出错"
+  },
+  "coreNavigation_routeSettings": {
+    "en": "General settings",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "通用设置"
+  },
+  "coreNavigation_routeSignSheetStates": {
+    "en": "Four sign sheet states",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "签名弹层四态"
+  },
+  "coreNavigation_routeSkeletonStates": {
+    "en": "Three skeleton types",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "骨架屏三类"
+  },
+  "coreNavigation_routeSmartMoney": {
+    "en": "Smart money",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "聪明钱追踪"
+  },
+  "coreNavigation_routeSocialRecovery": {
+    "en": "Social recovery",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "社交恢复"
+  },
+  "coreNavigation_routeSplash": {
+    "en": "Splash",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "启动闪屏"
+  },
+  "coreNavigation_routeSquare": {
+    "en": "Square Tab",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "广场 Tab"
+  },
+  "coreNavigation_routeSupport": {
+    "en": "Help and support",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "帮助与客服"
+  },
+  "coreNavigation_routeSwapRoute": {
+    "en": "Quote and fees",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "报价与费用"
+  },
+  "coreNavigation_routeToastStates": {
+    "en": "Three toast states",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Toast 三态"
+  },
+  "coreNavigation_routeToken": {
+    "en": "Token details",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Token 详情"
+  },
+  "coreNavigation_routeTokenCardStates": {
+    "en": "Five Token Card states",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "Token Card 五态"
+  },
+  "coreNavigation_routeTokenHolders": {
+    "en": "Holder distribution",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "持有人分布"
+  },
+  "coreNavigation_routeTokenTrades": {
+    "en": "Trade activity",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "交易活动"
+  },
+  "coreNavigation_routeTxHistory": {
+    "en": "Transaction history",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "交易历史"
+  },
+  "coreNavigation_routeTxResult": {
+    "en": "Transaction result",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "交易结果"
+  },
+  "coreNavigation_routeUserProfile": {
+    "en": "User profile",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "用户资料"
+  },
+  "coreNavigation_routeVoiceroomFull": {
+    "en": "Voice room full view",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "语音房完整视图"
+  },
+  "coreNavigation_routeWallet": {
+    "en": "Wallet overview",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "钱包总览"
+  },
+  "coreNavigation_routeWalletCreate": {
+    "en": "Creating wallet",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "钱包生成中"
+  },
+  "coreNavigation_routeWalletRecovery": {
+    "en": "Recovery setup",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "恢复方式设置"
+  },
+  "coreNavigation_routeWallets": {
+    "en": "Wallet management",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "多钱包管理"
+  },
+  "coreNavigation_routeWatchlistEdit": {
+    "en": "Edit watchlist",
+    "placeholders": {},
+    "where": "lib/core/navigation/route_manifest.dart",
+    "zh": "自选管理"
+  }
+}

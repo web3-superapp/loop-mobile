@@ -98,6 +98,1257 @@ abstract class LoopLocalizations {
     Locale('zh'),
   ];
 
+  /// lib/features/account/email_auth_controller.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'A Privy Mobile App Client ID is required.'**
+  String get account_emailAuthControllerErrorMessage;
+
+  /// lib/features/account/email_auth_controller.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a Privy Mobile App Client ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage10;
+
+  /// lib/features/account/email_auth_controller.dart:325
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in didn\'t finish. Check your network and the app redirect, then try again.'**
+  String get account_emailAuthControllerErrorMessage11;
+
+  /// lib/features/account/email_auth_controller.dart:347
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a valid Reown Project ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage12;
+
+  /// lib/features/account/email_auth_controller.dart:348
+  ///
+  /// In en, this message translates to:
+  /// **'Provide a Privy Client ID and a Reown Project ID with --dart-define first.'**
+  String get account_emailAuthControllerErrorMessage13;
+
+  /// lib/features/account/email_auth_controller.dart:375
+  ///
+  /// In en, this message translates to:
+  /// **'Only a signed-out session or a verified Privy account can connect a wallet.'**
+  String get account_emailAuthControllerErrorMessage14;
+
+  /// lib/features/account/email_auth_controller.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet action didn\'t finish. Check your network and the app redirect, then try again.'**
+  String get account_emailAuthControllerErrorMessage15;
+
+  /// lib/features/account/email_auth_controller.dart:458
+  ///
+  /// In en, this message translates to:
+  /// **'Only a verified Privy account can unlink a wallet.'**
+  String get account_emailAuthControllerErrorMessage16;
+
+  /// lib/features/account/email_auth_controller.dart:504
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinking didn\'t finish. Check your network and try again.'**
+  String get account_emailAuthControllerErrorMessage17;
+
+  /// lib/features/account/email_auth_controller.dart:146
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get account_emailAuthControllerErrorMessage2;
+
+  /// lib/features/account/email_auth_controller.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Resend the code.'**
+  String get account_emailAuthControllerErrorMessage3;
+
+  /// lib/features/account/email_auth_controller.dart:186, lib/features/account/privy_otp_screen.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'No attempts left. Resend the code.'**
+  String get account_emailAuthControllerErrorMessage4;
+
+  /// lib/features/account/email_auth_controller.dart:196
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code.'**
+  String get account_emailAuthControllerErrorMessage5;
+
+  /// lib/features/account/email_auth_controller.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'{userMessage} No attempts left. Resend the code.'**
+  String account_emailAuthControllerErrorMessage6(Object? userMessage);
+
+  /// lib/features/account/email_auth_controller.dart:225
+  ///
+  /// In en, this message translates to:
+  /// **'{userMessage} Attempts left: {emailAuthMaximumAttempts}.'**
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  );
+
+  /// lib/features/account/email_auth_controller.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple is only available on iOS.'**
+  String get account_emailAuthControllerErrorMessage8;
+
+  /// lib/features/account/email_auth_controller.dart:286, lib/features/account/email_auth_controller.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'The session changed. Check again.'**
+  String get account_emailAuthControllerErrorMessage9;
+
+  /// lib/features/account/email_auth_controller.dart:406
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet linked as a Privy sign-in method.'**
+  String get account_emailAuthControllerSuccessMessage;
+
+  /// lib/features/account/email_auth_controller.dart:489
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet unlinked.'**
+  String get account_emailAuthControllerSuccessMessage2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'1–40 characters, doesn\'t have to be unique'**
+  String get account_idSetupHintText;
+
+  /// lib/features/account/loop_id_setup_screen.dart:229
+  ///
+  /// In en, this message translates to:
+  /// **'A line about yourself (optional)'**
+  String get account_idSetupHintText2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Others see your avatar and username in chats. Your wallet address stays private.'**
+  String get account_idSetupIdentityStepCopy;
+
+  /// lib/features/account/loop_id_setup_screen.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get account_idSetupLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'Your bio wasn\'t saved. You can add it later in \"Edit profile\".'**
+  String get account_idSetupLoopIdActivatedBody;
+
+  /// lib/features/account/loop_id_setup_screen.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'You can change it later in \"Edit profile\".'**
+  String get account_idSetupLoopIdActivatedBody2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved'**
+  String get account_idSetupLoopIdActivatedTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'Try another'**
+  String get account_idSetupLoopIdAliasSuggestLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:115
+  ///
+  /// In en, this message translates to:
+  /// **'Account profile hasn\'t loaded yet.'**
+  String get account_idSetupLoopIdEmptyMessage;
+
+  /// lib/features/account/loop_id_setup_screen.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Your LOOP ID hasn\'t loaded yet'**
+  String get account_idSetupLoopIdEmptyTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:123
+  ///
+  /// In en, this message translates to:
+  /// **'Profile service'**
+  String get account_idSetupLoopIdErrorSource;
+
+  /// lib/features/account/loop_id_setup_screen.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save'**
+  String get account_idSetupLoopIdFailureTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:72, lib/features/account/loop_id_setup_screen.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get account_idSetupLoopIdSubmitTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'Profile service isn\'t available right now'**
+  String get account_idSetupLoopIdUnavailableTitle;
+
+  /// lib/features/account/loop_id_setup_screen.dart:255
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned yet'**
+  String get account_idSetupLoopIdValue;
+
+  /// lib/features/account/loop_id_setup_screen.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get account_idSetupLoopLabel;
+
+  /// lib/features/account/loop_id_setup_screen.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get account_idSetupLoopLabel2;
+
+  /// lib/features/account/loop_id_setup_screen.dart:130
+  ///
+  /// In en, this message translates to:
+  /// **'Save profile'**
+  String get account_idSetupLoopOfflineState;
+
+  /// lib/features/account/loop_id_setup_screen.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get account_idSetupSubmitting;
+
+  /// lib/features/account/loop_id_setup_screen.dart:261
+  ///
+  /// In en, this message translates to:
+  /// **'System-generated, unique and permanent. Friends can find you with it.'**
+  String get account_idSetupText;
+
+  /// lib/features/account/onboarding_communities.dart:737
+  ///
+  /// In en, this message translates to:
+  /// **'Muting the communities you just joined…'**
+  String get account_onboardingCommunitiesDetail;
+
+  /// lib/features/account/onboarding_communities.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to LOOP'**
+  String get account_onboardingCommunitiesIf;
+
+  /// lib/features/account/onboarding_communities.dart:592
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a few communities you like. They\'re muted after you join, and you can leave anytime.'**
+  String get account_onboardingCommunitiesIf2;
+
+  /// lib/features/account/onboarding_communities.dart:681
+  ///
+  /// In en, this message translates to:
+  /// **'Joined · Muted'**
+  String get account_onboardingCommunitiesJoined;
+
+  /// lib/features/account/onboarding_communities.dart:682
+  ///
+  /// In en, this message translates to:
+  /// **'Joined · Muting'**
+  String get account_onboardingCommunitiesJoinedMutePending;
+
+  /// lib/features/account/onboarding_communities.dart:683
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join'**
+  String get account_onboardingCommunitiesLoopRecordRow;
+
+  /// lib/features/account/onboarding_communities.dart:669
+  ///
+  /// In en, this message translates to:
+  /// **'{formatDecimal} members'**
+  String account_onboardingCommunitiesMembers(Object? formatDecimal);
+
+  /// lib/features/account/onboarding_communities.dart:542
+  ///
+  /// In en, this message translates to:
+  /// **'Join communities'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle;
+
+  /// lib/features/account/onboarding_communities.dart:548, lib/features/account/onboarding_communities.dart:574
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel;
+
+  /// lib/features/account/onboarding_communities.dart:603
+  ///
+  /// In en, this message translates to:
+  /// **'No communities to join yet'**
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage;
+
+  /// lib/features/account/onboarding_communities.dart:604
+  ///
+  /// In en, this message translates to:
+  /// **'Enter LOOP first and find communities in Square later.'**
+  String get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason;
+
+  /// lib/features/account/onboarding_communities.dart:588
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended communities'**
+  String get account_onboardingCommunitiesResource;
+
+  /// lib/features/account/onboarding_communities.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {members}, selected'**
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  );
+
+  /// lib/features/account/onboarding_communities.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {members}, not selected'**
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  );
+
+  /// lib/features/account/onboarding_communities.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Join 1 community and enter} other{Join {count} communities and enter}}'**
+  String account_onboardingCommunitiesS(num count);
+
+  /// lib/features/account/onboarding_communities.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get account_onboardingCommunitiesState;
+
+  /// lib/features/account/onboarding_communities.dart:693
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get account_onboardingCommunitiesState2;
+
+  /// lib/features/account/onboarding_communities.dart:736
+  ///
+  /// In en, this message translates to:
+  /// **'Entering LOOP'**
+  String get account_onboardingCommunitiesTitle;
+
+  /// lib/features/account/privy_login_screen.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Use another account'**
+  String get account_privyLoginAnotherAccountLabel;
+
+  /// lib/features/account/privy_login_screen.dart:416
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, in progress'**
+  String account_privyLoginAuthMethodBusyLabel(Object? label);
+
+  /// lib/features/account/privy_login_screen.dart:216
+  ///
+  /// In en, this message translates to:
+  /// **'Enter development preview'**
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to LOOP'**
+  String get account_privyLoginIf;
+
+  /// lib/features/account/privy_login_screen.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a way to sign in or create an account'**
+  String get account_privyLoginIf2;
+
+  /// lib/features/account/privy_login_screen.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'Once you\'re online, sign-in on this device is confirmed automatically. No need to sign in again.'**
+  String get account_privyLoginMessage;
+
+  /// lib/features/account/privy_login_screen.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple'**
+  String get account_privyLoginPrivyAppleLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'The Privy Mobile App Client ID is missing, so real code requests stay off.'**
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody;
+
+  /// lib/features/account/privy_login_screen.dart:130
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in setup is incomplete'**
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle;
+
+  /// lib/features/account/privy_login_screen.dart:175, lib/features/account/privy_login_screen.dart:347
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t continue'**
+  String get account_privyLoginPrivyAuthErrorTitle;
+
+  /// lib/features/account/privy_login_screen.dart:359, lib/features/account/privy_otp_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:359
+  ///
+  /// In en, this message translates to:
+  /// **'Get code'**
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2;
+
+  /// lib/features/account/privy_login_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get account_privyLoginPrivyEmailLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Email sign-in'**
+  String get account_privyLoginPrivyEmailScreenTitle;
+
+  /// lib/features/account/privy_login_screen.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get account_privyLoginPrivyGoogleLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:637
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP can\'t confirm your sign-in right now'**
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:640
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t confirm sign-in right now'**
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus;
+
+  /// lib/features/account/privy_login_screen.dart:626
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is restoring your sign-in'**
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:722
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is signing you out'**
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel;
+
+  /// lib/features/account/privy_login_screen.dart:723
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out'**
+  String get account_privyLoginPrivySigningOutScreenStatus;
+
+  /// lib/features/account/privy_login_screen.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting wallet'**
+  String get account_privyLoginPrivyWalletLoginButtonLabel;
+
+  /// lib/features/account/privy_login_screen.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'Have a wallet? Connect it'**
+  String get account_privyLoginPrivyWalletLoginButtonLabel2;
+
+  /// lib/features/account/privy_login_screen.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring sign-in'**
+  String get account_privyLoginRestoringTitle;
+
+  /// lib/features/account/privy_login_screen.dart:201
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable · No valid Reown Project ID'**
+  String get account_privyLoginS;
+
+  /// lib/features/account/privy_login_screen.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'Slow network, still restoring sign-in…'**
+  String get account_privyLoginSlowMessage;
+
+  /// lib/features/account/privy_login_screen.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable · No Privy Mobile App Client ID'**
+  String get account_privyLoginText;
+
+  /// lib/features/account/privy_login_screen.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you agree to the '**
+  String get account_privyLoginText2;
+
+  /// lib/features/account/privy_login_screen.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get account_privyLoginText3;
+
+  /// lib/features/account/privy_login_screen.dart:245
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get account_privyLoginText4;
+
+  /// lib/features/account/privy_login_screen.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get account_privyLoginText5;
+
+  /// lib/features/account/privy_login_screen.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'Have a wallet? '**
+  String get account_privyLoginText6;
+
+  /// lib/features/account/privy_login_screen.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get account_privyLoginText7;
+
+  /// lib/features/account/privy_login_screen.dart:690
+  ///
+  /// In en, this message translates to:
+  /// **'Network unavailable, waiting to connect'**
+  String get account_privyLoginTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'No code sent yet'**
+  String get account_privyOtpIdentityStepCopy;
+
+  /// lib/features/account/privy_otp_screen.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent to {maskEmailForDisplay}'**
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay);
+
+  /// lib/features/account/privy_otp_screen.dart:88, lib/features/account/privy_otp_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get account_privyOtpIdentityStepCopyTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get account_privyOtpLoopOfflineState;
+
+  /// lib/features/account/privy_otp_screen.dart:318
+  ///
+  /// In en, this message translates to:
+  /// **'Code digit {index}'**
+  String account_privyOtpPrivyOtpCaretLabel(Object? index);
+
+  /// lib/features/account/privy_otp_screen.dart:319
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get account_privyOtpPrivyOtpCaretValue;
+
+  /// lib/features/account/privy_otp_screen.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get account_privyOtpPrivyOtpChangeEmailLabel;
+
+  /// lib/features/account/privy_otp_screen.dart:206
+  ///
+  /// In en, this message translates to:
+  /// **'Verification failed'**
+  String get account_privyOtpPrivyOtpErrorTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Go back and enter your email.'**
+  String get account_privyOtpPrivyOtpNoDestinationMessage;
+
+  /// lib/features/account/privy_otp_screen.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'No email to verify'**
+  String get account_privyOtpPrivyOtpNoDestinationTitle;
+
+  /// lib/features/account/privy_otp_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {cooldown}s'**
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown);
+
+  /// lib/features/account/privy_otp_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Resend'**
+  String get account_privyOtpPrivyOtpResendLabel;
+
+  /// lib/features/account/account_screens.dart:1642
+  ///
+  /// In en, this message translates to:
+  /// **'Screen lock not read yet'**
+  String get account_screensAppLockRow;
+
+  /// lib/features/account/account_screens.dart:1645
+  ///
+  /// In en, this message translates to:
+  /// **'{detail} · Applies now; won\'t be remembered after the app restarts'**
+  String account_screensAppLockRow2(Object? detail);
+
+  /// lib/features/account/account_screens.dart:828
+  ///
+  /// In en, this message translates to:
+  /// **'It isn\'t a LOOP trading wallet and can\'t authorize any transaction.'**
+  String get account_screensBody;
+
+  /// lib/features/account/account_screens.dart:834
+  ///
+  /// In en, this message translates to:
+  /// **'Your community tokens stay where they are. Once linked, your holdings count toward power. That\'s why the external wallet option stays.'**
+  String get account_screensBody2;
+
+  /// lib/features/account/account_screens.dart:841
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.'**
+  String get account_screensBody3;
+
+  /// lib/features/account/account_screens.dart:848
+  ///
+  /// In en, this message translates to:
+  /// **'The session expired. Come back to this page and connect again.'**
+  String get account_screensBody4;
+
+  /// lib/features/account/account_screens.dart:1391
+  ///
+  /// In en, this message translates to:
+  /// **'If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.'**
+  String get account_screensBody5;
+
+  /// lib/features/account/account_screens.dart:1185
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic recovery'**
+  String get account_screensCloud;
+
+  /// lib/features/account/account_screens.dart:1185
+  ///
+  /// In en, this message translates to:
+  /// **'Recover with your sign-in method; on a new device, sign in with the same email'**
+  String get account_screensCloud2;
+
+  /// lib/features/account/account_screens.dart:1369
+  ///
+  /// In en, this message translates to:
+  /// **'Pick 3 guardians; any 2 can recover'**
+  String get account_screensDetail;
+
+  /// lib/features/account/account_screens.dart:1376
+  ///
+  /// In en, this message translates to:
+  /// **'Export anytime. It\'s your escape hatch'**
+  String get account_screensDetail2;
+
+  /// lib/features/account/account_screens.dart:813
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet and sign'**
+  String get account_screensExternalWalletConnectLabel;
+
+  /// lib/features/account/account_screens.dart:808, lib/features/account/privy_login_screen.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Connect wallet'**
+  String get account_screensExternalWalletConnectTitle;
+
+  /// lib/features/account/account_screens.dart:870
+  ///
+  /// In en, this message translates to:
+  /// **'Available wallet names show after you connect a wallet.'**
+  String get account_screensExternalWalletListUnavailableDetail;
+
+  /// lib/features/account/account_screens.dart:869
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read the installed wallet list right now'**
+  String get account_screensExternalWalletListUnavailableMessage;
+
+  /// lib/features/account/account_screens.dart:864
+  ///
+  /// In en, this message translates to:
+  /// **'No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.'**
+  String get account_screensExternalWalletUnavailableBody;
+
+  /// lib/features/account/account_screens.dart:863
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet connection isn\'t available right now'**
+  String get account_screensExternalWalletUnavailableTitle;
+
+  /// lib/features/account/account_screens.dart:204, lib/features/account/identity_step_scaffold.dart:161
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}: {label}'**
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  );
+
+  /// lib/features/account/account_screens.dart:857
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting only proves ownership. No assets move.'**
+  String get account_screensIdentityStepCopy;
+
+  /// lib/features/account/account_screens.dart:935
+  ///
+  /// In en, this message translates to:
+  /// **'Your secure wallet is setting up on this device.'**
+  String get account_screensIdentityStepCopy2;
+
+  /// lib/features/account/account_screens.dart:1400
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet already has one recovery method. Add the others once they open.'**
+  String get account_screensIdentityStepCopy3;
+
+  /// lib/features/account/account_screens.dart:1593
+  ///
+  /// In en, this message translates to:
+  /// **'App lock is handled by this device; transaction verification by the sign-in service.'**
+  String get account_screensIdentityStepCopy4;
+
+  /// lib/features/account/account_screens.dart:673
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP is loading'**
+  String get account_screensLabel;
+
+  /// lib/features/account/account_screens.dart:856
+  ///
+  /// In en, this message translates to:
+  /// **'Choose wallet'**
+  String get account_screensLabel2;
+
+  /// lib/features/account/account_screens.dart:934
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallet'**
+  String get account_screensLabel3;
+
+  /// lib/features/account/account_screens.dart:1040
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, done'**
+  String account_screensLabel4(Object? title);
+
+  /// lib/features/account/account_screens.dart:1040
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, not done: {pendingDetail}'**
+  String account_screensLabel5(Object? pendingDetail, Object? title);
+
+  /// lib/features/account/account_screens.dart:866
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets you can connect'**
+  String get account_screensLoopLabel;
+
+  /// lib/features/account/account_screens.dart:1364
+  ///
+  /// In en, this message translates to:
+  /// **'Also'**
+  String get account_screensLoopLabel2;
+
+  /// lib/features/account/account_screens.dart:1597, lib/features/account/account_screens.dart:1650
+  ///
+  /// In en, this message translates to:
+  /// **'App lock'**
+  String get account_screensLoopLabel3;
+
+  /// lib/features/account/account_screens.dart:1600
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction verification'**
+  String get account_screensLoopLabel4;
+
+  /// lib/features/account/account_screens.dart:384, lib/features/account/onboarding_communities.dart:533
+  ///
+  /// In en, this message translates to:
+  /// **'Enter LOOP'**
+  String get account_screensLoopSplashEnterLabel;
+
+  /// lib/features/account/account_screens.dart:1509
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, optional'**
+  String account_screensMethodSelectableSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:1509
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, selected'**
+  String account_screensMethodSelectedSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:1682
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get account_screensMfaRow;
+
+  /// lib/features/account/account_screens.dart:1692
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in service unreachable this run'**
+  String get account_screensMfaRow2;
+
+  /// lib/features/account/account_screens.dart:1694
+  ///
+  /// In en, this message translates to:
+  /// **'No answer from the sign-in service yet'**
+  String get account_screensMfaRow3;
+
+  /// lib/features/account/account_screens.dart:1184
+  ///
+  /// In en, this message translates to:
+  /// **'Passkey (recommended)'**
+  String get account_screensPasskey;
+
+  /// lib/features/account/account_screens.dart:1184
+  ///
+  /// In en, this message translates to:
+  /// **'Uses device biometrics and syncs with the system keychain'**
+  String get account_screensPasskey2;
+
+  /// lib/features/account/account_screens.dart:1304
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service says this account already has a passkey'**
+  String get account_screensPasskeyBoundDetail;
+
+  /// lib/features/account/account_screens.dart:1001, lib/features/account/account_screens.dart:1007
+  ///
+  /// In en, this message translates to:
+  /// **'Done once the wallet appears'**
+  String get account_screensPendingDetail;
+
+  /// lib/features/account/account_screens.dart:1013
+  ///
+  /// In en, this message translates to:
+  /// **'Done after the choice in step 3'**
+  String get account_screensPendingDetail2;
+
+  /// lib/features/account/account_screens.dart:1019
+  ///
+  /// In en, this message translates to:
+  /// **'Done after step 5'**
+  String get account_screensPendingDetail3;
+
+  /// lib/features/account/account_screens.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your account…'**
+  String get account_screensPreparingText;
+
+  /// lib/features/account/account_screens.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'Not done'**
+  String get account_screensS;
+
+  /// lib/features/account/account_screens.dart:1305
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service says this account already has a passkey: {named}'**
+  String account_screensS2(Object? named);
+
+  /// lib/features/account/account_screens.dart:1663
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, unavailable: {detail}'**
+  String account_screensSecurityAppLockSemanticLabel(Object? detail);
+
+  /// lib/features/account/account_screens.dart:1665
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, on. Tap and verify to turn off'**
+  String get account_screensSecurityAppLockSemanticLabel2;
+
+  /// lib/features/account/account_screens.dart:1666
+  ///
+  /// In en, this message translates to:
+  /// **'App lock, off. Tap and verify to turn on'**
+  String get account_screensSecurityAppLockSemanticLabel3;
+
+  /// lib/features/account/account_screens.dart:1660, lib/features/account/account_screens.dart:1686
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get account_screensSecurityAppLockTrailing;
+
+  /// lib/features/account/account_screens.dart:1541
+  ///
+  /// In en, this message translates to:
+  /// **'If the device doesn\'t support biometrics, the system screen lock passcode is used instead.'**
+  String get account_screensSecurityBiometricFallbackLine;
+
+  /// lib/features/account/account_screens.dart:1707
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, off. Tap to turn on'**
+  String get account_screensSecurityMfaSemanticLabel;
+
+  /// lib/features/account/account_screens.dart:1708
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, on: {detail}'**
+  String account_screensSecurityMfaSemanticLabel2(Object? detail);
+
+  /// lib/features/account/account_screens.dart:1709
+  ///
+  /// In en, this message translates to:
+  /// **'MFA, unavailable: {reason}'**
+  String account_screensSecurityMfaSemanticLabel3(Object? reason);
+
+  /// lib/features/account/account_screens.dart:1581, lib/features/account/account_screens.dart:1592
+  ///
+  /// In en, this message translates to:
+  /// **'Security setup'**
+  String get account_screensSecuritySetupContinueTitle;
+
+  /// lib/features/account/account_screens.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, available but off'**
+  String account_screensSemanticLabel(Object? title);
+
+  /// lib/features/account/account_screens.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, unavailable: {unavailableReason}'**
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  );
+
+  /// lib/features/account/account_screens.dart:1496
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, enabled: {reason}'**
+  String account_screensSemanticLabel3(Object? reason, Object? title);
+
+  /// lib/features/account/account_screens.dart:1498
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, set up: {detail}. Tap to unlink'**
+  String account_screensSemanticLabel4(Object? detail, Object? title);
+
+  /// lib/features/account/account_screens.dart:1501, lib/features/account/account_screens.dart:1531
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, unavailable: {reason}'**
+  String account_screensSemanticLabel5(Object? reason, Object? title);
+
+  /// lib/features/account/account_screens.dart:1531
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, available'**
+  String account_screensSemanticLabel6(Object? title);
+
+  /// lib/features/account/account_screens.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get account_screensStep;
+
+  /// lib/features/account/account_screens.dart:819
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to connect and failure notes'**
+  String get account_screensSummary;
+
+  /// lib/features/account/account_screens.dart:1358
+  ///
+  /// In en, this message translates to:
+  /// **'Other recovery methods and the risk of skipping'**
+  String get account_screensSummary2;
+
+  /// lib/features/account/account_screens.dart:901
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created'**
+  String get account_screensSwitch;
+
+  /// lib/features/account/account_screens.dart:902
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a built-in wallet. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch2;
+
+  /// lib/features/account/account_screens.dart:905
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your wallet'**
+  String get account_screensSwitch3;
+
+  /// lib/features/account/account_screens.dart:906
+  ///
+  /// In en, this message translates to:
+  /// **'Keys are generated on this device and never leave it. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch4;
+
+  /// lib/features/account/account_screens.dart:909
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet is still being created. You can continue for now'**
+  String get account_screensSwitch5;
+
+  /// lib/features/account/account_screens.dart:910
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet after 60 seconds. That doesn\'t mean it failed. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch6;
+
+  /// lib/features/account/account_screens.dart:913
+  ///
+  /// In en, this message translates to:
+  /// **'Not started yet'**
+  String get account_screensSwitch7;
+
+  /// lib/features/account/account_screens.dart:914
+  ///
+  /// In en, this message translates to:
+  /// **'Privy hasn\'t confirmed built-in wallet support, so this page won\'t fake progress. LOOP doesn\'t use recovery phrases.'**
+  String get account_screensSwitch8;
+
+  /// lib/features/account/account_screens.dart:827
+  ///
+  /// In en, this message translates to:
+  /// **'An external wallet is only a sign-in method'**
+  String get account_screensTitle;
+
+  /// lib/features/account/account_screens.dart:1390
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic recovery depends on your sign-in method'**
+  String get account_screensTitle10;
+
+  /// lib/features/account/account_screens.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an existing wallet to mine'**
+  String get account_screensTitle2;
+
+  /// lib/features/account/account_screens.dart:840
+  ///
+  /// In en, this message translates to:
+  /// **'Signature rejected'**
+  String get account_screensTitle3;
+
+  /// lib/features/account/account_screens.dart:847
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timed out'**
+  String get account_screensTitle4;
+
+  /// lib/features/account/account_screens.dart:999
+  ///
+  /// In en, this message translates to:
+  /// **'Generate key pair'**
+  String get account_screensTitle5;
+
+  /// lib/features/account/account_screens.dart:1005
+  ///
+  /// In en, this message translates to:
+  /// **'Write to secure enclave'**
+  String get account_screensTitle6;
+
+  /// lib/features/account/account_screens.dart:1017
+  ///
+  /// In en, this message translates to:
+  /// **'Link LOOP ID'**
+  String get account_screensTitle7;
+
+  /// lib/features/account/account_screens.dart:1368
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery 2-of-3'**
+  String get account_screensTitle8;
+
+  /// lib/features/account/account_screens.dart:1375
+  ///
+  /// In en, this message translates to:
+  /// **'Export private key'**
+  String get account_screensTitle9;
+
+  /// lib/features/account/account_screens.dart:296, lib/features/account/account_screens.dart:1483, lib/features/account/account_screens.dart:1529
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get account_screensTrailing;
+
+  /// lib/features/account/account_screens.dart:1477
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get account_screensTrailing2;
+
+  /// lib/features/account/account_screens.dart:1479
+  ///
+  /// In en, this message translates to:
+  /// **'Set up'**
+  String get account_screensTrailing3;
+
+  /// lib/features/account/account_screens.dart:1481, lib/features/account/onboarding_communities.dart:692
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get account_screensTrailing4;
+
+  /// lib/features/account/account_screens.dart:1727
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to Community. The request has been logged.'**
+  String get account_screensUnknownAccountSurfaceMessage;
+
+  /// lib/features/account/account_screens.dart:1721
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get account_screensUnknownAccountSurfaceTitle;
+
+  /// lib/features/account/account_screens.dart:1726
+  ///
+  /// In en, this message translates to:
+  /// **'This account page isn\'t in the 93-page product list'**
+  String get account_screensUnknownAccountSurfaceTitle2;
+
+  /// lib/features/account/account_screens.dart:1200
+  ///
+  /// In en, this message translates to:
+  /// **'Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)'**
+  String get account_screensWalletAutomaticRecoveryEvidence;
+
+  /// lib/features/account/account_screens.dart:928, lib/features/account/account_screens.dart:1011, lib/features/account/account_screens.dart:1399
+  ///
+  /// In en, this message translates to:
+  /// **'Set up recovery'**
+  String get account_screensWalletCreateContinueLabel;
+
+  /// lib/features/account/account_screens.dart:921
+  ///
+  /// In en, this message translates to:
+  /// **'Create LOOP wallet'**
+  String get account_screensWalletCreateContinueTitle;
+
+  /// lib/features/account/account_screens.dart:949
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation didn\'t finish'**
+  String get account_screensWalletCreateProviderMessageTitle;
+
+  /// lib/features/account/account_screens.dart:942
+  ///
+  /// In en, this message translates to:
+  /// **'Privy hasn\'t confirmed built-in wallet support. This page won\'t fake progress, and no wallet was created.'**
+  String get account_screensWalletCreateUnavailableBody;
+
+  /// lib/features/account/account_screens.dart:941
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation isn\'t available right now'**
+  String get account_screensWalletCreateUnavailableTitle;
+
+  /// lib/features/account/account_screens.dart:1325, lib/features/account/account_screens.dart:1431
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery methods'**
+  String get account_screensWalletRecoveryConfirmTitle;
+
+  /// lib/features/account/account_screens.dart:1405
+  ///
+  /// In en, this message translates to:
+  /// **'{walletAutomaticRecoveryEvidence}. LOOP has no recovery phrase; this is the default path.'**
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  );
+
+  /// lib/features/account/account_screens.dart:1404
+  ///
+  /// In en, this message translates to:
+  /// **'You can already get your assets back on a new phone'**
+  String get account_screensWalletRecoveryDefaultTitle;
+
+  /// lib/features/account/account_screens.dart:1420
+  ///
+  /// In en, this message translates to:
+  /// **'Capability list'**
+  String get account_screensWalletRecoveryErrorSource;
+
+  /// lib/features/account/account_screens.dart:1351
+  ///
+  /// In en, this message translates to:
+  /// **'Set up later'**
+  String get account_screensWalletRecoveryLaterLabel;
+
+  /// lib/features/account/account_screens.dart:1208
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service in this version doesn\'t offer this yet'**
+  String get account_screensWalletRecoveryProviderPending;
+
+  /// lib/features/account/account_screens.dart:1429
+  ///
+  /// In en, this message translates to:
+  /// **'{walletRecoveryProviderPending}. The options below aren\'t simulated locally and aren\'t pre-selected.'**
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  );
+
+  /// lib/features/account/account_screens.dart:1428
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t add another one yet'**
+  String get account_screensWalletRecoveryUnavailableTitle;
+
   /// lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94
   ///
   /// In en, this message translates to:
@@ -2209,6 +3460,1334 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Watchlist'**
   String get common_watchlist;
+
+  /// lib/core/assets/loop_assets.dart:390
+  ///
+  /// In en, this message translates to:
+  /// **'Voyager_7 avatar'**
+  String get coreAssets_loopLabel;
+
+  /// lib/core/assets/loop_assets.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'Community member Echo avatar'**
+  String get coreAssets_loopLabel10;
+
+  /// lib/core/assets/loop_assets.dart:450
+  ///
+  /// In en, this message translates to:
+  /// **'Community admin avatar'**
+  String get coreAssets_loopLabel11;
+
+  /// lib/core/assets/loop_assets.dart:456
+  ///
+  /// In en, this message translates to:
+  /// **'Community observer avatar'**
+  String get coreAssets_loopLabel12;
+
+  /// lib/core/assets/loop_assets.dart:466
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP Official community icon'**
+  String get coreAssets_loopLabel13;
+
+  /// lib/core/assets/loop_assets.dart:472
+  ///
+  /// In en, this message translates to:
+  /// **'PEPE Community community icon'**
+  String get coreAssets_loopLabel14;
+
+  /// lib/core/assets/loop_assets.dart:478
+  ///
+  /// In en, this message translates to:
+  /// **'BONK Community community icon'**
+  String get coreAssets_loopLabel15;
+
+  /// lib/core/assets/loop_assets.dart:484
+  ///
+  /// In en, this message translates to:
+  /// **'MOONCAT community icon'**
+  String get coreAssets_loopLabel16;
+
+  /// lib/core/assets/loop_assets.dart:490
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Orbit'**
+  String get coreAssets_loopLabel17;
+
+  /// lib/core/assets/loop_assets.dart:496
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Bolt'**
+  String get coreAssets_loopLabel18;
+
+  /// lib/core/assets/loop_assets.dart:502
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Wave'**
+  String get coreAssets_loopLabel19;
+
+  /// lib/core/assets/loop_assets.dart:396
+  ///
+  /// In en, this message translates to:
+  /// **'NightOwl avatar'**
+  String get coreAssets_loopLabel2;
+
+  /// lib/core/assets/loop_assets.dart:508
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Hexagon'**
+  String get coreAssets_loopLabel20;
+
+  /// lib/core/assets/loop_assets.dart:514
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Cube'**
+  String get coreAssets_loopLabel21;
+
+  /// lib/core/assets/loop_assets.dart:520
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Shield'**
+  String get coreAssets_loopLabel22;
+
+  /// lib/core/assets/loop_assets.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Starburst'**
+  String get coreAssets_loopLabel23;
+
+  /// lib/core/assets/loop_assets.dart:532
+  ///
+  /// In en, this message translates to:
+  /// **'Community mark · Signal'**
+  String get coreAssets_loopLabel24;
+
+  /// lib/core/assets/loop_assets.dart:402
+  ///
+  /// In en, this message translates to:
+  /// **'pepe_maxi avatar'**
+  String get coreAssets_loopLabel3;
+
+  /// lib/core/assets/loop_assets.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'AlphaDrop avatar'**
+  String get coreAssets_loopLabel4;
+
+  /// lib/core/assets/loop_assets.dart:414
+  ///
+  /// In en, this message translates to:
+  /// **'fox_trader avatar'**
+  String get coreAssets_loopLabel5;
+
+  /// lib/core/assets/loop_assets.dart:420
+  ///
+  /// In en, this message translates to:
+  /// **'PEPE founder avatar'**
+  String get coreAssets_loopLabel6;
+
+  /// lib/core/assets/loop_assets.dart:426
+  ///
+  /// In en, this message translates to:
+  /// **'SmartBuyer avatar'**
+  String get coreAssets_loopLabel7;
+
+  /// lib/core/assets/loop_assets.dart:432
+  ///
+  /// In en, this message translates to:
+  /// **'whale_0x9f avatar'**
+  String get coreAssets_loopLabel8;
+
+  /// lib/core/assets/loop_assets.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'DiamondPaw avatar'**
+  String get coreAssets_loopLabel9;
+
+  /// lib/core/config/loop_test_hints.dart:28
+  ///
+  /// In en, this message translates to:
+  /// **'BSC Testnet'**
+  String get coreConfig_testHintsLoopTestnetChainLabel;
+
+  /// lib/core/config/loop_test_hints.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'About the Launch testnet'**
+  String get coreConfig_testHintsLoopTestnetInfoButtonText;
+
+  /// lib/core/config/loop_test_hints.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'No testnet published'**
+  String get coreConfig_testHintsLoopTestnetNetworkRowAbsent;
+
+  /// lib/core/config/loop_test_hints.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'Testnet'**
+  String get coreConfig_testHintsLoopTestnetNetworkRowTitle;
+
+  /// lib/core/config/loop_test_hints.dart:42
+  ///
+  /// In en, this message translates to:
+  /// **'Launch lists, details and sign sheets currently point to BSC Testnet ({chainId}); testnet tokens have no real value. Wallet balances, market data, swaps and approvals still use BNB Smart Chain mainnet only and aren\'t affected. You can close this notice; it doesn\'t block anything.'**
+  String coreConfig_testHintsLoopTestnetNoticeBodyText(Object? chainId);
+
+  /// lib/core/config/loop_test_hints.dart:54
+  ///
+  /// In en, this message translates to:
+  /// **'Close testnet notice'**
+  String get coreConfig_testHintsLoopTestnetNoticeDismissText;
+
+  /// lib/core/config/loop_test_hints.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Launch is running on BSC Testnet'**
+  String get coreConfig_testHintsLoopTestnetNoticeTitleText;
+
+  /// lib/core/config/loop_test_hints.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'Launch chain balances are on BSC Testnet and don\'t count toward total assets; total assets only count BNB Smart Chain mainnet.'**
+  String get coreConfig_testHintsLoopTestnetWalletTotalNoteText;
+
+  /// lib/core/navigation/intel_power_route.dart:52
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation'**
+  String get coreNavigation_intelPowerRouteInvite;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'About and legal'**
+  String get coreNavigation_routeAbout;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Approval guard'**
+  String get coreNavigation_routeApprovalGuard;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Asset details'**
+  String get coreNavigation_routeAsset;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Privy sign-in'**
+  String get coreNavigation_routeAuth;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Email sign-in'**
+  String get coreNavigation_routeAuthEmail;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Email code'**
+  String get coreNavigation_routeAuthOtp;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Connect external wallet'**
+  String get coreNavigation_routeAuthWallet;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get coreNavigation_routeBetaFeedback;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'My feedback'**
+  String get coreNavigation_routeBetaFeedbackMine;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Bridge progress'**
+  String get coreNavigation_routeBridgeStatus;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Full-screen chart'**
+  String get coreNavigation_routeChartFull;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Tab'**
+  String get coreNavigation_routeChat;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Forward message'**
+  String get coreNavigation_routeChatForward;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Forward as one preview'**
+  String get coreNavigation_routeChatMergePreview;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Message search'**
+  String get coreNavigation_routeChatSearch;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Community Tab'**
+  String get coreNavigation_routeCommunity;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Community group'**
+  String get coreNavigation_routeCommunityChat;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Discover communities'**
+  String get coreNavigation_routeCommunityDiscover;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Community management'**
+  String get coreNavigation_routeCommunityManage;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Members and roles'**
+  String get coreNavigation_routeCommunityMembers;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Community home'**
+  String get coreNavigation_routeCommunityProfile;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Following and followers'**
+  String get coreNavigation_routeConnections;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'DApp browser'**
+  String get coreNavigation_routeDapp;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'DApp page'**
+  String get coreNavigation_routeDappWeb;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Device management'**
+  String get coreNavigation_routeDevices;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Force update'**
+  String get coreNavigation_routeForceUpdate;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get coreNavigation_routeGroup;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Group info'**
+  String get coreNavigation_routeGroupInfo;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Intel Tab'**
+  String get coreNavigation_routeIntel;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Private key export'**
+  String get coreNavigation_routeKeyExport;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Launch list'**
+  String get coreNavigation_routeLaunch;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Start a v2 launch'**
+  String get coreNavigation_routeLaunch2Create;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'DEX pool rewards'**
+  String get coreNavigation_routeLaunch2DynamicRewards;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'MEME v2 project'**
+  String get coreNavigation_routeLaunch2Instance;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Consensus badge'**
+  String get coreNavigation_routeLaunch2Nft;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Project status'**
+  String get coreNavigation_routeLaunch2Project;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Deployment progress'**
+  String get coreNavigation_routeLaunch2ProjectDeployment;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Sign deployment'**
+  String get coreNavigation_routeLaunch2ProjectSign;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'My projects'**
+  String get coreNavigation_routeLaunch2Projects;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to launch'**
+  String get coreNavigation_routeLaunchApply;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Project details'**
+  String get coreNavigation_routeLaunchDetail;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Graduation and migration'**
+  String get coreNavigation_routeLaunchGraduation;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Participation history'**
+  String get coreNavigation_routeLaunchHistory;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Bonding pool holders'**
+  String get coreNavigation_routeLaunchHolders;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Sale round rules'**
+  String get coreNavigation_routeLaunchRounds;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'My eligibility'**
+  String get coreNavigation_routeLaunchTier;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Launch subscription'**
+  String get coreNavigation_routeLaunchTrade;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Ecosystem economics'**
+  String get coreNavigation_routeLoopEconomy;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Create LOOP ID'**
+  String get coreNavigation_routeLoopIdSetup;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP staking'**
+  String get coreNavigation_routeLoopStake;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'System maintenance'**
+  String get coreNavigation_routeMaintenance;
+
+  /// lib/core/navigation/route_manifest.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Global and account'**
+  String get coreNavigation_routeManifestGlobalAccount;
+
+  /// lib/core/navigation/route_manifest.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'System states and components'**
+  String get coreNavigation_routeManifestSystem;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Market list'**
+  String get coreNavigation_routeMarket;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Create token'**
+  String get coreNavigation_routeMemeCreate;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'MEME token'**
+  String get coreNavigation_routeMemeToken;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'MEME holders'**
+  String get coreNavigation_routeMemeTokenHolders;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'MEME activity'**
+  String get coreNavigation_routeMemeTokenTrades;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'My mining'**
+  String get coreNavigation_routeMining;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Power breakdown'**
+  String get coreNavigation_routeMiningAssets;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Community mining panel'**
+  String get coreNavigation_routeMiningCommunity;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get coreNavigation_routeMiningRank;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards and claims'**
+  String get coreNavigation_routeMiningRewards;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Weight and power rules'**
+  String get coreNavigation_routeMiningRules;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Networks and RPC'**
+  String get coreNavigation_routeNetworks;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Net worth details'**
+  String get coreNavigation_routeNetworth;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'New pairs'**
+  String get coreNavigation_routeNewPairs;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Notification center'**
+  String get coreNavigation_routeNotifications;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'No network'**
+  String get coreNavigation_routeOffline;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended communities'**
+  String get coreNavigation_routeOnboardingCommunities;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Pay entry'**
+  String get coreNavigation_routePay;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Permission notes'**
+  String get coreNavigation_routePermissionNotice;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Center'**
+  String get coreNavigation_routePrivacy;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP ID home'**
+  String get coreNavigation_routeProfile;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get coreNavigation_routeProfileEdit;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations and boost'**
+  String get coreNavigation_routeReferral;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Region restriction'**
+  String get coreNavigation_routeRegionBlocked;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Global search'**
+  String get coreNavigation_routeSearch;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'MFA and app lock'**
+  String get coreNavigation_routeSecuritySetup;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Send: choose asset'**
+  String get coreNavigation_routeSend;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Send: confirm'**
+  String get coreNavigation_routeSendConfirm;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Send: recipient'**
+  String get coreNavigation_routeSendTo;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Server error'**
+  String get coreNavigation_routeServerError;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'General settings'**
+  String get coreNavigation_routeSettings;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Four sign sheet states'**
+  String get coreNavigation_routeSignSheetStates;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Three skeleton types'**
+  String get coreNavigation_routeSkeletonStates;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Smart money'**
+  String get coreNavigation_routeSmartMoney;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery'**
+  String get coreNavigation_routeSocialRecovery;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Splash'**
+  String get coreNavigation_routeSplash;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Square Tab'**
+  String get coreNavigation_routeSquare;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Help and support'**
+  String get coreNavigation_routeSupport;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Quote and fees'**
+  String get coreNavigation_routeSwapRoute;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Three toast states'**
+  String get coreNavigation_routeToastStates;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Token details'**
+  String get coreNavigation_routeToken;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Five Token Card states'**
+  String get coreNavigation_routeTokenCardStates;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Holder distribution'**
+  String get coreNavigation_routeTokenHolders;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Trade activity'**
+  String get coreNavigation_routeTokenTrades;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction history'**
+  String get coreNavigation_routeTxHistory;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction result'**
+  String get coreNavigation_routeTxResult;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'User profile'**
+  String get coreNavigation_routeUserProfile;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Voice room full view'**
+  String get coreNavigation_routeVoiceroomFull;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet overview'**
+  String get coreNavigation_routeWallet;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Creating wallet'**
+  String get coreNavigation_routeWalletCreate;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery setup'**
+  String get coreNavigation_routeWalletRecovery;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet management'**
+  String get coreNavigation_routeWallets;
+
+  /// lib/core/navigation/route_manifest.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Edit watchlist'**
+  String get coreNavigation_routeWatchlistEdit;
+
+  /// lib/core/security/loop_url_review.dart:41
+  ///
+  /// In en, this message translates to:
+  /// **'The domain has characters that look like Latin letters'**
+  String get coreSecurity_urlReviewConfusableCharacters;
+
+  /// lib/core/security/loop_url_review.dart:26
+  ///
+  /// In en, this message translates to:
+  /// **'The address contains a username or password, a common disguise'**
+  String get coreSecurity_urlReviewCredentialsInUrl;
+
+  /// lib/core/security/loop_url_review.dart:11
+  ///
+  /// In en, this message translates to:
+  /// **'Input is empty'**
+  String get coreSecurity_urlReviewEmpty;
+
+  /// lib/core/security/loop_url_review.dart:29
+  ///
+  /// In en, this message translates to:
+  /// **'The address is an IP, not a domain; ownership can\'t be checked'**
+  String get coreSecurity_urlReviewIpLiteralHost;
+
+  /// lib/core/security/loop_url_review.dart:23
+  ///
+  /// In en, this message translates to:
+  /// **'The address has no domain'**
+  String get coreSecurity_urlReviewMissingHost;
+
+  /// lib/core/security/loop_url_review.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'One part of the domain mixes Latin letters with other scripts'**
+  String get coreSecurity_urlReviewMixedScriptLabel;
+
+  /// lib/core/security/loop_url_review.dart:45
+  ///
+  /// In en, this message translates to:
+  /// **'The domain has non-ASCII characters; its ASCII form can\'t be computed locally'**
+  String get coreSecurity_urlReviewNonAsciiHost;
+
+  /// lib/core/security/loop_url_review.dart:32
+  ///
+  /// In en, this message translates to:
+  /// **'Uses a port other than 443'**
+  String get coreSecurity_urlReviewNonStandardPort;
+
+  /// lib/core/security/loop_url_review.dart:20
+  ///
+  /// In en, this message translates to:
+  /// **'Only HTTPS is allowed; plain-text or custom schemes are blocked'**
+  String get coreSecurity_urlReviewNotHttps;
+
+  /// lib/core/security/loop_url_review.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'The domain has an IDN-encoded (xn--) label that can\'t be turned back into readable form locally'**
+  String get coreSecurity_urlReviewPunycodeLabel;
+
+  /// lib/core/security/loop_url_review.dart:17
+  ///
+  /// In en, this message translates to:
+  /// **'No scheme given; read as HTTPS'**
+  String get coreSecurity_urlReviewSchemeAssumed;
+
+  /// lib/core/security/loop_url_review.dart:14
+  ///
+  /// In en, this message translates to:
+  /// **'The input has control or invisible characters'**
+  String get coreSecurity_urlReviewUnsafeCharacters;
+
+  /// lib/core/text/loop_error_text.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'The service didn\'t return a recognizable result. Try again later; if you already submitted a funds action, check the latest status first.'**
+  String get coreText_errorMessage;
+
+  /// lib/core/text/loop_error_text.dart:99
+  ///
+  /// In en, this message translates to:
+  /// **'This page\'s data is out of date. Refresh before continuing.'**
+  String get coreText_errorMessage10;
+
+  /// lib/core/text/loop_error_text.dart:106
+  ///
+  /// In en, this message translates to:
+  /// **'The same action was already submitted with different content. Check the latest status, then try again.'**
+  String get coreText_errorMessage11;
+
+  /// lib/core/text/loop_error_text.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'The indexer hasn\'t caught up with the latest block; data may lag. Try again later.'**
+  String get coreText_errorMessage12;
+
+  /// lib/core/text/loop_error_text.dart:120
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough available balance for this action (including fees).'**
+  String get coreText_errorMessage13;
+
+  /// lib/core/text/loop_error_text.dart:127
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong and the result is unconfirmed. Check the latest status before deciding whether to retry.'**
+  String get coreText_errorMessage14;
+
+  /// lib/core/text/loop_error_text.dart:134
+  ///
+  /// In en, this message translates to:
+  /// **'The request is malformed. Update the app or try again later.'**
+  String get coreText_errorMessage15;
+
+  /// lib/core/text/loop_error_text.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'A related service is under maintenance. Try again later.'**
+  String get coreText_errorMessage16;
+
+  /// lib/core/text/loop_error_text.dart:148
+  ///
+  /// In en, this message translates to:
+  /// **'The requested item doesn\'t exist or was removed.'**
+  String get coreText_errorMessage17;
+
+  /// lib/core/text/loop_error_text.dart:155
+  ///
+  /// In en, this message translates to:
+  /// **'This account doesn\'t have permission for this action.'**
+  String get coreText_errorMessage18;
+
+  /// lib/core/text/loop_error_text.dart:162
+  ///
+  /// In en, this message translates to:
+  /// **'This action was blocked by a policy in effect. The feature that started it explains the rule.'**
+  String get coreText_errorMessage19;
+
+  /// lib/core/text/loop_error_text.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'Finish setting up your LOOP account to continue.'**
+  String get coreText_errorMessage2;
+
+  /// lib/core/text/loop_error_text.dart:169
+  ///
+  /// In en, this message translates to:
+  /// **'Community and social actions need an activated LOOP ID. Activate it, then try again.'**
+  String get coreText_errorMessage20;
+
+  /// lib/core/text/loop_error_text.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'A required external service isn\'t available right now. Try again later.'**
+  String get coreText_errorMessage21;
+
+  /// lib/core/text/loop_error_text.dart:183
+  ///
+  /// In en, this message translates to:
+  /// **'The price changed. Refresh the quote before confirming.'**
+  String get coreText_errorMessage22;
+
+  /// lib/core/text/loop_error_text.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a moment and try again.'**
+  String get coreText_errorMessage23;
+
+  /// lib/core/text/loop_error_text.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'This feature isn\'t available in your region.'**
+  String get coreText_errorMessage24;
+
+  /// lib/core/text/loop_error_text.dart:204
+  ///
+  /// In en, this message translates to:
+  /// **'The service didn\'t respond in time. A timeout doesn\'t mean failure; for funds actions, check the latest status first.'**
+  String get coreText_errorMessage25;
+
+  /// lib/core/text/loop_error_text.dart:211
+  ///
+  /// In en, this message translates to:
+  /// **'That ID already belongs to something else. Use another one.'**
+  String get coreText_errorMessage26;
+
+  /// lib/core/text/loop_error_text.dart:218
+  ///
+  /// In en, this message translates to:
+  /// **'The device session expired. Sign in again.'**
+  String get coreText_errorMessage27;
+
+  /// lib/core/text/loop_error_text.dart:225
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction simulation didn\'t return a verifiable result. Can\'t confirm right now.'**
+  String get coreText_errorMessage28;
+
+  /// lib/core/text/loop_error_text.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'The request may have been accepted. Don\'t submit again; wait for reconciliation.'**
+  String get coreText_errorMessage29;
+
+  /// lib/core/text/loop_error_text.dart:50
+  ///
+  /// In en, this message translates to:
+  /// **'That name is on the current operator list. Try another.'**
+  String get coreText_errorMessage3;
+
+  /// lib/core/text/loop_error_text.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'The input doesn\'t meet the requirements. Check it and try again.'**
+  String get coreText_errorMessage30;
+
+  /// lib/core/text/loop_error_text.dart:246
+  ///
+  /// In en, this message translates to:
+  /// **'The data was changed on another device. Reload before saving.'**
+  String get coreText_errorMessage31;
+
+  /// lib/core/text/loop_error_text.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'That name is reserved by LOOP (such as official, support, admin). Try another.'**
+  String get coreText_errorMessage4;
+
+  /// lib/core/text/loop_error_text.dart:64
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in expired. Sign in again.'**
+  String get coreText_errorMessage5;
+
+  /// lib/core/text/loop_error_text.dart:71
+  ///
+  /// In en, this message translates to:
+  /// **'This action needs a signed-in account.'**
+  String get coreText_errorMessage6;
+
+  /// lib/core/text/loop_error_text.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed in, but this action needs extra verification.'**
+  String get coreText_errorMessage7;
+
+  /// lib/core/text/loop_error_text.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'This feature isn\'t available right now. Try again later.'**
+  String get coreText_errorMessage8;
+
+  /// lib/core/text/loop_error_text.dart:92
+  ///
+  /// In en, this message translates to:
+  /// **'The requested network doesn\'t match the asset\'s or wallet\'s chain.'**
+  String get coreText_errorMessage9;
+
+  /// lib/core/text/loop_error_text.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t finish right now'**
+  String get coreText_errorTitle;
+
+  /// lib/core/text/loop_error_text.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'Data out of date'**
+  String get coreText_errorTitle10;
+
+  /// lib/core/text/loop_error_text.dart:105
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate request conflict'**
+  String get coreText_errorTitle11;
+
+  /// lib/core/text/loop_error_text.dart:112
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain data delayed'**
+  String get coreText_errorTitle12;
+
+  /// lib/core/text/loop_error_text.dart:119
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance'**
+  String get coreText_errorTitle13;
+
+  /// lib/core/text/loop_error_text.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Internal service error'**
+  String get coreText_errorTitle14;
+
+  /// lib/core/text/loop_error_text.dart:133
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid request'**
+  String get coreText_errorTitle15;
+
+  /// lib/core/text/loop_error_text.dart:140
+  ///
+  /// In en, this message translates to:
+  /// **'Under maintenance'**
+  String get coreText_errorTitle16;
+
+  /// lib/core/text/loop_error_text.dart:147
+  ///
+  /// In en, this message translates to:
+  /// **'Not found'**
+  String get coreText_errorTitle17;
+
+  /// lib/core/text/loop_error_text.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'No permission'**
+  String get coreText_errorTitle18;
+
+  /// lib/core/text/loop_error_text.dart:161
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by policy'**
+  String get coreText_errorTitle19;
+
+  /// lib/core/text/loop_error_text.dart:42
+  ///
+  /// In en, this message translates to:
+  /// **'Account not set up'**
+  String get coreText_errorTitle2;
+
+  /// lib/core/text/loop_error_text.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your LOOP ID first'**
+  String get coreText_errorTitle20;
+
+  /// lib/core/text/loop_error_text.dart:175
+  ///
+  /// In en, this message translates to:
+  /// **'Provider not connected'**
+  String get coreText_errorTitle21;
+
+  /// lib/core/text/loop_error_text.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **'Quote expired'**
+  String get coreText_errorTitle22;
+
+  /// lib/core/text/loop_error_text.dart:189
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests'**
+  String get coreText_errorTitle23;
+
+  /// lib/core/text/loop_error_text.dart:196
+  ///
+  /// In en, this message translates to:
+  /// **'Region restriction'**
+  String get coreText_errorTitle24;
+
+  /// lib/core/text/loop_error_text.dart:203
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out'**
+  String get coreText_errorTitle25;
+
+  /// lib/core/text/loop_error_text.dart:210
+  ///
+  /// In en, this message translates to:
+  /// **'ID already taken'**
+  String get coreText_errorTitle26;
+
+  /// lib/core/text/loop_error_text.dart:217
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found'**
+  String get coreText_errorTitle27;
+
+  /// lib/core/text/loop_error_text.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation failed'**
+  String get coreText_errorTitle28;
+
+  /// lib/core/text/loop_error_text.dart:231
+  ///
+  /// In en, this message translates to:
+  /// **'Submission status unknown'**
+  String get coreText_errorTitle29;
+
+  /// lib/core/text/loop_error_text.dart:49
+  ///
+  /// In en, this message translates to:
+  /// **'That name isn\'t available'**
+  String get coreText_errorTitle3;
+
+  /// lib/core/text/loop_error_text.dart:238
+  ///
+  /// In en, this message translates to:
+  /// **'Validation failed'**
+  String get coreText_errorTitle30;
+
+  /// lib/core/text/loop_error_text.dart:245
+  ///
+  /// In en, this message translates to:
+  /// **'Version conflict'**
+  String get coreText_errorTitle31;
+
+  /// lib/core/text/loop_error_text.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'That name is reserved'**
+  String get coreText_errorTitle4;
+
+  /// lib/core/text/loop_error_text.dart:63
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid sign-in credentials'**
+  String get coreText_errorTitle5;
+
+  /// lib/core/text/loop_error_text.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in required'**
+  String get coreText_errorTitle6;
+
+  /// lib/core/text/loop_error_text.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Higher verification required'**
+  String get coreText_errorTitle7;
+
+  /// lib/core/text/loop_error_text.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Feature unavailable'**
+  String get coreText_errorTitle8;
+
+  /// lib/core/text/loop_error_text.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'Chain mismatch'**
+  String get coreText_errorTitle9;
+
+  /// lib/core/text/loop_token_text.dart:110
+  ///
+  /// In en, this message translates to:
+  /// **'Description can be up to {loopTokenDescriptionMaxCharacters} characters'**
+  String coreText_tokenLoopTokenDescriptionError(
+    Object? loopTokenDescriptionMaxCharacters,
+  );
+
+  /// lib/core/text/loop_token_text.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Description can\'t contain control or invisible characters'**
+  String get coreText_tokenLoopTokenDescriptionError2;
+
+  /// lib/core/text/loop_token_text.dart:21
+  ///
+  /// In en, this message translates to:
+  /// **'Name can be up to 20 characters (emoji count as 2)'**
+  String get coreText_tokenLoopTokenNameLengthMessage;
+
+  /// lib/core/text/loop_token_text.dart:18
+  ///
+  /// In en, this message translates to:
+  /// **'Name and ticker 1–20 characters each; Chinese, letters, numbers and emoji allowed'**
+  String get coreText_tokenLoopTokenTextRule;
+
+  /// lib/core/text/loop_token_text.dart:22
+  ///
+  /// In en, this message translates to:
+  /// **'Ticker can be up to 20 characters (emoji count as 2)'**
+  String get coreText_tokenLoopTokenTickerLengthMessage;
+
+  /// lib/core/text/loop_token_text.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'{label} is required'**
+  String coreText_tokenTokenTextError(Object? label);
+
+  /// lib/core/text/loop_token_text.dart:93
+  ///
+  /// In en, this message translates to:
+  /// **'{label} can\'t contain line breaks, control or invisible characters'**
+  String coreText_tokenTokenTextError2(Object? label);
+
+  /// lib/core/text/loop_token_text.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Ticker'**
+  String get coreText_tokenTokenTextError3;
 
   /// lib/features/dapp/dapp_bridge.dart:58
   ///
@@ -12763,6 +15342,1882 @@ abstract class LoopLocalizations {
   /// **'{unreadCount} unread'**
   String notifications_unreadCount(Object? unreadCount);
 
+  /// lib/features/profile/about/about_client_register.dart:125
+  ///
+  /// In en, this message translates to:
+  /// **'Other rules'**
+  String get profileAbout_clientRegisterLoopAboutUnknownModuleName;
+
+  /// lib/features/profile/about/about_client_register.dart:27
+  ///
+  /// In en, this message translates to:
+  /// **'App framework and runtime'**
+  String get profileAbout_clientRegisterPurpose;
+
+  /// lib/features/profile/about/about_client_register.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'Push channel'**
+  String get profileAbout_clientRegisterPurpose10;
+
+  /// lib/features/profile/about/about_client_register.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Local storage for device and session records'**
+  String get profileAbout_clientRegisterPurpose11;
+
+  /// lib/features/profile/about/about_client_register.dart:83
+  ///
+  /// In en, this message translates to:
+  /// **'Non-sensitive local display preferences'**
+  String get profileAbout_clientRegisterPurpose12;
+
+  /// lib/features/profile/about/about_client_register.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'Network reachability checks'**
+  String get profileAbout_clientRegisterPurpose13;
+
+  /// lib/features/profile/about/about_client_register.dart:93
+  ///
+  /// In en, this message translates to:
+  /// **'Vector icon rendering'**
+  String get profileAbout_clientRegisterPurpose14;
+
+  /// lib/features/profile/about/about_client_register.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'System share'**
+  String get profileAbout_clientRegisterPurpose15;
+
+  /// lib/features/profile/about/about_client_register.dart:103
+  ///
+  /// In en, this message translates to:
+  /// **'Open campaign links in the system browser'**
+  String get profileAbout_clientRegisterPurpose16;
+
+  /// lib/features/profile/about/about_client_register.dart:106
+  ///
+  /// In en, this message translates to:
+  /// **'Locally generated unique IDs'**
+  String get profileAbout_clientRegisterPurpose17;
+
+  /// lib/features/profile/about/about_client_register.dart:109
+  ///
+  /// In en, this message translates to:
+  /// **'iOS-style icon font'**
+  String get profileAbout_clientRegisterPurpose18;
+
+  /// lib/features/profile/about/about_client_register.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Interface fonts'**
+  String get profileAbout_clientRegisterPurpose19;
+
+  /// lib/features/profile/about/about_client_register.dart:30
+  ///
+  /// In en, this message translates to:
+  /// **'Network requests'**
+  String get profileAbout_clientRegisterPurpose2;
+
+  /// lib/features/profile/about/about_client_register.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Exact decimal math for amounts and prices'**
+  String get profileAbout_clientRegisterPurpose3;
+
+  /// lib/features/profile/about/about_client_register.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'State management'**
+  String get profileAbout_clientRegisterPurpose4;
+
+  /// lib/features/profile/about/about_client_register.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'Page routing'**
+  String get profileAbout_clientRegisterPurpose5;
+
+  /// lib/features/profile/about/about_client_register.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in and built-in wallet'**
+  String get profileAbout_clientRegisterPurpose6;
+
+  /// lib/features/profile/about/about_client_register.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet connection and signing credentials'**
+  String get profileAbout_clientRegisterPurpose7;
+
+  /// lib/features/profile/about/about_client_register.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'Community chat'**
+  String get profileAbout_clientRegisterPurpose8;
+
+  /// lib/features/profile/about/about_client_register.dart:63
+  ///
+  /// In en, this message translates to:
+  /// **'Local chat cache'**
+  String get profileAbout_clientRegisterPurpose9;
+
+  /// lib/features/profile/about/about_client_register.dart:134
+  ///
+  /// In en, this message translates to:
+  /// **'Product policy'**
+  String get profileAbout_clientRegisterSwitch;
+
+  /// lib/features/profile/about/about_client_register.dart:143
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain write rules'**
+  String get profileAbout_clientRegisterSwitch10;
+
+  /// lib/features/profile/about/about_client_register.dart:149
+  ///
+  /// In en, this message translates to:
+  /// **'Version of the five tabs, default landing page and overall product rules'**
+  String get profileAbout_clientRegisterSwitch11;
+
+  /// lib/features/profile/about/about_client_register.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Operator overrides for this client\'s version, region and terms requirements'**
+  String get profileAbout_clientRegisterSwitch12;
+
+  /// lib/features/profile/about/about_client_register.dart:151
+  ///
+  /// In en, this message translates to:
+  /// **'How device sessions are created, limited and revoked'**
+  String get profileAbout_clientRegisterSwitch13;
+
+  /// lib/features/profile/about/about_client_register.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'Rules for community creation, members, roles and governance'**
+  String get profileAbout_clientRegisterSwitch14;
+
+  /// lib/features/profile/about/about_client_register.dart:153
+  ///
+  /// In en, this message translates to:
+  /// **'How Market trending is ranked'**
+  String get profileAbout_clientRegisterSwitch15;
+
+  /// lib/features/profile/about/about_client_register.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Thresholds for new-device alerts'**
+  String get profileAbout_clientRegisterSwitch16;
+
+  /// lib/features/profile/about/about_client_register.dart:155
+  ///
+  /// In en, this message translates to:
+  /// **'Which account settings can be changed'**
+  String get profileAbout_clientRegisterSwitch17;
+
+  /// lib/features/profile/about/about_client_register.dart:156
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket categories, length and response times'**
+  String get profileAbout_clientRegisterSwitch18;
+
+  /// lib/features/profile/about/about_client_register.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Swap quote, slippage and fee rules'**
+  String get profileAbout_clientRegisterSwitch19;
+
+  /// lib/features/profile/about/about_client_register.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'Client policy'**
+  String get profileAbout_clientRegisterSwitch2;
+
+  /// lib/features/profile/about/about_client_register.dart:158
+  ///
+  /// In en, this message translates to:
+  /// **'Asset scope and per-transaction limit for on-chain write rollout'**
+  String get profileAbout_clientRegisterSwitch20;
+
+  /// lib/features/profile/about/about_client_register.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in session rules'**
+  String get profileAbout_clientRegisterSwitch3;
+
+  /// lib/features/profile/about/about_client_register.dart:137
+  ///
+  /// In en, this message translates to:
+  /// **'Community rules'**
+  String get profileAbout_clientRegisterSwitch4;
+
+  /// lib/features/profile/about/about_client_register.dart:138
+  ///
+  /// In en, this message translates to:
+  /// **'Market trending rules'**
+  String get profileAbout_clientRegisterSwitch5;
+
+  /// lib/features/profile/about/about_client_register.dart:139
+  ///
+  /// In en, this message translates to:
+  /// **'Device risk alert rules'**
+  String get profileAbout_clientRegisterSwitch6;
+
+  /// lib/features/profile/about/about_client_register.dart:140
+  ///
+  /// In en, this message translates to:
+  /// **'Account settings rules'**
+  String get profileAbout_clientRegisterSwitch7;
+
+  /// lib/features/profile/about/about_client_register.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'Support ticket rules'**
+  String get profileAbout_clientRegisterSwitch8;
+
+  /// lib/features/profile/about/about_client_register.dart:142
+  ///
+  /// In en, this message translates to:
+  /// **'Swap rules'**
+  String get profileAbout_clientRegisterSwitch9;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'No server address in the build config'**
+  String get profileAbout_networkDiagnosticsAboutBackendHostSubtitle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:169
+  ///
+  /// In en, this message translates to:
+  /// **'{backendTier} · From this build\'s config'**
+  String profileAbout_networkDiagnosticsAboutBackendHostSubtitle2(
+    Object? backendTier,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:164
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get profileAbout_networkDiagnosticsAboutBackendHostTitle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Declared {declaredMode} · Runtime {runtimeBuildMode} · {config}'**
+  String profileAbout_networkDiagnosticsAboutBuildModeSubtitle(
+    Object? config,
+    Object? declaredMode,
+    Object? runtimeBuildMode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Build mode'**
+  String get profileAbout_networkDiagnosticsAboutBuildModeTitle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:233
+  ///
+  /// In en, this message translates to:
+  /// **'Declared {declared} · Runtime {runtimeBuildMode}'**
+  String profileAbout_networkDiagnosticsBuildMode(
+    Object? declared,
+    Object? runtimeBuildMode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:156, lib/features/profile/about/network_diagnostics_screen.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'Not declared'**
+  String get profileAbout_networkDiagnosticsBuildRows;
+
+  /// lib/features/profile/about/network_diagnostics_controller.dart:67, lib/features/profile/about/network_diagnostics_controller.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'No address configured in this build, not checked'**
+  String get profileAbout_networkDiagnosticsControllerReason;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'{okCount} of {sent} reachable'**
+  String profileAbout_networkDiagnosticsDone(Object? okCount, Object? sent);
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'Run again'**
+  String get profileAbout_networkDiagnosticsDone2;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'{host} ({tier})'**
+  String profileAbout_networkDiagnosticsHostTier(Object? host, Object? tier);
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:92
+  ///
+  /// In en, this message translates to:
+  /// **'Start diagnosis'**
+  String get profileAbout_networkDiagnosticsIdle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'Checks'**
+  String get profileAbout_networkDiagnosticsLoopLabel;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get profileAbout_networkDiagnosticsLoopLabel2;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:249
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnosis copied'**
+  String get profileAbout_networkDiagnosticsMessage;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:256
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open share. Copy instead'**
+  String get profileAbout_networkDiagnosticsMessage2;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:179
+  ///
+  /// In en, this message translates to:
+  /// **'match'**
+  String get profileAbout_networkDiagnosticsModeMatch;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:179
+  ///
+  /// In en, this message translates to:
+  /// **'mismatch'**
+  String get profileAbout_networkDiagnosticsModeMismatch;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: the address doesn\'t meet this device\'s network rules'**
+  String get profileAbout_networkDiagnosticsModelsBlocked;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect: connection refused or interrupted'**
+  String get profileAbout_networkDiagnosticsModelsConnect;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect: DNS lookup failed'**
+  String get profileAbout_networkDiagnosticsModelsDns;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:154, lib/features/profile/about/network_diagnostics_screen.dart:63
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get profileAbout_networkDiagnosticsModelsIdle;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP network diagnosis'**
+  String get profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:302
+  ///
+  /// In en, this message translates to:
+  /// **'Time: {networkDiagnosticsTimestamp}'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport2(
+    Object? networkDiagnosticsTimestamp,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:303
+  ///
+  /// In en, this message translates to:
+  /// **'App version: {appVersion}'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport3(
+    Object? appVersion,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'Build mode: {buildMode}'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport4(
+    Object? buildMode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:305
+  ///
+  /// In en, this message translates to:
+  /// **'Server host: {serverHost}'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport5(
+    Object? serverHost,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'Platform: {platform}'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport6(
+    Object? platform,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:307
+  ///
+  /// In en, this message translates to:
+  /// **'Total time: {inMilliseconds} ms'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport7(
+    Object? inMilliseconds,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:308
+  ///
+  /// In en, this message translates to:
+  /// **'Results: {okCount} of {results} reachable'**
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport8(
+    Object? okCount,
+    Object? results,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:169
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect'**
+  String get profileAbout_networkDiagnosticsModelsOther;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Reachable'**
+  String get profileAbout_networkDiagnosticsModelsReachable;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:210
+  ///
+  /// In en, this message translates to:
+  /// **'Connected, but the service returned HTTP {statusCode}{reused}'**
+  String profileAbout_networkDiagnosticsModelsReason(
+    Object? reused,
+    Object? statusCode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:219
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP {statusCode} · Image {bytesText}'**
+  String profileAbout_networkDiagnosticsModelsReason2(
+    Object? bytesText,
+    Object? statusCode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'Connected, but no image received · HTTP {statusCode}'**
+  String profileAbout_networkDiagnosticsModelsReason3(Object? statusCode);
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:230
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP {statusCode} · Block {block}'**
+  String profileAbout_networkDiagnosticsModelsReason4(
+    Object? block,
+    Object? statusCode,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:155
+  ///
+  /// In en, this message translates to:
+  /// **'Checking'**
+  String get profileAbout_networkDiagnosticsModelsRunning;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:182
+  ///
+  /// In en, this message translates to:
+  /// **' · First {inMilliseconds} ms, connection reused'**
+  String profileAbout_networkDiagnosticsModelsS(Object? inMilliseconds);
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:158
+  ///
+  /// In en, this message translates to:
+  /// **'Timed out'**
+  String get profileAbout_networkDiagnosticsModelsTimeout;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:164
+  ///
+  /// In en, this message translates to:
+  /// **'Timed out, no response in time'**
+  String get profileAbout_networkDiagnosticsModelsTimeout2;
+
+  /// lib/features/profile/about/network_diagnostics_models.dart:167
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect: secure handshake failed'**
+  String get profileAbout_networkDiagnosticsModelsTls;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'Copy results'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsCopyLabel;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'This page only tests connectivity and timing. No account info is sent.'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioCaption;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Network check'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioKicker;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Total {state}s'**
+  String profileAbout_networkDiagnosticsNetworkDiagnosticsFolioStamp(
+    Object? state,
+  );
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:108
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure this device is online, then run again.'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineBody;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'No check could connect'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineTitle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'Results stay on this device and aren\'t uploaded. Copying or sharing is up to you.'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyText;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:144
+  ///
+  /// In en, this message translates to:
+  /// **'Where results go'**
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyTitle;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:64
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnosing'**
+  String get profileAbout_networkDiagnosticsRunning;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:93
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnosing'**
+  String get profileAbout_networkDiagnosticsRunning2;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'Each check times out after 8 seconds. All run at once, 15 seconds at most.'**
+  String get profileAbout_networkDiagnosticsText;
+
+  /// lib/features/profile/about/network_diagnostics_screen.dart:123
+  ///
+  /// In en, this message translates to:
+  /// **'About the checks'**
+  String get profileAbout_networkDiagnosticsTitle;
+
+  /// lib/features/profile/about/about_screen.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t publish client versions'**
+  String get profileAbout_screenAboutClientBuildNoteLabel;
+
+  /// lib/features/profile/about/about_screen.dart:90
+  ///
+  /// In en, this message translates to:
+  /// **'No valid version in the build config; none is made up here'**
+  String get profileAbout_screenAboutClientVersionSubtitle;
+
+  /// lib/features/profile/about/about_screen.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'From this device\'s build config, not uploaded'**
+  String get profileAbout_screenAboutClientVersionSubtitle2;
+
+  /// lib/features/profile/about/about_screen.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'Client version'**
+  String get profileAbout_screenAboutClientVersionTitle;
+
+  /// lib/features/profile/about/about_screen.dart:117
+  ///
+  /// In en, this message translates to:
+  /// **'For viewing only. No version is pinned.'**
+  String get profileAbout_screenAboutConfigNoteText;
+
+  /// lib/features/profile/about/about_screen.dart:104
+  ///
+  /// In en, this message translates to:
+  /// **'Test connectivity and timing from this device to each service'**
+  String get profileAbout_screenAboutNetworkDiagnosticsSubtitle;
+
+  /// lib/features/profile/about/about_screen.dart:102, lib/features/profile/about/network_diagnostics_screen.dart:71
+  ///
+  /// In en, this message translates to:
+  /// **'Network diagnosis'**
+  String get profileAbout_screenAboutNetworkDiagnosticsTitle;
+
+  /// lib/features/profile/about/about_screen.dart:123
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get profileAbout_screenAboutOpenSourceInfo;
+
+  /// lib/features/profile/about/about_screen.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source components in this app'**
+  String get profileAbout_screenAboutOpenSourceInfoTitle;
+
+  /// lib/features/profile/about/about_screen.dart:137
+  ///
+  /// In en, this message translates to:
+  /// **'Component versions follow this build\'s lockfile; this page doesn\'t show version numbers.'**
+  String get profileAbout_screenAboutOpenSourceNoteBody;
+
+  /// lib/features/profile/about/about_screen.dart:132
+  ///
+  /// In en, this message translates to:
+  /// **'Below are the open-source components the LOOP mobile client depends on directly, with their licenses; exact versions are recorded in this build\'s lockfile. Components used by the LOOP server aren\'t on this page.'**
+  String get profileAbout_screenAboutOpenSourceSummaryBody;
+
+  /// lib/features/profile/about/about_screen.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Crypto asset prices are highly volatile, and you may lose all your principal. LOOP is a non-custodial tool, gives no investment advice and isn\'t responsible for any trade outcome. Mining output depends on network-wide power competition and isn\'t a promise of returns.'**
+  String get profileAbout_screenAboutRiskNoticeBody;
+
+  /// lib/features/profile/about/about_screen.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Crypto asset risk'**
+  String get profileAbout_screenAboutRiskNoticeTitle;
+
+  /// lib/features/profile/about/about_screen.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'No document links for the Terms of Service, Privacy Policy and risk disclosure'**
+  String get profileAbout_screenAboutTermsUnavailableLabel;
+
+  /// lib/features/profile/about/about_screen.dart:230
+  ///
+  /// In en, this message translates to:
+  /// **'A version exists, but there\'s no document link to open yet.'**
+  String get profileAbout_screenAboutTermsVersionSubtitle;
+
+  /// lib/features/profile/about/about_screen.dart:229
+  ///
+  /// In en, this message translates to:
+  /// **'Terms version'**
+  String get profileAbout_screenAboutTermsVersionTitle;
+
+  /// lib/features/profile/about/about_screen.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read product records right now'**
+  String get profileAbout_screenEmptyMessage;
+
+  /// lib/features/profile/about/about_screen.dart:59
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get profileAbout_screenLoopLabel;
+
+  /// lib/features/profile/about/about_screen.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'Risk notice'**
+  String get profileAbout_screenLoopLabel2;
+
+  /// lib/features/profile/about/about_screen.dart:83, lib/features/profile/about/network_diagnostics_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'This build'**
+  String get profileAbout_screenLoopLabel3;
+
+  /// lib/features/profile/about/about_screen.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Current rules'**
+  String get profileAbout_screenLoopLabel4;
+
+  /// lib/features/profile/about/about_screen.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'Version {number}'**
+  String profileAbout_screenLoopRecordRow(Object? number);
+
+  /// lib/features/profile/about/about_screen.dart:200
+  ///
+  /// In en, this message translates to:
+  /// **'In effect {relativeTime}'**
+  String profileAbout_screenLoopRecordRow2(Object? relativeTime);
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:114
+  ///
+  /// In en, this message translates to:
+  /// **'That doesn\'t mean delivery works yet.'**
+  String get profileNotificationPreferences_screenBody;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:120
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll be asked once your account is ready.'**
+  String get profileNotificationPreferences_screenBody2;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'You can turn it on here once your account is in LOOP.'**
+  String get profileNotificationPreferences_screenBody3;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications stay in the in-app notification list.'**
+  String get profileNotificationPreferences_screenBody4;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:160
+  ///
+  /// In en, this message translates to:
+  /// **'Turn notifications back on for LOOP in system settings.'**
+  String get profileNotificationPreferences_screenBody5;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'This device registers automatically once it has one.'**
+  String get profileNotificationPreferences_screenBody6;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:175
+  ///
+  /// In en, this message translates to:
+  /// **'It\'ll try again next time you open LOOP.'**
+  String get profileNotificationPreferences_screenBody7;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:390
+  ///
+  /// In en, this message translates to:
+  /// **'Not in effect yet'**
+  String get profileNotificationPreferences_screenCategoryRow;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:253
+  ///
+  /// In en, this message translates to:
+  /// **'No notification settings yet'**
+  String get profileNotificationPreferences_screenEmptyMessage;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:460
+  ///
+  /// In en, this message translates to:
+  /// **'Once off, you won\'t get consensus badge, launch review or on-chain progress notifications.'**
+  String get profileNotificationPreferences_screenLaunchRound;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:283
+  ///
+  /// In en, this message translates to:
+  /// **'Save notification settings'**
+  String get profileNotificationPreferences_screenLoopOfflineState;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:445
+  ///
+  /// In en, this message translates to:
+  /// **'Notification settings saved'**
+  String get profileNotificationPreferences_screenMessage;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:215
+  ///
+  /// In en, this message translates to:
+  /// **'Notification settings aren\'t available right now'**
+  String
+  get profileNotificationPreferences_screenNotificationCapabilityBlockTitle;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:452
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off \"{label}\" notifications?'**
+  String profileNotificationPreferences_screenNotificationDisableTitle(
+    Object? label,
+  );
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'Notification settings changed on another device. Reload before editing.'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictBody;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'Version conflict. Nothing was overwritten'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictTitle;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'Settings not saved'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesErrorTitle;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'Push hasn\'t been confirmed on a real device yet. Switches still save and still affect the in-app notification list.'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushChannelBody;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:136
+  ///
+  /// In en, this message translates to:
+  /// **'New messages, price alerts and security events are pushed to this device. Tap Turn on and the system asks once.'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInBody;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInButtonLabel;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on push notifications'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInTitle;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'{deliveringEnabledCount} on and in effect. Only price alerts create in-app notifications for now; security events are always on.'**
+  String
+  profileNotificationPreferences_screenNotificationPreferencesSummaryBody(
+    Object? deliveringEnabledCount,
+  );
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:320
+  ///
+  /// In en, this message translates to:
+  /// **'Using default settings'**
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesVersionText;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:321
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {relativeTime}'**
+  String
+  profileNotificationPreferences_screenNotificationPreferencesVersionText2(
+    Object? relativeTime,
+  );
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:308
+  ///
+  /// In en, this message translates to:
+  /// **'Push isn\'t available yet'**
+  String
+  get profileNotificationPreferences_screenNotificationPushUnavailableLabel;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:392
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get profileNotificationPreferences_screenS;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:461
+  ///
+  /// In en, this message translates to:
+  /// **'Once off, you won\'t get this type of notification.'**
+  String get profileNotificationPreferences_screenSwitch;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'This device is registered for push'**
+  String get profileNotificationPreferences_screenTitle;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:119, lib/features/profile/notification_preferences/notification_preferences_screen.dart:127
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission hasn\'t been requested on this device'**
+  String get profileNotificationPreferences_screenTitle2;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:151
+  ///
+  /// In en, this message translates to:
+  /// **'No push channel on this device'**
+  String get profileNotificationPreferences_screenTitle3;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission denied; this device can\'t get push'**
+  String get profileNotificationPreferences_screenTitle4;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the system to assign a push channel'**
+  String get profileNotificationPreferences_screenTitle5;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:174
+  ///
+  /// In en, this message translates to:
+  /// **'This device isn\'t registered yet'**
+  String get profileNotificationPreferences_screenTitle6;
+
+  /// lib/features/profile/notification_preferences/notification_preferences_screen.dart:290
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t change notification settings'**
+  String get profileNotificationPreferences_screenTitle7;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'Use this one'**
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel2;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:164
+  ///
+  /// In en, this message translates to:
+  /// **'Drag and pinch to zoom. What\'s inside the frame is your avatar.'**
+  String get profilePresentation_avatarEditorBuild;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:382
+  ///
+  /// In en, this message translates to:
+  /// **'Use default avatar'**
+  String get profilePresentation_avatarEditorLoopAvatarResetLabel;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:373
+  ///
+  /// In en, this message translates to:
+  /// **'Upload avatar'**
+  String get profilePresentation_avatarEditorLoopAvatarUploadLabel;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:393
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar upload isn\'t open yet. Use the default for now.'**
+  String get profilePresentation_avatarEditorLoopAvatarUploadUnavailable;
+
+  /// lib/features/profile/presentation/avatar_editor.dart:159
+  ///
+  /// In en, this message translates to:
+  /// **'Crop avatar'**
+  String get profilePresentation_avatarEditorLoopSheetHeading;
+
+  /// lib/features/profile/presentation/avatar_media.dart:170
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm the upload. Your avatar wasn\'t changed.'**
+  String get profilePresentation_avatarMediaInvalidData;
+
+  /// lib/features/profile/presentation/avatar_media.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'No network connection. Your avatar wasn\'t uploaded.'**
+  String get profilePresentation_avatarMediaOffline;
+
+  /// lib/features/profile/presentation/avatar_media.dart:167
+  ///
+  /// In en, this message translates to:
+  /// **'Too many uploads. Try again in a minute.'**
+  String get profilePresentation_avatarMediaRateLimited;
+
+  /// lib/features/profile/presentation/avatar_media.dart:169
+  ///
+  /// In en, this message translates to:
+  /// **'This image can\'t be used: it must be JPG, PNG, WebP or HEIC, up to 5 MB, at least 64 pixels per side.'**
+  String get profilePresentation_avatarMediaRejected;
+
+  /// lib/features/profile/presentation/avatar_media.dart:165
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar upload isn\'t available right now. Use the default for now.'**
+  String get profilePresentation_avatarMediaUnavailable;
+
+  /// lib/features/profile/presentation/avatar_media.dart:171
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar upload failed. Try again.'**
+  String get profilePresentation_avatarMediaUnexpected;
+
+  /// lib/features/profile/privacy/privacy_models.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'Joined communities'**
+  String get profilePrivacy_modelsCommunities;
+
+  /// lib/features/profile/privacy/privacy_models.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Let friends message me'**
+  String get profilePrivacy_modelsDirectMessages;
+
+  /// lib/features/profile/privacy/privacy_models.dart:125
+  ///
+  /// In en, this message translates to:
+  /// **'Let strangers send friend requests'**
+  String get profilePrivacy_modelsFriendRequests;
+
+  /// lib/features/profile/privacy/privacy_models.dart:127
+  ///
+  /// In en, this message translates to:
+  /// **'Let friends add me to groups'**
+  String get profilePrivacy_modelsGroupInvites;
+
+  /// lib/features/profile/privacy/privacy_models.dart:37
+  ///
+  /// In en, this message translates to:
+  /// **'Mining power'**
+  String get profilePrivacy_modelsMiningPower;
+
+  /// lib/features/profile/privacy/privacy_models.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'Total assets'**
+  String get profilePrivacy_modelsTotalAssets;
+
+  /// lib/features/profile/privacy/privacy_models.dart:39
+  ///
+  /// In en, this message translates to:
+  /// **'Trade history'**
+  String get profilePrivacy_modelsTradeHistory;
+
+  /// lib/features/profile/security/security_models.dart:225
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic recovery'**
+  String get profileSecurity_modelsAutoRecovery;
+
+  /// lib/features/profile/security/security_models.dart:225
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery shares held by the provider.'**
+  String get profileSecurity_modelsAutoRecovery2;
+
+  /// lib/features/profile/security/security_models.dart:227, lib/features/profile/security/security_screens.dart:1135
+  ///
+  /// In en, this message translates to:
+  /// **'Export private key'**
+  String get profileSecurity_modelsKeyExport;
+
+  /// lib/features/profile/security/security_models.dart:227
+  ///
+  /// In en, this message translates to:
+  /// **'Take your private key with you, free of LOOP or Privy.'**
+  String get profileSecurity_modelsKeyExport2;
+
+  /// lib/features/profile/security/security_models.dart:222
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-factor authentication'**
+  String get profileSecurity_modelsMfa;
+
+  /// lib/features/profile/security/security_models.dart:222
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in and sensitive actions need a second factor.'**
+  String get profileSecurity_modelsMfa2;
+
+  /// lib/features/profile/security/security_models.dart:223
+  ///
+  /// In en, this message translates to:
+  /// **'Use device biometrics instead of a password.'**
+  String get profileSecurity_modelsPasskey;
+
+  /// lib/features/profile/security/security_models.dart:49
+  ///
+  /// In en, this message translates to:
+  /// **'Verified by Privy'**
+  String get profileSecurity_modelsProviderAuthenticated;
+
+  /// lib/features/profile/security/security_models.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery password'**
+  String get profileSecurity_modelsRecoveryPassword;
+
+  /// lib/features/profile/security/security_models.dart:224
+  ///
+  /// In en, this message translates to:
+  /// **'A passphrase you keep, used to recover your wallet on a new device.'**
+  String get profileSecurity_modelsRecoveryPassword2;
+
+  /// lib/features/profile/security/security_models.dart:226, lib/features/profile/security/security_screens.dart:1269, lib/features/profile/security/security_screens.dart:1277
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery'**
+  String get profileSecurity_modelsSocialRecovery;
+
+  /// lib/features/profile/security/security_models.dart:226
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery needs 2 of 3 guardians to confirm.'**
+  String get profileSecurity_modelsSocialRecovery2;
+
+  /// lib/features/profile/security/security_screens.dart:709
+  ///
+  /// In en, this message translates to:
+  /// **'ERC-20 approvals still active on this wallet.'**
+  String get profileSecurity_screensBody;
+
+  /// lib/features/profile/security/security_screens.dart:723
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals with no limit carry the highest risk.'**
+  String get profileSecurity_screensBody2;
+
+  /// lib/features/profile/security/security_screens.dart:1082
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke session'**
+  String get profileSecurity_screensDeviceRevokeConfirmLabel;
+
+  /// lib/features/profile/security/security_screens.dart:1064
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP marks this session as revoked, rejects later requests that carry it, and records a security event. The Privy sign-in on that device isn\'t ended.'**
+  String get profileSecurity_screensDeviceRevokeSheetEffectBody;
+
+  /// lib/features/profile/security/security_screens.dart:1062
+  ///
+  /// In en, this message translates to:
+  /// **'What happens after revoking'**
+  String get profileSecurity_screensDeviceRevokeSheetEffectTitle;
+
+  /// lib/features/profile/security/security_screens.dart:995
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked {relativeTime}'**
+  String profileSecurity_screensDeviceRow(Object? relativeTime);
+
+  /// lib/features/profile/security/security_screens.dart:997
+  ///
+  /// In en, this message translates to:
+  /// **'In use'**
+  String get profileSecurity_screensDeviceRow2;
+
+  /// lib/features/profile/security/security_screens.dart:858
+  ///
+  /// In en, this message translates to:
+  /// **'Device management isn\'t available right now'**
+  String get profileSecurity_screensDevicesCapabilityBlockTitle;
+
+  /// lib/features/profile/security/security_screens.dart:909
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no usable session ID, so no row in the list is marked as this session or this device.'**
+  String get profileSecurity_screensDevicesCurrentUnknownBody;
+
+  /// lib/features/profile/security/security_screens.dart:908
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t mark this session'**
+  String get profileSecurity_screensDevicesCurrentUnknownTitle;
+
+  /// lib/features/profile/security/security_screens.dart:966
+  ///
+  /// In en, this message translates to:
+  /// **'Revoking marks the session as revoked and makes LOOP reject later requests that carry it. It doesn\'t end the Privy sign-in on that device, so don\'t read it as that device being signed out. To sign out here, use Sign out in Settings.'**
+  String get profileSecurity_screensDevicesEffectNoticeBody;
+
+  /// lib/features/profile/security/security_screens.dart:964
+  ///
+  /// In en, this message translates to:
+  /// **'What revoking does'**
+  String get profileSecurity_screensDevicesEffectNoticeTitle;
+
+  /// lib/features/profile/security/security_screens.dart:852
+  ///
+  /// In en, this message translates to:
+  /// **'Device names and locations aren\'t shown here, only platform, version, session ID and sign-in time.'**
+  String get profileSecurity_screensDevicesFolioCaption;
+
+  /// lib/features/profile/security/security_screens.dart:851
+  ///
+  /// In en, this message translates to:
+  /// **'{deviceCount} devices · {activeCount} sessions'**
+  String profileSecurity_screensDevicesFolioHeading(
+    Object? activeCount,
+    Object? deviceCount,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:848
+  ///
+  /// In en, this message translates to:
+  /// **'Device sessions'**
+  String get profileSecurity_screensDevicesFolioKicker;
+
+  /// lib/features/profile/security/security_screens.dart:899
+  ///
+  /// In en, this message translates to:
+  /// **'{newSessions24h} sessions were created in the last {windowHours} hours, reaching the alert threshold of {newSessionThreshold}. This is only an alert; it doesn\'t require two-step verification.'**
+  String profileSecurity_screensDevicesHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? newSessions24h,
+    Object? windowHours,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:939
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out all other devices'**
+  String get profileSecurity_screensDevicesRevokeAllLabel;
+
+  /// lib/features/profile/security/security_screens.dart:947
+  ///
+  /// In en, this message translates to:
+  /// **'Needs two-step verification, not available now'**
+  String get profileSecurity_screensDevicesRevokeAllUnavailableLabel;
+
+  /// lib/features/profile/security/security_screens.dart:878
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP marked the session as revoked and rejects later requests that carry it. The Privy access token on that device isn\'t affected (providerAccessTerminated: {providerAccessTerminated}).'**
+  String profileSecurity_screensDevicesRevokeOutcomeBody(
+    Object? providerAccessTerminated,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:838, lib/features/profile/security/security_screens.dart:850
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get profileSecurity_screensDevicesScreenTitle;
+
+  /// lib/features/profile/security/security_screens.dart:917
+  ///
+  /// In en, this message translates to:
+  /// **'This account hasn\'t set up a device yet.'**
+  String get profileSecurity_screensDevicesStateEmptyMessage;
+
+  /// lib/features/profile/security/security_screens.dart:916
+  ///
+  /// In en, this message translates to:
+  /// **'No device sessions yet'**
+  String get profileSecurity_screensDevicesStateEmptyTitle;
+
+  /// lib/features/profile/security/security_screens.dart:932
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 100 sessions are shown; paging isn\'t available yet.'**
+  String get profileSecurity_screensDevicesTruncatedBody;
+
+  /// lib/features/profile/security/security_screens.dart:931
+  ///
+  /// In en, this message translates to:
+  /// **'List truncated'**
+  String get profileSecurity_screensDevicesTruncatedTitle;
+
+  /// lib/features/profile/security/security_screens.dart:236
+  ///
+  /// In en, this message translates to:
+  /// **'No security features to show'**
+  String get profileSecurity_screensEmptyMessage;
+
+  /// lib/features/profile/security/security_screens.dart:277
+  ///
+  /// In en, this message translates to:
+  /// **'No security summary yet'**
+  String get profileSecurity_screensEmptyMessage2;
+
+  /// lib/features/profile/security/security_screens.dart:888
+  ///
+  /// In en, this message translates to:
+  /// **'No device sessions to show'**
+  String get profileSecurity_screensEmptyMessage3;
+
+  /// lib/features/profile/security/security_screens.dart:1164
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read export status'**
+  String get profileSecurity_screensEmptyMessage4;
+
+  /// lib/features/profile/security/security_screens.dart:1303
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read social recovery status'**
+  String get profileSecurity_screensEmptyMessage5;
+
+  /// lib/features/profile/security/security_screens.dart:774
+  ///
+  /// In en, this message translates to:
+  /// **' · Source {source}'**
+  String profileSecurity_screensEventSourceSuffix(Object? source);
+
+  /// lib/features/profile/security/security_screens.dart:1000
+  ///
+  /// In en, this message translates to:
+  /// **'Session {sessionShortId} · First sign-in {sessionCreatedAtLabel}'**
+  String profileSecurity_screensIdentity(
+    Object? sessionCreatedAtLabel,
+    Object? sessionShortId,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:437
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in service says this account already has a passkey'**
+  String get profileSecurity_screensIf;
+
+  /// lib/features/profile/security/security_screens.dart:1206
+  ///
+  /// In en, this message translates to:
+  /// **'Verify and export'**
+  String get profileSecurity_screensKeyExportActionLabel;
+
+  /// lib/features/profile/security/security_screens.dart:1129, lib/features/profile/security/security_screens.dart:1175
+  ///
+  /// In en, this message translates to:
+  /// **'Private key export isn\'t available right now'**
+  String get profileSecurity_screensKeyExportCapabilityBlockTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1213
+  ///
+  /// In en, this message translates to:
+  /// **'Control notes'**
+  String get profileSecurity_screensKeyExportControlDisclosureSummary;
+
+  /// lib/features/profile/security/security_screens.dart:1145
+  ///
+  /// In en, this message translates to:
+  /// **'Before export: read the risks, verify your identity and confirm local display.'**
+  String get profileSecurity_screensKeyExportFolioCaption;
+
+  /// lib/features/profile/security/security_screens.dart:1144
+  ///
+  /// In en, this message translates to:
+  /// **'You control your private key'**
+  String get profileSecurity_screensKeyExportFolioHeading;
+
+  /// lib/features/profile/security/security_screens.dart:1143
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet key'**
+  String get profileSecurity_screensKeyExportFolioKicker;
+
+  /// lib/features/profile/security/security_screens.dart:1146
+  ///
+  /// In en, this message translates to:
+  /// **'Sensitive'**
+  String get profileSecurity_screensKeyExportFolioStamp;
+
+  /// lib/features/profile/security/security_screens.dart:1194
+  ///
+  /// In en, this message translates to:
+  /// **'This page never renders a masked key sample; that would make it look like a key was already exported.'**
+  String get profileSecurity_screensKeyExportNoKeySubtitle;
+
+  /// lib/features/profile/security/security_screens.dart:1193
+  ///
+  /// In en, this message translates to:
+  /// **'No private key is shown'**
+  String get profileSecurity_screensKeyExportNoKeyTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1187
+  ///
+  /// In en, this message translates to:
+  /// **'No Face ID, no code: verification only matters when export is actually possible.'**
+  String get profileSecurity_screensKeyExportNoVerificationSubtitle;
+
+  /// lib/features/profile/security/security_screens.dart:1186
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t be asked to verify'**
+  String get profileSecurity_screensKeyExportNoVerificationTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1156
+  ///
+  /// In en, this message translates to:
+  /// **'A leaked private key means losing all your assets. Don\'t screenshot it, send it to anyone or keep it in online notes. No one can recover stolen assets for you.'**
+  String get profileSecurity_screensKeyExportRiskBody;
+
+  /// lib/features/profile/security/security_screens.dart:1154
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting moves all responsibility to you'**
+  String get profileSecurity_screensKeyExportRiskTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1046
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get profileSecurity_screensLabel;
+
+  /// lib/features/profile/security/security_screens.dart:1047
+  ///
+  /// In en, this message translates to:
+  /// **'Client version'**
+  String get profileSecurity_screensLabel2;
+
+  /// lib/features/profile/security/security_screens.dart:1052
+  ///
+  /// In en, this message translates to:
+  /// **'First sign-in'**
+  String get profileSecurity_screensLabel3;
+
+  /// lib/features/profile/security/security_screens.dart:1056
+  ///
+  /// In en, this message translates to:
+  /// **'Belongs to'**
+  String get profileSecurity_screensLabel4;
+
+  /// lib/features/profile/security/security_screens.dart:1057
+  ///
+  /// In en, this message translates to:
+  /// **'Last active'**
+  String get profileSecurity_screensLabel5;
+
+  /// lib/features/profile/security/security_screens.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get profileSecurity_screensListSeparator;
+
+  /// lib/features/profile/security/security_screens.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Unreadable'**
+  String get profileSecurity_screensLoopBadge;
+
+  /// lib/features/profile/security/security_screens.dart:986, lib/features/profile/security/security_screens.dart:1020
+  ///
+  /// In en, this message translates to:
+  /// **'This session'**
+  String get profileSecurity_screensLoopBadge2;
+
+  /// lib/features/profile/security/security_screens.dart:988, lib/features/profile/security/security_screens.dart:1023
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get profileSecurity_screensLoopBadge3;
+
+  /// lib/features/profile/security/security_screens.dart:990
+  ///
+  /// In en, this message translates to:
+  /// **'Old session'**
+  String get profileSecurity_screensLoopBadge4;
+
+  /// lib/features/profile/security/security_screens.dart:991
+  ///
+  /// In en, this message translates to:
+  /// **'Other device'**
+  String get profileSecurity_screensLoopBadge5;
+
+  /// lib/features/profile/security/security_screens.dart:231, lib/features/profile/security/security_screens.dart:573
+  ///
+  /// In en, this message translates to:
+  /// **'Verification'**
+  String get profileSecurity_screensLoopLabel;
+
+  /// lib/features/profile/security/security_screens.dart:263
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction verification'**
+  String get profileSecurity_screensLoopLabel2;
+
+  /// lib/features/profile/security/security_screens.dart:271
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get profileSecurity_screensLoopLabel3;
+
+  /// lib/features/profile/security/security_screens.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'Recent security events'**
+  String get profileSecurity_screensLoopLabel4;
+
+  /// lib/features/profile/security/security_screens.dart:911, lib/features/profile/security/security_screens.dart:1050
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get profileSecurity_screensLoopLabel5;
+
+  /// lib/features/profile/security/security_screens.dart:934
+  ///
+  /// In en, this message translates to:
+  /// **'All devices'**
+  String get profileSecurity_screensLoopLabel6;
+
+  /// lib/features/profile/security/security_screens.dart:1179
+  ///
+  /// In en, this message translates to:
+  /// **'What won\'t happen at this step'**
+  String get profileSecurity_screensLoopLabel7;
+
+  /// lib/features/profile/security/security_screens.dart:1322
+  ///
+  /// In en, this message translates to:
+  /// **'Guardians'**
+  String get profileSecurity_screensLoopLabel8;
+
+  /// lib/features/profile/security/security_screens.dart:1018
+  ///
+  /// In en, this message translates to:
+  /// **'Session {sessionShortId}'**
+  String profileSecurity_screensLoopRecordRow(Object? sessionShortId);
+
+  /// lib/features/profile/security/security_screens.dart:1022, lib/features/profile/security/security_screens.dart:1056
+  ///
+  /// In en, this message translates to:
+  /// **'Old session on this device'**
+  String get profileSecurity_screensLoopRecordRow2;
+
+  /// lib/features/profile/security/security_screens.dart:1045
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke this session?'**
+  String get profileSecurity_screensLoopSheetHeading;
+
+  /// lib/features/profile/security/security_screens.dart:812, lib/features/profile/security/security_screens.dart:876
+  ///
+  /// In en, this message translates to:
+  /// **'Revocation recorded; access on that device isn\'t ended'**
+  String get profileSecurity_screensMessage;
+
+  /// lib/features/profile/security/security_screens.dart:812, lib/features/profile/security/security_screens.dart:867
+  ///
+  /// In en, this message translates to:
+  /// **'Revocation didn\'t finish'**
+  String get profileSecurity_screensMessage2;
+
+  /// lib/features/profile/security/security_screens.dart:772
+  ///
+  /// In en, this message translates to:
+  /// **'Platform not labeled'**
+  String get profileSecurity_screensPlatformUnlabeled;
+
+  /// lib/features/profile/security/security_screens.dart:998
+  ///
+  /// In en, this message translates to:
+  /// **'Last active {relativeTime}'**
+  String profileSecurity_screensS(Object? relativeTime);
+
+  /// lib/features/profile/security/security_screens.dart:1023
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get profileSecurity_screensS2;
+
+  /// lib/features/profile/security/security_screens.dart:248
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-factor authentication, passkeys, recovery and export are provided by Privy and will show here once open.'**
+  String get profileSecurity_screensScopeNote;
+
+  /// lib/features/profile/security/security_screens.dart:250
+  ///
+  /// In en, this message translates to:
+  /// **'These protections are provided by Privy.'**
+  String get profileSecurity_screensScopeNote2;
+
+  /// lib/features/profile/security/security_screens.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'These protections are provided by Privy. {notOpen} will show here once open.'**
+  String profileSecurity_screensScopeNote3(Object? notOpen);
+
+  /// lib/features/profile/security/security_screens.dart:703, lib/features/profile/security/security_screens.dart:706
+  ///
+  /// In en, this message translates to:
+  /// **'Active approvals'**
+  String get profileSecurity_screensSecurityApprovalsActiveTitle;
+
+  /// lib/features/profile/security/security_screens.dart:734
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals from block {groupedFigure} · Indexed {groupedFigure2} / Head {groupedFigure3} · Seen {relativeTime}'**
+  String profileSecurity_screensSecurityApprovalsFreshnessText(
+    Object? groupedFigure,
+    Object? groupedFigure2,
+    Object? groupedFigure3,
+    Object? relativeTime,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:686
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read token approvals'**
+  String get profileSecurity_screensSecurityApprovalsUnavailableLabel;
+
+  /// lib/features/profile/security/security_screens.dart:717, lib/features/profile/security/security_screens.dart:720
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited approvals'**
+  String get profileSecurity_screensSecurityApprovalsUnlimitedTitle;
+
+  /// lib/features/profile/security/security_screens.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Security Center isn\'t available right now'**
+  String get profileSecurity_screensSecurityCapabilityBlockTitle;
+
+  /// lib/features/profile/security/security_screens.dart:646
+  ///
+  /// In en, this message translates to:
+  /// **'{sessions} active sessions · {recent} new in the last {windowHours} hours'**
+  String profileSecurity_screensSecurityDevicesEntrySubtitle(
+    Object? recent,
+    Object? sessions,
+    Object? windowHours,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:644
+  ///
+  /// In en, this message translates to:
+  /// **'Signed-in devices'**
+  String get profileSecurity_screensSecurityDevicesEntryTitle;
+
+  /// lib/features/profile/security/security_screens.dart:628
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read devices and sessions'**
+  String get profileSecurity_screensSecurityDevicesUnavailableLabel;
+
+  /// lib/features/profile/security/security_screens.dart:764
+  ///
+  /// In en, this message translates to:
+  /// **'For now, only \"Sign out other devices\" records a security event.'**
+  String get profileSecurity_screensSecurityEventsEmptyMessage;
+
+  /// lib/features/profile/security/security_screens.dart:763
+  ///
+  /// In en, this message translates to:
+  /// **'No security events yet'**
+  String get profileSecurity_screensSecurityEventsEmptyTitle;
+
+  /// lib/features/profile/security/security_screens.dart:756
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read recent security events'**
+  String get profileSecurity_screensSecurityEventsUnavailableLabel;
+
+  /// lib/features/profile/security/security_screens.dart:659
+  ///
+  /// In en, this message translates to:
+  /// **'{recent} sessions were created in the last {windowHours} hours, reaching the alert threshold of {newSessionThreshold}. This is only an alert; it doesn\'t require two-step verification or a cooldown.'**
+  String profileSecurity_screensSecurityHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? recent,
+    Object? windowHours,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:657, lib/features/profile/security/security_screens.dart:897
+  ///
+  /// In en, this message translates to:
+  /// **'Several new sessions recently'**
+  String get profileSecurity_screensSecurityHighRiskNoticeTitle;
+
+  /// lib/features/profile/security/security_screens.dart:336
+  ///
+  /// In en, this message translates to:
+  /// **'Default method'**
+  String get profileSecurity_screensSecurityMethodDefaultLabel;
+
+  /// lib/features/profile/security/security_screens.dart:47
+  ///
+  /// In en, this message translates to:
+  /// **'Not open yet'**
+  String get profileSecurity_screensSecurityMethodDeferredLabel;
+
+  /// lib/features/profile/security/security_screens.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get profileSecurity_screensSecurityMethodOffLabel;
+
+  /// lib/features/profile/security/security_screens.dart:583
+  ///
+  /// In en, this message translates to:
+  /// **'How to turn these on'**
+  String get profileSecurity_screensSecurityMethodsGuideSummary;
+
+  /// lib/features/profile/security/security_screens.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Always on, can\'t be turned off'**
+  String get profileSecurity_screensSecurityNotificationLockSubtitle;
+
+  /// lib/features/profile/security/security_screens.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Security event notifications'**
+  String get profileSecurity_screensSecurityNotificationLockTitle;
+
+  /// lib/features/profile/security/security_screens.dart:308, lib/features/profile/security/security_screens.dart:958
+  ///
+  /// In en, this message translates to:
+  /// **'Seen {relativeTime}'**
+  String profileSecurity_screensSecurityObservedAtText(Object? relativeTime);
+
+  /// lib/features/profile/security/security_screens.dart:560
+  ///
+  /// In en, this message translates to:
+  /// **'Who provides these protections'**
+  String get profileSecurity_screensSecurityScopeInfoTitle;
+
+  /// lib/features/profile/security/security_screens.dart:392
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, unavailable, {reason}'**
+  String profileSecurity_screensSemanticLabel(Object? label, Object? reason);
+
+  /// lib/features/profile/security/security_screens.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, reading the sign-in service\'s answer'**
+  String profileSecurity_screensSemanticLabel2(Object? label);
+
+  /// lib/features/profile/security/security_screens.dart:422
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, unreadable, {reason} Tap to retry'**
+  String profileSecurity_screensSemanticLabel3(Object? label, Object? reason);
+
+  /// lib/features/profile/security/security_screens.dart:465
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {label2}. Tap to turn on'**
+  String profileSecurity_screensSemanticLabel4(Object? label, Object? label2);
+
+  /// lib/features/profile/security/security_screens.dart:465
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {state}: {detail}'**
+  String profileSecurity_screensSemanticLabelDetail(
+    Object? detail,
+    Object? label,
+    Object? state,
+  );
+
+  /// lib/features/profile/security/security_screens.dart:1337
+  ///
+  /// In en, this message translates to:
+  /// **'Add guardian'**
+  String get profileSecurity_screensSocialRecoveryActionLabel;
+
+  /// lib/features/profile/security/security_screens.dart:1263, lib/features/profile/security/security_screens.dart:1314
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery isn\'t available right now'**
+  String get profileSecurity_screensSocialRecoveryCapabilityBlockTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1344
+  ///
+  /// In en, this message translates to:
+  /// **'Social recovery status notes'**
+  String get profileSecurity_screensSocialRecoveryDisclosureSummary;
+
+  /// lib/features/profile/security/security_screens.dart:1289
+  ///
+  /// In en, this message translates to:
+  /// **'Pick 3 people you trust. If you lose your device, any 2 of them can help you recover your account. Guardians must confirm in their own app; unconfirmed ones don\'t count toward 2-of-3.'**
+  String get profileSecurity_screensSocialRecoveryExplainerBody;
+
+  /// lib/features/profile/security/security_screens.dart:1287
+  ///
+  /// In en, this message translates to:
+  /// **'What 2-of-3 means'**
+  String get profileSecurity_screensSocialRecoveryExplainerTitle;
+
+  /// lib/features/profile/security/security_screens.dart:1279
+  ///
+  /// In en, this message translates to:
+  /// **'Guardians only confirm recovery. They can\'t see your assets or start transactions.'**
+  String get profileSecurity_screensSocialRecoveryFolioCaption;
+
+  /// lib/features/profile/security/security_screens.dart:1278
+  ///
+  /// In en, this message translates to:
+  /// **'2-of-3 guardians'**
+  String get profileSecurity_screensSocialRecoveryFolioHeading;
+
+  /// lib/features/profile/security/security_screens.dart:1280
+  ///
+  /// In en, this message translates to:
+  /// **'2 of 3'**
+  String get profileSecurity_screensSocialRecoveryFolioStamp;
+
+  /// lib/features/profile/security/security_screens.dart:1327
+  ///
+  /// In en, this message translates to:
+  /// **'Guardians aren\'t open yet, so no one is listed here.'**
+  String get profileSecurity_screensSocialRecoveryNoGuardiansDetail;
+
+  /// lib/features/profile/security/security_screens.dart:1326
+  ///
+  /// In en, this message translates to:
+  /// **'No guardians yet'**
+  String get profileSecurity_screensSocialRecoveryNoGuardiansMessage;
+
+  /// lib/features/profile/security/security_screens.dart:417
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} Tap to retry.'**
+  String profileSecurity_screensSubtitle(Object? reason);
+
+  /// lib/features/profile/security/security_screens.dart:1217
+  ///
+  /// In en, this message translates to:
+  /// **'Export asks for Face ID, MFA and a risk confirmation, and blocks screenshots and screen recording during export. This page never pre-renders a private key sample: a masked string would read as \"already exported\".'**
+  String get profileSecurity_screensText;
+
+  /// lib/features/profile/security/security_screens.dart:1348
+  ///
+  /// In en, this message translates to:
+  /// **'You invite guardians, and they must confirm in their own app; unconfirmed ones don\'t count toward 2-of-3. Guardians can\'t see your assets or start transactions.'**
+  String get profileSecurity_screensText2;
+
+  /// lib/features/profile/security/security_screens.dart:577
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get profileSecurity_screensTitle;
+
+  /// lib/features/profile/security/security_screens.dart:773
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked a device session'**
+  String get profileSecurity_screensTitle2;
+
+  /// lib/features/profile/security/security_screens.dart:774
+  ///
+  /// In en, this message translates to:
+  /// **'Security event'**
+  String get profileSecurity_screensTitle3;
+
   /// lib/features/profile/settings/settings_screen.dart:261
   ///
   /// In en, this message translates to:
@@ -12912,6 +17367,1062 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Using default settings'**
   String get profileSettings_usingDefaults;
+
+  /// lib/features/profile/support/support_models.dart:10
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get profileSupport_modelsAccount;
+
+  /// lib/features/profile/support/support_models.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get profileSupport_modelsAnswered;
+
+  /// lib/features/profile/support/support_models.dart:52
+  ///
+  /// In en, this message translates to:
+  /// **'Support reply'**
+  String get profileSupport_modelsAnswered2;
+
+  /// lib/features/profile/support/support_models.dart:35, lib/features/profile/support/support_models.dart:53
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get profileSupport_modelsClosed;
+
+  /// lib/features/profile/support/support_models.dart:197
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the problem first.'**
+  String get profileSupport_modelsEmpty;
+
+  /// lib/features/profile/support/support_models.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get profileSupport_modelsOpen;
+
+  /// lib/features/profile/support/support_models.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP Support'**
+  String get profileSupport_modelsOperator;
+
+  /// lib/features/profile/support/support_models.dart:17
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get profileSupport_modelsOther;
+
+  /// lib/features/profile/support/support_models.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'The message is over 2,000 code points. Shorten it and submit again.'**
+  String get profileSupport_modelsTooLong;
+
+  /// lib/features/profile/support/support_models.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'The message has control or invisible characters (such as line breaks or direction marks). Remove them and submit again.'**
+  String get profileSupport_modelsUnsafeCharacters;
+
+  /// lib/features/profile/support/support_models.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get profileSupport_modelsUser;
+
+  /// lib/features/profile/support/support_models.dart:12
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get profileSupport_modelsWallet;
+
+  /// lib/features/profile/support/support_screen.dart:347
+  ///
+  /// In en, this message translates to:
+  /// **'Close ticket details'**
+  String get profileSupport_screenBarrierLabel;
+
+  /// lib/features/profile/support/support_screen.dart:255, lib/features/profile/support/support_screen.dart:264
+  ///
+  /// In en, this message translates to:
+  /// **'No tickets yet'**
+  String get profileSupport_screenEmptyMessage;
+
+  /// lib/features/profile/support/support_screen.dart:207
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the problem. Never enter a private key, recovery phrase or code'**
+  String get profileSupport_screenHint;
+
+  /// lib/features/profile/support/support_screen.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get profileSupport_screenLoopLabel;
+
+  /// lib/features/profile/support/support_screen.dart:149
+  ///
+  /// In en, this message translates to:
+  /// **'FAQ'**
+  String get profileSupport_screenLoopLabel2;
+
+  /// lib/features/profile/support/support_screen.dart:166, lib/features/profile/support/support_screen.dart:231
+  ///
+  /// In en, this message translates to:
+  /// **'Submit a ticket'**
+  String get profileSupport_screenLoopLabel3;
+
+  /// lib/features/profile/support/support_screen.dart:249
+  ///
+  /// In en, this message translates to:
+  /// **'My tickets'**
+  String get profileSupport_screenLoopLabel4;
+
+  /// lib/features/profile/support/support_screen.dart:397
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get profileSupport_screenLoopLabel5;
+
+  /// lib/features/profile/support/support_screen.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket submitted'**
+  String get profileSupport_screenMessage;
+
+  /// lib/features/profile/support/support_screen.dart:96, lib/features/profile/support/support_screen.dart:218
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket not submitted'**
+  String get profileSupport_screenMessage2;
+
+  /// lib/features/profile/support/support_screen.dart:340
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ticket, {label2}. Open full conversation'**
+  String profileSupport_screenSemanticLabel(Object? label, Object? label2);
+
+  /// lib/features/profile/support/support_screen.dart:324
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {relativeTime} · No reply yet'**
+  String profileSupport_screenSubtitle(Object? relativeTime);
+
+  /// lib/features/profile/support/support_screen.dart:325
+  ///
+  /// In en, this message translates to:
+  /// **'Support reply: {note}'**
+  String profileSupport_screenSubtitle2(Object? note);
+
+  /// lib/features/profile/support/support_screen.dart:240
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments aren\'t supported yet'**
+  String get profileSupport_screenSupportAttachmentsUnavailableLabel;
+
+  /// lib/features/profile/support/support_screen.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'{length} / {maximumBodyLength} code points{problem}'**
+  String profileSupport_screenSupportBodyFootnote(
+    Object? length,
+    Object? maximumBodyLength,
+    Object? problem,
+  );
+
+  /// lib/features/profile/support/support_screen.dart:188
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get profileSupport_screenSupportBodyLabel;
+
+  /// lib/features/profile/support/support_screen.dart:170
+  ///
+  /// In en, this message translates to:
+  /// **'Support tickets aren\'t available right now'**
+  String get profileSupport_screenSupportCapabilityBlockLabel;
+
+  /// lib/features/profile/support/support_screen.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Replies within {responseWindowHours} hours. For urgent issues, say so in the ticket.'**
+  String profileSupport_screenSupportEscalationText(
+    Object? responseWindowHours,
+  );
+
+  /// lib/features/profile/support/support_screen.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Replies within {responseWindowHours} hours on business days. For urgent issues, say so in the ticket.'**
+  String profileSupport_screenSupportEscalationTextBusinessDays(
+    Object? responseWindowHours,
+  );
+
+  /// lib/features/profile/support/support_screen.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Response time'**
+  String get profileSupport_screenSupportEscalationTitle;
+
+  /// lib/features/profile/support/support_screen.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'Only the latest page is shown; older tickets can\'t be viewed yet.'**
+  String get profileSupport_screenSupportMoreTicketsBody;
+
+  /// lib/features/profile/support/support_screen.dart:278
+  ///
+  /// In en, this message translates to:
+  /// **'There are older tickets'**
+  String get profileSupport_screenSupportMoreTicketsTitle;
+
+  /// lib/features/profile/support/support_screen.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP official community'**
+  String get profileSupport_screenSupportOpenCommunityTitle;
+
+  /// lib/features/profile/support/support_screen.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who asks for your private key, recovery phrase or code in a DM is a scammer. Report them.'**
+  String get profileSupport_screenSupportScamNoticeBody;
+
+  /// lib/features/profile/support/support_screen.dart:303
+  ///
+  /// In en, this message translates to:
+  /// **'We never DM you first'**
+  String get profileSupport_screenSupportScamNoticeTitle;
+
+  /// lib/features/profile/support/support_screen.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'Help and support'**
+  String get profileSupport_screenSupportScreenTitle;
+
+  /// lib/features/profile/support/support_screen.dart:434
+  ///
+  /// In en, this message translates to:
+  /// **'Support hasn\'t replied to this ticket yet; replies will show above.'**
+  String get profileSupport_screenSupportTicketDetailOpenText;
+
+  /// lib/features/profile/support/support_screen.dart:265
+  ///
+  /// In en, this message translates to:
+  /// **'After you submit, status and replies show here.'**
+  String get profileSupport_screenSupportTicketsEmptyMessage;
+
+  /// lib/features/profile/support/support_screen.dart:34
+  ///
+  /// In en, this message translates to:
+  /// **'How is power calculated'**
+  String get profileSupport_screenText;
+
+  /// lib/features/profile/support/support_screen.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'A Launch asset that hasn\'t graduated can only be bought, and only through its own channel. A rejection comes with a specific error code, shown as-is on the trade page.'**
+  String get profileSupport_screenText10;
+
+  /// lib/features/profile/support/support_screen.dart:35
+  ///
+  /// In en, this message translates to:
+  /// **'Power comes from the latest power snapshot: each registered asset\'s holding times its weight, not its price, listed line by line in the power breakdown. It counts holdings in wallets linked to your LOOP account; a community token counts only when it\'s bound to an approved community. The Mining page shows that snapshot\'s block and time.'**
+  String get profileSupport_screenText2;
+
+  /// lib/features/profile/support/support_screen.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Why does my token have no weight'**
+  String get profileSupport_screenText3;
+
+  /// lib/features/profile/support/support_screen.dart:41
+  ///
+  /// In en, this message translates to:
+  /// **'Only registered assets count toward mining. Registration follows LOOP\'s registry, not whether a token has appeared in your wallet. Tokens bound to communities under review have no weight.'**
+  String get profileSupport_screenText4;
+
+  /// lib/features/profile/support/support_screen.dart:45
+  ///
+  /// In en, this message translates to:
+  /// **'How do I join a Launch'**
+  String get profileSupport_screenText5;
+
+  /// lib/features/profile/support/support_screen.dart:46
+  ///
+  /// In en, this message translates to:
+  /// **'Launch rounds, snapshots and limits are set by contract parameters. Until they\'re confirmed, the Launch page only shows existing round status and promises no allocation.'**
+  String get profileSupport_screenText6;
+
+  /// lib/features/profile/support/support_screen.dart:50
+  ///
+  /// In en, this message translates to:
+  /// **'How do I recover my account on a new phone'**
+  String get profileSupport_screenText7;
+
+  /// lib/features/profile/support/support_screen.dart:52
+  ///
+  /// In en, this message translates to:
+  /// **'Your account identity is held by Privy. Passkeys and multi-factor authentication can be turned on in Security Center, and automatic recovery is the default method; social recovery and private key export aren\'t open yet. Security Center shows the current status of each.'**
+  String get profileSupport_screenText8;
+
+  /// lib/features/profile/support/support_screen.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'Why was my bonding pool buy rejected'**
+  String get profileSupport_screenText9;
+
+  /// lib/features/profile/me_attention.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'Message requests, {label} pending'**
+  String profile_meAttentionStreamChatMessageRequestsEntrySemanticLabel(
+    Object? label,
+  );
+
+  /// lib/features/profile/me_attention.dart:115
+  ///
+  /// In en, this message translates to:
+  /// **'{label} pending'**
+  String profile_meAttentionStreamChatMessageRequestsEntryTrailing(
+    Object? label,
+  );
+
+  /// lib/features/profile/profile_v2_screens.dart:276
+  ///
+  /// In en, this message translates to:
+  /// **'That name has a word that isn\'t allowed. Try another.'**
+  String get profile_screensAliasBlocked;
+
+  /// lib/features/profile/profile_v2_screens.dart:275
+  ///
+  /// In en, this message translates to:
+  /// **'That name is reserved by LOOP. Try another.'**
+  String get profile_screensAliasReserved;
+
+  /// lib/features/profile/profile_v2_screens.dart:273, lib/features/profile/profile_v2_screens.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Your account isn\'t set up yet. Try again later.'**
+  String get profile_screensBootstrapRequired;
+
+  /// lib/features/profile/profile_v2_screens.dart:1426
+  ///
+  /// In en, this message translates to:
+  /// **'1–40 characters, doesn\'t have to be unique'**
+  String get profile_screensHint;
+
+  /// lib/features/profile/profile_v2_screens.dart:1447
+  ///
+  /// In en, this message translates to:
+  /// **'A line about yourself (optional)'**
+  String get profile_screensHint2;
+
+  /// lib/features/profile/profile_v2_screens.dart:272
+  ///
+  /// In en, this message translates to:
+  /// **'Submission conflict. Reset; try again.'**
+  String get profile_screensIdempotencyConflict;
+
+  /// lib/features/profile/profile_v2_screens.dart:277
+  ///
+  /// In en, this message translates to:
+  /// **'The service returned a profile that doesn\'t match the contract. Nothing was applied.'**
+  String get profile_screensInvalidData;
+
+  /// lib/features/profile/profile_v2_screens.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'The service returned privacy settings that don\'t match the contract. Nothing was applied.'**
+  String get profile_screensInvalidData2;
+
+  /// lib/features/profile/profile_v2_screens.dart:904
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {month} {year}'**
+  String profile_screensJoinedLine(Object? month, Object? year);
+
+  /// lib/features/profile/profile_v2_screens.dart:1344, lib/features/profile/profile_v2_screens.dart:1659
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get profile_screensLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:530
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and security'**
+  String get profile_screensLoopLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:834
+  ///
+  /// In en, this message translates to:
+  /// **'Review notifications'**
+  String get profile_screensLoopLabel2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1702
+  ///
+  /// In en, this message translates to:
+  /// **'Identity'**
+  String get profile_screensLoopLabel3;
+
+  /// lib/features/profile/profile_v2_screens.dart:1756
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get profile_screensLoopLabel4;
+
+  /// lib/features/profile/profile_v2_screens.dart:1783
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get profile_screensLoopLabel5;
+
+  /// lib/features/profile/profile_v2_screens.dart:1212, lib/features/profile/profile_v2_screens.dart:1362
+  ///
+  /// In en, this message translates to:
+  /// **'Save profile'**
+  String get profile_screensLoopOfflineState;
+
+  /// lib/features/profile/profile_v2_screens.dart:1212
+  ///
+  /// In en, this message translates to:
+  /// **'Activate LOOP ID'**
+  String get profile_screensLoopOfflineState2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1670, lib/features/profile/profile_v2_screens.dart:1923
+  ///
+  /// In en, this message translates to:
+  /// **'Save privacy settings'**
+  String get profile_screensLoopOfflineState3;
+
+  /// lib/features/profile/profile_v2_screens.dart:194
+  ///
+  /// In en, this message translates to:
+  /// **'{resource} is kept only in memory for this run. It isn\'t written to your account and calls no provider.'**
+  String profile_screensLoopPreviewModeNoticeBody(Object? resource);
+
+  /// lib/features/profile/profile_v2_screens.dart:2089
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss update prompt'**
+  String get profile_screensLoopSoftUpdateDismissLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:2078
+  ///
+  /// In en, this message translates to:
+  /// **'Update to the latest version. This version still works.'**
+  String get profile_screensLoopSoftUpdatePromptBody;
+
+  /// lib/features/profile/profile_v2_screens.dart:2079
+  ///
+  /// In en, this message translates to:
+  /// **'Update to {minimum} or later. This version still works.'**
+  String profile_screensLoopSoftUpdatePromptBody2(Object? minimum);
+
+  /// lib/features/profile/profile_v2_screens.dart:2076
+  ///
+  /// In en, this message translates to:
+  /// **'New version available'**
+  String get profile_screensLoopSoftUpdatePromptTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:665
+  ///
+  /// In en, this message translates to:
+  /// **'No communities joined yet'**
+  String get profile_screensMeCommunitiesEmptyTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:629, lib/features/profile/profile_v2_screens.dart:645
+  ///
+  /// In en, this message translates to:
+  /// **'Communities aren\'t available right now'**
+  String get profile_screensMeCommunitiesUnavailableMessage;
+
+  /// lib/features/profile/profile_v2_screens.dart:680
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get profile_screensMeGroupLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:698
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get profile_screensMeGroupLabel2;
+
+  /// lib/features/profile/profile_v2_screens.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'All joined communities'**
+  String get profile_screensMeJoinedAllTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:717
+  ///
+  /// In en, this message translates to:
+  /// **'{groupedFigure} members'**
+  String profile_screensMembers(Object? groupedFigure);
+
+  /// lib/features/profile/profile_screens.dart:151
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to Me and pick another setting.'**
+  String get profile_screensMessage;
+
+  /// lib/features/profile/profile_v2_screens.dart:480
+  ///
+  /// In en, this message translates to:
+  /// **'Profile hasn\'t loaded yet'**
+  String get profile_screensMessage2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1561, lib/features/profile/profile_v2_screens.dart:1893
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted as version {version}'**
+  String profile_screensMessage3(Object? version);
+
+  /// lib/features/profile/profile_v2_screens.dart:312
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get profile_screensOffLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:261
+  ///
+  /// In en, this message translates to:
+  /// **'This device is offline. Your profile couldn\'t load, and no changes were submitted.'**
+  String get profile_screensOffline;
+
+  /// lib/features/profile/profile_v2_screens.dart:284
+  ///
+  /// In en, this message translates to:
+  /// **'This device is offline. Privacy settings couldn\'t load, and no changes were submitted.'**
+  String get profile_screensOffline2;
+
+  /// lib/features/profile/profile_v2_screens.dart:263
+  ///
+  /// In en, this message translates to:
+  /// **'Current policy doesn\'t allow reading or changing your profile. Nothing changed. This permission can\'t be changed in the app.'**
+  String get profile_screensPermissionDenied;
+
+  /// lib/features/profile/profile_v2_screens.dart:286
+  ///
+  /// In en, this message translates to:
+  /// **'Current policy doesn\'t allow reading or changing privacy settings. Nothing changed. This permission can\'t be changed in the app; the switches follow LOOP\'s records.'**
+  String get profile_screensPermissionDenied2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1716
+  ///
+  /// In en, this message translates to:
+  /// **'Show only your alias, never your wallet address'**
+  String get profile_screensPrivacyAnonymousModeSubtitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1715
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous mode'**
+  String get profile_screensPrivacyAnonymousModeTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1656
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings changed elsewhere'**
+  String get profile_screensPrivacyConflictTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1736
+  ///
+  /// In en, this message translates to:
+  /// **'Others can find you by nickname; your LOOP ID is always searchable exactly'**
+  String get profile_screensPrivacyDiscoverableSubtitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1737
+  ///
+  /// In en, this message translates to:
+  /// **'Others can\'t find you by nickname; your LOOP ID is always searchable exactly'**
+  String get profile_screensPrivacyDiscoverableSubtitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1729
+  ///
+  /// In en, this message translates to:
+  /// **'Discoverable'**
+  String get profile_screensPrivacyDiscoverableTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1937
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy preferences haven\'t loaded yet.'**
+  String get profile_screensPrivacyEmptyMessage;
+
+  /// lib/features/profile/profile_v2_screens.dart:1936
+  ///
+  /// In en, this message translates to:
+  /// **'No privacy settings to show'**
+  String get profile_screensPrivacyEmptyTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1956
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy service'**
+  String get profile_screensPrivacyErrorSource;
+
+  /// lib/features/profile/profile_v2_screens.dart:1947
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings can\'t be read or changed in your region'**
+  String get profile_screensPrivacyPermissionTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1948
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t read or change privacy settings'**
+  String get profile_screensPrivacyPermissionTitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1798, lib/features/profile/profile_v2_screens.dart:1829
+  ///
+  /// In en, this message translates to:
+  /// **'Only me'**
+  String get profile_screensPrivacyPublicHoldingsOffLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1797, lib/features/profile/profile_v2_screens.dart:1828
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get profile_screensPrivacyPublicHoldingsOnLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1794
+  ///
+  /// In en, this message translates to:
+  /// **'Others see your holdings and trades on your profile, never your wallet address'**
+  String get profile_screensPrivacyPublicHoldingsSubtitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1795
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see your holdings and trades'**
+  String get profile_screensPrivacyPublicHoldingsSubtitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1792
+  ///
+  /// In en, this message translates to:
+  /// **'Public holdings and trades'**
+  String get profile_screensPrivacyPublicHoldingsTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1688
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings can\'t be changed in your region'**
+  String get profile_screensPrivacySavePermissionTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1689
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t change privacy settings'**
+  String get profile_screensPrivacySavePermissionTitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'Holdings and trades are public'**
+  String get profile_screensPrivacySubtitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1930
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings aren\'t available right now'**
+  String get profile_screensPrivacyUnavailableTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1857
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility only affects what\'s shown. It doesn\'t let anyone copy your trades or access your wallet. Your avatar and username always show in chats and on your profile; your wallet address never appears on your profile.'**
+  String get profile_screensPrivacyVisibilityNoteText;
+
+  /// lib/features/profile/profile_v2_screens.dart:1854
+  ///
+  /// In en, this message translates to:
+  /// **'About visibility'**
+  String get profile_screensPrivacyVisibilityNoteTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1044
+  ///
+  /// In en, this message translates to:
+  /// **'Add a bio'**
+  String get profile_screensProfileAddBioLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:990
+  ///
+  /// In en, this message translates to:
+  /// **'No alias yet'**
+  String get profile_screensProfileAlias;
+
+  /// lib/features/profile/profile_v2_screens.dart:2011
+  ///
+  /// In en, this message translates to:
+  /// **'Reloading profile status.'**
+  String get profile_screensProfileAvailabilityBannerBody;
+
+  /// lib/features/profile/profile_v2_screens.dart:2009
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read profile status right now'**
+  String get profile_screensProfileAvailabilityBannerTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:2006
+  ///
+  /// In en, this message translates to:
+  /// **' You can keep browsing.'**
+  String get profile_screensProfileAvailabilityBrowseSuffix;
+
+  /// lib/features/profile/profile_v2_screens.dart:2035
+  ///
+  /// In en, this message translates to:
+  /// **'Hide profile status notice'**
+  String get profile_screensProfileAvailabilityDismissLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:2027
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying…'**
+  String get profile_screensProfileAvailabilityRetryLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:2027
+  ///
+  /// In en, this message translates to:
+  /// **'Reload profile status'**
+  String get profile_screensProfileAvailabilityRetryLabel2;
+
+  /// lib/features/profile/profile_v2_screens.dart:2006
+  ///
+  /// In en, this message translates to:
+  /// **' You can keep browsing or retry now.'**
+  String get profile_screensProfileAvailabilityRetryableSuffix;
+
+  /// lib/features/profile/profile_v2_screens.dart:1405
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get profile_screensProfileEditAliasLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1408
+  ///
+  /// In en, this message translates to:
+  /// **'Try another'**
+  String get profile_screensProfileEditAliasSuggestLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1432
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get profile_screensProfileEditBioLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1341
+  ///
+  /// In en, this message translates to:
+  /// **'Profile changed elsewhere'**
+  String get profile_screensProfileEditConflictTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1387, lib/features/profile/profile_v2_screens.dart:1698
+  ///
+  /// In en, this message translates to:
+  /// **'Save didn\'t finish'**
+  String get profile_screensProfileEditFailureTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1479
+  ///
+  /// In en, this message translates to:
+  /// **'Whether holdings and trades are public, who can add you'**
+  String get profile_screensProfileEditOpenPrivacySubtitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1377
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile can\'t be changed in your region'**
+  String get profile_screensProfileEditPermissionTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1378
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t change its profile'**
+  String get profile_screensProfileEditPermissionTitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1316, lib/features/profile/profile_v2_screens.dart:1631
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get profile_screensProfileEditSaveLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1311
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get profile_screensProfileEditSaveTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1353
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t save'**
+  String get profile_screensProfileEditValidationTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1226
+  ///
+  /// In en, this message translates to:
+  /// **'Account profile hasn\'t loaded yet.'**
+  String get profile_screensProfileEmptyMessage;
+
+  /// lib/features/profile/profile_v2_screens.dart:1225
+  ///
+  /// In en, this message translates to:
+  /// **'No profile to show'**
+  String get profile_screensProfileEmptyTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1248
+  ///
+  /// In en, this message translates to:
+  /// **'Profile service'**
+  String get profile_screensProfileErrorSource;
+
+  /// lib/features/profile/profile_v2_screens.dart:1023
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP ID unreadable'**
+  String get profile_screensProfileLoopId;
+
+  /// lib/features/profile/profile_v2_screens.dart:940
+  ///
+  /// In en, this message translates to:
+  /// **'Edit avatar and profile'**
+  String get profile_screensProfileOpenEditLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:536, lib/features/profile/profile_v2_screens.dart:1478, lib/features/profile/profile_v2_screens.dart:1620
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Center'**
+  String get profile_screensProfileOpenPrivacyTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1237, lib/features/profile/profile_v2_screens.dart:1374, lib/features/profile/profile_v2_screens.dart:1685, lib/features/profile/profile_v2_screens.dart:1945
+  ///
+  /// In en, this message translates to:
+  /// **'This step needs two-step verification'**
+  String get profile_screensProfilePermissionTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:1239
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile can\'t be read or changed in your region'**
+  String get profile_screensProfilePermissionTitle2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1240
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t read or change its profile'**
+  String get profile_screensProfilePermissionTitle3;
+
+  /// lib/features/profile/profile_v2_screens.dart:1005
+  ///
+  /// In en, this message translates to:
+  /// **'Share card'**
+  String get profile_screensProfileShareLoopIdLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:1219
+  ///
+  /// In en, this message translates to:
+  /// **'Profile isn\'t available right now'**
+  String get profile_screensProfileUnavailableTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:266
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile can\'t be read or changed in your region right now. Nothing changed. This isn\'t about your account; switching accounts won\'t change it.'**
+  String get profile_screensRegionBlocked;
+
+  /// lib/features/profile/profile_v2_screens.dart:289
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings can\'t be read or changed in your region right now. Nothing changed. This isn\'t about your account; switching accounts won\'t change it.'**
+  String get profile_screensRegionBlocked2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1641
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings'**
+  String get profile_screensResource;
+
+  /// lib/features/profile/profile_v2_screens.dart:568
+  ///
+  /// In en, this message translates to:
+  /// **'Holdings and trades visible only to you'**
+  String get profile_screensS;
+
+  /// lib/features/profile/profile_v2_screens.dart:1873
+  ///
+  /// In en, this message translates to:
+  /// **'Strangers can\'t send you friend requests'**
+  String get profile_screensS2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1875
+  ///
+  /// In en, this message translates to:
+  /// **'When off, friends can\'t open a direct message with you either'**
+  String get profile_screensS3;
+
+  /// lib/features/profile/profile_v2_screens.dart:1877
+  ///
+  /// In en, this message translates to:
+  /// **'When off, friends can\'t add you to small groups'**
+  String get profile_screensS4;
+
+  /// lib/features/profile/profile_v2_screens.dart:112, lib/features/profile/profile_v2_screens.dart:126
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get profile_screensSemanticLabel;
+
+  /// lib/features/profile/profile_v2_screens.dart:269
+  ///
+  /// In en, this message translates to:
+  /// **'This step needs two-step verification, which isn\'t open yet. Nothing changed. Check Security Center for the verification methods available now.'**
+  String get profile_screensStepUpRequired;
+
+  /// lib/features/profile/profile_v2_screens.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Changing privacy settings needs two-step verification, which isn\'t open yet. Nothing changed. Check Security Center for the verification methods available now.'**
+  String get profile_screensStepUpRequired2;
+
+  /// lib/features/profile/profile_v2_screens.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'The profile action didn\'t finish.'**
+  String get profile_screensSwitch;
+
+  /// lib/features/profile/profile_v2_screens.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'The privacy action didn\'t finish.'**
+  String get profile_screensSwitch2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1873
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with your LOOP ID can add you'**
+  String get profile_screensSwitch3;
+
+  /// lib/features/profile/profile_v2_screens.dart:1875
+  ///
+  /// In en, this message translates to:
+  /// **'Friends can open a direct message with you'**
+  String get profile_screensSwitch4;
+
+  /// lib/features/profile/profile_v2_screens.dart:1877
+  ///
+  /// In en, this message translates to:
+  /// **'Friends can add you to small groups'**
+  String get profile_screensSwitch5;
+
+  /// lib/features/profile/profile_v2_screens.dart:1059
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add a bio'**
+  String get profile_screensText;
+
+  /// lib/features/profile/profile_screens.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was changed'**
+  String get profile_screensTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:260
+  ///
+  /// In en, this message translates to:
+  /// **'The profile service isn\'t available right now. No changes were saved.'**
+  String get profile_screensUnavailable;
+
+  /// lib/features/profile/profile_v2_screens.dart:283
+  ///
+  /// In en, this message translates to:
+  /// **'The privacy service isn\'t available right now. No changes were saved.'**
+  String get profile_screensUnavailable2;
+
+  /// lib/features/profile/profile_v2_screens.dart:278
+  ///
+  /// In en, this message translates to:
+  /// **'The profile action didn\'t finish. Try again later.'**
+  String get profile_screensUnexpected;
+
+  /// lib/features/profile/profile_v2_screens.dart:298
+  ///
+  /// In en, this message translates to:
+  /// **'The privacy action didn\'t finish. Try again later.'**
+  String get profile_screensUnexpected2;
+
+  /// lib/features/profile/profile_screens.dart:144
+  ///
+  /// In en, this message translates to:
+  /// **'Setting unavailable'**
+  String get profile_screensUnknownProfileSurfaceTitle;
+
+  /// lib/features/profile/profile_v2_screens.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'Alias or bio is too long. Edit it and try again.'**
+  String get profile_screensValidationFailed;
+
+  /// lib/features/profile/profile_v2_screens.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'The submitted privacy settings weren\'t accepted. Check them and try again.'**
+  String get profile_screensValidationFailed2;
+
+  /// lib/features/profile/profile_v2_screens.dart:1525
+  ///
+  /// In en, this message translates to:
+  /// **'Alias must be 1–40 characters with no invisible characters.'**
+  String get profile_screensValidationMessage;
+
+  /// lib/features/profile/profile_v2_screens.dart:1536
+  ///
+  /// In en, this message translates to:
+  /// **'Bio can be up to 160 characters.'**
+  String get profile_screensValidationMessage2;
+
+  /// lib/features/profile/profile_v2_screens.dart:271
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile was changed elsewhere. Reload before saving.'**
+  String get profile_screensVersionConflict;
+
+  /// lib/features/profile/profile_v2_screens.dart:294
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings were changed elsewhere. Reload before saving.'**
+  String get profile_screensVersionConflict2;
+
+  /// lib/features/profile/sign_out_button.dart:26, lib/features/profile/sign_out_button.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get profile_signOutButtonConfirmLabel;
+
+  /// lib/features/profile/sign_out_button.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out…'**
+  String get profile_signOutButtonLabel;
+
+  /// lib/features/profile/sign_out_button.dart:15
+  ///
+  /// In en, this message translates to:
+  /// **'This device will stop getting notifications for this account, and the home screen data saved here will be cleared. Assets, friends and conversations in your account aren\'t affected; sign in again to get them back.'**
+  String get profile_signOutButtonLoopSignOutConfirmBody;
+
+  /// lib/features/profile/sign_out_button.dart:13
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get profile_signOutButtonLoopSignOutConfirmTitle;
 
   /// lib/features/scan/scan_screen.dart:20
   ///
@@ -14423,6 +19934,1230 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **', join the community to enter'**
   String get square_screenVoiceRoomJoinFirstSuffix;
+
+  /// lib/features/system/system_specimens.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'1H, fixed demo'**
+  String get system_specimensChartRangeLabel;
+
+  /// lib/features/system/system_specimens.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP community 128,420 members, 0.35×'**
+  String get system_specimensCommunityLine;
+
+  /// lib/features/system/system_specimens.dart:106
+  ///
+  /// In en, this message translates to:
+  /// **'Graduated 08-22, DEX pool liquidity in place'**
+  String get system_specimensCommunityLine2;
+
+  /// lib/features/system/system_specimens.dart:127
+  ///
+  /// In en, this message translates to:
+  /// **'This token isn\'t in a LOOP community, no Mining Weight'**
+  String get system_specimensCommunityLine3;
+
+  /// lib/features/system/system_specimens.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'This contract has a mint function; the issuer can mint more'**
+  String get system_specimensFact;
+
+  /// lib/features/system/system_specimens.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Contract address doesn\'t match the official PEPE'**
+  String get system_specimensFact2;
+
+  /// lib/features/system/system_specimens.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'State 1, normal'**
+  String get system_specimensLabel;
+
+  /// lib/features/system/system_specimens.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'State 2, identifying'**
+  String get system_specimensLabel2;
+
+  /// lib/features/system/system_specimens.dart:91
+  ///
+  /// In en, this message translates to:
+  /// **'State 3, graduated (LOOP Launch asset)'**
+  String get system_specimensLabel3;
+
+  /// lib/features/system/system_specimens.dart:115
+  ///
+  /// In en, this message translates to:
+  /// **'State 4, data missing'**
+  String get system_specimensLabel4;
+
+  /// lib/features/system/system_specimens.dart:135
+  ///
+  /// In en, this message translates to:
+  /// **'State 5, risk facts bar'**
+  String get system_specimensLabel5;
+
+  /// lib/features/system/system_specimens.dart:170
+  ///
+  /// In en, this message translates to:
+  /// **'State 1, awaiting confirmation (normal)'**
+  String get system_specimensLabel6;
+
+  /// lib/features/system/system_specimens.dart:181
+  ///
+  /// In en, this message translates to:
+  /// **'State 2, simulation failed'**
+  String get system_specimensLabel7;
+
+  /// lib/features/system/system_specimens.dart:190
+  ///
+  /// In en, this message translates to:
+  /// **'State 3, signing'**
+  String get system_specimensLabel8;
+
+  /// lib/features/system/system_specimens.dart:195
+  ///
+  /// In en, this message translates to:
+  /// **'State 4, rejected by policy'**
+  String get system_specimensLabel9;
+
+  /// lib/features/system/system_specimens.dart:17
+  ///
+  /// In en, this message translates to:
+  /// **'Component specimen'**
+  String get system_specimensLoopComponentSpecimenLabel;
+
+  /// lib/features/system/system_specimens.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get system_specimensLoopSignFact;
+
+  /// lib/features/system/system_specimens.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get system_specimensLoopSignFact2;
+
+  /// lib/features/system/system_specimens.dart:185
+  ///
+  /// In en, this message translates to:
+  /// **'Failed, can\'t simulate'**
+  String get system_specimensLoopSignFact3;
+
+  /// lib/features/system/system_specimens.dart:198
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer 5,000 USDC'**
+  String get system_specimensLoopSignFact4;
+
+  /// lib/features/system/system_specimens.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get system_specimensLoopSignFact5;
+
+  /// lib/features/system/system_specimens.dart:199
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get system_specimensLoopSignFact6;
+
+  /// lib/features/system/system_specimens.dart:23
+  ///
+  /// In en, this message translates to:
+  /// **'Component specimen, not the current state'**
+  String get system_specimensLoopStateSpecimenLabel;
+
+  /// lib/features/system/system_specimens.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Graduation details'**
+  String get system_specimensLoopTokenCardAction;
+
+  /// lib/features/system/system_specimens.dart:130
+  ///
+  /// In en, this message translates to:
+  /// **'View contract'**
+  String get system_specimensLoopTokenCardAction2;
+
+  /// lib/features/system/system_specimens.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'Trading unavailable'**
+  String get system_specimensLoopTokenCardAction3;
+
+  /// lib/features/system/system_specimens.dart:162
+  ///
+  /// In en, this message translates to:
+  /// **'Review facts, then buy'**
+  String get system_specimensLoopTokenCardAction4;
+
+  /// lib/features/system/system_specimens.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'View all facts'**
+  String get system_specimensLoopTokenCardAction5;
+
+  /// lib/features/system/system_specimens.dart:147, lib/features/system/system_specimens.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'2m ago'**
+  String get system_specimensObservedLabel;
+
+  /// lib/features/system/system_specimens.dart:187
+  ///
+  /// In en, this message translates to:
+  /// **'The simulation service didn\'t return a verifiable result. Can\'t confirm right now; retry the simulation or cancel.'**
+  String get system_specimensReason;
+
+  /// lib/features/system/system_specimens.dart:201
+  ///
+  /// In en, this message translates to:
+  /// **'Over your single-transfer limit of \$1,000. This is a wallet policy you set; adjust it in Security Center or lower the amount.'**
+  String get system_specimensReason2;
+
+  /// lib/features/system/system_specimens.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'PEPE 1-hour trend, component specimen'**
+  String get system_specimensSemanticLabel;
+
+  /// lib/features/system/system_specimens.dart:151
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain comparison'**
+  String get system_specimensSource;
+
+  /// lib/features/system/system_specimens.dart:210
+  ///
+  /// In en, this message translates to:
+  /// **'Demo data, development preview'**
+  String get system_specimensSourceLabel;
+
+  /// lib/features/system/system_surfaces.dart:857
+  ///
+  /// In en, this message translates to:
+  /// **'Offline, live updates paused'**
+  String get system_surfacesBanner;
+
+  /// lib/features/system/system_surfaces.dart:864
+  ///
+  /// In en, this message translates to:
+  /// **'Market data unavailable, prices may be stale'**
+  String get system_surfacesBanner2;
+
+  /// lib/features/system/system_surfaces.dart:871
+  ///
+  /// In en, this message translates to:
+  /// **'Trading service down, actions paused'**
+  String get system_surfacesBanner3;
+
+  /// lib/features/system/system_surfaces.dart:856, lib/features/system/system_surfaces.dart:916
+  ///
+  /// In en, this message translates to:
+  /// **'Check Wi-Fi or mobile data. Asset data is cached from the last sync and may be stale.'**
+  String get system_surfacesBody;
+
+  /// lib/features/system/system_surfaces.dart:1243
+  ///
+  /// In en, this message translates to:
+  /// **'Claims work normally after maintenance; nothing is missed.'**
+  String get system_surfacesBody10;
+
+  /// lib/features/system/system_surfaces.dart:1335
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t infer your region from device language, SIM or IP; without an approved decision, it\'s treated as unknown.'**
+  String get system_surfacesBody11;
+
+  /// lib/features/system/system_surfaces.dart:1362
+  ///
+  /// In en, this message translates to:
+  /// **'Your location isn\'t inferred, and other features aren\'t confirmed to be available.'**
+  String get system_surfacesBody12;
+
+  /// lib/features/system/system_surfaces.dart:1465
+  ///
+  /// In en, this message translates to:
+  /// **'Used for app lock and verification before signing. Biometric data stays with the system; LOOP can\'t access it.'**
+  String get system_surfacesBody13;
+
+  /// lib/features/system/system_surfaces.dart:1565
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a button to show a real toast. It disappears after 2.6 seconds.'**
+  String get system_surfacesBody14;
+
+  /// lib/features/system/system_surfaces.dart:1716
+  ///
+  /// In en, this message translates to:
+  /// **'Normal, identifying and Launch asset share one structure, not one risk judgment. This component appears in chats, community home, market lists and search results, with no route of its own.'**
+  String get system_surfacesBody15;
+
+  /// lib/features/system/system_surfaces.dart:1728
+  ///
+  /// In en, this message translates to:
+  /// **'Every item shows its source and time, with no verdict like \"dangerous\" or \"unsafe\". The call is yours.'**
+  String get system_surfacesBody16;
+
+  /// lib/features/system/system_surfaces.dart:1766
+  ///
+  /// In en, this message translates to:
+  /// **'Send, Swap, Launch buys and approvals all go through this one sheet; staking joins only after its own contract plan is approved.'**
+  String get system_surfacesBody17;
+
+  /// lib/features/system/system_surfaces.dart:1814
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet stopped it by your own rule, so the copy says which rule and how to change it, not just \"failed\".'**
+  String get system_surfacesBody18;
+
+  /// lib/features/system/system_surfaces.dart:1839
+  ///
+  /// In en, this message translates to:
+  /// **'Go back and try again.'**
+  String get system_surfacesBody19;
+
+  /// lib/features/system/system_surfaces.dart:863
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else works. Prices and charts may be off; actions that depend on the current price are paused.'**
+  String get system_surfacesBody2;
+
+  /// lib/features/system/system_surfaces.dart:870
+  ///
+  /// In en, this message translates to:
+  /// **'Orders and account changes can\'t be submitted; market browsing and chat still work.'**
+  String get system_surfacesBody3;
+
+  /// lib/features/system/system_surfaces.dart:931
+  ///
+  /// In en, this message translates to:
+  /// **'Other chains are fine. BSC balances may be off, and trading on that chain is paused.'**
+  String get system_surfacesBody4;
+
+  /// lib/features/system/system_surfaces.dart:935, lib/features/system/system_surfaces.dart:994
+  ///
+  /// In en, this message translates to:
+  /// **'A full outage blocks everything; a single-chain outage should leave other chains working. Blocking it all makes people think the whole app is broken.'**
+  String get system_surfacesBody5;
+
+  /// lib/features/system/system_surfaces.dart:982
+  ///
+  /// In en, this message translates to:
+  /// **'Per-chain status can\'t be read right now. This page won\'t decide for you whether a chain is available.'**
+  String get system_surfacesBody6;
+
+  /// lib/features/system/system_surfaces.dart:1049
+  ///
+  /// In en, this message translates to:
+  /// **'Trace ID 7f3a2c9e. Wallet assets stay on-chain, unaffected.'**
+  String get system_surfacesBody7;
+
+  /// lib/features/system/system_surfaces.dart:1081
+  ///
+  /// In en, this message translates to:
+  /// **'{trace}. Don\'t assume success or failure; check the latest status before retrying. Wallet assets stay on-chain, unaffected.'**
+  String system_surfacesBody8(Object? trace);
+
+  /// lib/features/system/system_surfaces.dart:1136
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP only blocks when an approved version policy requires an update and this version is below its floor.'**
+  String get system_surfacesBody9;
+
+  /// lib/features/system/system_surfaces.dart:954
+  ///
+  /// In en, this message translates to:
+  /// **'Everything else still works; affected actions stay disabled until recovery.'**
+  String get system_surfacesCaption;
+
+  /// lib/features/system/system_surfaces.dart:1758
+  ///
+  /// In en, this message translates to:
+  /// **'Send, Swap, DApp and Bridge all go through one signing exit.'**
+  String get system_surfacesCaption10;
+
+  /// lib/features/system/system_surfaces.dart:1836
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t recognize the requested system page.'**
+  String get system_surfacesCaption11;
+
+  /// lib/features/system/system_surfaces.dart:1125
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this page doesn\'t mean this version is unsupported or unsafe.'**
+  String get system_surfacesCaption2;
+
+  /// lib/features/system/system_surfaces.dart:1147
+  ///
+  /// In en, this message translates to:
+  /// **'An approved version policy requires a supported version. This can\'t be skipped.'**
+  String get system_surfacesCaption3;
+
+  /// lib/features/system/system_surfaces.dart:1324
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this page doesn\'t mean your region or account is restricted.'**
+  String get system_surfacesCaption4;
+
+  /// lib/features/system/system_surfaces.dart:1350
+  ///
+  /// In en, this message translates to:
+  /// **'Assets stay visible read-only; restricted features follow each page\'s current state.'**
+  String get system_surfacesCaption5;
+
+  /// lib/features/system/system_surfaces.dart:1351
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted features follow each page\'s current state; unconfirmed availability isn\'t listed here.'**
+  String get system_surfacesCaption6;
+
+  /// lib/features/system/system_surfaces.dart:1446
+  ///
+  /// In en, this message translates to:
+  /// **'Camera, notifications and biometrics are asked for only when needed.'**
+  String get system_surfacesCaption7;
+
+  /// lib/features/system/system_surfaces.dart:1552
+  ///
+  /// In en, this message translates to:
+  /// **'Success, warning and error share one position and clear meaning.'**
+  String get system_surfacesCaption8;
+
+  /// lib/features/system/system_surfaces.dart:1623
+  ///
+  /// In en, this message translates to:
+  /// **'Lists, details and charts each keep a stable layout so content doesn\'t jump.'**
+  String get system_surfacesCaption9;
+
+  /// lib/features/system/system_surfaces.dart:907, lib/features/system/system_surfaces.dart:953
+  ///
+  /// In en, this message translates to:
+  /// **'Cache is still viewable; Send, Swap and Bridge are paused.'**
+  String get system_surfacesConnectivitySpecimenCaption;
+
+  /// lib/features/system/system_surfaces.dart:906, lib/features/system/system_surfaces.dart:951
+  ///
+  /// In en, this message translates to:
+  /// **'This device is offline'**
+  String get system_surfacesConnectivitySpecimenHeading;
+
+  /// lib/features/system/system_surfaces.dart:905
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync 09:38'**
+  String get system_surfacesConnectivitySpecimenKicker;
+
+  /// lib/features/system/system_surfaces.dart:921, lib/features/system/system_surfaces.dart:968
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t connect to the server'**
+  String get system_surfacesConnectivitySpecimenRetryMessage;
+
+  /// lib/features/system/system_surfaces.dart:908, lib/features/system/system_surfaces.dart:955
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get system_surfacesConnectivitySpecimenStamp;
+
+  /// lib/features/system/system_surfaces.dart:899, lib/features/system/system_surfaces.dart:946
+  ///
+  /// In en, this message translates to:
+  /// **'No network'**
+  String get system_surfacesConnectivitySpecimenTitle;
+
+  /// lib/features/system/system_surfaces.dart:1403, lib/features/system/system_surfaces.dart:1478
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t get mining settlement or Launch alerts. Turn it back on in Settings → LOOP → Notifications.'**
+  String get system_surfacesDeniedBody;
+
+  /// lib/features/system/system_surfaces.dart:1409
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning is unavailable. Turn it back on in Settings → LOOP → Camera.'**
+  String get system_surfacesDeniedBody2;
+
+  /// lib/features/system/system_surfaces.dart:1415
+  ///
+  /// In en, this message translates to:
+  /// **'You can only listen in voice rooms. Turn it back on in Settings → LOOP → Microphone.'**
+  String get system_surfacesDeniedBody3;
+
+  /// lib/features/system/system_surfaces.dart:560
+  ///
+  /// In en, this message translates to:
+  /// **' (force-update floor {version})'**
+  String system_surfacesForceUpdateFloorSuffix(Object? version);
+
+  /// lib/features/system/system_surfaces.dart:1182
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t open the store directly right now. Update from the app store manually.'**
+  String get system_surfacesForceUpdateStoreUnavailableBody;
+
+  /// lib/features/system/system_surfaces.dart:1193
+  ///
+  /// In en, this message translates to:
+  /// **'An approved version policy requires an update. This can\'t be skipped'**
+  String get system_surfacesForceUpdateStoreUnavailableFootnote;
+
+  /// lib/features/system/system_surfaces.dart:1181
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get system_surfacesForceUpdateStoreUnavailableTitle;
+
+  /// lib/features/system/system_surfaces.dart:1124
+  ///
+  /// In en, this message translates to:
+  /// **'Version policy isn\'t open yet'**
+  String get system_surfacesHeading;
+
+  /// lib/features/system/system_surfaces.dart:1261
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance notice in effect'**
+  String get system_surfacesHeading2;
+
+  /// lib/features/system/system_surfaces.dart:1323
+  ///
+  /// In en, this message translates to:
+  /// **'Region policy isn\'t open yet'**
+  String get system_surfacesHeading3;
+
+  /// lib/features/system/system_surfaces.dart:1348
+  ///
+  /// In en, this message translates to:
+  /// **'Limited in your region'**
+  String get system_surfacesHeading4;
+
+  /// lib/features/system/system_surfaces.dart:1445
+  ///
+  /// In en, this message translates to:
+  /// **'Asked only when needed'**
+  String get system_surfacesHeading5;
+
+  /// lib/features/system/system_surfaces.dart:1691
+  ///
+  /// In en, this message translates to:
+  /// **'5 card states'**
+  String get system_surfacesHeading6;
+
+  /// lib/features/system/system_surfaces.dart:1757
+  ///
+  /// In en, this message translates to:
+  /// **'4 signing states'**
+  String get system_surfacesHeading7;
+
+  /// lib/features/system/system_surfaces.dart:1835
+  ///
+  /// In en, this message translates to:
+  /// **'This page isn\'t available'**
+  String get system_surfacesHeading8;
+
+  /// lib/features/system/system_surfaces.dart:950
+  ///
+  /// In en, this message translates to:
+  /// **'Device offline'**
+  String get system_surfacesKicker;
+
+  /// lib/features/system/system_surfaces.dart:1756
+  ///
+  /// In en, this message translates to:
+  /// **'Unified signing exit'**
+  String get system_surfacesKicker10;
+
+  /// lib/features/system/system_surfaces.dart:950
+  ///
+  /// In en, this message translates to:
+  /// **'Service outage'**
+  String get system_surfacesKicker2;
+
+  /// lib/features/system/system_surfaces.dart:1123
+  ///
+  /// In en, this message translates to:
+  /// **'Version policy'**
+  String get system_surfacesKicker3;
+
+  /// lib/features/system/system_surfaces.dart:1145
+  ///
+  /// In en, this message translates to:
+  /// **'Release gate'**
+  String get system_surfacesKicker4;
+
+  /// lib/features/system/system_surfaces.dart:1322, lib/features/system/system_surfaces.dart:1347
+  ///
+  /// In en, this message translates to:
+  /// **'Access policy'**
+  String get system_surfacesKicker5;
+
+  /// lib/features/system/system_surfaces.dart:1444
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get system_surfacesKicker6;
+
+  /// lib/features/system/system_surfaces.dart:1550
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get system_surfacesKicker7;
+
+  /// lib/features/system/system_surfaces.dart:1621
+  ///
+  /// In en, this message translates to:
+  /// **'Loading states'**
+  String get system_surfacesKicker8;
+
+  /// lib/features/system/system_surfaces.dart:1690
+  ///
+  /// In en, this message translates to:
+  /// **'Token card'**
+  String get system_surfacesKicker9;
+
+  /// lib/features/system/system_surfaces.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get system_surfacesLabel;
+
+  /// lib/features/system/system_surfaces.dart:1367
+  ///
+  /// In en, this message translates to:
+  /// **'View assets'**
+  String get system_surfacesLabel10;
+
+  /// lib/features/system/system_surfaces.dart:1373
+  ///
+  /// In en, this message translates to:
+  /// **'Export private key'**
+  String get system_surfacesLabel11;
+
+  /// lib/features/system/system_surfaces.dart:1384
+  ///
+  /// In en, this message translates to:
+  /// **'View eligibility policy'**
+  String get system_surfacesLabel12;
+
+  /// lib/features/system/system_surfaces.dart:1508
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get system_surfacesLabel13;
+
+  /// lib/features/system/system_surfaces.dart:1572
+  ///
+  /// In en, this message translates to:
+  /// **'Show {label} toast'**
+  String system_surfacesLabel14(Object? label);
+
+  /// lib/features/system/system_surfaces.dart:1000
+  ///
+  /// In en, this message translates to:
+  /// **'View cached content'**
+  String get system_surfacesLabel2;
+
+  /// lib/features/system/system_surfaces.dart:1000
+  ///
+  /// In en, this message translates to:
+  /// **'Keep using available features'**
+  String get system_surfacesLabel3;
+
+  /// lib/features/system/system_surfaces.dart:1054, lib/features/system/system_surfaces.dart:1089, lib/features/system/system_surfaces.dart:1378
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get system_surfacesLabel4;
+
+  /// lib/features/system/system_surfaces.dart:1166
+  ///
+  /// In en, this message translates to:
+  /// **'Force-update floor'**
+  String get system_surfacesLabel5;
+
+  /// lib/features/system/system_surfaces.dart:1171
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum supported version'**
+  String get system_surfacesLabel6;
+
+  /// lib/features/system/system_surfaces.dart:1187
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get system_surfacesLabel7;
+
+  /// lib/features/system/system_surfaces.dart:1273
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get system_surfacesLabel8;
+
+  /// lib/features/system/system_surfaces.dart:1275
+  ///
+  /// In en, this message translates to:
+  /// **'View service status'**
+  String get system_surfacesLabel9;
+
+  /// lib/features/system/system_surfaces.dart:54
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync {hour}:{minute}'**
+  String system_surfacesLastSyncKicker(Object? hour, Object? minute);
+
+  /// lib/features/system/system_surfaces.dart:1634
+  ///
+  /// In en, this message translates to:
+  /// **'The owner chose the {kind} skeleton; placeholders don\'t indicate result count, identity or success.'**
+  String system_surfacesLoadingPresentationActiveBody(Object? kind);
+
+  /// lib/features/system/system_surfaces.dart:1616, lib/features/system/system_surfaces.dart:1622
+  ///
+  /// In en, this message translates to:
+  /// **'Three skeleton types'**
+  String get system_surfacesLoadingPresentationActiveTitle;
+
+  /// lib/features/system/system_surfaces.dart:926, lib/features/system/system_surfaces.dart:977
+  ///
+  /// In en, this message translates to:
+  /// **'Partial outage (another state)'**
+  String get system_surfacesLoopLabel;
+
+  /// lib/features/system/system_surfaces.dart:1658
+  ///
+  /// In en, this message translates to:
+  /// **'Chart skeleton'**
+  String get system_surfacesLoopLabel10;
+
+  /// lib/features/system/system_surfaces.dart:1451
+  ///
+  /// In en, this message translates to:
+  /// **'Before asking'**
+  String get system_surfacesLoopLabel2;
+
+  /// lib/features/system/system_surfaces.dart:1472
+  ///
+  /// In en, this message translates to:
+  /// **'After denial (component specimen)'**
+  String get system_surfacesLoopLabel3;
+
+  /// lib/features/system/system_surfaces.dart:1491
+  ///
+  /// In en, this message translates to:
+  /// **'After denial'**
+  String get system_surfacesLoopLabel4;
+
+  /// lib/features/system/system_surfaces.dart:1558
+  ///
+  /// In en, this message translates to:
+  /// **'Current feedback'**
+  String get system_surfacesLoopLabel5;
+
+  /// lib/features/system/system_surfaces.dart:1580
+  ///
+  /// In en, this message translates to:
+  /// **'Static style comparison'**
+  String get system_surfacesLoopLabel6;
+
+  /// lib/features/system/system_surfaces.dart:1629
+  ///
+  /// In en, this message translates to:
+  /// **'Current loading'**
+  String get system_surfacesLoopLabel7;
+
+  /// lib/features/system/system_surfaces.dart:1654
+  ///
+  /// In en, this message translates to:
+  /// **'List skeleton'**
+  String get system_surfacesLoopLabel8;
+
+  /// lib/features/system/system_surfaces.dart:1656
+  ///
+  /// In en, this message translates to:
+  /// **'Detail skeleton'**
+  String get system_surfacesLoopLabel9;
+
+  /// lib/features/system/system_surfaces.dart:1235, lib/features/system/system_surfaces.dart:1262
+  ///
+  /// In en, this message translates to:
+  /// **'Community interaction is paused; Wallet and Mining data stay read-only.'**
+  String get system_surfacesMaintenanceSpecimenCaption;
+
+  /// lib/features/system/system_surfaces.dart:1233, lib/features/system/system_surfaces.dart:1260
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance window'**
+  String get system_surfacesMaintenanceSpecimenKicker;
+
+  /// lib/features/system/system_surfaces.dart:1249, lib/features/system/system_surfaces.dart:1281
+  ///
+  /// In en, this message translates to:
+  /// **'View read-only content'**
+  String get system_surfacesMaintenanceSpecimenReadOnlyLabel;
+
+  /// lib/features/system/system_surfaces.dart:1236
+  ///
+  /// In en, this message translates to:
+  /// **'2 hours'**
+  String get system_surfacesMaintenanceSpecimenStamp;
+
+  /// lib/features/system/system_surfaces.dart:1227, lib/features/system/system_surfaces.dart:1256
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled maintenance'**
+  String get system_surfacesMaintenanceSpecimenTitle;
+
+  /// lib/features/system/system_surfaces.dart:1485
+  ///
+  /// In en, this message translates to:
+  /// **'Allow LOOP in system settings'**
+  String get system_surfacesMessage;
+
+  /// lib/features/system/system_surfaces.dart:990
+  ///
+  /// In en, this message translates to:
+  /// **'Other chains are fine. Balances on this chain may be off, and trading on it is paused.'**
+  String get system_surfacesPartialOutageNoticeBody;
+
+  /// lib/features/system/system_surfaces.dart:989
+  ///
+  /// In en, this message translates to:
+  /// **'{networkLabel} network isn\'t available right now'**
+  String system_surfacesPartialOutageNoticeTitle(Object? networkLabel);
+
+  /// lib/features/system/system_surfaces.dart:1440
+  ///
+  /// In en, this message translates to:
+  /// **'Permission notes'**
+  String get system_surfacesPermissionDeniedSpecimenTitle;
+
+  /// lib/features/system/system_surfaces.dart:1477
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off in system settings'**
+  String get system_surfacesPermissionDeniedSpecimenTitle2;
+
+  /// lib/features/system/system_surfaces.dart:1402, lib/features/system/system_surfaces.dart:1455
+  ///
+  /// In en, this message translates to:
+  /// **'For mining settlement, Launch start, @mentions and security events. No marketing.'**
+  String get system_surfacesPurpose;
+
+  /// lib/features/system/system_surfaces.dart:1408, lib/features/system/system_surfaces.dart:1460
+  ///
+  /// In en, this message translates to:
+  /// **'Only when scanning a QR code: payment addresses and WalletConnect. Never in the background.'**
+  String get system_surfacesPurpose2;
+
+  /// lib/features/system/system_surfaces.dart:1414
+  ///
+  /// In en, this message translates to:
+  /// **'Only after you tap \"Speak\" in a voice room; the mic is off when you enter.'**
+  String get system_surfacesPurpose3;
+
+  /// lib/features/system/system_surfaces.dart:1491
+  ///
+  /// In en, this message translates to:
+  /// **'This request'**
+  String get system_surfacesS;
+
+  /// lib/features/system/system_surfaces.dart:1040, lib/features/system/system_surfaces.dart:1069
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet is still on your device. Try again later or contact support.'**
+  String get system_surfacesServiceErrorSpecimenCaption;
+
+  /// lib/features/system/system_surfaces.dart:1039, lib/features/system/system_surfaces.dart:1068
+  ///
+  /// In en, this message translates to:
+  /// **'Service unavailable'**
+  String get system_surfacesServiceErrorSpecimenHeading;
+
+  /// lib/features/system/system_surfaces.dart:1041, lib/features/system/system_surfaces.dart:1070
+  ///
+  /// In en, this message translates to:
+  /// **'Retryable'**
+  String get system_surfacesServiceErrorSpecimenStamp;
+
+  /// lib/features/system/system_surfaces.dart:1032, lib/features/system/system_surfaces.dart:1038, lib/features/system/system_surfaces.dart:1063, lib/features/system/system_surfaces.dart:1067
+  ///
+  /// In en, this message translates to:
+  /// **'Service status'**
+  String get system_surfacesServiceErrorSpecimenTitle;
+
+  /// lib/features/system/system_surfaces.dart:1503
+  ///
+  /// In en, this message translates to:
+  /// **'Open system settings'**
+  String get system_surfacesSettingsLabel;
+
+  /// lib/features/system/system_surfaces.dart:1406
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get system_surfacesShortName;
+
+  /// lib/features/system/system_surfaces.dart:1412
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get system_surfacesShortName2;
+
+  /// lib/features/system/system_surfaces.dart:558, lib/features/system/system_surfaces.dart:1146
+  ///
+  /// In en, this message translates to:
+  /// **'Update LOOP to continue'**
+  String get system_surfacesShowLoopForceUpdateDialog;
+
+  /// lib/features/system/system_surfaces.dart:560
+  ///
+  /// In en, this message translates to:
+  /// **'An approved version policy requires a supported version{requirement}. Install a supported version, then come back to LOOP.'**
+  String system_surfacesShowLoopForceUpdateDialog2(Object? requirement);
+
+  /// lib/features/system/system_surfaces.dart:1775
+  ///
+  /// In en, this message translates to:
+  /// **'Show pending sheet'**
+  String get system_surfacesSignSheetTriggerPendingLabel;
+
+  /// lib/features/system/system_surfaces.dart:1751
+  ///
+  /// In en, this message translates to:
+  /// **'Four sign sheet states'**
+  String get system_surfacesSignSheetTriggerPendingTitle;
+
+  /// lib/features/system/system_surfaces.dart:1634
+  ///
+  /// In en, this message translates to:
+  /// **'chart'**
+  String get system_surfacesSkeletonChart;
+
+  /// lib/features/system/system_surfaces.dart:1634
+  ///
+  /// In en, this message translates to:
+  /// **'detail'**
+  String get system_surfacesSkeletonDetail;
+
+  /// lib/features/system/system_surfaces.dart:1634
+  ///
+  /// In en, this message translates to:
+  /// **'list'**
+  String get system_surfacesSkeletonList;
+
+  /// lib/features/system/system_surfaces.dart:955
+  ///
+  /// In en, this message translates to:
+  /// **'Partial outage'**
+  String get system_surfacesStamp;
+
+  /// lib/features/system/system_surfaces.dart:1148
+  ///
+  /// In en, this message translates to:
+  /// **'Update needed'**
+  String get system_surfacesStamp2;
+
+  /// lib/features/system/system_surfaces.dart:1263
+  ///
+  /// In en, this message translates to:
+  /// **'In effect'**
+  String get system_surfacesStamp3;
+
+  /// lib/features/system/system_surfaces.dart:1263
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get system_surfacesStamp4;
+
+  /// lib/features/system/system_surfaces.dart:1352
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted'**
+  String get system_surfacesStamp5;
+
+  /// lib/features/system/system_surfaces.dart:1447
+  ///
+  /// In en, this message translates to:
+  /// **'On demand'**
+  String get system_surfacesStamp6;
+
+  /// lib/features/system/system_surfaces.dart:1553
+  ///
+  /// In en, this message translates to:
+  /// **'3 states'**
+  String get system_surfacesStamp7;
+
+  /// lib/features/system/system_surfaces.dart:1624
+  ///
+  /// In en, this message translates to:
+  /// **'3 types'**
+  String get system_surfacesStamp8;
+
+  /// lib/features/system/system_surfaces.dart:1692
+  ///
+  /// In en, this message translates to:
+  /// **'5 states'**
+  String get system_surfacesStamp9;
+
+  /// lib/features/system/system_surfaces.dart:1708
+  ///
+  /// In en, this message translates to:
+  /// **'Where this component appears'**
+  String get system_surfacesSummary;
+
+  /// lib/features/system/system_surfaces.dart:843
+  ///
+  /// In en, this message translates to:
+  /// **'Back to LOOP'**
+  String get system_surfacesSystemReturnLabel;
+
+  /// lib/features/system/system_surfaces.dart:1534
+  ///
+  /// In en, this message translates to:
+  /// **'Address copied'**
+  String get system_surfacesText;
+
+  /// lib/features/system/system_surfaces.dart:1535
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get system_surfacesText2;
+
+  /// lib/features/system/system_surfaces.dart:1535
+  ///
+  /// In en, this message translates to:
+  /// **'Price changed. Refresh the quote'**
+  String get system_surfacesText3;
+
+  /// lib/features/system/system_surfaces.dart:1536
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get system_surfacesText4;
+
+  /// lib/features/system/system_surfaces.dart:1536
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction failed: not enough gas'**
+  String get system_surfacesText5;
+
+  /// lib/features/system/system_surfaces.dart:855, lib/features/system/system_surfaces.dart:915
+  ///
+  /// In en, this message translates to:
+  /// **'Fully offline'**
+  String get system_surfacesTitle;
+
+  /// lib/features/system/system_surfaces.dart:1119
+  ///
+  /// In en, this message translates to:
+  /// **'Force update'**
+  String get system_surfacesTitle10;
+
+  /// lib/features/system/system_surfaces.dart:1135
+  ///
+  /// In en, this message translates to:
+  /// **'No approved minimum version policy'**
+  String get system_surfacesTitle11;
+
+  /// lib/features/system/system_surfaces.dart:1242
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Power keeps accruing'**
+  String get system_surfacesTitle12;
+
+  /// lib/features/system/system_surfaces.dart:1268
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance notes'**
+  String get system_surfacesTitle13;
+
+  /// lib/features/system/system_surfaces.dart:1318
+  ///
+  /// In en, this message translates to:
+  /// **'Region restriction'**
+  String get system_surfacesTitle14;
+
+  /// lib/features/system/system_surfaces.dart:1334
+  ///
+  /// In en, this message translates to:
+  /// **'No approved region decision'**
+  String get system_surfacesTitle15;
+
+  /// lib/features/system/system_surfaces.dart:1361
+  ///
+  /// In en, this message translates to:
+  /// **'No location or reason details here'**
+  String get system_surfacesTitle16;
+
+  /// lib/features/system/system_surfaces.dart:1454
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission'**
+  String get system_surfacesTitle17;
+
+  /// lib/features/system/system_surfaces.dart:1459
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission'**
+  String get system_surfacesTitle18;
+
+  /// lib/features/system/system_surfaces.dart:1464
+  ///
+  /// In en, this message translates to:
+  /// **'Biometrics'**
+  String get system_surfacesTitle19;
+
+  /// lib/features/system/system_surfaces.dart:862
+  ///
+  /// In en, this message translates to:
+  /// **'Market data unavailable'**
+  String get system_surfacesTitle2;
+
+  /// lib/features/system/system_surfaces.dart:1498
+  ///
+  /// In en, this message translates to:
+  /// **'{shortName} permission is turned off in system settings'**
+  String system_surfacesTitle20(Object? shortName);
+
+  /// lib/features/system/system_surfaces.dart:1498
+  ///
+  /// In en, this message translates to:
+  /// **'{shortName} permission'**
+  String system_surfacesTitle21(Object? shortName);
+
+  /// lib/features/system/system_surfaces.dart:1545, lib/features/system/system_surfaces.dart:1551
+  ///
+  /// In en, this message translates to:
+  /// **'Three toast states'**
+  String get system_surfacesTitle22;
+
+  /// lib/features/system/system_surfaces.dart:1685
+  ///
+  /// In en, this message translates to:
+  /// **'Five Token Card states'**
+  String get system_surfacesTitle23;
+
+  /// lib/features/system/system_surfaces.dart:1727
+  ///
+  /// In en, this message translates to:
+  /// **'Risk state lists facts only'**
+  String get system_surfacesTitle24;
+
+  /// lib/features/system/system_surfaces.dart:1765
+  ///
+  /// In en, this message translates to:
+  /// **'The only signing exit in the product'**
+  String get system_surfacesTitle25;
+
+  /// lib/features/system/system_surfaces.dart:1813
+  ///
+  /// In en, this message translates to:
+  /// **'A policy rejection isn\'t an error'**
+  String get system_surfacesTitle26;
+
+  /// lib/features/system/system_surfaces.dart:1830, lib/features/system/system_surfaces.dart:1834
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system_surfacesTitle27;
+
+  /// lib/features/system/system_surfaces.dart:869
+  ///
+  /// In en, this message translates to:
+  /// **'Trading service unavailable'**
+  String get system_surfacesTitle3;
+
+  /// lib/features/system/system_surfaces.dart:930
+  ///
+  /// In en, this message translates to:
+  /// **'BSC network isn\'t available right now'**
+  String get system_surfacesTitle4;
+
+  /// lib/features/system/system_surfaces.dart:934, lib/features/system/system_surfaces.dart:993
+  ///
+  /// In en, this message translates to:
+  /// **'Why tell these two apart'**
+  String get system_surfacesTitle5;
+
+  /// lib/features/system/system_surfaces.dart:981
+  ///
+  /// In en, this message translates to:
+  /// **'No per-chain outage info'**
+  String get system_surfacesTitle6;
+
+  /// lib/features/system/system_surfaces.dart:1048
+  ///
+  /// In en, this message translates to:
+  /// **'Error 502'**
+  String get system_surfacesTitle7;
+
+  /// lib/features/system/system_surfaces.dart:1078
+  ///
+  /// In en, this message translates to:
+  /// **'Result unconfirmed'**
+  String get system_surfacesTitle8;
+
+  /// lib/features/system/system_surfaces.dart:1079
+  ///
+  /// In en, this message translates to:
+  /// **'Error {statusLabel}'**
+  String system_surfacesTitle9(Object? statusLabel);
+
+  /// lib/features/system/system_surfaces.dart:430
+  ///
+  /// In en, this message translates to:
+  /// **'{title}. {body}'**
+  String system_surfacesTitleBody(Object? body, Object? title);
+
+  /// lib/features/system/system_surfaces.dart:1081
+  ///
+  /// In en, this message translates to:
+  /// **'Trace ID {trace}'**
+  String system_surfacesTraceId(Object? trace);
+
+  /// lib/features/system/system_surfaces.dart:1081
+  ///
+  /// In en, this message translates to:
+  /// **'No trace ID'**
+  String get system_surfacesTraceMissing;
+
+  /// lib/features/system/system_surfaces.dart:1190
+  ///
+  /// In en, this message translates to:
+  /// **'No reviewed store link. Open the app store manually.'**
+  String get system_surfacesUnavailableReason;
+
+  /// lib/features/system/system_surfaces.dart:1370
+  ///
+  /// In en, this message translates to:
+  /// **'The Wallet page can\'t be reached right now.'**
+  String get system_surfacesUnavailableReason2;
+
+  /// lib/features/system/system_surfaces.dart:1375
+  ///
+  /// In en, this message translates to:
+  /// **'The private key export page can\'t be reached right now.'**
+  String get system_surfacesUnavailableReason3;
+
+  /// lib/features/system/system_surfaces.dart:1380
+  ///
+  /// In en, this message translates to:
+  /// **'The help page can\'t be reached right now.'**
+  String get system_surfacesUnavailableReason4;
+
+  /// lib/features/system/system_surfaces.dart:1386
+  ///
+  /// In en, this message translates to:
+  /// **'No approved eligibility policy link.'**
+  String get system_surfacesUnavailableReason5;
 
   /// lib/features/wallet/testnet_faucet/testnet_faucet_sheet.dart:164
   ///

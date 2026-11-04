@@ -53,7 +53,7 @@ void main() {
         ),
       );
 
-      expect(find.text('正在准备你的账号…'), findsOneWidget);
+      expect(find.text('Preparing your account…'), findsOneWidget);
       expect(_loader(tester).isSweeping, isTrue);
 
       // The complaint this answers: a mark that finishes once looks like a
@@ -111,7 +111,7 @@ void main() {
 
       expect(_loader(tester).isSweeping, isFalse);
       expect(_band, findsNothing);
-      expect(find.text('正在准备你的账号…'), findsNothing);
+      expect(find.text('Preparing your account…'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('loop-splash-unavailable')),
         findsOneWidget,
@@ -147,7 +147,7 @@ void main() {
 
         expect(_loader(tester).isSweeping, isFalse);
         // The movement is gone; the sentence and the spoken label are not.
-        expect(find.text('正在准备你的账号…'), findsOneWidget);
+        expect(find.text('Preparing your account…'), findsOneWidget);
         expect(
           tester
               .widget<Semantics>(
@@ -162,7 +162,7 @@ void main() {
               )
               .properties
               .label,
-          'LOOP 正在加载',
+          'LOOP is loading',
         );
       },
     );
@@ -236,7 +236,7 @@ void main() {
         findsNothing,
       );
       expect(_enabled(tester, 'wallet-create-continue'), isFalse);
-      expect(find.textContaining('助记词'), findsWidgets);
+      expect(find.textContaining('recovery phrase'), findsWidgets);
     });
 
     testWidgets('continues to the recovery step when the wallet can be made', (
@@ -272,11 +272,11 @@ void main() {
       // Passkey only (decision 0151 took 恢复密码 off the page); the two
       // disclosure rows stay collapsed and 自动恢复 is not an option at all —
       // it is already in force.
-      expect(find.text('不可用'), findsNWidgets(1));
-      expect(find.textContaining('恢复密码'), findsNothing);
-      expect(find.text('可用'), findsNothing);
-      expect(find.text('已选'), findsNothing);
-      expect(find.text('已启用'), findsOneWidget);
+      expect(find.text('Unavailable'), findsNWidgets(1));
+      expect(find.textContaining('Recovery password'), findsNothing);
+      expect(find.text('Available'), findsNothing);
+      expect(find.text('Selected'), findsNothing);
+      expect(find.text('Enabled'), findsOneWidget);
       // Nothing to enrol is not a reason to trap the owner on the step: both
       // actions continue, and neither claims an enrolment (F2).
       expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
@@ -311,15 +311,15 @@ void main() {
           ),
         );
 
-        expect(find.text('可用'), findsOneWidget);
-        expect(find.text('已选'), findsNothing);
+        expect(find.text('Available'), findsOneWidget);
+        expect(find.text('Selected'), findsNothing);
 
         // The enabled row reports; it is not a choice to make.
         await _tap(tester, 'recovery-cloud');
-        expect(find.text('已选'), findsNothing);
+        expect(find.text('Selected'), findsNothing);
 
         await _tap(tester, 'recovery-passkey');
-        expect(find.text('已选'), findsOneWidget);
+        expect(find.text('Selected'), findsOneWidget);
 
         await _tap(tester, 'wallet-recovery-confirm');
         expect(decisions, <WalletRecoveryMethod?>[
@@ -344,7 +344,7 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-loading')),
         findsOneWidget,
       );
-      expect(find.text('可用'), findsNothing);
+      expect(find.text('Available'), findsNothing);
 
       await _pump(
         tester,
@@ -456,7 +456,7 @@ void main() {
       }
       expect(find.text('设置恢复方式'), findsOneWidget);
       expect(find.text('03 / 05'), findsNothing);
-      expect(find.bySemanticsLabel('流程第 3 步，共 5 步：设置恢复方式'), findsOneWidget);
+      expect(find.bySemanticsLabel('Step 3 of 5: 设置恢复方式'), findsOneWidget);
     });
 
     testWidgets('the last step lights every dot', (tester) async {

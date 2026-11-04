@@ -155,7 +155,7 @@ void main() {
       expect(primary.stamp, 'On-chain');
       expect(
         primary.caption,
-        'Directory, applications and round config come from LOOP. On-chain status is read from BSC 测试网.',
+        'Directory, applications and round config come from LOOP. On-chain status is read from BSC Testnet.',
       );
     });
 

@@ -1,0 +1,834 @@
+{
+  "profileAbout_clientRegisterLoopAboutUnknownModuleName": {
+    "en": "Other rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:125",
+    "zh": "其他规则"
+  },
+  "profileAbout_clientRegisterPurpose": {
+    "en": "App framework and runtime",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:27",
+    "zh": "应用框架与运行时"
+  },
+  "profileAbout_clientRegisterPurpose10": {
+    "en": "Push channel",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:73",
+    "zh": "推送通道"
+  },
+  "profileAbout_clientRegisterPurpose11": {
+    "en": "Local storage for device and session records",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:78",
+    "zh": "设备与会话记录的本地保管"
+  },
+  "profileAbout_clientRegisterPurpose12": {
+    "en": "Non-sensitive local display preferences",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:83",
+    "zh": "非敏感的本机显示偏好"
+  },
+  "profileAbout_clientRegisterPurpose13": {
+    "en": "Network reachability checks",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:88",
+    "zh": "网络可达性检测"
+  },
+  "profileAbout_clientRegisterPurpose14": {
+    "en": "Vector icon rendering",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:93",
+    "zh": "矢量图标渲染"
+  },
+  "profileAbout_clientRegisterPurpose15": {
+    "en": "System share",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:98",
+    "zh": "系统分享"
+  },
+  "profileAbout_clientRegisterPurpose16": {
+    "en": "Open campaign links in the system browser",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:103",
+    "zh": "用系统浏览器打开活动链接"
+  },
+  "profileAbout_clientRegisterPurpose17": {
+    "en": "Locally generated unique IDs",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:106",
+    "zh": "本地生成的唯一标识"
+  },
+  "profileAbout_clientRegisterPurpose18": {
+    "en": "iOS-style icon font",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:109",
+    "zh": "iOS 风格图标字体"
+  },
+  "profileAbout_clientRegisterPurpose19": {
+    "en": "Interface fonts",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:114",
+    "zh": "界面字体"
+  },
+  "profileAbout_clientRegisterPurpose2": {
+    "en": "Network requests",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:30",
+    "zh": "网络请求"
+  },
+  "profileAbout_clientRegisterPurpose3": {
+    "en": "Exact decimal math for amounts and prices",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:33",
+    "zh": "金额与行情的精确十进制计算"
+  },
+  "profileAbout_clientRegisterPurpose4": {
+    "en": "State management",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:38",
+    "zh": "状态管理"
+  },
+  "profileAbout_clientRegisterPurpose5": {
+    "en": "Page routing",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:43",
+    "zh": "页面路由"
+  },
+  "profileAbout_clientRegisterPurpose6": {
+    "en": "Sign-in and built-in wallet",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:48",
+    "zh": "登录与内置钱包"
+  },
+  "profileAbout_clientRegisterPurpose7": {
+    "en": "External wallet connection and signing credentials",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:53",
+    "zh": "外部钱包连接与签名凭证"
+  },
+  "profileAbout_clientRegisterPurpose8": {
+    "en": "Community chat",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:58",
+    "zh": "社区聊天"
+  },
+  "profileAbout_clientRegisterPurpose9": {
+    "en": "Local chat cache",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:63",
+    "zh": "聊天本地缓存"
+  },
+  "profileAbout_clientRegisterSwitch": {
+    "en": "Product policy",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:134",
+    "zh": "产品策略"
+  },
+  "profileAbout_clientRegisterSwitch10": {
+    "en": "On-chain write rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:143",
+    "zh": "链上写入规则"
+  },
+  "profileAbout_clientRegisterSwitch11": {
+    "en": "Version of the five tabs, default landing page and overall product rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:149",
+    "zh": "五个 Tab、默认落地页与整体产品规则的版本"
+  },
+  "profileAbout_clientRegisterSwitch12": {
+    "en": "Operator overrides for this client's version, region and terms requirements",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:150",
+    "zh": "运营对这个客户端的版本、地区与条款要求的覆盖版本"
+  },
+  "profileAbout_clientRegisterSwitch13": {
+    "en": "How device sessions are created, limited and revoked",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:151",
+    "zh": "设备会话如何创建、限额与撤销"
+  },
+  "profileAbout_clientRegisterSwitch14": {
+    "en": "Rules for community creation, members, roles and governance",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:152",
+    "zh": "社区创建、成员、角色与治理的规则"
+  },
+  "profileAbout_clientRegisterSwitch15": {
+    "en": "How Market trending is ranked",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:153",
+    "zh": "行情页热门排序怎么算"
+  },
+  "profileAbout_clientRegisterSwitch16": {
+    "en": "Thresholds for new-device alerts",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:154",
+    "zh": "新设备提示的阈值"
+  },
+  "profileAbout_clientRegisterSwitch17": {
+    "en": "Which account settings can be changed",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:155",
+    "zh": "账号设置里可以改哪些项"
+  },
+  "profileAbout_clientRegisterSwitch18": {
+    "en": "Ticket categories, length and response times",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:156",
+    "zh": "工单分类、字数与答复时限"
+  },
+  "profileAbout_clientRegisterSwitch19": {
+    "en": "Swap quote, slippage and fee rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:157",
+    "zh": "兑换的报价、滑点与手续费规则"
+  },
+  "profileAbout_clientRegisterSwitch2": {
+    "en": "Client policy",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:135",
+    "zh": "客户端策略"
+  },
+  "profileAbout_clientRegisterSwitch20": {
+    "en": "Asset scope and per-transaction limit for on-chain write rollout",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:158",
+    "zh": "链上写入放量的资产范围与单笔上限"
+  },
+  "profileAbout_clientRegisterSwitch3": {
+    "en": "Sign-in session rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:136",
+    "zh": "登录会话规则"
+  },
+  "profileAbout_clientRegisterSwitch4": {
+    "en": "Community rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:137",
+    "zh": "社区规则"
+  },
+  "profileAbout_clientRegisterSwitch5": {
+    "en": "Market trending rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:138",
+    "zh": "行情热榜规则"
+  },
+  "profileAbout_clientRegisterSwitch6": {
+    "en": "Device risk alert rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:139",
+    "zh": "设备风险提示规则"
+  },
+  "profileAbout_clientRegisterSwitch7": {
+    "en": "Account settings rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:140",
+    "zh": "账号设置规则"
+  },
+  "profileAbout_clientRegisterSwitch8": {
+    "en": "Support ticket rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:141",
+    "zh": "客服工单规则"
+  },
+  "profileAbout_clientRegisterSwitch9": {
+    "en": "Swap rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_client_register.dart:142",
+    "zh": "兑换规则"
+  },
+  "profileAbout_networkDiagnosticsAboutBackendHostSubtitle": {
+    "en": "No server address in the build config",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:168",
+    "zh": "构建配置里没有服务端地址"
+  },
+  "profileAbout_networkDiagnosticsAboutBackendHostSubtitle2": {
+    "en": "{backendTier} · From this build's config",
+    "placeholders": {
+      "backendTier": {
+        "example": "loopBackendTier(backendHost)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:169",
+    "zh": "{backendTier} · 来自这次构建的配置"
+  },
+  "profileAbout_networkDiagnosticsAboutBackendHostTitle": {
+    "en": "Server",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:164",
+    "zh": "服务端"
+  },
+  "profileAbout_networkDiagnosticsAboutBuildModeSubtitle": {
+    "en": "Declared {declaredMode} · Runtime {runtimeBuildMode} · {config}",
+    "placeholders": {
+      "config": {
+        "example": "config.declaredModeMatchesRuntime ? '一致' : '不一致'",
+        "type": "Object"
+      },
+      "declaredMode": {
+        "example": "declaredMode",
+        "type": "Object"
+      },
+      "runtimeBuildMode": {
+        "example": "loopRuntimeBuildMode()",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:178",
+    "zh": "声明 {declaredMode} · 运行时 {runtimeBuildMode} · {config}"
+  },
+  "profileAbout_networkDiagnosticsAboutBuildModeTitle": {
+    "en": "Build mode",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:176",
+    "zh": "构建模式"
+  },
+  "profileAbout_networkDiagnosticsBuildMode": {
+    "en": "Declared {declared} · Runtime {runtimeBuildMode}",
+    "placeholders": {
+      "declared": {
+        "example": "declared",
+        "type": "Object"
+      },
+      "runtimeBuildMode": {
+        "example": "loopRuntimeBuildMode()",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:233",
+    "zh": "声明 {declared} · 运行时 {runtimeBuildMode}"
+  },
+  "profileAbout_networkDiagnosticsBuildRows": {
+    "en": "Not declared",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:156, lib/features/profile/about/network_diagnostics_screen.dart:227",
+    "zh": "未声明"
+  },
+  "profileAbout_networkDiagnosticsControllerReason": {
+    "en": "No address configured in this build, not checked",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_controller.dart:67, lib/features/profile/about/network_diagnostics_controller.dart:94",
+    "zh": "这个构建没有配置地址，未探测"
+  },
+  "profileAbout_networkDiagnosticsDone": {
+    "en": "{okCount} of {sent} reachable",
+    "placeholders": {
+      "okCount": {
+        "example": "state.okCount",
+        "type": "Object"
+      },
+      "sent": {
+        "example": "sent",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:65",
+    "zh": "{sent} 项中 {okCount} 项可达"
+  },
+  "profileAbout_networkDiagnosticsDone2": {
+    "en": "Run again",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:94",
+    "zh": "重新诊断"
+  },
+  "profileAbout_networkDiagnosticsHostTier": {
+    "en": "{host} ({tier})",
+    "placeholders": {
+      "host": {
+        "example": "host",
+        "type": "Object"
+      },
+      "tier": {
+        "example": "tier",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:237",
+    "zh": "{host}（{tier}）"
+  },
+  "profileAbout_networkDiagnosticsIdle": {
+    "en": "Start diagnosis",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:92",
+    "zh": "开始诊断"
+  },
+  "profileAbout_networkDiagnosticsLoopLabel": {
+    "en": "Checks",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:114",
+    "zh": "探测项"
+  },
+  "profileAbout_networkDiagnosticsLoopLabel2": {
+    "en": "Results",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:126",
+    "zh": "结果"
+  },
+  "profileAbout_networkDiagnosticsMessage": {
+    "en": "Diagnosis copied",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:249",
+    "zh": "诊断结果已复制"
+  },
+  "profileAbout_networkDiagnosticsMessage2": {
+    "en": "Can't open share. Copy instead",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:256",
+    "zh": "无法打开分享，可以改用复制"
+  },
+  "profileAbout_networkDiagnosticsModeMatch": {
+    "en": "match",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:179",
+    "zh": "一致"
+  },
+  "profileAbout_networkDiagnosticsModeMismatch": {
+    "en": "mismatch",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:179",
+    "zh": "不一致"
+  },
+  "profileAbout_networkDiagnosticsModelsBlocked": {
+    "en": "Not sent: the address doesn't meet this device's network rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:168",
+    "zh": "未发出：地址不符合本机网络规则"
+  },
+  "profileAbout_networkDiagnosticsModelsConnect": {
+    "en": "Can't connect: connection refused or interrupted",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:166",
+    "zh": "无法连接：连接被拒绝或中断"
+  },
+  "profileAbout_networkDiagnosticsModelsDns": {
+    "en": "Can't connect: DNS lookup failed",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:165",
+    "zh": "无法连接：域名解析失败"
+  },
+  "profileAbout_networkDiagnosticsModelsIdle": {
+    "en": "Not started",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:154, lib/features/profile/about/network_diagnostics_screen.dart:63",
+    "zh": "未开始"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport": {
+    "en": "LOOP network diagnosis",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:301",
+    "zh": "LOOP 网络诊断"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport2": {
+    "en": "Time: {networkDiagnosticsTimestamp}",
+    "placeholders": {
+      "networkDiagnosticsTimestamp": {
+        "example": "networkDiagnosticsTimestamp(startedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:302",
+    "zh": "时间：{networkDiagnosticsTimestamp}"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport3": {
+    "en": "App version: {appVersion}",
+    "placeholders": {
+      "appVersion": {
+        "example": "context.appVersion",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:303",
+    "zh": "App 版本：{appVersion}"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport4": {
+    "en": "Build mode: {buildMode}",
+    "placeholders": {
+      "buildMode": {
+        "example": "context.buildMode",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:304",
+    "zh": "构建模式：{buildMode}"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport5": {
+    "en": "Server host: {serverHost}",
+    "placeholders": {
+      "serverHost": {
+        "example": "context.serverHost",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:305",
+    "zh": "服务端主机：{serverHost}"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport6": {
+    "en": "Platform: {platform}",
+    "placeholders": {
+      "platform": {
+        "example": "context.platform",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:306",
+    "zh": "平台：{platform}"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport7": {
+    "en": "Total time: {inMilliseconds} ms",
+    "placeholders": {
+      "inMilliseconds": {
+        "example": "total.inMilliseconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:307",
+    "zh": "总耗时：{inMilliseconds} ms"
+  },
+  "profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport8": {
+    "en": "Results: {okCount} of {results} reachable",
+    "placeholders": {
+      "okCount": {
+        "example": "okCount",
+        "type": "Object"
+      },
+      "results": {
+        "example": "results.length",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:308",
+    "zh": "结果：{results} 项中 {okCount} 项可达"
+  },
+  "profileAbout_networkDiagnosticsModelsOther": {
+    "en": "Can't connect",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:169",
+    "zh": "无法连接"
+  },
+  "profileAbout_networkDiagnosticsModelsReachable": {
+    "en": "Reachable",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:157",
+    "zh": "可达"
+  },
+  "profileAbout_networkDiagnosticsModelsReason": {
+    "en": "Connected, but the service returned HTTP {statusCode}{reused}",
+    "placeholders": {
+      "reused": {
+        "example": "reused",
+        "type": "Object"
+      },
+      "statusCode": {
+        "example": "statusCode",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:210",
+    "zh": "已连上，但服务返回 HTTP {statusCode}{reused}"
+  },
+  "profileAbout_networkDiagnosticsModelsReason2": {
+    "en": "HTTP {statusCode} · Image {bytesText}",
+    "placeholders": {
+      "bytesText": {
+        "example": "_bytesText(body.length)",
+        "type": "Object"
+      },
+      "statusCode": {
+        "example": "statusCode",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:219",
+    "zh": "HTTP {statusCode} · 图片 {bytesText}"
+  },
+  "profileAbout_networkDiagnosticsModelsReason3": {
+    "en": "Connected, but no image received · HTTP {statusCode}",
+    "placeholders": {
+      "statusCode": {
+        "example": "statusCode",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:220",
+    "zh": "已连上，但没有拿到图片 · HTTP {statusCode}"
+  },
+  "profileAbout_networkDiagnosticsModelsReason4": {
+    "en": "HTTP {statusCode} · Block {block}",
+    "placeholders": {
+      "block": {
+        "example": "block",
+        "type": "Object"
+      },
+      "statusCode": {
+        "example": "statusCode",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:230",
+    "zh": "HTTP {statusCode} · 区块 {block}"
+  },
+  "profileAbout_networkDiagnosticsModelsRunning": {
+    "en": "Checking",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:155",
+    "zh": "探测中"
+  },
+  "profileAbout_networkDiagnosticsModelsS": {
+    "en": " · First {inMilliseconds} ms, connection reused",
+    "placeholders": {
+      "inMilliseconds": {
+        "example": "firstElapsed.inMilliseconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:182",
+    "zh": " · 首次 {inMilliseconds} ms，复用连接"
+  },
+  "profileAbout_networkDiagnosticsModelsTimeout": {
+    "en": "Timed out",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:158",
+    "zh": "超时"
+  },
+  "profileAbout_networkDiagnosticsModelsTimeout2": {
+    "en": "Timed out, no response in time",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:164",
+    "zh": "超时，规定时间内没有响应"
+  },
+  "profileAbout_networkDiagnosticsModelsTls": {
+    "en": "Can't connect: secure handshake failed",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_models.dart:167",
+    "zh": "无法连接：安全连接握手失败"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsCopyLabel": {
+    "en": "Copy results",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:131",
+    "zh": "复制诊断结果"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsFolioCaption": {
+    "en": "This page only tests connectivity and timing. No account info is sent.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:79",
+    "zh": "这个页面只测连通性和耗时，不发送账号信息。"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsFolioKicker": {
+    "en": "Network check",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:77",
+    "zh": "网络检查"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsFolioStamp": {
+    "en": "Total {state}s",
+    "placeholders": {
+      "state": {
+        "example": "(state.total!.inMilliseconds / 1000).toStringAsFixed(1)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:84",
+    "zh": "总耗时 {state} 秒"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineBody": {
+    "en": "Make sure this device is online, then run again.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:108",
+    "zh": "请先确认这台设备已经联网，再重新诊断。"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineTitle": {
+    "en": "No check could connect",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:107",
+    "zh": "所有探测都没有连上"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyText": {
+    "en": "Results stay on this device and aren't uploaded. Copying or sharing is up to you.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:145",
+    "zh": "结果只留在这台设备上，不会上传；复制或分享由你决定。"
+  },
+  "profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyTitle": {
+    "en": "Where results go",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:144",
+    "zh": "结果去向"
+  },
+  "profileAbout_networkDiagnosticsRunning": {
+    "en": "Diagnosing",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:64",
+    "zh": "诊断中"
+  },
+  "profileAbout_networkDiagnosticsRunning2": {
+    "en": "Diagnosing",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:93",
+    "zh": "正在诊断"
+  },
+  "profileAbout_networkDiagnosticsText": {
+    "en": "Each check times out after 8 seconds. All run at once, 15 seconds at most.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:124",
+    "zh": "每项单独限时 8 秒，全部探测同时发出，最长 15 秒。"
+  },
+  "profileAbout_networkDiagnosticsTitle": {
+    "en": "About the checks",
+    "placeholders": {},
+    "where": "lib/features/profile/about/network_diagnostics_screen.dart:123",
+    "zh": "探测说明"
+  },
+  "profileAbout_screenAboutClientBuildNoteLabel": {
+    "en": "LOOP doesn't publish client versions",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:160",
+    "zh": "LOOP 不发布客户端版本"
+  },
+  "profileAbout_screenAboutClientVersionSubtitle": {
+    "en": "No valid version in the build config; none is made up here",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:90",
+    "zh": "构建配置里没有合法的版本号，这里不编造一个"
+  },
+  "profileAbout_screenAboutClientVersionSubtitle2": {
+    "en": "From this device's build config, not uploaded",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:91",
+    "zh": "来自这台设备的构建配置，不会上传"
+  },
+  "profileAbout_screenAboutClientVersionTitle": {
+    "en": "Client version",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:88",
+    "zh": "客户端版本"
+  },
+  "profileAbout_screenAboutConfigNoteText": {
+    "en": "For viewing only. No version is pinned.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:117",
+    "zh": "这里只用于查看，不会固定任何一个版本。"
+  },
+  "profileAbout_screenAboutNetworkDiagnosticsSubtitle": {
+    "en": "Test connectivity and timing from this device to each service",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:104",
+    "zh": "测这台设备到各项服务的连通性和耗时"
+  },
+  "profileAbout_screenAboutNetworkDiagnosticsTitle": {
+    "en": "Network diagnosis",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:102, lib/features/profile/about/network_diagnostics_screen.dart:71",
+    "zh": "网络诊断"
+  },
+  "profileAbout_screenAboutOpenSourceInfo": {
+    "en": "Open-source licenses",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:123",
+    "zh": "开源许可"
+  },
+  "profileAbout_screenAboutOpenSourceInfoTitle": {
+    "en": "Open-source components in this app",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:126",
+    "zh": "本应用使用的开源组件"
+  },
+  "profileAbout_screenAboutOpenSourceNoteBody": {
+    "en": "Component versions follow this build's lockfile; this page doesn't show version numbers.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:137",
+    "zh": "组件版本以本次构建的锁定文件为准，这一页不显示版本号。"
+  },
+  "profileAbout_screenAboutOpenSourceSummaryBody": {
+    "en": "Below are the open-source components the LOOP mobile client depends on directly, with their licenses; exact versions are recorded in this build's lockfile. Components used by the LOOP server aren't on this page.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:132",
+    "zh": "下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。"
+  },
+  "profileAbout_screenAboutRiskNoticeBody": {
+    "en": "Crypto asset prices are highly volatile, and you may lose all your principal. LOOP is a non-custodial tool, gives no investment advice and isn't responsible for any trade outcome. Mining output depends on network-wide power competition and isn't a promise of returns.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:80",
+    "zh": "加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。"
+  },
+  "profileAbout_screenAboutRiskNoticeTitle": {
+    "en": "Crypto asset risk",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:78",
+    "zh": "加密资产风险"
+  },
+  "profileAbout_screenAboutTermsUnavailableLabel": {
+    "en": "No document links for the Terms of Service, Privacy Policy and risk disclosure",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:221",
+    "zh": "用户协议、隐私政策与风险披露没有文档地址"
+  },
+  "profileAbout_screenAboutTermsVersionSubtitle": {
+    "en": "A version exists, but there's no document link to open yet.",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:230",
+    "zh": "已经有版本号，但还没有可打开的文档链接。"
+  },
+  "profileAbout_screenAboutTermsVersionTitle": {
+    "en": "Terms version",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:229",
+    "zh": "协议版本"
+  },
+  "profileAbout_screenEmptyMessage": {
+    "en": "Can't read product records right now",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:65",
+    "zh": "暂时读不到产品记录"
+  },
+  "profileAbout_screenLoopLabel": {
+    "en": "Legal",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:59",
+    "zh": "法务"
+  },
+  "profileAbout_screenLoopLabel2": {
+    "en": "Risk notice",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:73",
+    "zh": "风险提示"
+  },
+  "profileAbout_screenLoopLabel3": {
+    "en": "This build",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:83, lib/features/profile/about/network_diagnostics_screen.dart:159",
+    "zh": "本机构建"
+  },
+  "profileAbout_screenLoopLabel4": {
+    "en": "Current rules",
+    "placeholders": {},
+    "where": "lib/features/profile/about/about_screen.dart:111",
+    "zh": "当前规则"
+  },
+  "profileAbout_screenLoopRecordRow": {
+    "en": "Version {number}",
+    "placeholders": {
+      "number": {
+        "example": "configVersion",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/about_screen.dart:198",
+    "zh": "版本 {number}"
+  },
+  "profileAbout_screenLoopRecordRow2": {
+    "en": "In effect {relativeTime}",
+    "placeholders": {
+      "relativeTime": {
+        "example": "loopRelativeTime(entry.effectiveAt!)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/profile/about/about_screen.dart:200",
+    "zh": "生效于 {relativeTime}"
+  }
+}

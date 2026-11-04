@@ -20,7 +20,7 @@ void main() {
 
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
     expect(find.byType(LoopGlobalNotice), findsNothing);
-    expect(find.text('当前反馈'), findsNothing);
+    expect(find.text('Current feedback'), findsNothing);
 
     await scrollPageTo(
       tester,
@@ -42,7 +42,10 @@ void main() {
 
     // The rows carry the prototype's own copy; the bar line above the
     // folio is what says they are samples, not a prefix on every string.
-    await scrollPageTo(tester, find.text('交易失败：gas 不足').last);
+    await scrollPageTo(
+      tester,
+      find.text('Transaction failed: not enough gas').last,
+    );
     expect(find.textContaining('示例 · '), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
@@ -83,7 +86,7 @@ void main() {
     );
     expect(find.text('确切的警告观测。'), findsOneWidget);
     expect(find.byType(LoopGlobalNotice), findsOneWidget);
-    expect(find.text('关闭'), findsNothing);
+    expect(find.text('Close'), findsNothing);
   });
 
   testWidgets('explicit feedback renders its kind with exact actions', (
@@ -113,7 +116,7 @@ void main() {
           onSecondaryAction: () => fail('generic secondary must stay isolated'),
         ),
       );
-      expect(find.text('当前反馈'), findsOneWidget);
+      expect(find.text('Current feedback'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(LoopGlobalNotice),
@@ -126,9 +129,9 @@ void main() {
         find.bySemanticsLabel('$prefix：来自功能的 ${kind.name} 结果'),
         findsOneWidget,
       );
-      expect(find.text('返回 LOOP'), findsNothing);
+      expect(find.text('Back to LOOP'), findsNothing);
       await tester.tap(find.text('查看'));
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
     }
     expect((actions, dismissed), (3, 3));
     semantics.dispose();
@@ -188,7 +191,7 @@ void main() {
       tester,
       const SystemSurfaceScreen.fromId('toast', globalFeedback: feedback),
     );
-    expect(find.text('关闭'), findsNothing);
+    expect(find.text('Close'), findsNothing);
 
     var dismissals = 0;
     await pumpSystemSurface(
@@ -200,7 +203,7 @@ void main() {
       ),
     );
     expect(find.text('查看'), findsNothing);
-    await tester.tap(find.text('关闭'));
+    await tester.tap(find.text('Close'));
     expect(dismissals, 1);
   });
 
@@ -224,8 +227,8 @@ void main() {
 
     expect(find.text('确切的错误观测。'), findsOneWidget);
     expect(find.text('查看'), findsNothing);
-    expect(find.text('关闭'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Close'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
   });
 
   testWidgets('toast page remains usable at 2x text', (tester) async {

@@ -148,7 +148,10 @@ void main() {
       );
       final mode = find.byKey(const ValueKey<String>('about-build-mode'));
       expect(
-        find.descendant(of: mode, matching: find.textContaining('声明 debug')),
+        find.descendant(
+          of: mode,
+          matching: find.textContaining('Declared debug'),
+        ),
         findsOneWidget,
       );
     });
@@ -162,7 +165,10 @@ void main() {
       final row = find.byKey(const ValueKey<String>('about-backend-host'));
       await scrollToS8Section(tester, row);
       expect(
-        find.descendant(of: row, matching: find.text('构建配置里没有服务端地址')),
+        find.descendant(
+          of: row,
+          matching: find.text('No server address in the build config'),
+        ),
         findsOneWidget,
       );
     });

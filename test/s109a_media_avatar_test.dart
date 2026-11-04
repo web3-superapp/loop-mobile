@@ -395,7 +395,10 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(find.text('头像上传暂未开放，先用默认头像。'), findsOneWidget);
+      expect(
+        find.text('Avatar upload isn\'t open yet. Use the default for now.'),
+        findsOneWidget,
+      );
       // The monogram is the default; there is nothing to reset.
       expect(
         find.byKey(const ValueKey<String>('loop-avatar-reset')),
@@ -447,10 +450,13 @@ void main() {
     });
 
     for (final (kind, copy) in <(AvatarUploadFailureKind, String)>[
-      (AvatarUploadFailureKind.rateLimited, '上传太频繁'),
-      (AvatarUploadFailureKind.rejected, '这张图片不能用'),
-      (AvatarUploadFailureKind.offline, '网络未连接'),
-      (AvatarUploadFailureKind.unavailable, '头像上传暂不可用'),
+      (AvatarUploadFailureKind.rateLimited, 'Too many uploads'),
+      (AvatarUploadFailureKind.rejected, "This image can't be used"),
+      (AvatarUploadFailureKind.offline, 'No network connection'),
+      (
+        AvatarUploadFailureKind.unavailable,
+        "Avatar upload isn't available right now",
+      ),
     ]) {
       testWidgets('a ${kind.name} upload says so and changes nothing', (
         tester,

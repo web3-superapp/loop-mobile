@@ -6,6 +6,7 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/reown/external_wallet_credential_gateway.dart';
 import 'package:loop_mobile/integrations/reown/reown_external_wallet_connector.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum EmailAuthStep { enterEmail, enterCode }
 
@@ -135,15 +136,17 @@ class EmailAuthController extends Notifier<EmailAuthState> {
     if (state.isBusy) return;
     final config = ref.read(appConfigProvider);
     if (!config.canInitializePrivy) {
-      state = const EmailAuthState(
-        errorMessage: '需要先提供 Privy Mobile App Client ID。',
+      state = EmailAuthState(
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage,
       );
       return;
     }
 
     final email = input.trim();
     if (!_isValidEmail(email)) {
-      state = const EmailAuthState(errorMessage: '请输入有效的邮箱地址。');
+      state = EmailAuthState(
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage2,
+      );
       return;
     }
 
@@ -174,7 +177,9 @@ class EmailAuthController extends Notifier<EmailAuthState> {
     final resendAvailableAt = state.resendAvailableAt;
     final failedAttempts = state.failedAttempts;
     if (email == null) {
-      state = const EmailAuthState(errorMessage: '请重新发送验证码。');
+      state = EmailAuthState(
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage3,
+      );
       return;
     }
     if (state.attemptsExhausted) {
@@ -183,7 +188,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         submittedEmail: email,
         resendAvailableAt: resendAvailableAt,
         failedAttempts: failedAttempts,
-        errorMessage: '尝试次数已用完，请重新发送验证码。',
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage4,
       );
       return;
     }
@@ -193,7 +198,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         submittedEmail: email,
         resendAvailableAt: resendAvailableAt,
         failedAttempts: failedAttempts,
-        errorMessage: '请输入 6 位数字验证码。',
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage5,
       );
       return;
     }
@@ -221,8 +226,13 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         failedAttempts: attempts,
         failureKind: EmailAuthFailureKind.rejected,
         errorMessage: exhausted
-            ? '${error.userMessage} 尝试次数已用完，请重新发送验证码。'
-            : '${error.userMessage} 还可尝试 ${emailAuthMaximumAttempts - attempts} 次。',
+            ? LoopL10n.current.account_emailAuthControllerErrorMessage6(
+                error.userMessage,
+              )
+            : LoopL10n.current.account_emailAuthControllerErrorMessage7(
+                emailAuthMaximumAttempts - attempts,
+                error.userMessage,
+              ),
       );
     }
   }
@@ -270,7 +280,9 @@ class EmailAuthController extends Notifier<EmailAuthState> {
 
   Future<void> loginWithApple() async {
     if (!ref.read(isIosIdentityPlatformProvider)) {
-      state = const EmailAuthState(errorMessage: 'Apple 登录仅支持 iOS。');
+      state = EmailAuthState(
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage8,
+      );
       return;
     }
     await _loginWithOAuth(PrivyOAuthLoginProvider.apple);
@@ -283,14 +295,15 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '当前会话状态已变化，请重新检查。',
+        errorMessage: LoopL10n.current.account_emailAuthControllerErrorMessage9,
       );
       return;
     }
     final config = ref.read(appConfigProvider);
     if (!config.canInitializePrivy) {
-      state = const EmailAuthState(
-        errorMessage: '需要先通过 --dart-define 提供 Privy Mobile App Client ID。',
+      state = EmailAuthState(
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage10,
       );
       return;
     }
@@ -322,7 +335,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '登录未完成，请检查网络和应用回跳后重试。',
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage11,
       );
     }
   }
@@ -344,8 +358,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         step: state.step,
         submittedEmail: state.submittedEmail,
         errorMessage: config.canInitializePrivy
-            ? '需要先通过 --dart-define 提供有效的 Reown Project ID。'
-            : '需要先通过 --dart-define 提供 Privy Client ID 和 Reown Project ID。',
+            ? LoopL10n.current.account_emailAuthControllerErrorMessage12
+            : LoopL10n.current.account_emailAuthControllerErrorMessage13,
       );
       return ExternalWalletConnectOutcome.failed;
     }
@@ -372,7 +386,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '只有退出登录状态或已验证的 Privy 账号可以连接钱包。',
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage14,
       );
       return ExternalWalletConnectOutcome.failed;
     }
@@ -403,7 +418,10 @@ class EmailAuthController extends Notifier<EmailAuthState> {
             account,
             expectedPrivyUserId: expectedPrincipal!,
           );
-      state = const EmailAuthState(successMessage: '外部钱包已绑定为 Privy 登录凭据。');
+      state = EmailAuthState(
+        successMessage:
+            LoopL10n.current.account_emailAuthControllerSuccessMessage,
+      );
       return ExternalWalletConnectOutcome.linked;
     } on ExternalWalletConnectorException catch (error) {
       if (!ref.mounted) return ExternalWalletConnectOutcome.failed;
@@ -435,7 +453,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '钱包操作未完成，请检查网络和应用回跳后重试。',
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage15,
       );
       return ExternalWalletConnectOutcome.failed;
     }
@@ -455,7 +474,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '只有已验证的 Privy 账号可以解绑钱包。',
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage16,
       );
       return false;
     }
@@ -486,7 +506,10 @@ class EmailAuthController extends Notifier<EmailAuthState> {
             updated,
             expectedPrivyUserId: account.privyUserId,
           );
-      state = const EmailAuthState(successMessage: '已解绑外部钱包。');
+      state = EmailAuthState(
+        successMessage:
+            LoopL10n.current.account_emailAuthControllerSuccessMessage2,
+      );
       return true;
     } on PrivyGatewayException catch (error) {
       if (!ref.mounted) return false;
@@ -501,7 +524,8 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: state.step,
         submittedEmail: state.submittedEmail,
-        errorMessage: '解绑没有完成，请检查网络后重试。',
+        errorMessage:
+            LoopL10n.current.account_emailAuthControllerErrorMessage17,
       );
       return false;
     }
@@ -523,7 +547,9 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         current.mode == LoopSessionMode.authenticated &&
         current.account?.privyUserId == account.privyUserId;
     if (!isPreAuthentication && !alreadyAcceptedSamePrincipal) {
-      throw const PrivyGatewayException('当前会话状态已变化，请重新检查。');
+      throw PrivyGatewayException(
+        LoopL10n.current.account_emailAuthControllerErrorMessage9,
+      );
     }
     ref.read(loopSessionProvider.notifier).acceptAuthenticated(account);
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -81,7 +82,7 @@ class IdentityStepScaffold extends StatelessWidget {
                         LoopIconButton(
                           key: const ValueKey<String>('loop-topbar-back'),
                           icon: 'back',
-                          label: '返回',
+                          label: context.l10n.common_back,
                           onPressed: back,
                         ),
                       const Spacer(),
@@ -158,7 +159,11 @@ class IdentityStepBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: '流程第 $step 步，共 $total 步：$label',
+      label: context.l10n.account_screensIdentityProgressTrackLabel(
+        label,
+        step,
+        total,
+      ),
       child: ExcludeSemantics(
         child: Padding(
           key: const ValueKey<String>('identity-step-bar'),

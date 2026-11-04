@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/profile/about/about_client_register.dart';
 import 'package:loop_mobile/features/profile/about/about_controller.dart';
 import 'package:loop_mobile/features/profile/about/about_models.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_screen.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -50,19 +51,19 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('about-screen'),
         archetype: LoopPageArchetype.record,
-        title: '关于',
+        title: context.l10n.common_aboutSection,
         onBack: widget.onBack,
         // The prototype's order: 法务 first, then the risk disclosure — the one
         // compliance text this page owns. Build and policy rows are this
         // build's own additions and follow (audit 2026-09-21 §J.14).
         sections: <Widget>[
-          const LoopLabel('法务'),
+          LoopLabel(context.l10n.profileAbout_screenLoopLabel),
           if (state.value == null)
             LoopChainStateBlock(
               keyPrefix: 'about',
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '暂时读不到产品记录',
+              emptyMessage: context.l10n.profileAbout_screenEmptyMessage,
               skeleton: LoopSkeletonType.detail,
               onRetry: () => unawaited(
                 ref.read(aboutControllerProvider.notifier).reload(),
@@ -70,28 +71,28 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             )
           else
             _AboutTermsBlock(termsGate: about!.termsGate),
-          const LoopLabel('风险提示'),
-          const LoopNotice(
+          LoopLabel(context.l10n.profileAbout_screenLoopLabel2),
+          LoopNotice(
             key: ValueKey<String>('about-risk-notice'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '加密资产风险',
-            body:
-                '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，'
-                '不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。',
+            title: context.l10n.profileAbout_screenAboutRiskNoticeTitle,
+            body: context.l10n.profileAbout_screenAboutRiskNoticeBody,
           ),
-          const LoopLabel('本机构建'),
+          LoopLabel(context.l10n.profileAbout_screenLoopLabel3),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('about-client-version'),
-                title: '客户端版本',
+                title: context.l10n.profileAbout_screenAboutClientVersionTitle,
                 subtitle: clientVersion.isEmpty
-                    ? '构建配置里没有合法的版本号，这里不编造一个'
-                    : '来自这台设备的构建配置，不会上传',
+                    ? context.l10n.profileAbout_screenAboutClientVersionSubtitle
+                    : context
+                          .l10n
+                          .profileAbout_screenAboutClientVersionSubtitle2,
                 trailing: clientVersion.isEmpty ? null : clientVersion,
                 trailingBadge: clientVersion.isEmpty
-                    ? const LoopBadge('未配置')
+                    ? LoopBadge(context.l10n.common_notConfigured)
                     : null,
                 position: LoopRowPosition.first,
               ),
@@ -99,42 +100,46 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               // moved to 网络诊断, behind the test-hints switch.
               LoopRecordRow(
                 key: const ValueKey<String>('about-network-diagnostics'),
-                title: '网络诊断',
+                title: context
+                    .l10n
+                    .profileAbout_screenAboutNetworkDiagnosticsTitle,
                 // Decision 0102: a pushed child page, not one of the 93 routes.
-                subtitle: '测这台设备到各项服务的连通性和耗时',
+                subtitle: context
+                    .l10n
+                    .profileAbout_screenAboutNetworkDiagnosticsSubtitle,
                 onTap: () => unawaited(openNetworkDiagnostics(context)),
                 position: LoopRowPosition.last,
               ),
             ],
           ),
           if (about != null) ...<Widget>[
-            const LoopLabel('当前规则'),
+            LoopLabel(context.l10n.profileAbout_screenLoopLabel4),
             _AboutRulesBlock(versions: about.configVersions),
             LoopProvenanceFooter(
               key: const ValueKey<String>('about-config-note'),
-              label: '说明',
-              title: '说明',
-              text: '这里只用于查看，不会固定任何一个版本。',
+              label: context.l10n.common_about,
+              title: context.l10n.common_about,
+              text: context.l10n.profileAbout_screenAboutConfigNoteText,
             ),
           ],
           // S278 · decision 0236: the summary card and the closing note are
           // the (i) beside the section title.
-          const LoopInfoLabel(
-            '开源许可',
+          LoopInfoLabel(
+            context.l10n.profileAbout_screenAboutOpenSourceInfo,
             info: LoopInfoButton(
               key: ValueKey<String>('about-open-source-info'),
-              title: '本应用使用的开源组件',
+              title: context.l10n.profileAbout_screenAboutOpenSourceInfoTitle,
               sheetKey: 'about-open-source-info-sheet',
               notes: <LoopInfoNote>[
                 LoopInfoNote(
                   key: ValueKey<String>('about-open-source-summary'),
-                  body:
-                      '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
-                      '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
+                  body: context
+                      .l10n
+                      .profileAbout_screenAboutOpenSourceSummaryBody,
                 ),
                 LoopInfoNote(
                   key: ValueKey<String>('about-open-source-note'),
-                  body: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
+                  body: context.l10n.profileAbout_screenAboutOpenSourceNoteBody,
                 ),
               ],
             ),
@@ -157,7 +162,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           if (about != null)
             LoopUnavailableLine(
               key: const ValueKey<String>('about-client-build-note'),
-              label: 'LOOP 不发布客户端版本',
+              label: context.l10n.profileAbout_screenAboutClientBuildNoteLabel,
               reasonCode: about.clientBuildReasonCode,
             ),
           const SizedBox(height: 20),
@@ -195,9 +200,13 @@ class _AboutRulesBlock extends StatelessWidget {
             subtitle: <String>[
               ?loopAboutModuleDescription(entry.module),
               <String>[
-                '版本 ${entry.configVersion}',
+                context.l10n.profileAbout_screenLoopRecordRow(
+                  entry.configVersion,
+                ),
                 if (entry.effectiveAt != null)
-                  '生效于 ${loopRelativeTime(entry.effectiveAt!)}',
+                  context.l10n.profileAbout_screenLoopRecordRow2(
+                    loopRelativeTime(entry.effectiveAt!),
+                  ),
               ].join(' · '),
             ].join('\n'),
             subtitleMaxLines: 2,
@@ -218,7 +227,7 @@ class _AboutTermsBlock extends StatelessWidget {
     if (!termsGate.isAvailable) {
       return LoopUnavailableLine(
         key: const ValueKey<String>('about-terms-unavailable'),
-        label: '用户协议、隐私政策与风险披露没有文档地址',
+        label: context.l10n.profileAbout_screenAboutTermsUnavailableLabel,
         reasonCode: termsGate.reasonCode,
       );
     }
@@ -226,8 +235,8 @@ class _AboutTermsBlock extends StatelessWidget {
       rows: <LoopRecordRow>[
         LoopRecordRow(
           key: const ValueKey<String>('about-terms-version'),
-          title: '协议版本',
-          subtitle: '已经有版本号，但还没有可打开的文档链接。',
+          title: context.l10n.profileAbout_screenAboutTermsVersionTitle,
+          subtitle: context.l10n.profileAbout_screenAboutTermsVersionSubtitle,
           trailing: termsGate.requiredVersion,
         ),
       ],

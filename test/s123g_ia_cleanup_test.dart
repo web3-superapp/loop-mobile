@@ -78,7 +78,7 @@ void main() {
         await tester.pump();
         expect(signedOut, 1);
         // While it runs the control says so and takes no second tap.
-        expect(find.text('正在退出…'), findsOneWidget);
+        expect(find.text('Signing out…'), findsOneWidget);
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(

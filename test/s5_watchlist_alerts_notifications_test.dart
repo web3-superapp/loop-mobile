@@ -680,6 +680,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
+      // The price-alerts page (lib/features/market) is not migrated yet.
       expect(find.text('推送尚不可用'), findsOneWidget);
       expect(find.textContaining('需要系统通知权限'), findsNothing);
       // Once per screen: the feed footer printed the same sentence two lines
@@ -740,7 +741,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.textContaining('1 项开启并生效'), findsOneWidget);
+      expect(find.textContaining('1 on and in effect'), findsOneWidget);
       expect(find.text('9 项开启'), findsNothing);
 
       // Every switch that stores an intent without producing anything says so
@@ -753,7 +754,10 @@ void main() {
         );
         await scrollToS5Section(tester, row);
         expect(
-          find.descendant(of: row, matching: find.textContaining('暂不生效')),
+          find.descendant(
+            of: row,
+            matching: find.textContaining('Not in effect yet'),
+          ),
           category == LoopNotificationCategory.tradePriceAlert
               ? findsNothing
               : findsOneWidget,
@@ -791,7 +795,7 @@ void main() {
       expect(written[LoopNotificationCategory.communityAll], isTrue);
       // The locked category is always submitted as true.
       expect(written[LoopNotificationCategory.securityEvent], isTrue);
-      expect(find.text('通知设置已保存'), findsOneWidget);
+      expect(find.text('Notification settings saved'), findsOneWidget);
     });
 
     testWidgets('a conflict keeps the page and asks for a reload', (
@@ -822,7 +826,7 @@ void main() {
         find.byKey(const ValueKey<String>('notification-preferences-conflict')),
         findsOneWidget,
       );
-      expect(find.text('通知设置已保存'), findsNothing);
+      expect(find.text('Notification settings saved'), findsNothing);
     });
 
     testWidgets('delivery is unavailable regardless of the saved intents', (
@@ -834,7 +838,7 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
 
-      expect(find.text('推送尚不可用'), findsOneWidget);
+      expect(find.text("Push isn't available yet"), findsOneWidget);
       expect(
         find.textContaining("Push notifications aren't available yet"),
         findsWidgets,
@@ -855,7 +859,12 @@ void main() {
         pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.noPrincipal),
       );
 
-      expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Notification permission hasn\'t been requested on this device',
+        ),
+        findsOneWidget,
+      );
     });
 
     // Decision 0076: the prompt waits for Community, and the page
@@ -870,8 +879,18 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
-      expect(find.textContaining('账号进入 LOOP 之后，可以在这里开启。'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Notification permission hasn\'t been requested on this device',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'You can turn it on here once your account is in LOOP.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an account in Community is offered the opt-in card first', (
@@ -892,7 +911,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('开启推送通知'), findsOneWidget);
+      expect(find.textContaining('Turn on push notifications'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('notification-preferences-push-opt-in-button'),
@@ -913,8 +932,16 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('通知权限已拒绝，这台设备收不到推送'), findsOneWidget);
-      expect(find.text('可以在系统设置里为 LOOP 重新打开通知。'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Notification permission denied; this device can\'t get push',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Turn notifications back on for LOOP in system settings.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a registered device still does not claim a delivery', (
@@ -927,8 +954,14 @@ void main() {
         pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.registered),
       );
 
-      expect(find.textContaining('这台设备已登记接收推送'), findsOneWidget);
-      expect(find.textContaining('这不代表已经能送达。'), findsOneWidget);
+      expect(
+        find.textContaining('This device is registered for push'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('That doesn\'t mean delivery works yet.'),
+        findsOneWidget,
+      );
     });
 
     // The server's own statement is not repeated in this device's words: one
@@ -945,7 +978,7 @@ void main() {
         ),
       );
 
-      expect(find.text('推送尚不可用'), findsOneWidget);
+      expect(find.text('Push isn\'t available yet'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('notification-preferences-push-device'),
@@ -967,13 +1000,26 @@ void main() {
           notifications: FakeNotificationsGateway(),
           pushDiagnostics: recorder,
         );
-        expect(find.textContaining('还没有向这台设备请求通知权限'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'Notification permission hasn\'t been requested on this device',
+          ),
+          findsOneWidget,
+        );
 
         recorder.record(LoopPushRegistrationGate.registered);
         await tester.pumpAndSettle();
 
-        expect(find.textContaining('还没有向这台设备请求通知权限'), findsNothing);
-        expect(find.textContaining('这台设备已登记接收推送'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'Notification permission hasn\'t been requested on this device',
+          ),
+          findsNothing,
+        );
+        expect(
+          find.textContaining('This device is registered for push'),
+          findsOneWidget,
+        );
       },
     );
 
@@ -991,9 +1037,12 @@ void main() {
         ),
       );
 
-      expect(find.text('推送尚不可用'), findsNothing);
+      expect(find.text('Push isn\'t available yet'), findsNothing);
       // 通道有了，不等于这台设备收到过；页面只说后面这件事。
-      expect(find.textContaining('推送还没有在真机上确认过'), findsOneWidget);
+      expect(
+        find.textContaining("Push hasn't been confirmed on a real device yet"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('真机确认过之后，这一行也收起来', (tester) async {
@@ -1011,8 +1060,11 @@ void main() {
         ),
       );
 
-      expect(find.text('推送尚不可用'), findsNothing);
-      expect(find.textContaining('推送还没有在真机上确认过'), findsNothing);
+      expect(find.text('Push isn\'t available yet'), findsNothing);
+      expect(
+        find.textContaining("Push hasn't been confirmed on a real device yet"),
+        findsNothing,
+      );
     });
 
     testWidgets('an unavailable capability stops the page', (tester) async {

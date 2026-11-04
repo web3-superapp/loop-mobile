@@ -10,6 +10,730 @@ class LoopLocalizationsZh extends LoopLocalizations {
   LoopLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get account_emailAuthControllerErrorMessage =>
+      '需要先提供 Privy Mobile App Client ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage10 =>
+      '需要先通过 --dart-define 提供 Privy Mobile App Client ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage11 =>
+      '登录未完成，请检查网络和应用回跳后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage12 =>
+      '需要先通过 --dart-define 提供有效的 Reown Project ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage13 =>
+      '需要先通过 --dart-define 提供 Privy Client ID 和 Reown Project ID。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage14 =>
+      '只有退出登录状态或已验证的 Privy 账号可以连接钱包。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage15 =>
+      '钱包操作未完成，请检查网络和应用回跳后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage16 =>
+      '只有已验证的 Privy 账号可以解绑钱包。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage17 => '解绑没有完成，请检查网络后重试。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage2 => '请输入有效的邮箱地址。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage3 => '请重新发送验证码。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage4 => '尝试次数已用完，请重新发送验证码。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage5 => '请输入 6 位数字验证码。';
+
+  @override
+  String account_emailAuthControllerErrorMessage6(Object? userMessage) {
+    return '$userMessage 尝试次数已用完，请重新发送验证码。';
+  }
+
+  @override
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  ) {
+    return '$userMessage 还可尝试 $emailAuthMaximumAttempts 次。';
+  }
+
+  @override
+  String get account_emailAuthControllerErrorMessage8 => 'Apple 登录仅支持 iOS。';
+
+  @override
+  String get account_emailAuthControllerErrorMessage9 => '当前会话状态已变化，请重新检查。';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage =>
+      '外部钱包已绑定为 Privy 登录凭据。';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage2 => '已解绑外部钱包。';
+
+  @override
+  String get account_idSetupHintText => '1–40 个字符，可以和别人重复';
+
+  @override
+  String get account_idSetupHintText2 => '一句话介绍自己（可以不填）';
+
+  @override
+  String get account_idSetupIdentityStepCopy => '头像和用户名是别人在聊天里看到的你，钱包地址不会公开。';
+
+  @override
+  String get account_idSetupLabel => '载入';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody => '简介没有保存成功，可以之后在「编辑资料」里补上。';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody2 => '之后可以在「编辑资料」里修改。';
+
+  @override
+  String get account_idSetupLoopIdActivatedTitle => '资料已保存';
+
+  @override
+  String get account_idSetupLoopIdAliasSuggestLabel => '换一个';
+
+  @override
+  String get account_idSetupLoopIdEmptyMessage => '账号资料尚未载入。';
+
+  @override
+  String get account_idSetupLoopIdEmptyTitle => '还没有读取到你的 LOOP ID';
+
+  @override
+  String get account_idSetupLoopIdErrorSource => '资料服务';
+
+  @override
+  String get account_idSetupLoopIdFailureTitle => '没有保存成功';
+
+  @override
+  String get account_idSetupLoopIdSubmitTitle => '完善资料';
+
+  @override
+  String get account_idSetupLoopIdUnavailableTitle => '资料服务暂不可用';
+
+  @override
+  String get account_idSetupLoopIdValue => '尚未分配';
+
+  @override
+  String get account_idSetupLoopLabel => '用户名';
+
+  @override
+  String get account_idSetupLoopLabel2 => '简介';
+
+  @override
+  String get account_idSetupLoopOfflineState => '保存资料';
+
+  @override
+  String get account_idSetupSubmitting => '提交中…';
+
+  @override
+  String get account_idSetupText => '系统生成、唯一、不可更改。好友可以用它搜到你。';
+
+  @override
+  String get account_onboardingCommunitiesDetail => '正在为你把刚加入的社区设为免打扰…';
+
+  @override
+  String get account_onboardingCommunitiesIf => '继续进入 LOOP';
+
+  @override
+  String get account_onboardingCommunitiesIf2 => '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。';
+
+  @override
+  String get account_onboardingCommunitiesJoined => '已加入 · 已免打扰';
+
+  @override
+  String get account_onboardingCommunitiesJoinedMutePending => '已加入 · 免打扰生效中';
+
+  @override
+  String get account_onboardingCommunitiesLoopRecordRow => '没有加入成功';
+
+  @override
+  String account_onboardingCommunitiesMembers(Object? formatDecimal) {
+    return '$formatDecimal 成员';
+  }
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle =>
+      '加入社区';
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel =>
+      '跳过';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage =>
+      '还没有可加入的社区';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason =>
+      '可以先进入 LOOP，之后在广场里找社区。';
+
+  @override
+  String get account_onboardingCommunitiesResource => '推荐社区';
+
+  @override
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name，$members，已选';
+  }
+
+  @override
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name，$members，未选';
+  }
+
+  @override
+  String account_onboardingCommunitiesS(num count) {
+    return '加入 $count 个社区并进入';
+  }
+
+  @override
+  String get account_onboardingCommunitiesState => '已加入';
+
+  @override
+  String get account_onboardingCommunitiesState2 => '未选';
+
+  @override
+  String get account_onboardingCommunitiesTitle => '正在进入 LOOP';
+
+  @override
+  String get account_privyLoginAnotherAccountLabel => '换个账号登录';
+
+  @override
+  String account_privyLoginAuthMethodBusyLabel(Object? label) {
+    return '$label，正在进行';
+  }
+
+  @override
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel => '进入开发预览';
+
+  @override
+  String get account_privyLoginIf => '欢迎来到 LOOP';
+
+  @override
+  String get account_privyLoginIf2 => '选择一种方式登录或创建账户';
+
+  @override
+  String get account_privyLoginMessage => '联网后会自动确认这台设备上的登录状态，不需要重新登录。';
+
+  @override
+  String get account_privyLoginPrivyAppleLoginButtonLabel => '使用 Apple 登录';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody =>
+      '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle =>
+      '登录配置不完整';
+
+  @override
+  String get account_privyLoginPrivyAuthErrorTitle => '无法继续';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel => '发送中…';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2 => '获取验证码';
+
+  @override
+  String get account_privyLoginPrivyEmailLoginButtonLabel => '使用邮箱登录';
+
+  @override
+  String get account_privyLoginPrivyEmailScreenTitle => '邮箱登录';
+
+  @override
+  String get account_privyLoginPrivyGoogleLoginButtonLabel => '使用 Google 登录';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel =>
+      'LOOP 暂时无法确认登录状态';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus =>
+      '暂时无法确认登录状态';
+
+  @override
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel =>
+      'LOOP 正在恢复登录状态';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel =>
+      'LOOP 正在安全退出';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenStatus => '正在安全退出';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel => '正在连接钱包';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel2 => '已有钱包？连接钱包';
+
+  @override
+  String get account_privyLoginRestoringTitle => '正在恢复登录状态';
+
+  @override
+  String get account_privyLoginS => '暂不可用 · 缺少有效的 Reown Project ID';
+
+  @override
+  String get account_privyLoginSlowMessage => '网络较慢，仍在恢复登录状态…';
+
+  @override
+  String get account_privyLoginText => '暂不可用 · 缺少 Privy Mobile App Client ID';
+
+  @override
+  String get account_privyLoginText2 => '继续即表示同意 ';
+
+  @override
+  String get account_privyLoginText3 => '用户协议';
+
+  @override
+  String get account_privyLoginText4 => ' 和 ';
+
+  @override
+  String get account_privyLoginText5 => '隐私政策';
+
+  @override
+  String get account_privyLoginText6 => '已有钱包？';
+
+  @override
+  String get account_privyLoginText7 => '正在连接…';
+
+  @override
+  String get account_privyLoginTitle => '网络不可用，正在等待连接';
+
+  @override
+  String get account_privyOtpIdentityStepCopy => '尚未发送验证码';
+
+  @override
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay) {
+    return '验证码已发送至 $maskEmailForDisplay';
+  }
+
+  @override
+  String get account_privyOtpIdentityStepCopyTitle => '验证邮箱';
+
+  @override
+  String get account_privyOtpLoopOfflineState => '重新发送验证码';
+
+  @override
+  String account_privyOtpPrivyOtpCaretLabel(Object? index) {
+    return '验证码第 $index 位';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpCaretValue => '未填写';
+
+  @override
+  String get account_privyOtpPrivyOtpChangeEmailLabel => '更换邮箱';
+
+  @override
+  String get account_privyOtpPrivyOtpErrorTitle => '验证未通过';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationMessage => '返回上一步输入邮箱。';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationTitle => '没有待验证的邮箱';
+
+  @override
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown) {
+    return '$cooldown 秒后可重新发送';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpResendLabel => '重新发送';
+
+  @override
+  String get account_screensAppLockRow => '还没有读到这台设备的锁屏能力';
+
+  @override
+  String account_screensAppLockRow2(Object? detail) {
+    return '$detail · 这次有效，重开 App 后不会记得';
+  }
+
+  @override
+  String get account_screensBody => '它不是 LOOP 交易钱包，也不能授权任何交易。';
+
+  @override
+  String get account_screensBody2 =>
+      '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。';
+
+  @override
+  String get account_screensBody3 => '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。';
+
+  @override
+  String get account_screensBody4 => '会话已过期，请回到这一页重新发起连接。';
+
+  @override
+  String get account_screensBody5 =>
+      '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。';
+
+  @override
+  String get account_screensCloud => '自动恢复';
+
+  @override
+  String get account_screensCloud2 => '凭登录方式恢复，换设备后用同一邮箱登录即可';
+
+  @override
+  String get account_screensDetail => '指定 3 个守护人，2 个同意即可恢复';
+
+  @override
+  String get account_screensDetail2 => '随时可导出，这是你的逃生舱';
+
+  @override
+  String get account_screensExternalWalletConnectLabel => '选择钱包并签名';
+
+  @override
+  String get account_screensExternalWalletConnectTitle => '连接钱包';
+
+  @override
+  String get account_screensExternalWalletListUnavailableDetail =>
+      '连接钱包后才会显示可用的钱包名称。';
+
+  @override
+  String get account_screensExternalWalletListUnavailableMessage =>
+      '已安装钱包清单暂不可读';
+
+  @override
+  String get account_screensExternalWalletUnavailableBody =>
+      '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。';
+
+  @override
+  String get account_screensExternalWalletUnavailableTitle => '外部钱包连接暂不可用';
+
+  @override
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return '流程第 $step 步，共 $total 步：$label';
+  }
+
+  @override
+  String get account_screensIdentityStepCopy => '连接只验证所有权，不会转移资产。';
+
+  @override
+  String get account_screensIdentityStepCopy2 => '安全钱包正在本地初始化。';
+
+  @override
+  String get account_screensIdentityStepCopy3 => '你的钱包已经有一种恢复方式，其余的等开放后再补。';
+
+  @override
+  String get account_screensIdentityStepCopy4 => '应用锁由这台设备把关，交易验证由登录服务决定。';
+
+  @override
+  String get account_screensLabel => 'LOOP 正在加载';
+
+  @override
+  String get account_screensLabel2 => '选择钱包';
+
+  @override
+  String get account_screensLabel3 => '创建钱包';
+
+  @override
+  String account_screensLabel4(Object? title) {
+    return '$title，已完成';
+  }
+
+  @override
+  String account_screensLabel5(Object? pendingDetail, Object? title) {
+    return '$title，未完成：$pendingDetail';
+  }
+
+  @override
+  String get account_screensLoopLabel => '可连接的钱包';
+
+  @override
+  String get account_screensLoopLabel2 => '另外';
+
+  @override
+  String get account_screensLoopLabel3 => '应用锁';
+
+  @override
+  String get account_screensLoopLabel4 => '交易验证';
+
+  @override
+  String get account_screensLoopSplashEnterLabel => '进入 LOOP';
+
+  @override
+  String account_screensMethodSelectableSemanticLabel(Object? title) {
+    return '$title，可选';
+  }
+
+  @override
+  String account_screensMethodSelectedSemanticLabel(Object? title) {
+    return '$title，已选';
+  }
+
+  @override
+  String get account_screensMfaRow => '读取中…';
+
+  @override
+  String get account_screensMfaRow2 => '这次运行没有连上登录服务';
+
+  @override
+  String get account_screensMfaRow3 => '还没有读到登录服务的回答';
+
+  @override
+  String get account_screensPasskey => 'Passkey（推荐）';
+
+  @override
+  String get account_screensPasskey2 => '用设备生物识别，跟随系统钥匙串同步';
+
+  @override
+  String get account_screensPasskeyBoundDetail => '登录服务说这个账号已经有 Passkey';
+
+  @override
+  String get account_screensPendingDetail => '钱包出现后才算完成';
+
+  @override
+  String get account_screensPendingDetail2 => '第 3 步选择后才算完成';
+
+  @override
+  String get account_screensPendingDetail3 => '第 5 步完成后才算完成';
+
+  @override
+  String get account_screensPreparingText => '正在准备你的账号…';
+
+  @override
+  String get account_screensS => '未完成';
+
+  @override
+  String account_screensS2(Object? named) {
+    return '登录服务说这个账号已经有 Passkey：$named';
+  }
+
+  @override
+  String account_screensSecurityAppLockSemanticLabel(Object? detail) {
+    return '应用锁，不可用：$detail';
+  }
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel2 =>
+      '应用锁，已开启，点按后验证身份可关闭';
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel3 =>
+      '应用锁，未开启，点按后验证身份可开启';
+
+  @override
+  String get account_screensSecurityAppLockTrailing => '未开启';
+
+  @override
+  String get account_screensSecurityBiometricFallbackLine =>
+      '设备不支持生物识别时，会改用系统锁屏密码验证。';
+
+  @override
+  String get account_screensSecurityMfaSemanticLabel => 'MFA，未开启，点按开启';
+
+  @override
+  String account_screensSecurityMfaSemanticLabel2(Object? detail) {
+    return 'MFA，已开启：$detail';
+  }
+
+  @override
+  String account_screensSecurityMfaSemanticLabel3(Object? reason) {
+    return 'MFA，不可用：$reason';
+  }
+
+  @override
+  String get account_screensSecuritySetupContinueTitle => '安全设置';
+
+  @override
+  String account_screensSemanticLabel(Object? title) {
+    return '$title，可用但未开启';
+  }
+
+  @override
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  ) {
+    return '$title，不可用：$unavailableReason';
+  }
+
+  @override
+  String account_screensSemanticLabel3(Object? reason, Object? title) {
+    return '$title，已启用：$reason';
+  }
+
+  @override
+  String account_screensSemanticLabel4(Object? detail, Object? title) {
+    return '$title，已设置：$detail，点按可以解绑';
+  }
+
+  @override
+  String account_screensSemanticLabel5(Object? reason, Object? title) {
+    return '$title，不可用：$reason';
+  }
+
+  @override
+  String account_screensSemanticLabel6(Object? title) {
+    return '$title，能力可用';
+  }
+
+  @override
+  String get account_screensStep => '已完成';
+
+  @override
+  String get account_screensSummary => '扫码连接与失败说明';
+
+  @override
+  String get account_screensSummary2 => '其他恢复方式与跳过风险';
+
+  @override
+  String get account_screensSwitch => '钱包已创建';
+
+  @override
+  String get account_screensSwitch2 => '这个账号下已经能看到内置钱包。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch3 => '正在创建你的钱包';
+
+  @override
+  String get account_screensSwitch4 => '密钥在本地生成，不会离开这台设备。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch5 => '钱包还在创建中，可以先继续';
+
+  @override
+  String get account_screensSwitch6 => '等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensSwitch7 => '还没有开始创建';
+
+  @override
+  String get account_screensSwitch8 =>
+      'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。';
+
+  @override
+  String get account_screensTitle => '外部钱包只是登录凭证';
+
+  @override
+  String get account_screensTitle10 => '自动恢复依赖你的登录方式';
+
+  @override
+  String get account_screensTitle2 => '连接已有钱包就能挖矿';
+
+  @override
+  String get account_screensTitle3 => '签名被拒绝';
+
+  @override
+  String get account_screensTitle4 => '连接超时';
+
+  @override
+  String get account_screensTitle5 => '生成密钥对';
+
+  @override
+  String get account_screensTitle6 => '写入安全区';
+
+  @override
+  String get account_screensTitle7 => '绑定 LOOP ID';
+
+  @override
+  String get account_screensTitle8 => '社交恢复 2-of-3';
+
+  @override
+  String get account_screensTitle9 => '导出私钥';
+
+  @override
+  String get account_screensTrailing => '可用';
+
+  @override
+  String get account_screensTrailing2 => '已启用';
+
+  @override
+  String get account_screensTrailing3 => '已设置';
+
+  @override
+  String get account_screensTrailing4 => '已选';
+
+  @override
+  String get account_screensUnknownAccountSurfaceMessage => '请返回社区。请求已被记录。';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle => '页面不存在';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle2 => '这个账户页面不在 93 页产品清单里';
+
+  @override
+  String get account_screensWalletAutomaticRecoveryEvidence =>
+      'Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）';
+
+  @override
+  String get account_screensWalletCreateContinueLabel => '设置恢复方式';
+
+  @override
+  String get account_screensWalletCreateContinueTitle => '创建 LOOP 钱包';
+
+  @override
+  String get account_screensWalletCreateProviderMessageTitle => '这次创建没有完成';
+
+  @override
+  String get account_screensWalletCreateUnavailableBody =>
+      'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。';
+
+  @override
+  String get account_screensWalletCreateUnavailableTitle => '钱包创建暂不可用';
+
+  @override
+  String get account_screensWalletRecoveryConfirmTitle => '恢复方式';
+
+  @override
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  ) {
+    return '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。';
+  }
+
+  @override
+  String get account_screensWalletRecoveryDefaultTitle => '换手机后你已经能拿回资产';
+
+  @override
+  String get account_screensWalletRecoveryErrorSource => '能力清单';
+
+  @override
+  String get account_screensWalletRecoveryLaterLabel => '稍后设置';
+
+  @override
+  String get account_screensWalletRecoveryProviderPending =>
+      '当前版本的登录服务还没有开放这一项';
+
+  @override
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  ) {
+    return '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。';
+  }
+
+  @override
+  String get account_screensWalletRecoveryUnavailableTitle => '现在还不能再加一种';
+
+  @override
   String get betaFeedback_cameraFailed => '无法打开相机';
 
   @override
@@ -1103,6 +1827,687 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get common_watchlist => '自选';
+
+  @override
+  String get coreAssets_loopLabel => 'Voyager_7 头像';
+
+  @override
+  String get coreAssets_loopLabel10 => '社区成员 Echo 头像';
+
+  @override
+  String get coreAssets_loopLabel11 => '社区管理员头像';
+
+  @override
+  String get coreAssets_loopLabel12 => '社区观察员头像';
+
+  @override
+  String get coreAssets_loopLabel13 => 'LOOP Official 社区图标';
+
+  @override
+  String get coreAssets_loopLabel14 => 'PEPE Community 社区图标';
+
+  @override
+  String get coreAssets_loopLabel15 => 'BONK Community 社区图标';
+
+  @override
+  String get coreAssets_loopLabel16 => 'MOONCAT 社区图标';
+
+  @override
+  String get coreAssets_loopLabel17 => '社区标识 · 轨道';
+
+  @override
+  String get coreAssets_loopLabel18 => '社区标识 · 闪电';
+
+  @override
+  String get coreAssets_loopLabel19 => '社区标识 · 波形';
+
+  @override
+  String get coreAssets_loopLabel2 => 'NightOwl 头像';
+
+  @override
+  String get coreAssets_loopLabel20 => '社区标识 · 六边形';
+
+  @override
+  String get coreAssets_loopLabel21 => '社区标识 · 立方';
+
+  @override
+  String get coreAssets_loopLabel22 => '社区标识 · 盾形';
+
+  @override
+  String get coreAssets_loopLabel23 => '社区标识 · 星芒';
+
+  @override
+  String get coreAssets_loopLabel24 => '社区标识 · 信号';
+
+  @override
+  String get coreAssets_loopLabel3 => 'pepe_maxi 头像';
+
+  @override
+  String get coreAssets_loopLabel4 => 'AlphaDrop 头像';
+
+  @override
+  String get coreAssets_loopLabel5 => 'fox_trader 头像';
+
+  @override
+  String get coreAssets_loopLabel6 => 'PEPE founder 头像';
+
+  @override
+  String get coreAssets_loopLabel7 => 'SmartBuyer 头像';
+
+  @override
+  String get coreAssets_loopLabel8 => 'whale_0x9f 头像';
+
+  @override
+  String get coreAssets_loopLabel9 => 'DiamondPaw 头像';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetChainLabel => 'BSC 测试网';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetInfoButtonText => '关于 Launch 测试网';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNetworkRowAbsent => '没有已发布的测试网';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNetworkRowTitle => '测试网';
+
+  @override
+  String coreConfig_testHintsLoopTestnetNoticeBodyText(Object? chainId) {
+    return 'Launch 目录、详情与签名单当前指向 BSC 测试网（$chainId），测试网上的代币没有真实价值。钱包余额、行情、兑换与授权仍然只走 BNB Smart Chain 主网，不受影响。这条说明可以关闭，不会阻断任何操作。';
+  }
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNoticeDismissText => '关闭测试网说明';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNoticeTitleText =>
+      'Launch 当前运行在 BSC 测试网';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetWalletTotalNoteText =>
+      'Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。';
+
+  @override
+  String get coreNavigation_intelPowerRouteInvite => '邀请';
+
+  @override
+  String get coreNavigation_routeAbout => '关于与法务';
+
+  @override
+  String get coreNavigation_routeApprovalGuard => '授权拦截';
+
+  @override
+  String get coreNavigation_routeAsset => '资产详情';
+
+  @override
+  String get coreNavigation_routeAuth => 'Privy 登录';
+
+  @override
+  String get coreNavigation_routeAuthEmail => '邮箱登录';
+
+  @override
+  String get coreNavigation_routeAuthOtp => '邮箱验证码';
+
+  @override
+  String get coreNavigation_routeAuthWallet => '连接外部钱包';
+
+  @override
+  String get coreNavigation_routeBetaFeedback => '意见反馈';
+
+  @override
+  String get coreNavigation_routeBetaFeedbackMine => '我的反馈';
+
+  @override
+  String get coreNavigation_routeBridgeStatus => '跨链进度';
+
+  @override
+  String get coreNavigation_routeChartFull => '全屏 K 线';
+
+  @override
+  String get coreNavigation_routeChat => '聊天 Tab';
+
+  @override
+  String get coreNavigation_routeChatForward => '转发消息';
+
+  @override
+  String get coreNavigation_routeChatMergePreview => '合并转发预览';
+
+  @override
+  String get coreNavigation_routeChatSearch => '消息搜索';
+
+  @override
+  String get coreNavigation_routeCommunity => '社区 Tab';
+
+  @override
+  String get coreNavigation_routeCommunityChat => '社区大群';
+
+  @override
+  String get coreNavigation_routeCommunityDiscover => '发现社区';
+
+  @override
+  String get coreNavigation_routeCommunityManage => '社区管理';
+
+  @override
+  String get coreNavigation_routeCommunityMembers => '成员与权限';
+
+  @override
+  String get coreNavigation_routeCommunityProfile => '社区主页';
+
+  @override
+  String get coreNavigation_routeConnections => '关注与粉丝';
+
+  @override
+  String get coreNavigation_routeDapp => 'DApp 浏览器';
+
+  @override
+  String get coreNavigation_routeDappWeb => 'DApp 页面';
+
+  @override
+  String get coreNavigation_routeDevices => '设备管理';
+
+  @override
+  String get coreNavigation_routeForceUpdate => '强制更新';
+
+  @override
+  String get coreNavigation_routeGroup => '普通群聊';
+
+  @override
+  String get coreNavigation_routeGroupInfo => '群信息';
+
+  @override
+  String get coreNavigation_routeIntel => '情报 Tab';
+
+  @override
+  String get coreNavigation_routeKeyExport => '私钥导出';
+
+  @override
+  String get coreNavigation_routeLaunch => 'Launch 列表';
+
+  @override
+  String get coreNavigation_routeLaunch2Create => '发起 v2 发射';
+
+  @override
+  String get coreNavigation_routeLaunch2DynamicRewards => '外盘奖励';
+
+  @override
+  String get coreNavigation_routeLaunch2Instance => 'MEME v2 项目';
+
+  @override
+  String get coreNavigation_routeLaunch2Nft => '共识勋章';
+
+  @override
+  String get coreNavigation_routeLaunch2Project => '项目状态';
+
+  @override
+  String get coreNavigation_routeLaunch2ProjectDeployment => '部署进度';
+
+  @override
+  String get coreNavigation_routeLaunch2ProjectSign => '签名部署';
+
+  @override
+  String get coreNavigation_routeLaunch2Projects => '我的项目';
+
+  @override
+  String get coreNavigation_routeLaunchApply => '申请发射';
+
+  @override
+  String get coreNavigation_routeLaunchDetail => '项目详情';
+
+  @override
+  String get coreNavigation_routeLaunchGraduation => '毕业与迁移';
+
+  @override
+  String get coreNavigation_routeLaunchHistory => '参与记录';
+
+  @override
+  String get coreNavigation_routeLaunchHolders => '内盘持有人';
+
+  @override
+  String get coreNavigation_routeLaunchRounds => '销售轮次规则';
+
+  @override
+  String get coreNavigation_routeLaunchTier => '我的资格';
+
+  @override
+  String get coreNavigation_routeLaunchTrade => 'Launch 认购';
+
+  @override
+  String get coreNavigation_routeLoopEconomy => '生态经济面板';
+
+  @override
+  String get coreNavigation_routeLoopIdSetup => '生成 LOOP ID';
+
+  @override
+  String get coreNavigation_routeLoopStake => 'LOOP 质押';
+
+  @override
+  String get coreNavigation_routeMaintenance => '系统维护';
+
+  @override
+  String get coreNavigation_routeManifestGlobalAccount => '全局与账户';
+
+  @override
+  String get coreNavigation_routeManifestSystem => '系统态与组件';
+
+  @override
+  String get coreNavigation_routeMarket => '行情列表';
+
+  @override
+  String get coreNavigation_routeMemeCreate => '创建代币';
+
+  @override
+  String get coreNavigation_routeMemeToken => 'MEME 代币';
+
+  @override
+  String get coreNavigation_routeMemeTokenHolders => 'MEME 持有者';
+
+  @override
+  String get coreNavigation_routeMemeTokenTrades => 'MEME 动态';
+
+  @override
+  String get coreNavigation_routeMining => '我的挖矿';
+
+  @override
+  String get coreNavigation_routeMiningAssets => '算力明细';
+
+  @override
+  String get coreNavigation_routeMiningCommunity => '社区挖矿面板';
+
+  @override
+  String get coreNavigation_routeMiningRank => '排行榜';
+
+  @override
+  String get coreNavigation_routeMiningRewards => '奖励与领取';
+
+  @override
+  String get coreNavigation_routeMiningRules => '权重与算力规则';
+
+  @override
+  String get coreNavigation_routeNetworks => '网络与 RPC';
+
+  @override
+  String get coreNavigation_routeNetworth => '净值明细';
+
+  @override
+  String get coreNavigation_routeNewPairs => '新币发现';
+
+  @override
+  String get coreNavigation_routeNotifications => '通知中心';
+
+  @override
+  String get coreNavigation_routeOffline => '无网络';
+
+  @override
+  String get coreNavigation_routeOnboardingCommunities => '推荐社区';
+
+  @override
+  String get coreNavigation_routePay => 'Pay 入口';
+
+  @override
+  String get coreNavigation_routePermissionNotice => '权限申请说明';
+
+  @override
+  String get coreNavigation_routePrivacy => '隐私中心';
+
+  @override
+  String get coreNavigation_routeProfile => 'LOOP ID 主页';
+
+  @override
+  String get coreNavigation_routeProfileEdit => '编辑资料';
+
+  @override
+  String get coreNavigation_routeReferral => '邀请关系与加成';
+
+  @override
+  String get coreNavigation_routeRegionBlocked => '地区限制';
+
+  @override
+  String get coreNavigation_routeSearch => '全局搜索';
+
+  @override
+  String get coreNavigation_routeSecuritySetup => 'MFA 与应用锁';
+
+  @override
+  String get coreNavigation_routeSend => '发送-选资产';
+
+  @override
+  String get coreNavigation_routeSendConfirm => '发送-确认';
+
+  @override
+  String get coreNavigation_routeSendTo => '发送-收款方';
+
+  @override
+  String get coreNavigation_routeServerError => '服务出错';
+
+  @override
+  String get coreNavigation_routeSettings => '通用设置';
+
+  @override
+  String get coreNavigation_routeSignSheetStates => '签名弹层四态';
+
+  @override
+  String get coreNavigation_routeSkeletonStates => '骨架屏三类';
+
+  @override
+  String get coreNavigation_routeSmartMoney => '聪明钱追踪';
+
+  @override
+  String get coreNavigation_routeSocialRecovery => '社交恢复';
+
+  @override
+  String get coreNavigation_routeSplash => '启动闪屏';
+
+  @override
+  String get coreNavigation_routeSquare => '广场 Tab';
+
+  @override
+  String get coreNavigation_routeSupport => '帮助与客服';
+
+  @override
+  String get coreNavigation_routeSwapRoute => '报价与费用';
+
+  @override
+  String get coreNavigation_routeToastStates => 'Toast 三态';
+
+  @override
+  String get coreNavigation_routeToken => 'Token 详情';
+
+  @override
+  String get coreNavigation_routeTokenCardStates => 'Token Card 五态';
+
+  @override
+  String get coreNavigation_routeTokenHolders => '持有人分布';
+
+  @override
+  String get coreNavigation_routeTokenTrades => '交易活动';
+
+  @override
+  String get coreNavigation_routeTxHistory => '交易历史';
+
+  @override
+  String get coreNavigation_routeTxResult => '交易结果';
+
+  @override
+  String get coreNavigation_routeUserProfile => '用户资料';
+
+  @override
+  String get coreNavigation_routeVoiceroomFull => '语音房完整视图';
+
+  @override
+  String get coreNavigation_routeWallet => '钱包总览';
+
+  @override
+  String get coreNavigation_routeWalletCreate => '钱包生成中';
+
+  @override
+  String get coreNavigation_routeWalletRecovery => '恢复方式设置';
+
+  @override
+  String get coreNavigation_routeWallets => '多钱包管理';
+
+  @override
+  String get coreNavigation_routeWatchlistEdit => '自选管理';
+
+  @override
+  String get coreSecurity_urlReviewConfusableCharacters => '域名里含有与拉丁字母同形的字符';
+
+  @override
+  String get coreSecurity_urlReviewCredentialsInUrl => '地址里带有用户名或密码，这是常见的伪装手法';
+
+  @override
+  String get coreSecurity_urlReviewEmpty => '输入为空';
+
+  @override
+  String get coreSecurity_urlReviewIpLiteralHost => '地址是 IP，不是域名，无法核对归属';
+
+  @override
+  String get coreSecurity_urlReviewMissingHost => '地址里没有域名';
+
+  @override
+  String get coreSecurity_urlReviewMixedScriptLabel => '域名的同一段里混用了拉丁字母与其他文字';
+
+  @override
+  String get coreSecurity_urlReviewNonAsciiHost =>
+      '域名含有非 ASCII 字符，本地无法计算它的 ASCII 形式';
+
+  @override
+  String get coreSecurity_urlReviewNonStandardPort => '使用了非 443 端口';
+
+  @override
+  String get coreSecurity_urlReviewNotHttps => '只允许 HTTPS，明文或自定义协议一律阻止';
+
+  @override
+  String get coreSecurity_urlReviewPunycodeLabel =>
+      '域名含有 IDN 编码（xn--）标签，无法在本地还原成可读形式';
+
+  @override
+  String get coreSecurity_urlReviewSchemeAssumed => '没有写协议，已按 HTTPS 解析';
+
+  @override
+  String get coreSecurity_urlReviewUnsafeCharacters => '输入里含有控制字符或不可见字符';
+
+  @override
+  String get coreText_errorMessage =>
+      '服务没有返回可识别的结果。请稍后重试；如果已经提交过资金动作，请先查看最新状态。';
+
+  @override
+  String get coreText_errorMessage10 => '页面数据已不是最新，请刷新后再操作。';
+
+  @override
+  String get coreText_errorMessage11 => '同一操作已被提交过且内容不同，请检查最新状态后再试。';
+
+  @override
+  String get coreText_errorMessage12 => '索引尚未追上最新区块，数据可能滞后，稍后可以再试。';
+
+  @override
+  String get coreText_errorMessage13 => '可用余额不足以完成此操作（含手续费）。';
+
+  @override
+  String get coreText_errorMessage14 => '出了点问题，结果未确认。请查看最新状态后再决定是否重试。';
+
+  @override
+  String get coreText_errorMessage15 => '请求格式不正确，请更新 App 或稍后再试。';
+
+  @override
+  String get coreText_errorMessage16 => '相关服务正在维护，稍后可以再试。';
+
+  @override
+  String get coreText_errorMessage17 => '请求的对象不存在或已被移除。';
+
+  @override
+  String get coreText_errorMessage18 => '当前账号无权执行此操作。';
+
+  @override
+  String get coreText_errorMessage19 => '此操作被当前生效的策略拦截。具体规则由发起该操作的功能说明。';
+
+  @override
+  String get coreText_errorMessage2 => '需要先完成 LOOP 账号引导才能继续。';
+
+  @override
+  String get coreText_errorMessage20 => '社区与社交操作需要已激活的 LOOP ID。完成激活后可以重试。';
+
+  @override
+  String get coreText_errorMessage21 => '所需的外部服务暂时不可用，稍后可以再试。';
+
+  @override
+  String get coreText_errorMessage22 => '价格已变动，请刷新报价后再确认。';
+
+  @override
+  String get coreText_errorMessage23 => '请稍等片刻再试。';
+
+  @override
+  String get coreText_errorMessage24 => '此功能在当前地区不可用。';
+
+  @override
+  String get coreText_errorMessage25 => '服务没有及时响应。超时不代表失败，资金动作请先查看最新状态。';
+
+  @override
+  String get coreText_errorMessage26 => '该标识已经属于另一个对象，请换一个再提交。';
+
+  @override
+  String get coreText_errorMessage27 => '设备会话已失效，请重新登录。';
+
+  @override
+  String get coreText_errorMessage28 => '交易预演没有返回可验证结果，当前不能确认。';
+
+  @override
+  String get coreText_errorMessage29 => '请求可能已被接受。请勿重复提交，等待对账结果。';
+
+  @override
+  String get coreText_errorMessage3 => '该名称在当前的运营名单内，请换一个再试。';
+
+  @override
+  String get coreText_errorMessage30 => '输入内容不符合要求，请检查后重试。';
+
+  @override
+  String get coreText_errorMessage31 => '数据已被其他设备修改，请重新加载后再保存。';
+
+  @override
+  String get coreText_errorMessage4 => '该名称属于 LOOP 保留词（如官方、支持、管理），请换一个再试。';
+
+  @override
+  String get coreText_errorMessage5 => '登录状态已失效，请重新登录。';
+
+  @override
+  String get coreText_errorMessage6 => '此操作需要已登录的账号。';
+
+  @override
+  String get coreText_errorMessage7 => '当前登录有效，但此操作需要额外的身份验证。';
+
+  @override
+  String get coreText_errorMessage8 => '这个功能暂时不可用，稍后再试。';
+
+  @override
+  String get coreText_errorMessage9 => '请求的网络与资产或钱包所在链不一致。';
+
+  @override
+  String get coreText_errorTitle => '暂时无法完成';
+
+  @override
+  String get coreText_errorTitle10 => '数据已过期';
+
+  @override
+  String get coreText_errorTitle11 => '重复请求冲突';
+
+  @override
+  String get coreText_errorTitle12 => '链上数据延迟';
+
+  @override
+  String get coreText_errorTitle13 => '余额不足';
+
+  @override
+  String get coreText_errorTitle14 => '服务内部错误';
+
+  @override
+  String get coreText_errorTitle15 => '请求无效';
+
+  @override
+  String get coreText_errorTitle16 => '系统维护中';
+
+  @override
+  String get coreText_errorTitle17 => '未找到';
+
+  @override
+  String get coreText_errorTitle18 => '没有权限';
+
+  @override
+  String get coreText_errorTitle19 => '被策略拦截';
+
+  @override
+  String get coreText_errorTitle2 => '账号尚未初始化';
+
+  @override
+  String get coreText_errorTitle20 => '需要先激活 LOOP ID';
+
+  @override
+  String get coreText_errorTitle21 => '服务提供方未连接';
+
+  @override
+  String get coreText_errorTitle22 => '报价已过期';
+
+  @override
+  String get coreText_errorTitle23 => '操作过于频繁';
+
+  @override
+  String get coreText_errorTitle24 => '地区限制';
+
+  @override
+  String get coreText_errorTitle25 => '请求超时';
+
+  @override
+  String get coreText_errorTitle26 => '标识已被占用';
+
+  @override
+  String get coreText_errorTitle27 => '会话不存在';
+
+  @override
+  String get coreText_errorTitle28 => '模拟失败';
+
+  @override
+  String get coreText_errorTitle29 => '提交结果未知';
+
+  @override
+  String get coreText_errorTitle3 => '这个名称不可用';
+
+  @override
+  String get coreText_errorTitle30 => '校验未通过';
+
+  @override
+  String get coreText_errorTitle31 => '版本冲突';
+
+  @override
+  String get coreText_errorTitle4 => '这个名称已被保留';
+
+  @override
+  String get coreText_errorTitle5 => '登录凭证无效';
+
+  @override
+  String get coreText_errorTitle6 => '需要登录';
+
+  @override
+  String get coreText_errorTitle7 => '需要更高等级的验证';
+
+  @override
+  String get coreText_errorTitle8 => '功能暂不可用';
+
+  @override
+  String get coreText_errorTitle9 => '链不匹配';
+
+  @override
+  String coreText_tokenLoopTokenDescriptionError(
+    Object? loopTokenDescriptionMaxCharacters,
+  ) {
+    return '简介最多 $loopTokenDescriptionMaxCharacters 个字';
+  }
+
+  @override
+  String get coreText_tokenLoopTokenDescriptionError2 => '简介不能包含控制符或不可见字符';
+
+  @override
+  String get coreText_tokenLoopTokenNameLengthMessage =>
+      '名称最多 20 个字（emoji 算 2 个字）';
+
+  @override
+  String get coreText_tokenLoopTokenTextRule =>
+      '名称和代码各 1–20 个字，可用中文、字母、数字、emoji';
+
+  @override
+  String get coreText_tokenLoopTokenTickerLengthMessage =>
+      '代码最多 20 个字（emoji 算 2 个字）';
+
+  @override
+  String coreText_tokenTokenTextError(Object? label) {
+    return '请填写$label';
+  }
+
+  @override
+  String coreText_tokenTokenTextError2(Object? label) {
+    return '$label不能包含换行、控制符或不可见字符';
+  }
+
+  @override
+  String get coreText_tokenTokenTextError3 => '代码';
 
   @override
   String get dapp_bridgeDappIntentBusyText => '钱包有待处理的操作';
@@ -7441,6 +8846,1130 @@ class LoopLocalizationsZh extends LoopLocalizations {
   }
 
   @override
+  String get profileAbout_clientRegisterLoopAboutUnknownModuleName => '其他规则';
+
+  @override
+  String get profileAbout_clientRegisterPurpose => '应用框架与运行时';
+
+  @override
+  String get profileAbout_clientRegisterPurpose10 => '推送通道';
+
+  @override
+  String get profileAbout_clientRegisterPurpose11 => '设备与会话记录的本地保管';
+
+  @override
+  String get profileAbout_clientRegisterPurpose12 => '非敏感的本机显示偏好';
+
+  @override
+  String get profileAbout_clientRegisterPurpose13 => '网络可达性检测';
+
+  @override
+  String get profileAbout_clientRegisterPurpose14 => '矢量图标渲染';
+
+  @override
+  String get profileAbout_clientRegisterPurpose15 => '系统分享';
+
+  @override
+  String get profileAbout_clientRegisterPurpose16 => '用系统浏览器打开活动链接';
+
+  @override
+  String get profileAbout_clientRegisterPurpose17 => '本地生成的唯一标识';
+
+  @override
+  String get profileAbout_clientRegisterPurpose18 => 'iOS 风格图标字体';
+
+  @override
+  String get profileAbout_clientRegisterPurpose19 => '界面字体';
+
+  @override
+  String get profileAbout_clientRegisterPurpose2 => '网络请求';
+
+  @override
+  String get profileAbout_clientRegisterPurpose3 => '金额与行情的精确十进制计算';
+
+  @override
+  String get profileAbout_clientRegisterPurpose4 => '状态管理';
+
+  @override
+  String get profileAbout_clientRegisterPurpose5 => '页面路由';
+
+  @override
+  String get profileAbout_clientRegisterPurpose6 => '登录与内置钱包';
+
+  @override
+  String get profileAbout_clientRegisterPurpose7 => '外部钱包连接与签名凭证';
+
+  @override
+  String get profileAbout_clientRegisterPurpose8 => '社区聊天';
+
+  @override
+  String get profileAbout_clientRegisterPurpose9 => '聊天本地缓存';
+
+  @override
+  String get profileAbout_clientRegisterSwitch => '产品策略';
+
+  @override
+  String get profileAbout_clientRegisterSwitch10 => '链上写入规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch11 => '五个 Tab、默认落地页与整体产品规则的版本';
+
+  @override
+  String get profileAbout_clientRegisterSwitch12 => '运营对这个客户端的版本、地区与条款要求的覆盖版本';
+
+  @override
+  String get profileAbout_clientRegisterSwitch13 => '设备会话如何创建、限额与撤销';
+
+  @override
+  String get profileAbout_clientRegisterSwitch14 => '社区创建、成员、角色与治理的规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch15 => '行情页热门排序怎么算';
+
+  @override
+  String get profileAbout_clientRegisterSwitch16 => '新设备提示的阈值';
+
+  @override
+  String get profileAbout_clientRegisterSwitch17 => '账号设置里可以改哪些项';
+
+  @override
+  String get profileAbout_clientRegisterSwitch18 => '工单分类、字数与答复时限';
+
+  @override
+  String get profileAbout_clientRegisterSwitch19 => '兑换的报价、滑点与手续费规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch2 => '客户端策略';
+
+  @override
+  String get profileAbout_clientRegisterSwitch20 => '链上写入放量的资产范围与单笔上限';
+
+  @override
+  String get profileAbout_clientRegisterSwitch3 => '登录会话规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch4 => '社区规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch5 => '行情热榜规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch6 => '设备风险提示规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch7 => '账号设置规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch8 => '客服工单规则';
+
+  @override
+  String get profileAbout_clientRegisterSwitch9 => '兑换规则';
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBackendHostSubtitle =>
+      '构建配置里没有服务端地址';
+
+  @override
+  String profileAbout_networkDiagnosticsAboutBackendHostSubtitle2(
+    Object? backendTier,
+  ) {
+    return '$backendTier · 来自这次构建的配置';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBackendHostTitle => '服务端';
+
+  @override
+  String profileAbout_networkDiagnosticsAboutBuildModeSubtitle(
+    Object? config,
+    Object? declaredMode,
+    Object? runtimeBuildMode,
+  ) {
+    return '声明 $declaredMode · 运行时 $runtimeBuildMode · $config';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBuildModeTitle => '构建模式';
+
+  @override
+  String profileAbout_networkDiagnosticsBuildMode(
+    Object? declared,
+    Object? runtimeBuildMode,
+  ) {
+    return '声明 $declared · 运行时 $runtimeBuildMode';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsBuildRows => '未声明';
+
+  @override
+  String get profileAbout_networkDiagnosticsControllerReason =>
+      '这个构建没有配置地址，未探测';
+
+  @override
+  String profileAbout_networkDiagnosticsDone(Object? okCount, Object? sent) {
+    return '$sent 项中 $okCount 项可达';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsDone2 => '重新诊断';
+
+  @override
+  String profileAbout_networkDiagnosticsHostTier(Object? host, Object? tier) {
+    return '$host（$tier）';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsIdle => '开始诊断';
+
+  @override
+  String get profileAbout_networkDiagnosticsLoopLabel => '探测项';
+
+  @override
+  String get profileAbout_networkDiagnosticsLoopLabel2 => '结果';
+
+  @override
+  String get profileAbout_networkDiagnosticsMessage => '诊断结果已复制';
+
+  @override
+  String get profileAbout_networkDiagnosticsMessage2 => '无法打开分享，可以改用复制';
+
+  @override
+  String get profileAbout_networkDiagnosticsModeMatch => '一致';
+
+  @override
+  String get profileAbout_networkDiagnosticsModeMismatch => '不一致';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsBlocked => '未发出：地址不符合本机网络规则';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsConnect => '无法连接：连接被拒绝或中断';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsDns => '无法连接：域名解析失败';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsIdle => '未开始';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport =>
+      'LOOP 网络诊断';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport2(
+    Object? networkDiagnosticsTimestamp,
+  ) {
+    return '时间：$networkDiagnosticsTimestamp';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport3(
+    Object? appVersion,
+  ) {
+    return 'App 版本：$appVersion';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport4(
+    Object? buildMode,
+  ) {
+    return '构建模式：$buildMode';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport5(
+    Object? serverHost,
+  ) {
+    return '服务端主机：$serverHost';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport6(
+    Object? platform,
+  ) {
+    return '平台：$platform';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport7(
+    Object? inMilliseconds,
+  ) {
+    return '总耗时：$inMilliseconds ms';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport8(
+    Object? okCount,
+    Object? results,
+  ) {
+    return '结果：$results 项中 $okCount 项可达';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsOther => '无法连接';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsReachable => '可达';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason(
+    Object? reused,
+    Object? statusCode,
+  ) {
+    return '已连上，但服务返回 HTTP $statusCode$reused';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason2(
+    Object? bytesText,
+    Object? statusCode,
+  ) {
+    return 'HTTP $statusCode · 图片 $bytesText';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason3(Object? statusCode) {
+    return '已连上，但没有拿到图片 · HTTP $statusCode';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason4(
+    Object? block,
+    Object? statusCode,
+  ) {
+    return 'HTTP $statusCode · 区块 $block';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsRunning => '探测中';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsS(Object? inMilliseconds) {
+    return ' · 首次 $inMilliseconds ms，复用连接';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTimeout => '超时';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTimeout2 => '超时，规定时间内没有响应';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTls => '无法连接：安全连接握手失败';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsCopyLabel =>
+      '复制诊断结果';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioCaption =>
+      '这个页面只测连通性和耗时，不发送账号信息。';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioKicker =>
+      '网络检查';
+
+  @override
+  String profileAbout_networkDiagnosticsNetworkDiagnosticsFolioStamp(
+    Object? state,
+  ) {
+    return '总耗时 $state 秒';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineBody =>
+      '请先确认这台设备已经联网，再重新诊断。';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineTitle =>
+      '所有探测都没有连上';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyText =>
+      '结果只留在这台设备上，不会上传；复制或分享由你决定。';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyTitle =>
+      '结果去向';
+
+  @override
+  String get profileAbout_networkDiagnosticsRunning => '诊断中';
+
+  @override
+  String get profileAbout_networkDiagnosticsRunning2 => '正在诊断';
+
+  @override
+  String get profileAbout_networkDiagnosticsText =>
+      '每项单独限时 8 秒，全部探测同时发出，最长 15 秒。';
+
+  @override
+  String get profileAbout_networkDiagnosticsTitle => '探测说明';
+
+  @override
+  String get profileAbout_screenAboutClientBuildNoteLabel => 'LOOP 不发布客户端版本';
+
+  @override
+  String get profileAbout_screenAboutClientVersionSubtitle =>
+      '构建配置里没有合法的版本号，这里不编造一个';
+
+  @override
+  String get profileAbout_screenAboutClientVersionSubtitle2 =>
+      '来自这台设备的构建配置，不会上传';
+
+  @override
+  String get profileAbout_screenAboutClientVersionTitle => '客户端版本';
+
+  @override
+  String get profileAbout_screenAboutConfigNoteText => '这里只用于查看，不会固定任何一个版本。';
+
+  @override
+  String get profileAbout_screenAboutNetworkDiagnosticsSubtitle =>
+      '测这台设备到各项服务的连通性和耗时';
+
+  @override
+  String get profileAbout_screenAboutNetworkDiagnosticsTitle => '网络诊断';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceInfo => '开源许可';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceInfoTitle => '本应用使用的开源组件';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceNoteBody =>
+      '组件版本以本次构建的锁定文件为准，这一页不显示版本号。';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceSummaryBody =>
+      '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。';
+
+  @override
+  String get profileAbout_screenAboutRiskNoticeBody =>
+      '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。';
+
+  @override
+  String get profileAbout_screenAboutRiskNoticeTitle => '加密资产风险';
+
+  @override
+  String get profileAbout_screenAboutTermsUnavailableLabel =>
+      '用户协议、隐私政策与风险披露没有文档地址';
+
+  @override
+  String get profileAbout_screenAboutTermsVersionSubtitle =>
+      '已经有版本号，但还没有可打开的文档链接。';
+
+  @override
+  String get profileAbout_screenAboutTermsVersionTitle => '协议版本';
+
+  @override
+  String get profileAbout_screenEmptyMessage => '暂时读不到产品记录';
+
+  @override
+  String get profileAbout_screenLoopLabel => '法务';
+
+  @override
+  String get profileAbout_screenLoopLabel2 => '风险提示';
+
+  @override
+  String get profileAbout_screenLoopLabel3 => '本机构建';
+
+  @override
+  String get profileAbout_screenLoopLabel4 => '当前规则';
+
+  @override
+  String profileAbout_screenLoopRecordRow(Object? number) {
+    return '版本 $number';
+  }
+
+  @override
+  String profileAbout_screenLoopRecordRow2(Object? relativeTime) {
+    return '生效于 $relativeTime';
+  }
+
+  @override
+  String get profileNotificationPreferences_screenBody => '这不代表已经能送达。';
+
+  @override
+  String get profileNotificationPreferences_screenBody2 => '账号准备好之后会请求一次。';
+
+  @override
+  String get profileNotificationPreferences_screenBody3 =>
+      '账号进入 LOOP 之后，可以在这里开启。';
+
+  @override
+  String get profileNotificationPreferences_screenBody4 => '通知只会留在应用内的通知列表里。';
+
+  @override
+  String get profileNotificationPreferences_screenBody5 =>
+      '可以在系统设置里为 LOOP 重新打开通知。';
+
+  @override
+  String get profileNotificationPreferences_screenBody6 => '拿到之后这台设备会自动登记。';
+
+  @override
+  String get profileNotificationPreferences_screenBody7 => '下次回到 LOOP 时会再试一次。';
+
+  @override
+  String get profileNotificationPreferences_screenCategoryRow => '暂不生效';
+
+  @override
+  String get profileNotificationPreferences_screenEmptyMessage => '还没有通知设置';
+
+  @override
+  String get profileNotificationPreferences_screenLaunchRound =>
+      '关闭后不会再收到共识勋章、发射审核结果与上链进度通知。';
+
+  @override
+  String get profileNotificationPreferences_screenLoopOfflineState => '保存通知设置';
+
+  @override
+  String get profileNotificationPreferences_screenMessage => '通知设置已保存';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationCapabilityBlockTitle =>
+      '通知设置当前不可用';
+
+  @override
+  String profileNotificationPreferences_screenNotificationDisableTitle(
+    Object? label,
+  ) {
+    return '关闭『$label』通知？';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictBody =>
+      '通知设置已在其他设备上改动。请重新加载后再修改。';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictTitle =>
+      '版本冲突 —— 没有覆盖任何内容';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesErrorTitle =>
+      '设置没有保存';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushChannelBody =>
+      '推送还没有在真机上确认过。开关照常保存，也照常影响站内的通知列表。';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInBody =>
+      '新消息、价格提醒和安全事件会推送到这台设备。点开启后，系统会询问一次。';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInButtonLabel =>
+      '开启';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInTitle =>
+      '开启推送通知';
+
+  @override
+  String
+  profileNotificationPreferences_screenNotificationPreferencesSummaryBody(
+    Object? deliveringEnabledCount,
+  ) {
+    return '$deliveringEnabledCount 项开启并生效。目前只有价格提醒会生成应用内通知；安全事件始终开启。';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesVersionText =>
+      '当前使用默认设置';
+
+  @override
+  String
+  profileNotificationPreferences_screenNotificationPreferencesVersionText2(
+    Object? relativeTime,
+  ) {
+    return '更新于 $relativeTime';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPushUnavailableLabel =>
+      '推送尚不可用';
+
+  @override
+  String get profileNotificationPreferences_screenS => '已关闭';
+
+  @override
+  String get profileNotificationPreferences_screenSwitch => '关闭后不会再收到这一类通知。';
+
+  @override
+  String get profileNotificationPreferences_screenTitle => '这台设备已登记接收推送';
+
+  @override
+  String get profileNotificationPreferences_screenTitle2 => '还没有向这台设备请求通知权限';
+
+  @override
+  String get profileNotificationPreferences_screenTitle3 => '这台设备上没有推送通道';
+
+  @override
+  String get profileNotificationPreferences_screenTitle4 => '通知权限已拒绝，这台设备收不到推送';
+
+  @override
+  String get profileNotificationPreferences_screenTitle5 => '正在等待系统分配推送通道';
+
+  @override
+  String get profileNotificationPreferences_screenTitle6 => '这台设备还没有登记成功';
+
+  @override
+  String get profileNotificationPreferences_screenTitle7 => '当前账号无权修改通知设置';
+
+  @override
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel => '处理中…';
+
+  @override
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel2 => '使用这张';
+
+  @override
+  String get profilePresentation_avatarEditorBuild => '拖动、双指缩放，方框里的部分就是头像。';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarResetLabel => '用默认头像';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarUploadLabel => '上传头像';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarUploadUnavailable =>
+      '头像上传暂未开放，先用默认头像。';
+
+  @override
+  String get profilePresentation_avatarEditorLoopSheetHeading => '裁剪头像';
+
+  @override
+  String get profilePresentation_avatarMediaInvalidData => '上传结果无法确认，头像没有更换。';
+
+  @override
+  String get profilePresentation_avatarMediaOffline => '网络未连接，头像没有上传。';
+
+  @override
+  String get profilePresentation_avatarMediaRateLimited => '上传太频繁，请一分钟后再试。';
+
+  @override
+  String get profilePresentation_avatarMediaRejected =>
+      '这张图片不能用：需要 JPG、PNG、WebP 或 HEIC，不超过 5 MB，边长至少 64 像素。';
+
+  @override
+  String get profilePresentation_avatarMediaUnavailable => '头像上传暂不可用，先用默认头像。';
+
+  @override
+  String get profilePresentation_avatarMediaUnexpected => '头像没有上传成功，请重试。';
+
+  @override
+  String get profilePrivacy_modelsCommunities => '加入的社区';
+
+  @override
+  String get profilePrivacy_modelsDirectMessages => '允许好友发起私聊';
+
+  @override
+  String get profilePrivacy_modelsFriendRequests => '允许陌生人发好友申请';
+
+  @override
+  String get profilePrivacy_modelsGroupInvites => '允许好友拉我进群';
+
+  @override
+  String get profilePrivacy_modelsMiningPower => '挖矿算力';
+
+  @override
+  String get profilePrivacy_modelsTotalAssets => '总资产';
+
+  @override
+  String get profilePrivacy_modelsTradeHistory => '交易记录';
+
+  @override
+  String get profileSecurity_modelsAutoRecovery => '自动恢复';
+
+  @override
+  String get profileSecurity_modelsAutoRecovery2 => '由 Provider 托管的恢复分片。';
+
+  @override
+  String get profileSecurity_modelsKeyExport => '导出私钥';
+
+  @override
+  String get profileSecurity_modelsKeyExport2 => '把私钥带走，不受 LOOP 或 Privy 限制。';
+
+  @override
+  String get profileSecurity_modelsMfa => '多因素验证';
+
+  @override
+  String get profileSecurity_modelsMfa2 => '登录与敏感操作需要第二个因素。';
+
+  @override
+  String get profileSecurity_modelsPasskey => '用设备生物识别代替密码。';
+
+  @override
+  String get profileSecurity_modelsProviderAuthenticated => 'Privy 已验证';
+
+  @override
+  String get profileSecurity_modelsRecoveryPassword => '恢复密码';
+
+  @override
+  String get profileSecurity_modelsRecoveryPassword2 => '由你保管的一段口令，用来在新设备恢复钱包。';
+
+  @override
+  String get profileSecurity_modelsSocialRecovery => '社交恢复';
+
+  @override
+  String get profileSecurity_modelsSocialRecovery2 => '2-of-3 守护人共同确认才能恢复。';
+
+  @override
+  String get profileSecurity_screensBody => '当前钱包上仍然生效的 ERC-20 授权。';
+
+  @override
+  String get profileSecurity_screensBody2 => '额度没有上限的授权，风险最高。';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeConfirmLabel => '撤销会话';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeSheetEffectBody =>
+      'LOOP 会把这个会话记为已撤销，并拒绝之后携带它的请求，同时写入一条安全事件。对方设备上的 Privy 登录不会被终止。';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeSheetEffectTitle => '撤销后会发生什么';
+
+  @override
+  String profileSecurity_screensDeviceRow(Object? relativeTime) {
+    return '已于 $relativeTime撤销';
+  }
+
+  @override
+  String get profileSecurity_screensDeviceRow2 => '正在使用';
+
+  @override
+  String get profileSecurity_screensDevicesCapabilityBlockTitle => '设备管理当前不可用';
+
+  @override
+  String get profileSecurity_screensDevicesCurrentUnknownBody =>
+      '本机没有可用的会话标识，因此列表里没有任何一行被标为本次会话或本设备。';
+
+  @override
+  String get profileSecurity_screensDevicesCurrentUnknownTitle => '无法标记本次会话';
+
+  @override
+  String get profileSecurity_screensDevicesEffectNoticeBody =>
+      '撤销会把该会话记为已撤销，并让 LOOP 拒绝之后携带它的请求。它不会终止对方设备上的 Privy 登录，所以不能理解为对方已经退出。退出本机请使用设置页的退出登录。';
+
+  @override
+  String get profileSecurity_screensDevicesEffectNoticeTitle => '撤销能做到什么';
+
+  @override
+  String get profileSecurity_screensDevicesFolioCaption =>
+      '这里不显示设备名称和位置，只显示平台、版本、会话标识与登录时间。';
+
+  @override
+  String profileSecurity_screensDevicesFolioHeading(
+    Object? activeCount,
+    Object? deviceCount,
+  ) {
+    return '$deviceCount 台设备 · $activeCount 个会话';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesFolioKicker => '设备会话';
+
+  @override
+  String profileSecurity_screensDevicesHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? newSessions24h,
+    Object? windowHours,
+  ) {
+    return '最近 $windowHours 小时内新建了 $newSessions24h 个会话，达到提示阈值 $newSessionThreshold。这只是提示，不会因此要求二次验证。';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesRevokeAllLabel => '下线所有其他设备';
+
+  @override
+  String get profileSecurity_screensDevicesRevokeAllUnavailableLabel =>
+      '需要二次验证，当前不可执行';
+
+  @override
+  String profileSecurity_screensDevicesRevokeOutcomeBody(
+    Object? providerAccessTerminated,
+  ) {
+    return 'LOOP 已把该会话标记为已撤销，并拒绝之后携带它的请求。对方设备的 Privy 访问令牌不受影响（providerAccessTerminated: $providerAccessTerminated）。';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesScreenTitle => '设备管理';
+
+  @override
+  String get profileSecurity_screensDevicesStateEmptyMessage =>
+      '这个账号还没有完成过一次设备初始化。';
+
+  @override
+  String get profileSecurity_screensDevicesStateEmptyTitle => '还没有设备会话';
+
+  @override
+  String get profileSecurity_screensDevicesTruncatedBody =>
+      '最多显示 100 条会话，暂时不能翻页。';
+
+  @override
+  String get profileSecurity_screensDevicesTruncatedTitle => '列表已被截断';
+
+  @override
+  String get profileSecurity_screensEmptyMessage => '没有可展示的安全能力';
+
+  @override
+  String get profileSecurity_screensEmptyMessage2 => '还没有安全汇总';
+
+  @override
+  String get profileSecurity_screensEmptyMessage3 => '没有可显示的设备会话';
+
+  @override
+  String get profileSecurity_screensEmptyMessage4 => '读不到导出能力的状态';
+
+  @override
+  String get profileSecurity_screensEmptyMessage5 => '读不到社交恢复的状态';
+
+  @override
+  String profileSecurity_screensEventSourceSuffix(Object? source) {
+    return ' · 来源 $source';
+  }
+
+  @override
+  String profileSecurity_screensIdentity(
+    Object? sessionCreatedAtLabel,
+    Object? sessionShortId,
+  ) {
+    return '会话 $sessionShortId · 首次登录 $sessionCreatedAtLabel';
+  }
+
+  @override
+  String get profileSecurity_screensIf => '登录服务说这个账号已经有 Passkey';
+
+  @override
+  String get profileSecurity_screensKeyExportActionLabel => '验证并导出';
+
+  @override
+  String get profileSecurity_screensKeyExportCapabilityBlockTitle =>
+      '导出私钥当前不可用';
+
+  @override
+  String get profileSecurity_screensKeyExportControlDisclosureSummary => '控制说明';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioCaption =>
+      '导出前完成风险阅读、身份验证与本地显示确认。';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioHeading => '私钥由你控制';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioKicker => '钱包密钥';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioStamp => '敏感';
+
+  @override
+  String get profileSecurity_screensKeyExportNoKeySubtitle =>
+      '这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。';
+
+  @override
+  String get profileSecurity_screensKeyExportNoKeyTitle => '不会显示任何私钥';
+
+  @override
+  String get profileSecurity_screensKeyExportNoVerificationSubtitle =>
+      '没有 Face ID、没有验证码：验证只在真的能导出时才有意义。';
+
+  @override
+  String get profileSecurity_screensKeyExportNoVerificationTitle => '不会要求你验证';
+
+  @override
+  String get profileSecurity_screensKeyExportRiskBody =>
+      '私钥泄露等于资产全部丢失。不要截图、不要发给任何人、不要存在联网笔记里。没有任何人能帮你找回被盗的资产。';
+
+  @override
+  String get profileSecurity_screensKeyExportRiskTitle => '导出即全部责任转移';
+
+  @override
+  String get profileSecurity_screensLabel => '平台';
+
+  @override
+  String get profileSecurity_screensLabel2 => '客户端版本';
+
+  @override
+  String get profileSecurity_screensLabel3 => '首次登录';
+
+  @override
+  String get profileSecurity_screensLabel4 => '归属';
+
+  @override
+  String get profileSecurity_screensLabel5 => '最后活跃';
+
+  @override
+  String get profileSecurity_screensListSeparator => '、';
+
+  @override
+  String get profileSecurity_screensLoopBadge => '读不到';
+
+  @override
+  String get profileSecurity_screensLoopBadge2 => '本次会话';
+
+  @override
+  String get profileSecurity_screensLoopBadge3 => '已撤销';
+
+  @override
+  String get profileSecurity_screensLoopBadge4 => '本设备 · 旧会话';
+
+  @override
+  String get profileSecurity_screensLoopBadge5 => '其他设备';
+
+  @override
+  String get profileSecurity_screensLoopLabel => '验证';
+
+  @override
+  String get profileSecurity_screensLoopLabel2 => '交易验证';
+
+  @override
+  String get profileSecurity_screensLoopLabel3 => '设备';
+
+  @override
+  String get profileSecurity_screensLoopLabel4 => '最近安全事件';
+
+  @override
+  String get profileSecurity_screensLoopLabel5 => '会话';
+
+  @override
+  String get profileSecurity_screensLoopLabel6 => '全部设备';
+
+  @override
+  String get profileSecurity_screensLoopLabel7 => '这一步现在不会发生什么';
+
+  @override
+  String get profileSecurity_screensLoopLabel8 => '守护人';
+
+  @override
+  String profileSecurity_screensLoopRecordRow(Object? sessionShortId) {
+    return '会话 $sessionShortId';
+  }
+
+  @override
+  String get profileSecurity_screensLoopRecordRow2 => '本设备的旧会话';
+
+  @override
+  String get profileSecurity_screensLoopSheetHeading => '撤销这个会话？';
+
+  @override
+  String get profileSecurity_screensMessage => '已记录撤销，对方访问未终止';
+
+  @override
+  String get profileSecurity_screensMessage2 => '撤销没有完成';
+
+  @override
+  String get profileSecurity_screensPlatformUnlabeled => '未标注平台';
+
+  @override
+  String profileSecurity_screensS(Object? relativeTime) {
+    return '最后活跃 $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensS2 => '活跃';
+
+  @override
+  String get profileSecurity_screensScopeNote =>
+      '多因素验证、Passkey、恢复与导出由 Privy 提供，开放后会在这里显示。';
+
+  @override
+  String get profileSecurity_screensScopeNote2 => '这些保护由 Privy 提供。';
+
+  @override
+  String profileSecurity_screensScopeNote3(Object? notOpen) {
+    return '这些保护由 Privy 提供。$notOpen开放后会在这里显示。';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsActiveTitle => '有效授权';
+
+  @override
+  String profileSecurity_screensSecurityApprovalsFreshnessText(
+    Object? groupedFigure,
+    Object? groupedFigure2,
+    Object? groupedFigure3,
+    Object? relativeTime,
+  ) {
+    return '授权记录自区块 $groupedFigure 起 · 索引高度 $groupedFigure2 / 链头 $groupedFigure3 · 观察于 $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsUnavailableLabel =>
+      '授权盘点读不到';
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsUnlimitedTitle => '无限额度授权';
+
+  @override
+  String get profileSecurity_screensSecurityCapabilityBlockTitle => '安全中心当前不可用';
+
+  @override
+  String profileSecurity_screensSecurityDevicesEntrySubtitle(
+    Object? recent,
+    Object? sessions,
+    Object? windowHours,
+  ) {
+    return '$sessions 个活跃会话 · 最近 $windowHours 小时新增 $recent 个';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityDevicesEntryTitle => '已登录设备';
+
+  @override
+  String get profileSecurity_screensSecurityDevicesUnavailableLabel =>
+      '设备与会话读不到';
+
+  @override
+  String get profileSecurity_screensSecurityEventsEmptyMessage =>
+      '目前只有\"撤销其他设备\"会记录一条安全事件。';
+
+  @override
+  String get profileSecurity_screensSecurityEventsEmptyTitle => '还没有安全事件';
+
+  @override
+  String get profileSecurity_screensSecurityEventsUnavailableLabel =>
+      '最近安全事件读不到';
+
+  @override
+  String profileSecurity_screensSecurityHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? recent,
+    Object? windowHours,
+  ) {
+    return '最近 $windowHours 小时内新建了 $recent 个会话，达到提示阈值 $newSessionThreshold。这只是提示，不会因此要求二次验证或冷却。';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityHighRiskNoticeTitle => '最近新增了多个会话';
+
+  @override
+  String get profileSecurity_screensSecurityMethodDefaultLabel => '默认方式';
+
+  @override
+  String get profileSecurity_screensSecurityMethodDeferredLabel => '还没有开放';
+
+  @override
+  String get profileSecurity_screensSecurityMethodOffLabel => '未开启';
+
+  @override
+  String get profileSecurity_screensSecurityMethodsGuideSummary => '这些保护怎么开启';
+
+  @override
+  String get profileSecurity_screensSecurityNotificationLockSubtitle =>
+      '始终开启，无法关闭';
+
+  @override
+  String get profileSecurity_screensSecurityNotificationLockTitle => '安全事件通知';
+
+  @override
+  String profileSecurity_screensSecurityObservedAtText(Object? relativeTime) {
+    return '观察于 $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityScopeInfoTitle => '这些保护由谁提供';
+
+  @override
+  String profileSecurity_screensSemanticLabel(Object? label, Object? reason) {
+    return '$label，不可用，$reason';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel2(Object? label) {
+    return '$label，正在读取登录服务的回答';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel3(Object? label, Object? reason) {
+    return '$label，读不到，$reason点按重试';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel4(Object? label, Object? label2) {
+    return '$label，$label2，点按开启';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabelDetail(
+    Object? detail,
+    Object? label,
+    Object? state,
+  ) {
+    return '$label，$state：$detail';
+  }
+
+  @override
+  String get profileSecurity_screensSocialRecoveryActionLabel => '添加守护人';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryCapabilityBlockTitle =>
+      '社交恢复当前不可用';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryDisclosureSummary =>
+      '社交恢复状态说明';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryExplainerBody =>
+      '指定 3 个你信任的人。丢失设备时，其中 2 人同意即可帮你恢复账户。守护人需要在自己的 App 里主动确认，未确认的不计入 2-of-3。';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryExplainerTitle =>
+      '2-of-3 是什么意思';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioCaption =>
+      '守护人只参与恢复确认，不能查看资产或发起交易。';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioHeading => '2-of-3 守护人';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioStamp => '3 选 2';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryNoGuardiansDetail =>
+      '守护人还没有开放，这里不会列出任何人。';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryNoGuardiansMessage =>
+      '还没有添加守护人';
+
+  @override
+  String profileSecurity_screensSubtitle(Object? reason) {
+    return '$reason点按重试。';
+  }
+
+  @override
+  String get profileSecurity_screensText =>
+      '导出会要求 Face ID、MFA 与一次风险确认，并在导出期间禁止截图与录屏。这一页不会预先渲染任何私钥样例：一段被遮罩的字符会被读成「已经导出过」。';
+
+  @override
+  String get profileSecurity_screensText2 =>
+      '守护人由你邀请，对方要在自己的 App 里主动确认；未确认的不计入 2-of-3。守护人看不到你的资产，也不能发起交易。';
+
+  @override
+  String get profileSecurity_screensTitle => '恢复';
+
+  @override
+  String get profileSecurity_screensTitle2 => '撤销了一个设备会话';
+
+  @override
+  String get profileSecurity_screensTitle3 => '安全事件';
+
+  @override
   String get profileSettings_aboutAndLegal => '关于与法务';
 
   @override
@@ -7525,6 +10054,590 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get profileSettings_usingDefaults => '当前使用默认设置';
+
+  @override
+  String get profileSupport_modelsAccount => '账号';
+
+  @override
+  String get profileSupport_modelsAnswered => '已回复';
+
+  @override
+  String get profileSupport_modelsAnswered2 => '客服回复';
+
+  @override
+  String get profileSupport_modelsClosed => '已关闭';
+
+  @override
+  String get profileSupport_modelsEmpty => '请先描述你遇到的问题。';
+
+  @override
+  String get profileSupport_modelsOpen => '待处理';
+
+  @override
+  String get profileSupport_modelsOperator => 'LOOP 客服';
+
+  @override
+  String get profileSupport_modelsOther => '其他';
+
+  @override
+  String get profileSupport_modelsTooLong => '正文超过 2000 码点，请精简后再提交。';
+
+  @override
+  String get profileSupport_modelsUnsafeCharacters =>
+      '正文含有控制字符或不可见字符（例如换行、方向控制符），请删除后再提交。';
+
+  @override
+  String get profileSupport_modelsUser => '你';
+
+  @override
+  String get profileSupport_modelsWallet => '钱包';
+
+  @override
+  String get profileSupport_screenBarrierLabel => '关闭工单详情';
+
+  @override
+  String get profileSupport_screenEmptyMessage => '还没有提交过工单';
+
+  @override
+  String get profileSupport_screenHint => '描述你遇到的问题；不要填写私钥、助记词或验证码';
+
+  @override
+  String get profileSupport_screenLoopLabel => '联系我们';
+
+  @override
+  String get profileSupport_screenLoopLabel2 => '常见问题';
+
+  @override
+  String get profileSupport_screenLoopLabel3 => '提交工单';
+
+  @override
+  String get profileSupport_screenLoopLabel4 => '我的工单';
+
+  @override
+  String get profileSupport_screenLoopLabel5 => '往来记录';
+
+  @override
+  String get profileSupport_screenMessage => '工单已提交';
+
+  @override
+  String get profileSupport_screenMessage2 => '工单没有提交';
+
+  @override
+  String profileSupport_screenSemanticLabel(Object? label, Object? label2) {
+    return '$label 工单，$label2，打开完整往来';
+  }
+
+  @override
+  String profileSupport_screenSubtitle(Object? relativeTime) {
+    return '提交于 $relativeTime · 还没有回复';
+  }
+
+  @override
+  String profileSupport_screenSubtitle2(Object? note) {
+    return '客服回复：$note';
+  }
+
+  @override
+  String get profileSupport_screenSupportAttachmentsUnavailableLabel =>
+      '暂不支持附件';
+
+  @override
+  String profileSupport_screenSupportBodyFootnote(
+    Object? length,
+    Object? maximumBodyLength,
+    Object? problem,
+  ) {
+    return '$length / $maximumBodyLength 码点$problem';
+  }
+
+  @override
+  String get profileSupport_screenSupportBodyLabel => '问题描述';
+
+  @override
+  String get profileSupport_screenSupportCapabilityBlockLabel => '客服工单当前不可用';
+
+  @override
+  String profileSupport_screenSupportEscalationText(
+    Object? responseWindowHours,
+  ) {
+    return '$responseWindowHours 小时内回复；紧急问题请在工单正文里写明。';
+  }
+
+  @override
+  String profileSupport_screenSupportEscalationTextBusinessDays(
+    Object? responseWindowHours,
+  ) {
+    return '工作日 $responseWindowHours 小时内回复；紧急问题请在工单正文里写明。';
+  }
+
+  @override
+  String get profileSupport_screenSupportEscalationTitle => '回复时间';
+
+  @override
+  String get profileSupport_screenSupportMoreTicketsBody =>
+      '目前只显示最新的一页，更早的工单暂时看不到。';
+
+  @override
+  String get profileSupport_screenSupportMoreTicketsTitle => '还有更早的工单';
+
+  @override
+  String get profileSupport_screenSupportOpenCommunityTitle => 'LOOP 官方社区';
+
+  @override
+  String get profileSupport_screenSupportScamNoticeBody =>
+      '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。';
+
+  @override
+  String get profileSupport_screenSupportScamNoticeTitle => '官方不会主动私聊你';
+
+  @override
+  String get profileSupport_screenSupportScreenTitle => '帮助与客服';
+
+  @override
+  String get profileSupport_screenSupportTicketDetailOpenText =>
+      '客服还没有回复这张工单；有回复时会出现在上面。';
+
+  @override
+  String get profileSupport_screenSupportTicketsEmptyMessage =>
+      '提交后，这里会显示状态与客服回复。';
+
+  @override
+  String get profileSupport_screenText => '算力是怎么算的';
+
+  @override
+  String get profileSupport_screenText10 =>
+      '未毕业的 Launch 资产只能买入，且只能走它自己的通道；被拒绝时会给出具体的错误码，交易页会原样显示。';
+
+  @override
+  String get profileSupport_screenText2 =>
+      '算力来自最近一次算力快照：每个已登记资产的持有数量乘以权重，不乘价格，在算力明细里逐行列出。按绑定到 LOOP 账号的钱包持仓计算；社区币须加入已通过审核的绑定社区才计入。挖矿页会显示那次快照的区块与时间。';
+
+  @override
+  String get profileSupport_screenText3 => '为什么我的币没有权重';
+
+  @override
+  String get profileSupport_screenText4 =>
+      '只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，不以钱包里是否出现过为准。绑定待审核社区的币没有权重。';
+
+  @override
+  String get profileSupport_screenText5 => '怎么参与 Launch';
+
+  @override
+  String get profileSupport_screenText6 =>
+      'Launch 轮次、快照与限额由合约参数决定。参数确认前，Launch 页只展示已有的轮次状态，不承诺任何额度。';
+
+  @override
+  String get profileSupport_screenText7 => '换手机怎么恢复账户';
+
+  @override
+  String get profileSupport_screenText8 =>
+      '账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。安全中心会显示每一项的当前状态。';
+
+  @override
+  String get profileSupport_screenText9 => '内盘买入为什么被拒绝';
+
+  @override
+  String profile_meAttentionStreamChatMessageRequestsEntrySemanticLabel(
+    Object? label,
+  ) {
+    return '陌生人请求，$label 条待处理';
+  }
+
+  @override
+  String profile_meAttentionStreamChatMessageRequestsEntryTrailing(
+    Object? label,
+  ) {
+    return '$label 条待处理';
+  }
+
+  @override
+  String get profile_screensAliasBlocked => '该名称包含不允许的词，请换一个再试。';
+
+  @override
+  String get profile_screensAliasReserved => '该名称属于 LOOP 保留词，请换一个再试。';
+
+  @override
+  String get profile_screensBootstrapRequired => '账号尚未完成初始化，请稍后重试。';
+
+  @override
+  String get profile_screensHint => '1–40 个字符，可以和别人重复';
+
+  @override
+  String get profile_screensHint2 => '一句话介绍自己（可以不填）';
+
+  @override
+  String get profile_screensIdempotencyConflict => '提交冲突，已重置，请再试一次。';
+
+  @override
+  String get profile_screensInvalidData => '服务返回的资料不符合约定，没有采纳任何内容。';
+
+  @override
+  String get profile_screensInvalidData2 => '服务返回的隐私设置不符合约定，没有采纳任何内容。';
+
+  @override
+  String profile_screensJoinedLine(Object? month, Object? year) {
+    return '$year 年 $month 月加入';
+  }
+
+  @override
+  String get profile_screensLabel => '重新载入';
+
+  @override
+  String get profile_screensLoopLabel => '隐私与安全';
+
+  @override
+  String get profile_screensLoopLabel2 => '审核通知';
+
+  @override
+  String get profile_screensLoopLabel3 => '身份';
+
+  @override
+  String get profile_screensLoopLabel4 => '社交';
+
+  @override
+  String get profile_screensLoopLabel5 => '可见性';
+
+  @override
+  String get profile_screensLoopOfflineState => '保存资料';
+
+  @override
+  String get profile_screensLoopOfflineState2 => '激活 LOOP ID';
+
+  @override
+  String get profile_screensLoopOfflineState3 => '保存隐私设置';
+
+  @override
+  String profile_screensLoopPreviewModeNoticeBody(Object? resource) {
+    return '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。';
+  }
+
+  @override
+  String get profile_screensLoopSoftUpdateDismissLabel => '忽略更新提示';
+
+  @override
+  String get profile_screensLoopSoftUpdatePromptBody =>
+      '建议更新到最新版本；当前版本仍然可以继续使用。';
+
+  @override
+  String profile_screensLoopSoftUpdatePromptBody2(Object? minimum) {
+    return '建议更新到 $minimum 或更高版本；当前版本仍然可以继续使用。';
+  }
+
+  @override
+  String get profile_screensLoopSoftUpdatePromptTitle => '有新版本可用';
+
+  @override
+  String get profile_screensMeCommunitiesEmptyTitle => '还没有加入社区';
+
+  @override
+  String get profile_screensMeCommunitiesUnavailableMessage => '社区暂不可用';
+
+  @override
+  String get profile_screensMeGroupLabel => '我加入的';
+
+  @override
+  String get profile_screensMeGroupLabel2 => '我创建的';
+
+  @override
+  String get profile_screensMeJoinedAllTitle => '全部已加入的社区';
+
+  @override
+  String profile_screensMembers(Object? groupedFigure) {
+    return '$groupedFigure 名成员';
+  }
+
+  @override
+  String get profile_screensMessage => '回到「我」，选择其它设置。';
+
+  @override
+  String get profile_screensMessage2 => '资料还没有读到';
+
+  @override
+  String profile_screensMessage3(Object? version) {
+    return '已提交到版本 $version';
+  }
+
+  @override
+  String get profile_screensOffLabel => '已关闭';
+
+  @override
+  String get profile_screensOffline => '设备当前离线，资料未能读取，也没有提交任何修改。';
+
+  @override
+  String get profile_screensOffline2 => '设备当前离线，隐私设置未能读取，也没有提交任何修改。';
+
+  @override
+  String get profile_screensPermissionDenied =>
+      '当前策略不允许读取或修改账号资料，没有发生任何变化。这项权限不能在应用里自行调整。';
+
+  @override
+  String get profile_screensPermissionDenied2 =>
+      '当前策略不允许读取或修改隐私设置，没有发生任何变化。这项权限不能在应用里自行调整；开关的当前状态以 LOOP 记录为准。';
+
+  @override
+  String get profile_screensPrivacyAnonymousModeSubtitle => '只显示别名，不显示钱包地址';
+
+  @override
+  String get profile_screensPrivacyAnonymousModeTitle => '匿名模式';
+
+  @override
+  String get profile_screensPrivacyConflictTitle => '隐私设置已在别处修改';
+
+  @override
+  String get profile_screensPrivacyDiscoverableSubtitle =>
+      '允许别人按昵称搜到你；LOOP ID 始终可被精确搜索';
+
+  @override
+  String get profile_screensPrivacyDiscoverableSubtitle2 =>
+      '别人无法按昵称搜到你；LOOP ID 始终可被精确搜索';
+
+  @override
+  String get profile_screensPrivacyDiscoverableTitle => '可被发现';
+
+  @override
+  String get profile_screensPrivacyEmptyMessage => '隐私偏好尚未读取。';
+
+  @override
+  String get profile_screensPrivacyEmptyTitle => '还没有可展示的隐私设置';
+
+  @override
+  String get profile_screensPrivacyErrorSource => '隐私服务';
+
+  @override
+  String get profile_screensPrivacyPermissionTitle => '当前地区不能读取或修改隐私设置';
+
+  @override
+  String get profile_screensPrivacyPermissionTitle2 => '当前账号无权读取或修改隐私设置';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsOffLabel => '仅自己';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsOnLabel => '所有人';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsSubtitle =>
+      '别人在你的主页能看到持仓和交易记录，不显示钱包地址';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsSubtitle2 => '只有你自己能看到持仓和交易记录';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsTitle => '公开持仓与交易';
+
+  @override
+  String get profile_screensPrivacySavePermissionTitle => '当前地区不能修改隐私设置';
+
+  @override
+  String get profile_screensPrivacySavePermissionTitle2 => '当前账号无权修改隐私设置';
+
+  @override
+  String get profile_screensPrivacySubtitle => '持仓与交易已公开';
+
+  @override
+  String get profile_screensPrivacyUnavailableTitle => '隐私设置暂不可用';
+
+  @override
+  String get profile_screensPrivacyVisibilityNoteText =>
+      '可见性只影响展示，不会让别人复制你的交易或访问你的钱包；头像和用户名在聊天与主页上始终显示，钱包地址从不出现在主页上。';
+
+  @override
+  String get profile_screensPrivacyVisibilityNoteTitle => '可见性说明';
+
+  @override
+  String get profile_screensProfileAddBioLabel => '添加个人简介';
+
+  @override
+  String get profile_screensProfileAlias => '尚未设置别名';
+
+  @override
+  String get profile_screensProfileAvailabilityBannerBody => '正在重新读取资料状态。';
+
+  @override
+  String get profile_screensProfileAvailabilityBannerTitle => '资料状态暂不可读';
+
+  @override
+  String get profile_screensProfileAvailabilityBrowseSuffix => ' 你可以继续浏览。';
+
+  @override
+  String get profile_screensProfileAvailabilityDismissLabel => '收起资料状态提示';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryLabel => '正在重试…';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryLabel2 => '重新读取资料状态';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryableSuffix =>
+      ' 你可以继续浏览，也可以现在重试。';
+
+  @override
+  String get profile_screensProfileEditAliasLabel => '用户名';
+
+  @override
+  String get profile_screensProfileEditAliasSuggestLabel => '换一个';
+
+  @override
+  String get profile_screensProfileEditBioLabel => '简介';
+
+  @override
+  String get profile_screensProfileEditConflictTitle => '资料已在别处修改';
+
+  @override
+  String get profile_screensProfileEditFailureTitle => '保存未完成';
+
+  @override
+  String get profile_screensProfileEditOpenPrivacySubtitle => '持仓与交易是否公开、谁能加你';
+
+  @override
+  String get profile_screensProfileEditPermissionTitle => '当前地区不能修改资料';
+
+  @override
+  String get profile_screensProfileEditPermissionTitle2 => '当前账号无权修改资料';
+
+  @override
+  String get profile_screensProfileEditSaveLabel => '保存中…';
+
+  @override
+  String get profile_screensProfileEditSaveTitle => '编辑资料';
+
+  @override
+  String get profile_screensProfileEditValidationTitle => '无法保存';
+
+  @override
+  String get profile_screensProfileEmptyMessage => '账号资料尚未读取。';
+
+  @override
+  String get profile_screensProfileEmptyTitle => '还没有可展示的资料';
+
+  @override
+  String get profile_screensProfileErrorSource => '资料服务';
+
+  @override
+  String get profile_screensProfileLoopId => 'LOOP ID 不可读';
+
+  @override
+  String get profile_screensProfileOpenEditLabel => '编辑头像与资料';
+
+  @override
+  String get profile_screensProfileOpenPrivacyTitle => '隐私中心';
+
+  @override
+  String get profile_screensProfilePermissionTitle => '这一步需要二次验证';
+
+  @override
+  String get profile_screensProfilePermissionTitle2 => '当前地区不能读取或修改资料';
+
+  @override
+  String get profile_screensProfilePermissionTitle3 => '当前账号无权读取或修改资料';
+
+  @override
+  String get profile_screensProfileShareLoopIdLabel => '分享名片';
+
+  @override
+  String get profile_screensProfileUnavailableTitle => '资料暂不可用';
+
+  @override
+  String get profile_screensRegionBlocked =>
+      '你所在的地区暂时不能读取或修改账号资料，没有发生任何变化。这与账号无关，换一个账号也不会改变结果。';
+
+  @override
+  String get profile_screensRegionBlocked2 =>
+      '你所在的地区暂时不能读取或修改隐私设置，没有发生任何变化。这与账号无关，换一个账号也不会改变结果。';
+
+  @override
+  String get profile_screensResource => '隐私设置';
+
+  @override
+  String get profile_screensS => '持仓与交易仅自己可见';
+
+  @override
+  String get profile_screensS2 => '陌生人无法向你发好友申请';
+
+  @override
+  String get profile_screensS3 => '关闭后，好友也无法打开与你的私聊';
+
+  @override
+  String get profile_screensS4 => '关闭后，好友无法把你拉进小群';
+
+  @override
+  String get profile_screensSemanticLabel => '头像';
+
+  @override
+  String get profile_screensStepUpRequired =>
+      '这一步需要二次验证，二次验证还没有开放，没有发生任何变化。请到安全中心查看当前可用的验证方式。';
+
+  @override
+  String get profile_screensStepUpRequired2 =>
+      '修改隐私设置需要二次验证，二次验证还没有开放，没有发生任何变化。请到安全中心查看当前可用的验证方式。';
+
+  @override
+  String get profile_screensSwitch => '资料操作没有完成。';
+
+  @override
+  String get profile_screensSwitch2 => '隐私操作没有完成。';
+
+  @override
+  String get profile_screensSwitch3 => '知道你 LOOP ID 的人可以加你';
+
+  @override
+  String get profile_screensSwitch4 => '已成为好友的人可以直接打开与你的私聊';
+
+  @override
+  String get profile_screensSwitch5 => '好友可以把你拉进小群';
+
+  @override
+  String get profile_screensText => '＋ 添加个人简介';
+
+  @override
+  String get profile_screensTitle => '没有做任何更改';
+
+  @override
+  String get profile_screensUnavailable => '资料服务当前不可用，没有任何修改被保存。';
+
+  @override
+  String get profile_screensUnavailable2 => '隐私服务当前不可用，没有任何修改被保存。';
+
+  @override
+  String get profile_screensUnexpected => '资料操作没有完成，请稍后再试。';
+
+  @override
+  String get profile_screensUnexpected2 => '隐私操作没有完成，请稍后再试。';
+
+  @override
+  String get profile_screensUnknownProfileSurfaceTitle => '设置不可用';
+
+  @override
+  String get profile_screensValidationFailed => '别名或简介超出长度限制，请修改后重试。';
+
+  @override
+  String get profile_screensValidationFailed2 => '提交的隐私设置不被接受，请检查后重试。';
+
+  @override
+  String get profile_screensValidationMessage => '别名需要 1–40 个字符，且不能包含不可见字符。';
+
+  @override
+  String get profile_screensValidationMessage2 => '简介最多 160 个字符。';
+
+  @override
+  String get profile_screensVersionConflict => '资料在别处已被修改。请重新载入后再保存。';
+
+  @override
+  String get profile_screensVersionConflict2 => '隐私设置在别处已被修改。请重新载入后再保存。';
+
+  @override
+  String get profile_signOutButtonConfirmLabel => '退出登录';
+
+  @override
+  String get profile_signOutButtonLabel => '正在退出…';
+
+  @override
+  String get profile_signOutButtonLoopSignOutConfirmBody =>
+      '这台设备将不再收到这个账号的通知，本机保存的首屏数据会被清除。账号里的资产、好友与会话不受影响，重新登录即可恢复。';
+
+  @override
+  String get profile_signOutButtonLoopSignOutConfirmTitle => '退出登录？';
 
   @override
   String get scan_cameraDeniedBody => '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。';
@@ -8376,6 +11489,658 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get square_screenVoiceRoomJoinFirstSuffix => '，加入社区后可进入';
+
+  @override
+  String get system_specimensChartRangeLabel => '1H，固定演示';
+
+  @override
+  String get system_specimensCommunityLine => 'LOOP 社区 128,420 成员，0.35×';
+
+  @override
+  String get system_specimensCommunityLine2 => '08-22 毕业，外盘流动性已建立';
+
+  @override
+  String get system_specimensCommunityLine3 => '该代币未加入 LOOP 社区，无 Mining Weight';
+
+  @override
+  String get system_specimensFact => '该合约含 mint 函数，发行方可增发';
+
+  @override
+  String get system_specimensFact2 => '合约地址与 PEPE 官方不一致';
+
+  @override
+  String get system_specimensLabel => '态 1，正常';
+
+  @override
+  String get system_specimensLabel2 => '态 2，识别中';
+
+  @override
+  String get system_specimensLabel3 => '态 3，已毕业（LOOP Launch 资产）';
+
+  @override
+  String get system_specimensLabel4 => '态 4，数据缺失';
+
+  @override
+  String get system_specimensLabel5 => '态 5，风险事实红条';
+
+  @override
+  String get system_specimensLabel6 => '态 1，待确认（正常）';
+
+  @override
+  String get system_specimensLabel7 => '态 2，模拟失败';
+
+  @override
+  String get system_specimensLabel8 => '态 3，签名中';
+
+  @override
+  String get system_specimensLabel9 => '态 4，被策略拒绝';
+
+  @override
+  String get system_specimensLoopComponentSpecimenLabel => '组件样例';
+
+  @override
+  String get system_specimensLoopSignFact => '费用';
+
+  @override
+  String get system_specimensLoopSignFact2 => '通过';
+
+  @override
+  String get system_specimensLoopSignFact3 => '失败，无法预演';
+
+  @override
+  String get system_specimensLoopSignFact4 => '转账 5,000 USDC';
+
+  @override
+  String get system_specimensLoopSignFact5 => '结果';
+
+  @override
+  String get system_specimensLoopSignFact6 => '被拒绝';
+
+  @override
+  String get system_specimensLoopStateSpecimenLabel => '组件样例，不是当前状态';
+
+  @override
+  String get system_specimensLoopTokenCardAction => '毕业详情';
+
+  @override
+  String get system_specimensLoopTokenCardAction2 => '查看合约';
+
+  @override
+  String get system_specimensLoopTokenCardAction3 => '交易不可用';
+
+  @override
+  String get system_specimensLoopTokenCardAction4 => '确认事实后买入';
+
+  @override
+  String get system_specimensLoopTokenCardAction5 => '查看全部事实';
+
+  @override
+  String get system_specimensObservedLabel => '2 分钟前';
+
+  @override
+  String get system_specimensReason => '模拟服务未返回可验证结果。当前不能确认；可重试模拟或取消操作。';
+
+  @override
+  String get system_specimensReason2 =>
+      '超过你设置的单笔转账上限 \$1,000。这是你自己配置的钱包策略 —— 可在安全中心调整，或降低本次金额。';
+
+  @override
+  String get system_specimensSemanticLabel => 'PEPE 1 小时走势，组件样例';
+
+  @override
+  String get system_specimensSource => '链上比对';
+
+  @override
+  String get system_specimensSourceLabel => '演示数据，开发预览';
+
+  @override
+  String get system_surfacesBanner => '离线，实时信息已暂停';
+
+  @override
+  String get system_surfacesBanner2 => '行情不可用，价格可能已过期';
+
+  @override
+  String get system_surfacesBanner3 => '交易服务中断，动作已暂停';
+
+  @override
+  String get system_surfacesBody => '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。';
+
+  @override
+  String get system_surfacesBody10 => '维护结束后可正常领取，不会漏算。';
+
+  @override
+  String get system_surfacesBody11 =>
+      'LOOP 不会从设备语言、SIM 或 IP 推断地区；没有已批准的判定时一律视为未知。';
+
+  @override
+  String get system_surfacesBody12 => '不推断你所在的位置，也不确认其他功能一定可用。';
+
+  @override
+  String get system_surfacesBody13 => '用于应用锁与签名前验证。生物特征由系统保管，LOOP 拿不到。';
+
+  @override
+  String get system_surfacesBody14 => '点按钮触发真实 Toast，2.6 秒后自动消失。';
+
+  @override
+  String get system_surfacesBody15 =>
+      '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。';
+
+  @override
+  String get system_surfacesBody16 => '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。';
+
+  @override
+  String get system_surfacesBody17 =>
+      'Send、Swap、Launch 买入、授权全部汇聚到这一个弹层；质押要等独立合约方案批准后才会加入。';
+
+  @override
+  String get system_surfacesBody18 =>
+      '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。';
+
+  @override
+  String get system_surfacesBody19 => '返回上一页后重试。';
+
+  @override
+  String get system_surfacesBody2 => '其他功能正常。价格与图表可能不准，依赖当前价格的动作已暂停。';
+
+  @override
+  String get system_surfacesBody3 => '订单与账户变更无法提交；行情浏览与聊天仍可使用。';
+
+  @override
+  String get system_surfacesBody4 => '其他链正常。BSC 上的资产余额可能不准，该链的交易已暂停。';
+
+  @override
+  String get system_surfacesBody5 =>
+      '完全断网时所有操作都要拦；单链故障时其他链应该照常可用 —— 一刀切会让用户以为整个 App 坏了。';
+
+  @override
+  String get system_surfacesBody6 => '暂时读不到单条链的状态，这一页不会替你判断某条链是否可用。';
+
+  @override
+  String get system_surfacesBody7 => '追踪号 7f3a2c9e，Wallet 资产仍在链上，不受影响。';
+
+  @override
+  String system_surfacesBody8(Object? trace) {
+    return '$trace，不要假定成功或失败；重试前先查看最新状态。Wallet 资产仍在链上，不受影响。';
+  }
+
+  @override
+  String get system_surfacesBody9 => '只有已批准的版本策略要求更新，并且当前版本低于它的下限时，LOOP 才会拦截。';
+
+  @override
+  String get system_surfacesCaption => '其他部分仍可使用；受影响的动作在恢复前保持禁用。';
+
+  @override
+  String get system_surfacesCaption10 => '发送、兑换、DApp 与跨链统一进入同一签名出口。';
+
+  @override
+  String get system_surfacesCaption11 => 'LOOP 无法识别请求的系统页面。';
+
+  @override
+  String get system_surfacesCaption2 => '打开此页不代表当前版本不受支持或不安全。';
+
+  @override
+  String get system_surfacesCaption3 => '已批准的版本策略要求受支持的版本，此要求不可跳过。';
+
+  @override
+  String get system_surfacesCaption4 => '打开此页不代表你所在的地区或账号受限。';
+
+  @override
+  String get system_surfacesCaption5 => '资产保持只读可见；受限功能按各自页面的当前状态显示。';
+
+  @override
+  String get system_surfacesCaption6 => '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。';
+
+  @override
+  String get system_surfacesCaption7 => '相机、通知和生物识别只在对应动作发生时请求。';
+
+  @override
+  String get system_surfacesCaption8 => '成功、警告与错误共用同一位置和清晰语义。';
+
+  @override
+  String get system_surfacesCaption9 => '列表、详情和图表分别保留稳定布局，避免内容跳动。';
+
+  @override
+  String get system_surfacesConnectivitySpecimenCaption =>
+      '缓存仍可查看；发送、兑换与跨链已经暂停。';
+
+  @override
+  String get system_surfacesConnectivitySpecimenHeading => '当前设备离线';
+
+  @override
+  String get system_surfacesConnectivitySpecimenKicker => '上次同步 09:38';
+
+  @override
+  String get system_surfacesConnectivitySpecimenRetryMessage => '无法连接到服务器';
+
+  @override
+  String get system_surfacesConnectivitySpecimenStamp => '离线';
+
+  @override
+  String get system_surfacesConnectivitySpecimenTitle => '无网络';
+
+  @override
+  String get system_surfacesDeniedBody =>
+      '你将收不到挖矿结算与 Launch 提醒。可在 系统设置 → LOOP → 通知 中重新开启。';
+
+  @override
+  String get system_surfacesDeniedBody2 => '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。';
+
+  @override
+  String get system_surfacesDeniedBody3 =>
+      '语音房只能收听；可在 系统设置 → LOOP → 麦克风 中重新开启。';
+
+  @override
+  String system_surfacesForceUpdateFloorSuffix(Object? version) {
+    return '（强制更新下限 $version）';
+  }
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableBody =>
+      '暂时不能直接跳转商店，请手动前往应用商店更新。';
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableFootnote =>
+      '已批准的版本策略要求更新，无法跳过';
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableTitle => '已确认需要更新';
+
+  @override
+  String get system_surfacesHeading => '版本策略还没有开放';
+
+  @override
+  String get system_surfacesHeading2 => '维护通知已生效';
+
+  @override
+  String get system_surfacesHeading3 => '地区策略还没有开放';
+
+  @override
+  String get system_surfacesHeading4 => '部分功能在当前地区不可用';
+
+  @override
+  String get system_surfacesHeading5 => '使用前再申请';
+
+  @override
+  String get system_surfacesHeading6 => '5 种卡片状态';
+
+  @override
+  String get system_surfacesHeading7 => '4 种签名状态';
+
+  @override
+  String get system_surfacesHeading8 => '此页面不可用';
+
+  @override
+  String get system_surfacesKicker => '设备离线';
+
+  @override
+  String get system_surfacesKicker10 => '统一签名出口';
+
+  @override
+  String get system_surfacesKicker2 => '服务中断';
+
+  @override
+  String get system_surfacesKicker3 => '版本策略';
+
+  @override
+  String get system_surfacesKicker4 => '发布闸门';
+
+  @override
+  String get system_surfacesKicker5 => '访问策略';
+
+  @override
+  String get system_surfacesKicker6 => '权限控制';
+
+  @override
+  String get system_surfacesKicker7 => '反馈';
+
+  @override
+  String get system_surfacesKicker8 => '加载状态';
+
+  @override
+  String get system_surfacesKicker9 => '代币卡片';
+
+  @override
+  String get system_surfacesLabel => '立即更新';
+
+  @override
+  String get system_surfacesLabel10 => '查看资产';
+
+  @override
+  String get system_surfacesLabel11 => '导出私钥';
+
+  @override
+  String get system_surfacesLabel12 => '查看资格政策';
+
+  @override
+  String get system_surfacesLabel13 => '暂不';
+
+  @override
+  String system_surfacesLabel14(Object? label) {
+    return '触发$label Toast';
+  }
+
+  @override
+  String get system_surfacesLabel2 => '查看缓存内容';
+
+  @override
+  String get system_surfacesLabel3 => '继续使用可用功能';
+
+  @override
+  String get system_surfacesLabel4 => '联系客服';
+
+  @override
+  String get system_surfacesLabel5 => '强制更新下限';
+
+  @override
+  String get system_surfacesLabel6 => '最低支持版本';
+
+  @override
+  String get system_surfacesLabel7 => '前往更新';
+
+  @override
+  String get system_surfacesLabel8 => '再次检查';
+
+  @override
+  String get system_surfacesLabel9 => '查看服务状态';
+
+  @override
+  String system_surfacesLastSyncKicker(Object? hour, Object? minute) {
+    return '上次同步 $hour:$minute';
+  }
+
+  @override
+  String system_surfacesLoadingPresentationActiveBody(Object? kind) {
+    return '拥有方选择了$kind骨架；占位不代表结果数量、身份或成功。';
+  }
+
+  @override
+  String get system_surfacesLoadingPresentationActiveTitle => '骨架屏三类';
+
+  @override
+  String get system_surfacesLoopLabel => '部分故障（另一种态）';
+
+  @override
+  String get system_surfacesLoopLabel10 => '图表骨架';
+
+  @override
+  String get system_surfacesLoopLabel2 => '申请前说明';
+
+  @override
+  String get system_surfacesLoopLabel3 => '被拒后的引导（组件样例）';
+
+  @override
+  String get system_surfacesLoopLabel4 => '被拒后的引导';
+
+  @override
+  String get system_surfacesLoopLabel5 => '当前反馈';
+
+  @override
+  String get system_surfacesLoopLabel6 => '静态样式对照';
+
+  @override
+  String get system_surfacesLoopLabel7 => '当前加载';
+
+  @override
+  String get system_surfacesLoopLabel8 => '列表骨架';
+
+  @override
+  String get system_surfacesLoopLabel9 => '详情骨架';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenCaption =>
+      '期间暂停社区互动；钱包与 Mining 数据保持只读。';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenKicker => '维护窗口';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenReadOnlyLabel => '查看只读内容';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenStamp => '2 小时';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenTitle => '计划维护';
+
+  @override
+  String get system_surfacesMessage => '请在系统设置中打开 LOOP 权限';
+
+  @override
+  String get system_surfacesPartialOutageNoticeBody =>
+      '其他链正常。该链上的资产余额可能不准，该链的交易已暂停。';
+
+  @override
+  String system_surfacesPartialOutageNoticeTitle(Object? networkLabel) {
+    return '$networkLabel 网络暂时不可用';
+  }
+
+  @override
+  String get system_surfacesPermissionDeniedSpecimenTitle => '权限说明';
+
+  @override
+  String get system_surfacesPermissionDeniedSpecimenTitle2 => '通知权限已被系统关闭';
+
+  @override
+  String get system_surfacesPurpose =>
+      '用来推送挖矿结算、Launch 开始、@我的消息与安全事件。不会推送营销内容。';
+
+  @override
+  String get system_surfacesPurpose2 =>
+      '只在扫二维码时使用 —— 扫收款地址、扫 WalletConnect。不会在后台访问。';
+
+  @override
+  String get system_surfacesPurpose3 => '只在你于语音房点击「发言」后使用；进入语音房时麦克风默认关闭。';
+
+  @override
+  String get system_surfacesS => '本次申请';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenCaption =>
+      '钱包仍在你的设备上；稍后重试或联系支持。';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenHeading => '服务暂时不可用';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenStamp => '可重试';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenTitle => '服务状态';
+
+  @override
+  String get system_surfacesSettingsLabel => '前往系统设置';
+
+  @override
+  String get system_surfacesShortName => '相机';
+
+  @override
+  String get system_surfacesShortName2 => '麦克风';
+
+  @override
+  String get system_surfacesShowLoopForceUpdateDialog => '请更新 LOOP 后继续';
+
+  @override
+  String system_surfacesShowLoopForceUpdateDialog2(Object? requirement) {
+    return '已批准的版本策略要求受支持的版本$requirement。安装受支持的版本后再回到 LOOP。';
+  }
+
+  @override
+  String get system_surfacesSignSheetTriggerPendingLabel => '触发待确认弹层';
+
+  @override
+  String get system_surfacesSignSheetTriggerPendingTitle => '签名弹层四态';
+
+  @override
+  String get system_surfacesSkeletonChart => '图表';
+
+  @override
+  String get system_surfacesSkeletonDetail => '详情';
+
+  @override
+  String get system_surfacesSkeletonList => '列表';
+
+  @override
+  String get system_surfacesStamp => '部分中断';
+
+  @override
+  String get system_surfacesStamp2 => '需更新';
+
+  @override
+  String get system_surfacesStamp3 => '生效中';
+
+  @override
+  String get system_surfacesStamp4 => '已排期';
+
+  @override
+  String get system_surfacesStamp5 => '受限';
+
+  @override
+  String get system_surfacesStamp6 => '按需申请';
+
+  @override
+  String get system_surfacesStamp7 => '3 种状态';
+
+  @override
+  String get system_surfacesStamp8 => '3 种';
+
+  @override
+  String get system_surfacesStamp9 => '5 种状态';
+
+  @override
+  String get system_surfacesSummary => '查看组件出现位置';
+
+  @override
+  String get system_surfacesSystemReturnLabel => '返回 LOOP';
+
+  @override
+  String get system_surfacesText => '地址已复制';
+
+  @override
+  String get system_surfacesText2 => '警告';
+
+  @override
+  String get system_surfacesText3 => '价格已变动，请刷新报价';
+
+  @override
+  String get system_surfacesText4 => '错误';
+
+  @override
+  String get system_surfacesText5 => '交易失败：gas 不足';
+
+  @override
+  String get system_surfacesTitle => '完全离线';
+
+  @override
+  String get system_surfacesTitle10 => '强制更新';
+
+  @override
+  String get system_surfacesTitle11 => '没有已批准的最低版本策略';
+
+  @override
+  String get system_surfacesTitle12 => 'Mining Power 正常累计';
+
+  @override
+  String get system_surfacesTitle13 => '维护说明';
+
+  @override
+  String get system_surfacesTitle14 => '地区限制';
+
+  @override
+  String get system_surfacesTitle15 => '没有已批准的地区判定';
+
+  @override
+  String get system_surfacesTitle16 => '这页不提供位置或原因细节';
+
+  @override
+  String get system_surfacesTitle17 => '通知权限';
+
+  @override
+  String get system_surfacesTitle18 => '相机权限';
+
+  @override
+  String get system_surfacesTitle19 => '生物识别';
+
+  @override
+  String get system_surfacesTitle2 => '行情暂时不可用';
+
+  @override
+  String system_surfacesTitle20(Object? shortName) {
+    return '$shortName权限已被系统关闭';
+  }
+
+  @override
+  String system_surfacesTitle21(Object? shortName) {
+    return '$shortName权限';
+  }
+
+  @override
+  String get system_surfacesTitle22 => 'Toast 三态';
+
+  @override
+  String get system_surfacesTitle23 => 'Token Card 五态';
+
+  @override
+  String get system_surfacesTitle24 => '风险态只列事实';
+
+  @override
+  String get system_surfacesTitle25 => '全产品唯一签名出口';
+
+  @override
+  String get system_surfacesTitle26 => '策略拒绝不是错误';
+
+  @override
+  String get system_surfacesTitle27 => '系统';
+
+  @override
+  String get system_surfacesTitle3 => '交易服务暂时不可用';
+
+  @override
+  String get system_surfacesTitle4 => 'BSC 网络暂时不可用';
+
+  @override
+  String get system_surfacesTitle5 => '为什么区分这两种';
+
+  @override
+  String get system_surfacesTitle6 => '没有分链的故障信息';
+
+  @override
+  String get system_surfacesTitle7 => '错误 502';
+
+  @override
+  String get system_surfacesTitle8 => '结果未确认';
+
+  @override
+  String system_surfacesTitle9(Object? statusLabel) {
+    return '错误 $statusLabel';
+  }
+
+  @override
+  String system_surfacesTitleBody(Object? body, Object? title) {
+    return '$title。$body';
+  }
+
+  @override
+  String system_surfacesTraceId(Object? trace) {
+    return '追踪号 $trace';
+  }
+
+  @override
+  String get system_surfacesTraceMissing => '追踪号未提供';
+
+  @override
+  String get system_surfacesUnavailableReason => '没有已审阅的商店跳转，请手动打开应用商店。';
+
+  @override
+  String get system_surfacesUnavailableReason2 => '钱包页当前不可达。';
+
+  @override
+  String get system_surfacesUnavailableReason3 => '私钥导出页当前不可达。';
+
+  @override
+  String get system_surfacesUnavailableReason4 => '帮助页当前不可达。';
+
+  @override
+  String get system_surfacesUnavailableReason5 => '没有已批准的资格政策链接。';
 
   @override
   String get walletTestnetFaucet_sheetBarrierLabel => '关闭获取资金';

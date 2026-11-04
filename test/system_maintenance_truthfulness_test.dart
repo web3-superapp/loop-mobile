@@ -20,7 +20,7 @@ void main() {
         'maintenance-specimen',
         'maintenance-specimen-read-only',
       ],
-      specimenText: <String>['Mining Power 正常累计'],
+      specimenText: <String>['Mining Power keeps accruing'],
     );
   });
 
@@ -40,12 +40,12 @@ void main() {
     );
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
-    expect(find.text('2 小时'), findsOneWidget);
-    expect(find.text('Mining Power 正常累计'), findsOneWidget);
-    expect(find.text('再次检查'), findsNothing);
-    expect(find.text('查看服务状态'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.tap(find.text('查看只读内容'));
+    expect(find.text('2 hours'), findsOneWidget);
+    expect(find.text('Mining Power keeps accruing'), findsOneWidget);
+    expect(find.text('Check again'), findsNothing);
+    expect(find.text('View service status'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.tap(find.text('View read-only content'));
     expect(readOnly, 1);
   });
 
@@ -69,12 +69,12 @@ void main() {
       ),
     );
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
-    expect(find.text('已排期'), findsOneWidget);
+    expect(find.text('Scheduled'), findsOneWidget);
     expect(find.text(loopStateSpecimenLabel), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.tap(find.text('再次检查'));
-    await tester.tap(find.text('查看服务状态'));
-    await tester.tap(find.text('查看只读内容'));
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.tap(find.text('Check again'));
+    await tester.tap(find.text('View service status'));
+    await tester.tap(find.text('View read-only content'));
     expect((rechecks, status, readOnly), (1, 1, 1));
 
     await pumpSystemSurface(
@@ -84,10 +84,10 @@ void main() {
         maintenanceNotice: LoopMaintenanceNotice(),
       ),
     );
-    expect(find.text('维护通知已生效'), findsOneWidget);
-    expect(find.text('生效中'), findsOneWidget);
+    expect(find.text('Maintenance notice in effect'), findsOneWidget);
+    expect(find.text('In effect'), findsOneWidget);
     expect(find.textContaining('UTC'), findsNothing);
-    expect(find.text('再次检查'), findsNothing);
+    expect(find.text('Check again'), findsNothing);
   });
 
   testWidgets('explicit notice never accepts generic system actions', (
@@ -108,10 +108,10 @@ void main() {
     );
 
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
-    expect(find.text('再次检查'), findsNothing);
-    expect(find.text('查看服务状态'), findsNothing);
-    expect(find.text('查看只读内容'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Check again'), findsNothing);
+    expect(find.text('View service status'), findsNothing);
+    expect(find.text('View read-only content'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
   });
 
   testWidgets('read-only action requires its dedicated callback', (
@@ -128,7 +128,7 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('查看只读内容'), findsNothing);
+    expect(find.text('View read-only content'), findsNothing);
 
     var readOnly = 0;
     await pumpSystemSurface(
@@ -139,7 +139,7 @@ void main() {
         onMaintenanceReadOnly: () => readOnly += 1,
       ),
     );
-    await tester.tap(find.text('查看只读内容'));
+    await tester.tap(find.text('View read-only content'));
     expect(readOnly, 1);
 
     // The specimen has its own read-only exit and never the generic one.
@@ -152,8 +152,8 @@ void main() {
         onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.tap(find.text('查看只读内容'));
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.tap(find.text('View read-only content'));
     expect(specimenReadOnly, 1);
   });
 
@@ -171,7 +171,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('查看服务状态'));
-    await tester.tap(find.text('查看服务状态'));
+    await tester.ensureVisible(find.text('View service status'));
+    await tester.tap(find.text('View service status'));
   });
 }

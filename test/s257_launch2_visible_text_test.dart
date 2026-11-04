@@ -47,9 +47,12 @@ void main() {
   });
 
   test('the older rules answer first and are unchanged', () {
-    expect(launch2FieldError(Launch2Field.name, '   '), '请填写名称');
-    expect(launch2FieldError(Launch2Field.ticker, ''), '请填写代码');
-    expect(launch2FieldError(Launch2Field.name, 'a​b'), '名称不能包含换行、控制符或不可见字符');
+    expect(launch2FieldError(Launch2Field.name, '   '), 'Name is required');
+    expect(launch2FieldError(Launch2Field.ticker, ''), 'Ticker is required');
+    expect(
+      launch2FieldError(Launch2Field.name, 'a​b'),
+      "Name can't contain line breaks, control or invisible characters",
+    );
     expect(launch2FieldError(Launch2Field.ticker, 'a' * 21), isNotNull);
     expect(
       launch2FieldError(Launch2Field.ticker, 'a' * 21),

@@ -16,102 +16,111 @@
 library;
 
 import 'package:loop_mobile/features/profile/about/about_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Direct dependencies of this Flutter client. Versions are deliberately absent
 /// — the build's lockfile is the only exact record, and a version printed here
 /// could disagree with the binary the reader is holding.
-const List<LoopOpenSourceEntry> loopClientOpenSourceEntries =
+List<LoopOpenSourceEntry> get loopClientOpenSourceEntries =>
     <LoopOpenSourceEntry>[
       LoopOpenSourceEntry(
         name: 'Flutter / Dart',
-        purpose: '应用框架与运行时',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose,
         license: 'BSD-3-Clause',
       ),
-      LoopOpenSourceEntry(name: 'dio', purpose: '网络请求', license: 'MIT'),
+      LoopOpenSourceEntry(
+        name: 'dio',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose2,
+        license: 'MIT',
+      ),
       LoopOpenSourceEntry(
         name: 'decimal',
-        purpose: '金额与行情的精确十进制计算',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose3,
         license: 'Apache-2.0',
       ),
       LoopOpenSourceEntry(
         name: 'flutter_riverpod',
-        purpose: '状态管理',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose4,
         license: 'MIT',
       ),
       LoopOpenSourceEntry(
         name: 'go_router',
-        purpose: '页面路由',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose5,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'privy_flutter',
-        purpose: '登录与内置钱包',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose6,
         license: 'MIT',
       ),
       LoopOpenSourceEntry(
         name: 'reown_appkit',
-        purpose: '外部钱包连接与签名凭证',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose7,
         license: 'Reown Community License',
       ),
       LoopOpenSourceEntry(
         name: 'stream_chat_flutter',
-        purpose: '社区聊天',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose8,
         license: 'Stream Source Code License',
       ),
       LoopOpenSourceEntry(
         name: 'stream_chat_persistence',
-        purpose: '聊天本地缓存',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose9,
         license: 'Stream Source Code License',
       ),
       LoopOpenSourceEntry(
         name: 'stream_video_flutter',
-        purpose: '语音房',
+        purpose: LoopL10n.current.common_voiceRooms,
         license: 'Stream Source Code License',
       ),
       LoopOpenSourceEntry(
         name: 'firebase_core / firebase_messaging',
-        purpose: '推送通道',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose10,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'flutter_secure_storage',
-        purpose: '设备与会话记录的本地保管',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose11,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'shared_preferences',
-        purpose: '非敏感的本机显示偏好',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose12,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'connectivity_plus',
-        purpose: '网络可达性检测',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose13,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'flutter_svg',
-        purpose: '矢量图标渲染',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose14,
         license: 'MIT',
       ),
       LoopOpenSourceEntry(
         name: 'share_plus',
-        purpose: '系统分享',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose15,
         license: 'BSD-3-Clause',
       ),
       LoopOpenSourceEntry(
         name: 'url_launcher',
-        purpose: '用系统浏览器打开活动链接',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose16,
         license: 'BSD-3-Clause',
       ),
-      LoopOpenSourceEntry(name: 'uuid', purpose: '本地生成的唯一标识', license: 'MIT'),
+      LoopOpenSourceEntry(
+        name: 'uuid',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose17,
+        license: 'MIT',
+      ),
       LoopOpenSourceEntry(
         name: 'cupertino_icons',
-        purpose: 'iOS 风格图标字体',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose18,
         license: 'MIT',
       ),
       LoopOpenSourceEntry(
         name: 'IBM Plex Mono / Noto Sans SC',
-        purpose: '界面字体',
+        purpose: LoopL10n.current.profileAbout_clientRegisterPurpose19,
         license: 'SIL OFL 1.1',
       ),
     ];
@@ -122,7 +131,8 @@ const List<LoopOpenSourceEntry> loopClientOpenSourceEntries =
 /// rows is the server's to decide (decision 0049): a key this client cannot
 /// translate is still a rule that is in force, so the row stays and carries
 /// everything except the identifier.
-const String loopAboutUnknownModuleName = '其他规则';
+String get loopAboutUnknownModuleName =>
+    LoopL10n.current.profileAbout_clientRegisterLoopAboutUnknownModuleName;
 
 /// The user-facing name of one published rule snapshot, or `null` when this
 /// client has no name for the key.
@@ -131,30 +141,30 @@ const String loopAboutUnknownModuleName = '其他规则';
 /// key returns `null` rather than falling back to itself: printing an internal
 /// identifier is the defect this function exists to close.
 String? loopAboutModuleName(String module) => switch (module) {
-  'productPolicy' => '产品策略',
-  'clientPolicy' => '客户端策略',
-  'sessionPolicy' => '登录会话规则',
-  'community' => '社区规则',
-  'marketTrending' => '行情热榜规则',
-  'deviceRisk' => '设备风险提示规则',
-  'accountSettings' => '账号设置规则',
-  'support' => '客服工单规则',
-  'swapPolicy' => '兑换规则',
-  'bscWriteCanary' => '链上写入规则',
+  'productPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch,
+  'clientPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch2,
+  'sessionPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch3,
+  'community' => LoopL10n.current.profileAbout_clientRegisterSwitch4,
+  'marketTrending' => LoopL10n.current.profileAbout_clientRegisterSwitch5,
+  'deviceRisk' => LoopL10n.current.profileAbout_clientRegisterSwitch6,
+  'accountSettings' => LoopL10n.current.profileAbout_clientRegisterSwitch7,
+  'support' => LoopL10n.current.profileAbout_clientRegisterSwitch8,
+  'swapPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch9,
+  'bscWriteCanary' => LoopL10n.current.profileAbout_clientRegisterSwitch10,
   _ => null,
 };
 
 /// What each named rule decides, in one line.
 String? loopAboutModuleDescription(String module) => switch (module) {
-  'productPolicy' => '五个 Tab、默认落地页与整体产品规则的版本',
-  'clientPolicy' => '运营对这个客户端的版本、地区与条款要求的覆盖版本',
-  'sessionPolicy' => '设备会话如何创建、限额与撤销',
-  'community' => '社区创建、成员、角色与治理的规则',
-  'marketTrending' => '行情页热门排序怎么算',
-  'deviceRisk' => '新设备提示的阈值',
-  'accountSettings' => '账号设置里可以改哪些项',
-  'support' => '工单分类、字数与答复时限',
-  'swapPolicy' => '兑换的报价、滑点与手续费规则',
-  'bscWriteCanary' => '链上写入放量的资产范围与单笔上限',
+  'productPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch11,
+  'clientPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch12,
+  'sessionPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch13,
+  'community' => LoopL10n.current.profileAbout_clientRegisterSwitch14,
+  'marketTrending' => LoopL10n.current.profileAbout_clientRegisterSwitch15,
+  'deviceRisk' => LoopL10n.current.profileAbout_clientRegisterSwitch16,
+  'accountSettings' => LoopL10n.current.profileAbout_clientRegisterSwitch17,
+  'support' => LoopL10n.current.profileAbout_clientRegisterSwitch18,
+  'swapPolicy' => LoopL10n.current.profileAbout_clientRegisterSwitch19,
+  'bscWriteCanary' => LoopL10n.current.profileAbout_clientRegisterSwitch20,
   _ => null,
 };

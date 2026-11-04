@@ -10,6 +10,793 @@ class LoopLocalizationsEn extends LoopLocalizations {
   LoopLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get account_emailAuthControllerErrorMessage =>
+      'A Privy Mobile App Client ID is required.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage10 =>
+      'Provide a Privy Mobile App Client ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage11 =>
+      'Sign-in didn\'t finish. Check your network and the app redirect, then try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage12 =>
+      'Provide a valid Reown Project ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage13 =>
+      'Provide a Privy Client ID and a Reown Project ID with --dart-define first.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage14 =>
+      'Only a signed-out session or a verified Privy account can connect a wallet.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage15 =>
+      'The wallet action didn\'t finish. Check your network and the app redirect, then try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage16 =>
+      'Only a verified Privy account can unlink a wallet.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage17 =>
+      'Unlinking didn\'t finish. Check your network and try again.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage2 =>
+      'Enter a valid email address.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage3 => 'Resend the code.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage4 =>
+      'No attempts left. Resend the code.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage5 =>
+      'Enter the 6-digit code.';
+
+  @override
+  String account_emailAuthControllerErrorMessage6(Object? userMessage) {
+    return '$userMessage No attempts left. Resend the code.';
+  }
+
+  @override
+  String account_emailAuthControllerErrorMessage7(
+    Object? emailAuthMaximumAttempts,
+    Object? userMessage,
+  ) {
+    return '$userMessage Attempts left: $emailAuthMaximumAttempts.';
+  }
+
+  @override
+  String get account_emailAuthControllerErrorMessage8 =>
+      'Sign in with Apple is only available on iOS.';
+
+  @override
+  String get account_emailAuthControllerErrorMessage9 =>
+      'The session changed. Check again.';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage =>
+      'External wallet linked as a Privy sign-in method.';
+
+  @override
+  String get account_emailAuthControllerSuccessMessage2 =>
+      'External wallet unlinked.';
+
+  @override
+  String get account_idSetupHintText =>
+      '1–40 characters, doesn\'t have to be unique';
+
+  @override
+  String get account_idSetupHintText2 => 'A line about yourself (optional)';
+
+  @override
+  String get account_idSetupIdentityStepCopy =>
+      'Others see your avatar and username in chats. Your wallet address stays private.';
+
+  @override
+  String get account_idSetupLabel => 'Load';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody =>
+      'Your bio wasn\'t saved. You can add it later in \"Edit profile\".';
+
+  @override
+  String get account_idSetupLoopIdActivatedBody2 =>
+      'You can change it later in \"Edit profile\".';
+
+  @override
+  String get account_idSetupLoopIdActivatedTitle => 'Profile saved';
+
+  @override
+  String get account_idSetupLoopIdAliasSuggestLabel => 'Try another';
+
+  @override
+  String get account_idSetupLoopIdEmptyMessage =>
+      'Account profile hasn\'t loaded yet.';
+
+  @override
+  String get account_idSetupLoopIdEmptyTitle =>
+      'Your LOOP ID hasn\'t loaded yet';
+
+  @override
+  String get account_idSetupLoopIdErrorSource => 'Profile service';
+
+  @override
+  String get account_idSetupLoopIdFailureTitle => 'Couldn\'t save';
+
+  @override
+  String get account_idSetupLoopIdSubmitTitle => 'Complete your profile';
+
+  @override
+  String get account_idSetupLoopIdUnavailableTitle =>
+      'Profile service isn\'t available right now';
+
+  @override
+  String get account_idSetupLoopIdValue => 'Not assigned yet';
+
+  @override
+  String get account_idSetupLoopLabel => 'Username';
+
+  @override
+  String get account_idSetupLoopLabel2 => 'Bio';
+
+  @override
+  String get account_idSetupLoopOfflineState => 'Save profile';
+
+  @override
+  String get account_idSetupSubmitting => 'Submitting…';
+
+  @override
+  String get account_idSetupText =>
+      'System-generated, unique and permanent. Friends can find you with it.';
+
+  @override
+  String get account_onboardingCommunitiesDetail =>
+      'Muting the communities you just joined…';
+
+  @override
+  String get account_onboardingCommunitiesIf => 'Continue to LOOP';
+
+  @override
+  String get account_onboardingCommunitiesIf2 =>
+      'Pick a few communities you like. They\'re muted after you join, and you can leave anytime.';
+
+  @override
+  String get account_onboardingCommunitiesJoined => 'Joined · Muted';
+
+  @override
+  String get account_onboardingCommunitiesJoinedMutePending =>
+      'Joined · Muting';
+
+  @override
+  String get account_onboardingCommunitiesLoopRecordRow => 'Couldn\'t join';
+
+  @override
+  String account_onboardingCommunitiesMembers(Object? formatDecimal) {
+    return '$formatDecimal members';
+  }
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesScreenTitle =>
+      'Join communities';
+
+  @override
+  String get account_onboardingCommunitiesOnboardingCommunitiesSkipLabel =>
+      'Skip';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage =>
+      'No communities to join yet';
+
+  @override
+  String
+  get account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason =>
+      'Enter LOOP first and find communities in Square later.';
+
+  @override
+  String get account_onboardingCommunitiesResource => 'Recommended communities';
+
+  @override
+  String account_onboardingCommunitiesRowSelectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name, $members, selected';
+  }
+
+  @override
+  String account_onboardingCommunitiesRowUnselectedSemanticLabel(
+    Object? members,
+    Object? name,
+  ) {
+    return '$name, $members, not selected';
+  }
+
+  @override
+  String account_onboardingCommunitiesS(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Join $count communities and enter',
+      one: 'Join 1 community and enter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get account_onboardingCommunitiesState => 'Joined';
+
+  @override
+  String get account_onboardingCommunitiesState2 => 'Not selected';
+
+  @override
+  String get account_onboardingCommunitiesTitle => 'Entering LOOP';
+
+  @override
+  String get account_privyLoginAnotherAccountLabel => 'Use another account';
+
+  @override
+  String account_privyLoginAuthMethodBusyLabel(Object? label) {
+    return '$label, in progress';
+  }
+
+  @override
+  String get account_privyLoginEnterDevelopmentPreviewButtonLabel =>
+      'Enter development preview';
+
+  @override
+  String get account_privyLoginIf => 'Welcome to LOOP';
+
+  @override
+  String get account_privyLoginIf2 =>
+      'Choose a way to sign in or create an account';
+
+  @override
+  String get account_privyLoginMessage =>
+      'Once you\'re online, sign-in on this device is confirmed automatically. No need to sign in again.';
+
+  @override
+  String get account_privyLoginPrivyAppleLoginButtonLabel =>
+      'Sign in with Apple';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteBody =>
+      'The Privy Mobile App Client ID is missing, so real code requests stay off.';
+
+  @override
+  String get account_privyLoginPrivyAuthConfigurationIncompleteTitle =>
+      'Sign-in setup is incomplete';
+
+  @override
+  String get account_privyLoginPrivyAuthErrorTitle => 'Can\'t continue';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel => 'Sending…';
+
+  @override
+  String get account_privyLoginPrivyAuthPrimaryButtonLabel2 => 'Get code';
+
+  @override
+  String get account_privyLoginPrivyEmailLoginButtonLabel =>
+      'Sign in with email';
+
+  @override
+  String get account_privyLoginPrivyEmailScreenTitle => 'Email sign-in';
+
+  @override
+  String get account_privyLoginPrivyGoogleLoginButtonLabel =>
+      'Sign in with Google';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel =>
+      'LOOP can\'t confirm your sign-in right now';
+
+  @override
+  String get account_privyLoginPrivyRestoreUnavailableScreenStatus =>
+      'Can\'t confirm sign-in right now';
+
+  @override
+  String get account_privyLoginPrivyRestoringScreenSemanticLabel =>
+      'LOOP is restoring your sign-in';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenSemanticLabel =>
+      'LOOP is signing you out';
+
+  @override
+  String get account_privyLoginPrivySigningOutScreenStatus => 'Signing out';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel =>
+      'Connecting wallet';
+
+  @override
+  String get account_privyLoginPrivyWalletLoginButtonLabel2 =>
+      'Have a wallet? Connect it';
+
+  @override
+  String get account_privyLoginRestoringTitle => 'Restoring sign-in';
+
+  @override
+  String get account_privyLoginS => 'Unavailable · No valid Reown Project ID';
+
+  @override
+  String get account_privyLoginSlowMessage =>
+      'Slow network, still restoring sign-in…';
+
+  @override
+  String get account_privyLoginText =>
+      'Unavailable · No Privy Mobile App Client ID';
+
+  @override
+  String get account_privyLoginText2 => 'By continuing, you agree to the ';
+
+  @override
+  String get account_privyLoginText3 => 'Terms of Service';
+
+  @override
+  String get account_privyLoginText4 => ' and ';
+
+  @override
+  String get account_privyLoginText5 => 'Privacy Policy';
+
+  @override
+  String get account_privyLoginText6 => 'Have a wallet? ';
+
+  @override
+  String get account_privyLoginText7 => 'Connecting…';
+
+  @override
+  String get account_privyLoginTitle =>
+      'Network unavailable, waiting to connect';
+
+  @override
+  String get account_privyOtpIdentityStepCopy => 'No code sent yet';
+
+  @override
+  String account_privyOtpIdentityStepCopy2(Object? maskEmailForDisplay) {
+    return 'Code sent to $maskEmailForDisplay';
+  }
+
+  @override
+  String get account_privyOtpIdentityStepCopyTitle => 'Verify email';
+
+  @override
+  String get account_privyOtpLoopOfflineState => 'Resend code';
+
+  @override
+  String account_privyOtpPrivyOtpCaretLabel(Object? index) {
+    return 'Code digit $index';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpCaretValue => 'Empty';
+
+  @override
+  String get account_privyOtpPrivyOtpChangeEmailLabel => 'Change email';
+
+  @override
+  String get account_privyOtpPrivyOtpErrorTitle => 'Verification failed';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationMessage =>
+      'Go back and enter your email.';
+
+  @override
+  String get account_privyOtpPrivyOtpNoDestinationTitle => 'No email to verify';
+
+  @override
+  String account_privyOtpPrivyOtpResendHint(Object? cooldown) {
+    return 'Resend in ${cooldown}s';
+  }
+
+  @override
+  String get account_privyOtpPrivyOtpResendLabel => 'Resend';
+
+  @override
+  String get account_screensAppLockRow => 'Screen lock not read yet';
+
+  @override
+  String account_screensAppLockRow2(Object? detail) {
+    return '$detail · Applies now; won\'t be remembered after the app restarts';
+  }
+
+  @override
+  String get account_screensBody =>
+      'It isn\'t a LOOP trading wallet and can\'t authorize any transaction.';
+
+  @override
+  String get account_screensBody2 =>
+      'Your community tokens stay where they are. Once linked, your holdings count toward power. That\'s why the external wallet option stays.';
+
+  @override
+  String get account_screensBody3 =>
+      'Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.';
+
+  @override
+  String get account_screensBody4 =>
+      'The session expired. Come back to this page and connect again.';
+
+  @override
+  String get account_screensBody5 =>
+      'If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.';
+
+  @override
+  String get account_screensCloud => 'Automatic recovery';
+
+  @override
+  String get account_screensCloud2 =>
+      'Recover with your sign-in method; on a new device, sign in with the same email';
+
+  @override
+  String get account_screensDetail => 'Pick 3 guardians; any 2 can recover';
+
+  @override
+  String get account_screensDetail2 =>
+      'Export anytime. It\'s your escape hatch';
+
+  @override
+  String get account_screensExternalWalletConnectLabel =>
+      'Choose a wallet and sign';
+
+  @override
+  String get account_screensExternalWalletConnectTitle => 'Connect wallet';
+
+  @override
+  String get account_screensExternalWalletListUnavailableDetail =>
+      'Available wallet names show after you connect a wallet.';
+
+  @override
+  String get account_screensExternalWalletListUnavailableMessage =>
+      'Can\'t read the installed wallet list right now';
+
+  @override
+  String get account_screensExternalWalletUnavailableBody =>
+      'No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.';
+
+  @override
+  String get account_screensExternalWalletUnavailableTitle =>
+      'External wallet connection isn\'t available right now';
+
+  @override
+  String account_screensIdentityProgressTrackLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return 'Step $step of $total: $label';
+  }
+
+  @override
+  String get account_screensIdentityStepCopy =>
+      'Connecting only proves ownership. No assets move.';
+
+  @override
+  String get account_screensIdentityStepCopy2 =>
+      'Your secure wallet is setting up on this device.';
+
+  @override
+  String get account_screensIdentityStepCopy3 =>
+      'Your wallet already has one recovery method. Add the others once they open.';
+
+  @override
+  String get account_screensIdentityStepCopy4 =>
+      'App lock is handled by this device; transaction verification by the sign-in service.';
+
+  @override
+  String get account_screensLabel => 'LOOP is loading';
+
+  @override
+  String get account_screensLabel2 => 'Choose wallet';
+
+  @override
+  String get account_screensLabel3 => 'Create wallet';
+
+  @override
+  String account_screensLabel4(Object? title) {
+    return '$title, done';
+  }
+
+  @override
+  String account_screensLabel5(Object? pendingDetail, Object? title) {
+    return '$title, not done: $pendingDetail';
+  }
+
+  @override
+  String get account_screensLoopLabel => 'Wallets you can connect';
+
+  @override
+  String get account_screensLoopLabel2 => 'Also';
+
+  @override
+  String get account_screensLoopLabel3 => 'App lock';
+
+  @override
+  String get account_screensLoopLabel4 => 'Transaction verification';
+
+  @override
+  String get account_screensLoopSplashEnterLabel => 'Enter LOOP';
+
+  @override
+  String account_screensMethodSelectableSemanticLabel(Object? title) {
+    return '$title, optional';
+  }
+
+  @override
+  String account_screensMethodSelectedSemanticLabel(Object? title) {
+    return '$title, selected';
+  }
+
+  @override
+  String get account_screensMfaRow => 'Loading…';
+
+  @override
+  String get account_screensMfaRow2 => 'Sign-in service unreachable this run';
+
+  @override
+  String get account_screensMfaRow3 => 'No answer from the sign-in service yet';
+
+  @override
+  String get account_screensPasskey => 'Passkey (recommended)';
+
+  @override
+  String get account_screensPasskey2 =>
+      'Uses device biometrics and syncs with the system keychain';
+
+  @override
+  String get account_screensPasskeyBoundDetail =>
+      'The sign-in service says this account already has a passkey';
+
+  @override
+  String get account_screensPendingDetail => 'Done once the wallet appears';
+
+  @override
+  String get account_screensPendingDetail2 => 'Done after the choice in step 3';
+
+  @override
+  String get account_screensPendingDetail3 => 'Done after step 5';
+
+  @override
+  String get account_screensPreparingText => 'Preparing your account…';
+
+  @override
+  String get account_screensS => 'Not done';
+
+  @override
+  String account_screensS2(Object? named) {
+    return 'The sign-in service says this account already has a passkey: $named';
+  }
+
+  @override
+  String account_screensSecurityAppLockSemanticLabel(Object? detail) {
+    return 'App lock, unavailable: $detail';
+  }
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel2 =>
+      'App lock, on. Tap and verify to turn off';
+
+  @override
+  String get account_screensSecurityAppLockSemanticLabel3 =>
+      'App lock, off. Tap and verify to turn on';
+
+  @override
+  String get account_screensSecurityAppLockTrailing => 'Off';
+
+  @override
+  String get account_screensSecurityBiometricFallbackLine =>
+      'If the device doesn\'t support biometrics, the system screen lock passcode is used instead.';
+
+  @override
+  String get account_screensSecurityMfaSemanticLabel =>
+      'MFA, off. Tap to turn on';
+
+  @override
+  String account_screensSecurityMfaSemanticLabel2(Object? detail) {
+    return 'MFA, on: $detail';
+  }
+
+  @override
+  String account_screensSecurityMfaSemanticLabel3(Object? reason) {
+    return 'MFA, unavailable: $reason';
+  }
+
+  @override
+  String get account_screensSecuritySetupContinueTitle => 'Security setup';
+
+  @override
+  String account_screensSemanticLabel(Object? title) {
+    return '$title, available but off';
+  }
+
+  @override
+  String account_screensSemanticLabel2(
+    Object? title,
+    Object? unavailableReason,
+  ) {
+    return '$title, unavailable: $unavailableReason';
+  }
+
+  @override
+  String account_screensSemanticLabel3(Object? reason, Object? title) {
+    return '$title, enabled: $reason';
+  }
+
+  @override
+  String account_screensSemanticLabel4(Object? detail, Object? title) {
+    return '$title, set up: $detail. Tap to unlink';
+  }
+
+  @override
+  String account_screensSemanticLabel5(Object? reason, Object? title) {
+    return '$title, unavailable: $reason';
+  }
+
+  @override
+  String account_screensSemanticLabel6(Object? title) {
+    return '$title, available';
+  }
+
+  @override
+  String get account_screensStep => 'Done';
+
+  @override
+  String get account_screensSummary => 'Scan to connect and failure notes';
+
+  @override
+  String get account_screensSummary2 =>
+      'Other recovery methods and the risk of skipping';
+
+  @override
+  String get account_screensSwitch => 'Wallet created';
+
+  @override
+  String get account_screensSwitch2 =>
+      'This account already has a built-in wallet. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch3 => 'Creating your wallet';
+
+  @override
+  String get account_screensSwitch4 =>
+      'Keys are generated on this device and never leave it. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch5 =>
+      'Your wallet is still being created. You can continue for now';
+
+  @override
+  String get account_screensSwitch6 =>
+      'No wallet after 60 seconds. That doesn\'t mean it failed. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensSwitch7 => 'Not started yet';
+
+  @override
+  String get account_screensSwitch8 =>
+      'Privy hasn\'t confirmed built-in wallet support, so this page won\'t fake progress. LOOP doesn\'t use recovery phrases.';
+
+  @override
+  String get account_screensTitle =>
+      'An external wallet is only a sign-in method';
+
+  @override
+  String get account_screensTitle10 =>
+      'Automatic recovery depends on your sign-in method';
+
+  @override
+  String get account_screensTitle2 => 'Connect an existing wallet to mine';
+
+  @override
+  String get account_screensTitle3 => 'Signature rejected';
+
+  @override
+  String get account_screensTitle4 => 'Connection timed out';
+
+  @override
+  String get account_screensTitle5 => 'Generate key pair';
+
+  @override
+  String get account_screensTitle6 => 'Write to secure enclave';
+
+  @override
+  String get account_screensTitle7 => 'Link LOOP ID';
+
+  @override
+  String get account_screensTitle8 => 'Social recovery 2-of-3';
+
+  @override
+  String get account_screensTitle9 => 'Export private key';
+
+  @override
+  String get account_screensTrailing => 'Available';
+
+  @override
+  String get account_screensTrailing2 => 'Enabled';
+
+  @override
+  String get account_screensTrailing3 => 'Set up';
+
+  @override
+  String get account_screensTrailing4 => 'Selected';
+
+  @override
+  String get account_screensUnknownAccountSurfaceMessage =>
+      'Go back to Community. The request has been logged.';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle => 'Page not found';
+
+  @override
+  String get account_screensUnknownAccountSurfaceTitle2 =>
+      'This account page isn\'t in the 93-page product list';
+
+  @override
+  String get account_screensWalletAutomaticRecoveryEvidence =>
+      'Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)';
+
+  @override
+  String get account_screensWalletCreateContinueLabel => 'Set up recovery';
+
+  @override
+  String get account_screensWalletCreateContinueTitle => 'Create LOOP wallet';
+
+  @override
+  String get account_screensWalletCreateProviderMessageTitle =>
+      'Wallet creation didn\'t finish';
+
+  @override
+  String get account_screensWalletCreateUnavailableBody =>
+      'Privy hasn\'t confirmed built-in wallet support. This page won\'t fake progress, and no wallet was created.';
+
+  @override
+  String get account_screensWalletCreateUnavailableTitle =>
+      'Wallet creation isn\'t available right now';
+
+  @override
+  String get account_screensWalletRecoveryConfirmTitle => 'Recovery methods';
+
+  @override
+  String account_screensWalletRecoveryDefaultBody(
+    Object? walletAutomaticRecoveryEvidence,
+  ) {
+    return '$walletAutomaticRecoveryEvidence. LOOP has no recovery phrase; this is the default path.';
+  }
+
+  @override
+  String get account_screensWalletRecoveryDefaultTitle =>
+      'You can already get your assets back on a new phone';
+
+  @override
+  String get account_screensWalletRecoveryErrorSource => 'Capability list';
+
+  @override
+  String get account_screensWalletRecoveryLaterLabel => 'Set up later';
+
+  @override
+  String get account_screensWalletRecoveryProviderPending =>
+      'The sign-in service in this version doesn\'t offer this yet';
+
+  @override
+  String account_screensWalletRecoveryUnavailableBody(
+    Object? walletRecoveryProviderPending,
+  ) {
+    return '$walletRecoveryProviderPending. The options below aren\'t simulated locally and aren\'t pre-selected.';
+  }
+
+  @override
+  String get account_screensWalletRecoveryUnavailableTitle =>
+      'You can\'t add another one yet';
+
+  @override
   String get betaFeedback_cameraFailed => 'Couldn\'t open the camera';
 
   @override
@@ -1217,6 +2004,729 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get common_watchlist => 'Watchlist';
+
+  @override
+  String get coreAssets_loopLabel => 'Voyager_7 avatar';
+
+  @override
+  String get coreAssets_loopLabel10 => 'Community member Echo avatar';
+
+  @override
+  String get coreAssets_loopLabel11 => 'Community admin avatar';
+
+  @override
+  String get coreAssets_loopLabel12 => 'Community observer avatar';
+
+  @override
+  String get coreAssets_loopLabel13 => 'LOOP Official community icon';
+
+  @override
+  String get coreAssets_loopLabel14 => 'PEPE Community community icon';
+
+  @override
+  String get coreAssets_loopLabel15 => 'BONK Community community icon';
+
+  @override
+  String get coreAssets_loopLabel16 => 'MOONCAT community icon';
+
+  @override
+  String get coreAssets_loopLabel17 => 'Community mark · Orbit';
+
+  @override
+  String get coreAssets_loopLabel18 => 'Community mark · Bolt';
+
+  @override
+  String get coreAssets_loopLabel19 => 'Community mark · Wave';
+
+  @override
+  String get coreAssets_loopLabel2 => 'NightOwl avatar';
+
+  @override
+  String get coreAssets_loopLabel20 => 'Community mark · Hexagon';
+
+  @override
+  String get coreAssets_loopLabel21 => 'Community mark · Cube';
+
+  @override
+  String get coreAssets_loopLabel22 => 'Community mark · Shield';
+
+  @override
+  String get coreAssets_loopLabel23 => 'Community mark · Starburst';
+
+  @override
+  String get coreAssets_loopLabel24 => 'Community mark · Signal';
+
+  @override
+  String get coreAssets_loopLabel3 => 'pepe_maxi avatar';
+
+  @override
+  String get coreAssets_loopLabel4 => 'AlphaDrop avatar';
+
+  @override
+  String get coreAssets_loopLabel5 => 'fox_trader avatar';
+
+  @override
+  String get coreAssets_loopLabel6 => 'PEPE founder avatar';
+
+  @override
+  String get coreAssets_loopLabel7 => 'SmartBuyer avatar';
+
+  @override
+  String get coreAssets_loopLabel8 => 'whale_0x9f avatar';
+
+  @override
+  String get coreAssets_loopLabel9 => 'DiamondPaw avatar';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetChainLabel => 'BSC Testnet';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetInfoButtonText =>
+      'About the Launch testnet';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNetworkRowAbsent =>
+      'No testnet published';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNetworkRowTitle => 'Testnet';
+
+  @override
+  String coreConfig_testHintsLoopTestnetNoticeBodyText(Object? chainId) {
+    return 'Launch lists, details and sign sheets currently point to BSC Testnet ($chainId); testnet tokens have no real value. Wallet balances, market data, swaps and approvals still use BNB Smart Chain mainnet only and aren\'t affected. You can close this notice; it doesn\'t block anything.';
+  }
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNoticeDismissText =>
+      'Close testnet notice';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetNoticeTitleText =>
+      'Launch is running on BSC Testnet';
+
+  @override
+  String get coreConfig_testHintsLoopTestnetWalletTotalNoteText =>
+      'Launch chain balances are on BSC Testnet and don\'t count toward total assets; total assets only count BNB Smart Chain mainnet.';
+
+  @override
+  String get coreNavigation_intelPowerRouteInvite => 'Invitation';
+
+  @override
+  String get coreNavigation_routeAbout => 'About and legal';
+
+  @override
+  String get coreNavigation_routeApprovalGuard => 'Approval guard';
+
+  @override
+  String get coreNavigation_routeAsset => 'Asset details';
+
+  @override
+  String get coreNavigation_routeAuth => 'Privy sign-in';
+
+  @override
+  String get coreNavigation_routeAuthEmail => 'Email sign-in';
+
+  @override
+  String get coreNavigation_routeAuthOtp => 'Email code';
+
+  @override
+  String get coreNavigation_routeAuthWallet => 'Connect external wallet';
+
+  @override
+  String get coreNavigation_routeBetaFeedback => 'Feedback';
+
+  @override
+  String get coreNavigation_routeBetaFeedbackMine => 'My feedback';
+
+  @override
+  String get coreNavigation_routeBridgeStatus => 'Bridge progress';
+
+  @override
+  String get coreNavigation_routeChartFull => 'Full-screen chart';
+
+  @override
+  String get coreNavigation_routeChat => 'Chat Tab';
+
+  @override
+  String get coreNavigation_routeChatForward => 'Forward message';
+
+  @override
+  String get coreNavigation_routeChatMergePreview => 'Forward as one preview';
+
+  @override
+  String get coreNavigation_routeChatSearch => 'Message search';
+
+  @override
+  String get coreNavigation_routeCommunity => 'Community Tab';
+
+  @override
+  String get coreNavigation_routeCommunityChat => 'Community group';
+
+  @override
+  String get coreNavigation_routeCommunityDiscover => 'Discover communities';
+
+  @override
+  String get coreNavigation_routeCommunityManage => 'Community management';
+
+  @override
+  String get coreNavigation_routeCommunityMembers => 'Members and roles';
+
+  @override
+  String get coreNavigation_routeCommunityProfile => 'Community home';
+
+  @override
+  String get coreNavigation_routeConnections => 'Following and followers';
+
+  @override
+  String get coreNavigation_routeDapp => 'DApp browser';
+
+  @override
+  String get coreNavigation_routeDappWeb => 'DApp page';
+
+  @override
+  String get coreNavigation_routeDevices => 'Device management';
+
+  @override
+  String get coreNavigation_routeForceUpdate => 'Force update';
+
+  @override
+  String get coreNavigation_routeGroup => 'Group chat';
+
+  @override
+  String get coreNavigation_routeGroupInfo => 'Group info';
+
+  @override
+  String get coreNavigation_routeIntel => 'Intel Tab';
+
+  @override
+  String get coreNavigation_routeKeyExport => 'Private key export';
+
+  @override
+  String get coreNavigation_routeLaunch => 'Launch list';
+
+  @override
+  String get coreNavigation_routeLaunch2Create => 'Start a v2 launch';
+
+  @override
+  String get coreNavigation_routeLaunch2DynamicRewards => 'DEX pool rewards';
+
+  @override
+  String get coreNavigation_routeLaunch2Instance => 'MEME v2 project';
+
+  @override
+  String get coreNavigation_routeLaunch2Nft => 'Consensus badge';
+
+  @override
+  String get coreNavigation_routeLaunch2Project => 'Project status';
+
+  @override
+  String get coreNavigation_routeLaunch2ProjectDeployment =>
+      'Deployment progress';
+
+  @override
+  String get coreNavigation_routeLaunch2ProjectSign => 'Sign deployment';
+
+  @override
+  String get coreNavigation_routeLaunch2Projects => 'My projects';
+
+  @override
+  String get coreNavigation_routeLaunchApply => 'Apply to launch';
+
+  @override
+  String get coreNavigation_routeLaunchDetail => 'Project details';
+
+  @override
+  String get coreNavigation_routeLaunchGraduation => 'Graduation and migration';
+
+  @override
+  String get coreNavigation_routeLaunchHistory => 'Participation history';
+
+  @override
+  String get coreNavigation_routeLaunchHolders => 'Bonding pool holders';
+
+  @override
+  String get coreNavigation_routeLaunchRounds => 'Sale round rules';
+
+  @override
+  String get coreNavigation_routeLaunchTier => 'My eligibility';
+
+  @override
+  String get coreNavigation_routeLaunchTrade => 'Launch subscription';
+
+  @override
+  String get coreNavigation_routeLoopEconomy => 'Ecosystem economics';
+
+  @override
+  String get coreNavigation_routeLoopIdSetup => 'Create LOOP ID';
+
+  @override
+  String get coreNavigation_routeLoopStake => 'LOOP staking';
+
+  @override
+  String get coreNavigation_routeMaintenance => 'System maintenance';
+
+  @override
+  String get coreNavigation_routeManifestGlobalAccount => 'Global and account';
+
+  @override
+  String get coreNavigation_routeManifestSystem =>
+      'System states and components';
+
+  @override
+  String get coreNavigation_routeMarket => 'Market list';
+
+  @override
+  String get coreNavigation_routeMemeCreate => 'Create token';
+
+  @override
+  String get coreNavigation_routeMemeToken => 'MEME token';
+
+  @override
+  String get coreNavigation_routeMemeTokenHolders => 'MEME holders';
+
+  @override
+  String get coreNavigation_routeMemeTokenTrades => 'MEME activity';
+
+  @override
+  String get coreNavigation_routeMining => 'My mining';
+
+  @override
+  String get coreNavigation_routeMiningAssets => 'Power breakdown';
+
+  @override
+  String get coreNavigation_routeMiningCommunity => 'Community mining panel';
+
+  @override
+  String get coreNavigation_routeMiningRank => 'Leaderboard';
+
+  @override
+  String get coreNavigation_routeMiningRewards => 'Rewards and claims';
+
+  @override
+  String get coreNavigation_routeMiningRules => 'Weight and power rules';
+
+  @override
+  String get coreNavigation_routeNetworks => 'Networks and RPC';
+
+  @override
+  String get coreNavigation_routeNetworth => 'Net worth details';
+
+  @override
+  String get coreNavigation_routeNewPairs => 'New pairs';
+
+  @override
+  String get coreNavigation_routeNotifications => 'Notification center';
+
+  @override
+  String get coreNavigation_routeOffline => 'No network';
+
+  @override
+  String get coreNavigation_routeOnboardingCommunities =>
+      'Recommended communities';
+
+  @override
+  String get coreNavigation_routePay => 'Pay entry';
+
+  @override
+  String get coreNavigation_routePermissionNotice => 'Permission notes';
+
+  @override
+  String get coreNavigation_routePrivacy => 'Privacy Center';
+
+  @override
+  String get coreNavigation_routeProfile => 'LOOP ID home';
+
+  @override
+  String get coreNavigation_routeProfileEdit => 'Edit profile';
+
+  @override
+  String get coreNavigation_routeReferral => 'Invitations and boost';
+
+  @override
+  String get coreNavigation_routeRegionBlocked => 'Region restriction';
+
+  @override
+  String get coreNavigation_routeSearch => 'Global search';
+
+  @override
+  String get coreNavigation_routeSecuritySetup => 'MFA and app lock';
+
+  @override
+  String get coreNavigation_routeSend => 'Send: choose asset';
+
+  @override
+  String get coreNavigation_routeSendConfirm => 'Send: confirm';
+
+  @override
+  String get coreNavigation_routeSendTo => 'Send: recipient';
+
+  @override
+  String get coreNavigation_routeServerError => 'Server error';
+
+  @override
+  String get coreNavigation_routeSettings => 'General settings';
+
+  @override
+  String get coreNavigation_routeSignSheetStates => 'Four sign sheet states';
+
+  @override
+  String get coreNavigation_routeSkeletonStates => 'Three skeleton types';
+
+  @override
+  String get coreNavigation_routeSmartMoney => 'Smart money';
+
+  @override
+  String get coreNavigation_routeSocialRecovery => 'Social recovery';
+
+  @override
+  String get coreNavigation_routeSplash => 'Splash';
+
+  @override
+  String get coreNavigation_routeSquare => 'Square Tab';
+
+  @override
+  String get coreNavigation_routeSupport => 'Help and support';
+
+  @override
+  String get coreNavigation_routeSwapRoute => 'Quote and fees';
+
+  @override
+  String get coreNavigation_routeToastStates => 'Three toast states';
+
+  @override
+  String get coreNavigation_routeToken => 'Token details';
+
+  @override
+  String get coreNavigation_routeTokenCardStates => 'Five Token Card states';
+
+  @override
+  String get coreNavigation_routeTokenHolders => 'Holder distribution';
+
+  @override
+  String get coreNavigation_routeTokenTrades => 'Trade activity';
+
+  @override
+  String get coreNavigation_routeTxHistory => 'Transaction history';
+
+  @override
+  String get coreNavigation_routeTxResult => 'Transaction result';
+
+  @override
+  String get coreNavigation_routeUserProfile => 'User profile';
+
+  @override
+  String get coreNavigation_routeVoiceroomFull => 'Voice room full view';
+
+  @override
+  String get coreNavigation_routeWallet => 'Wallet overview';
+
+  @override
+  String get coreNavigation_routeWalletCreate => 'Creating wallet';
+
+  @override
+  String get coreNavigation_routeWalletRecovery => 'Recovery setup';
+
+  @override
+  String get coreNavigation_routeWallets => 'Wallet management';
+
+  @override
+  String get coreNavigation_routeWatchlistEdit => 'Edit watchlist';
+
+  @override
+  String get coreSecurity_urlReviewConfusableCharacters =>
+      'The domain has characters that look like Latin letters';
+
+  @override
+  String get coreSecurity_urlReviewCredentialsInUrl =>
+      'The address contains a username or password, a common disguise';
+
+  @override
+  String get coreSecurity_urlReviewEmpty => 'Input is empty';
+
+  @override
+  String get coreSecurity_urlReviewIpLiteralHost =>
+      'The address is an IP, not a domain; ownership can\'t be checked';
+
+  @override
+  String get coreSecurity_urlReviewMissingHost => 'The address has no domain';
+
+  @override
+  String get coreSecurity_urlReviewMixedScriptLabel =>
+      'One part of the domain mixes Latin letters with other scripts';
+
+  @override
+  String get coreSecurity_urlReviewNonAsciiHost =>
+      'The domain has non-ASCII characters; its ASCII form can\'t be computed locally';
+
+  @override
+  String get coreSecurity_urlReviewNonStandardPort =>
+      'Uses a port other than 443';
+
+  @override
+  String get coreSecurity_urlReviewNotHttps =>
+      'Only HTTPS is allowed; plain-text or custom schemes are blocked';
+
+  @override
+  String get coreSecurity_urlReviewPunycodeLabel =>
+      'The domain has an IDN-encoded (xn--) label that can\'t be turned back into readable form locally';
+
+  @override
+  String get coreSecurity_urlReviewSchemeAssumed =>
+      'No scheme given; read as HTTPS';
+
+  @override
+  String get coreSecurity_urlReviewUnsafeCharacters =>
+      'The input has control or invisible characters';
+
+  @override
+  String get coreText_errorMessage =>
+      'The service didn\'t return a recognizable result. Try again later; if you already submitted a funds action, check the latest status first.';
+
+  @override
+  String get coreText_errorMessage10 =>
+      'This page\'s data is out of date. Refresh before continuing.';
+
+  @override
+  String get coreText_errorMessage11 =>
+      'The same action was already submitted with different content. Check the latest status, then try again.';
+
+  @override
+  String get coreText_errorMessage12 =>
+      'The indexer hasn\'t caught up with the latest block; data may lag. Try again later.';
+
+  @override
+  String get coreText_errorMessage13 =>
+      'Not enough available balance for this action (including fees).';
+
+  @override
+  String get coreText_errorMessage14 =>
+      'Something went wrong and the result is unconfirmed. Check the latest status before deciding whether to retry.';
+
+  @override
+  String get coreText_errorMessage15 =>
+      'The request is malformed. Update the app or try again later.';
+
+  @override
+  String get coreText_errorMessage16 =>
+      'A related service is under maintenance. Try again later.';
+
+  @override
+  String get coreText_errorMessage17 =>
+      'The requested item doesn\'t exist or was removed.';
+
+  @override
+  String get coreText_errorMessage18 =>
+      'This account doesn\'t have permission for this action.';
+
+  @override
+  String get coreText_errorMessage19 =>
+      'This action was blocked by a policy in effect. The feature that started it explains the rule.';
+
+  @override
+  String get coreText_errorMessage2 =>
+      'Finish setting up your LOOP account to continue.';
+
+  @override
+  String get coreText_errorMessage20 =>
+      'Community and social actions need an activated LOOP ID. Activate it, then try again.';
+
+  @override
+  String get coreText_errorMessage21 =>
+      'A required external service isn\'t available right now. Try again later.';
+
+  @override
+  String get coreText_errorMessage22 =>
+      'The price changed. Refresh the quote before confirming.';
+
+  @override
+  String get coreText_errorMessage23 => 'Wait a moment and try again.';
+
+  @override
+  String get coreText_errorMessage24 =>
+      'This feature isn\'t available in your region.';
+
+  @override
+  String get coreText_errorMessage25 =>
+      'The service didn\'t respond in time. A timeout doesn\'t mean failure; for funds actions, check the latest status first.';
+
+  @override
+  String get coreText_errorMessage26 =>
+      'That ID already belongs to something else. Use another one.';
+
+  @override
+  String get coreText_errorMessage27 =>
+      'The device session expired. Sign in again.';
+
+  @override
+  String get coreText_errorMessage28 =>
+      'The transaction simulation didn\'t return a verifiable result. Can\'t confirm right now.';
+
+  @override
+  String get coreText_errorMessage29 =>
+      'The request may have been accepted. Don\'t submit again; wait for reconciliation.';
+
+  @override
+  String get coreText_errorMessage3 =>
+      'That name is on the current operator list. Try another.';
+
+  @override
+  String get coreText_errorMessage30 =>
+      'The input doesn\'t meet the requirements. Check it and try again.';
+
+  @override
+  String get coreText_errorMessage31 =>
+      'The data was changed on another device. Reload before saving.';
+
+  @override
+  String get coreText_errorMessage4 =>
+      'That name is reserved by LOOP (such as official, support, admin). Try another.';
+
+  @override
+  String get coreText_errorMessage5 => 'Your sign-in expired. Sign in again.';
+
+  @override
+  String get coreText_errorMessage6 => 'This action needs a signed-in account.';
+
+  @override
+  String get coreText_errorMessage7 =>
+      'You\'re signed in, but this action needs extra verification.';
+
+  @override
+  String get coreText_errorMessage8 =>
+      'This feature isn\'t available right now. Try again later.';
+
+  @override
+  String get coreText_errorMessage9 =>
+      'The requested network doesn\'t match the asset\'s or wallet\'s chain.';
+
+  @override
+  String get coreText_errorTitle => 'Can\'t finish right now';
+
+  @override
+  String get coreText_errorTitle10 => 'Data out of date';
+
+  @override
+  String get coreText_errorTitle11 => 'Duplicate request conflict';
+
+  @override
+  String get coreText_errorTitle12 => 'On-chain data delayed';
+
+  @override
+  String get coreText_errorTitle13 => 'Insufficient balance';
+
+  @override
+  String get coreText_errorTitle14 => 'Internal service error';
+
+  @override
+  String get coreText_errorTitle15 => 'Invalid request';
+
+  @override
+  String get coreText_errorTitle16 => 'Under maintenance';
+
+  @override
+  String get coreText_errorTitle17 => 'Not found';
+
+  @override
+  String get coreText_errorTitle18 => 'No permission';
+
+  @override
+  String get coreText_errorTitle19 => 'Blocked by policy';
+
+  @override
+  String get coreText_errorTitle2 => 'Account not set up';
+
+  @override
+  String get coreText_errorTitle20 => 'Activate your LOOP ID first';
+
+  @override
+  String get coreText_errorTitle21 => 'Provider not connected';
+
+  @override
+  String get coreText_errorTitle22 => 'Quote expired';
+
+  @override
+  String get coreText_errorTitle23 => 'Too many requests';
+
+  @override
+  String get coreText_errorTitle24 => 'Region restriction';
+
+  @override
+  String get coreText_errorTitle25 => 'Request timed out';
+
+  @override
+  String get coreText_errorTitle26 => 'ID already taken';
+
+  @override
+  String get coreText_errorTitle27 => 'Session not found';
+
+  @override
+  String get coreText_errorTitle28 => 'Simulation failed';
+
+  @override
+  String get coreText_errorTitle29 => 'Submission status unknown';
+
+  @override
+  String get coreText_errorTitle3 => 'That name isn\'t available';
+
+  @override
+  String get coreText_errorTitle30 => 'Validation failed';
+
+  @override
+  String get coreText_errorTitle31 => 'Version conflict';
+
+  @override
+  String get coreText_errorTitle4 => 'That name is reserved';
+
+  @override
+  String get coreText_errorTitle5 => 'Invalid sign-in credentials';
+
+  @override
+  String get coreText_errorTitle6 => 'Sign-in required';
+
+  @override
+  String get coreText_errorTitle7 => 'Higher verification required';
+
+  @override
+  String get coreText_errorTitle8 => 'Feature unavailable';
+
+  @override
+  String get coreText_errorTitle9 => 'Chain mismatch';
+
+  @override
+  String coreText_tokenLoopTokenDescriptionError(
+    Object? loopTokenDescriptionMaxCharacters,
+  ) {
+    return 'Description can be up to $loopTokenDescriptionMaxCharacters characters';
+  }
+
+  @override
+  String get coreText_tokenLoopTokenDescriptionError2 =>
+      'Description can\'t contain control or invisible characters';
+
+  @override
+  String get coreText_tokenLoopTokenNameLengthMessage =>
+      'Name can be up to 20 characters (emoji count as 2)';
+
+  @override
+  String get coreText_tokenLoopTokenTextRule =>
+      'Name and ticker 1–20 characters each; Chinese, letters, numbers and emoji allowed';
+
+  @override
+  String get coreText_tokenLoopTokenTickerLengthMessage =>
+      'Ticker can be up to 20 characters (emoji count as 2)';
+
+  @override
+  String coreText_tokenTokenTextError(Object? label) {
+    return '$label is required';
+  }
+
+  @override
+  String coreText_tokenTokenTextError2(Object? label) {
+    return '$label can\'t contain line breaks, control or invisible characters';
+  }
+
+  @override
+  String get coreText_tokenTokenTextError3 => 'Ticker';
 
   @override
   String get dapp_bridgeDappIntentBusyText => 'The wallet has a pending action';
@@ -8084,6 +9594,1230 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
+  String get profileAbout_clientRegisterLoopAboutUnknownModuleName =>
+      'Other rules';
+
+  @override
+  String get profileAbout_clientRegisterPurpose => 'App framework and runtime';
+
+  @override
+  String get profileAbout_clientRegisterPurpose10 => 'Push channel';
+
+  @override
+  String get profileAbout_clientRegisterPurpose11 =>
+      'Local storage for device and session records';
+
+  @override
+  String get profileAbout_clientRegisterPurpose12 =>
+      'Non-sensitive local display preferences';
+
+  @override
+  String get profileAbout_clientRegisterPurpose13 =>
+      'Network reachability checks';
+
+  @override
+  String get profileAbout_clientRegisterPurpose14 => 'Vector icon rendering';
+
+  @override
+  String get profileAbout_clientRegisterPurpose15 => 'System share';
+
+  @override
+  String get profileAbout_clientRegisterPurpose16 =>
+      'Open campaign links in the system browser';
+
+  @override
+  String get profileAbout_clientRegisterPurpose17 =>
+      'Locally generated unique IDs';
+
+  @override
+  String get profileAbout_clientRegisterPurpose18 => 'iOS-style icon font';
+
+  @override
+  String get profileAbout_clientRegisterPurpose19 => 'Interface fonts';
+
+  @override
+  String get profileAbout_clientRegisterPurpose2 => 'Network requests';
+
+  @override
+  String get profileAbout_clientRegisterPurpose3 =>
+      'Exact decimal math for amounts and prices';
+
+  @override
+  String get profileAbout_clientRegisterPurpose4 => 'State management';
+
+  @override
+  String get profileAbout_clientRegisterPurpose5 => 'Page routing';
+
+  @override
+  String get profileAbout_clientRegisterPurpose6 =>
+      'Sign-in and built-in wallet';
+
+  @override
+  String get profileAbout_clientRegisterPurpose7 =>
+      'External wallet connection and signing credentials';
+
+  @override
+  String get profileAbout_clientRegisterPurpose8 => 'Community chat';
+
+  @override
+  String get profileAbout_clientRegisterPurpose9 => 'Local chat cache';
+
+  @override
+  String get profileAbout_clientRegisterSwitch => 'Product policy';
+
+  @override
+  String get profileAbout_clientRegisterSwitch10 => 'On-chain write rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch11 =>
+      'Version of the five tabs, default landing page and overall product rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch12 =>
+      'Operator overrides for this client\'s version, region and terms requirements';
+
+  @override
+  String get profileAbout_clientRegisterSwitch13 =>
+      'How device sessions are created, limited and revoked';
+
+  @override
+  String get profileAbout_clientRegisterSwitch14 =>
+      'Rules for community creation, members, roles and governance';
+
+  @override
+  String get profileAbout_clientRegisterSwitch15 =>
+      'How Market trending is ranked';
+
+  @override
+  String get profileAbout_clientRegisterSwitch16 =>
+      'Thresholds for new-device alerts';
+
+  @override
+  String get profileAbout_clientRegisterSwitch17 =>
+      'Which account settings can be changed';
+
+  @override
+  String get profileAbout_clientRegisterSwitch18 =>
+      'Ticket categories, length and response times';
+
+  @override
+  String get profileAbout_clientRegisterSwitch19 =>
+      'Swap quote, slippage and fee rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch2 => 'Client policy';
+
+  @override
+  String get profileAbout_clientRegisterSwitch20 =>
+      'Asset scope and per-transaction limit for on-chain write rollout';
+
+  @override
+  String get profileAbout_clientRegisterSwitch3 => 'Sign-in session rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch4 => 'Community rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch5 => 'Market trending rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch6 => 'Device risk alert rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch7 => 'Account settings rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch8 => 'Support ticket rules';
+
+  @override
+  String get profileAbout_clientRegisterSwitch9 => 'Swap rules';
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBackendHostSubtitle =>
+      'No server address in the build config';
+
+  @override
+  String profileAbout_networkDiagnosticsAboutBackendHostSubtitle2(
+    Object? backendTier,
+  ) {
+    return '$backendTier · From this build\'s config';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBackendHostTitle => 'Server';
+
+  @override
+  String profileAbout_networkDiagnosticsAboutBuildModeSubtitle(
+    Object? config,
+    Object? declaredMode,
+    Object? runtimeBuildMode,
+  ) {
+    return 'Declared $declaredMode · Runtime $runtimeBuildMode · $config';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsAboutBuildModeTitle => 'Build mode';
+
+  @override
+  String profileAbout_networkDiagnosticsBuildMode(
+    Object? declared,
+    Object? runtimeBuildMode,
+  ) {
+    return 'Declared $declared · Runtime $runtimeBuildMode';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsBuildRows => 'Not declared';
+
+  @override
+  String get profileAbout_networkDiagnosticsControllerReason =>
+      'No address configured in this build, not checked';
+
+  @override
+  String profileAbout_networkDiagnosticsDone(Object? okCount, Object? sent) {
+    return '$okCount of $sent reachable';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsDone2 => 'Run again';
+
+  @override
+  String profileAbout_networkDiagnosticsHostTier(Object? host, Object? tier) {
+    return '$host ($tier)';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsIdle => 'Start diagnosis';
+
+  @override
+  String get profileAbout_networkDiagnosticsLoopLabel => 'Checks';
+
+  @override
+  String get profileAbout_networkDiagnosticsLoopLabel2 => 'Results';
+
+  @override
+  String get profileAbout_networkDiagnosticsMessage => 'Diagnosis copied';
+
+  @override
+  String get profileAbout_networkDiagnosticsMessage2 =>
+      'Can\'t open share. Copy instead';
+
+  @override
+  String get profileAbout_networkDiagnosticsModeMatch => 'match';
+
+  @override
+  String get profileAbout_networkDiagnosticsModeMismatch => 'mismatch';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsBlocked =>
+      'Not sent: the address doesn\'t meet this device\'s network rules';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsConnect =>
+      'Can\'t connect: connection refused or interrupted';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsDns =>
+      'Can\'t connect: DNS lookup failed';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsIdle => 'Not started';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport =>
+      'LOOP network diagnosis';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport2(
+    Object? networkDiagnosticsTimestamp,
+  ) {
+    return 'Time: $networkDiagnosticsTimestamp';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport3(
+    Object? appVersion,
+  ) {
+    return 'App version: $appVersion';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport4(
+    Object? buildMode,
+  ) {
+    return 'Build mode: $buildMode';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport5(
+    Object? serverHost,
+  ) {
+    return 'Server host: $serverHost';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport6(
+    Object? platform,
+  ) {
+    return 'Platform: $platform';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport7(
+    Object? inMilliseconds,
+  ) {
+    return 'Total time: $inMilliseconds ms';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsNetworkDiagnosticsReport8(
+    Object? okCount,
+    Object? results,
+  ) {
+    return 'Results: $okCount of $results reachable';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsOther => 'Can\'t connect';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsReachable => 'Reachable';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason(
+    Object? reused,
+    Object? statusCode,
+  ) {
+    return 'Connected, but the service returned HTTP $statusCode$reused';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason2(
+    Object? bytesText,
+    Object? statusCode,
+  ) {
+    return 'HTTP $statusCode · Image $bytesText';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason3(Object? statusCode) {
+    return 'Connected, but no image received · HTTP $statusCode';
+  }
+
+  @override
+  String profileAbout_networkDiagnosticsModelsReason4(
+    Object? block,
+    Object? statusCode,
+  ) {
+    return 'HTTP $statusCode · Block $block';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsRunning => 'Checking';
+
+  @override
+  String profileAbout_networkDiagnosticsModelsS(Object? inMilliseconds) {
+    return ' · First $inMilliseconds ms, connection reused';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTimeout => 'Timed out';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTimeout2 =>
+      'Timed out, no response in time';
+
+  @override
+  String get profileAbout_networkDiagnosticsModelsTls =>
+      'Can\'t connect: secure handshake failed';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsCopyLabel =>
+      'Copy results';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioCaption =>
+      'This page only tests connectivity and timing. No account info is sent.';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsFolioKicker =>
+      'Network check';
+
+  @override
+  String profileAbout_networkDiagnosticsNetworkDiagnosticsFolioStamp(
+    Object? state,
+  ) {
+    return 'Total ${state}s';
+  }
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineBody =>
+      'Make sure this device is online, then run again.';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsOfflineTitle =>
+      'No check could connect';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyText =>
+      'Results stay on this device and aren\'t uploaded. Copying or sharing is up to you.';
+
+  @override
+  String get profileAbout_networkDiagnosticsNetworkDiagnosticsPrivacyTitle =>
+      'Where results go';
+
+  @override
+  String get profileAbout_networkDiagnosticsRunning => 'Diagnosing';
+
+  @override
+  String get profileAbout_networkDiagnosticsRunning2 => 'Diagnosing';
+
+  @override
+  String get profileAbout_networkDiagnosticsText =>
+      'Each check times out after 8 seconds. All run at once, 15 seconds at most.';
+
+  @override
+  String get profileAbout_networkDiagnosticsTitle => 'About the checks';
+
+  @override
+  String get profileAbout_screenAboutClientBuildNoteLabel =>
+      'LOOP doesn\'t publish client versions';
+
+  @override
+  String get profileAbout_screenAboutClientVersionSubtitle =>
+      'No valid version in the build config; none is made up here';
+
+  @override
+  String get profileAbout_screenAboutClientVersionSubtitle2 =>
+      'From this device\'s build config, not uploaded';
+
+  @override
+  String get profileAbout_screenAboutClientVersionTitle => 'Client version';
+
+  @override
+  String get profileAbout_screenAboutConfigNoteText =>
+      'For viewing only. No version is pinned.';
+
+  @override
+  String get profileAbout_screenAboutNetworkDiagnosticsSubtitle =>
+      'Test connectivity and timing from this device to each service';
+
+  @override
+  String get profileAbout_screenAboutNetworkDiagnosticsTitle =>
+      'Network diagnosis';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceInfo => 'Open-source licenses';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceInfoTitle =>
+      'Open-source components in this app';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceNoteBody =>
+      'Component versions follow this build\'s lockfile; this page doesn\'t show version numbers.';
+
+  @override
+  String get profileAbout_screenAboutOpenSourceSummaryBody =>
+      'Below are the open-source components the LOOP mobile client depends on directly, with their licenses; exact versions are recorded in this build\'s lockfile. Components used by the LOOP server aren\'t on this page.';
+
+  @override
+  String get profileAbout_screenAboutRiskNoticeBody =>
+      'Crypto asset prices are highly volatile, and you may lose all your principal. LOOP is a non-custodial tool, gives no investment advice and isn\'t responsible for any trade outcome. Mining output depends on network-wide power competition and isn\'t a promise of returns.';
+
+  @override
+  String get profileAbout_screenAboutRiskNoticeTitle => 'Crypto asset risk';
+
+  @override
+  String get profileAbout_screenAboutTermsUnavailableLabel =>
+      'No document links for the Terms of Service, Privacy Policy and risk disclosure';
+
+  @override
+  String get profileAbout_screenAboutTermsVersionSubtitle =>
+      'A version exists, but there\'s no document link to open yet.';
+
+  @override
+  String get profileAbout_screenAboutTermsVersionTitle => 'Terms version';
+
+  @override
+  String get profileAbout_screenEmptyMessage =>
+      'Can\'t read product records right now';
+
+  @override
+  String get profileAbout_screenLoopLabel => 'Legal';
+
+  @override
+  String get profileAbout_screenLoopLabel2 => 'Risk notice';
+
+  @override
+  String get profileAbout_screenLoopLabel3 => 'This build';
+
+  @override
+  String get profileAbout_screenLoopLabel4 => 'Current rules';
+
+  @override
+  String profileAbout_screenLoopRecordRow(Object? number) {
+    return 'Version $number';
+  }
+
+  @override
+  String profileAbout_screenLoopRecordRow2(Object? relativeTime) {
+    return 'In effect $relativeTime';
+  }
+
+  @override
+  String get profileNotificationPreferences_screenBody =>
+      'That doesn\'t mean delivery works yet.';
+
+  @override
+  String get profileNotificationPreferences_screenBody2 =>
+      'You\'ll be asked once your account is ready.';
+
+  @override
+  String get profileNotificationPreferences_screenBody3 =>
+      'You can turn it on here once your account is in LOOP.';
+
+  @override
+  String get profileNotificationPreferences_screenBody4 =>
+      'Notifications stay in the in-app notification list.';
+
+  @override
+  String get profileNotificationPreferences_screenBody5 =>
+      'Turn notifications back on for LOOP in system settings.';
+
+  @override
+  String get profileNotificationPreferences_screenBody6 =>
+      'This device registers automatically once it has one.';
+
+  @override
+  String get profileNotificationPreferences_screenBody7 =>
+      'It\'ll try again next time you open LOOP.';
+
+  @override
+  String get profileNotificationPreferences_screenCategoryRow =>
+      'Not in effect yet';
+
+  @override
+  String get profileNotificationPreferences_screenEmptyMessage =>
+      'No notification settings yet';
+
+  @override
+  String get profileNotificationPreferences_screenLaunchRound =>
+      'Once off, you won\'t get consensus badge, launch review or on-chain progress notifications.';
+
+  @override
+  String get profileNotificationPreferences_screenLoopOfflineState =>
+      'Save notification settings';
+
+  @override
+  String get profileNotificationPreferences_screenMessage =>
+      'Notification settings saved';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationCapabilityBlockTitle =>
+      'Notification settings aren\'t available right now';
+
+  @override
+  String profileNotificationPreferences_screenNotificationDisableTitle(
+    Object? label,
+  ) {
+    return 'Turn off \"$label\" notifications?';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictBody =>
+      'Notification settings changed on another device. Reload before editing.';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesConflictTitle =>
+      'Version conflict. Nothing was overwritten';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesErrorTitle =>
+      'Settings not saved';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushChannelBody =>
+      'Push hasn\'t been confirmed on a real device yet. Switches still save and still affect the in-app notification list.';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInBody =>
+      'New messages, price alerts and security events are pushed to this device. Tap Turn on and the system asks once.';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInButtonLabel =>
+      'Turn on';
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesPushOptInTitle =>
+      'Turn on push notifications';
+
+  @override
+  String
+  profileNotificationPreferences_screenNotificationPreferencesSummaryBody(
+    Object? deliveringEnabledCount,
+  ) {
+    return '$deliveringEnabledCount on and in effect. Only price alerts create in-app notifications for now; security events are always on.';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPreferencesVersionText =>
+      'Using default settings';
+
+  @override
+  String
+  profileNotificationPreferences_screenNotificationPreferencesVersionText2(
+    Object? relativeTime,
+  ) {
+    return 'Updated $relativeTime';
+  }
+
+  @override
+  String
+  get profileNotificationPreferences_screenNotificationPushUnavailableLabel =>
+      'Push isn\'t available yet';
+
+  @override
+  String get profileNotificationPreferences_screenS => 'Off';
+
+  @override
+  String get profileNotificationPreferences_screenSwitch =>
+      'Once off, you won\'t get this type of notification.';
+
+  @override
+  String get profileNotificationPreferences_screenTitle =>
+      'This device is registered for push';
+
+  @override
+  String get profileNotificationPreferences_screenTitle2 =>
+      'Notification permission hasn\'t been requested on this device';
+
+  @override
+  String get profileNotificationPreferences_screenTitle3 =>
+      'No push channel on this device';
+
+  @override
+  String get profileNotificationPreferences_screenTitle4 =>
+      'Notification permission denied; this device can\'t get push';
+
+  @override
+  String get profileNotificationPreferences_screenTitle5 =>
+      'Waiting for the system to assign a push channel';
+
+  @override
+  String get profileNotificationPreferences_screenTitle6 =>
+      'This device isn\'t registered yet';
+
+  @override
+  String get profileNotificationPreferences_screenTitle7 =>
+      'This account can\'t change notification settings';
+
+  @override
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel =>
+      'Processing…';
+
+  @override
+  String get profilePresentation_avatarEditorAvatarCropConfirmLabel2 =>
+      'Use this one';
+
+  @override
+  String get profilePresentation_avatarEditorBuild =>
+      'Drag and pinch to zoom. What\'s inside the frame is your avatar.';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarResetLabel =>
+      'Use default avatar';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarUploadLabel =>
+      'Upload avatar';
+
+  @override
+  String get profilePresentation_avatarEditorLoopAvatarUploadUnavailable =>
+      'Avatar upload isn\'t open yet. Use the default for now.';
+
+  @override
+  String get profilePresentation_avatarEditorLoopSheetHeading => 'Crop avatar';
+
+  @override
+  String get profilePresentation_avatarMediaInvalidData =>
+      'Couldn\'t confirm the upload. Your avatar wasn\'t changed.';
+
+  @override
+  String get profilePresentation_avatarMediaOffline =>
+      'No network connection. Your avatar wasn\'t uploaded.';
+
+  @override
+  String get profilePresentation_avatarMediaRateLimited =>
+      'Too many uploads. Try again in a minute.';
+
+  @override
+  String get profilePresentation_avatarMediaRejected =>
+      'This image can\'t be used: it must be JPG, PNG, WebP or HEIC, up to 5 MB, at least 64 pixels per side.';
+
+  @override
+  String get profilePresentation_avatarMediaUnavailable =>
+      'Avatar upload isn\'t available right now. Use the default for now.';
+
+  @override
+  String get profilePresentation_avatarMediaUnexpected =>
+      'Avatar upload failed. Try again.';
+
+  @override
+  String get profilePrivacy_modelsCommunities => 'Joined communities';
+
+  @override
+  String get profilePrivacy_modelsDirectMessages => 'Let friends message me';
+
+  @override
+  String get profilePrivacy_modelsFriendRequests =>
+      'Let strangers send friend requests';
+
+  @override
+  String get profilePrivacy_modelsGroupInvites =>
+      'Let friends add me to groups';
+
+  @override
+  String get profilePrivacy_modelsMiningPower => 'Mining power';
+
+  @override
+  String get profilePrivacy_modelsTotalAssets => 'Total assets';
+
+  @override
+  String get profilePrivacy_modelsTradeHistory => 'Trade history';
+
+  @override
+  String get profileSecurity_modelsAutoRecovery => 'Automatic recovery';
+
+  @override
+  String get profileSecurity_modelsAutoRecovery2 =>
+      'Recovery shares held by the provider.';
+
+  @override
+  String get profileSecurity_modelsKeyExport => 'Export private key';
+
+  @override
+  String get profileSecurity_modelsKeyExport2 =>
+      'Take your private key with you, free of LOOP or Privy.';
+
+  @override
+  String get profileSecurity_modelsMfa => 'Multi-factor authentication';
+
+  @override
+  String get profileSecurity_modelsMfa2 =>
+      'Sign-in and sensitive actions need a second factor.';
+
+  @override
+  String get profileSecurity_modelsPasskey =>
+      'Use device biometrics instead of a password.';
+
+  @override
+  String get profileSecurity_modelsProviderAuthenticated => 'Verified by Privy';
+
+  @override
+  String get profileSecurity_modelsRecoveryPassword => 'Recovery password';
+
+  @override
+  String get profileSecurity_modelsRecoveryPassword2 =>
+      'A passphrase you keep, used to recover your wallet on a new device.';
+
+  @override
+  String get profileSecurity_modelsSocialRecovery => 'Social recovery';
+
+  @override
+  String get profileSecurity_modelsSocialRecovery2 =>
+      'Recovery needs 2 of 3 guardians to confirm.';
+
+  @override
+  String get profileSecurity_screensBody =>
+      'ERC-20 approvals still active on this wallet.';
+
+  @override
+  String get profileSecurity_screensBody2 =>
+      'Approvals with no limit carry the highest risk.';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeConfirmLabel =>
+      'Revoke session';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeSheetEffectBody =>
+      'LOOP marks this session as revoked, rejects later requests that carry it, and records a security event. The Privy sign-in on that device isn\'t ended.';
+
+  @override
+  String get profileSecurity_screensDeviceRevokeSheetEffectTitle =>
+      'What happens after revoking';
+
+  @override
+  String profileSecurity_screensDeviceRow(Object? relativeTime) {
+    return 'Revoked $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensDeviceRow2 => 'In use';
+
+  @override
+  String get profileSecurity_screensDevicesCapabilityBlockTitle =>
+      'Device management isn\'t available right now';
+
+  @override
+  String get profileSecurity_screensDevicesCurrentUnknownBody =>
+      'This device has no usable session ID, so no row in the list is marked as this session or this device.';
+
+  @override
+  String get profileSecurity_screensDevicesCurrentUnknownTitle =>
+      'Can\'t mark this session';
+
+  @override
+  String get profileSecurity_screensDevicesEffectNoticeBody =>
+      'Revoking marks the session as revoked and makes LOOP reject later requests that carry it. It doesn\'t end the Privy sign-in on that device, so don\'t read it as that device being signed out. To sign out here, use Sign out in Settings.';
+
+  @override
+  String get profileSecurity_screensDevicesEffectNoticeTitle =>
+      'What revoking does';
+
+  @override
+  String get profileSecurity_screensDevicesFolioCaption =>
+      'Device names and locations aren\'t shown here, only platform, version, session ID and sign-in time.';
+
+  @override
+  String profileSecurity_screensDevicesFolioHeading(
+    Object? activeCount,
+    Object? deviceCount,
+  ) {
+    return '$deviceCount devices · $activeCount sessions';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesFolioKicker => 'Device sessions';
+
+  @override
+  String profileSecurity_screensDevicesHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? newSessions24h,
+    Object? windowHours,
+  ) {
+    return '$newSessions24h sessions were created in the last $windowHours hours, reaching the alert threshold of $newSessionThreshold. This is only an alert; it doesn\'t require two-step verification.';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesRevokeAllLabel =>
+      'Sign out all other devices';
+
+  @override
+  String get profileSecurity_screensDevicesRevokeAllUnavailableLabel =>
+      'Needs two-step verification, not available now';
+
+  @override
+  String profileSecurity_screensDevicesRevokeOutcomeBody(
+    Object? providerAccessTerminated,
+  ) {
+    return 'LOOP marked the session as revoked and rejects later requests that carry it. The Privy access token on that device isn\'t affected (providerAccessTerminated: $providerAccessTerminated).';
+  }
+
+  @override
+  String get profileSecurity_screensDevicesScreenTitle => 'Devices';
+
+  @override
+  String get profileSecurity_screensDevicesStateEmptyMessage =>
+      'This account hasn\'t set up a device yet.';
+
+  @override
+  String get profileSecurity_screensDevicesStateEmptyTitle =>
+      'No device sessions yet';
+
+  @override
+  String get profileSecurity_screensDevicesTruncatedBody =>
+      'Up to 100 sessions are shown; paging isn\'t available yet.';
+
+  @override
+  String get profileSecurity_screensDevicesTruncatedTitle => 'List truncated';
+
+  @override
+  String get profileSecurity_screensEmptyMessage =>
+      'No security features to show';
+
+  @override
+  String get profileSecurity_screensEmptyMessage2 => 'No security summary yet';
+
+  @override
+  String get profileSecurity_screensEmptyMessage3 =>
+      'No device sessions to show';
+
+  @override
+  String get profileSecurity_screensEmptyMessage4 =>
+      'Can\'t read export status';
+
+  @override
+  String get profileSecurity_screensEmptyMessage5 =>
+      'Can\'t read social recovery status';
+
+  @override
+  String profileSecurity_screensEventSourceSuffix(Object? source) {
+    return ' · Source $source';
+  }
+
+  @override
+  String profileSecurity_screensIdentity(
+    Object? sessionCreatedAtLabel,
+    Object? sessionShortId,
+  ) {
+    return 'Session $sessionShortId · First sign-in $sessionCreatedAtLabel';
+  }
+
+  @override
+  String get profileSecurity_screensIf =>
+      'The sign-in service says this account already has a passkey';
+
+  @override
+  String get profileSecurity_screensKeyExportActionLabel => 'Verify and export';
+
+  @override
+  String get profileSecurity_screensKeyExportCapabilityBlockTitle =>
+      'Private key export isn\'t available right now';
+
+  @override
+  String get profileSecurity_screensKeyExportControlDisclosureSummary =>
+      'Control notes';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioCaption =>
+      'Before export: read the risks, verify your identity and confirm local display.';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioHeading =>
+      'You control your private key';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioKicker => 'Wallet key';
+
+  @override
+  String get profileSecurity_screensKeyExportFolioStamp => 'Sensitive';
+
+  @override
+  String get profileSecurity_screensKeyExportNoKeySubtitle =>
+      'This page never renders a masked key sample; that would make it look like a key was already exported.';
+
+  @override
+  String get profileSecurity_screensKeyExportNoKeyTitle =>
+      'No private key is shown';
+
+  @override
+  String get profileSecurity_screensKeyExportNoVerificationSubtitle =>
+      'No Face ID, no code: verification only matters when export is actually possible.';
+
+  @override
+  String get profileSecurity_screensKeyExportNoVerificationTitle =>
+      'You won\'t be asked to verify';
+
+  @override
+  String get profileSecurity_screensKeyExportRiskBody =>
+      'A leaked private key means losing all your assets. Don\'t screenshot it, send it to anyone or keep it in online notes. No one can recover stolen assets for you.';
+
+  @override
+  String get profileSecurity_screensKeyExportRiskTitle =>
+      'Exporting moves all responsibility to you';
+
+  @override
+  String get profileSecurity_screensLabel => 'Platform';
+
+  @override
+  String get profileSecurity_screensLabel2 => 'Client version';
+
+  @override
+  String get profileSecurity_screensLabel3 => 'First sign-in';
+
+  @override
+  String get profileSecurity_screensLabel4 => 'Belongs to';
+
+  @override
+  String get profileSecurity_screensLabel5 => 'Last active';
+
+  @override
+  String get profileSecurity_screensListSeparator => ', ';
+
+  @override
+  String get profileSecurity_screensLoopBadge => 'Unreadable';
+
+  @override
+  String get profileSecurity_screensLoopBadge2 => 'This session';
+
+  @override
+  String get profileSecurity_screensLoopBadge3 => 'Revoked';
+
+  @override
+  String get profileSecurity_screensLoopBadge4 => 'Old session';
+
+  @override
+  String get profileSecurity_screensLoopBadge5 => 'Other device';
+
+  @override
+  String get profileSecurity_screensLoopLabel => 'Verification';
+
+  @override
+  String get profileSecurity_screensLoopLabel2 => 'Transaction verification';
+
+  @override
+  String get profileSecurity_screensLoopLabel3 => 'Devices';
+
+  @override
+  String get profileSecurity_screensLoopLabel4 => 'Recent security events';
+
+  @override
+  String get profileSecurity_screensLoopLabel5 => 'Session';
+
+  @override
+  String get profileSecurity_screensLoopLabel6 => 'All devices';
+
+  @override
+  String get profileSecurity_screensLoopLabel7 =>
+      'What won\'t happen at this step';
+
+  @override
+  String get profileSecurity_screensLoopLabel8 => 'Guardians';
+
+  @override
+  String profileSecurity_screensLoopRecordRow(Object? sessionShortId) {
+    return 'Session $sessionShortId';
+  }
+
+  @override
+  String get profileSecurity_screensLoopRecordRow2 =>
+      'Old session on this device';
+
+  @override
+  String get profileSecurity_screensLoopSheetHeading => 'Revoke this session?';
+
+  @override
+  String get profileSecurity_screensMessage =>
+      'Revocation recorded; access on that device isn\'t ended';
+
+  @override
+  String get profileSecurity_screensMessage2 => 'Revocation didn\'t finish';
+
+  @override
+  String get profileSecurity_screensPlatformUnlabeled => 'Platform not labeled';
+
+  @override
+  String profileSecurity_screensS(Object? relativeTime) {
+    return 'Last active $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensS2 => 'Active';
+
+  @override
+  String get profileSecurity_screensScopeNote =>
+      'Multi-factor authentication, passkeys, recovery and export are provided by Privy and will show here once open.';
+
+  @override
+  String get profileSecurity_screensScopeNote2 =>
+      'These protections are provided by Privy.';
+
+  @override
+  String profileSecurity_screensScopeNote3(Object? notOpen) {
+    return 'These protections are provided by Privy. $notOpen will show here once open.';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsActiveTitle =>
+      'Active approvals';
+
+  @override
+  String profileSecurity_screensSecurityApprovalsFreshnessText(
+    Object? groupedFigure,
+    Object? groupedFigure2,
+    Object? groupedFigure3,
+    Object? relativeTime,
+  ) {
+    return 'Approvals from block $groupedFigure · Indexed $groupedFigure2 / Head $groupedFigure3 · Seen $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsUnavailableLabel =>
+      'Can\'t read token approvals';
+
+  @override
+  String get profileSecurity_screensSecurityApprovalsUnlimitedTitle =>
+      'Unlimited approvals';
+
+  @override
+  String get profileSecurity_screensSecurityCapabilityBlockTitle =>
+      'Security Center isn\'t available right now';
+
+  @override
+  String profileSecurity_screensSecurityDevicesEntrySubtitle(
+    Object? recent,
+    Object? sessions,
+    Object? windowHours,
+  ) {
+    return '$sessions active sessions · $recent new in the last $windowHours hours';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityDevicesEntryTitle =>
+      'Signed-in devices';
+
+  @override
+  String get profileSecurity_screensSecurityDevicesUnavailableLabel =>
+      'Can\'t read devices and sessions';
+
+  @override
+  String get profileSecurity_screensSecurityEventsEmptyMessage =>
+      'For now, only \"Sign out other devices\" records a security event.';
+
+  @override
+  String get profileSecurity_screensSecurityEventsEmptyTitle =>
+      'No security events yet';
+
+  @override
+  String get profileSecurity_screensSecurityEventsUnavailableLabel =>
+      'Can\'t read recent security events';
+
+  @override
+  String profileSecurity_screensSecurityHighRiskNoticeBody(
+    Object? newSessionThreshold,
+    Object? recent,
+    Object? windowHours,
+  ) {
+    return '$recent sessions were created in the last $windowHours hours, reaching the alert threshold of $newSessionThreshold. This is only an alert; it doesn\'t require two-step verification or a cooldown.';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityHighRiskNoticeTitle =>
+      'Several new sessions recently';
+
+  @override
+  String get profileSecurity_screensSecurityMethodDefaultLabel =>
+      'Default method';
+
+  @override
+  String get profileSecurity_screensSecurityMethodDeferredLabel =>
+      'Not open yet';
+
+  @override
+  String get profileSecurity_screensSecurityMethodOffLabel => 'Off';
+
+  @override
+  String get profileSecurity_screensSecurityMethodsGuideSummary =>
+      'How to turn these on';
+
+  @override
+  String get profileSecurity_screensSecurityNotificationLockSubtitle =>
+      'Always on, can\'t be turned off';
+
+  @override
+  String get profileSecurity_screensSecurityNotificationLockTitle =>
+      'Security event notifications';
+
+  @override
+  String profileSecurity_screensSecurityObservedAtText(Object? relativeTime) {
+    return 'Seen $relativeTime';
+  }
+
+  @override
+  String get profileSecurity_screensSecurityScopeInfoTitle =>
+      'Who provides these protections';
+
+  @override
+  String profileSecurity_screensSemanticLabel(Object? label, Object? reason) {
+    return '$label, unavailable, $reason';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel2(Object? label) {
+    return '$label, reading the sign-in service\'s answer';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel3(Object? label, Object? reason) {
+    return '$label, unreadable, $reason Tap to retry';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabel4(Object? label, Object? label2) {
+    return '$label, $label2. Tap to turn on';
+  }
+
+  @override
+  String profileSecurity_screensSemanticLabelDetail(
+    Object? detail,
+    Object? label,
+    Object? state,
+  ) {
+    return '$label, $state: $detail';
+  }
+
+  @override
+  String get profileSecurity_screensSocialRecoveryActionLabel => 'Add guardian';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryCapabilityBlockTitle =>
+      'Social recovery isn\'t available right now';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryDisclosureSummary =>
+      'Social recovery status notes';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryExplainerBody =>
+      'Pick 3 people you trust. If you lose your device, any 2 of them can help you recover your account. Guardians must confirm in their own app; unconfirmed ones don\'t count toward 2-of-3.';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryExplainerTitle =>
+      'What 2-of-3 means';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioCaption =>
+      'Guardians only confirm recovery. They can\'t see your assets or start transactions.';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioHeading =>
+      '2-of-3 guardians';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryFolioStamp => '2 of 3';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryNoGuardiansDetail =>
+      'Guardians aren\'t open yet, so no one is listed here.';
+
+  @override
+  String get profileSecurity_screensSocialRecoveryNoGuardiansMessage =>
+      'No guardians yet';
+
+  @override
+  String profileSecurity_screensSubtitle(Object? reason) {
+    return '$reason Tap to retry.';
+  }
+
+  @override
+  String get profileSecurity_screensText =>
+      'Export asks for Face ID, MFA and a risk confirmation, and blocks screenshots and screen recording during export. This page never pre-renders a private key sample: a masked string would read as \"already exported\".';
+
+  @override
+  String get profileSecurity_screensText2 =>
+      'You invite guardians, and they must confirm in their own app; unconfirmed ones don\'t count toward 2-of-3. Guardians can\'t see your assets or start transactions.';
+
+  @override
+  String get profileSecurity_screensTitle => 'Recovery';
+
+  @override
+  String get profileSecurity_screensTitle2 => 'Revoked a device session';
+
+  @override
+  String get profileSecurity_screensTitle3 => 'Security event';
+
+  @override
   String get profileSettings_aboutAndLegal => 'About and legal';
 
   @override
@@ -8175,6 +10909,649 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get profileSettings_usingDefaults => 'Using default settings';
+
+  @override
+  String get profileSupport_modelsAccount => 'Account';
+
+  @override
+  String get profileSupport_modelsAnswered => 'Answered';
+
+  @override
+  String get profileSupport_modelsAnswered2 => 'Support reply';
+
+  @override
+  String get profileSupport_modelsClosed => 'Closed';
+
+  @override
+  String get profileSupport_modelsEmpty => 'Describe the problem first.';
+
+  @override
+  String get profileSupport_modelsOpen => 'Open';
+
+  @override
+  String get profileSupport_modelsOperator => 'LOOP Support';
+
+  @override
+  String get profileSupport_modelsOther => 'Other';
+
+  @override
+  String get profileSupport_modelsTooLong =>
+      'The message is over 2,000 code points. Shorten it and submit again.';
+
+  @override
+  String get profileSupport_modelsUnsafeCharacters =>
+      'The message has control or invisible characters (such as line breaks or direction marks). Remove them and submit again.';
+
+  @override
+  String get profileSupport_modelsUser => 'You';
+
+  @override
+  String get profileSupport_modelsWallet => 'Wallet';
+
+  @override
+  String get profileSupport_screenBarrierLabel => 'Close ticket details';
+
+  @override
+  String get profileSupport_screenEmptyMessage => 'No tickets yet';
+
+  @override
+  String get profileSupport_screenHint =>
+      'Describe the problem. Never enter a private key, recovery phrase or code';
+
+  @override
+  String get profileSupport_screenLoopLabel => 'Contact us';
+
+  @override
+  String get profileSupport_screenLoopLabel2 => 'FAQ';
+
+  @override
+  String get profileSupport_screenLoopLabel3 => 'Submit a ticket';
+
+  @override
+  String get profileSupport_screenLoopLabel4 => 'My tickets';
+
+  @override
+  String get profileSupport_screenLoopLabel5 => 'Conversation';
+
+  @override
+  String get profileSupport_screenMessage => 'Ticket submitted';
+
+  @override
+  String get profileSupport_screenMessage2 => 'Ticket not submitted';
+
+  @override
+  String profileSupport_screenSemanticLabel(Object? label, Object? label2) {
+    return '$label ticket, $label2. Open full conversation';
+  }
+
+  @override
+  String profileSupport_screenSubtitle(Object? relativeTime) {
+    return 'Submitted $relativeTime · No reply yet';
+  }
+
+  @override
+  String profileSupport_screenSubtitle2(Object? note) {
+    return 'Support reply: $note';
+  }
+
+  @override
+  String get profileSupport_screenSupportAttachmentsUnavailableLabel =>
+      'Attachments aren\'t supported yet';
+
+  @override
+  String profileSupport_screenSupportBodyFootnote(
+    Object? length,
+    Object? maximumBodyLength,
+    Object? problem,
+  ) {
+    return '$length / $maximumBodyLength code points$problem';
+  }
+
+  @override
+  String get profileSupport_screenSupportBodyLabel => 'Description';
+
+  @override
+  String get profileSupport_screenSupportCapabilityBlockLabel =>
+      'Support tickets aren\'t available right now';
+
+  @override
+  String profileSupport_screenSupportEscalationText(
+    Object? responseWindowHours,
+  ) {
+    return 'Replies within $responseWindowHours hours. For urgent issues, say so in the ticket.';
+  }
+
+  @override
+  String profileSupport_screenSupportEscalationTextBusinessDays(
+    Object? responseWindowHours,
+  ) {
+    return 'Replies within $responseWindowHours hours on business days. For urgent issues, say so in the ticket.';
+  }
+
+  @override
+  String get profileSupport_screenSupportEscalationTitle => 'Response time';
+
+  @override
+  String get profileSupport_screenSupportMoreTicketsBody =>
+      'Only the latest page is shown; older tickets can\'t be viewed yet.';
+
+  @override
+  String get profileSupport_screenSupportMoreTicketsTitle =>
+      'There are older tickets';
+
+  @override
+  String get profileSupport_screenSupportOpenCommunityTitle =>
+      'LOOP official community';
+
+  @override
+  String get profileSupport_screenSupportScamNoticeBody =>
+      'Anyone who asks for your private key, recovery phrase or code in a DM is a scammer. Report them.';
+
+  @override
+  String get profileSupport_screenSupportScamNoticeTitle =>
+      'We never DM you first';
+
+  @override
+  String get profileSupport_screenSupportScreenTitle => 'Help and support';
+
+  @override
+  String get profileSupport_screenSupportTicketDetailOpenText =>
+      'Support hasn\'t replied to this ticket yet; replies will show above.';
+
+  @override
+  String get profileSupport_screenSupportTicketsEmptyMessage =>
+      'After you submit, status and replies show here.';
+
+  @override
+  String get profileSupport_screenText => 'How is power calculated';
+
+  @override
+  String get profileSupport_screenText10 =>
+      'A Launch asset that hasn\'t graduated can only be bought, and only through its own channel. A rejection comes with a specific error code, shown as-is on the trade page.';
+
+  @override
+  String get profileSupport_screenText2 =>
+      'Power comes from the latest power snapshot: each registered asset\'s holding times its weight, not its price, listed line by line in the power breakdown. It counts holdings in wallets linked to your LOOP account; a community token counts only when it\'s bound to an approved community. The Mining page shows that snapshot\'s block and time.';
+
+  @override
+  String get profileSupport_screenText3 => 'Why does my token have no weight';
+
+  @override
+  String get profileSupport_screenText4 =>
+      'Only registered assets count toward mining. Registration follows LOOP\'s registry, not whether a token has appeared in your wallet. Tokens bound to communities under review have no weight.';
+
+  @override
+  String get profileSupport_screenText5 => 'How do I join a Launch';
+
+  @override
+  String get profileSupport_screenText6 =>
+      'Launch rounds, snapshots and limits are set by contract parameters. Until they\'re confirmed, the Launch page only shows existing round status and promises no allocation.';
+
+  @override
+  String get profileSupport_screenText7 =>
+      'How do I recover my account on a new phone';
+
+  @override
+  String get profileSupport_screenText8 =>
+      'Your account identity is held by Privy. Passkeys and multi-factor authentication can be turned on in Security Center, and automatic recovery is the default method; social recovery and private key export aren\'t open yet. Security Center shows the current status of each.';
+
+  @override
+  String get profileSupport_screenText9 =>
+      'Why was my bonding pool buy rejected';
+
+  @override
+  String profile_meAttentionStreamChatMessageRequestsEntrySemanticLabel(
+    Object? label,
+  ) {
+    return 'Message requests, $label pending';
+  }
+
+  @override
+  String profile_meAttentionStreamChatMessageRequestsEntryTrailing(
+    Object? label,
+  ) {
+    return '$label pending';
+  }
+
+  @override
+  String get profile_screensAliasBlocked =>
+      'That name has a word that isn\'t allowed. Try another.';
+
+  @override
+  String get profile_screensAliasReserved =>
+      'That name is reserved by LOOP. Try another.';
+
+  @override
+  String get profile_screensBootstrapRequired =>
+      'Your account isn\'t set up yet. Try again later.';
+
+  @override
+  String get profile_screensHint =>
+      '1–40 characters, doesn\'t have to be unique';
+
+  @override
+  String get profile_screensHint2 => 'A line about yourself (optional)';
+
+  @override
+  String get profile_screensIdempotencyConflict =>
+      'Submission conflict. Reset; try again.';
+
+  @override
+  String get profile_screensInvalidData =>
+      'The service returned a profile that doesn\'t match the contract. Nothing was applied.';
+
+  @override
+  String get profile_screensInvalidData2 =>
+      'The service returned privacy settings that don\'t match the contract. Nothing was applied.';
+
+  @override
+  String profile_screensJoinedLine(Object? month, Object? year) {
+    return 'Joined $month $year';
+  }
+
+  @override
+  String get profile_screensLabel => 'Reload';
+
+  @override
+  String get profile_screensLoopLabel => 'Privacy and security';
+
+  @override
+  String get profile_screensLoopLabel2 => 'Review notifications';
+
+  @override
+  String get profile_screensLoopLabel3 => 'Identity';
+
+  @override
+  String get profile_screensLoopLabel4 => 'Social';
+
+  @override
+  String get profile_screensLoopLabel5 => 'Visibility';
+
+  @override
+  String get profile_screensLoopOfflineState => 'Save profile';
+
+  @override
+  String get profile_screensLoopOfflineState2 => 'Activate LOOP ID';
+
+  @override
+  String get profile_screensLoopOfflineState3 => 'Save privacy settings';
+
+  @override
+  String profile_screensLoopPreviewModeNoticeBody(Object? resource) {
+    return '$resource is kept only in memory for this run. It isn\'t written to your account and calls no provider.';
+  }
+
+  @override
+  String get profile_screensLoopSoftUpdateDismissLabel =>
+      'Dismiss update prompt';
+
+  @override
+  String get profile_screensLoopSoftUpdatePromptBody =>
+      'Update to the latest version. This version still works.';
+
+  @override
+  String profile_screensLoopSoftUpdatePromptBody2(Object? minimum) {
+    return 'Update to $minimum or later. This version still works.';
+  }
+
+  @override
+  String get profile_screensLoopSoftUpdatePromptTitle =>
+      'New version available';
+
+  @override
+  String get profile_screensMeCommunitiesEmptyTitle =>
+      'No communities joined yet';
+
+  @override
+  String get profile_screensMeCommunitiesUnavailableMessage =>
+      'Communities aren\'t available right now';
+
+  @override
+  String get profile_screensMeGroupLabel => 'Joined';
+
+  @override
+  String get profile_screensMeGroupLabel2 => 'Created';
+
+  @override
+  String get profile_screensMeJoinedAllTitle => 'All joined communities';
+
+  @override
+  String profile_screensMembers(Object? groupedFigure) {
+    return '$groupedFigure members';
+  }
+
+  @override
+  String get profile_screensMessage =>
+      'Go back to Me and pick another setting.';
+
+  @override
+  String get profile_screensMessage2 => 'Profile hasn\'t loaded yet';
+
+  @override
+  String profile_screensMessage3(Object? version) {
+    return 'Submitted as version $version';
+  }
+
+  @override
+  String get profile_screensOffLabel => 'Off';
+
+  @override
+  String get profile_screensOffline =>
+      'This device is offline. Your profile couldn\'t load, and no changes were submitted.';
+
+  @override
+  String get profile_screensOffline2 =>
+      'This device is offline. Privacy settings couldn\'t load, and no changes were submitted.';
+
+  @override
+  String get profile_screensPermissionDenied =>
+      'Current policy doesn\'t allow reading or changing your profile. Nothing changed. This permission can\'t be changed in the app.';
+
+  @override
+  String get profile_screensPermissionDenied2 =>
+      'Current policy doesn\'t allow reading or changing privacy settings. Nothing changed. This permission can\'t be changed in the app; the switches follow LOOP\'s records.';
+
+  @override
+  String get profile_screensPrivacyAnonymousModeSubtitle =>
+      'Show only your alias, never your wallet address';
+
+  @override
+  String get profile_screensPrivacyAnonymousModeTitle => 'Anonymous mode';
+
+  @override
+  String get profile_screensPrivacyConflictTitle =>
+      'Privacy settings changed elsewhere';
+
+  @override
+  String get profile_screensPrivacyDiscoverableSubtitle =>
+      'Others can find you by nickname; your LOOP ID is always searchable exactly';
+
+  @override
+  String get profile_screensPrivacyDiscoverableSubtitle2 =>
+      'Others can\'t find you by nickname; your LOOP ID is always searchable exactly';
+
+  @override
+  String get profile_screensPrivacyDiscoverableTitle => 'Discoverable';
+
+  @override
+  String get profile_screensPrivacyEmptyMessage =>
+      'Privacy preferences haven\'t loaded yet.';
+
+  @override
+  String get profile_screensPrivacyEmptyTitle => 'No privacy settings to show';
+
+  @override
+  String get profile_screensPrivacyErrorSource => 'Privacy service';
+
+  @override
+  String get profile_screensPrivacyPermissionTitle =>
+      'Privacy settings can\'t be read or changed in your region';
+
+  @override
+  String get profile_screensPrivacyPermissionTitle2 =>
+      'This account can\'t read or change privacy settings';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsOffLabel => 'Only me';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsOnLabel => 'Everyone';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsSubtitle =>
+      'Others see your holdings and trades on your profile, never your wallet address';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsSubtitle2 =>
+      'Only you can see your holdings and trades';
+
+  @override
+  String get profile_screensPrivacyPublicHoldingsTitle =>
+      'Public holdings and trades';
+
+  @override
+  String get profile_screensPrivacySavePermissionTitle =>
+      'Privacy settings can\'t be changed in your region';
+
+  @override
+  String get profile_screensPrivacySavePermissionTitle2 =>
+      'This account can\'t change privacy settings';
+
+  @override
+  String get profile_screensPrivacySubtitle => 'Holdings and trades are public';
+
+  @override
+  String get profile_screensPrivacyUnavailableTitle =>
+      'Privacy settings aren\'t available right now';
+
+  @override
+  String get profile_screensPrivacyVisibilityNoteText =>
+      'Visibility only affects what\'s shown. It doesn\'t let anyone copy your trades or access your wallet. Your avatar and username always show in chats and on your profile; your wallet address never appears on your profile.';
+
+  @override
+  String get profile_screensPrivacyVisibilityNoteTitle => 'About visibility';
+
+  @override
+  String get profile_screensProfileAddBioLabel => 'Add a bio';
+
+  @override
+  String get profile_screensProfileAlias => 'No alias yet';
+
+  @override
+  String get profile_screensProfileAvailabilityBannerBody =>
+      'Reloading profile status.';
+
+  @override
+  String get profile_screensProfileAvailabilityBannerTitle =>
+      'Can\'t read profile status right now';
+
+  @override
+  String get profile_screensProfileAvailabilityBrowseSuffix =>
+      ' You can keep browsing.';
+
+  @override
+  String get profile_screensProfileAvailabilityDismissLabel =>
+      'Hide profile status notice';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryLabel => 'Retrying…';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryLabel2 =>
+      'Reload profile status';
+
+  @override
+  String get profile_screensProfileAvailabilityRetryableSuffix =>
+      ' You can keep browsing or retry now.';
+
+  @override
+  String get profile_screensProfileEditAliasLabel => 'Username';
+
+  @override
+  String get profile_screensProfileEditAliasSuggestLabel => 'Try another';
+
+  @override
+  String get profile_screensProfileEditBioLabel => 'Bio';
+
+  @override
+  String get profile_screensProfileEditConflictTitle =>
+      'Profile changed elsewhere';
+
+  @override
+  String get profile_screensProfileEditFailureTitle => 'Save didn\'t finish';
+
+  @override
+  String get profile_screensProfileEditOpenPrivacySubtitle =>
+      'Whether holdings and trades are public, who can add you';
+
+  @override
+  String get profile_screensProfileEditPermissionTitle =>
+      'Your profile can\'t be changed in your region';
+
+  @override
+  String get profile_screensProfileEditPermissionTitle2 =>
+      'This account can\'t change its profile';
+
+  @override
+  String get profile_screensProfileEditSaveLabel => 'Saving…';
+
+  @override
+  String get profile_screensProfileEditSaveTitle => 'Edit profile';
+
+  @override
+  String get profile_screensProfileEditValidationTitle => 'Can\'t save';
+
+  @override
+  String get profile_screensProfileEmptyMessage =>
+      'Account profile hasn\'t loaded yet.';
+
+  @override
+  String get profile_screensProfileEmptyTitle => 'No profile to show';
+
+  @override
+  String get profile_screensProfileErrorSource => 'Profile service';
+
+  @override
+  String get profile_screensProfileLoopId => 'LOOP ID unreadable';
+
+  @override
+  String get profile_screensProfileOpenEditLabel => 'Edit avatar and profile';
+
+  @override
+  String get profile_screensProfileOpenPrivacyTitle => 'Privacy Center';
+
+  @override
+  String get profile_screensProfilePermissionTitle =>
+      'This step needs two-step verification';
+
+  @override
+  String get profile_screensProfilePermissionTitle2 =>
+      'Your profile can\'t be read or changed in your region';
+
+  @override
+  String get profile_screensProfilePermissionTitle3 =>
+      'This account can\'t read or change its profile';
+
+  @override
+  String get profile_screensProfileShareLoopIdLabel => 'Share card';
+
+  @override
+  String get profile_screensProfileUnavailableTitle =>
+      'Profile isn\'t available right now';
+
+  @override
+  String get profile_screensRegionBlocked =>
+      'Your profile can\'t be read or changed in your region right now. Nothing changed. This isn\'t about your account; switching accounts won\'t change it.';
+
+  @override
+  String get profile_screensRegionBlocked2 =>
+      'Privacy settings can\'t be read or changed in your region right now. Nothing changed. This isn\'t about your account; switching accounts won\'t change it.';
+
+  @override
+  String get profile_screensResource => 'Privacy settings';
+
+  @override
+  String get profile_screensS => 'Holdings and trades visible only to you';
+
+  @override
+  String get profile_screensS2 => 'Strangers can\'t send you friend requests';
+
+  @override
+  String get profile_screensS3 =>
+      'When off, friends can\'t open a direct message with you either';
+
+  @override
+  String get profile_screensS4 =>
+      'When off, friends can\'t add you to small groups';
+
+  @override
+  String get profile_screensSemanticLabel => 'Avatar';
+
+  @override
+  String get profile_screensStepUpRequired =>
+      'This step needs two-step verification, which isn\'t open yet. Nothing changed. Check Security Center for the verification methods available now.';
+
+  @override
+  String get profile_screensStepUpRequired2 =>
+      'Changing privacy settings needs two-step verification, which isn\'t open yet. Nothing changed. Check Security Center for the verification methods available now.';
+
+  @override
+  String get profile_screensSwitch => 'The profile action didn\'t finish.';
+
+  @override
+  String get profile_screensSwitch2 => 'The privacy action didn\'t finish.';
+
+  @override
+  String get profile_screensSwitch3 => 'Anyone with your LOOP ID can add you';
+
+  @override
+  String get profile_screensSwitch4 =>
+      'Friends can open a direct message with you';
+
+  @override
+  String get profile_screensSwitch5 => 'Friends can add you to small groups';
+
+  @override
+  String get profile_screensText => '+ Add a bio';
+
+  @override
+  String get profile_screensTitle => 'Nothing was changed';
+
+  @override
+  String get profile_screensUnavailable =>
+      'The profile service isn\'t available right now. No changes were saved.';
+
+  @override
+  String get profile_screensUnavailable2 =>
+      'The privacy service isn\'t available right now. No changes were saved.';
+
+  @override
+  String get profile_screensUnexpected =>
+      'The profile action didn\'t finish. Try again later.';
+
+  @override
+  String get profile_screensUnexpected2 =>
+      'The privacy action didn\'t finish. Try again later.';
+
+  @override
+  String get profile_screensUnknownProfileSurfaceTitle => 'Setting unavailable';
+
+  @override
+  String get profile_screensValidationFailed =>
+      'Alias or bio is too long. Edit it and try again.';
+
+  @override
+  String get profile_screensValidationFailed2 =>
+      'The submitted privacy settings weren\'t accepted. Check them and try again.';
+
+  @override
+  String get profile_screensValidationMessage =>
+      'Alias must be 1–40 characters with no invisible characters.';
+
+  @override
+  String get profile_screensValidationMessage2 =>
+      'Bio can be up to 160 characters.';
+
+  @override
+  String get profile_screensVersionConflict =>
+      'Your profile was changed elsewhere. Reload before saving.';
+
+  @override
+  String get profile_screensVersionConflict2 =>
+      'Privacy settings were changed elsewhere. Reload before saving.';
+
+  @override
+  String get profile_signOutButtonConfirmLabel => 'Sign out';
+
+  @override
+  String get profile_signOutButtonLabel => 'Signing out…';
+
+  @override
+  String get profile_signOutButtonLoopSignOutConfirmBody =>
+      'This device will stop getting notifications for this account, and the home screen data saved here will be cleared. Assets, friends and conversations in your account aren\'t affected; sign in again to get them back.';
+
+  @override
+  String get profile_signOutButtonLoopSignOutConfirmTitle => 'Sign out?';
 
   @override
   String get scan_cameraDeniedBody =>
@@ -9106,6 +12483,708 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get square_screenVoiceRoomJoinFirstSuffix =>
       ', join the community to enter';
+
+  @override
+  String get system_specimensChartRangeLabel => '1H, fixed demo';
+
+  @override
+  String get system_specimensCommunityLine =>
+      'LOOP community 128,420 members, 0.35×';
+
+  @override
+  String get system_specimensCommunityLine2 =>
+      'Graduated 08-22, DEX pool liquidity in place';
+
+  @override
+  String get system_specimensCommunityLine3 =>
+      'This token isn\'t in a LOOP community, no Mining Weight';
+
+  @override
+  String get system_specimensFact =>
+      'This contract has a mint function; the issuer can mint more';
+
+  @override
+  String get system_specimensFact2 =>
+      'Contract address doesn\'t match the official PEPE';
+
+  @override
+  String get system_specimensLabel => 'State 1, normal';
+
+  @override
+  String get system_specimensLabel2 => 'State 2, identifying';
+
+  @override
+  String get system_specimensLabel3 => 'State 3, graduated (LOOP Launch asset)';
+
+  @override
+  String get system_specimensLabel4 => 'State 4, data missing';
+
+  @override
+  String get system_specimensLabel5 => 'State 5, risk facts bar';
+
+  @override
+  String get system_specimensLabel6 =>
+      'State 1, awaiting confirmation (normal)';
+
+  @override
+  String get system_specimensLabel7 => 'State 2, simulation failed';
+
+  @override
+  String get system_specimensLabel8 => 'State 3, signing';
+
+  @override
+  String get system_specimensLabel9 => 'State 4, rejected by policy';
+
+  @override
+  String get system_specimensLoopComponentSpecimenLabel => 'Component specimen';
+
+  @override
+  String get system_specimensLoopSignFact => 'Fee';
+
+  @override
+  String get system_specimensLoopSignFact2 => 'Passed';
+
+  @override
+  String get system_specimensLoopSignFact3 => 'Failed, can\'t simulate';
+
+  @override
+  String get system_specimensLoopSignFact4 => 'Transfer 5,000 USDC';
+
+  @override
+  String get system_specimensLoopSignFact5 => 'Result';
+
+  @override
+  String get system_specimensLoopSignFact6 => 'Rejected';
+
+  @override
+  String get system_specimensLoopStateSpecimenLabel =>
+      'Component specimen, not the current state';
+
+  @override
+  String get system_specimensLoopTokenCardAction => 'Graduation details';
+
+  @override
+  String get system_specimensLoopTokenCardAction2 => 'View contract';
+
+  @override
+  String get system_specimensLoopTokenCardAction3 => 'Trading unavailable';
+
+  @override
+  String get system_specimensLoopTokenCardAction4 => 'Review facts, then buy';
+
+  @override
+  String get system_specimensLoopTokenCardAction5 => 'View all facts';
+
+  @override
+  String get system_specimensObservedLabel => '2m ago';
+
+  @override
+  String get system_specimensReason =>
+      'The simulation service didn\'t return a verifiable result. Can\'t confirm right now; retry the simulation or cancel.';
+
+  @override
+  String get system_specimensReason2 =>
+      'Over your single-transfer limit of \$1,000. This is a wallet policy you set; adjust it in Security Center or lower the amount.';
+
+  @override
+  String get system_specimensSemanticLabel =>
+      'PEPE 1-hour trend, component specimen';
+
+  @override
+  String get system_specimensSource => 'On-chain comparison';
+
+  @override
+  String get system_specimensSourceLabel => 'Demo data, development preview';
+
+  @override
+  String get system_surfacesBanner => 'Offline, live updates paused';
+
+  @override
+  String get system_surfacesBanner2 =>
+      'Market data unavailable, prices may be stale';
+
+  @override
+  String get system_surfacesBanner3 => 'Trading service down, actions paused';
+
+  @override
+  String get system_surfacesBody =>
+      'Check Wi-Fi or mobile data. Asset data is cached from the last sync and may be stale.';
+
+  @override
+  String get system_surfacesBody10 =>
+      'Claims work normally after maintenance; nothing is missed.';
+
+  @override
+  String get system_surfacesBody11 =>
+      'LOOP doesn\'t infer your region from device language, SIM or IP; without an approved decision, it\'s treated as unknown.';
+
+  @override
+  String get system_surfacesBody12 =>
+      'Your location isn\'t inferred, and other features aren\'t confirmed to be available.';
+
+  @override
+  String get system_surfacesBody13 =>
+      'Used for app lock and verification before signing. Biometric data stays with the system; LOOP can\'t access it.';
+
+  @override
+  String get system_surfacesBody14 =>
+      'Tap a button to show a real toast. It disappears after 2.6 seconds.';
+
+  @override
+  String get system_surfacesBody15 =>
+      'Normal, identifying and Launch asset share one structure, not one risk judgment. This component appears in chats, community home, market lists and search results, with no route of its own.';
+
+  @override
+  String get system_surfacesBody16 =>
+      'Every item shows its source and time, with no verdict like \"dangerous\" or \"unsafe\". The call is yours.';
+
+  @override
+  String get system_surfacesBody17 =>
+      'Send, Swap, Launch buys and approvals all go through this one sheet; staking joins only after its own contract plan is approved.';
+
+  @override
+  String get system_surfacesBody18 =>
+      'Your wallet stopped it by your own rule, so the copy says which rule and how to change it, not just \"failed\".';
+
+  @override
+  String get system_surfacesBody19 => 'Go back and try again.';
+
+  @override
+  String get system_surfacesBody2 =>
+      'Everything else works. Prices and charts may be off; actions that depend on the current price are paused.';
+
+  @override
+  String get system_surfacesBody3 =>
+      'Orders and account changes can\'t be submitted; market browsing and chat still work.';
+
+  @override
+  String get system_surfacesBody4 =>
+      'Other chains are fine. BSC balances may be off, and trading on that chain is paused.';
+
+  @override
+  String get system_surfacesBody5 =>
+      'A full outage blocks everything; a single-chain outage should leave other chains working. Blocking it all makes people think the whole app is broken.';
+
+  @override
+  String get system_surfacesBody6 =>
+      'Per-chain status can\'t be read right now. This page won\'t decide for you whether a chain is available.';
+
+  @override
+  String get system_surfacesBody7 =>
+      'Trace ID 7f3a2c9e. Wallet assets stay on-chain, unaffected.';
+
+  @override
+  String system_surfacesBody8(Object? trace) {
+    return '$trace. Don\'t assume success or failure; check the latest status before retrying. Wallet assets stay on-chain, unaffected.';
+  }
+
+  @override
+  String get system_surfacesBody9 =>
+      'LOOP only blocks when an approved version policy requires an update and this version is below its floor.';
+
+  @override
+  String get system_surfacesCaption =>
+      'Everything else still works; affected actions stay disabled until recovery.';
+
+  @override
+  String get system_surfacesCaption10 =>
+      'Send, Swap, DApp and Bridge all go through one signing exit.';
+
+  @override
+  String get system_surfacesCaption11 =>
+      'LOOP doesn\'t recognize the requested system page.';
+
+  @override
+  String get system_surfacesCaption2 =>
+      'Opening this page doesn\'t mean this version is unsupported or unsafe.';
+
+  @override
+  String get system_surfacesCaption3 =>
+      'An approved version policy requires a supported version. This can\'t be skipped.';
+
+  @override
+  String get system_surfacesCaption4 =>
+      'Opening this page doesn\'t mean your region or account is restricted.';
+
+  @override
+  String get system_surfacesCaption5 =>
+      'Assets stay visible read-only; restricted features follow each page\'s current state.';
+
+  @override
+  String get system_surfacesCaption6 =>
+      'Restricted features follow each page\'s current state; unconfirmed availability isn\'t listed here.';
+
+  @override
+  String get system_surfacesCaption7 =>
+      'Camera, notifications and biometrics are asked for only when needed.';
+
+  @override
+  String get system_surfacesCaption8 =>
+      'Success, warning and error share one position and clear meaning.';
+
+  @override
+  String get system_surfacesCaption9 =>
+      'Lists, details and charts each keep a stable layout so content doesn\'t jump.';
+
+  @override
+  String get system_surfacesConnectivitySpecimenCaption =>
+      'Cache is still viewable; Send, Swap and Bridge are paused.';
+
+  @override
+  String get system_surfacesConnectivitySpecimenHeading =>
+      'This device is offline';
+
+  @override
+  String get system_surfacesConnectivitySpecimenKicker => 'Last sync 09:38';
+
+  @override
+  String get system_surfacesConnectivitySpecimenRetryMessage =>
+      'Can\'t connect to the server';
+
+  @override
+  String get system_surfacesConnectivitySpecimenStamp => 'Offline';
+
+  @override
+  String get system_surfacesConnectivitySpecimenTitle => 'No network';
+
+  @override
+  String get system_surfacesDeniedBody =>
+      'You won\'t get mining settlement or Launch alerts. Turn it back on in Settings → LOOP → Notifications.';
+
+  @override
+  String get system_surfacesDeniedBody2 =>
+      'Scanning is unavailable. Turn it back on in Settings → LOOP → Camera.';
+
+  @override
+  String get system_surfacesDeniedBody3 =>
+      'You can only listen in voice rooms. Turn it back on in Settings → LOOP → Microphone.';
+
+  @override
+  String system_surfacesForceUpdateFloorSuffix(Object? version) {
+    return ' (force-update floor $version)';
+  }
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableBody =>
+      'Can\'t open the store directly right now. Update from the app store manually.';
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableFootnote =>
+      'An approved version policy requires an update. This can\'t be skipped';
+
+  @override
+  String get system_surfacesForceUpdateStoreUnavailableTitle =>
+      'Update required';
+
+  @override
+  String get system_surfacesHeading => 'Version policy isn\'t open yet';
+
+  @override
+  String get system_surfacesHeading2 => 'Maintenance notice in effect';
+
+  @override
+  String get system_surfacesHeading3 => 'Region policy isn\'t open yet';
+
+  @override
+  String get system_surfacesHeading4 => 'Limited in your region';
+
+  @override
+  String get system_surfacesHeading5 => 'Asked only when needed';
+
+  @override
+  String get system_surfacesHeading6 => '5 card states';
+
+  @override
+  String get system_surfacesHeading7 => '4 signing states';
+
+  @override
+  String get system_surfacesHeading8 => 'This page isn\'t available';
+
+  @override
+  String get system_surfacesKicker => 'Device offline';
+
+  @override
+  String get system_surfacesKicker10 => 'Unified signing exit';
+
+  @override
+  String get system_surfacesKicker2 => 'Service outage';
+
+  @override
+  String get system_surfacesKicker3 => 'Version policy';
+
+  @override
+  String get system_surfacesKicker4 => 'Release gate';
+
+  @override
+  String get system_surfacesKicker5 => 'Access policy';
+
+  @override
+  String get system_surfacesKicker6 => 'Permissions';
+
+  @override
+  String get system_surfacesKicker7 => 'Feedback';
+
+  @override
+  String get system_surfacesKicker8 => 'Loading states';
+
+  @override
+  String get system_surfacesKicker9 => 'Token card';
+
+  @override
+  String get system_surfacesLabel => 'Update now';
+
+  @override
+  String get system_surfacesLabel10 => 'View assets';
+
+  @override
+  String get system_surfacesLabel11 => 'Export private key';
+
+  @override
+  String get system_surfacesLabel12 => 'View eligibility policy';
+
+  @override
+  String get system_surfacesLabel13 => 'Not now';
+
+  @override
+  String system_surfacesLabel14(Object? label) {
+    return 'Show $label toast';
+  }
+
+  @override
+  String get system_surfacesLabel2 => 'View cached content';
+
+  @override
+  String get system_surfacesLabel3 => 'Keep using available features';
+
+  @override
+  String get system_surfacesLabel4 => 'Contact support';
+
+  @override
+  String get system_surfacesLabel5 => 'Force-update floor';
+
+  @override
+  String get system_surfacesLabel6 => 'Minimum supported version';
+
+  @override
+  String get system_surfacesLabel7 => 'Update';
+
+  @override
+  String get system_surfacesLabel8 => 'Check again';
+
+  @override
+  String get system_surfacesLabel9 => 'View service status';
+
+  @override
+  String system_surfacesLastSyncKicker(Object? hour, Object? minute) {
+    return 'Last sync $hour:$minute';
+  }
+
+  @override
+  String system_surfacesLoadingPresentationActiveBody(Object? kind) {
+    return 'The owner chose the $kind skeleton; placeholders don\'t indicate result count, identity or success.';
+  }
+
+  @override
+  String get system_surfacesLoadingPresentationActiveTitle =>
+      'Three skeleton types';
+
+  @override
+  String get system_surfacesLoopLabel => 'Partial outage (another state)';
+
+  @override
+  String get system_surfacesLoopLabel10 => 'Chart skeleton';
+
+  @override
+  String get system_surfacesLoopLabel2 => 'Before asking';
+
+  @override
+  String get system_surfacesLoopLabel3 => 'After denial (component specimen)';
+
+  @override
+  String get system_surfacesLoopLabel4 => 'After denial';
+
+  @override
+  String get system_surfacesLoopLabel5 => 'Current feedback';
+
+  @override
+  String get system_surfacesLoopLabel6 => 'Static style comparison';
+
+  @override
+  String get system_surfacesLoopLabel7 => 'Current loading';
+
+  @override
+  String get system_surfacesLoopLabel8 => 'List skeleton';
+
+  @override
+  String get system_surfacesLoopLabel9 => 'Detail skeleton';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenCaption =>
+      'Community interaction is paused; Wallet and Mining data stay read-only.';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenKicker => 'Maintenance window';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenReadOnlyLabel =>
+      'View read-only content';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenStamp => '2 hours';
+
+  @override
+  String get system_surfacesMaintenanceSpecimenTitle => 'Scheduled maintenance';
+
+  @override
+  String get system_surfacesMessage => 'Allow LOOP in system settings';
+
+  @override
+  String get system_surfacesPartialOutageNoticeBody =>
+      'Other chains are fine. Balances on this chain may be off, and trading on it is paused.';
+
+  @override
+  String system_surfacesPartialOutageNoticeTitle(Object? networkLabel) {
+    return '$networkLabel network isn\'t available right now';
+  }
+
+  @override
+  String get system_surfacesPermissionDeniedSpecimenTitle => 'Permission notes';
+
+  @override
+  String get system_surfacesPermissionDeniedSpecimenTitle2 =>
+      'Notifications are turned off in system settings';
+
+  @override
+  String get system_surfacesPurpose =>
+      'For mining settlement, Launch start, @mentions and security events. No marketing.';
+
+  @override
+  String get system_surfacesPurpose2 =>
+      'Only when scanning a QR code: payment addresses and WalletConnect. Never in the background.';
+
+  @override
+  String get system_surfacesPurpose3 =>
+      'Only after you tap \"Speak\" in a voice room; the mic is off when you enter.';
+
+  @override
+  String get system_surfacesS => 'This request';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenCaption =>
+      'Your wallet is still on your device. Try again later or contact support.';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenHeading =>
+      'Service unavailable';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenStamp => 'Retryable';
+
+  @override
+  String get system_surfacesServiceErrorSpecimenTitle => 'Service status';
+
+  @override
+  String get system_surfacesSettingsLabel => 'Open system settings';
+
+  @override
+  String get system_surfacesShortName => 'Camera';
+
+  @override
+  String get system_surfacesShortName2 => 'Microphone';
+
+  @override
+  String get system_surfacesShowLoopForceUpdateDialog =>
+      'Update LOOP to continue';
+
+  @override
+  String system_surfacesShowLoopForceUpdateDialog2(Object? requirement) {
+    return 'An approved version policy requires a supported version$requirement. Install a supported version, then come back to LOOP.';
+  }
+
+  @override
+  String get system_surfacesSignSheetTriggerPendingLabel =>
+      'Show pending sheet';
+
+  @override
+  String get system_surfacesSignSheetTriggerPendingTitle =>
+      'Four sign sheet states';
+
+  @override
+  String get system_surfacesSkeletonChart => 'chart';
+
+  @override
+  String get system_surfacesSkeletonDetail => 'detail';
+
+  @override
+  String get system_surfacesSkeletonList => 'list';
+
+  @override
+  String get system_surfacesStamp => 'Partial outage';
+
+  @override
+  String get system_surfacesStamp2 => 'Update needed';
+
+  @override
+  String get system_surfacesStamp3 => 'In effect';
+
+  @override
+  String get system_surfacesStamp4 => 'Scheduled';
+
+  @override
+  String get system_surfacesStamp5 => 'Restricted';
+
+  @override
+  String get system_surfacesStamp6 => 'On demand';
+
+  @override
+  String get system_surfacesStamp7 => '3 states';
+
+  @override
+  String get system_surfacesStamp8 => '3 types';
+
+  @override
+  String get system_surfacesStamp9 => '5 states';
+
+  @override
+  String get system_surfacesSummary => 'Where this component appears';
+
+  @override
+  String get system_surfacesSystemReturnLabel => 'Back to LOOP';
+
+  @override
+  String get system_surfacesText => 'Address copied';
+
+  @override
+  String get system_surfacesText2 => 'Warning';
+
+  @override
+  String get system_surfacesText3 => 'Price changed. Refresh the quote';
+
+  @override
+  String get system_surfacesText4 => 'Error';
+
+  @override
+  String get system_surfacesText5 => 'Transaction failed: not enough gas';
+
+  @override
+  String get system_surfacesTitle => 'Fully offline';
+
+  @override
+  String get system_surfacesTitle10 => 'Force update';
+
+  @override
+  String get system_surfacesTitle11 => 'No approved minimum version policy';
+
+  @override
+  String get system_surfacesTitle12 => 'Mining Power keeps accruing';
+
+  @override
+  String get system_surfacesTitle13 => 'Maintenance notes';
+
+  @override
+  String get system_surfacesTitle14 => 'Region restriction';
+
+  @override
+  String get system_surfacesTitle15 => 'No approved region decision';
+
+  @override
+  String get system_surfacesTitle16 => 'No location or reason details here';
+
+  @override
+  String get system_surfacesTitle17 => 'Notification permission';
+
+  @override
+  String get system_surfacesTitle18 => 'Camera permission';
+
+  @override
+  String get system_surfacesTitle19 => 'Biometrics';
+
+  @override
+  String get system_surfacesTitle2 => 'Market data unavailable';
+
+  @override
+  String system_surfacesTitle20(Object? shortName) {
+    return '$shortName permission is turned off in system settings';
+  }
+
+  @override
+  String system_surfacesTitle21(Object? shortName) {
+    return '$shortName permission';
+  }
+
+  @override
+  String get system_surfacesTitle22 => 'Three toast states';
+
+  @override
+  String get system_surfacesTitle23 => 'Five Token Card states';
+
+  @override
+  String get system_surfacesTitle24 => 'Risk state lists facts only';
+
+  @override
+  String get system_surfacesTitle25 => 'The only signing exit in the product';
+
+  @override
+  String get system_surfacesTitle26 => 'A policy rejection isn\'t an error';
+
+  @override
+  String get system_surfacesTitle27 => 'System';
+
+  @override
+  String get system_surfacesTitle3 => 'Trading service unavailable';
+
+  @override
+  String get system_surfacesTitle4 => 'BSC network isn\'t available right now';
+
+  @override
+  String get system_surfacesTitle5 => 'Why tell these two apart';
+
+  @override
+  String get system_surfacesTitle6 => 'No per-chain outage info';
+
+  @override
+  String get system_surfacesTitle7 => 'Error 502';
+
+  @override
+  String get system_surfacesTitle8 => 'Result unconfirmed';
+
+  @override
+  String system_surfacesTitle9(Object? statusLabel) {
+    return 'Error $statusLabel';
+  }
+
+  @override
+  String system_surfacesTitleBody(Object? body, Object? title) {
+    return '$title. $body';
+  }
+
+  @override
+  String system_surfacesTraceId(Object? trace) {
+    return 'Trace ID $trace';
+  }
+
+  @override
+  String get system_surfacesTraceMissing => 'No trace ID';
+
+  @override
+  String get system_surfacesUnavailableReason =>
+      'No reviewed store link. Open the app store manually.';
+
+  @override
+  String get system_surfacesUnavailableReason2 =>
+      'The Wallet page can\'t be reached right now.';
+
+  @override
+  String get system_surfacesUnavailableReason3 =>
+      'The private key export page can\'t be reached right now.';
+
+  @override
+  String get system_surfacesUnavailableReason4 =>
+      'The help page can\'t be reached right now.';
+
+  @override
+  String get system_surfacesUnavailableReason5 =>
+      'No approved eligibility policy link.';
 
   @override
   String get walletTestnetFaucet_sheetBarrierLabel => 'Close Get funds';

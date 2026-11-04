@@ -633,7 +633,10 @@ void main() {
         find.byKey(const ValueKey<String>('profile-edit-alias-field')),
         findsNothing,
       );
-      expect(find.textContaining('不能在应用里自行调整'), findsOneWidget);
+      expect(
+        find.textContaining("can't be changed in the app"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a step-up refusal points at the security centre', (
@@ -653,8 +656,11 @@ void main() {
         find.byKey(const ValueKey<String>('profile-permission')),
         findsOneWidget,
       );
-      expect(find.text('这一步需要二次验证'), findsOneWidget);
-      expect(find.text('前往安全中心'), findsOneWidget);
+      expect(
+        find.text('This step needs two-step verification'),
+        findsOneWidget,
+      );
+      expect(find.text('Go to Security Center'), findsOneWidget);
     });
   });
 
@@ -805,7 +811,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.textContaining('项开启'), findsNothing);
+      expect(find.textContaining('on and in effect'), findsNothing);
     });
 
     testWidgets('empty does not apply: every category is always present', (
@@ -832,7 +838,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.textContaining('项开启'), findsOneWidget);
+      expect(find.textContaining('on and in effect'), findsOneWidget);
     });
 
     testWidgets('a failed read is an error, never a page of default switches', (
@@ -896,7 +902,7 @@ void main() {
         find.byKey(const ValueKey<String>('notification-preferences-error')),
         findsNothing,
       );
-      expect(find.text('通知设置已保存'), findsNothing);
+      expect(find.text('Notification settings saved'), findsNothing);
     });
 
     testWidgets('a refused save states the refusal, never a saved intent', (
@@ -939,7 +945,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('通知设置已保存'), findsNothing);
+      expect(find.text('Notification settings saved'), findsNothing);
     });
   });
 }

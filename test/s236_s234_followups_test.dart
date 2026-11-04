@@ -205,7 +205,9 @@ void main() {
       );
       expect(find.text('Usable $walletMaskedFigure'), findsOneWidget);
       expect(
-        find.text('Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。'),
+        find.text(
+          'Launch chain balances are on BSC Testnet and don\'t count toward total assets; total assets only count BNB Smart Chain mainnet.',
+        ),
         findsOneWidget,
       );
     });

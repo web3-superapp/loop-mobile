@@ -254,7 +254,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('还没有可加入的社区'), findsOneWidget);
+      expect(find.text('No communities to join yet'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('onboarding-communities-enter')),
         findsOneWidget,
@@ -296,9 +296,9 @@ void main() {
       Finder tick(String state) => find.byWidgetPredicate(
         (widget) => widget is Semantics && widget.properties.label == state,
       );
-      expect(tick('已选'), findsNWidgets(5));
-      expect(tick('未选'), findsNWidgets(2));
-      expect(find.text('加入 5 个社区并进入'), findsOneWidget);
+      expect(tick('Selected'), findsNWidgets(5));
+      expect(tick('Not selected'), findsNWidgets(2));
+      expect(find.text('Join 5 communities and enter'), findsOneWidget);
     });
 
     testWidgets('进入 LOOP joins each ticked one with notifications: muted '
@@ -316,7 +316,7 @@ void main() {
       // Untick one: four remain.
       await tester.tap(find.text('社区 2'));
       await tester.pumpAndSettle();
-      expect(find.text('加入 4 个社区并进入'), findsOneWidget);
+      expect(find.text('Join 4 communities and enter'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('onboarding-communities-enter')),
@@ -420,8 +420,11 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.byKey(_entering), findsOneWidget);
-      expect(find.text('正在进入 LOOP'), findsOneWidget);
-      expect(find.text('正在为你把刚加入的社区设为免打扰…'), findsOneWidget);
+      expect(find.text('Entering LOOP'), findsOneWidget);
+      expect(
+        find.text('Muting the communities you just joined…'),
+        findsOneWidget,
+      );
       // The five communities just joined circle the centre; LOOP is not
       // there yet.
       for (var index = 1; index <= 5; index += 1) {
@@ -541,7 +544,7 @@ void main() {
             .value,
         1,
       );
-      expect(find.text('正在进入 LOOP'), findsOneWidget);
+      expect(find.text('Entering LOOP'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(
@@ -581,7 +584,7 @@ void main() {
         expect(frames, lessThan(20));
         if (find.byKey(_entering).evaluate().isNotEmpty) break;
         expect(find.text('正在加入…'), findsOneWidget);
-        expect(find.text('进入 LOOP'), findsNothing);
+        expect(find.text('Enter LOOP'), findsNothing);
       }
       expect(find.byKey(_entering), findsOneWidget);
       await _pumpThroughWait(tester);
@@ -602,7 +605,7 @@ void main() {
         await tester.tap(find.text('社区 $index'));
         await tester.pumpAndSettle();
       }
-      expect(find.text('进入 LOOP'), findsOneWidget);
+      expect(find.text('Enter LOOP'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey<String>('onboarding-communities-enter')),
       );
@@ -693,7 +696,7 @@ void main() {
       );
       expect(done, 0);
       expect(find.text('当前账号没有执行这个操作的权限。'), findsNWidgets(5));
-      expect(find.text('继续进入 LOOP'), findsOneWidget);
+      expect(find.text('Continue to LOOP'), findsOneWidget);
       expect(find.byKey(_entering), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('onboarding-communities-list')),

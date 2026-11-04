@@ -19,6 +19,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 abstract final class LoopAssetPaths {
   static const String icons = 'assets/icons';
@@ -381,157 +382,155 @@ final class LoopIdentitySlot {
 /// Slot table copied from `FX.media` in `docs/prototype/app-v2.js`, extended
 /// for the eight community presets the prototype never drew.
 abstract final class LoopIdentitySlots {
-  static const Map<String, LoopIdentitySlot> people =
-      <String, LoopIdentitySlot>{
-        'v7': LoopIdentitySlot(
-          column: 0,
-          row: 0,
-          fallback: 'V7',
-          label: 'Voyager_7 头像',
-        ),
-        'nightowl': LoopIdentitySlot(
-          column: 1,
-          row: 0,
-          fallback: 'NO',
-          label: 'NightOwl 头像',
-        ),
-        'pepe-maxi': LoopIdentitySlot(
-          column: 2,
-          row: 0,
-          fallback: 'PM',
-          label: 'pepe_maxi 头像',
-        ),
-        'alpha-drop': LoopIdentitySlot(
-          column: 3,
-          row: 0,
-          fallback: 'AD',
-          label: 'AlphaDrop 头像',
-        ),
-        'fomo-trader': LoopIdentitySlot(
-          column: 0,
-          row: 1,
-          fallback: 'FT',
-          label: 'fox_trader 头像',
-        ),
-        'pepe-founder': LoopIdentitySlot(
-          column: 1,
-          row: 1,
-          fallback: 'PF',
-          label: 'PEPE founder 头像',
-        ),
-        'smart-buyer': LoopIdentitySlot(
-          column: 2,
-          row: 1,
-          fallback: 'SB',
-          label: 'SmartBuyer 头像',
-        ),
-        'whale': LoopIdentitySlot(
-          column: 3,
-          row: 1,
-          fallback: 'WH',
-          label: 'whale_0x9f 头像',
-        ),
-        'diamondpaw': LoopIdentitySlot(
-          column: 0,
-          row: 2,
-          fallback: 'DP',
-          label: 'DiamondPaw 头像',
-        ),
-        'member-echo': LoopIdentitySlot(
-          column: 1,
-          row: 2,
-          fallback: 'EC',
-          label: '社区成员 Echo 头像',
-        ),
-        'moderator': LoopIdentitySlot(
-          column: 2,
-          row: 2,
-          fallback: 'MOD',
-          label: '社区管理员头像',
-        ),
-        'observer': LoopIdentitySlot(
-          column: 3,
-          row: 2,
-          fallback: 'OBS',
-          label: '社区观察员头像',
-        ),
-      };
+  static Map<String, LoopIdentitySlot> people = <String, LoopIdentitySlot>{
+    'v7': LoopIdentitySlot(
+      column: 0,
+      row: 0,
+      fallback: 'V7',
+      label: LoopL10n.current.coreAssets_loopLabel,
+    ),
+    'nightowl': LoopIdentitySlot(
+      column: 1,
+      row: 0,
+      fallback: 'NO',
+      label: LoopL10n.current.coreAssets_loopLabel2,
+    ),
+    'pepe-maxi': LoopIdentitySlot(
+      column: 2,
+      row: 0,
+      fallback: 'PM',
+      label: LoopL10n.current.coreAssets_loopLabel3,
+    ),
+    'alpha-drop': LoopIdentitySlot(
+      column: 3,
+      row: 0,
+      fallback: 'AD',
+      label: LoopL10n.current.coreAssets_loopLabel4,
+    ),
+    'fomo-trader': LoopIdentitySlot(
+      column: 0,
+      row: 1,
+      fallback: 'FT',
+      label: LoopL10n.current.coreAssets_loopLabel5,
+    ),
+    'pepe-founder': LoopIdentitySlot(
+      column: 1,
+      row: 1,
+      fallback: 'PF',
+      label: LoopL10n.current.coreAssets_loopLabel6,
+    ),
+    'smart-buyer': LoopIdentitySlot(
+      column: 2,
+      row: 1,
+      fallback: 'SB',
+      label: LoopL10n.current.coreAssets_loopLabel7,
+    ),
+    'whale': LoopIdentitySlot(
+      column: 3,
+      row: 1,
+      fallback: 'WH',
+      label: LoopL10n.current.coreAssets_loopLabel8,
+    ),
+    'diamondpaw': LoopIdentitySlot(
+      column: 0,
+      row: 2,
+      fallback: 'DP',
+      label: LoopL10n.current.coreAssets_loopLabel9,
+    ),
+    'member-echo': LoopIdentitySlot(
+      column: 1,
+      row: 2,
+      fallback: 'EC',
+      label: LoopL10n.current.coreAssets_loopLabel10,
+    ),
+    'moderator': LoopIdentitySlot(
+      column: 2,
+      row: 2,
+      fallback: 'MOD',
+      label: LoopL10n.current.coreAssets_loopLabel11,
+    ),
+    'observer': LoopIdentitySlot(
+      column: 3,
+      row: 2,
+      fallback: 'OBS',
+      label: LoopL10n.current.coreAssets_loopLabel12,
+    ),
+  };
 
-  static const Map<String, LoopIdentitySlot> communities =
-      <String, LoopIdentitySlot>{
-        'loop': LoopIdentitySlot(
-          column: 0,
-          row: 0,
-          fallback: 'LOOP',
-          label: 'LOOP Official 社区图标',
-        ),
-        'pepe': LoopIdentitySlot(
-          column: 1,
-          row: 0,
-          fallback: 'PEPE',
-          label: 'PEPE Community 社区图标',
-        ),
-        'bonk': LoopIdentitySlot(
-          column: 2,
-          row: 0,
-          fallback: 'BONK',
-          label: 'BONK Community 社区图标',
-        ),
-        'mcat': LoopIdentitySlot(
-          column: 3,
-          row: 0,
-          fallback: 'MCAT',
-          label: 'MOONCAT 社区图标',
-        ),
-        'community-05': LoopIdentitySlot(
-          column: 0,
-          row: 1,
-          fallback: 'ORB',
-          label: '社区标识 · 轨道',
-        ),
-        'community-06': LoopIdentitySlot(
-          column: 1,
-          row: 1,
-          fallback: 'BLT',
-          label: '社区标识 · 闪电',
-        ),
-        'community-07': LoopIdentitySlot(
-          column: 2,
-          row: 1,
-          fallback: 'WAV',
-          label: '社区标识 · 波形',
-        ),
-        'community-08': LoopIdentitySlot(
-          column: 3,
-          row: 1,
-          fallback: 'HEX',
-          label: '社区标识 · 六边形',
-        ),
-        'community-09': LoopIdentitySlot(
-          column: 0,
-          row: 2,
-          fallback: 'CUB',
-          label: '社区标识 · 立方',
-        ),
-        'community-10': LoopIdentitySlot(
-          column: 1,
-          row: 2,
-          fallback: 'SHD',
-          label: '社区标识 · 盾形',
-        ),
-        'community-11': LoopIdentitySlot(
-          column: 2,
-          row: 2,
-          fallback: 'SPK',
-          label: '社区标识 · 星芒',
-        ),
-        'community-12': LoopIdentitySlot(
-          column: 3,
-          row: 2,
-          fallback: 'SIG',
-          label: '社区标识 · 信号',
-        ),
-      };
+  static Map<String, LoopIdentitySlot> communities = <String, LoopIdentitySlot>{
+    'loop': LoopIdentitySlot(
+      column: 0,
+      row: 0,
+      fallback: 'LOOP',
+      label: LoopL10n.current.coreAssets_loopLabel13,
+    ),
+    'pepe': LoopIdentitySlot(
+      column: 1,
+      row: 0,
+      fallback: 'PEPE',
+      label: LoopL10n.current.coreAssets_loopLabel14,
+    ),
+    'bonk': LoopIdentitySlot(
+      column: 2,
+      row: 0,
+      fallback: 'BONK',
+      label: LoopL10n.current.coreAssets_loopLabel15,
+    ),
+    'mcat': LoopIdentitySlot(
+      column: 3,
+      row: 0,
+      fallback: 'MCAT',
+      label: LoopL10n.current.coreAssets_loopLabel16,
+    ),
+    'community-05': LoopIdentitySlot(
+      column: 0,
+      row: 1,
+      fallback: 'ORB',
+      label: LoopL10n.current.coreAssets_loopLabel17,
+    ),
+    'community-06': LoopIdentitySlot(
+      column: 1,
+      row: 1,
+      fallback: 'BLT',
+      label: LoopL10n.current.coreAssets_loopLabel18,
+    ),
+    'community-07': LoopIdentitySlot(
+      column: 2,
+      row: 1,
+      fallback: 'WAV',
+      label: LoopL10n.current.coreAssets_loopLabel19,
+    ),
+    'community-08': LoopIdentitySlot(
+      column: 3,
+      row: 1,
+      fallback: 'HEX',
+      label: LoopL10n.current.coreAssets_loopLabel20,
+    ),
+    'community-09': LoopIdentitySlot(
+      column: 0,
+      row: 2,
+      fallback: 'CUB',
+      label: LoopL10n.current.coreAssets_loopLabel21,
+    ),
+    'community-10': LoopIdentitySlot(
+      column: 1,
+      row: 2,
+      fallback: 'SHD',
+      label: LoopL10n.current.coreAssets_loopLabel22,
+    ),
+    'community-11': LoopIdentitySlot(
+      column: 2,
+      row: 2,
+      fallback: 'SPK',
+      label: LoopL10n.current.coreAssets_loopLabel23,
+    ),
+    'community-12': LoopIdentitySlot(
+      column: 3,
+      row: 2,
+      fallback: 'SIG',
+      label: LoopL10n.current.coreAssets_loopLabel24,
+    ),
+  };
 
   /// Alias table from `FX.media.aliases` so fixture keys resolve to slots.
   static const Map<String, String> communityAliases = <String, String>{

@@ -1,0 +1,44 @@
+{
+  "profilePrivacy_modelsCommunities": {
+    "en": "Joined communities",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:38",
+    "zh": "加入的社区"
+  },
+  "profilePrivacy_modelsDirectMessages": {
+    "en": "Let friends message me",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:126",
+    "zh": "允许好友发起私聊"
+  },
+  "profilePrivacy_modelsFriendRequests": {
+    "en": "Let strangers send friend requests",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:125",
+    "zh": "允许陌生人发好友申请"
+  },
+  "profilePrivacy_modelsGroupInvites": {
+    "en": "Let friends add me to groups",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:127",
+    "zh": "允许好友拉我进群"
+  },
+  "profilePrivacy_modelsMiningPower": {
+    "en": "Mining power",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:37",
+    "zh": "挖矿算力"
+  },
+  "profilePrivacy_modelsTotalAssets": {
+    "en": "Total assets",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:36",
+    "zh": "总资产"
+  },
+  "profilePrivacy_modelsTradeHistory": {
+    "en": "Trade history",
+    "placeholders": {},
+    "where": "lib/features/profile/privacy/privacy_models.dart:39",
+    "zh": "交易记录"
+  }
+}

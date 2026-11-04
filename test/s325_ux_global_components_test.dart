@@ -382,9 +382,12 @@ void main() {
       await tester.tap(_key('loop-page-info-action'));
       await tester.pumpAndSettle();
       expect(_key('loop-provenance-sheet'), findsOneWidget);
-      expect(find.textContaining('额度没有上限的授权，风险最高'), findsOneWidget);
-      expect(find.textContaining('由 Privy 提供'), findsOneWidget);
-      expect(find.textContaining('观察于'), findsWidgets);
+      expect(
+        find.textContaining('Approvals with no limit carry the highest risk'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('provided by Privy'), findsOneWidget);
+      expect(find.textContaining('Seen'), findsWidgets);
     });
 
     testWidgets('outside a page the block keeps its own (i)', (tester) async {

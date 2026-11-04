@@ -24,7 +24,7 @@ void main() {
 
     // The page is the component's specification, so the cards are the page.
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
-    expect(find.text('演示数据，开发预览'), findsNothing);
+    expect(find.text('Demo data, development preview'), findsNothing);
     for (final state in LoopTokenCardState.values) {
       final key = ValueKey<String>('loop-token-card-${state.name}');
       await scrollPageTo(tester, find.byKey(key));
@@ -52,15 +52,15 @@ void main() {
     router.go('/system/token-card');
     await tester.pumpAndSettle();
 
-    expect(find.text('演示数据，开发预览'), findsOneWidget);
+    expect(find.text('Demo data, development preview'), findsOneWidget);
     expect(find.text(loopComponentSpecimenLabel), findsNothing);
-    expect(find.text('态 1，正常'.toUpperCase()), findsOneWidget);
+    expect(find.text('State 1, normal'), findsOneWidget);
     for (final state in LoopTokenCardState.values) {
       final key = ValueKey<String>('loop-token-card-${state.name}');
       await scrollPageTo(tester, find.byKey(key));
       expect(find.byKey(key), findsOneWidget, reason: state.name);
     }
-    expect(find.text('态 5，风险事实红条'.toUpperCase()), findsOneWidget);
+    expect(find.text('State 5, risk facts bar'), findsOneWidget);
     await scrollPageTo(
       tester,
       find.byKey(const ValueKey<String>('loop-token-card-risk-facts')),
@@ -76,7 +76,7 @@ void main() {
       findsNothing,
     );
     // Showcase actions are inert: they never navigate or sign.
-    await tester.tap(find.text('确认事实后买入'));
+    await tester.tap(find.text('Review facts, then buy'));
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,
@@ -103,7 +103,9 @@ void main() {
       tester,
       const SystemSurfaceScreen.fromId('token-card-states'),
     );
-    final disclosure = tester.getTopLeft(find.text('查看组件出现位置')).dy;
+    final disclosure = tester
+        .getTopLeft(find.text('Where this component appears'))
+        .dy;
     final firstCard = tester.getTopLeft(
       find.byKey(const ValueKey<String>('loop-token-card-normal')),
     );

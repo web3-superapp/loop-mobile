@@ -1,0 +1,146 @@
+{
+  "coreAssets_loopLabel": {
+    "en": "Voyager_7 avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:390",
+    "zh": "Voyager_7 头像"
+  },
+  "coreAssets_loopLabel10": {
+    "en": "Community member Echo avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:444",
+    "zh": "社区成员 Echo 头像"
+  },
+  "coreAssets_loopLabel11": {
+    "en": "Community admin avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:450",
+    "zh": "社区管理员头像"
+  },
+  "coreAssets_loopLabel12": {
+    "en": "Community observer avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:456",
+    "zh": "社区观察员头像"
+  },
+  "coreAssets_loopLabel13": {
+    "en": "LOOP Official community icon",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:466",
+    "zh": "LOOP Official 社区图标"
+  },
+  "coreAssets_loopLabel14": {
+    "en": "PEPE Community community icon",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:472",
+    "zh": "PEPE Community 社区图标"
+  },
+  "coreAssets_loopLabel15": {
+    "en": "BONK Community community icon",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:478",
+    "zh": "BONK Community 社区图标"
+  },
+  "coreAssets_loopLabel16": {
+    "en": "MOONCAT community icon",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:484",
+    "zh": "MOONCAT 社区图标"
+  },
+  "coreAssets_loopLabel17": {
+    "en": "Community mark · Orbit",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:490",
+    "zh": "社区标识 · 轨道"
+  },
+  "coreAssets_loopLabel18": {
+    "en": "Community mark · Bolt",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:496",
+    "zh": "社区标识 · 闪电"
+  },
+  "coreAssets_loopLabel19": {
+    "en": "Community mark · Wave",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:502",
+    "zh": "社区标识 · 波形"
+  },
+  "coreAssets_loopLabel2": {
+    "en": "NightOwl avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:396",
+    "zh": "NightOwl 头像"
+  },
+  "coreAssets_loopLabel20": {
+    "en": "Community mark · Hexagon",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:508",
+    "zh": "社区标识 · 六边形"
+  },
+  "coreAssets_loopLabel21": {
+    "en": "Community mark · Cube",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:514",
+    "zh": "社区标识 · 立方"
+  },
+  "coreAssets_loopLabel22": {
+    "en": "Community mark · Shield",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:520",
+    "zh": "社区标识 · 盾形"
+  },
+  "coreAssets_loopLabel23": {
+    "en": "Community mark · Starburst",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:526",
+    "zh": "社区标识 · 星芒"
+  },
+  "coreAssets_loopLabel24": {
+    "en": "Community mark · Signal",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:532",
+    "zh": "社区标识 · 信号"
+  },
+  "coreAssets_loopLabel3": {
+    "en": "pepe_maxi avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:402",
+    "zh": "pepe_maxi 头像"
+  },
+  "coreAssets_loopLabel4": {
+    "en": "AlphaDrop avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:408",
+    "zh": "AlphaDrop 头像"
+  },
+  "coreAssets_loopLabel5": {
+    "en": "fox_trader avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:414",
+    "zh": "fox_trader 头像"
+  },
+  "coreAssets_loopLabel6": {
+    "en": "PEPE founder avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:420",
+    "zh": "PEPE founder 头像"
+  },
+  "coreAssets_loopLabel7": {
+    "en": "SmartBuyer avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:426",
+    "zh": "SmartBuyer 头像"
+  },
+  "coreAssets_loopLabel8": {
+    "en": "whale_0x9f avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:432",
+    "zh": "whale_0x9f 头像"
+  },
+  "coreAssets_loopLabel9": {
+    "en": "DiamondPaw avatar",
+    "placeholders": {},
+    "where": "lib/core/assets/loop_assets.dart:438",
+    "zh": "DiamondPaw 头像"
+  }
+}

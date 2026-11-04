@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_models.dart';
 import 'package:loop_mobile/integrations/diagnostics/loop_network_probe.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum NetworkDiagnosticsPhase { idle, running, done }
 
@@ -64,7 +65,11 @@ final class NetworkDiagnosticsController
             status: target.isConfigured
                 ? NetworkProbeStatus.idle
                 : NetworkProbeStatus.notConfigured,
-            reason: target.isConfigured ? '' : '这个构建没有配置地址，未探测',
+            reason: target.isConfigured
+                ? ''
+                : LoopL10n
+                      .current
+                      .profileAbout_networkDiagnosticsControllerReason,
           ),
       ],
     );
@@ -91,7 +96,11 @@ final class NetworkDiagnosticsController
             status: target.isConfigured
                 ? NetworkProbeStatus.running
                 : NetworkProbeStatus.notConfigured,
-            reason: target.isConfigured ? '' : '这个构建没有配置地址，未探测',
+            reason: target.isConfigured
+                ? ''
+                : LoopL10n
+                      .current
+                      .profileAbout_networkDiagnosticsControllerReason,
           ),
       ],
     );

@@ -57,7 +57,7 @@ void main() {
     await _sendCode(tester, container);
 
     // UX-002: the address is shown masked.
-    expect(find.text('验证码已发送至 o••••r@example.com'), findsOneWidget);
+    expect(find.text('Code sent to o••••r@example.com'), findsOneWidget);
     expect(find.byKey(const ValueKey('privy-otp-field')), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('privy-otp-resend-hint')),
@@ -83,7 +83,7 @@ void main() {
     expect(find.text('1/5'), findsOneWidget);
     expect(find.text('01 / 05'), findsNothing);
     expect(find.text('验证失败时会看到什么'), findsNothing);
-    final titleFinder = find.text('验证邮箱');
+    final titleFinder = find.text('Verify email');
     expect(
       tester.getTopLeft(bar).dy,
       lessThan(tester.getTopLeft(titleFinder).dy),
@@ -116,7 +116,7 @@ void main() {
       find.byKey(const ValueKey<String>('privy-otp-error')),
       findsOneWidget,
     );
-    expect(find.textContaining('还可尝试 2 次'), findsOneWidget);
+    expect(find.textContaining('Attempts left: 2'), findsOneWidget);
     expect(container.read(emailAuthProvider).failedAttempts, 1);
   });
 
@@ -139,7 +139,7 @@ void main() {
     }
 
     expect(gateway.verifyCalls, 3);
-    expect(find.text('尝试次数已用完，请重新发送验证码。'), findsOneWidget);
+    expect(find.text('No attempts left. Resend the code.'), findsOneWidget);
     expect(_pressed(tester, 'privy-auth-primary-button'), isNull);
   });
 
@@ -196,13 +196,13 @@ void main() {
     final semantics = tester.getSemantics(
       find.byKey(const ValueKey<String>('privy-otp-cell-1')),
     );
-    expect(semantics.label, '验证码第 1 位');
+    expect(semantics.label, 'Code digit 1');
     expect(semantics.value, '8');
     expect(
       tester
           .getSemantics(find.byKey(const ValueKey<String>('privy-otp-cell-5')))
           .value,
-      '未填写',
+      'Empty',
     );
     // A letter never reaches the controller.
     await tester.enterText(
@@ -236,7 +236,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
     await tester.pump();
 
-    expect(find.text('验证中…'), findsOneWidget);
+    expect(find.text('Verifying…'), findsOneWidget);
     gateway.releaseVerify();
     await tester.pumpAndSettle();
   });

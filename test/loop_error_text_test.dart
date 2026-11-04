@@ -94,7 +94,7 @@ void main() {
     ]) {
       expect(LoopErrorText.forCode(notRetryable).retryable, isFalse);
     }
-    expect(LoopErrorText.forCode('QUOTE_EXPIRED').title, '报价已过期');
+    expect(LoopErrorText.forCode('QUOTE_EXPIRED').title, 'Quote expired');
     expect(
       LoopErrorText.forCode('errors.quote.expired'),
       LoopErrorText.unknown,
@@ -107,8 +107,14 @@ void main() {
   });
 
   test('alias and policy copy stay neutral and route-free', () {
-    expect(LoopErrorText.forCode('ALIAS_RESERVED').title, '这个名称已被保留');
-    expect(LoopErrorText.forCode('ALIAS_BLOCKED').title, '这个名称不可用');
+    expect(
+      LoopErrorText.forCode('ALIAS_RESERVED').title,
+      'That name is reserved',
+    );
+    expect(
+      LoopErrorText.forCode('ALIAS_BLOCKED').title,
+      'That name isn\'t available',
+    );
     for (final code in <String>['ALIAS_RESERVED', 'ALIAS_BLOCKED']) {
       final copy = LoopErrorText.forCode(code);
       expect(copy.retryable, isFalse, reason: code);

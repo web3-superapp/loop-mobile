@@ -389,7 +389,7 @@ void main() {
       await _pumpMe(tester, onNavigate: opened.add, requests: _oneRequest());
       final entry = _key('stream-chat-message-requests-entry');
       expect(entry, findsOneWidget);
-      expect(find.text('1 条待处理'), findsOneWidget);
+      expect(find.text('1 pending'), findsOneWidget);
       expect(
         tester.getTopLeft(entry).dy,
         greaterThan(tester.getTopLeft(_key('profile-identity-card')).dy),
@@ -548,10 +548,10 @@ void main() {
       ]) {
         expect(_key(gone), findsNothing, reason: gone);
       }
-      expect(find.text('账号'), findsNothing);
+      expect(find.text('Account'), findsNothing);
       expect(find.text('资产与挖矿'), findsNothing);
-      expect(find.text('通知中心'), findsNothing);
-      expect(find.text('隐私与安全'), findsOneWidget);
+      expect(find.text('Notification center'), findsNothing);
+      expect(find.text('Privacy and security'), findsOneWidget);
       await tester.tap(_key('profile-open-notifications'));
       expect(opened, <String>['notif-settings']);
     });

@@ -1,0 +1,1412 @@
+{
+  "account_emailAuthControllerErrorMessage": {
+    "en": "A Privy Mobile App Client ID is required.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:139",
+    "zh": "需要先提供 Privy Mobile App Client ID。"
+  },
+  "account_emailAuthControllerErrorMessage10": {
+    "en": "Provide a Privy Mobile App Client ID with --dart-define first.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:293",
+    "zh": "需要先通过 --dart-define 提供 Privy Mobile App Client ID。"
+  },
+  "account_emailAuthControllerErrorMessage11": {
+    "en": "Sign-in didn't finish. Check your network and the app redirect, then try again.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:325",
+    "zh": "登录未完成，请检查网络和应用回跳后重试。"
+  },
+  "account_emailAuthControllerErrorMessage12": {
+    "en": "Provide a valid Reown Project ID with --dart-define first.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:347",
+    "zh": "需要先通过 --dart-define 提供有效的 Reown Project ID。"
+  },
+  "account_emailAuthControllerErrorMessage13": {
+    "en": "Provide a Privy Client ID and a Reown Project ID with --dart-define first.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:348",
+    "zh": "需要先通过 --dart-define 提供 Privy Client ID 和 Reown Project ID。"
+  },
+  "account_emailAuthControllerErrorMessage14": {
+    "en": "Only a signed-out session or a verified Privy account can connect a wallet.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:375",
+    "zh": "只有退出登录状态或已验证的 Privy 账号可以连接钱包。"
+  },
+  "account_emailAuthControllerErrorMessage15": {
+    "en": "The wallet action didn't finish. Check your network and the app redirect, then try again.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:438",
+    "zh": "钱包操作未完成，请检查网络和应用回跳后重试。"
+  },
+  "account_emailAuthControllerErrorMessage16": {
+    "en": "Only a verified Privy account can unlink a wallet.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:458",
+    "zh": "只有已验证的 Privy 账号可以解绑钱包。"
+  },
+  "account_emailAuthControllerErrorMessage17": {
+    "en": "Unlinking didn't finish. Check your network and try again.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:504",
+    "zh": "解绑没有完成，请检查网络后重试。"
+  },
+  "account_emailAuthControllerErrorMessage2": {
+    "en": "Enter a valid email address.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:146",
+    "zh": "请输入有效的邮箱地址。"
+  },
+  "account_emailAuthControllerErrorMessage3": {
+    "en": "Resend the code.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:177",
+    "zh": "请重新发送验证码。"
+  },
+  "account_emailAuthControllerErrorMessage4": {
+    "en": "No attempts left. Resend the code.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:186, lib/features/account/privy_otp_screen.dart:182",
+    "zh": "尝试次数已用完，请重新发送验证码。"
+  },
+  "account_emailAuthControllerErrorMessage5": {
+    "en": "Enter the 6-digit code.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:196",
+    "zh": "请输入 6 位数字验证码。"
+  },
+  "account_emailAuthControllerErrorMessage6": {
+    "en": "{userMessage} No attempts left. Resend the code.",
+    "placeholders": {
+      "userMessage": {
+        "example": "error.userMessage",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/email_auth_controller.dart:224",
+    "zh": "{userMessage} 尝试次数已用完，请重新发送验证码。"
+  },
+  "account_emailAuthControllerErrorMessage7": {
+    "en": "{userMessage} Attempts left: {emailAuthMaximumAttempts}.",
+    "placeholders": {
+      "emailAuthMaximumAttempts": {
+        "example": "emailAuthMaximumAttempts - attempts",
+        "type": "Object"
+      },
+      "userMessage": {
+        "example": "error.userMessage",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/email_auth_controller.dart:225",
+    "zh": "{userMessage} 还可尝试 {emailAuthMaximumAttempts} 次。"
+  },
+  "account_emailAuthControllerErrorMessage8": {
+    "en": "Sign in with Apple is only available on iOS.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:273",
+    "zh": "Apple 登录仅支持 iOS。"
+  },
+  "account_emailAuthControllerErrorMessage9": {
+    "en": "The session changed. Check again.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:286, lib/features/account/email_auth_controller.dart:526",
+    "zh": "当前会话状态已变化，请重新检查。"
+  },
+  "account_emailAuthControllerSuccessMessage": {
+    "en": "External wallet linked as a Privy sign-in method.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:406",
+    "zh": "外部钱包已绑定为 Privy 登录凭据。"
+  },
+  "account_emailAuthControllerSuccessMessage2": {
+    "en": "External wallet unlinked.",
+    "placeholders": {},
+    "where": "lib/features/account/email_auth_controller.dart:489",
+    "zh": "已解绑外部钱包。"
+  },
+  "account_idSetupHintText": {
+    "en": "1–40 characters, doesn't have to be unique",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:190",
+    "zh": "1–40 个字符，可以和别人重复"
+  },
+  "account_idSetupHintText2": {
+    "en": "A line about yourself (optional)",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:229",
+    "zh": "一句话介绍自己（可以不填）"
+  },
+  "account_idSetupIdentityStepCopy": {
+    "en": "Others see your avatar and username in chats. Your wallet address stays private.",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:91",
+    "zh": "头像和用户名是别人在聊天里看到的你，钱包地址不会公开。"
+  },
+  "account_idSetupLabel": {
+    "en": "Load",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:116",
+    "zh": "载入"
+  },
+  "account_idSetupLoopIdActivatedBody": {
+    "en": "Your bio wasn't saved. You can add it later in \"Edit profile\".",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:147",
+    "zh": "简介没有保存成功，可以之后在「编辑资料」里补上。"
+  },
+  "account_idSetupLoopIdActivatedBody2": {
+    "en": "You can change it later in \"Edit profile\".",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:148",
+    "zh": "之后可以在「编辑资料」里修改。"
+  },
+  "account_idSetupLoopIdActivatedTitle": {
+    "en": "Profile saved",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:145",
+    "zh": "资料已保存"
+  },
+  "account_idSetupLoopIdAliasSuggestLabel": {
+    "en": "Try another",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:197",
+    "zh": "换一个"
+  },
+  "account_idSetupLoopIdEmptyMessage": {
+    "en": "Account profile hasn't loaded yet.",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:115",
+    "zh": "账号资料尚未载入。"
+  },
+  "account_idSetupLoopIdEmptyTitle": {
+    "en": "Your LOOP ID hasn't loaded yet",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:114",
+    "zh": "还没有读取到你的 LOOP ID"
+  },
+  "account_idSetupLoopIdErrorSource": {
+    "en": "Profile service",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:123",
+    "zh": "资料服务"
+  },
+  "account_idSetupLoopIdFailureTitle": {
+    "en": "Couldn't save",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:138",
+    "zh": "没有保存成功"
+  },
+  "account_idSetupLoopIdSubmitTitle": {
+    "en": "Complete your profile",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:72, lib/features/account/loop_id_setup_screen.dart:90",
+    "zh": "完善资料"
+  },
+  "account_idSetupLoopIdUnavailableTitle": {
+    "en": "Profile service isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:105",
+    "zh": "资料服务暂不可用"
+  },
+  "account_idSetupLoopIdValue": {
+    "en": "Not assigned yet",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:255",
+    "zh": "尚未分配"
+  },
+  "account_idSetupLoopLabel": {
+    "en": "Username",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:160",
+    "zh": "用户名"
+  },
+  "account_idSetupLoopLabel2": {
+    "en": "Bio",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:208",
+    "zh": "简介"
+  },
+  "account_idSetupLoopOfflineState": {
+    "en": "Save profile",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:130",
+    "zh": "保存资料"
+  },
+  "account_idSetupSubmitting": {
+    "en": "Submitting…",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:78",
+    "zh": "提交中…"
+  },
+  "account_idSetupText": {
+    "en": "System-generated, unique and permanent. Friends can find you with it.",
+    "placeholders": {},
+    "where": "lib/features/account/loop_id_setup_screen.dart:261",
+    "zh": "系统生成、唯一、不可更改。好友可以用它搜到你。"
+  },
+  "account_onboardingCommunitiesDetail": {
+    "en": "Muting the communities you just joined…",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:737",
+    "zh": "正在为你把刚加入的社区设为免打扰…"
+  },
+  "account_onboardingCommunitiesIf": {
+    "en": "Continue to LOOP",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:531",
+    "zh": "继续进入 LOOP"
+  },
+  "account_onboardingCommunitiesIf2": {
+    "en": "Pick a few communities you like. They're muted after you join, and you can leave anytime.",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:592",
+    "zh": "选几个感兴趣的社区。加入后默认免打扰，随时可以退出。"
+  },
+  "account_onboardingCommunitiesJoined": {
+    "en": "Joined · Muted",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:681",
+    "zh": "已加入 · 已免打扰"
+  },
+  "account_onboardingCommunitiesJoinedMutePending": {
+    "en": "Joined · Muting",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:682",
+    "zh": "已加入 · 免打扰生效中"
+  },
+  "account_onboardingCommunitiesLoopRecordRow": {
+    "en": "Couldn't join",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:683",
+    "zh": "没有加入成功"
+  },
+  "account_onboardingCommunitiesMembers": {
+    "en": "{formatDecimal} members",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal(Decimal.fromInt(community.memberCount), maxFractionDigits: 0)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/onboarding_communities.dart:669",
+    "zh": "{formatDecimal} 成员"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesScreenTitle": {
+    "en": "Join communities",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:542",
+    "zh": "加入社区"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesSkipLabel": {
+    "en": "Skip",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:548, lib/features/account/onboarding_communities.dart:574",
+    "zh": "跳过"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage": {
+    "en": "No communities to join yet",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:603",
+    "zh": "还没有可加入的社区"
+  },
+  "account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason": {
+    "en": "Enter LOOP first and find communities in Square later.",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:604",
+    "zh": "可以先进入 LOOP，之后在广场里找社区。"
+  },
+  "account_onboardingCommunitiesResource": {
+    "en": "Recommended communities",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:588",
+    "zh": "推荐社区"
+  },
+  "account_onboardingCommunitiesRowSelectedSemanticLabel": {
+    "en": "{name}, {members}, selected",
+    "placeholders": {
+      "members": {
+        "example": "members",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/onboarding_communities.dart:702",
+    "zh": "{name}，{members}，已选"
+  },
+  "account_onboardingCommunitiesRowUnselectedSemanticLabel": {
+    "en": "{name}, {members}, not selected",
+    "placeholders": {
+      "members": {
+        "example": "members",
+        "type": "Object"
+      },
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/onboarding_communities.dart:702",
+    "zh": "{name}，{members}，未选"
+  },
+  "account_onboardingCommunitiesS": {
+    "en": "{count, plural, =1{Join 1 community and enter} other{Join {count} communities and enter}}",
+    "placeholders": {
+      "count": {
+        "example": "count",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/onboarding_communities.dart:534",
+    "zh": "加入 {count} 个社区并进入"
+  },
+  "account_onboardingCommunitiesState": {
+    "en": "Joined",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:690",
+    "zh": "已加入"
+  },
+  "account_onboardingCommunitiesState2": {
+    "en": "Not selected",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:693",
+    "zh": "未选"
+  },
+  "account_onboardingCommunitiesTitle": {
+    "en": "Entering LOOP",
+    "placeholders": {},
+    "where": "lib/features/account/onboarding_communities.dart:736",
+    "zh": "正在进入 LOOP"
+  },
+  "account_privyLoginAnotherAccountLabel": {
+    "en": "Use another account",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:692",
+    "zh": "换个账号登录"
+  },
+  "account_privyLoginAuthMethodBusyLabel": {
+    "en": "{label}, in progress",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/privy_login_screen.dart:416",
+    "zh": "{label}，正在进行"
+  },
+  "account_privyLoginEnterDevelopmentPreviewButtonLabel": {
+    "en": "Enter development preview",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:216",
+    "zh": "进入开发预览"
+  },
+  "account_privyLoginIf": {
+    "en": "Welcome to LOOP",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:107",
+    "zh": "欢迎来到 LOOP"
+  },
+  "account_privyLoginIf2": {
+    "en": "Choose a way to sign in or create an account",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:113",
+    "zh": "选择一种方式登录或创建账户"
+  },
+  "account_privyLoginMessage": {
+    "en": "Once you're online, sign-in on this device is confirmed automatically. No need to sign in again.",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:691",
+    "zh": "联网后会自动确认这台设备上的登录状态，不需要重新登录。"
+  },
+  "account_privyLoginPrivyAppleLoginButtonLabel": {
+    "en": "Sign in with Apple",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:136",
+    "zh": "使用 Apple 登录"
+  },
+  "account_privyLoginPrivyAuthConfigurationIncompleteBody": {
+    "en": "The Privy Mobile App Client ID is missing, so real code requests stay off.",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:131",
+    "zh": "缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。"
+  },
+  "account_privyLoginPrivyAuthConfigurationIncompleteTitle": {
+    "en": "Sign-in setup is incomplete",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:130",
+    "zh": "登录配置不完整"
+  },
+  "account_privyLoginPrivyAuthErrorTitle": {
+    "en": "Can't continue",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:175, lib/features/account/privy_login_screen.dart:347",
+    "zh": "无法继续"
+  },
+  "account_privyLoginPrivyAuthPrimaryButtonLabel": {
+    "en": "Sending…",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:359, lib/features/account/privy_otp_screen.dart:166",
+    "zh": "发送中…"
+  },
+  "account_privyLoginPrivyAuthPrimaryButtonLabel2": {
+    "en": "Get code",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:359",
+    "zh": "获取验证码"
+  },
+  "account_privyLoginPrivyEmailLoginButtonLabel": {
+    "en": "Sign in with email",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:159",
+    "zh": "使用邮箱登录"
+  },
+  "account_privyLoginPrivyEmailScreenTitle": {
+    "en": "Email sign-in",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:319",
+    "zh": "邮箱登录"
+  },
+  "account_privyLoginPrivyGoogleLoginButtonLabel": {
+    "en": "Sign in with Google",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:150",
+    "zh": "使用 Google 登录"
+  },
+  "account_privyLoginPrivyRestoreUnavailableScreenSemanticLabel": {
+    "en": "LOOP can't confirm your sign-in right now",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:637",
+    "zh": "LOOP 暂时无法确认登录状态"
+  },
+  "account_privyLoginPrivyRestoreUnavailableScreenStatus": {
+    "en": "Can't confirm sign-in right now",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:640",
+    "zh": "暂时无法确认登录状态"
+  },
+  "account_privyLoginPrivyRestoringScreenSemanticLabel": {
+    "en": "LOOP is restoring your sign-in",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:626",
+    "zh": "LOOP 正在恢复登录状态"
+  },
+  "account_privyLoginPrivySigningOutScreenSemanticLabel": {
+    "en": "LOOP is signing you out",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:722",
+    "zh": "LOOP 正在安全退出"
+  },
+  "account_privyLoginPrivySigningOutScreenStatus": {
+    "en": "Signing out",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:723",
+    "zh": "正在安全退出"
+  },
+  "account_privyLoginPrivyWalletLoginButtonLabel": {
+    "en": "Connecting wallet",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:484",
+    "zh": "正在连接钱包"
+  },
+  "account_privyLoginPrivyWalletLoginButtonLabel2": {
+    "en": "Have a wallet? Connect it",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:484",
+    "zh": "已有钱包？连接钱包"
+  },
+  "account_privyLoginRestoringTitle": {
+    "en": "Restoring sign-in",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:563",
+    "zh": "正在恢复登录状态"
+  },
+  "account_privyLoginS": {
+    "en": "Unavailable · No valid Reown Project ID",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:201",
+    "zh": "暂不可用 · 缺少有效的 Reown Project ID"
+  },
+  "account_privyLoginSlowMessage": {
+    "en": "Slow network, still restoring sign-in…",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:567",
+    "zh": "网络较慢，仍在恢复登录状态…"
+  },
+  "account_privyLoginText": {
+    "en": "Unavailable · No Privy Mobile App Client ID",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:200",
+    "zh": "暂不可用 · 缺少 Privy Mobile App Client ID"
+  },
+  "account_privyLoginText2": {
+    "en": "By continuing, you agree to the ",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:237",
+    "zh": "继续即表示同意 "
+  },
+  "account_privyLoginText3": {
+    "en": "Terms of Service",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:239",
+    "zh": "用户协议"
+  },
+  "account_privyLoginText4": {
+    "en": " and ",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:245",
+    "zh": " 和 "
+  },
+  "account_privyLoginText5": {
+    "en": "Privacy Policy",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:247",
+    "zh": "隐私政策"
+  },
+  "account_privyLoginText6": {
+    "en": "Have a wallet? ",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:500",
+    "zh": "已有钱包？"
+  },
+  "account_privyLoginText7": {
+    "en": "Connecting…",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:502",
+    "zh": "正在连接…"
+  },
+  "account_privyLoginTitle": {
+    "en": "Network unavailable, waiting to connect",
+    "placeholders": {},
+    "where": "lib/features/account/privy_login_screen.dart:690",
+    "zh": "网络不可用，正在等待连接"
+  },
+  "account_privyOtpIdentityStepCopy": {
+    "en": "No code sent yet",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:95",
+    "zh": "尚未发送验证码"
+  },
+  "account_privyOtpIdentityStepCopy2": {
+    "en": "Code sent to {maskEmailForDisplay}",
+    "placeholders": {
+      "maskEmailForDisplay": {
+        "example": "maskEmailForDisplay(destination)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/privy_otp_screen.dart:104",
+    "zh": "验证码已发送至 {maskEmailForDisplay}"
+  },
+  "account_privyOtpIdentityStepCopyTitle": {
+    "en": "Verify email",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:88, lib/features/account/privy_otp_screen.dart:91",
+    "zh": "验证邮箱"
+  },
+  "account_privyOtpLoopOfflineState": {
+    "en": "Resend code",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:190",
+    "zh": "重新发送验证码"
+  },
+  "account_privyOtpPrivyOtpCaretLabel": {
+    "en": "Code digit {index}",
+    "placeholders": {
+      "index": {
+        "example": "index + 1",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/privy_otp_screen.dart:318",
+    "zh": "验证码第 {index} 位"
+  },
+  "account_privyOtpPrivyOtpCaretValue": {
+    "en": "Empty",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:319",
+    "zh": "未填写"
+  },
+  "account_privyOtpPrivyOtpChangeEmailLabel": {
+    "en": "Change email",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:112",
+    "zh": "更换邮箱"
+  },
+  "account_privyOtpPrivyOtpErrorTitle": {
+    "en": "Verification failed",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:206",
+    "zh": "验证未通过"
+  },
+  "account_privyOtpPrivyOtpNoDestinationMessage": {
+    "en": "Go back and enter your email.",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:136",
+    "zh": "返回上一步输入邮箱。"
+  },
+  "account_privyOtpPrivyOtpNoDestinationTitle": {
+    "en": "No email to verify",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:135",
+    "zh": "没有待验证的邮箱"
+  },
+  "account_privyOtpPrivyOtpResendHint": {
+    "en": "Resend in {cooldown}s",
+    "placeholders": {
+      "cooldown": {
+        "example": "cooldown",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/privy_otp_screen.dart:159",
+    "zh": "{cooldown} 秒后可重新发送"
+  },
+  "account_privyOtpPrivyOtpResendLabel": {
+    "en": "Resend",
+    "placeholders": {},
+    "where": "lib/features/account/privy_otp_screen.dart:166",
+    "zh": "重新发送"
+  },
+  "account_screensAppLockRow": {
+    "en": "Screen lock not read yet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1642",
+    "zh": "还没有读到这台设备的锁屏能力"
+  },
+  "account_screensAppLockRow2": {
+    "en": "{detail} · Applies now; won't be remembered after the app restarts",
+    "placeholders": {
+      "detail": {
+        "example": "detail",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1645",
+    "zh": "{detail} · 这次有效，重开 App 后不会记得"
+  },
+  "account_screensBody": {
+    "en": "It isn't a LOOP trading wallet and can't authorize any transaction.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:828",
+    "zh": "它不是 LOOP 交易钱包，也不能授权任何交易。"
+  },
+  "account_screensBody2": {
+    "en": "Your community tokens stay where they are. Once linked, your holdings count toward power. That's why the external wallet option stays.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:834",
+    "zh": "你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。"
+  },
+  "account_screensBody3": {
+    "en": "Connecting asks for one signature to prove ownership. No assets move. Cancelling the signature changes nothing.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:841",
+    "zh": "连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。"
+  },
+  "account_screensBody4": {
+    "en": "The session expired. Come back to this page and connect again.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:848",
+    "zh": "会话已过期，请回到这一页重新发起连接。"
+  },
+  "account_screensBody5": {
+    "en": "If you lose your email or sign-in method, you lose the wallet too. Adding another method is safer; you can add one once they open.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1391",
+    "zh": "邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。"
+  },
+  "account_screensCloud": {
+    "en": "Automatic recovery",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1185",
+    "zh": "自动恢复"
+  },
+  "account_screensCloud2": {
+    "en": "Recover with your sign-in method; on a new device, sign in with the same email",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1185",
+    "zh": "凭登录方式恢复，换设备后用同一邮箱登录即可"
+  },
+  "account_screensDetail": {
+    "en": "Pick 3 guardians; any 2 can recover",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1369",
+    "zh": "指定 3 个守护人，2 个同意即可恢复"
+  },
+  "account_screensDetail2": {
+    "en": "Export anytime. It's your escape hatch",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1376",
+    "zh": "随时可导出，这是你的逃生舱"
+  },
+  "account_screensExternalWalletConnectLabel": {
+    "en": "Choose a wallet and sign",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:813",
+    "zh": "选择钱包并签名"
+  },
+  "account_screensExternalWalletConnectTitle": {
+    "en": "Connect wallet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:808, lib/features/account/privy_login_screen.dart:502",
+    "zh": "连接钱包"
+  },
+  "account_screensExternalWalletListUnavailableDetail": {
+    "en": "Available wallet names show after you connect a wallet.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:870",
+    "zh": "连接钱包后才会显示可用的钱包名称。"
+  },
+  "account_screensExternalWalletListUnavailableMessage": {
+    "en": "Can't read the installed wallet list right now",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:869",
+    "zh": "已安装钱包清单暂不可读"
+  },
+  "account_screensExternalWalletUnavailableBody": {
+    "en": "No valid Reown Project ID or Privy Client ID. With no connection channel, no installed wallets are listed here.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:864",
+    "zh": "缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。"
+  },
+  "account_screensExternalWalletUnavailableTitle": {
+    "en": "External wallet connection isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:863",
+    "zh": "外部钱包连接暂不可用"
+  },
+  "account_screensIdentityProgressTrackLabel": {
+    "en": "Step {step} of {total}: {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "step": {
+        "example": "step",
+        "type": "Object"
+      },
+      "total": {
+        "example": "total",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:204, lib/features/account/identity_step_scaffold.dart:161",
+    "zh": "流程第 {step} 步，共 {total} 步：{label}"
+  },
+  "account_screensIdentityStepCopy": {
+    "en": "Connecting only proves ownership. No assets move.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:857",
+    "zh": "连接只验证所有权，不会转移资产。"
+  },
+  "account_screensIdentityStepCopy2": {
+    "en": "Your secure wallet is setting up on this device.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:935",
+    "zh": "安全钱包正在本地初始化。"
+  },
+  "account_screensIdentityStepCopy3": {
+    "en": "Your wallet already has one recovery method. Add the others once they open.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1400",
+    "zh": "你的钱包已经有一种恢复方式，其余的等开放后再补。"
+  },
+  "account_screensIdentityStepCopy4": {
+    "en": "App lock is handled by this device; transaction verification by the sign-in service.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1593",
+    "zh": "应用锁由这台设备把关，交易验证由登录服务决定。"
+  },
+  "account_screensLabel": {
+    "en": "LOOP is loading",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:673",
+    "zh": "LOOP 正在加载"
+  },
+  "account_screensLabel2": {
+    "en": "Choose wallet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:856",
+    "zh": "选择钱包"
+  },
+  "account_screensLabel3": {
+    "en": "Create wallet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:934",
+    "zh": "创建钱包"
+  },
+  "account_screensLabel4": {
+    "en": "{title}, done",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1040",
+    "zh": "{title}，已完成"
+  },
+  "account_screensLabel5": {
+    "en": "{title}, not done: {pendingDetail}",
+    "placeholders": {
+      "pendingDetail": {
+        "example": "pendingDetail",
+        "type": "Object"
+      },
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1040",
+    "zh": "{title}，未完成：{pendingDetail}"
+  },
+  "account_screensLoopLabel": {
+    "en": "Wallets you can connect",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:866",
+    "zh": "可连接的钱包"
+  },
+  "account_screensLoopLabel2": {
+    "en": "Also",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1364",
+    "zh": "另外"
+  },
+  "account_screensLoopLabel3": {
+    "en": "App lock",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1597, lib/features/account/account_screens.dart:1650",
+    "zh": "应用锁"
+  },
+  "account_screensLoopLabel4": {
+    "en": "Transaction verification",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1600",
+    "zh": "交易验证"
+  },
+  "account_screensLoopSplashEnterLabel": {
+    "en": "Enter LOOP",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:384, lib/features/account/onboarding_communities.dart:533",
+    "zh": "进入 LOOP"
+  },
+  "account_screensMethodSelectableSemanticLabel": {
+    "en": "{title}, optional",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1509",
+    "zh": "{title}，可选"
+  },
+  "account_screensMethodSelectedSemanticLabel": {
+    "en": "{title}, selected",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1509",
+    "zh": "{title}，已选"
+  },
+  "account_screensMfaRow": {
+    "en": "Loading…",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1682",
+    "zh": "读取中…"
+  },
+  "account_screensMfaRow2": {
+    "en": "Sign-in service unreachable this run",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1692",
+    "zh": "这次运行没有连上登录服务"
+  },
+  "account_screensMfaRow3": {
+    "en": "No answer from the sign-in service yet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1694",
+    "zh": "还没有读到登录服务的回答"
+  },
+  "account_screensPasskey": {
+    "en": "Passkey (recommended)",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1184",
+    "zh": "Passkey（推荐）"
+  },
+  "account_screensPasskey2": {
+    "en": "Uses device biometrics and syncs with the system keychain",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1184",
+    "zh": "用设备生物识别，跟随系统钥匙串同步"
+  },
+  "account_screensPasskeyBoundDetail": {
+    "en": "The sign-in service says this account already has a passkey",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1304",
+    "zh": "登录服务说这个账号已经有 Passkey"
+  },
+  "account_screensPendingDetail": {
+    "en": "Done once the wallet appears",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1001, lib/features/account/account_screens.dart:1007",
+    "zh": "钱包出现后才算完成"
+  },
+  "account_screensPendingDetail2": {
+    "en": "Done after the choice in step 3",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1013",
+    "zh": "第 3 步选择后才算完成"
+  },
+  "account_screensPendingDetail3": {
+    "en": "Done after step 5",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1019",
+    "zh": "第 5 步完成后才算完成"
+  },
+  "account_screensPreparingText": {
+    "en": "Preparing your account…",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:352",
+    "zh": "正在准备你的账号…"
+  },
+  "account_screensS": {
+    "en": "Not done",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1093",
+    "zh": "未完成"
+  },
+  "account_screensS2": {
+    "en": "The sign-in service says this account already has a passkey: {named}",
+    "placeholders": {
+      "named": {
+        "example": "named.join(' · ')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1305",
+    "zh": "登录服务说这个账号已经有 Passkey：{named}"
+  },
+  "account_screensSecurityAppLockSemanticLabel": {
+    "en": "App lock, unavailable: {detail}",
+    "placeholders": {
+      "detail": {
+        "example": "detail",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1663",
+    "zh": "应用锁，不可用：{detail}"
+  },
+  "account_screensSecurityAppLockSemanticLabel2": {
+    "en": "App lock, on. Tap and verify to turn off",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1665",
+    "zh": "应用锁，已开启，点按后验证身份可关闭"
+  },
+  "account_screensSecurityAppLockSemanticLabel3": {
+    "en": "App lock, off. Tap and verify to turn on",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1666",
+    "zh": "应用锁，未开启，点按后验证身份可开启"
+  },
+  "account_screensSecurityAppLockTrailing": {
+    "en": "Off",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1660, lib/features/account/account_screens.dart:1686",
+    "zh": "未开启"
+  },
+  "account_screensSecurityBiometricFallbackLine": {
+    "en": "If the device doesn't support biometrics, the system screen lock passcode is used instead.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1541",
+    "zh": "设备不支持生物识别时，会改用系统锁屏密码验证。"
+  },
+  "account_screensSecurityMfaSemanticLabel": {
+    "en": "MFA, off. Tap to turn on",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1707",
+    "zh": "MFA，未开启，点按开启"
+  },
+  "account_screensSecurityMfaSemanticLabel2": {
+    "en": "MFA, on: {detail}",
+    "placeholders": {
+      "detail": {
+        "example": "detail",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1708",
+    "zh": "MFA，已开启：{detail}"
+  },
+  "account_screensSecurityMfaSemanticLabel3": {
+    "en": "MFA, unavailable: {reason}",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1709",
+    "zh": "MFA，不可用：{reason}"
+  },
+  "account_screensSecuritySetupContinueTitle": {
+    "en": "Security setup",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1581, lib/features/account/account_screens.dart:1592",
+    "zh": "安全设置"
+  },
+  "account_screensSemanticLabel": {
+    "en": "{title}, available but off",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:299",
+    "zh": "{title}，可用但未开启"
+  },
+  "account_screensSemanticLabel2": {
+    "en": "{title}, unavailable: {unavailableReason}",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      },
+      "unavailableReason": {
+        "example": "unavailableReason",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:300",
+    "zh": "{title}，不可用：{unavailableReason}"
+  },
+  "account_screensSemanticLabel3": {
+    "en": "{title}, enabled: {reason}",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      },
+      "title": {
+        "example": "method.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1496",
+    "zh": "{title}，已启用：{reason}"
+  },
+  "account_screensSemanticLabel4": {
+    "en": "{title}, set up: {detail}. Tap to unlink",
+    "placeholders": {
+      "detail": {
+        "example": "detail",
+        "type": "Object"
+      },
+      "title": {
+        "example": "method.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1498",
+    "zh": "{title}，已设置：{detail}，点按可以解绑"
+  },
+  "account_screensSemanticLabel5": {
+    "en": "{title}, unavailable: {reason}",
+    "placeholders": {
+      "reason": {
+        "example": "reason",
+        "type": "Object"
+      },
+      "title": {
+        "example": "method.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1501, lib/features/account/account_screens.dart:1531",
+    "zh": "{title}，不可用：{reason}"
+  },
+  "account_screensSemanticLabel6": {
+    "en": "{title}, available",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1531",
+    "zh": "{title}，能力可用"
+  },
+  "account_screensStep": {
+    "en": "Done",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1093",
+    "zh": "已完成"
+  },
+  "account_screensSummary": {
+    "en": "Scan to connect and failure notes",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:819",
+    "zh": "扫码连接与失败说明"
+  },
+  "account_screensSummary2": {
+    "en": "Other recovery methods and the risk of skipping",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1358",
+    "zh": "其他恢复方式与跳过风险"
+  },
+  "account_screensSwitch": {
+    "en": "Wallet created",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:901",
+    "zh": "钱包已创建"
+  },
+  "account_screensSwitch2": {
+    "en": "This account already has a built-in wallet. LOOP doesn't use recovery phrases.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:902",
+    "zh": "这个账号下已经能看到内置钱包。LOOP 不使用助记词。"
+  },
+  "account_screensSwitch3": {
+    "en": "Creating your wallet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:905",
+    "zh": "正在创建你的钱包"
+  },
+  "account_screensSwitch4": {
+    "en": "Keys are generated on this device and never leave it. LOOP doesn't use recovery phrases.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:906",
+    "zh": "密钥在本地生成，不会离开这台设备。LOOP 不使用助记词。"
+  },
+  "account_screensSwitch5": {
+    "en": "Your wallet is still being created. You can continue for now",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:909",
+    "zh": "钱包还在创建中，可以先继续"
+  },
+  "account_screensSwitch6": {
+    "en": "No wallet after 60 seconds. That doesn't mean it failed. LOOP doesn't use recovery phrases.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:910",
+    "zh": "等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。"
+  },
+  "account_screensSwitch7": {
+    "en": "Not started yet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:913",
+    "zh": "还没有开始创建"
+  },
+  "account_screensSwitch8": {
+    "en": "Privy hasn't confirmed built-in wallet support, so this page won't fake progress. LOOP doesn't use recovery phrases.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:914",
+    "zh": "Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。"
+  },
+  "account_screensTitle": {
+    "en": "An external wallet is only a sign-in method",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:827",
+    "zh": "外部钱包只是登录凭证"
+  },
+  "account_screensTitle10": {
+    "en": "Automatic recovery depends on your sign-in method",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1390",
+    "zh": "自动恢复依赖你的登录方式"
+  },
+  "account_screensTitle2": {
+    "en": "Connect an existing wallet to mine",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:833",
+    "zh": "连接已有钱包就能挖矿"
+  },
+  "account_screensTitle3": {
+    "en": "Signature rejected",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:840",
+    "zh": "签名被拒绝"
+  },
+  "account_screensTitle4": {
+    "en": "Connection timed out",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:847",
+    "zh": "连接超时"
+  },
+  "account_screensTitle5": {
+    "en": "Generate key pair",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:999",
+    "zh": "生成密钥对"
+  },
+  "account_screensTitle6": {
+    "en": "Write to secure enclave",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1005",
+    "zh": "写入安全区"
+  },
+  "account_screensTitle7": {
+    "en": "Link LOOP ID",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1017",
+    "zh": "绑定 LOOP ID"
+  },
+  "account_screensTitle8": {
+    "en": "Social recovery 2-of-3",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1368",
+    "zh": "社交恢复 2-of-3"
+  },
+  "account_screensTitle9": {
+    "en": "Export private key",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1375",
+    "zh": "导出私钥"
+  },
+  "account_screensTrailing": {
+    "en": "Available",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:296, lib/features/account/account_screens.dart:1483, lib/features/account/account_screens.dart:1529",
+    "zh": "可用"
+  },
+  "account_screensTrailing2": {
+    "en": "Enabled",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1477",
+    "zh": "已启用"
+  },
+  "account_screensTrailing3": {
+    "en": "Set up",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1479",
+    "zh": "已设置"
+  },
+  "account_screensTrailing4": {
+    "en": "Selected",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1481, lib/features/account/onboarding_communities.dart:692",
+    "zh": "已选"
+  },
+  "account_screensUnknownAccountSurfaceMessage": {
+    "en": "Go back to Community. The request has been logged.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1727",
+    "zh": "请返回社区。请求已被记录。"
+  },
+  "account_screensUnknownAccountSurfaceTitle": {
+    "en": "Page not found",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1721",
+    "zh": "页面不存在"
+  },
+  "account_screensUnknownAccountSurfaceTitle2": {
+    "en": "This account page isn't in the 93-page product list",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1726",
+    "zh": "这个账户页面不在 93 页产品清单里"
+  },
+  "account_screensWalletAutomaticRecoveryEvidence": {
+    "en": "Privy built-in wallets recover through your sign-in method by default; on a new device, sign in with the same email (source: Privy)",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1200",
+    "zh": "Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）"
+  },
+  "account_screensWalletCreateContinueLabel": {
+    "en": "Set up recovery",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:928, lib/features/account/account_screens.dart:1011, lib/features/account/account_screens.dart:1399",
+    "zh": "设置恢复方式"
+  },
+  "account_screensWalletCreateContinueTitle": {
+    "en": "Create LOOP wallet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:921",
+    "zh": "创建 LOOP 钱包"
+  },
+  "account_screensWalletCreateProviderMessageTitle": {
+    "en": "Wallet creation didn't finish",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:949",
+    "zh": "这次创建没有完成"
+  },
+  "account_screensWalletCreateUnavailableBody": {
+    "en": "Privy hasn't confirmed built-in wallet support. This page won't fake progress, and no wallet was created.",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:942",
+    "zh": "Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。"
+  },
+  "account_screensWalletCreateUnavailableTitle": {
+    "en": "Wallet creation isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:941",
+    "zh": "钱包创建暂不可用"
+  },
+  "account_screensWalletRecoveryConfirmTitle": {
+    "en": "Recovery methods",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1325, lib/features/account/account_screens.dart:1431",
+    "zh": "恢复方式"
+  },
+  "account_screensWalletRecoveryDefaultBody": {
+    "en": "{walletAutomaticRecoveryEvidence}. LOOP has no recovery phrase; this is the default path.",
+    "placeholders": {
+      "walletAutomaticRecoveryEvidence": {
+        "example": "walletAutomaticRecoveryEvidence",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1405",
+    "zh": "{walletAutomaticRecoveryEvidence}。LOOP 没有助记词，这条路就是默认的那条。"
+  },
+  "account_screensWalletRecoveryDefaultTitle": {
+    "en": "You can already get your assets back on a new phone",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1404",
+    "zh": "换手机后你已经能拿回资产"
+  },
+  "account_screensWalletRecoveryErrorSource": {
+    "en": "Capability list",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1420",
+    "zh": "能力清单"
+  },
+  "account_screensWalletRecoveryLaterLabel": {
+    "en": "Set up later",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1351",
+    "zh": "稍后设置"
+  },
+  "account_screensWalletRecoveryProviderPending": {
+    "en": "The sign-in service in this version doesn't offer this yet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1208",
+    "zh": "当前版本的登录服务还没有开放这一项"
+  },
+  "account_screensWalletRecoveryUnavailableBody": {
+    "en": "{walletRecoveryProviderPending}. The options below aren't simulated locally and aren't pre-selected.",
+    "placeholders": {
+      "walletRecoveryProviderPending": {
+        "example": "walletRecoveryProviderPending",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/account/account_screens.dart:1429",
+    "zh": "{walletRecoveryProviderPending}。下面的选项不会在本地模拟，也不会预先勾选。"
+  },
+  "account_screensWalletRecoveryUnavailableTitle": {
+    "en": "You can't add another one yet",
+    "placeholders": {},
+    "where": "lib/features/account/account_screens.dart:1428",
+    "zh": "现在还不能再加一种"
+  }
+}

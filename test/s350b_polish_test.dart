@@ -114,7 +114,7 @@ void main() {
     testWidgets('代币 / NFT / 邀请, 代币 chosen', (tester) async {
       await s350bPumpPower(tester);
       final bar = tester.widget<LoopSegBar>(_key('mining-power-tabs'));
-      expect(bar.labels, <String>['代币', 'NFT', '邀请']);
+      expect(bar.labels, <String>['Token', 'NFT', 'Invitation']);
       expect(bar.selectedIndex, 0);
       expect(_key('mining-power-tab-token'), findsOneWidget);
     });

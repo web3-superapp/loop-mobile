@@ -29,15 +29,20 @@ void main() {
         onSecondaryAction: () {},
       ),
     );
-    expect(find.text('地区策略还没有开放'), findsOneWidget);
-    expect(find.textContaining('不会从设备语言、SIM 或 IP 推断'), findsOneWidget);
-    expect(find.text('部分功能在当前地区不可用'), findsNothing);
+    expect(find.text('Region policy isn\'t open yet'), findsOneWidget);
+    expect(
+      find.textContaining(
+        "doesn't infer your region from device language, SIM or IP",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Limited in your region'), findsNothing);
     // An unknown region grows no exit: the three only belong to a decision.
-    expect(find.text('查看资产'), findsNothing);
-    expect(find.text('导出私钥'), findsNothing);
-    expect(find.text('联系客服'), findsNothing);
-    expect(find.text('查看资格政策'), findsNothing);
-    expect(find.text('返回 LOOP'), findsOneWidget);
+    expect(find.text('View assets'), findsNothing);
+    expect(find.text('Export private key'), findsNothing);
+    expect(find.text('Contact support'), findsNothing);
+    expect(find.text('View eligibility policy'), findsNothing);
+    expect(find.text('Back to LOOP'), findsOneWidget);
   });
 
   testWidgets('explicit decision renders only its bounded projection', (
@@ -61,16 +66,19 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('部分功能在当前地区不可用'), findsOneWidget);
+    expect(find.text('Limited in your region'), findsOneWidget);
     // The stamp states the decision, never the server's own code for it.
     expect(find.text('REGION_BLOCKED'), findsNothing);
-    expect(find.text('受限'), findsOneWidget);
-    expect(find.textContaining('资产保持只读可见'), findsOneWidget);
-    expect(find.text('地区策略还没有开放'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Restricted'), findsOneWidget);
+    expect(
+      find.textContaining('Assets stay visible read-only'),
+      findsOneWidget,
+    );
+    expect(find.text('Region policy isn\'t open yet'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
     expect(find.textContaining('Spot'), findsNothing);
-    await tester.tap(find.text('查看资产'));
-    await tester.tap(find.text('查看资格政策'));
+    await tester.tap(find.text('View assets'));
+    await tester.tap(find.text('View eligibility policy'));
     expect((continues, policy), (1, 1));
 
     await pumpSystemSurface(
@@ -80,14 +88,20 @@ void main() {
         featureAvailabilityRestriction: LoopFeatureAvailabilityRestriction(),
       ),
     );
-    expect(find.text('受限'), findsOneWidget);
-    expect(find.textContaining('不列出未确认的可用范围'), findsOneWidget);
+    expect(find.text('Restricted'), findsOneWidget);
+    expect(
+      find.textContaining("unconfirmed availability isn't listed"),
+      findsOneWidget,
+    );
     // Every exit is still on the page, off, with the reason under it.
-    expect(find.text('查看资产'), findsOneWidget);
-    expect(find.text('导出私钥'), findsOneWidget);
-    expect(find.text('联系客服'), findsOneWidget);
-    expect(find.text('钱包页当前不可达。'), findsOneWidget);
-    expect(find.text('查看资格政策'), findsNothing);
+    expect(find.text('View assets'), findsOneWidget);
+    expect(find.text('Export private key'), findsOneWidget);
+    expect(find.text('Contact support'), findsOneWidget);
+    expect(
+      find.text('The Wallet page can\'t be reached right now.'),
+      findsOneWidget,
+    );
+    expect(find.text('View eligibility policy'), findsNothing);
   });
 
   testWidgets('region actions appear independently and never generically', (
@@ -108,10 +122,10 @@ void main() {
         onRegionSupport: () => supports += 1,
       ),
     );
-    expect(find.text('查看资格政策'), findsNothing);
-    await tester.tap(find.text('查看资产'));
-    await tester.tap(find.text('导出私钥'));
-    await tester.tap(find.text('联系客服'));
+    expect(find.text('View eligibility policy'), findsNothing);
+    await tester.tap(find.text('View assets'));
+    await tester.tap(find.text('Export private key'));
+    await tester.tap(find.text('Contact support'));
     expect((assets, exports, supports), (1, 1, 1));
 
     await pumpSystemSurface(
@@ -124,10 +138,14 @@ void main() {
       ),
     );
     // An exit with no destination is shown off, and it cannot be invoked.
-    expect(find.text('钱包页当前不可达。'), findsOneWidget);
-    await tester.tap(find.text('查看资产'));
+    expect(
+      find.text('The Wallet page can\'t be reached right now.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('View assets'));
     expect(assets, 1);
-    await tester.tap(find.text('查看资格政策'));
+    await tester.ensureVisible(find.text('View eligibility policy'));
+    await tester.tap(find.text('View eligibility policy'));
     expect(policyOpens, 1);
 
     await pumpSystemSurface(
@@ -141,8 +159,8 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('查看资格政策'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('View eligibility policy'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
   });
 
   testWidgets('region states remain usable at 2x text', (tester) async {
@@ -158,7 +176,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('查看资格政策'));
-    await tester.tap(find.text('查看资格政策'));
+    await tester.ensureVisible(find.text('View eligibility policy'));
+    await tester.tap(find.text('View eligibility policy'));
   });
 }

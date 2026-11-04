@@ -50,14 +50,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
-    expect(find.text('登录配置不完整'), findsOneWidget);
+    expect(find.text('Welcome to LOOP'), findsOneWidget);
+    expect(find.text('Sign-in setup is incomplete'), findsOneWidget);
     expect(find.byType(MemeScreen), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('enter-development-preview-button')),
       findsNothing,
     );
-    expect(find.text('进入开发预览'), findsNothing);
+    expect(find.text('Enter development preview'), findsNothing);
   });
 
   testWidgets('signing out shows a non-interactive authentication boundary', (
@@ -119,7 +119,7 @@ void main() {
     await exit;
     await tester.pumpAndSettle();
 
-    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+    expect(find.text('Welcome to LOOP'), findsOneWidget);
   });
 
   testWidgets('explicit offline composition can enter and leave preview', (
@@ -141,7 +141,7 @@ void main() {
     final previewButton = find.byKey(
       const ValueKey<String>('enter-development-preview-button'),
     );
-    expect(find.text('进入开发预览'), findsOneWidget);
+    expect(find.text('Enter development preview'), findsOneWidget);
     await tester.ensureVisible(previewButton);
     await tester.pump();
     await tester.tap(previewButton);
@@ -182,7 +182,7 @@ void main() {
       find.byKey(const ValueKey<String>('community-confirm-cancel')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('欢迎来到 LOOP'), findsNothing);
+    expect(find.text('Welcome to LOOP'), findsNothing);
     await tester.tap(signOut);
     await tester.pumpAndSettle();
     await tester.tap(
@@ -190,7 +190,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+    expect(find.text('Welcome to LOOP'), findsOneWidget);
     expect(find.byType(MemeScreen), findsNothing);
   });
 }

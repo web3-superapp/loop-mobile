@@ -209,7 +209,7 @@ void main() {
       expect(_key('about-backend-host'), findsNothing);
       expect(_key('about-build-mode'), findsNothing);
       expect(find.textContaining('api-staging'), findsNothing);
-      expect(find.text('构建模式'), findsNothing);
+      expect(find.text('Build mode'), findsNothing);
       _expectNoHintText();
     });
 
@@ -255,8 +255,8 @@ void main() {
     tearDown(() => debugSetLoopTestHintsVisible(null));
 
     test('the chain, the kicker and the environment tag say testnet', () {
-      expect(loopChainName(loopLaunchTestnetChainId), 'BSC 测试网');
-      expect(loopTestnetBadgeFor(loopLaunchTestnetChainId), 'BSC 测试网');
+      expect(loopChainName(loopLaunchTestnetChainId), 'BSC Testnet');
+      expect(loopTestnetBadgeFor(loopLaunchTestnetChainId), 'BSC Testnet');
       expect(
         launch2DeskKicker(loopLaunchTestnetChainId),
         'Launchpad · BSC TESTNET',

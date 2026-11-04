@@ -109,7 +109,7 @@ void main() {
       final empty = find.byKey(const ValueKey<String>('security-events-empty'));
       await scrollToS8Section(tester, empty);
       expect(empty, findsOneWidget);
-      expect(find.text('还没有安全事件'), findsOneWidget);
+      expect(find.text('No security events yet'), findsOneWidget);
     });
 
     testWidgets('an unavailable approvals block prints its reason, not a 0', (
@@ -130,7 +130,7 @@ void main() {
       );
       await scrollToS8Section(tester, block);
       expect(block, findsOneWidget);
-      expect(find.text('授权盘点读不到'), findsOneWidget);
+      expect(find.text('Can\'t read token approvals'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('security-approvals-active')),
         findsNothing,
@@ -151,11 +151,17 @@ void main() {
       );
       await scrollToS8Section(tester, freshness);
       // S278 · decision 0236: the coverage line is behind the block's (i).
-      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsNothing);
+      expect(
+        find.textContaining('Approvals from block 120,600,000'),
+        findsNothing,
+      );
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
-      expect(find.textContaining('索引高度 120,659,683'), findsOneWidget);
+      expect(
+        find.textContaining('Approvals from block 120,600,000'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Indexed 120,659,683'), findsOneWidget);
     });
 
     testWidgets('the high-risk signal quotes the server policy', (
@@ -176,7 +182,7 @@ void main() {
       );
       await scrollToS8Section(tester, notice);
       expect(notice, findsOneWidget);
-      expect(find.textContaining('阈值 2'), findsOneWidget);
+      expect(find.textContaining('threshold of 2'), findsOneWidget);
       expect(find.textContaining('deviceRiskV1'), findsNothing);
     });
   });
@@ -302,7 +308,7 @@ void main() {
 
       expect(find.text('iOS · 1.0.0'), findsOneWidget);
       expect(find.text('Android · 1.0.0'), findsOneWidget);
-      expect(find.text('本次会话'), findsOneWidget);
+      expect(find.text('This session'), findsOneWidget);
       expect(find.textContaining('iPhone 15 Pro'), findsNothing);
       expect(find.textContaining('MacBook'), findsNothing);
       expect(find.textContaining('上海'), findsNothing);
@@ -333,28 +339,28 @@ void main() {
       );
 
       expect(find.text('iOS · 1.0.0'), findsNWidgets(2));
-      expect(find.textContaining('会话 3d4e'), findsOneWidget);
-      expect(find.textContaining('会话 4e5f'), findsOneWidget);
+      expect(find.textContaining('Session 3d4e'), findsOneWidget);
+      expect(find.textContaining('Session 4e5f'), findsOneWidget);
       // Both instants are the server's, printed on the reader's own wall
       // clock like every other timestamp in the app.
       expect(
         find.textContaining(
-          '首次登录 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 20))}',
+          'First sign-in ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 20))}',
         ),
         findsOneWidget,
       );
       expect(
         find.textContaining(
-          '首次登录 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 3, 1))}',
+          'First sign-in ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 3, 1))}',
         ),
         findsOneWidget,
       );
       // The session in hand is being used, so no observation time is printed
       // beside it; the older session of the same device says whose it is.
-      expect(find.text('本次会话'), findsOneWidget);
-      expect(find.textContaining('正在使用'), findsOneWidget);
-      expect(find.text('本设备 · 旧会话'), findsOneWidget);
-      expect(find.textContaining('最后活跃 '), findsOneWidget);
+      expect(find.text('This session'), findsOneWidget);
+      expect(find.textContaining('In use'), findsOneWidget);
+      expect(find.text('Old session'), findsOneWidget);
+      expect(find.textContaining('Last active '), findsOneWidget);
     });
 
     testWidgets('the revoke sheet names the session it is about', (
@@ -391,7 +397,10 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: sheet, matching: find.text('本设备的旧会话')),
+        find.descendant(
+          of: sheet,
+          matching: find.text('Old session on this device'),
+        ),
         findsOneWidget,
       );
     });
@@ -412,7 +421,7 @@ void main() {
         find.byKey(const ValueKey<String>('devices-revoke-all-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('需要二次验证'), findsWidgets);
+      expect(find.textContaining('Needs two-step verification'), findsWidgets);
     });
 
     testWidgets('revoking another session states the audit-only effect', (
@@ -435,7 +444,7 @@ void main() {
         find.byKey(const ValueKey<String>('device-revoke-sheet')),
         findsOneWidget,
       );
-      expect(find.textContaining('不会被终止'), findsOneWidget);
+      expect(find.textContaining("isn't ended"), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('device-revoke-confirm')),
@@ -447,7 +456,10 @@ void main() {
         const ValueKey<String>('devices-revoke-outcome'),
       );
       await scrollToS8Section(tester, outcome);
-      expect(find.text('已记录撤销，对方访问未终止'), findsWidgets);
+      expect(
+        find.text('Revocation recorded; access on that device isn\'t ended'),
+        findsWidgets,
+      );
       expect(find.textContaining('已下线'), findsNothing);
     });
 
@@ -590,7 +602,7 @@ void main() {
         security: FakeSecurityGateway(),
       );
 
-      expect(find.text('2-of-3 守护人'), findsOneWidget);
+      expect(find.text('2-of-3 guardians'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('social-recovery-unavailable')),
         findsOneWidget,

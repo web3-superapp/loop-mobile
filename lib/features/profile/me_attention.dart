@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/notifications/notification_inbox.dart';
 import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -111,9 +112,15 @@ class MeMessageRequestsEntry extends ConsumerWidget {
             key: const ValueKey<String>('stream-chat-message-requests-entry'),
             // Decision 0212: a quiet Text2 glyph, not a Yellow one.
             leading: const LoopRowIcon(icon: 'mail'),
-            title: '陌生人请求',
-            trailing: '$label 条待处理',
-            semanticLabel: '陌生人请求，$label 条待处理',
+            title: context.l10n.common_messageRequests,
+            trailing: context.l10n
+                .profile_meAttentionStreamChatMessageRequestsEntryTrailing(
+                  label,
+                ),
+            semanticLabel: context.l10n
+                .profile_meAttentionStreamChatMessageRequestsEntrySemanticLabel(
+                  label,
+                ),
             onTap:
                 onOpen ?? () => unawaited(context.push<void>('/chat/requests')),
           ),

@@ -211,9 +211,9 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-mfa')),
       );
-      expect(row.trailing, '不可用');
+      expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);
-      expect(row.subtitle, contains('这次运行没有连上登录服务'));
+      expect(row.subtitle, contains('Sign-in service unreachable this run'));
     });
 
     testWidgets('an answered, empty account is 未开启 and can be opened', (
@@ -230,7 +230,7 @@ void main() {
       );
 
       final finder = find.byKey(const ValueKey<String>('security-mfa'));
-      expect(tester.widget<LoopRecordRow>(finder).trailing, '未开启');
+      expect(tester.widget<LoopRecordRow>(finder).trailing, 'Off');
 
       await tester.tap(finder);
       await tester.pumpAndSettle();
@@ -255,9 +255,9 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-mfa')),
       );
-      expect(row.trailing, '已开启');
+      expect(row.trailing, 'On');
       expect(row.subtitle, contains('Authenticator app'));
-      expect(row.semanticLabel, contains('已开启'));
+      expect(row.semanticLabel, contains('MFA, on'));
     });
 
     testWidgets('大额交易二次验证 has no switch in a tree with no device check', (
@@ -541,7 +541,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('security-mfa')),
       );
-      expect(row.trailing, '已开启');
+      expect(row.trailing, 'On');
       expect(row.subtitle, contains('Passkey'));
     });
 
@@ -605,7 +605,7 @@ void main() {
       final row = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('recovery-passkey')),
       );
-      expect(row.trailing, '不可用');
+      expect(row.trailing, 'Unavailable');
       expect(row.onTap, isNull);
       expect(row.subtitle, contains(loopPasskeyDomainPending));
     });
@@ -623,7 +623,7 @@ void main() {
       );
 
       final finder = find.byKey(const ValueKey<String>('recovery-passkey'));
-      expect(tester.widget<LoopRecordRow>(finder).trailing, '可用');
+      expect(tester.widget<LoopRecordRow>(finder).trailing, 'Available');
 
       await tester.tap(finder);
       await tester.pumpAndSettle();
@@ -651,7 +651,7 @@ void main() {
 
       final finder = find.byKey(const ValueKey<String>('recovery-passkey'));
       final row = tester.widget<LoopRecordRow>(finder);
-      expect(row.trailing, '已设置');
+      expect(row.trailing, 'Set up');
       expect(row.subtitle, contains('iPhone'));
       // Nothing more to add is not what this page says once one is bound.
       expect(
@@ -681,7 +681,7 @@ void main() {
               find.byKey(const ValueKey<String>('recovery-passkey')),
             )
             .trailing,
-        '可用',
+        'Available',
       );
     });
   });

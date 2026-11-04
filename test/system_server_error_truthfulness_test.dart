@@ -17,7 +17,7 @@ void main() {
       location: '/system/error',
       kicker: loopStateSpecimenLabel,
       specimenKeys: <String>['service-error-specimen'],
-      specimenText: <String>['错误 502', '重试', '联系客服'],
+      specimenText: <String>['Error 502', 'Retry', 'Contact support'],
     );
   });
 
@@ -36,12 +36,12 @@ void main() {
       ),
     );
     expect(find.text(loopStateSpecimenLabel), findsOneWidget);
-    expect(find.text('服务暂时不可用'), findsOneWidget);
-    expect(find.text('可重试'), findsOneWidget);
-    expect(find.textContaining('追踪号 7f3a2c9e'), findsOneWidget);
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.tap(find.text('重试'));
-    await tester.tap(find.text('联系客服'));
+    expect(find.text('Service unavailable'), findsOneWidget);
+    expect(find.text('Retryable'), findsOneWidget);
+    expect(find.textContaining('Trace ID 7f3a2c9e'), findsOneWidget);
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Contact support'));
     expect((retries, support), (1, 1));
   });
 
@@ -65,16 +65,16 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('服务暂时不可用'), findsOneWidget);
-    expect(find.text('可重试'), findsOneWidget);
+    expect(find.text('Service unavailable'), findsOneWidget);
+    expect(find.text('Retryable'), findsOneWidget);
     expect(
-      find.bySemanticsLabel(RegExp('错误 502.*追踪号 7f3a2c9e')),
+      find.bySemanticsLabel(RegExp('Error 502.*Trace ID 7f3a2c9e')),
       findsOneWidget,
     );
     expect(find.text(loopStateSpecimenLabel), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
-    await tester.tap(find.text('重试'));
-    await tester.tap(find.text('联系客服'));
+    expect(find.text('Back to LOOP'), findsNothing);
+    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Contact support'));
     expect(retries, 1);
     expect(support, 1);
 
@@ -86,9 +86,12 @@ void main() {
         serviceErrorObservation: LoopServiceErrorObservation(),
       ),
     );
-    expect(find.bySemanticsLabel(RegExp('结果未确认.*追踪号未提供')), findsOneWidget);
-    expect(find.text('重试'), findsNothing);
-    expect(find.text('联系客服'), findsNothing);
+    expect(
+      find.bySemanticsLabel(RegExp('Result unconfirmed.*No trace ID')),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Contact support'), findsNothing);
   });
 
   testWidgets('explicit observation never accepts generic system actions', (
@@ -107,10 +110,10 @@ void main() {
       ),
     );
 
-    expect(find.text('服务暂时不可用'), findsOneWidget);
-    expect(find.text('重试'), findsNothing);
-    expect(find.text('联系客服'), findsNothing);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Service unavailable'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Contact support'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
   });
 
   testWidgets('server-error states remain usable at 2x text', (tester) async {
@@ -127,7 +130,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('联系客服'));
-    await tester.tap(find.text('联系客服'));
+    await tester.ensureVisible(find.text('Contact support'));
+    await tester.tap(find.text('Contact support'));
   });
 }

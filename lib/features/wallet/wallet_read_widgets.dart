@@ -809,7 +809,7 @@ bool walletLaunchChainBadged(LoopLaunchChainBalance launchChain) =>
 /// reads the total above as including these balances (loop-api decision
 /// 0038: the main asset area stays on the main chain). Drawn only while the
 /// test-hints switch is on (decision 0204).
-const String walletLaunchChainTotalNote = loopTestnetWalletTotalNoteText;
+String get walletLaunchChainTotalNote => loopTestnetWalletTotalNoteText;
 
 /// The Launch slot's USD1 symbol: 「tUSD1」 on a testnet, as the faucet
 /// names it, 「USD1」 otherwise — and 「USD1」 whenever the test-hints switch

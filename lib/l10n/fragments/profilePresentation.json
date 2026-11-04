@@ -1,0 +1,80 @@
+{
+  "profilePresentation_avatarEditorAvatarCropConfirmLabel": {
+    "en": "Processing…",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:232",
+    "zh": "处理中…"
+  },
+  "profilePresentation_avatarEditorAvatarCropConfirmLabel2": {
+    "en": "Use this one",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:232",
+    "zh": "使用这张"
+  },
+  "profilePresentation_avatarEditorBuild": {
+    "en": "Drag and pinch to zoom. What's inside the frame is your avatar.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:164",
+    "zh": "拖动、双指缩放，方框里的部分就是头像。"
+  },
+  "profilePresentation_avatarEditorLoopAvatarResetLabel": {
+    "en": "Use default avatar",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:382",
+    "zh": "用默认头像"
+  },
+  "profilePresentation_avatarEditorLoopAvatarUploadLabel": {
+    "en": "Upload avatar",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:373",
+    "zh": "上传头像"
+  },
+  "profilePresentation_avatarEditorLoopAvatarUploadUnavailable": {
+    "en": "Avatar upload isn't open yet. Use the default for now.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:393",
+    "zh": "头像上传暂未开放，先用默认头像。"
+  },
+  "profilePresentation_avatarEditorLoopSheetHeading": {
+    "en": "Crop avatar",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_editor.dart:159",
+    "zh": "裁剪头像"
+  },
+  "profilePresentation_avatarMediaInvalidData": {
+    "en": "Couldn't confirm the upload. Your avatar wasn't changed.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:170",
+    "zh": "上传结果无法确认，头像没有更换。"
+  },
+  "profilePresentation_avatarMediaOffline": {
+    "en": "No network connection. Your avatar wasn't uploaded.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:166",
+    "zh": "网络未连接，头像没有上传。"
+  },
+  "profilePresentation_avatarMediaRateLimited": {
+    "en": "Too many uploads. Try again in a minute.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:167",
+    "zh": "上传太频繁，请一分钟后再试。"
+  },
+  "profilePresentation_avatarMediaRejected": {
+    "en": "This image can't be used: it must be JPG, PNG, WebP or HEIC, up to 5 MB, at least 64 pixels per side.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:169",
+    "zh": "这张图片不能用：需要 JPG、PNG、WebP 或 HEIC，不超过 5 MB，边长至少 64 像素。"
+  },
+  "profilePresentation_avatarMediaUnavailable": {
+    "en": "Avatar upload isn't available right now. Use the default for now.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:165",
+    "zh": "头像上传暂不可用，先用默认头像。"
+  },
+  "profilePresentation_avatarMediaUnexpected": {
+    "en": "Avatar upload failed. Try again.",
+    "placeholders": {},
+    "where": "lib/features/profile/presentation/avatar_media.dart:171",
+    "zh": "头像没有上传成功，请重试。"
+  }
+}

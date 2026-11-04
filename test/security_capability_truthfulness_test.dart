@@ -86,7 +86,7 @@ void main() {
       find.byKey(const ValueKey<String>('security-devices-entry')),
     );
     expect(devices.trailing, '2');
-    expect(devices.subtitle, startsWith('2 个活跃会话'));
+    expect(devices.subtitle, startsWith('2 active sessions'));
 
     // Decision 0151: the server still lists 恢复密码 and the response stays
     // valid, but the center no longer shows it.
@@ -105,12 +105,12 @@ void main() {
       find.byKey(const ValueKey<String>('security-method-recoveryPassword')),
       findsNothing,
     );
-    expect(find.text('恢复密码'), findsNothing);
+    expect(find.text('Recovery password'), findsNothing);
     // None of the five exists yet, so none of them is "off": a badge reading
     // 未开启 over a sentence reading 还没有开放 made LOOP's omission look like
     // the account's.
-    expect(find.text('还没有开放'), findsNWidgets(5));
-    expect(find.text('未开启'), findsNothing);
+    expect(find.text('Not open yet'), findsNWidgets(5));
+    expect(find.text('Off'), findsNothing);
     // And the row says what the method would do, instead of repeating its own
     // title with 还没有开放 after it — since S278 (decision 0236) behind the
     // row's (i), not under its title.
@@ -138,7 +138,7 @@ void main() {
         reason: id.wireName,
       );
     }
-    expect(find.text('已开启'), findsOneWidget); // security.event only
+    expect(find.text('On'), findsOneWidget); // security.event only
 
     // The two rows that lead somewhere lead to their own explanation page.
     // S278 · decision 0236: the row's (i) answers only its own 44 dp, which
@@ -149,14 +149,14 @@ void main() {
         of: find.byKey(
           const ValueKey<String>('security-method-socialRecovery'),
         ),
-        matching: find.text('社交恢复'),
+        matching: find.text('Social recovery'),
       ),
     );
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
         of: find.byKey(const ValueKey<String>('security-method-keyExport')),
-        matching: find.text('导出私钥'),
+        matching: find.text('Export private key'),
       ),
     );
     await tester.pumpAndSettle();
@@ -177,8 +177,8 @@ void main() {
 
       await _pumpPhone(tester, ProfileSurfaceScreen.fromId(retiredId));
 
-      expect(find.text('设置不可用'), findsOneWidget);
-      expect(find.text('没有做任何更改'), findsOneWidget);
+      expect(find.text('Setting unavailable'), findsOneWidget);
+      expect(find.text('Nothing was changed'), findsOneWidget);
       expect(find.textContaining('Recovery phrase'), findsNothing);
       expect(find.byType(TextField), findsNothing);
     }
@@ -220,7 +220,10 @@ void main() {
       find.byKey(const ValueKey<String>('security-capability-block')),
       findsOneWidget,
     );
-    expect(find.text('安全中心当前不可用'), findsOneWidget);
+    expect(
+      find.text('Security Center isn\'t available right now'),
+      findsOneWidget,
+    );
     expect(find.textContaining('项保护已开启'), findsNothing);
     expect(find.text('已开启'), findsNothing);
     expect(find.text('Recovery phrase'), findsNothing);

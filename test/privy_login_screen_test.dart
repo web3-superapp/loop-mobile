@@ -49,11 +49,14 @@ void main() {
   testWidgets('the welcome reads title, one line and no Emoji', (tester) async {
     await _pump(tester, showApple: false);
 
-    final title = tester.widget<Text>(find.text('欢迎来到 LOOP'));
+    final title = tester.widget<Text>(find.text('Welcome to LOOP'));
     // Decision 0211: the step title is bold Inter / Noto Sans SC.
     expect(title.style?.fontSize, LoopType.stepTitle.fontSize);
     expect(title.style?.fontFamily, LoopFonts.body);
-    expect(find.text('选择一种方式登录或创建账户'), findsOneWidget);
+    expect(
+      find.text('Choose a way to sign in or create an account'),
+      findsOneWidget,
+    );
     expect(find.text('登录后自动创建钱包，持仓即产生算力。'), findsNothing);
     final emoji = RegExp(
       r'[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]',
@@ -99,7 +102,7 @@ void main() {
     await _pump(tester, showApple: false, reownProjectId: '');
 
     expect(_walletLinkTap(tester), isNull);
-    expect(find.textContaining('缺少有效的 Reown Project ID'), findsOneWidget);
+    expect(find.textContaining('No valid Reown Project ID'), findsOneWidget);
   });
 
   testWidgets('使用邮箱登录 opens the e-mail step', (tester) async {

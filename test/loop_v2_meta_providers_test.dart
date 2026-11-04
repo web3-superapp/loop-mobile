@@ -147,7 +147,7 @@ void main() {
       repository.capabilitiesResult.complete(_capabilities());
       await tester.pumpAndSettle();
 
-      expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+      expect(find.text('Welcome to LOOP'), findsOneWidget);
       expect(find.byType(MemeScreen), findsNothing);
       expect(tester.takeException(), isNull);
     },

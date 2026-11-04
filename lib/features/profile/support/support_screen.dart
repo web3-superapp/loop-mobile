@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/profile/support/support_controller.dart';
 import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/features/profile/support/support_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -23,7 +24,10 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The five bundled answers. They are product copy, not an indexed FAQ: there
 /// is no article resource, so nothing here claims a server source.
-const List<(String, String)> _supportAnswers = <(String, String)>[
+/// Each answer carries a stable id for its key (decision 0281: keys never
+/// spell copy).
+List<(String, String, String)>
+get _supportAnswers => <(String, String, String)>[
   // Bundled copy outlives the state it was written in: this answer used to say
   // the formula was undecided and that no power was shown, and it kept saying
   // it after the mining pages started showing settled figures. It now describes
@@ -31,32 +35,30 @@ const List<(String, String)> _supportAnswers = <(String, String)>[
   // effect; the version itself is on the mining page, which is the one place
   // that reads it.
   (
-    '算力是怎么算的',
-    '算力来自最近一次算力快照：每个已登记资产的持有数量乘以权重，不乘价格，在算力明细里'
-        '逐行列出。按绑定到 LOOP 账号的钱包持仓计算；社区币须加入已通过审核的绑定社区才计入。'
-        '挖矿页会显示那次快照的区块与时间。',
+    'power',
+    LoopL10n.current.profileSupport_screenText,
+    LoopL10n.current.profileSupport_screenText2,
   ),
   (
-    '为什么我的币没有权重',
-    '只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，'
-        '不以钱包里是否出现过为准。绑定待审核社区的币没有权重。',
+    'weight',
+    LoopL10n.current.profileSupport_screenText3,
+    LoopL10n.current.profileSupport_screenText4,
   ),
   (
-    '怎么参与 Launch',
-    'Launch 轮次、快照与限额由合约参数决定。参数确认前，Launch 页只展示已有的'
-        '轮次状态，不承诺任何额度。',
+    'launch',
+    LoopL10n.current.profileSupport_screenText5,
+    LoopL10n.current.profileSupport_screenText6,
   ),
   (
-    '换手机怎么恢复账户',
+    'recovery',
+    LoopL10n.current.profileSupport_screenText7,
     // Decision 0158: the same facts as the security center (decision 0156).
-    '账号身份由 Privy 保管。Passkey 与多因素验证可以在安全中心开启，'
-        '自动恢复是默认的恢复方式；社交恢复与导出私钥还没有开放。'
-        '安全中心会显示每一项的当前状态。',
+    LoopL10n.current.profileSupport_screenText8,
   ),
   (
-    '内盘买入为什么被拒绝',
-    '未毕业的 Launch 资产只能买入，且只能走它自己的通道；被拒绝时会给出具体的'
-        '错误码，交易页会原样显示。',
+    'bonding-buy',
+    LoopL10n.current.profileSupport_screenText9,
+    LoopL10n.current.profileSupport_screenText10,
   ),
 ];
 
@@ -93,7 +95,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     if (ok) _body.clear();
     LoopToast.show(
       context,
-      message: ok ? '工单已提交' : '工单没有提交',
+      message: ok
+          ? LoopL10n.current.profileSupport_screenMessage
+          : LoopL10n.current.profileSupport_screenMessage2,
       kind: ok ? LoopToastKind.ok : LoopToastKind.err,
     );
   }
@@ -125,20 +129,21 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('support-screen'),
         archetype: LoopPageArchetype.record,
-        title: '帮助与客服',
+        title: context.l10n.profileSupport_screenSupportScreenTitle,
         onBack: widget.onBack,
         // The prototype has no hero here: it opens on 联系我们, and its
         // 「先查答案，再提交工单」 card is the body of the closing disclosure.
         // A hero carrying that line over a page with no answers on it was the
         // page denying itself (audit 2026-09-21 §D+ #13, §D+ #14).
         sections: <Widget>[
-          const LoopLabel('联系我们'),
+          LoopLabel(context.l10n.profileSupport_screenLoopLabel),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('support-open-community'),
                 leading: const LoopRowIcon(icon: 'community'),
-                title: 'LOOP 官方社区',
+                title:
+                    context.l10n.profileSupport_screenSupportOpenCommunityTitle,
                 position: LoopRowPosition.single,
                 onTap: () => widget.onNavigate('community-discover'),
               ),
@@ -146,28 +151,29 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           ),
           // Five bundled answers, so the page has a first path that is not a
           // ticket. They are product copy, not an indexed article resource.
-          const LoopLabel('常见问题'),
+          LoopLabel(context.l10n.profileSupport_screenLoopLabel2),
           Column(
             children: <Widget>[
               for (final answer in _supportAnswers)
                 LoopDisclosure(
                   key: ValueKey<String>('support-answer-${answer.$1}'),
-                  summary: answer.$1,
+                  summary: answer.$2,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                     child: Text(
-                      answer.$2,
+                      answer.$3,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                 ),
             ],
           ),
-          const LoopLabel('提交工单'),
+          LoopLabel(context.l10n.profileSupport_screenLoopLabel3),
           if (blocked)
             LoopUnavailableLine(
               key: const ValueKey<String>('support-capability-block'),
-              label: '客服工单当前不可用',
+              label:
+                  context.l10n.profileSupport_screenSupportCapabilityBlockLabel,
               reasonCode:
                   capability.reasonCode ?? 'SUPPORT_RUNTIME_UNAVAILABLE',
             )
@@ -185,10 +191,14 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             const SizedBox(height: 12),
             LoopFlatField(
               key: const ValueKey<String>('support-body'),
-              label: '问题描述',
-              footnote:
-                  '$length / ${LoopSupportPolicy.maximumBodyLength} 码点'
-                  '${problem != null && length > 0 ? ' · ${problem.explanation}' : ''}',
+              label: context.l10n.profileSupport_screenSupportBodyLabel,
+              footnote: context.l10n.profileSupport_screenSupportBodyFootnote(
+                length,
+                LoopSupportPolicy.maximumBodyLength,
+                problem != null && length > 0
+                    ? ' · ${problem.explanation}'
+                    : '',
+              ),
               error: problem != null && length > 0,
               child: TextField(
                 key: const ValueKey<String>('support-body-field'),
@@ -204,7 +214,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 onChanged: (_) => setState(() {}),
                 style: LoopType.bodyLg,
                 decoration: loopFormFieldDecoration(
-                  hint: '描述你遇到的问题；不要填写私钥、助记词或验证码',
+                  hint: context.l10n.profileSupport_screenHint,
                 ),
               ),
             ),
@@ -215,7 +225,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             if (state.commandFailureKind != null)
               LoopErrorState(
                 key: const ValueKey<String>('support-command-error'),
-                title: '工单没有提交',
+                title: context.l10n.profileSupport_screenMessage2,
                 reason: loopChainFailureReason(state.commandFailureKind),
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
@@ -228,7 +238,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: LoopButton(
                 key: const ValueKey<String>('support-submit'),
-                label: state.busy ? '提交中' : '提交工单',
+                label: state.busy
+                    ? context.l10n.common_submitting
+                    : context.l10n.profileSupport_screenLoopLabel3,
                 block: true,
                 primary: true,
                 onPressed: submittable ? () => unawaited(_submit()) : null,
@@ -237,7 +249,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             if (page != null)
               LoopUnavailableLine.fact(
                 key: const ValueKey<String>('support-attachments-unavailable'),
-                label: '暂不支持附件',
+                label: context
+                    .l10n
+                    .profileSupport_screenSupportAttachmentsUnavailableLabel,
                 fact: page.attachments,
                 margin: const EdgeInsets.fromLTRB(
                   LoopSpacing.page,
@@ -246,23 +260,25 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                   0,
                 ),
               ),
-            const LoopLabel('我的工单'),
+            LoopLabel(context.l10n.profileSupport_screenLoopLabel4),
             if (!state.resource.isReady)
               LoopChainStateBlock(
                 keyPrefix: 'support',
                 phase: state.resource.phase,
                 failureKind: state.resource.failureKind,
-                emptyMessage: '还没有提交过工单',
+                emptyMessage: context.l10n.profileSupport_screenEmptyMessage,
                 onRetry: () => unawaited(
                   ref.read(supportControllerProvider.notifier).reload(),
                 ),
               )
             else if (page!.items.isEmpty)
-              const LoopEmptyState(
+              LoopEmptyState(
                 key: ValueKey<String>('support-tickets-empty'),
                 illustration: LoopIllustration.history,
-                title: '还没有提交过工单',
-                message: '提交后，这里会显示状态与客服回复。',
+                title: context.l10n.profileSupport_screenEmptyMessage,
+                message: context
+                    .l10n
+                    .profileSupport_screenSupportTicketsEmptyMessage,
                 compact: true,
               )
             else
@@ -272,11 +288,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 ],
               ),
             if (page?.nextCursor != null)
-              const LoopNotice(
+              LoopNotice(
                 key: ValueKey<String>('support-more-tickets'),
                 icon: 'info',
-                title: '还有更早的工单',
-                body: '目前只显示最新的一页，更早的工单暂时看不到。',
+                title:
+                    context.l10n.profileSupport_screenSupportMoreTicketsTitle,
+                body: context.l10n.profileSupport_screenSupportMoreTicketsBody,
                 margin: EdgeInsets.fromLTRB(
                   LoopSpacing.page,
                   12,
@@ -288,20 +305,24 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           if (policy != null)
             LoopProvenanceFooter(
               key: const ValueKey<String>('support-escalation'),
-              label: '说明',
-              title: '回复时间',
-              text:
-                  '${policy.businessDaysOnly ? '工作日 ' : ''}'
-                  '${policy.responseWindowHours} 小时内回复；'
-                  '紧急问题请在工单正文里写明。',
+              label: context.l10n.common_about,
+              title: context.l10n.profileSupport_screenSupportEscalationTitle,
+              text: policy.businessDaysOnly
+                  ? LoopL10n.current
+                        .profileSupport_screenSupportEscalationTextBusinessDays(
+                          policy.responseWindowHours,
+                        )
+                  : LoopL10n.current.profileSupport_screenSupportEscalationText(
+                      policy.responseWindowHours,
+                    ),
             ),
           // The prototype closes on the warning, not opens on it.
-          const LoopNotice(
+          LoopNotice(
             key: ValueKey<String>('support-scam-notice'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            title: '官方不会主动私聊你',
-            body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
+            title: context.l10n.profileSupport_screenSupportScamNoticeTitle,
+            body: context.l10n.profileSupport_screenSupportScamNoticeBody,
             margin: EdgeInsets.fromLTRB(
               LoopSpacing.page,
               14,
@@ -321,8 +342,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       key: ValueKey<String>('support-ticket-${ticket.ticketId}'),
       title: '${ticket.category.label} · ${ticket.body}',
       subtitle: note == null
-          ? '提交于 ${loopRelativeTime(ticket.createdAt)} · 还没有回复'
-          : '客服回复：$note',
+          ? LoopL10n.current.profileSupport_screenSubtitle(
+              loopRelativeTime(ticket.createdAt),
+            )
+          : LoopL10n.current.profileSupport_screenSubtitle2(note),
       // A ticket row carries two full sentences — the question you typed and
       // the operator's answer — and on a phone both used to end in an
       // ellipsis with nowhere to go. The row now opens the whole exchange.
@@ -336,15 +359,17 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         },
       ),
       position: LoopRowPosition.middle,
-      semanticLabel:
-          '${ticket.category.label} 工单，${ticket.status.label}，打开完整往来',
+      semanticLabel: LoopL10n.current.profileSupport_screenSemanticLabel(
+        ticket.category.label,
+        ticket.status.label,
+      ),
       onTap: () => unawaited(_openTicket(ticket)),
     );
   }
 
   Future<void> _openTicket(LoopSupportTicket ticket) => showLoopSheet<void>(
     context,
-    barrierLabel: '关闭工单详情',
+    barrierLabel: LoopL10n.current.profileSupport_screenBarrierLabel,
     builder: (context) => _SupportTicketDetail(ticket: ticket),
   );
 }
@@ -394,7 +419,7 @@ class _SupportTicketDetail extends StatelessWidget {
             style: theme.textTheme.titleMedium,
           ),
         ),
-        const LoopLabel('往来记录'),
+        LoopLabel(context.l10n.profileSupport_screenLoopLabel5),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Column(
@@ -429,9 +454,9 @@ class _SupportTicketDetail extends StatelessWidget {
           ),
         ),
         if (ticket.status == LoopSupportTicketStatus.open)
-          const LoopFootnote(
+          LoopFootnote(
             key: ValueKey<String>('support-ticket-detail-open'),
-            text: '客服还没有回复这张工单；有回复时会出现在上面。',
+            text: context.l10n.profileSupport_screenSupportTicketDetailOpenText,
           ),
         const SizedBox(height: 8),
       ],

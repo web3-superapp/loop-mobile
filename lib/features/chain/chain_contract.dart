@@ -534,10 +534,10 @@ String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
 /// chain slot is the BSC testnet and the test-hints switch is on (decision
 /// 0204). It is a statement of fact, never a blocker. Callers that draw it
 /// conditionally use [loopTestnetBadgeFor].
-const String loopTestnetBadgeLabel = loopTestnetBadgeText;
+String get loopTestnetBadgeLabel => loopTestnetBadgeText;
 
 /// Title of the one-time explanation that accompanies the badge.
-const String loopTestnetNoticeTitle = loopTestnetNoticeTitleText;
+String get loopTestnetNoticeTitle => loopTestnetNoticeTitleText;
 
 /// The one-time explanation. It never says anything is broken: the Launch
 /// module points at `eip155:97` on purpose, and everything else stays on the

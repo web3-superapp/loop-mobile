@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:loop_mobile/l10n/loop_l10n.dart';
+
 /// Decision 0206 (backend 0164, contracts 0016; supersedes the length and
 /// ticker parts of 0199): a MEME / launch token's name and ticker follow
 /// four.meme's rule — one rule for both. After `trim`, 1–20 UTF-16 units
@@ -15,11 +17,14 @@ const int loopTokenTextMaxUnits = 20;
 const int loopTokenDescriptionMaxCharacters = 2000;
 
 /// The rule as the form states it.
-const String loopTokenTextRule = '名称和代码各 1–20 个字，可用中文、字母、数字、emoji';
+String get loopTokenTextRule =>
+    LoopL10n.current.coreText_tokenLoopTokenTextRule;
 
 /// Shown for a name or ticker over 20 units.
-const String loopTokenNameLengthMessage = '名称最多 20 个字（emoji 算 2 个字）';
-const String loopTokenTickerLengthMessage = '代码最多 20 个字（emoji 算 2 个字）';
+String get loopTokenNameLengthMessage =>
+    LoopL10n.current.coreText_tokenLoopTokenNameLengthMessage;
+String get loopTokenTickerLengthMessage =>
+    LoopL10n.current.coreText_tokenLoopTokenTickerLengthMessage;
 
 final RegExp _format = RegExp(r'[\p{Cf}\p{Zl}\p{Zp}]', unicode: true);
 final RegExp _allowedFormat = RegExp(
@@ -87,31 +92,41 @@ bool _hasHazard(String value) =>
 
 String? _tokenTextError(String raw, String label, String lengthMessage) {
   final value = raw.trim();
-  if (value.isEmpty) return '请填写$label';
+  if (value.isEmpty) {
+    return LoopL10n.current.coreText_tokenTokenTextError(label);
+  }
   if (value.length > loopTokenTextMaxUnits) return lengthMessage;
   if (_hasHazard(value)) {
-    return '$label不能包含换行、控制符或不可见字符';
+    return LoopL10n.current.coreText_tokenTokenTextError2(label);
   }
   return null;
 }
 
 /// Why [raw] is not a token name, or `null`.
-String? loopTokenNameError(String raw) =>
-    _tokenTextError(raw, '名称', loopTokenNameLengthMessage);
+String? loopTokenNameError(String raw) => _tokenTextError(
+  raw,
+  LoopL10n.current.common_name,
+  loopTokenNameLengthMessage,
+);
 
 /// Why [raw] is not a token ticker, or `null` — the name's rule.
-String? loopTokenTickerError(String raw) =>
-    _tokenTextError(raw, '代码', loopTokenTickerLengthMessage);
+String? loopTokenTickerError(String raw) => _tokenTextError(
+  raw,
+  LoopL10n.current.coreText_tokenTokenTextError3,
+  loopTokenTickerLengthMessage,
+);
 
 /// Why [raw] is not a token description, or `null` (empty is allowed).
 String? loopTokenDescriptionError(String raw) {
   final value = raw.trim();
   if (loopCharacterCount(value) > loopTokenDescriptionMaxCharacters) {
-    return '简介最多 $loopTokenDescriptionMaxCharacters 个字';
+    return LoopL10n.current.coreText_tokenLoopTokenDescriptionError(
+      loopTokenDescriptionMaxCharacters,
+    );
   }
   if (_controlButLayout.hasMatch(value.replaceAll('\r', '')) ||
       _hasForbiddenFormat(value)) {
-    return '简介不能包含控制符或不可见字符';
+    return LoopL10n.current.coreText_tokenLoopTokenDescriptionError2;
   }
   return null;
 }

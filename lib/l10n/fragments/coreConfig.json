@@ -1,0 +1,55 @@
+{
+  "coreConfig_testHintsLoopTestnetChainLabel": {
+    "en": "BSC Testnet",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:28",
+    "zh": "BSC 测试网"
+  },
+  "coreConfig_testHintsLoopTestnetInfoButtonText": {
+    "en": "About the Launch testnet",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:51",
+    "zh": "关于 Launch 测试网"
+  },
+  "coreConfig_testHintsLoopTestnetNetworkRowAbsent": {
+    "en": "No testnet published",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:60",
+    "zh": "没有已发布的测试网"
+  },
+  "coreConfig_testHintsLoopTestnetNetworkRowTitle": {
+    "en": "Testnet",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:57",
+    "zh": "测试网"
+  },
+  "coreConfig_testHintsLoopTestnetNoticeBodyText": {
+    "en": "Launch lists, details and sign sheets currently point to BSC Testnet ({chainId}); testnet tokens have no real value. Wallet balances, market data, swaps and approvals still use BNB Smart Chain mainnet only and aren't affected. You can close this notice; it doesn't block anything.",
+    "placeholders": {
+      "chainId": {
+        "example": "chainId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/core/config/loop_test_hints.dart:42",
+    "zh": "Launch 目录、详情与签名单当前指向 BSC 测试网（{chainId}），测试网上的代币没有真实价值。钱包余额、行情、兑换与授权仍然只走 BNB Smart Chain 主网，不受影响。这条说明可以关闭，不会阻断任何操作。"
+  },
+  "coreConfig_testHintsLoopTestnetNoticeDismissText": {
+    "en": "Close testnet notice",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:54",
+    "zh": "关闭测试网说明"
+  },
+  "coreConfig_testHintsLoopTestnetNoticeTitleText": {
+    "en": "Launch is running on BSC Testnet",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:37",
+    "zh": "Launch 当前运行在 BSC 测试网"
+  },
+  "coreConfig_testHintsLoopTestnetWalletTotalNoteText": {
+    "en": "Launch chain balances are on BSC Testnet and don't count toward total assets; total assets only count BNB Smart Chain mainnet.",
+    "placeholders": {},
+    "where": "lib/core/config/loop_test_hints.dart:48",
+    "zh": "Launch 链是 BSC 测试网余额，不计入总资产；总资产只统计 BNB Smart Chain 主网。"
+  }
+}

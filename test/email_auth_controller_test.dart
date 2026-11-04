@@ -103,7 +103,7 @@ void main() {
     expect(state.errorMessage, contains('验证码不正确。'));
     expect(
       state.errorMessage,
-      contains('还可尝试 ${emailAuthMaximumAttempts - 1} 次'),
+      contains('Attempts left: ${emailAuthMaximumAttempts - 1}'),
     );
     expect(state.submittedEmail, 'person@example.com');
 
@@ -114,7 +114,7 @@ void main() {
     expect(state.failedAttempts, emailAuthMaximumAttempts);
     expect(state.remainingAttempts, 0);
     expect(state.attemptsExhausted, isTrue);
-    expect(state.errorMessage, contains('尝试次数已用完'));
+    expect(state.errorMessage, contains('No attempts left'));
     expect(gateway.verifiedEmails, hasLength(emailAuthMaximumAttempts));
 
     // Exhausted: the client stops asking the provider at all.

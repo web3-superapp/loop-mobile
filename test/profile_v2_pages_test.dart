@@ -106,7 +106,10 @@ void main() {
 
       // S107 §4: the row states the 公开持仓与交易 switch (the 匿名模式 line
       // left with its own switch). This harness keeps both facets private.
-      expect(await subtitle('profile-open-privacy'), '持仓与交易仅自己可见');
+      expect(
+        await subtitle('profile-open-privacy'),
+        'Holdings and trades visible only to you',
+      );
       // The security posture was not read, so the row says nothing rather
       // than 「读不到」.
       expect(await subtitle('profile-open-security'), isNull);
@@ -134,7 +137,7 @@ void main() {
         find.byKey(const ValueKey<String>('profile-open-wallets')),
         findsNothing,
       );
-      expect(find.textContaining('读不到'), findsNothing);
+      expect(find.textContaining('Unreadable'), findsNothing);
     });
 
     testWidgets('nothing on this page calls a working destination closed', (
@@ -184,7 +187,7 @@ void main() {
         gateway: _Gateway(resource: active(alias: null)),
       );
 
-      expect(find.text('尚未设置别名'), findsWidgets);
+      expect(find.text('No alias yet'), findsWidgets);
       expect(find.byKey(const ValueKey<String>('profile-empty')), findsNothing);
     });
 
@@ -265,7 +268,7 @@ void main() {
           find.byKey(const ValueKey<String>('loop-preview-mode-notice')),
           findsOneWidget,
         );
-        expect(find.text('开发预览'), findsWidgets);
+        expect(find.text('Development preview'), findsWidgets);
       });
 
       testWidgets('$surfaceId carries no Preview label in production', (
@@ -333,7 +336,7 @@ void main() {
         );
       }
       // Decision 0126: each label sits inside its 52-high field.
-      for (final label in <String>['用户名', '简介', 'LOOP ID']) {
+      for (final label in <String>['Username', 'Bio', 'LOOP ID']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
       for (final key in <String>[
@@ -379,8 +382,8 @@ void main() {
         find.byKey(const ValueKey<String>('profile-edit-failure')),
         findsOneWidget,
       );
-      expect(find.textContaining('保留词'), findsOneWidget);
-      expect(find.text('资料已保存'), findsNothing);
+      expect(find.textContaining('reserved by LOOP'), findsOneWidget);
+      expect(find.text('Profile saved'), findsNothing);
       // The draft survives so the owner can correct it.
       expect(
         tester

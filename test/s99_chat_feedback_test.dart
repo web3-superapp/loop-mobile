@@ -655,12 +655,15 @@ void main() {
       await tester.tap(row('mining.weight'));
       await tester.pumpAndSettle();
 
-      expect(find.text('关闭『Weight changes』通知？'), findsOneWidget);
+      expect(
+        find.text('Turn off "Weight changes" notifications?'),
+        findsOneWidget,
+      );
       expect(
         find.text('When a held token\'s Mining Weight changes'),
         findsWidgets,
       );
-      expect(find.text('关闭'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
 
@@ -688,7 +691,7 @@ void main() {
       await scrollToS5Section(tester, row('mining.weight'));
       await tester.tap(row('mining.weight'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
 
       expect(
@@ -747,7 +750,7 @@ void main() {
       // below the screen, a reduced-motion one is already in place.
       await tester.pump();
       await tester.pump();
-      final title = find.text('关闭『Weight changes』通知？');
+      final title = find.text('Turn off "Weight changes" notifications?');
       expect(title, findsOneWidget);
       final sheet = tester.getRect(
         find.byKey(const ValueKey<String>('loop-sheet')),
@@ -758,7 +761,7 @@ void main() {
     test('titles and bodies come from the category', () {
       expect(
         notificationDisableTitle(LoopNotificationCategory.communityAll),
-        '关闭『All messages』通知？',
+        'Turn off "All messages" notifications?',
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.communityAll),
@@ -766,12 +769,12 @@ void main() {
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.launchGraduation),
-        '关闭后不会再收到这一类通知。',
+        'Once off, you won\'t get this type of notification.',
       );
       // Decision 0242: the row that files the launch progress names it.
       expect(
         notificationDisableBody(LoopNotificationCategory.launchRound),
-        '关闭后不会再收到共识勋章、发射审核结果与上链进度通知。',
+        'Once off, you won\'t get consensus badge, launch review or on-chain progress notifications.',
       );
     });
   });

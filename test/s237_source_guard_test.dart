@@ -5,6 +5,7 @@
 // Every string literal under `lib/` is read (comments are skipped, and the
 // literal pieces of an interpolation are read on their own). The words below
 // may appear in a literal only where the switch owns them.
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +34,19 @@ const List<String> _banned = <String>[
 
 /// The only file that may hold the switch-on texts.
 const String _hintsFile = 'lib/core/config/loop_test_hints.dart';
+
+/// The ARB keys that belong to [_hintsFile] (decision 0281).
+const String _hintsKeyPrefix = 'coreConfig_testHints';
+
+Map<String, String> _arb(String path) {
+  final data =
+      jsonDecode(File(path).readAsStringSync()) as Map<String, Object?>;
+  return <String, String>{
+    for (final entry in data.entries)
+      if (!entry.key.startsWith('@') && entry.value is String)
+        entry.key: entry.value! as String,
+  };
+}
 
 /// Per-file exceptions, each with its reason.
 const Map<String, Set<String>> _allowed = <String, Set<String>>{
@@ -186,6 +200,9 @@ multi
     for (final file in files) {
       final path = file.path.replaceAll(r'\', '/');
       if (path == _hintsFile) continue;
+      // Decision 0281: generated ARB accessors; their copy is checked by key
+      // in the ARB test below.
+      if (path.startsWith('lib/l10n/gen/')) continue;
       final allowed = _allowed[path] ?? const <String>{};
       for (final (line, text) in dartStringLiterals(file.readAsStringSync())) {
         if (_code.hasMatch(text)) continue;
@@ -220,11 +237,44 @@ multi
   });
 
   test('the hints file is where the switch-on words live', () {
-    final texts = dartStringLiterals(File(_hintsFile).readAsStringSync())
+    final source = File(_hintsFile).readAsStringSync();
+    final texts = dartStringLiterals(source)
         .map((entry) => entry.$2)
         .join('\n');
-    for (final word in <String>['测试网', 'TESTNET', 'tBNB', 'tUSD1']) {
+    for (final word in <String>['TESTNET', 'tBNB', 'tUSD1']) {
       expect(texts, contains(word), reason: word);
     }
+    // Decision 0281: 测试网 moved to ARB; the hints file reads it from its
+    // own `coreConfig_testHints*` keys.
+    final zh = _arb('lib/l10n/app_zh.arb');
+    expect(
+      zh.entries.any(
+        (entry) =>
+            entry.key.startsWith(_hintsKeyPrefix) &&
+            entry.value.contains('测试网') &&
+            source.contains(entry.key),
+      ),
+      isTrue,
+    );
+  });
+
+  test('ARB copy holds a test-only word only under the hints keys '
+      '(decision 0281)', () {
+    final offences = <String>[];
+    for (final file in <String>['lib/l10n/app_zh.arb', 'lib/l10n/app_en.arb']) {
+      for (final entry in _arb(file).entries) {
+        if (entry.key.startsWith(_hintsKeyPrefix)) continue;
+        final text = entry.value;
+        if (_code.hasMatch(text) || _chainId.hasMatch(text)) continue;
+        for (final word in _banned) {
+          if (word == 'TESTNET' &&
+              !RegExp(r'(?<![A-Z_])TESTNET(?![A-Z_])').hasMatch(text)) {
+            continue;
+          }
+          if (text.contains(word)) offences.add('$file ${entry.key} [$word]');
+        }
+      }
+    }
+    expect(offences, isEmpty, reason: offences.join('\n'));
   });
 }

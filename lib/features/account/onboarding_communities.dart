@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -526,12 +527,12 @@ class _OnboardingCommunitiesScreenState
     // failed join, or before the button is pressed; a clean result is the
     // entering page above, so there is no 「进入 LOOP while settling」 label.
     final enterLabel = state.submitting
-        ? '正在加入…'
+        ? context.l10n.common_joining
         : state.hasFailures
-        ? '继续进入 LOOP'
+        ? context.l10n.account_onboardingCommunitiesIf
         : count == 0
-        ? '进入 LOOP'
-        : '加入 $count 个社区并进入';
+        ? context.l10n.account_screensLoopSplashEnterLabel
+        : context.l10n.account_onboardingCommunitiesS(count);
     // Decision 0126: the last step of the opening, flat — Logo 36, name and
     // members, a Lime tick circle on the right.
     return LoopFlat(
@@ -539,13 +540,17 @@ class _OnboardingCommunitiesScreenState
       child: LoopStreamPage(
         key: const ValueKey<String>('onboarding-communities-screen'),
         archetype: LoopPageArchetype.action,
-        title: '加入社区',
+        title: context
+            .l10n
+            .account_onboardingCommunitiesOnboardingCommunitiesScreenTitle,
         kicker: communityPreviewKicker(state.mode),
         actions: <Widget>[
           LoopIconButton(
             key: const ValueKey<String>('onboarding-communities-skip'),
             icon: 'close',
-            label: '跳过',
+            label: context
+                .l10n
+                .account_onboardingCommunitiesOnboardingCommunitiesSkipLabel,
             onPressed: state.submitting ? null : _leave,
           ),
         ],
@@ -571,7 +576,9 @@ class _OnboardingCommunitiesScreenState
                 key: const ValueKey<String>('onboarding-communities-skip-text'),
                 onPressed: state.submitting ? null : _leave,
                 child: Text(
-                  '跳过',
+                  context
+                      .l10n
+                      .account_onboardingCommunitiesOnboardingCommunitiesSkipLabel,
                   style: LoopTypography.withWeight(
                     LoopType.label,
                     FontWeight.w600,
@@ -585,11 +592,14 @@ class _OnboardingCommunitiesScreenState
           key: const ValueKey<String>('onboarding-communities-list'),
           padding: const EdgeInsets.only(bottom: 16),
           children: <Widget>[
-            CommunityPreviewNotice(mode: state.mode, resource: '推荐社区'),
+            CommunityPreviewNotice(
+              mode: state.mode,
+              resource: context.l10n.account_onboardingCommunitiesResource,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
               child: Text(
-                '选几个感兴趣的社区。加入后默认免打扰，随时可以退出。',
+                context.l10n.account_onboardingCommunitiesIf2,
                 style: LoopType.body.copyWith(color: LoopColors.text2),
               ),
             ),
@@ -600,8 +610,12 @@ class _OnboardingCommunitiesScreenState
                 failureKind: state.failureKind,
                 skeleton: LoopSkeletonType.record,
                 rows: 5,
-                emptyMessage: '还没有可加入的社区',
-                emptyReason: '可以先进入 LOOP，之后在广场里找社区。',
+                emptyMessage: context
+                    .l10n
+                    .account_onboardingCommunitiesOnboardingCommunitiesStateEmptyMessage,
+                emptyReason: context
+                    .l10n
+                    .account_onboardingCommunitiesOnboardingCommunitiesStateEmptyReason,
                 onRetry: () => unawaited(controller.reload()),
               )
             else ...<Widget>[
@@ -624,7 +638,7 @@ class _OnboardingCommunitiesScreenState
                     key: const ValueKey<String>(
                       'onboarding-communities-retry-more',
                     ),
-                    label: '重试',
+                    label: context.l10n.common_retry,
                     block: true,
                     onPressed: () => unawaited(controller.retryMore()),
                   ),
@@ -665,8 +679,12 @@ class _OnboardingCommunitiesScreenState
     final selected = state.selected.contains(id);
     final result = state.results[id];
     final reason = state.failureReasons[id];
-    final members =
-        '${loopFormatDecimal(Decimal.fromInt(community.memberCount), maxFractionDigits: 0)} 成员';
+    final members = LoopL10n.current.account_onboardingCommunitiesMembers(
+      loopFormatDecimal(
+        Decimal.fromInt(community.memberCount),
+        maxFractionDigits: 0,
+      ),
+    );
     return LoopRecordRow(
       key: ValueKey<String>('onboarding-community-$id'),
       leading: CommunityLogo(
@@ -678,19 +696,22 @@ class _OnboardingCommunitiesScreenState
       ),
       title: community.name,
       subtitle: switch (result) {
-        OnboardingJoinResult.joined => '已加入 · 已免打扰',
-        OnboardingJoinResult.joinedMutePending => '已加入 · 免打扰生效中',
-        OnboardingJoinResult.failed => reason ?? '没有加入成功',
+        OnboardingJoinResult.joined =>
+          LoopL10n.current.account_onboardingCommunitiesJoined,
+        OnboardingJoinResult.joinedMutePending =>
+          LoopL10n.current.account_onboardingCommunitiesJoinedMutePending,
+        OnboardingJoinResult.failed =>
+          reason ?? LoopL10n.current.account_onboardingCommunitiesLoopRecordRow,
         null => members,
       },
       subtitleMaxLines: 1,
       trailingBadge: _OnboardingTick(
         key: ValueKey<String>('onboarding-community-badge-$id'),
         state: result?.isJoined ?? false
-            ? '已加入'
+            ? LoopL10n.current.account_onboardingCommunitiesState
             : selected
-            ? '已选'
-            : '未选',
+            ? LoopL10n.current.account_screensTrailing4
+            : LoopL10n.current.account_onboardingCommunitiesState2,
         on: selected || (result?.isJoined ?? false),
       ),
       selected: selected,
@@ -699,7 +720,17 @@ class _OnboardingCommunitiesScreenState
       onTap: state.submitting || (result?.isJoined ?? false)
           ? null
           : () => controller.toggle(id),
-      semanticLabel: '${community.name}，$members，${selected ? '已选' : '未选'}',
+      semanticLabel: selected
+          ? LoopL10n.current
+                .account_onboardingCommunitiesRowSelectedSemanticLabel(
+                  members,
+                  community.name,
+                )
+          : LoopL10n.current
+                .account_onboardingCommunitiesRowUnselectedSemanticLabel(
+                  members,
+                  community.name,
+                ),
     );
   }
 }
@@ -733,8 +764,10 @@ class OnboardingCommunitiesEntering extends StatefulWidget {
   /// [onboardingEnteringLogoLimit] are drawn.
   final List<CommunitySummary> communities;
 
-  static const String title = '正在进入 LOOP';
-  static const String detail = '正在为你把刚加入的社区设为免打扰…';
+  static String get title =>
+      LoopL10n.current.account_onboardingCommunitiesTitle;
+  static String get detail =>
+      LoopL10n.current.account_onboardingCommunitiesDetail;
 
   /// Orbit until here, then gather (1.2 s – 1.8 s), then the ring (0.6 s).
   static const Duration orbitEnd = Duration(milliseconds: 1200);

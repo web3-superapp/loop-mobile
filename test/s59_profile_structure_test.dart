@@ -124,9 +124,13 @@ void main() {
       // moved to 我的 and 资产与挖矿 left.
       expect(
         _labels(tester),
-        containsAllInOrder(<String>['隐私与安全', 'General', 'About']),
+        containsAllInOrder(<String>[
+          'Privacy and security',
+          'General',
+          'About',
+        ]),
       );
-      expect(_labels(tester), isNot(contains('账号')));
+      expect(_labels(tester), isNot(contains('Account')));
       expect(_labels(tester), isNot(contains('资产与挖矿')));
       expect(
         _labels(tester).where((label) => label == 'General'),
@@ -202,7 +206,12 @@ void main() {
         find.byKey(const ValueKey<String>('loop-page-primary')),
         findsNothing,
       );
-      expect(_labels(tester), <String>['联系我们', '常见问题', '提交工单', '我的工单']);
+      expect(_labels(tester), <String>[
+        'Contact us',
+        'FAQ',
+        'Submit a ticket',
+        'My tickets',
+      ]);
       // Five bundled answers and the one human entry point.
       expect(find.byType(LoopDisclosure), findsNWidgets(5));
       expect(
@@ -240,13 +249,13 @@ void main() {
         findsNothing,
       );
       expect(_labels(tester), <String>[
-        '验证',
-        '恢复',
-        '交易验证',
-        '设备',
-        '授权盘点',
-        '通知',
-        '最近安全事件',
+        'Verification',
+        'Recovery',
+        'Transaction verification',
+        'Devices',
+        'Token approvals',
+        'Notifications',
+        'Recent security events',
       ]);
     });
 

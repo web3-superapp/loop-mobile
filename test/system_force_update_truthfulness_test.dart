@@ -35,7 +35,7 @@ void main() {
     router.go('/system/update');
     await tester.pumpAndSettle();
 
-    expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
+    expect(find.text('Update LOOP to continue'), findsOneWidget);
     expect(find.text('9.0.0'), findsOneWidget);
     // The floor and the supported version are the facts; the policy version
     // that carries them is a backend identifier and stays off the page.
@@ -48,7 +48,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-topbar-back')),
       findsNothing,
     );
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
     // No reviewed store action is wired yet. The exit stays on the page, off,
     // with the reason under it: a gate with no control on it is what left the
     // blocked owner with nothing to do (audit 2026-09-20 §C.9).
@@ -56,9 +56,17 @@ void main() {
       find.byKey(const ValueKey<String>('force-update-store-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('前往更新'), findsOneWidget);
-    expect(find.text('没有已审阅的商店跳转，请手动打开应用商店。'), findsOneWidget);
-    expect(find.text('已批准的版本策略要求更新，无法跳过'), findsOneWidget);
+    expect(find.text('Update'), findsOneWidget);
+    expect(
+      find.text('No reviewed store link. Open the app store manually.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'An approved version policy requires an update. This can\'t be skipped',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a supported client is never blocked by an available policy', (
@@ -79,7 +87,7 @@ void main() {
       find.byKey(const ValueKey<String>('update-policy-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('请更新 LOOP 后继续'), findsNothing);
+    expect(find.text('Update LOOP to continue'), findsNothing);
   });
 
   testWidgets('explicit requirement blocks and invokes only its action', (
@@ -101,19 +109,19 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
-    expect(find.text('需更新'), findsOneWidget);
+    expect(find.text('Update LOOP to continue'), findsOneWidget);
+    expect(find.text('Update needed'), findsOneWidget);
     // The two floors are labelled separately and never merged.
-    expect(find.text('强制更新下限'), findsOneWidget);
+    expect(find.text('Force-update floor'), findsOneWidget);
     expect(find.text('1.2.0'), findsOneWidget);
-    expect(find.text('最低支持版本'), findsOneWidget);
+    expect(find.text('Minimum supported version'), findsOneWidget);
     expect(find.text('1.4.0'), findsOneWidget);
-    expect(find.text('返回 LOOP'), findsNothing);
+    expect(find.text('Back to LOOP'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-blocking')),
       findsOneWidget,
     );
-    await tester.tap(find.text('前往更新'));
+    await tester.tap(find.text('Update'));
     expect(updates, 1);
   });
 
@@ -129,11 +137,14 @@ void main() {
         ),
       ),
     );
-    expect(find.text('强制更新下限'), findsOneWidget);
-    expect(find.text('最低支持版本'), findsNothing);
+    expect(find.text('Force-update floor'), findsOneWidget);
+    expect(find.text('Minimum supported version'), findsNothing);
     // No reviewed store action: the exit is present and disabled.
-    expect(find.text('前往更新'), findsOneWidget);
-    expect(find.text('没有已审阅的商店跳转，请手动打开应用商店。'), findsOneWidget);
+    expect(find.text('Update'), findsOneWidget);
+    expect(
+      find.text('No reviewed store link. Open the app store manually.'),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey<String>('force-update-store-unavailable')),
       findsOneWidget,
@@ -163,9 +174,9 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
-    expect(find.textContaining('强制更新下限 2.0.0'), findsOneWidget);
-    await tester.tap(find.text('立即更新'));
+    expect(find.text('Update LOOP to continue'), findsOneWidget);
+    expect(find.textContaining('force-update floor 2.0.0'), findsOneWidget);
+    await tester.tap(find.text('Update now'));
     expect(updates, 1);
   });
 
@@ -180,7 +191,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('前往更新'));
+    await tester.ensureVisible(find.text('Update'));
   });
 }
 
